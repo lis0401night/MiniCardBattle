@@ -118,14 +118,7 @@ function startNextBattleSequence() {
     let introText = `第${battleCount + 1}戦の相手は私よ。\n` + getDialogue(enemyConfig, playerConfig, 'intro');
     
     if (enemyConfig.isShadow) {
-        const shadowDialogues = {
-            android: "……排除……シマス……。ワタシハ……アナタ……。",
-            dragon: "……熱イ……。全テ……焼キ尽クス……。",
-            knight: "……聖ナル光……。ソレハ……偽リ……。",
-            cthulhu: "……深淵……深ク……。堕チ……ナサイ……。",
-            satan: "……我ハ……闇……。絶望……ソノモノ……。"
-        };
-        introText = shadowDialogues[playerConfig.id] || "……。";
+        introText = "・・・・";
     }
 
     dialogueQueue = [
@@ -223,7 +216,11 @@ function showNextDialogue() {
         pRight.classList.add('active'); pLeft.classList.remove('active');
         box.style.borderColor = enemyConfig.color;
     }
-    document.getElementById('dialogue-text').innerText = cur.text;
+    let text = cur.text;
+    if (cur.speaker === 'enemy' && enemyConfig.isShadow) {
+        text = "・・・・";
+    }
+    document.getElementById('dialogue-text').innerText = text;
     currentDialogueIndex++;
 }
 

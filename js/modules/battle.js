@@ -35,6 +35,16 @@ function initBattleState() {
     document.getElementById('enemy-icon').src = enemyConfig.icon;
     document.getElementById('player-name').innerText = playerConfig.name;
     document.getElementById('enemy-name').innerText = enemyConfig.name;
+    
+    // 敵アイコンのフィルタ処理（シャドウ対応）
+    const enemyIconImg = document.getElementById('enemy-icon');
+    enemyIconImg.src = enemyConfig.icon;
+    if (enemyConfig.isShadow) {
+        enemyIconImg.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
+    } else {
+        enemyIconImg.style.filter = 'none';
+    }
+
     const bs = document.getElementById('screen-battle');
     bs.style.backgroundColor = '#0f172a';
     bs.style.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)), url('assets/background_${enemyConfig.id}.png')`;
@@ -91,7 +101,13 @@ function triggerFinishVisuals() {
 
 function showSpeechBubble(target) {
     const config = target === 'blue' ? playerConfig : enemyConfig;
-    const phrases = config.dialogue.damage;
+    let phrases = config.dialogue.damage;
+    
+    // シャドウ（ドッペルゲンガー）は無言
+    if (target === 'red' && enemyConfig.isShadow) {
+        phrases = ['・・・・'];
+    }
+
     const bubble = document.getElementById(target === 'blue' ? 'player-speech' : 'enemy-speech');
     if (bubble) {
         bubble.innerText = phrases[Math.floor(Math.random() * phrases.length)];
