@@ -902,18 +902,18 @@ h2 {
 /* 敵スキル確認用ボタン */
 .enemy-skill-btn {
     position: absolute;
-    right: -40px;
-    top: 50%;
-    transform: translateY(-50%);
+    right: -25px;
+    top: 60px;
     background: #334155;
-    color: #94a3b8;
-    border: 1px solid #475569;
+    color: #facc15;
+    border: 1px solid #facc15;
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.7rem;
     cursor: pointer;
     font-weight: bold;
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    z-index: 101;
 }
 
 .enemy-skill-btn:active {

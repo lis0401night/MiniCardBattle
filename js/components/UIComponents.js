@@ -110,7 +110,6 @@ const UI_COMPONENTS = {
             </div>
             <button id="btn-finish-deck" class="btn" onclick="finishDeckEdit()" style="margin-top: 10px; width: 100%; opacity: 0.5;">BATTLE START</button>
         </div>
-        <button class="btn" style="margin-top: 15px; background: #475569; padding: 8px 20px; font-size: 1rem;" onclick="switchScreen('screen-select')">戻る</button>
     </div>
     `,
 
@@ -196,7 +195,7 @@ const UI_COMPONENTS = {
                     </div>
                 </div>
                 <!-- 敵スキル確認ボタン -->
-                <button class="enemy-skill-btn" onclick="showEnemySkillConfirm()">スキル<br>確認</button>
+                <button class="enemy-skill-btn" onclick="showEnemySkillConfirm()">敵スキル<br>確認</button>
             </div>
         </div>
         <div id="turn-status">ROUND 1</div>
