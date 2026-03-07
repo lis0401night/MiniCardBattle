@@ -1,0 +1,210 @@
+:root {
+    --bg-color: #0f172a;
+    --panel-bg: #1e293b;
+    --text-light: #f8fafc;
+    --color-blue: #38bdf8;
+    --color-red: #fb7185;
+    --color-legend: #facc15;
+}
+
+/* 画面全体の幅をスマホサイズに制限し、PCでは中央に配置 */
+html { background-color: #000; width: 100%; height: 100%; }
+body { 
+    margin: 0 auto; padding: 0; width: 100%; height: 100%; max-width: 480px; position: relative;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: var(--bg-color); 
+    color: var(--text-light); 
+    touch-action: manipulation; 
+    overflow: hidden; user-select: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+}
+
+/* 画面共通スタイル */
+.screen { 
+    display: none; width: 100%; height: 100%; 
+    flex-direction: column; align-items: center; justify-content: center; 
+    position: absolute; top: 0; left: 0; background-color: var(--bg-color);
+    padding: 20px; box-sizing: border-box;
+}
+.screen.active { display: flex; }
+
+/* 各種メニュー画面の背景設定 */
+#screen-mode-select, #screen-rules, #screen-select, #screen-difficulty, #screen-loading, #screen-dialogue, #screen-continue, #screen-result {
+    background-color: #0f172a;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('../assets/background_select.png');
+    background-size: cover;
+    background-position: center;
+}
+/* バトル画面の背景設定（JSで動的に変更されます） */
+#screen-battle {
+    background-size: cover;
+    background-position: center;
+    padding: 5px 10px; justify-content: space-between;
+}
+
+h1, h2 { margin: 0 0 20px 0; text-align: center; }
+.btn {
+    background: linear-gradient(45deg, #3b82f6, #8b5cf6); border: none;
+    color: white; padding: 12px 30px; font-size: 1.2rem; font-weight: bold;
+    border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    transition: transform 0.1s; margin-top: 20px;
+}
+.btn:active { transform: scale(0.95); }
+
+/* ===== タイトル画面 ===== */
+#screen-title { background-color: #000; cursor: pointer; position: relative; padding: 0;}
+.title-visual { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;}
+.game-title { font-size: 3.5rem; color: #38bdf8; text-shadow: 0 0 20px rgba(56,189,248,0.5); line-height: 1.1; z-index: 2; position: relative; display: none;}
+.start-text { font-size: 1.5rem; font-weight: bold; animation: blink 1.5s infinite; color: #fff; text-shadow: 0 2px 10px #000, 0 0 10px #facc15; z-index: 2; position: absolute; bottom: 10%;}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ===== ルール説明画面 ===== */
+.rule-box { background: rgba(30, 41, 59, 0.85); padding: 20px; border-radius: 12px; border: 2px solid #334155; max-width: 400px; line-height: 1.6; max-height: 60vh; overflow-y: auto;}
+.rule-box ul { padding-left: 20px; margin-top: 0;}
+.rule-box li { margin-bottom: 10px; font-size: 0.95rem; text-shadow: 1px 1px 2px #000; }
+
+/* ===== ローディング画面 ===== */
+.loader { border: 6px solid #334155; border-top: 6px solid #38bdf8; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* ===== キャラクター選択画面 ===== */
+.char-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.char-card {
+    width: 140px; height: 180px; border-radius: 12px; border: 3px solid #334155;
+    background-size: cover; background-position: center; position: relative; cursor: pointer; 
+    transition: transform 0.2s, border-color 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden;
+}
+.char-card:hover, .char-card:active { transform: scale(1.05); border-color: #facc15; z-index: 10;}
+.char-name { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 8px 0; text-align: center; font-weight: bold; font-size: 0.9rem;}
+
+/* ===== 会話シーン画面 ===== */
+.portrait-container { position: absolute; top: 10%; width: 100%; height: 60%; display: flex; justify-content: space-between; padding: 0 5%; box-sizing: border-box;}
+.char-portrait { height: 100%; max-width: 45%; object-fit: contain; transition: all 0.3s; filter: brightness(0.4); transform: scale(0.9); }
+.char-portrait.active { filter: brightness(1.1); transform: scale(1.05); z-index: 5; }
+.dialogue-box {
+    position: absolute; bottom: 5%; width: 90%; height: 25%; background: rgba(15, 23, 42, 0.9); border: 2px solid #555; border-radius: 12px;
+    padding: 15px; box-sizing: border-box; cursor: pointer; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; left: 5%;
+}
+.dialogue-box::after { content: "▼"; position: absolute; bottom: 10px; right: 15px; animation: blink 1s infinite; font-size: 0.8rem; }
+#speaker-name { font-weight: bold; font-size: 1.2rem; margin-bottom: 8px; border-bottom: 1px solid #334155; padding-bottom: 5px;}
+#dialogue-text { font-size: 1.1rem; line-height: 1.5; flex-grow: 1; }
+
+/* ===== コンティニュー画面 ===== */
+#screen-continue { text-align: center; }
+.continue-img-container { position: relative; width: 300px; height: 350px; margin: 0 auto 20px auto; overflow: hidden; }
+.continue-img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(80%) sepia(30%) hue-rotate(-50deg); transition: filter 0.5s, transform 0.5s; }
+.continue-img.revive { filter: none; transform: scale(1.05); }
+#continue-count { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: #fff; text-shadow: 0 0 20px #ef4444, 2px 2px 0 #000; font-family: 'Impact'; margin: 0; }
+
+/* ===== スキルカットイン演出 ===== */
+#screen-cutin {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 1000; display: none;
+    align-items: center; justify-content: center; background: rgba(0,0,0,0.6); overflow: hidden;
+}
+.cutin-bg { position: absolute; width: 100%; height: 150px; background: linear-gradient(90deg, transparent, #facc15, transparent); transform: skewY(-15deg); opacity: 0.8; }
+.cutin-char { position: absolute; height: 110%; bottom: -5%; left: -50%; filter: drop-shadow(0 0 20px #facc15); animation: slideIn 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; object-fit: contain;}
+.cutin-text-img { position: absolute; font-size: 2.8rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px #ef4444, 3px 3px 0 #000; font-style: italic; right: 5%; opacity: 0; animation: textPop 2s ease forwards; transform-origin: right center; text-align: right; line-height: 1.1;}
+@keyframes slideIn { 0% { left: -50%; } 15% { left: 5%; } 85% { left: 10%; opacity: 1; } 100% { left: 100%; opacity: 0;} }
+@keyframes textPop { 0% { opacity: 0; transform: scale(0.5); } 15% { opacity: 1; transform: scale(1.2); } 30% { transform: scale(1); } 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.5); } }
+
+/* ===== リーダースキル発動確認モーダル ===== */
+#screen-skill-confirm {
+    display:none; position:absolute; top:0; left:0; width:100%; height:100%; 
+    background:rgba(0,0,0,0.85); z-index:60; flex-direction:column; align-items:center; justify-content:center; 
+    padding:20px; box-sizing:border-box;
+}
+.skill-modal-box {
+    background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; 
+    width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+/* ===== バトル画面 ===== */
+.hp-area { display: flex; justify-content: space-between; width: 100%; max-width: 400px; padding: 5px 10px; box-sizing: border-box;}
+.status-container { display: flex; align-items: center; width: 100%; position: relative; }
+
+/* アイコンとSPオーブ */
+.icon-wrapper { position: relative; }
+.char-icon { width: 50px; height: 50px; border-radius: 50%; border: 3px solid; object-fit: cover; background-color: #334155; flex-shrink: 0; margin-right: 12px; transition: all 0.3s;}
+.char-icon.blue { border-color: var(--color-blue); }
+.char-icon.red { border-color: var(--color-red); }
+
+.sp-orbs { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 4px; z-index: 10; width: 100%;}
+.orb { display: block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #facc15; background: rgba(0,0,0,0.8); box-sizing: border-box; box-shadow: 0 2px 4px rgba(0,0,0,0.8);}
+.orb.filled { background: #facc15; box-shadow: 0 0 8px #facc15; border: 2px solid #fff;}
+
+.speech-bubble {
+    position: absolute; top: -15px; left: 65px; background: rgba(255, 255, 255, 0.95); color: #000;
+    padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.1s, transform 0.1s;
+    transform: translateY(10px); white-space: nowrap;
+}
+.speech-bubble.active { opacity: 1; transform: translateY(0); }
+.speech-bubble::before { content: ''; position: absolute; left: -6px; top: 12px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 6px solid rgba(255, 255, 255, 0.95); }
+
+.player-status { display: flex; flex-direction: column; width: calc(100% - 62px); }
+.status-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 2px; text-shadow: 1px 1px 2px #000;}
+.hp-bar-bg { width: 100%; height: 15px; background: #334155; border-radius: 8px; overflow: hidden; position: relative;}
+.hp-bar-fill { height: 100%; transition: width 0.3s ease; }
+.hp-bar-fill.blue { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+.hp-bar-fill.red { background: linear-gradient(90deg, #e11d48, #fb7185); }
+.hp-text { position: absolute; top: -1px; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; text-shadow: 1px 1px 1px #000;}
+
+.battle-board { display: flex; flex-direction: column; gap: 15px; background: rgba(30, 41, 59, 0.85); padding: 10px; border-radius: 12px; border: 1px solid #334155; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);}
+.lane-row { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; justify-content: center; }
+.cell { width: 80px; height: 100px; background: rgba(15, 23, 42, 0.8); border: 2px dashed #475569; border-radius: 8px; position: relative; }
+.cell.highlight { border-color: #facc15; background: rgba(250, 204, 21, 0.3); }
+
+/* カードデザイン */
+.card { 
+    width: 80px; height: 100px; border-radius: 8px; position: absolute; top: 0; left: 0; background-color: #334155; 
+    border: 2px solid #94a3b8; box-sizing: border-box; box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s, border-color 0.3s; overflow: hidden; cursor: pointer;
+}
+.card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.9) 100%); z-index: 1; pointer-events: none;}
+.card::after { content: ""; position: absolute; inset: 0; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; pointer-events: none; z-index: 4;}
+.card.blue { border-color: var(--color-blue); box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+.card.red { border-color: var(--color-red); box-shadow: 0 0 8px rgba(251, 113, 133, 0.4); }
+.card.board-selected { transform: translateY(-10px); box-shadow: 0 0 20px #facc15; border-color: #facc15; z-index: 10; }
+
+.card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; background-color: #475569; }
+.card-power { position: absolute; bottom: 2px; right: 4px; font-size: 1.6rem; font-weight: 900; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 10px rgba(0,0,0,0.8); color: #fff; z-index: 2; font-family: 'Impact', 'Arial Black', sans-serif; letter-spacing: -1px;}
+.card-skill { position: absolute; top: 3px; left: 3px; background: rgba(0,0,0,0.85); padding: 2px 5px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; color: #facc15; z-index: 3; border: 1px solid #ca8a04; box-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+
+.hand-area { display: flex; gap: 5px; height: 110px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; width: 100%; max-width: 400px; overflow-x: auto; align-items: center;}
+.hand-card { position: relative; cursor: pointer; transition: transform 0.2s; flex-shrink: 0;}
+.hand-card.selected { transform: translateY(-15px); box-shadow: 0 0 15px var(--color-blue); border-color: var(--color-blue); z-index: 10;}
+
+#turn-status { font-size: 1.2rem; font-weight: bold; text-align: center; height: 1.5rem; color: #facc15; margin: 5px 0; text-shadow: 1px 1px 2px #000;}
+
+/* アクションコントロール */
+.controls { display: flex; justify-content: space-between; width: 100%; max-width: 400px; padding: 0 10px; margin-bottom: 5px;}
+#deck-info { font-size: 0.85rem; color: #cbd5e1; align-self: center; text-shadow: 1px 1px 2px #000;}
+
+.action-btn { background: #475569; color: white; border: 1px solid #334155; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;}
+.action-btn:active { background: #334155; }
+
+/* スキルボタン発動可能時のアニメーション */
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.leader-skill-btn.ready { background: linear-gradient(45deg, #ca8a04, #facc15); color: #000; animation: pulse 1.5s infinite; text-shadow: none; box-shadow: 0 0 10px rgba(250,204,21,0.5); border: 1px solid #fff;}
+
+/* 敵スキル確認用ボタン */
+.enemy-skill-btn { position: absolute; right: -40px; top: 50%; transform: translateY(-50%); background: #334155; color: #94a3b8; border: 1px solid #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; box-shadow: 1px 1px 3px rgba(0,0,0,0.5);}
+.enemy-skill-btn:active { background: #1e293b; }
+
+.card-detail-box { width: 100%; max-width: 400px; background: rgba(15, 23, 42, 0.85); border: 1px solid #334155; border-radius: 8px; padding: 8px; box-sizing: border-box; font-size: 0.85rem; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #cbd5e1; text-align: center; margin-bottom: 5px; line-height: 1.3;}
+
+.anim-attack-up { transform: translateY(-30px) scale(1.1) !important; z-index: 20;}
+.anim-attack-down { transform: translateY(30px) scale(1.1) !important; z-index: 20;}
+.anim-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+
+/* ポップアップ関連 */
+.damage-popup { position: absolute; color: #ef4444; font-size: 2rem; font-weight: bold; text-shadow: 2px 2px 0 #fff; animation: floatUp 1s ease-out forwards; pointer-events: none; z-index: 100;}
+@keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
+
+.skill-popup { position: absolute; color: #facc15; font-size: 1.2rem; font-weight: bold; text-shadow: 2px 2px 0 #000; animation: skillPop 1.5s ease-out forwards; pointer-events: none; z-index: 100;}
+@keyframes skillPop { 0% { opacity: 0; transform: translateY(10px) scale(0.8); } 20% { opacity: 1; transform: translateY(-10px) scale(1.2); } 80% { opacity: 1; transform: translateY(-10px) scale(1); } 100% { opacity: 0; transform: translateY(-20px) scale(0.8); } }
+
+.btn-home { position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; z-index: 100; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.5);}
+.btn-home:active { background: #334155; transform: scale(0.95);}
