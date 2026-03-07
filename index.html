@@ -1,216 +1,45 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mini Card Battle</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
+    <!-- 本番環境でPWA化する時にコメントを外してください -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
     <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <!-- タイトル画面 -->
-    <div id="screen-title" class="screen active" onclick="goToModeSelect()">
-        <img src="assets/title_img_long.png" class="title-visual" alt="Title Visual">
-        <div class="game-title">MINI CARD<br>BATTLE</div>
-        <div class="start-text">TAP TO START</div>
-    </div>
-
-    <!-- モード選択画面 -->
-    <div id="screen-mode-select" class="screen">
-        <img src="assets/title_img_long.png" class="title-visual" style="opacity: 0.3; filter: blur(5px);" alt="BG">
-        <h1 style="color: #38bdf8; text-shadow: 0 0 15px rgba(56,189,248,0.5); z-index: 2;">MINI CARD BATTLE</h1>
-        <button class="btn" onclick="startGameMode('story')">STORY MODE</button>
-        <button class="btn" onclick="startGameMode('free')" style="background: linear-gradient(45deg, #10b981, #3b82f6); margin-top: 15px;">FREE BATTLE</button>
-        <button class="btn" onclick="showRules()" style="background: #475569; margin-top: 15px; font-size: 1rem; padding: 10px 20px;">HOW TO PLAY</button>
-    </div>
-
-    <!-- ルール説明画面 -->
-    <div id="screen-rules" class="screen">
-        <h2>HOW TO PLAY</h2>
-        <div class="rule-box">
-            <ul>
-                <li><strong>勝利条件:</strong> 相手リーダーのHPを0にすれば勝利。</li>
-                <li><strong>バトルの流れ:</strong> 
-                    1. ターン開始時にカードを1枚引く。<br>
-                    2. 手札からカードを1枚選び、空いているレーンに出す。<br>
-                    3. 全レーンで正面の敵と戦闘（いない場合はリーダーへ直接攻撃）。
-                </li>
-                <li><strong>SPとスキル:</strong> 
-                    毎ターンSPが1たまります。最大までたまると強力な「リーダースキル」を発動できます。
-                </li>
-            </ul>
-        </div>
-        <button class="btn" onclick="switchScreen('screen-mode-select')">BACK</button>
-    </div>
-
-    <!-- キャラクター選択画面 -->
-    <div id="screen-select" class="screen">
-        <h2 id="select-title">Select Your Character</h2>
-        <div id="char-grid" class="char-grid"></div>
-        <button class="btn" onclick="switchScreen('screen-mode-select')" style="background: #475569; margin-top: 20px;">BACK</button>
-    </div>
-
-    <!-- 詳細確認モーダル風 -->
-    <div id="screen-char-detail" class="screen" style="background: rgba(0,0,0,0.9);">
-        <div class="skill-modal-box" style="max-width: 400px; width: 90%;">
-            <img id="detail-char-img" src="" style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid #38bdf8; margin-bottom: 15px; object-fit: cover;">
-            <h2 id="detail-char-name" style="margin-bottom: 5px;"></h2>
-            <p id="detail-char-desc" style="font-size: 0.9rem; margin-bottom: 15px; text-align: center; color: #cbd5e1;"></p>
-            <div style="width: 100%; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border-left: 4px solid #facc15;">
-                <div style="color: #facc15; font-weight: bold; font-size: 0.8rem; margin-bottom: 3px;">LEADER SKILL</div>
-                <div id="detail-leader-name" style="font-weight: bold; margin-bottom: 3px;"></div>
-                <div id="detail-leader-desc" style="font-size: 0.8rem; color: #94a3b8;"></div>
-            </div>
-            <div style="display: flex; gap: 10px; width: 100%; margin-top: 20px;">
-                <button class="btn" onclick="closeCharDetail()" style="flex: 1; margin: 0; background: #475569;">CANCEL</button>
-                <button class="btn" onclick="confirmCharSelect()" style="flex: 1; margin: 0;">SELECT</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 難易度選択画面 -->
-    <div id="screen-difficulty" class="screen">
-        <h2>Difficulty Level</h2>
-        <button class="btn" onclick="startFreeBattle(1)" style="background: #10b981;">EASY</button>
-        <button class="btn" onclick="startFreeBattle(2)" style="background: #f59e0b; margin-top: 15px;">NORMAL</button>
-        <button class="btn" onclick="startFreeBattle(3)" style="background: #ef4444; margin-top: 15px;">HARD</button>
-        <button class="btn" onclick="switchScreen('screen-select')" style="background: #475569; margin-top: 25px;">BACK</button>
-    </div>
-
-    <!-- ローディング画面 -->
-    <div id="screen-loading" class="screen">
-        <div class="loader"></div>
-        <p id="loading-text">Generating Cards...</p>
-    </div>
-
-    <!-- 会話・ダイアログ画面 -->
-    <div id="screen-dialogue" class="screen">
-        <div class="portrait-container">
-            <img id="portrait-left" class="char-portrait" src="" alt="Player">
-            <img id="portrait-right" class="char-portrait" src="" alt="Enemy">
-        </div>
-        <div class="dialogue-box" onclick="showNextDialogue()">
-            <div id="speaker-name"></div>
-            <div id="dialogue-text"></div>
-        </div>
-    </div>
-
-    <!-- エンディング一枚絵画面 -->
-    <div id="screen-ending-illust" class="screen" style="background:#000; padding:0;" onclick="finishEnding()">
-        <img id="ending-illust-img" src="" style="width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 2s;">
-        <div id="ending-text" style="position:absolute; bottom:15%; width:100%; text-align:center; color:#fff; font-size:2rem; font-weight:bold; text-shadow:0 0 10px #000; opacity:0; transition:opacity 3s;">THANK YOU FOR PLAYING!</div>
-    </div>
-
-    <!-- コンティニュー画面 -->
-    <div id="screen-continue" class="screen">
-        <h1>GAME OVER</h1>
-        <div class="continue-img-container">
-            <img id="continue-img" class="continue-img" src="">
-            <p id="continue-count">9</p>
-        </div>
-        <p>あきらめますか？</p>
-        <div id="continue-buttons" style="display: flex; gap: 20px;">
-            <button class="btn" onclick="executeContinue()" style="background: #10b981;">まだ戦える！</button>
-            <button class="btn" onclick="executeGameOver()" style="background: #475569;">ここで休む</button>
-        </div>
-    </div>
-
-    <!-- バトル終了画面 -->
-    <div id="screen-result" class="screen">
-        <h1 id="result-title">RESULT</h1>
-        <p id="result-desc"></p>
-        <button class="btn" onclick="location.reload()">TITLE PAGE</button>
-    </div>
-
-    <!-- スキルカットイン用 -->
-    <div id="screen-cutin">
-        <div id="cutin-bg" class="cutin-bg"></div>
-        <img id="cutin-char-img" class="cutin-char" src="">
-        <div id="cutin-text" class="cutin-text-img"></div>
-    </div>
-
-    <!-- スキル発動確認モーダル -->
-    <div id="screen-skill-confirm">
-        <div class="skill-modal-box">
-            <div style="color: #facc15; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">LEADER SKILL</div>
-            <h2 id="skill-confirm-name" style="margin-bottom: 10px;"></h2>
-            <p id="skill-confirm-desc" style="font-size: 0.9rem; color: #cbd5e1; text-align: center; margin-bottom: 15px;"></p>
-            <p id="skill-confirm-status" style="font-weight: bold; margin-bottom: 20px;"></p>
-            <div style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn" onclick="closeSkillConfirm()" style="flex: 1; margin: 0; background: #475569;">戻る</button>
-                <button id="btn-execute-skill" class="btn" onclick="executeSkillFromConfirm()" style="flex: 1; margin: 0;">発動！</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- バトル画面 -->
-    <div id="screen-battle" class="screen">
-        <button class="btn-home" onclick="returnToTitle()">EXIT</button>
-        
-        <!-- 敵ステータス -->
-        <div class="hp-area">
-            <div class="status-container">
-                <div class="icon-wrapper">
-                    <img id="enemy-icon" class="char-icon red" src="">
-                    <div id="enemy-sp-orbs" class="sp-orbs"></div>
-                </div>
-                <div id="enemy-speech" class="speech-bubble">...</div>
-                <div class="player-status">
-                    <div id="enemy-name" class="status-name">ENEMY</div>
-                    <div class="hp-bar-bg">
-                        <div id="enemy-hp-fill" class="hp-bar-fill red" style="width: 100%;"></div>
-                        <div id="enemy-hp-text" class="hp-text">20 / 20</div>
-                    </div>
-                </div>
-                <button class="enemy-skill-btn" onclick="showEnemySkillConfirm()">Skill</button>
-            </div>
-        </div>
-
-        <!-- 盤面。上から敵・プレイヤー -->
-        <div class="battle-board">
-            <div id="enemy-lanes" class="lane-row">
-                <div class="cell" data-lane="0"></div>
-                <div class="cell" data-lane="1"></div>
-                <div class="cell" data-lane="2"></div>
-            </div>
-            <div id="player-lanes" class="lane-row">
-                <div class="cell" data-lane="0"></div>
-                <div class="cell" data-lane="1"></div>
-                <div class="cell" data-lane="2"></div>
-            </div>
-        </div>
-
-        <div id="turn-status">YOUR TURN</div>
-
-        <!-- アクションと詳細 -->
-        <div class="controls">
-            <div id="deck-info">Deck: 25 / Drop: 0</div>
-            <button id="btn-leader-skill" class="action-btn leader-skill-btn" style="padding: 10px 15px;" onclick="showSkillConfirm()">LEADER SKILL</button>
-            <button class="action-btn" style="background: #1e293b;" onclick="endPlayerTurn()">END TURN</button>
-        </div>
-
-        <!-- カード詳細 -->
-        <div id="card-detail-view" class="card-detail-box">
-            カードを選択するとここに能力が表示されます
-        </div>
-
-        <!-- 手札 -->
-        <div id="player-hand" class="hand-area"></div>
-    </div>
-
-    <!-- JavaScript 分割ファイル読み込み -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/game.js"></script>
-
     <script>
-        // PWAのサービスワーカー登録
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(() => {});
-            });
-        }
+        window.onerror = function (msg, url, line, col, error) {
+            alert("Error: " + msg + "\nLine: " + line + "\nURL: " + url);
+        };
     </script>
+</head>
+
+<body>
+
+    <!-- アプリケーションのUIコンポーネントがここに動的に挿入されます -->
+    <div id="app-container"></div>
+
+    <!-- ===== JSファイルの読み込み ===== -->
+    <!-- 定数データ -->
+    <script src="js/constants/config.js"></script>
+    <script src="js/constants/skills.js"></script>
+    <script src="js/constants/characters.js"></script>
+    <script src="js/constants/cards.js"></script>
+
+    <!-- UIコンポーネント（テンプレート群） -->
+    <script src="js/components/UIComponents.js"></script>
+
+    <!-- システム -->
+    <script src="js/sounds.js"></script>
+    <script src="js/modules/state.js"></script>
+    <script src="js/modules/utils.js"></script>
+    <script src="js/modules/ui.js"></script>
+    <script src="js/modules/deck.js"></script>
+    <script src="js/modules/battle.js"></script>
+
+    <!-- メインエントリー -->
+    <script src="js/main.js"></script>
 </body>
+
 </html>
