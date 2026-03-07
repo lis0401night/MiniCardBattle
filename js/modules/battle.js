@@ -226,7 +226,13 @@ async function activateLeaderSkill(owner) {
 function discardCard(owner, card) { if (card.isToken) return; if ('basePower' in card) { card.power = card.basePower; } card.currentPower = card.power; (owner === 'blue' ? playerDiscard : enemyDiscard).push(card); }
 function drawCard(owner) {
     let d = owner === 'blue' ? playerDeck : enemyDeck, h = owner === 'blue' ? playerHand : enemyHand, ds = owner === 'blue' ? playerDiscard : enemyDiscard;
-    if (d.length === 0 && ds.length > 0) { d.push(...ds.sort(() => Math.random() - 0.5)); ds.length = 0; playSound(SOUNDS.seSkill); createDamagePopup(document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'), 'RELOAD', '#38bdf8'); }
+    if (d.length === 0 && ds.length > 0) {
+        d.push(...ds.sort(() => Math.random() - 0.5));
+        ds.length = 0;
+        playSound(SOUNDS.seSkill);
+        createDamagePopup(document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'), 'RELOAD', '#38bdf8');
+        showDeckRefreshEffect(owner);
+    }
     if (d.length > 0 && h.length < 5) h.push(d.pop());
     if (owner === 'blue') { document.getElementById('deck-info').innerText = `Deck: ${playerDeck.length} / Drop: ${playerDiscard.length}`; renderHand(); }
 }

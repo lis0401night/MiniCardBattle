@@ -27,12 +27,12 @@ async function performFadeTransition(action) {
     const fade = document.getElementById('fade-overlay');
     const portraitContainer = document.querySelector('.portrait-container');
     const portraits = document.querySelectorAll('.char-portrait');
-    
+
     if (fade) fade.classList.add('active');
-    
+
     // 暗転完了まで待機
     await sleep(500);
-    
+
     // 配置換えの瞬間にコンテナを完全に消去（レンダリングツリーから除外）
     if (portraitContainer) {
         portraitContainer.style.display = 'none';
@@ -57,7 +57,7 @@ async function performFadeTransition(action) {
 
     // 暗転解除開始
     if (fade) fade.classList.remove('active');
-    
+
     // フェードイン完了後にtransitionを元に戻す
     await sleep(500);
     if (portraits) {
@@ -115,12 +115,12 @@ function confirmCharSelect() {
                 const j = Math.floor(Math.random() * (i + 1));
                 [otherIds[i], otherIds[j]] = [otherIds[j], otherIds[i]];
             }
-            
+
             // ストーリー構成: 1戦目(ランダム1), 2戦目(ランダム2), 3戦目(自分/影), 4戦目(残る1人), 5戦目(サタン)
             enemyQueue = [otherIds[0], otherIds[1], 'shadow', otherIds[2], 'satan'];
-            
+
             battleCount = 1;
-            
+
             // ストーリー導入フェーズ
             appState = 'story_intro';
             dialogueQueue = [
@@ -129,7 +129,7 @@ function confirmCharSelect() {
             playerConfig.storyIntro.forEach(text => {
                 dialogueQueue.push({ speaker: 'player', text: text });
             });
-            
+
             performFadeTransition(() => {
                 setupDialogueScreen();
             });
@@ -163,9 +163,9 @@ function startNextBattleSequence() {
         startEndingSequence();
         return;
     }
-    
+
     let nextEnemyId = enemyQueue.shift();
-    
+
     // ストーリーモード専用の進行制御
     if (gameMode === 'story') {
         if (battleCount === 3) {
@@ -184,7 +184,7 @@ function startNextBattleSequence() {
         enemyConfig.isShadow = true;
         enemyConfig.name = `影の${playerConfig.name}`;
     } else {
-        const charId = nextEnemyId || 'android'; 
+        const charId = nextEnemyId || 'android';
         enemyConfig = { ...CHARACTERS[charId] };
         enemyConfig.isShadow = false;
     }
@@ -194,9 +194,9 @@ function startNextBattleSequence() {
     }
 
     appState = 'pre_dialogue';
-    
+
     let introText = (enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(enemyConfig, playerConfig, 'intro');
-    
+
     if (enemyConfig.isShadow) {
         introText = "・・・・";
     }
@@ -205,12 +205,12 @@ function startNextBattleSequence() {
         { speaker: 'enemy', text: introText },
         { speaker: 'player', text: enemyConfig.isShadow ? (playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(playerConfig, enemyConfig, 'intro') }
     ];
-    
+
     if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
         introText = "……よくぞここまで辿り着いたな。" + getDialogue(enemyConfig, playerConfig, 'intro');
         dialogueQueue[0].text = introText;
     }
-    
+
     setupDialogueScreen();
 }
 
@@ -245,7 +245,7 @@ function setupDialogueScreen() {
     // 各ポートレートの画像ソースと表示状態を準備
     const pLeft = document.getElementById('portrait-left');
     const pRight = document.getElementById('portrait-right');
-    
+
     // 一旦アクティブ状態を解除
     pLeft.classList.remove('active');
     pRight.classList.remove('active');
@@ -257,7 +257,7 @@ function setupDialogueScreen() {
 
     pRight.src = pRightImg;
     pRight.style.display = 'block';
-    
+
     // シャドウ用のグレー表示
     if (enemyConfig.isShadow) {
         pRight.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
@@ -288,10 +288,10 @@ function showNextDialogue() {
                     if (gameMode === 'story' && playerConfig.interBattleStory && enemyConfig.id !== 'satan') {
                         appState = 'inter_battle_story';
                         dialogueQueue = [];
-                        
+
                         let storyLines = null;
                         const stories = playerConfig.interBattleStory;
-                        
+
                         // 現在の戦闘数（battleCount）に対応するストーリーがあるか確認
                         if (stories[battleCount]) {
                             storyLines = stories[battleCount];
@@ -422,7 +422,20 @@ function executeContinue() {
     imgEl.src = playerConfig.image;
     imgEl.classList.add('revive');
 
-    setTimeout(() => { prepareBattle(); }, 2000);
+    setTimeout(() => {
+        appState = 'pre_dialogue';
+        let introText = (enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(enemyConfig, playerConfig, 'intro');
+        if (enemyConfig.isShadow) introText = "・・・・";
+        dialogueQueue = [
+            { speaker: 'enemy', text: introText },
+            { speaker: 'player', text: enemyConfig.isShadow ? (playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(playerConfig, enemyConfig, 'intro') }
+        ];
+        if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
+            introText = "……よくぞここまで辿り着いたな。" + getDialogue(enemyConfig, playerConfig, 'intro');
+            dialogueQueue[0].text = introText;
+        }
+        setupDialogueScreen();
+    }, 2000);
 }
 
 function executeGameOver() {
@@ -447,13 +460,13 @@ function updateCardDetail(c) {
 function createCardDOM(c) {
     const d = document.createElement('div'); d.className = `card ${c.owner}`;
     let sH = ''; if (c.skill !== 'none' && !c.skill.startsWith('token_')) { const s = SKILLS[c.skill]; sH = `<div class="card-skill">${s.icon} ${s.name}</div>`; }
-    
+
     // シャドウ戦のカードはグレーにする
     let filter = c.filter;
     if (c.owner === 'red' && enemyConfig.isShadow) {
         filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
     }
-    
+
     d.innerHTML = `<div class="card-bg" style="background-image: url('${c.imgUrl}'); filter: ${filter};"></div>${sH}<div class="card-power">${c.currentPower}</div>`;
     return d;
 }
@@ -463,6 +476,7 @@ function renderHand() {
     playerHand.forEach((c, i) => {
         const d = createCardDOM(c); d.className += " hand-card" + (i === selectedCardIndex ? " selected" : "");
         d.onclick = () => { if (isProcessing) return; playSound(SOUNDS.seClick); selectedCardIndex = i; updateCardDetail(playerHand[i]); renderHand(); renderBoard(); highlightLanes(); };
+        setupLongPress(d, c);
         e.appendChild(d);
     });
 }
@@ -473,8 +487,18 @@ function renderBoard() {
     for (let i = 0; i < 3; i++) {
         const p = document.querySelector(`#player-lanes .cell[data-lane="${i}"]`), e = document.querySelector(`#enemy-lanes .cell[data-lane="${i}"]`);
         p.innerHTML = ''; p.className = 'cell'; e.innerHTML = ''; e.className = 'cell';
-        if (playerBoard[i]) { const d = createCardDOM(playerBoard[i]); d.onclick = (ev) => { ev.stopPropagation(); if (isProcessing) return; playSound(SOUNDS.seClick); updateCardDetail(playerBoard[i]); }; p.appendChild(d); }
-        if (enemyBoard[i]) { const d = createCardDOM(enemyBoard[i]); d.onclick = (ev) => { ev.stopPropagation(); playSound(SOUNDS.seClick); updateCardDetail(enemyBoard[i]); }; e.appendChild(d); }
+        if (playerBoard[i]) {
+            const d = createCardDOM(playerBoard[i]);
+            d.onclick = (ev) => { ev.stopPropagation(); if (isProcessing) return; playSound(SOUNDS.seClick); updateCardDetail(playerBoard[i]); };
+            setupLongPress(d, playerBoard[i]);
+            p.appendChild(d);
+        }
+        if (enemyBoard[i]) {
+            const d = createCardDOM(enemyBoard[i]);
+            d.onclick = (ev) => { ev.stopPropagation(); playSound(SOUNDS.seClick); updateCardDetail(enemyBoard[i]); };
+            setupLongPress(d, enemyBoard[i]);
+            e.appendChild(d);
+        }
     }
 }
 
@@ -543,4 +567,28 @@ function closeCardPreview() {
         modal.style.display = 'none';
         playSound(SOUNDS.seClick);
     }
+}
+function showDeckRefreshEffect(owner) {
+    const battleScreen = document.getElementById('screen-battle');
+    if (!battleScreen) return;
+
+    const effectEl = document.createElement('div');
+    effectEl.className = 'deck-refresh-effect';
+    effectEl.innerText = 'DECK REFRESH';
+
+    // 配置位置（プレイヤー側か敵側か）
+    if (owner === 'blue') {
+        effectEl.style.bottom = '25%';
+    } else {
+        effectEl.style.top = '25%';
+    }
+
+    battleScreen.appendChild(effectEl);
+
+    // アニメーション終了後に削除
+    setTimeout(() => {
+        if (effectEl.parentNode) {
+            effectEl.parentNode.removeChild(effectEl);
+        }
+    }, 1500);
 }
