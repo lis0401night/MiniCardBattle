@@ -52,10 +52,10 @@ function loadDeck() {
             playerDeckSelection = JSON.parse(saved);
         } catch (e) {
             console.error("Deck load error:", e);
-            playerDeckSelection = [];
+            playerDeckSelection = [...INITIAL_DECK]; // エラー時は初期デッキ
         }
     } else {
-        playerDeckSelection = []; // 初期化されていない場合に備える
+        playerDeckSelection = [...INITIAL_DECK]; // 初回起動・データなし時は初期デッキ
     }
 }
 
@@ -108,7 +108,7 @@ function renderDeckEdit() {
         currentList.appendChild(item);
     });
 
-    countDisplay.innerText = `Cards: ${playerDeckSelection.length} / ${DECK_SIZE}`;
+    countDisplay.innerText = `カード枚数: ${playerDeckSelection.length} / ${DECK_SIZE}`;
     finishBtn.style.opacity = playerDeckSelection.length === DECK_SIZE ? "1" : "0.5";
 }
 
@@ -128,8 +128,16 @@ function removeCardFromDeck(index) {
 }
 
 function clearDeck() {
-    if (confirm("デッキをリセットしますか？")) {
+    if (confirm("デッキのカードをすべて削除しますか？")) {
         playerDeckSelection = [];
+        saveDeck();
+        renderDeckEdit();
+    }
+}
+
+function resetDeck() {
+    if (confirm("デッキを初期状態（おすすめ構成）に戻しますか？")) {
+        playerDeckSelection = [...INITIAL_DECK];
         saveDeck();
         renderDeckEdit();
     }

@@ -5,7 +5,7 @@ const CHARACTERS = {
     android: {
         id: 'android', name: '機動戦姫 アイギス',
         desc: '最新鋭のAIを搭載した戦闘用アンドロイド。感情を持たないが、マスターへの忠誠心は絶対的。',
-        filter: 'hue-rotate(180deg) saturate(1.5) contrast(1.2)', cardType: 'set1', cardBg: 'bg1',
+        filter: 'none', cardType: 'set1', cardBg: 'bg1',
         image: 'assets/char_android.png', imageLose: 'assets/char_android_lose.png', icon: 'assets/icon_android.png', imageEnding: 'assets/char_android_ending.png', color: '#38bdf8',
         leaderSkill: { name: '殲滅光線', desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。', cost: 4, action: 'annihilation' },
         dialogue: {
@@ -23,7 +23,7 @@ const CHARACTERS = {
     dragon: {
         id: 'dragon', name: '焔竜姫 イグニス',
         desc: '火山地帯を縄張りとする竜族の姫。圧倒的な炎の力とワガママな性格で敵を焼き尽くす。',
-        filter: 'sepia(0.8) hue-rotate(-50deg) saturate(2) contrast(1.2)', cardType: 'set2', cardBg: 'bg2',
+        filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/char_dragon.png', imageLose: 'assets/char_dragon_lose.png', icon: 'assets/icon_dragon.png', imageEnding: 'assets/char_dragon_ending.png', color: '#fb7185',
         leaderSkill: { name: '竜王の降臨', desc: '(SP:4) 空いているレーンに「イグニス(P:7)」を1体召喚する。', cost: 4, action: 'dragon_summon' },
         dialogue: {
@@ -41,7 +41,7 @@ const CHARACTERS = {
     knight: {
         id: 'knight', name: '聖騎士 セレスティア',
         desc: '王国騎士団を率いる誇り高き騎士。聖なる加護と鉄壁の防御で仲間を守り抜く。',
-        filter: 'sepia(0.6) saturate(1.5) contrast(1.1)', cardType: 'set5', cardBg: 'bg1',
+        filter: 'none', cardType: 'set5', cardBg: 'bg1',
         image: 'assets/char_knight.png', imageLose: 'assets/char_knight_lose.png', icon: 'assets/icon_knight.png', imageEnding: 'assets/char_knight_ending.png', color: '#facc15',
         leaderSkill: { name: '聖なる進軍', desc: '(SP:5) 空きレーンに「騎士(P:1)」を最大2体召喚し、自分の場のすべてのカードのパワーを+3する。', cost: 5, action: 'holy_march' },
         dialogue: {
@@ -59,7 +59,7 @@ const CHARACTERS = {
     cthulhu: {
         id: 'cthulhu', name: '深淵の巫女 ナイア',
         desc: '深き海より来たりし名状しがたき存在の眷属。相手の精神を削り、狂気へと誘う。',
-        filter: 'sepia(1) hue-rotate(240deg) saturate(2) contrast(1.5) brightness(0.8)', cardType: 'set2', cardBg: 'bg3',
+        filter: 'none', cardType: 'set2', cardBg: 'bg3',
         image: 'assets/char_cthulhu.png', imageLose: 'assets/char_cthulhu_lose.png', icon: 'assets/icon_cthulhu.png', imageEnding: 'assets/char_cthulhu_ending.png', color: '#c084fc',
         leaderSkill: { name: '深淵の儀式', desc: '(SP:4) 手札のパワーが低いカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。', cost: 4, action: 'abyss_ritual' },
         dialogue: {

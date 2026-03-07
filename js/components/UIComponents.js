@@ -85,30 +85,33 @@ const UI_COMPONENTS = {
     deckEditScreen: `
     <!-- デッキ編集画面 -->
     <div id="screen-deck-edit" class="screen">
-        <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;">DECK CONSTRUCTION</h2>
-        <div id="deck-count-display" style="font-size: 0.9rem; margin-bottom: 10px;">Cards: 0 / 30</div>
+        <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;">デッキ構築</h2>
+        <div id="deck-count-display" style="font-size: 0.9rem; margin-bottom: 10px;">カード枚数: 0 / 30</div>
         <div class="deck-edit-container">
             <!-- 上段: 現在のデッキ -->
             <div class="deck-section">
-                <div class="deck-section-title">Current Deck (Tap to Remove)</div>
+                <div class="deck-section-title">現在のデッキ（タップで削除）</div>
                 <div id="deck-current-list" class="deck-list-horizontal"></div>
             </div>
             <!-- 下段: カードマスター -->
             <div class="deck-section">
-                <div class="deck-section-title">Available Cards (Tap to Add)</div>
+                <div class="deck-section-title">所持カード（タップで追加）</div>
                 <div id="deck-master-list" class="deck-list-horizontal"></div>
             </div>
             <div class="deck-controls">
                 <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;">
-                    <button class="action-btn" onclick="exportDeckXML()" style="font-size: 0.75rem; padding: 5px 10px;">Export XML</button>
+                    <button class="action-btn" onclick="exportDeckXML()" style="font-size: 0.75rem; padding: 5px 10px;">保存(XML)</button>
                     <label class="action-btn" style="font-size: 0.75rem; padding: 5px 10px; cursor: pointer; display: flex; align-items: center;">
-                        Import XML
+                        読込(XML)
                         <input type="file" id="import-xml-input" style="display:none;" accept=".xml" onchange="importDeckXML(event)">
                     </label>
                 </div>
-                <button class="action-btn" onclick="clearDeck()" style="background: #7f1d1d; font-size: 0.75rem; padding: 5px 10px;">Clear All</button>
+                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;">
+                    <button class="action-btn" onclick="resetDeck()" style="background: #1e40af; font-size: 0.75rem; padding: 5px 10px;">初期デッキに戻す</button>
+                    <button class="action-btn" onclick="clearDeck()" style="background: #7f1d1d; font-size: 0.75rem; padding: 5px 10px;">全削除</button>
+                </div>
             </div>
-            <button id="btn-finish-deck" class="btn" onclick="finishDeckEdit()" style="margin-top: 10px; width: 100%; opacity: 0.5;">BATTLE START</button>
+            <button id="btn-finish-deck" class="btn" onclick="finishDeckEdit()" style="margin-top: 10px; width: 100%; opacity: 0.5;">バトル開始！</button>
         </div>
     </div>
     `,
@@ -198,7 +201,7 @@ const UI_COMPONENTS = {
                 <button class="enemy-skill-btn" onclick="showEnemySkillConfirm()">敵スキル<br>確認</button>
             </div>
         </div>
-        <div id="turn-status">ROUND 1</div>
+        <div id="turn-status">ラウンド 1</div>
         <!-- 盤面 (3レーン) -->
         <div class="battle-board">
             <div class="lane-row" id="enemy-lanes">
@@ -231,7 +234,7 @@ const UI_COMPONENTS = {
         </div>
         <!-- アクションコントロール -->
         <div class="controls">
-            <div id="deck-info">Deck: 15 / Drop: 0</div>
+            <div id="deck-info">山札: 30 / 墓地: 0</div>
             <div style="display: flex; gap: 8px;">
                 <button id="btn-leader-skill" class="action-btn leader-skill-btn" onclick="showSkillConfirm()">リーダースキル</button>
                 <button class="action-btn" onclick="endPlayerTurn()">終了(待機)</button>
