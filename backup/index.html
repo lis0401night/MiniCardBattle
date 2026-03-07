@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mini Card Battle</title>
+    <!-- 本番環境でPWA化する時にコメントを外してください -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-light: #f8fafc;
+            --color-blue: #38bdf8;
+            --color-red: #fb7185;
+            --color-legend: #facc15;
+        }
+
+        /* 画面全体の幅をスマホサイズに制限し、PCでは中央に配置 */
+        html { background-color: #000; width: 100%; height: 100%; }
+        body { 
+            margin: 0 auto; padding: 0; width: 100%; height: 100%; max-width: 480px; position: relative;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-light); 
+            touch-action: manipulation; 
+            overflow: hidden; user-select: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* 画面共通スタイル */
+        .screen { 
+            display: none; width: 100%; height: 100%; 
+            flex-direction: column; align-items: center; justify-content: center; 
+            position: absolute; top: 0; left: 0; background-color: var(--bg-color);
+            padding: 20px; box-sizing: border-box;
+        }
+        .screen.active { display: flex; }
+
+        h1, h2 { margin: 0 0 20px 0; text-align: center; }
+        .btn {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6); border: none;
+            color: white; padding: 12px 30px; font-size: 1.2rem; font-weight: bold;
+            border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.1s; margin-top: 20px;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        /* ===== タイトル＆モード選択画面 ===== */
+        #screen-title { background-color: #000; cursor: pointer; position: relative; padding: 0;}
+        #screen-mode-select { background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); }
+        
+        .title-visual { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;}
+        .game-title { font-size: 3.5rem; color: #38bdf8; text-shadow: 0 0 20px rgba(56,189,248,0.5); line-height: 1.1; z-index: 2; position: relative; display: none;}
+        .start-text { font-size: 1.5rem; font-weight: bold; animation: blink 1.5s infinite; color: #fff; text-shadow: 0 2px 10px #000, 0 0 10px #facc15; z-index: 2; position: absolute; bottom: 10%;}
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* ===== ルール説明画面 ===== */
+        .rule-box { background: var(--panel-bg); padding: 20px; border-radius: 12px; border: 2px solid #334155; max-width: 400px; line-height: 1.6; max-height: 60vh; overflow-y: auto;}
+        .rule-box ul { padding-left: 20px; margin-top: 0;}
+        .rule-box li { margin-bottom: 10px; font-size: 0.95rem; }
+
+        /* ===== ローディング画面 ===== */
+        .loader { border: 6px solid #334155; border-top: 6px solid #38bdf8; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ===== キャラクター選択画面 ===== */
+        .char-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .char-card {
+            width: 140px; height: 180px; border-radius: 12px; border: 3px solid #334155;
+            background-size: cover; background-position: center; position: relative; cursor: pointer; 
+            transition: transform 0.2s, border-color 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden;
+        }
+        .char-card:hover, .char-card:active { transform: scale(1.05); border-color: #facc15; z-index: 10;}
+        .char-name { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 8px 0; text-align: center; font-weight: bold; font-size: 0.9rem;}
+
+        /* ===== 会話シーン画面 ===== */
+        .portrait-container { position: absolute; top: 10%; width: 100%; height: 60%; display: flex; justify-content: space-between; padding: 0 5%; box-sizing: border-box;}
+        .char-portrait { height: 100%; max-width: 45%; object-fit: contain; transition: all 0.3s; filter: brightness(0.4); transform: scale(0.9); }
+        .char-portrait.active { filter: brightness(1.1); transform: scale(1.05); z-index: 5; }
+        .dialogue-box {
+            position: absolute; bottom: 5%; width: 90%; height: 25%; background: rgba(15, 23, 42, 0.9); border: 2px solid #555; border-radius: 12px;
+            padding: 15px; box-sizing: border-box; cursor: pointer; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; left: 5%;
+        }
+        .dialogue-box::after { content: "▼"; position: absolute; bottom: 10px; right: 15px; animation: blink 1s infinite; font-size: 0.8rem; }
+        #speaker-name { font-weight: bold; font-size: 1.2rem; margin-bottom: 8px; border-bottom: 1px solid #334155; padding-bottom: 5px;}
+        #dialogue-text { font-size: 1.1rem; line-height: 1.5; flex-grow: 1; }
+
+        /* ===== コンティニュー画面 ===== */
+        #screen-continue { background-color: #000; text-align: center; }
+        .continue-img-container { position: relative; width: 300px; height: 350px; margin: 0 auto 20px auto; overflow: hidden; }
+        .continue-img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(80%) sepia(30%) hue-rotate(-50deg); transition: filter 0.5s, transform 0.5s; }
+        .continue-img.revive { filter: none; transform: scale(1.05); }
+        #continue-count { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: #fff; text-shadow: 0 0 20px #ef4444, 2px 2px 0 #000; font-family: 'Impact'; margin: 0; }
+
+        /* ===== バトル画面 ===== */
+        #screen-battle { padding: 5px 10px; justify-content: space-between;}
+        .hp-area { display: flex; justify-content: space-between; width: 100%; max-width: 400px; padding: 5px 10px; box-sizing: border-box;}
+        
+        .status-container { display: flex; align-items: center; width: 100%; position: relative; }
+        .char-icon { width: 45px; height: 45px; border-radius: 50%; border: 2px solid; object-fit: cover; background-color: #334155; flex-shrink: 0; margin-right: 12px;}
+        .char-icon.blue { border-color: var(--color-blue); }
+        .char-icon.red { border-color: var(--color-red); }
+        
+        .speech-bubble {
+            position: absolute; top: -15px; left: 55px; background: rgba(255, 255, 255, 0.95); color: #000;
+            padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.1s, transform 0.1s;
+            transform: translateY(10px); white-space: nowrap;
+        }
+        .speech-bubble.active { opacity: 1; transform: translateY(0); }
+        .speech-bubble::before { content: ''; position: absolute; left: -6px; top: 12px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 6px solid rgba(255, 255, 255, 0.95); }
+
+        .player-status { display: flex; flex-direction: column; width: calc(100% - 57px); }
+        .status-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 2px; text-shadow: 1px 1px 2px #000;}
+        .hp-bar-bg { width: 100%; height: 15px; background: #334155; border-radius: 8px; overflow: hidden; position: relative;}
+        .hp-bar-fill { height: 100%; transition: width 0.3s ease; }
+        .hp-bar-fill.blue { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+        .hp-bar-fill.red { background: linear-gradient(90deg, #e11d48, #fb7185); }
+        .hp-text { position: absolute; top: -1px; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; text-shadow: 1px 1px 1px #000;}
+
+        .battle-board { display: flex; flex-direction: column; gap: 15px; background: var(--panel-bg); padding: 10px; border-radius: 12px; border: 1px solid #334155; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);}
+        .lane-row { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; justify-content: center; }
+        .cell { width: 80px; height: 100px; background: #0f172a; border: 2px dashed #475569; border-radius: 8px; position: relative; }
+        .cell.highlight { border-color: #facc15; background: rgba(250, 204, 21, 0.1); }
+
+        /* カードデザイン */
+        .card { 
+            width: 80px; height: 100px; border-radius: 8px; position: absolute; top: 0; left: 0; background-color: #334155; 
+            border: 2px solid #94a3b8; box-sizing: border-box; box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; overflow: hidden; 
+        }
+        .card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.9) 100%); z-index: 1; pointer-events: none;}
+        .card::after { content: ""; position: absolute; inset: 0; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; pointer-events: none; z-index: 4;}
+        .card.blue { border-color: var(--color-blue); box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+        .card.red { border-color: var(--color-red); box-shadow: 0 0 8px rgba(251, 113, 133, 0.4); }
+
+        .card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; background-color: #475569; }
+        .card-power { position: absolute; bottom: 2px; right: 4px; font-size: 1.6rem; font-weight: 900; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 10px rgba(0,0,0,0.8); color: #fff; z-index: 2; font-family: 'Impact', 'Arial Black', sans-serif; letter-spacing: -1px;}
+        .card-skill { position: absolute; top: 3px; left: 3px; background: rgba(0,0,0,0.85); padding: 2px 5px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; color: #facc15; z-index: 3; border: 1px solid #ca8a04; box-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+
+        .hand-area { display: flex; gap: 5px; height: 110px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; width: 100%; max-width: 400px; overflow-x: auto; align-items: center;}
+        .hand-card { position: relative; cursor: pointer; transition: transform 0.2s; flex-shrink: 0;}
+        .hand-card.selected { transform: translateY(-15px); box-shadow: 0 0 15px var(--color-blue); z-index: 10;}
+        
+        #turn-status { font-size: 1.2rem; font-weight: bold; text-align: center; height: 1.5rem; color: #facc15; margin: 5px 0;}
+        
+        .controls { display: flex; justify-content: space-between; width: 100%; max-width: 400px; padding: 0 10px; margin-bottom: 5px;}
+        #deck-info { font-size: 0.85rem; color: #94a3b8; align-self: center;}
+        .end-turn-btn { background: #475569; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;}
+        .end-turn-btn:active { background: #334155; }
+
+        .card-detail-box { width: 100%; max-width: 400px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 8px; box-sizing: border-box; font-size: 0.85rem; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-align: center; margin-bottom: 5px; line-height: 1.3;}
+
+        .anim-attack-up { transform: translateY(-30px) scale(1.1) !important; z-index: 20;}
+        .anim-attack-down { transform: translateY(30px) scale(1.1) !important; z-index: 20;}
+        .anim-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        
+        /* ポップアップ関連 */
+        .damage-popup { position: absolute; color: #ef4444; font-size: 2rem; font-weight: bold; text-shadow: 2px 2px 0 #fff; animation: floatUp 1s ease-out forwards; pointer-events: none; z-index: 100;}
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
+
+        .skill-popup { position: absolute; color: #facc15; font-size: 1.2rem; font-weight: bold; text-shadow: 2px 2px 0 #000; animation: skillPop 1.5s ease-out forwards; pointer-events: none; z-index: 100;}
+        @keyframes skillPop { 0% { opacity: 0; transform: translateY(10px) scale(0.8); } 20% { opacity: 1; transform: translateY(-10px) scale(1.2); } 80% { opacity: 1; transform: translateY(-10px) scale(1); } 100% { opacity: 0; transform: translateY(-20px) scale(0.8); } }
+
+        .btn-home { position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; z-index: 100; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.5);}
+        .btn-home:active { background: #334155; transform: scale(0.95);}
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. タイトル画面 -->
+    <div id="screen-title" class="screen active" onclick="goToModeSelect()">
+        <img src="assets/title_img.jpg" alt="Key Visual" class="title-visual" onerror="this.style.display='none'; document.querySelector('.game-title').style.display='block';">
+        <h1 class="game-title">LANE<br>DEFENDERS</h1>
+        <div class="start-text">TAP TO START</div>
+    </div>
+
+    <!-- モード選択画面 -->
+    <div id="screen-mode-select" class="screen">
+        <h1 class="game-title" style="display:block; margin-bottom: 40px;">LANE<br>DEFENDERS</h1>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">STORY MODE</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">FREE MODE</button>
+        <button class="btn" style="width: 250px; background: #475569;" onclick="showRules()">HOW TO PLAY</button>
+    </div>
+
+    <!-- 2. ルール説明画面 -->
+    <div id="screen-rules" class="screen">
+        <h2>HOW TO PLAY</h2>
+        <div class="rule-box">
+            <ul>
+                <li>毎ターン、手札から1枚を空きレーンに配置します。</li>
+                <li><b>自分のターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
+                <li>正面に敵がいれば激突！空いていれば<b>相手リーダーに直接ダメージ！</b></li>
+                <li>カードには様々なスキルがあります。手札や盤面のカードをタップして効果を確認しましょう。</li>
+                <li><b>【リーダー能力】</b>各キャラクターは強力な固有能力を持っています。自動で発動し、戦局を有利に導きます。</li>
+                <li><b>【デッキ切れ】</b>デッキが0枚になると、捨て山がシャッフルされ再装填されます。</li>
+                <li>先に相手リーダーのHPを0にすれば勝利です。</li>
+            </ul>
+        </div>
+        <button class="btn" onclick="switchScreen('screen-mode-select')">戻る</button>
+    </div>
+
+    <!-- 3. キャラクター選択画面 -->
+    <div id="screen-select" class="screen">
+        <h2 id="select-title">Select Your Character</h2>
+        <div class="char-grid" id="char-grid"></div>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+    </div>
+
+    <!-- 3.5 キャラクター詳細確認画面 -->
+    <div id="screen-char-detail" class="screen" style="background: rgba(0,0,0,0.85); z-index: 50;">
+        <div style="background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+            <img id="detail-char-img" src="" style="width: 160px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #334155; margin-bottom: 15px;">
+            <h2 id="detail-char-name" style="margin-bottom: 5px; color: #facc15; font-size: 1.3rem; text-align: center;">Name</h2>
+            <p id="detail-char-desc" style="font-size: 0.9rem; color: #cbd5e1; text-align: center; margin-bottom: 15px; line-height: 1.4;">Description</p>
+            <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 20px; border: 1px solid #475569;">
+                <div style="color: #facc15; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">【リーダー能力】</div>
+                <div id="detail-leader-name" style="font-weight: bold; margin-bottom: 3px; color: #fff;">Skill Name</div>
+                <div id="detail-leader-desc" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Skill Desc</div>
+            </div>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn" style="flex: 1; background: #475569; margin-top: 0;" onclick="closeCharDetail()">戻る</button>
+                <button class="btn" style="flex: 1; background: linear-gradient(45deg, #3b82f6, #1d4ed8); margin-top: 0;" onclick="confirmCharSelect()">決定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 難易度選択画面 (フリーモード用) -->
+    <div id="screen-difficulty" class="screen">
+        <h2>Select AI Difficulty</h2>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <button class="btn" style="background: #22c55e; width: 200px;" onclick="startFreeBattle(1)">EASY</button>
+            <button class="btn" style="background: #eab308; width: 200px;" onclick="startFreeBattle(2)">NORMAL</button>
+            <button class="btn" style="background: #ef4444; width: 200px;" onclick="startFreeBattle(3)">HARD</button>
+        </div>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+    </div>
+
+    <!-- 4. ローディング画面 -->
+    <div id="screen-loading" class="screen">
+        <div class="loader"></div>
+        <div id="loading-text">Generating Cards... 0%</div>
+        <p style="color:#94a3b8; font-size:0.8rem; margin-top:10px;">デッキを構築しています</p>
+    </div>
+
+    <!-- 5. 会話シーン画面 -->
+    <div id="screen-dialogue" class="screen">
+        <div class="portrait-container">
+            <img id="portrait-left" class="char-portrait" src="" alt="Player">
+            <img id="portrait-right" class="char-portrait" src="" alt="Enemy">
+        </div>
+        <div class="dialogue-box" onclick="showNextDialogue()">
+            <div id="speaker-name">Name</div>
+            <div id="dialogue-text">Dialogue text goes here...</div>
+        </div>
+    </div>
+
+    <!-- コンティニュー画面 -->
+    <div id="screen-continue" class="screen">
+        <h1 style="color: #ef4444; font-size: 3rem; text-shadow: 0 0 10px #ef4444; margin-bottom: 0;">CONTINUE?</h1>
+        <div class="continue-img-container">
+            <img id="continue-img" class="continue-img" src="">
+            <div id="continue-count">9</div>
+        </div>
+        <div id="continue-buttons" style="display: flex; gap: 20px;">
+            <button class="btn" onclick="executeContinue()" style="background: linear-gradient(45deg, #22c55e, #16a34a); padding: 15px 40px; font-size: 1.5rem;">YES</button>
+            <button class="btn" onclick="executeGameOver()" style="background: linear-gradient(45deg, #64748b, #475569); padding: 15px 40px; font-size: 1.5rem;">NO</button>
+        </div>
+    </div>
+
+    <!-- 6. バトル画面 -->
+    <div id="screen-battle" class="screen">
+        <button class="btn-home" onclick="returnToTitle()">🏠 リタイア</button>
+
+        <!-- 敵ステータス -->
+        <div class="hp-area">
+            <div class="status-container">
+                <img id="enemy-icon" class="char-icon red" src="">
+                <div id="enemy-speech" class="speech-bubble">くっ…！</div>
+                <div class="player-status">
+                    <div class="status-name" id="enemy-name" style="color:var(--color-red)">Enemy</div>
+                    <div class="hp-bar-bg">
+                        <div class="hp-bar-fill red" id="enemy-hp-fill" style="width: 100%;"></div>
+                        <div class="hp-text" id="enemy-hp-text">20 / 20</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="turn-status">ROUND 1</div>
+
+        <!-- 盤面 (3レーン) -->
+        <div class="battle-board">
+            <div class="lane-row" id="enemy-lanes">
+                <div class="cell" data-lane="0"></div><div class="cell" data-lane="1"></div><div class="cell" data-lane="2"></div>
+            </div>
+            <div class="lane-row" id="player-lanes">
+                <div class="cell" data-lane="0"></div><div class="cell" data-lane="1"></div><div class="cell" data-lane="2"></div>
+            </div>
+        </div>
+
+        <!-- 自分ステータス -->
+        <div class="hp-area">
+            <div class="status-container">
+                <img id="player-icon" class="char-icon blue" src="">
+                <div id="player-speech" class="speech-bubble">痛い！</div>
+                <div class="player-status">
+                    <div class="status-name" id="player-name" style="color:var(--color-blue)">Player</div>
+                    <div class="hp-bar-bg">
+                        <div class="hp-bar-fill blue" id="player-hp-fill" style="width: 100%;"></div>
+                        <div class="hp-text" id="player-hp-text">20 / 20</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div id="deck-info">Deck: 15 / Drop: 0</div>
+            <button class="end-turn-btn" onclick="endPlayerTurn()">ターン終了 (配置なし)</button>
+        </div>
+
+        <!-- カード効果表示エリア -->
+        <div id="card-detail-view" class="card-detail-box">カードを選択するとここに効果が表示されます</div>
+
+        <!-- 手札 -->
+        <div id="player-hand" class="hand-area"></div>
+    </div>
+
+    <!-- 7. エンディングイラスト表示画面 -->
+    <div id="screen-ending-illust" class="screen" style="background-color: #000; padding: 0;" onclick="finishEnding()">
+        <img id="ending-illust-img" src="" style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 2s;">
+        <div id="ending-text" style="position: absolute; bottom: 15%; font-size: 3rem; font-weight: bold; color: #fff; text-shadow: 0 0 20px #facc15, 2px 2px 0 #000; font-style: italic; opacity: 0; transition: opacity 2s;">CONGRATULATIONS!</div>
+    </div>
+
+    <!-- 8. クリア / ゲームオーバー画面 -->
+    <div id="screen-result" class="screen">
+        <h1 id="result-title" style="font-size: 3rem;">GAME CLEAR!</h1>
+        <p id="result-desc">すべてのライバルを撃破しました！</p>
+        <button class="btn" onclick="location.reload()">タイトルへ戻る</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // キャラクターデータ設定（リーダー能力へ変更）
+        // ==========================================
+        const CHARACTERS = {
+            android: {
+                id: 'android', name: '機動戦姫 アイギス', 
+                desc: '最新鋭のAIを搭載した戦闘用アンドロイド。感情を持たないが、マスターへの忠誠心は絶対的。',
+                filter: 'hue-rotate(180deg) saturate(1.5) contrast(1.2)', cardType: 'set1', cardBg: 'bg1',
+                image: 'assets/char_android.png', imageLose: 'assets/char_android_lose.png', icon: 'assets/icon_android.png', imageEnding: 'assets/char_android_ending.png', color: '#38bdf8',
+                leaderSkill: { name: '緊急ガード', desc: 'ライフが10以下になった時、一度だけ空きレーンに「ガードメカ(P:10/攻撃不可/破壊時ライフ10回復)」を生成する。', type: 'hp_trigger', threshold: 10 },
+                dialogue: {
+                    intro: { dragon: '対象の熱源反応を確認。冷却プロトコルを起動します。', knight: '対象の装甲、旧式と推測。物理演算を開始します。', cthulhu: '非論理的生命体を検出。排除プログラムを実行します。', satan: '分類不能な超高エネルギー体を確認。リミッターを解除します。', default: 'マスター、バトルプロトコルを開始します。' },
+                    win: { dragon: '熱源の鎮火を確認。', knight: '旧式装甲の突破完了。', cthulhu: '非論理的エラーを排除。', satan: '対象の完全消滅を確認。私の、勝ちです。', default: '対象の沈黙を確認。ミッションコンプリート。' },
+                    lose: { dragon: '装甲溶解……システムダウン……', knight: '計算外の攻撃力……機能停止します……', cthulhu: '精神侵染……マスター、逃げ……て……', satan: 'マスター……ごめんなさい……', default: '致命的なエラー……再起動します……' },
+                    damage: ['シールド損傷！', 'ダメージ軽微。', 'エラー発生！', '出力低下。'],
+                    ending: [
+                        { speaker: 'player', text: '全対象の排除を完了しました。マスター、私の性能はいかがでしたか？' },
+                        { speaker: 'player', text: 'これからも、あなたの剣として、盾として。ずっとおそばにいます。' }
+                    ]
+                }
+            },
+            dragon: {
+                id: 'dragon', name: '焔竜姫 イグニス', 
+                desc: '火山地帯を縄張りとする竜族の姫。圧倒的な炎の力とワガママな性格で敵を焼き尽くす。',
+                filter: 'sepia(0.8) hue-rotate(-50deg) saturate(2) contrast(1.2)', cardType: 'set2', cardBg: 'bg2',
+                image: 'assets/char_dragon.png', imageLose: 'assets/char_dragon_lose.png', icon: 'assets/icon_dragon.png', imageEnding: 'assets/char_dragon_ending.png', color: '#fb7185',
+                leaderSkill: { name: '焦熱の牙', desc: '敵リーダーに与えるダイレクトアタックのダメージが、常に +1 される。', type: 'passive_damage_up' },
+                dialogue: {
+                    intro: { android: 'なんだか鉄臭いヤツ！ 溶かしてやる！', knight: 'また騎士？ 私の巣を荒らしたヤツの仲間ね！', cthulhu: 'うわ、気持ち悪いタコ！ 焼きダコにしてやる！', satan: '魔王だかなんだか知らないけど、私の炎のほうが強いんだから！', default: 'ガウッ！ 私の炎で丸焦げにしてやるんだから！' },
+                    win: { android: 'ただのガラクタになっちゃったわね！', knight: 'ふんっ、ノロマね！', cthulhu: 'うげぇ、美味しそうじゃない……。', satan: 'へへーん！ ドラゴンが一番強いに決まってるでしょ！', default: 'ふんっ、他愛ないわね！' },
+                    lose: { android: '冷たいのやだー！', knight: '痛いっ！ 鱗が……きゅ〜。', cthulhu: '触手でベタベタにしないでぇ……！', satan: 'うそ……私の炎が、負けるなんて……。', default: 'きゅ〜……お腹が空いただけなんだからねっ！' },
+                    damage: ['あだっ！', '熱くないもん！', 'やりやがったわね！', '痛いじゃない！'],
+                    ending: [
+                        { speaker: 'player', text: 'ぜーんぶやっつけてやったわ！ 私が一番強いって証明できたわね！' },
+                        { speaker: 'player', text: 'あんた、マスターにしてはなかなかやるじゃない。これからも背中は任せてあげる！' }
+                    ]
+                }
+            },
+            knight: {
+                id: 'knight', name: '聖騎士 セレスティア', 
+                desc: '王国騎士団を率いる誇り高き騎士。聖なる加護と鉄壁の防御で仲間を守り抜く。',
+                filter: 'sepia(0.6) saturate(1.5) contrast(1.1)', cardType: 'set5', cardBg: 'bg1',
+                image: 'assets/char_knight.png', imageLose: 'assets/char_knight_lose.png', icon: 'assets/icon_knight.png', imageEnding: 'assets/char_knight_ending.png', color: '#facc15',
+                leaderSkill: { name: '騎士団の招集', desc: '自分のターン開始時、空きレーンに「兵士(P:1)」を1体生成する。', type: 'turn_start_spawn' },
+                dialogue: {
+                    intro: { android: '魔導人形か……油断はしない！', dragon: '竜の落とし子よ、容赦はしないぞ！', cthulhu: '邪神の眷属め！ 聖剣で浄化してくれる！', satan: '魔王……！ ここで貴様を討ち、世界に平和を！', default: '我が剣に誓って、正々堂々と勝負しよう！' },
+                    win: { android: '見事な剣筋だった。', dragon: '少しは懲りたか。', cthulhu: '光の前に邪悪は滅びるのだ！', satan: 'ついに、悲願は達成された！ 我が剣の勝利だ！', default: '素晴らしい勝負だった。君の戦術も見事だ。' },
+                    lose: { android: '動きが読めない……。', dragon: '竜の力、圧倒的すぎる……。', cthulhu: '正気が……奪われる……！', satan: '世界が……闇に……飲まれる……。', default: 'くっ……私の采配ミスだ。敗北を認めよう。' },
+                    damage: ['くっ！', 'まだだ！', '浅い！', 'なんの！'],
+                    ending: [
+                        { speaker: 'player', text: 'すべての戦いを終えたか。私の剣も、少しは君の役に立てたかな？' },
+                        { speaker: 'player', text: '君という名将に出会えたこと、誇りに思う。これからも共に歩ませてくれ！' }
+                    ]
+                }
+            },
+            cthulhu: {
+                id: 'cthulhu', name: '深淵の巫女 ナイア', 
+                desc: '深き海より来たりし名状しがたき存在の眷属。相手の精神を削り、狂気へと誘う。',
+                filter: 'sepia(1) hue-rotate(240deg) saturate(2) contrast(1.5) brightness(0.8)', cardType: 'set2', cardBg: 'bg3',
+                image: 'assets/char_cthulhu.png', imageLose: 'assets/char_cthulhu_lose.png', icon: 'assets/icon_cthulhu.png', imageEnding: 'assets/char_cthulhu_ending.png', color: '#c084fc',
+                leaderSkill: { name: '狂気の囁き', desc: '自分のターン開始時、手札からランダムなカード1枚のパワーを +1 する。', type: 'turn_start_buff' },
+                dialogue: {
+                    intro: { android: '感情のないお人形……つまらないわね。', dragon: '爬虫類は嫌いですの。', knight: '無駄な信念ですねぇ……。', satan: 'あら、魔界の王様？ 私の深淵とどちらが深いか、試してみます？', default: 'フフフ……深淵の理に触れる覚悟はありまして？' },
+                    win: { android: 'あら、壊れちゃいました。', dragon: '沈みなさい、暗い海の底へ。', knight: '狂気に歪むその顔、素敵ですわ。', satan: 'フフフ、魔王の絶望する顔……最高の極上ですわ。', default: 'アハハハ！ 貴方のSAN値、もう空っぽですわよ？' },
+                    lose: { android: '理性が……論理が……私を浸食する……！', dragon: 'あつい、私の海が蒸発してしまう……！', knight: 'その眩しい光、目障りですわ……！', satan: '深淵が……塗り潰されていく……。', default: 'いあ！ いあ！ ……まさか、退けられるとは……' },
+                    damage: ['あぁんっ！', '痛いですわ！', '無礼な！', 'フフフ…'],
+                    ending: [
+                        { speaker: 'player', text: 'あらあら、みーんな狂ってしまいましたわ。貴方のおかげですわね。' },
+                        { speaker: 'player', text: '私を満たしてくれたご褒美に、貴方だけは最後まで正気を残して差し上げますわ。フフフ……。' }
+                    ]
+                }
+            },
+            satan: {
+                id: 'satan', name: '魔王 サタン', 
+                desc: '魔界を統べる絶対的な恐怖の象徴。すべてを無に帰す圧倒的な力を持つ。',
+                filter: 'contrast(1.5) brightness(0.7) sepia(1) hue-rotate(-50deg) saturate(3)', cardType: 'set3', cardBg: 'bg3',
+                image: 'assets/char_satan.png', imageLose: 'assets/char_satan_lose.png', icon: 'assets/icon_satan.png', color: '#dc2626',
+                leaderSkill: { name: '魔界の理', desc: '特別な能力を持たないが、デッキのカードパワーが全体的に高い。', type: 'none' },
+                dialogue: {
+                    intro: { default: '我は魔王サタン……絶望の淵へ沈むがよい。' },
+                    win: { default: 'フハハハ！ 脆弱な者どもよ、永遠の闇に惑え！' },
+                    lose: { default: 'バカな……この我が……貴様らごときに……グアアアッ！' },
+                    damage: ['ヌゥッ！', '小賢しい！', '効かぬわ！', 'おのれ…！'],
+                    ending: []
+                }
+            }
+        };
+
+        // 汎用ダメージポップアップ関数（一番上に移動してエラーを防ぐ）
+        function createDamagePopup(targetEl, text, color = '#ef4444') {
+            if(!targetEl) return;
+            const popup = document.createElement('div');
+            popup.className = 'damage-popup'; popup.innerText = text; popup.style.color = color;
+            const rect = targetEl.getBoundingClientRect();
+            popup.style.left = `${rect.left + rect.width/2 - 10}px`; popup.style.top = `${rect.top}px`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function getDialogue(speakerConfig, targetConfig, type) {
+            const dict = speakerConfig.dialogue[type];
+            if (targetConfig && dict[targetConfig.id]) return dict[targetConfig.id];
+            return dict.default;
+        }
+
+        // ==========================================
+        // サウンド・ユーティリティ
+        // ==========================================
+        const SOUNDS = {
+            bgmTitle: new Audio('assets/bgm_title.mp3'),
+            bgmBattle: new Audio('assets/bgm_battle.mp3'),
+            bgmEnding: new Audio('assets/bgm_ending.mp3'),
+            bgmLastBattle: new Audio('assets/bgm_lastbattle.mp3'),
+            seClick: new Audio('assets/se_click.mp3'),
+            sePlace: new Audio('assets/se_place.mp3'),
+            seAttack: new Audio('assets/se_attack.mp3'),
+            seDamage: new Audio('assets/se_damage.mp3'),
+            seSkill: new Audio('assets/se_skill.mp3'),
+            seDestroy: new Audio('assets/se_destroy.mp3'),
+            seContinue: new Audio('assets/se_skill.mp3')
+        };
+        SOUNDS.bgmTitle.loop = true; SOUNDS.bgmBattle.loop = true; SOUNDS.bgmEnding.loop = true; SOUNDS.bgmLastBattle.loop = true;
+        
+        Object.values(SOUNDS).forEach(audio => { audio.volume = 0.3; });
+
+        function playSound(audio) { if(audio){ audio.currentTime = 0; audio.play().catch(()=>{}); } }
+        function stopSound(audio) { if(audio){ audio.pause(); audio.currentTime = 0; } }
+        const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+        // ==========================================
+        // スキルの定義と説明
+        // ==========================================
+        const SKILLS = {
+            none: { name: 'なし', icon: '', desc: '特殊な能力を持たない。' },
+            quick: { name: '速攻', icon: '⚡', desc: '場に出たターンにすぐ攻撃する。' },
+            deadly: { name: '必殺', icon: '☠️', desc: '戦闘した相手を確実に破壊する。' },
+            draw: { name: '入替', icon: '🃏', desc: '手札の最もパワーが低いカードを捨て、1枚引く。' },
+            heal: { name: '回復', icon: '💚', desc: 'リーダーのHPを3回復する。' },
+            snipe: { name: '狙撃', icon: '🎯', desc: '相手の場で最大パワーのカード1枚に4ダメージ。' },
+            spread: { name: '拡散', icon: '☄️', desc: '相手の場のすべてのカードに2ダメージ。' },
+            copy: { name: '複製', icon: '👯', desc: '自分の場の最大パワーのカードと同じパワーになる。' },
+            support: { name: '援護', icon: '🛡️', desc: '自分の場の他のすべてのカードのパワーを+2する。' },
+            defender: { name: '防御', icon: '🧱', desc: '【デメリット】敵カードやリーダーにダメージを与えられない。' },
+            
+            // トークン専用スキル
+            guard_mech: { name: '防衛・修復', icon: '🛡️', desc: '攻撃できない。破壊された時、リーダーのHPを10回復する。' }
+        };
+
+        // ==========================================
+        // グローバルステートとモード管理
+        // ==========================================
+        let gameMode = 'story'; 
+        let aiLevel = 1; 
+        let playerConfig = null;
+        let enemyConfig = null;
+        let appState = 'title'; 
+        let enemyQueue = [];
+        let battleCount = 1;
+        let dialogueQueue = [];
+        let currentDialogueIndex = 0;
+        let lastBattleResult = '';
+
+        let isLeaderSkillUsed = { blue: false, red: false }; 
+        let isBattleEnded = false;
+
+        const MAX_HP = 20;
+        let playerHP = MAX_HP, enemyHP = MAX_HP;
+        let playerDeck = [], enemyDeck = [];
+        let playerHand = [], enemyHand = [];
+        let playerDiscard = [], enemyDiscard = [];
+        let playerBoard = [null, null, null];
+        let enemyBoard = [null, null, null];
+        let selectedCardIndex = null;
+        let isProcessing = false;
+        let pendingCharId = null;
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function goToModeSelect() {
+            playSound(SOUNDS.seClick);
+            playSound(SOUNDS.bgmTitle);
+            switchScreen('screen-mode-select');
+        }
+
+        function showRules() {
+            playSound(SOUNDS.seClick);
+            switchScreen('screen-rules');
+        }
+
+        function startGameMode(mode) {
+            playSound(SOUNDS.seClick);
+            gameMode = mode;
+            document.getElementById('select-title').innerText = "Select Your Character";
+            appState = 'select_player';
+            initSelectScreen(false); // プレイヤーはサタンを選べない
+            switchScreen('screen-select');
+        }
+
+        function initSelectScreen(includeSatan) {
+            const grid = document.getElementById('char-grid');
+            grid.innerHTML = '';
+            Object.values(CHARACTERS).forEach(char => {
+                if (!includeSatan && char.id === 'satan') return;
+                const el = document.createElement('div');
+                el.className = 'char-card';
+                el.style.backgroundImage = `url('${char.image}')`;
+                el.innerHTML = `<div class="char-name" style="color:${char.color}">${char.name}</div>`;
+                el.onclick = () => showCharDetail(char.id);
+                grid.appendChild(el);
+            });
+        }
+
+        // キャラクター詳細画面の表示
+        function showCharDetail(charId) {
+            playSound(SOUNDS.seClick);
+            pendingCharId = charId;
+            const char = CHARACTERS[charId];
+            
+            document.getElementById('detail-char-img').src = char.image;
+            document.getElementById('detail-char-name').innerText = char.name;
+            document.getElementById('detail-char-name').style.color = char.color;
+            document.getElementById('detail-char-desc').innerText = char.desc;
+            
+            const lSkill = char.leaderSkill;
+            document.getElementById('detail-leader-name').innerText = lSkill.name;
+            document.getElementById('detail-leader-desc').innerText = lSkill.desc;
+            
+            switchScreen('screen-char-detail');
+        }
+
+        function closeCharDetail() {
+            playSound(SOUNDS.seClick);
+            pendingCharId = null;
+            switchScreen('screen-select');
+        }
+
+        function confirmCharSelect() {
+            playSound(SOUNDS.seClick);
+            if (appState === 'select_player') {
+                playerConfig = CHARACTERS[pendingCharId];
+                if (gameMode === 'story') {
+                    enemyQueue = Object.keys(CHARACTERS).filter(id => id !== pendingCharId && id !== 'satan').sort(() => Math.random() - 0.5);
+                    enemyQueue.push('satan'); 
+                    battleCount = 1;
+                    startNextBattleSequence();
+                } else {
+                    appState = 'select_enemy';
+                    document.getElementById('select-title').innerText = "Select Enemy";
+                    initSelectScreen(true); 
+                    switchScreen('screen-select');
+                }
+            } else if (appState === 'select_enemy') {
+                enemyConfig = CHARACTERS[pendingCharId];
+                appState = 'select_difficulty';
+                switchScreen('screen-difficulty');
+            }
+        }
+
+        function startFreeBattle(level) {
+            playSound(SOUNDS.seClick);
+            aiLevel = level;
+            battleCount = 1;
+            appState = 'pre_dialogue';
+            dialogueQueue = [
+                { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'intro') },
+                { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
+            ];
+            setupDialogueScreen();
+        }
+
+        function startNextBattleSequence() {
+            if (enemyQueue.length === 0) {
+                startEndingSequence();
+                return;
+            }
+            enemyConfig = CHARACTERS[enemyQueue.shift()];
+            
+            if (gameMode === 'story') {
+                aiLevel = Math.min(3, battleCount);
+            }
+
+            appState = 'pre_dialogue';
+            dialogueQueue = [
+                { speaker: 'enemy', text: `第${battleCount}戦の相手は私よ。\n` + getDialogue(enemyConfig, playerConfig, 'intro') },
+                { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
+            ];
+            if (enemyConfig.id === 'satan') {
+                dialogueQueue[0].text = getDialogue(enemyConfig, playerConfig, 'intro');
+            }
+            setupDialogueScreen();
+        }
+
+        function startEndingSequence() {
+            appState = 'ending_dialogue';
+            stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
+            playSound(SOUNDS.bgmEnding);
+            
+            dialogueQueue = playerConfig.dialogue.ending;
+            currentDialogueIndex = 0;
+            
+            document.getElementById('portrait-left').src = playerConfig.image;
+            document.getElementById('portrait-left').classList.add('active');
+            document.getElementById('portrait-right').style.display = 'none'; 
+            switchScreen('screen-dialogue');
+            showNextDialogue();
+        }
+
+        function setupDialogueScreen() {
+            currentDialogueIndex = 0;
+            let pLeftImg = playerConfig.image;
+            let pRightImg = enemyConfig.image;
+
+            if (appState === 'post_dialogue') {
+                if (lastBattleResult === 'win') pRightImg = enemyConfig.imageLose;
+                else if (lastBattleResult === 'lose') pLeftImg = playerConfig.imageLose;
+            }
+
+            document.getElementById('portrait-left').src = pLeftImg;
+            document.getElementById('portrait-right').src = pRightImg;
+            document.getElementById('portrait-right').style.display = 'block';
+
+            switchScreen('screen-dialogue');
+            showNextDialogue();
+        }
+
+        function showNextDialogue() {
+            if (currentDialogueIndex >= dialogueQueue.length) {
+                if (appState === 'pre_dialogue') {
+                    prepareBattle();
+                } else if (appState === 'post_dialogue') {
+                    if (gameMode === 'free') {
+                        document.getElementById('result-title').innerText = lastBattleResult === 'win' ? "YOU WIN!" : "YOU LOSE...";
+                        document.getElementById('result-title').style.color = lastBattleResult === 'win' ? "#facc15" : "#aaa";
+                        document.getElementById('result-desc').innerText = "フリーモード終了";
+                        switchScreen('screen-result');
+                    } else {
+                        if (lastBattleResult === 'lose') showContinueScreen();
+                        else startNextBattleSequence(); 
+                    }
+                } else if (appState === 'ending_dialogue') {
+                    appState = 'ending_illust';
+                    switchScreen('screen-ending-illust');
+                    document.getElementById('ending-illust-img').src = playerConfig.imageEnding;
+                    setTimeout(() => {
+                        document.getElementById('ending-illust-img').style.opacity = 1;
+                        document.getElementById('ending-text').style.opacity = 1;
+                    }, 100);
+                }
+                return;
+            }
+
+            playSound(SOUNDS.seClick);
+            const cur = dialogueQueue[currentDialogueIndex];
+            const nameEl = document.getElementById('speaker-name');
+            const pLeft = document.getElementById('portrait-left'), pRight = document.getElementById('portrait-right');
+            const box = document.querySelector('.dialogue-box');
+
+            if (cur.speaker === 'player') {
+                nameEl.innerText = playerConfig.name; nameEl.style.color = playerConfig.color;
+                pLeft.classList.add('active'); 
+                if (appState !== 'ending_dialogue') pRight.classList.remove('active'); 
+                box.style.borderColor = playerConfig.color;
+            } else {
+                nameEl.innerText = enemyConfig.name; nameEl.style.color = enemyConfig.color;
+                pRight.classList.add('active'); pLeft.classList.remove('active'); 
+                box.style.borderColor = enemyConfig.color;
+            }
+            document.getElementById('dialogue-text').innerText = cur.text;
+            currentDialogueIndex++;
+        }
+        
+        function finishEnding() {
+            if (appState !== 'ending_illust') return;
+            playSound(SOUNDS.seClick);
+            document.getElementById('ending-illust-img').style.opacity = 0;
+            document.getElementById('ending-text').style.opacity = 0;
+            
+            setTimeout(() => {
+                document.getElementById('portrait-right').style.display = 'block';
+                document.getElementById('result-title').innerText = "GAME CLEAR!";
+                document.getElementById('result-title').style.color = "#facc15";
+                document.getElementById('result-desc').innerText = "すべてのライバルを撃破し、エンディングを迎えました！";
+                switchScreen('screen-result');
+            }, 2000);
+        }
+
+        // ==========================================
+        // コンティニュー処理
+        // ==========================================
+        let continueTimer = null;
+        let continueCount = 9;
+
+        function showContinueScreen() {
+            stopSound(SOUNDS.bgmTitle);
+            switchScreen('screen-continue');
+            document.getElementById('continue-img').src = playerConfig.imageLose;
+            document.getElementById('continue-img').classList.remove('revive');
+            document.getElementById('continue-buttons').style.display = 'flex';
+            
+            continueCount = 9;
+            document.getElementById('continue-count').innerText = continueCount;
+            
+            continueTimer = setInterval(() => {
+                continueCount--;
+                if (continueCount < 0) {
+                    clearInterval(continueTimer);
+                    executeGameOver();
+                } else {
+                    document.getElementById('continue-count').innerText = continueCount;
+                }
+            }, 1000);
+        }
+
+        function executeContinue() {
+            if (continueTimer) clearInterval(continueTimer);
+            playSound(SOUNDS.seContinue);
+            document.getElementById('continue-count').innerText = "YES!";
+            document.getElementById('continue-buttons').style.display = 'none';
+            
+            const imgEl = document.getElementById('continue-img');
+            imgEl.src = playerConfig.image;
+            imgEl.classList.add('revive');
+            
+            setTimeout(() => { prepareBattle(); }, 2000);
+        }
+
+        function executeGameOver() {
+            if (continueTimer) clearInterval(continueTimer);
+            appState = 'title';
+            switchScreen('screen-mode-select');
+            playSound(SOUNDS.bgmTitle);
+        }
+
+        // ==========================================
+        // デッキ生成とバトル
+        // ==========================================
+        function generateDeck(owner, config, sessionId) {
+            const cardTemplates = [
+                { power: 1, skill: 'deadly' }, { power: 1, skill: 'deadly' },
+                { power: 2, skill: 'draw' }, { power: 2, skill: 'draw' },
+                { power: 2, skill: 'quick' }, { power: 2, skill: 'quick' },
+                { power: 3, skill: 'heal' }, { power: 3, skill: 'heal' },
+                { power: 2, skill: 'snipe' }, { power: 2, skill: 'spread' },
+                { power: 1, skill: 'copy' }, { power: 1, skill: 'copy' },
+                { power: 2, skill: 'support' }, { power: 2, skill: 'support' },
+                { power: 8, skill: 'defender' }, { power: 8, skill: 'defender' },
+                { power: 4, skill: 'none' }, { power: 4, skill: 'none' },
+                { power: 5, skill: 'none' }, { power: 7, skill: 'none' }
+            ];
+            
+            let deck = cardTemplates.map((t, i) => {
+                let p = t.power;
+                if (config.id === 'satan') p += 2;
+                
+                return {
+                    id: `${owner}_${sessionId}_${i}`, owner: owner,
+                    imgUrl: `https://robohash.org/${owner}_${sessionId}_${i}?set=${config.cardType}&size=160x200&bgset=${config.cardBg}`,
+                    filter: config.filter,
+                    power: p, currentPower: p, skill: t.skill
+                };
+            });
+            return deck.sort(() => Math.random() - 0.5);
+        }
+
+        function prepareBattle() {
+            switchScreen('screen-loading');
+            const sessionId = Date.now();
+            playerDeck = generateDeck('blue', playerConfig, sessionId);
+            enemyDeck = generateDeck('red', enemyConfig, sessionId);
+            
+            const allCards = [...playerDeck, ...enemyDeck];
+            let loaded = 0;
+            const updateProgress = () => {
+                loaded++;
+                document.getElementById('loading-text').innerText = `Generating Cards... ${Math.floor((loaded / allCards.length) * 100)}%`;
+                if (loaded === allCards.length) setTimeout(initBattleState, 500);
+            };
+            
+            if(allCards.length === 0) updateProgress();
+            allCards.forEach(card => {
+                const img = new Image();
+                img.onload = updateProgress; img.onerror = updateProgress;
+                img.src = card.imgUrl;
+            });
+        }
+
+        function initBattleState() {
+            stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
+            if (gameMode === 'story' && enemyConfig.id === 'satan') {
+                playSound(SOUNDS.bgmLastBattle);
+            } else {
+                playSound(SOUNDS.bgmBattle);
+            }
+
+            playerHP = MAX_HP; enemyHP = MAX_HP;
+            playerHand = []; enemyHand = [];
+            playerDiscard = []; enemyDiscard = [];
+            playerBoard = [null, null, null]; enemyBoard = [null, null, null];
+            isProcessing = false;
+            isLeaderSkillUsed = { blue: false, red: false };
+            isBattleEnded = false; 
+            updateCardDetail(null);
+            
+            document.getElementById('player-icon').src = playerConfig.icon;
+            document.getElementById('enemy-icon').src = enemyConfig.icon;
+            document.getElementById('player-name').innerText = playerConfig.name;
+            document.getElementById('enemy-name').innerText = enemyConfig.name;
+            
+            updateHPBar();
+            renderBoard();
+            
+            for(let i=0; i<3; i++) { drawCard('blue'); drawCard('red'); }
+            
+            switchScreen('screen-battle');
+            startTurn('blue');
+        }
+
+        // ==========================================
+        // バトル中のヘルパー関数と勝敗判定
+        // ==========================================
+        function updateHPBar() {
+            document.getElementById('player-hp-fill').style.width = `${Math.max(0, (playerHP/MAX_HP)*100)}%`;
+            document.getElementById('player-hp-text').innerText = `${Math.max(0, playerHP)} / ${MAX_HP}`;
+            document.getElementById('enemy-hp-fill').style.width = `${Math.max(0, (enemyHP/MAX_HP)*100)}%`;
+            document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemyHP)} / ${MAX_HP}`;
+        }
+
+        function checkWinCondition() {
+            if (playerHP <= 0 || enemyHP <= 0) {
+                if (!isBattleEnded) {
+                    isBattleEnded = true;
+                    endBattle();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function showSpeechBubble(target) {
+            const config = target === 'blue' ? playerConfig : enemyConfig;
+            const phrases = config.dialogue.damage;
+            const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+            const bubbleId = target === 'blue' ? 'player-speech' : 'enemy-speech';
+            const bubble = document.getElementById(bubbleId);
+            bubble.innerText = phrase;
+            bubble.classList.add('active');
+            setTimeout(() => { bubble.classList.remove('active'); }, 1500);
+        }
+
+        function showLeaderSkillActivation(owner, skillName) {
+            const iconId = owner === 'blue' ? 'player-icon' : 'enemy-icon';
+            const iconEl = document.getElementById(iconId);
+            iconEl.classList.remove('anim-shake');
+            void iconEl.offsetWidth;
+            iconEl.classList.add('anim-shake');
+            
+            const popup = document.createElement('div');
+            popup.className = 'skill-popup';
+            popup.innerText = skillName;
+            
+            const rect = iconEl.getBoundingClientRect();
+            popup.style.left = `${rect.left + 50}px`;
+            popup.style.top = `${rect.top}px`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1500);
+        }
+
+        async function checkHpTriggerSkills() {
+            const check = async (owner) => {
+                const hp = owner === 'blue' ? playerHP : enemyHP;
+                const config = owner === 'blue' ? playerConfig : enemyConfig;
+                const used = isLeaderSkillUsed[owner];
+                const board = owner === 'blue' ? playerBoard : enemyBoard;
+
+                if (config.leaderSkill.type === 'hp_trigger' && hp <= config.leaderSkill.threshold && hp > 0 && !used) {
+                    const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+                    if (emptyLanes.length > 0) {
+                        isLeaderSkillUsed[owner] = true;
+                        const targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                        board[targetLane] = {
+                            id: `guard_mech_${owner}_${Date.now()}`, owner: owner,
+                            imgUrl: CHARACTERS['android'].image, filter: 'grayscale(1)',
+                            power: 10, currentPower: 10, skill: 'guard_mech', isToken: true
+                        };
+                        showLeaderSkillActivation(owner, config.leaderSkill.name);
+                        playSound(SOUNDS.seSkill);
+                        renderBoard();
+                        await sleep(500);
+                    }
+                }
+            };
+            await check('blue');
+            await check('red');
+        }
+
+        function discardCard(owner, card) {
+            if (card.isToken) return;
+            card.currentPower = card.power; 
+            if (owner === 'blue') playerDiscard.push(card);
+            else enemyDiscard.push(card);
+        }
+
+        function drawCard(owner) {
+            let deck = owner === 'blue' ? playerDeck : enemyDeck;
+            const hand = owner === 'blue' ? playerHand : enemyHand;
+            let discard = owner === 'blue' ? playerDiscard : enemyDiscard;
+
+            if (deck.length === 0 && discard.length > 0) {
+                deck.push(...discard.sort(() => Math.random() - 0.5));
+                discard.length = 0; 
+                playSound(SOUNDS.seSkill);
+                createDamagePopup(document.getElementById(`${owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'}`), 'RELOAD', '#38bdf8');
+            }
+
+            if (deck.length > 0 && hand.length < 5) hand.push(deck.pop());
+
+            if (owner === 'blue') {
+                document.getElementById('deck-info').innerText = `Deck: ${playerDeck.length} / Drop: ${playerDiscard.length}`;
+                renderHand();
+            }
+        }
+
+        function updateCardDetail(card) {
+            const detailBox = document.getElementById('card-detail-view');
+            if (!card) {
+                detailBox.innerText = 'カードを選択するとここに能力が表示されます';
+                detailBox.style.color = '#94a3b8';
+            } else {
+                const skillInfo = SKILLS[card.skill];
+                let powerStr = `パワー ${card.currentPower}`; 
+                let color = '#fff';
+                
+                if (card.skill === 'none') {
+                    detailBox.innerHTML = `<strong style="color:${color}">${powerStr}</strong> <span style="margin-left:10px;">${skillInfo.desc}</span>`;
+                } else {
+                    detailBox.innerHTML = `<strong style="color:${color}">${powerStr}</strong> <span style="color:#facc15; margin-left:10px;">${skillInfo.icon} ${skillInfo.name}</span> <br> <span style="color:${color}">${skillInfo.desc}</span>`;
+                }
+                detailBox.style.color = color;
+            }
+        }
+
+        function createCardDOM(card) {
+            const div = document.createElement('div');
+            div.className = `card ${card.owner}`;
+
+            let skillHtml = '';
+            if (card.skill !== 'none') {
+                const s = SKILLS[card.skill];
+                skillHtml = `<div class="card-skill">${s.icon} ${s.name}</div>`;
+            }
+            div.innerHTML = `<div class="card-bg" style="background-image: url('${card.imgUrl}'); filter: ${card.filter};"></div>${skillHtml}<div class="card-power">${card.currentPower}</div>`;
+            return div;
+        }
+
+        function renderHand() {
+            const handEl = document.getElementById('player-hand');
+            handEl.innerHTML = '';
+            playerHand.forEach((card, idx) => {
+                const div = createCardDOM(card);
+                div.className += " hand-card";
+                if (idx === selectedCardIndex) div.classList.add('selected');
+                div.onclick = () => {
+                    if (isProcessing) return;
+                    playSound(SOUNDS.seClick);
+                    selectedCardIndex = idx;
+                    updateCardDetail(playerHand[idx]);
+                    renderHand();
+                    highlightLanes();
+                };
+                handEl.appendChild(div);
+            });
+        }
+
+        function highlightLanes() {
+            document.querySelectorAll('#player-lanes .cell').forEach((cell, i) => {
+                if (playerBoard[i] === null) cell.classList.add('highlight');
+                else cell.classList.remove('highlight');
+            });
+        }
+
+        function renderBoard() {
+            for(let i=0; i<3; i++) {
+                const pCell = document.querySelector(`#player-lanes .cell[data-lane="${i}"]`);
+                const eCell = document.querySelector(`#enemy-lanes .cell[data-lane="${i}"]`);
+                pCell.innerHTML = ''; pCell.className = 'cell';
+                eCell.innerHTML = ''; eCell.className = 'cell';
+                
+                if (playerBoard[i]) {
+                    const cardDOM = createCardDOM(playerBoard[i]);
+                    cardDOM.onclick = (e) => { e.stopPropagation(); playSound(SOUNDS.seClick); updateCardDetail(playerBoard[i]); };
+                    pCell.appendChild(cardDOM);
+                }
+                if (enemyBoard[i]) {
+                    const cardDOM = createCardDOM(enemyBoard[i]);
+                    cardDOM.onclick = (e) => { e.stopPropagation(); playSound(SOUNDS.seClick); updateCardDetail(enemyBoard[i]); };
+                    eCell.appendChild(cardDOM);
+                }
+            }
+        }
+
+        // ==========================================
+        // ターンの進行とAIロジック
+        // ==========================================
+        async function startTurn(owner) {
+            if (isBattleEnded) return;
+            isProcessing = true;
+            document.getElementById('turn-status').innerText = owner === 'blue' ? "YOUR TURN" : "ENEMY TURN";
+            document.getElementById('turn-status').style.color = owner === 'blue' ? "var(--color-blue)" : "var(--color-red)";
+            
+            const hasCard = (owner === 'blue' ? playerBoard : enemyBoard).some(c => c !== null);
+            if (hasCard) {
+                await executeCombatPhase(owner);
+                if (checkWinCondition()) return;
+            }
+
+            await handleTurnStartSkills(owner);
+
+            drawCard(owner);
+            
+            if (owner === 'blue') {
+                selectedCardIndex = null;
+                updateCardDetail(null);
+                renderHand();
+                
+                const isBoardFull = playerBoard.every(card => card !== null);
+                if (isBoardFull) {
+                    const statusEl = document.getElementById('turn-status');
+                    statusEl.innerText = "BOARD FULL - AUTO SKIP";
+                    statusEl.style.color = "#94a3b8";
+                    await sleep(1500); 
+                    endTurnLogic('blue');
+                } else {
+                    isProcessing = false;
+                }
+            } else {
+                await sleep(500);
+                await executeEnemyAI();
+            }
+        }
+
+        async function handleTurnStartSkills(owner) {
+            const config = owner === 'blue' ? playerConfig : enemyConfig;
+            const board = owner === 'blue' ? playerBoard : enemyBoard;
+            const hand = owner === 'blue' ? playerHand : enemyHand;
+
+            if (config.leaderSkill.type === 'turn_start_spawn') {
+                const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+                if (emptyLanes.length > 0) {
+                    const targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    board[targetLane] = {
+                        id: `token_${owner}_${Date.now()}`, owner: owner,
+                        imgUrl: CHARACTERS['knight'].image, filter: 'grayscale(0.5)',
+                        power: 1, currentPower: 1, skill: 'none', isToken: true
+                    };
+                    showLeaderSkillActivation(owner, config.leaderSkill.name);
+                    playSound(SOUNDS.seSkill);
+                    renderBoard();
+                    await sleep(400);
+                }
+            } else if (config.leaderSkill.type === 'turn_start_buff') {
+                if (hand.length > 0) {
+                    const targetIdx = Math.floor(Math.random() * hand.length);
+                    hand[targetIdx].power += 1;
+                    hand[targetIdx].currentPower += 1;
+                    showLeaderSkillActivation(owner, config.leaderSkill.name);
+                    playSound(SOUNDS.seSkill);
+                    if (owner === 'blue') renderHand();
+                    await sleep(400);
+                }
+            }
+        }
+
+        document.querySelectorAll('#player-lanes .cell').forEach(cell => {
+            cell.onclick = async () => {
+                if (isProcessing || selectedCardIndex === null) return;
+                const lane = parseInt(cell.getAttribute('data-lane'));
+                if (playerBoard[lane] !== null) return;
+
+                isProcessing = true;
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+                
+                await playCard('blue', selectedCardIndex, lane);
+                if (checkWinCondition()) return;
+                
+                selectedCardIndex = null;
+                updateCardDetail(null);
+                await sleep(500);
+                endTurnLogic('blue');
+            };
+        });
+
+        async function endPlayerTurn() {
+            if (isProcessing) return;
+            isProcessing = true;
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+            selectedCardIndex = null;
+            updateCardDetail(null);
+            renderHand();
+            endTurnLogic('blue');
+        }
+
+        function endTurnLogic(owner) {
+            if (isBattleEnded) return;
+            startTurn(owner === 'blue' ? 'red' : 'blue');
+        }
+
+        async function executeEnemyAI() {
+            if (isBattleEnded) return;
+            let targetLane = -1;
+            let maxThreat = -1;
+            const emptyLanes = enemyBoard.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+
+            if (aiLevel === 1) {
+                if (emptyLanes.length > 0) targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+            } 
+            else {
+                for(let i=0; i<3; i++){
+                    if (enemyBoard[i] === null && playerBoard[i] !== null) {
+                        if (playerBoard[i].currentPower > maxThreat) {
+                            maxThreat = playerBoard[i].currentPower;
+                            targetLane = i;
+                        }
+                    }
+                }
+                if (targetLane === -1 && emptyLanes.length > 0) {
+                    if (aiLevel === 3) {
+                        let directLanes = emptyLanes.filter(i => playerBoard[i] === null);
+                        if (directLanes.length > 0) targetLane = directLanes[Math.floor(Math.random() * directLanes.length)];
+                        else targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    } else {
+                        targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    }
+                }
+            }
+            
+            if (targetLane !== -1 && enemyHand.length > 0) {
+                let bestIdx = 0;
+                if (aiLevel >= 2) {
+                    for(let i=1; i<enemyHand.length; i++) if(enemyHand[i].power > enemyHand[bestIdx].power) bestIdx = i;
+                } else {
+                    bestIdx = Math.floor(Math.random() * enemyHand.length);
+                }
+                await playCard('red', bestIdx, targetLane);
+                if (checkWinCondition()) return;
+                await sleep(500);
+            }
+            endTurnLogic('red');
+        }
+
+        // ==========================================
+        // スキル解決と戦闘アニメーション
+        // ==========================================
+        async function playCard(owner, handIndex, lane) {
+            const hand = owner === 'blue' ? playerHand : enemyHand;
+            const board = owner === 'blue' ? playerBoard : enemyBoard;
+            
+            board[lane] = hand.splice(handIndex, 1)[0];
+            playSound(SOUNDS.sePlace);
+            renderHand();
+            renderBoard();
+            
+            const card = board[lane];
+            if (card.skill !== 'none' && card.skill !== 'deadly' && card.skill !== 'defender' && card.skill !== 'guard_mech') {
+                await resolveOnPlaySkill(owner, lane, card);
+            }
+        }
+
+        async function resolveOnPlaySkill(owner, lane, card) {
+            const cardEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
+            if (!cardEl) return;
+
+            const hand = owner === 'blue' ? playerHand : enemyHand;
+            const board = owner === 'blue' ? playerBoard : enemyBoard;
+            const enemyBoardRef = owner === 'blue' ? enemyBoard : playerBoard;
+            const defOwner = owner === 'blue' ? 'red' : 'blue';
+
+            if (card.skill === 'draw') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, 'REPLACE', '#facc15');
+                if (hand.length > 0) {
+                    let minIdx = 0;
+                    for(let i=1; i<hand.length; i++) if(hand[i].power < hand[minIdx].power) minIdx = i;
+                    discardCard(owner, hand.splice(minIdx, 1)[0]);
+                }
+                drawCard(owner); await sleep(500);
+            } else if (card.skill === 'heal') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, '+3 HP', '#4ade80');
+                if (owner === 'blue') playerHP = Math.min(MAX_HP, playerHP + 3);
+                else enemyHP = Math.min(MAX_HP, enemyHP + 3);
+                updateHPBar(); await sleep(500);
+            } else if (card.skill === 'snipe') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, 'SNIPE', '#facc15');
+                const targets = enemyBoardRef.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+                if (targets.length > 0) {
+                    let maxTargetLane = targets[0];
+                    for (let i of targets) if (enemyBoardRef[i].currentPower > enemyBoardRef[maxTargetLane].currentPower) maxTargetLane = i;
+                    const targetEl = document.querySelector(`#${owner === 'blue' ? 'enemy' : 'player'}-lanes .cell[data-lane="${maxTargetLane}"] .card`);
+                    
+                    targetEl.classList.add('anim-shake'); playSound(SOUNDS.seDamage); createDamagePopup(targetEl, '-4', '#ef4444');
+                    enemyBoardRef[maxTargetLane].currentPower -= 4; 
+                    renderBoard(); 
+                    await sleep(500);
+                    
+                    if (enemyBoardRef[maxTargetLane].currentPower <= 0) {
+                        discardCard(defOwner, enemyBoardRef[maxTargetLane]); enemyBoardRef[maxTargetLane] = null;
+                        playSound(SOUNDS.seDestroy); renderBoard();
+                    }
+                }
+            } else if (card.skill === 'spread') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, 'SPREAD', '#facc15');
+                let hit = false;
+                for (let i = 0; i < 3; i++) {
+                    if (enemyBoardRef[i] !== null) {
+                        const targetEl = document.querySelector(`#${owner === 'blue' ? 'enemy' : 'player'}-lanes .cell[data-lane="${i}"] .card`);
+                        targetEl.classList.add('anim-shake'); createDamagePopup(targetEl, '-2', '#ef4444');
+                        enemyBoardRef[i].currentPower -= 2; hit = true;
+                    }
+                }
+                if (hit) {
+                    renderBoard(); 
+                    playSound(SOUNDS.seDamage); await sleep(500);
+                    for (let i = 0; i < 3; i++) {
+                        if (enemyBoardRef[i] !== null && enemyBoardRef[i].currentPower <= 0) {
+                            discardCard(defOwner, enemyBoardRef[i]); enemyBoardRef[i] = null; playSound(SOUNDS.seDestroy);
+                        }
+                    }
+                    renderBoard();
+                }
+            } else if (card.skill === 'copy') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, 'COPY', '#facc15');
+                let maxP = -1;
+                for (let i = 0; i < 3; i++) if (i !== lane && board[i] !== null && board[i].currentPower > maxP) maxP = board[i].currentPower;
+                if (maxP > 0) { card.power = maxP; card.currentPower = maxP; createDamagePopup(cardEl, `P=${maxP}`, '#4ade80'); renderBoard(); }
+                await sleep(500);
+            } else if (card.skill === 'support') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, 'SUPPORT', '#facc15');
+                let supported = false;
+                for (let i = 0; i < 3; i++) {
+                    if (i !== lane && board[i] !== null) {
+                        board[i].currentPower += 2;
+                        const targetEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
+                        createDamagePopup(targetEl, '+2', '#4ade80'); supported = true;
+                    }
+                }
+                if(supported) { renderBoard(); await sleep(500); }
+            } else if (card.skill === 'quick') {
+                playSound(SOUNDS.seSkill); createDamagePopup(cardEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(owner, lane);
+            } 
+        }
+
+        async function executeSingleCombat(attacker, lane) {
+            const atkBoard = attacker === 'blue' ? playerBoard : enemyBoard;
+            const defBoard = attacker === 'blue' ? enemyBoard : playerBoard;
+            const atkRowId = attacker === 'blue' ? '#player-lanes' : '#enemy-lanes';
+            const defRowId = attacker === 'blue' ? '#enemy-lanes' : '#player-lanes';
+            const animClass = attacker === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
+
+            const atkCard = atkBoard[lane];
+            if (!atkCard) return;
+            if (atkCard.skill === 'defender' || atkCard.skill === 'guard_mech') return;
+
+            const atkCardEl = document.querySelector(`${atkRowId} .cell[data-lane="${lane}"] .card`);
+            if (!atkCardEl) return;
+
+            atkCardEl.classList.add(animClass);
+            playSound(SOUNDS.seAttack);
+            await sleep(300);
+
+            if (defBoard[lane] !== null) {
+                const atkPower = atkBoard[lane].currentPower;
+                const defPower = defBoard[lane].currentPower;
+                const atkDeadly = atkBoard[lane].skill === 'deadly';
+                const defDeadly = defBoard[lane].skill === 'deadly';
+                const defDefender = defBoard[lane].skill === 'defender' || defBoard[lane].skill === 'guard_mech';
+                
+                defBoard[lane].currentPower -= atkPower;
+                if (!defDefender) atkBoard[lane].currentPower -= defPower;
+                
+                const defCardEl = document.querySelector(`${defRowId} .cell[data-lane="${lane}"] .card`);
+                if(defCardEl) defCardEl.classList.add('anim-shake');
+                playSound(SOUNDS.seDamage);
+                
+                createDamagePopup(defCardEl, `-${atkPower}`);
+                if (!defDefender) createDamagePopup(atkCardEl, `-${defPower}`);
+                
+                renderBoard(); 
+                await sleep(400);
+
+                if (atkDeadly && !defDefender) defBoard[lane].currentPower = 0;
+                if (defDeadly) atkBoard[lane].currentPower = 0;
+                
+                let destroyed = false;
+                if (atkBoard[lane].currentPower <= 0) { 
+                    discardCard(attacker, atkBoard[lane]); atkBoard[lane] = null; destroyed = true; 
+                }
+                if (defBoard[lane].currentPower <= 0) { 
+                    if (defBoard[lane].skill === 'guard_mech') {
+                        const healOwner = attacker === 'blue' ? 'red' : 'blue';
+                        if (healOwner === 'blue') playerHP = Math.min(MAX_HP, playerHP + 10); else enemyHP = Math.min(MAX_HP, enemyHP + 10);
+                        updateHPBar();
+                        createDamagePopup(document.getElementById(`${healOwner}-hp-fill`), `+10 HP`, '#4ade80');
+                    }
+                    discardCard(attacker === 'blue' ? 'red' : 'blue', defBoard[lane]); defBoard[lane] = null; destroyed = true; 
+                }
+                if (destroyed) playSound(SOUNDS.seDestroy);
+
+            } else {
+                let dmg = atkBoard[lane].currentPower;
+                const atkConfig = attacker === 'blue' ? playerConfig : enemyConfig;
+                
+                if (atkConfig.leaderSkill.type === 'passive_damage_up') {
+                    dmg += 1;
+                    showLeaderSkillActivation(attacker, atkConfig.leaderSkill.name);
+                }
+
+                playSound(SOUNDS.seDamage);
+                document.body.classList.add('anim-shake');
+                
+                if (attacker === 'blue') {
+                    enemyHP -= dmg;
+                    createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`);
+                    showSpeechBubble('red');
+                } else {
+                    playerHP -= dmg;
+                    createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`);
+                    showSpeechBubble('blue');
+                }
+                updateHPBar();
+                if (checkWinCondition()) return; 
+                
+                await sleep(400);
+                document.body.classList.remove('anim-shake');
+                
+                await checkHpTriggerSkills();
+            }
+
+            if(atkCardEl) atkCardEl.classList.remove(animClass);
+            renderBoard();
+        }
+
+        async function executeCombatPhase(attacker) {
+            const atkBoard = attacker === 'blue' ? playerBoard : enemyBoard;
+            for (let i = 0; i < 3; i++) {
+                if (atkBoard[i] !== null) {
+                    await executeSingleCombat(attacker, i);
+                    if (isBattleEnded) break; 
+                    await sleep(200);
+                }
+            }
+        }
+
+        function endBattle() {
+            stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
+            
+            if (playerHP > 0 && enemyHP <= 0) lastBattleResult = 'win';
+            else if (playerHP <= 0 && enemyHP > 0) lastBattleResult = 'lose';
+            else lastBattleResult = 'draw';
+
+            document.getElementById('turn-status').innerText = lastBattleResult === 'win' ? "YOU WIN!" : (lastBattleResult === 'lose' ? "YOU LOSE..." : "DRAW");
+            document.getElementById('turn-status').style.color = lastBattleResult === 'win' ? "#facc15" : "#fff";
+
+            setTimeout(() => {
+                playSound(SOUNDS.bgmTitle);
+                appState = 'post_dialogue';
+                if (lastBattleResult === 'win') {
+                    battleCount++;
+                    dialogueQueue = [
+                        { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') },
+                        { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }
+                    ];
+                } else {
+                    dialogueQueue = [
+                        { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') },
+                        { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }
+                    ];
+                }
+                setupDialogueScreen();
+            }, 1500);
+        }
+
+        function returnToTitle() {
+            playSound(SOUNDS.seClick);
+            if (confirm('バトルを諦めてタイトルに戻りますか？')) {
+                stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
+                playSound(SOUNDS.bgmTitle);
+                appState = 'title';
+                isProcessing = false;
+                switchScreen('screen-mode-select');
+            }
+        }
+
+    </script>
+</body>
+</html>
