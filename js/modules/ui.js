@@ -64,8 +64,9 @@ function confirmCharSelect() {
     if (appState === 'select_player') {
         playerConfig = CHARACTERS[pendingCharId];
         if (gameMode === 'story') {
-            enemyQueue = Object.keys(CHARACTERS).filter(id => id !== pendingCharId && id !== 'satan').sort(() => Math.random() - 0.5);
-            enemyQueue.push('satan');
+            const others = Object.keys(CHARACTERS).filter(id => id !== pendingCharId && id !== 'satan').sort(() => Math.random() - 0.5);
+            // 進行順: ランダム1, ランダム2, シャドウ, ランダム3, サタン
+            enemyQueue = [others[0], others[1], 'shadow', others[2], 'satan'];
             battleCount = 1;
             startNextBattleSequence();
         } else {
@@ -100,13 +101,13 @@ function startNextBattleSequence() {
     }
     
     const nextEnemyId = enemyQueue.shift();
-    enemyConfig = { ...CHARACTERS[nextEnemyId] };
-
-    // ストーリーモード3戦目はミラーマッチ（シャドウ）
-    if (gameMode === 'story' && battleCount === 2) {
+    if (nextEnemyId === 'shadow') {
         enemyConfig = { ...playerConfig };
         enemyConfig.isShadow = true;
         enemyConfig.name = `影の${playerConfig.name}`;
+    } else {
+        enemyConfig = { ...CHARACTERS[nextEnemyId] };
+        enemyConfig.isShadow = false;
     }
 
     if (gameMode === 'story') {
@@ -115,7 +116,7 @@ function startNextBattleSequence() {
 
     appState = 'pre_dialogue';
     
-    let introText = `第${battleCount + 1}戦の相手は私よ。\n` + getDialogue(enemyConfig, playerConfig, 'intro');
+    let introText = "次は私がお相手よ。\n" + getDialogue(enemyConfig, playerConfig, 'intro');
     
     if (enemyConfig.isShadow) {
         introText = "・・・・";
@@ -127,7 +128,8 @@ function startNextBattleSequence() {
     ];
     
     if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
-        dialogueQueue[0].text = getDialogue(enemyConfig, playerConfig, 'intro');
+        introText = "……よくぞここまで辿り着いたな。" + getDialogue(enemyConfig, playerConfig, 'intro');
+        dialogueQueue[0].text = introText;
     }
     setupDialogueScreen();
 }
