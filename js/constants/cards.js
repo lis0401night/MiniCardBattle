@@ -17,22 +17,3 @@ const CARD_MASTER = [
     { id: 'ent', name: '頑丈', power: 4, skill: 'sturdy', desc: '受けるダメージを半減。' },
     { id: 'mirror', name: '分身', power: 2, skill: 'clone', desc: '空レーンに分身を生成。' }
 ];
-
-/**
- * 初期デッキの構成 (計30枚)
- */
-const INITIAL_DECK = [
-    // 通常 (10枚)
-    ...Array(10).fill(CARD_MASTER.find(m => m.id === 'soldier')),
-    // 特殊能力系 (各2枚 = 10種 × 2 = 20枚)
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'archer')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'mage')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'quick_knight')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'cleric')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'sniper')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'bomber')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'mimic')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'commander')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'wolf')),
-    ...Array(2).fill(CARD_MASTER.find(m => m.id === 'lich')),
-];

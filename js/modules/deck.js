@@ -14,24 +14,10 @@ function generateDeck(owner, config, sessionId) {
             };
         });
     } else {
-        const cardTemplates = [
-            { id: 'deadly', power: 2, skill: 'deadly', name: '必殺' },
-            { id: 'draw', power: 5, skill: 'draw', name: '入替' },
-            { id: 'quick_knight', power: 2, skill: 'quick', name: '速攻' },
-            { id: 'cleric', power: 3, skill: 'heal', name: '回復' },
-            { id: 'sniper', power: 2, skill: 'snipe', name: '狙撃' },
-            { id: 'bomber', power: 2, skill: 'spread', name: '拡散' },
-            { id: 'mimic', power: 1, skill: 'copy', name: '複製' },
-            { id: 'commander', power: 3, skill: 'support', name: '援護' },
-            { id: 'golem', power: 10, skill: 'defender', name: '防御' },
-            { id: 'mirror', power: 2, skill: 'clone', name: '分身' },
-            { id: 'wolf', power: 3, skill: 'lone_wolf', name: '単騎' },
-            { id: 'lich', power: 4, skill: 'soul_bind', name: '魂縛' },
-            { id: 'ent', power: 4, skill: 'sturdy', name: '頑丈' },
-            { id: 'soldier', power: 7, skill: 'none', name: '通常' }
-        ];
+        // 敵のデッキ生成 (従来通りランダム、ただしリーダー補正あり)
+        const templates = [...CARD_MASTER];
         for (let i = 0; i < DECK_SIZE; i++) {
-            const t = cardTemplates[Math.floor(Math.random() * cardTemplates.length)];
+            const t = templates[Math.floor(Math.random() * templates.length)];
             let p = t.power;
             if (config.id === 'satan') p += 1;
             const imgUrl = `assets/card_${t.skill}.jpg`;
@@ -45,6 +31,40 @@ function generateDeck(owner, config, sessionId) {
     return deck.sort(() => Math.random() - 0.5);
 }
 
+/**
+ * リーダー別のおすすめ初期デッキを生成 (20枚)
+ */
+function getInitialDeck(charId) {
+    const counts = {};
+    const deck = [];
+
+    if (charId === 'dragon') {
+        // イグニス: 速攻、狙撃、拡散、通常多め
+        counts.quick_knight = 4; counts.sniper = 4; counts.bomber = 4; counts.soldier = 8;
+    } else if (charId === 'knight') {
+        // セレスティア: 分身、援護、通常多め
+        counts.mirror = 7; counts.commander = 7; counts.soldier = 6;
+    } else if (charId === 'cthulhu') {
+        // ナイア: 必殺、魂縛、単騎、入替多め
+        counts.archer = 5; counts.lich = 5; counts.wolf = 5; counts.mage = 5;
+    } else {
+        // アイギス / サタン: バランス
+        counts.soldier = 4;
+        CARD_MASTER.forEach(m => { if (m.id !== 'soldier') counts[m.id] = 1; });
+        counts.mirror = 2; counts.archer = 2; // 微調整で20枚に
+    }
+
+    Object.keys(counts).forEach(id => {
+        const template = CARD_MASTER.find(m => m.id === id);
+        if (template) {
+            for (let i = 0; i < counts[id]; i++) {
+                deck.push({ ...template });
+            }
+        }
+    });
+    return deck.slice(0, DECK_SIZE); // 念のため20枚で切る
+}
+
 function loadDeck() {
     const saved = localStorage.getItem('mini_card_battle_deck');
     if (saved) {
@@ -52,10 +72,10 @@ function loadDeck() {
             playerDeckSelection = JSON.parse(saved);
         } catch (e) {
             console.error("Deck load error:", e);
-            playerDeckSelection = [...INITIAL_DECK]; // エラー時は初期デッキ
+            playerDeckSelection = getInitialDeck(playerConfig.id);
         }
     } else {
-        playerDeckSelection = [...INITIAL_DECK]; // 初回起動・データなし時は初期デッキ
+        playerDeckSelection = getInitialDeck(playerConfig.id);
     }
 }
 
@@ -75,36 +95,54 @@ function renderDeckEdit() {
     const countDisplay = document.getElementById('deck-count-display');
     const finishBtn = document.getElementById('btn-finish-deck');
 
+    // --- 所持カードリスト (マスター) ---
     masterList.innerHTML = '';
     CARD_MASTER.forEach(template => {
         const item = document.createElement('div');
         item.className = 'deck-card-item';
         const imgUrl = `assets/card_${template.skill}.jpg`;
+        // デッキ内での枚数を確認
+        const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
+        const opacity = inDeckCount >= 5 ? "0.4" : "1";
+
         item.innerHTML = `
-            <div class="card blue" style="width:70px; height:95px; position:relative; top:0; left:0; display:block;">
+            <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block; opacity:${opacity};">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
-                <div class="card-power" style="font-size:1.2rem; bottom:0; right:4px;">${template.power}</div>
-                <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); font-size:0.5rem; padding:2px; color:#fff; width:100%; text-align:center; z-index:5;">${template.name}</div>
+                <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
+                <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); font-size:0.6rem; padding:2px; color:#fff; width:100%; text-align:center; z-index:5;">${template.name}</div>
+                ${inDeckCount > 0 ? `<div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#facc15; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${inDeckCount}</div>` : ''}
             </div>
         `;
         item.onclick = () => addCardToDeck(template);
-        setupLongPress(item, template);
+        setupLongPress(item, { ...template, imgUrl: imgUrl });
         masterList.appendChild(item);
     });
 
+    // --- 現在のデッキリスト (グループ化表示) ---
     currentList.innerHTML = '';
-    playerDeckSelection.forEach((card, idx) => {
+    // IDごとに集計
+    const grouped = {};
+    playerDeckSelection.forEach(card => {
+        if (!grouped[card.id]) grouped[card.id] = { card: card, count: 0 };
+        grouped[card.id].count++;
+    });
+
+    Object.keys(grouped).forEach(id => {
+        const group = grouped[id];
+        const card = group.card;
         const item = document.createElement('div');
         item.className = 'deck-card-item';
         const imgUrl = `assets/card_${card.skill}.jpg`;
         item.innerHTML = `
-            <div class="card blue" style="width:60px; height:85px; position:relative; top:0; left:0; display:block;">
+            <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block;">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
-                <div class="card-power" style="font-size:1rem; bottom:0; right:2px;">${card.power}</div>
+                <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${card.power}</div>
+                <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); font-size:0.6rem; padding:2px; color:#fff; width:100%; text-align:center; z-index:5;">${card.name}</div>
+                <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#facc15; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${group.count}</div>
             </div>
         `;
-        item.onclick = () => removeCardFromDeck(idx);
-        setupLongPress(item, card);
+        item.onclick = () => removeCardFromDeck(id);
+        setupLongPress(item, { ...card, imgUrl: imgUrl });
         currentList.appendChild(item);
     });
 
@@ -114,17 +152,29 @@ function renderDeckEdit() {
 
 function addCardToDeck(template) {
     if (playerDeckSelection.length >= DECK_SIZE) return;
+    
+    // 同名カード5枚制限
+    const count = playerDeckSelection.filter(c => c.id === template.id).length;
+    if (count >= 5) {
+        // alert("同じカードは5枚までしか入れられません！"); 
+        return; 
+    }
+
     playerDeckSelection.push({ ...template });
     playSound(SOUNDS.seClick);
     saveDeck();
     renderDeckEdit();
 }
 
-function removeCardFromDeck(index) {
-    playerDeckSelection.splice(index, 1);
-    playSound(SOUNDS.seClick);
-    saveDeck();
-    renderDeckEdit();
+function removeCardFromDeck(cardId) {
+    // 指定されたIDのカードを1枚だけ削除
+    const index = playerDeckSelection.findIndex(c => c.id === cardId);
+    if (index !== -1) {
+        playerDeckSelection.splice(index, 1);
+        playSound(SOUNDS.seClick);
+        saveDeck();
+        renderDeckEdit();
+    }
 }
 
 function clearDeck() {
@@ -137,7 +187,7 @@ function clearDeck() {
 
 function resetDeck() {
     if (confirm("デッキを初期状態（おすすめ構成）に戻しますか？")) {
-        playerDeckSelection = [...INITIAL_DECK];
+        playerDeckSelection = getInitialDeck(playerConfig.id);
         saveDeck();
         renderDeckEdit();
     }
@@ -179,7 +229,12 @@ function importDeckXML(event) {
         for (let i = 0; i < cards.length && i < DECK_SIZE; i++) {
             const id = cards[i].getAttribute("id");
             const template = CARD_MASTER.find(m => m.id === id) || CARD_MASTER[0];
-            playerDeckSelection.push({ ...template });
+            
+            // インポート時も5枚制限をチェックする場合
+            const count = playerDeckSelection.filter(c => c.id === id).length;
+            if (count < 5) {
+                playerDeckSelection.push({ ...template });
+            }
         }
         saveDeck();
         renderDeckEdit();

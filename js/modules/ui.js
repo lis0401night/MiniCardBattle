@@ -329,12 +329,13 @@ function openCardPreview(card) {
     const descEl = document.getElementById('preview-card-desc');
 
     container.innerHTML = '';
-    const cardImgUrl = card.imgUrl || `assets/card_none.jpg`; // デフォルトフォールバック
+    // スキル名から画像URLを特定（imgUrlがない場合のフォールバック）
+    const cardImgUrl = card.imgUrl || `assets/card_${card.skill || 'none'}.jpg`;
     const cardClone = document.createElement('div');
     cardClone.className = 'card blue';
     cardClone.innerHTML = `
         <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
-        <div class="card-power">${card.power}</div>
+        <div class="card-power">${card.currentPower || card.power}</div>
     `;
     container.appendChild(cardClone);
 

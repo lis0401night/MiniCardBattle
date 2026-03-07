@@ -1209,8 +1209,8 @@ h2 {
 
 .deck-card-item {
     flex-shrink: 0 !important;
-    width: 70px;
-    height: 95px;
+    width: 85px;
+    height: 115px;
 }
 
 /* モーダルの完全中央配置 */
