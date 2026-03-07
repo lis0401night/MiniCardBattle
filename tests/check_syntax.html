@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Mini Card Battle - 構文チェックツール</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; line-height: 1.6; }
+        .success { color: #4ade80; border-left: 4px solid #4ade80; padding-left: 10px; margin: 10px 0; }
+        .error { color: #f87171; border-left: 4px solid #f87171; padding-left: 10px; margin: 10px 0; background: rgba(248, 113, 113, 0.1); }
+        .warning { color: #fb7185; border-left: 4px solid #fb7185; padding-left: 10px; margin: 10px 0; }
+        pre { background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+        h1 { border-bottom: 2px solid #38bdf8; padding-bottom: 5px; }
+        .check-item { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Mini Card Battle 構文チェックツール</h1>
+    <p>ファイル編集後、このファイルをブラウザで開く（または更新する）ことで、基本的なミスがないか確認できます。</p>
+
+    <div id="results">
+        <div class="check-item">
+            <strong>1. スクリプトの読み込みチェック</strong>
+            <div id="load-status">チェック中...</div>
+        </div>
+        <div class="check-item">
+            <strong>2. グローバル定数の定義チェック</strong>
+            <div id="const-status">チェック中...</div>
+        </div>
+        <div class="check-item">
+            <strong>3. データ構造の整合性チェック</strong>
+            <div id="data-status">チェック中...</div>
+        </div>
+    </div>
+
+    <script>
+        const results = {
+            log: (id, msg, isError = false) => {
+                const el = document.getElementById(id);
+                el.className = isError ? 'error' : 'success';
+                el.innerText = msg;
+            }
+        };
+
+        // window.onload で実行（game.jsのonloadと競合しないように）
+        window.addEventListener('DOMContentLoaded', async () => {
+            let hasError = false;
+
+            // 1. スクリプトの読み込み
+            try {
+                // config.js
+                await loadScript('../js/config.js');
+                results.log('load-status', '✅ すべてのスクリプトファイルが正常に読み込まれました。');
+            } catch (e) {
+                results.log('load-status', '❌ スクリプトの読み込み中にエラーが発生しました：\n' + e.message, true);
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // 2. 定数チェック
+            try {
+                if (typeof MAX_HP === 'undefined') throw new Error('MAX_HP が定義されていません。');
+                if (typeof SOUNDS === 'undefined') throw new Error('SOUNDS が定義されていません。');
+                if (typeof CHARACTERS === 'undefined') throw new Error('CHARACTERS が定義されていません。');
+                if (typeof SKILLS === 'undefined') throw new Error('SKILLS が定義されていません。');
+                results.log('const-status', '✅ すべての必須定数が定義されています。');
+            } catch (e) {
+                results.log('const-status', '❌ 定数エラー：' + e.message, true);
+            }
+
+            // 3. データ構造チェック (簡単なバリデーション)
+            try {
+                const charKeys = Object.keys(CHARACTERS);
+                if (charKeys.length < 5) throw new Error('キャラクターが不足しています。');
+                
+                charKeys.forEach(key => {
+                    const char = CHARACTERS[key];
+                    if (!char.name || !char.leaderSkill || !char.dialogue) {
+                        throw new Error(`キャラクター [${key}] のデータ構造が不完全です。`);
+                    }
+                });
+
+                results.log('data-status', '✅ キャラクターデータの構造は正常です。');
+            } catch (e) {
+                results.log('data-status', '❌ データ構造エラー：' + e.message, true);
+            }
+        });
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error(`${src} の読み込みに失敗しました。パスが正しいか、構文エラーがないか確認してください。`));
+                document.head.appendChild(script);
+            });
+        }
+    </script>
+
+    <div class="warning">
+        <p><strong>注意:</strong> このツールでエラーがなくても、実際のゲームで論理エラーが発生する可能性はあります。最終的には `index.html` での動作確認も行ってください。</p>
+        <p>※ `manifest.json` のエラー（CORS）はこのツールでは解決できません。Webサーバー上で動作させるか、VS CodeのLive Serverなどを使用してください。</p>
+    </div>
+</body>
+</html>
