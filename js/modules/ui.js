@@ -64,9 +64,17 @@ function confirmCharSelect() {
     if (appState === 'select_player') {
         playerConfig = CHARACTERS[pendingCharId];
         if (gameMode === 'story') {
-            const others = Object.keys(CHARACTERS).filter(id => id !== pendingCharId && id !== 'satan').sort(() => Math.random() - 0.5);
-            // 進行順: ランダム1, ランダム2, シャドウ, ランダム3, サタン
-            enemyQueue = [others[0], others[1], 'shadow', others[2], 'satan'];
+            // 他のキャラクターのIDをランダムに並び替え（プレイヤーとサタンは除く）
+            const otherIds = Object.keys(CHARACTERS).filter(id => id !== pendingCharId && id !== 'satan');
+            for (let i = otherIds.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [otherIds[i], otherIds[j]] = [otherIds[j], otherIds[i]];
+            }
+            
+            // ストーリー構成: 1戦目(ランダム1), 2戦目(ランダム2), 3戦目(自分/影), 4戦目(残る1人), 5戦目(サタン)
+            // othersの数は5名中(自分の選択1, サタン1)を除いた3名なので、others[0, 1, 2]が使える。
+            enemyQueue = [otherIds[0], otherIds[1], 'shadow', otherIds[2], 'satan'];
+            
             battleCount = 1;
             startNextBattleSequence();
         } else {
@@ -100,13 +108,28 @@ function startNextBattleSequence() {
         return;
     }
     
-    const nextEnemyId = enemyQueue.shift();
+    let nextEnemyId = enemyQueue.shift();
+    
+    // ストーリーモード専用の進行制御
+    if (gameMode === 'story') {
+        if (battleCount === 3) {
+            nextEnemyId = 'shadow'; // 3戦目は必ず影
+        } else if (battleCount === 5) {
+            nextEnemyId = 'satan'; // 5戦目は必ずサタン
+        } else if (nextEnemyId === 'shadow' || nextEnemyId === 'satan') {
+            // 1, 2, 4戦目に影やサタンが混ざっていたら回避（通常は起きないが念のため）
+            const others = Object.keys(CHARACTERS).filter(id => id !== playerConfig.id && id !== 'satan');
+            nextEnemyId = others[battleCount % others.length];
+        }
+    }
+
     if (nextEnemyId === 'shadow') {
         enemyConfig = { ...playerConfig };
         enemyConfig.isShadow = true;
         enemyConfig.name = `影の${playerConfig.name}`;
     } else {
-        enemyConfig = { ...CHARACTERS[nextEnemyId] };
+        const charId = nextEnemyId || 'android'; 
+        enemyConfig = { ...CHARACTERS[charId] };
         enemyConfig.isShadow = false;
     }
 
