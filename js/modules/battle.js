@@ -35,7 +35,7 @@ function initBattleState() {
     document.getElementById('enemy-icon').src = enemyConfig.icon;
     document.getElementById('player-name').innerText = playerConfig.name;
     document.getElementById('enemy-name').innerText = enemyConfig.name;
-    
+
     // 敵アイコンのフィルタ処理（シャドウ対応）
     const enemyIconImg = document.getElementById('enemy-icon');
     enemyIconImg.src = enemyConfig.icon;
@@ -79,11 +79,11 @@ function updateSPOrbs(owner) {
 }
 
 function checkWinCondition() {
-    if ((playerHP <= 0 || enemyHP <= 0) && !isBattleEnded) { 
-        isBattleEnded = true; 
+    if ((playerHP <= 0 || enemyHP <= 0) && !isBattleEnded) {
+        isBattleEnded = true;
         triggerFinishVisuals();
-        setTimeout(endBattle, 2000); 
-        return true; 
+        setTimeout(endBattle, 2000);
+        return true;
     }
     return false;
 }
@@ -93,7 +93,7 @@ function triggerFinishVisuals() {
     document.body.classList.add('slow-motion');
     document.body.classList.add('anim-mega-shake');
     playSound(SOUNDS.seDamage); // 重厚な音（既存のSEを流用）
-    
+
     setTimeout(() => {
         document.body.classList.remove('anim-mega-shake');
     }, 1000);
@@ -102,7 +102,7 @@ function triggerFinishVisuals() {
 function showSpeechBubble(target) {
     const config = target === 'blue' ? playerConfig : enemyConfig;
     let phrases = config.dialogue.damage;
-    
+
     // シャドウ（ドッペルゲンガー）は無言
     if (target === 'red' && enemyConfig.isShadow) {
         phrases = ['・・・・'];
@@ -223,7 +223,7 @@ async function activateLeaderSkill(owner) {
     isProcessing = prevProc;
 }
 
-function discardCard(owner, card) { if (card.isToken) return; card.currentPower = card.power; (owner === 'blue' ? playerDiscard : enemyDiscard).push(card); }
+function discardCard(owner, card) { if (card.isToken) return; if ('basePower' in card) { card.power = card.basePower; } card.currentPower = card.power; (owner === 'blue' ? playerDiscard : enemyDiscard).push(card); }
 function drawCard(owner) {
     let d = owner === 'blue' ? playerDeck : enemyDeck, h = owner === 'blue' ? playerHand : enemyHand, ds = owner === 'blue' ? playerDiscard : enemyDiscard;
     if (d.length === 0 && ds.length > 0) { d.push(...ds.sort(() => Math.random() - 0.5)); ds.length = 0; playSound(SOUNDS.seSkill); createDamagePopup(document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'), 'RELOAD', '#38bdf8'); }
@@ -335,7 +335,7 @@ async function executeSingleCombat(atk, l) {
         const dE = document.querySelector(`${dR} .cell[data-lane="${l}"] .card`); if (dE) dE.classList.add('anim-shake');
         playSound(SOUNDS.seDamage); createDamagePopup(dE, `-${dDef}`); if (dB[l].skill !== 'defender') createDamagePopup(aE, `-${dAtk}`);
         renderBoard(); await sleep(400);
-        if (aC.skill === 'deadly' && dB[l].skill !== 'defender') dB[l].currentPower = 0; if (dB[l].skill === 'deadly') aC.currentPower = 0;
+        if (aC.skill === 'deadly') dB[l].currentPower = 0; if (dB[l].skill === 'deadly') aC.currentPower = 0;
         let aD = aC.currentPower <= 0, dD = dB[l].currentPower <= 0, tr = false;
         if (dD && !aD && aC.skill === 'soul_bind') { aC.currentPower += 2; aC.power += 2; createDamagePopup(aE, '+2', '#4ade80'); tr = true; }
         if (aD && !dD && dB[l].skill === 'soul_bind') { dB[l].currentPower += 2; dB[l].power += 2; createDamagePopup(dE, '+2', '#4ade80'); tr = true; }
@@ -353,10 +353,10 @@ async function executeSingleCombat(atk, l) {
 
 async function executeCombatPhase(atk) {
     const b = atk === 'blue' ? playerBoard : enemyBoard;
-    for (let i = 0; i < 3; i++) if (b[i]) { 
-        await executeSingleCombat(atk, i); 
-        if (isBattleEnded) break; 
-        await sleep(200); 
+    for (let i = 0; i < 3; i++) if (b[i]) {
+        await executeSingleCombat(atk, i);
+        if (isBattleEnded) break;
+        await sleep(200);
     }
 }
 

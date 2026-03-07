@@ -10,7 +10,7 @@ function generateDeck(owner, config, sessionId) {
             return {
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: config.filter,
-                power: t.power, currentPower: t.power, skill: t.skill, name: t.name
+                basePower: t.power, power: t.power, currentPower: t.power, skill: t.skill, name: t.name
             };
         });
     } else {
@@ -20,7 +20,7 @@ function generateDeck(owner, config, sessionId) {
             const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
             if (config.id === 'satan') p += 1; // サタン補正は維持
-            
+
             // ミラーマッチ（シャドウ）用のフィルタ処理
             let filter = config.filter;
             if (config.isShadow) {
@@ -31,7 +31,7 @@ function generateDeck(owner, config, sessionId) {
             deck.push({
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: filter,
-                power: p, currentPower: p, skill: t.skill, name: t.name
+                basePower: p, power: p, currentPower: p, skill: t.skill, name: t.name
             });
         });
     }
@@ -143,7 +143,7 @@ function renderDeckEdit() {
 function addCardToDeck(template) {
     if (playerDeckSelection.length >= DECK_SIZE) return;
     const count = playerDeckSelection.filter(c => c.id === template.id).length;
-    if (count >= 5) return; 
+    if (count >= 5) return;
 
     playerDeckSelection.push({ ...template });
     playSound(SOUNDS.seClick);
