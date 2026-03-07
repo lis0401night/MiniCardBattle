@@ -265,6 +265,43 @@ h2 {
     z-index: 5;
 }
 
+/* アニメーション無効化用 */
+.no-transition, .no-transition * {
+    transition: none !important;
+}
+
+/* センター配置用 */
+.portrait-container.center {
+    justify-content: center;
+}
+
+.portrait-container.center .char-portrait {
+    max-width: 70%;
+    margin: 0 auto;
+}
+
+.portrait-container.center #portrait-right {
+    display: none !important;
+}
+
+/* フェード演出 */
+.fade-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.fade-overlay.active {
+    opacity: 1;
+}
+
 .dialogue-box {
     position: absolute;
     bottom: 5%;

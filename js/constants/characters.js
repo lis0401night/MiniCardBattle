@@ -8,9 +8,34 @@ const CHARACTERS = {
         filter: 'none', cardType: 'set1', cardBg: 'bg1',
         image: 'assets/char_android.png', imageLose: 'assets/char_android_lose.png', icon: 'assets/icon_android.png', imageEnding: 'assets/char_android_ending.png', color: '#38bdf8',
         leaderSkill: { name: '殲滅光線', desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。', cost: 4, action: 'annihilation' },
+        preBattleLine: '目標確認。バトルプロトコルを開始します。',
+        mirrorIntro: '偽物の熱源反応を確認。私の任務は魔王サタンの排除です。たとえ自分自身であっても、障害は排除します。',
+        narratorIntro: '王国が開発した最新鋭アンドロイド、アイギス。その瞳に映るものは、冷徹な計算と、マスターへの揺るぎない忠誠のみ。',
+        storyIntro: [
+            '魔界の深部から極めて高いエネルギー反応を検知しました。',
+            'マスター、魔王サタンを放置すれば世界の均衡が崩れます。調査及び排除任務への同行を要請します。'
+        ],
+        interBattleStory: {
+            1: [
+                '周辺の敵対個体の排除を確認しました。',
+                'これよりエネルギー反応の源へ向けて、前進を継続します。'
+            ],
+            2: [
+                '目標地点への距離、残り僅か。',
+                'システムに異常なし。魔王サタンの排除まで、あと一息です。'
+            ],
+            4: [
+                'サタンの居城、「魔王城」の門前に到達。',
+                'これより最終ミッションに移行します。マスター、心の準備を。'
+            ],
+            default: [
+                ['エネルギー残量、問題なし。索敵を強化しつつ前進します。'],
+                ['索敵範囲内に強力な個体を確認。排除し、道を切り開きます。']
+            ]
+        },
         dialogue: {
             intro: { dragon: '対象の熱源反応を確認。冷却プロトコルを起動します。', knight: '対象の装甲、旧式と推測。物理演算を開始します。', cthulhu: '非論理的生命体を検出。排除プログラムを実行します。', satan: '分類不能な超高エネルギー体を確認。リミッターを解除します。', default: 'マスター、バトルプロトコルを開始します。' },
-            win: { dragon: '熱源の鎮火を確認。', knight: '旧式装甲の突破完了。', cthulhu: '非論理적エラーを排除。', satan: '対象の完全消滅を確認。私の、勝ちです。', default: '対象の沈黙を確認。ミッションコンプリート。' },
+            win: { dragon: '熱源の鎮火を確認。', knight: '旧式装甲の突破完了。', cthulhu: '非論理的エラーを排除。', satan: '対象の完全消滅を確認。私の、勝ちです。', default: '対象の沈黙を確認。ミッションコンプリート。' },
             lose: { dragon: '装甲溶解……システムダウン……', knight: '計算外の攻撃力……機能停止します……', cthulhu: '精神侵染……マスター、逃げ……て……', satan: 'マスター……ごめんなさい……', default: '致命的なエラー……再起動します……' },
             damage: ['シールド損傷！', 'ダメージ軽微。', 'エラー発生！', '出力低下。'],
             skill: 'リミッター解除、対象を殲滅します！',
@@ -26,6 +51,31 @@ const CHARACTERS = {
         filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/char_dragon.png', imageLose: 'assets/char_dragon_lose.png', icon: 'assets/icon_dragon.png', imageEnding: 'assets/char_dragon_ending.png', color: '#fb7185',
         leaderSkill: { name: '竜王の降臨', desc: '(SP:4) 空いているレーンに「イグニス(P:7)」を1体召喚する。', cost: 4, action: 'dragon_summon' },
+        preBattleLine: 'アツくさせてあげるわ！ 覚悟しなさい！',
+        mirrorIntro: 'なによアイツ、私のマネして！ 私は魔王サタンをぶっ飛ばして、私が世界で一番強いって分からせてやるんだから！ ニセモノはひっこんでなさい！',
+        narratorIntro: '火山に君臨する竜族の王女、イグニス。彼女の逆鱗に触れた者に残されるのは、炭塵と絶望のみである。',
+        storyIntro: [
+            '魔王サタンが一番強いなんて、絶対に許せない！ 私の炎の方がずっと激しいんだから！',
+            '誰にも邪魔させない、私がアイツを焼き尽くしてやるんだわ！'
+        ],
+        interBattleStory: {
+            1: [
+                'へへーん、楽勝ね！ 次はどいつ？',
+                'まとめて焼き尽くしてやるんだから！'
+            ],
+            2: [
+                'だんだん熱くなってきたわね……魔王の気配かしら？',
+                'いいわよ、もっとアツいバトルを期待してるんだから！'
+            ],
+            4: [
+                'ついにここまで来たわね。あのアホ面した魔王、炭にしてやるわ！',
+                '私の炎が世界一だって、たっぷり教えてあげるんだから！'
+            ],
+            default: [
+                ['ふんっ、他愛ないわね！ 次！'],
+                ['もっと強いヤツはいないの？ 燃え足りないわ！']
+            ]
+        },
         dialogue: {
             intro: { android: 'なんだか鉄臭いヤツ！ 溶かしてやる！', knight: 'また騎士？ 私の巣を荒らしたヤツの仲間ね！', cthulhu: 'うわ、気持ち悪いタコ！ 焼きダコにしてやる！', satan: '魔王だかなんだか知らないけど、私の炎のほうが強いんだから！', default: 'ガウッ！ 私の炎で丸焦げにしてやるんだから！' },
             win: { android: 'ただのガラクタになっちゃったわね！', knight: 'ふんっ、ノロマね！', cthulhu: 'うげぇ、美味しそうじゃない……。', satan: 'へへーん！ ドラゴンが一番強いに決まってるでしょ！', default: 'ふんっ、他愛ないわね！' },
@@ -44,8 +94,33 @@ const CHARACTERS = {
         filter: 'none', cardType: 'set5', cardBg: 'bg1',
         image: 'assets/char_knight.png', imageLose: 'assets/char_knight_lose.png', icon: 'assets/icon_knight.png', imageEnding: 'assets/char_knight_ending.png', color: '#facc15',
         leaderSkill: { name: '聖なる進軍', desc: '(SP:5) 空きレーンに「騎士(P:1)」を最大2体召喚し、自分の場のすべてのカードのパワーを+3する。', cost: 5, action: 'holy_march' },
+        preBattleLine: '我が剣にかけて、勝利を誓おう！',
+        mirrorIntro: '私の影……。迷いがあるというのか。だが止まってはいられない。魔王サタンを討ち、この世界に光を取り戻す。それが私の使命だ！',
+        narratorIntro: '聖騎士団を率いる若き天才剣士、セレスティア。その白銀の鎧は、王国の人々の希望の象徴であった。',
+        storyIntro: [
+            '魔王の影が世界を覆いつつあります。放っておけば、人々は絶望に沈むでしょう。',
+            '私は聖騎士として、サタンを討伐しに行く決意をしました。共に行きましょう！'
+        ],
+        interBattleStory: {
+            1: [
+                '手応えあり……！ ですが、魔界の深淵まではまだ距離があります。',
+                '皆さん、歩みを止めてはなりません！'
+            ],
+            2: [
+                '邪悪な気配が強まっています。魔王はすぐそこ……。',
+                '私の剣は、決して折れることはありません。信じてください！'
+            ],
+            4: [
+                'ついに魔王城の懐まで踏み込みました。',
+                'この一戦に、王国の未来が、世界の運命がかかっています。参りましょう！'
+            ],
+            default: [
+                ['勝利を神に感謝しましょう。しかし、油断は禁物です。'],
+                ['一時の急速をとった後、すぐに進軍を開始します！']
+            ]
+        },
         dialogue: {
-            intro: { android: '魔導人形か……油断はしない！', dragon: '竜の落とし子よ、容赦はしないぞ！', cthulhu: '邪神の眷属め！ 聖剣で浄化してくれる！', satan: '魔王……！ ここで貴様を討ち、世界に平和を！', default: '我が剣に誓って、正々堂々と勝負しよう！' },
+            intro: { android: '魔導人形か……油断はしない！', dragon: '竜の落とし子よ, 容赦はしないぞ！', cthulhu: '邪神の眷属め！ 聖剣で浄化してくれる！', satan: '魔王……！ ここで貴様を討ち、世界に平和を！', default: '我が剣に誓って、正々堂々と勝負しよう！' },
             win: { android: '見事な剣筋だった。', dragon: '少しは懲りたか。', cthulhu: '光の前に邪悪は滅びるのだ！', satan: 'ついに、悲願は達成された！ 我が剣の勝利だ！', default: '素晴らしい勝負だった。君の戦術も見事だ。' },
             lose: { android: '動きが読めない……。', dragon: '竜の力、圧倒的すぎる……。', cthulhu: '正気が……奪われる……！', satan: '世界が……闇に……飲まれる……。', default: 'くっ……私の采配ミスだ。敗北を認めよう。' },
             damage: ['くっ！', 'まだだ！', '浅い！', 'なんの！'],
@@ -62,9 +137,34 @@ const CHARACTERS = {
         filter: 'none', cardType: 'set2', cardBg: 'bg3',
         image: 'assets/char_cthulhu.png', imageLose: 'assets/char_cthulhu_lose.png', icon: 'assets/icon_cthulhu.png', imageEnding: 'assets/char_cthulhu_ending.png', color: '#c084fc',
         leaderSkill: { name: '深淵の儀式', desc: '(SP:4) 手札のパワーが低いカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。', cost: 4, action: 'abyss_ritual' },
+        preBattleLine: 'フフフ、深淵へようこそ……。',
+        mirrorIntro: 'あら、私の鏡合わせ？ 滑稽ですわ。魔王サタン……あの底知れぬ力、私の深淵で飲み込んであげたくなりましたの. 貴女も飲み込まれたいのかしら？',
+        narratorIntro: '深き海の底より這い出せし「名状しがたきもの」の巫女、ナイア。彼女の微笑みは、見る者を狂気へと誘う。',
+        storyIntro: [
+            '魔界の底で何かが囁いていますわ。魔王サタン……。',
+            'あの方の魂、どんな味がするのかしら？ フフフ、興味が尽きませんわ。見つけ出しに行きましょう？'
+        ],
+        interBattleStory: {
+            1: [
+                'フフフ……もっと、もっと悲鳴を聞かせてくださいな。',
+                '深淵は常に飢えていますのよ。'
+            ],
+            2: [
+                '心地よい響き……絶望の音がここまで届きますわ。',
+                '魔王サタン……貴方の魂は、どんな味がするのかしら……？'
+            ],
+            4: [
+                'アハハハ！ 観客（眷属）たちが騒がしいですわね。',
+                'さぁ、最高のショー（崩壊）を始めましょう？ 魔王様。'
+            ],
+            default: [
+                ['フフフ……次は誰を深淵に沈めて差し上げましょうかしら？'],
+                ['いい絶望でしたわ。……次の方、呼んでくださる？']
+            ]
+        },
         dialogue: {
             intro: { android: '感情のないお人形……つまらないわね。', dragon: '爬虫類は嫌いですの。', knight: '無駄な信念ですねぇ……。', satan: 'あら、魔界の王様？ 私の深淵とどちらが深いか、試してみます？', default: 'フフフ……深淵の理に触れる覚悟はありまして？' },
-            win: { android: 'あら、壊れちゃいました. ', dragon: '沈みなさい、暗い海の底へ。', knight: '狂気に歪むその顔、素敵ですわ。', satan: 'フフフ、魔王の絶望する顔……最高の極上ですわ。', default: 'アハハハ！ 貴方のSAN値、もう空っぽですわよ？' },
+            win: { android: 'あら、壊れちゃいました。', dragon: '沈みなさい、暗い海の底へ。', knight: '狂気に歪むその顔、素敵ですわ。', satan: 'フフフ、魔王の絶望する顔……最高の極上ですわ。', default: 'アハハハ！ 貴方のSAN値、もう空っぽですわよ？' },
             lose: { android: '理性が……論理が……私を浸食する……！', dragon: 'あつい、私の海が蒸発してしまう……！', knight: 'その眩しい光、目障りですわ……！', satan: '深淵が……塗り潰されていく……。', default: 'いあ！ いあ！ ……まさか、退けられるとは……' },
             damage: ['あぁんっ！', '痛いですわ！', '無礼な！', 'フフフ…'],
             skill: 'フフフ…深淵の力で、すべてを狂わせてあげますわ。',
@@ -80,6 +180,7 @@ const CHARACTERS = {
         filter: 'contrast(1.5) brightness(0.7) sepia(1) hue-rotate(-50deg) saturate(3)', cardType: 'set3', cardBg: 'bg3',
         image: 'assets/char_satan.png', imageLose: 'assets/char_satan_lose.png', icon: 'assets/icon_satan.png', color: '#dc2626',
         leaderSkill: { name: '魔王の化身', desc: '(SP:6) 空いているレーンに「サタンの化身(P:10)」を1体召喚する。', cost: 6, action: 'satan_avatar' },
+        preBattleLine: '我は絶対……ひれ伏すがよい。',
         dialogue: {
             intro: { default: '我は魔王サタン……絶望の淵へ沈むがよい。' },
             win: { default: 'フハハハ！ 脆弱な者どもよ、永遠の闇に惑え！' },

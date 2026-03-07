@@ -22,6 +22,51 @@ function startGameMode(mode) {
     switchScreen('screen-select');
 }
 
+// 演出用ユーティリティ
+async function performFadeTransition(action) {
+    const fade = document.getElementById('fade-overlay');
+    const portraitContainer = document.querySelector('.portrait-container');
+    const portraits = document.querySelectorAll('.char-portrait');
+    
+    if (fade) fade.classList.add('active');
+    
+    // 暗転完了まで待機
+    await sleep(500);
+    
+    // 配置換えの瞬間にコンテナを完全に消去（レンダリングツリーから除外）
+    if (portraitContainer) {
+        portraitContainer.style.display = 'none';
+        portraits.forEach(p => {
+            p.style.transition = 'none';
+        });
+    }
+
+    if (action) action();
+
+    // 描画更新と配置の確定を待機（レイアウト再計算を促す）
+    await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            setTimeout(resolve, 80);
+        });
+    }));
+
+    // 配置が完了した状態で再表示
+    if (portraitContainer) {
+        portraitContainer.style.display = 'flex';
+    }
+
+    // 暗転解除開始
+    if (fade) fade.classList.remove('active');
+    
+    // フェードイン完了後にtransitionを元に戻す
+    await sleep(500);
+    if (portraits) {
+        portraits.forEach(p => {
+            p.style.transition = '';
+        });
+    }
+}
+
 function initSelectScreen(includeSatan) {
     const grid = document.getElementById('char-grid');
     grid.innerHTML = '';
@@ -72,11 +117,22 @@ function confirmCharSelect() {
             }
             
             // ストーリー構成: 1戦目(ランダム1), 2戦目(ランダム2), 3戦目(自分/影), 4戦目(残る1人), 5戦目(サタン)
-            // othersの数は5名中(自分の選択1, サタン1)を除いた3名なので、others[0, 1, 2]が使える。
             enemyQueue = [otherIds[0], otherIds[1], 'shadow', otherIds[2], 'satan'];
             
             battleCount = 1;
-            startNextBattleSequence();
+            
+            // ストーリー導入フェーズ
+            appState = 'story_intro';
+            dialogueQueue = [
+                { speaker: 'narrator', text: playerConfig.narratorIntro }
+            ];
+            playerConfig.storyIntro.forEach(text => {
+                dialogueQueue.push({ speaker: 'player', text: text });
+            });
+            
+            performFadeTransition(() => {
+                setupDialogueScreen();
+            });
         } else {
             appState = 'select_enemy';
             document.getElementById('select-title').innerText = "Select Enemy";
@@ -139,7 +195,7 @@ function startNextBattleSequence() {
 
     appState = 'pre_dialogue';
     
-    let introText = "次は私がお相手よ。\n" + getDialogue(enemyConfig, playerConfig, 'intro');
+    let introText = (enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(enemyConfig, playerConfig, 'intro');
     
     if (enemyConfig.isShadow) {
         introText = "・・・・";
@@ -147,13 +203,14 @@ function startNextBattleSequence() {
 
     dialogueQueue = [
         { speaker: 'enemy', text: introText },
-        { speaker: 'player', text: enemyConfig.isShadow ? "なっ、自分自身だと……！？" : getDialogue(playerConfig, enemyConfig, 'intro') }
+        { speaker: 'player', text: enemyConfig.isShadow ? (playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(playerConfig, enemyConfig, 'intro') }
     ];
     
     if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
         introText = "……よくぞここまで辿り着いたな。" + getDialogue(enemyConfig, playerConfig, 'intro');
         dialogueQueue[0].text = introText;
     }
+    
     setupDialogueScreen();
 }
 
@@ -177,12 +234,27 @@ function setupDialogueScreen() {
     let pLeftImg = playerConfig.image;
     let pRightImg = enemyConfig.image;
 
+    // 配置を確定
+    const portraitContainer = document.querySelector('.portrait-container');
+    if (appState === 'story_intro' || appState === 'inter_battle_story') {
+        portraitContainer.classList.add('center');
+    } else {
+        portraitContainer.classList.remove('center');
+    }
+
+    // 各ポートレートの画像ソースと表示状態を準備
+    const pLeft = document.getElementById('portrait-left');
+    const pRight = document.getElementById('portrait-right');
+    
+    // 一旦アクティブ状態を解除
+    pLeft.classList.remove('active');
+    pRight.classList.remove('active');
+
     if (appState === 'post_dialogue') {
         if (lastBattleResult === 'win') pRightImg = enemyConfig.imageLose;
         else if (lastBattleResult === 'lose') pLeftImg = playerConfig.imageLose;
     }
 
-    const pRight = document.getElementById('portrait-right');
     pRight.src = pRightImg;
     pRight.style.display = 'block';
     
@@ -193,7 +265,7 @@ function setupDialogueScreen() {
         pRight.style.filter = 'none';
     }
 
-    document.getElementById('portrait-left').src = pLeftImg;
+    pLeft.src = pLeftImg;
 
     switchScreen('screen-dialogue');
     showNextDialogue();
@@ -211,16 +283,60 @@ function showNextDialogue() {
                 switchScreen('screen-result');
             } else {
                 if (lastBattleResult === 'lose') showContinueScreen();
-                else startNextBattleSequence();
+                else {
+                    // 戦闘間ストーリーの挿入
+                    if (gameMode === 'story' && playerConfig.interBattleStory && enemyConfig.id !== 'satan') {
+                        appState = 'inter_battle_story';
+                        dialogueQueue = [];
+                        
+                        let storyLines = null;
+                        const stories = playerConfig.interBattleStory;
+                        
+                        // 現在の戦闘数（battleCount）に対応するストーリーがあるか確認
+                        if (stories[battleCount]) {
+                            storyLines = stories[battleCount];
+                        } else if (stories.default && stories.default.length > 0) {
+                            // ない場合はランダムに選択
+                            const randomIndex = Math.floor(Math.random() * stories.default.length);
+                            storyLines = stories.default[randomIndex];
+                        }
+
+                        if (storyLines) {
+                            storyLines.forEach(text => {
+                                dialogueQueue.push({ speaker: 'player', text: text });
+                            });
+                            performFadeTransition(() => {
+                                setupDialogueScreen();
+                            });
+                        } else {
+                            // 万が一どちらもない場合は次へ
+                            performFadeTransition(() => {
+                                startNextBattleSequence();
+                            });
+                        }
+                    } else {
+                        performFadeTransition(() => {
+                            startNextBattleSequence();
+                        });
+                    }
+                }
             }
+        } else if (appState === 'story_intro' || appState === 'inter_battle_story') {
+            performFadeTransition(() => {
+                startNextBattleSequence();
+            });
+            return;
         } else if (appState === 'ending_dialogue') {
             appState = 'ending_illust';
             switchScreen('screen-ending-illust');
-            document.getElementById('ending-illust-img').src = playerConfig.imageEnding;
+            const img = document.getElementById('ending-illust-img');
+            const txt = document.getElementById('ending-text');
+            img.src = playerConfig.imageEnding;
             setTimeout(() => {
-                document.getElementById('ending-illust-img').style.opacity = 1;
-                document.getElementById('ending-text').style.opacity = 1;
+                img.style.opacity = 1;
+                txt.style.opacity = 1;
             }, 100);
+            return;
         }
         return;
     }
@@ -236,6 +352,11 @@ function showNextDialogue() {
         pLeft.classList.add('active');
         if (appState !== 'ending_dialogue') pRight.classList.remove('active');
         box.style.borderColor = playerConfig.color;
+    } else if (cur.speaker === 'narrator') {
+        nameEl.innerText = "Narrator"; nameEl.style.color = "#94a3b8";
+        pLeft.classList.remove('active');
+        pRight.classList.remove('active');
+        box.style.borderColor = "#475569";
     } else {
         nameEl.innerText = enemyConfig.name; nameEl.style.color = enemyConfig.color;
         pRight.classList.add('active'); pLeft.classList.remove('active');
