@@ -14,19 +14,26 @@ function generateDeck(owner, config, sessionId) {
             };
         });
     } else {
-        // 敵のデッキ生成
-        const templates = [...CARD_MASTER];
-        for (let i = 0; i < DECK_SIZE; i++) {
-            const t = templates[Math.floor(Math.random() * templates.length)];
+        // 敵のデッキ生成（リーダーごとの初期デッキを使用）
+        const deckIds = INITIAL_DECKS[config.id] || INITIAL_DECKS.android;
+        deckIds.forEach((cardId, i) => {
+            const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
-            if (config.id === 'satan') p += 1;
+            if (config.id === 'satan') p += 1; // サタン補正は維持
+            
+            // ミラーマッチ（シャドウ）用のフィルタ処理
+            let filter = config.filter;
+            if (config.isShadow) {
+                filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
+            }
+
             const imgUrl = `assets/card_${t.skill}.jpg`;
             deck.push({
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
-                imgUrl: imgUrl, filter: config.filter,
+                imgUrl: imgUrl, filter: filter,
                 power: p, currentPower: p, skill: t.skill, name: t.name
             });
-        }
+        });
     }
     return deck.sort(() => Math.random() - 0.5);
 }
@@ -35,37 +42,12 @@ function generateDeck(owner, config, sessionId) {
  * リーダー別のおすすめ初期デッキを生成 (20枚・同名5枚制限厳守)
  */
 function getInitialDeck(charId) {
-    const counts = {};
+    const deckIds = INITIAL_DECKS[charId] || INITIAL_DECKS.android;
     const deck = [];
-
-    if (charId === 'dragon') {
-        // イグニス: 速攻(5), 狙撃(5), 拡散(5), 通常(5)
-        counts.quick_knight = 5; counts.sniper = 5; counts.bomber = 5; counts.soldier = 5;
-    } else if (charId === 'knight') {
-        // セレスティア: 分身(5), 援護(5), 通常(5), 速攻(2), 狙撃(2), 回復(1)
-        counts.mirror = 5; counts.commander = 5; counts.soldier = 5;
-        counts.quick_knight = 2; counts.sniper = 2; counts.cleric = 1;
-    } else if (charId === 'cthulhu') {
-        // ナイア: 必殺(5), 魂縛(5), 単騎(5), 入替(5)
-        counts.archer = 5; counts.lich = 5; counts.wolf = 5; counts.mage = 5;
-    } else {
-        // アイギス / サタン: バランス (計20枚)
-        counts.soldier = 5;
-        counts.mirror = 2; counts.archer = 2; counts.cleric = 2;
-        // 残り9枚を各1枚ずつ (計13種-4種=9種)
-        CARD_MASTER.forEach(m => {
-            if (!['soldier', 'mirror', 'archer', 'cleric'].includes(m.id)) {
-                counts[m.id] = 1;
-            }
-        });
-    }
-
-    Object.keys(counts).forEach(id => {
+    deckIds.forEach(id => {
         const template = CARD_MASTER.find(m => m.id === id);
         if (template) {
-            for (let i = 0; i < Math.min(counts[id], 5); i++) { // 常に5枚制限を適用
-                deck.push({ ...template });
-            }
+            deck.push({ ...template });
         }
     });
     return deck.slice(0, DECK_SIZE); // 20枚

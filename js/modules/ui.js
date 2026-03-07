@@ -98,18 +98,42 @@ function startNextBattleSequence() {
         startEndingSequence();
         return;
     }
-    enemyConfig = CHARACTERS[enemyQueue.shift()];
+    
+    const nextEnemyId = enemyQueue.shift();
+    enemyConfig = { ...CHARACTERS[nextEnemyId] };
+
+    // ストーリーモード3戦目はミラーマッチ（シャドウ）
+    if (gameMode === 'story' && battleCount === 2) {
+        enemyConfig = { ...playerConfig };
+        enemyConfig.isShadow = true;
+        enemyConfig.name = `影の${playerConfig.name}`;
+    }
 
     if (gameMode === 'story') {
         aiLevel = Math.min(3, battleCount);
     }
 
     appState = 'pre_dialogue';
+    
+    let introText = `第${battleCount + 1}戦の相手は私よ。\n` + getDialogue(enemyConfig, playerConfig, 'intro');
+    
+    if (enemyConfig.isShadow) {
+        const shadowDialogues = {
+            android: "……排除……シマス……。ワタシハ……アナタ……。",
+            dragon: "……熱イ……。全テ……焼キ尽クス……。",
+            knight: "……聖ナル光……。ソレハ……偽リ……。",
+            cthulhu: "……深淵……深ク……。堕チ……ナサイ……。",
+            satan: "……我ハ……闇……。絶望……ソノモノ……。"
+        };
+        introText = shadowDialogues[playerConfig.id] || "……。";
+    }
+
     dialogueQueue = [
-        { speaker: 'enemy', text: `第${battleCount}戦の相手は私よ。\n` + getDialogue(enemyConfig, playerConfig, 'intro') },
-        { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
+        { speaker: 'enemy', text: introText },
+        { speaker: 'player', text: enemyConfig.isShadow ? "なっ、自分自身だと……！？" : getDialogue(playerConfig, enemyConfig, 'intro') }
     ];
-    if (enemyConfig.id === 'satan') {
+    
+    if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
         dialogueQueue[0].text = getDialogue(enemyConfig, playerConfig, 'intro');
     }
     setupDialogueScreen();
@@ -140,9 +164,18 @@ function setupDialogueScreen() {
         else if (lastBattleResult === 'lose') pLeftImg = playerConfig.imageLose;
     }
 
+    const pRight = document.getElementById('portrait-right');
+    pRight.src = pRightImg;
+    pRight.style.display = 'block';
+    
+    // シャドウ用のグレー表示
+    if (enemyConfig.isShadow) {
+        pRight.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
+    } else {
+        pRight.style.filter = 'none';
+    }
+
     document.getElementById('portrait-left').src = pLeftImg;
-    document.getElementById('portrait-right').src = pRightImg;
-    document.getElementById('portrait-right').style.display = 'block';
 
     switchScreen('screen-dialogue');
     showNextDialogue();
@@ -271,7 +304,14 @@ function updateCardDetail(c) {
 function createCardDOM(c) {
     const d = document.createElement('div'); d.className = `card ${c.owner}`;
     let sH = ''; if (c.skill !== 'none' && !c.skill.startsWith('token_')) { const s = SKILLS[c.skill]; sH = `<div class="card-skill">${s.icon} ${s.name}</div>`; }
-    d.innerHTML = `<div class="card-bg" style="background-image: url('${c.imgUrl}'); filter: ${c.filter};"></div>${sH}<div class="card-power">${c.currentPower}</div>`;
+    
+    // シャドウ戦のカードはグレーにする
+    let filter = c.filter;
+    if (c.owner === 'red' && enemyConfig.isShadow) {
+        filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
+    }
+    
+    d.innerHTML = `<div class="card-bg" style="background-image: url('${c.imgUrl}'); filter: ${filter};"></div>${sH}<div class="card-power">${c.currentPower}</div>`;
     return d;
 }
 

@@ -69,8 +69,24 @@ function updateSPOrbs(owner) {
 }
 
 function checkWinCondition() {
-    if ((playerHP <= 0 || enemyHP <= 0) && !isBattleEnded) { isBattleEnded = true; endBattle(); return true; }
+    if ((playerHP <= 0 || enemyHP <= 0) && !isBattleEnded) { 
+        isBattleEnded = true; 
+        triggerFinishVisuals();
+        setTimeout(endBattle, 2000); 
+        return true; 
+    }
     return false;
+}
+
+function triggerFinishVisuals() {
+    // 画面全体のスローモーションと揺れ
+    document.body.classList.add('slow-motion');
+    document.body.classList.add('anim-mega-shake');
+    playSound(SOUNDS.seDamage); // 重厚な音（既存のSEを流用）
+    
+    setTimeout(() => {
+        document.body.classList.remove('anim-mega-shake');
+    }, 1000);
 }
 
 function showSpeechBubble(target) {
@@ -321,10 +337,15 @@ async function executeSingleCombat(atk, l) {
 
 async function executeCombatPhase(atk) {
     const b = atk === 'blue' ? playerBoard : enemyBoard;
-    for (let i = 0; i < 3; i++) if (b[i]) { await executeSingleCombat(atk, i); if (isBattleEnded) break; await sleep(200); }
+    for (let i = 0; i < 3; i++) if (b[i]) { 
+        await executeSingleCombat(atk, i); 
+        if (isBattleEnded) break; 
+        await sleep(200); 
+    }
 }
 
 function endBattle() {
+    document.body.classList.remove('slow-motion');
     stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
     lastBattleResult = playerHP > 0 ? (enemyHP <= 0 ? 'win' : 'draw') : (enemyHP > 0 ? 'lose' : 'draw');
     const t = document.getElementById('turn-status'); t.innerText = lastBattleResult === 'win' ? "YOU WIN!" : (lastBattleResult === 'lose' ? "YOU LOSE..." : "DRAW");

@@ -978,6 +978,26 @@ h2 {
     }
 }
 
+.anim-mega-shake {
+    animation: mega-shake 0.8s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes mega-shake {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    10%, 30%, 50%, 70%, 90% { transform: translate3d(-10px, 0, 0); }
+    20%, 40%, 60%, 80% { transform: translate3d(10px, 0, 0); }
+}
+
+.slow-motion {
+    filter: sepia(0.5) brightness(0.8) contrast(1.2);
+    transition: filter 1s ease-in-out;
+}
+
+.slow-motion * {
+    animation-duration: 4s !important;
+    transition-duration: 4s !important;
+}
+
 /* ポップアップ関連 */
 .damage-popup {
     position: absolute;
