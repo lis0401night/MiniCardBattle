@@ -284,7 +284,7 @@ async function activateLeaderSkill(owner) {
             playSound(SOUNDS.sePlace); renderBoard(); await sleep(500);
         }
     } else if (action === 'holy_march') {
-        const tK = CARD_MASTER.find(m => m.id === 'token_knight');
+        const tK = CARD_MASTER.find(m => m.id === 'token_soldier');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK);
 
         for (let l of selectedLanes) {

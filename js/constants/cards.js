@@ -17,7 +17,7 @@ const CARD_MASTER = [
     { id: 'tortoise', name: '頑丈', power: 4, skill: 'sturdy', flavor: '鋼鉄の甲羅を持つ巨大な亀。あらゆる攻撃を跳ね返す。' },
     { id: 'clone', name: '分身', power: 2, skill: 'clone', skillValue: 1, flavor: '鏡の魔力で自らの鏡像を戦場に作り出す。' },
     // トークンカード
-    { id: 'token_knight', name: '騎士', power: 1, skill: 'none', isToken: true, flavor: 'セレスティアの号令で召喚された騎士。' },
+    { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, flavor: '本体から生み出された分身。' }
