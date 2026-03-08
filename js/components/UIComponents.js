@@ -186,7 +186,10 @@ const UI_COMPONENTS = {
                 <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
             </div>
             <!-- 目隠し用レイヤー -->
-            <div id="reward-mask" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#0f172a; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:5rem; color:#334155; z-index:20;">?</div>
+            <div id="reward-mask" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#0f172a; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:20;">
+                <div style="font-size:5rem; color:#334155;">?</div>
+                <div style="font-size:1rem; color:#cbd5e1; margin-top:15px; animation: pulse 1.5s infinite;">タップして表を開く</div>
+            </div>
         </div>
     </div>
     `,
