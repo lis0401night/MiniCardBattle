@@ -39,6 +39,14 @@ const INITIAL_DECKS = {
         'diviner', 'diviner',
         'tortoise', 'tortoise',
     ],
+    cleric: [
+        'cleric', 'cleric', 'cleric', 'cleric',
+        'vampire', 'vampire', 'vampire', 'vampire',
+        'wraith', 'wraith', 'wraith', 'wraith',
+        'shade', 'shade', 'shade', 'shade',
+        'shadow', 'shadow', 'shadow', 'shadow',
+        'scorpion', 'scorpion'
+    ],
     satan: [
         'golem', 'golem', 'golem', 'golem',
         'clone', 'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',

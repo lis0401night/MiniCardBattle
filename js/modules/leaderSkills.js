@@ -166,5 +166,21 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         if (isBlue) renderHand();
         playSound(SOUNDS.seSkill);
         await sleep(500);
+    } else if (action === 'dark_ritual') {
+        const d = 3;
+        playSound(SOUNDS.seDamage);
+        if (isBlue) {
+            enemyHP -= d;
+            playerHP = Math.min(MAX_HP, playerHP + d);
+            createDamagePopup(document.getElementById('enemy-hp-fill'), `-${d}`);
+            createDamagePopup(document.getElementById('player-hp-fill'), `+${d}`, '#4ade80');
+        } else {
+            playerHP -= d;
+            enemyHP = Math.min(MAX_HP, enemyHP + d);
+            createDamagePopup(document.getElementById('player-hp-fill'), `-${d}`);
+            createDamagePopup(document.getElementById('enemy-hp-fill'), `+${d}`, '#4ade80');
+        }
+        updateHPBar();
+        await sleep(500);
     }
 }
