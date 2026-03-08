@@ -24,6 +24,8 @@ function startGameMode(mode) {
 
 // 演出用ユーティリティ
 async function performFadeTransition(action) {
+    if (isProcessing) return;
+    isProcessing = true;
     const fade = document.getElementById('fade-overlay');
     const portraitContainer = document.querySelector('.portrait-container');
     const portraits = document.querySelectorAll('.char-portrait');
@@ -65,6 +67,7 @@ async function performFadeTransition(action) {
             p.style.transition = '';
         });
     }
+    isProcessing = false;
 }
 
 function initSelectScreen(includeSatan) {
@@ -136,25 +139,14 @@ function startFreeBattle(level) {
 }
 
 function startNextBattleSequence() {
-    if (enemyQueue.length === 0) {
+    if (gameMode !== 'story') return;
+
+    if (battleCount > 5) {
         startEndingSequence();
         return;
     }
 
-    let nextEnemyId = enemyQueue.shift();
-
-    // ストーリーモード専用の進行制御
-    if (gameMode === 'story') {
-        if (battleCount === 3) {
-            nextEnemyId = 'shadow'; // 3戦目は必ず影
-        } else if (battleCount === 5) {
-            nextEnemyId = 'satan'; // 5戦目は必ずサタン
-        } else if (nextEnemyId === 'shadow' || nextEnemyId === 'satan') {
-            // 1, 2, 4戦目に影やサタンが混ざっていたら回避（通常は起きないが念のため）
-            const others = Object.keys(CHARACTERS).filter(id => id !== playerConfig.id && id !== 'satan');
-            nextEnemyId = others[battleCount % others.length];
-        }
-    }
+    let nextEnemyId = storyQueue[battleCount - 1];
 
     if (nextEnemyId === 'shadow') {
         enemyConfig = { ...playerConfig };
@@ -249,6 +241,7 @@ function setupDialogueScreen() {
 }
 
 function showNextDialogue() {
+    if (isProcessing) return;
     if (currentDialogueIndex >= dialogueQueue.length) {
         processStoryNextStep();
         return;

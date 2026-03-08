@@ -13,7 +13,7 @@ function initStoryMode(charId) {
     }
 
     // ストーリー構成: 1戦目(ランダム1), 2戦目(ランダム2), 3戦目(自分/影), 4戦目(残る1人), 5戦目(サタン)
-    enemyQueue = [otherIds[0], otherIds[1], 'shadow', otherIds[2], 'satan'];
+    storyQueue = [otherIds[0], otherIds[1], 'shadow', otherIds[2], 'satan'];
 
     battleCount = 1;
     appState = 'story_intro';
