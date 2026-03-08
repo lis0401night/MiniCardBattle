@@ -22,7 +22,7 @@ const CARD_MASTER = [
     { id: 'cyberdragoon', name: '試作型ドラグーン', power: 5, skills: [{ id: 'charge', value: 2 }, { id: 'spread', value: 3 }], rarity: 3, flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。', imgUrl: 'assets/card_cyberdragon.jpg' },
     { id: 'dragon', name: 'ファイア・ドラゴン', power: 5, skills: [{ id: 'spread', value: 2 }, { id: 'berserk', value: 2 }], rarity: 3, flavor: '炎を纏った紅蓮の翼。その咆哮は敵を焼き払い、荒ぶる魔力は周囲をも巻き込む。' },
     { id: 'champion', name: 'アリーナのチャンピオン', power: 1, skill: 'hero', skillValue: 3, rarity: 3, flavor: '観衆の歓声こそが彼の力。その雄姿は味方を鼓舞し、敵を圧倒する。', imgUrl: 'assets/card_champion.jpg' },
-    { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 1, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
+    { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'wolf', name: '真夜中の狩人', power: 2, skill: 'lone_wolf', skillValue: 3, rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
     { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 3, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
     { id: 'daemon', name: '魔界の尖兵', power: 6, skill: 'sacrifice', skillValue: 2, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
