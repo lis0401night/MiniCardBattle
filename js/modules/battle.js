@@ -231,12 +231,19 @@ async function waitPlayerEnemyLaneSelection(count, owner) {
                 cell.classList.remove('highlight-target');
                 cell.classList.remove('selected-highlight');
                 cell.onclick = originalListeners[i];
+                // カードのクリック判定を元に戻す
+                const card = cell.querySelector('.card');
+                if (card) card.style.pointerEvents = '';
             });
         };
 
         cells.forEach((cell, i) => {
             if (targetBoard[i] !== null) {
                 cell.classList.add('highlight-target');
+                // カードがクリックを遮らないようにする
+                const card = cell.querySelector('.card');
+                if (card) card.style.pointerEvents = 'none';
+
                 cell.onclick = (ev) => {
                     ev.stopPropagation();
                     playSound(SOUNDS.seClick);
