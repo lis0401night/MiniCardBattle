@@ -27,7 +27,8 @@ function initBattleState() {
     stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
     if (gameMode === 'story' && enemyConfig.id === 'satan') playSound(SOUNDS.bgmLastBattle);
     else playSound(SOUNDS.bgmBattle);
-    playerHP = MAX_HP; enemyHP = MAX_HP; playerSP = 0; enemySP = 0;
+    playerMaxHP = MAX_HP; enemyMaxHP = (enemyConfig.id === 'satan') ? 40 : MAX_HP;
+    playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
     playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
     playerBoard = [null, null, null]; enemyBoard = [null, null, null];
     isProcessing = false; selectedCardIndex = null; isBattleEnded = false; updateCardDetail(null);
@@ -55,10 +56,10 @@ function initBattleState() {
 }
 
 function updateHPBar() {
-    document.getElementById('player-hp-fill').style.width = `${Math.max(0, (playerHP / MAX_HP) * 100)}%`;
-    document.getElementById('player-hp-text').innerText = `${Math.max(0, playerHP)} / ${MAX_HP}`;
-    document.getElementById('enemy-hp-fill').style.width = `${Math.max(0, (enemyHP / MAX_HP) * 100)}%`;
-    document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemyHP)} / ${MAX_HP}`;
+    document.getElementById('player-hp-fill').style.width = `${Math.max(0, (playerHP / playerMaxHP) * 100)}%`;
+    document.getElementById('player-hp-text').innerText = `${Math.max(0, playerHP)} / ${playerMaxHP}`;
+    document.getElementById('enemy-hp-fill').style.width = `${Math.max(0, (enemyHP / enemyMaxHP) * 100)}%`;
+    document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemyHP)} / ${enemyMaxHP}`;
 }
 
 function updateSPOrbs(owner) {

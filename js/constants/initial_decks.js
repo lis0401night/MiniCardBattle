@@ -51,7 +51,19 @@ const INITIAL_DECKS = {
     ],
     satan: [
         'golem', 'golem', 'golem', 'golem',
-        'clone', 'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',
-        'cheetah', 'sniper', 'mage', 'copy', 'commander', 'wall', 'wolf', 'shade', 'tortoise'
+        'daemon', 'daemon', 'daemon', 'daemon',
+        'cleric',
+        'clone',
+        'scorpion',
+        'cheetah',
+        'sniper',
+        'mage',
+        'copy',
+        'commander',
+        'wall',
+        'wolf',
+        'shade',
+        'tortoise',
+        'octopus'
     ]
 };

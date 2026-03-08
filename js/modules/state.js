@@ -4,7 +4,7 @@
 let playerConfig = CHARACTERS.android;
 let enemyConfig = CHARACTERS.dragon;
 let playerDeckSelection = [];
-let playerHP, enemyHP, playerSP, enemySP;
+let playerHP, enemyHP, playerMaxHP, enemyMaxHP, playerSP, enemySP;
 let playerHand, enemyHand, playerDeck, enemyDeck;
 let playerDiscard, enemyDiscard;
 let playerBoard, enemyBoard;
