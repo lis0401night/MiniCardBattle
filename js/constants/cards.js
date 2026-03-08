@@ -2,13 +2,14 @@
  * Mini Card Battle - Card Master Data
  */
 const CARD_MASTER = [
-    { id: 'golem', name: '旧型タイタン', power: 5, skill: 'none', rarity: 1, flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。' },
+    { id: 'golem', name: '大理石のゴーレム', power: 5, skill: 'none', rarity: 1, flavor: '魔法によって生命を吹き込まれた大理石の彫像。美しさと硬固さを兼ね備えている。' },
     { id: 'sniper', name: '森の射手', power: 2, skill: 'snipe', skillValue: 4, rarity: 1, flavor: '静寂に包まれた深い森を守るエルフの狩人。その矢は木の葉の間を縫い、目標を違わず射抜く。' },
     { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', rarity: 1, flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
     { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'scorpion', name: '黒サソリ', power: 1, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
     { id: 'cleric', name: '見習い修道女', power: 4, skill: 'heal', skillValue: 3, rarity: 1, flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
     { id: 'wall', name: '城壁', power: 10, skill: 'defender', rarity: 1, flavor: '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。' },
+    { id: 'titan', name: '旧式タイタン', power: 7, skill: 'growth', skillValue: -2, rarity: 2, flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。', imgUrl: 'assets/card_titan.jpg' },
     { id: 'bigai', name: 'サイクロプス Mk-II', power: 3, skills: [{ id: 'charge', value: 1 }, { id: 'snipe', value: 5 }], rarity: 2, flavor: '単眼の狙撃特化型自律ユニット。一撃必殺の精度を誇る。', imgUrl: 'assets/card_bigai.jpg' },
     { id: 'babydragon', name: 'ドラゴンの雛', power: 2, skill: 'growth', skillValue: 3, rarity: 2, flavor: 'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。' },
     { id: 'commander', name: '前線の司令官', power: 3, skill: 'support', skillValue: 2, rarity: 2, flavor: '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。' },

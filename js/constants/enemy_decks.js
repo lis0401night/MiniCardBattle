@@ -6,10 +6,10 @@ const ENEMY_DECKS = {
         'golem', 'golem', 'golem', 'golem',
         'cyberdragoon', 'cyberdragoon',
         'bigai', 'bigai',
-        'sniper', 'sniper',
+        'titan', 'titan',
         'wall', 'wall',
         'diviner', 'diviner',
-        'mage', 'mage', 'mage',
+        'clone', 'clone', 'clone',
         'cleric', 'cleric', 'cleric',
     ],
     dragon: [

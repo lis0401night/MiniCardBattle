@@ -447,12 +447,19 @@ async function triggerStartTurnSkills(owner) {
             const val = getSkillValue(c, 'growth') || 1;
             c.power += val;
             c.currentPower += val;
+            const prefix = val > 0 ? '+' : '';
+            const color = val > 0 ? '#4ade80' : '#ef4444';
             triggered = true;
 
             const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
             if (cEl) {
+                createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
+            }
+            if (c.currentPower <= 0) {
+                if (!discardCard(owner, c, i)) board[i] = null;
+                playSound(SOUNDS.seDestroy);
+            } else {
                 playSound(SOUNDS.seSkill);
-                createDamagePopup(cEl, `成長 +${val}`, '#4ade80');
             }
         }
     }

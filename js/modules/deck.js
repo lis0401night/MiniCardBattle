@@ -64,7 +64,7 @@ function loadDeck() {
         try {
             playerDeckSelection = JSON.parse(saved).map(savedCard => {
                 const t = CARD_MASTER.find(m => m.id === savedCard.id);
-                return t ? { ...t, ...savedCard } : savedCard;
+                return t ? { ...t } : savedCard;
             });
         } catch (e) {
             console.error("Deck load error:", e);
