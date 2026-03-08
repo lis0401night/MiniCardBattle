@@ -195,7 +195,7 @@ function startEndingSequence() {
     document.getElementById('portrait-left').classList.add('active');
     document.getElementById('portrait-right').style.display = 'none';
     switchScreen('screen-dialogue');
-    showNextDialogue();
+    showNextDialogue(true);
 }
 
 function setupDialogueScreen() {
@@ -237,11 +237,11 @@ function setupDialogueScreen() {
     pLeft.src = pLeftImg;
 
     switchScreen('screen-dialogue');
-    showNextDialogue();
+    showNextDialogue(true);
 }
 
-function showNextDialogue() {
-    if (isProcessing) return;
+function showNextDialogue(force = false) {
+    if (isProcessing && !force) return;
     if (currentDialogueIndex >= dialogueQueue.length) {
         processStoryNextStep();
         return;
