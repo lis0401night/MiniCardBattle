@@ -148,6 +148,88 @@ function showEnemySkillConfirm() {
 function closeSkillConfirm() { playSound(SOUNDS.seClick); document.getElementById('screen-skill-confirm').style.display = 'none'; }
 function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('blue'); }
 
+/**
+ * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
+ */
+async function waitPlayerLaneSelection(count, owner, tokenCard) {
+    const board = owner === 'blue' ? playerBoard : enemyBoard;
+    const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+
+    if (emptyLanes.length === 0) return [];
+    if (count >= emptyLanes.length) return emptyLanes;
+    if (owner === 'red') {
+        return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count);
+    }
+    if (emptyLanes.length === 1) return emptyLanes;
+
+    return new Promise((resolve) => {
+        const selected = [];
+        const cells = document.querySelectorAll(`#player-lanes .cell`);
+        const originalListeners = Array.from(cells).map(c => c.onclick);
+
+        const cleanUp = () => {
+            cells.forEach((cell, i) => {
+                cell.classList.remove('highlight');
+                cell.classList.remove('selected-highlight');
+                cell.onclick = originalListeners[i];
+            });
+        };
+
+        cells.forEach((cell, i) => {
+            if (playerBoard[i] === null) {
+                cell.classList.add('highlight');
+                cell.onclick = (ev) => {
+                    ev.stopPropagation();
+                    playSound(SOUNDS.seClick);
+                    if (!selected.includes(i)) {
+                        selected.push(i);
+                        cell.classList.remove('highlight');
+                        cell.classList.add('selected-highlight'); // 選択済みの黄緑
+                        if (selected.length >= count) {
+                            setTimeout(() => {
+                                cleanUp();
+                                resolve(selected);
+                            }, 300);
+                        }
+                    }
+                };
+            }
+        });
+    });
+}
+
+function evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count) {
+    if (aiLevel <= 1) {
+        // EASY: ランダム
+        return [...emptyLanes].sort(() => Math.random() - 0.5).slice(0, count);
+    }
+
+    // NORMAL/HARD: 簡易的な評価
+    const scores = emptyLanes.map(l => {
+        let score = 0;
+        const pCard = playerBoard[l];
+
+        if (pCard) {
+            // 敵（プレイヤー）がいる場合：ブロック評価
+            // トークンの攻撃力で倒せるなら高評価
+            if (tokenCard.power >= pCard.currentPower) {
+                score += 1000 + pCard.currentPower * 10;
+            } else {
+                // 倒せなくても、敵の攻撃力が高いなら壁として評価
+                score += 500 + pCard.currentPower * 5;
+            }
+        } else {
+            // 敵がいない場合：一匹狼シナジーなどを考慮
+            score += 200 + tokenCard.power;
+            // 他のレーンが一匹狼なら、敢えてここには置かないほうがいい場合もあるが
+            // 基本は高いパワーを空きレーンに出すのも有効
+        }
+        return { lane: l, score };
+    });
+
+    return scores.sort((a, b) => b.score - a.score).slice(0, count).map(s => s.lane);
+}
+
 async function activateLeaderSkill(owner) {
     if (isBattleEnded) return;
     const isBlue = owner === 'blue';
@@ -189,21 +271,27 @@ async function activateLeaderSkill(owner) {
         for (let i = 0; i < 3; i++) if (eBoard[i] && eBoard[i].currentPower <= 0) { discardCard(defO, eBoard[i]); eBoard[i] = null; playSound(SOUNDS.seDestroy); }
         renderBoard();
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {
-        const emp = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-        if (emp.length > 0) {
-            const l = emp[Math.floor(Math.random() * emp.length)];
-            const tS = CARD_MASTER.find(m => m.id === 'token_satan');
-            const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
+        const tS = CARD_MASTER.find(m => m.id === 'token_satan');
+        const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
+        const token = action === 'satan_avatar' ? tS : tI;
+
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, token);
+        if (selectedLanes.length > 0) {
+            const l = selectedLanes[0];
             board[l] = action === 'satan_avatar' ?
                 { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: CHARACTERS['satan'].image, filter: 'grayscale(1) brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)', currentPower: tS.power } :
                 { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: CHARACTERS['dragon'].image, filter: 'none', currentPower: tI.power };
             playSound(SOUNDS.sePlace); renderBoard(); await sleep(500);
         }
     } else if (action === 'holy_march') {
-        let sc = 0;
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
-        for (let i = 0; i < 3; i++) if (board[i] === null && sc < 2) { board[i] = { id: `tk_k_${Date.now()}_${i}`, owner, ...tK, imgUrl: 'assets/card_knight.png', filter: 'none', currentPower: tK.power }; sc++; }
-        if (sc > 0) { playSound(SOUNDS.sePlace); renderBoard(); await sleep(400); }
+        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK);
+
+        for (let l of selectedLanes) {
+            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_knight.png', filter: 'none', currentPower: tK.power };
+        }
+        if (selectedLanes.length > 0) { playSound(SOUNDS.sePlace); renderBoard(); await sleep(400); }
+
         let bf = false;
         for (let i = 0; i < 3; i++) if (board[i]) {
             board[i].currentPower += 3; board[i].power += 3;
@@ -314,24 +402,24 @@ async function resolveOnPlaySkill(o, l, c) {
         if (s) { renderBoard(); await sleep(500); }
     } else if (c.skill === 'clone') {
         const count = c.skillValue || 1;
+        const tC = CARD_MASTER.find(m => m.id === 'token_clone');
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
-        for (let j = 0; j < count; j++) {
-            const emp = b.map((x, i) => x === null ? i : -1).filter(i => i !== -1);
-            if (emp.length > 0) {
-                const tL = emp[Math.floor(Math.random() * emp.length)];
-                const tC = CARD_MASTER.find(m => m.id === 'token_clone');
-                b[tL] = {
-                    id: `cl_${Date.now()}_${j}`,
-                    owner: o,
-                    ...tC,
-                    imgUrl: c.imgUrl,
-                    filter: c.filter,
-                    power: c.power,
-                    currentPower: c.currentPower
-                };
-                renderBoard();
-                await sleep(300);
-            }
+
+        const selectedLanes = await waitPlayerLaneSelection(count, o, tC);
+
+        for (let i = 0; i < selectedLanes.length; i++) {
+            const tL = selectedLanes[i];
+            b[tL] = {
+                id: `cl_${Date.now()}_${i}`,
+                owner: o,
+                ...tC,
+                imgUrl: c.imgUrl,
+                filter: c.filter,
+                power: c.power,
+                currentPower: c.currentPower
+            };
+            renderBoard();
+            await sleep(300);
         }
     } else if (c.skill === 'lone_wolf') {
         playSound(SOUNDS.seSkill); const e = b.filter(x => x === null).length;
