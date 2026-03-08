@@ -788,24 +788,24 @@ h2 {
 .battle-board {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
     background: rgba(30, 41, 59, 0.45);
-    padding: 10px;
-    border-radius: 12px;
+    padding: 20px;
+    border-radius: 16px;
     border: 1px solid #334155;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .lane-row {
     display: grid;
-    grid-template-columns: repeat(3, 80px);
-    gap: 10px;
+    grid-template-columns: repeat(3, 110px);
+    gap: 20px;
     justify-content: center;
 }
 
 .cell {
-    width: 80px;
-    height: 100px;
+    width: 110px;
+    height: 140px;
     background: rgba(15, 23, 42, 0.45);
     border: 2px dashed #475569;
     border-radius: 8px;
@@ -838,6 +838,12 @@ h2 {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s, border-color 0.3s;
     overflow: hidden;
     cursor: pointer;
+}
+
+/* 盤面のカードはセルに合わせて拡大 */
+.cell .card {
+    width: 100%;
+    height: 100%;
 }
 
 .card::before {
@@ -916,7 +922,8 @@ h2 {
     position: absolute;
     bottom: 0px;
     right: 3px;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
+    /* Base size for hand */
     font-weight: 900;
     text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 10px rgba(0, 0, 0, 0.8);
     color: #fff;
@@ -925,41 +932,54 @@ h2 {
     letter-spacing: -1.5px;
 }
 
+/* 盤面のカードはパワー表示も大きく */
+.cell .card-power {
+    font-size: 1.9rem;
+    right: 4px;
+    bottom: 1px;
+}
+
 .card-skill-container {
     position: absolute;
-    bottom: 3px;
-    left: 3px;
+    bottom: 5px;
+    left: 4px;
     display: flex;
     flex-direction: column-reverse;
-    gap: 2px;
+    gap: 3px;
     z-index: 3;
-    max-width: 65%;
+    max-width: calc(100% - 35px);
 }
 
 .card-skill {
-    background: rgba(0, 0, 0, 0.82);
-    padding: 1px 5px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 1px 4px;
     border-radius: 3px;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
+    /* Base size for hand to prevent clipping */
     font-weight: bold;
     border: 1px solid #ca8a04;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     color: #fff;
 }
 
+/* 盤面のカードはバッジも少し大きく */
+.cell .card-skill {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
 .hand-area {
     display: flex;
-    gap: 5px;
-    height: 125px;
-    /* 固定高さを維持 */
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
+    gap: 8px;
+    height: 130px;
+    /* Reduced to fit 100px cards */
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     overflow-x: auto;
     overflow-y: hidden;
     /* 縦スクロールを防止 */
