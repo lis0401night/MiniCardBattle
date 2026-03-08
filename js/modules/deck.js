@@ -125,7 +125,7 @@ function renderDeckEdit() {
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
                 ${renderSkillTag(template)}
-                <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:${remaining > 0 ? '#facc15' : '#ef4444'}; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">${inDeckCount}/${owned}</div>
+                <div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:${remaining > 0 ? '#facc15' : '#ef4444'}; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid ${remaining > 0 ? '#facc15' : '#ef4444'};">${inDeckCount}/${owned}</div>
             </div>
         `;
         item.onclick = () => addCardToDeck(template);
@@ -154,7 +154,7 @@ function renderDeckEdit() {
                 <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${card.power}</div>
                 ${renderSkillTag(card)}
-                <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#facc15; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${group.count}</div>
+                <div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:#facc15; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid #facc15;">x${group.count}</div>
             </div>
         `;
         item.onclick = () => removeCardFromDeck(id);

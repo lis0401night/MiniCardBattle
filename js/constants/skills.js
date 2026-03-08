@@ -22,5 +22,5 @@ const SKILLS = {
     bind: { name: '拘束', icon: '🕸️', desc: (val) => `召喚時、正面のカードに${val}ターンの間「防衛」を持たせる。` },
     growth: { name: '成長', icon: '🌱', desc: (val) => `自分のターン開始時、パワーを${val >= 0 ? '+' : ''}${val}する。` },
     hero: { name: '英雄', icon: '🏆', desc: (val) => `召喚時、自分の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
-    charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダースキルのコストを${val >= 0 ? '+' : ''}${val}する` }
+    charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダーのSPを${val >= 0 ? '+' : ''}${val}する` }
 };
