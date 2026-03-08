@@ -44,7 +44,7 @@ async function executeEnemyAI() {
             if (aiLevel >= 2) {
                 for (let i = 0; i < enemyHand.length; i++) {
                     const card = enemyHand[i];
-                    if (card.skill === 'quick') {
+                    if (hasSkill(card, 'quick')) {
                         for (let l of emptyLanes) {
                             if (playerHP - card.currentPower <= 0) {
                                 await playCard('red', i, l);
@@ -66,7 +66,7 @@ async function executeEnemyAI() {
                 for (let i = 0; i < 3; i++) {
                     if (enemyBoard[i] === null && playerBoard[i] !== null) {
                         const pCard = playerBoard[i];
-                        if (pCard.skill === 'defender') continue;
+                        if (hasSkill(pCard, 'defender')) continue;
 
                         const dmg = pCard.currentPower;
                         if (enemyHP - dmg <= 0 && dmg > maxIncomingDamage) {
@@ -92,8 +92,8 @@ async function executeEnemyAI() {
                             const card = enemyHand[i];
 
                             // 【制限】速攻カードを防御（身代わり）に使うのは、相手を倒せる場合のみ
-                            if (card.skill === 'quick' && targetEnemyCard) {
-                                const willKill = card.currentPower >= targetEnemyCard.currentPower || card.skill === 'deadly';
+                            if (hasSkill(card, 'quick') && targetEnemyCard) {
+                                const willKill = card.currentPower >= targetEnemyCard.currentPower || hasSkill(card, 'deadly');
                                 if (!willKill) continue;
                             }
 
@@ -101,23 +101,24 @@ async function executeEnemyAI() {
                             let pDmg = [0, 0, 0];
 
                             // スキルシミュレーション
-                            if (card.skill === 'lone_wolf') {
+                            if (hasSkill(card, 'lone_wolf')) {
                                 let emptyCount = 0;
                                 for (let j = 0; j < 3; j++) {
                                     if (j !== l && enemyBoard[j] === null) emptyCount++;
                                 }
-                                simPower += emptyCount * 3;
-                            } else if (card.skill === 'snipe') {
+                                simPower += emptyCount * (getSkillValue(card, 'lone_wolf') || 3);
+                            } else if (hasSkill(card, 'snipe')) {
                                 let maxL = -1; let maxP = -1;
                                 for (let j = 0; j < 3; j++) {
                                     if (playerBoard[j] && playerBoard[j].currentPower > maxP) {
                                         maxP = playerBoard[j].currentPower; maxL = j;
                                     }
                                 }
-                                if (maxL !== -1) pDmg[maxL] += 4;
-                            } else if (card.skill === 'spread') {
+                                if (maxL !== -1) pDmg[maxL] += (getSkillValue(card, 'snipe') || 4);
+                            } else if (hasSkill(card, 'spread')) {
+                                const val = getSkillValue(card, 'spread') || 2;
                                 for (let j = 0; j < 3; j++) {
-                                    if (playerBoard[j]) pDmg[j] += 2;
+                                    if (playerBoard[j]) pDmg[j] += val;
                                 }
                             }
 
@@ -129,10 +130,10 @@ async function executeEnemyAI() {
                                 if (remainingOpponentPower <= 0) {
                                     score += 2000 + simPower;
                                 } else {
-                                    const isWin = simPower >= remainingOpponentPower || card.skill === 'deadly';
+                                    const isWin = simPower >= remainingOpponentPower || hasSkill(card, 'deadly');
                                     if (isWin) {
                                         score += 1000 + (remainingOpponentPower * 50) + simPower;
-                                        if (simPower === remainingOpponentPower && card.skill !== 'deadly') score -= 100;
+                                        if (simPower === remainingOpponentPower && !hasSkill(card, 'deadly')) score -= 100;
                                     } else {
                                         score += 500 + (remainingOpponentPower * 40) - (simPower * 10);
                                     }
@@ -172,7 +173,7 @@ async function executeEnemyAI() {
                     } else {
                         let maxThreat = -1;
                         for (let i = 0; i < 3; i++) {
-                            if (enemyBoard[i] === null && playerBoard[i] !== null && playerBoard[i].currentPower > maxThreat && playerBoard[i].skill !== 'defender') {
+                            if (enemyBoard[i] === null && playerBoard[i] !== null && playerBoard[i].currentPower > maxThreat && !hasSkill(playerBoard[i], 'defender')) {
                                 maxThreat = playerBoard[i].currentPower;
                                 targetLane = i;
                             }
@@ -186,9 +187,9 @@ async function executeEnemyAI() {
                     let bestIdx = -1;
                     for (let i = 0; i < enemyHand.length; i++) {
                         const c = enemyHand[i];
-                        if (c.skill === 'quick' && playerBoard[targetLane]) {
+                        if (hasSkill(c, 'quick') && playerBoard[targetLane]) {
                             // 相手を倒せない防御に速攻は使わない
-                            if (c.currentPower < playerBoard[targetLane].currentPower && c.skill !== 'deadly') continue;
+                            if (c.currentPower < playerBoard[targetLane].currentPower && !hasSkill(c, 'deadly')) continue;
                         }
                         bestIdx = i; // 候補が見つかればそれを使う
                         break;

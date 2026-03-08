@@ -469,28 +469,46 @@ function updateCardDetail(c) {
         b.innerHTML = '<div class="skill-info">カードを選択するとここに能力が表示されます</div>';
         b.style.color = '#94a3b8';
     } else {
-        const s = SKILLS[c.skill];
-        const hasSkill = s && s.name !== '通常';
-        const skillEffect = s ? (typeof s.desc === 'function' ? s.desc(c.skillValue) : s.desc) : '';
+        let skillsToShow = [];
+        if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
+            skillsToShow.push({ id: c.skill, value: c.skillValue });
+        }
+        if (Array.isArray(c.skills)) {
+            skillsToShow = skillsToShow.concat(c.skills);
+        }
+
+        // 拘束（スタン）状態も反映
+        if (c.stunTurns > 0) {
+            skillsToShow.push({ id: 'defender', value: null });
+        }
 
         // レアリティに応じた色
         const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
         const rarColor = rarityColors[c.rarity] || '#fff';
 
         let html = '<div class="card-detail-content">';
+        if (skillsToShow.length > 0) {
+            skillsToShow.forEach(sk => {
+                const s = SKILLS[sk.id];
+                if (s) {
+                    const isBind = (sk.id === 'defender' && c.stunTurns > 0);
+                    const skillName = isBind ? '拘束' : s.name;
+                    const val = isBind ? '' : (sk.value ?? '');
+                    const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
 
-        if (hasSkill) {
-            html += `<div class="skill-header">
-                <div class="card-skill-tag">${s.icon} ${s.name}${c.skillValue || ''}</div>
-            </div>`;
-        }
-
-        if (skillEffect) {
-            html += `<div class="skill-desc">${skillEffect}</div>`;
+                    html += `<div class="skill-header">
+                        <div class="card-skill-tag" style="background:${isBind ? '#475569' : ''}; border-color:${isBind ? '#ef4444' : ''}; color:${isBind ? '#fca5a5' : ''};">
+                            ${s.icon} ${skillName}${val}
+                        </div>
+                    </div>
+                    <div class="skill-desc">${skillEffect}</div>`;
+                }
+            });
+        } else {
+            html += `<div class="skill-desc">能力なし</div>`;
         }
 
         html += '</div>';
-
         b.innerHTML = html;
         b.style.color = '#fff';
     }
@@ -609,15 +627,36 @@ function populateCardPreview(prefix, card) {
         nameEl.style.color = rarityColors[card.rarity] || '#fff';
     }
 
-    const s = SKILLS[card.skill];
-    if (skillLabel && descEl) {
-        if (s && card.skill !== 'none' && card.skill !== undefined) {
-            skillLabel.style.display = 'inline-block';
-            skillLabel.innerText = `${s.icon} ${s.name}`;
-            descEl.innerText = typeof s.desc === 'function' ? s.desc(card.skillValue) : s.desc;
+    const skillsList = document.getElementById(`${prefix}-skills-list`);
+
+    if (skillsList) {
+        skillsList.innerHTML = '';
+        let skillsToShow = [];
+        if (card.skill && card.skill !== 'none' && card.skill !== undefined) {
+            skillsToShow.push({ id: card.skill, value: card.skillValue });
+        }
+        if (Array.isArray(card.skills)) {
+            skillsToShow = skillsToShow.concat(card.skills);
+        }
+
+        if (skillsToShow.length > 0) {
+            skillsToShow.forEach(sk => {
+                const s = SKILLS[sk.id];
+                if (s) {
+                    const item = document.createElement('div');
+                    item.className = 'preview-skill-item';
+                    const val = sk.value === null || sk.value === undefined ? '' : sk.value;
+                    const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+
+                    item.innerHTML = `
+                        <div class="preview-skill-badge">${s.icon} ${s.name}${val}</div>
+                        <p class="preview-skill-desc">${desc}</p>
+                    `;
+                    skillsList.appendChild(item);
+                }
+            });
         } else {
-            skillLabel.style.display = 'none';
-            descEl.innerText = '能力なし';
+            skillsList.innerHTML = '<p class="preview-skill-desc">能力なし</p>';
         }
     }
 
@@ -757,16 +796,14 @@ function showCardReward(enemyId) {
 
     // 公開前の状態にマスク
     const nameEl = document.getElementById('reward-card-name');
-    const skillLabel = document.getElementById('reward-card-skill-label');
-    const descEl = document.getElementById('reward-card-desc');
+    const skillsList = document.getElementById('reward-skills-list');
     const flavorEl = document.getElementById('reward-card-flavor');
     const mask = document.getElementById('reward-mask');
     const nextBtn = document.getElementById('btn-reward-next');
 
     nameEl.innerText = "???";
     nameEl.style.color = "#fff";
-    skillLabel.style.display = 'none';
-    descEl.innerText = "クリックしてカードを公開";
+    skillsList.innerHTML = '<p class="preview-skill-desc">クリックしてカードを公開</p>';
     flavorEl.innerText = "";
 
     mask.style.display = 'flex';

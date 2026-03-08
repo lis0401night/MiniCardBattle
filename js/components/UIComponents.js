@@ -3,12 +3,22 @@ function renderSkillTag(card) {
     if (!card) return '';
     let badges = [];
 
-    // 元のスキル
+    // 元のスキル（単一）
     const s = SKILLS[card.skill];
     if (s && card.skill !== 'none' && s.name !== '通常') {
         const skillName = s.name || '';
         const value = card.skillValue || '';
         badges.push(`<div class="card-skill">${s.icon} ${skillName}${value}</div>`);
+    }
+
+    // 複数スキルへの対応
+    if (Array.isArray(card.skills)) {
+        card.skills.forEach(sk => {
+            const sObj = SKILLS[sk.id];
+            if (sObj && sObj.name !== '通常') {
+                badges.push(`<div class="card-skill">${sObj.icon} ${sObj.name}${sk.value || ''}</div>`);
+            }
+        });
     }
 
     // 拘束（スタン）状態による「防衛」バッジ
@@ -171,8 +181,7 @@ const UI_COMPONENTS = {
             <div id="reward-card-container"></div>
             <div class="preview-details">
                 <h2 id="reward-card-name">? ? ?</h2>
-                <div id="reward-card-skill-label" class="preview-skill-badge" style="display:none;">Skill</div>
-                <p id="reward-card-desc">クリックしてカードを公開</p>
+                <div id="reward-skills-list" class="preview-skills-list"></div>
                 <p id="reward-card-flavor" class="preview-flavor-text"></p>
                 <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
             </div>
@@ -332,8 +341,7 @@ const UI_COMPONENTS = {
             <div id="preview-card-container"></div>
             <div class="preview-details">
                 <h2 id="preview-card-name">Card Name</h2>
-                <div id="preview-card-skill-label" class="preview-skill-badge">Skill</div>
-                <p id="preview-card-desc">Description</p>
+                <div id="preview-skills-list" class="preview-skills-list"></div>
                 <p id="preview-card-flavor" class="preview-flavor-text"></p>
                 <button class="btn" style="margin-top: 15px; width: 100%;" onclick="closeCardPreview()">閉じる</button>
             </div>

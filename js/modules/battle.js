@@ -327,156 +327,167 @@ function endTurnLogic(o) {
 async function playCard(o, hI, l) {
     const h = o === 'blue' ? playerHand : enemyHand, b = o === 'blue' ? playerBoard : enemyBoard;
     b[l] = h.splice(hI, 1)[0]; playSound(SOUNDS.sePlace); renderHand(); renderBoard();
-    const c = b[l]; if (c.skill !== 'none' && !['deadly', 'defender', 'soul_bind', 'sturdy'].includes(c.skill)) await resolveOnPlaySkill(o, l, c);
+    const c = b[l];
+    // 出現時スキルの発動（単一または複数）
+    if (hasActiveSkill(c)) {
+        await resolveOnPlaySkill(o, l, c);
+    }
+}
+
+// 判定補助: カードが何らかのアクティブスキルを持っているか
+function hasActiveSkill(c) {
+    if (!c) return false;
+    const activeSkills = ['draw', 'heal', 'snipe', 'spread', 'copy', 'clone', 'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick'];
+    if (activeSkills.includes(c.skill)) return true;
+    if (Array.isArray(c.skills)) {
+        return c.skills.some(s => activeSkills.includes(s.id));
+    }
+    return false;
+}
+
+// 判定補助: 特定のスキルを所持しているか
+function hasSkill(c, skillId) {
+    if (!c) return false;
+    if (c.skill === skillId) return true;
+    if (Array.isArray(c.skills)) {
+        return c.skills.some(s => s.id === skillId);
+    }
+    return false;
+}
+
+// 判定補助: スキルの数値を取得
+function getSkillValue(c, skillId) {
+    if (!c) return 0;
+    if (c.skill === skillId) return c.skillValue || 0;
+    if (Array.isArray(c.skills)) {
+        const s = c.skills.find(s => s.id === skillId);
+        return s ? s.value || 0 : 0;
+    }
+    return 0;
 }
 
 async function resolveOnPlaySkill(o, l, c) {
     const cEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`);
     if (!cEl) return;
     const h = o === 'blue' ? playerHand : enemyHand, b = o === 'blue' ? playerBoard : enemyBoard, eB = o === 'blue' ? enemyBoard : playerBoard, dO = o === 'blue' ? 'red' : 'blue', dS = o === 'blue' ? 'enemy' : 'player';
-    if (c.skill === 'draw') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'REPLACE', '#facc15');
-        if (h.length > 0) { let mp = Math.min(...h.map(x => x.power)), dc = 0; for (let i = h.length - 1; i >= 0; i--) if (h[i].power === mp) { discardCard(o, h.splice(i, 1)[0]); dc++; } for (let i = 0; i < dc; i++) drawCard(o); }
-        else drawCard(o);
-        await sleep(500);
-    } else if (c.skill === 'heal') {
-        const val = c.skillValue || 3;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, `+${val} HP`, '#4ade80');
-        if (o === 'blue') playerHP = Math.min(MAX_HP, playerHP + val); else enemyHP = Math.min(MAX_HP, enemyHP + val); updateHPBar(); await sleep(500);
-    } else if (c.skill === 'snipe') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SNIPE', '#facc15');
-        const ts = eB.map((x, i) => x ? i : -1).filter(i => i !== -1);
-        if (ts.length > 0) {
-            let mL = ts[0]; for (let i of ts) if (eB[i].currentPower > eB[mL].currentPower) mL = i;
-            const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${mL}"] .card`);
-            const val = c.skillValue || 4;
-            if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
-            playSound(SOUNDS.seDamage); eB[mL].currentPower -= val; renderBoard(); await sleep(500);
-            if (eB[mL].currentPower <= 0) { if (!discardCard(dO, eB[mL], mL)) eB[mL] = null; playSound(SOUNDS.seDestroy); renderBoard(); }
-        }
-    } else if (c.skill === 'spread') {
-        const val = c.skillValue || 2;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SPREAD', '#facc15'); let hit = false;
-        for (let i = 0; i < 3; i++) if (eB[i]) { const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); } eB[i].currentPower -= val; hit = true; }
-        if (hit) { renderBoard(); playSound(SOUNDS.seDamage); await sleep(500); for (let i = 0; i < 3; i++) if (eB[i] && eB[i].currentPower <= 0) { if (!discardCard(dO, eB[i], i)) eB[i] = null; playSound(SOUNDS.seDestroy); } renderBoard(); }
-    } else if (c.skill === 'copy') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'COPY', '#facc15');
-        const adj = l === 1 ? [0, 2] : [1];
-        let total = 0;
-        for (let i of adj) {
-            if (b[i]) total += b[i].currentPower;
-        }
-        if (total > 0) {
-            c.power += total;
-            c.currentPower += total;
-            createDamagePopup(cEl, `+${total}`, '#4ade80');
-            renderBoard();
-        }
-        await sleep(500);
-    } else if (c.skill === 'support') {
-        const val = c.skillValue || 2;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SUPPORT', '#facc15');
-        const adj = l === 1 ? [0, 2] : [1];
-        let hit = false;
-        for (let i of adj) {
-            if (b[i]) {
-                b[i].currentPower += val;
-                const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
-                if (tEl) createDamagePopup(tEl, `+${val}`, '#4ade80');
-                hit = true;
-            }
-        }
-        if (hit) { renderBoard(); await sleep(500); }
-    } else if (c.skill === 'clone') {
-        const count = c.skillValue || 1;
-        const tC = CARD_MASTER.find(m => m.id === 'token_clone');
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
 
-        const selectedLanes = await waitPlayerLaneSelection(count, o, tC);
+    // 発動対象スキルのリストを作成
+    let skillsToResolve = [];
+    if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
+    if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
-        for (let i = 0; i < selectedLanes.length; i++) {
-            const tL = selectedLanes[i];
-            b[tL] = {
-                id: `cl_${Date.now()}_${i}`,
-                owner: o,
-                ...tC,
-                imgUrl: c.imgUrl,
-                filter: c.filter,
-                power: c.power,
-                currentPower: c.currentPower,
-                rarity: c.rarity || 1
-            };
-            renderBoard();
-            await sleep(300);
-        }
-    } else if (c.skill === 'lone_wolf') {
-        playSound(SOUNDS.seSkill); const e = b.filter(x => x === null).length;
-        const val = c.skillValue || 3;
-        if (e * val > 0) { c.power += e * val; c.currentPower += e * val; createDamagePopup(cEl, `+${e * val}`, '#4ade80'); renderBoard(); }
-        else createDamagePopup(cEl, `+0`, '#94a3b8'); await sleep(500);
-    } else if (c.skill === 'berserk') {
-        const val = c.skillValue || 2;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BERSERK', '#ef4444');
-        const adj = l === 1 ? [0, 2] : [1];
-        let hit = false;
-        for (let i of adj) {
-            if (b[i]) {
-                const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
+    for (const sk of skillsToResolve) {
+        const skillId = sk.id;
+        const skillValue = sk.value;
+
+        if (skillId === 'draw') {
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'REPLACE', '#facc15');
+            if (h.length > 0) { let mp = Math.min(...h.map(x => x.power)), dc = 0; for (let i = h.length - 1; i >= 0; i--) if (h[i].power === mp) { discardCard(o, h.splice(i, 1)[0]); dc++; } for (let i = 0; i < dc; i++) drawCard(o); }
+            else drawCard(o);
+            await sleep(500);
+        } else if (skillId === 'heal') {
+            const val = skillValue || 3;
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, `+${val} HP`, '#4ade80');
+            if (o === 'blue') playerHP = Math.min(MAX_HP, playerHP + val); else enemyHP = Math.min(MAX_HP, enemyHP + val); updateHPBar(); await sleep(500);
+        } else if (skillId === 'snipe') {
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SNIPE', '#facc15');
+            const ts = eB.map((x, i) => x ? i : -1).filter(i => i !== -1);
+            if (ts.length > 0) {
+                let mL = ts[0]; for (let i of ts) if (eB[i].currentPower > eB[mL].currentPower) mL = i;
+                const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${mL}"] .card`);
+                const val = skillValue || 4;
                 if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
-                b[i].currentPower -= val; hit = true;
+                playSound(SOUNDS.seDamage); eB[mL].currentPower -= val; renderBoard(); await sleep(500);
+                if (eB[mL].currentPower <= 0) { if (!discardCard(dO, eB[mL], mL)) eB[mL] = null; playSound(SOUNDS.seDestroy); renderBoard(); }
             }
-        }
-        if (hit) {
-            renderBoard(); playSound(SOUNDS.seDamage); await sleep(500);
+        } else if (skillId === 'spread') {
+            const val = skillValue || 2;
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SPREAD', '#facc15'); let hit = false;
+            for (let i = 0; i < 3; i++) if (eB[i]) { const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); } eB[i].currentPower -= val; hit = true; }
+            if (hit) { renderBoard(); playSound(SOUNDS.seDamage); await sleep(500); for (let i = 0; i < 3; i++) if (eB[i] && eB[i].currentPower <= 0) { if (!discardCard(dO, eB[i], i)) eB[i] = null; playSound(SOUNDS.seDestroy); } renderBoard(); }
+        } else if (skillId === 'copy') {
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'COPY', '#facc15');
+            const adj = l === 1 ? [0, 2] : [1];
+            let total = 0;
+            for (let i of adj) { if (b[i]) total += b[i].currentPower; }
+            if (total > 0) { c.power += total; c.currentPower += total; createDamagePopup(cEl, `+${total}`, '#4ade80'); renderBoard(); await sleep(500); }
+        } else if (skillId === 'support') {
+            const val = skillValue || 2;
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SUPPORT', '#facc15');
+            const adj = l === 1 ? [0, 2] : [1];
+            let hit = false;
+            for (let i of adj) { if (b[i]) { b[i].currentPower += val; const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`); if (tEl) createDamagePopup(tEl, `+${val}`, '#4ade80'); hit = true; } }
+            if (hit) { renderBoard(); await sleep(500); }
+        } else if (skillId === 'clone') {
+            const count = skillValue || 1;
+            const tC = CARD_MASTER.find(m => m.id === 'token_clone');
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
+            const selectedLanes = await waitPlayerLaneSelection(count, o, tC);
+            for (let i = 0; i < selectedLanes.length; i++) {
+                const tL = selectedLanes[i];
+                b[tL] = { id: `cl_${Date.now()}_${i}`, owner: o, ...tC, imgUrl: c.imgUrl, filter: c.filter, power: c.power, currentPower: c.currentPower, rarity: c.rarity || 1 };
+                renderBoard(); await sleep(300);
+            }
+        } else if (skillId === 'lone_wolf') {
+            playSound(SOUNDS.seSkill); const e = b.filter(x => x === null).length;
+            const val = skillValue || 3;
+            if (e * val > 0) { c.power += e * val; c.currentPower += e * val; createDamagePopup(cEl, `+${e * val}`, '#4ade80'); renderBoard(); }
+            else createDamagePopup(cEl, `+0`, '#94a3b8'); await sleep(500);
+        } else if (skillId === 'berserk') {
+            const val = skillValue || 2;
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BERSERK', '#ef4444');
+            const adj = l === 1 ? [0, 2] : [1];
+            let hit = false;
             for (let i of adj) {
-                if (b[i] && b[i].currentPower <= 0) { if (!discardCard(o, b[i], i)) b[i] = null; playSound(SOUNDS.seDestroy); }
+                if (b[i]) {
+                    const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
+                    if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
+                    b[i].currentPower -= val; hit = true;
+                }
             }
-            renderBoard();
+            if (hit) {
+                renderBoard(); playSound(SOUNDS.seDamage); await sleep(500);
+                for (let i of adj) { if (b[i] && b[i].currentPower <= 0) { if (!discardCard(o, b[i], i)) b[i] = null; playSound(SOUNDS.seDestroy); } }
+                renderBoard();
+            }
+        } else if (skillId === 'sacrifice') {
+            const val = skillValue || 3;
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SACRIFICE', '#ef4444');
+            const lEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-hp-container`);
+            if (lEl) { lEl.classList.add('anim-shake'); createDamagePopup(lEl, `-${val} HP`, '#ef4444'); }
+            if (o === 'blue') playerHP -= val; else enemyHP -= val;
+            updateHPBar(); playSound(SOUNDS.seDamage); await sleep(500); checkWinCondition();
+        } else if (skillId === 'bind') {
+            const val = skillValue || 1;
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BIND', '#facc15');
+            if (eB[l]) { eB[l].stunTurns = 2; eB[l].stunAppliedThisTurn = true; const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); } }
+            await sleep(500);
+        } else if (skillId === 'quick') {
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(o, l);
         }
-    } else if (c.skill === 'sacrifice') {
-        const val = c.skillValue || 3;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SACRIFICE', '#ef4444');
-        const lEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-hp-container`);
-        if (lEl) { lEl.classList.add('anim-shake'); createDamagePopup(lEl, `-${val} HP`, '#ef4444'); }
-        if (o === 'blue') playerHP -= val; else enemyHP -= val;
-        updateHPBar();
-        playSound(SOUNDS.seDamage);
-        await sleep(500);
-        checkWinCondition();
-    } else if (c.skill === 'bind') {
-        const val = c.skillValue || 1;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BIND', '#facc15');
-        if (eB[l]) {
-            // 次の自分のターンの終わりまで持続させるため、2を設定し適用フラグを立てる
-            eB[l].stunTurns = 2;
-            eB[l].stunAppliedThisTurn = true;
-            const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
-            if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); }
-        }
-        await sleep(500);
-    } else if (c.skill === 'quick') { playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(o, l); }
+    }
 }
 
 async function executeSingleCombat(atk, l) {
     const aB = atk === 'blue' ? playerBoard : enemyBoard, dB = atk === 'blue' ? enemyBoard : playerBoard, aR = atk === 'blue' ? '#player-lanes' : '#enemy-lanes', dR = atk === 'blue' ? '#enemy-lanes' : '#player-lanes', an = atk === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
-    const aC = aB[l]; if (!aC || aC.skill === 'defender' || aC.stunTurns > 0) return;
+    const aC = aB[l]; if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0) return;
     const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`); if (!aE) return;
     aE.classList.add(an); playSound(SOUNDS.seAttack); await sleep(300);
     if (dB[l]) {
         let dDef = aC.currentPower, dAtk = dB[l].currentPower;
-        if (dB[l].skill === 'sturdy') dDef = Math.floor(dDef / 2); if (aC.skill === 'sturdy') dAtk = Math.floor(dAtk / 2);
+        if (hasSkill(dB[l], 'sturdy')) dDef = Math.floor(dDef / 2); if (hasSkill(aC, 'sturdy')) dAtk = Math.floor(dAtk / 2);
 
         // 拘束（スタン）状態の相手には反撃を受けない
         if (dB[l].stunTurns > 0) dAtk = 0;
 
-        dB[l].currentPower -= dDef; if (dB[l].skill !== 'defender') aC.currentPower -= dAtk;
+        dB[l].currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) aC.currentPower -= dAtk;
         const dE = document.querySelector(`${dR} .cell[data-lane="${l}"] .card`); if (dE) dE.classList.add('anim-shake');
-        playSound(SOUNDS.seDamage); createDamagePopup(dE, `-${dDef}`); if (dB[l].skill !== 'defender') createDamagePopup(aE, `-${dAtk}`);
+        playSound(SOUNDS.seDamage); createDamagePopup(dE, `-${dDef}`); if (!hasSkill(dB[l], 'defender')) createDamagePopup(aE, `-${dAtk}`);
         renderBoard(); await sleep(400);
-        if (aC.skill === 'deadly') dB[l].currentPower = 0; if (dB[l].skill === 'deadly') aC.currentPower = 0;
+        if (hasSkill(aC, 'deadly')) dB[l].currentPower = 0; if (hasSkill(dB[l], 'deadly')) aC.currentPower = 0;
         let aD = aC.currentPower <= 0, dD = dB[l].currentPower <= 0, tr = false;
-        if (dD && !aD && aC.skill === 'soul_bind') { const val = aC.skillValue || 2; aC.currentPower += val; aC.power += val; createDamagePopup(aE, `+${val}`, '#4ade80'); tr = true; }
-        if (aD && !dD && dB[l].skill === 'soul_bind') { const val = dB[l].skillValue || 2; dB[l].currentPower += val; dB[l].power += val; createDamagePopup(dE, `+${val}`, '#4ade80'); tr = true; }
+        if (dD && !aD && hasSkill(aC, 'soul_bind')) { const val = getSkillValue(aC, 'soul_bind') || 2; aC.currentPower += val; aC.power += val; createDamagePopup(aE, `+${val}`, '#4ade80'); tr = true; }
+        if (aD && !dD && hasSkill(dB[l], 'soul_bind')) { const val = getSkillValue(dB[l], 'soul_bind') || 2; dB[l].currentPower += val; dB[l].power += val; createDamagePopup(dE, `+${val}`, '#4ade80'); tr = true; }
         if (tr) { playSound(SOUNDS.seSkill); renderBoard(); await sleep(300); }
         if (aD) { if (!discardCard(atk, aC, l)) aB[l] = null; } if (dD) { if (!discardCard(atk === 'blue' ? 'red' : 'blue', dB[l], l)) dB[l] = null; }
         if (aD || dD) playSound(SOUNDS.seDestroy);

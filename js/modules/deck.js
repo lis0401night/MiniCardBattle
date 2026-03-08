@@ -10,8 +10,9 @@ function generateDeck(owner, config, sessionId) {
             return {
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: config.filter,
-                basePower: t.power, power: t.power, currentPower: t.power, skill: t.skill, name: t.name,
-                skillValue: t.skillValue, flavor: t.flavor, rarity: t.rarity
+                basePower: t.power, power: t.power, currentPower: t.power, name: t.name,
+                skill: t.skill, skillValue: t.skillValue, skills: t.skills,
+                flavor: t.flavor, rarity: t.rarity
             };
         });
     } else {
@@ -32,8 +33,9 @@ function generateDeck(owner, config, sessionId) {
             deck.push({
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: filter,
-                basePower: p, power: p, currentPower: p, skill: t.skill, name: t.name,
-                skillValue: t.skillValue, flavor: t.flavor, rarity: t.rarity
+                basePower: p, power: p, currentPower: p, name: t.name,
+                skill: t.skill, skillValue: t.skillValue, skills: t.skills,
+                flavor: t.flavor, rarity: t.rarity
             });
         });
     }
@@ -60,7 +62,10 @@ function loadDeck() {
     const saved = localStorage.getItem(key);
     if (saved) {
         try {
-            playerDeckSelection = JSON.parse(saved);
+            playerDeckSelection = JSON.parse(saved).map(savedCard => {
+                const t = CARD_MASTER.find(m => m.id === savedCard.id);
+                return t ? { ...t, ...savedCard } : savedCard;
+            });
         } catch (e) {
             console.error("Deck load error:", e);
             playerDeckSelection = getInitialDeck(playerConfig.id);
@@ -215,7 +220,8 @@ function finishDeckEdit() {
 function exportDeckXML() {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<deck>\n';
     playerDeckSelection.forEach(c => {
-        xml += `  <card id="${c.id}" name="${c.name}" power="${c.power}" skill="${c.skill}" />\n`;
+        const skillsAttr = c.skills ? ` skills='${JSON.stringify(c.skills)}'` : '';
+        xml += `  <card id="${c.id}" name="${c.name}" power="${c.power}" skill="${c.skill}"${skillsAttr} />\n`;
     });
     xml += '</deck>';
     const blob = new Blob([xml], { type: 'text/xml' });
