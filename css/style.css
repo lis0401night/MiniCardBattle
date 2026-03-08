@@ -952,7 +952,7 @@ h2 {
     flex-direction: column-reverse;
     gap: 3px;
     z-index: 3;
-    max-width: calc(100% - 35px);
+    max-width: calc(100% - 12px);
 }
 
 .card-skill {

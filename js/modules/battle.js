@@ -407,7 +407,7 @@ async function playCard(o, hI, l) {
 // 判定補助: カードが何らかのアクティブスキルを持っているか
 function hasActiveSkill(c) {
     if (!c) return false;
-    const activeSkills = ['draw', 'heal', 'snipe', 'spread', 'copy', 'clone', 'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick'];
+    const activeSkills = ['draw', 'heal', 'snipe', 'spread', 'copy', 'clone', 'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge'];
     if (activeSkills.includes(c.skill)) return true;
     if (Array.isArray(c.skills)) {
         return c.skills.some(s => activeSkills.includes(s.id));
