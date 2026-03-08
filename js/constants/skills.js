@@ -21,5 +21,6 @@ const SKILLS = {
     sacrifice: { name: '対価', icon: '🩸', desc: (val) => `召喚時、自身のリーダーに${val || 3}ダメージを与える。` },
     bind: { name: '拘束', icon: '🕸️', desc: (val) => `正面のカードに${val}ターンの間「防衛」を持たせる。` },
     growth: { name: '成長', icon: '🌱', desc: (val) => `自分のターン開始時、パワーを+${val}する。` },
-    hero: { name: '英雄', icon: '🏆', desc: (val) => `場に出た時、自身の埋まっているレーンにつきパワーを+${val}する` }
+    hero: { name: '英雄', icon: '🏆', desc: (val) => `場に出た時、自身の埋まっているレーンにつきパワーを+${val}する` },
+    charge: { name: '充填', icon: '🔋', desc: (val) => `リーダースキルのコストを${val}消費する` }
 };

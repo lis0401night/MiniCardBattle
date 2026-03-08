@@ -481,6 +481,11 @@ async function resolveOnPlaySkill(o, l, c) {
             if (h.length > 0) { let mp = Math.min(...h.map(x => x.power)), dc = 0; for (let i = h.length - 1; i >= 0; i--) if (h[i].power === mp) { discardCard(o, h.splice(i, 1)[0]); dc++; } for (let i = 0; i < dc; i++) drawCard(o); }
             else drawCard(o);
             await sleep(500);
+        } else if (skillId === 'charge') {
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, `CHARGE -${skillValue}`, '#facc15');
+            if (o === 'blue') { playerSP = Math.max(0, playerSP - skillValue); updateSPOrbs('blue'); }
+            else { enemySP = Math.max(0, enemySP - skillValue); updateSPOrbs('red'); }
+            await sleep(500);
         } else if (skillId === 'heal') {
             const val = skillValue || 3;
             playSound(SOUNDS.seSkill); createDamagePopup(cEl, `+${val} HP`, '#4ade80');

@@ -4,14 +4,13 @@
 const ENEMY_DECKS = {
     android: [
         'golem', 'golem', 'golem', 'golem',
-        'clone', 'clone',
+        'cyberdragoon', 'cyberdragoon',
+        'bigai', 'bigai',
         'sniper', 'sniper',
-        'mage', 'mage',
-        'cleric', 'cleric',
         'wall', 'wall',
-        'tortoise', 'tortoise',
         'diviner', 'diviner',
-        'scorpion', 'scorpion'
+        'mage', 'mage', 'mage',
+        'cleric', 'cleric', 'cleric',
     ],
     dragon: [
         'golem', 'golem', 'golem', 'golem',
@@ -66,15 +65,15 @@ const ENEMY_DECKS = {
     satan: [
         'golem', 'golem', 'golem', 'golem',
         'daemon', 'daemon', 'daemon', 'daemon',
+        'cyberdragoon',
         'champion',
         'dragon',
         'octopus',
         'wolf',
         'copy',
-        'cleric',
-        'clone',
+        'babydragon',
+        'bigai',
         'cheetah',
-        'sniper',
         'mage',
         'commander',
         'shade',
