@@ -13,7 +13,25 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
     cell.onclick = async () => {
         if (typeof isProcessing === 'undefined') return;
         if (isProcessing || selectedCardIndex === null) return;
-        const l = parseInt(cell.getAttribute('data-lane')); if (playerBoard[l] !== null) return;
+        const l = parseInt(cell.getAttribute('data-lane'));
+
+        // 既にカードがあるレーンの場合は確認モーダルを表示
+        if (playerBoard[l] !== null) {
+            const existingCard = playerBoard[l];
+            const newCard = playerHand[selectedCardIndex];
+            const confirmed = await new Promise(resolve => {
+                showConfirmModal(
+                    `「${existingCard.name}」を破棄して「${newCard.name}」を配置しますか？`,
+                    () => resolve(true),
+                    () => resolve(false)
+                );
+            });
+            if (!confirmed) return;
+            // 既存カードを破棄
+            playerBoard[l] = null;
+            renderBoard();
+        }
+
         isProcessing = true; document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
         await playCard('blue', selectedCardIndex, l); if (checkWinCondition()) return;
         selectedCardIndex = null; updateCardDetail(null); await sleep(500); endTurnLogic('blue');

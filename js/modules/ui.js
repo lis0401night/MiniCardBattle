@@ -548,7 +548,7 @@ function renderHand() {
     });
 }
 
-function highlightLanes() { document.querySelectorAll('#player-lanes .cell').forEach((c, i) => playerBoard[i] === null && selectedCardIndex !== null ? c.classList.add('highlight') : c.classList.remove('highlight')); }
+function highlightLanes() { document.querySelectorAll('#player-lanes .cell').forEach((c, i) => selectedCardIndex !== null ? c.classList.add('highlight') : c.classList.remove('highlight')); }
 
 function renderBoard() {
     for (let i = 0; i < 3; i++) {
@@ -556,7 +556,14 @@ function renderBoard() {
         p.innerHTML = ''; p.className = 'cell'; e.innerHTML = ''; e.className = 'cell';
         if (playerBoard[i]) {
             const d = createCardDOM(playerBoard[i]);
-            d.onclick = (ev) => { ev.stopPropagation(); if (isProcessing) return; playSound(SOUNDS.seClick); updateCardDetail(playerBoard[i]); };
+            d.onclick = (ev) => {
+                // 手札カードが選択中の場合はクリックをセルに伝播させる（上書き配置を可能にする）
+                if (selectedCardIndex !== null) return;
+                ev.stopPropagation();
+                if (isProcessing) return;
+                playSound(SOUNDS.seClick);
+                updateCardDetail(playerBoard[i]);
+            };
             setupLongPress(d, playerBoard[i]);
             p.appendChild(d);
         }

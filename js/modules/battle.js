@@ -155,13 +155,20 @@ function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('b
 async function waitPlayerLaneSelection(count, owner, tokenCard) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
     const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+    const allLanes = [0, 1, 2];
 
-    if (emptyLanes.length === 0) return [];
-    if (count >= emptyLanes.length) return emptyLanes;
+    // AIの場合：空きレーンを優先、無ければ最弱カードのレーンを選択
     if (owner === 'red') {
+        if (emptyLanes.length === 0) return [];
+        if (count >= emptyLanes.length) return emptyLanes;
         return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count);
     }
-    if (emptyLanes.length === 1) return emptyLanes;
+
+    // プレイヤーの場合
+    if (emptyLanes.length === 0 && count === 0) return [];
+
+    // 空きレーンが必要数以下でトークン全配置可能な場合は自動選択
+    if (emptyLanes.length > 0 && count >= emptyLanes.length) return emptyLanes;
 
     return new Promise((resolve) => {
         const selected = [];
@@ -177,24 +184,41 @@ async function waitPlayerLaneSelection(count, owner, tokenCard) {
         };
 
         cells.forEach((cell, i) => {
-            if (playerBoard[i] === null) {
-                cell.classList.add('highlight');
-                cell.onclick = (ev) => {
-                    ev.stopPropagation();
-                    playSound(SOUNDS.seClick);
-                    if (!selected.includes(i)) {
-                        selected.push(i);
-                        cell.classList.remove('highlight');
-                        cell.classList.add('selected-highlight'); // 選択済みの黄緑
-                        if (selected.length >= count) {
-                            setTimeout(() => {
-                                cleanUp();
-                                resolve(selected);
-                            }, 300);
-                        }
+            // 全レーンをハイライト
+            cell.classList.add('highlight');
+            cell.onclick = async (ev) => {
+                ev.stopPropagation();
+                playSound(SOUNDS.seClick);
+
+                // 既にカードがあるレーンの場合は確認
+                if (board[i] !== null) {
+                    const existingCard = board[i];
+                    const tokenName = tokenCard ? tokenCard.name : 'トークン';
+                    const confirmed = await new Promise(res => {
+                        showConfirmModal(
+                            `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
+                            () => res(true),
+                            () => res(false)
+                        );
+                    });
+                    if (!confirmed) return;
+                    // 既存カードを破棄
+                    board[i] = null;
+                    renderBoard();
+                }
+
+                if (!selected.includes(i)) {
+                    selected.push(i);
+                    cell.classList.remove('highlight');
+                    cell.classList.add('selected-highlight');
+                    if (selected.length >= count) {
+                        setTimeout(() => {
+                            cleanUp();
+                            resolve(selected);
+                        }, 300);
                     }
-                };
-            }
+                }
+            };
         });
     });
 }
@@ -359,9 +383,7 @@ async function startTurn(owner) {
     drawCard(owner);
     if (owner === 'blue') {
         selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
-        if (playerBoard.every(x => x !== null) && (!playerConfig.leaderSkill.cost || playerSP < playerConfig.leaderSkill.cost)) {
-            s.innerText = "BOARD FULL - AUTO SKIP"; s.style.color = "#94a3b8"; await sleep(1500); endTurnLogic('blue');
-        } else isProcessing = false;
+        isProcessing = false;
     } else { await sleep(500); await executeEnemyAI(); }
 }
 
