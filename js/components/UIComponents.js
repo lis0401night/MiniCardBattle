@@ -2,7 +2,7 @@
 function renderSkillTag(card) {
     if (!card || card.skill === 'none') return '';
     const s = SKILLS[card.skill];
-    if (!s) return '';
+    if (!s || s.name === '通常') return '';
     const skillName = s.name || card.name || '';
     const value = card.skillValue || '';
     return `<div class="card-skill">${s.icon} ${skillName}${value}</div>`;
@@ -298,6 +298,7 @@ const UI_COMPONENTS = {
                 <h2 id="preview-card-name">Card Name</h2>
                 <div id="preview-card-skill-label" class="preview-skill-badge">Skill</div>
                 <p id="preview-card-desc">Description</p>
+                <p id="preview-card-flavor" class="preview-flavor-text"></p>
                 <button class="btn" style="margin-top: 15px; width: 100%;" onclick="closeCardPreview()">閉じる</button>
             </div>
         </div>

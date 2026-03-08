@@ -3,31 +3,31 @@
  */
 const INITIAL_DECKS = {
     android: [
-        'soldier', 'soldier', 'soldier', 'soldier', 'soldier',
-        'mirror', 'mirror', 'archer', 'archer', 'cleric', 'cleric',
-        'quick_knight', 'sniper', 'bomber', 'mimic', 'commander', 'golem', 'wolf', 'lich', 'ent'
+        'golem', 'golem', 'golem', 'golem', 'golem',
+        'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',
+        'cheetah', 'sniper', 'mage', 'copy', 'commander', 'wall', 'wolf', 'shade', 'tortoise'
     ],
     dragon: [
-        'quick_knight', 'quick_knight', 'quick_knight', 'quick_knight', 'quick_knight',
+        'cheetah', 'cheetah', 'cheetah', 'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper', 'sniper', 'sniper',
-        'bomber', 'bomber', 'bomber', 'bomber', 'bomber',
-        'soldier', 'soldier', 'soldier', 'soldier', 'soldier'
+        'mage', 'mage', 'mage', 'mage', 'mage',
+        'golem', 'golem', 'golem', 'golem', 'golem'
     ],
     knight: [
-        'mirror', 'mirror', 'mirror', 'mirror', 'mirror',
+        'clone', 'clone', 'clone', 'clone', 'clone',
         'commander', 'commander', 'commander', 'commander', 'commander',
-        'soldier', 'soldier', 'soldier', 'soldier', 'soldier',
-        'quick_knight', 'quick_knight', 'sniper', 'sniper', 'cleric'
+        'golem', 'golem', 'golem', 'golem', 'golem',
+        'cheetah', 'cheetah', 'sniper', 'sniper', 'cleric'
     ],
     cthulhu: [
-        'archer', 'archer', 'archer', 'archer', 'archer',
-        'lich', 'lich', 'lich', 'lich', 'lich',
+        'scorpion', 'scorpion', 'scorpion', 'scorpion', 'scorpion',
+        'shade', 'shade', 'shade', 'shade', 'shade',
         'wolf', 'wolf', 'wolf', 'wolf', 'wolf',
-        'mage', 'mage', 'mage', 'mage', 'mage'
+        'diviner', 'diviner', 'diviner', 'diviner', 'diviner'
     ],
     satan: [
-        'soldier', 'soldier', 'soldier', 'soldier', 'soldier',
-        'mirror', 'mirror', 'archer', 'archer', 'cleric', 'cleric',
-        'quick_knight', 'sniper', 'bomber', 'mimic', 'commander', 'golem', 'wolf', 'lich', 'ent'
+        'golem', 'golem', 'golem', 'golem', 'golem',
+        'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',
+        'cheetah', 'sniper', 'mage', 'copy', 'commander', 'wall', 'wolf', 'shade', 'tortoise'
     ]
 };

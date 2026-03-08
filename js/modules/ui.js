@@ -51,48 +51,51 @@ function startGameMode(mode) {
 async function performFadeTransition(action) {
     if (isProcessing) return;
     isProcessing = true;
-    const fade = document.getElementById('fade-overlay');
-    const portraitContainer = document.querySelector('.portrait-container');
-    const portraits = document.querySelectorAll('.char-portrait');
+    try {
+        const fade = document.getElementById('fade-overlay');
+        const portraitContainer = document.querySelector('.portrait-container');
+        const portraits = document.querySelectorAll('.char-portrait');
 
-    if (fade) fade.classList.add('active');
+        if (fade) fade.classList.add('active');
 
-    // 暗転完了まで待機
-    await sleep(500);
+        // 暗転完了まで待機
+        await sleep(500);
 
-    // 配置換えの瞬間にコンテナを完全に消去（レンダリングツリーから除外）
-    if (portraitContainer) {
-        portraitContainer.style.display = 'none';
-        portraits.forEach(p => {
-            p.style.transition = 'none';
-        });
+        // 配置換えの瞬間にコンテナを完全に消去（レンダリングツリーから除外）
+        if (portraitContainer) {
+            portraitContainer.style.display = 'none';
+            portraits.forEach(p => {
+                p.style.transition = 'none';
+            });
+        }
+
+        if (action) action();
+
+        // 描画更新と配置の確定を待機（レイアウト再計算を促す）
+        await new Promise(resolve => requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                setTimeout(resolve, 80);
+            });
+        }));
+
+        // 配置が完了した状態で再表示
+        if (portraitContainer) {
+            portraitContainer.style.display = 'flex';
+        }
+
+        // 暗転解除開始
+        if (fade) fade.classList.remove('active');
+
+        // フェードイン完了後にtransitionを元に戻す
+        await sleep(500);
+        if (portraits) {
+            portraits.forEach(p => {
+                p.style.transition = '';
+            });
+        }
+    } finally {
+        isProcessing = false;
     }
-
-    if (action) action();
-
-    // 描画更新と配置の確定を待機（レイアウト再計算を促す）
-    await new Promise(resolve => requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            setTimeout(resolve, 80);
-        });
-    }));
-
-    // 配置が完了した状態で再表示
-    if (portraitContainer) {
-        portraitContainer.style.display = 'flex';
-    }
-
-    // 暗転解除開始
-    if (fade) fade.classList.remove('active');
-
-    // フェードイン完了後にtransitionを元に戻す
-    await sleep(500);
-    if (portraits) {
-        portraits.forEach(p => {
-            p.style.transition = '';
-        });
-    }
-    isProcessing = false;
 }
 
 function initSelectScreen(includeSatan) {
@@ -268,6 +271,7 @@ function startEndingSequence() {
 }
 
 function setupDialogueScreen() {
+    isProcessing = false; // 会話開始時に必ずフラグをリセット
     currentDialogueIndex = 0;
     let pLeftImg = playerConfig.image;
     let pRightImg = enemyConfig.image;
@@ -423,12 +427,30 @@ function executeGameOver() {
 // カードのDOMと描画関係（バトル画面UIへの反映）
 function updateCardDetail(c) {
     const b = document.getElementById('card-detail-view');
-    if (!c) { b.innerText = 'カードを選択するとここに能力が表示されます'; b.style.color = '#94a3b8'; }
-    else {
-        const s = SKILLS[c.skill]; let p = `パワー ${c.currentPower}`, cl = '#fff';
-        const skillTag = renderSkillTag(c);
-        if (c.skill === 'none' || c.skill.startsWith('token_')) b.innerHTML = `<strong style="color:${cl}">${p}</strong> <span style="margin-left:10px;">${s.desc}</span>`;
-        else b.innerHTML = `<div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;"><div class="card-skill-tag">${s.icon} ${c.name}${c.skillValue || ''}</div> <strong style="color:${cl}">${p}</strong></div> <span style="color:${cl}">${s.desc}</span>`;
+    if (!c) {
+        b.innerHTML = '<div class="skill-info">カードを選択するとここに能力が表示されます</div>';
+        b.style.color = '#94a3b8';
+    } else {
+        const s = SKILLS[c.skill];
+        const cl = '#fff';
+        const hasSkill = s && s.name !== '通常';
+        const skillEffect = s ? (typeof s.desc === 'function' ? s.desc(c.skillValue) : s.desc) : '';
+
+        let html = '<div class="card-detail-content">';
+
+        if (hasSkill) {
+            html += `<div class="skill-header">
+                <div class="card-skill-tag">${s.icon} ${s.name}${c.skillValue || ''}</div>
+            </div>`;
+        }
+
+        if (skillEffect) {
+            html += `<div class="skill-desc">${skillEffect}</div>`;
+        }
+
+        html += '</div>';
+
+        b.innerHTML = html;
         b.style.color = cl;
     }
 }
@@ -443,7 +465,11 @@ function createCardDOM(c) {
         filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
     }
 
-    d.innerHTML = `<div class="card-bg" style="background-image: url('${c.imgUrl}'); filter: ${filter};"></div>${sH}<div class="card-power">${c.currentPower}</div>`;
+    d.innerHTML = `
+        <div class="card-bg" style="background-image: url('${c.imgUrl}'); filter: ${filter};"></div>
+        ${sH}
+        <div class="card-power">${c.currentPower}</div>
+    `;
     return d;
 }
 
@@ -510,10 +536,11 @@ function openCardPreview(card) {
     const nameEl = document.getElementById('preview-card-name');
     const skillLabel = document.getElementById('preview-card-skill-label');
     const descEl = document.getElementById('preview-card-desc');
+    const flavorEl = document.getElementById('preview-card-flavor');
 
     container.innerHTML = '';
-    // スキル名から画像URLを特定（imgUrlがない場合のフォールバック）
-    const cardImgUrl = card.imgUrl || `assets/card_${card.skill || 'none'}.jpg`;
+    // IDから画像URLを特定
+    const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
     const cardClone = document.createElement('div');
     cardClone.className = 'card blue';
     cardClone.innerHTML = `
@@ -527,10 +554,18 @@ function openCardPreview(card) {
     if (s && card.skill !== 'none' && card.skill !== undefined) {
         skillLabel.style.display = 'inline-block';
         skillLabel.innerText = `${s.icon} ${s.name}`;
-        descEl.innerText = s.desc;
+        descEl.innerText = typeof s.desc === 'function' ? s.desc(card.skillValue) : s.desc;
     } else {
         skillLabel.style.display = 'none';
-        descEl.innerText = '特殊能力なし。';
+        descEl.innerText = '';
+    }
+
+    if (card.flavor) {
+        flavorEl.innerText = card.flavor;
+        flavorEl.style.display = 'block';
+    } else {
+        flavorEl.innerText = '';
+        flavorEl.style.display = 'none';
     }
 
     modal.style.display = 'flex';

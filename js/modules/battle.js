@@ -192,12 +192,17 @@ async function activateLeaderSkill(owner) {
         const emp = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
         if (emp.length > 0) {
             const l = emp[Math.floor(Math.random() * emp.length)];
-            board[l] = action === 'satan_avatar' ? { id: `tk_s_${Date.now()}`, owner, imgUrl: CHARACTERS['satan'].image, filter: 'grayscale(1) brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)', power: 10, currentPower: 10, skill: 'token_satan', isToken: true } : { id: `tk_i_${Date.now()}`, owner, imgUrl: CHARACTERS['dragon'].image, filter: 'none', power: 7, currentPower: 7, skill: 'token_ignis', isToken: true };
+            const tS = CARD_MASTER.find(m => m.id === 'token_satan');
+            const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
+            board[l] = action === 'satan_avatar' ?
+                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: CHARACTERS['satan'].image, filter: 'grayscale(1) brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)', currentPower: tS.power } :
+                { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: CHARACTERS['dragon'].image, filter: 'none', currentPower: tI.power };
             playSound(SOUNDS.sePlace); renderBoard(); await sleep(500);
         }
     } else if (action === 'holy_march') {
         let sc = 0;
-        for (let i = 0; i < 3; i++) if (board[i] === null && sc < 2) { board[i] = { id: `tk_k_${Date.now()}_${i}`, owner, imgUrl: 'assets/card_knight.png', filter: 'none', power: 1, currentPower: 1, skill: 'token_knight', isToken: true }; sc++; }
+        const tK = CARD_MASTER.find(m => m.id === 'token_knight');
+        for (let i = 0; i < 3; i++) if (board[i] === null && sc < 2) { board[i] = { id: `tk_k_${Date.now()}_${i}`, owner, ...tK, imgUrl: 'assets/card_knight.png', filter: 'none', currentPower: tK.power }; sc++; }
         if (sc > 0) { playSound(SOUNDS.sePlace); renderBoard(); await sleep(400); }
         let bf = false;
         for (let i = 0; i < 3; i++) if (board[i]) {
@@ -314,15 +319,15 @@ async function resolveOnPlaySkill(o, l, c) {
             const emp = b.map((x, i) => x === null ? i : -1).filter(i => i !== -1);
             if (emp.length > 0) {
                 const tL = emp[Math.floor(Math.random() * emp.length)];
+                const tC = CARD_MASTER.find(m => m.id === 'token_clone');
                 b[tL] = {
                     id: `cl_${Date.now()}_${j}`,
                     owner: o,
+                    ...tC,
                     imgUrl: c.imgUrl,
                     filter: c.filter,
                     power: c.power,
-                    currentPower: c.currentPower,
-                    skill: 'none',
-                    isToken: true
+                    currentPower: c.currentPower
                 };
                 renderBoard();
                 await sleep(300);
@@ -379,6 +384,7 @@ function endBattle() {
     lastBattleResult = playerHP > 0 ? (enemyHP <= 0 ? 'win' : 'draw') : (enemyHP > 0 ? 'lose' : 'draw');
     const t = document.getElementById('turn-status'); t.innerText = lastBattleResult === 'win' ? "YOU WIN!" : (lastBattleResult === 'lose' ? "YOU LOSE..." : "DRAW");
     t.style.color = lastBattleResult === 'win' ? "#facc15" : "#fff";
+    isProcessing = false; // バトル結果表示と同時にフラグをリセット
     setTimeout(() => {
         playSound(SOUNDS.bgmTitle); appState = 'post_dialogue';
         if (lastBattleResult === 'win') { dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }]; }

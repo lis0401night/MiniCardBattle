@@ -6,12 +6,12 @@ function generateDeck(owner, config, sessionId) {
     let deck = [];
     if (owner === 'blue') {
         deck = playerDeckSelection.map((t, i) => {
-            const imgUrl = `assets/card_${t.skill}.jpg`;
+            const imgUrl = t.imgUrl || `assets/card_${t.id}.jpg`;
             return {
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: config.filter,
                 basePower: t.power, power: t.power, currentPower: t.power, skill: t.skill, name: t.name,
-                skillValue: t.skillValue
+                skillValue: t.skillValue, flavor: t.flavor
             };
         });
     } else {
@@ -28,12 +28,12 @@ function generateDeck(owner, config, sessionId) {
                 filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
             }
 
-            const imgUrl = `assets/card_${t.skill}.jpg`;
+            const imgUrl = t.imgUrl || `assets/card_${t.id}.jpg`;
             deck.push({
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: filter,
                 basePower: p, power: p, currentPower: p, skill: t.skill, name: t.name,
-                skillValue: t.skillValue
+                skillValue: t.skillValue, flavor: t.flavor
             });
         });
     }
@@ -90,10 +90,10 @@ function renderDeckEdit() {
 
     // --- 所持カードリスト (マスター) ---
     masterList.innerHTML = '';
-    CARD_MASTER.forEach(template => {
+    CARD_MASTER.filter(t => !t.isToken).forEach(template => {
         const item = document.createElement('div');
         item.className = 'deck-card-item';
-        const imgUrl = `assets/card_${template.skill}.jpg`;
+        const imgUrl = template.imgUrl || `assets/card_${template.id}.jpg`;
         const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
         const remaining = 5 - inDeckCount; // デッキに入れられる残り枚数
         const opacity = remaining <= 0 ? "0.4" : "1";
@@ -124,17 +124,18 @@ function renderDeckEdit() {
         const card = group.card;
         const item = document.createElement('div');
         item.className = 'deck-card-item';
-        const imgUrl = `assets/card_${card.skill}.jpg`;
+        // IDから画像URLを特定
+        const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
         item.innerHTML = `
             <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block;">
-                <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
+                <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${card.power}</div>
                 ${renderSkillTag(card)}
                 <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#facc15; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${group.count}</div>
             </div>
         `;
         item.onclick = () => removeCardFromDeck(id);
-        setupLongPress(item, { ...card, imgUrl: imgUrl });
+        setupLongPress(item, { ...card, imgUrl: cardImgUrl });
         currentList.appendChild(item);
     });
 
