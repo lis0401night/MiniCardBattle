@@ -19,7 +19,7 @@ const ENEMY_DECKS = {
         'babydragon', 'babydragon',
         'berserker', 'berserker',
         'tortoise', 'tortoise',
-
+        'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
         'mage', 'mage', 'mage',
     ],
@@ -35,12 +35,13 @@ const ENEMY_DECKS = {
     ],
     knight: [
         'golem', 'golem', 'golem', 'golem',
-        'clone', 'clone', 'clone', 'clone',
-        'commander', 'commander', 'commander', 'commander',
-        'sniper', 'sniper',
+        'champion', 'champion',
+        'commander', 'commander',
         'mage', 'mage',
         'wall', 'wall',
-        'cheetah', 'cheetah'
+        'cleric', 'cleric',
+        'sniper', 'sniper', 'sniper',
+        'clone', 'clone', 'clone'
     ],
     cthulhu: [
         'golem', 'golem', 'golem', 'golem',
@@ -65,18 +66,18 @@ const ENEMY_DECKS = {
     satan: [
         'golem', 'golem', 'golem', 'golem',
         'daemon', 'daemon', 'daemon', 'daemon',
+        'champion',
+        'dragon',
+        'octopus',
+        'wolf',
+        'copy',
         'cleric',
         'clone',
-        'scorpion',
         'cheetah',
         'sniper',
         'mage',
-        'copy',
         'commander',
-        'wall',
-        'wolf',
         'shade',
-        'tortoise',
-        'octopus'
+        'tortoise'
     ]
 };

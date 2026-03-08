@@ -529,6 +529,12 @@ async function resolveOnPlaySkill(o, l, c) {
             const val = skillValue || 3;
             if (e * val > 0) { c.power += e * val; c.currentPower += e * val; createDamagePopup(cEl, `+${e * val}`, '#4ade80'); renderBoard(); }
             else createDamagePopup(cEl, `+0`, '#94a3b8'); await sleep(500);
+        } else if (skillId === 'hero') {
+            playSound(SOUNDS.seSkill); const occ = b.filter(x => x !== null).length; // 自身のレーンも含まれるため最低1
+            const val = skillValue || 3;
+            if (occ * val > 0) { c.power += occ * val; c.currentPower += occ * val; createDamagePopup(cEl, `+${occ * val}`, '#4ade80'); renderBoard(); }
+            await sleep(500);
+
         } else if (skillId === 'berserk') {
             const val = skillValue || 2;
             playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BERSERK', '#ef4444');
