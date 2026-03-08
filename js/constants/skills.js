@@ -12,7 +12,7 @@ const SKILLS = {
     copy: { name: '複製', icon: '👯', desc: '自分の場の最大パワーのカードと同じパワーになる。' },
     support: { name: '援護', icon: '🛡️', desc: '自分の場の他のすべてのカードのパワーを+2する。' },
     defender: { name: '防御', icon: '🧱', desc: '【デメリット】敵カードやリーダーにダメージを与えられない。' },
-    clone: { name: '分身', icon: '👥', desc: '空いているレーンに「分身(P:2)」を1体生成する。' },
+    clone: { name: '分身', icon: '👥', desc: '空いているレーンに、自身と同じパワーの分身を生成する。' },
     lone_wolf: { name: '単騎', icon: '🐺', desc: '場に出た時、自分の空きレーンの数×3だけパワーを上げる。' },
     soul_bind: { name: '魂縛', icon: '⛓️', desc: '戦闘で敵を破壊した時、パワーを+2する。' },
     sturdy: { name: '頑丈', icon: '🪨', desc: '戦闘で受けるダメージを半減する（端数切り捨て）。' },
