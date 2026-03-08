@@ -107,33 +107,10 @@ function closeCharDetail() {
 function confirmCharSelect() {
     playSound(SOUNDS.seClick);
     if (appState === 'select_player') {
-        playerConfig = CHARACTERS[pendingCharId];
         if (gameMode === 'story') {
-            // 他のキャラクターのIDをランダムに並び替え（プレイヤーとサタンは除く）
-            const otherIds = Object.keys(CHARACTERS).filter(id => id !== pendingCharId && id !== 'satan');
-            for (let i = otherIds.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [otherIds[i], otherIds[j]] = [otherIds[j], otherIds[i]];
-            }
-
-            // ストーリー構成: 1戦目(ランダム1), 2戦目(ランダム2), 3戦目(自分/影), 4戦目(残る1人), 5戦目(サタン)
-            enemyQueue = [otherIds[0], otherIds[1], 'shadow', otherIds[2], 'satan'];
-
-            battleCount = 1;
-
-            // ストーリー導入フェーズ
-            appState = 'story_intro';
-            dialogueQueue = [
-                { speaker: 'narrator', text: playerConfig.narratorIntro }
-            ];
-            playerConfig.storyIntro.forEach(text => {
-                dialogueQueue.push({ speaker: 'player', text: text });
-            });
-
-            performFadeTransition(() => {
-                setupDialogueScreen();
-            });
+            initStoryMode(pendingCharId);
         } else {
+            playerConfig = CHARACTERS[pendingCharId];
             appState = 'select_enemy';
             document.getElementById('select-title').innerText = "Select Enemy";
             initSelectScreen(true);
@@ -273,71 +250,7 @@ function setupDialogueScreen() {
 
 function showNextDialogue() {
     if (currentDialogueIndex >= dialogueQueue.length) {
-        if (appState === 'pre_dialogue') {
-            startBattleFlow();
-        } else if (appState === 'post_dialogue') {
-            if (gameMode === 'free') {
-                document.getElementById('result-title').innerText = lastBattleResult === 'win' ? "YOU WIN!" : "YOU LOSE...";
-                document.getElementById('result-title').style.color = lastBattleResult === 'win' ? "#facc15" : "#aaa";
-                document.getElementById('result-desc').innerText = "フリーモード終了";
-                switchScreen('screen-result');
-            } else {
-                if (lastBattleResult === 'lose') showContinueScreen();
-                else {
-                    // 戦闘間ストーリーの挿入
-                    if (gameMode === 'story' && playerConfig.interBattleStory && enemyConfig.id !== 'satan') {
-                        appState = 'inter_battle_story';
-                        dialogueQueue = [];
-
-                        let storyLines = null;
-                        const stories = playerConfig.interBattleStory;
-
-                        // 現在の戦闘数（battleCount）に対応するストーリーがあるか確認
-                        if (stories[battleCount]) {
-                            storyLines = stories[battleCount];
-                        } else if (stories.default && stories.default.length > 0) {
-                            // ない場合はランダムに選択
-                            const randomIndex = Math.floor(Math.random() * stories.default.length);
-                            storyLines = stories.default[randomIndex];
-                        }
-
-                        if (storyLines) {
-                            storyLines.forEach(text => {
-                                dialogueQueue.push({ speaker: 'player', text: text });
-                            });
-                            performFadeTransition(() => {
-                                setupDialogueScreen();
-                            });
-                        } else {
-                            // 万が一どちらもない場合は次へ
-                            performFadeTransition(() => {
-                                startNextBattleSequence();
-                            });
-                        }
-                    } else {
-                        performFadeTransition(() => {
-                            startNextBattleSequence();
-                        });
-                    }
-                }
-            }
-        } else if (appState === 'story_intro' || appState === 'inter_battle_story') {
-            performFadeTransition(() => {
-                startNextBattleSequence();
-            });
-            return;
-        } else if (appState === 'ending_dialogue') {
-            appState = 'ending_illust';
-            switchScreen('screen-ending-illust');
-            const img = document.getElementById('ending-illust-img');
-            const txt = document.getElementById('ending-text');
-            img.src = playerConfig.imageEnding;
-            setTimeout(() => {
-                img.style.opacity = 1;
-                txt.style.opacity = 1;
-            }, 100);
-            return;
-        }
+        processStoryNextStep();
         return;
     }
 

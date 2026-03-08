@@ -359,7 +359,7 @@ function endBattle() {
     t.style.color = lastBattleResult === 'win' ? "#facc15" : "#fff";
     setTimeout(() => {
         playSound(SOUNDS.bgmTitle); appState = 'post_dialogue';
-        if (lastBattleResult === 'win') { battleCount++; dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }]; }
+        if (lastBattleResult === 'win') { dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }]; }
         else dialogueQueue = [{ speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }];
         setupDialogueScreen();
     }, 1500);
