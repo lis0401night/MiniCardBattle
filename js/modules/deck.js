@@ -11,7 +11,7 @@ function generateDeck(owner, config, sessionId) {
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: config.filter,
                 basePower: t.power, power: t.power, currentPower: t.power, skill: t.skill, name: t.name,
-                skillValue: t.skillValue, flavor: t.flavor
+                skillValue: t.skillValue, flavor: t.flavor, rarity: t.rarity
             };
         });
     } else {
@@ -33,7 +33,7 @@ function generateDeck(owner, config, sessionId) {
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: filter,
                 basePower: p, power: p, currentPower: p, skill: t.skill, name: t.name,
-                skillValue: t.skillValue, flavor: t.flavor
+                skillValue: t.skillValue, flavor: t.flavor, rarity: t.rarity
             });
         });
     }

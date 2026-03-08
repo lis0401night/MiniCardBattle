@@ -255,7 +255,8 @@ function triggerSplitSkill(owner, lane, card) {
         ...tL,
         imgUrl: 'assets/card_legs.jpg',
         power: val,
-        currentPower: val
+        currentPower: val,
+        rarity: tL.rarity || 1
     };
 
     setTimeout(() => {
@@ -382,7 +383,8 @@ async function resolveOnPlaySkill(o, l, c) {
                 imgUrl: c.imgUrl,
                 filter: c.filter,
                 power: c.power,
-                currentPower: c.currentPower
+                currentPower: c.currentPower,
+                rarity: c.rarity || 1
             };
             renderBoard();
             await sleep(300);

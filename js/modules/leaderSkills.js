@@ -120,8 +120,8 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             board[l] = action === 'satan_avatar' ?
-                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: CHARACTERS['satan'].image, filter: 'grayscale(1) brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)', currentPower: tS.power } :
-                { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: CHARACTERS['dragon'].image, filter: 'none', currentPower: tI.power };
+                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: CHARACTERS['satan'].image, filter: 'grayscale(1) brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)', currentPower: tS.power, rarity: tS.rarity || 1 } :
+                { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: CHARACTERS['dragon'].image, filter: 'none', currentPower: tI.power, rarity: tI.rarity || 1 };
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(500);
@@ -131,7 +131,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK);
 
         for (let l of selectedLanes) {
-            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_soldier.jpg', filter: 'none', currentPower: tK.power };
+            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_soldier.jpg', filter: 'none', currentPower: tK.power, rarity: tK.rarity || 1 };
         }
         if (selectedLanes.length > 0) {
             playSound(SOUNDS.sePlace);

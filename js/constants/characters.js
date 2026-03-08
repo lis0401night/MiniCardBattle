@@ -207,7 +207,7 @@ const CHARACTERS = {
         }
     },
     cleric: {
-        id: 'cleric', stageId: 'knight', name: '背徳の聖職者 エリシア',
+        id: 'cleric', stageId: 'cleric', name: '背徳の聖職者 エリシア',
         desc: '聖職者の皮を被った傲慢な女。自らを神の代行者と称し、異端者を嘲笑いながら排除する。',
         filter: 'none', cardType: 'set1', cardBg: 'bg1',
         image: 'assets/char_cleric.png', imageLose: 'assets/char_cleric_lose.png', icon: 'assets/icon_cleric.png', imageEnding: 'assets/char_cleric_ending.png', color: '#94a3b8',
