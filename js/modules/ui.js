@@ -453,9 +453,12 @@ function updateCardDetail(c) {
         b.style.color = '#94a3b8';
     } else {
         const s = SKILLS[c.skill];
-        const cl = '#fff';
         const hasSkill = s && s.name !== '通常';
         const skillEffect = s ? (typeof s.desc === 'function' ? s.desc(c.skillValue) : s.desc) : '';
+
+        // レアリティに応じた色
+        const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
+        const rarColor = rarityColors[c.rarity] || '#fff';
 
         let html = '<div class="card-detail-content">';
 
@@ -472,12 +475,13 @@ function updateCardDetail(c) {
         html += '</div>';
 
         b.innerHTML = html;
-        b.style.color = cl;
+        b.style.color = '#fff';
     }
 }
 
 function createCardDOM(c) {
-    const d = document.createElement('div'); d.className = `card ${c.owner}`;
+    const rarityClass = c.rarity ? ` rarity-${c.rarity}` : '';
+    const d = document.createElement('div'); d.className = `card ${c.owner}${rarityClass}`;
     let sH = renderSkillTag(c);
 
     // シャドウ戦のカードはグレーにする
@@ -563,7 +567,8 @@ function openCardPreview(card) {
     // IDから画像URLを特定
     const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
     const cardClone = document.createElement('div');
-    cardClone.className = 'card blue';
+    const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
+    cardClone.className = `card blue${rarityClass}`;
     cardClone.innerHTML = `
         <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
         <div class="card-power">${card.currentPower || card.power}</div>
@@ -571,14 +576,20 @@ function openCardPreview(card) {
     container.appendChild(cardClone);
 
     nameEl.innerText = card.name;
+    const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
+    nameEl.style.color = rarityColors[card.rarity] || '#fff';
+
     const s = SKILLS[card.skill];
     if (s && card.skill !== 'none' && card.skill !== undefined) {
         skillLabel.style.display = 'inline-block';
         skillLabel.innerText = `${s.icon} ${s.name}`;
+        skillLabel.style.background = '#475569';
+        skillLabel.style.color = '#facc15';
         descEl.innerText = typeof s.desc === 'function' ? s.desc(card.skillValue) : s.desc;
-    } else {
+    }
+    else {
         skillLabel.style.display = 'none';
-        descEl.innerText = '';
+        descEl.innerText = '能力なし';
     }
 
     if (card.flavor) {

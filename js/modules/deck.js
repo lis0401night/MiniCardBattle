@@ -97,9 +97,10 @@ function renderDeckEdit() {
         const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
         const remaining = 4 - inDeckCount; // デッキに入れられる残り枚数
         const opacity = remaining <= 0 ? "0.4" : "1";
+        const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
 
         item.innerHTML = `
-            <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block; opacity:${opacity};">
+            <div class="card blue${rarityClass}" style="width:80px; height:110px; position:relative; top:0; left:0; display:block; opacity:${opacity};">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
                 ${renderSkillTag(template)}
@@ -126,8 +127,9 @@ function renderDeckEdit() {
         item.className = 'deck-card-item';
         // IDから画像URLを特定
         const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
+        const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
         item.innerHTML = `
-            <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block;">
+            <div class="card blue${rarityClass}" style="width:80px; height:110px; position:relative; top:0; left:0; display:block;">
                 <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${card.power}</div>
                 ${renderSkillTag(card)}

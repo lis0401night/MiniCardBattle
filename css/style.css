@@ -806,6 +806,32 @@ h2 {
     box-shadow: 0 0 8px rgba(251, 113, 133, 0.4);
 }
 
+/* レアリティ別の枠色 */
+.card.rarity-1 {
+    border-color: #cd7f32;
+    /* Bronze */
+    box-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
+}
+
+.card.rarity-2 {
+    border-color: #e2e8f0;
+    /* Silver - slightly brighter than c0c0c0 for visibility */
+    box-shadow: 0 0 12px rgba(226, 232, 240, 0.6);
+}
+
+.card.rarity-3 {
+    border-color: #facc15;
+    /* Gold */
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.7);
+}
+
+/* 選択時のハイライトはレアリティより優先 */
+.card.selected,
+.card.board-selected {
+    border-color: #fff !important;
+    box-shadow: 0 0 20px #fff !important;
+}
+
 .card.board-selected {
     transform: translateY(-10px);
     box-shadow: 0 0 20px #facc15;
@@ -845,7 +871,6 @@ h2 {
     border-radius: 3px;
     font-size: 0.6rem;
     font-weight: bold;
-    color: #facc15;
     z-index: 3;
     border: 1px solid #ca8a04;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
