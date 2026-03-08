@@ -410,6 +410,16 @@ async function resolveOnPlaySkill(o, l, c) {
             }
             renderBoard();
         }
+    } else if (c.skill === 'sacrifice') {
+        const val = c.skillValue || 3;
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SACRIFICE', '#ef4444');
+        const lEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-hp-container`);
+        if (lEl) { lEl.classList.add('anim-shake'); createDamagePopup(lEl, `-${val} HP`, '#ef4444'); }
+        if (o === 'blue') playerHP -= val; else enemyHP -= val;
+        updateHPBar();
+        playSound(SOUNDS.seDamage);
+        await sleep(500);
+        checkWinCondition();
     } else if (c.skill === 'quick') { playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(o, l); }
 }
 

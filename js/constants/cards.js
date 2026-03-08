@@ -17,7 +17,8 @@ const CARD_MASTER = [
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
     { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'berserker', name: '狂戦士', power: 8, skill: 'berserk', skillValue: 2, flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
-    { id: 'octopus', name: '深海の悪魔', power: 4, skill: 'split', skillValue: 1, flavor: '暗黒の海溝に棲む巨大な魔物。切り離された触手が独自に獲物を求めて蠢き出す。' },
+    { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 1, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
+    { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, flavor: '降臨した竜族の姫。' },
