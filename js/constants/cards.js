@@ -12,7 +12,8 @@ const CARD_MASTER = [
     { id: 'cheetah', name: '稲妻の猟豹', power: 2, skill: 'quick', rarity: 2, flavor: '稲妻を纏って戦場を駆ける最速の野獣。その爪が空気を切り裂く。' },
     { id: 'wall', name: '城壁', power: 10, skill: 'defender', rarity: 2, flavor: '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。' },
     { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 3, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
-    { id: 'scorpion', name: 'ブラック・スコーピオン', power: 1, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
+    { id: 'scorpion', name: '黒サソリ', power: 1, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
+    { id: 'spider', name: 'スパイダー', power: 3, skill: 'bind', skillValue: 1, rarity: 1, flavor: '暗闇に潜み、粘着質の糸を紡ぐ毒蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。' }
     { id: 'wolf', name: '真夜中の狩人', power: 2, skill: 'lone_wolf', skillValue: 3, rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', rarity: 2, flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
@@ -24,5 +25,5 @@ const CARD_MASTER = [
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },
-    { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '切り離されてもなお蠢き続ける蛸の足。' }
+    { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '切り離されてもなお蠢き続ける蛸の足。' },
 ];

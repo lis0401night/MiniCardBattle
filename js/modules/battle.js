@@ -285,6 +285,19 @@ async function startTurn(owner) {
     const c = owner === 'blue' ? playerConfig : enemyConfig;
     if (c.leaderSkill.cost) { if (owner === 'blue') playerSP = Math.min(c.leaderSkill.cost, playerSP + 1); else enemySP = Math.min(c.leaderSkill.cost, enemySP + 1); }
     updateSPOrbs(owner); if ((owner === 'blue' ? playerBoard : enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
+
+    // 拘束（スタン）状態の更新
+    const board = owner === 'blue' ? playerBoard : enemyBoard;
+    board.forEach(c => {
+        if (c && c.stunTurns > 0) {
+            c.stunTurns--;
+            if (c.stunTurns === 0) {
+                // UI上の表示を更新するために再描画が必要な場合がある
+                renderBoard();
+            }
+        }
+    });
+
     drawCard(owner);
     if (owner === 'blue') {
         selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
@@ -423,17 +436,30 @@ async function resolveOnPlaySkill(o, l, c) {
         playSound(SOUNDS.seDamage);
         await sleep(500);
         checkWinCondition();
+    } else if (c.skill === 'bind') {
+        const val = c.skillValue || 1;
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BIND', '#facc15');
+        if (eB[l]) {
+            eB[l].stunTurns = val;
+            const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
+            if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); }
+        }
+        await sleep(500);
     } else if (c.skill === 'quick') { playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(o, l); }
 }
 
 async function executeSingleCombat(atk, l) {
     const aB = atk === 'blue' ? playerBoard : enemyBoard, dB = atk === 'blue' ? enemyBoard : playerBoard, aR = atk === 'blue' ? '#player-lanes' : '#enemy-lanes', dR = atk === 'blue' ? '#enemy-lanes' : '#player-lanes', an = atk === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
-    const aC = aB[l]; if (!aC || aC.skill === 'defender') return;
+    const aC = aB[l]; if (!aC || aC.skill === 'defender' || aC.stunTurns > 0) return;
     const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`); if (!aE) return;
     aE.classList.add(an); playSound(SOUNDS.seAttack); await sleep(300);
     if (dB[l]) {
         let dDef = aC.currentPower, dAtk = dB[l].currentPower;
         if (dB[l].skill === 'sturdy') dDef = Math.floor(dDef / 2); if (aC.skill === 'sturdy') dAtk = Math.floor(dAtk / 2);
+
+        // 拘束（スタン）状態の相手には反撃を受けない
+        if (dB[l].stunTurns > 0) dAtk = 0;
+
         dB[l].currentPower -= dDef; if (dB[l].skill !== 'defender') aC.currentPower -= dAtk;
         const dE = document.querySelector(`${dR} .cell[data-lane="${l}"] .card`); if (dE) dE.classList.add('anim-shake');
         playSound(SOUNDS.seDamage); createDamagePopup(dE, `-${dDef}`); if (dB[l].skill !== 'defender') createDamagePopup(aE, `-${dAtk}`);

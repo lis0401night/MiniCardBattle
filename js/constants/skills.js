@@ -16,7 +16,8 @@ const SKILLS = {
     lone_wolf: { name: '単騎', icon: '🐺', desc: (val) => `場に出た時、自分の空きレーンの数×${val || 3}だけパワーを上げる。` },
     soul_bind: { name: '魂縛', icon: '⛓️', desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。` },
     sturdy: { name: '頑丈', icon: '🛡', desc: (val) => '戦闘で受けるダメージを半減する（端数切り捨て）。' },
-    berserk: { name: '狂乱', icon: '💢', desc: (val) => `【デメリット】自分の場の隣のレーンのカードに${val}ダメージ。` },
+    berserk: { name: '狂乱', icon: '💢', desc: (val) => `【デメリット】自分の場の隣のレーンにいるカードに${val}ダメージ。` },
     split: { name: '分裂', icon: '🐙', desc: (val) => `破壊された時、同じレーンにパワー${val}のトークンを出す。` },
-    sacrifice: { name: '対価', icon: '🩸', desc: (val) => `召喚時、自身のリーダーに${val || 3}ダメージを与える。` }
+    sacrifice: { name: '対価', icon: '🩸', desc: (val) => `召喚時、自身のリーダーに${val || 3}ダメージを与える。` },
+    bind: { name: '拘束', icon: '🕸️', desc: (val) => `正面のカードに${val}ターンの間「防衛」を持たせる。` }
 };
