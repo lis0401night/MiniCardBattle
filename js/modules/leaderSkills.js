@@ -182,5 +182,21 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         }
         updateHPBar();
         await sleep(500);
+    } else if (action === 'targeted_destruction') {
+        const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner);
+        if (selectedLanes.length > 0) {
+            const l = selectedLanes[0];
+            const targetCell = document.querySelector(`#${isBlue ? 'enemy' : 'player'}-lanes .cell[data-lane="${l}"] .card`);
+            if (targetCell) {
+                targetCell.classList.add('anim-shake');
+                createDamagePopup(targetCell, 'DESTORY');
+            }
+            playSound(SOUNDS.seDamage);
+            await sleep(500);
+            if (!discardCard(defO, eBoard[l], l)) eBoard[l] = null;
+            playSound(SOUNDS.seDestroy);
+            renderBoard();
+            await sleep(300);
+        }
     }
 }
