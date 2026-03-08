@@ -22,7 +22,7 @@ const CARD_MASTER = [
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', rarity: 2, flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
     { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -3 }], rarity: 2, flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。' },
-    { id: 'cyberdragoon', name: '試作型ドラグーン', power: 5, skills: [{ id: 'charge', value: -2 }, { id: 'spread', value: 3 }], rarity: 3, flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。', imgUrl: 'assets/card_cyberdragon.jpg' },
+    { id: 'cyberdragoon', name: '試作型ドラグーン', power: 5, skills: [{ id: 'spread', value: 3 }, { id: 'charge', value: -2 }], rarity: 3, flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。', imgUrl: 'assets/card_cyberdragon.jpg' },
     { id: 'dragon', name: 'ファイア・ドラゴン', power: 5, skills: [{ id: 'spread', value: 2 }, { id: 'berserk', value: 2 }], rarity: 3, flavor: '炎を纏った紅蓮の翼。その咆哮は敵を焼き払い、荒ぶる魔力は周囲をも巻き込む。' },
     { id: 'champion', name: 'アリーナのチャンピオン', power: 1, skill: 'hero', skillValue: 3, rarity: 3, flavor: '観衆の歓声こそが彼の力。その雄姿は味方を鼓舞し、敵を圧倒する。', imgUrl: 'assets/card_champion.jpg' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
