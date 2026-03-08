@@ -1340,6 +1340,9 @@ h2 {
     z-index: 2000;
     justify-content: center;
     align-items: center;
+    overflow-y: auto;
+    padding: 20px 0;
+    box-sizing: border-box;
 }
 
 .preview-content {
@@ -1625,4 +1628,309 @@ h2 {
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     text-align: center;
     width: 100%;
+}
+
+/* ===== モバイル対応: 画面の高さが小さい端末 ===== */
+@media (max-height: 700px) {
+    .preview-content {
+        padding: 15px;
+        max-width: 280px;
+    }
+
+    #preview-card-container .card,
+    #reward-card-container .card {
+        width: 140px;
+        height: 186px;
+    }
+
+    #preview-card-container,
+    #reward-card-container {
+        margin-bottom: 12px;
+    }
+
+    .preview-details h2 {
+        font-size: 1.2rem;
+        margin: 0 0 6px 0;
+    }
+
+    .preview-skills-list {
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .preview-skill-badge {
+        font-size: 0.75rem;
+        padding: 3px 8px;
+    }
+
+    .preview-skill-desc {
+        font-size: 0.8rem;
+    }
+
+    .preview-flavor-text {
+        font-size: 0.8rem;
+        margin-top: 6px;
+        padding-top: 6px;
+    }
+
+    .battle-board {
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .lane-row {
+        grid-template-columns: repeat(3, 85px);
+        gap: 10px;
+    }
+
+    .cell {
+        width: 85px;
+        height: 110px;
+    }
+
+    .card {
+        width: 65px;
+        height: 82px;
+    }
+
+    .cell .card-power {
+        font-size: 1.4rem;
+    }
+
+    .card-power {
+        font-size: 1.2rem;
+    }
+
+    .card-skill {
+        font-size: 0.45rem;
+        padding: 1px 3px;
+    }
+
+    .cell .card-skill {
+        font-size: 0.55rem;
+        padding: 1px 4px;
+    }
+
+    .hand-area {
+        height: 105px;
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .hand-card.selected {
+        transform: translateY(-10px);
+    }
+
+    .hp-area {
+        padding: 3px 10px;
+    }
+
+    .char-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .status-name {
+        font-size: 0.75rem;
+    }
+
+    .hp-bar-bg {
+        height: 12px;
+    }
+
+    .hp-text {
+        font-size: 0.65rem;
+    }
+
+    #turn-status {
+        font-size: 1rem;
+        height: 1.2rem;
+        margin: 2px 0;
+    }
+
+    .controls {
+        margin-bottom: 2px;
+        padding: 0 5px;
+    }
+
+    .card-detail-wrapper {
+        height: 50px;
+        margin-bottom: 2px;
+    }
+
+    .card-detail-box {
+        min-height: 50px;
+        max-height: 120px;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+
+    .orb {
+        width: 10px;
+        height: 10px;
+    }
+
+    .speech-bubble {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        left: 55px;
+    }
+}
+
+/* ===== 超小型端末: さらに小さい画面 ===== */
+@media (max-height: 600px) {
+    .preview-content {
+        padding: 12px;
+        max-width: 250px;
+    }
+
+    #preview-card-container .card,
+    #reward-card-container .card {
+        width: 110px;
+        height: 146px;
+    }
+
+    #preview-card-container,
+    #reward-card-container {
+        margin-bottom: 8px;
+    }
+
+    .preview-details h2 {
+        font-size: 1rem;
+        margin: 0 0 4px 0;
+    }
+
+    .preview-skills-list {
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .preview-skill-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+
+    .preview-skill-desc {
+        font-size: 0.75rem;
+    }
+
+    .preview-flavor-text {
+        font-size: 0.75rem;
+        margin-top: 4px;
+        padding-top: 4px;
+    }
+
+    .battle-board {
+        gap: 6px;
+        padding: 6px;
+    }
+
+    .lane-row {
+        grid-template-columns: repeat(3, 70px);
+        gap: 8px;
+    }
+
+    .cell {
+        width: 70px;
+        height: 90px;
+    }
+
+    .card {
+        width: 55px;
+        height: 70px;
+    }
+
+    .cell .card-power {
+        font-size: 1.2rem;
+    }
+
+    .card-power {
+        font-size: 1rem;
+    }
+
+    .card-skill {
+        font-size: 0.4rem;
+        padding: 0px 2px;
+    }
+
+    .cell .card-skill {
+        font-size: 0.45rem;
+        padding: 1px 3px;
+    }
+
+    .hand-area {
+        height: 90px;
+        padding: 4px 8px;
+        gap: 4px;
+    }
+
+    .hand-card.selected {
+        transform: translateY(-8px);
+    }
+
+    .char-icon {
+        width: 35px;
+        height: 35px;
+        margin-right: 8px;
+    }
+
+    .status-name {
+        font-size: 0.7rem;
+    }
+
+    .hp-bar-bg {
+        height: 10px;
+    }
+
+    #turn-status {
+        font-size: 0.85rem;
+        height: 1rem;
+        margin: 1px 0;
+    }
+
+    .controls {
+        margin-bottom: 1px;
+    }
+
+    .card-detail-wrapper {
+        height: 40px;
+        margin-bottom: 1px;
+    }
+
+    .card-detail-box {
+        min-height: 40px;
+        max-height: 100px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+
+    .action-btn {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+}
+
+/* ===== モバイル対応: 画面幅が狭い端末 ===== */
+@media (max-width: 400px) {
+    .lane-row {
+        gap: 8px;
+    }
+
+    .battle-board {
+        padding: 8px;
+    }
+
+    .hp-area {
+        padding: 3px 5px;
+    }
+
+    .hand-area {
+        padding: 6px 8px;
+        max-width: 100%;
+    }
+
+    .controls {
+        max-width: 100%;
+        padding: 0 5px;
+    }
 }

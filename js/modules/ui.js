@@ -542,7 +542,7 @@ function renderHand() {
     const e = document.getElementById('player-hand'); e.innerHTML = '';
     playerHand.forEach((c, i) => {
         const d = createCardDOM(c); d.className += " hand-card" + (i === selectedCardIndex ? " selected" : "");
-        d.onclick = () => { if (isProcessing) return; playSound(SOUNDS.seClick); selectedCardIndex = i; updateCardDetail(playerHand[i]); renderHand(); renderBoard(); highlightLanes(); };
+        d.onclick = () => { if (isProcessing) return; playSound(SOUNDS.seClick); if (selectedCardIndex === i) { selectedCardIndex = null; updateCardDetail(null); } else { selectedCardIndex = i; updateCardDetail(playerHand[i]); } renderHand(); renderBoard(); highlightLanes(); };
         setupLongPress(d, c);
         e.appendChild(d);
     });
