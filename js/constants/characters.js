@@ -143,7 +143,7 @@ const CHARACTERS = {
         }
     },
     elf: {
-        id: 'elf', stageId: 'android', name: '流浪の射手 リナ',
+        id: 'elf', stageId: 'elf', name: '流浪の射手 リナ',
         desc: '記憶を失い、銀の弓と共に旅を続けるエルフの少女。その静かな佇まいには、隠しきれない高潔さが漂う。',
         filter: 'none', cardType: 'set1', cardBg: 'bg1',
         image: 'assets/char_elf.png', imageLose: 'assets/char_elf_lose.png', icon: 'assets/icon_elf.png', imageEnding: 'assets/char_elf_ending.png', color: '#4ade80',
