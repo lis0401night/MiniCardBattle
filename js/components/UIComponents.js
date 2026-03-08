@@ -1,5 +1,16 @@
 // ==========================================
-// HTML UI Components (Templates)
+function renderSkillTag(card) {
+    if (!card || card.skill === 'none') return '';
+    const s = SKILLS[card.skill];
+    if (!s) return '';
+    const skillName = s.name || card.name || '';
+    const value = card.skillValue || '';
+    return `<div class="card-skill">${s.icon} ${skillName}${value}</div>`;
+}
+
+/**
+ * Mini Card Battle - UI Components & Templates
+ */
 // ==========================================
 
 const UI_COMPONENTS = {

@@ -426,15 +426,16 @@ function updateCardDetail(c) {
     if (!c) { b.innerText = 'カードを選択するとここに能力が表示されます'; b.style.color = '#94a3b8'; }
     else {
         const s = SKILLS[c.skill]; let p = `パワー ${c.currentPower}`, cl = '#fff';
+        const skillTag = renderSkillTag(c);
         if (c.skill === 'none' || c.skill.startsWith('token_')) b.innerHTML = `<strong style="color:${cl}">${p}</strong> <span style="margin-left:10px;">${s.desc}</span>`;
-        else b.innerHTML = `<strong style="color:${cl}">${p}</strong> <span style="color:#facc15; margin-left:10px;">${s.icon} ${s.name}</span> <br> <span style="color:${cl}">${s.desc}</span>`;
+        else b.innerHTML = `<div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;"><div class="card-skill-tag">${s.icon} ${c.name}${c.skillValue || ''}</div> <strong style="color:${cl}">${p}</strong></div> <span style="color:${cl}">${s.desc}</span>`;
         b.style.color = cl;
     }
 }
 
 function createCardDOM(c) {
     const d = document.createElement('div'); d.className = `card ${c.owner}`;
-    let sH = ''; if (c.skill !== 'none' && !c.skill.startsWith('token_')) { const s = SKILLS[c.skill]; sH = `<div class="card-skill">${s.icon} ${s.name}</div>`; }
+    let sH = renderSkillTag(c);
 
     // シャドウ戦のカードはグレーにする
     let filter = c.filter;

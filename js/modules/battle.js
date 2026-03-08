@@ -279,38 +279,59 @@ async function resolveOnPlaySkill(o, l, c) {
         else drawCard(o);
         await sleep(500);
     } else if (c.skill === 'heal') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '+3 HP', '#4ade80');
-        if (o === 'blue') playerHP = Math.min(MAX_HP, playerHP + 3); else enemyHP = Math.min(MAX_HP, enemyHP + 3); updateHPBar(); await sleep(500);
+        const val = c.skillValue || 3;
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, `+${val} HP`, '#4ade80');
+        if (o === 'blue') playerHP = Math.min(MAX_HP, playerHP + val); else enemyHP = Math.min(MAX_HP, enemyHP + val); updateHPBar(); await sleep(500);
     } else if (c.skill === 'snipe') {
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SNIPE', '#facc15');
         const ts = eB.map((x, i) => x ? i : -1).filter(i => i !== -1);
         if (ts.length > 0) {
             let mL = ts[0]; for (let i of ts) if (eB[i].currentPower > eB[mL].currentPower) mL = i;
             const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${mL}"] .card`);
-            if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '-4', '#ef4444'); }
-            playSound(SOUNDS.seDamage); eB[mL].currentPower -= 4; renderBoard(); await sleep(500);
+            const val = c.skillValue || 4;
+            if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
+            playSound(SOUNDS.seDamage); eB[mL].currentPower -= val; renderBoard(); await sleep(500);
             if (eB[mL].currentPower <= 0) { discardCard(dO, eB[mL]); eB[mL] = null; playSound(SOUNDS.seDestroy); renderBoard(); }
         }
     } else if (c.skill === 'spread') {
+        const val = c.skillValue || 2;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SPREAD', '#facc15'); let hit = false;
-        for (let i = 0; i < 3; i++) if (eB[i]) { const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '-2', '#ef4444'); } eB[i].currentPower -= 2; hit = true; }
+        for (let i = 0; i < 3; i++) if (eB[i]) { const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); } eB[i].currentPower -= val; hit = true; }
         if (hit) { renderBoard(); playSound(SOUNDS.seDamage); await sleep(500); for (let i = 0; i < 3; i++) if (eB[i] && eB[i].currentPower <= 0) { discardCard(dO, eB[i]); eB[i] = null; playSound(SOUNDS.seDestroy); } renderBoard(); }
     } else if (c.skill === 'copy') {
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'COPY', '#facc15');
         let mP = -1; for (let i = 0; i < 3; i++) if (i !== l && b[i] && b[i].currentPower > mP) mP = b[i].currentPower;
         if (mP > 0) { c.power = mP; c.currentPower = mP; createDamagePopup(cEl, `P=${mP}`, '#4ade80'); renderBoard(); } await sleep(500);
     } else if (c.skill === 'support') {
+        const val = c.skillValue || 2;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SUPPORT', '#facc15'); let s = false;
-        for (let i = 0; i < 3; i++) if (i !== l && b[i]) { b[i].currentPower += 2; const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`); if (tEl) createDamagePopup(tEl, '+2', '#4ade80'); s = true; }
+        for (let i = 0; i < 3; i++) if (i !== l && b[i]) { b[i].currentPower += val; const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`); if (tEl) createDamagePopup(tEl, `+${val}`, '#4ade80'); s = true; }
         if (s) { renderBoard(); await sleep(500); }
     } else if (c.skill === 'clone') {
+        const count = c.skillValue || 1;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
-        const emp = b.map((x, i) => x === null ? i : -1).filter(i => i !== -1);
-        if (emp.length > 0) { const tL = emp[Math.floor(Math.random() * emp.length)]; b[tL] = { id: `cl_${Date.now()}`, owner: o, imgUrl: c.imgUrl, filter: c.filter, power: 2, currentPower: 2, skill: 'token_clone', isToken: true }; renderBoard(); }
-        await sleep(500);
+        for (let j = 0; j < count; j++) {
+            const emp = b.map((x, i) => x === null ? i : -1).filter(i => i !== -1);
+            if (emp.length > 0) {
+                const tL = emp[Math.floor(Math.random() * emp.length)];
+                b[tL] = {
+                    id: `cl_${Date.now()}_${j}`,
+                    owner: o,
+                    imgUrl: c.imgUrl,
+                    filter: c.filter,
+                    power: c.power,
+                    currentPower: c.currentPower,
+                    skill: 'none',
+                    isToken: true
+                };
+                renderBoard();
+                await sleep(300);
+            }
+        }
     } else if (c.skill === 'lone_wolf') {
         playSound(SOUNDS.seSkill); const e = b.filter(x => x === null).length;
-        if (e * 3 > 0) { c.power += e * 3; c.currentPower += e * 3; createDamagePopup(cEl, `+${e * 3}`, '#4ade80'); renderBoard(); }
+        const val = c.skillValue || 3;
+        if (e * val > 0) { c.power += e * val; c.currentPower += e * val; createDamagePopup(cEl, `+${e * val}`, '#4ade80'); renderBoard(); }
         else createDamagePopup(cEl, `+0`, '#94a3b8'); await sleep(500);
     } else if (c.skill === 'quick') { playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(o, l); }
 }
@@ -329,8 +350,8 @@ async function executeSingleCombat(atk, l) {
         renderBoard(); await sleep(400);
         if (aC.skill === 'deadly') dB[l].currentPower = 0; if (dB[l].skill === 'deadly') aC.currentPower = 0;
         let aD = aC.currentPower <= 0, dD = dB[l].currentPower <= 0, tr = false;
-        if (dD && !aD && aC.skill === 'soul_bind') { aC.currentPower += 2; aC.power += 2; createDamagePopup(aE, '+2', '#4ade80'); tr = true; }
-        if (aD && !dD && dB[l].skill === 'soul_bind') { dB[l].currentPower += 2; dB[l].power += 2; createDamagePopup(dE, '+2', '#4ade80'); tr = true; }
+        if (dD && !aD && aC.skill === 'soul_bind') { const val = aC.skillValue || 2; aC.currentPower += val; aC.power += val; createDamagePopup(aE, `+${val}`, '#4ade80'); tr = true; }
+        if (aD && !dD && dB[l].skill === 'soul_bind') { const val = dB[l].skillValue || 2; dB[l].currentPower += val; dB[l].power += val; createDamagePopup(dE, `+${val}`, '#4ade80'); tr = true; }
         if (tr) { playSound(SOUNDS.seSkill); renderBoard(); await sleep(300); }
         if (aD) { discardCard(atk, aC); aB[l] = null; } if (dD) { discardCard(atk === 'blue' ? 'red' : 'blue', dB[l]); dB[l] = null; }
         if (aD || dD) playSound(SOUNDS.seDestroy);

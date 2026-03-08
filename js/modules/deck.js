@@ -10,7 +10,8 @@ function generateDeck(owner, config, sessionId) {
             return {
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: config.filter,
-                basePower: t.power, power: t.power, currentPower: t.power, skill: t.skill, name: t.name
+                basePower: t.power, power: t.power, currentPower: t.power, skill: t.skill, name: t.name,
+                skillValue: t.skillValue
             };
         });
     } else {
@@ -31,7 +32,8 @@ function generateDeck(owner, config, sessionId) {
             deck.push({
                 id: `${owner}_${sessionId}_${i}`, owner: owner,
                 imgUrl: imgUrl, filter: filter,
-                basePower: p, power: p, currentPower: p, skill: t.skill, name: t.name
+                basePower: p, power: p, currentPower: p, skill: t.skill, name: t.name,
+                skillValue: t.skillValue
             });
         });
     }
@@ -100,7 +102,7 @@ function renderDeckEdit() {
             <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block; opacity:${opacity};">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
-                <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); font-size:0.6rem; padding:2px; color:#fff; width:100%; text-align:center; z-index:5;">${template.name}</div>
+                ${renderSkillTag(template)}
                 <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:${remaining > 0 ? '#facc15' : '#ef4444'}; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${remaining}</div>
             </div>
         `;
@@ -127,7 +129,7 @@ function renderDeckEdit() {
             <div class="card blue" style="width:80px; height:110px; position:relative; top:0; left:0; display:block;">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${card.power}</div>
-                <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); font-size:0.6rem; padding:2px; color:#fff; width:100%; text-align:center; z-index:5;">${card.name}</div>
+                ${renderSkillTag(card)}
                 <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#facc15; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${group.count}</div>
             </div>
         `;
