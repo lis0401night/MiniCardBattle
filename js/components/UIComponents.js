@@ -37,7 +37,7 @@ const UI_COMPONENTS = {
     rulesScreen: `
     <!-- 2. ルール説明画面 -->
     <div id="screen-rules" class="screen">
-        <h2>遊び方</h2>
+        <h2 onclick="debugUnlockCards()">遊び方</h2>
         <div class="rule-box">
             <ul>
                 <li><b>【デッキ編成】デッキに同じカードは4枚まで入れられます。</b></li>

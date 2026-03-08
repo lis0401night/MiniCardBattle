@@ -10,7 +10,24 @@ function goToModeSelect() {
 
 function showRules() {
     playSound(SOUNDS.seClick);
+    rulesClickCount = 0; // 画面を開くたびにリセット
     switchScreen('screen-rules');
+}
+
+let rulesClickCount = 0;
+function debugUnlockCards() {
+    rulesClickCount++;
+    if (rulesClickCount >= 10) {
+        rulesClickCount = 0;
+        CARD_MASTER.forEach(card => {
+            if (!card.isToken) {
+                playerInventory[card.id] = 4;
+            }
+        });
+        saveDeck();
+        playSound(SOUNDS.seSkill);
+        showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
+    }
 }
 
 function goBackFromSelect() {
