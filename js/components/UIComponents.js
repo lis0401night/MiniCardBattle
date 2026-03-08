@@ -236,7 +236,7 @@ const UI_COMPONENTS = {
     skillConfirmScreen: `
     <!-- リーダースキル発動確認モーダル（敵味方兼用） -->
     <div id="screen-skill-confirm" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:60; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
-        <div class="skill-modal-box">
+        <div class="skill-modal-box modal-pop-animation">
             <h2 id="skill-confirm-name" style="color: #facc15; margin-bottom: 10px;">Skill Name</h2>
             <p id="skill-confirm-desc" style="color: #cbd5e1; font-size: 0.9rem; text-align: center; margin-bottom: 15px; line-height: 1.4;">Description</p>
             <div id="skill-confirm-status" style="margin: 10px 0 20px 0; font-weight: bold; font-size: 1.1rem;"></div>
@@ -307,7 +307,7 @@ const UI_COMPONENTS = {
             <div id="deck-info">山札: 30 / 墓地: 0</div>
             <div style="display: flex; gap: 8px;">
                 <button id="btn-leader-skill" class="action-btn leader-skill-btn" onclick="showSkillConfirm()">リーダースキル</button>
-                <button class="action-btn" onclick="endPlayerTurn()">終了(待機)</button>
+                <button id="btn-end-turn" class="action-btn" onclick="endPlayerTurn()">ターン終了</button>
             </div>
         </div>
         <!-- カード効果表示エリア -->
@@ -353,14 +353,14 @@ const UI_COMPONENTS = {
     `,
 
     confirmModal: `
-    <!-- 汎用確認・警告モーダル -->
-    <div id="modal-confirm" class="modal-overlay">
-        <div class="modal-content confirm-modal-content">
-            <h3 id="confirm-modal-title">確認</h3>
-            <p id="confirm-modal-message">メッセージがここに入ります</p>
-            <div class="confirm-modal-buttons">
-                <button id="confirm-modal-cancel" class="btn btn-secondary">キャンセル</button>
-                <button id="confirm-modal-ok" class="btn">OK</button>
+    <!-- 汎用確認・警告モーダル（スキル確認と同じデザイン） -->
+    <div id="modal-confirm" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:200; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+        <div class="skill-modal-box modal-pop-animation">
+            <h2 id="confirm-modal-title" style="color: #facc15; margin-bottom: 10px;">確認</h2>
+            <p id="confirm-modal-message" style="color: #cbd5e1; font-size: 0.9rem; text-align: center; margin-bottom: 15px; line-height: 1.6; white-space: pre-line;">メッセージがここに入ります</p>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="confirm-modal-cancel" class="btn" style="flex: 1; background: #475569; margin-top: 0;">キャンセル</button>
+                <button id="confirm-modal-ok" class="btn" style="flex: 1; background: linear-gradient(45deg, #0ea5e9, #0284c7); margin-top: 0;">OK</button>
             </div>
         </div>
     </div>

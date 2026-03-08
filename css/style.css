@@ -603,7 +603,25 @@ h2 {
         opacity: 0;
         transform: scale(1.5);
     }
+
 }
+
+@keyframes modalPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-pop-animation {
+    animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
 
 /* ===== リーダースキル発動確認モーダル ===== */
 #screen-skill-confirm {

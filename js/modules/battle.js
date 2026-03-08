@@ -128,6 +128,13 @@ function showSkillConfirm() {
     if (playerSP >= s.cost) { st.innerText = "発動可能です！"; st.style.color = "#4ade80"; ex.style.display = "block"; }
     else { st.innerText = `発動まであと ${s.cost - playerSP} SP`; st.style.color = "#f87171"; ex.style.display = "none"; }
     document.getElementById('screen-skill-confirm').style.display = 'flex';
+    // アニメーションを再発火させるためのハック
+    const box = document.querySelector('#screen-skill-confirm .skill-modal-box');
+    if (box) {
+        box.classList.remove('modal-pop-animation');
+        void box.offsetWidth; // reflow
+        box.classList.add('modal-pop-animation');
+    }
 }
 
 function showEnemySkillConfirm() {
@@ -144,6 +151,13 @@ function showEnemySkillConfirm() {
         else { st.innerText = `発動まであと ${r} SP`; st.style.color = "#f87171"; }
     }
     ex.style.display = "none"; document.getElementById('screen-skill-confirm').style.display = 'flex';
+    // アニメーションを再発火させるためのハック
+    const box = document.querySelector('#screen-skill-confirm .skill-modal-box');
+    if (box) {
+        box.classList.remove('modal-pop-animation');
+        void box.offsetWidth; // reflow
+        box.classList.add('modal-pop-animation');
+    }
 }
 
 function closeSkillConfirm() { playSound(SOUNDS.seClick); document.getElementById('screen-skill-confirm').style.display = 'none'; }
@@ -155,7 +169,6 @@ function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('b
 async function waitPlayerLaneSelection(count, owner, tokenCard) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
     const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-    const allLanes = [0, 1, 2];
 
     // AIの場合：空きレーンを優先、無ければ最弱カードのレーンを選択
     if (owner === 'red') {
@@ -164,16 +177,20 @@ async function waitPlayerLaneSelection(count, owner, tokenCard) {
         return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count);
     }
 
-    // プレイヤーの場合
-    if (emptyLanes.length === 0 && count === 0) return [];
-
-    // 空きレーンが必要数以下でトークン全配置可能な場合は自動選択
-    if (emptyLanes.length > 0 && count >= emptyLanes.length) return emptyLanes;
-
+    // プレイヤーの場合：常に手動選択（自動選択は行わない）
     return new Promise((resolve) => {
         const selected = [];
         const cells = document.querySelectorAll(`#player-lanes .cell`);
         const originalListeners = Array.from(cells).map(c => c.onclick);
+
+        // 「ターン終了」ボタンを「配置終了」に切り替え
+        const endBtn = document.getElementById('btn-end-turn');
+        const originalBtnText = endBtn.innerText;
+        const originalBtnOnclick = endBtn.onclick;
+        const originalBtnStyle = endBtn.style.cssText;
+        endBtn.innerText = '配置終了';
+        endBtn.style.background = '#ef4444';
+        endBtn.style.borderColor = '#dc2626';
 
         const cleanUp = () => {
             cells.forEach((cell, i) => {
@@ -181,6 +198,16 @@ async function waitPlayerLaneSelection(count, owner, tokenCard) {
                 cell.classList.remove('selected-highlight');
                 cell.onclick = originalListeners[i];
             });
+            // ボタンを元に戻す
+            endBtn.innerText = originalBtnText;
+            endBtn.style.cssText = originalBtnStyle;
+            endBtn.onclick = originalBtnOnclick;
+        };
+
+        endBtn.onclick = () => {
+            playSound(SOUNDS.seClick);
+            cleanUp();
+            resolve(selected); // 現在までの選択で終了（0個でもOK）
         };
 
         cells.forEach((cell, i) => {
@@ -388,7 +415,17 @@ async function startTurn(owner) {
 }
 
 async function endPlayerTurn() {
-    if (isProcessing) return; isProcessing = true;
+    if (isProcessing) return;
+    // 確認モーダルを表示
+    const confirmed = await new Promise(resolve => {
+        showConfirmModal(
+            'ターンを終了しますか？\nまだカードを使用できます。',
+            () => resolve(true),
+            () => resolve(false)
+        );
+    });
+    if (!confirmed) return;
+    isProcessing = true;
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
     selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard(); endTurnLogic('blue');
 }

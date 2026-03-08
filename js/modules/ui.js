@@ -737,7 +737,16 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
     cancelBtn.style.display = "block";
     okBtn.textContent = "OK";
 
+    playSound(SOUNDS.seClick);
     modal.style.display = 'flex';
+
+    // アニメーションを再発火させるためのハック
+    const box = modal.querySelector('.skill-modal-box');
+    if (box) {
+        box.classList.remove('modal-pop-animation');
+        void box.offsetWidth; // reflow
+        box.classList.add('modal-pop-animation');
+    }
 
     okBtn.onclick = () => {
         playSound(SOUNDS.seClick);
@@ -771,7 +780,16 @@ function showAlertModal(message, onClose = null) {
     cancelBtn.style.display = "none";
     okBtn.textContent = "閉じる";
 
+    playSound(SOUNDS.seClick);
     modal.style.display = 'flex';
+
+    // アニメーションを再発火させるためのハック
+    const box = modal.querySelector('.skill-modal-box');
+    if (box) {
+        box.classList.remove('modal-pop-animation');
+        void box.offsetWidth; // reflow
+        box.classList.add('modal-pop-animation');
+    }
 
     okBtn.onclick = () => {
         playSound(SOUNDS.seClick);
