@@ -288,7 +288,7 @@ async function activateLeaderSkill(owner) {
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK);
 
         for (let l of selectedLanes) {
-            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_knight.png', filter: 'none', currentPower: tK.power };
+            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_soldier.jpg', filter: 'none', currentPower: tK.power };
         }
         if (selectedLanes.length > 0) { playSound(SOUNDS.sePlace); renderBoard(); await sleep(400); }
 
