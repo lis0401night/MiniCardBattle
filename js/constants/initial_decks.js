@@ -3,31 +3,43 @@
  */
 const INITIAL_DECKS = {
     android: [
-        'golem', 'golem', 'golem', 'golem', 'golem',
-        'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',
-        'cheetah', 'sniper', 'mage', 'copy', 'commander', 'wall', 'wolf', 'shade', 'tortoise'
+        'golem', 'golem', 'golem', 'golem',
+        'clone', 'clone',
+        'sniper', 'sniper',
+        'mage', 'mage',
+        'cleric', 'cleric',
+        'wall', 'wall',
+        'tortoise', 'tortoise',
+        'diviner', 'diviner',
+        'scorpion', 'scorpion'
     ],
     dragon: [
-        'cheetah', 'cheetah', 'cheetah', 'cheetah', 'cheetah',
-        'sniper', 'sniper', 'sniper', 'sniper', 'sniper',
-        'mage', 'mage', 'mage', 'mage', 'mage',
-        'golem', 'golem', 'golem', 'golem', 'golem'
+        'golem', 'golem', 'golem', 'golem',
+        'sniper', 'sniper', 'sniper', 'sniper',
+        'mage', 'mage', 'mage', 'mage',
+        'tortoise', 'tortoise', 'tortoise', 'tortoise',
+        'scorpion', 'scorpion',
+        'cheetah', 'cheetah'
     ],
     knight: [
-        'clone', 'clone', 'clone', 'clone', 'clone',
-        'commander', 'commander', 'commander', 'commander', 'commander',
-        'golem', 'golem', 'golem', 'golem', 'golem',
-        'cheetah', 'cheetah', 'sniper', 'sniper', 'cleric'
+        'golem', 'golem', 'golem', 'golem',
+        'clone', 'clone', 'clone', 'clone',
+        'commander', 'commander', 'commander', 'commander',
+        'sniper', 'sniper', 'sniper', 'sniper',
+        'wall', 'wall',
+        'cheetah', 'cheetah'
     ],
     cthulhu: [
-        'scorpion', 'scorpion', 'scorpion', 'scorpion', 'scorpion',
-        'shade', 'shade', 'shade', 'shade', 'shade',
-        'wolf', 'wolf', 'wolf', 'wolf', 'wolf',
-        'diviner', 'diviner', 'diviner', 'diviner', 'diviner'
+        'golem', 'golem', 'golem', 'golem',
+        'scorpion', 'scorpion', 'scorpion', 'scorpion',
+        'shade', 'shade', 'shade', 'shade',
+        'wolf', 'wolf', 'wolf', 'wolf',
+        'diviner', 'diviner',
+        'tortoise', 'tortoise',
     ],
     satan: [
-        'golem', 'golem', 'golem', 'golem', 'golem',
-        'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',
+        'golem', 'golem', 'golem', 'golem',
+        'clone', 'clone', 'clone', 'scorpion', 'scorpion', 'cleric', 'cleric',
         'cheetah', 'sniper', 'mage', 'copy', 'commander', 'wall', 'wolf', 'shade', 'tortoise'
     ]
 };

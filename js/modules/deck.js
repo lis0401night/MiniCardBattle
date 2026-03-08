@@ -95,7 +95,7 @@ function renderDeckEdit() {
         item.className = 'deck-card-item';
         const imgUrl = template.imgUrl || `assets/card_${template.id}.jpg`;
         const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
-        const remaining = 5 - inDeckCount; // デッキに入れられる残り枚数
+        const remaining = 4 - inDeckCount; // デッキに入れられる残り枚数
         const opacity = remaining <= 0 ? "0.4" : "1";
 
         item.innerHTML = `
@@ -146,7 +146,7 @@ function renderDeckEdit() {
 function addCardToDeck(template) {
     if (playerDeckSelection.length >= DECK_SIZE) return;
     const count = playerDeckSelection.filter(c => c.id === template.id).length;
-    if (count >= 5) return;
+    if (count >= 4) return;
 
     playerDeckSelection.push({ ...template });
     playSound(SOUNDS.seClick);
