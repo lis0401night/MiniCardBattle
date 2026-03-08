@@ -19,7 +19,7 @@ function getDialogue(speakerConfig, targetConfig, type) {
 }
 
 function playSound(audio) { if (audio) { audio.currentTime = 0; audio.play().catch(() => { }); } }
-function stopSound(audio) { if (audio) { audio.pause(); audio.currentTime = 0; } }
+function stopSound(audio) { if (audio && audio.pause) { audio.pause(); audio.currentTime = 0; } }
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 // 画面遷移
