@@ -268,7 +268,7 @@ async function activateLeaderSkill(owner) {
             }
         }
         renderBoard(); playSound(SOUNDS.seDamage); await sleep(500);
-        for (let i = 0; i < 3; i++) if (eBoard[i] && eBoard[i].currentPower <= 0) { discardCard(defO, eBoard[i]); eBoard[i] = null; playSound(SOUNDS.seDestroy); }
+        for (let i = 0; i < 3; i++) if (eBoard[i] && eBoard[i].currentPower <= 0) { if (!discardCard(defO, eBoard[i], i)) eBoard[i] = null; playSound(SOUNDS.seDestroy); }
         renderBoard();
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
@@ -317,7 +317,39 @@ async function activateLeaderSkill(owner) {
     isProcessing = prevProc;
 }
 
-function discardCard(owner, card) { if (card.isToken) return; if ('basePower' in card) { card.power = card.basePower; } card.currentPower = card.power; (owner === 'blue' ? playerDiscard : enemyDiscard).push(card); }
+function discardCard(owner, card, lane) {
+    if (card.skill === 'split' && lane !== undefined) {
+        triggerSplitSkill(owner, lane, card);
+        return true; // 分裂した場合は墓地に行かず場に残る（上書きされる）
+    }
+    if (card.isToken) return false;
+    if ('basePower' in card) { card.power = card.basePower; }
+    card.currentPower = card.power;
+    (owner === 'blue' ? playerDiscard : enemyDiscard).push(card);
+    return false;
+}
+
+function triggerSplitSkill(owner, lane, card) {
+    const board = owner === 'blue' ? playerBoard : enemyBoard;
+    const tL = CARD_MASTER.find(m => m.id === 'legs');
+    const val = card.skillValue || 1;
+
+    board[lane] = {
+        id: `sp_${Date.now()}_${lane}`,
+        owner,
+        ...tL,
+        imgUrl: 'assets/card_legs.jpg',
+        power: val,
+        currentPower: val
+    };
+
+    setTimeout(() => {
+        playSound(SOUNDS.sePlace);
+        renderBoard();
+        const cEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
+        if (cEl) createDamagePopup(cEl, 'SPLIT', '#facc15');
+    }, 100);
+}
 function drawCard(owner) {
     let d = owner === 'blue' ? playerDeck : enemyDeck, h = owner === 'blue' ? playerHand : enemyHand, ds = owner === 'blue' ? playerDiscard : enemyDiscard;
     if (d.length === 0 && ds.length > 0) {
@@ -384,17 +416,27 @@ async function resolveOnPlaySkill(o, l, c) {
             const val = c.skillValue || 4;
             if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
             playSound(SOUNDS.seDamage); eB[mL].currentPower -= val; renderBoard(); await sleep(500);
-            if (eB[mL].currentPower <= 0) { discardCard(dO, eB[mL]); eB[mL] = null; playSound(SOUNDS.seDestroy); renderBoard(); }
+            if (eB[mL].currentPower <= 0) { if (!discardCard(dO, eB[mL], mL)) eB[mL] = null; playSound(SOUNDS.seDestroy); renderBoard(); }
         }
     } else if (c.skill === 'spread') {
         const val = c.skillValue || 2;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SPREAD', '#facc15'); let hit = false;
         for (let i = 0; i < 3; i++) if (eB[i]) { const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); } eB[i].currentPower -= val; hit = true; }
-        if (hit) { renderBoard(); playSound(SOUNDS.seDamage); await sleep(500); for (let i = 0; i < 3; i++) if (eB[i] && eB[i].currentPower <= 0) { discardCard(dO, eB[i]); eB[i] = null; playSound(SOUNDS.seDestroy); } renderBoard(); }
+        if (hit) { renderBoard(); playSound(SOUNDS.seDamage); await sleep(500); for (let i = 0; i < 3; i++) if (eB[i] && eB[i].currentPower <= 0) { if (!discardCard(dO, eB[i], i)) eB[i] = null; playSound(SOUNDS.seDestroy); } renderBoard(); }
     } else if (c.skill === 'copy') {
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'COPY', '#facc15');
-        let mP = -1; for (let i = 0; i < 3; i++) if (i !== l && b[i] && b[i].currentPower > mP) mP = b[i].currentPower;
-        if (mP > 0) { c.power = mP; c.currentPower = mP; createDamagePopup(cEl, `P=${mP}`, '#4ade80'); renderBoard(); } await sleep(500);
+        const adj = l === 1 ? [0, 2] : [1];
+        let total = 0;
+        for (let i of adj) {
+            if (b[i]) total += b[i].currentPower;
+        }
+        if (total > 0) {
+            c.power += total;
+            c.currentPower += total;
+            createDamagePopup(cEl, `+${total}`, '#4ade80');
+            renderBoard();
+        }
+        await sleep(500);
     } else if (c.skill === 'support') {
         const val = c.skillValue || 2;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SUPPORT', '#facc15');
@@ -450,7 +492,7 @@ async function resolveOnPlaySkill(o, l, c) {
         if (hit) {
             renderBoard(); playSound(SOUNDS.seDamage); await sleep(500);
             for (let i of adj) {
-                if (b[i] && b[i].currentPower <= 0) { discardCard(o, b[i]); b[i] = null; playSound(SOUNDS.seDestroy); }
+                if (b[i] && b[i].currentPower <= 0) { if (!discardCard(o, b[i], i)) b[i] = null; playSound(SOUNDS.seDestroy); }
             }
             renderBoard();
         }
@@ -474,7 +516,7 @@ async function executeSingleCombat(atk, l) {
         if (dD && !aD && aC.skill === 'soul_bind') { const val = aC.skillValue || 2; aC.currentPower += val; aC.power += val; createDamagePopup(aE, `+${val}`, '#4ade80'); tr = true; }
         if (aD && !dD && dB[l].skill === 'soul_bind') { const val = dB[l].skillValue || 2; dB[l].currentPower += val; dB[l].power += val; createDamagePopup(dE, `+${val}`, '#4ade80'); tr = true; }
         if (tr) { playSound(SOUNDS.seSkill); renderBoard(); await sleep(300); }
-        if (aD) { discardCard(atk, aC); aB[l] = null; } if (dD) { discardCard(atk === 'blue' ? 'red' : 'blue', dB[l]); dB[l] = null; }
+        if (aD) { if (!discardCard(atk, aC, l)) aB[l] = null; } if (dD) { if (!discardCard(atk === 'blue' ? 'red' : 'blue', dB[l], l)) dB[l] = null; }
         if (aD || dD) playSound(SOUNDS.seDestroy);
     } else {
         const d = aC.currentPower; playSound(SOUNDS.seDamage); document.body.classList.add('anim-shake');

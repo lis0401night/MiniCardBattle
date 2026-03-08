@@ -16,9 +16,10 @@ const INITIAL_DECKS = {
     dragon: [
         'golem', 'golem', 'golem', 'golem',
         'berserker', 'berserker', 'berserker', 'berserker',
-        'sniper', 'sniper', 'sniper', 'sniper',
+        'sniper', 'sniper',
         'mage', 'mage', 'mage', 'mage',
         'tortoise', 'tortoise',
+        'octopus', 'octopus',
         'cheetah', 'cheetah'
     ],
     knight: [
@@ -33,7 +34,8 @@ const INITIAL_DECKS = {
         'golem', 'golem', 'golem', 'golem',
         'scorpion', 'scorpion', 'scorpion', 'scorpion',
         'shade', 'shade', 'shade', 'shade',
-        'wolf', 'wolf', 'wolf', 'wolf',
+        'wolf', 'wolf',
+        'octopus', 'octopus',
         'diviner', 'diviner',
         'tortoise', 'tortoise',
     ],

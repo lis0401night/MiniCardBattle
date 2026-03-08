@@ -17,9 +17,11 @@ const CARD_MASTER = [
     { id: 'tortoise', name: '頑丈', power: 4, skill: 'sturdy', flavor: '鋼鉄の甲羅を持つ巨大な亀。あらゆる攻撃を跳ね返す。' },
     { id: 'clone', name: '分身', power: 2, skill: 'clone', skillValue: 1, flavor: '鏡の魔力で自らの鏡像を戦場に作り出す。' },
     { id: 'berserker', name: '狂戦士', power: 8, skill: 'berserk', skillValue: 2, flavor: '戦いの興奮で我を忘れた戦士。敵味方の区別なくその斧を振るう。' },
+    { id: 'octopus', name: '大蛸', power: 4, skill: 'split', skillValue: 1, flavor: '全身が筋肉の塊。足を失ってもすぐに生えてくる。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, flavor: '魔王サタンの強大な化身。' },
-    { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, flavor: '本体から生み出された分身。' }
+    { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, flavor: '本体から生み出された分身。' },
+    { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, flavor: '切り離されてもなお蠢き続ける蛸の足。' }
 ];
