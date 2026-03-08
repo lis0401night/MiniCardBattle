@@ -284,7 +284,12 @@ async function startTurn(owner) {
     const s = document.getElementById('turn-status'); s.innerText = owner === 'blue' ? "YOUR TURN" : "ENEMY TURN"; s.style.color = owner === 'blue' ? "var(--color-blue)" : "var(--color-red)";
     const c = owner === 'blue' ? playerConfig : enemyConfig;
     if (c.leaderSkill.cost) { if (owner === 'blue') playerSP = Math.min(c.leaderSkill.cost, playerSP + 1); else enemySP = Math.min(c.leaderSkill.cost, enemySP + 1); }
-    updateSPOrbs(owner); if ((owner === 'blue' ? playerBoard : enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
+    updateSPOrbs(owner);
+
+    // ターン開始時スキルの発動
+    await triggerStartTurnSkills(owner);
+
+    if ((owner === 'blue' ? playerBoard : enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
 
     drawCard(owner);
     if (owner === 'blue') {
@@ -364,6 +369,32 @@ function getSkillValue(c, skillId) {
         return s ? s.value || 0 : 0;
     }
     return 0;
+}
+
+async function triggerStartTurnSkills(owner) {
+    const board = owner === 'blue' ? playerBoard : enemyBoard;
+    const side = owner === 'blue' ? 'player' : 'enemy';
+    let triggered = false;
+
+    for (let i = 0; i < 3; i++) {
+        const c = board[i];
+        if (c && hasSkill(c, 'growth')) {
+            const val = getSkillValue(c, 'growth') || 1;
+            c.power += val;
+            c.currentPower += val;
+            triggered = true;
+
+            const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
+            if (cEl) {
+                playSound(SOUNDS.seSkill);
+                createDamagePopup(cEl, `成長 +${val}`, '#4ade80');
+            }
+        }
+    }
+    if (triggered) {
+        renderBoard();
+        await sleep(600);
+    }
 }
 
 async function resolveOnPlaySkill(o, l, c) {
