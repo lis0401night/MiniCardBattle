@@ -199,6 +199,64 @@ async function waitPlayerLaneSelection(count, owner, tokenCard) {
     });
 }
 
+/**
+ * 相手の場のカードを選択させるユーティリティ（破壊スキル用など）
+ */
+async function waitPlayerEnemyLaneSelection(count, owner) {
+    const isBlue = owner === 'blue';
+    const targetBoard = isBlue ? enemyBoard : playerBoard;
+    const targetSide = isBlue ? 'enemy' : 'player';
+
+    // ターゲット可能なレーン（配置されている場所）を取得
+    const occupiedLanes = targetBoard.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+
+    if (occupiedLanes.length === 0) return [];
+
+    // AIの場合：最もパワーが高いカードを選択
+    if (owner === 'red') {
+        const sortedLanes = [...occupiedLanes].sort((a, b) => targetBoard[b].currentPower - targetBoard[a].currentPower);
+        return sortedLanes.slice(0, count);
+    }
+
+    // ターゲット数以下の場合は全選択
+    if (occupiedLanes.length <= count) return occupiedLanes;
+
+    return new Promise((resolve) => {
+        const selected = [];
+        const cells = document.querySelectorAll(`#${targetSide}-lanes .cell`);
+        const originalListeners = Array.from(cells).map(c => c.onclick);
+
+        const cleanUp = () => {
+            cells.forEach((cell, i) => {
+                cell.classList.remove('highlight-target');
+                cell.classList.remove('selected-highlight');
+                cell.onclick = originalListeners[i];
+            });
+        };
+
+        cells.forEach((cell, i) => {
+            if (targetBoard[i] !== null) {
+                cell.classList.add('highlight-target');
+                cell.onclick = (ev) => {
+                    ev.stopPropagation();
+                    playSound(SOUNDS.seClick);
+                    if (!selected.includes(i)) {
+                        selected.push(i);
+                        cell.classList.remove('highlight-target');
+                        cell.classList.add('selected-highlight');
+                        if (selected.length >= count) {
+                            setTimeout(() => {
+                                cleanUp();
+                                resolve(selected);
+                            }, 300);
+                        }
+                    }
+                };
+            }
+        });
+    });
+}
+
 function evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count) {
     if (aiLevel <= 1) {
         // EASY: ランダム

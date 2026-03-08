@@ -823,6 +823,11 @@ h2 {
     box-shadow: inset 0 0 15px rgba(250, 204, 21, 0.5);
 }
 
+.cell.highlight-target {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.3);
+}
+
 /* カードデザイン */
 .card {
     width: 80px;
