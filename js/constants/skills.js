@@ -10,10 +10,11 @@ const SKILLS = {
     snipe: { name: '狙撃', icon: '🎯', desc: (val) => `相手の場で最大パワーのカード1枚に${val || 4}ダメージ。` },
     spread: { name: '拡散', icon: '☄️', desc: (val) => `相手の場のすべてのカードに${val || 2}ダメージ。` },
     copy: { name: '複製', icon: '👯', desc: (val) => '自分の場の最大パワーのカードと同じパワーになる。' },
-    support: { name: '援護', icon: '🚩', desc: (val) => `自分の場の他のすべてのカードのパワーを+${val || 2}する。` },
+    support: { name: '援護', icon: '🚩', desc: (val) => `自分の場の隣のレーンのカードのパワーを+${val || 2}する。` },
     defender: { name: '防御', icon: '🧱', desc: (val) => '【デメリット】敵カードやリーダーにダメージを与えられない。' },
     clone: { name: '分身', icon: '👥', desc: (val) => `空いているレーンに、自身と同じパワーの分身を${val || 1}体生成する。` },
     lone_wolf: { name: '単騎', icon: '🐺', desc: (val) => `場に出た時、自分の空きレーンの数×${val || 3}だけパワーを上げる。` },
     soul_bind: { name: '魂縛', icon: '⛓️', desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。` },
-    sturdy: { name: '頑丈', icon: '🛡', desc: (val) => '戦闘で受けるダメージを半減する（端数切り捨て）。' }
+    sturdy: { name: '頑丈', icon: '🛡', desc: (val) => '戦闘で受けるダメージを半減する（端数切り捨て）。' },
+    berserk: { name: '狂乱', icon: '💢', desc: (val) => `【デメリット】自分の場の隣のレーンのカードに${val}ダメージ。` }
 };

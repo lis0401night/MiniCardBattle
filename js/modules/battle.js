@@ -397,9 +397,18 @@ async function resolveOnPlaySkill(o, l, c) {
         if (mP > 0) { c.power = mP; c.currentPower = mP; createDamagePopup(cEl, `P=${mP}`, '#4ade80'); renderBoard(); } await sleep(500);
     } else if (c.skill === 'support') {
         const val = c.skillValue || 2;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SUPPORT', '#facc15'); let s = false;
-        for (let i = 0; i < 3; i++) if (i !== l && b[i]) { b[i].currentPower += val; const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`); if (tEl) createDamagePopup(tEl, `+${val}`, '#4ade80'); s = true; }
-        if (s) { renderBoard(); await sleep(500); }
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SUPPORT', '#facc15');
+        const adj = l === 1 ? [0, 2] : [1];
+        let hit = false;
+        for (let i of adj) {
+            if (b[i]) {
+                b[i].currentPower += val;
+                const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
+                if (tEl) createDamagePopup(tEl, `+${val}`, '#4ade80');
+                hit = true;
+            }
+        }
+        if (hit) { renderBoard(); await sleep(500); }
     } else if (c.skill === 'clone') {
         const count = c.skillValue || 1;
         const tC = CARD_MASTER.find(m => m.id === 'token_clone');
@@ -426,6 +435,25 @@ async function resolveOnPlaySkill(o, l, c) {
         const val = c.skillValue || 3;
         if (e * val > 0) { c.power += e * val; c.currentPower += e * val; createDamagePopup(cEl, `+${e * val}`, '#4ade80'); renderBoard(); }
         else createDamagePopup(cEl, `+0`, '#94a3b8'); await sleep(500);
+    } else if (c.skill === 'berserk') {
+        const val = c.skillValue || 2;
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BERSERK', '#ef4444');
+        const adj = l === 1 ? [0, 2] : [1];
+        let hit = false;
+        for (let i of adj) {
+            if (b[i]) {
+                const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
+                if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
+                b[i].currentPower -= val; hit = true;
+            }
+        }
+        if (hit) {
+            renderBoard(); playSound(SOUNDS.seDamage); await sleep(500);
+            for (let i of adj) {
+                if (b[i] && b[i].currentPower <= 0) { discardCard(o, b[i]); b[i] = null; playSound(SOUNDS.seDestroy); }
+            }
+            renderBoard();
+        }
     } else if (c.skill === 'quick') { playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'QUICK', '#facc15'); await sleep(400); await executeSingleCombat(o, l); }
 }
 

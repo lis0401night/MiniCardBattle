@@ -15,10 +15,10 @@ const INITIAL_DECKS = {
     ],
     dragon: [
         'golem', 'golem', 'golem', 'golem',
+        'berserker', 'berserker', 'berserker', 'berserker',
         'sniper', 'sniper', 'sniper', 'sniper',
         'mage', 'mage', 'mage', 'mage',
-        'tortoise', 'tortoise', 'tortoise', 'tortoise',
-        'scorpion', 'scorpion',
+        'tortoise', 'tortoise',
         'cheetah', 'cheetah'
     ],
     knight: [
