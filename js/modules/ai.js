@@ -81,38 +81,86 @@ async function executeEnemyAI() {
             if (aiLevel >= 3) {
                 const targetEnemyCard = playerBoard[targetLane];
                 let bestCardIndex = 0;
+                let bestScore = -9999;
 
-                if (targetEnemyCard) {
-                    // 正面に敵がいる場合、それに「勝てる」カード（または相打ち）を優先
-                    const reqPower = targetEnemyCard.currentPower;
-                    let foundWinCard = false;
+                for (let i = 0; i < enemyHand.length; i++) {
+                    const card = enemyHand[i];
 
-                    for (let i = 0; i < enemyHand.length; i++) {
-                        const card = enemyHand[i];
-                        // 相手以上のパワーがあるか、または必殺（deadly）持ちなら優先
-                        if (card.currentPower >= reqPower || card.skill === 'deadly') {
-                            if (!foundWinCard || card.currentPower > enemyHand[bestCardIndex].currentPower) {
-                                bestCardIndex = i;
-                                foundWinCard = true;
+                    // 【シミュレーション】
+                    let simPower = card.currentPower;
+                    let pDmg = [0, 0, 0];
+
+                    if (card.skill === 'lone_wolf') {
+                        // 出した瞬間に「他の空きレーン数」×3を加算する
+                        // カードを置く対象レーン (targetLane) は埋まるので、そこは空きとして数えない
+                        let emptyCount = 0;
+                        for (let j = 0; j < 3; j++) {
+                            if (j !== targetLane && enemyBoard[j] === null) {
+                                emptyCount++;
+                            }
+                        }
+                        // 全てのレーンが空いている（自分以外に何もいない）なら、最大でも空きは2つ
+                        simPower += emptyCount * 3;
+                    } else if (card.skill === 'snipe') {
+                        let maxL = -1;
+                        let maxP = -1;
+                        for (let j = 0; j < 3; j++) {
+                            if (playerBoard[j] && playerBoard[j].currentPower > maxP) {
+                                maxP = playerBoard[j].currentPower;
+                                maxL = j;
+                            }
+                        }
+                        if (maxL !== -1) pDmg[maxL] += 4;
+                    } else if (card.skill === 'spread') {
+                        for (let j = 0; j < 3; j++) {
+                            if (playerBoard[j]) pDmg[j] += 2;
+                        }
+                    }
+
+                    // 【スコア計算】
+                    let score = 0;
+
+                    if (targetEnemyCard) {
+                        const remainingOpponentPower = targetEnemyCard.currentPower - pDmg[targetLane];
+
+                        if (remainingOpponentPower <= 0) {
+                            // スキルだけで正面の敵を倒せる場合は大加点
+                            score += 1000 + simPower;
+                        } else {
+                            // 戦闘が発生する場合
+                            const isWin = simPower >= remainingOpponentPower || card.skill === 'deadly';
+                            if (isWin) {
+                                score += 500 + simPower; // 勝てるなら高いほど良い
+                                if (simPower === remainingOpponentPower && card.skill !== 'deadly') {
+                                    score -= 100; // 相打ちは、自分が生き残るよりは優先度を下げる
+                                }
+                            } else {
+                                // 勝てない場合は単純にパワーが高い（被害を抑える）ほうがマシ
+                                score += simPower;
+                            }
+                        }
+                    } else {
+                        // 正面に敵がいない場合は実質パワーが高いほど良い
+                        score += simPower;
+                    }
+
+                    // 正面以外のレーンに対するスキルダメージの評価加点
+                    for (let j = 0; j < 3; j++) {
+                        if (j !== targetLane && playerBoard[j] && pDmg[j] > 0) {
+                            if (playerBoard[j].currentPower - pDmg[j] <= 0) {
+                                score += 200; // 他レーンを破壊できたら大きな加点
+                            } else {
+                                score += 50;  // 削るだけでも加点
                             }
                         }
                     }
-                    // 勝てるカードが無ければ、一番パワーが高いカードを出して被害を抑える
-                    if (!foundWinCard) {
-                        for (let i = 1; i < enemyHand.length; i++) {
-                            if (enemyHand[i].power > enemyHand[bestCardIndex].power) {
-                                bestCardIndex = i;
-                            }
-                        }
-                    }
-                } else {
-                    // 正面に敵がいない場合、単純に一番パワーが高いカードを出す
-                    for (let i = 1; i < enemyHand.length; i++) {
-                        if (enemyHand[i].power > enemyHand[bestCardIndex].power) {
-                            bestCardIndex = i;
-                        }
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestCardIndex = i;
                     }
                 }
+
                 handIndex = bestCardIndex;
             } else {
                 // NORMAL: 手札のカード選びは考慮しない（ランダム）
