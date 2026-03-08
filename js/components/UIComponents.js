@@ -56,8 +56,10 @@ const UI_COMPONENTS = {
     <!-- 3. キャラクター選択画面 -->
     <div id="screen-select" class="screen">
         <h2 id="select-title">キャラクター選択</h2>
-        <div class="char-grid" id="char-grid"></div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromSelect()">戻る</button>
+        <div class="select-scroll-area">
+            <div class="char-grid" id="char-grid"></div>
+        </div>
+        <button class="btn" style="margin-top: 20px; background: #475569;" onclick="goBackFromSelect()">戻る</button>
     </div>
     `,
 
@@ -98,8 +100,10 @@ const UI_COMPONENTS = {
     <!-- ステージ(背景)選択画面 (フリーモード用) -->
     <div id="screen-stage-select" class="screen">
         <h2>ステージ選択</h2>
-        <div class="char-grid" id="stage-grid"></div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromStage()">戻る</button>
+        <div class="select-scroll-area">
+            <div class="char-grid" id="stage-grid"></div>
+        </div>
+        <button class="btn" style="margin-top: 20px; background: #475569;" onclick="goBackFromStage()">戻る</button>
     </div>
     `,
 

@@ -16,7 +16,7 @@ function generateDeck(owner, config, sessionId) {
         });
     } else {
         // 敵のデッキ生成（リーダーごとの初期デッキを使用）
-        const deckIds = INITIAL_DECKS[config.id] || INITIAL_DECKS.android;
+        const deckIds = ENEMY_DECKS[config.id] || ENEMY_DECKS.android;
         deckIds.forEach((cardId, i) => {
             const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
@@ -44,9 +44,8 @@ function generateDeck(owner, config, sessionId) {
  * リーダー別のおすすめ初期デッキを生成 (20枚・同名5枚制限厳守)
  */
 function getInitialDeck(charId) {
-    const deckIds = INITIAL_DECKS[charId] || INITIAL_DECKS.android;
     const deck = [];
-    deckIds.forEach(id => {
+    INITIAL_PLAYER_DECK.forEach(id => {
         const template = CARD_MASTER.find(m => m.id === id);
         if (template) {
             deck.push({ ...template });
@@ -69,11 +68,26 @@ function loadDeck() {
     } else {
         playerDeckSelection = getInitialDeck(playerConfig.id);
     }
+
+    // インベントリの読み込み
+    const invKey = `mini_card_battle_inventory`;
+    const invSaved = localStorage.getItem(invKey);
+    if (invSaved) {
+        playerInventory = JSON.parse(invSaved);
+    } else {
+        // 初期インベントリの作成（初期デッキのカードを所持）
+        playerInventory = {};
+        INITIAL_PLAYER_DECK.forEach(id => {
+            playerInventory[id] = (playerInventory[id] || 0) + 1;
+        });
+    }
 }
 
 function saveDeck() {
     const key = `mini_card_battle_deck_${playerConfig.id}`;
     localStorage.setItem(key, JSON.stringify(playerDeckSelection));
+    const invKey = `mini_card_battle_inventory`;
+    localStorage.setItem(invKey, JSON.stringify(playerInventory));
 }
 
 function startBattleFlow() {
@@ -91,11 +105,13 @@ function renderDeckEdit() {
     // --- 所持カードリスト (マスター) ---
     masterList.innerHTML = '';
     CARD_MASTER.filter(t => !t.isToken).forEach(template => {
+        const owned = playerInventory[template.id] || 0;
+
         const item = document.createElement('div');
         item.className = 'deck-card-item';
         const imgUrl = template.imgUrl || `assets/card_${template.id}.jpg`;
         const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
-        const remaining = 4 - inDeckCount; // デッキに入れられる残り枚数
+        const remaining = owned - inDeckCount; // デッキに入れられる残り枚数
         const opacity = remaining <= 0 ? "0.4" : "1";
         const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
 
@@ -104,7 +120,7 @@ function renderDeckEdit() {
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
                 ${renderSkillTag(template)}
-                <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:${remaining > 0 ? '#facc15' : '#ef4444'}; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">x${remaining}</div>
+                <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:${remaining > 0 ? '#facc15' : '#ef4444'}; padding:0 5px; border-radius:4px; font-weight:bold; font-size:0.8rem; z-index:6;">${inDeckCount}/${owned}</div>
             </div>
         `;
         item.onclick = () => addCardToDeck(template);
@@ -147,8 +163,9 @@ function renderDeckEdit() {
 
 function addCardToDeck(template) {
     if (playerDeckSelection.length >= DECK_SIZE) return;
-    const count = playerDeckSelection.filter(c => c.id === template.id).length;
-    if (count >= 4) return;
+    const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
+    const ownedCount = playerInventory[template.id] || 0;
+    if (inDeckCount >= ownedCount) return;
 
     playerDeckSelection.push({ ...template });
     playSound(SOUNDS.seClick);

@@ -4,6 +4,7 @@
 let playerConfig = CHARACTERS.android;
 let enemyConfig = CHARACTERS.dragon;
 let playerDeckSelection = [];
+let playerInventory = {}; // 所持カード枚数管理
 let playerHP, enemyHP, playerMaxHP, enemyMaxHP, playerSP, enemySP;
 let playerHand, enemyHand, playerDeck, enemyDeck;
 let playerDiscard, enemyDiscard;
