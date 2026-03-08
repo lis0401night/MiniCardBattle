@@ -22,16 +22,6 @@ const ENEMY_DECKS = {
         'sniper', 'sniper', 'sniper',
         'mage', 'mage', 'mage',
     ],
-    elf: [
-        'golem', 'golem', 'golem', 'golem',
-        'wolf', 'wolf',
-        'spider', 'spider',
-        'cheetah', 'cheetah',
-        'diviner', 'diviner',
-        'cleric', 'cleric',
-        'sniper', 'sniper', 'sniper',
-        'mage', 'mage', 'mage',
-    ],
     knight: [
         'golem', 'golem', 'golem', 'golem',
         'champion', 'champion',
@@ -51,6 +41,16 @@ const ENEMY_DECKS = {
         'clone', 'clone',
         'scorpion', 'scorpion', 'scorpion',
         'diviner', 'diviner', 'diviner',
+    ],
+    elf: [
+        'golem', 'golem', 'golem', 'golem',
+        'wolf', 'wolf',
+        'spider', 'spider',
+        'cheetah', 'cheetah',
+        'diviner', 'diviner',
+        'cleric', 'cleric',
+        'sniper', 'sniper', 'sniper',
+        'scorpion', 'scorpion', 'scorpion',
     ],
     cleric: [
         'golem', 'golem', 'golem', 'golem',
@@ -75,8 +75,8 @@ const ENEMY_DECKS = {
         'bigai',
         'cheetah',
         'mage',
-        'commander',
         'shade',
+        'berserker',
         'tortoise'
     ]
 };
