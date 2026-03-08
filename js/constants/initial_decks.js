@@ -16,36 +16,38 @@ const INITIAL_DECKS = {
     dragon: [
         'golem', 'golem', 'golem', 'golem',
         'berserker', 'berserker', 'berserker', 'berserker',
+        'cheetah', 'cheetah', 'cheetah', 'cheetah',
         'sniper', 'sniper',
-        'mage', 'mage', 'mage', 'mage',
+        'mage', 'mage',
         'tortoise', 'tortoise',
-        'octopus', 'octopus',
-        'cheetah', 'cheetah'
+        'octopus', 'octopus'
     ],
     knight: [
         'golem', 'golem', 'golem', 'golem',
         'clone', 'clone', 'clone', 'clone',
         'commander', 'commander', 'commander', 'commander',
-        'sniper', 'sniper', 'sniper', 'sniper',
+        'sniper', 'sniper',
+        'mage', 'mage',
         'wall', 'wall',
         'cheetah', 'cheetah'
     ],
     cthulhu: [
         'golem', 'golem', 'golem', 'golem',
-        'scorpion', 'scorpion', 'scorpion', 'scorpion',
         'shade', 'shade', 'shade', 'shade',
-        'wolf', 'wolf',
+        'wolf', 'wolf', 'wolf', 'wolf',
+        'scorpion', 'scorpion',
         'octopus', 'octopus',
         'diviner', 'diviner',
         'tortoise', 'tortoise',
     ],
     cleric: [
+        'golem', 'golem', 'golem', 'golem',
         'cleric', 'cleric', 'cleric', 'cleric',
-        'vampire', 'vampire', 'vampire', 'vampire',
-        'wraith', 'wraith', 'wraith', 'wraith',
-        'shade', 'shade', 'shade', 'shade',
-        'shadow', 'shadow', 'shadow', 'shadow',
-        'scorpion', 'scorpion'
+        'wall', 'wall', 'wall', 'wall',
+        'clone', 'clone',
+        'scorpion', 'scorpion',
+        'diviner', 'diviner',
+        'copy', 'copy'
     ],
     satan: [
         'golem', 'golem', 'golem', 'golem',
