@@ -210,7 +210,7 @@ const CHARACTERS = {
         id: 'cleric', stageId: 'knight', name: '背徳の聖職者 エリシア',
         desc: '聖職者の皮を被った傲慢な女。自らを神の代行者と称し、異端者を嘲笑いながら排除する。',
         filter: 'none', cardType: 'set1', cardBg: 'bg1',
-        image: 'assets/char_cleric.png', imageLose: 'assets/char_cleric_lose.png', icon: 'assets/char_cleric.png', color: '#94a3b8',
+        image: 'assets/char_cleric.png', imageLose: 'assets/char_cleric_lose.png', icon: 'assets/icon_cleric.png', imageEnding: 'assets/char_cleric_ending.png', color: '#94a3b8',
         leaderSkill: { name: '暗黒の審判', desc: '(SP:3) 敵リーダーに3ダメージを与え、自身のHPを3回復する。', cost: 3, action: 'dark_ritual' },
         preBattleLine: 'あら、私に逆らうなんて。身の程をわきまえなさい。',
         mirrorIntro: '私の偽物……？ フフ、その醜い姿で私と同じ聖職者を名乗るなんて。異端者として焼き払ってあげるわ。',
