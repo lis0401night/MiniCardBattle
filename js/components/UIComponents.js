@@ -1,5 +1,16 @@
 // ==========================================
-// HTML UI Components (Templates)
+function renderSkillTag(card) {
+    if (!card || card.skill === 'none') return '';
+    const s = SKILLS[card.skill];
+    if (!s || s.name === '通常') return '';
+    const skillName = s.name || card.name || '';
+    const value = card.skillValue || '';
+    return `<div class="card-skill">${s.icon} ${skillName}${value}</div>`;
+}
+
+/**
+ * Mini Card Battle - UI Components & Templates
+ */
 // ==========================================
 
 const UI_COMPONENTS = {
@@ -17,18 +28,19 @@ const UI_COMPONENTS = {
     <!-- モード選択画面 -->
     <div id="screen-mode-select" class="screen">
         <h1 class="game-title" style="display:block; margin-bottom: 40px;">LANE<br>DEFENDERS</h1>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">STORY MODE</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">FREE MODE</button>
-        <button class="btn" style="width: 250px; background: #475569;" onclick="showRules()">HOW TO PLAY</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">STORY</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">FREE BATTLE</button>
+        <button class="btn" style="width: 250px; background: #475569;" onclick="showRules()">遊び方</button>
     </div>
     `,
 
     rulesScreen: `
     <!-- 2. ルール説明画面 -->
     <div id="screen-rules" class="screen">
-        <h2>HOW TO PLAY</h2>
+        <h2>遊び方</h2>
         <div class="rule-box">
             <ul>
+                <li><b>【デッキ編成】デッキに同じカードは5枚まで入れられます。</b></li>
                 <li>毎ターン、手札から1枚を空きレーンに<b>配置</b>します。</li>
                 <li><b>自分のターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
                 <li>正面に敵がいれば激突！空いていれば<b>相手リーダーに直接ダメージ！</b></li>
@@ -43,9 +55,9 @@ const UI_COMPONENTS = {
     characterSelectScreen: `
     <!-- 3. キャラクター選択画面 -->
     <div id="screen-select" class="screen">
-        <h2 id="select-title">Select Your Character</h2>
+        <h2 id="select-title">キャラクター選択</h2>
         <div class="char-grid" id="char-grid"></div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromSelect()">戻る</button>
     </div>
     `,
 
@@ -72,13 +84,22 @@ const UI_COMPONENTS = {
     difficultySelectScreen: `
     <!-- 難易度選択画面 (フリーモード用) -->
     <div id="screen-difficulty" class="screen">
-        <h2>Select AI Difficulty</h2>
+        <h2>AI難易度</h2>
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <button class="btn" style="background: #22c55e; width: 200px;" onclick="startFreeBattle(1)">EASY</button>
             <button class="btn" style="background: #eab308; width: 200px;" onclick="startFreeBattle(2)">NORMAL</button>
             <button class="btn" style="background: #ef4444; width: 200px;" onclick="startFreeBattle(3)">HARD</button>
         </div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromDifficulty()">戻る</button>
+    </div>
+    `,
+
+    stageSelectScreen: `
+    <!-- ステージ(背景)選択画面 (フリーモード用) -->
+    <div id="screen-stage-select" class="screen">
+        <h2>ステージ選択</h2>
+        <div class="char-grid" id="stage-grid"></div>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromStage()">戻る</button>
     </div>
     `,
 
@@ -242,7 +263,9 @@ const UI_COMPONENTS = {
             </div>
         </div>
         <!-- カード効果表示エリア -->
-        <div id="card-detail-view" class="card-detail-box">カードを選択するとここに能力が表示されます</div>
+        <div class="card-detail-wrapper">
+            <div id="card-detail-view" class="card-detail-box">カードを選択するとここに能力が表示されます</div>
+        </div>
         <!-- 手札 -->
         <div id="player-hand" class="hand-area"></div>
     </div>
@@ -275,9 +298,24 @@ const UI_COMPONENTS = {
                 <h2 id="preview-card-name">Card Name</h2>
                 <div id="preview-card-skill-label" class="preview-skill-badge">Skill</div>
                 <p id="preview-card-desc">Description</p>
+                <p id="preview-card-flavor" class="preview-flavor-text"></p>
                 <button class="btn" style="margin-top: 15px; width: 100%;" onclick="closeCardPreview()">閉じる</button>
             </div>
         </div>
     </div>
     `,
+
+    confirmModal: `
+    <!-- 汎用確認・警告モーダル -->
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content confirm-modal-content">
+            <h3 id="confirm-modal-title">確認</h3>
+            <p id="confirm-modal-message">メッセージがここに入ります</p>
+            <div class="confirm-modal-buttons">
+                <button id="confirm-modal-cancel" class="btn btn-secondary">キャンセル</button>
+                <button id="confirm-modal-ok" class="btn">OK</button>
+            </div>
+        </div>
+    </div>
+    `
 };

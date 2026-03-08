@@ -3,7 +3,7 @@
  */
 const CHARACTERS = {
     android: {
-        id: 'android', name: '機動戦姫 アイギス',
+        id: 'android', stageId: 'android', name: '機動戦姫 アイギス',
         desc: '最新鋭のAIを搭載した戦闘用アンドロイド。感情を持たないが、マスターへの忠誠心は絶対的。',
         filter: 'none', cardType: 'set1', cardBg: 'bg1',
         image: 'assets/char_android.png', imageLose: 'assets/char_android_lose.png', icon: 'assets/icon_android.png', imageEnding: 'assets/char_android_ending.png', color: '#38bdf8',
@@ -23,6 +23,10 @@ const CHARACTERS = {
             2: [
                 '目標地点への距離、残り僅か。',
                 'システムに異常なし。魔王サタンの排除まで、あと一息です。'
+            ],
+            3: [
+                '自身の影との戦闘を終了。自己対話による最適化を完了しました。',
+                '私は私。マスターに忠誠を誓った、唯一無二の機体です。'
             ],
             4: [
                 'サタンの居城、「魔王城」の門前に到達。',
@@ -46,7 +50,7 @@ const CHARACTERS = {
         }
     },
     dragon: {
-        id: 'dragon', name: '焔竜姫 イグニス',
+        id: 'dragon', stageId: 'dragon', name: '焔竜姫 イグニス',
         desc: '火山地帯を縄張りとする竜族の姫。圧倒的な炎の力とワガママな性格で敵を焼き尽くす。',
         filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/char_dragon.png', imageLose: 'assets/char_dragon_lose.png', icon: 'assets/icon_dragon.png', imageEnding: 'assets/char_dragon_ending.png', color: '#fb7185',
@@ -66,6 +70,10 @@ const CHARACTERS = {
             2: [
                 'だんだん熱くなってきたわね……魔王の気配かしら？',
                 'いいわよ、もっとアツいバトルを期待してるんだから！'
+            ],
+            3: [
+                'なによアイツ、私のマネして……ムカつくわね！',
+                '本物の炎がどっちか、これで分かったでしょ！ 私が本物よ！'
             ],
             4: [
                 'ついにここまで来たわね。あのアホ面した魔王、炭にしてやるわ！',
@@ -89,7 +97,7 @@ const CHARACTERS = {
         }
     },
     knight: {
-        id: 'knight', name: '聖騎士 セレスティア',
+        id: 'knight', stageId: 'knight', name: '聖騎士 セレスティア',
         desc: '王国騎士団を率いる誇り高き騎士。聖なる加護と鉄壁の防御で仲間を守り抜く。',
         filter: 'none', cardType: 'set5', cardBg: 'bg1',
         image: 'assets/char_knight.png', imageLose: 'assets/char_knight_lose.png', icon: 'assets/icon_knight.png', imageEnding: 'assets/char_knight_ending.png', color: '#facc15',
@@ -109,6 +117,10 @@ const CHARACTERS = {
             2: [
                 '邪悪な気配が強まっています。魔王はすぐそこ……。',
                 '私の剣は、決して折れることはありません。信じてください！'
+            ],
+            3: [
+                '自分の影と向き合うのは……少し勇気がいりました。',
+                'ですが、もう迷いません。私の心は、この剣と共にあります！'
             ],
             4: [
                 'ついに魔王城の懐まで踏み込みました。',
@@ -132,7 +144,7 @@ const CHARACTERS = {
         }
     },
     cthulhu: {
-        id: 'cthulhu', name: '深淵の巫女 ナイア',
+        id: 'cthulhu', stageId: 'cthulhu', name: '深淵の巫女 ナイア',
         desc: '深き海より来たりし名状しがたき存在の眷属。相手の精神を削り、狂気へと誘う。',
         filter: 'none', cardType: 'set2', cardBg: 'bg3',
         image: 'assets/char_cthulhu.png', imageLose: 'assets/char_cthulhu_lose.png', icon: 'assets/icon_cthulhu.png', imageEnding: 'assets/char_cthulhu_ending.png', color: '#c084fc',
@@ -152,6 +164,10 @@ const CHARACTERS = {
             2: [
                 '心地よい響き……絶望の音がここまで届きますわ。',
                 '魔王サタン……貴方の魂は、どんな味がするのかしら……？'
+            ],
+            3: [
+                '自分自身との対話……案外、楽しいものですわね。',
+                '深淵も、私自身に飲み込まれて満足したようですわ。フフフ……。'
             ],
             4: [
                 'アハハハ！ 観客（眷属）たちが騒がしいですわね。',
@@ -175,7 +191,7 @@ const CHARACTERS = {
         }
     },
     satan: {
-        id: 'satan', name: '魔王 サタン',
+        id: 'satan', stageId: 'satan', name: '魔王 サタン',
         desc: '魔界を統べる絶対的な恐怖の象徴。すべてを無に帰す圧倒的な力を持つ。',
         filter: 'contrast(1.5) brightness(0.7) sepia(1) hue-rotate(-50deg) saturate(3)', cardType: 'set3', cardBg: 'bg3',
         image: 'assets/char_satan.png', imageLose: 'assets/char_satan_lose.png', icon: 'assets/icon_satan.png', color: '#dc2626',
