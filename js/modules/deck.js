@@ -162,24 +162,27 @@ function removeCardFromDeck(cardId) {
 }
 
 function clearDeck() {
-    if (confirm("デッキのカードをすべて削除しますか？")) {
+    playSound(SOUNDS.seClick);
+    showConfirmModal("デッキのカードをすべて削除しますか？", () => {
         playerDeckSelection = [];
-        saveDeck();
+        saveDeck(); // Keep saveDeck() for persistence
         renderDeckEdit();
-    }
+    });
 }
 
 function resetDeck() {
-    if (confirm("デッキを初期状態（おすすめ構成）に戻しますか？")) {
+    playSound(SOUNDS.seClick);
+    showConfirmModal("デッキを初期状態（おすすめ構成）に戻しますか？", () => {
         playerDeckSelection = getInitialDeck(playerConfig.id);
-        saveDeck();
+        saveDeck(); // Keep saveDeck() for persistence
         renderDeckEdit();
-    }
+    });
 }
 
 function finishDeckEdit() {
     if (playerDeckSelection.length !== DECK_SIZE) {
-        alert(`デッキを${DECK_SIZE}枚にしてください！`);
+        playSound(SOUNDS.seClick);
+        showAlertModal(`デッキを${DECK_SIZE}枚にしてください！`);
         return;
     }
     playSound(SOUNDS.seClick);

@@ -13,10 +13,35 @@ function showRules() {
     switchScreen('screen-rules');
 }
 
+function goBackFromSelect() {
+    playSound(SOUNDS.seClick);
+    if (appState === 'select_enemy') {
+        appState = 'select_player';
+        document.getElementById('select-title').innerText = "キャラクター選択";
+        initSelectScreen(false);
+    } else {
+        switchScreen('screen-mode-select');
+    }
+}
+
+function goBackFromDifficulty() {
+    playSound(SOUNDS.seClick);
+    appState = 'select_enemy';
+    document.getElementById('select-title').innerText = "対戦相手";
+    initSelectScreen(true);
+    switchScreen('screen-select');
+}
+
+function goBackFromStage() {
+    playSound(SOUNDS.seClick);
+    appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
+}
+
 function startGameMode(mode) {
     playSound(SOUNDS.seClick);
     gameMode = mode;
-    document.getElementById('select-title').innerText = "Select Your Character";
+    document.getElementById('select-title').innerText = "キャラクター選択";
     appState = 'select_player';
     initSelectScreen(false);
     switchScreen('screen-select');
@@ -115,7 +140,7 @@ function confirmCharSelect() {
         } else {
             playerConfig = CHARACTERS[pendingCharId];
             appState = 'select_enemy';
-            document.getElementById('select-title').innerText = "Select Enemy";
+            document.getElementById('select-title').innerText = "対戦相手";
             initSelectScreen(true);
             switchScreen('screen-select');
         }
@@ -129,6 +154,50 @@ function confirmCharSelect() {
 function startFreeBattle(level) {
     playSound(SOUNDS.seClick);
     aiLevel = level;
+    appState = 'select_stage';
+    initStageSelectScreen();
+    switchScreen('screen-stage-select');
+}
+
+function initStageSelectScreen() {
+    const grid = document.getElementById('stage-grid');
+    grid.innerHTML = '';
+
+    const stages = [
+        { id: 'random', name: 'ランダム' },
+        ...Object.values(STAGES)
+    ];
+
+    stages.forEach(s => {
+        const d = document.createElement('div');
+        d.className = 'char-card';
+        if (s.id === 'random') {
+            d.style.backgroundColor = '#000000';
+            d.style.backgroundImage = 'none';
+            d.innerHTML = `
+                <div style="position: absolute; width: 150%; height: 150%; top: -25%; left: -25%; background: radial-gradient(circle, rgba(255,255,255,0.4) 10%, rgba(255,255,255,0) 60%); filter: blur(10px); pointer-events: none;"></div>
+                <div class="char-name" style="color:#ffffff; z-index: 2;">${s.name}</div>
+            `;
+        } else {
+            d.style.backgroundImage = `url('assets/background_${s.id}.png')`;
+            d.innerHTML = `<div class="char-name" style="color:#ffffff">${s.name}</div>`;
+        }
+
+        d.onclick = () => confirmStageSelect(s.id);
+        grid.appendChild(d);
+    });
+}
+
+function confirmStageSelect(stageId) {
+    playSound(SOUNDS.seClick);
+
+    if (stageId === 'random') {
+        const bgIds = Object.keys(STAGES);
+        selectedStageId = bgIds[Math.floor(Math.random() * bgIds.length)];
+    } else {
+        selectedStageId = stageId;
+    }
+
     battleCount = 1;
     appState = 'pre_dialogue';
     dialogueQueue = [
@@ -497,4 +566,67 @@ function showDeckRefreshEffect(owner) {
             effectEl.parentNode.removeChild(effectEl);
         }
     }, 1500);
+}
+
+// --- カスタムモーダル制御 ---
+function showConfirmModal(message, onConfirm, onCancel = null) {
+    let modal = document.getElementById('modal-confirm');
+    if (!modal) {
+        const div = document.createElement('div');
+        div.innerHTML = UI_TEMPLATES.confirmModal;
+        document.body.appendChild(div.firstElementChild);
+        modal = document.getElementById('modal-confirm');
+    }
+
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl = document.getElementById('confirm-modal-message');
+    const okBtn = document.getElementById('confirm-modal-ok');
+    const cancelBtn = document.getElementById('confirm-modal-cancel');
+
+    titleEl.textContent = "確認";
+    msgEl.textContent = message;
+    cancelBtn.style.display = "block";
+    okBtn.textContent = "OK";
+
+    modal.style.display = 'flex';
+
+    okBtn.onclick = () => {
+        playSound(SOUNDS.seClick);
+        modal.style.display = 'none';
+        if (onConfirm) onConfirm();
+    };
+
+    cancelBtn.onclick = () => {
+        playSound(SOUNDS.seClick);
+        modal.style.display = 'none';
+        if (onCancel) onCancel();
+    };
+}
+
+function showAlertModal(message, onClose = null) {
+    let modal = document.getElementById('modal-confirm');
+    if (!modal) {
+        const div = document.createElement('div');
+        div.innerHTML = UI_TEMPLATES.confirmModal;
+        document.body.appendChild(div.firstElementChild);
+        modal = document.getElementById('modal-confirm');
+    }
+
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl = document.getElementById('confirm-modal-message');
+    const okBtn = document.getElementById('confirm-modal-ok');
+    const cancelBtn = document.getElementById('confirm-modal-cancel');
+
+    titleEl.textContent = "お知らせ";
+    msgEl.textContent = message;
+    cancelBtn.style.display = "none";
+    okBtn.textContent = "閉じる";
+
+    modal.style.display = 'flex';
+
+    okBtn.onclick = () => {
+        playSound(SOUNDS.seClick);
+        modal.style.display = 'none';
+        if (onClose) onClose();
+    };
 }

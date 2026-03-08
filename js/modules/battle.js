@@ -47,7 +47,8 @@ function initBattleState() {
 
     const bs = document.getElementById('screen-battle');
     bs.style.backgroundColor = '#0f172a';
-    bs.style.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)), url('assets/background_${enemyConfig.id}.png')`;
+    const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
+    bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
     updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
     for (let i = 0; i < 5; i++) { drawCard('blue'); drawCard('red'); }
     switchScreen('screen-battle'); startTurn('blue');
@@ -365,4 +366,13 @@ function endBattle() {
     }, 1500);
 }
 
-function returnToTitle() { if (confirm('バトルを諦めてタイトルに戻りますか？')) { stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle); playSound(SOUNDS.bgmTitle); appState = 'title'; isProcessing = false; switchScreen('screen-mode-select'); } }
+function returnToTitle() {
+    showConfirmModal('バトルを諦めてタイトルに戻りますか？', () => {
+        stopSound(SOUNDS.bgmBattle);
+        stopSound(SOUNDS.bgmLastBattle);
+        playSound(SOUNDS.bgmTitle);
+        appState = 'title';
+        isProcessing = false;
+        switchScreen('screen-mode-select');
+    });
+}

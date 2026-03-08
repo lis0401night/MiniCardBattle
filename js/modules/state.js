@@ -13,3 +13,4 @@ let isProcessing = false, selectedCardIndex = null, isBattleEnded = false;
 let battleCount = 1, storyQueue = [], dialogueQueue = [], currentDialogueIndex = 0;
 let pendingCharId = null, lastBattleResult = null;
 let longPressTimer;
+let selectedStageId = null;

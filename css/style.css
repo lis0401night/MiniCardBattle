@@ -65,7 +65,8 @@ body {
 #screen-dialogue,
 #screen-continue,
 #screen-result,
-#screen-deck-edit {
+#screen-deck-edit,
+#screen-stage-select {
     background-color: #0f172a;
     background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('../assets/background_select.png');
     background-size: cover;
@@ -725,7 +726,7 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    background: rgba(30, 41, 59, 0.85);
+    background: rgba(30, 41, 59, 0.45);
     padding: 10px;
     border-radius: 12px;
     border: 1px solid #334155;
@@ -742,7 +743,7 @@ h2 {
 .cell {
     width: 80px;
     height: 100px;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(15, 23, 42, 0.45);
     border: 2px dashed #475569;
     border-radius: 8px;
     position: relative;
@@ -850,14 +851,37 @@ h2 {
 .hand-area {
     display: flex;
     gap: 5px;
-    height: 110px;
+    height: 125px;
+    /* 固定高さを維持 */
     padding: 10px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 10px;
     width: 100%;
     max-width: 400px;
     overflow-x: auto;
-    align-items: center;
+    overflow-y: hidden;
+    /* 縦スクロールを防止 */
+    align-items: flex-end;
+    /* 下揃えにして、選択時の上に伸びるスペースを確保 */
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+    /* 領域が潰れないように固定 */
+    box-sizing: border-box;
+}
+
+/* 手札のスクロールバーをデッキリストと統一 */
+.hand-area::-webkit-scrollbar {
+    height: 6px;
+}
+
+.hand-area::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.hand-area::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
 }
 
 .hand-card {
@@ -872,6 +896,8 @@ h2 {
     box-shadow: 0 0 15px var(--color-blue);
     border-color: var(--color-blue);
     z-index: 10;
+    /* transformを使用しているため、通常はレイアウト破綻しませんが、
+       念のためマージン等による押し出しが発生しないことを保証します */
 }
 
 #turn-status {
@@ -962,24 +988,43 @@ h2 {
     background: #1e293b;
 }
 
-.card-detail-box {
+/* カード能力表示エリア（ラッパーで高さを予約） */
+.card-detail-wrapper {
     width: 100%;
     max-width: 400px;
-    background: rgba(15, 23, 42, 0.85);
+    height: 60px;
+    /* レイアウト上の固定高さ */
+    position: relative;
+    margin-bottom: 5px;
+    z-index: 50;
+    /* 他のUIより手前に表示 */
+}
+
+.card-detail-box {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.95);
+    /* 少し不透明度を上げて読み心地を向上 */
     border: 1px solid #334155;
     border-radius: 8px;
     padding: 8px;
     box-sizing: border-box;
     font-size: 0.85rem;
-    min-height: 48px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    min-height: 60px;
+    max-height: 150px;
+    /* 内容が多い場合も最大ここまで */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: #cbd5e1;
     text-align: center;
-    margin-bottom: 5px;
     line-height: 1.3;
+    overflow-y: auto;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
+    /* 上に伸びる際の影 */
 }
 
 .anim-attack-up {
@@ -1300,10 +1345,66 @@ h2 {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.85);
     z-index: 2000;
     justify-content: center !important;
     align-items: center !important;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: rgba(30, 41, 59, 0.98);
+    border: 2px solid #334155;
+    border-radius: 16px;
+    padding: 24px;
+    width: 85%;
+    max-width: 360px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    animation: modalScaleUp 0.3s ease-out;
+}
+
+@keyframes modalScaleUp {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirm-modal-content {
+    text-align: center;
+}
+
+#confirm-modal-title {
+    margin-top: 0;
+    color: #facc15;
+    font-size: 1.4rem;
+}
+
+#confirm-modal-message {
+    color: #cbd5e1;
+    margin: 15px 0 25px 0;
+    line-height: 1.5;
+}
+
+.confirm-modal-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-modal-buttons .btn {
+    flex: 1;
+    margin: 0;
+    padding: 10px;
+}
+
+.btn-secondary {
+    background: #475569 !important;
+    border-color: #334155 !important;
 }
 
 .preview-content {
