@@ -37,6 +37,14 @@ function initBattleState() {
     document.getElementById('player-name').innerText = playerConfig.name;
     document.getElementById('enemy-name').innerText = enemyConfig.name;
 
+    // リーダースキルのコストをマスターデータからリセット（以前のバトルの修整をクリア）
+    if (playerConfig.leaderSkill && CHARACTERS[playerConfig.id]) {
+        playerConfig.leaderSkill.cost = CHARACTERS[playerConfig.id].leaderSkill.cost;
+    }
+    if (enemyConfig.leaderSkill && CHARACTERS[enemyConfig.id]) {
+        enemyConfig.leaderSkill.cost = CHARACTERS[enemyConfig.id].leaderSkill.cost;
+    }
+
     // 敵アイコンのフィルタ処理（シャドウ対応）
     const enemyIconImg = document.getElementById('enemy-icon');
     enemyIconImg.src = enemyConfig.icon;
@@ -548,9 +556,13 @@ async function resolveOnPlaySkill(o, l, c) {
             else drawCard(o);
             await sleep(500);
         } else if (skillId === 'charge') {
-            playSound(SOUNDS.seSkill); createDamagePopup(cEl, `CHARGE -${skillValue}`, '#facc15');
-            if (o === 'blue') { playerSP = Math.max(0, playerSP - skillValue); updateSPOrbs('blue'); }
-            else { enemySP = Math.max(0, enemySP - skillValue); updateSPOrbs('red'); }
+            const costChange = skillValue;
+            playSound(SOUNDS.seSkill);
+            createDamagePopup(cEl, `COST ${costChange >= 0 ? '+' : ''}${costChange}`, '#facc15');
+            const config = o === 'blue' ? playerConfig : enemyConfig;
+            if (config.leaderSkill) {
+                config.leaderSkill.cost = Math.max(0, config.leaderSkill.cost + costChange);
+            }
             await sleep(500);
         } else if (skillId === 'heal') {
             const val = skillValue || 3;

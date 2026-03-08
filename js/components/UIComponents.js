@@ -109,7 +109,7 @@ const UI_COMPONENTS = {
     difficultySelectScreen: `
     <!-- 難易度選択画面 (フリーモード用) -->
     <div id="screen-difficulty" class="screen">
-        <h2>AI難易度</h2>
+        <h2>難易度</h2>
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <button class="btn" style="background: #22c55e; width: 200px;" onclick="startFreeBattle(1)">EASY</button>
             <button class="btn" style="background: #eab308; width: 200px;" onclick="startFreeBattle(2)">NORMAL</button>

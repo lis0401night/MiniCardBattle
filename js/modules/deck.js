@@ -199,7 +199,7 @@ function clearDeck() {
 
 function resetDeck() {
     playSound(SOUNDS.seClick);
-    showConfirmModal("デッキを初期状態（おすすめ構成）に戻しますか？", () => {
+    showConfirmModal("デッキを初期状態に戻しますか？", () => {
         playerDeckSelection = getInitialDeck(playerConfig.id);
         saveDeck(); // Keep saveDeck() for persistence
         renderDeckEdit();
