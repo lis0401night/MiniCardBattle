@@ -234,7 +234,7 @@ function confirmStageSelect(stageId) {
 function startNextBattleSequence() {
     if (gameMode !== 'story') return;
 
-    if (battleCount > 5) {
+    if (battleCount > 6) {
         startEndingSequence();
         return;
     }
