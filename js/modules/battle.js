@@ -260,22 +260,7 @@ async function endPlayerTurn() {
 
 function endTurnLogic(o) { if (!isBattleEnded) startTurn(o === 'blue' ? 'red' : 'blue'); }
 
-async function executeEnemyAI() {
-    if (isBattleEnded) return;
-    if (enemyConfig.leaderSkill.cost && enemySP >= enemyConfig.leaderSkill.cost && Math.random() < 0.7) { await activateLeaderSkill('red'); if (checkWinCondition()) return; }
-    let tL = -1, mT = -1; const emp = enemyBoard.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-    if (aiLevel === 1) { if (emp.length > 0) tL = emp[Math.floor(Math.random() * emp.length)]; }
-    else {
-        for (let i = 0; i < 3; i++) if (enemyBoard[i] === null && playerBoard[i] !== null && playerBoard[i].currentPower > mT) { mT = playerBoard[i].currentPower; tL = i; }
-        if (tL === -1 && emp.length > 0) tL = emp[Math.floor(Math.random() * emp.length)];
-    }
-    if (tL !== -1 && enemyHand.length > 0) {
-        let bI = 0; if (aiLevel >= 2) { for (let i = 1; i < enemyHand.length; i++) if (enemyHand[i].power > enemyHand[bI].power) bI = i; }
-        else bI = Math.floor(Math.random() * enemyHand.length);
-        await playCard('red', bI, tL); if (checkWinCondition()) return; await sleep(500);
-    }
-    endTurnLogic('red');
-}
+
 
 async function playCard(o, hI, l) {
     const h = o === 'blue' ? playerHand : enemyHand, b = o === 'blue' ? playerBoard : enemyBoard;
