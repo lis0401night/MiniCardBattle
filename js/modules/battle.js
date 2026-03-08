@@ -286,18 +286,6 @@ async function startTurn(owner) {
     if (c.leaderSkill.cost) { if (owner === 'blue') playerSP = Math.min(c.leaderSkill.cost, playerSP + 1); else enemySP = Math.min(c.leaderSkill.cost, enemySP + 1); }
     updateSPOrbs(owner); if ((owner === 'blue' ? playerBoard : enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
 
-    // 拘束（スタン）状態の更新
-    const board = owner === 'blue' ? playerBoard : enemyBoard;
-    board.forEach(c => {
-        if (c && c.stunTurns > 0) {
-            c.stunTurns--;
-            if (c.stunTurns === 0) {
-                // UI上の表示を更新するために再描画が必要な場合がある
-                renderBoard();
-            }
-        }
-    });
-
     drawCard(owner);
     if (owner === 'blue') {
         selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
@@ -313,7 +301,26 @@ async function endPlayerTurn() {
     selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard(); endTurnLogic('blue');
 }
 
-function endTurnLogic(o) { if (!isBattleEnded) startTurn(o === 'blue' ? 'red' : 'blue'); }
+function endTurnLogic(o) {
+    // 全ボードの拘束（スタン）状態の更新（ターン終了時に減算）
+    [playerBoard, enemyBoard].forEach(board => {
+        board.forEach(c => {
+            if (c && c.stunTurns > 0) {
+                if (c.stunAppliedThisTurn) {
+                    // 出した直後のターンは減らしすぎないようにスキップ
+                    c.stunAppliedThisTurn = false;
+                } else {
+                    c.stunTurns--;
+                }
+            }
+        });
+    });
+
+    if (!isBattleEnded) {
+        renderBoard();
+        startTurn(o === 'blue' ? 'red' : 'blue');
+    }
+}
 
 
 
@@ -440,7 +447,9 @@ async function resolveOnPlaySkill(o, l, c) {
         const val = c.skillValue || 1;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BIND', '#facc15');
         if (eB[l]) {
-            eB[l].stunTurns = val;
+            // 次の自分のターンの終わりまで持続させるため、2を設定し適用フラグを立てる
+            eB[l].stunTurns = 2;
+            eB[l].stunAppliedThisTurn = true;
             const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
             if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); }
         }

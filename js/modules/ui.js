@@ -510,7 +510,6 @@ function createCardDOM(c) {
     // 拘束（スタン）状態のビジュアルフィードバック
     if (c.stunTurns > 0) {
         filter = (filter || '') + ' grayscale(1) brightness(0.5)';
-        sH += `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2rem; z-index:10; pointer-events:none;">🕸️</div>`;
     }
 
     d.innerHTML = `

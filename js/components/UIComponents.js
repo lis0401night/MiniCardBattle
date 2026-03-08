@@ -1,11 +1,24 @@
 // ==========================================
 function renderSkillTag(card) {
-    if (!card || card.skill === 'none') return '';
+    if (!card) return '';
+    let badges = [];
+
+    // 元のスキル
     const s = SKILLS[card.skill];
-    if (!s || s.name === '通常') return '';
-    const skillName = s.name || card.name || '';
-    const value = card.skillValue || '';
-    return `<div class="card-skill">${s.icon} ${skillName}${value}</div>`;
+    if (s && card.skill !== 'none' && s.name !== '通常') {
+        const skillName = s.name || '';
+        const value = card.skillValue || '';
+        badges.push(`<div class="card-skill">${s.icon} ${skillName}${value}</div>`);
+    }
+
+    // 拘束（スタン）状態による「防衛」バッジ
+    if (card.stunTurns > 0) {
+        const def = SKILLS['defender'];
+        badges.push(`<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防衛</div>`);
+    }
+
+    if (badges.length === 0) return '';
+    return `<div class="card-skill-container">${badges.join('')}</div>`;
 }
 
 /**
