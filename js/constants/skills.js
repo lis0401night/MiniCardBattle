@@ -3,7 +3,7 @@
  */
 const SKILLS = {
     none: { name: '通常', icon: '', desc: (val) => '' },
-    quick: { name: '速攻', icon: '⚡', desc: (val) => '場に出たターンにすぐ攻撃する。' },
+    quick: { name: '速攻', icon: '⚡', desc: (val) => '場に出たターンの終わりに攻撃する。' },
     deadly: { name: '必殺', icon: '☠️', desc: (val) => '戦闘した相手を確実に破壊する。' },
     draw: { name: '入替', icon: '🃏', desc: (val) => '手札の最もパワーが低いカードを全て捨て、同数引く。' },
     heal: { name: '回復', icon: '💚', desc: (val) => `リーダーのHPを${val || 3}回復する。` },

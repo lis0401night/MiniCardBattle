@@ -39,138 +39,162 @@ async function executeEnemyAI() {
         const emptyLanes = enemyBoard.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
 
         if (emptyLanes.length > 0 && enemyHand.length > 0) {
-            // ① 【共通】次ターンの致命傷（自分への直接攻撃）を防ぐレーンを探す
-            let lethalLane = -1;
-            let maxIncomingDamage = 0;
-
-            for (let i = 0; i < 3; i++) {
-                // 自分のレーンが空き、かつ相手のレーンにカードがある場合
-                if (enemyBoard[i] === null && playerBoard[i] !== null) {
-                    const pCard = playerBoard[i];
-                    // 防衛カードは攻撃しないので除外
-                    if (pCard.skill === 'defender') continue;
-
-                    const dmg = pCard.currentPower;
-                    // その攻撃で死ぬ、または最も痛い攻撃を防ぐ
-                    if (enemyHP - dmg <= 0 && dmg > maxIncomingDamage) {
-                        maxIncomingDamage = dmg;
-                        lethalLane = i;
+            // ① 【共通】リーサル判定（速攻）
+            // 相手のHPを0にできる「速攻」カードがあれば最優先で空きレーンに出す
+            if (aiLevel >= 2) {
+                for (let i = 0; i < enemyHand.length; i++) {
+                    const card = enemyHand[i];
+                    if (card.skill === 'quick') {
+                        for (let l of emptyLanes) {
+                            if (playerHP - card.currentPower <= 0) {
+                                await playCard('red', i, l);
+                                if (checkWinCondition()) return;
+                                await sleep(500);
+                                endTurnLogic('red');
+                                return;
+                            }
+                        }
                     }
                 }
             }
 
-            // ② 致命傷を防げるならそのレーンを、そうでないなら他の戦略的レーンを選ぶ
-            if (aiLevel >= 3) {
-                // HARD専用：全空きレーンと一手札の組み合わせをシミュレーションする
-                let bestCardIndex = 0;
-                let bestLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
-                let bestScore = -9999;
+            if (emptyLanes.length > 0 && enemyHand.length > 0) {
+                // ② 【共通】次ターンの致命傷（自分への直接攻撃）を防ぐレーンを探す
+                let lethalLane = -1;
+                let maxIncomingDamage = 0;
 
-                // 致命傷レーンがある場合は守るレーンを固定
-                const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : emptyLanes;
+                for (let i = 0; i < 3; i++) {
+                    if (enemyBoard[i] === null && playerBoard[i] !== null) {
+                        const pCard = playerBoard[i];
+                        if (pCard.skill === 'defender') continue;
 
-                for (let l of lanesToEvaluate) {
-                    const targetEnemyCard = playerBoard[l];
-
-                    for (let i = 0; i < enemyHand.length; i++) {
-                        const card = enemyHand[i];
-
-                        // 【シミュレーション】
-                        let simPower = card.currentPower;
-                        let pDmg = [0, 0, 0];
-
-                        if (card.skill === 'lone_wolf') {
-                            let emptyCount = 0;
-                            for (let j = 0; j < 3; j++) {
-                                if (j !== l && enemyBoard[j] === null) {
-                                    emptyCount++;
-                                }
-                            }
-                            simPower += emptyCount * 3;
-                        } else if (card.skill === 'snipe') {
-                            let maxL = -1;
-                            let maxP = -1;
-                            for (let j = 0; j < 3; j++) {
-                                if (playerBoard[j] && playerBoard[j].currentPower > maxP) {
-                                    maxP = playerBoard[j].currentPower;
-                                    maxL = j;
-                                }
-                            }
-                            if (maxL !== -1) pDmg[maxL] += 4;
-                        } else if (card.skill === 'spread') {
-                            for (let j = 0; j < 3; j++) {
-                                if (playerBoard[j]) pDmg[j] += 2;
-                            }
+                        const dmg = pCard.currentPower;
+                        if (enemyHP - dmg <= 0 && dmg > maxIncomingDamage) {
+                            maxIncomingDamage = dmg;
+                            lethalLane = i;
                         }
+                    }
+                }
 
-                        // 【スコア計算】
-                        let score = 0;
+                // ③ 戦略的プレイ（HARDとNORMALで分岐）
+                if (aiLevel >= 3) {
+                    // HARD専用：シミュレーションによる最適化
+                    let bestCardIndex = 0;
+                    let bestLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    let bestScore = -9999;
 
-                        if (targetEnemyCard) {
-                            const remainingOpponentPower = targetEnemyCard.currentPower - pDmg[l];
+                    const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : emptyLanes;
 
-                            if (remainingOpponentPower <= 0) {
-                                // スキルだけで正面の敵を倒せる場合は大加点
-                                score += 1000 + simPower;
-                            } else {
-                                // 戦闘が発生する場合
-                                const isWin = simPower >= remainingOpponentPower || card.skill === 'deadly';
-                                if (isWin) {
-                                    score += 500 + simPower; // 勝てるなら高いほど良い
-                                    if (simPower === remainingOpponentPower && card.skill !== 'deadly') {
-                                        score -= 100; // 相打ちはスコアを下げる
+                    for (let l of lanesToEvaluate) {
+                        const targetEnemyCard = playerBoard[l];
+
+                        for (let i = 0; i < enemyHand.length; i++) {
+                            const card = enemyHand[i];
+
+                            // 【制限】速攻カードを防御（身代わり）に使うのは、相手を倒せる場合のみ
+                            if (card.skill === 'quick' && targetEnemyCard) {
+                                const willKill = card.currentPower >= targetEnemyCard.currentPower || card.skill === 'deadly';
+                                if (!willKill) continue;
+                            }
+
+                            let simPower = card.currentPower;
+                            let pDmg = [0, 0, 0];
+
+                            // スキルシミュレーション
+                            if (card.skill === 'lone_wolf') {
+                                let emptyCount = 0;
+                                for (let j = 0; j < 3; j++) {
+                                    if (j !== l && enemyBoard[j] === null) emptyCount++;
+                                }
+                                simPower += emptyCount * 3;
+                            } else if (card.skill === 'snipe') {
+                                let maxL = -1; let maxP = -1;
+                                for (let j = 0; j < 3; j++) {
+                                    if (playerBoard[j] && playerBoard[j].currentPower > maxP) {
+                                        maxP = playerBoard[j].currentPower; maxL = j;
                                     }
-                                } else {
-                                    // 勝てない場合（無駄死に）は非常に低く評価する
-                                    score += simPower - 1000;
+                                }
+                                if (maxL !== -1) pDmg[maxL] += 4;
+                            } else if (card.skill === 'spread') {
+                                for (let j = 0; j < 3; j++) {
+                                    if (playerBoard[j]) pDmg[j] += 2;
                                 }
                             }
-                        } else {
-                            // 正面に敵がいない（安全な空きレーン）場合は実質パワーが高いほど良い
-                            // ただし勝てるブロック(500+)よりは低く、無駄死に(-1000)よりは高くする
-                            score += 200 + simPower;
-                        }
 
-                        // 正面以外のレーンに対するスキルダメージの評価加点
-                        for (let j = 0; j < 3; j++) {
-                            if (j !== l && playerBoard[j] && pDmg[j] > 0) {
-                                if (playerBoard[j].currentPower - pDmg[j] <= 0) {
-                                    score += 200; // 他レーンを破壊できたら大きな加点
+                            // 【スコア計算】
+                            let score = 0;
+
+                            if (targetEnemyCard) {
+                                const remainingOpponentPower = targetEnemyCard.currentPower - pDmg[l];
+                                if (remainingOpponentPower <= 0) {
+                                    score += 2000 + simPower;
                                 } else {
-                                    score += 50;  // 削るだけでも加点
+                                    const isWin = simPower >= remainingOpponentPower || card.skill === 'deadly';
+                                    if (isWin) {
+                                        score += 1000 + (remainingOpponentPower * 50) + simPower;
+                                        if (simPower === remainingOpponentPower && card.skill !== 'deadly') score -= 100;
+                                    } else {
+                                        score += 500 + (remainingOpponentPower * 40) - (simPower * 10);
+                                    }
+                                }
+                            } else {
+                                score += 200 + simPower;
+                            }
+
+                            // 正面以外のレーン（スキルダメージ）の評価
+                            for (let j = 0; j < 3; j++) {
+                                if (j !== l && playerBoard[j] && pDmg[j] > 0) {
+                                    const remaining = playerBoard[j].currentPower - pDmg[j];
+                                    if (remaining <= 0) {
+                                        // 複数撃破ボーナス（HARDはここを高く評価）
+                                        score += 800;
+                                    } else {
+                                        score += 100;
+                                    }
                                 }
                             }
-                        }
 
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestCardIndex = i;
-                            bestLane = l;
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestCardIndex = i;
+                                bestLane = l;
+                            }
                         }
                     }
-                }
 
-                targetLane = bestLane;
-                handIndex = bestCardIndex;
+                    targetLane = bestLane;
+                    handIndex = bestCardIndex;
 
-            } else {
-                // NORMAL
-                if (lethalLane !== -1) {
-                    targetLane = lethalLane;
                 } else {
-                    let maxThreat = -1;
-                    for (let i = 0; i < 3; i++) {
-                        if (enemyBoard[i] === null && playerBoard[i] !== null && playerBoard[i].currentPower > maxThreat && playerBoard[i].skill !== 'defender') {
-                            maxThreat = playerBoard[i].currentPower;
-                            targetLane = i;
+                    // NORMAL：簡易的な判断
+                    if (lethalLane !== -1) {
+                        targetLane = lethalLane;
+                    } else {
+                        let maxThreat = -1;
+                        for (let i = 0; i < 3; i++) {
+                            if (enemyBoard[i] === null && playerBoard[i] !== null && playerBoard[i].currentPower > maxThreat && playerBoard[i].skill !== 'defender') {
+                                maxThreat = playerBoard[i].currentPower;
+                                targetLane = i;
+                            }
+                        }
+                        if (targetLane === -1) {
+                            targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
                         }
                     }
-                    if (targetLane === -1) {
-                        targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+
+                    // 手札選び（NORMALでも速攻の無駄使いを避ける）
+                    let bestIdx = -1;
+                    for (let i = 0; i < enemyHand.length; i++) {
+                        const c = enemyHand[i];
+                        if (c.skill === 'quick' && playerBoard[targetLane]) {
+                            // 相手を倒せない防御に速攻は使わない
+                            if (c.currentPower < playerBoard[targetLane].currentPower && c.skill !== 'deadly') continue;
+                        }
+                        bestIdx = i; // 候補が見つかればそれを使う
+                        break;
                     }
+                    handIndex = (bestIdx !== -1) ? bestIdx : Math.floor(Math.random() * enemyHand.length);
                 }
-                // 手札のカード選びは考慮しない（ランダム）
-                handIndex = Math.floor(Math.random() * enemyHand.length);
             }
         }
     }
