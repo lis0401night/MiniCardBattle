@@ -219,6 +219,45 @@ h2 {
     /* Firefox */
 }
 
+/* ===== 報酬画面 ===== */
+#screen-reward {
+    flex-direction: column;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.85) !important;
+    /* 戦闘画面を背景に見せる */
+    z-index: 100;
+}
+
+.reward-title {
+    font-size: 2.2rem;
+    color: #facc15;
+    text-shadow: 0 0 15px rgba(250, 204, 21, 0.6);
+    margin-bottom: 20px;
+    font-weight: bold;
+    z-index: 10;
+}
+
+.reward-card-front .card {
+    pointer-events: none;
+}
+
+#btn-reward-next {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
 .select-scroll-area::-webkit-scrollbar {
     display: none;
     /* WebKit (Chrome, Safari, etc.) */
@@ -1297,11 +1336,13 @@ h2 {
     }
 }
 
-#preview-card-container {
+#preview-card-container,
+#reward-card-container {
     margin-bottom: 20px;
 }
 
-#preview-card-container .card {
+#preview-card-container .card,
+#reward-card-container .card {
     width: 180px;
     height: 240px;
     cursor: default;

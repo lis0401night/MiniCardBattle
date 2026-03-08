@@ -472,9 +472,13 @@ function endBattle() {
     isProcessing = false; // バトル結果表示と同時にフラグをリセット
     setTimeout(() => {
         playSound(SOUNDS.bgmTitle); appState = 'post_dialogue';
-        if (lastBattleResult === 'win') { dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }]; }
-        else dialogueQueue = [{ speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }];
-        setupDialogueScreen();
+        if (lastBattleResult === 'win') {
+            dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }];
+            showCardReward(enemyConfig.id);
+        } else {
+            dialogueQueue = [{ speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }];
+            setupDialogueScreen();
+        }
     }, 1500);
 }
 

@@ -555,51 +555,64 @@ function setupLongPress(element, cardData) {
     });
 }
 
-function openCardPreview(card) {
-    const modal = document.getElementById('card-preview-modal');
-    const container = document.getElementById('preview-card-container');
-    const nameEl = document.getElementById('preview-card-name');
-    const skillLabel = document.getElementById('preview-card-skill-label');
-    const descEl = document.getElementById('preview-card-desc');
-    const flavorEl = document.getElementById('preview-card-flavor');
+// プレビュー表示の更新（共通処理）
+function populateCardPreview(prefix, card) {
+    const container = document.getElementById(`${prefix}-card-container`);
+    const nameEl = document.getElementById(`${prefix}-card-name`);
+    const skillLabel = document.getElementById(`${prefix}-card-skill-label`);
+    const descEl = document.getElementById(`${prefix}-card-desc`);
+    const flavorEl = document.getElementById(`${prefix}-card-flavor`);
 
-    container.innerHTML = '';
-    // IDから画像URLを特定
-    const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
-    const cardClone = document.createElement('div');
-    const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-    cardClone.className = `card blue${rarityClass}`;
-    cardClone.innerHTML = `
-        <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
-        <div class="card-power">${card.currentPower || card.power}</div>
-    `;
-    container.appendChild(cardClone);
+    if (container) {
+        container.innerHTML = '';
+        const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
+        const cardClone = document.createElement('div');
+        const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
+        cardClone.className = `card blue${rarityClass}`;
 
-    nameEl.innerText = card.name;
-    const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
-    nameEl.style.color = rarityColors[card.rarity] || '#fff';
+        // 拡大表示用にサイズを明示（style.cssの基準に合わせる）
+        cardClone.style.width = "180px";
+        cardClone.style.height = "240px";
+
+        cardClone.innerHTML = `
+            <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
+            <div class="card-power">${card.currentPower || card.power}</div>
+        `;
+        container.appendChild(cardClone);
+    }
+
+    if (nameEl) {
+        nameEl.innerText = card.name;
+        const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
+        nameEl.style.color = rarityColors[card.rarity] || '#fff';
+    }
 
     const s = SKILLS[card.skill];
-    if (s && card.skill !== 'none' && card.skill !== undefined) {
-        skillLabel.style.display = 'inline-block';
-        skillLabel.innerText = `${s.icon} ${s.name}`;
-        skillLabel.style.background = '#475569';
-        skillLabel.style.color = '#facc15';
-        descEl.innerText = typeof s.desc === 'function' ? s.desc(card.skillValue) : s.desc;
-    }
-    else {
-        skillLabel.style.display = 'none';
-        descEl.innerText = '能力なし';
-    }
-
-    if (card.flavor) {
-        flavorEl.innerText = card.flavor;
-        flavorEl.style.display = 'block';
-    } else {
-        flavorEl.innerText = '';
-        flavorEl.style.display = 'none';
+    if (skillLabel && descEl) {
+        if (s && card.skill !== 'none' && card.skill !== undefined) {
+            skillLabel.style.display = 'inline-block';
+            skillLabel.innerText = `${s.icon} ${s.name}`;
+            descEl.innerText = typeof s.desc === 'function' ? s.desc(card.skillValue) : s.desc;
+        } else {
+            skillLabel.style.display = 'none';
+            descEl.innerText = '能力なし';
+        }
     }
 
+    if (flavorEl) {
+        if (card.flavor) {
+            flavorEl.innerText = card.flavor;
+            flavorEl.style.display = 'block';
+        } else {
+            flavorEl.innerText = '';
+            flavorEl.style.display = 'none';
+        }
+    }
+}
+
+function openCardPreview(card) {
+    const modal = document.getElementById('card-preview-modal');
+    populateCardPreview('preview', card);
     modal.style.display = 'flex';
     playSound(SOUNDS.seClick);
 }
@@ -697,4 +710,68 @@ function showAlertModal(message, onClose = null) {
         modal.style.display = 'none';
         if (onClose) onClose();
     };
+}
+
+// --- 報酬システム ---
+let pendingRewardCard = null;
+
+function showCardReward(enemyId) {
+    const enemyDeckIds = ENEMY_DECKS[enemyId] || ENEMY_DECKS.android;
+    const eligibleIds = [...new Set(enemyDeckIds)].filter(id => {
+        const owned = playerInventory[id] || 0;
+        return owned < 4;
+    });
+
+    if (eligibleIds.length === 0) {
+        setupDialogueScreen();
+        return;
+    }
+
+    const rewardId = eligibleIds[Math.floor(Math.random() * eligibleIds.length)];
+    pendingRewardCard = { ...CARD_MASTER.find(m => m.id === rewardId) };
+
+    // 報酬画面の準備
+    populateCardPreview('reward', pendingRewardCard);
+
+    // 公開前の状態にマスク
+    const nameEl = document.getElementById('reward-card-name');
+    const skillLabel = document.getElementById('reward-card-skill-label');
+    const descEl = document.getElementById('reward-card-desc');
+    const flavorEl = document.getElementById('reward-card-flavor');
+    const mask = document.getElementById('reward-mask');
+    const nextBtn = document.getElementById('btn-reward-next');
+
+    nameEl.innerText = "???";
+    nameEl.style.color = "#fff";
+    skillLabel.style.display = 'none';
+    descEl.innerText = "クリックしてカードを公開";
+    flavorEl.innerText = "";
+
+    mask.style.display = 'flex';
+    nextBtn.style.display = 'none';
+
+    document.getElementById('screen-reward').classList.add('active');
+}
+
+function revealRewardCard() {
+    const mask = document.getElementById('reward-mask');
+    if (mask.style.display === 'none') return;
+
+    mask.style.display = 'none';
+    playSound(SOUNDS.seClick);
+
+    // 本来の情報を表示
+    populateCardPreview('reward', pendingRewardCard);
+
+    document.getElementById('btn-reward-next').style.display = 'block';
+
+    // インベントリの更新
+    playerInventory[pendingRewardCard.id] = (playerInventory[pendingRewardCard.id] || 0) + 1;
+    saveDeck();
+}
+
+function closeRewardScreen() {
+    playSound(SOUNDS.seClick);
+    document.getElementById('screen-reward').classList.remove('active');
+    setupDialogueScreen();
 }

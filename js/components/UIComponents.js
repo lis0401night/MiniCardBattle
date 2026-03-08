@@ -150,6 +150,25 @@ const UI_COMPONENTS = {
     </div>
     `,
 
+    rewardScreen: `
+    <!-- 10. カード獲得画面 -->
+    <div id="screen-reward" class="screen">
+        <h2 class="reward-title">カードを獲得！</h2>
+        <div class="preview-content" id="reward-preview-content" style="position:relative; cursor:pointer;" onclick="revealRewardCard()">
+            <div id="reward-card-container"></div>
+            <div class="preview-details">
+                <h2 id="reward-card-name">? ? ?</h2>
+                <div id="reward-card-skill-label" class="preview-skill-badge" style="display:none;">Skill</div>
+                <p id="reward-card-desc">クリックしてカードを公開</p>
+                <p id="reward-card-flavor" class="preview-flavor-text"></p>
+                <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
+            </div>
+            <!-- 目隠し用レイヤー -->
+            <div id="reward-mask" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#0f172a; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:5rem; color:#334155; z-index:20;">?</div>
+        </div>
+    </div>
+    `,
+
     dialogueScreen: `
     <!-- 5. 会話シーン画面 -->
     <div id="screen-dialogue" class="screen">

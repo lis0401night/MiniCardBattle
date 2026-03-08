@@ -4,7 +4,7 @@
 const INITIAL_PLAYER_DECK = [
     'golem', 'golem', 'golem', 'golem',
     'sniper', 'sniper', 'sniper', 'sniper',
-    'cleric', 'cleric', 'cleric', 'cleric',
+    'diviner', 'diviner', 'diviner', 'diviner',
     'clone', 'clone', 'clone', 'clone',
     'scorpion', 'scorpion', 'scorpion', 'scorpion'
 ];
