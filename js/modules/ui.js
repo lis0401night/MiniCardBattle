@@ -130,7 +130,7 @@ function initSelectScreen(includeSatan) {
         `;
         randomEl.onclick = () => {
             playSound(SOUNDS.seClick);
-            const selectableIds = Object.keys(CHARACTERS); // サタンも含めて全キャラから抽選
+            const selectableIds = Object.keys(CHARACTERS).filter(id => id !== 'satan');
             const randomId = selectableIds[Math.floor(Math.random() * selectableIds.length)];
             enemyConfig = CHARACTERS[randomId];
             appState = 'select_difficulty';
@@ -530,8 +530,11 @@ function createCardDOM(c, isBoard = false) {
         filter = (filter || '') + ' grayscale(1) brightness(0.5)';
     }
 
+    // 画像のフォールバック
+    const imgUrl = c.imgUrl || (c.id && !c.id.includes('_') ? `assets/card_${c.id}.jpg` : 'assets/card_none_backup.jpg');
+
     d.innerHTML = `
-        <div class="card-bg" style="background-image: url('${c.imgUrl}'); filter: ${filter};"></div>
+        <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${filter};"></div>
         ${sH}
         <div class="card-power">${c.currentPower}</div>
     `;

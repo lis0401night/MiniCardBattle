@@ -390,9 +390,10 @@ async function waitPlayerHandSelection(count, owner) {
 
 
 function evaluateBestLanesForToken(allLanes, owner, tokenCard, count) {
+    const board = owner === 'red' ? enemyBoard : playerBoard;
     if (aiLevel <= 1) {
         // EASY: ランダム
-        return [...emptyLanes].sort(() => Math.random() - 0.5).slice(0, count);
+        return [...allLanes].sort(() => Math.random() - 0.5).slice(0, count);
     }
 
     // NORMAL/HARD: 簡易的な評価
@@ -415,7 +416,6 @@ function evaluateBestLanesForToken(allLanes, owner, tokenCard, count) {
         // 自分のカードがある場合（上書き評価）
         if (myCard) {
             // 空きレーンを最優先するため、大幅にスコアを引く
-            // ただし、トークンの方が大幅に強い場合は検討の余地あり
             score -= 5000;
             // 自分のパワーが低いほど、上書きの価値が高い（マイナスの緩和）
             score -= myCard.currentPower * 100;
