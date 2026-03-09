@@ -259,6 +259,31 @@ async function executeEnemyAI() {
                 // 防御・生存評価
                 if (l === lethalLane) score += 10000;
 
+                // 被ダメージ軽減の評価強化（特に4ダメージ以上の防御）
+                if (targetEnemyCard && !hasSkill(targetEnemyCard, 'defender')) {
+                    const currentIncomingDmg = (function () {
+                        const existingCard = enemyBoard[l];
+                        if (!existingCard) return targetEnemyCard.currentPower;
+                        let eff = targetEnemyCard.currentPower;
+                        if (hasSkill(existingCard, 'sturdy')) eff = Math.floor(eff / 2);
+                        return Math.max(0, eff - existingCard.currentPower);
+                    })();
+
+                    const newIncomingDmg = (function () {
+                        let eff = targetEnemyCard.currentPower - pDmg[l];
+                        if (eff <= 0) return 0;
+                        if (hasSkill(card, 'sturdy')) eff = Math.floor(eff / 2);
+                        return Math.max(0, eff - simPower);
+                    })();
+
+                    const preventedDmg = currentIncomingDmg - newIncomingDmg;
+                    if (preventedDmg >= 4) {
+                        score += 5000; // 大ダメージを阻止する配置を強力に推奨
+                    } else if (preventedDmg > 0) {
+                        score += preventedDmg * 200;
+                    }
+                }
+
                 // 自壊リスク（負の成長）
                 if (hasSkill(card, 'growth')) {
                     const val = getSkillValue(card, 'growth');
