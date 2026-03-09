@@ -805,7 +805,8 @@ function showAlertModal(message, onClose = null) {
 let pendingRewardCard = null;
 
 function showCardReward(enemyId) {
-    const enemyDeckIds = ENEMY_DECKS[enemyId] || ENEMY_DECKS.android;
+    let recipe = ENEMY_DECKS[enemyId] || ENEMY_DECKS.android;
+    let enemyDeckIds = Array.isArray(recipe) ? recipe : (recipe.normal || []);
     const eligibleIds = [...new Set(enemyDeckIds)].filter(id => {
         const owned = playerInventory[id] || 0;
         return owned < 4;
