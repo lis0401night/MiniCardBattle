@@ -8,12 +8,20 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const h = o === 'blue' ? playerHand : enemyHand, b = o === 'blue' ? playerBoard : enemyBoard, eB = o === 'blue' ? enemyBoard : playerBoard, dO = o === 'blue' ? 'red' : 'blue', dS = o === 'blue' ? 'enemy' : 'player';
 
     if (skillId === 'draw') {
+        const count = skillValue || 1;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'REPLACE', '#facc15');
-        if (h.length > 0) {
-            let mp = Math.min(...h.map(x => x.power)), dc = 0;
-            for (let i = h.length - 1; i >= 0; i--) if (h[i].power === mp) { discardCard(o, h.splice(i, 1)[0]); dc++; }
-            for (let i = 0; i < dc; i++) drawCard(o);
-        } else drawCard(o);
+        const selectedIndices = await waitPlayerHandSelection(count, o);
+        if (selectedIndices.length > 0) {
+            // インデックスが大きい順にソートして、spliceでズレないようにする
+            selectedIndices.sort((a, b) => b - a);
+            for (let i of selectedIndices) {
+                const discarded = h.splice(i, 1)[0];
+                discardCard(o, discarded);
+            }
+            for (let i = 0; i < selectedIndices.length; i++) drawCard(o);
+        } else if (h.length === 0) {
+            drawCard(o);
+        }
         await sleep(500);
     } else if (skillId === 'charge') {
         const val = skillValue;

@@ -4,7 +4,7 @@
 const CARD_MASTER = [
     { id: 'golem', name: '大理石のゴーレム', power: 5, skill: 'none', rarity: 1, flavor: '魔法によって生命を吹き込まれた大理石の彫像。美しさと硬固さを兼ね備えている。' },
     { id: 'sniper', name: '森の射手', power: 2, skill: 'snipe', skillValue: 4, rarity: 1, flavor: '静寂に包まれた深い森を守るエルフの狩人。その矢は木の葉の間を縫い、目標を違わず射抜く。' },
-    { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', rarity: 1, flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
+    { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', skillValue: 2, rarity: 1, flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
     { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'scorpion', name: '黒サソリ', power: 2, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
     { id: 'cleric', name: '見習い修道女', power: 4, skill: 'heal', skillValue: 3, rarity: 1, flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
@@ -32,6 +32,8 @@ const CARD_MASTER = [
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 3, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
+    { id: 'dealer', name: 'デビル・ディーラー', power: 3, skills: [{ id: 'draw', value: 4 }, { id: 'sacrifice', value: 2 }], rarity: 2, flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。', imgUrl: 'assets/card_dealer.png' },
+    { id: 'bard', name: '森の歌うたい', power: 2, skills: [{ id: 'support', value: 2 }, { id: 'heal', value: 2 }], rarity: 2, flavor: 'ウクレレを奏でる彼を、森の動物たちは親しみを持って「先生」と呼ぶ。その歌声は傷ついた心も体も癒やす。', imgUrl: 'assets/card_bard.png' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },

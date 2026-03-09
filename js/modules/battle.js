@@ -315,6 +315,78 @@ async function waitPlayerEnemyLaneSelection(count, owner) {
     });
 }
 
+/**
+ * プレイヤーまたはAIに手札からカードを選択させるユーティリティ（入替スキル用）
+ */
+async function waitPlayerHandSelection(count, owner) {
+    const hand = owner === 'blue' ? playerHand : enemyHand;
+    if (hand.length === 0) return [];
+
+    // AIの場合：最もパワーが低いカードを選択
+    if (owner === 'red') {
+        const sortedWithIndex = hand.map((c, i) => ({ c, i })).sort((a, b) => a.c.power - b.c.power);
+        const selectedCount = Math.min(count, hand.length);
+        return sortedWithIndex.slice(0, selectedCount).map(x => x.i);
+    }
+
+    // プレイヤーの場合：手動選択
+    return new Promise((resolve) => {
+        const selectedIndices = [];
+        const handEl = document.getElementById('player-hand');
+        const cards = handEl.querySelectorAll('.hand-card');
+
+        // 「ターン終了」ボタンを「選択終了」に切り替え
+        const endBtn = document.getElementById('btn-end-turn');
+        const originalBtnText = endBtn.innerText;
+        const originalBtnOnclick = endBtn.onclick;
+        const originalBtnStyle = endBtn.style.cssText;
+        endBtn.innerText = '選択終了';
+        endBtn.style.background = '#facc15';
+        endBtn.style.color = '#000';
+        endBtn.style.borderColor = '#eab308';
+
+        const cleanUp = () => {
+            cards.forEach((card) => {
+                card.classList.remove('selected');
+                card.style.pointerEvents = '';
+            });
+            // ボタンを元に戻す
+            endBtn.innerText = originalBtnText;
+            endBtn.style.cssText = originalBtnStyle;
+            endBtn.onclick = originalBtnOnclick;
+            renderHand(); // 通常の状態に戻す
+        };
+
+        endBtn.onclick = () => {
+            playSound(SOUNDS.seClick);
+            cleanUp();
+            resolve(selectedIndices);
+        };
+
+        cards.forEach((card, i) => {
+            card.classList.add('can-select'); // CSSで強調するため（もしあれば）
+            card.onclick = (ev) => {
+                ev.stopPropagation();
+                playSound(SOUNDS.seClick);
+
+                if (selectedIndices.includes(i)) {
+                    // 選択解除
+                    const idx = selectedIndices.indexOf(i);
+                    selectedIndices.splice(idx, 1);
+                    card.classList.remove('selected');
+                } else {
+                    // 選択
+                    if (selectedIndices.length < count) {
+                        selectedIndices.push(i);
+                        card.classList.add('selected');
+                    }
+                }
+            };
+        });
+    });
+}
+
+
 function evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count) {
     if (aiLevel <= 1) {
         // EASY: ランダム
@@ -457,7 +529,9 @@ function endTurnLogic(o) {
 
 async function playCard(o, hI, l) {
     const h = o === 'blue' ? playerHand : enemyHand, b = o === 'blue' ? playerBoard : enemyBoard;
-    b[l] = h.splice(hI, 1)[0]; playSound(SOUNDS.sePlace); renderHand(); renderBoard();
+    b[l] = h.splice(hI, 1)[0]; playSound(SOUNDS.sePlace);
+    if (o === 'blue') { selectedCardIndex = null; updateCardDetail(null); }
+    renderHand(); renderBoard();
     const c = b[l];
     // 出現時スキルの発動（単一または複数）
     if (hasActiveSkill(c)) {

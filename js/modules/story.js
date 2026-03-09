@@ -35,10 +35,9 @@ function processStoryNextStep() {
         startBattleFlow();
     } else if (appState === 'post_dialogue') {
         if (gameMode === 'free') {
-            document.getElementById('result-title').innerText = lastBattleResult === 'win' ? "YOU WIN!" : "YOU LOSE...";
-            document.getElementById('result-title').style.color = lastBattleResult === 'win' ? "#facc15" : "#aaa";
-            document.getElementById('result-desc').innerText = "フリーモード終了";
-            switchScreen('screen-result');
+            performFadeTransition(() => {
+                startGameMode('free');
+            });
         } else {
             // ストーリーモードの場合
             if (lastBattleResult === 'lose') {
