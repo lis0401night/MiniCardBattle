@@ -23,6 +23,6 @@ ENEMY_DECKS.elf = {
         'cheetah', 'cheetah', 'cheetah', 'cheetah',
         'bard', 'bard', 'bard', 'bard',
         'spider', 'spider', 'spider', 'spider',
-        'sniper', 'sniper', 'sniper', 'sniper',
+        'clone', 'clone', 'clone', 'clone',
     ]
 };

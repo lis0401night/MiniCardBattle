@@ -22,7 +22,8 @@ ENEMY_DECKS.knight = {
         'champion', 'champion', 'champion', 'champion',
         'assassin', 'assassin', 'assassin', 'assassin',
         'commander', 'commander', 'commander', 'commander',
-        'lightpaladin', 'lightpaladin', 'lightpaladin', 'lightpaladin',
-        'darkpaladin', 'darkpaladin', 'darkpaladin', 'darkpaladin',
+        'lightpaladin', 'lightpaladin',
+        'darkpaladin', 'darkpaladin',
+        'clone', 'clone', 'clone', 'clone',
     ]
 };

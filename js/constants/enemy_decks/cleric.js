@@ -19,8 +19,9 @@ ENEMY_DECKS.cleric = {
     hard: [
         'vampire', 'vampire', 'vampire', 'vampire',
         'tortoise', 'tortoise', 'tortoise', 'tortoise',
-        'crenellatedwall', 'crenellatedwall', 'crenellatedwall', 'crenellatedwall',
-        'wall', 'wall', 'wall', 'wall',
+        'crenellatedwall', 'crenellatedwall',
+        'wall', 'wall',
         'cleric', 'cleric', 'cleric', 'cleric',
+        'clone', 'clone', 'clone', 'clone',
     ]
 };
