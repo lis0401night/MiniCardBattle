@@ -168,13 +168,10 @@ function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('b
  */
 async function waitPlayerLaneSelection(count, owner, tokenCard) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
-    const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-
-    // AIの場合：空きレーンを優先、無ければ最弱カードのレーンを選択
+    // AIの場合：空きレーンがあれば優先、無ければ味方カードの上書きを検討
     if (owner === 'red') {
-        if (emptyLanes.length === 0) return [];
-        if (count >= emptyLanes.length) return emptyLanes;
-        return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count);
+        const allLanes = board.map((_, i) => i);
+        return evaluateBestLanesForToken(allLanes, owner, tokenCard, count);
     }
 
     // プレイヤーの場合：常に手動選択（自動選択は行わない）
@@ -232,6 +229,11 @@ async function waitPlayerLaneSelection(count, owner, tokenCard) {
                     // 既存カードを破棄
                     board[i] = null;
                     renderBoard();
+                    // 他のセルのハイライトを再適用
+                    cells.forEach((c2, i2) => {
+                        if (selected.includes(i2)) c2.classList.add('selected-highlight');
+                        else c2.classList.add('highlight');
+                    });
                 }
 
                 if (!selected.includes(i)) {
@@ -394,25 +396,34 @@ function evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count) {
     }
 
     // NORMAL/HARD: 簡易的な評価
-    const scores = emptyLanes.map(l => {
+    const scores = allLanes.map(l => {
         let score = 0;
-        const pCard = playerBoard[l];
+        const eCard = owner === 'red' ? playerBoard[l] : enemyBoard[l];
+        const myCard = board[l];
 
-        if (pCard) {
-            // 敵（プレイヤー）がいる場合：ブロック評価
-            // トークンの攻撃力で倒せるなら高評価
-            if (tokenCard.power >= pCard.currentPower) {
-                score += 1000 + pCard.currentPower * 10;
+        // 相手カードがいる場合（対面評価）
+        if (eCard) {
+            if (tokenCard.power >= eCard.currentPower) {
+                score += 1000 + eCard.currentPower * 10;
             } else {
-                // 倒せなくても、敵の攻撃力が高いなら壁として評価
-                score += 500 + pCard.currentPower * 5;
+                score += 500 + eCard.currentPower * 5;
             }
         } else {
-            // 敵がいない場合：一匹狼シナジーなどを考慮
             score += 200 + tokenCard.power;
-            // 他のレーンが一匹狼なら、敢えてここには置かないほうがいい場合もあるが
-            // 基本は高いパワーを空きレーンに出すのも有効
         }
+
+        // 自分のカードがある場合（上書き評価）
+        if (myCard) {
+            // 空きレーンを最優先するため、大幅にスコアを引く
+            // ただし、トークンの方が大幅に強い場合は検討の余地あり
+            score -= 5000;
+            // 自分のパワーが低いほど、上書きの価値が高い（マイナスの緩和）
+            score -= myCard.currentPower * 100;
+        } else {
+            // 空きレーンボーナス
+            score += 1000;
+        }
+
         return { lane: l, score };
     });
 
