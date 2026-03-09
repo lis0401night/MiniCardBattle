@@ -576,9 +576,28 @@ async function resolveOnPlaySkill(o, l, c) {
             }
         } else if (skillId === 'spread') {
             const val = skillValue || 2;
-            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SPREAD', '#facc15'); let hit = false;
-            for (let i = 0; i < 3; i++) if (eB[i]) { const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`); if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); } eB[i].currentPower -= val; hit = true; }
-            if (hit) { renderBoard(); playSound(SOUNDS.seDamage); await sleep(500); for (let i = 0; i < 3; i++) if (eB[i] && eB[i].currentPower <= 0) { if (!discardCard(dO, eB[i], i)) eB[i] = null; playSound(SOUNDS.seDestroy); } renderBoard(); }
+            playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'SPREAD', '#facc15');
+            let hit = false;
+            // 正面とその隣接レーンのみを対象にする
+            const targets = [l, l - 1, l + 1].filter(i => i >= 0 && i < 3);
+            for (let i of targets) {
+                if (eB[i]) {
+                    const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${i}"] .card`);
+                    if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, `-${val}`, '#ef4444'); }
+                    eB[i].currentPower -= val;
+                    hit = true;
+                }
+            }
+            if (hit) {
+                renderBoard(); playSound(SOUNDS.seDamage); await sleep(500);
+                for (let i of targets) {
+                    if (eB[i] && eB[i].currentPower <= 0) {
+                        if (!discardCard(dO, eB[i], i)) eB[i] = null;
+                        playSound(SOUNDS.seDestroy);
+                    }
+                }
+                renderBoard();
+            }
         } else if (skillId === 'copy') {
             playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'COPY', '#facc15');
             const adj = l === 1 ? [0, 2] : [1];

@@ -8,7 +8,7 @@ const SKILLS = {
     draw: { name: '入替', icon: '🃏', desc: (val) => '召喚時、手札の最もパワーが低いカードを全て捨て、同数引く。' },
     heal: { name: '回復', icon: '💚', desc: (val) => `召喚時、リーダーのHPを${val || 3}回復する。` },
     snipe: { name: '狙撃', icon: '🎯', desc: (val) => `召喚時、相手の場で最大パワーのカード1枚に${val || 4}ダメージ。` },
-    spread: { name: '拡散', icon: '☄️', desc: (val) => `召喚時、相手の場のすべてのカードに${val || 2}ダメージ。` },
+    spread: { name: '拡散', icon: '☄️', desc: (val) => `召喚時、正面とその隣レーンのカードに${val || 2}ダメージ。` },
     copy: { name: '複製', icon: '👯', desc: (val) => '召喚時、自分の場の隣のレーンのカードのパワーの合計を自身に+する。' },
     support: { name: '援護', icon: '🚩', desc: (val) => `召喚時、自分の場の隣のレーンのカードのパワーを+${val || 2}する。` },
     defender: { name: '防御', icon: '🧱', desc: (val) => '敵カードやリーダーにダメージを与えられない。' },
@@ -19,7 +19,7 @@ const SKILLS = {
     berserk: { name: '狂乱', icon: '💢', desc: (val) => `召喚時、自分の場の隣のレーンにいるカードに${val}ダメージ。` },
     split: { name: '分裂', icon: '🐙', desc: (val) => `破壊時、同じレーンにパワー${val}のトークンを出す。` },
     sacrifice: { name: '対価', icon: '🩸', desc: (val) => `召喚時、自分のリーダーに${val || 3}ダメージを与える。` },
-    bind: { name: '拘束', icon: '🕸️', desc: (val) => `召喚時、正面のカードに${val}ターンの間「防衛」を持たせる。` },
+    bind: { name: '拘束', icon: '🕸️', desc: (val) => `召喚時、正面のカードに${val}ターンの間「防御」を持たせる。` },
     growth: { name: '成長', icon: '🌱', desc: (val) => `自分のターン開始時、パワーを${val >= 0 ? '+' : ''}${val}する。` },
     hero: { name: '英雄', icon: '🏆', desc: (val) => `召喚時、自分の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
     charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダーのSPを${val >= 0 ? '+' : ''}${val}する` }

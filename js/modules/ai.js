@@ -160,7 +160,9 @@ async function executeEnemyAI() {
                         }
                         if (hasSkill(card, 'spread')) {
                             const val = getSkillValue(card, 'spread') || 2;
-                            for (let j = 0; j < 3; j++) {
+                            // 正面とその隣接レーンのみ
+                            const targets = [l, l - 1, l + 1].filter(j => j >= 0 && j < 3);
+                            for (let j of targets) {
                                 if (playerBoard[j]) pDmg[j] += val;
                             }
                         }
