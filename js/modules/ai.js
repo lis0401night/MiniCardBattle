@@ -32,8 +32,26 @@ async function executeEnemyAI() {
         // EASY: 完全にランダム（空きレーンにランダムな手札）
         const emptyLanes = enemyBoard.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
         if (emptyLanes.length > 0 && enemyHand.length > 0) {
-            targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
             handIndex = Math.floor(Math.random() * enemyHand.length);
+            const card = enemyHand[handIndex];
+            if (hasSkill(card, 'legendary')) {
+                // 伝説カードなら中央（1）に置く。中央が空いてなければ別のカードを探す
+                if (emptyLanes.includes(1)) {
+                    targetLane = 1;
+                } else {
+                    // 中央が空いてないので別の（非伝説）カードを探す
+                    const nonLegendaryIndices = enemyHand.map((c, i) => !hasSkill(c, 'legendary') ? i : -1).filter(i => i !== -1);
+                    if (nonLegendaryIndices.length > 0) {
+                        handIndex = nonLegendaryIndices[Math.floor(Math.random() * nonLegendaryIndices.length)];
+                        targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    } else {
+                        // 全て伝説カードで中央が空いてない場合は何もしない
+                        handIndex = -1;
+                    }
+                }
+            } else {
+                targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+            }
         } else if (emptyLanes.length === 0 && enemyHand.length > 0) {
             // ボード満杯時：手札の最強カードが盤面の最弱カードより強ければ上書き
             let weakestLane = -1, weakestPower = Infinity;
@@ -49,7 +67,15 @@ async function executeEnemyAI() {
                 }
             }
             if (weakestLane !== -1 && strongestHand !== -1 && strongestPower > weakestPower) {
-                targetLane = weakestLane; handIndex = strongestHand; overwriteMode = true;
+                // 伝説カードの場合は中央レーンのみ上書き可能
+                const card = enemyHand[strongestHand];
+                if (hasSkill(card, 'legendary')) {
+                    if (weakestLane === 1) {
+                        targetLane = weakestLane; handIndex = strongestHand; overwriteMode = true;
+                    }
+                } else {
+                    targetLane = weakestLane; handIndex = strongestHand; overwriteMode = true;
+                }
             }
         }
     } else {
@@ -65,6 +91,8 @@ async function executeEnemyAI() {
                     const card = enemyHand[i];
                     if (hasSkill(card, 'quick')) {
                         for (let l of availableLanes) {
+                            // 伝説カード制限
+                            if (hasSkill(card, 'legendary') && l !== 1) continue;
                             if (playerBoard[l] === null && playerHP - card.currentPower <= 0) {
                                 if (enemyBoard[l] !== null) {
                                     enemyBoard[l] = null; // 上書き
@@ -131,6 +159,9 @@ async function executeEnemyAI() {
 
                     for (let i = 0; i < enemyHand.length; i++) {
                         const card = enemyHand[i];
+
+                        // 【制限】伝説カードは中央のみ
+                        if (hasSkill(card, 'legendary') && l !== 1) continue;
 
                         // 【制限】速攻カードを防御（身代わり）に使うのは、相手を倒せる場合のみ
                         if (hasSkill(card, 'quick') && targetEnemyCard) {
@@ -298,6 +329,8 @@ async function executeEnemyAI() {
                         if (hasSkill(c, 'quick') && playerBoard[targetLane]) {
                             if (c.currentPower < playerBoard[targetLane].currentPower && !hasSkill(c, 'deadly')) continue;
                         }
+                        // 伝説カードの配置制限
+                        if (hasSkill(c, 'legendary') && targetLane !== 1) continue;
                         bestIdx = i;
                         break;
                     }

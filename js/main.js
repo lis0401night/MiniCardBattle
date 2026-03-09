@@ -14,6 +14,19 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
         if (typeof isProcessing === 'undefined') return;
         if (isProcessing || selectedCardIndex === null) return;
         const l = parseInt(cell.getAttribute('data-lane'));
+        const newCard = playerHand[selectedCardIndex];
+
+        // 伝説カードの配置制限
+        if (hasSkill(newCard, 'legendary') && l !== 1) {
+            playSound(SOUNDS.seDamage);
+            showConfirmModal(
+                `「${newCard.name}」は伝説のカードのため、中央のレーンにしか配置できません。`,
+                () => { },
+                null,
+                true // 警告モード（OKボタンのみ）
+            );
+            return;
+        }
 
         // 既にカードがあるレーンの場合は確認モーダルを表示
         if (playerBoard[l] !== null) {

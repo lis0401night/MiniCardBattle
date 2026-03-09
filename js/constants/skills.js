@@ -25,7 +25,8 @@ const SKILLS = {
     charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダーのSPを${val >= 0 ? '+' : ''}${val}する` },
     stealth: { name: '潜伏', icon: '👣', desc: (val) => `召喚時、自身に無敵${val || 1}を付与する。` },
     invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` },
-    guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' }
+    guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' },
+    legendary: { name: '伝説', icon: '👑', desc: (val) => '中央のレーンにしか配置できない。' }
 };
 
 // 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）
@@ -36,5 +37,5 @@ const ACTIVE_SKILLS = [
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 const PASSIVE_SKILLS = [
-    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible'
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary'
 ];

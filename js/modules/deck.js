@@ -18,7 +18,43 @@ function generateDeck(owner, config, sessionId) {
         });
     } else {
         // 敵のデッキ生成（リーダーごとの初期デッキを使用）
-        const deckIds = ENEMY_DECKS[config.id] || ENEMY_DECKS.android;
+        let deckIds = ENEMY_DECKS[config.id] || ENEMY_DECKS.android;
+
+        // 難易度(aiLevel)による調整
+        if (typeof aiLevel !== 'undefined') {
+            if (aiLevel === 1) { // EASY: ゴールド(rarity 3)を抜く
+                deckIds = deckIds.filter(id => {
+                    const t = CARD_MASTER.find(m => m.id === id);
+                    return !t || t.rarity !== 3;
+                });
+            } else if (aiLevel === 3) { // HARD: デッキにあるゴールドを4枚ずつにする
+                const goldIds = [...new Set(deckIds.filter(id => {
+                    const t = CARD_MASTER.find(m => m.id === id);
+                    return t && t.rarity === 3;
+                }))];
+
+                // ゴールド以外のカードを抽出
+                let baseDeck = deckIds.filter(id => {
+                    const t = CARD_MASTER.find(m => m.id === id);
+                    return !t || t.rarity !== 3;
+                });
+
+                // 各ゴールドカードにつき最大4枚になるように追加
+                goldIds.forEach(gid => {
+                    const count = deckIds.filter(id => id === gid).length;
+                    const addCount = Math.max(0, 4 - count);
+                    for (let n = 0; n < addCount; n++) {
+                        baseDeck.push(gid);
+                    }
+                    // もともとあったゴールドカードも追加（重複させないために一旦抜いたので）
+                    for (let n = 0; n < count; n++) {
+                        baseDeck.push(gid);
+                    }
+                });
+                deckIds = baseDeck;
+            }
+        }
+
         deckIds.forEach((cardId, i) => {
             const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
