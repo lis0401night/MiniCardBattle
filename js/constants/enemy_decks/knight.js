@@ -1,30 +1,28 @@
 ENEMY_DECKS.knight = {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'commander', 'commander', 'commander',
-        'mage', 'mage', 'mage',
-        'wall', 'wall',
-        'cleric', 'cleric',
+        'commander', 'commander',
+        'lightpaladin', 'lightpaladin',
+        'ninja', 'ninja', 'ninja',
+        'crenellatedwall', 'crenellatedwall', 'crenellatedwall',
+        'clone', 'clone', 'clone',
         'sniper', 'sniper', 'sniper',
-        'clone', 'clone', 'clone'
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
         'champion',
         'assassin', 'assassin',
         'commander', 'commander',
-        'mage', 'mage',
-        'wall', 'wall',
-        'cleric', 'cleric',
-        'sniper', 'sniper', 'sniper',
-        'clone', 'clone', 'clone'
+        'darkpaladin', 'darkpaladin',
+        'ninja', 'ninja', 'ninja',
+        'crenellatedwall', 'crenellatedwall',
+        'clone', 'clone', 'clone', 'clone',
     ],
     hard: [
         'champion', 'champion', 'champion', 'champion',
         'assassin', 'assassin', 'assassin', 'assassin',
         'commander', 'commander', 'commander', 'commander',
-        'mage', 'mage', 'mage', 'mage',
-        'sniper', 'sniper', 'sniper', 'sniper',
-        'clone', 'clone', 'clone', 'clone'
+        'lightpaladin', 'lightpaladin', 'lightpaladin', 'lightpaladin',
+        'darkpaladin', 'darkpaladin', 'darkpaladin', 'darkpaladin',
     ]
 };

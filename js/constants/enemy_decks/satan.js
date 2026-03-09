@@ -1,35 +1,28 @@
 ENEMY_DECKS.satan = {
     easy: [
-        'golem', 'golem', 'golem', 'golem', 'golem', 'golem',
-        'babydragon', 'babydragon',
-        'bigai', 'bigai',
-        'cheetah', 'cheetah',
-        'mage', 'mage',
-        'shade', 'shade',
-        'berserker', 'berserker',
-        'tortoise', 'tortoise'
+        'golem', 'golem', 'golem', 'golem',
+        'wall', 'wall', 'wall', 'wall',
+        'copy', 'copy', 'copy', 'copy',
+        'mage', 'mage', 'mage', 'mage',
+        'clone', 'clone', 'clone', 'clone',
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'daemon', 'daemon', 'daemon', 'daemon',
-        'cyberdragoon',
-        'champion',
-        'dragon',
-        'octopus',
-        'wolf',
-        'copy',
-        'babydragon',
-        'bigai',
-        'cheetah',
-        'mage',
-        'shade',
-        'berserker'
+        'wall', 'wall', 'wall', 'wall',
+        'copy', 'copy', 'copy', 'copy',
+        'mage', 'mage', 'mage', 'mage',
+        'clone', 'clone', 'clone', 'clone',
     ],
     hard: [
         'daemon', 'daemon', 'daemon', 'daemon',
-        'cyberdragoon', 'cyberdragoon', 'cyberdragoon', 'cyberdragoon',
-        'champion', 'champion', 'champion', 'champion',
-        'dragon', 'dragon', 'dragon', 'dragon',
-        'octopus', 'octopus', 'octopus', 'octopus'
+        'cyberdragoon',
+        'cyberman',
+        'champion',
+        'assassin',
+        'dragon',
+        'warlock', 'warlock',
+        'wolf', 'wolf', 'wolf',
+        'vampire', 'vampire', 'vampire',
+        'octopus', 'octopus', 'octopus',
     ]
 };

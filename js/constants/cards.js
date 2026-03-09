@@ -27,6 +27,7 @@ const CARD_MASTER = [
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
     { id: 'lightpaladin', name: '光の聖騎士', power: 5, skill: 'guardian', rarity: 2, flavor: '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。', imgUrl: 'assets/card_lightpaladin.jpg' },
     { id: 'darkpaladin', name: '闇の聖騎士', power: 5, skills: [{ id: 'deadly' }, { id: 'sacrifice', value: 2 }], rarity: 2, flavor: '「勝利のためなら、この命すらも捨て石にすぎん。」黒鉄の鎧に身を包んだ冷徹な騎士。', imgUrl: 'assets/card_darkpaladin.jpg' },
+    { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 2, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
     { id: 'cyberdragoon', name: '試作型ドラグーン', power: 5, skills: [{ id: 'spread', value: 3 }, { id: 'charge', value: -3 }, { id: 'legendary' }], rarity: 3, flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。', imgUrl: 'assets/card_cyberdragon.jpg' },
     { id: 'cyberman', name: 'ライオット・キーパー', power: 6, skills: [{ id: 'charge', value: -1 }], rarity: 3, flavor: '「システム始動……これより排除を開始する。」最新型の暴徒鎮圧用ドロイド。', imgUrl: 'assets/card_cyberman.jpg' },
     { id: 'dragon', name: 'ファイア・ドラゴン', power: 6, skills: [{ id: 'spread', value: 2 }, { id: 'berserk', value: 2 }, { id: 'legendary' }], rarity: 3, flavor: '炎を纏った紅蓮の翼。その咆哮は敵を焼き払い、荒ぶる魔力は周囲をも巻き込む。' },
@@ -36,7 +37,6 @@ const CARD_MASTER = [
     { id: 'wolf', name: '真夜中の狩人', power: 3, skills: [{ id: 'lone_wolf', value: 3 }, { id: 'legendary' }], rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
     { id: 'vampire', name: '夜の王', power: 5, skills: [{ id: 'soul_bind', value: 3 }, { id: 'sacrifice', value: 3 }], rarity: 3, flavor: '冷笑を浮かべる夜の支配者。彼の者に狙われた者は、魂の底まで吸い尽くされる。', imgUrl: 'assets/card_vampire.jpg' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
-    { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 3, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
