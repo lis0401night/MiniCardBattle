@@ -389,7 +389,7 @@ async function waitPlayerHandSelection(count, owner) {
 }
 
 
-function evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count) {
+function evaluateBestLanesForToken(allLanes, owner, tokenCard, count) {
     if (aiLevel <= 1) {
         // EASY: ランダム
         return [...emptyLanes].sort(() => Math.random() - 0.5).slice(0, count);
