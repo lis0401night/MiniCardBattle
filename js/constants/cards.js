@@ -28,7 +28,7 @@ const CARD_MASTER = [
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'wolf', name: '真夜中の狩人', power: 2, skill: 'lone_wolf', skillValue: 3, rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
     { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 3, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
-    { id: 'daemon', name: '魔界の尖兵', power: 6, skill: 'sacrifice', skillValue: 2, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
+    { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
