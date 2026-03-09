@@ -29,8 +29,9 @@ async function activateLeaderSkill(owner) {
 
     if (checkWinCondition()) return;
 
-    // 盤面が一杯でスキルも使えない場合のオートスキップ（プレイヤーのみ）
-    if (isBlue && playerBoard.every(c => c !== null) && (!playerConfig.leaderSkill.cost || playerSP < playerConfig.leaderSkill.cost)) {
+    // 盤面が一杯かつ手札も無空で、スキルも使えない場合のオートスキップ（プレイヤーのみ）
+    // 手札がある場合は上書き配置が可能なため、勝手に終了させない
+    if (isBlue && playerBoard.every(c => c !== null) && playerHand.length === 0 && (!playerConfig.leaderSkill.cost || playerSP < playerConfig.leaderSkill.cost)) {
         const st = document.getElementById('turn-status');
         st.innerText = "BOARD FULL - AUTO SKIP";
         st.style.color = "#94a3b8";

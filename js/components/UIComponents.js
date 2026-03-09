@@ -1,14 +1,17 @@
 // ==========================================
-function renderSkillTag(card) {
+function renderSkillTag(card, isBoard = false) {
     if (!card) return '';
     let badges = [];
 
     // 元のスキル（単一）
     const s = SKILLS[card.skill];
     if (s && card.skill !== 'none' && s.name !== '通常') {
-        const skillName = s.name || '';
-        const value = card.skillValue || '';
-        badges.push(`<div class="card-skill">${s.icon} ${skillName}${value}</div>`);
+        const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(card.skill);
+        if (showBadge) {
+            const skillName = s.name || '';
+            const value = card.skillValue || '';
+            badges.push(`<div class="card-skill">${s.icon} ${skillName}${value}</div>`);
+        }
     }
 
     // 複数スキルへの対応
@@ -16,15 +19,18 @@ function renderSkillTag(card) {
         card.skills.forEach(sk => {
             const sObj = SKILLS[sk.id];
             if (sObj && sObj.name !== '通常') {
-                badges.push(`<div class="card-skill">${sObj.icon} ${sObj.name}${sk.value || ''}</div>`);
+                const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(sk.id);
+                if (showBadge) {
+                    badges.push(`<div class="card-skill">${sObj.icon} ${sObj.name}${sk.value || ''}</div>`);
+                }
             }
         });
     }
 
-    // 拘束（スタン）状態による「防衛」バッジ
+    // 拘束（スタン）状態による「防御」バッジ（カウント表示追加）
     if (card.stunTurns > 0) {
         const def = SKILLS['defender'];
-        badges.push(`<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防衛</div>`);
+        badges.push(`<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防御${card.stunTurns}</div>`);
     }
 
     if (badges.length === 0) return '';

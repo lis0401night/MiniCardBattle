@@ -156,14 +156,14 @@ async function executeEnemyAI() {
                                     maxP = playerBoard[j].currentPower; maxL = j;
                                 }
                             }
-                            if (maxL !== -1) pDmg[maxL] += (getSkillValue(card, 'snipe') || 4);
+                            if (maxL !== -1 && !hasSkill(playerBoard[maxL], 'invincible')) pDmg[maxL] += (getSkillValue(card, 'snipe') || 4);
                         }
                         if (hasSkill(card, 'spread')) {
                             const val = getSkillValue(card, 'spread') || 2;
                             // 正面とその隣接レーンのみ
                             const targets = [l, l - 1, l + 1].filter(j => j >= 0 && j < 3);
                             for (let j of targets) {
-                                if (playerBoard[j]) pDmg[j] += val;
+                                if (playerBoard[j] && !hasSkill(playerBoard[j], 'invincible')) pDmg[j] += val;
                             }
                         }
                         // 英雄スキル：自身を含む埋まっているレーン数 × value をパワーに加算
@@ -187,16 +187,22 @@ async function executeEnemyAI() {
                         let score = 0;
 
                         if (targetEnemyCard) {
-                            const remainingOpponentPower = targetEnemyCard.currentPower - pDmg[l];
-                            if (remainingOpponentPower <= 0) {
-                                score += 2000 + simPower;
+                            if (hasSkill(targetEnemyCard, 'invincible')) {
+                                score += 500 + simPower; // 無敵の相手は破壊できない
                             } else {
-                                const isWin = simPower >= remainingOpponentPower || hasSkill(card, 'deadly');
-                                if (isWin) {
-                                    score += 1000 + (remainingOpponentPower * 50) + simPower;
-                                    if (simPower === remainingOpponentPower && !hasSkill(card, 'deadly')) score -= 100;
+                                const remainingOpponentPower = targetEnemyCard.currentPower - pDmg[l];
+                                if (remainingOpponentPower <= 0) {
+                                    score += 2000 + simPower;
                                 } else {
-                                    score += 500 + (remainingOpponentPower * 40) - (simPower * 10);
+                                    const isWin = simPower >= remainingOpponentPower || hasSkill(card, 'deadly');
+                                    const selfInv = hasSkill(card, 'stealth') || hasSkill(card, 'invincible');
+                                    // 無敵または絶対勝ち
+                                    if (isWin || selfInv) {
+                                        score += 1000 + (remainingOpponentPower * 50) + simPower;
+                                        if (simPower === remainingOpponentPower && !hasSkill(card, 'deadly')) score -= 100;
+                                    } else {
+                                        score += 500 + (remainingOpponentPower * 40) - (simPower * 10);
+                                    }
                                 }
                             }
                         } else {

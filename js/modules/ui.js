@@ -514,10 +514,10 @@ function updateCardDetail(c) {
     }
 }
 
-function createCardDOM(c) {
+function createCardDOM(c, isBoard = false) {
     const rarityClass = c.rarity ? ` rarity-${c.rarity}` : '';
     const d = document.createElement('div'); d.className = `card ${c.owner}${rarityClass}`;
-    let sH = renderSkillTag(c);
+    let sH = renderSkillTag(c, isBoard);
 
     // シャドウ戦のカードはグレーにする
     let filter = c.filter;
@@ -541,7 +541,7 @@ function createCardDOM(c) {
 function renderHand() {
     const e = document.getElementById('player-hand'); e.innerHTML = '';
     playerHand.forEach((c, i) => {
-        const d = createCardDOM(c); d.className += " hand-card" + (i === selectedCardIndex ? " selected" : "");
+        const d = createCardDOM(c, false); d.className += " hand-card" + (i === selectedCardIndex ? " selected" : "");
         d.onclick = () => { if (isProcessing) return; playSound(SOUNDS.seClick); if (selectedCardIndex === i) { selectedCardIndex = null; updateCardDetail(null); } else { selectedCardIndex = i; updateCardDetail(playerHand[i]); } renderHand(); renderBoard(); highlightLanes(); };
         setupLongPress(d, c);
         e.appendChild(d);
@@ -555,7 +555,7 @@ function renderBoard() {
         const p = document.querySelector(`#player-lanes .cell[data-lane="${i}"]`), e = document.querySelector(`#enemy-lanes .cell[data-lane="${i}"]`);
         p.innerHTML = ''; p.className = 'cell'; e.innerHTML = ''; e.className = 'cell';
         if (playerBoard[i]) {
-            const d = createCardDOM(playerBoard[i]);
+            const d = createCardDOM(playerBoard[i], true);
             d.onclick = (ev) => {
                 // 手札カードが選択中の場合はクリックをセルに伝播させる（上書き配置を可能にする）
                 if (selectedCardIndex !== null) return;
@@ -568,7 +568,7 @@ function renderBoard() {
             p.appendChild(d);
         }
         if (enemyBoard[i]) {
-            const d = createCardDOM(enemyBoard[i]);
+            const d = createCardDOM(enemyBoard[i], true);
             d.onclick = (ev) => { ev.stopPropagation(); playSound(SOUNDS.seClick); updateCardDetail(enemyBoard[i]); };
             setupLongPress(d, enemyBoard[i]);
             e.appendChild(d);

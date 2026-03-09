@@ -22,5 +22,18 @@ const SKILLS = {
     bind: { name: '拘束', icon: '🕸️', desc: (val) => `召喚時、正面のカードに${val}ターンの間「防御」を持たせる。` },
     growth: { name: '成長', icon: '🌱', desc: (val) => `自分のターン開始時、パワーを${val >= 0 ? '+' : ''}${val}する。` },
     hero: { name: '英雄', icon: '🏆', desc: (val) => `召喚時、自分の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
-    charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダーのSPを${val >= 0 ? '+' : ''}${val}する` }
+    charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダーのSPを${val >= 0 ? '+' : ''}${val}する` },
+    stealth: { name: '潜伏', icon: '👣', desc: (val) => `召喚時、自身に無敵${val || 1}を付与する。` },
+    invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` }
 };
+
+// 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）
+const ACTIVE_SKILLS = [
+    'draw', 'heal', 'snipe', 'spread', 'copy', 'support', 'clone',
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth'
+];
+
+// 戦闘中やターン開始時など、継続的に影響を与えるスキル
+const PASSIVE_SKILLS = [
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible'
+];
