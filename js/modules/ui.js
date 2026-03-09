@@ -560,8 +560,8 @@ function renderBoard() {
         if (playerBoard[i]) {
             const d = createCardDOM(playerBoard[i], true);
             d.onclick = (ev) => {
-                // 手札カードが選択中の場合はクリックをセルに伝播させる（上書き配置を可能にする）
-                if (selectedCardIndex !== null) return;
+                // 手札カードが選択中、またはスキル発動中(isProcessing)はクリックをセルに伝播させる
+                if (selectedCardIndex !== null || isProcessing) return;
                 ev.stopPropagation();
                 if (isProcessing) return;
                 playSound(SOUNDS.seClick);
