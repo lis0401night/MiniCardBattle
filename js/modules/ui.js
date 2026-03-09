@@ -551,7 +551,23 @@ function renderHand() {
     });
 }
 
-function highlightLanes() { document.querySelectorAll('#player-lanes .cell').forEach((c, i) => selectedCardIndex !== null ? c.classList.add('highlight') : c.classList.remove('highlight')); }
+function highlightLanes() {
+    document.querySelectorAll('#player-lanes .cell').forEach((c, i) => {
+        if (selectedCardIndex === null) {
+            c.classList.remove('highlight');
+        } else {
+            const card = playerHand[selectedCardIndex];
+            if (hasSkill(card, 'legendary')) {
+                // 伝説カードなら中央（インデックス1）のみハイライト
+                if (i === 1) c.classList.add('highlight');
+                else c.classList.remove('highlight');
+            } else {
+                // 通常カードなら全てハイライト
+                c.classList.add('highlight');
+            }
+        }
+    });
+}
 
 function renderBoard() {
     for (let i = 0; i < 3; i++) {
