@@ -5,19 +5,36 @@
 async function executeEnemyAI() {
     if (isBattleEnded) return;
 
-    // リーダースキルの使用判定（共通ロジック）
-    // 無駄撃ちを防ぐ（例: プレイヤー側の盤面が空のときは全体除去を撃たない）
-    if (enemyConfig.leaderSkill.cost && enemySP >= enemyConfig.leaderSkill.cost) {
-        let shouldUseSkill = true;
-        const action = enemyConfig.leaderSkill.action;
+    // リーダースキルの使用判定（一新：配置前と配置後の2段階または緊急時）
+    // ここでは「配置前」の一般的な使用判定を行う（確率は90%に引き上げ）
+    const canUseSkill = enemyConfig.leaderSkill.cost && enemySP >= enemyConfig.leaderSkill.cost;
+    const skillAction = enemyConfig.leaderSkill.action;
 
-        // 殲滅光線（全体ダメージ）の場合、プレイヤーの場にカードが1枚も無ければ使わない
-        if (action === 'annihilation') {
-            const hasPlayerCards = Object.values(playerBoard).some(c => c !== null);
-            if (!hasPlayerCards) shouldUseSkill = false;
+    if (canUseSkill) {
+        let shouldProactiveUse = false;
+
+        // スキルごとの積極使用判断
+        if (skillAction === 'annihilation') {
+            // 敵が2体以上、または強力な敵（パワー5以上）がいるなら撃つ
+            const enemyCount = Object.values(playerBoard).filter(c => c !== null).length;
+            const hasStrongEnemy = Object.values(playerBoard).some(c => c && c.currentPower >= 5);
+            if (enemyCount >= 2 || hasStrongEnemy) shouldProactiveUse = true;
+        } else if (skillAction === 'holy_march' || skillAction === 'satan_avatar' || skillAction === 'dragon_summon') {
+            // 盤面に空きがあるなら積極的に展開
+            const emptyCount = enemyBoard.filter(c => c === null).length;
+            if (emptyCount >= 1) shouldProactiveUse = true;
+        } else if (skillAction === 'dark_ritual') {
+            // HPが減っている、または相手のHPを削れるなら撃つ
+            if (enemyHP < MAX_HP || playerHP > 0) shouldProactiveUse = true;
+        } else if (skillAction === 'abyss_ritual') {
+            // 手札があるなら強化のために撃つ
+            if (enemyHand.length >= 2) shouldProactiveUse = true;
+        } else if (skillAction === 'targeted_destruction') {
+            // 相手にカードがあるなら撃つ
+            if (Object.values(playerBoard).some(c => c !== null)) shouldProactiveUse = true;
         }
 
-        if (shouldUseSkill && Math.random() < 0.7) {
+        if (shouldProactiveUse && Math.random() < 0.9) {
             await activateLeaderSkill('red');
             if (checkWinCondition()) return;
         }
@@ -144,6 +161,28 @@ async function executeEnemyAI() {
                     maxIncomingDamage = directDmg;
                     lethalLane = i;
                 }
+            }
+        }
+
+        // ②-B リーダースキルによる緊急回避（追加）
+        // lethalLaneがある場合、配置の前にスキルで状況を改善できないか試みる
+        if (lethalLane !== -1 && canUseSkill) {
+            let emergencyUsed = false;
+            if (skillAction === 'dark_ritual') {
+                // 回復で耐えられるなら使う
+                await activateLeaderSkill('red');
+                emergencyUsed = true;
+            } else if (skillAction === 'annihilation' || skillAction === 'targeted_destruction') {
+                // 除去で脅威を取り除ける可能性があるなら使う
+                await activateLeaderSkill('red');
+                emergencyUsed = true;
+            }
+
+            if (emergencyUsed) {
+                if (checkWinCondition()) return;
+                // スキル使用後にリーサル状況を再計算するために一度抜けて再考させるか、
+                // あるいはこのまま続行（virtualHPが更新されているのでシミュレーションには乗る）
+                currentEnemyHP = enemyHP; // 実HPを更新
             }
         }
 

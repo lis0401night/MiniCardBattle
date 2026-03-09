@@ -422,6 +422,18 @@ function evaluateBestLanesForToken(allLanes, owner, tokenCard, count) {
         } else {
             // 空きレーンボーナス
             score += 1000;
+
+            // 手札に応じたレーン確保ロジック（追加）
+            const hand = owner === 'red' ? enemyHand : playerHand;
+            const hasLegendary = hand.some(c => hasSkill(c, 'legendary'));
+            const hasSupport = hand.some(c => hasSkill(c, 'support'));
+
+            if (l === 1) {
+                // 伝説カードがあるなら中央は極力空ける
+                if (hasLegendary) score -= 3000;
+                // 援護カードなども中央に置きたい場合を考慮
+                else if (hasSupport) score -= 3000;
+            }
         }
 
         return { lane: l, score };
