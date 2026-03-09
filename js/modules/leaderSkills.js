@@ -117,7 +117,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
 
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, token);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true);
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             board[l] = action === 'satan_avatar' ?
@@ -129,7 +129,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         }
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_soldier');
-        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK);
+        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true);
 
         for (let l of selectedLanes) {
             board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_soldier.jpg', filter: 'none', currentPower: tK.power, rarity: tK.rarity || 1 };

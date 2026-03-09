@@ -2,8 +2,12 @@
  * Mini Card Battle - Enemy AI Logic
  */
 
+/**
+ * 通常の敵AIの思考ルーチン（手札からの配置）
+ * 1ターンに基本1枚のみ配置するルールを遵守
+ */
 async function executeEnemyAI() {
-    if (appState !== 'battle' || isProcessing || isBattleEnded) return;
+    if (appState !== 'battle' || isBattleEnded) return;
 
     isProcessing = true;
     try {
@@ -24,198 +28,286 @@ async function executeEnemyAI() {
             } else if (skillAction === 'dragon_summon' || skillAction === 'satan_avatar') {
                 if (enemyBoard.some(c => c === null)) shouldActivate = true;
             } else if (skillAction === 'holy_march') {
-                if (enemyBoard.filter(c => c !== null).length >= 1) shouldActivate = true;
+                // 盤面に空きがある（召喚）か、既に1枚以上いてバフの恩恵がある場合
+                if (enemyBoard.some(c => c === null) || enemyBoard.filter(c => c !== null).length >= 1) shouldActivate = true;
             } else if (skillAction === 'abyss_ritual') {
-                if (enemyHand.length <= 3 || enemyHand.some(c => c.power <= 3)) shouldActivate = true;
+                // 手札が2枚以上あればバフ効率が良い
+                if (enemyHand.length >= 2) shouldActivate = true;
             } else if (skillAction === 'targeted_destruction') {
                 if (playerBoard.some(c => c !== null)) shouldActivate = true;
             } else if (skillAction === 'dark_ritual') {
                 if (enemyHP <= enemyMaxHP - 3 || playerHP > 5) shouldActivate = true;
             }
 
-            if (shouldActivate && Math.random() < 0.9) {
+            // 条件を満たしていれば、ほぼ確実に発動
+            if (shouldActivate && Math.random() < 0.98) {
                 await activateLeaderSkill('red');
                 if (isBattleEnded) return;
+                await sleep(500);
             }
         }
 
-        const emptyLanes = [];
-        const allLanes = [0, 1, 2];
-        for (let i = 0; i < 3; i++) {
-            if (enemyBoard[i] === null) emptyLanes.push(i);
-        }
-
+        // 思考ルーチン: 1枚だけ最適なカードを選ぶ
         if (enemyHand.length > 0) {
-            // リーサル（敗北）回避の優先判定
-            let lethalLane = -1;
-            let maxIncomingDamage = 0;
-            let virtualHP = enemyHP;
+            const decision = getBestMove(enemyHand, enemyBoard, playerBoard);
 
-            for (let i = 0; i < 3; i++) {
-                const pCard = playerBoard[i];
-                if (pCard) {
-                    let directDmg = 0;
-                    if (!enemyBoard[i]) {
-                        directDmg = pCard.currentPower;
-                    } else {
-                        const myCard = enemyBoard[i];
-                        let effectiveEnemyDamage = pCard.currentPower;
-                        if (hasSkill(myCard, 'sturdy')) effectiveEnemyDamage = Math.floor(effectiveEnemyDamage / 2);
-                        if (effectiveEnemyDamage > myCard.currentPower && !hasSkill(myCard, 'deadly')) {
-                            directDmg = effectiveEnemyDamage - myCard.currentPower;
-                        }
-                    }
-
-                    if (directDmg > 0 && virtualHP - directDmg <= 0 && directDmg > maxIncomingDamage) {
-                        maxIncomingDamage = directDmg;
-                        lethalLane = i;
-                    }
+            if (decision.bestCardIndex !== -1 && decision.bestLane !== -1 && (decision.bestScore > 500 || decision.totalDamageBefore >= 4)) {
+                if (decision.bestIsOverwrite) {
+                    const oldCard = enemyBoard[decision.bestLane];
+                    discardCard('red', oldCard, decision.bestLane);
                 }
-            }
-
-            if (lethalLane !== -1 && canUseSkill) {
-                const skillAction = skill.action;
-                if (['dark_ritual', 'annihilation', 'targeted_destruction'].includes(skillAction)) {
-                    await activateLeaderSkill('red');
-                    if (isBattleEnded) return;
-                }
-            }
-
-            let bestCardIndex = -1;
-            let bestLane = -1;
-            let bestScore = -999999;
-            let bestIsOverwrite = false;
-
-            const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : (emptyLanes.length > 0 ? emptyLanes : allLanes);
-
-            for (let l of lanesToEvaluate) {
-                const isOverwrite = enemyBoard[l] !== null;
-
-                for (let i = 0; i < enemyHand.length; i++) {
-                    const card = enemyHand[i];
-
-                    if (hasSkill(card, 'legendary') && l !== 1) continue;
-
-                    const targetEnemyCard = playerBoard[l];
-                    if (hasSkill(card, 'quick') && targetEnemyCard && hasSkill(targetEnemyCard, 'invincible') && lethalLane === -1) {
-                        continue;
-                    }
-
-                    let score = 0;
-                    let simPower = card.currentPower;
-                    let pDmg = [0, 0, 0];
-
-                    if (hasSkill(card, 'lone_wolf')) {
-                        const emptyCount = enemyBoard.filter((c, j) => j !== l && c === null).length;
-                        simPower += emptyCount * (getSkillValue(card, 'lone_wolf') || 3);
-                    }
-                    if (hasSkill(card, 'hero')) {
-                        const filledCount = enemyBoard.filter((c, j) => (j !== l && c !== null) || j === l).length;
-                        simPower += filledCount * (getSkillValue(card, 'hero') || 3);
-                    }
-                    if (hasSkill(card, 'support')) {
-                        const val = getSkillValue(card, 'support') || 2;
-                        [l - 1, l + 1].forEach(j => {
-                            if (j >= 0 && j < 3 && enemyBoard[j]) {
-                                const ally = enemyBoard[j];
-                                const opponent = playerBoard[j];
-                                score += 500;
-                                if (opponent) {
-                                    const currentWin = ally.currentPower >= opponent.currentPower;
-                                    const afterBuffWin = (ally.currentPower + val) >= opponent.currentPower;
-                                    if (!currentWin && afterBuffWin) score += 2000;
-                                }
-                            }
-                        });
-                    }
-
-                    if (hasSkill(card, 'snipe')) {
-                        let maxL = -1, maxP = -1;
-                        for (let j = 0; j < 3; j++) {
-                            if (playerBoard[j] && playerBoard[j].currentPower > maxP) {
-                                maxP = playerBoard[j].currentPower; maxL = j;
-                            }
-                        }
-                        if (maxL !== -1 && !hasSkill(playerBoard[maxL], 'invincible')) {
-                            let dmg = (getSkillValue(card, 'snipe') || 4);
-                            if (hasSkill(playerBoard[maxL], 'sturdy')) dmg = Math.floor(dmg / 2);
-                            pDmg[maxL] += dmg;
-                        }
-                    }
-                    if (hasSkill(card, 'spread')) {
-                        const val = getSkillValue(card, 'spread') || 2;
-                        let spreadHitCount = 0;
-                        [l - 1, l, l + 1].forEach(j => {
-                            if (j >= 0 && j < 3 && playerBoard[j] && !hasSkill(playerBoard[j], 'invincible')) {
-                                let dmg = val;
-                                if (hasSkill(playerBoard[j], 'sturdy')) dmg = Math.floor(dmg / 2);
-                                pDmg[j] += dmg;
-                                spreadHitCount++;
-                                if (playerBoard[j].currentPower <= dmg) score += 1500;
-                            }
-                        });
-                        if (spreadHitCount >= 2) score += 1000 * spreadHitCount;
-                    }
-
-                    if (hasSkill(card, 'sacrifice')) {
-                        const cost = getSkillValue(card, 'sacrifice') || 0;
-                        if (enemyHP - cost <= 0) score = -9999999;
-                    }
-
-                    if (targetEnemyCard) {
-                        const pInv = hasSkill(targetEnemyCard, 'invincible');
-                        const pSturdy = hasSkill(targetEnemyCard, 'sturdy');
-                        const pLethalGrowth = hasSkill(targetEnemyCard, 'growth') && (targetEnemyCard.currentPower + getSkillValue(targetEnemyCard, 'growth') <= 0);
-
-                        if (pInv) {
-                            score += 500 + simPower;
-                        } else if (pLethalGrowth) {
-                            score += 300 + simPower;
-                        } else {
-                            let effectiveDmg = simPower;
-                            if (pSturdy) effectiveDmg = Math.floor(effectiveDmg / 2);
-                            const remainingP = targetEnemyCard.currentPower - pDmg[l];
-                            if (remainingP <= 0) {
-                                score += 2000 + simPower;
-                            } else {
-                                const pPowerAfterSkill = remainingP;
-                                const isWin = effectiveDmg >= pPowerAfterSkill || hasSkill(card, 'deadly');
-                                if (isWin) score += 1000 + (pPowerAfterSkill * 60) + (simPower * 10);
-                                else score += 400 + (pPowerAfterSkill * 30) - (simPower * 5);
-                            }
-                            if (pSturdy && simPower === 1) score -= 200;
-                        }
-                    } else {
-                        score += 1500 + (simPower * 20);
-                        if (l > 0 && enemyBoard[l - 1]) score += 200;
-                        if (l < 2 && enemyBoard[l + 1]) score += 200;
-                    }
-
-                    if (targetEnemyCard && targetEnemyCard.currentPower >= 4) score += 5000;
-
-                    if (isOverwrite) {
-                        score -= 6000;
-                        if (enemyBoard[l].currentPower >= 5) score -= 3000;
-                    }
-
-                    if (score > bestScore) {
-                        bestScore = score; bestCardIndex = i; bestLane = l; bestIsOverwrite = isOverwrite;
-                    }
-                }
-            }
-
-            if (bestCardIndex !== -1 && bestLane !== -1) {
-                if (bestIsOverwrite) {
-                    const oldCard = enemyBoard[bestLane];
-                    discardCard('red', oldCard, bestLane);
-                }
-                await playCard('red', bestCardIndex, bestLane);
+                await playCard('red', decision.bestCardIndex, decision.bestLane);
+                await sleep(600);
             }
         }
+    } catch (e) {
+        console.error("AI Error:", e);
     } finally {
         if (!isBattleEnded) {
             isProcessing = false;
             endTurnLogic('red');
         }
     }
+}
+
+/**
+ * トークンや分身などの追加配置用の最適レーン評価
+ */
+function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill = false) {
+    if (owner === 'blue') {
+        const shuffled = [...allLanes].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, count);
+    }
+
+    const results = [];
+    let tempBoard = [...enemyBoard];
+
+    for (let k = 0; k < count; k++) {
+        let bestScore = -999999;
+        let bestLane = -1;
+
+        // 手札からの配置と同様、空きレーンがあればそこを優先、無ければ全レーンを対象にする
+        const emptyLanes = allLanes.filter(l => tempBoard[l] === null && !results.includes(l));
+        const lanesToEvaluate = emptyLanes.length > 0 ? emptyLanes : allLanes.filter(l => !results.includes(l));
+
+        for (let l of lanesToEvaluate) {
+            let score = calculateScoreForPlacement(tokenCard, l, tempBoard, playerBoard, -1, isLeaderSkill);
+
+            // 上書き配置には強力なペナルティ（手札からの配置と一貫性を持たせる）
+            if (tempBoard[l] !== null) {
+                score -= 10000;
+                const myCP = tempBoard[l].currentPower !== undefined ? tempBoard[l].currentPower : (tempBoard[l].power || 0);
+                if (myCP >= 5) score -= 5000;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestLane = l;
+            }
+        }
+
+        if (bestLane !== -1) {
+            results.push(bestLane);
+            tempBoard[bestLane] = tokenCard;
+        }
+    }
+    return results;
+}
+
+/**
+ * 特定の配置におけるボード全体の被ダメージを計算する
+ */
+function calculateTotalIncomingDamage(myBoard, opBoard, extraHits = [0, 0, 0]) {
+    let total = 0;
+    for (let i = 0; i < 3; i++) {
+        const pCard = opBoard[i];
+        if (!pCard) continue;
+
+        let dmg = 0;
+        const myCard = myBoard[i];
+        if (!myCard) {
+            dmg = pCard.currentPower || pCard.power || 0;
+        } else {
+            let effAtk = pCard.currentPower || pCard.power || 0;
+            const myCP = myCard.currentPower !== undefined ? myCard.currentPower : (myCard.power || 0);
+            if (hasSkill(myCard, 'sturdy')) effAtk = Math.floor(effAtk / 2);
+            if (effAtk > myCP && !hasSkill(myCard, 'deadly')) {
+                dmg = effAtk - myCP;
+            }
+        }
+        // スキル（狙撃・拡散）によるダメージ加算を考慮
+        let finalDmg = Math.max(0, dmg - extraHits[i]);
+        total += finalDmg;
+    }
+    return total;
+}
+
+/**
+ * 盤面状況に基づきスコアを計算する共通関数
+ */
+function calculateScoreForPlacement(card, l, myBoard, opBoard, lethalLane = -1, isLeaderSkill = false) {
+    if (hasSkill(card, 'legendary') && l !== 1) return -1000000;
+
+    let score = 0;
+
+    // 手札に伝説(Rarity 3)がある場合、リーダースキルの召喚時は中央を空ける（予約）
+    if (l === 1 && !hasSkill(card, 'legendary') && isLeaderSkill) {
+        if (enemyHand.some(c => hasSkill(c, 'legendary') || (c.rarity === 3))) {
+            score -= 20000;
+        }
+    }
+
+    const targetEnemyCard = opBoard[l];
+    if (hasSkill(card, 'quick') && targetEnemyCard && hasSkill(targetEnemyCard, 'invincible') && lethalLane === -1) return -500000;
+
+    let simPower = card.currentPower !== undefined ? card.currentPower : (card.power || 0);
+    let pDmgToEnemy = [0, 0, 0]; // 自分が相手に与えるスキルダメージ
+
+    // スキル効果の計算
+    if (hasSkill(card, 'lone_wolf')) {
+        const emptyCount = myBoard.filter((c, j) => j !== l && c === null).length;
+        simPower += emptyCount * (getSkillValue(card, 'lone_wolf') || 3);
+    }
+    if (hasSkill(card, 'hero')) {
+        const filledCount = myBoard.filter((c, j) => (j !== l && c !== null) || j === l).length;
+        simPower += filledCount * (getSkillValue(card, 'hero') || 3);
+    }
+    if (hasSkill(card, 'support')) {
+        const val = getSkillValue(card, 'support') || 2;
+        [l - 1, l + 1].forEach(j => {
+            if (j >= 0 && j < 3 && myBoard[j]) {
+                const ally = myBoard[j]; const opponent = opBoard[j];
+                const allyCP = ally.currentPower !== undefined ? ally.currentPower : (ally.power || 0);
+                const opCP = (opponent && opponent.currentPower !== undefined) ? opponent.currentPower : (opponent ? opponent.power : 0);
+                score += 500;
+                if (opponent) {
+                    if (allyCP < opCP && (allyCP + val) >= opCP) score += 2000;
+                }
+            }
+        });
+    }
+    if (hasSkill(card, 'snipe')) {
+        let maxL = -1, maxP = -1;
+        for (let j = 0; j < 3; j++) {
+            if (opBoard[j]) {
+                const opCP = opBoard[j].currentPower !== undefined ? opBoard[j].currentPower : (opBoard[j].power || 0);
+                if (opCP > maxP) { maxP = opCP; maxL = j; }
+            }
+        }
+        if (maxL !== -1 && !hasSkill(opBoard[maxL], 'invincible')) {
+            let dmg = getSkillValue(card, 'snipe') || 4;
+            if (hasSkill(opBoard[maxL], 'sturdy')) dmg = Math.floor(dmg / 2);
+            pDmgToEnemy[maxL] += dmg;
+        }
+    }
+    if (hasSkill(card, 'spread')) {
+        const val = getSkillValue(card, 'spread') || 2;
+        let hitCount = 0;
+        [l - 1, l, l + 1].forEach(j => {
+            if (j >= 0 && j < 3 && opBoard[j] && !hasSkill(opBoard[j], 'invincible')) {
+                let dmg = val; if (hasSkill(opBoard[j], 'sturdy')) dmg = Math.floor(dmg / 2);
+                pDmgToEnemy[j] += dmg; hitCount++;
+                const opCP = opBoard[j].currentPower !== undefined ? opBoard[j].currentPower : (opBoard[j].power || 0);
+                if (opCP <= dmg) score += 1500;
+            }
+        });
+        if (hitCount >= 2) score += 1000 * hitCount;
+    }
+    if (hasSkill(card, 'sacrifice')) {
+        const cost = getSkillValue(card, 'sacrifice') || 0;
+        if (enemyHP - cost <= 0) score = -9999999;
+    }
+
+    // 仮想盤面での被ダメージ計算
+    const virtualBoard = [...myBoard];
+    virtualBoard[l] = { ...card, currentPower: simPower };
+    // スキルで敵を倒せた場合の盤面更新
+    const virtualOpBoard = opBoard.map((c, i) => {
+        if (!c) return null;
+        const cCP = c.currentPower !== undefined ? c.currentPower : (c.power || 0);
+        if (cCP <= pDmgToEnemy[i]) return null;
+        return { ...c, currentPower: cCP - pDmgToEnemy[i] };
+    });
+
+    const totalDmgBefore = calculateTotalIncomingDamage(myBoard, opBoard);
+    const totalDmgAfter = calculateTotalIncomingDamage(virtualBoard, virtualOpBoard);
+
+    // 4以上の合計ダメージを回避できた場合、または軽減できた場合にボーナス
+    if (totalDmgBefore >= 4 && totalDmgAfter < 4) {
+        score += 8000;
+    } else if (totalDmgAfter < totalDmgBefore) {
+        score += (totalDmgBefore - totalDmgAfter) * 1000;
+    }
+
+    // 対面戦闘評価
+    if (targetEnemyCard) {
+        const pInv = hasSkill(targetEnemyCard, 'invincible');
+        const pSturdy = hasSkill(targetEnemyCard, 'sturdy');
+        const targetCP = targetEnemyCard.currentPower !== undefined ? targetEnemyCard.currentPower : (targetEnemyCard.power || 0);
+        const pLethalGr = hasSkill(targetEnemyCard, 'growth') && (targetCP + getSkillValue(targetEnemyCard, 'growth') <= 0);
+        if (pInv) score += 500 + simPower;
+        else if (pLethalGr) score += 300 + simPower;
+        else {
+            let effDmg = simPower; if (pSturdy) effDmg = Math.floor(effDmg / 2);
+            const remP = (virtualOpBoard[l] ? virtualOpBoard[l].currentPower : 0);
+            if (remP <= 0) score += 2000 + simPower;
+            else {
+                const isWin = effDmg >= remP || hasSkill(card, 'deadly');
+                if (isWin) score += 1000 + (remP * 60) + (simPower * 10);
+                else score += 400 + (remP * 30) - (simPower * 5);
+            }
+        }
+    } else {
+        score += 1500 + (simPower * 20);
+    }
+
+    return score;
+}
+
+/**
+ * 最善の1手を算出する
+ */
+function getBestMove(hand, myBoard, opBoard) {
+    let bestCardIndex = -1, bestLane = -1, bestScore = -999999, bestIsOverwrite = false;
+
+    const totalDamageBefore = calculateTotalIncomingDamage(myBoard, opBoard);
+
+    // リーサル回避判定
+    let lethalLane = -1;
+    for (let i = 0; i < 3; i++) {
+        const pCard = opBoard[i];
+        if (pCard) {
+            let dmg = 0;
+            const pCP = pCard.currentPower !== undefined ? pCard.currentPower : (pCard.power || 0);
+            if (!myBoard[i]) dmg = pCP;
+            else {
+                let eff = pCP;
+                const myCP = myBoard[i].currentPower !== undefined ? myBoard[i].currentPower : (myBoard[i].power || 0);
+                if (hasSkill(myBoard[i], 'sturdy')) eff = Math.floor(eff / 2);
+                if (eff > myCP && !hasSkill(myBoard[i], 'deadly')) dmg = eff - myCP;
+            }
+            if (dmg > 0 && enemyHP - dmg <= 0) { lethalLane = i; break; }
+        }
+    }
+
+    const allLanes = [0, 1, 2];
+    const emptyLanes = allLanes.filter(l => myBoard[l] === null);
+    const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : (emptyLanes.length > 0 ? emptyLanes : allLanes);
+
+    for (let l of lanesToEvaluate) {
+        const isOverwrite = myBoard[l] !== null;
+        for (let i = 0; i < hand.length; i++) {
+            let score = calculateScoreForPlacement(hand[i], l, myBoard, opBoard, lethalLane);
+            if (isOverwrite) {
+                score -= 10000;
+                const myCP = myBoard[l].currentPower !== undefined ? myBoard[l].currentPower : (myBoard[l].power || 0);
+                if (myCP >= 5) score -= 5000;
+            }
+            if (score > bestScore) {
+                bestScore = score; bestCardIndex = i; bestLane = l; bestIsOverwrite = isOverwrite;
+            }
+        }
+    }
+
+    return { bestCardIndex, bestLane, bestScore, bestIsOverwrite, lethalLane, totalDamageBefore };
 }

@@ -166,12 +166,12 @@ function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('b
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
  */
-async function waitPlayerLaneSelection(count, owner, tokenCard) {
+async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
     // AIの場合：空きレーンがあれば優先、無ければ味方カードの上書きを検討
     if (owner === 'red') {
         const allLanes = board.map((_, i) => i);
-        return evaluateBestLanesForToken(allLanes, owner, tokenCard, count);
+        return evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill);
     }
 
     // プレイヤーの場合：常に手動選択（自動選択は行わない）
@@ -389,58 +389,6 @@ async function waitPlayerHandSelection(count, owner) {
 }
 
 
-function evaluateBestLanesForToken(allLanes, owner, tokenCard, count) {
-    const board = owner === 'red' ? enemyBoard : playerBoard;
-    if (aiLevel <= 1) {
-        // EASY: ランダム
-        return [...allLanes].sort(() => Math.random() - 0.5).slice(0, count);
-    }
-
-    // NORMAL/HARD: 簡易的な評価
-    const scores = allLanes.map(l => {
-        let score = 0;
-        const eCard = owner === 'red' ? playerBoard[l] : enemyBoard[l];
-        const myCard = board[l];
-
-        // 相手カードがいる場合（対面評価）
-        if (eCard) {
-            if (tokenCard.power >= eCard.currentPower) {
-                score += 1000 + eCard.currentPower * 10;
-            } else {
-                score += 500 + eCard.currentPower * 5;
-            }
-        } else {
-            score += 200 + tokenCard.power;
-        }
-
-        // 自分のカードがある場合（上書き評価）
-        if (myCard) {
-            // 空きレーンを最優先するため、大幅にスコアを引く
-            score -= 5000;
-            // 自分のパワーが低いほど、上書きの価値が高い（マイナスの緩和）
-            score -= myCard.currentPower * 100;
-        } else {
-            // 空きレーンボーナス
-            score += 1000;
-
-            // 手札に応じたレーン確保ロジック（追加）
-            const hand = owner === 'red' ? enemyHand : playerHand;
-            const hasLegendary = hand.some(c => hasSkill(c, 'legendary'));
-            const hasSupport = hand.some(c => hasSkill(c, 'support'));
-
-            if (l === 1) {
-                // 伝説カードがあるなら中央は極力空ける
-                if (hasLegendary) score -= 3000;
-                // 援護カードなども中央に置きたい場合を考慮
-                else if (hasSupport) score -= 3000;
-            }
-        }
-
-        return { lane: l, score };
-    });
-
-    return scores.sort((a, b) => b.score - a.score).slice(0, count).map(s => s.lane);
-}
 
 
 function discardCard(owner, card, lane) {

@@ -93,7 +93,7 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const count = skillValue || 1;
         const tC = CARD_MASTER.find(m => m.id === 'token_clone');
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
-        const selectedLanes = await waitPlayerLaneSelection(count, o, tC);
+        const selectedLanes = await waitPlayerLaneSelection(count, o, tC, false);
         for (let i = 0; i < selectedLanes.length; i++) {
             const tL = selectedLanes[i];
             b[tL] = { id: `cl_${Date.now()}_${i}`, owner: o, ...tC, imgUrl: c.imgUrl, filter: c.filter, power: c.power, currentPower: c.currentPower, rarity: c.rarity || 1, basePower: c.power };
