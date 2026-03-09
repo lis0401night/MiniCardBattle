@@ -1,150 +1,89 @@
-// ==========================================
-// 敵AIの思考ルーチンロジック
-// ==========================================
+/**
+ * Mini Card Battle - Enemy AI Logic
+ */
 
 async function executeEnemyAI() {
-    if (isBattleEnded) return;
+    if (appState !== 'battle' || isProcessing || isBattleEnded) return;
 
-    // リーダースキルの使用判定（一新：配置前と配置後の2段階または緊急時）
-    // ここでは「配置前」の一般的な使用判定を行う（確率は90%に引き上げ）
-    const canUseSkill = enemyConfig.leaderSkill.cost && enemySP >= enemyConfig.leaderSkill.cost;
-    const skillAction = enemyConfig.leaderSkill.action;
+    // --- リーダースキルの積極的活用ロジック (追加) ---
+    const skill = enemyConfig.leaderSkill;
+    const canUseSkill = enemySP >= skill.cost;
 
     if (canUseSkill) {
-        let shouldProactiveUse = false;
+        let shouldActivate = false;
+        const skillAction = skill.action;
 
-        // スキルごとの積極使用判断
+        // 状況に応じた発動判定 (独自ロジック)
         if (skillAction === 'annihilation') {
-            // 敵が2体以上、または強力な敵（パワー5以上）がいるなら撃つ
-            const enemyCount = Object.values(playerBoard).filter(c => c !== null).length;
-            const hasStrongEnemy = Object.values(playerBoard).some(c => c && c.currentPower >= 5);
-            if (enemyCount >= 2 || hasStrongEnemy) shouldProactiveUse = true;
-        } else if (skillAction === 'holy_march' || skillAction === 'satan_avatar' || skillAction === 'dragon_summon') {
-            // 盤面に空きがあるなら積極的に展開
-            const emptyCount = enemyBoard.filter(c => c === null).length;
-            if (emptyCount >= 1) shouldProactiveUse = true;
-        } else if (skillAction === 'dark_ritual') {
-            // HPが減っている、または相手のHPを削れるなら撃つ
-            if (enemyHP < MAX_HP || playerHP > 0) shouldProactiveUse = true;
+            // 敵が2体以上、または強力な敵がいる場合
+            const playerCardCount = playerBoard.filter(c => c !== null).length;
+            const hasStrongEnemy = playerBoard.some(c => c && c.currentPower >= 5);
+            if (playerCardCount >= 2 || hasStrongEnemy) shouldActivate = true;
+        } else if (skillAction === 'dragon_summon' || skillAction === 'satan_avatar') {
+            // 盤面に空きがあるなら積極的に出す
+            if (enemyBoard.some(c => c === null)) shouldActivate = true;
+        } else if (skillAction === 'holy_march') {
+            // 味方が2体以上いる、または空きがある
+            if (enemyBoard.filter(c => c !== null).length >= 1) shouldActivate = true;
         } else if (skillAction === 'abyss_ritual') {
-            // 手札があるなら強化のために撃つ
-            if (enemyHand.length >= 2) shouldProactiveUse = true;
+            // 手札が少ない、またはパワーが低いカードがある
+            if (enemyHand.length <= 3 || enemyHand.some(c => c.power <= 3)) shouldActivate = true;
         } else if (skillAction === 'targeted_destruction') {
-            // 相手にカードがあるなら撃つ
-            if (Object.values(playerBoard).some(c => c !== null)) shouldProactiveUse = true;
+            // 相手にカードがあるなら使う
+            if (playerBoard.some(c => c !== null)) shouldActivate = true;
+        } else if (skillAction === 'dark_ritual') {
+            // HPが減っている、または相手にダメージを与えたい
+            if (enemyHP <= enemyMaxHP - 3 || playerHP > 5) shouldActivate = true;
         }
 
-        if (shouldProactiveUse && Math.random() < 0.9) {
+        // 基本的な発動確率 (高い確率で使うように調整)
+        if (shouldActivate && Math.random() < 0.9) {
             await activateLeaderSkill('red');
             if (checkWinCondition()) return;
         }
     }
+    // ----------------------------------------------
 
-    // 難易度別のプレイ判断ルーチン
-    let targetLane = -1;
-    let handIndex = -1;
-    let overwriteMode = false; // 上書きモードフラグ
+    isProcessing = true;
+    await sleep(800);
 
-    if (aiLevel === 1) {
-        // EASY: 完全にランダム（空きレーンにランダムな手札）
-        const emptyLanes = enemyBoard.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-        if (emptyLanes.length > 0 && enemyHand.length > 0) {
-            handIndex = Math.floor(Math.random() * enemyHand.length);
-            const card = enemyHand[handIndex];
-            if (hasSkill(card, 'legendary')) {
-                // 伝説カードなら中央（1）に置く。中央が空いてなければ別のカードを探す
-                if (emptyLanes.includes(1)) {
-                    targetLane = 1;
+    const emptyLanes = [];
+    const allLanes = [0, 1, 2];
+    for (let i = 0; i < 3; i++) {
+        if (enemyBoard[i] === null) emptyLanes.push(i);
+    }
+
+    if (enemyHand.length > 0) {
+        // ① 現状の被ダメージ予測
+        let currentTotalIncoming = 0;
+        for (let i = 0; i < 3; i++) {
+            const pCard = playerBoard[i];
+            const eCard = enemyBoard[i];
+            if (pCard) {
+                if (!eCard) {
+                    currentTotalIncoming += pCard.currentPower;
                 } else {
-                    // 中央が空いてないので別の（非伝説）カードを探す
-                    const nonLegendaryIndices = enemyHand.map((c, i) => !hasSkill(c, 'legendary') ? i : -1).filter(i => i !== -1);
-                    if (nonLegendaryIndices.length > 0) {
-                        handIndex = nonLegendaryIndices[Math.floor(Math.random() * nonLegendaryIndices.length)];
-                        targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
-                    } else {
-                        // 全て伝説カードで中央が空いてない場合は何もしない
-                        handIndex = -1;
-                    }
-                }
-            } else {
-                targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
-            }
-        } else if (emptyLanes.length === 0 && enemyHand.length > 0) {
-            // ボード満杯時：手札の最強カードが盤面の最弱カードより強ければ上書き
-            let weakestLane = -1, weakestPower = Infinity;
-            let strongestHand = -1, strongestPower = -1;
-            for (let i = 0; i < 3; i++) {
-                if (enemyBoard[i] && enemyBoard[i].currentPower < weakestPower) {
-                    weakestPower = enemyBoard[i].currentPower; weakestLane = i;
-                }
-            }
-            for (let i = 0; i < enemyHand.length; i++) {
-                if (enemyHand[i].currentPower > strongestPower) {
-                    strongestPower = enemyHand[i].currentPower; strongestHand = i;
-                }
-            }
-            if (weakestLane !== -1 && strongestHand !== -1 && strongestPower > weakestPower) {
-                // 伝説カードの場合は中央レーンのみ上書き可能
-                const card = enemyHand[strongestHand];
-                if (hasSkill(card, 'legendary')) {
-                    if (weakestLane === 1) {
-                        targetLane = weakestLane; handIndex = strongestHand; overwriteMode = true;
-                    }
-                } else {
-                    targetLane = weakestLane; handIndex = strongestHand; overwriteMode = true;
-                }
-            }
-        }
-    } else {
-        // NORMAL (2) / HARD (3): シミュレーションベースの意思決定
-        const emptyLanes = enemyBoard.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-        const allLanes = [0, 1, 2];
-
-        // ① リーサル判定（速攻）: 相手のHPを0にできる「速攻」があれば最優先
-        const quickLethalLanes = emptyLanes.length > 0 ? emptyLanes : allLanes;
-        for (let i = 0; i < enemyHand.length; i++) {
-            const card = enemyHand[i];
-            if (hasSkill(card, 'quick')) {
-                for (let l of quickLethalLanes) {
-                    if (hasSkill(card, 'legendary') && l !== 1) continue;
-                    // 正面にカードがない場合のみリーサル判定
-                    if (playerBoard[l] === null && playerHP - card.currentPower <= 0) {
-                        if (enemyBoard[l] !== null) {
-                            enemyBoard[l] = null; // 上書き
-                            renderBoard();
-                        }
-                        await playCard('red', i, l);
-                        if (checkWinCondition()) return;
-                        await sleep(500);
-                        endTurnLogic('red');
-                        return;
+                    // 貫通ダメージの計算
+                    let effectiveEnemyDamage = pCard.currentPower;
+                    if (hasSkill(eCard, 'sturdy')) effectiveEnemyDamage = Math.floor(effectiveEnemyDamage / 2);
+                    if (effectiveEnemyDamage > eCard.currentPower && !hasSkill(eCard, 'deadly')) {
+                        currentTotalIncoming += (effectiveEnemyDamage - eCard.currentPower);
                     }
                 }
             }
         }
 
-        // ② 次ターンの致命傷（敗北）を回避できるか判定
+        // ② リーサル（敗北）回避の優先判定
         let lethalLane = -1;
         let maxIncomingDamage = 0;
-        let currentEnemyHP = enemyHP;
+        let virtualHP = enemyHP;
 
-        // リーダースキルによる回復や除去の可能性を考慮
-        const canHeal = enemyConfig.leaderSkill.action === 'dark_ritual' && enemySP >= (enemyConfig.leaderSkill.cost || 3);
-        const virtualHP = canHeal ? currentEnemyHP + 3 : currentEnemyHP;
-
+        // ②-A 次の相手のターン開始時の盤面をシミュレート（成長スキル等）
         for (let i = 0; i < 3; i++) {
-            if (playerBoard[i] !== null) {
-                const pCard = playerBoard[i];
-                if (hasSkill(pCard, 'defender')) continue;
-
-                // 次のターン開始時に負の成長で自壊するカードは脅威から除外
-                if (hasSkill(pCard, 'growth')) {
-                    const gVal = getSkillValue(pCard, 'growth');
-                    if (gVal < 0 && pCard.currentPower + gVal <= 0) continue;
-                }
-
+            const pCard = playerBoard[i];
+            if (pCard) {
                 let directDmg = 0;
-                if (enemyBoard[i] === null) {
+                if (!enemyBoard[i]) {
                     directDmg = pCard.currentPower;
                 } else {
                     const myCard = enemyBoard[i];
@@ -164,32 +103,28 @@ async function executeEnemyAI() {
             }
         }
 
-        // ②-B リーダースキルによる緊急回避（追加）
-        // lethalLaneがある場合、配置の前にスキルで状況を改善できないか試みる
+        // ②-B リーダースキルによる緊急回避
         if (lethalLane !== -1 && canUseSkill) {
             let emergencyUsed = false;
+            const skillAction = skill.action;
             if (skillAction === 'dark_ritual') {
-                // 回復で耐えられるなら使う
                 await activateLeaderSkill('red');
                 emergencyUsed = true;
             } else if (skillAction === 'annihilation' || skillAction === 'targeted_destruction') {
-                // 除去で脅威を取り除ける可能性があるなら使う
                 await activateLeaderSkill('red');
                 emergencyUsed = true;
             }
 
             if (emergencyUsed) {
                 if (checkWinCondition()) return;
-                // スキル使用後にリーサル状況を再計算するために一度抜けて再考させるか、
-                // あるいはこのまま続行（virtualHPが更新されているのでシミュレーションには乗る）
-                currentEnemyHP = enemyHP; // 実HPを更新
+                currentEnemyHP = enemyHP;
             }
         }
 
         // ③ シミュレーションによる最適配置の選択
         let bestCardIndex = -1;
         let bestLane = -1;
-        let bestScore = -99999;
+        let bestScore = -999999;
         let bestIsOverwrite = false;
 
         const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : (emptyLanes.length > 0 ? emptyLanes : allLanes);
@@ -208,6 +143,8 @@ async function executeEnemyAI() {
                     continue;
                 }
 
+                // スコア計算の初期化
+                let score = 0;
                 let simPower = card.currentPower;
                 let pDmg = [0, 0, 0];
 
@@ -222,11 +159,24 @@ async function executeEnemyAI() {
                 }
                 if (hasSkill(card, 'support')) {
                     const val = getSkillValue(card, 'support') || 2;
-                    let supportBonus = 0;
-                    if (l > 0 && enemyBoard[l - 1]) supportBonus += val;
-                    if (l < 2 && enemyBoard[l + 1]) supportBonus += val;
-                    simPower += supportBonus; // 味方へのバフも自身の価値に加算
+                    [l - 1, l + 1].forEach(j => {
+                        if (j >= 0 && j < 3 && enemyBoard[j]) {
+                            const ally = enemyBoard[j];
+                            const opponent = playerBoard[j];
+                            score += 500; // バフを付与できることへの基本点
+
+                            if (opponent) {
+                                const currentWin = ally.currentPower >= opponent.currentPower;
+                                const afterBuffWin = (ally.currentPower + val) >= opponent.currentPower;
+                                // バフによって戦況が好転（負け/分け → 勝ち）する場合に大幅加点
+                                if (!currentWin && afterBuffWin) {
+                                    score += 2000;
+                                }
+                            }
+                        }
+                    });
                 }
+
                 if (hasSkill(card, 'snipe')) {
                     let maxL = -1, maxP = -1;
                     for (let j = 0; j < 3; j++) {
@@ -242,17 +192,31 @@ async function executeEnemyAI() {
                 }
                 if (hasSkill(card, 'spread')) {
                     const val = getSkillValue(card, 'spread') || 2;
+                    let spreadHitCount = 0;
                     [l - 1, l, l + 1].forEach(j => {
                         if (j >= 0 && j < 3 && playerBoard[j] && !hasSkill(playerBoard[j], 'invincible')) {
                             let dmg = val;
                             if (hasSkill(playerBoard[j], 'sturdy')) dmg = Math.floor(dmg / 2);
                             pDmg[j] += dmg;
+                            spreadHitCount++;
+
+                            // スキルダメージだけで敵を倒せる場合はボーナス付与
+                            if (playerBoard[j].currentPower <= dmg) {
+                                score += 1500;
+                            }
                         }
                     });
+                    // 複数ヒット時のコンボボーナス
+                    if (spreadHitCount >= 2) score += 1000 * spreadHitCount;
                 }
 
-                // スコア評価
-                let score = 0;
+                // 「対価」による自滅防止ロジック
+                if (hasSkill(card, 'sacrifice')) {
+                    const cost = getSkillValue(card, 'sacrifice') || 0;
+                    if (enemyHP - cost <= 0) {
+                        score = -999999; // 敗北につながる手は絶対に選ばない
+                    }
+                }
 
                 // 戦闘シミュレーション
                 if (targetEnemyCard) {
@@ -284,56 +248,22 @@ async function executeEnemyAI() {
                         if (pSturdy && simPower === 1) score -= 200;
                     }
                 } else {
-                    score += 300 + simPower;
+                    // 空きレーンへの配置
+                    score += 1500 + (simPower * 20);
+                    // 隣接レーンへの影響（味方がいる場合）
+                    if (l > 0 && enemyBoard[l - 1]) score += 200;
+                    if (l < 2 && enemyBoard[l + 1]) score += 200;
                 }
 
-                // スキルによる他レーンへの貢献
-                for (let j = 0; j < 3; j++) {
-                    if (j !== l && playerBoard[j] && pDmg[j] > 0) {
-                        if (playerBoard[j].currentPower - pDmg[j] <= 0) score += 1000;
-                        else score += pDmg[j] * 50;
-                    }
+                // 大ダメージ被弾回避ボーナス (4以上の被弾を防ぐなら強力な加点)
+                if (targetEnemyCard && targetEnemyCard.currentPower >= 4) {
+                    score += 5000;
                 }
 
-                // 防御・生存評価
-                if (l === lethalLane) score += 10000;
-
-                // 被ダメージ軽減の評価強化（特に4ダメージ以上の防御）
-                if (targetEnemyCard && !hasSkill(targetEnemyCard, 'defender')) {
-                    const currentIncomingDmg = (function () {
-                        const existingCard = enemyBoard[l];
-                        if (!existingCard) return targetEnemyCard.currentPower;
-                        let eff = targetEnemyCard.currentPower;
-                        if (hasSkill(existingCard, 'sturdy')) eff = Math.floor(eff / 2);
-                        return Math.max(0, eff - existingCard.currentPower);
-                    })();
-
-                    const newIncomingDmg = (function () {
-                        let eff = targetEnemyCard.currentPower - pDmg[l];
-                        if (eff <= 0) return 0;
-                        if (hasSkill(card, 'sturdy')) eff = Math.floor(eff / 2);
-                        return Math.max(0, eff - simPower);
-                    })();
-
-                    const preventedDmg = currentIncomingDmg - newIncomingDmg;
-                    if (preventedDmg >= 4) {
-                        score += 5000; // 大ダメージを阻止する配置を強力に推奨
-                    } else if (preventedDmg > 0) {
-                        score += preventedDmg * 200;
-                    }
-                }
-
-                // 自壊リスク（負の成長）
-                if (hasSkill(card, 'growth')) {
-                    const val = getSkillValue(card, 'growth');
-                    if (val < 0 && card.currentPower + val <= 0) score -= 1500;
-                }
-
-                // 上書きペナルティ
+                // 上書きペナルティ（基本的には空きを優先）
                 if (isOverwrite) {
-                    const lostCard = enemyBoard[l];
-                    score -= lostCard.currentPower * 100;
-                    if (simPower <= lostCard.currentPower) score -= 1000;
+                    score -= 5000;
+                    if (enemyBoard[l].currentPower >= 5) score -= 2000; // 強い味方の上書きは避ける
                 }
 
                 if (score > bestScore) {
@@ -345,23 +275,19 @@ async function executeEnemyAI() {
             }
         }
 
-        if (bestCardIndex !== -1 && (bestScore > 0 || lethalLane !== -1)) {
-            targetLane = bestLane;
-            handIndex = bestCardIndex;
-            overwriteMode = bestIsOverwrite;
+        // 最善の手が存在すれば実行
+        if (bestCardIndex !== -1 && bestLane !== -1) {
+            const card = enemyHand.splice(bestCardIndex, 1)[0];
+            if (bestIsOverwrite) {
+                const oldCard = enemyBoard[bestLane];
+                discardCard('red', oldCard, bestLane);
+            }
+            await playCard('red', bestLane, card);
         }
     }
 
-    // カードをプレイする
-    if (targetLane !== -1 && handIndex !== -1 && enemyHand.length > 0) {
-        if (overwriteMode && enemyBoard[targetLane] !== null) {
-            enemyBoard[targetLane] = null;
-            renderBoard();
-        }
-        await playCard('red', handIndex, targetLane);
-        if (checkWinCondition()) return;
-        await sleep(500);
+    if (!isBattleEnded) {
+        isProcessing = false;
+        endTurn();
     }
-
-    endTurnLogic('red');
 }
