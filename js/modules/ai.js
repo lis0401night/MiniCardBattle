@@ -287,19 +287,17 @@ async function executeEnemyAI() {
             overwriteMode = bestIsOverwrite;
         }
     }
-}
 
-// カードをプレイする
-if (targetLane !== -1 && handIndex !== -1 && enemyHand.length > 0) {
-    // 上書きモードの場合、既存カードを破棄
-    if (overwriteMode && enemyBoard[targetLane] !== null) {
-        enemyBoard[targetLane] = null;
-        renderBoard();
+    // カードをプレイする
+    if (targetLane !== -1 && handIndex !== -1 && enemyHand.length > 0) {
+        if (overwriteMode && enemyBoard[targetLane] !== null) {
+            enemyBoard[targetLane] = null;
+            renderBoard();
+        }
+        await playCard('red', handIndex, targetLane);
+        if (checkWinCondition()) return;
+        await sleep(500);
     }
-    await playCard('red', handIndex, targetLane);
-    if (checkWinCondition()) return;
-    await sleep(500);
-}
 
-endTurnLogic('red');
+    endTurnLogic('red');
 }
