@@ -559,6 +559,8 @@ function hasActiveSkill(c) {
 // 判定補助: 特定のスキルを所持しているか
 function hasSkill(c, skillId) {
     if (!c) return false;
+    // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
+    if (skillId === 'defender' && c.stunTurns > 0) return true;
     if (c.skill === skillId) return true;
     if (Array.isArray(c.skills)) {
         return c.skills.some(s => s.id === skillId);
