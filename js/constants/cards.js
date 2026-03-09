@@ -34,6 +34,8 @@ const CARD_MASTER = [
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 3, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
+    { id: 'lightpaladin', name: '光の聖騎士', power: 5, skill: 'guardian', rarity: 2, flavor: '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。', imgUrl: 'assets/card_lightpaladin.png' },
+    { id: 'darkpaladin', name: '闇の聖騎士', power: 5, skills: [{ id: 'deadly' }, { id: 'sacrifice', value: 2 }], rarity: 2, flavor: '「勝利のためなら、この命すらも捨て石にすぎん。」黒鉄の鎧に身を包んだ冷徹な騎士。', imgUrl: 'assets/card_darkpaladin.png' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },

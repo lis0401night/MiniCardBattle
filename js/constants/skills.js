@@ -15,7 +15,7 @@ const SKILLS = {
     clone: { name: '分身', icon: '👥', desc: (val) => `召喚時、自分のレーンに、自身と同じパワーの分身を${val || 1}体生成する。` },
     lone_wolf: { name: '単騎', icon: '🐺', desc: (val) => `召喚時、自分の空いているレーンの数×${val || 3}だけパワーを上げる。` },
     soul_bind: { name: '魂縛', icon: '⛓️', desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。` },
-    sturdy: { name: '頑丈', icon: '🛡', desc: (val) => '戦闘時で受けるダメージを半減する（端数切り捨て）。' },
+    sturdy: { name: '頑丈', icon: '⛰', desc: (val) => '戦闘時で受けるダメージを半減する（端数切り捨て）。' },
     berserk: { name: '狂乱', icon: '💢', desc: (val) => `召喚時、自分の場の隣のレーンにいるカードに${val}ダメージ。` },
     split: { name: '分裂', icon: '🐙', desc: (val) => `破壊時、同じレーンにパワー${val}のトークンを出す。` },
     sacrifice: { name: '対価', icon: '🩸', desc: (val) => `召喚時、自分のリーダーに${val || 3}ダメージを与える。` },
@@ -24,7 +24,8 @@ const SKILLS = {
     hero: { name: '英雄', icon: '🏆', desc: (val) => `召喚時、自分の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
     charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分のリーダーのSPを${val >= 0 ? '+' : ''}${val}する` },
     stealth: { name: '潜伏', icon: '👣', desc: (val) => `召喚時、自身に無敵${val || 1}を付与する。` },
-    invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` }
+    invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` },
+    guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' }
 };
 
 // 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）

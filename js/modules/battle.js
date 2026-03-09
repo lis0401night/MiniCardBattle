@@ -636,17 +636,43 @@ async function executeSingleCombat(atk, l) {
         if (hasSkill(dB[l], 'invincible')) dDef = 0;
         if (hasSkill(aC, 'invincible')) dAtk = 0;
 
-        dB[l].currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) aC.currentPower -= dAtk;
-        const dE = document.querySelector(`${dR} .cell[data-lane="${l}"] .card`); if (dE) dE.classList.add('anim-shake');
-        playSound(SOUNDS.seDamage); createDamagePopup(dE, `-${dDef}`); if (!hasSkill(dB[l], 'defender')) createDamagePopup(aE, `-${dAtk}`);
+        // 守護（guardian）スキルの判定：隣接する味方がダメージを肩代わりする
+        let dLane = l;
+        let dg = (l === 1) ? (hasSkill(dB[0], 'guardian') ? 0 : (hasSkill(dB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(dB[1], 'guardian') ? 1 : null) : (hasSkill(dB[1], 'guardian') ? 1 : null));
+        if (dg !== null) dLane = dg;
+
+        let aLane = l;
+        if (!hasSkill(dB[l], 'defender')) {
+            let ag = (l === 1) ? (hasSkill(aB[0], 'guardian') ? 0 : (hasSkill(aB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(aB[1], 'guardian') ? 1 : null) : (hasSkill(aB[1], 'guardian') ? 1 : null));
+            if (ag !== null) aLane = ag;
+        }
+
+        const realDef = dB[dLane], realAtk = aB[aLane];
+        realDef.currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) realAtk.currentPower -= dAtk;
+
+        const dE_real = document.querySelector(`${dR} .cell[data-lane="${dLane}"] .card`);
+        const aE_real = document.querySelector(`${aR} .cell[data-lane="${aLane}"] .card`);
+
+        if (dE_real) dE_real.classList.add('anim-shake');
+        playSound(SOUNDS.seDamage); createDamagePopup(dE_real, `-${dDef}`);
+        if (!hasSkill(dB[l], 'defender')) {
+            if (aE_real) aE_real.classList.add('anim-shake');
+            createDamagePopup(aE_real, `-${dAtk}`);
+        }
         renderBoard(); await sleep(400);
-        if (dDef > 0 && hasSkill(aC, 'deadly')) dB[l].currentPower = 0;
-        if (dAtk > 0 && hasSkill(dB[l], 'deadly')) aC.currentPower = 0;
-        let aD = aC.currentPower <= 0, dD = dB[l].currentPower <= 0, tr = false;
+
+        if (dDef > 0 && hasSkill(aC, 'deadly')) realDef.currentPower = 0;
+        if (dAtk > 0 && hasSkill(dB[l], 'deadly')) realAtk.currentPower = 0;
+
+        let aD = realAtk.currentPower <= 0, dD = realDef.currentPower <= 0, tr = false;
         if (dD && !aD && hasSkill(aC, 'soul_bind')) { const val = getSkillValue(aC, 'soul_bind') || 2; aC.currentPower += val; aC.power += val; createDamagePopup(aE, `+${val}`, '#4ade80'); tr = true; }
-        if (aD && !dD && hasSkill(dB[l], 'soul_bind')) { const val = getSkillValue(dB[l], 'soul_bind') || 2; dB[l].currentPower += val; dB[l].power += val; createDamagePopup(dE, `+${val}`, '#4ade80'); tr = true; }
+        if (aD && !dD && hasSkill(dB[l], 'soul_bind')) {
+            const val = getSkillValue(dB[l], 'soul_bind') || 2; dB[l].currentPower += val; dB[l].power += val;
+            const dE_orig = document.querySelector(`${dR} .cell[data-lane="${l}"] .card`);
+            createDamagePopup(dE_orig, `+${val}`, '#4ade80'); tr = true;
+        }
         if (tr) { playSound(SOUNDS.seSkill); renderBoard(); await sleep(300); }
-        if (aD) { if (!discardCard(atk, aC, l)) aB[l] = null; } if (dD) { if (!discardCard(atk === 'blue' ? 'red' : 'blue', dB[l], l)) dB[l] = null; }
+        if (aD) { if (!discardCard(atk, realAtk, aLane)) aB[aLane] = null; } if (dD) { if (!discardCard(atk === 'blue' ? 'red' : 'blue', realDef, dLane)) dB[dLane] = null; }
         if (aD || dD) playSound(SOUNDS.seDestroy);
     } else {
         const d = aC.currentPower; playSound(SOUNDS.seDamage); document.body.classList.add('anim-shake');
