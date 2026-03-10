@@ -4,9 +4,13 @@
 
 // 初期ロード時に音量を復元
 (function () {
+    // gameVolumeが未定義の場合は初期値をセット
+    if (typeof gameVolume === 'undefined') {
+        window.gameVolume = 0.5;
+    }
     const savedVol = localStorage.getItem('mini_card_battle_volume');
     if (savedVol !== null) {
-        gameVolume = parseFloat(savedVol);
+        window.gameVolume = parseFloat(savedVol);
     }
 })();
 

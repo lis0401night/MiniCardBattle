@@ -1,20 +1,20 @@
 // ==========================================
 // グローバル変数（ゲーム状態管理）
 // ==========================================
-let playerConfig = CHARACTERS.android;
-let enemyConfig = CHARACTERS.dragon;
-let playerDeckSelection = [];
-let playerInventory = {}; // 所持カード枚数管理
-let playerHP, enemyHP, playerMaxHP, enemyMaxHP, playerSP, enemySP;
-let playerHand, enemyHand, playerDeck, enemyDeck;
-let playerDiscard, enemyDiscard;
-let playerBoard, enemyBoard;
-let appState = 'title', gameMode = 'story', aiLevel = 1;
-let isProcessing = false, selectedCardIndex = null, isBattleEnded = false;
-let selectedBoardLaneIndex = null, selectedBoardSide = null; // 場のカード選択用
-let isDiscardingMode = false, discardMaxCount = 0; // 手札入替時のプロンプト用
-let battleCount = 1, storyQueue = [], dialogueQueue = [], currentDialogueIndex = 0;
-let pendingCharId = null, lastBattleResult = null;
-let longPressTimer;
-let selectedStageId = null;
-let gameVolume = 0.5;
+var playerConfig = CHARACTERS.android;
+var enemyConfig = CHARACTERS.dragon;
+var playerDeckSelection = [];
+var playerInventory = {}; // 所持カード枚数管理
+var playerHP, enemyHP, playerMaxHP, enemyMaxHP, playerSP, enemySP;
+var playerHand, enemyHand, playerDeck, enemyDeck;
+var playerDiscard, enemyDiscard;
+var playerBoard, enemyBoard;
+var appState = 'title', gameMode = 'story', aiLevel = 1;
+var isProcessing = false, selectedCardIndex = null, isBattleEnded = false;
+var selectedBoardLaneIndex = null, selectedBoardSide = null; // 場のカード選択用
+var isDiscardingMode = false, discardMaxCount = 0; // 手札入替時のプロンプト用
+var battleCount = 1, storyQueue = [], dialogueQueue = [], currentDialogueIndex = 0;
+var pendingCharId = null, lastBattleResult = null;
+var longPressTimer;
+var selectedStageId = null;
+var gameVolume = 0.5;
