@@ -24,9 +24,23 @@ function prepareBattle() {
 }
 
 function initBattleState() {
-    stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
-    if (gameMode === 'story' && enemyConfig.id === 'satan') playSound(SOUNDS.bgmLastBattle);
-    else playSound(SOUNDS.bgmBattle);
+    // 全てのBGMを停止
+    stopSound(SOUNDS.bgmTitle);
+    stopSound(SOUNDS.bgmBattle);
+    stopSound(SOUNDS.bgmLastBattle);
+    stopSound(SOUNDS.bgmStageAndroid);
+
+    // ステージ情報の取得
+    const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
+    const stageData = STAGES[stageId];
+    
+    // BGMの再生（魔王城は特殊扱い）
+    if (gameMode === 'story' && enemyConfig.id === 'satan') {
+        playSound(SOUNDS.bgmLastBattle);
+    } else {
+        const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
+        playSound(SOUNDS[bgmKey]);
+    }
     playerMaxHP = MAX_HP; enemyMaxHP = (enemyConfig.id === 'satan') ? 40 : MAX_HP;
     playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
     playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
@@ -48,7 +62,6 @@ function initBattleState() {
 
     const bs = document.getElementById('screen-battle');
     bs.style.backgroundColor = '#0f172a';
-    const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
     bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
     updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
     for (let i = 0; i < 5; i++) { drawCard('blue'); drawCard('red'); }
@@ -654,7 +667,7 @@ async function executeCombatPhase(atk) {
 
 function endBattle() {
     document.body.classList.remove('slow-motion');
-    stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
+    stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle); stopSound(SOUNDS.bgmStageAndroid);
     lastBattleResult = playerHP > 0 ? (enemyHP <= 0 ? 'win' : 'draw') : (enemyHP > 0 ? 'lose' : 'draw');
     const t = document.getElementById('turn-status'); t.innerText = lastBattleResult === 'win' ? "YOU WIN!" : (lastBattleResult === 'lose' ? "YOU LOSE..." : "DRAW");
     t.style.color = lastBattleResult === 'win' ? "#facc15" : "#fff";
@@ -675,6 +688,7 @@ function returnToTitle() {
     showConfirmModal('バトルを諦めてタイトルに戻りますか？', () => {
         stopSound(SOUNDS.bgmBattle);
         stopSound(SOUNDS.bgmLastBattle);
+        stopSound(SOUNDS.bgmStageAndroid);
         playSound(SOUNDS.bgmTitle);
         appState = 'title';
         isProcessing = false;

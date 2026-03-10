@@ -295,7 +295,7 @@ function startNextBattleSequence() {
 
 function startEndingSequence() {
     appState = 'ending_dialogue';
-    stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle);
+    stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle); stopSound(SOUNDS.bgmStageAndroid);
     playSound(SOUNDS.bgmEnding);
 
     dialogueQueue = playerConfig.dialogue.ending;
