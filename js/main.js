@@ -28,6 +28,18 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
             return;
         }
 
+        // 生贄（上書き専用）カードの配置制限
+        if (hasSkill(newCard, 'takeover') && playerBoard[l] === null) {
+            playSound(SOUNDS.seDamage);
+            showConfirmModal(
+                `「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか配置できません。`,
+                () => { },
+                null,
+                true // 警告モード（OKボタンのみ）
+            );
+            return;
+        }
+
         // 既にカードがあるレーンの場合は確認モーダルを表示
         if (playerBoard[l] !== null) {
             const existingCard = playerBoard[l];

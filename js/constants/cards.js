@@ -6,6 +6,7 @@ const CARD_MASTER = [
     { id: 'sniper', name: '森の射手', power: 2, skill: 'snipe', skillValue: 4, rarity: 1, flavor: '静寂に包まれた深い森を守るエルフの狩人。その矢は木の葉の間を縫い、目標を違わず射抜く。' },
     { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', skillValue: 2, rarity: 1, flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
     { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
+    { id: 'dinosaur', name: '古代の大蜥蜴', power: 8, skill: 'takeover', rarity: 1, flavor: '古代の息吹を宿す巨大な爬虫類。その巨体を現すには、相応の代償が必要となる。', imgUrl: 'assets/card_dinosaur.jpg' },
     { id: 'scorpion', name: '黒サソリ', power: 2, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
     { id: 'cleric', name: '見習い修道女', power: 3, skill: 'heal', skillValue: 2, rarity: 1, flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
     { id: 'wall', name: '城壁', power: 10, skill: 'defender', rarity: 1, flavor: '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。' },

@@ -145,6 +145,7 @@ function calculateTotalIncomingDamage(myBoard, opBoard, extraHits = [0, 0, 0]) {
  */
 function calculateScoreForPlacement(card, l, myBoard, opBoard, lethalLane = -1, isLeaderSkill = false) {
     if (hasSkill(card, 'legendary') && l !== 1) return -1000000;
+    if (hasSkill(card, 'takeover') && myBoard[l] === null) return -1000000;
 
     let score = 0;
 
