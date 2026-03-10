@@ -153,16 +153,29 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         const h = isBlue ? playerHand : enemyHand;
         if (h.length > 0) {
             let dc = 0;
-            while (dc < 2 && h.length > 0) {
-                let mp = Math.min(...h.map(c => c.power)), mi = h.findIndex(c => c.power === mp);
-                discardCard(owner, h.splice(mi, 1)[0]);
-                dc++;
+            if (isBlue) {
+                // プレイヤーは手動で0〜2枚選択
+                const selectedIndices = await waitPlayerHandSelection(2, owner);
+                if (selectedIndices.length > 0) {
+                    selectedIndices.sort((a, b) => b - a);
+                    for (let i of selectedIndices) {
+                        discardCard(owner, h.splice(i, 1)[0]);
+                        dc++;
+                    }
+                }
+            } else {
+                // AIは自動でパワーの低いカードを最大2枚捨てる
+                while (dc < 2 && h.length > 0) {
+                    let mp = Math.min(...h.map(c => c.power)), mi = h.findIndex(c => c.power === mp);
+                    discardCard(owner, h.splice(mi, 1)[0]);
+                    dc++;
+                }
             }
             for (let i = 0; i < dc; i++) drawCard(owner);
         }
         h.forEach(c => {
-            c.power += 2;
-            c.currentPower += 2;
+            c.power += 1;
+            c.currentPower += 1;
         });
         if (isBlue) renderHand();
         playSound(SOUNDS.seSkill);

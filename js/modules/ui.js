@@ -208,6 +208,17 @@ function showCharDetail(charId) {
     document.getElementById('detail-char-name').style.color = char.color;
     document.getElementById('detail-char-desc').innerText = char.desc;
 
+    // 使いやすさ表示
+    const easeEl = document.getElementById('detail-char-ease');
+    if (char.easeOfUse) {
+        const filled = '★'.repeat(char.easeOfUse);
+        const empty = '☆'.repeat(3 - char.easeOfUse);
+        easeEl.innerText = '使いやすさ: ' + filled + empty;
+        easeEl.style.display = 'block';
+    } else {
+        easeEl.style.display = 'none';
+    }
+
     const lSkill = char.leaderSkill;
     let costText = lSkill.cost ? ` (必要SP: ${lSkill.cost})` : '';
     document.getElementById('detail-leader-name').innerText = lSkill.name + costText;

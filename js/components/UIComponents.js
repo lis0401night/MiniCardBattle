@@ -99,6 +99,7 @@ const UI_COMPONENTS = {
         <div style="background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
             <img id="detail-char-img" src="" style="width: 160px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #334155; margin-bottom: 15px;">
             <h2 id="detail-char-name" style="margin-bottom: 5px; color: #facc15; font-size: 1.3rem; text-align: center;">Name</h2>
+            <div id="detail-char-ease" style="color: #fbd38d; font-size: 0.95rem; margin-bottom: 5px; text-shadow: 1px 1px 2px #000;">使いやすさ: ★★★</div>
             <p id="detail-char-desc" style="font-size: 0.9rem; color: #cbd5e1; text-align: center; margin-bottom: 15px; line-height: 1.4;">Description</p>
             <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 20px; border: 1px solid #475569;">
                 <div style="color: #facc15; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">【リーダー能力】</div>
@@ -215,9 +216,11 @@ const UI_COMPONENTS = {
             <div id="reward-card-container"></div>
             <div class="preview-details">
                 <h2 id="reward-card-name">? ? ?</h2>
-                <div id="reward-skills-list" class="preview-skills-list"></div>
-                <p id="reward-card-flavor" class="preview-flavor-text"></p>
-                <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
+                <div class="preview-scroll-area">
+                    <div id="reward-skills-list" class="preview-skills-list"></div>
+                    <p id="reward-card-flavor" class="preview-flavor-text"></p>
+                </div>
+                <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; flex-shrink: 0; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
             </div>
             <!-- 目隠し用レイヤー -->
             <div id="reward-mask" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#0f172a; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:20;">
@@ -380,9 +383,11 @@ const UI_COMPONENTS = {
             <div id="preview-card-container"></div>
             <div class="preview-details">
                 <h2 id="preview-card-name">Card Name</h2>
-                <div id="preview-skills-list" class="preview-skills-list"></div>
-                <p id="preview-card-flavor" class="preview-flavor-text"></p>
-                <button class="btn" style="margin-top: 15px; width: 100%;" onclick="closeCardPreview()">閉じる</button>
+                <div class="preview-scroll-area">
+                    <div id="preview-skills-list" class="preview-skills-list"></div>
+                    <p id="preview-card-flavor" class="preview-flavor-text"></p>
+                </div>
+                <button class="btn" style="margin-top: 15px; width: 100%; flex-shrink: 0;" onclick="closeCardPreview()">閉じる</button>
             </div>
         </div>
     </div>

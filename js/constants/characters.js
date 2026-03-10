@@ -5,6 +5,7 @@ const CHARACTERS = {
     android: {
         id: 'android', stageId: 'android', name: '機動戦姫 アイギス',
         desc: '最新鋭のAIを搭載した戦闘用アンドロイド。感情を持たないが、マスターへの忠誠心は絶対的。',
+        easeOfUse: 2,
         filter: 'none', cardType: 'set1', cardBg: 'bg1',
         image: 'assets/char_android.png', imageLose: 'assets/char_android_lose.png', icon: 'assets/icon_android.png', imageEnding: 'assets/char_android_ending.png', color: '#38bdf8',
         leaderSkill: { name: '殲滅光線', desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。', cost: 4, action: 'annihilation' },
@@ -40,6 +41,7 @@ const CHARACTERS = {
     dragon: {
         id: 'dragon', stageId: 'dragon', name: '焔竜姫 イグニス',
         desc: '火山地帯を縄張りとする竜族の姫。圧倒的な炎の力とワガママな性格で敵を焼き尽くす。',
+        easeOfUse: 3,
         filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/char_dragon.png', imageLose: 'assets/char_dragon_lose.png', icon: 'assets/icon_dragon.png', imageEnding: 'assets/char_dragon_ending.png', color: '#fb7185',
         leaderSkill: { name: '竜王の降臨', desc: '(SP:4) 自分のレーンに「イグニス(P:7)」を1体召喚する。', cost: 4, action: 'dragon_summon' },
@@ -75,6 +77,7 @@ const CHARACTERS = {
     knight: {
         id: 'knight', stageId: 'knight', name: '聖騎士 セレスティア',
         desc: '王国騎士団を率いる誇り高き騎士。聖なる加護と鉄壁の防御で仲間を守り抜く。',
+        easeOfUse: 3,
         filter: 'none', cardType: 'set5', cardBg: 'bg1',
         image: 'assets/char_knight.png', imageLose: 'assets/char_knight_lose.png', icon: 'assets/icon_knight.png', imageEnding: 'assets/char_knight_ending.png', color: '#facc15',
         leaderSkill: { name: '聖なる進軍', desc: '(SP:5) 自分のレーンに「騎士(P:1)」を最大2体召喚し、自分の場のすべてのカードのパワーを+3する。', cost: 5, action: 'holy_march' },
@@ -108,11 +111,12 @@ const CHARACTERS = {
         }
     },
     cthulhu: {
-        id: 'cthulhu', stageId: 'cthulhu', name: '深淵の巫女 ナイア',
+        id: 'cthulhu', stageId: 'cthulhu', name: '深淵の呼び声 ナイア',
         desc: '深き海より来たりし名状しがたき存在の眷属。相手の精神を削り、狂気へと誘う。',
-        filter: 'none', cardType: 'set2', cardBg: 'bg3',
+        easeOfUse: 1,
+        filter: 'none', cardType: 'set6', cardBg: 'bg3',
         image: 'assets/char_cthulhu.png', imageLose: 'assets/char_cthulhu_lose.png', icon: 'assets/icon_cthulhu.png', imageEnding: 'assets/char_cthulhu_ending.png', color: '#c084fc',
-        leaderSkill: { name: '深淵の儀式', desc: '(SP:4) 手札のパワーが低いカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。', cost: 4, action: 'abyss_ritual' },
+        leaderSkill: { name: '深淵の儀式', desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+1する。', cost: 3, action: 'abyss_ritual' },
         preBattleLine: 'フフフ、深淵へようこそ……。',
         mirrorIntro: 'あら、私の鏡合わせ？ 滑稽ですわ。魔王サタン……あの底知れぬ力、私の深淵で飲み込んであげたくなりましたの. 貴女も飲み込まれたいのかしら？',
         narratorIntro: '深き海の底より這い出せし「名状しがたきもの」の巫女、ナイア。彼女の微笑みは、見る者を狂気へと誘う。',
@@ -145,7 +149,8 @@ const CHARACTERS = {
     elf: {
         id: 'elf', stageId: 'elf', name: '流浪の射手 リナ',
         desc: '記憶を失い、銀の弓と共に旅を続けるエルフの少女。その静かな佇まいには、隠しきれない高潔さが漂う。',
-        filter: 'none', cardType: 'set1', cardBg: 'bg1',
+        easeOfUse: 2,
+        filter: 'none', cardType: 'set3', cardBg: 'bg3',
         image: 'assets/char_elf.png', imageLose: 'assets/char_elf_lose.png', icon: 'assets/icon_elf.png', imageEnding: 'assets/char_elf_ending.png', color: '#4ade80',
         leaderSkill: { name: '星墜ちの矢', desc: '(SP:3) 相手の場のカード1枚を選択して破壊する。', cost: 3, action: 'targeted_destruction' },
         preBattleLine: '私は自分を探しているの……。邪魔をしないで。',
@@ -180,7 +185,8 @@ const CHARACTERS = {
     cleric: {
         id: 'cleric', stageId: 'cleric', name: '背徳の聖職者 エリシア',
         desc: '聖職者の皮を被った傲慢な女。自らを神の代行者と称し、異端者を嘲笑いながら排除する。',
-        filter: 'none', cardType: 'set1', cardBg: 'bg1',
+        easeOfUse: 1,
+        filter: 'none', cardType: 'set4', cardBg: 'bg1',
         image: 'assets/char_cleric.png', imageLose: 'assets/char_cleric_lose.png', icon: 'assets/icon_cleric.png', imageEnding: 'assets/char_cleric_ending.png', color: '#94a3b8',
         leaderSkill: { name: '暗黒の審判', desc: '(SP:3) 敵リーダーに3ダメージを与え、自身のHPを3回復する。', cost: 3, action: 'dark_ritual' },
         preBattleLine: 'あら、私に逆らうなんて。身の程をわきまえなさい。',
