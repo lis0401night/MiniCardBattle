@@ -15,3 +15,4 @@ let battleCount = 1, storyQueue = [], dialogueQueue = [], currentDialogueIndex =
 let pendingCharId = null, lastBattleResult = null;
 let longPressTimer;
 let selectedStageId = null;
+let gameVolume = 0.5;

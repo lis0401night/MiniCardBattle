@@ -57,9 +57,10 @@ const UI_COMPONENTS = {
     <!-- モード選択画面 -->
     <div id="screen-mode-select" class="screen">
         <h1 class="game-title" style="display:block; margin-bottom: 40px;">LANE<br>DEFENDERS</h1>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">STORY</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">FREE BATTLE</button>
-        <button class="btn" style="width: 250px; background: #475569;" onclick="showRules()">遊び方</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">ストーリー</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">フリーバトル</button>
+        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showRules()">遊び方</button>
+        <button class="btn" style="width: 250px; background: #475569;" onclick="showOptions()">オプション</button>
     </div>
     `,
 
@@ -115,11 +116,11 @@ const UI_COMPONENTS = {
     difficultySelectScreen: `
     <!-- 難易度選択画面 (フリーモード用) -->
     <div id="screen-difficulty" class="screen">
-        <h2>難易度</h2>
+        <h2 style="font-weight: 900;">難易度</h2>
         <div style="display: flex; flex-direction: column; gap: 15px;">
-            <button class="btn" style="background: #22c55e; width: 200px;" onclick="startFreeBattle(1)">EASY</button>
-            <button class="btn" style="background: #eab308; width: 200px;" onclick="startFreeBattle(2)">NORMAL</button>
-            <button class="btn" style="background: #ef4444; width: 200px;" onclick="startFreeBattle(3)">HARD</button>
+            <button class="btn" style="background: #22c55e; width: 200px;" onclick="startFreeBattle(1)">イージー</button>
+            <button class="btn" style="background: #eab308; width: 200px;" onclick="startFreeBattle(2)">ノーマル</button>
+            <button class="btn" style="background: #ef4444; width: 200px;" onclick="startFreeBattle(3)">ハード</button>
         </div>
         <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromDifficulty()">戻る</button>
     </div>
@@ -133,6 +134,33 @@ const UI_COMPONENTS = {
             <div class="char-grid" id="stage-grid"></div>
         </div>
         <button class="btn" style="margin-top: 20px; background: #475569;" onclick="goBackFromStage()">戻る</button>
+    </div>
+    `,
+
+    optionsScreen: `
+    <!-- オプション画面 -->
+    <div id="screen-options" class="screen">
+        <h2 style="color: #facc15; margin-bottom: 30px;">オプション</h2>
+        
+        <div style="width: 280px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 30px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; color: #cbd5e1; font-size: 0.9rem;">音量調整</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2rem;">🔈</span>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.5" 
+                        style="flex-grow: 1; cursor: pointer;" oninput="updateVolume(this.value)">
+                    <span style="font-size: 1.2rem;">🔊</span>
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid #334155; padding-top: 20px;">
+                <label style="display: block; margin-bottom: 10px; color: #cbd5e1; font-size: 0.9rem;">データ管理</label>
+                <button class="btn" style="background: #7f1d1d; width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="resetGameData()">データ削除</button>
+                <p style="color: #64748b; font-size: 0.7rem; margin-top: 8px; text-align: center;">※デッキと所持カードが初期化されます</p>
+            </div>
+        </div>
+
+        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
     </div>
     `,
 

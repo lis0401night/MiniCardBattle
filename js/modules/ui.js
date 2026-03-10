@@ -2,6 +2,14 @@
 // UIと画面制御ロジック
 // ==========================================
 
+// 初期ロード時に音量を復元
+(function () {
+    const savedVol = localStorage.getItem('mini_card_battle_volume');
+    if (savedVol !== null) {
+        gameVolume = parseFloat(savedVol);
+    }
+})();
+
 function goToModeSelect() {
     playSound(SOUNDS.seClick);
     playSound(SOUNDS.bgmTitle);
@@ -12,6 +20,43 @@ function showRules() {
     playSound(SOUNDS.seClick);
     rulesClickCount = 0; // 画面を開くたびにリセット
     switchScreen('screen-rules');
+}
+
+function showOptions() {
+    playSound(SOUNDS.seClick);
+    const slider = document.getElementById('volume-slider');
+    if (slider) slider.value = gameVolume;
+    switchScreen('screen-options');
+}
+
+function updateVolume(val) {
+    gameVolume = parseFloat(val);
+    // BGMの音量を即座に反映させる
+    if (SOUNDS.bgmTitle) SOUNDS.bgmTitle.volume = gameVolume;
+    if (SOUNDS.bgmBattle) SOUNDS.bgmBattle.volume = gameVolume;
+    if (SOUNDS.bgmLastBattle) SOUNDS.bgmLastBattle.volume = gameVolume;
+    if (SOUNDS.bgmEnding) SOUNDS.bgmEnding.volume = gameVolume;
+    localStorage.setItem('mini_card_battle_volume', gameVolume);
+}
+
+function resetGameData() {
+    playSound(SOUNDS.seClick);
+    showConfirmModal(
+        "本当に全てのデータを削除しますか？\nデッキと所持カードが初期化されます。(この操作は取り消せません)",
+        () => {
+            // localStorageの全削除（またはゲームに関連する物のみ）
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('mini_card_battle_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            playSound(SOUNDS.seDestroy);
+            showAlertModal("データをリセットしました。タイトルに戻ります。", () => {
+                location.reload();
+            });
+        }
+    );
 }
 
 let rulesClickCount = 0;
