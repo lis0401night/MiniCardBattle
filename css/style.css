@@ -115,31 +115,6 @@ h2 {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* ひび割れオーバーレイの擬似要素 */
-.btn::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-    mask-image: linear-gradient(135deg, white 0%, transparent 100%);
-    opacity: 0.2;
-    pointer-events: none;
-}
-
-/* ひび割れ効果をより強調するための追加オーバーレイ */
-.btn::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M0 0 L10 20 L5 40 L20 35 L30 60 L15 80 L40 75 L60 95 L75 70 L95 80 L80 50 L100 40 L70 30 L85 10 L50 20 L30 0 Z' fill='none' stroke='rgba(255,255,255,0.15)' stroke-width='0.5'/%3E%3C/svg%3E");
-    background-size: 50px 50px;
-    opacity: 0.3;
-    pointer-events: none;
-}
-
 .btn:hover {
     transform: translateY(-3px) scale(1.02);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 92, 246, 0.4);
@@ -272,6 +247,16 @@ h2 {
 }
 
 /* ===== 報酬画面 ===== */
+#screen-battle.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    /* 上下いっぱいに広げる */
+    padding: 10px 0;
+    /* 上下の微調整 */
+}
+
 #screen-reward {
     flex-direction: column;
     padding: 20px;
@@ -708,14 +693,20 @@ h2 {
 /* ===== バトル画面 ===== */
 .hp-area {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    /* 縦に並べる */
+    justify-content: center;
+    align-items: center;
     width: 100%;
     max-width: 400px;
     padding: 5px 10px;
+    gap: 10px;
+    /* Added for spacing between status containers */
     box-sizing: border-box;
 }
 
 .status-container {
+    position: relative;
     display: flex;
     align-items: center;
     width: 100%;
@@ -737,6 +728,12 @@ h2 {
     flex-shrink: 0;
     margin-right: 12px;
     transition: all 0.3s;
+}
+
+.card-detail-box:empty {
+    border: none;
+    background: none;
+    padding: 0;
 }
 
 .char-icon.blue {
@@ -1097,31 +1094,43 @@ h2 {
        念のためマージン等による押し出しが発生しないことを保証します */
 }
 
+.turn-area {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px 0;
+}
+
 #turn-status {
     font-size: 1.2rem;
     font-weight: bold;
     text-align: center;
     height: 1.5rem;
     color: #facc15;
-    margin: 5px 0;
     text-shadow: 1px 1px 2px #000;
 }
 
 /* アクションコントロール */
 .controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    /* 右寄せにする */
     width: 100%;
     max-width: 400px;
     padding: 0 10px;
     margin-bottom: 5px;
 }
 
-#deck-info {
-    font-size: 0.85rem;
+.deck-info {
+    font-size: 0.75rem;
+    /* 少し小さくしてスッキリさせる */
     color: #cbd5e1;
-    align-self: center;
+    align-self: flex-start;
     text-shadow: 1px 1px 2px #000;
+    margin-top: 2px;
 }
 
 .action-btn {
@@ -1167,18 +1176,27 @@ h2 {
 /* 敵スキル確認用ボタン */
 .enemy-skill-btn {
     position: absolute;
-    right: -25px;
-    top: 60px;
-    background: #334155;
-    color: #facc15;
-    border: 1px solid #facc15;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    cursor: pointer;
-    font-weight: bold;
-    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-    z-index: 101;
+    right: 10px;
+    /* 下のアクションボタンの右端（padding: 10px）と揃える */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+
+    /* action-btnのレイアウトを継承 */
+    padding: 8px 15px !important;
+    font-size: 0.85rem !important;
+    min-width: 120px;
+    white-space: nowrap;
+
+    background: #475569 !important;
+    border: 1px solid #334155 !important;
+    color: white !important;
+    width: auto;
+}
+
+.enemy-skill-btn:hover {
+    background: #475569;
+    transform: translateY(-50%) scale(1.05);
 }
 
 .enemy-skill-btn:active {
@@ -1202,16 +1220,19 @@ h2 {
     background: rgba(15, 23, 42, 0.95);
     border: 1px solid var(--color-blue);
     border-radius: 8px;
-    padding: 10px 15px;
+    padding: 10px;
+    box-sizing: border-box;
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
     color: #fff;
     font-size: 0.9rem;
     position: absolute;
     bottom: 0;
-    min-height: 60px;
     max-height: 150px;
     overflow-y: auto;
-    box-sizing: border-box;
-    display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 4px;

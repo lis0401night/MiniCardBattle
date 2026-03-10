@@ -33,7 +33,7 @@ function initBattleState() {
     // ステージ情報の取得
     const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
     const stageData = STAGES[stageId];
-    
+
     // BGMの再生（魔王城は特殊扱い）
     if (gameMode === 'story' && enemyConfig.id === 'satan') {
         playSound(SOUNDS.bgmLastBattle);
@@ -350,6 +350,11 @@ async function waitPlayerHandSelection(count, owner) {
         const handEl = document.getElementById('player-hand');
         const cards = handEl.querySelectorAll('.hand-card');
 
+        // 手札入れ替え用のプロンプトを表示
+        isDiscardingMode = true;
+        discardMaxCount = count;
+        updateCardDetail(null);
+
         // 「ターン終了」ボタンを「選択終了」に切り替え
         const endBtn = document.getElementById('btn-end-turn');
         const originalBtnText = endBtn.innerText;
@@ -361,6 +366,9 @@ async function waitPlayerHandSelection(count, owner) {
         endBtn.style.borderColor = '#eab308';
 
         const cleanUp = () => {
+            isDiscardingMode = false;
+            discardMaxCount = 0;
+            updateCardDetail(null);
             cards.forEach((card) => {
                 card.classList.remove('selected');
                 card.style.pointerEvents = '';
@@ -442,6 +450,11 @@ function triggerSplitSkill(owner, lane, card) {
 }
 function drawCard(owner) {
     let d = owner === 'blue' ? playerDeck : enemyDeck, h = owner === 'blue' ? playerHand : enemyHand, ds = owner === 'blue' ? playerDiscard : enemyDiscard;
+    if (d.length === 0 && ds.length === 0) {
+        if (owner === 'blue') {
+            showAlertModal("山札がなくなりました！");
+        }
+    }
     if (d.length === 0 && ds.length > 0) {
         d.push(...ds.sort(() => Math.random() - 0.5));
         ds.length = 0;
@@ -450,7 +463,14 @@ function drawCard(owner) {
         showDeckRefreshEffect(owner);
     }
     if (d.length > 0 && h.length < 5) h.push(d.pop());
-    if (owner === 'blue') { document.getElementById('deck-info').innerText = `Deck: ${playerDeck.length} / Drop: ${playerDiscard.length}`; renderHand(); }
+    if (owner === 'blue') {
+        const el = document.getElementById('deck-info');
+        if (el) el.innerText = `Deck: ${playerDeck.length} / Drop: ${playerDiscard.length}`;
+        renderHand();
+    } else {
+        const el = document.getElementById('enemy-deck-info');
+        if (el) el.innerText = `Deck: ${enemyDeck.length} / Drop: ${enemyDiscard.length}`;
+    }
 }
 
 async function startTurn(owner) {

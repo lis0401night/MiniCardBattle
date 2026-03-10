@@ -11,6 +11,8 @@ let playerDiscard, enemyDiscard;
 let playerBoard, enemyBoard;
 let appState = 'title', gameMode = 'story', aiLevel = 1;
 let isProcessing = false, selectedCardIndex = null, isBattleEnded = false;
+let selectedBoardLaneIndex = null, selectedBoardSide = null; // 場のカード選択用
+let isDiscardingMode = false, discardMaxCount = 0; // 手札入替時のプロンプト用
 let battleCount = 1, storyQueue = [], dialogueQueue = [], currentDialogueIndex = 0;
 let pendingCharId = null, lastBattleResult = null;
 let longPressTimer;

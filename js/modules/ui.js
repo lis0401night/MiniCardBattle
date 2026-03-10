@@ -511,8 +511,12 @@ function executeGameOver() {
 function updateCardDetail(c) {
     const b = document.getElementById('card-detail-view');
     if (!c) {
-        b.innerHTML = '<div class="skill-info">カードを選択するとここに能力が表示されます</div>';
-        b.style.color = '#94a3b8';
+        if (isDiscardingMode) {
+            b.innerHTML = `<div class="skill-info" style="color:#facc15; font-weight:bold;">捨てるカードを${discardMaxCount}枚まで選んでください</div>`;
+        } else {
+            b.innerHTML = '';
+        }
+        b.style.color = isDiscardingMode ? '#facc15' : '#94a3b8';
     } else {
         let skillsToShow = [];
         if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
@@ -590,7 +594,22 @@ function renderHand() {
     const e = document.getElementById('player-hand'); e.innerHTML = '';
     playerHand.forEach((c, i) => {
         const d = createCardDOM(c, false); d.className += " hand-card" + (i === selectedCardIndex ? " selected" : "");
-        d.onclick = () => { if (isProcessing) return; playSound(SOUNDS.seClick); if (selectedCardIndex === i) { selectedCardIndex = null; updateCardDetail(null); } else { selectedCardIndex = i; updateCardDetail(playerHand[i]); } renderHand(); renderBoard(); highlightLanes(); };
+        d.onclick = () => {
+            if (isProcessing && !isDiscardingMode) return;
+            playSound(SOUNDS.seClick);
+            if (selectedCardIndex === i) {
+                selectedCardIndex = null;
+                updateCardDetail(null);
+            } else {
+                selectedCardIndex = i;
+                selectedBoardLaneIndex = null;
+                selectedBoardSide = null;
+                updateCardDetail(playerHand[i]);
+            }
+            renderHand();
+            renderBoard();
+            highlightLanes();
+        };
         setupLongPress(d, c);
         e.appendChild(d);
     });
@@ -618,22 +637,54 @@ function renderBoard() {
     for (let i = 0; i < 3; i++) {
         const p = document.querySelector(`#player-lanes .cell[data-lane="${i}"]`), e = document.querySelector(`#enemy-lanes .cell[data-lane="${i}"]`);
         p.innerHTML = ''; p.className = 'cell'; e.innerHTML = ''; e.className = 'cell';
+
+        // プレイヤー側
         if (playerBoard[i]) {
             const d = createCardDOM(playerBoard[i], true);
+            if (selectedBoardLaneIndex === i && selectedBoardSide === 'player') d.classList.add('selected');
             d.onclick = (ev) => {
-                // 手札カードが選択中、またはスキル発動中(isProcessing)はクリックをセルに伝播させる
-                if (selectedCardIndex !== null || isProcessing) return;
+                // 手札カードが選択中(isProcessing)はクリックをセルに伝播させる
+                if (selectedCardIndex !== null || (isProcessing && !isDiscardingMode)) return;
                 ev.stopPropagation();
-                if (isProcessing) return;
                 playSound(SOUNDS.seClick);
-                updateCardDetail(playerBoard[i]);
+                if (selectedBoardLaneIndex === i && selectedBoardSide === 'player') {
+                    selectedBoardLaneIndex = null;
+                    selectedBoardSide = null;
+                    updateCardDetail(null);
+                } else {
+                    selectedBoardLaneIndex = i;
+                    selectedBoardSide = 'player';
+                    selectedCardIndex = null;
+                    updateCardDetail(playerBoard[i]);
+                }
+                renderBoard();
+                renderHand();
             };
             setupLongPress(d, playerBoard[i]);
             p.appendChild(d);
         }
+
+        // 敵側
         if (enemyBoard[i]) {
             const d = createCardDOM(enemyBoard[i], true);
-            d.onclick = (ev) => { ev.stopPropagation(); playSound(SOUNDS.seClick); updateCardDetail(enemyBoard[i]); };
+            if (selectedBoardLaneIndex === i && selectedBoardSide === 'enemy') d.classList.add('selected');
+            d.onclick = (ev) => {
+                if (selectedCardIndex !== null || (isProcessing && !isDiscardingMode)) return;
+                ev.stopPropagation();
+                playSound(SOUNDS.seClick);
+                if (selectedBoardLaneIndex === i && selectedBoardSide === 'enemy') {
+                    selectedBoardLaneIndex = null;
+                    selectedBoardSide = null;
+                    updateCardDetail(null);
+                } else {
+                    selectedBoardLaneIndex = i;
+                    selectedBoardSide = 'enemy';
+                    selectedCardIndex = null;
+                    updateCardDetail(enemyBoard[i]);
+                }
+                renderBoard();
+                renderHand();
+            };
             setupLongPress(d, enemyBoard[i]);
             e.appendChild(d);
         }

@@ -285,7 +285,7 @@ const UI_COMPONENTS = {
     battleScreen: `
     <!-- 6. バトル画面 -->
     <div id="screen-battle" class="screen">
-        <button class="btn-home" onclick="returnToTitle()">🏠 リタイア</button>
+        <button class="btn-home" onclick="returnToTitle()">リタイア</button>
         <!-- 敵ステータス -->
         <div class="hp-area">
             <div class="status-container">
@@ -300,12 +300,14 @@ const UI_COMPONENTS = {
                         <div class="hp-bar-fill red" id="enemy-hp-fill" style="width: 100%;"></div>
                         <div class="hp-text" id="enemy-hp-text">20 / 20</div>
                     </div>
+                    <div id="enemy-deck-info" class="deck-info">Deck: 30 / Drop: 0</div>
                 </div>
-                <!-- 敵スキル確認ボタン -->
-                <button class="enemy-skill-btn" onclick="showEnemySkillConfirm()">敵スキル<br>確認</button>
             </div>
         </div>
-        <div id="turn-status">ラウンド 1</div>
+        <div class="turn-area">
+            <div id="turn-status">ラウンド 1</div>
+            <button class="action-btn enemy-skill-btn" onclick="showEnemySkillConfirm()">敵スキル</button>
+        </div>
         <!-- 盤面 (3レーン) -->
         <div class="battle-board">
             <div class="lane-row" id="enemy-lanes">
@@ -333,12 +335,12 @@ const UI_COMPONENTS = {
                         <div class="hp-bar-fill blue" id="player-hp-fill" style="width: 100%;"></div>
                         <div class="hp-text" id="player-hp-text">20 / 20</div>
                     </div>
+                    <div id="deck-info" class="deck-info">Deck: 30 / Drop: 0</div>
                 </div>
             </div>
         </div>
         <!-- アクションコントロール -->
         <div class="controls">
-            <div id="deck-info">山札: 30 / 墓地: 0</div>
             <div style="display: flex; gap: 8px;">
                 <button id="btn-leader-skill" class="action-btn leader-skill-btn" onclick="showSkillConfirm()">リーダースキル</button>
                 <button id="btn-end-turn" class="action-btn" onclick="endPlayerTurn()">ターン終了</button>
@@ -346,7 +348,7 @@ const UI_COMPONENTS = {
         </div>
         <!-- カード効果表示エリア -->
         <div class="card-detail-wrapper">
-            <div id="card-detail-view" class="card-detail-box">カードを選択するとここに能力が表示されます</div>
+            <div id="card-detail-view" class="card-detail-box"></div>
         </div>
         <!-- 手札 -->
         <div id="player-hand" class="hand-area"></div>
