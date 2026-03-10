@@ -7,7 +7,7 @@ const CARD_MASTER = [
     { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', skillValue: 2, rarity: 1, flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
     { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'scorpion', name: '黒サソリ', power: 2, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
-    { id: 'cleric', name: '見習い修道女', power: 4, skill: 'heal', skillValue: 2, rarity: 1, flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
+    { id: 'cleric', name: '見習い修道女', power: 3, skill: 'heal', skillValue: 2, rarity: 1, flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
     { id: 'wall', name: '城壁', power: 10, skill: 'defender', rarity: 1, flavor: '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。' },
     { id: 'ninja', name: '忍者', power: 2, skill: 'stealth', skillValue: 1, rarity: 1, flavor: '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。', imgUrl: 'assets/card_ninja.jpg' },
     { id: 'charger', name: '虹ハチドリ', power: 1, skill: 'charge', skillValue: 1, rarity: 1, flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。', imgUrl: 'assets/card_charger.jpg' },
