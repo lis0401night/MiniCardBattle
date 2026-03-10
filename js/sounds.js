@@ -24,9 +24,9 @@ const SOUNDS = {
 };
 
 // サウンドの初期設定
-SOUNDS.bgmTitle.loop = true;
-SOUNDS.bgmBattle.loop = true;
-SOUNDS.bgmEnding.loop = true;
-SOUNDS.bgmLastBattle.loop = true;
-SOUNDS.bgmStageAndroid.loop = true;
+Object.keys(SOUNDS).forEach(key => {
+    if (key.startsWith('bgm')) {
+        SOUNDS[key].loop = true;
+    }
+});
 Object.values(SOUNDS).forEach(audio => { audio.volume = 0.3; });
