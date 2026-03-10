@@ -342,16 +342,16 @@ const UI_COMPONENTS = {
                 </div>
             </div>
         </div>
+        <!-- カード効果表示エリア -->
+        <div class="card-detail-wrapper">
+            <div id="card-detail-view" class="card-detail-box"></div>
+        </div>
         <!-- アクションコントロール -->
         <div class="controls">
             <div style="display: flex; gap: 8px;">
                 <button id="btn-leader-skill" class="action-btn leader-skill-btn" onclick="showSkillConfirm()">リーダースキル</button>
                 <button id="btn-end-turn" class="action-btn" onclick="endPlayerTurn()">ターン終了</button>
             </div>
-        </div>
-        <!-- カード効果表示エリア -->
-        <div class="card-detail-wrapper">
-            <div id="card-detail-view" class="card-detail-box"></div>
         </div>
         <!-- 手札 -->
         <div id="player-hand" class="hand-area"></div>
