@@ -23,7 +23,7 @@ const CARD_MASTER = [
     { id: 'mage', name: '未熟な魔導士', power: 2, skill: 'spread', skillValue: 2, rarity: 2, flavor: '魔導アカデミーの門を叩いたばかりの若者。制御しきれない魔力が周囲に拡散する。' },
     { id: 'cheetah', name: '稲妻の猟豹', power: 2, skill: 'quick', rarity: 2, flavor: '稲妻を纏って戦場を駆ける最速の野獣。その爪が空気を切り裂く。' },
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
-    { id: 'dealer', name: 'デビル・ディーラー', power: 4, skills: [{ id: 'draw', value: 4 }, { id: 'sacrifice', value: 2 }], rarity: 2, flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。', imgUrl: 'assets/card_dealer.png' },
+    { id: 'dealer', name: 'デビル・ディーラー', power: 4, skills: [{ id: 'draw', value: 4 }, { id: 'sacrifice', value: 2 }], rarity: 2, flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。', imgUrl: 'assets/card_dealer.jpg' },
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', rarity: 2, flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
     { id: 'lightpaladin', name: '光の聖騎士', power: 5, skill: 'guardian', rarity: 2, flavor: '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。', imgUrl: 'assets/card_lightpaladin.jpg' },
