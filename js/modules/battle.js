@@ -130,9 +130,26 @@ function showSpeechBubble(target) {
     }
 
     const bubble = document.getElementById(target === 'blue' ? 'player-speech' : 'enemy-speech');
+    const iconEl = document.getElementById(target === 'blue' ? 'player-icon' : 'enemy-icon');
+
     if (bubble) {
         bubble.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-        bubble.classList.add('active'); setTimeout(() => bubble.classList.remove('active'), 1500);
+        bubble.classList.add('active');
+
+        // アイコンをダメージ画像に変更
+        if (iconEl && iconEl.src) {
+            const originalSrc = iconEl.src;
+            if (!originalSrc.includes('_damage.png')) {
+                iconEl.src = originalSrc.replace('.png', '_damage.png');
+                setTimeout(() => {
+                    if (iconEl.src.includes('_damage.png')) {
+                        iconEl.src = originalSrc;
+                    }
+                }, 1500);
+            }
+        }
+
+        setTimeout(() => bubble.classList.remove('active'), 1500);
     }
 }
 

@@ -728,12 +728,12 @@ h2 {
     width: 110px;
     height: 110px;
     border-radius: 50%;
-    border: 4px solid transparent;
-    /* グラデーション用に透明化し太くする */
+    border: none;
+    padding: 5px;
+    /* 枠線代わりのパディング */
+    box-sizing: border-box;
     object-fit: cover;
     background-color: #334155;
-    background-clip: padding-box;
-    /* コンテンツ領域だけ背景で塗る */
     flex-shrink: 0;
     margin-right: -25px;
     /* HPバーと重ねるためにマイナス値 */
@@ -751,18 +751,15 @@ h2 {
 }
 
 .char-icon.blue {
-    background-image: linear-gradient(#334155, #334155), linear-gradient(90deg, #0ea5e9, #38bdf8);
-    background-origin: border-box;
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
 }
 
 .char-icon.red {
-    background-image: linear-gradient(#334155, #334155), linear-gradient(90deg, #e11d48, #fb7185);
-    background-origin: border-box;
+    background: linear-gradient(90deg, #e11d48, #fb7185);
 }
 
 .char-icon.dead {
-    background-image: linear-gradient(#334155, #334155), linear-gradient(90deg, #334155, #475569);
-    background-origin: border-box;
+    background: linear-gradient(90deg, #334155, #475569);
     filter: grayscale(1);
 }
 
@@ -845,7 +842,7 @@ h2 {
 
 .status-name {
     font-weight: bold;
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     margin-bottom: 2px;
     margin-left: 25px;
     /* アイコンとの重なりを防ぐ */
@@ -1874,8 +1871,7 @@ h2 {
     }
 
     .status-name {
-        font-size: 1.5rem;
-        /* スマホ向けに倍増 */
+        font-size: 1.2rem;
         margin-left: 15px;
     }
 
@@ -2030,8 +2026,7 @@ h2 {
     }
 
     .status-name {
-        font-size: 1.4rem;
-        /* 極小画面向けに倍増 */
+        font-size: 1.1rem;
         margin-left: 10px;
     }
 
