@@ -394,7 +394,7 @@ const UI_COMPONENTS = {
         <div class="skill-modal-box modal-pop-animation">
             <h2 id="confirm-modal-title" style="color: #facc15; margin-bottom: 10px;">確認</h2>
             <p id="confirm-modal-message" style="color: #cbd5e1; font-size: 0.9rem; text-align: center; margin-bottom: 15px; line-height: 1.6; white-space: pre-line;">メッセージがここに入ります</p>
-            <div style="display: flex; gap: 10px; width: 100%;">
+            <div class="confirm-modal-buttons" style="display: flex; gap: 10px; width: 100%;">
                 <button id="confirm-modal-cancel" class="btn" style="flex: 1; background: #475569; margin-top: 0;">キャンセル</button>
                 <button id="confirm-modal-ok" class="btn" style="flex: 1; background: linear-gradient(45deg, #0ea5e9, #0284c7); margin-top: 0;">OK</button>
             </div>
