@@ -507,8 +507,21 @@ function executeContinue() {
 function executeGameOver() {
     if (continueTimer) clearInterval(continueTimer);
     appState = 'title';
+    stopAllBGM();
     switchScreen('screen-mode-select');
     playSound(SOUNDS.bgmTitle);
+}
+
+function returnToTitle() {
+    showConfirmModal(
+        "バトルを中断してタイトルに戻りますか？",
+        () => {
+            stopAllBGM();
+            appState = 'title';
+            switchScreen('screen-mode-select');
+            playSound(SOUNDS.bgmTitle);
+        }
+    );
 }
 
 // カードのDOMと描画関係（バトル画面UIへの反映）

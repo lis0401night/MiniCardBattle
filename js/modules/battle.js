@@ -705,7 +705,7 @@ async function executeCombatPhase(atk) {
 
 function endBattle() {
     document.body.classList.remove('slow-motion');
-    stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle); stopSound(SOUNDS.bgmStageAndroid);
+    stopAllBGM();
     lastBattleResult = playerHP > 0 ? (enemyHP <= 0 ? 'win' : 'draw') : (enemyHP > 0 ? 'lose' : 'draw');
     const t = document.getElementById('turn-status'); t.innerText = lastBattleResult === 'win' ? "YOU WIN!" : (lastBattleResult === 'lose' ? "YOU LOSE..." : "DRAW");
     t.style.color = lastBattleResult === 'win' ? "#facc15" : "#fff";
