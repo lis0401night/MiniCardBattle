@@ -64,7 +64,7 @@ function initBattleState() {
     bs.style.backgroundColor = '#0f172a';
     bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
     updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
-    for (let i = 0; i < 5; i++) { drawCard('blue'); drawCard('red'); }
+    for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
     switchScreen('screen-battle'); startTurn('blue');
 }
 

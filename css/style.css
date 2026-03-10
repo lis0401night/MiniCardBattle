@@ -1081,13 +1081,13 @@ h2 {
 .hand-area {
     display: flex;
     gap: 8px;
-    height: 130px;
-    /* Reduced to fit 100px cards */
+    height: 155px;
+    /* Enlarged from 130px */
     padding: 10px 15px;
     background: rgba(0, 0, 0, 0.4);
     border-radius: 12px;
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     overflow-x: auto;
     overflow-y: hidden;
     /* 縦スクロールを防止 */
@@ -1128,6 +1128,11 @@ h2 {
     z-index: 10;
     /* transformを使用しているため、通常はレイアウト破綻しませんが、
        念のためマージン等による押し出しが発生しないことを保証します */
+}
+
+.card.hand-card {
+    width: 100px;
+    height: 125px;
 }
 
 .turn-area {
@@ -1869,13 +1874,18 @@ h2 {
     }
 
     .hand-area {
-        height: 105px;
+        height: 125px;
         padding: 6px 10px;
         gap: 6px;
     }
 
     .hand-card.selected {
         transform: translateY(-10px);
+    }
+
+    .card.hand-card {
+        width: 80px;
+        height: 100px;
     }
 
     .hp-area {
@@ -2028,13 +2038,18 @@ h2 {
     }
 
     .hand-area {
-        height: 90px;
+        height: 110px;
         padding: 4px 8px;
         gap: 4px;
     }
 
     .hand-card.selected {
         transform: translateY(-8px);
+    }
+
+    .card.hand-card {
+        width: 68px;
+        height: 85px;
     }
 
     .char-icon {
