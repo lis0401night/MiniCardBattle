@@ -18,7 +18,7 @@ const CARD_MASTER = [
     { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -3 }], rarity: 2, flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。', imgUrl: 'assets/card_mantis.jpg' },
     { id: 'bigai', name: 'サイクロプス Mk-II', power: 3, skills: [{ id: 'charge', value: -2 }, { id: 'snipe', value: 5 }], rarity: 2, flavor: '単眼の狙撃特化型自律ユニット。一撃必殺の精度を誇る。', imgUrl: 'assets/card_bigai.jpg' },
     { id: 'babydragon', name: 'ドラゴンの雛', power: 2, skill: 'growth', skillValue: 3, rarity: 2, flavor: 'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。' },
-    { id: 'dragonewt', name: '竜人の突撃兵', power: 4, skills: [{ id: 'pierce' }], rarity: 2, flavor: '竜の血を引く勇猛な戦士。その槍の一突きは、敵の装甲のみならず背後のリーダーさえも震え上がらせる。' },
+    { id: 'dragonewt', name: '竜人族の騎兵', power: 4, skills: [{ id: 'pierce' }], rarity: 2, flavor: '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫く' },
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
     { id: 'commander', name: '前線の司令官', power: 3, skill: 'support', skillValue: 2, rarity: 2, flavor: '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。' },
     { id: 'lightpaladin', name: '光の聖騎士', power: 5, skill: 'guardian', rarity: 2, flavor: '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。', imgUrl: 'assets/card_lightpaladin.jpg' },
