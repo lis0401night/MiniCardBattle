@@ -9,7 +9,8 @@ ENEMY_DECKS.cleric = {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'vampire', 'vampire', 'vampire',
+        'empress',
+        'vampire', 'vampire',
         'tortoise', 'tortoise',
         'crenellatedwall', 'crenellatedwall',
         'wall', 'wall', 'wall',
@@ -17,11 +18,11 @@ ENEMY_DECKS.cleric = {
         'scorpion', 'scorpion', 'scorpion',
     ],
     hard: [
+        'empress', 'empress', 'empress', 'empress',
         'vampire', 'vampire', 'vampire', 'vampire',
         'tortoise', 'tortoise', 'tortoise', 'tortoise',
         'crenellatedwall', 'crenellatedwall',
         'wall', 'wall',
         'cleric', 'cleric', 'cleric', 'cleric',
-        'clone', 'clone', 'clone', 'clone',
     ]
 };

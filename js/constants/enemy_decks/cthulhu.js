@@ -10,7 +10,8 @@ ENEMY_DECKS.cthulhu = {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'octopus', 'octopus', 'octopus',
+        'oldgod',
+        'octopus', 'octopus',
         'tortoise', 'tortoise',
         'shade', 'shade',
         'dealer', 'dealer',
@@ -19,10 +20,11 @@ ENEMY_DECKS.cthulhu = {
         'diviner', 'diviner', 'diviner',
     ],
     hard: [
+        'oldgod', 'oldgod', 'oldgod', 'oldgod',
         'octopus', 'octopus', 'octopus', 'octopus',
-        'shade', 'shade', 'shade', 'shade',
         'tortoise', 'tortoise', 'tortoise', 'tortoise',
-        'dealer', 'dealer', 'dealer', 'dealer',
+        'shade', 'shade',
+        'dealer', 'dealer',
         'clone', 'clone', 'clone', 'clone',
     ]
 };
