@@ -21,7 +21,7 @@ const CARD_MASTER = [
     { id: 'commander', name: '前線の司令官', power: 3, skill: 'support', skillValue: 2, rarity: 2, flavor: '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。' },
     { id: 'bard', name: '森の歌うたい', power: 1, skills: [{ id: 'support', value: 2 }, { id: 'heal', value: 2 }], rarity: 2, flavor: 'ウクレレを奏でる彼を、森の動物たちは親しみを持って「先生」と呼ぶ。その歌声は傷ついた心も体も癒やす。', imgUrl: 'assets/card_bard.jpg' },
     { id: 'spider', name: 'スパイダー', power: 3, skill: 'bind', skillValue: 1, rarity: 2, flavor: '暗闇に潜み、粘着質の糸を紡ぐ毒蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。' },
-    { id: 'mage', name: '未熟な魔導士', power: 2, skill: 'spread', skillValue: 2, rarity: 2, flavor: '魔導アカデミーの門を叩いたばかりの若者。制御しきれない魔力が周囲に拡散する。' },
+    { id: 'mage', name: '学院の雷撃魔導士', power: 2, skill: 'spread', skillValue: 2, rarity: 2, flavor: '魔導アカデミーの雷撃魔導士。周囲の魔力を吸収し、雷撃を放つ。' },
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'dealer', name: 'デビル・ディーラー', power: 4, skills: [{ id: 'draw', value: 4 }, { id: 'sacrifice', value: 2 }], rarity: 2, flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。', imgUrl: 'assets/card_dealer.jpg' },
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', rarity: 2, flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
