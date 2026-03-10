@@ -3,8 +3,11 @@
  */
 const INITIAL_PLAYER_DECK = [
     'golem', 'golem', 'golem', 'golem',
-    'sniper', 'sniper', 'sniper', 'sniper',
-    'diviner', 'diviner', 'diviner', 'diviner',
     'clone', 'clone', 'clone', 'clone',
-    'scorpion', 'scorpion', 'scorpion', 'scorpion'
+    'dinosaur', 'dinosaur',
+    'sniper', 'sniper',
+    'diviner', 'diviner',
+    'cheetah', 'cheetah',
+    'scorpion', 'scorpion',
+    'cleric', 'cleric',
 ];
