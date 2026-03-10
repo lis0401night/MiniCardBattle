@@ -87,17 +87,15 @@ function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSk
         let bestLane = -1;
 
         // 手札からの配置と同様、空きレーンがあればそこを優先、無ければ全レーンを対象にする
-        const emptyLanes = allLanes.filter(l => tempBoard[l] === null && !results.includes(l));
-        const lanesToEvaluate = emptyLanes.length > 0 ? emptyLanes : allLanes.filter(l => !results.includes(l));
+        const lanesToEvaluate = allLanes.filter(l => !results.includes(l));
 
         for (let l of lanesToEvaluate) {
             let score = calculateScoreForPlacement(tokenCard, l, tempBoard, playerBoard, -1, isLeaderSkill);
 
-            // 上書き配置には強力なペナルティ（手札からの配置と一貫性を持たせる）
+            // 動的な上書きペナルティ: 失うカードのパワー + 機会コスト(2000)
             if (tempBoard[l] !== null) {
-                score -= 10000;
                 const myCP = tempBoard[l].currentPower !== undefined ? tempBoard[l].currentPower : (tempBoard[l].power || 0);
-                if (myCP >= 5) score -= 5000;
+                score -= (myCP * 100 + 2000);
             }
 
             if (score > bestScore) {
@@ -179,12 +177,45 @@ function calculateScoreForPlacement(card, l, myBoard, opBoard, lethalLane = -1, 
                 const ally = myBoard[j]; const opponent = opBoard[j];
                 const allyCP = ally.currentPower !== undefined ? ally.currentPower : (ally.power || 0);
                 const opCP = (opponent && opponent.currentPower !== undefined) ? opponent.currentPower : (opponent ? opponent.power : 0);
-                score += 500;
+                score += (val * 500); // 基礎加点
                 if (opponent) {
-                    if (allyCP < opCP && (allyCP + val) >= opCP) score += 2000;
+                    if (allyCP < opCP && (allyCP + val) >= opCP) score += 3000; // 逆転勝利ボーナス
+                } else {
+                    score += 500; // 敵がいないレーンの味方強化（リーサル短縮）
                 }
             }
         });
+    }
+    if (hasSkill(card, 'berserk')) {
+        const val = getSkillValue(card, 'berserk') || 2;
+        [l - 1, l + 1].forEach(j => {
+            if (j >= 0 && j < 3 && myBoard[j]) {
+                const ally = myBoard[j];
+                const allyCP = ally.currentPower !== undefined ? ally.currentPower : (ally.power || 0);
+                score -= Math.min(allyCP, val) * 1000; // 味方へのダメージは大きな減点
+                if (allyCP <= val) score -= 2000; // 破壊してしまう場合はさらに減点
+            }
+        });
+    }
+    if (hasSkill(card, 'copy')) {
+        const adj = l === 1 ? [0, 2] : [1];
+        let total = 0;
+        for (let j of adj) {
+            if (myBoard[j]) {
+                total += (myBoard[j].currentPower !== undefined ? myBoard[j].currentPower : (myBoard[j].power || 0));
+            }
+        }
+        simPower += total;
+        score += total * 20;
+    }
+    if (hasSkill(card, 'charge')) {
+        const val = getSkillValue(card, 'charge') || 2;
+        score += val * 1000; // SP増加の価値
+    }
+    if (hasSkill(card, 'heal')) {
+        const val = getSkillValue(card, 'heal') || 3;
+        const missingHP = (typeof MAX_HP !== 'undefined' ? MAX_HP : 20) - enemyHP;
+        score += Math.min(val, missingHP) * 800; // 回復量の価値
     }
     if (hasSkill(card, 'snipe')) {
         let maxL = -1, maxP = -1;
@@ -291,17 +322,18 @@ function getBestMove(hand, myBoard, opBoard) {
     }
 
     const allLanes = [0, 1, 2];
-    const emptyLanes = allLanes.filter(l => myBoard[l] === null);
-    const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : (emptyLanes.length > 0 ? emptyLanes : allLanes);
+    // リーサル回避が必要な場合は該当レーンのみ、そうでなければ全レーンを評価
+    const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : allLanes;
 
     for (let l of lanesToEvaluate) {
         const isOverwrite = myBoard[l] !== null;
         for (let i = 0; i < hand.length; i++) {
             let score = calculateScoreForPlacement(hand[i], l, myBoard, opBoard, lethalLane);
+
+            // 動的な上書きペナルティ: 失うカードのパワー + 機会コスト(2000)
             if (isOverwrite) {
-                score -= 10000;
                 const myCP = myBoard[l].currentPower !== undefined ? myBoard[l].currentPower : (myBoard[l].power || 0);
-                if (myCP >= 5) score -= 5000;
+                score -= (myCP * 100 + 2000);
             }
             if (score > bestScore) {
                 bestScore = score; bestCardIndex = i; bestLane = l; bestIsOverwrite = isOverwrite;
