@@ -27,7 +27,8 @@ const SKILLS = {
     invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` },
     guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' },
     legendary: { name: '伝説', icon: '👑', desc: (val) => '中央のレーンにしか配置できない。' },
-    takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードの置かれているレーンにしか配置できない。' }
+    takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードの置かれているレーンにしか配置できない。' },
+    pierce: { name: '貫通', icon: '🏹', desc: (val) => '戦闘で敵を破壊した時、自身のパワーの分だけ相手リーダーにダメージを与える。' }
 };
 
 // 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）
@@ -38,5 +39,5 @@ const ACTIVE_SKILLS = [
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 const PASSIVE_SKILLS = [
-    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover'
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce'
 ];

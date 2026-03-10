@@ -2,7 +2,7 @@ ENEMY_DECKS.dragon = {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'babydragon', 'babydragon',
-        'berserker', 'berserker',
+        'dragonewt', 'dragonewt',
         'mage', 'mage',
         'cheetah', 'cheetah', 'cheetah', 'cheetah',
         'scorpion', 'scorpion', 'scorpion',

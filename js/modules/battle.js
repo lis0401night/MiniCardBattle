@@ -667,6 +667,24 @@ async function executeSingleCombat(atk, l) {
         if (tr) { playSound(SOUNDS.seSkill); renderBoard(); await sleep(300); }
         if (aD) { if (!discardCard(atk, realAtk, aLane)) aB[aLane] = null; } if (dD) { if (!discardCard(atk === 'blue' ? 'red' : 'blue', realDef, dLane)) dB[dLane] = null; }
         if (aD || dD) playSound(SOUNDS.seDestroy);
+
+        // 貫通スキルの判定: 防御側を破壊し、攻撃側が生き残っている場合
+        if (dD && !aD && hasSkill(aC, 'pierce')) {
+            const pD = aC.currentPower;
+            if (pD > 0) {
+                await sleep(200);
+                playSound(SOUNDS.seDamage);
+                if (atk === 'blue') {
+                    enemyHP -= pD;
+                    createDamagePopup(document.getElementById('enemy-hp-fill'), `-${pD}`);
+                } else {
+                    playerHP -= pD;
+                    createDamagePopup(document.getElementById('player-hp-fill'), `-${pD}`);
+                }
+                updateHPBar();
+                if (checkWinCondition()) return;
+            }
+        }
     } else {
         const d = aC.currentPower; playSound(SOUNDS.seDamage); document.body.classList.add('anim-shake');
         if (atk === 'blue') { enemyHP -= d; createDamagePopup(document.getElementById('enemy-hp-fill'), `-${d}`); showSpeechBubble('red'); }
