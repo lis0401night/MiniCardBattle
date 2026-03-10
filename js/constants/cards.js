@@ -36,7 +36,7 @@ const CARD_MASTER = [
     { id: 'champion', name: 'アリーナのチャンピオン', power: 1, skills: [{ id: 'hero', value: 3 }, { id: 'legendary' }], rarity: 3, flavor: '観衆の歓声こそが彼の力。その雄姿は味方を鼓舞し、敵を圧倒する。', imgUrl: 'assets/card_champion.jpg' },
     { id: 'assassin', name: 'ギルドの暗殺者', power: 1, skills: [{ id: 'quick' }, { id: 'deadly' }, { id: 'stealth', value: 1 }], rarity: 3, flavor: '黒い服と2つの短剣を持つ若い女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。', imgUrl: 'assets/card_assassin.jpg' },
     { id: 'wolf', name: '真夜中の狩人', power: 3, skills: [{ id: 'lone_wolf', value: 3 }, { id: 'legendary' }], rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
-    { id: 'vampire', name: '渇きの王', power: 6, skills: [{ id: 'soul_bind', value: 4 }, { id: 'growth', value: -3 }, { id: 'sacrifice', value: 3 }], rarity: 3, flavor: '冷笑を浮かべる夜の支配者。彼の者に狙われた者は、魂の底まで吸い尽くされる。', imgUrl: 'assets/card_vampire.jpg' },
+    { id: 'vampire', name: '渇きの王', power: 6, skills: [{ id: 'soul_bind', value: 4 }, { id: 'growth', value: -3 }, { id: 'sacrifice', value: 3 }], rarity: 2, flavor: '冷笑を浮かべる夜の支配者。彼の者に狙われた者は、魂の底まで吸い尽くされる。', imgUrl: 'assets/card_vampire.jpg' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     // トークンカード
