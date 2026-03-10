@@ -725,14 +725,22 @@ h2 {
 }
 
 .char-icon {
-    width: 50px;
-    height: 50px;
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
-    border: 3px solid;
+    border: 4px solid transparent;
+    /* グラデーション用に透明化し太くする */
     object-fit: cover;
     background-color: #334155;
+    background-clip: padding-box;
+    /* コンテンツ領域だけ背景で塗る */
     flex-shrink: 0;
-    margin-right: 12px;
+    margin-right: -25px;
+    /* HPバーと重ねるためにマイナス値 */
+    position: relative;
+    /* z-index用 */
+    z-index: 2;
+    /* HPバーより手前に表示 */
     transition: all 0.3s;
 }
 
@@ -743,29 +751,41 @@ h2 {
 }
 
 .char-icon.blue {
-    border-color: var(--color-blue);
+    background-image: linear-gradient(#334155, #334155), linear-gradient(90deg, #0ea5e9, #38bdf8);
+    background-origin: border-box;
 }
 
 .char-icon.red {
-    border-color: var(--color-red);
+    background-image: linear-gradient(#334155, #334155), linear-gradient(90deg, #e11d48, #fb7185);
+    background-origin: border-box;
+}
+
+.char-icon.dead {
+    background-image: linear-gradient(#334155, #334155), linear-gradient(90deg, #334155, #475569);
+    background-origin: border-box;
+    filter: grayscale(1);
 }
 
 .sp-orbs {
     position: absolute;
-    bottom: -8px;
-    left: 50%;
+    bottom: -35px;
+    /* アクションボタンの高さに合わせる */
+    /* アイコンの中央とオーブ全体の中心を揃える */
+    left: calc(110px / 2);
+    /* char-iconのwidthの半分を指定 */
     transform: translateX(-50%);
     display: flex;
     justify-content: center;
     gap: 4px;
     z-index: 10;
-    width: 100%;
+    width: max-content;
+    /* アイコン幅に縛られず重なりを防止 */
 }
 
 .orb {
     display: block;
-    width: 12px;
-    height: 12px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     border: 2px solid #facc15;
     background: rgba(0, 0, 0, 0.8);
@@ -816,13 +836,19 @@ h2 {
 .player-status {
     display: flex;
     flex-direction: column;
-    width: calc(100% - 62px);
+    width: calc(100% - 85px);
+    /* アイコン拡大に伴いHPバーをさらに短縮 */
+    position: relative;
+    z-index: 1;
+    /* アイコンの奥に表示 */
 }
 
 .status-name {
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 1.8rem;
     margin-bottom: 2px;
+    margin-left: 25px;
+    /* アイコンとの重なりを防ぐ */
     text-shadow: 1px 1px 2px #000;
 }
 
@@ -1136,9 +1162,11 @@ h2 {
     font-size: 0.75rem;
     /* 少し小さくしてスッキリさせる */
     color: #cbd5e1;
-    align-self: flex-start;
-    text-shadow: 1px 1px 2px #000;
+    align-self: flex-end;
+    /* 右寄せにする */
     margin-top: 2px;
+    margin-right: 2px;
+    text-shadow: 1px 1px 2px #000;
 }
 
 .action-btn {
@@ -1830,12 +1858,25 @@ h2 {
     }
 
     .char-icon {
-        width: 40px;
-        height: 40px;
+        width: 80px;
+        height: 80px;
+        margin-right: -15px;
+    }
+
+    .player-status {
+        width: calc(100% - 65px);
+    }
+
+    .sp-orbs {
+        bottom: -30px;
+        left: calc(80px / 2);
+        /* char-icon(80px)の中央 */
     }
 
     .status-name {
-        font-size: 0.75rem;
+        font-size: 1.5rem;
+        /* スマホ向けに倍増 */
+        margin-left: 15px;
     }
 
     .hp-bar-bg {
@@ -1973,13 +2014,25 @@ h2 {
     }
 
     .char-icon {
-        width: 35px;
-        height: 35px;
-        margin-right: 8px;
+        width: 70px;
+        height: 70px;
+        margin-right: -10px;
+    }
+
+    .player-status {
+        width: calc(100% - 60px);
+    }
+
+    .sp-orbs {
+        bottom: -25px;
+        left: calc(70px / 2);
+        /* char-icon(70px)の中央 */
     }
 
     .status-name {
-        font-size: 0.7rem;
+        font-size: 1.4rem;
+        /* 極小画面向けに倍増 */
+        margin-left: 10px;
     }
 
     .hp-bar-bg {

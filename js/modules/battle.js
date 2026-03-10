@@ -73,6 +73,12 @@ function updateHPBar() {
     document.getElementById('player-hp-text').innerText = `${Math.max(0, playerHP)} / ${playerMaxHP}`;
     document.getElementById('enemy-hp-fill').style.width = `${Math.max(0, (enemyHP / enemyMaxHP) * 100)}%`;
     document.getElementById('enemy-hp-text').innerText = `${Math.max(0, enemyHP)} / ${enemyMaxHP}`;
+
+    // HP0時のアイコン死亡演出（スタイル反映用）
+    const pIcon = document.getElementById('player-icon');
+    if (pIcon) pIcon.classList.toggle('dead', playerHP <= 0);
+    const eIcon = document.getElementById('enemy-icon');
+    if (eIcon) eIcon.classList.toggle('dead', enemyHP <= 0);
 }
 
 function updateSPOrbs(owner) {
