@@ -263,6 +263,7 @@ function confirmCharSelect() {
 function confirmDifficulty(level) {
     playSound(SOUNDS.seClick);
     aiLevel = level;
+    storyDifficulty = level; // ストーリーモード用に保存
     if (gameMode === 'story') {
         initStoryMode(pendingCharId);
     } else {
@@ -341,7 +342,16 @@ function startNextBattleSequence() {
     }
 
     if (gameMode === 'story') {
-        aiLevel = Math.min(3, battleCount);
+        // 難易度設定に応じたスケーリング
+        if (storyDifficulty === 1) {
+            aiLevel = 1; // イージーはずっとイージー
+        } else if (storyDifficulty === 3) {
+            aiLevel = 3; // ハードはずっとハード
+        } else {
+            // ノーマル時は進行度に合わせて上昇
+            aiLevel = Math.min(3, Math.ceil(battleCount / 2.5)); // 1-2戦:1, 3-5戦:2, 6-7戦:3
+        }
+        console.log(`Story Mode Battle: ${battleCount}, aiLevel set to: ${aiLevel} (Chosen: ${storyDifficulty})`);
     }
 
     appState = 'pre_dialogue';

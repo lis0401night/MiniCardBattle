@@ -9,7 +9,7 @@ var playerHP, enemyHP, playerMaxHP, enemyMaxHP, playerSP, enemySP;
 var playerHand, enemyHand, playerDeck, enemyDeck;
 var playerDiscard, enemyDiscard;
 var playerBoard, enemyBoard;
-var appState = 'title', gameMode = 'story', aiLevel = 1;
+var appState = 'title', gameMode = 'story', aiLevel = 1, storyDifficulty = 1;
 var isProcessing = false, selectedCardIndex = null, isBattleEnded = false;
 var selectedBoardLaneIndex = null, selectedBoardSide = null; // 場のカード選択用
 var isDiscardingMode = false, discardMaxCount = 0; // 手札入替時のプロンプト用
