@@ -181,7 +181,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         playSound(SOUNDS.seSkill);
         await sleep(500);
     } else if (action === 'dark_ritual') {
-        const d = 3;
+        const d = 2;
         playSound(SOUNDS.seDamage);
         if (isBlue) {
             enemyHP -= d;
