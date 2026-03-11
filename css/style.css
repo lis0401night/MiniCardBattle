@@ -20,6 +20,9 @@ html {
     background-color: #000;
     width: 100%;
     height: 100%;
+    font-size: 16px; /* OSのフォントサイズ設定の影響を固定化 */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 body {
@@ -38,6 +41,8 @@ body {
     -webkit-user-select: none;
     -webkit-touch-callout: none;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 #app-container {
