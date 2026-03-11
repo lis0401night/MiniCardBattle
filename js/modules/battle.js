@@ -747,9 +747,7 @@ function endBattle() {
 
 function returnToTitle() {
     showConfirmModal('バトルを諦めてタイトルに戻りますか？', () => {
-        stopSound(SOUNDS.bgmBattle);
-        stopSound(SOUNDS.bgmLastBattle);
-        stopSound(SOUNDS.bgmStageAndroid);
+        stopAllBGM();
         playSound(SOUNDS.bgmTitle);
         appState = 'title';
         isProcessing = false;
