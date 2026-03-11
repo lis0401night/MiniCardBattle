@@ -49,14 +49,37 @@ async function executeEnemyAI() {
 
         // 思考ルーチン: 1枚だけ最適なカードを選ぶ
         if (enemyHand.length > 0) {
-            const decision = getBestMove(enemyHand, enemyBoard, playerBoard);
+            let bestCardIndex = -1;
+            let bestLane = -1;
+            let bestIsOverwrite = false;
 
-            if (decision.bestCardIndex !== -1 && decision.bestLane !== -1 && (decision.bestScore > 500 || decision.totalDamageBefore >= 4)) {
-                if (decision.bestIsOverwrite) {
-                    const oldCard = enemyBoard[decision.bestLane];
-                    discardCard('red', oldCard, decision.bestLane);
+            if (typeof aiLevel !== 'undefined' && aiLevel === 1) {
+                // イージー難易度: 手札からランダムに、空きレーンを優先してランダム配置
+                bestCardIndex = Math.floor(Math.random() * enemyHand.length);
+                const emptyLanes = [0, 1, 2].filter(l => enemyBoard[l] === null);
+                if (emptyLanes.length > 0) {
+                    bestLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    bestIsOverwrite = false;
+                } else {
+                    bestLane = Math.floor(Math.random() * 3);
+                    bestIsOverwrite = true;
                 }
-                await playCard('red', decision.bestCardIndex, decision.bestLane);
+            } else {
+                // ノーマル以上: 最適な手を選ぶ
+                const decision = getBestMove(enemyHand, enemyBoard, playerBoard);
+                if (decision.bestCardIndex !== -1 && decision.bestLane !== -1 && (decision.bestScore > 500 || decision.totalDamageBefore >= 4)) {
+                    bestCardIndex = decision.bestCardIndex;
+                    bestLane = decision.bestLane;
+                    bestIsOverwrite = decision.bestIsOverwrite;
+                }
+            }
+
+            if (bestCardIndex !== -1 && bestLane !== -1) {
+                if (bestIsOverwrite) {
+                    const oldCard = enemyBoard[bestLane];
+                    discardCard('red', oldCard, bestLane);
+                }
+                await playCard('red', bestCardIndex, bestLane);
                 await sleep(600);
             }
         }
