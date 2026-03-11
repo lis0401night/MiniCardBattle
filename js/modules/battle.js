@@ -572,29 +572,6 @@ function hasActiveSkill(c) {
     return ACTIVE_SKILLS.some(s => hasSkill(c, s));
 }
 
-// 判定補助: 特定のスキルを所持しているか
-function hasSkill(c, skillId) {
-    if (!c) return false;
-    // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
-    if (skillId === 'defender' && c.stunTurns > 0) return true;
-    if (c.skill === skillId) return true;
-    if (Array.isArray(c.skills)) {
-        return c.skills.some(s => s.id === skillId);
-    }
-    return false;
-}
-
-// 判定補助: スキルの数値を取得
-function getSkillValue(c, skillId) {
-    if (!c) return 0;
-    if (c.skill === skillId) return c.skillValue || 0;
-    if (Array.isArray(c.skills)) {
-        const s = c.skills.find(s => s.id === skillId);
-        return s ? s.value || 0 : 0;
-    }
-    return 0;
-}
-
 async function triggerStartTurnSkills(owner) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
     const side = owner === 'blue' ? 'player' : 'enemy';

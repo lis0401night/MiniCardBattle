@@ -32,14 +32,14 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             break;
         case 'copy':
             const cAdj = l === 1 ? [0, 2] : [1];
-            let total = 0; cAdj.forEach(j => { if (b[j]) total += (b[j].currentPower || b[j].power); });
+            let total = 0; cAdj.forEach(j => { if (b[j]) total += (b[j].currentPower !== undefined ? b[j].currentPower : b[j].power); });
             c.currentPower += total;
             break;
         case 'spread':
             const spVal = val || 2;
             [l - 1, l, l + 1].forEach(j => {
                 if (j >= 0 && j < 3 && eB[j]) {
-                    let d = spVal; if (hasSkill(eB[j], 'sturdy')) d = Math.floor(d / 2);
+                    let d = spVal;
                     eB[j].currentPower -= d;
                     if (eB[j].currentPower <= 0) eB[j] = null;
                 }
@@ -55,7 +55,7 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
                 }
             }
             if (maxL !== -1) {
-                let d = snVal; if (hasSkill(eB[maxL], 'sturdy')) d = Math.floor(d / 2);
+                let d = snVal;
                 eB[maxL].currentPower -= d;
                 if (eB[maxL].currentPower <= 0) eB[maxL] = null;
             }
@@ -82,6 +82,9 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             if (owner === 'blue') state.playerSP += (val || 2);
             else state.enemySP += (val || 2);
             break;
+        case 'quick':
+            applySingleCombat(state, owner, l);
+            break;
         case 'stealth':
         case 'invincible':
             if (!Array.isArray(c.skills)) c.skills = [{ id: 'invincible', value: val || 1 }];
@@ -91,51 +94,117 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
 }
 
 /**
+ * リーダースキルの効果を適用する (純粋関数)
+ */
+function applyLeaderSkillLogic(state, owner, action) {
+    const isBlue = owner === 'blue';
+    const board = isBlue ? state.playerBoard : state.enemyBoard;
+    const eBoard = isBlue ? state.enemyBoard : state.playerBoard;
+
+    if (action === 'annihilation') {
+        for (let i = 0; i < 3; i++) {
+            if (eBoard[i]) {
+                eBoard[i].currentPower -= 4;
+                if (eBoard[i].currentPower <= 0) eBoard[i] = null;
+            }
+        }
+    } else if (action === 'satan_avatar' || action === 'dragon_summon') {
+        const power = action === 'satan_avatar' ? 10 : 7;
+        const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+        if (emptyLanes.length > 0) {
+            const l = emptyLanes[0];
+            board[l] = { id: `tk_${Date.now()}`, owner, power, currentPower: power };
+        }
+    } else if (action === 'holy_march') {
+        // 騎士召喚（最大2体。シミュレーション上は前方優先または空き優先）
+        let count = 0;
+        for (let i = 0; i < 3 && count < 2; i++) {
+            if (board[i] === null) {
+                board[i] = { id: `tk_k_${Date.now()}_${i}`, owner, power: 2, currentPower: 2 };
+                count++;
+            }
+        }
+        // 全体バフ+2
+        for (let i = 0; i < 3; i++) {
+            if (board[i]) {
+                board[i].currentPower += 2;
+                board[i].power += 2;
+            }
+        }
+    } else if (action === 'dark_ritual') {
+        const d = 2;
+        if (isBlue) {
+            state.enemyHP -= d;
+            state.playerHP = Math.min(20, state.playerHP + d);
+        } else {
+            state.playerHP -= d;
+            state.enemyHP = Math.min(20, state.enemyHP + d);
+        }
+    } else if (action === 'targeted_destruction') {
+        let maxL = -1, maxP = -1;
+        for (let i = 0; i < 3; i++) {
+            if (eBoard[i] && eBoard[i].currentPower > maxP) {
+                maxP = eBoard[i].currentPower;
+                maxL = i;
+            }
+        }
+        if (maxL !== -1) eBoard[maxL] = null;
+    }
+}
+
+/**
  * 戦闘フェーズの計算 (純粋関数)
  * @param {Object} state
  * @param {string} attackerSide 'blue' or 'red'
  */
 function calculateCombatPhase(state, attackerSide) {
+    for (let l = 0; l < 3; l++) {
+        applySingleCombat(state, attackerSide, l);
+    }
+}
+
+/**
+ * 指定した1レーンのみの戦闘計算（Quick等のシミュレーション用）
+ */
+function applySingleCombat(state, attackerSide, l) {
     const atkBoard = attackerSide === 'blue' ? state.playerBoard : state.enemyBoard;
     const defBoard = attackerSide === 'blue' ? state.enemyBoard : state.playerBoard;
     let defHP = attackerSide === 'blue' ? state.enemyHP : state.playerHP;
 
-    for (let l = 0; l < 3; l++) {
-        const aC = atkBoard[l];
-        if (!aC || hasSkill(aC, 'defender')) continue;
+    const aC = atkBoard[l];
+    if (!aC || hasSkill(aC, 'defender')) return;
 
-        let dLane = l;
-        // 守護チェック
-        let dg = (l === 1) ? (hasSkill(defBoard[0], 'guardian') ? 0 : (hasSkill(defBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(defBoard[1], 'guardian') ? 1 : null) : (hasSkill(defBoard[1], 'guardian') ? 1 : null));
-        if (dg !== null) dLane = dg;
+    let dLane = l;
+    // 守護チェック
+    let dg = (l === 1) ? (hasSkill(defBoard[0], 'guardian') ? 0 : (hasSkill(defBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(defBoard[1], 'guardian') ? 1 : null) : (hasSkill(defBoard[1], 'guardian') ? 1 : null));
+    if (dg !== null) dLane = dg;
 
-        const dC = defBoard[dLane];
-        let aP = aC.currentPower;
+    const dC = defBoard[dLane];
+    let aP = aC.currentPower;
 
-        if (dC) {
-            let dP = dC.currentPower;
-            let dmgToDef = aP;
-            let dmgToAtk = dP;
+    if (dC) {
+        let dP = dC.currentPower;
+        let dmgToDef = aP;
+        let dmgToAtk = dP;
 
-            if (hasSkill(dC, 'sturdy')) dmgToDef = Math.floor(dmgToDef / 2);
-            if (hasSkill(aC, 'sturdy')) dmgToAtk = Math.floor(dmgToAtk / 2);
-            if (hasSkill(dC, 'invincible')) dmgToDef = 0;
-            if (hasSkill(aC, 'invincible')) dmgToAtk = 0;
+        if (hasSkill(dC, 'sturdy')) dmgToDef = Math.floor(dmgToDef / 2);
+        if (hasSkill(aC, 'sturdy')) dmgToAtk = Math.floor(dmgToAtk / 2);
+        if (hasSkill(dC, 'invincible')) dmgToDef = 0;
+        if (hasSkill(aC, 'invincible')) dmgToAtk = 0;
 
-            dC.currentPower -= dmgToDef;
-            aC.currentPower -= dmgToAtk;
+        dC.currentPower -= dmgToDef;
+        aC.currentPower -= dmgToAtk;
 
-            if (dmgToDef > 0 && hasSkill(aC, 'deadly')) dC.currentPower = 0;
-            if (dmgToAtk > 0 && hasSkill(dC, 'deadly')) aC.currentPower = 0;
+        if (dmgToDef > 0 && hasSkill(aC, 'deadly')) dC.currentPower = 0;
+        if (dmgToAtk > 0 && hasSkill(dC, 'deadly')) aC.currentPower = 0;
 
-            if (dC.currentPower <= 0) {
-                defBoard[dLane] = null;
-                if (hasSkill(aC, 'pierce')) defHP -= Math.max(0, aC.currentPower);
-            }
-            if (aC.currentPower <= 0) atkBoard[l] = null;
-        } else {
-            defHP -= aP;
+        if (dC.currentPower <= 0) {
+            defBoard[dLane] = null;
+            if (hasSkill(aC, 'pierce')) defHP -= Math.max(0, aC.currentPower);
         }
+        if (aC.currentPower <= 0) atkBoard[l] = null;
+    } else {
+        defHP -= aP;
     }
 
     if (attackerSide === 'blue') state.enemyHP = defHP;
