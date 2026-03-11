@@ -1,6 +1,7 @@
 ENEMY_DECKS.satan = {
     easy: [
         'golem', 'golem', 'golem', 'golem',
+        'wall', 'wall',
         'copy', 'copy',
         'dealer', 'dealer',
         'mage', 'mage', 'mage', 'mage',

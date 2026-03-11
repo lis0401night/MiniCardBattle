@@ -16,7 +16,7 @@ ENEMY_DECKS.knight = {
         'darkpaladin', 'darkpaladin',
         'ninja', 'ninja', 'ninja',
         'crenellatedwall', 'crenellatedwall',
-        'clone', 'clone', 'clone',
+        'clone', 'clone', 'clone', 'clone',
     ],
     hard: [
         'champion', 'champion', 'champion', 'champion',
