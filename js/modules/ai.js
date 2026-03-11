@@ -320,11 +320,119 @@ function calculateScoreForPlacement(card, l, myBoard, opBoard, lethalLane = -1, 
 }
 
 /**
- * 最善の1手を算出する
+ * プレイヤー（青）からAI（赤）への攻撃フェーズをシミュレートする
+ */
+function simulatePlayerCombatPhase(simMyBoard, simOpBoard, simMyHP) {
+    let currentMyHP = simMyHP;
+    for (let l = 0; l < 3; l++) {
+        const pCard = simOpBoard[l];
+        // プレイヤーにカードがないか、防衛（攻撃不可）ならスキップ
+        if (!pCard || hasSkill(pCard, 'defender')) continue;
+
+        let dDef = simMyBoard[l] ? (simMyBoard[l].currentPower !== undefined ? simMyBoard[l].currentPower : (simMyBoard[l].power || 0)) : 0;
+        let dAtk = pCard.currentPower !== undefined ? pCard.currentPower : (pCard.power || 0);
+
+        if (simMyBoard[l] && hasSkill(simMyBoard[l], 'sturdy')) dAtk = Math.floor(dAtk / 2);
+        if (simMyBoard[l] && hasSkill(pCard, 'sturdy')) dDef = Math.floor(dDef / 2);
+
+        if (simMyBoard[l] && hasSkill(simMyBoard[l], 'invincible')) dAtk = 0;
+        if (hasSkill(pCard, 'invincible')) dDef = 0;
+
+        // 守護スキルの判定 (AI側: 防御先が変わるか)
+        let dLane = l;
+        if (simMyBoard[l]) {
+            let dg = (l === 1) ? (hasSkill(simMyBoard[0], 'guardian') ? 0 : (hasSkill(simMyBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(simMyBoard[1], 'guardian') ? 1 : null) : (hasSkill(simMyBoard[1], 'guardian') ? 1 : null));
+            if (dg !== null) dLane = dg;
+        }
+
+        // プレイヤー側攻撃先の変更(守護)
+        let aLane = l;
+        let ag = (l === 1) ? (hasSkill(simOpBoard[0], 'guardian') ? 0 : (hasSkill(simOpBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(simOpBoard[1], 'guardian') ? 1 : null) : (hasSkill(simOpBoard[1], 'guardian') ? 1 : null));
+        if (ag !== null) aLane = ag;
+
+        const realDef = simMyBoard[dLane];
+        const realAtk = simOpBoard[aLane];
+
+        if (realDef) {
+            realDef.currentPower -= dDef;
+            if (dDef > 0 && hasSkill(pCard, 'deadly')) realDef.currentPower = 0;
+        } else {
+            // ダイレクトアタック
+            currentMyHP -= dAtk;
+        }
+
+        if (realAtk) {
+            realAtk.currentPower -= dAtk;
+            if (simMyBoard[l] && dAtk > 0 && hasSkill(simMyBoard[l], 'deadly')) realAtk.currentPower = 0;
+        }
+
+        // 破壊判定とソウルバインド(回復)
+        let aD = realAtk && realAtk.currentPower <= 0;
+        let dD = realDef && realDef.currentPower <= 0;
+
+        if (dD && !aD && pCard && hasSkill(pCard, 'soul_bind')) {
+            // プレイヤー回復(シミュ上はプレイヤーHPは管理しないが、パワーが上がる)
+            const val = getSkillValue(pCard, 'soul_bind') || 2;
+            realAtk.currentPower += val;
+        }
+        if (aD && !dD && simMyBoard[l] && hasSkill(simMyBoard[l], 'soul_bind')) {
+            const val = getSkillValue(simMyBoard[l], 'soul_bind') || 2;
+            realDef.currentPower += val;
+        }
+
+        // カード除去
+        if (aD) simOpBoard[aLane] = null;
+        if (dD) simMyBoard[dLane] = null;
+
+        // 貫通スキルの判定 (プレイヤー側からAIへ)
+        if (dD && !aD && pCard && hasSkill(pCard, 'pierce')) {
+            const pD = pCard.currentPower;
+            if (pD > 0) currentMyHP -= pD;
+        }
+    }
+    return { board: simMyBoard, opBoard: simOpBoard, hp: currentMyHP };
+}
+
+/**
+ * 戦闘シミュレーション後の盤面を評価する
+ */
+function evaluateBoardState(simMyBoard, simOpBoard, simMyHP) {
+    if (simMyHP <= 0) return -9999999;
+
+    let score = simMyHP * 1000; // HPの価値
+
+    for (let i = 0; i < 3; i++) {
+        if (simMyBoard[i]) {
+            score += 2000; // 生存ボーナス
+            score += (simMyBoard[i].currentPower !== undefined ? simMyBoard[i].currentPower : (simMyBoard[i].power || 0)) * 100;
+        }
+        if (simOpBoard[i]) {
+            score -= 1000; // 敵生存ペナルティ
+            score -= (simOpBoard[i].currentPower !== undefined ? simOpBoard[i].currentPower : (simOpBoard[i].power || 0)) * 50;
+        } else {
+            score += 1500; // 敵を除去できたボーナス
+        }
+    }
+    return score;
+}
+
+/**
+ * 候補を評価するためのヘルパークラス
+ */
+class MoveCandidate {
+    constructor(index, lane, isOverwrite, baseScore) {
+        this.index = index;
+        this.lane = lane;
+        this.isOverwrite = isOverwrite;
+        this.baseScore = baseScore;
+        this.simulatedScore = -9999999;
+    }
+}
+
+/**
+ * 最善の1手を算出する (上位3パターンから戦闘後シミュレーションで決定)
  */
 function getBestMove(hand, myBoard, opBoard) {
-    let bestCardIndex = -1, bestLane = -1, bestScore = -999999, bestIsOverwrite = false;
-
     const totalDamageBefore = calculateTotalIncomingDamage(myBoard, opBoard);
 
     // リーサル回避判定
@@ -346,24 +454,64 @@ function getBestMove(hand, myBoard, opBoard) {
     }
 
     const allLanes = [0, 1, 2];
-    // リーサル回避が必要な場合は該当レーンのみ、そうでなければ全レーンを評価
     const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : allLanes;
+    let candidates = [];
 
+    // STEP1: すべての配置の基礎スコアを出し、候補をリスティング
     for (let l of lanesToEvaluate) {
         const isOverwrite = myBoard[l] !== null;
         for (let i = 0; i < hand.length; i++) {
             let score = calculateScoreForPlacement(hand[i], l, myBoard, opBoard, lethalLane);
 
-            // 動的な上書きペナルティ: 失うカードのパワー + 機会コスト(2000)
-            if (isOverwrite) {
-                const myCP = myBoard[l].currentPower !== undefined ? myBoard[l].currentPower : (myBoard[l].power || 0);
-                score -= (myCP * 100 + 2000);
-            }
-            if (score > bestScore) {
-                bestScore = score; bestCardIndex = i; bestLane = l; bestIsOverwrite = isOverwrite;
-            }
+            // ユーザー要望：上書きのハードコードされたペナルティを削除し、結果が強ければ上書きを許容する
+
+            candidates.push(new MoveCandidate(i, l, isOverwrite, score));
         }
     }
 
-    return { bestCardIndex, bestLane, bestScore, bestIsOverwrite, lethalLane, totalDamageBefore };
+    // 基礎スコアで降順ソート
+    candidates.sort((a, b) => b.baseScore - a.baseScore);
+
+    // STEP2: 上位3つの候補について、次ターンの戦闘終了後をシミュレート
+    const topCandidates = candidates.slice(0, 3);
+
+    let bestCandidate = null;
+
+    for (let cand of topCandidates) {
+        // 仮想盤面の初期化
+        let simMyBoard = myBoard.map(c => c ? { ...c, currentPower: (c.currentPower !== undefined ? c.currentPower : c.power) } : null);
+        let simOpBoard = opBoard.map(c => c ? { ...c, currentPower: (c.currentPower !== undefined ? c.currentPower : c.power) } : null);
+
+        // カードのプレイ適用
+        const playedCard = hand[cand.index];
+        const initialPower = playedCard.currentPower !== undefined ? playedCard.currentPower : (playedCard.power || 0);
+        simMyBoard[cand.lane] = { ...playedCard, currentPower: initialPower };
+
+        // ターン終了およびプレイヤーの攻撃フェーズシミュレート
+        const result = simulatePlayerCombatPhase(simMyBoard, simOpBoard, enemyHP);
+
+        // 最終状態の評価
+        cand.simulatedScore = evaluateBoardState(result.board, result.opBoard, result.hp);
+
+        // 配置の基礎スコアも加算して総合評価（目先のダメージ等も捨てるわけではない）
+        const totalScore = cand.simulatedScore + (cand.baseScore * 0.1);
+
+        if (!bestCandidate || totalScore > bestCandidate.simulatedScore) {
+            cand.simulatedScore = totalScore;
+            bestCandidate = cand;
+        }
+    }
+
+    if (bestCandidate) {
+        return {
+            bestCardIndex: bestCandidate.index,
+            bestLane: bestCandidate.lane,
+            bestScore: bestCandidate.baseScore,
+            bestIsOverwrite: bestCandidate.isOverwrite,
+            lethalLane,
+            totalDamageBefore
+        };
+    }
+
+    return { bestCardIndex: -1, bestLane: -1, bestScore: -999999, bestIsOverwrite: false, lethalLane, totalDamageBefore };
 }
