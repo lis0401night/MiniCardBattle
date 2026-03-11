@@ -85,6 +85,36 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
         case 'quick':
             applySingleCombat(state, owner, l);
             break;
+        case 'clone':
+            const cloneCount = val || 1;
+            const tC = {
+                id: 'token_clone',
+                name: '分身',
+                isToken: true,
+                rarity: c.rarity || 1
+            };
+            // スキルの引き継ぎ（分身以外）
+            let inheritedSkills = [];
+            if (c.skill && c.skill !== 'clone') inheritedSkills.push({ id: c.skill, value: c.skillValue });
+            if (Array.isArray(c.skills)) {
+                inheritedSkills = inheritedSkills.concat(c.skills.filter(sk => sk.id !== 'clone'));
+            }
+
+            for (let i = 0; i < cloneCount; i++) {
+                const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                if (emptyLanes.length > 0) {
+                    const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
+                    b[targetLane] = {
+                        ...tC,
+                        id: `cl_sim_${Date.now()}_${i}`,
+                        owner,
+                        power: c.power,
+                        currentPower: c.currentPower,
+                        skills: inheritedSkills
+                    };
+                }
+            }
+            break;
         case 'stealth':
         case 'invincible':
             if (!Array.isArray(c.skills)) c.skills = [{ id: 'invincible', value: val || 1 }];

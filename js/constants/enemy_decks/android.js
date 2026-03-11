@@ -24,6 +24,7 @@ ENEMY_DECKS.android = {
         'cyberman', 'cyberman', 'cyberman', 'cyberman',
         'bigai', 'bigai', 'bigai', 'bigai',
         'titan', 'titan', 'titan', 'titan',
-        'clone', 'clone', 'clone', 'clone',
+        'clone', 'clone', 'clone',
+        'mantis',
     ]
 };

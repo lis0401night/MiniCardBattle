@@ -42,11 +42,30 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const count = skillValue || 1;
         const tC = CARD_MASTER.find(m => m.id === 'token_clone');
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
+
+        // スキルの引き継ぎ（分身以外）
+        let inheritedSkills = [];
+        if (c.skill && c.skill !== 'clone') inheritedSkills.push({ id: c.skill, value: c.skillValue });
+        if (Array.isArray(c.skills)) {
+            inheritedSkills = inheritedSkills.concat(c.skills.filter(sk => sk.id !== 'clone'));
+        }
+
         const selectedLanes = await waitPlayerLaneSelection(count, o, tC, false);
         for (let i = 0; i < selectedLanes.length; i++) {
             const tL = selectedLanes[i];
             const board = o === 'blue' ? playerBoard : enemyBoard;
-            board[tL] = { id: `cl_${Date.now()}_${i}`, owner: o, ...tC, imgUrl: c.imgUrl, filter: c.filter, power: c.power, currentPower: c.currentPower, rarity: c.rarity || 1, basePower: c.power };
+            board[tL] = {
+                id: `cl_${Date.now()}_${i}`,
+                owner: o,
+                ...tC,
+                imgUrl: c.imgUrl,
+                filter: c.filter,
+                power: c.power,
+                currentPower: c.currentPower,
+                rarity: c.rarity || 1,
+                basePower: c.power,
+                skills: inheritedSkills // スキルを引き継ぐ
+            };
             renderBoard(); await sleep(300);
         }
     } else if (skillId === 'quick') {

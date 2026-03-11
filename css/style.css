@@ -1052,7 +1052,7 @@ h2 {
     bottom: 5px;
     left: 4px;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     gap: 3px;
     z-index: 3;
     max-width: calc(100% - 12px);
@@ -1129,15 +1129,12 @@ h2 {
 }
 
 .card.hand-card {
-    width: calc((100% - 10px - (1.5% * 4)) / 5);
+    width: calc((100% - (1.5% * 4)) / 5);
     /* 5枚が等間隔に並ぶよう計算 */
     max-width: 90px;
-    /* 大きくなりすぎない制限 */
-    min-width: 60px;
-    /* 小さくなりすぎない制限 */
-    aspect-ratio: 4 / 5;
-    /* 縦横比を固定 */
     height: auto;
+    aspect-ratio: 4 / 5;
+    flex-shrink: 0;
 }
 
 .card.hand-card .card-power {
@@ -1908,8 +1905,8 @@ h2 {
     }
 
     .card.hand-card {
-        width: 80px;
-        height: 100px;
+        width: calc((100% - (8px * 4)) / 5);
+        height: auto;
     }
 
     .hp-area {
@@ -2072,8 +2069,8 @@ h2 {
     }
 
     .card.hand-card {
-        width: 68px;
-        height: 85px;
+        width: calc((100% - (4px * 4)) / 5);
+        height: auto;
     }
 
     .char-icon {

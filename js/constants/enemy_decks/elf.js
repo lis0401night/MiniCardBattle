@@ -2,7 +2,7 @@ ENEMY_DECKS.elf = {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'spider', 'spider',
-        'bard', 'bard',
+        'mage', 'mage',
         'charger', 'charger', 'charger',
         'diviner', 'diviner', 'diviner',
         'sniper', 'sniper', 'sniper',
@@ -12,8 +12,8 @@ ENEMY_DECKS.elf = {
         'golem', 'golem', 'golem', 'golem',
         'wolf', 'wolf', 'wolf',
         'spider', 'spider',
+        'mage', 'mage',
         'bard', 'bard',
-        'cheetah', 'cheetah',
         'charger', 'charger',
         'diviner', 'diviner',
         'sniper', 'sniper', 'sniper',
@@ -21,6 +21,7 @@ ENEMY_DECKS.elf = {
     hard: [
         'wolf', 'wolf', 'wolf', 'wolf',
         'cheetah', 'cheetah', 'cheetah', 'cheetah',
+        'mage', 'mage', 'mage', 'mage',
         'bard', 'bard', 'bard', 'bard',
         'spider', 'spider', 'spider', 'spider',
         'clone', 'clone', 'clone', 'clone',
