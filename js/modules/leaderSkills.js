@@ -142,10 +142,10 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
 
         let bf = false;
         for (let i = 0; i < 3; i++) if (board[i]) {
-            board[i].currentPower += 3;
-            board[i].power += 3;
+            board[i].currentPower += 2;
+            board[i].power += 2;
             const t = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
-            if (t) createDamagePopup(t, '+3', '#4ade80');
+            if (t) createDamagePopup(t, '+2', '#4ade80');
             bf = true;
         }
         if (bf) { renderBoard(); await sleep(500); }

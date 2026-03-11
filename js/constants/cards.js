@@ -43,7 +43,7 @@ const CARD_MASTER = [
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     // トークンカード
-    { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
+    { id: 'token_soldier', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },
