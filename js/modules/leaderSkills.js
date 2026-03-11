@@ -2,7 +2,7 @@
 // リーダースキルの実行ロジック
 // ==========================================
 
-async function activateLeaderSkill(owner) {
+async function activateLeaderSkill(owner, tokenLanes = null) {
     if (isBattleEnded) return;
     const isBlue = owner === 'blue';
     if (isBlue && (isProcessing || document.getElementById('turn-status').innerText !== "YOUR TURN")) return;
@@ -25,7 +25,7 @@ async function activateLeaderSkill(owner) {
 
     // スキル効果の実行
     const action = config.leaderSkill.action;
-    await executeLeaderSkillAction(owner, action, isBlue, config);
+    await executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes);
 
     if (checkWinCondition()) return;
 
@@ -87,7 +87,7 @@ async function showLeaderSkillCutin(config, isBlue, owner) {
     if (b) b.classList.remove('active');
 }
 
-async function executeLeaderSkillAction(owner, action, isBlue, config) {
+async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null) {
     const board = isBlue ? playerBoard : enemyBoard;
     const eBoard = isBlue ? enemyBoard : playerBoard;
     const defO = isBlue ? 'red' : 'blue';
@@ -117,7 +117,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
 
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes);
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             board[l] = action === 'satan_avatar' ?
@@ -129,7 +129,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config) {
         }
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_soldier');
-        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true);
+        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes);
 
         for (let l of selectedLanes) {
             board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/card_soldier.jpg', filter: 'none', currentPower: tK.power, rarity: tK.rarity || 1 };

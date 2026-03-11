@@ -1,33 +1,43 @@
 // ==========================================
 function renderSkillTag(card, isBoard = false) {
     if (!card) return '';
-    let badges = [];
+    let skillCandidates = [];
 
-    // 元のスキル（単一）
-    const s = SKILLS[card.skill];
-    if (s && card.skill !== 'none' && s.name !== '通常') {
-        const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(card.skill);
-        if (showBadge) {
-            const skillName = s.name || '';
-            const value = card.skillValue || '';
-            badges.push(`<div class="card-skill">${s.icon} ${skillName}${value}</div>`);
-        }
-    }
-
-    // 複数スキルへの対応
-    if (Array.isArray(card.skills)) {
-        card.skills.forEach(sk => {
-            const sObj = SKILLS[sk.id];
-            if (sObj && sObj.name !== '通常') {
-                const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(sk.id);
-                if (showBadge) {
-                    badges.push(`<div class="card-skill">${sObj.icon} ${sObj.name}${sk.value || ''}</div>`);
-                }
+    // 1. 表示対象のスキルを全てリストアップ
+    const addCandidate = (id, val) => {
+        const s = SKILLS[id];
+        if (s && id !== 'none' && s.name !== '通常') {
+            const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(id);
+            if (showBadge) {
+                skillCandidates.push({ id, name: s.name, icon: s.icon, value: val || '' });
             }
-        });
+        }
+    };
+
+    if (card.skill) addCandidate(card.skill, card.skillValue);
+    if (Array.isArray(card.skills)) {
+        card.skills.forEach(sk => addCandidate(sk.id, sk.value));
     }
 
-    // 拘束（スタン）状態による「防御」バッジ（カウント表示追加）
+    // 2. IDと値が一致するものを集計
+    let grouped = [];
+    skillCandidates.forEach(c => {
+        const existing = grouped.find(g => g.id === c.id && g.value === c.value);
+        if (existing) {
+            existing.count++;
+        } else {
+            grouped.push({ ...c, count: 1 });
+        }
+    });
+
+    // 3. バッジの生成
+    let badges = [];
+    grouped.forEach(g => {
+        const countSuffix = g.count > 1 ? ` * ${g.count}` : '';
+        badges.push(`<div class="card-skill">${g.icon} ${g.name}${g.value}${countSuffix}</div>`);
+    });
+
+    // 拘束（スタン）状態による「防御」バッジ（集約対象外）
     if (card.stunTurns > 0) {
         const def = SKILLS['defender'];
         badges.push(`<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防御${card.stunTurns}</div>`);

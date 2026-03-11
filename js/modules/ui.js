@@ -568,36 +568,50 @@ function updateCardDetail(c) {
         }
         b.style.color = isDiscardingMode ? '#facc15' : '#94a3b8';
     } else {
-        let skillsToShow = [];
+        let skillCandidates = [];
         if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
-            skillsToShow.push({ id: c.skill, value: c.skillValue });
+            skillCandidates.push({ id: c.skill, value: c.skillValue });
         }
         if (Array.isArray(c.skills)) {
-            skillsToShow = skillsToShow.concat(c.skills);
+            c.skills.forEach(sk => {
+                skillCandidates.push({ id: sk.id, value: sk.value });
+            });
         }
 
         // 拘束（スタン）状態も反映
         if (c.stunTurns > 0) {
-            skillsToShow.push({ id: 'defender', value: null });
+            skillCandidates.push({ id: 'defender', value: null, isBind: true });
         }
+
+        // IDと値が一致するものを集計
+        let grouped = [];
+        skillCandidates.forEach(c => {
+            const existing = grouped.find(g => g.id === c.id && g.value === c.value && g.isBind === c.isBind);
+            if (existing) {
+                existing.count++;
+            } else {
+                grouped.push({ ...c, count: 1 });
+            }
+        });
 
         // レアリティに応じた色
         const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
         const rarColor = rarityColors[c.rarity] || '#fff';
 
         let html = '<div class="card-detail-content">';
-        if (skillsToShow.length > 0) {
-            skillsToShow.forEach(sk => {
+        if (grouped.length > 0) {
+            grouped.forEach(sk => {
                 const s = SKILLS[sk.id];
                 if (s) {
-                    const isBind = (sk.id === 'defender' && c.stunTurns > 0);
+                    const isBind = sk.isBind;
                     const skillName = isBind ? '拘束' : s.name;
                     const val = isBind ? '' : (sk.value ?? '');
                     const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+                    const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
 
                     html += `<div class="skill-header">
                         <div class="card-skill-tag" style="background:${isBind ? '#475569' : ''}; border-color:${isBind ? '#ef4444' : ''}; color:${isBind ? '#fca5a5' : ''};">
-                            ${s.icon} ${skillName}${val}
+                            ${s.icon} ${skillName}${val}${countSuffix}
                         </div>
                     </div>
                     <div class="skill-desc">${skillEffect}</div>`;
@@ -841,25 +855,39 @@ function populateCardPreview(prefix, card) {
 
     if (skillsList) {
         skillsList.innerHTML = '';
-        let skillsToShow = [];
+        let skillCandidates = [];
         if (card.skill && card.skill !== 'none' && card.skill !== undefined) {
-            skillsToShow.push({ id: card.skill, value: card.skillValue });
+            skillCandidates.push({ id: card.skill, value: card.skillValue });
         }
         if (Array.isArray(card.skills)) {
-            skillsToShow = skillsToShow.concat(card.skills);
+            card.skills.forEach(sk => {
+                skillCandidates.push({ id: sk.id, value: sk.value });
+            });
         }
 
-        if (skillsToShow.length > 0) {
-            skillsToShow.forEach(sk => {
+        // IDと値が一致するものを集計
+        let grouped = [];
+        skillCandidates.forEach(c => {
+            const existing = grouped.find(g => g.id === c.id && g.value === c.value);
+            if (existing) {
+                existing.count++;
+            } else {
+                grouped.push({ ...c, count: 1 });
+            }
+        });
+
+        if (grouped.length > 0) {
+            grouped.forEach(sk => {
                 const s = SKILLS[sk.id];
                 if (s) {
                     const item = document.createElement('div');
                     item.className = 'preview-skill-item';
                     const val = sk.value === null || sk.value === undefined ? '' : sk.value;
                     const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+                    const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
 
                     item.innerHTML = `
-                        <div class="preview-skill-badge">${s.icon} ${s.name}${val}</div>
+                        <div class="preview-skill-badge">${s.icon} ${s.name}${val}${countSuffix}</div>
                         <p class="preview-skill-desc">${desc}</p>
                     `;
                     skillsList.appendChild(item);

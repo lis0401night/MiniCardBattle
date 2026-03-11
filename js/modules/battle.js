@@ -202,10 +202,16 @@ function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('b
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
  */
-async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false) {
+async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
-    // AIの場合：空きレーンがあれば優先、無ければ味方カードの上書きを検討
+    // AIの場合：
     if (owner === 'red') {
+        // すでにシミュレーションで決定された配置があればそれを使う
+        if (tokenLanes && tokenLanes.length > 0) {
+            console.log("AI using pre-calculated tokenLanes:", tokenLanes);
+            return tokenLanes.slice(0, count);
+        }
+        // 無ければ評価を行う（強制使用時など）
         const allLanes = board.map((_, i) => i);
         return evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill);
     }

@@ -40,6 +40,7 @@ const CARD_MASTER = [
     { id: 'champion', name: 'アリーナのチャンピオン', power: 1, skills: [{ id: 'legendary' }, { id: 'hero', value: 3 }], rarity: 3, flavor: '観衆の歓声こそが彼の力。その雄姿は味方を鼓舞し、敵を圧倒する。', imgUrl: 'assets/card_champion.jpg' },
     { id: 'assassin', name: 'ギルドの暗殺者', power: 1, skills: [{ id: 'quick' }, { id: 'deadly' }, { id: 'stealth', value: 1 }], rarity: 3, flavor: '黒い服と2つの短剣を持つ若い女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。', imgUrl: 'assets/card_assassin.jpg' },
     { id: 'wolf', name: '真夜中の狩人', power: 3, skills: [{ id: 'legendary' }, { id: 'lone_wolf', value: 3 }], rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
+    { id: 'highelf', name: 'ロストレイルの精鋭パトロール', power: 2, skills: [{ id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }], rarity: 3, flavor: '迷いの森を監視する精鋭。その神速の連射は、影すらも逃がさない。', imgUrl: 'assets/card_highelf.jpg' },
     { id: 'empress', name: '蒼穹の審判者', power: 3, skills: [{ id: 'legendary' }, { id: 'heal', value: 3 }, { id: 'snipe', value: 3 }], rarity: 3, flavor: '宇宙の理を掌るオーブを掲げ、全ての魂に等しく審判を下す聖女。' },
     { id: 'vampire', name: '渇きの王', power: 6, skills: [{ id: 'soul_bind', value: 4 }, { id: 'growth', value: -3 }, { id: 'sacrifice', value: 2 }], rarity: 3, flavor: '冷笑を浮かべる夜の支配者. 彼の者に狙われた者は、魂の底まで吸い尽くされる。', imgUrl: 'assets/card_vampire.jpg' },
     { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'pierce' }], rarity: 3, flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },

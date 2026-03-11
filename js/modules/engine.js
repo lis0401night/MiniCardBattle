@@ -126,7 +126,7 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
 /**
  * リーダースキルの効果を適用する (純粋関数)
  */
-function applyLeaderSkillLogic(state, owner, action) {
+function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
     const isBlue = owner === 'blue';
     const board = isBlue ? state.playerBoard : state.enemyBoard;
     const eBoard = isBlue ? state.enemyBoard : state.playerBoard;
@@ -140,18 +140,33 @@ function applyLeaderSkillLogic(state, owner, action) {
         }
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {
         const power = action === 'satan_avatar' ? 10 : 7;
-        const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
-        if (emptyLanes.length > 0) {
-            const l = emptyLanes[0];
+        let l = -1;
+        if (tokenLanes && tokenLanes.length > 0) {
+            l = tokenLanes[0];
+        } else {
+            const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+            if (emptyLanes.length > 0) l = emptyLanes[0];
+        }
+
+        if (l !== -1) {
             board[l] = { id: `tk_${Date.now()}`, owner, power, currentPower: power };
         }
     } else if (action === 'holy_march') {
-        // 騎士召喚（最大2体。シミュレーション上は前方優先または空き優先）
+        // 騎士召喚（最大2体）
         let count = 0;
-        for (let i = 0; i < 3 && count < 2; i++) {
-            if (board[i] === null) {
-                board[i] = { id: `tk_k_${Date.now()}_${i}`, owner, power: 2, currentPower: 2 };
-                count++;
+        if (tokenLanes && tokenLanes.length > 0) {
+            for (let l of tokenLanes) {
+                if (board[l] === null) {
+                    board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, power: 2, currentPower: 2 };
+                    count++;
+                }
+            }
+        } else {
+            for (let i = 0; i < 3 && count < 2; i++) {
+                if (board[i] === null) {
+                    board[i] = { id: `tk_k_${Date.now()}_${i}`, owner, power: 2, currentPower: 2 };
+                    count++;
+                }
             }
         }
         // 全体バフ+2

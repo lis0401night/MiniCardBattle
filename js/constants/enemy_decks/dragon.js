@@ -23,8 +23,9 @@ ENEMY_DECKS.dragon = {
     hard: [
         'dragon', 'dragon', 'dragon', 'dragon',
         'warlock', 'warlock', 'warlock', 'warlock',
-        'babydragon', 'babydragon', 'babydragon', 'babydragon',
         'berserker', 'berserker', 'berserker', 'berserker',
-        'dragonewt', 'dragonewt', 'dragonewt', 'dragonewt',
+        'babydragon', 'babydragon',
+        'dragonewt', 'dragonewt',
+        'sniper', 'sniper', 'sniper', 'sniper',
     ]
 };

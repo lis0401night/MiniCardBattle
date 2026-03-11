@@ -37,6 +37,7 @@ async function executeEnemyAI() {
         }
 
         if (shouldForceSkill) {
+            // 強制使用時はデフォルトの評価（空きレーン前方優先）
             await activateLeaderSkill('red');
             if (isBattleEnded) return;
             await sleep(500);
@@ -54,13 +55,15 @@ async function executeEnemyAI() {
                 decision = getNormalDecision();
             }
 
-            // 選んだ手が「スキル使用」を伴う場合、実行する
+            // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
             if (decision.useSkill) {
-                await activateLeaderSkill('red');
+                // シミュレーションで決定した tokenLanes を渡す
+                await activateLeaderSkill('red', decision.tokenLanes);
                 if (isBattleEnded) return;
                 await sleep(500);
             }
 
+            // カードを出す
             if (decision.index !== -1 && decision.lane !== -1) {
                 if (decision.isOverwrite) {
                     const oldCard = enemyBoard[decision.lane];
