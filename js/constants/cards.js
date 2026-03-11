@@ -3,9 +3,9 @@
  */
 const CARD_MASTER = [
     { id: 'golem', name: '大理石のゴーレム', power: 5, skill: 'none', rarity: 1, flavor: '魔法によって生命を吹き込まれた大理石の彫像。美しさと硬固さを兼ね備えている。' },
+    { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'sniper', name: '森の射手', power: 2, skill: 'snipe', skillValue: 4, rarity: 1, flavor: '静寂に包まれた深い森を守るエルフの狩人。その矢は木の葉の間を縫い、目標を違わず射抜く。' },
     { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', skillValue: 2, rarity: 1, flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
-    { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'dinosaur', name: '古代の大蜥蜴', power: 8, skill: 'takeover', rarity: 1, flavor: '古代の息吹を宿す巨大な爬虫類。その巨体を現すには、相応の代償が必要となる。', imgUrl: 'assets/card_dinosaur.jpg' },
     { id: 'cheetah', name: '稲妻の猟豹', power: 2, skill: 'quick', rarity: 1, flavor: '稲妻を纏って戦場を駆ける最速の野獣。その爪が空気を切り裂く。' },
     { id: 'scorpion', name: '黒サソリ', power: 2, skill: 'deadly', rarity: 1, flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
@@ -42,7 +42,7 @@ const CARD_MASTER = [
     { id: 'wolf', name: '真夜中の狩人', power: 3, skills: [{ id: 'legendary' }, { id: 'lone_wolf', value: 3 }], rarity: 3, flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
     { id: 'empress', name: '蒼穹の審判者', power: 3, skills: [{ id: 'legendary' }, { id: 'heal', value: 3 }, { id: 'snipe', value: 3 }], rarity: 3, flavor: '宇宙の理を掌るオーブを掲げ、全ての魂に等しく審判を下す聖女。' },
     { id: 'vampire', name: '渇きの王', power: 6, skills: [{ id: 'soul_bind', value: 4 }, { id: 'growth', value: -3 }, { id: 'sacrifice', value: 2 }], rarity: 3, flavor: '冷笑を浮かべる夜の支配者. 彼の者に狙われた者は、魂の底まで吸い尽くされる。', imgUrl: 'assets/card_vampire.jpg' },
-    { id: 'oldgod', name: '古の神', power: 9, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'pierce' }], rarity: 3, flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
+    { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'pierce' }], rarity: 3, flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     // トークンカード

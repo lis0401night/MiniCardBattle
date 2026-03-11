@@ -1575,6 +1575,20 @@ h2 {
     flex-direction: column;
 }
 
+.preview-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.preview-scroll-area::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.preview-scroll-area::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+
 .preview-skills-list {
     display: flex;
     flex-direction: column;
