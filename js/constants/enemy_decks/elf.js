@@ -24,6 +24,5 @@ ENEMY_DECKS.elf = {
         'mage', 'mage', 'mage', 'mage',
         'bard', 'bard', 'bard', 'bard',
         'spider', 'spider', 'spider', 'spider',
-        'clone', 'clone', 'clone', 'clone',
     ]
 };
