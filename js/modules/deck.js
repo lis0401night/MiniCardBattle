@@ -23,8 +23,8 @@ function generateDeck(owner, config, sessionId) {
 
         if (recipe.easy && recipe.normal && recipe.hard) {
             if (typeof aiLevel !== 'undefined') {
-                if (aiLevel === 1) deckIds = recipe.easy;
-                else if (aiLevel === 3) deckIds = recipe.hard;
+                if (aiLevel == 1) deckIds = recipe.easy;
+                else if (aiLevel == 3) deckIds = recipe.hard;
                 else deckIds = recipe.normal;
             } else {
                 deckIds = recipe.normal;

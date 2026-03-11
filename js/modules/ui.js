@@ -987,8 +987,8 @@ function showCardReward(enemyId) {
     let enemyDeckIds = [];
     if (recipe.easy && recipe.normal && recipe.hard) {
         if (typeof aiLevel !== 'undefined') {
-            if (aiLevel === 1) enemyDeckIds = recipe.easy;
-            else if (aiLevel === 3) enemyDeckIds = recipe.hard;
+            if (aiLevel == 1) enemyDeckIds = recipe.easy;
+            else if (aiLevel == 3) enemyDeckIds = recipe.hard;
             else enemyDeckIds = recipe.normal;
         } else {
             enemyDeckIds = recipe.normal;
