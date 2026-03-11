@@ -115,13 +115,13 @@ const UI_COMPONENTS = {
     `,
 
     difficultySelectScreen: `
-    <!-- 難易度選択画面 (フリーモード用) -->
+    <!-- 難易度選択画面 -->
     <div id="screen-difficulty" class="screen">
         <h2 style="font-weight: 900;">難易度</h2>
         <div style="display: flex; flex-direction: column; gap: 15px;">
-            <button class="btn" style="background: #22c55e; width: 200px;" onclick="startFreeBattle(1)">イージー</button>
-            <button class="btn" style="background: #eab308; width: 200px;" onclick="startFreeBattle(2)">ノーマル</button>
-            <button class="btn" style="background: #ef4444; width: 200px;" onclick="startFreeBattle(3)">ハード</button>
+            <button class="btn" style="background: #22c55e; width: 200px;" onclick="confirmDifficulty(1)">イージー</button>
+            <button class="btn" style="background: #eab308; width: 200px;" onclick="confirmDifficulty(2)">ノーマル</button>
+            <button class="btn" style="background: #ef4444; width: 200px;" onclick="confirmDifficulty(3)">ハード</button>
         </div>
         <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromDifficulty()">戻る</button>
     </div>

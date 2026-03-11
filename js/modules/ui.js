@@ -92,10 +92,17 @@ function goBackFromSelect() {
 
 function goBackFromDifficulty() {
     playSound(SOUNDS.seClick);
-    appState = 'select_enemy';
-    document.getElementById('select-title').innerText = "対戦相手";
-    initSelectScreen(true);
-    switchScreen('screen-select');
+    if (gameMode === 'story') {
+        appState = 'select_player';
+        document.getElementById('select-title').innerText = "キャラクター選択";
+        initSelectScreen(false);
+        switchScreen('screen-select');
+    } else {
+        appState = 'select_enemy';
+        document.getElementById('select-title').innerText = "対戦相手";
+        initSelectScreen(true);
+        switchScreen('screen-select');
+    }
 }
 
 function goBackFromStage() {
@@ -237,7 +244,8 @@ function confirmCharSelect() {
     playSound(SOUNDS.seClick);
     if (appState === 'select_player') {
         if (gameMode === 'story') {
-            initStoryMode(pendingCharId);
+            appState = 'select_difficulty';
+            switchScreen('screen-difficulty');
         } else {
             playerConfig = CHARACTERS[pendingCharId];
             appState = 'select_enemy';
@@ -252,12 +260,16 @@ function confirmCharSelect() {
     }
 }
 
-function startFreeBattle(level) {
+function confirmDifficulty(level) {
     playSound(SOUNDS.seClick);
     aiLevel = level;
-    appState = 'select_stage';
-    initStageSelectScreen();
-    switchScreen('screen-stage-select');
+    if (gameMode === 'story') {
+        initStoryMode(pendingCharId);
+    } else {
+        appState = 'select_stage';
+        initStageSelectScreen();
+        switchScreen('screen-stage-select');
+    }
 }
 
 function initStageSelectScreen() {
