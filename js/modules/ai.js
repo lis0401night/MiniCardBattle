@@ -1,10 +1,9 @@
 /**
- * Mini Card Battle - Enemy AI Logic
+ * ミニカードバトル - 敵AIロジック（シミュレーション・オーバーホール版）
  */
 
 /**
  * 通常の敵AIの思考ルーチン（手札からの配置）
- * 1ターンに基本1枚のみ配置するルールを遵守
  */
 async function executeEnemyAI() {
     if (appState !== 'battle' || isBattleEnded) return;
@@ -28,10 +27,8 @@ async function executeEnemyAI() {
             } else if (skillAction === 'dragon_summon' || skillAction === 'satan_avatar') {
                 if (enemyBoard.some(c => c === null)) shouldActivate = true;
             } else if (skillAction === 'holy_march') {
-                // 盤面に空きがある（召喚）か、既に1枚以上いてバフの恩恵がある場合
                 if (enemyBoard.some(c => c === null) || enemyBoard.filter(c => c !== null).length >= 1) shouldActivate = true;
             } else if (skillAction === 'abyss_ritual') {
-                // 手札が2枚以上あればバフ効率が良い
                 if (enemyHand.length >= 2) shouldActivate = true;
             } else if (skillAction === 'targeted_destruction') {
                 if (playerBoard.some(c => c !== null)) shouldActivate = true;
@@ -39,7 +36,6 @@ async function executeEnemyAI() {
                 if (enemyHP <= enemyMaxHP - 3 || playerHP > 5) shouldActivate = true;
             }
 
-            // 条件を満たしていれば、ほぼ確実に発動
             if (shouldActivate && Math.random() < 0.98) {
                 await activateLeaderSkill('red');
                 if (isBattleEnded) return;
@@ -47,31 +43,31 @@ async function executeEnemyAI() {
             }
         }
 
-        // 思考ルーチン: 1枚だけ最適なカードを選ぶ
-        if (enemyHand.length > 0) {
+        // 思考ルーチン: シミュレーションに基づき最適な手を選ぶ
+        if (enemyHand.length > 0 || enemyBoard.some(c => c !== null)) {
             let bestCardIndex = -1;
             let bestLane = -1;
             let bestIsOverwrite = false;
 
             if (typeof aiLevel !== 'undefined' && aiLevel === 1) {
-                // イージー難易度: 手札からランダムに、空きレーンを優先してランダム配置
-                bestCardIndex = Math.floor(Math.random() * enemyHand.length);
-                const emptyLanes = [0, 1, 2].filter(l => enemyBoard[l] === null);
-                if (emptyLanes.length > 0) {
-                    bestLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
-                    bestIsOverwrite = false;
-                } else {
-                    bestLane = Math.floor(Math.random() * 3);
-                    bestIsOverwrite = true;
+                // イージー難易度: ランダム配置（既存ロジック維持）
+                bestCardIndex = Math.floor(Math.random() * (enemyHand.length + 1)) - 1; // -1はパス
+                if (bestCardIndex !== -1) {
+                    const emptyLanes = [0, 1, 2].filter(l => enemyBoard[l] === null);
+                    if (emptyLanes.length > 0) {
+                        bestLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                        bestIsOverwrite = false;
+                    } else {
+                        bestLane = Math.floor(Math.random() * 3);
+                        bestIsOverwrite = true;
+                    }
                 }
             } else {
-                // ノーマル以上: 最適な手を選ぶ
-                const decision = getBestMove(enemyHand, enemyBoard, playerBoard);
-                if (decision.bestCardIndex !== -1 && decision.bestLane !== -1 && (decision.bestScore > 500 || decision.totalDamageBefore >= 4)) {
-                    bestCardIndex = decision.bestCardIndex;
-                    bestLane = decision.bestLane;
-                    bestIsOverwrite = decision.bestIsOverwrite;
-                }
+                // ノーマル以上: 全パターンシミュレーション
+                const decision = getBestSimulatedMove(enemyHand, enemyBoard, playerBoard, enemyHP);
+                bestCardIndex = decision.index;
+                bestLane = decision.lane;
+                bestIsOverwrite = decision.isOverwrite;
             }
 
             if (bestCardIndex !== -1 && bestLane !== -1) {
@@ -81,6 +77,9 @@ async function executeEnemyAI() {
                 }
                 await playCard('red', bestCardIndex, bestLane);
                 await sleep(600);
+            } else {
+                // パスを選択した場合
+                console.log("AI decided to PASS.");
             }
         }
     } catch (e) {
@@ -94,424 +93,164 @@ async function executeEnemyAI() {
 }
 
 /**
- * トークンや分身などの追加配置用の最適レーン評価
+ * 全パターンのシミュレーションを行い、最善手（インデックス、レーン）を返す
  */
-function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill = false) {
-    if (owner === 'blue') {
-        const shuffled = [...allLanes].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, count);
+function getBestSimulatedMove(hand, myBoard, opBoard, myHP) {
+    let candidates = [];
+
+    // 1. 各カードを各レーンに置くパターン
+    for (let i = 0; i < hand.length; i++) {
+        for (let l = 0; l < 3; l++) {
+            const card = hand[i];
+            // 伝説(Legendary)の配置制限チェック
+            if (hasSkill(card, 'legendary') && l !== 1) continue;
+            // 生贄(Takeover)の配置制限チェック: すでにカードがあるレーンのみ配置可能
+            if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
+
+            const isOverwrite = myBoard[l] !== null;
+            const score = simulateAndEvaluate(i, l, hand, myBoard, opBoard, myHP);
+            candidates.push({ index: i, lane: l, isOverwrite, score });
+        }
     }
 
+    // 2. 「何もしない（パス）」という選択肢
+    const passScore = simulateAndEvaluate(-1, -1, hand, myBoard, opBoard, myHP);
+    candidates.push({ index: -1, lane: -1, isOverwrite: false, score: passScore });
+
+    // スコア順にソート（安定させるためにシャッフル含めるのも手だが、まずは最大値優先）
+    candidates.sort((a, b) => b.score - a.score);
+
+    // デバッグ用ログ
+    console.log("AI Candidates (top 3):", candidates.slice(0, 3));
+
+    return candidates[0];
+}
+
+/**
+ * 仮想盤面でのシミュレーションと評価
+ */
+function simulateAndEvaluate(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP) {
+    // 盤面と状態を深くコピー（JSON.parse/stringifyは重いのでシンプルに）
+    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
+    let simState = {
+        playerBoard: currentOpBoard.map(cloneCard),
+        enemyBoard: currentMyBoard.map(cloneCard),
+        playerHP: playerHP, // グローバルから取得
+        enemyHP: currentMyHP,
+        playerSP: playerSP,
+        enemySP: enemySP
+    };
+
+    // 1. カードプレイの適用
+    if (handIdx !== -1) {
+        const playedCard = cloneCard(hand[handIdx]);
+        playedCard.currentPower = playedCard.power;
+        simState.enemyBoard[laneIdx] = playedCard;
+
+        // 配置時スキル(OnPlay)の適用
+        let skills = [];
+        if (playedCard.skill && playedCard.skill !== 'none') skills.push({ id: playedCard.skill, value: playedCard.skillValue });
+        if (Array.isArray(playedCard.skills)) skills = skills.concat(playedCard.skills);
+
+        skills.forEach(sk => {
+            applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value);
+        });
+    }
+
+    // 2. プレイヤー側のターン開始 & 戦闘予測
+    // パッシブ効果の適用
+    applyPassiveSkillLogic(simState, 'blue');
+    applyPassiveSkillLogic(simState, 'red');
+
+    // 戦闘フェーズのシミュレーション（プレイヤーが攻撃側）
+    calculateCombatPhase(simState, 'blue');
+
+    // 4. 最終状態の評価
+    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP);
+}
+
+/**
+ * シミュレーション結果の盤面評価を行う
+ */
+function evaluateSimulatedState(myBoard, opBoard, myHP) {
+    if (myHP <= 0) return -1000000;
+
+    let score = myHP * 5000;
+
+    for (let i = 0; i < 3; i++) {
+        if (myBoard[i]) {
+            const p = myBoard[i].currentPower;
+            score += 2000;
+            score += p * 200;
+            if (hasSkill(myBoard[i], 'legendary')) score += 5000;
+        }
+        if (opBoard[i]) {
+            const ep = opBoard[i].currentPower;
+            score -= 1000;
+            score -= ep * 150;
+        } else {
+            score += 800;
+        }
+    }
+    return score;
+}
+
+/**
+ * トークン配置用の評価（シミュレーションを流用）
+ */
+function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill = false) {
+    if (owner === 'blue') return [...allLanes].sort(() => Math.random() - 0.5).slice(0, count);
+
     const results = [];
-    let tempBoard = [...enemyBoard];
+    let currentBoard = [...enemyBoard];
 
     for (let k = 0; k < count; k++) {
-        let bestScore = -999999;
+        let bestScore = -Infinity;
         let bestLane = -1;
+        const available = allLanes.filter(l => !results.includes(l));
 
-        // 手札からの配置と同様、空きレーンがあればそこを優先、無ければ全レーンを対象にする
-        const lanesToEvaluate = allLanes.filter(l => !results.includes(l));
-
-        for (let l of lanesToEvaluate) {
-            let score = calculateScoreForPlacement(tokenCard, l, tempBoard, playerBoard, -1, isLeaderSkill);
-
-            // 動的な上書きペナルティ: 失うカードのパワー + 機会コスト(2000)
-            if (tempBoard[l] !== null) {
-                const myCP = tempBoard[l].currentPower !== undefined ? tempBoard[l].currentPower : (tempBoard[l].power || 0);
-                score -= (myCP * 100 + 2000);
-            }
-
+        for (let l of available) {
+            const score = simulateAndEvaluateToken(tokenCard, l, currentBoard, playerBoard, enemyHP);
             if (score > bestScore) {
                 bestScore = score;
                 bestLane = l;
             }
         }
-
         if (bestLane !== -1) {
             results.push(bestLane);
-            tempBoard[bestLane] = tokenCard;
+            currentBoard[bestLane] = tokenCard;
         }
     }
     return results;
 }
 
-/**
- * 特定の配置におけるボード全体の被ダメージを計算する
- */
-function calculateTotalIncomingDamage(myBoard, opBoard, extraHits = [0, 0, 0]) {
-    let total = 0;
-    for (let i = 0; i < 3; i++) {
-        const pCard = opBoard[i];
-        if (!pCard) continue;
+function simulateAndEvaluateToken(token, l, board, opBoard, hp) {
+    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
+    let simState = {
+        playerBoard: opBoard.map(cloneCard),
+        enemyBoard: board.map(cloneCard),
+        playerHP: playerHP,
+        enemyHP: hp,
+        playerSP: playerSP,
+        enemySP: enemySP
+    };
 
-        let dmg = 0;
-        const myCard = myBoard[i];
-        if (!myCard) {
-            dmg = pCard.currentPower || pCard.power || 0;
-        } else {
-            let effAtk = pCard.currentPower || pCard.power || 0;
-            const myCP = myCard.currentPower !== undefined ? myCard.currentPower : (myCard.power || 0);
-            if (hasSkill(myCard, 'sturdy')) effAtk = Math.floor(effAtk / 2);
-            if (effAtk > myCP && !hasSkill(myCard, 'deadly')) {
-                dmg = effAtk - myCP;
-            }
-        }
-        // スキル（狙撃・拡散）によるダメージ加算を考慮
-        let finalDmg = Math.max(0, dmg - extraHits[i]);
-        total += finalDmg;
-    }
-    return total;
-}
+    const playedToken = cloneCard(token);
+    playedToken.currentPower = playedToken.power;
+    simState.enemyBoard[l] = playedToken;
 
-/**
- * 盤面状況に基づきスコアを計算する共通関数
- */
-function calculateScoreForPlacement(card, l, myBoard, opBoard, lethalLane = -1, isLeaderSkill = false) {
-    if (hasSkill(card, 'legendary') && l !== 1) return -1000000;
-    if (hasSkill(card, 'takeover') && myBoard[l] === null) return -1000000;
+    let skills = [];
+    if (playedToken.skill && playedToken.skill !== 'none') skills.push({ id: playedToken.skill, value: playedToken.skillValue });
+    if (Array.isArray(playedToken.skills)) skills = skills.concat(playedToken.skills);
 
-    let score = 0;
-
-    // 手札に伝説(Rarity 3)がある場合、リーダースキルの召喚時は中央を空ける（予約）
-    if (l === 1 && !hasSkill(card, 'legendary') && isLeaderSkill) {
-        if (enemyHand.some(c => hasSkill(c, 'legendary') || (c.rarity === 3))) {
-            score -= 20000;
-        }
-    }
-
-    const targetEnemyCard = opBoard[l];
-    if (hasSkill(card, 'quick') && targetEnemyCard && hasSkill(targetEnemyCard, 'invincible') && lethalLane === -1) return -500000;
-
-    let simPower = card.currentPower !== undefined ? card.currentPower : (card.power || 0);
-    let pDmgToEnemy = [0, 0, 0]; // 自分が相手に与えるスキルダメージ
-
-    // スキル効果の計算
-    if (hasSkill(card, 'lone_wolf')) {
-        const emptyCount = myBoard.filter((c, j) => j !== l && c === null).length;
-        simPower += emptyCount * (getSkillValue(card, 'lone_wolf') || 3);
-    }
-    if (hasSkill(card, 'hero')) {
-        const filledCount = myBoard.filter((c, j) => (j !== l && c !== null) || j === l).length;
-        simPower += filledCount * (getSkillValue(card, 'hero') || 3);
-    }
-    if (hasSkill(card, 'support')) {
-        const val = getSkillValue(card, 'support') || 2;
-        [l - 1, l + 1].forEach(j => {
-            if (j >= 0 && j < 3 && myBoard[j]) {
-                const ally = myBoard[j]; const opponent = opBoard[j];
-                const allyCP = ally.currentPower !== undefined ? ally.currentPower : (ally.power || 0);
-                const opCP = (opponent && opponent.currentPower !== undefined) ? opponent.currentPower : (opponent ? opponent.power : 0);
-                score += (val * 500); // 基礎加点
-                if (opponent) {
-                    if (allyCP < opCP && (allyCP + val) >= opCP) score += 3000; // 逆転勝利ボーナス
-                } else {
-                    score += 500; // 敵がいないレーンの味方強化（リーサル短縮）
-                }
-            }
-        });
-    }
-    if (hasSkill(card, 'berserk')) {
-        const val = getSkillValue(card, 'berserk') || 2;
-        [l - 1, l + 1].forEach(j => {
-            if (j >= 0 && j < 3 && myBoard[j]) {
-                const ally = myBoard[j];
-                const allyCP = ally.currentPower !== undefined ? ally.currentPower : (ally.power || 0);
-                score -= Math.min(allyCP, val) * 1000; // 味方へのダメージは大きな減点
-                if (allyCP <= val) score -= 2000; // 破壊してしまう場合はさらに減点
-            }
-        });
-    }
-    if (hasSkill(card, 'copy')) {
-        const adj = l === 1 ? [0, 2] : [1];
-        let total = 0;
-        for (let j of adj) {
-            if (myBoard[j]) {
-                total += (myBoard[j].currentPower !== undefined ? myBoard[j].currentPower : (myBoard[j].power || 0));
-            }
-        }
-        simPower += total;
-        score += total * 20;
-    }
-    if (hasSkill(card, 'charge')) {
-        const val = getSkillValue(card, 'charge') || 2;
-        score += val * 1000; // SP増加の価値
-    }
-    if (hasSkill(card, 'heal')) {
-        const val = getSkillValue(card, 'heal') || 3;
-        const missingHP = (typeof MAX_HP !== 'undefined' ? MAX_HP : 20) - enemyHP;
-        score += Math.min(val, missingHP) * 800; // 回復量の価値
-    }
-    if (hasSkill(card, 'snipe')) {
-        let maxL = -1, maxP = -1;
-        for (let j = 0; j < 3; j++) {
-            if (opBoard[j]) {
-                const opCP = opBoard[j].currentPower !== undefined ? opBoard[j].currentPower : (opBoard[j].power || 0);
-                if (opCP > maxP) { maxP = opCP; maxL = j; }
-            }
-        }
-        if (maxL !== -1 && !hasSkill(opBoard[maxL], 'invincible')) {
-            let dmg = getSkillValue(card, 'snipe') || 4;
-            if (hasSkill(opBoard[maxL], 'sturdy')) dmg = Math.floor(dmg / 2);
-            pDmgToEnemy[maxL] += dmg;
-        }
-    }
-    if (hasSkill(card, 'spread')) {
-        const val = getSkillValue(card, 'spread') || 2;
-        let hitCount = 0;
-        [l - 1, l, l + 1].forEach(j => {
-            if (j >= 0 && j < 3 && opBoard[j] && !hasSkill(opBoard[j], 'invincible')) {
-                let dmg = val; if (hasSkill(opBoard[j], 'sturdy')) dmg = Math.floor(dmg / 2);
-                pDmgToEnemy[j] += dmg; hitCount++;
-                const opCP = opBoard[j].currentPower !== undefined ? opBoard[j].currentPower : (opBoard[j].power || 0);
-                if (opCP <= dmg) score += 1500;
-            }
-        });
-        if (hitCount >= 2) score += 1000 * hitCount;
-    }
-    if (hasSkill(card, 'sacrifice')) {
-        const cost = getSkillValue(card, 'sacrifice') || 0;
-        if (enemyHP - cost <= 0) score = -9999999;
-    }
-
-    // 仮想盤面での被ダメージ計算
-    const virtualBoard = [...myBoard];
-    virtualBoard[l] = { ...card, currentPower: simPower };
-    // スキルで敵を倒せた場合の盤面更新
-    const virtualOpBoard = opBoard.map((c, i) => {
-        if (!c) return null;
-        const cCP = c.currentPower !== undefined ? c.currentPower : (c.power || 0);
-        if (cCP <= pDmgToEnemy[i]) return null;
-        return { ...c, currentPower: cCP - pDmgToEnemy[i] };
+    skills.forEach(sk => {
+        applyActiveSkillLogic(simState, 'red', l, sk.id, sk.value);
     });
 
-    const totalDmgBefore = calculateTotalIncomingDamage(myBoard, opBoard);
-    const totalDmgAfter = calculateTotalIncomingDamage(virtualBoard, virtualOpBoard);
-
-    // 4以上の合計ダメージを回避できた場合、または軽減できた場合にボーナス
-    if (totalDmgBefore >= 4 && totalDmgAfter < 4) {
-        score += 8000;
-    } else if (totalDmgAfter < totalDmgBefore) {
-        score += (totalDmgBefore - totalDmgAfter) * 1000;
-    }
-
-    // 対面戦闘評価
-    if (targetEnemyCard) {
-        const pInv = hasSkill(targetEnemyCard, 'invincible');
-        const pSturdy = hasSkill(targetEnemyCard, 'sturdy');
-        const targetCP = targetEnemyCard.currentPower !== undefined ? targetEnemyCard.currentPower : (targetEnemyCard.power || 0);
-        const pLethalGr = hasSkill(targetEnemyCard, 'growth') && (targetCP + getSkillValue(targetEnemyCard, 'growth') <= 0);
-        if (pInv) score += 500 + simPower;
-        else if (pLethalGr) score += 300 + simPower;
-        else {
-            let effDmg = simPower; if (pSturdy) effDmg = Math.floor(effDmg / 2);
-            const remP = (virtualOpBoard[l] ? virtualOpBoard[l].currentPower : 0);
-            if (remP <= 0) score += 2000 + simPower;
-            else {
-                const isWin = effDmg >= remP || hasSkill(card, 'deadly');
-                if (isWin) score += 1000 + (remP * 60) + (simPower * 10);
-                else score += 400 + (remP * 30) - (simPower * 5);
-            }
-        }
-    } else {
-        score += 1500 + (simPower * 20);
-    }
-
-    return score;
+    calculateCombatPhase(simState, 'blue');
+    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP);
 }
 
-/**
- * プレイヤー（青）からAI（赤）への攻撃フェーズをシミュレートする
- */
-function simulatePlayerCombatPhase(simMyBoard, simOpBoard, simMyHP) {
-    let currentMyHP = simMyHP;
-    for (let l = 0; l < 3; l++) {
-        const pCard = simOpBoard[l];
-        // プレイヤーにカードがないか、防衛（攻撃不可）ならスキップ
-        if (!pCard || hasSkill(pCard, 'defender')) continue;
 
-        let dDef = simMyBoard[l] ? (simMyBoard[l].currentPower !== undefined ? simMyBoard[l].currentPower : (simMyBoard[l].power || 0)) : 0;
-        let dAtk = pCard.currentPower !== undefined ? pCard.currentPower : (pCard.power || 0);
+// 既存の判定補助関数などはそのまま利用可能（hasSkill, getSkillValue 等）
 
-        if (simMyBoard[l] && hasSkill(simMyBoard[l], 'sturdy')) dAtk = Math.floor(dAtk / 2);
-        if (simMyBoard[l] && hasSkill(pCard, 'sturdy')) dDef = Math.floor(dDef / 2);
-
-        if (simMyBoard[l] && hasSkill(simMyBoard[l], 'invincible')) dAtk = 0;
-        if (hasSkill(pCard, 'invincible')) dDef = 0;
-
-        // 守護スキルの判定 (AI側: 防御先が変わるか)
-        let dLane = l;
-        if (simMyBoard[l]) {
-            let dg = (l === 1) ? (hasSkill(simMyBoard[0], 'guardian') ? 0 : (hasSkill(simMyBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(simMyBoard[1], 'guardian') ? 1 : null) : (hasSkill(simMyBoard[1], 'guardian') ? 1 : null));
-            if (dg !== null) dLane = dg;
-        }
-
-        // プレイヤー側攻撃先の変更(守護)
-        let aLane = l;
-        let ag = (l === 1) ? (hasSkill(simOpBoard[0], 'guardian') ? 0 : (hasSkill(simOpBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(simOpBoard[1], 'guardian') ? 1 : null) : (hasSkill(simOpBoard[1], 'guardian') ? 1 : null));
-        if (ag !== null) aLane = ag;
-
-        const realDef = simMyBoard[dLane];
-        const realAtk = simOpBoard[aLane];
-
-        if (realDef) {
-            realDef.currentPower -= dDef;
-            if (dDef > 0 && hasSkill(pCard, 'deadly')) realDef.currentPower = 0;
-        } else {
-            // ダイレクトアタック
-            currentMyHP -= dAtk;
-        }
-
-        if (realAtk) {
-            realAtk.currentPower -= dAtk;
-            if (simMyBoard[l] && dAtk > 0 && hasSkill(simMyBoard[l], 'deadly')) realAtk.currentPower = 0;
-        }
-
-        // 破壊判定とソウルバインド(回復)
-        let aD = realAtk && realAtk.currentPower <= 0;
-        let dD = realDef && realDef.currentPower <= 0;
-
-        if (dD && !aD && pCard && hasSkill(pCard, 'soul_bind')) {
-            // プレイヤー回復(シミュ上はプレイヤーHPは管理しないが、パワーが上がる)
-            const val = getSkillValue(pCard, 'soul_bind') || 2;
-            realAtk.currentPower += val;
-        }
-        if (aD && !dD && simMyBoard[l] && hasSkill(simMyBoard[l], 'soul_bind')) {
-            const val = getSkillValue(simMyBoard[l], 'soul_bind') || 2;
-            realDef.currentPower += val;
-        }
-
-        // カード除去
-        if (aD) simOpBoard[aLane] = null;
-        if (dD) simMyBoard[dLane] = null;
-
-        // 貫通スキルの判定 (プレイヤー側からAIへ)
-        if (dD && !aD && pCard && hasSkill(pCard, 'pierce')) {
-            const pD = pCard.currentPower;
-            if (pD > 0) currentMyHP -= pD;
-        }
-    }
-    return { board: simMyBoard, opBoard: simOpBoard, hp: currentMyHP };
-}
-
-/**
- * 戦闘シミュレーション後の盤面を評価する
- */
-function evaluateBoardState(simMyBoard, simOpBoard, simMyHP) {
-    if (simMyHP <= 0) return -9999999;
-
-    let score = simMyHP * 1000; // HPの価値
-
-    for (let i = 0; i < 3; i++) {
-        if (simMyBoard[i]) {
-            score += 2000; // 生存ボーナス
-            score += (simMyBoard[i].currentPower !== undefined ? simMyBoard[i].currentPower : (simMyBoard[i].power || 0)) * 100;
-        }
-        if (simOpBoard[i]) {
-            score -= 1000; // 敵生存ペナルティ
-            score -= (simOpBoard[i].currentPower !== undefined ? simOpBoard[i].currentPower : (simOpBoard[i].power || 0)) * 50;
-        } else {
-            score += 1500; // 敵を除去できたボーナス
-        }
-    }
-    return score;
-}
-
-/**
- * 候補を評価するためのヘルパークラス
- */
-class MoveCandidate {
-    constructor(index, lane, isOverwrite, baseScore) {
-        this.index = index;
-        this.lane = lane;
-        this.isOverwrite = isOverwrite;
-        this.baseScore = baseScore;
-        this.simulatedScore = -9999999;
-    }
-}
-
-/**
- * 最善の1手を算出する (上位3パターンから戦闘後シミュレーションで決定)
- */
-function getBestMove(hand, myBoard, opBoard) {
-    const totalDamageBefore = calculateTotalIncomingDamage(myBoard, opBoard);
-
-    // リーサル回避判定
-    let lethalLane = -1;
-    for (let i = 0; i < 3; i++) {
-        const pCard = opBoard[i];
-        if (pCard) {
-            let dmg = 0;
-            const pCP = pCard.currentPower !== undefined ? pCard.currentPower : (pCard.power || 0);
-            if (!myBoard[i]) dmg = pCP;
-            else {
-                let eff = pCP;
-                const myCP = myBoard[i].currentPower !== undefined ? myBoard[i].currentPower : (myBoard[i].power || 0);
-                if (hasSkill(myBoard[i], 'sturdy')) eff = Math.floor(eff / 2);
-                if (eff > myCP && !hasSkill(myBoard[i], 'deadly')) dmg = eff - myCP;
-            }
-            if (dmg > 0 && enemyHP - dmg <= 0) { lethalLane = i; break; }
-        }
-    }
-
-    const allLanes = [0, 1, 2];
-    const lanesToEvaluate = (lethalLane !== -1) ? [lethalLane] : allLanes;
-    let candidates = [];
-
-    // STEP1: すべての配置の基礎スコアを出し、候補をリスティング
-    for (let l of lanesToEvaluate) {
-        const isOverwrite = myBoard[l] !== null;
-        for (let i = 0; i < hand.length; i++) {
-            let score = calculateScoreForPlacement(hand[i], l, myBoard, opBoard, lethalLane);
-
-            // ユーザー要望：上書きのハードコードされたペナルティを削除し、結果が強ければ上書きを許容する
-
-            candidates.push(new MoveCandidate(i, l, isOverwrite, score));
-        }
-    }
-
-    // 基礎スコアで降順ソート
-    candidates.sort((a, b) => b.baseScore - a.baseScore);
-
-    // STEP2: 上位3つの候補について、次ターンの戦闘終了後をシミュレート
-    const topCandidates = candidates.slice(0, 3);
-
-    let bestCandidate = null;
-
-    for (let cand of topCandidates) {
-        // 仮想盤面の初期化
-        let simMyBoard = myBoard.map(c => c ? { ...c, currentPower: (c.currentPower !== undefined ? c.currentPower : c.power) } : null);
-        let simOpBoard = opBoard.map(c => c ? { ...c, currentPower: (c.currentPower !== undefined ? c.currentPower : c.power) } : null);
-
-        // カードのプレイ適用
-        const playedCard = hand[cand.index];
-        const initialPower = playedCard.currentPower !== undefined ? playedCard.currentPower : (playedCard.power || 0);
-        simMyBoard[cand.lane] = { ...playedCard, currentPower: initialPower };
-
-        // ターン終了およびプレイヤーの攻撃フェーズシミュレート
-        const result = simulatePlayerCombatPhase(simMyBoard, simOpBoard, enemyHP);
-
-        // 最終状態の評価
-        cand.simulatedScore = evaluateBoardState(result.board, result.opBoard, result.hp);
-
-        // 配置の基礎スコアも加算して総合評価（目先のダメージ等も捨てるわけではない）
-        const totalScore = cand.simulatedScore + (cand.baseScore * 0.1);
-
-        if (!bestCandidate || totalScore > bestCandidate.simulatedScore) {
-            cand.simulatedScore = totalScore;
-            bestCandidate = cand;
-        }
-    }
-
-    if (bestCandidate) {
-        return {
-            bestCardIndex: bestCandidate.index,
-            bestLane: bestCandidate.lane,
-            bestScore: bestCandidate.baseScore,
-            bestIsOverwrite: bestCandidate.isOverwrite,
-            lethalLane,
-            totalDamageBefore
-        };
-    }
-
-    return { bestCardIndex: -1, bestLane: -1, bestScore: -999999, bestIsOverwrite: false, lethalLane, totalDamageBefore };
-}
