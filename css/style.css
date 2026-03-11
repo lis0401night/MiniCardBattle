@@ -1292,6 +1292,12 @@ h2 {
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
 }
 
+.card-detail-box:empty {
+    display: none;
+    padding: 0;
+    border: none;
+}
+
 .skill-header {
     display: flex;
     align-items: center;

@@ -984,7 +984,20 @@ let pendingRewardCard = null;
 
 function showCardReward(enemyId) {
     let recipe = ENEMY_DECKS[enemyId] || ENEMY_DECKS.android;
-    let enemyDeckIds = Array.isArray(recipe) ? recipe : (recipe.normal || []);
+    let enemyDeckIds = [];
+    if (recipe.easy && recipe.normal && recipe.hard) {
+        if (typeof aiLevel !== 'undefined') {
+            if (aiLevel === 1) enemyDeckIds = recipe.easy;
+            else if (aiLevel === 3) enemyDeckIds = recipe.hard;
+            else enemyDeckIds = recipe.normal;
+        } else {
+            enemyDeckIds = recipe.normal;
+        }
+    } else if (Array.isArray(recipe)) {
+        enemyDeckIds = recipe;
+    } else {
+        enemyDeckIds = recipe.normal || [];
+    }
     const eligibleIds = [...new Set(enemyDeckIds)].filter(id => {
         const owned = playerInventory[id] || 0;
         return owned < 4;
