@@ -202,7 +202,8 @@ function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSk
     if (owner === 'blue') return [...allLanes].sort(() => Math.random() - 0.5).slice(0, count);
 
     const results = [];
-    let currentBoard = [...enemyBoard];
+    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
+    let currentBoard = enemyBoard.map(cloneCard);
 
     for (let k = 0; k < count; k++) {
         let bestScore = -Infinity;
@@ -211,14 +212,17 @@ function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSk
 
         for (let l of available) {
             const score = simulateAndEvaluateToken(tokenCard, l, currentBoard, playerBoard, enemyHP);
-            if (score > bestScore) {
+            if (!isNaN(score) && score > bestScore) {
                 bestScore = score;
                 bestLane = l;
             }
         }
         if (bestLane !== -1) {
             results.push(bestLane);
-            currentBoard[bestLane] = tokenCard;
+            // 次のトークン配置の予測用に、ボードにトークンを（バトル用データ形式で）反映
+            const t = cloneCard(tokenCard);
+            t.currentPower = t.power;
+            currentBoard[bestLane] = t;
         }
     }
     return results;
