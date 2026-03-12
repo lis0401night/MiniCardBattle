@@ -90,11 +90,13 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         // 演出: 盤面の大幅な変化（破壊等）を伴うスキルの後処理
         if (['spread', 'snipe', 'berserk', 'sacrifice'].includes(skillId)) {
             playSound(SOUNDS.seDamage);
-            await sleep(500);
-            if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
+            await sleep(100); // わずかに待つ
+            if (await cleanupDestroyedCards()) {
+                // cleanup内でseDestroyは鳴る
+            }
             if (skillId === 'sacrifice') checkWinCondition();
         } else {
-            cleanupDestroyedCards();
+            await cleanupDestroyedCards();
         }
 
         renderBoard();
@@ -119,7 +121,10 @@ async function triggerStartTurnPassive(owner, lane) {
         const prefix = val > 0 ? '+' : ''; const color = val > 0 ? '#4ade80' : '#ef4444';
         const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
         if (cEl) createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
-        if (c.currentPower <= 0) { if (!discardCard(owner, c, lane)) board[lane] = null; playSound(SOUNDS.seDestroy); }
+        if (c.currentPower <= 0) {
+            if (!discardCard(owner, c, lane)) board[lane] = null;
+            playSound(SOUNDS.seDestroy);
+        }
         else playSound(SOUNDS.seSkill);
         triggered = true;
     }

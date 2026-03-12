@@ -314,10 +314,15 @@ async function waitPlayerEnemyLaneSelection(count, owner) {
 
     if (occupiedLanes.length === 0) return [];
 
-    // AIの場合：最もパワーが高いカードを選択
-    if (owner === 'red') {
-        const sortedLanes = [...occupiedLanes].sort((a, b) => targetBoard[b].currentPower - targetBoard[a].currentPower);
-        return sortedLanes.slice(0, count);
+    // AIの場合：最もパワーが高いカードを選択（同値の場合は左＝インデックスが小さい方を優先）
+    if (owner === 'red' || owner === 'blue') {
+        const sortedLanes = [...occupiedLanes].sort((a, b) => {
+            const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
+            if (diff !== 0) return diff;
+            return a - b; // インデックスが小さい方（左）を優先
+        });
+        if (owner === 'red') return sortedLanes.slice(0, count);
+        // プレイヤー側で自動選択が必要な場合（現状は手動だが、一貫性のため）
     }
 
     // ターゲット数以下の場合は全選択
@@ -475,18 +480,37 @@ function updateDeckDisplay(owner) {
     }
 }
 
-function cleanupDestroyedCards() {
-    let destroyed = false;
+async function cleanupDestroyedCards() {
+    let destroyedItems = [];
     [playerBoard, enemyBoard].forEach((board, bIdx) => {
-        const owner = bIdx === 0 ? 'blue' : 'red';
+        const side = bIdx === 0 ? 'player' : 'enemy';
         for (let i = 0; i < 3; i++) {
             if (board[i] && board[i].currentPower <= 0) {
-                if (!discardCard(owner, board[i], i)) board[i] = null;
-                destroyed = true;
+                const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
+                destroyedItems.push({ board, index: i, el, owner: bIdx === 0 ? 'blue' : 'red', card: board[i] });
             }
         }
     });
-    return destroyed;
+
+    if (destroyedItems.length === 0) return false;
+
+    // 演出: 破壊されるカードを揺らす
+    destroyedItems.forEach(item => {
+        if (item.el) item.el.classList.add('anim-shake');
+    });
+    playSound(SOUNDS.seDamage);
+    await sleep(400);
+
+    // 実際の除去処理
+    destroyedItems.forEach(item => {
+        if (!discardCard(item.owner, item.card, item.index)) {
+            item.board[item.index] = null;
+        }
+    });
+
+    playSound(SOUNDS.seDestroy);
+    renderBoard();
+    return true;
 }
 
 function triggerSplitSkill(owner, lane, card) {
@@ -702,21 +726,35 @@ async function executeSingleCombat(atk, l) {
         const realDef = dB[dLane], realAtk = aB[aLane];
         realDef.currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) realAtk.currentPower -= dAtk;
 
-        const dE_real = document.querySelector(`${dR} .cell[data-lane="${dLane}"] .card`);
-        const aE_real = document.querySelector(`${aR} .cell[data-lane="${aLane}"] .card`);
-        if (dE_real) { dE_real.classList.add('anim-shake'); createDamagePopup(dE_real, `-${dDef}`); }
-        if (!hasSkill(dB[l], 'defender') && aE_real) { aE_real.classList.add('anim-shake'); createDamagePopup(aE_real, `-${dAtk}`); }
-        playSound(SOUNDS.seDamage); renderBoard(); await sleep(400);
+        // 演出: ダメージ反映のための再描画
+        renderBoard();
+        const dE_new = document.querySelector(`${dR} .cell[data-lane="${dLane}"] .card`);
+        const aE_new = document.querySelector(`${aR} .cell[data-lane="${aLane}"] .card`);
+
+        if (dE_new) { dE_new.classList.add('anim-shake'); createDamagePopup(dE_new, `-${dDef}`); }
+        if (!hasSkill(dB[l], 'defender') && aE_new) { aE_new.classList.add('anim-shake'); createDamagePopup(aE_new, `-${dAtk}`); }
+        playSound(SOUNDS.seDamage);
+        await sleep(400);
 
         if (dDef > 0 && hasSkill(aC, 'deadly')) realDef.currentPower = 0;
         if (dAtk > 0 && hasSkill(dB[l], 'deadly')) realAtk.currentPower = 0;
 
         let aD = realAtk.currentPower <= 0, dD = realDef.currentPower <= 0;
-        if (dD && !aD && hasSkill(aC, 'soul_bind')) { const val = getSkillValue(aC, 'soul_bind') || 2; aC.currentPower += val; createDamagePopup(aE, `+${val}`, '#4ade80'); playSound(SOUNDS.seSkill); }
-        if (aD && !dD && hasSkill(dB[l], 'soul_bind')) { const val = getSkillValue(dB[l], 'soul_bind') || 2; dB[l].currentPower += val; createDamagePopup(document.querySelector(`${dR} .cell[data-lane="${l}"] .card`), `+${val}`, '#4ade80'); playSound(SOUNDS.seSkill); }
+        if (dD && !aD && hasSkill(aC, 'soul_bind')) {
+            const val = getSkillValue(aC, 'soul_bind') || 2;
+            aC.currentPower += val;
+            if (aE_new) createDamagePopup(aE_new, `+${val}`, '#4ade80');
+            playSound(SOUNDS.seSkill);
+        }
+        if (aD && !dD && hasSkill(dB[l], 'soul_bind')) {
+            const val = getSkillValue(dB[l], 'soul_bind') || 2;
+            dB[l].currentPower += val;
+            if (dE_new) createDamagePopup(dE_new, `+${val}`, '#4ade80');
+            playSound(SOUNDS.seSkill);
+        }
 
-        if (aD) { if (!discardCard(atk, realAtk, aLane)) aB[aLane] = null; } if (dD) { if (!discardCard(atk === 'blue' ? 'red' : 'blue', realDef, dLane)) dB[dLane] = null; }
-        if (aD || dD) { playSound(SOUNDS.seDestroy); renderBoard(); }
+        // 破壊演出（async化したクリーンアップを使用）
+        const destroyed = await cleanupDestroyedCards();
 
         if (dD && !aD && hasSkill(aC, 'pierce')) {
             const pD = aC.currentPower;

@@ -207,7 +207,9 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
             playSound(SOUNDS.seDamage);
             await sleep(500);
             eBoard[l].currentPower = 0; // 無条件破壊のため、パワーを0に設定してからクリーンアップを呼ぶ
-            if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
+            if (await cleanupDestroyedCards()) {
+                // cleanup内で破壊音などは処理済み
+            }
             renderBoard();
             await sleep(300);
         }

@@ -50,6 +50,7 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             for (let j = 0; j < 3; j++) {
                 if (eB[j]) {
                     const p = eB[j].currentPower;
+                    // 同値の場合は左（jが小さい方）を優先するため、> を使用
                     if (p > maxP) { maxP = p; maxL = j; }
                 }
             }
@@ -184,9 +185,13 @@ function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
     } else if (action === 'targeted_destruction') {
         let maxL = -1, maxP = -1;
         for (let i = 0; i < 3; i++) {
-            if (eBoard[i] && eBoard[i].currentPower > maxP) {
-                maxP = eBoard[i].currentPower;
-                maxL = i;
+            if (eBoard[i]) {
+                const p = eBoard[i].currentPower;
+                // 同値の場合は左（iが小さい方）を優先
+                if (p > maxP) {
+                    maxP = p;
+                    maxL = i;
+                }
             }
         }
         if (maxL !== -1) eBoard[maxL].currentPower = 0;
