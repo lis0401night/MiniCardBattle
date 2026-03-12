@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Mini Card Battle</title>
     <!-- 本番環境でPWA化する時にコメントを外してください -->
     <!-- <link rel="manifest" href="manifest.json"> -->
@@ -38,13 +39,21 @@
     <script src="js/constants/enemy_decks/satan.js"></script>
 
     <!-- UIコンポーネント（テンプレート群） -->
-    <script src="js/components/UIComponents.js"></script>
+    <script src="js/components/BaseUI.js"></script>
+    <script src="js/components/BattleUI.js"></script>
+    <script src="js/components/ModalUI.js"></script>
 
     <!-- システム -->
     <script src="js/sounds.js"></script>
     <script src="js/modules/state.js"></script>
     <script src="js/modules/utils.js"></script>
-    <script src="js/modules/ui.js"></script>
+
+    <!-- UIロジック（分割後） -->
+    <script src="js/modules/ui/uiCore.js"></script>
+    <script src="js/modules/ui/uiGallery.js"></script>
+    <script src="js/modules/ui/uiBattle.js"></script>
+    <script src="js/modules/ui/uiDialogue.js"></script>
+    <script src="js/modules/ui/uiModals.js"></script>
     <script src="js/modules/deck.js"></script>
     <script src="js/modules/engine.js"></script>
     <script src="js/modules/skillLogic.js"></script>

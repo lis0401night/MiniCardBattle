@@ -277,19 +277,45 @@ h2 {
     margin-bottom: 10px;
 }
 
-/* スクロールバーのデザイン統一 */
-.card-list-container::-webkit-scrollbar {
+/* スクロールバーのデザイン統一 (Global & Custom) */
+::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
 }
 
-.card-list-container::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 3px;
 }
 
-.card-list-container::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
     background: #475569;
     border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Firefox Support */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #475569 rgba(255, 255, 255, 0.05);
+}
+
+.card-list-container {
+    width: 95%;
+    max-width: 440px;
+    height: 400px;
+    /* 縦スクロール用 */
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 12px;
+    border: 1px solid #334155;
+    padding: 10px 5px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
 }
 
 .card-list-grid-3col {
@@ -438,8 +464,6 @@ h2 {
     padding: 10px 5px;
     display: flex;
     justify-content: center;
-    scrollbar-width: none;
-    /* Firefox */
 }
 
 /* ===== 報酬画面 ===== */
@@ -491,10 +515,6 @@ h2 {
 }
 
 
-.select-scroll-area::-webkit-scrollbar {
-    display: none;
-    /* WebKit (Chrome, Safari, etc.) */
-}
 
 .char-grid {
     display: grid;
@@ -689,20 +709,7 @@ h2 {
     transition: transform 0.2s;
 }
 
-/* スクロールバーのカスタマイズ */
-.deck-list-horizontal::-webkit-scrollbar {
-    height: 6px;
-}
 
-.deck-list-horizontal::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-.deck-list-horizontal::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 3px;
-}
 
 /* ===== コンティニュー画面 ===== */
 #screen-continue {
@@ -1292,20 +1299,7 @@ h2 {
     justify-content: center;
 }
 
-/* 手札のスクロールバーをデッキリストと統一 */
-.hand-area::-webkit-scrollbar {
-    height: 6px;
-}
 
-.hand-area::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-.hand-area::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 3px;
-}
 
 .hand-card {
     position: relative;
@@ -1772,19 +1766,7 @@ h2 {
     flex-direction: column;
 }
 
-.preview-scroll-area::-webkit-scrollbar {
-    width: 6px;
-}
 
-.preview-scroll-area::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-.preview-scroll-area::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 3px;
-}
 
 .preview-skills-list {
     display: flex;
@@ -1872,18 +1854,7 @@ h2 {
     -webkit-overflow-scrolling: touch;
 }
 
-.deck-list-horizontal::-webkit-scrollbar {
-    height: 6px;
-}
 
-.deck-list-horizontal::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.deck-list-horizontal::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 3px;
-}
 
 .deck-card-item {
     flex-shrink: 0 !important;
