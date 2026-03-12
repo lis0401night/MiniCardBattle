@@ -80,7 +80,7 @@ Object.assign(UI_COMPONENTS, {
     rewardScreen: `
     <!-- 10. カード獲得画面 -->
     <div id="screen-reward" class="screen">
-        <div class="preview-content" id="reward-preview-content" style="position:relative; cursor:pointer;" onclick="revealRewardCard()">
+        <div class="preview-content" id="reward-preview-content" style="position:relative;">
             <div id="reward-card-container"></div>
             <div class="preview-details">
                 <h2 id="reward-card-name">? ? ?</h2>
@@ -91,7 +91,7 @@ Object.assign(UI_COMPONENTS, {
                 <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; flex-shrink: 0; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
             </div>
             <!-- 目隠し用レイヤー -->
-            <div id="reward-mask" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.95); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:20; backdrop-filter: blur(4px);">
+            <div id="reward-mask" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.95); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:20; backdrop-filter: blur(4px); cursor:pointer;" onclick="revealRewardCard()">
                 <h2 class="reward-title" style="margin-bottom: 20px; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);">カードを獲得！</h2>
                 <div style="font-size:5rem; color:#334155;">?</div>
                 <div style="font-size:1rem; color:#cbd5e1; margin-top:15px; animation: pulse 1.5s infinite;">タップして表を開く</div>
