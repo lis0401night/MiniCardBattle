@@ -63,6 +63,122 @@ function resetGameData() {
     );
 }
 
+function showSyncDataModal() {
+    playSound(SOUNDS.seClick);
+    const modal = document.getElementById('screen-sync-data');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeSyncDataModal() {
+    playSound(SOUNDS.seClick);
+    const modal = document.getElementById('screen-sync-data');
+    if (modal) modal.style.display = 'none';
+}
+
+function backupDataToXML() {
+    playSound(SOUNDS.seClick);
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<GameData>\n';
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('mini_card_battle_')) {
+            const val = localStorage.getItem(key);
+            // XMLエスケープ処理
+            const escapedVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+            xml += `  <Entry key="${key}">${escapedVal}</Entry>\n`;
+        }
+    }
+    xml += '</GameData>';
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mini_card_battle_backup_${new Date().toISOString().split('T')[0]}.xml`;
+    document.body.appendChild(a); // Mobile compatibility
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importDataFromXML() {
+    playSound(SOUNDS.seClick);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xml';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) {
+            document.body.removeChild(input);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const content = e.target.result;
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(content, 'text/xml');
+                const entries = xmlDoc.getElementsByTagName('Entry');
+
+                if (entries.length === 0) {
+                    showAlertModal("有効なバックアップデータが見つかりませんでした。");
+                    return;
+                }
+
+                showConfirmModal(
+                    "データを上書きしてよろしいですか？\n取り込んだデータで現在の進行状況が上書きされ、自動的にリロードされます。",
+                    () => {
+                        for (let i = 0; i < entries.length; i++) {
+                            const key = entries[i].getAttribute('key');
+                            const val = entries[i].textContent;
+                            if (key) localStorage.setItem(key, val);
+                        }
+                        location.reload();
+                    }
+                );
+            } catch (err) {
+                console.error("Import error:", err);
+                showAlertModal("ファイルのパースに失敗しました。正しいXMLファイルか確認してください。");
+            } finally {
+                if (document.body.contains(input)) document.body.removeChild(input);
+            }
+        };
+        reader.onerror = () => {
+            showAlertModal("ファイルの読み込みに失敗しました。");
+            if (document.body.contains(input)) document.body.removeChild(input);
+        };
+        reader.readAsText(file);
+    };
+
+    input.click();
+}
+
+function reloadGame() {
+    playSound(SOUNDS.seClick);
+    location.reload();
+}
+
+function showRulesModal() {
+    playSound(SOUNDS.seClick);
+    const modal = document.getElementById('modal-rules');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active'); // アニメーション用
+    }
+}
+
+function closeRulesModal() {
+    playSound(SOUNDS.seClick);
+    const modal = document.getElementById('modal-rules');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+}
+
 let rulesClickCount = 0;
 function debugUnlockCards() {
     rulesClickCount++;
@@ -931,11 +1047,11 @@ function showDeckRefreshEffect(owner) {
     effectEl.className = 'deck-refresh-effect';
     effectEl.innerText = 'DECK REFRESH';
 
-    // 配置位置（プレイヤー側か敵側か）
+    // 配置位置（画面中央付近に浮かせる）
     if (owner === 'blue') {
-        effectEl.style.bottom = '25%';
+        effectEl.style.top = '65%';
     } else {
-        effectEl.style.top = '25%';
+        effectEl.style.top = '35%';
     }
 
     battleScreen.appendChild(effectEl);

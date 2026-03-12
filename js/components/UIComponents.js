@@ -66,11 +66,11 @@ const UI_COMPONENTS = {
     modeSelectScreen: `
     <!-- モード選択画面 -->
     <div id="screen-mode-select" class="screen">
+        <button class="btn-circle btn-gear" onclick="showOptions()">⚙</button>
         <h1 class="game-title" style="display:block; margin-bottom: 40px;">LANE<br>DEFENDERS</h1>
+        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showRules()">遊び方</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">ストーリー</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">フリーバトル</button>
-        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showRules()">遊び方</button>
-        <button class="btn" style="width: 250px; background: #475569;" onclick="showOptions()">オプション</button>
     </div>
     `,
 
@@ -81,10 +81,11 @@ const UI_COMPONENTS = {
         <div class="rule-box">
             <ul>
                 <li><b>【デッキ編成】デッキに同じカードは4枚まで入れられます。</b></li>
-                <li>毎ターン、手札から1枚を自分のレーンに<b>配置</b>します。（置き直しも可能ですが、下のカードは破棄されます）</li>
+                <li>毎ターン、手札から1枚を自分のレーンに<b>配置</b>します。（置き直しの場合、下のカードは破棄されます）</li>
                 <li><b>自分のターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
-                <li>正面に敵がいれば激突！空いていれば<b>相手リーダーに直接ダメージ！</b></li>
-                <li><b>【リーダー能力】</b>毎ターン「SP」が溜まります。必要なSPが溜まると、「リーダースキル」ボタンから強力な必殺技を発動できます！（発動してもカードの配置は可能です）</li>
+                <li>正面に敵がいれば戦闘となり、お互いのパワーが引かれます。</li>
+                <li>正面が空いていれば<b>相手リーダーに直接ダメージ！</b></li>
+                <li><b>【リーダー能力】</b>毎ターン「SP」が溜まります。SPがMAXになると、カードの配置前に「リーダースキル」ボタンから必殺技を発動できます！</li>
                 <li>先に相手リーダーのHPを0にすれば勝利です。</li>
             </ul>
         </div>
@@ -166,8 +167,16 @@ const UI_COMPONENTS = {
             
             <div style="border-top: 1px solid #334155; padding-top: 20px;">
                 <label style="display: block; margin-bottom: 10px; color: #cbd5e1; font-size: 0.9rem;">データ管理</label>
-                <button class="btn" style="background: #7f1d1d; width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="resetGameData()">データ削除</button>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn" style="background: #475569; width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="showSyncDataModal()">データ連携</button>
+                    <button class="btn" style="background: #7f1d1d; width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="resetGameData()">データ削除</button>
+                </div>
                 <p style="color: #64748b; font-size: 0.7rem; margin-top: 8px; text-align: center;">※デッキと所持カードが初期化されます</p>
+            </div>
+
+            <div style="border-top: 1px solid #334155; padding-top: 20px; margin-top: 20px;">
+                <label style="display: block; margin-bottom: 10px; color: #cbd5e1; font-size: 0.9rem;">更新</label>
+                <button class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="reloadGame()">更新してタイトルへ</button>
             </div>
         </div>
 
@@ -298,7 +307,8 @@ const UI_COMPONENTS = {
     battleScreen: `
     <!-- 6. バトル画面 -->
     <div id="screen-battle" class="screen">
-        <button class="btn-home" onclick="returnToTitle()">リタイア</button>
+        <button class="btn-circle btn-battle-help" onclick="showRulesModal()">？</button>
+        <button class="btn-circle btn-battle-retire" onclick="returnToTitle()">🏳</button>
         <!-- 敵ステータス -->
         <div class="hp-area">
             <div class="status-container">
@@ -413,6 +423,44 @@ const UI_COMPONENTS = {
                 <button id="confirm-modal-cancel" class="btn" style="flex: 1; background: #475569; margin-top: 0;">キャンセル</button>
                 <button id="confirm-modal-ok" class="btn" style="flex: 1; background: linear-gradient(45deg, #0ea5e9, #0284c7); margin-top: 0;">OK</button>
             </div>
+        </div>
+    </div>
+    `,
+
+    syncDataModal: `
+    <!-- データ連携モーダル -->
+    <div id="screen-sync-data" class="screen" style="background: rgba(0,0,0,0.85); z-index: 70;">
+        <div style="background: var(--panel-bg); border: 2px solid #94a3b8; border-radius: 12px; padding: 30px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+            <h2 style="color: #f8fafc; margin-bottom: 20px;">データ連携</h2>
+            <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                <button class="btn" style="background: linear-gradient(45deg, #0ea5e9, #2563eb); margin-top: 0;" onclick="backupDataToXML()">バックアップ</button>
+                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); margin-top: 0;" onclick="importDataFromXML()">データ取込</button>
+                <button class="btn" style="background: #475569; margin-top: 5px;" onclick="closeSyncDataModal()">戻る</button>
+            </div>
+            <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 20px; text-align: center; line-height: 1.4;">
+                バックアップしたXMLファイルを保存するか、保存したファイルからデータを復元できます。
+            </p>
+        </div>
+    </div>
+    `,
+
+    rulesModal: `
+    <!-- 遊び方モーダル（戦闘中用） -->
+    <div id="modal-rules" class="rules-modal-overlay" onclick="closeRulesModal()">
+        <div class="skill-modal-box modal-pop-animation" style="width: 90%; max-width: 400px; padding: 25px;" onclick="event.stopPropagation()">
+            <h2 style="color: #facc15; margin-bottom: 20px;">遊び方</h2>
+            <div class="rule-box" style="background: rgba(0,0,0,0.5); border: 1px solid #334155; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; text-align: left;">
+                <ul style="padding-left: 20px; color: #cbd5e1; font-size: 0.9rem; line-height: 1.6;">
+                    <li><b>【デッキ編成】</b>デッキには同じカードは4枚まで入れられます。</li>
+                    <li>毎ターン、手札から1枚を自分のレーンに<b>配置</b>します。（置き直しの場合、下のカードは破棄されます）</li>
+                    <li><b>自分のターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
+                    <li>正面に敵がいれば戦闘となり、お互いのパワーが引かれます。</li>
+                    <li>正面が空いていれば<b>相手リーダーに直接ダメージ！</b></li>
+                    <li><b>【リーダー能力】</b>毎ターン「SP」が溜まります。SPがMAXになると、カードの配置前に「リーダースキル」ボタンから必殺技を発動できます！</li>
+                    <li>先に相手リーダーのHPを0にすれば勝利です。</li>
+                </ul>
+            </div>
+            <button class="btn" style="margin-top: 20px; width: 100%;" onclick="closeRulesModal()">閉じる</button>
         </div>
     </div>
     `

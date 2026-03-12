@@ -20,7 +20,8 @@ html {
     background-color: #000;
     width: 100%;
     height: 100%;
-    font-size: 16px; /* OSのフォントサイズ設定の影響を固定化 */
+    font-size: 16px;
+    /* OSのフォントサイズ設定の影響を固定化 */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
 }
@@ -141,6 +142,124 @@ h2 {
     color: #1e293b;
     text-shadow: none;
     font-weight: 900;
+}
+
+/* 共通の形（円形アイコンボタン） */
+.btn-circle {
+    width: 44px;
+    height: 44px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+    line-height: 1;
+    padding: 0;
+}
+
+.btn-circle:hover {
+    background: rgba(51, 65, 85, 0.9);
+    border-color: #facc15;
+    color: #facc15;
+    transform: scale(1.1);
+}
+
+.btn-circle:active {
+    transform: scale(0.9);
+}
+
+/* 各ボタン固有の設定 */
+.btn-gear {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2rem;
+    /* 歯車は少し大きく */
+}
+
+.btn-gear:hover {
+    transform: rotate(45deg) scale(1.1);
+}
+
+.btn-battle-help {
+    position: absolute;
+    top: 20px;
+    right: 74px;
+}
+
+.btn-battle-retire {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+/* ヘルプモーダル用のスタイル */
+.rules-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 200;
+    display: none;
+    /* JSで制御 */
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* 山札リセット演出 */
+.deck-refresh-effect {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(14, 165, 233, 0.9);
+    color: #fff;
+    padding: 10px 30px;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #0ea5e9;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+    z-index: 100;
+    pointer-events: none;
+    animation: deckRefreshPop 1.5s ease-out forwards;
+    white-space: nowrap;
+}
+
+@keyframes deckRefreshPop {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 20px) scale(0.8);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1.1);
+    }
+
+    30% {
+        transform: translate(-50%, 0) scale(1);
+    }
+
+    80% {
+        opacity: 1;
+        transform: translate(-50%, -10px) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -30px) scale(0.9);
+    }
 }
 
 /* ===== タイトル画面 ===== */
