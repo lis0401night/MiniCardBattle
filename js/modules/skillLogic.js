@@ -31,7 +31,7 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             selectedIndices.sort((a, b) => b - a);
             for (let i of selectedIndices) {
                 const discarded = h.splice(i, 1)[0];
-                discardCard(o, discarded);
+                await discardCard(o, discarded);
             }
             for (let i = 0; i < selectedIndices.length; i++) drawCard(o);
         } else if (h.length === 0) {
@@ -122,7 +122,7 @@ async function triggerStartTurnPassive(owner, lane) {
         const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
         if (cEl) createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
         if (c.currentPower <= 0) {
-            if (!discardCard(owner, c, lane)) board[lane] = null;
+            if (!(await discardCard(owner, c, lane))) board[lane] = null;
             playSound(SOUNDS.seDestroy);
         }
         else playSound(SOUNDS.seSkill);

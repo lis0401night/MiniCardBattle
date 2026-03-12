@@ -14,6 +14,7 @@ const CARD_MASTER = [
     { id: 'ninja', name: '忍者', power: 3, skill: 'stealth', skillValue: 1, rarity: 1, flavor: '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。', imgUrl: 'assets/card_ninja.jpg' },
     { id: 'charger', name: '虹ハチドリ', power: 1, skill: 'charge', skillValue: 1, rarity: 1, flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。', imgUrl: 'assets/card_charger.jpg' },
     { id: 'crenellatedwall', name: '民兵団の射手', power: 5, skills: [{ id: 'spread', value: 1 }, { id: 'defender' }], rarity: 1, flavor: '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。', imgUrl: 'assets/card_crenellatedwall.jpg' },
+    { id: 'devil', name: '地獄の放火魔', power: 2, skills: [{ id: 'spread', value: 3 }, { id: 'explode', value: 3 }], rarity: 1, flavor: '背中のタンクには地獄の業火が詰まっている。初めて武器を与えられた小悪魔は、その焦熱を振り撒くことに至上の喜びを感じていた。', imgUrl: 'assets/card_devil.jpg' },
     { id: 'titan', name: '旧式タイタン', power: 8, skill: 'growth', skillValue: -2, rarity: 2, flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。', imgUrl: 'assets/card_titan.jpg' },
     { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], rarity: 2, flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。', imgUrl: 'assets/card_mantis.jpg' },
     { id: 'bigai', name: 'サイクロプス Mk-II', power: 3, skills: [{ id: 'charge', value: -1 }, { id: 'snipe', value: 5 }], rarity: 2, flavor: '単眼の狙撃特化型自律ユニット。一撃必殺の精度を誇る。', imgUrl: 'assets/card_bigai.jpg' },

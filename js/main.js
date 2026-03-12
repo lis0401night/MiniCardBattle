@@ -58,7 +58,7 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
             });
             if (!confirmed) return;
             // 既存カードを破棄
-            if (!discardCard('blue', playerBoard[l], l)) playerBoard[l] = null;
+            if (!(await discardCard('blue', playerBoard[l], l))) playerBoard[l] = null;
             renderBoard();
         }
 

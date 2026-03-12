@@ -259,6 +259,30 @@ function applySingleCombat(state, attackerSide, l) {
  * ターン開始パッシブの適用
  */
 function applyPassiveSkillLogic(state, side) {
+    // シミュレーション用のクリーンアップ
+    let anyDestroyed = true;
+    while (anyDestroyed) {
+        anyDestroyed = false;
+        [state.playerBoard, state.enemyBoard].forEach((b, bIdx) => {
+            // const currentSide = bIdx === 0 ? 'blue' : 'red'; // Not used, but kept for context if needed
+            for (let i = 0; i < 3; i++) {
+                if (b[i] && b[i].currentPower <= 0) {
+                    const deadCard = b[i];
+                    b[i] = null;
+                    anyDestroyed = true;
+                    // 誘爆チェック
+                    if (hasSkill(deadCard, 'explode')) {
+                        const val = getSkillValue(deadCard, 'explode') || 3;
+                        const adj = i === 1 ? [0, 2] : [1];
+                        adj.forEach(j => {
+                            if (b[j]) b[j].currentPower -= val;
+                        });
+                    }
+                }
+            }
+        });
+    }
+
     const b = side === 'blue' ? state.playerBoard : state.enemyBoard;
     for (let i = 0; i < 3; i++) {
         const c = b[i];

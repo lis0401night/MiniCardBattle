@@ -67,7 +67,7 @@ async function executeEnemyAI() {
             if (decision.index !== -1 && decision.lane !== -1) {
                 if (decision.isOverwrite) {
                     const oldCard = enemyBoard[decision.lane];
-                    discardCard('red', oldCard, decision.lane);
+                    await discardCard('red', oldCard, decision.lane);
                 }
                 await playCard('red', decision.index, decision.lane);
                 await sleep(600);

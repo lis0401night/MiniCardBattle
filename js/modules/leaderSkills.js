@@ -109,7 +109,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
             if (eBoard[i] && eBoard[i].currentPower <= 0) {
             }
         }
-        if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
+        await cleanupDestroyedCards();
         renderBoard();
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
@@ -150,15 +150,15 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
         if (bf) { renderBoard(); await sleep(500); }
     } else if (action === 'abyss_ritual') {
         const h = isBlue ? playerHand : enemyHand;
+        let dc = 0;
         if (h.length > 0) {
-            let dc = 0;
             if (isBlue) {
                 // プレイヤーは手動で0〜2枚選択
                 const selectedIndices = await waitPlayerHandSelection(2, owner);
                 if (selectedIndices.length > 0) {
                     selectedIndices.sort((a, b) => b - a);
                     for (let i of selectedIndices) {
-                        discardCard(owner, h.splice(i, 1)[0]);
+                        await discardCard(owner, h.splice(i, 1)[0]);
                         dc++;
                     }
                 }
@@ -166,7 +166,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
                 // AIは自動でパワーの低いカードを最大2枚捨てる
                 while (dc < 2 && h.length > 0) {
                     let mp = Math.min(...h.map(c => c.power)), mi = h.findIndex(c => c.power === mp);
-                    discardCard(owner, h.splice(mi, 1)[0]);
+                    await discardCard(owner, h.splice(mi, 1)[0]);
                     dc++;
                 }
             }
