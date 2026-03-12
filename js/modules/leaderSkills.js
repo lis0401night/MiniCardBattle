@@ -107,7 +107,6 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
 
         for (let i = 0; i < 3; i++) {
             if (eBoard[i] && eBoard[i].currentPower <= 0) {
-                // cleanupDestroyedCardsが一括で行うのでここでは何もしないか、あるいは一括で呼ぶ
             }
         }
         if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
@@ -207,6 +206,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
             }
             playSound(SOUNDS.seDamage);
             await sleep(500);
+            eBoard[l].currentPower = 0; // 無条件破壊のため、パワーを0に設定してからクリーンアップを呼ぶ
             if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
             renderBoard();
             await sleep(300);
