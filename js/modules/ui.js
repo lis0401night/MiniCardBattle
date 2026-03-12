@@ -679,10 +679,12 @@ function updateCardDetail(c) {
     if (!c) {
         if (isDiscardingMode) {
             b.innerHTML = `<div class="skill-info" style="color:#facc15; font-weight:bold;">捨てるカードを${discardMaxCount}枚まで選んでください</div>`;
+        } else if (isPlacementMode) {
+            b.innerHTML = `<div class="skill-info" style="color:#facc15; font-weight:bold;">配置する場所を選んでください</div>`;
         } else {
             b.innerHTML = '';
         }
-        b.style.color = isDiscardingMode ? '#facc15' : '#94a3b8';
+        b.style.color = (isDiscardingMode || isPlacementMode) ? '#facc15' : '#94a3b8';
     } else {
         let skillCandidates = [];
         if (c.skill && c.skill !== 'none' && c.skill !== undefined) {

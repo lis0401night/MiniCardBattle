@@ -16,7 +16,7 @@ const CARD_MASTER = [
     { id: 'crenellatedwall', name: '民兵団の射手', power: 5, skills: [{ id: 'spread', value: 1 }, { id: 'defender' }], rarity: 1, flavor: '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。', imgUrl: 'assets/card_crenellatedwall.jpg' },
     { id: 'titan', name: '旧式タイタン', power: 8, skill: 'growth', skillValue: -2, rarity: 2, flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。', imgUrl: 'assets/card_titan.jpg' },
     { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], rarity: 2, flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。', imgUrl: 'assets/card_mantis.jpg' },
-    { id: 'bigai', name: 'サイクロプス Mk-II', power: 3, skills: [{ id: 'charge', value: -2 }, { id: 'snipe', value: 5 }], rarity: 2, flavor: '単眼の狙撃特化型自律ユニット。一撃必殺の精度を誇る。', imgUrl: 'assets/card_bigai.jpg' },
+    { id: 'bigai', name: 'サイクロプス Mk-II', power: 3, skills: [{ id: 'charge', value: -1 }, { id: 'snipe', value: 5 }], rarity: 2, flavor: '単眼の狙撃特化型自律ユニット。一撃必殺の精度を誇る。', imgUrl: 'assets/card_bigai.jpg' },
     { id: 'babydragon', name: 'ドラゴンの雛', power: 2, skill: 'growth', skillValue: 3, rarity: 2, flavor: 'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。' },
     { id: 'dragonewt', name: '竜人族の騎兵', power: 4, skills: [{ id: 'pierce' }, { id: 'snipe', value: 2 }], rarity: 2, flavor: '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫き、遠方の獲物も逃さない。' },
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },

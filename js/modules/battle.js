@@ -223,6 +223,10 @@ async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = 
         const cells = document.querySelectorAll(`#player-lanes .cell`);
         const originalListeners = Array.from(cells).map(c => c.onclick);
 
+        // 配置ガイドメッセージを表示
+        isPlacementMode = true;
+        updateCardDetail(null);
+
         // 「ターン終了」ボタンを「配置終了」に切り替え
         const endBtn = document.getElementById('btn-end-turn');
         const originalBtnText = endBtn.innerText;
@@ -233,6 +237,8 @@ async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = 
         endBtn.style.borderColor = '#dc2626';
 
         const cleanUp = () => {
+            isPlacementMode = false;
+            updateCardDetail(null);
             cells.forEach((cell, i) => {
                 cell.classList.remove('highlight');
                 cell.classList.remove('selected-highlight');
