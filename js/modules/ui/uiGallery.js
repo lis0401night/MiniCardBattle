@@ -9,6 +9,9 @@ function showGallery() {
 
 function showCardList() {
     playSound(SOUNDS.seClick);
+    if (typeof loadDeck === 'function') {
+        loadDeck();
+    }
     renderCardList();
     switchScreen('screen-card-list');
 }
@@ -41,7 +44,7 @@ function renderCardList() {
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
                 ${renderSkillTag(template)}
                 <div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:#facc15; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid #facc15;">
-                    ${inDeckCount}/${ownedCount}
+                    ${ownedCount}/4
                 </div>
             </div>
         `;

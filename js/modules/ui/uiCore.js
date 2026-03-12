@@ -154,10 +154,23 @@ function importDataFromXML() {
 
 function reloadGame() {
     playSound(SOUNDS.seClick);
-    location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set('reload', Date.now());
+    window.location.href = url.toString();
 }
 
 let rulesClickCount = 0;
+let optionsTitleClickCount = 0;
+
+function handleOptionsTitleClick() {
+    optionsTitleClickCount++;
+    if (optionsTitleClickCount >= 10) {
+        optionsTitleClickCount = 0;
+        // 意図的にエラーを発生させる
+        const error = new Error("Debug: Intentional error triggered by clicking options title 10 times.");
+        window.onerror(error.message, window.location.href, 0, 0, error);
+    }
+}
 
 function goBackFromSelect() {
     playSound(SOUNDS.seClick);

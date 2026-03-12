@@ -176,7 +176,7 @@ const UI_COMPONENTS = {
     optionsScreen: `
     <!-- オプション画面 -->
     <div id="screen-options" class="screen">
-        <h2 style="color: #facc15; margin-bottom: 30px;">オプション</h2>
+        <h2 style="color: #facc15; margin-bottom: 30px;" onclick="handleOptionsTitleClick()">オプション</h2>
         
         <div style="width: 280px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 30px;">
             <div style="margin-bottom: 20px;">

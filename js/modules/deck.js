@@ -96,7 +96,12 @@ function loadDeck() {
     const invKey = `mini_card_battle_inventory`;
     const invSaved = localStorage.getItem(invKey);
     if (invSaved) {
-        playerInventory = JSON.parse(invSaved);
+        try {
+            playerInventory = JSON.parse(invSaved);
+        } catch (e) {
+            console.error("Inventory parse error:", e);
+            playerInventory = {};
+        }
     } else {
         // 初期インベントリの作成（初期デッキのカードを所持）
         playerInventory = {};
@@ -192,7 +197,6 @@ function addCardToDeck(template) {
 
     playerDeckSelection.push({ ...template });
     playSound(SOUNDS.seClick);
-    saveDeck();
     renderDeckEdit();
 }
 
@@ -201,7 +205,6 @@ function removeCardFromDeck(cardId) {
     if (index !== -1) {
         playerDeckSelection.splice(index, 1);
         playSound(SOUNDS.seClick);
-        saveDeck();
         renderDeckEdit();
     }
 }
@@ -210,7 +213,6 @@ function clearDeck() {
     playSound(SOUNDS.seClick);
     showConfirmModal("デッキのカードをすべて削除しますか？", () => {
         playerDeckSelection = [];
-        saveDeck(); // Keep saveDeck() for persistence
         renderDeckEdit();
     });
 }
@@ -219,7 +221,6 @@ function resetDeck() {
     playSound(SOUNDS.seClick);
     showConfirmModal("デッキを初期状態に戻しますか？", () => {
         playerDeckSelection = getInitialDeck(playerConfig.id);
-        saveDeck(); // Keep saveDeck() for persistence
         renderDeckEdit();
     });
 }
@@ -231,6 +232,7 @@ function finishDeckEdit() {
         return;
     }
     playSound(SOUNDS.seClick);
+    saveDeck(); // ここでまとめて保存
     appState = 'battle';
     prepareBattle();
 }
@@ -267,7 +269,6 @@ function importDeckXML(event) {
                 playerDeckSelection.push({ ...template });
             }
         }
-        saveDeck();
         renderDeckEdit();
     };
     reader.readAsText(file);

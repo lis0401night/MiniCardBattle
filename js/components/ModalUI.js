@@ -53,5 +53,21 @@ Object.assign(UI_COMPONENTS, {
             <button class="btn" style="margin-top: 20px; width: 100%;" onclick="closeRulesModal()">閉じる</button>
         </div>
     </div>
+    `,
+
+    errorModal: `
+    <!-- 致命的エラーモーダル -->
+    <div id="modal-error" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+        <div class="skill-modal-box modal-pop-animation" style="border-color: #ef4444; max-width: 400px;">
+            <h2 style="color: #ef4444; margin-bottom: 15px;">エラーが発生しました</h2>
+            <p id="error-modal-message" style="color: #cbd5e1; font-size: 0.9rem; text-align: left; margin-bottom: 25px; line-height: 1.6; width: 100%; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
+                予期しないエラーが発生しました。
+            </p>
+            <p style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 20px; text-align: center;">
+                ブラウザのキャッシュにより問題が継続する場合があります。<br>下のボタンから最新状態で再読み込みしてください。
+            </p>
+            <button class="btn" style="width: 100%; background: linear-gradient(135deg, #3b82f6, #8b5cf6);" onclick="reloadGame()">更新してタイトルへ</button>
+        </div>
+    </div>
     `
 });

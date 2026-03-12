@@ -1,5 +1,5 @@
 // ==========================================
-// UI Modal Logic (Confirm, Alert, SkillConfirm)
+// UI Modal Logic (Confirm, Alert, SkillConfirm, Error)
 // ==========================================
 
 function showConfirmModal(message, onConfirm, onCancel = null, isAlert = false) {
@@ -41,4 +41,20 @@ function showConfirmModal(message, onConfirm, onCancel = null, isAlert = false) 
 
 function showAlertModal(message, onClose = null) {
     showConfirmModal(message, onClose, null, true);
+}
+
+/**
+ * 致命的なエラーを表示するモーダル
+ * キャッシュ削除（スーパーリロード）を促す
+ */
+function showErrorModal(message) {
+    const modal = document.getElementById('modal-error');
+    const msgEl = document.getElementById('error-modal-message');
+    if (!modal || !msgEl) return;
+
+    msgEl.textContent = message;
+    modal.style.display = 'flex';
+
+    // 他のBGM等を止める
+    if (typeof stopAllBGM === 'function') stopAllBGM();
 }
