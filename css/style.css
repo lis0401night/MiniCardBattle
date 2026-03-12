@@ -262,6 +262,72 @@ h2 {
     }
 }
 
+/* ギャラリー・カード一覧共通 */
+.card-list-container {
+    width: 95%;
+    max-width: 440px;
+    height: 400px;
+    /* 縦スクロール用 */
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 12px;
+    border: 1px solid #334155;
+    padding: 10px 5px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+/* スクロールバーのデザイン統一 */
+.card-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.card-list-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.card-list-container::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+
+.card-list-grid-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    /* 縦横均等な余白 */
+}
+
+.card-list-grid-3col .deck-card-item {
+    width: 100%;
+    height: 0;
+    padding-bottom: 150%;
+    /* 2:3 ratio (100% * 1.5) */
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.card-list-grid-3col .card {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    margin: 0 !important;
+    display: block !important;
+}
+
+.card-list-grid-3col .deck-card-item:hover {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.card-list-grid-3col .deck-card-item:hover {
+    transform: scale(1.05);
+}
+
 /* ===== タイトル画面 ===== */
 #screen-title {
     background-color: #000;
@@ -1032,7 +1098,10 @@ h2 {
 
 .cell {
     width: 110px;
-    height: 140px;
+    height: auto;
+    aspect-ratio: 2 / 3;
+    box-sizing: border-box;
+    /* 枠線を含めた計算でズレを防止 */
     background: rgba(15, 23, 42, 0.45);
     border: 2px dashed #475569;
     border-radius: 8px;
@@ -1058,7 +1127,9 @@ h2 {
 /* カードデザイン */
 .card {
     width: 80px;
-    height: 100px;
+    height: auto !important;
+    aspect-ratio: 2 / 3 !important;
+    /* 160:240 (2:3) の比率に統一 */
     border-radius: 8px;
     position: absolute;
     top: 0;
@@ -1206,8 +1277,8 @@ h2 {
     display: flex;
     gap: 1.5%;
     /* 画面幅に応じた隙間 */
-    height: 145px;
-    /* PCでの表示も見据えて高さを確保 */
+    min-height: 120px;
+    /* 固定高さを排除して中身の比率を優先 */
     padding: 10px 2%;
     background: rgba(0, 0, 0, 0.4);
     border-radius: 12px;
@@ -1244,7 +1315,7 @@ h2 {
 }
 
 .hand-card.selected {
-    transform: translateY(-15px);
+    transform: translateY(-10px);
     box-shadow: 0 0 15px var(--color-blue);
     border-color: var(--color-blue);
     z-index: 10;
@@ -1256,8 +1327,10 @@ h2 {
     width: calc((100% - (1.5% * 4)) / 5);
     /* 5枚が等間隔に並ぶよう計算 */
     max-width: 90px;
-    height: auto;
-    aspect-ratio: 4 / 5;
+    height: auto !important;
+    aspect-ratio: 2 / 3 !important;
+    position: relative !important;
+    /* 絶対配置を解除して高さを確保 */
     flex-shrink: 0;
 }
 
@@ -1961,7 +2034,8 @@ h2 {
     #preview-card-container .card,
     #reward-card-container .card {
         width: 140px;
-        height: 186px;
+        height: auto !important;
+        aspect-ratio: 2 / 3 !important;
     }
 
     #preview-card-container,
@@ -2006,12 +2080,14 @@ h2 {
 
     .cell {
         width: 85px;
-        height: 110px;
+        height: 127.5px;
+        /* 85 * 1.5 */
     }
 
     .card {
         width: 65px;
-        height: 82px;
+        height: auto;
+        aspect-ratio: 2 / 3;
     }
 
     .cell .card-power {
@@ -2033,7 +2109,8 @@ h2 {
     }
 
     .hand-area {
-        height: 125px;
+        min-height: 110px;
+        height: auto;
         padding: 6px 10px;
         gap: 6px;
     }
@@ -2044,7 +2121,8 @@ h2 {
 
     .card.hand-card {
         width: calc((100% - (8px * 4)) / 5);
-        height: auto;
+        height: auto !important;
+        aspect-ratio: 2 / 3 !important;
     }
 
     .hp-area {
@@ -2125,7 +2203,8 @@ h2 {
     #preview-card-container .card,
     #reward-card-container .card {
         width: 110px;
-        height: 146px;
+        height: auto;
+        aspect-ratio: 2 / 3;
     }
 
     #preview-card-container,
@@ -2170,12 +2249,14 @@ h2 {
 
     .cell {
         width: 70px;
-        height: 90px;
+        height: 105px;
+        /* 70 * 1.5 */
     }
 
     .card {
         width: 55px;
-        height: 70px;
+        height: auto;
+        aspect-ratio: 2 / 3;
     }
 
     .cell .card-power {
@@ -2197,7 +2278,8 @@ h2 {
     }
 
     .hand-area {
-        height: 110px;
+        min-height: 100px;
+        height: auto;
         padding: 4px 8px;
         gap: 4px;
     }

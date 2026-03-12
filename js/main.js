@@ -8,6 +8,11 @@ if (appContainer) {
     appContainer.innerHTML = Object.values(UI_COMPONENTS).join('\n');
 }
 
+// データの読み込み（インベントリとデッキ）
+if (typeof loadDeck === 'function') {
+    loadDeck();
+}
+
 // 2. 盤面のセルクリックイベントのバインド
 document.querySelectorAll('#player-lanes .cell').forEach(cell => {
     cell.onclick = async () => {

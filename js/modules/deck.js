@@ -139,7 +139,7 @@ function renderDeckEdit() {
         const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
 
         item.innerHTML = `
-            <div class="card blue${rarityClass}" style="width:80px; height:110px; position:relative; top:0; left:0; display:block; opacity:${opacity};">
+            <div class="card blue${rarityClass}" style="width:80px; height:120px; position:relative; top:0; left:0; display:block; opacity:${opacity};">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
                 ${renderSkillTag(template)}
@@ -168,7 +168,7 @@ function renderDeckEdit() {
         const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
         const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
         item.innerHTML = `
-            <div class="card blue${rarityClass}" style="width:80px; height:110px; position:relative; top:0; left:0; display:block;">
+            <div class="card blue${rarityClass}" style="width:80px; height:120px; position:relative; top:0; left:0; display:block;">
                 <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${card.power}</div>
                 ${renderSkillTag(card)}

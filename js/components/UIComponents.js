@@ -71,6 +71,32 @@ const UI_COMPONENTS = {
         <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showRules()">遊び方</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">ストーリー</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">フリーバトル</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #8b5cf6, #6d28d9);" onclick="showGallery()">ギャラリー</button>
+    </div>
+    `,
+
+    galleryMenuScreen: `
+    <!-- ギャラリーメニュー画面 -->
+    <div id="screen-gallery-menu" class="screen">
+        <h2 style="color: #facc15; margin-bottom: 40px;">ギャラリー</h2>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #059669);" onclick="showCardList()">カード一覧</button>
+        <div style="margin-top: 20px; border-top: 1px solid #334155; width: 250px; padding-top: 20px;">
+            <button class="btn" style="width: 250px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        </div>
+    </div>
+    `,
+
+    cardListScreen: `
+    <!-- カード一覧画面 -->
+    <div id="screen-card-list" class="screen">
+        <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;">カード一覧</h2>
+        <div id="card-list-count" style="font-size: 0.9rem; margin-bottom: 10px; color: #cbd5e1;">カード枚数: 0 / 0</div>
+        
+        <div class="card-list-container">
+            <div id="gallery-card-grid" class="card-list-grid-3col"></div>
+        </div>
+
+        <button class="btn" style="margin-top: 15px; width: 100%; background: #475569;" onclick="switchScreen('screen-gallery-menu')">戻る</button>
     </div>
     `,
 

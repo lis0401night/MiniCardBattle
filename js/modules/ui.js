@@ -161,6 +161,70 @@ function reloadGame() {
     location.reload();
 }
 
+/**
+ * ギャラリーメニュー表示
+ */
+function showGallery() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-gallery-menu');
+}
+
+/**
+ * カード一覧画面表示
+ */
+function showCardList() {
+    playSound(SOUNDS.seClick);
+    renderCardList();
+    switchScreen('screen-card-list');
+}
+
+/**
+ * 全カード一覧の描画
+ */
+function renderCardList() {
+    const grid = document.getElementById('gallery-card-grid');
+    const countEl = document.getElementById('card-list-count');
+    if (!grid || !countEl) return;
+
+    grid.innerHTML = '';
+
+    // トークン以外のカードを抽出
+    const masterCards = CARD_MASTER.filter(c => !c.isToken);
+    let ownedKindCount = 0;
+
+    masterCards.forEach(template => {
+        const ownedCount = playerInventory[template.id] || 0;
+        const inDeckCount = playerDeckSelection.filter(c => c.id === template.id).length;
+        if (ownedCount > 0) ownedKindCount++;
+
+        const item = document.createElement('div');
+        item.className = 'deck-card-item gallery-card-wrapper';
+
+        const imgUrl = template.imgUrl || `assets/card_${template.id}.jpg`;
+        const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
+        const isOwned = ownedCount > 0;
+        const opacity = isOwned ? "1" : "0.4";
+
+        item.innerHTML = `
+            <div class="card blue${rarityClass}" style="opacity:${opacity};">
+                <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
+                <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
+                ${renderSkillTag(template)}
+                <div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:#facc15; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid #facc15;">
+                    ${inDeckCount}/${ownedCount}
+                </div>
+            </div>
+        `;
+
+        // 詳細確認用のプレビューをタップで表示
+        item.onclick = () => openCardPreview({ ...template, imgUrl: imgUrl });
+
+        grid.appendChild(item);
+    });
+
+    countEl.innerText = `カード枚数: ${ownedKindCount} / ${masterCards.length}`;
+}
+
 function showRulesModal() {
     playSound(SOUNDS.seClick);
     const modal = document.getElementById('modal-rules');
@@ -952,9 +1016,9 @@ function populateCardPreview(prefix, card) {
         const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
         cardClone.className = `card blue${rarityClass}`;
 
-        // 拡大表示用にサイズを明示（style.cssの基準に合わせる）
+        // 拡大表示用にサイズを明示（比率2:3に合わせる: 180 * 1.5 = 270）
         cardClone.style.width = "180px";
-        cardClone.style.height = "240px";
+        cardClone.style.height = "270px";
 
         cardClone.innerHTML = `
             <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
