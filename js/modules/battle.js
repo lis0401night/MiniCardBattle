@@ -64,6 +64,7 @@ function initBattleState() {
     bs.style.backgroundColor = '#0f172a';
     bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
     updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
+    updateDeckDisplay('blue'); updateDeckDisplay('red');
     for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
     switchScreen('screen-battle'); startTurn('blue');
 }
@@ -269,7 +270,7 @@ async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = 
                     });
                     if (!confirmed) return;
                     // 既存カードを破棄
-                    board[i] = null;
+                    if (!discardCard(owner, board[i], i)) board[i] = null;
                     renderBoard();
                     // 他のセルのハイライトを再適用
                     cells.forEach((c2, i2) => {
@@ -452,7 +453,34 @@ function discardCard(owner, card, lane) {
     if ('basePower' in card) { card.power = card.basePower; }
     card.currentPower = card.power;
     (owner === 'blue' ? playerDiscard : enemyDiscard).push(card);
+    updateDeckDisplay(owner);
     return false;
+}
+
+function updateDeckDisplay(owner) {
+    const d = owner === 'blue' ? playerDeck : enemyDeck;
+    const ds = owner === 'blue' ? playerDiscard : enemyDiscard;
+    if (owner === 'blue') {
+        const el = document.getElementById('deck-info');
+        if (el) el.innerText = `Deck: ${d.length} / Drop: ${ds.length}`;
+    } else {
+        const el = document.getElementById('enemy-deck-info');
+        if (el) el.innerText = `Deck: ${d.length} / Drop: ${ds.length}`;
+    }
+}
+
+function cleanupDestroyedCards() {
+    let destroyed = false;
+    [playerBoard, enemyBoard].forEach((board, bIdx) => {
+        const owner = bIdx === 0 ? 'blue' : 'red';
+        for (let i = 0; i < 3; i++) {
+            if (board[i] && board[i].currentPower <= 0) {
+                if (!discardCard(owner, board[i], i)) board[i] = null;
+                destroyed = true;
+            }
+        }
+    });
+    return destroyed;
 }
 
 function triggerSplitSkill(owner, lane, card) {
@@ -479,11 +507,13 @@ function triggerSplitSkill(owner, lane, card) {
 }
 function drawCard(owner) {
     let d = owner === 'blue' ? playerDeck : enemyDeck, h = owner === 'blue' ? playerHand : enemyHand, ds = owner === 'blue' ? playerDiscard : enemyDiscard;
-    if (d.length === 0 && ds.length === 0) {
-        if (owner === 'blue') {
-            showAlertModal("山札がなくなりました！");
-        }
+
+    // 手札がいっぱいの場合は何もしない
+    if (h.length >= 5) {
+        updateDeckDisplay(owner);
+        return;
     }
+
     if (d.length === 0 && ds.length > 0) {
         d.push(...ds.sort(() => Math.random() - 0.5));
         ds.length = 0;
@@ -491,15 +521,11 @@ function drawCard(owner) {
         createDamagePopup(document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'), 'RELOAD', '#38bdf8');
         showDeckRefreshEffect(owner);
     }
-    if (d.length > 0 && h.length < 5) h.push(d.pop());
-    if (owner === 'blue') {
-        const el = document.getElementById('deck-info');
-        if (el) el.innerText = `Deck: ${playerDeck.length} / Drop: ${playerDiscard.length}`;
-        renderHand();
-    } else {
-        const el = document.getElementById('enemy-deck-info');
-        if (el) el.innerText = `Deck: ${enemyDeck.length} / Drop: ${enemyDiscard.length}`;
-    }
+
+    if (d.length > 0) h.push(d.pop());
+
+    updateDeckDisplay(owner);
+    if (owner === 'blue') renderHand();
 }
 
 async function startTurn(owner) {
@@ -562,6 +588,10 @@ function endTurnLogic(o) {
 
 async function playCard(o, hI, l) {
     const h = o === 'blue' ? playerHand : enemyHand, b = o === 'blue' ? playerBoard : enemyBoard;
+    // 上書き配置時の破棄処理
+    if (b[l]) {
+        if (!discardCard(o, b[l], l)) b[l] = null;
+    }
     b[l] = h.splice(hI, 1)[0]; playSound(SOUNDS.sePlace);
     if (o === 'blue') { selectedCardIndex = null; updateCardDetail(null); }
     renderHand(); renderBoard();

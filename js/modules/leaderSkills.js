@@ -107,10 +107,10 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
 
         for (let i = 0; i < 3; i++) {
             if (eBoard[i] && eBoard[i].currentPower <= 0) {
-                if (!discardCard(defO, eBoard[i], i)) eBoard[i] = null;
-                playSound(SOUNDS.seDestroy);
+                // cleanupDestroyedCardsが一括で行うのでここでは何もしないか、あるいは一括で呼ぶ
             }
         }
+        if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
         renderBoard();
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
@@ -207,8 +207,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
             }
             playSound(SOUNDS.seDamage);
             await sleep(500);
-            if (!discardCard(defO, eBoard[l], l)) eBoard[l] = null;
-            playSound(SOUNDS.seDestroy);
+            if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
             renderBoard();
             await sleep(300);
         }

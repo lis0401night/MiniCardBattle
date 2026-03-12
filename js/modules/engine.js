@@ -41,7 +41,6 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
                 if (j >= 0 && j < 3 && eB[j]) {
                     let d = spVal;
                     eB[j].currentPower -= d;
-                    if (eB[j].currentPower <= 0) eB[j] = null;
                 }
             });
             break;
@@ -57,7 +56,6 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             if (maxL !== -1) {
                 let d = snVal;
                 eB[maxL].currentPower -= d;
-                if (eB[maxL].currentPower <= 0) eB[maxL] = null;
             }
             break;
         case 'berserk':
@@ -66,7 +64,6 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             bAdj.forEach(j => {
                 if (b[j]) {
                     b[j].currentPower -= bVal;
-                    if (b[j].currentPower <= 0) b[j] = null;
                 }
             });
             break;
@@ -135,7 +132,6 @@ function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {
                 eBoard[i].currentPower -= 4;
-                if (eBoard[i].currentPower <= 0) eBoard[i] = null;
             }
         }
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {
@@ -193,7 +189,7 @@ function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
                 maxL = i;
             }
         }
-        if (maxL !== -1) eBoard[maxL] = null;
+        if (maxL !== -1) eBoard[maxL].currentPower = 0;
     }
 }
 
@@ -244,10 +240,8 @@ function applySingleCombat(state, attackerSide, l) {
         if (dmgToAtk > 0 && hasSkill(dC, 'deadly')) aC.currentPower = 0;
 
         if (dC.currentPower <= 0) {
-            defBoard[dLane] = null;
             if (hasSkill(aC, 'pierce')) defHP -= Math.max(0, aC.currentPower);
         }
-        if (aC.currentPower <= 0) atkBoard[l] = null;
     } else {
         defHP -= aP;
     }
@@ -267,7 +261,6 @@ function applyPassiveSkillLogic(state, side) {
         if (hasSkill(c, 'growth')) {
             const v = getSkillValue(c, 'growth') || 1;
             c.currentPower += v;
-            if (c.currentPower <= 0) b[i] = null;
         }
     }
 }

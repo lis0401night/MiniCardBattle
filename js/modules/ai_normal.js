@@ -139,6 +139,12 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
     applyPassiveSkillLogic(simState, 'blue');
     applyPassiveSkillLogic(simState, 'red');
     calculateCombatPhase(simState, 'blue');
+
+    // シミュレーション用のクリーンアップ（Drop増加等は不要なので直接nullにする）
+    [simState.playerBoard, simState.enemyBoard].forEach(b => {
+        for (let i = 0; i < 3; i++) if (b[i] && b[i].currentPower <= 0) b[i] = null;
+    });
+
     return simState;
 }
 

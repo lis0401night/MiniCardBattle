@@ -91,7 +91,10 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         if (['spread', 'snipe', 'berserk', 'sacrifice'].includes(skillId)) {
             playSound(SOUNDS.seDamage);
             await sleep(500);
+            if (cleanupDestroyedCards()) playSound(SOUNDS.seDestroy);
             if (skillId === 'sacrifice') checkWinCondition();
+        } else {
+            cleanupDestroyedCards();
         }
 
         renderBoard();
