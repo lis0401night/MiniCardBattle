@@ -1178,6 +1178,11 @@ h2 {
     z-index: 4;
 }
 
+/* レジェンドはオーバーレイ不要 */
+.card.rarity-4::before {
+    content: none;
+}
+
 .card.blue {
     border-color: var(--color-blue);
     box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
@@ -1205,6 +1210,29 @@ h2 {
     border-color: #facc15;
     /* Gold */
     box-shadow: 0 0 15px rgba(250, 204, 21, 0.7);
+}
+
+.card.rarity-4 {
+    border: 2px solid transparent;
+    background: linear-gradient(#334155, #334155) padding-box,
+        linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) border-box;
+    background-size: 100% 100%, 300% 300%;
+    animation: rainbow-move 4s linear infinite;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes rainbow-move {
+    0% {
+        background-position: 0% 50%, 0% 50%;
+    }
+
+    50% {
+        background-position: 0% 50%, 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%, 0% 50%;
+    }
 }
 
 /* 選択時のハイライトはレアリティより優先 */

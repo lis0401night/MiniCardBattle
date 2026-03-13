@@ -291,5 +291,10 @@ function applyPassiveSkillLogic(state, side) {
             const v = getSkillValue(c, 'growth') || 1;
             c.currentPower += v;
         }
+        if (hasSkill(c, 'contract')) {
+            const v = getSkillValue(c, 'contract') || 3;
+            if (side === 'blue') state.playerHP -= v;
+            else state.enemyHP -= v;
+        }
     }
 }

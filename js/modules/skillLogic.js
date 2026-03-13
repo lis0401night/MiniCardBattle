@@ -152,5 +152,19 @@ async function triggerStartTurnPassive(owner, lane) {
             triggered = true;
         }
     }
+
+    // Contract (契約)
+    if (c && hasSkill(c, 'contract')) {
+        const val = getSkillValue(c, 'contract') || 3;
+        const hpFill = document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill');
+
+        if (owner === 'blue') playerHP -= val;
+        else enemyHP -= val;
+
+        playSound(SOUNDS.seDamage);
+        if (hpFill) createDamagePopup(hpFill, `契約 -${val}`, '#ef4444');
+        updateHPBar();
+        triggered = true;
+    }
     return triggered;
 }

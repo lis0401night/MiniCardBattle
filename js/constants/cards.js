@@ -47,10 +47,20 @@ const CARD_MASTER = [
     { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'pierce' }], rarity: 3, flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
+    { id: 'whiterider', name: '征服の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 5 }, { id: 'snipe', value: 8 }], flavor: '第一の封印が解かれし時、白馬に乗れる者が現る。彼は征服の上に更なる征服を重ねんとし、その矢は逃れ得ぬ運命を射抜く。' },
+    { id: 'redrider', name: '戦争の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 5 }, { id: 'quick' }], flavor: '第二の封印。火の如き赤き馬に乗れる者、地上から平和を奪い去る。その大剣が振るわれる時、終わりなき争いの火蓋が切って落とされる。' },
+    { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 5 }, { id: 'spread', value: 4 }], flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
+    // トークンカード
+    {
+        id: 'palerider', name: '死の使徒', power: 5, rarity: 4,
+        skills: [{ id: 'contract', value: 5 }, { id: 'clone', value: 1 }],
+        flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。'
+    },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },
     { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '切り離されてもなお蠢き続ける蛸の足。' },
+
 ];
