@@ -465,6 +465,14 @@ async function discardCard(owner, card, lane) {
     }
     // スキル発動フラグをリセット
     card.skillTriggered = false;
+    card.stunTurns = 0;
+    card.stunAppliedThisTurn = false;
+
+    // 一時的なスキルの除去（無敵など）
+    if (Array.isArray(card.skills)) {
+        card.skills = card.skills.filter(sk => sk.id !== 'invincible');
+    }
+
     if ('basePower' in card) { card.power = card.basePower; }
     card.currentPower = card.power;
     (owner === 'blue' ? playerDiscard : enemyDiscard).push(card);
