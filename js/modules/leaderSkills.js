@@ -202,7 +202,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
             const targetCell = document.querySelector(`#${isBlue ? 'enemy' : 'player'}-lanes .cell[data-lane="${l}"] .card`);
             if (targetCell) {
                 targetCell.classList.add('anim-shake');
-                createDamagePopup(targetCell, 'DESTORY');
+                createDamagePopup(targetCell, '破壊');
             }
             playSound(SOUNDS.seDamage);
             await sleep(500);

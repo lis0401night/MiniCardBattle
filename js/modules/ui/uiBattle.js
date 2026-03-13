@@ -184,7 +184,7 @@ function showDeckRefreshEffect(owner) {
     if (!battleScreen) return;
     const effectEl = document.createElement('div');
     effectEl.className = 'deck-refresh-effect';
-    effectEl.innerText = 'DECK REFRESH';
+    effectEl.innerText = '山札補充';
     if (owner === 'blue') effectEl.style.top = '65%';
     else effectEl.style.top = '35%';
     battleScreen.appendChild(effectEl);

@@ -1111,7 +1111,7 @@ function showDeckRefreshEffect(owner) {
 
     const effectEl = document.createElement('div');
     effectEl.className = 'deck-refresh-effect';
-    effectEl.innerText = 'DECK REFRESH';
+    effectEl.innerText = '山札補充';
 
     // 配置位置（画面中央付近に浮かせる）
     if (owner === 'blue') {

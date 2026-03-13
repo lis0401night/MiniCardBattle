@@ -539,7 +539,7 @@ function triggerSplitSkill(owner, lane, card) {
         playSound(SOUNDS.sePlace);
         renderBoard();
         const cEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
-        if (cEl) createDamagePopup(cEl, 'SPLIT', '#facc15');
+        if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
     }, 100);
 }
 async function triggerExplodeSkill(owner, lane, card) {
@@ -567,7 +567,7 @@ async function triggerExplodeSkill(owner, lane, card) {
             const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${j}"] .card`);
             if (cEl) {
                 cEl.classList.add('anim-shake');
-                createDamagePopup(cEl, `EXPLODE -${val}`, '#ef4444');
+                createDamagePopup(cEl, `誘爆 -${val}`, '#ef4444');
             }
         });
 
@@ -588,7 +588,7 @@ function drawCard(owner) {
         d.push(...ds.sort(() => Math.random() - 0.5));
         ds.length = 0;
         playSound(SOUNDS.seSkill);
-        createDamagePopup(document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'), 'RELOAD', '#38bdf8');
+        createDamagePopup(document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill'), 'リロード', '#38bdf8');
         showDeckRefreshEffect(owner);
     }
 

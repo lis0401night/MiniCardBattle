@@ -10,8 +10,8 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     // 演出用のポップアップと音（一括した基本演出）
     if (['support', 'hero', 'lone_wolf', 'copy', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick'].includes(skillId)) {
         playSound(SOUNDS.seSkill);
-        const labels = { 'support': 'SUPPORT', 'hero': 'HERO', 'lone_wolf': 'LONE WOLF', 'copy': 'COPY', 'spread': 'SPREAD', 'snipe': 'SNIPE', 'berserk': 'BERSERK', 'heal': 'HEAL', 'charge': 'CHARGE', 'sacrifice': 'SACRIFICE', 'quick': 'QUICK' };
-        if (cEl) createDamagePopup(cEl, labels[skillId] || 'SKILL', '#facc15');
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'copy': '複製', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻' };
+        if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     }
 
     // --- ロジックの実行 (Engineの呼び出し) ---
@@ -25,7 +25,7 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     if (skillId === 'draw') {
         const h = o === 'blue' ? playerHand : enemyHand;
         const count = skillValue || 1;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'REPLACE', '#facc15');
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '入替', '#facc15');
         const selectedIndices = await waitPlayerHandSelection(count, o);
         if (selectedIndices.length > 0) {
             selectedIndices.sort((a, b) => b - a);
@@ -41,7 +41,7 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'clone') {
         const count = skillValue || 1;
         const tC = CARD_MASTER.find(m => m.id === 'token_clone');
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'CLONE', '#facc15');
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '分身', '#facc15');
 
         // スキルの引き継ぎ（分身以外）
         let inheritedSkills = [];
@@ -71,7 +71,7 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'quick') {
         await sleep(400); await executeSingleCombat(o, l);
     } else if (skillId === 'bind') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, 'BIND', '#facc15');
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '拘束', '#facc15');
         const eB = o === 'blue' ? enemyBoard : playerBoard;
         if (eB[l]) {
             eB[l].stunTurns = 2; eB[l].stunAppliedThisTurn = true;
