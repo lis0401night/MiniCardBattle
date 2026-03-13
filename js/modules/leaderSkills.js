@@ -97,7 +97,7 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {
                 const t = document.querySelector(`#${defS}-lanes .cell[data-lane="${i}"] .card`);
-                if (t) { t.classList.add('anim-shake'); createDamagePopup(t, '-4'); }
+                if (t) { createDamagePopup(t, '-4'); }
                 eBoard[i].currentPower -= 4;
             }
         }
@@ -201,7 +201,6 @@ async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLane
             const l = selectedLanes[0];
             const targetCell = document.querySelector(`#${isBlue ? 'enemy' : 'player'}-lanes .cell[data-lane="${l}"] .card`);
             if (targetCell) {
-                targetCell.classList.add('anim-shake');
                 createDamagePopup(targetCell, '破壊');
             }
             playSound(SOUNDS.seDamage);

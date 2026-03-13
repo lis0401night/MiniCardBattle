@@ -771,8 +771,8 @@ async function executeSingleCombat(atk, l) {
         const dE_new = document.querySelector(`${dR} .cell[data-lane="${dLane}"] .card`);
         const aE_new = document.querySelector(`${aR} .cell[data-lane="${aLane}"] .card`);
 
-        if (dE_new) { dE_new.classList.add('anim-shake'); createDamagePopup(dE_new, `-${dDef}`); }
-        if (!hasSkill(dB[l], 'defender') && aE_new) { aE_new.classList.add('anim-shake'); createDamagePopup(aE_new, `-${dAtk}`); }
+        if (dE_new) { createDamagePopup(dE_new, `-${dDef}`); }
+        if (!hasSkill(dB[l], 'defender') && aE_new) { createDamagePopup(aE_new, `-${dAtk}`); }
         playSound(SOUNDS.seDamage);
         await sleep(400);
 
