@@ -904,8 +904,8 @@ h2 {
     align-items: center;
     width: 100%;
     max-width: 400px;
-    padding: 5px 10px;
-    gap: 10px;
+    padding: min(5px, 0.5vh) 10px;
+    gap: min(10px, 1vh);
     /* Added for spacing between status containers */
     box-sizing: border-box;
 }
@@ -924,8 +924,8 @@ h2 {
 }
 
 .char-icon {
-    width: 110px;
-    height: 110px;
+    width: min(110px, 15vh);
+    height: min(110px, 15vh);
     border-radius: 50%;
     border: none;
     padding: 5px;
@@ -934,7 +934,7 @@ h2 {
     object-fit: cover;
     background-color: #334155;
     flex-shrink: 0;
-    margin-right: -25px;
+    margin-right: calc(min(110px, 15vh) * -0.22);
     /* HPバーと重ねるためにマイナス値 */
     position: relative;
     /* z-index用 */
@@ -1084,24 +1084,30 @@ h2 {
 .battle-board {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    justify-content: center;
+    gap: min(15px, 2vh);
     background: rgba(30, 41, 59, 0.45);
-    padding: 20px;
+    padding: min(15px, 2vh);
     border-radius: 16px;
     border: 1px solid #334155;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    flex-shrink: 1;
+    min-height: 0;
+    height: clamp(200px, 42vh, 450px);
+    width: fit-content;
+    align-self: center;
 }
 
 .lane-row {
-    display: grid;
-    grid-template-columns: repeat(3, 110px);
-    gap: 20px;
+    display: flex;
+    height: calc(50% - min(10px, 1vh));
+    gap: min(20px, 2vw, 2vh);
     justify-content: center;
 }
 
 .cell {
-    width: 110px;
-    height: auto;
+    height: 100%;
+    width: auto;
     aspect-ratio: 2 / 3;
     box-sizing: border-box;
     /* 枠線を含めた計算でズレを防止 */
@@ -1109,6 +1115,7 @@ h2 {
     border: 2px dashed #475569;
     border-radius: 8px;
     position: relative;
+    flex-shrink: 0;
 }
 
 .cell.highlight {
@@ -1280,9 +1287,10 @@ h2 {
     display: flex;
     gap: 1.5%;
     /* 画面幅に応じた隙間 */
-    min-height: 120px;
-    /* 固定高さを排除して中身の比率を優先 */
-    padding: 10px 2%;
+    height: 16vh;
+    min-height: 70px;
+    max-height: 150px;
+    padding: min(10px, 1vh) 2%;
     background: rgba(0, 0, 0, 0.4);
     border-radius: 12px;
     width: 100%;
@@ -1369,7 +1377,7 @@ h2 {
     width: 100%;
     max-width: 400px;
     padding: 0 10px;
-    margin-bottom: 5px;
+    margin-bottom: min(5px, 0.5vh);
 }
 
 .deck-info {
@@ -2041,18 +2049,16 @@ h2 {
     }
 
     .lane-row {
-        grid-template-columns: repeat(3, 85px);
-        gap: 10px;
+        gap: min(10px, 1.5vh);
     }
 
     .cell {
-        width: 85px;
-        height: 127.5px;
-        /* 85 * 1.5 */
+        height: 100%;
+        width: auto;
     }
 
     .card {
-        width: 65px;
+        width: min(80px, 18vw);
         height: auto;
         aspect-ratio: 2 / 3;
     }
@@ -2076,10 +2082,10 @@ h2 {
     }
 
     .hand-area {
-        min-height: 110px;
-        height: auto;
-        padding: 6px 10px;
-        gap: 6px;
+        height: 16vh;
+        min-height: 70px;
+        padding: 4px 10px;
+        gap: 4px;
     }
 
     .hand-card.selected {
@@ -2210,18 +2216,16 @@ h2 {
     }
 
     .lane-row {
-        grid-template-columns: repeat(3, 70px);
-        gap: 8px;
+        gap: min(8px, 1vh);
     }
 
     .cell {
-        width: 70px;
-        height: 105px;
-        /* 70 * 1.5 */
+        height: 100%;
+        width: auto;
     }
 
     .card {
-        width: 55px;
+        width: min(80px, 15vw);
         height: auto;
         aspect-ratio: 2 / 3;
     }
@@ -2245,10 +2249,10 @@ h2 {
     }
 
     .hand-area {
-        min-height: 100px;
-        height: auto;
-        padding: 4px 8px;
-        gap: 4px;
+        height: 15vh;
+        min-height: 60px;
+        padding: 2px 5px;
+        gap: 2px;
     }
 
     .hand-card.selected {
