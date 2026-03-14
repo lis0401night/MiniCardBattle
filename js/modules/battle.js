@@ -34,14 +34,12 @@ function initBattleState() {
     const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
     const stageData = STAGES[stageId];
 
-    // BGMの再生（魔王城は特殊扱い）
-    if (gameMode === 'story' && enemyConfig.id === 'satan') {
-        playSound(SOUNDS.bgmLastBattle);
-    } else {
-        const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-        playSound(SOUNDS[bgmKey]);
-    }
-    playerMaxHP = MAX_HP; enemyMaxHP = (enemyConfig.id === 'satan') ? 40 : MAX_HP;
+    // BGMの再生
+    const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
+    playSound(SOUNDS[bgmKey]);
+    playerMaxHP = MAX_HP;
+    enemyMaxHP = (gameMode === 'event_satan') ? 100 : (enemyConfig.id === 'satan') ? 40 : MAX_HP;
+    if (gameMode === 'event_satan') aiLevel = 3; // 念のため再セット
     playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
     playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
     playerBoard = [null, null, null]; enemyBoard = [null, null, null];
@@ -615,6 +613,7 @@ async function startTurn(owner) {
 
     // ターン開始時スキルの発動
     await triggerStartTurnSkills(owner);
+    if (isBattleEnded) return;
 
     if ((owner === 'blue' ? playerBoard : enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
 
@@ -693,11 +692,12 @@ async function triggerStartTurnSkills(owner) {
 
     for (let i = 0; i < 3; i++) {
         const tr = await triggerStartTurnPassive(owner, i);
-        if (tr) triggered = true;
-    }
-    if (triggered) {
-        renderBoard();
-        await sleep(600);
+        if (tr) {
+            triggered = true;
+            renderBoard();
+            await sleep(600); // 各レーンの発動ごとに待機して、複数が重ならないようにする
+            if (checkWinCondition()) return;
+        }
     }
 }
 

@@ -69,6 +69,7 @@ const UI_COMPONENTS = {
         <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showRules()">遊び方</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">ストーリー</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">フリーバトル</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #f97316, #db2777);" onclick="showEventMenu()">イベント</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #8b5cf6, #6d28d9);" onclick="showGallery()">ギャラリー</button>
     </div>
     `,
@@ -78,8 +79,8 @@ const UI_COMPONENTS = {
     <div id="screen-gallery-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">ギャラリー</h2>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #059669);" onclick="showCardList()">カード一覧</button>
-        <div style="margin-top: 20px; border-top: 1px solid #334155; width: 250px; padding-top: 20px;">
-            <button class="btn" style="width: 250px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
+            <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
         </div>
     </div>
     `,
@@ -94,7 +95,7 @@ const UI_COMPONENTS = {
             <div id="gallery-card-grid" class="card-list-grid-3col"></div>
         </div>
 
-        <button class="btn" style="margin-top: 15px; width: 100%; background: #475569;" onclick="switchScreen('screen-gallery-menu')">戻る</button>
+        <button class="btn" style="margin-top: 15px; background: #475569;" onclick="switchScreen('screen-gallery-menu')">戻る</button>
     </div>
     `,
 
@@ -113,7 +114,7 @@ const UI_COMPONENTS = {
                 <li>先に相手リーダーのHPを0にすれば勝利です。</li>
             </ul>
         </div>
-        <button class="btn" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <button class="btn" style="width: 250px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
     </div>
     `,
 
@@ -248,6 +249,50 @@ const UI_COMPONENTS = {
         <div class="loader"></div>
         <div id="loading-text">Generating Cards... 0%</div>
         <p style="color:#94a3b8; font-size:0.8rem; margin-top:10px; text-align: center;">デッキを構築しています</p>
+    </div>
+    `,
+
+    eventMenuScreen: `
+    <!-- イベントメニュー画面 -->
+    <div id="screen-event-menu" class="screen">
+        <h2 style="color: #facc15; margin-bottom: 40px;">イベント</h2>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #7f1d1d);" onclick="startHighDifficulty()">高難易度</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #065f46);" onclick="startDefenseBattle()">防衛戦</button>
+        <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
+            <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        </div>
+    </div>
+    `,
+
+    highDifficultyScreen: `
+    <!-- 高難易度画面 -->
+    <div id="screen-high-difficulty" class="screen">
+        <h2 style="color: #facc15; margin-bottom: 20px;">高難易度</h2>
+        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showHighDifficultyRules()">ルール</button>
+        
+        <div class="banner-container">
+            <button class="btn-banner legendary" onclick="handleSatanBattle()">
+                <img src="assets/icon_satan.png" class="banner-icon">
+                <span class="banner-text" style="color: #ef4444;">復活の魔王 サタン</span>
+            </button>
+        </div>
+
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-event-menu')">戻る</button>
+    </div>
+    `,
+
+    highDifficultyRulesScreen: `
+    <!-- 高難易度ルール画面 -->
+    <div id="screen-high-difficulty-rules" class="screen">
+        <h2 style="color: #facc15;">ルール</h2>
+        <div class="rule-box">
+            <ul>
+                <li>特別な対戦相手と戦えます。</li>
+                <li>ここでしか手に入らない限定の報酬を手に入れましょう。</li>
+                <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>遥かに強力な相手のため、ストーリーやフリーバトルでカードを集めてから挑むように注意してください。</b></li>
+            </ul>
+        </div>
+        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-high-difficulty')">戻る</button>
     </div>
     `,
 
