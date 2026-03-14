@@ -2,11 +2,16 @@
  * Mini Card Battle - Enemy Deck: High Difficulty Satan
  */
 const ENEMY_DECK_SATAN_HIGH = [
-    'whiterider', 'whiterider', 'whiterider', 'whiterider',
-    'redrider', 'redrider', 'redrider', 'redrider',
-    'blackrider', 'blackrider', 'blackrider', 'blackrider',
-    'palerider', 'palerider', 'palerider', 'palerider',
-    'daemon', 'daemon', 'daemon', 'daemon'
+    'whiterider', 'whiterider',
+    'redrider', 'redrider',
+    'blackrider', 'blackrider',
+    'palerider', 'palerider',
+    'bahamut', 'bahamut',
+    'daemon', 'daemon',
+    'warlock', 'warlock',
+    'dealer', 'dealer',
+    'devil', 'devil',
+    'goat', 'goat',
 ];
 // Register to global decks
 if (typeof ENEMY_DECKS !== 'undefined') {

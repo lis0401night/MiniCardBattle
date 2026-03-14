@@ -12,7 +12,7 @@ ENEMY_DECKS.dragon = {
     normal: [
         'golem', 'golem', 'golem', 'golem',
         'dragon',
-        'warlock', 'warlock',
+        'drifter', 'drifter',
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
         'berserker', 'berserker',
@@ -22,7 +22,7 @@ ENEMY_DECKS.dragon = {
     ],
     hard: [
         'dragon', 'dragon', 'dragon', 'dragon',
-        'warlock', 'warlock', 'warlock', 'warlock',
+        'drifter', 'drifter', 'drifter', 'drifter',
         'berserker', 'berserker', 'berserker', 'berserker',
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
