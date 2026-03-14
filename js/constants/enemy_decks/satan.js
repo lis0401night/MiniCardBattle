@@ -10,14 +10,15 @@ ENEMY_DECKS.satan = {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'daemon',
+        'bahamut',
+        'daemon', 'daemon',
         'dealer', 'dealer', 'dealer', 'dealer',
         'devil', 'devil', 'devil', 'devil',
         'mage', 'mage', 'mage', 'mage',
         'clone', 'clone', 'clone', 'clone',
     ],
     hard: [
-        'golem', 'golem', 'golem', 'golem',
+        'bahamut', 'bahamut', 'bahamut', 'bahamut',
         'daemon', 'daemon', 'daemon', 'daemon',
         'warlock', 'warlock', 'warlock', 'warlock',
         'dealer', 'dealer', 'dealer', 'dealer',

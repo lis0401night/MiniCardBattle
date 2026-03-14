@@ -85,7 +85,8 @@ body {
 #screen-event-menu,
 #screen-high-difficulty,
 #screen-high-difficulty-rules,
-#screen-stage-select {
+#screen-stage-select,
+#screen-gallery-menu {
     background-color: #0f172a;
     background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('../assets/background_select.png');
     background-size: cover;

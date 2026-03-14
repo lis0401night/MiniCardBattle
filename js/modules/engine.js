@@ -267,6 +267,10 @@ function applySingleCombat(state, attackerSide, l) {
         if (hasSkill(dC, 'invincible')) dmgToDef = 0;
         if (hasSkill(aC, 'invincible')) dmgToAtk = 0;
 
+        // 連撃（ダブルストライク）: 与えるダメージ2倍
+        if (hasSkill(aC, 'double_strike')) dmgToDef *= 2;
+        if (hasSkill(dC, 'double_strike')) dmgToAtk *= 2;
+
         dC.currentPower -= dmgToDef;
         aC.currentPower -= dmgToAtk;
 
@@ -274,10 +278,16 @@ function applySingleCombat(state, attackerSide, l) {
         if (dmgToAtk > 0 && hasSkill(dC, 'deadly')) aC.currentPower = 0;
 
         if (dC.currentPower <= 0) {
-            if (hasSkill(aC, 'pierce')) defHP -= Math.max(0, aC.currentPower);
+            if (hasSkill(aC, 'pierce')) {
+                let pDmg = Math.max(0, aC.currentPower);
+                if (hasSkill(aC, 'double_strike')) pDmg *= 2;
+                defHP -= pDmg;
+            }
         }
     } else {
-        defHP -= aP;
+        let finalDmg = aP;
+        if (hasSkill(aC, 'double_strike')) finalDmg *= 2;
+        defHP -= finalDmg;
     }
 
     if (attackerSide === 'blue') state.enemyHP = defHP;

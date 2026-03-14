@@ -762,6 +762,10 @@ async function executeSingleCombat(atk, l) {
         if (hasSkill(dB[l], 'sturdy')) dDef = Math.floor(dDef / 2); if (hasSkill(aC, 'sturdy')) dAtk = Math.floor(dAtk / 2);
         if (hasSkill(dB[l], 'invincible')) dDef = 0; if (hasSkill(aC, 'invincible')) dAtk = 0;
 
+        // 連撃（ダブルストライク）: 与えるダメージ2倍
+        if (hasSkill(aC, 'double_strike')) dDef *= 2;
+        if (hasSkill(dB[l], 'double_strike')) dAtk *= 2;
+
         let dLane = l;
         let dg = (l === 1) ? (hasSkill(dB[0], 'guardian') ? 0 : (hasSkill(dB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(dB[1], 'guardian') ? 1 : null) : (hasSkill(dB[1], 'guardian') ? 1 : null));
         if (dg !== null) dLane = dg;
@@ -805,7 +809,8 @@ async function executeSingleCombat(atk, l) {
         const destroyed = await cleanupDestroyedCards();
 
         if (dD && !aD && hasSkill(aC, 'pierce')) {
-            const pD = aC.currentPower;
+            let pD = aC.currentPower;
+            if (hasSkill(aC, 'double_strike')) pD *= 2;
             if (pD > 0) {
                 await sleep(200); playSound(SOUNDS.seDamage);
                 if (atk === 'blue') { enemyHP -= pD; createDamagePopup(document.getElementById('enemy-hp-fill'), `-${pD}`); }
@@ -814,7 +819,9 @@ async function executeSingleCombat(atk, l) {
             }
         }
     } else {
-        const d = aC.currentPower; playSound(SOUNDS.seDamage); document.body.classList.add('anim-shake');
+        let d = aC.currentPower;
+        if (hasSkill(aC, 'double_strike')) d *= 2;
+        playSound(SOUNDS.seDamage); document.body.classList.add('anim-shake');
         if (atk === 'blue') { enemyHP -= d; createDamagePopup(document.getElementById('enemy-hp-fill'), `-${d}`); showSpeechBubble('red'); }
         else { playerHP -= d; createDamagePopup(document.getElementById('player-hp-fill'), `-${d}`); showSpeechBubble('blue'); }
         updateHPBar(); if (checkWinCondition()) return; await sleep(400); document.body.classList.remove('anim-shake');
