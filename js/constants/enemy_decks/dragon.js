@@ -3,9 +3,9 @@ ENEMY_DECKS.dragon = {
         'golem', 'golem', 'golem', 'golem',
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
+        'dancer', 'dancer', 'dancer',
         'dinosaur', 'dinosaur', 'dinosaur',
         'cheetah', 'cheetah', 'cheetah',
-        'scorpion', 'scorpion', 'scorpion',
         'sniper', 'sniper', 'sniper',
 
     ],
@@ -16,9 +16,9 @@ ENEMY_DECKS.dragon = {
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
         'berserker', 'berserker',
+        'dancer', 'dancer', 'dancer',
         'cheetah', 'cheetah',
-        'scorpion', 'scorpion',
-        'dinosaur', 'dinosaur', 'dinosaur',
+        'dinosaur', 'dinosaur',
     ],
     hard: [
         'dragon', 'dragon', 'dragon', 'dragon',
@@ -26,6 +26,7 @@ ENEMY_DECKS.dragon = {
         'berserker', 'berserker', 'berserker', 'berserker',
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
-        'sniper', 'sniper', 'sniper', 'sniper',
+        'dancer', 'dancer',
+        'dinosaur', 'dinosaur',
     ]
 };
