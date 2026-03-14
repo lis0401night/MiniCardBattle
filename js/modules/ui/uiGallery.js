@@ -87,10 +87,13 @@ function debugUnlockCards() {
             }
         });
         
-        // プレミアムカード(empress)の解放
-        if (!unlockedPremiumCards.includes('empress')) {
-            unlockedPremiumCards.push('empress');
-        }
+        // プレミアムカード(empress, assassin)の解放
+        const premiumTargets = ['empress', 'assassin'];
+        premiumTargets.forEach(id => {
+            if (!unlockedPremiumCards.includes(id)) {
+                unlockedPremiumCards.push(id);
+            }
+        });
         
         saveDeck();
         playSound(SOUNDS.seSkill);
