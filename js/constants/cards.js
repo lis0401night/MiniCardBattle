@@ -30,7 +30,7 @@ const CARD_MASTER = [
     { id: 'mage', name: '学院の雷撃魔導士', power: 2, skill: 'spread', skillValue: 2, rarity: 2, flavor: '魔導アカデミーの雷撃魔導士。周囲の魔力を吸収し、雷撃を放つ。' },
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', rarity: 2, flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
     { id: 'prince', name: '星の王子', power: 1, skill: 'stealth', skillValue: 2, rarity: 2, flavor: '黒き触手に抱かれた幼き王は、遥か宇宙の深淵から、我らの空へと帰還しつつある。', imgUrl: 'assets/card_prince.jpg' },
-    { id: 'copy', name: 'ホムンクルスの実験体', power: 1, skill: 'copy', rarity: 2, flavor: '錬金術の過程で生み出された不安定な生命。周囲の情報を読み取り、その姿を不完全に模倣する。' },
+    { id: 'copy', name: '虚無の目覚め', power: 4, skill: 'morph', skillValue: 1, rarity: 2, flavor: 'その巨大な眼差しに見つめられた時、存在の意味は虚空へと霧散し、ただ静寂のみが残される。' },
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'zombie', name: '解き放たれた囚人', power: 1, skills: [{ id: 'clone', value: 2 }, { id: 'growth', value: -1 }], rarity: 2, flavor: 'かつて地下牢に繋がれていた者たちの成れの果て。その怨念は果てることなく、仲間を呼び寄せながら朽ちてゆく。', imgUrl: 'assets/card_zombie.jpg' },
     { id: 'barrier', name: '聖光の護り手', power: 4, skills: [{ id: 'guardian' }, { id: 'support', value: 1 }], rarity: 2, flavor: '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。', imgUrl: 'assets/card_barrier.jpg' },
@@ -48,16 +48,17 @@ const CARD_MASTER = [
     { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'pierce' }], rarity: 3, flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
-    { id: 'whiterider', name: '征服の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'snipe', value: 8 }], flavor: '第一の封印が解かれし時、白馬に乗れる者が現る。彼は征服の上に更なる征服を重ねんとし、その矢は逃れ得ぬ運命を射抜く。' },
-    { id: 'redrider', name: '戦争の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'quick' }], flavor: '第二の封印。火の如き赤き馬に乗れる者、地上から平和を奪い去る。その大剣が振るわれる時、終わりなき争いの火蓋が切って落とされる。' },
-    { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'spread', value: 4 }], flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
-    { id: 'palerider', name: '死の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
+    { id: 'whiterider', name: '征服の使徒', power: 6, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'snipe', value: 8 }], flavor: '第一の封印が解かれし時、白馬に乗れる者が現る。彼は征服の上に更なる征服を重ねんとし、その矢は逃れ得ぬ運命を射抜く。' },
+    { id: 'redrider', name: '戦争の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'quick' }], flavor: '第二の封印。火の如き赤き馬に乗れる者、地上から平和を奪い去る。その大剣が振るわれる時、終わりなき争いの火蓋が切って落とされる。' },
+    { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'morph', value: 2 }], flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
+    { id: 'palerider', name: '死の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },
     { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '切り離されてもなお蠢き続ける蛸の足。' },
+    { id: 'token_void', name: '虚空', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '形なき虚無の欠片。それは何も生み出さず、ただそこにあるだけの空虚。', imgUrl: 'assets/card_token_void.jpg' }
 
 
 ];

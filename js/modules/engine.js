@@ -30,10 +30,39 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             const empty = b.filter(x => x === null).length;
             c.currentPower += empty * (val || 3);
             break;
-        case 'copy':
-            const cAdj = l === 1 ? [0, 2] : [1];
-            let total = 0; cAdj.forEach(j => { if (b[j]) total += (b[j].currentPower !== undefined ? b[j].currentPower : b[j].power); });
-            c.currentPower += total;
+        case 'morph':
+            const eH = owner === 'blue' ? state.enemyHand : state.playerHand;
+            if (eH && eH.length > 0) {
+                const count = val || 1;
+                for (let k = 0; k < count; k++) {
+                    if (eH.length === 0) break;
+                    let maxIdx = -1;
+                    let maxP = -1;
+                    for (let i = 0; i < eH.length; i++) {
+                        if (eH[i].power > maxP) {
+                            maxP = eH[i].power;
+                            maxIdx = i;
+                        }
+                    }
+                    if (maxIdx !== -1) {
+                        // 捨てて虚空を加える
+                        const discarded = eH.splice(maxIdx, 1)[0];
+                        const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
+                        if (eD) eD.push(discarded);
+
+                        const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+                        // 虚空トークンの追加
+                        const voidToken = {
+                            ...voidTpl,
+                            id: `token_void_${Date.now()}_${k}`,
+                            owner: owner === 'blue' ? 'red' : 'blue',
+                            currentPower: voidTpl.power,
+                            basePower: voidTpl.power,
+                        };
+                        eH.push(voidToken);
+                    }
+                }
+            }
             break;
         case 'spread':
             const spVal = val || 2;
@@ -77,8 +106,8 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
             else state.enemyHP -= (val || 3);
             break;
         case 'charge':
-            if (owner === 'blue') state.playerSP += (val || 2);
-            else state.enemySP += (val || 2);
+            if (owner === 'blue') state.playerSP = Math.max(0, state.playerSP + (val || 2));
+            else state.enemySP = Math.max(0, state.enemySP + (val || 2));
             break;
         case 'quick':
             applySingleCombat(state, owner, l);
@@ -258,7 +287,7 @@ function applySingleCombat(state, attackerSide, l) {
 /**
  * ターン開始パッシブの適用
  */
-function applyPassiveSkillLogic(state, side) {
+function applyPassiveSkillLogic(state, side, skipContract = false) {
     // シミュレーション用のクリーンアップ
     let anyDestroyed = true;
     while (anyDestroyed) {
@@ -291,7 +320,7 @@ function applyPassiveSkillLogic(state, side) {
             const v = getSkillValue(c, 'growth') || 1;
             c.currentPower += v;
         }
-        if (hasSkill(c, 'contract')) {
+        if (hasSkill(c, 'contract') && !skipContract) {
             const v = getSkillValue(c, 'contract') || 3;
             if (side === 'blue') state.playerHP -= v;
             else state.enemyHP -= v;

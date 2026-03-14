@@ -30,55 +30,51 @@ function initStoryMode(charId) {
     });
 }
 
-function processStoryNextStep() {
+/**
+ * ストーリーモードの進行管理
+ */
+function handleStoryProgression() {
     if (appState === 'pre_dialogue') {
         startBattleFlow();
     } else if (appState === 'post_dialogue') {
-        if (gameMode === 'free') {
-            performFadeTransition(() => {
-                startGameMode('free');
-            });
+        if (lastBattleResult === 'lose') {
+            showContinueScreen();
         } else {
-            // ストーリーモードの場合
-            if (lastBattleResult === 'lose') {
-                showContinueScreen();
-            } else {
-                // 戦闘に勝利した場合、中間のストーリーがあるか判定
-                if (playerConfig.interBattleStory && enemyConfig.id !== 'satan') {
-                    appState = 'inter_battle_story';
-                    dialogueQueue = [];
+            // 戦闘に勝利した場合、中間のストーリーがあるか判定
+            if (playerConfig.interBattleStory && enemyConfig.id !== 'satan') {
+                appState = 'inter_battle_story';
+                dialogueQueue = [];
 
-                    let storyLines = null;
-                    const stories = playerConfig.interBattleStory;
+                let storyLines = null;
+                const stories = playerConfig.interBattleStory;
 
-                    if (stories[battleCount]) {
-                        storyLines = stories[battleCount];
-                    } else if (stories.default && stories.default.length > 0) {
-                        const randomIndex = Math.floor(Math.random() * stories.default.length);
-                        storyLines = stories.default[randomIndex];
-                    }
+                if (stories[battleCount]) {
+                    storyLines = stories[battleCount];
+                } else if (stories.default && stories.default.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * stories.default.length);
+                    storyLines = stories.default[randomIndex];
+                }
 
-                    if (storyLines) {
-                        storyLines.forEach(text => {
-                            dialogueQueue.push({ speaker: 'player', text: text });
-                        });
-                        performFadeTransition(() => {
-                            setupDialogueScreen();
-                        });
-                    } else {
-                        // ストーリーが無ければ即座にカウントアップして次へ
-                        battleCount++;
-                        performFadeTransition(() => {
-                            startNextBattleSequence();
-                        });
-                    }
+                if (storyLines) {
+                    storyLines.forEach(text => {
+                        dialogueQueue.push({ speaker: 'player', text: text });
+                    });
+                    performFadeTransition(() => {
+                        setupDialogueScreen();
+                    });
                 } else {
-                    // サタン戦などのあと
+                    // ストーリーが無ければ即座にカウントアップして次へ
                     battleCount++;
                     performFadeTransition(() => {
                         startNextBattleSequence();
                     });
                 }
+            } else {
+                // 通常勝利またはサタン戦後のストーリー用
+                battleCount++;
+                performFadeTransition(() => {
+                    startNextBattleSequence();
+                });
             }
         }
     } else if (appState === 'story_intro') {

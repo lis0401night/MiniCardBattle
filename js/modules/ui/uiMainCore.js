@@ -1,6 +1,7 @@
-// ==========================================
-// UI Core Logic (Navigation & Global Settings)
-// ==========================================
+/**
+ * Mini Card Battle - UI Core (uiMainCore.js)
+ * VERSION: 1.2
+ */
 
 // 初期ロード時に音量を復元
 (function () {
@@ -12,6 +13,8 @@
         window.gameVolume = parseFloat(savedVol);
     }
 })();
+
+console.log("!!! uiMainCore.js Version 1.2 Loaded !!!");
 
 function goToModeSelect() {
     playSound(SOUNDS.seClick);
@@ -154,9 +157,7 @@ function importDataFromXML() {
 
 function reloadGame() {
     playSound(SOUNDS.seClick);
-    const url = new URL(window.location.href);
-    url.searchParams.set('reload', Date.now());
-    window.location.href = url.toString();
+    location.reload();
 }
 
 let rulesClickCount = 0;
@@ -178,6 +179,7 @@ function goBackFromSelect() {
         appState = 'select_player';
         document.getElementById('select-title').innerText = "キャラクター選択";
         initSelectScreen(false);
+        switchScreen('screen-select');
     } else {
         switchScreen('screen-mode-select');
     }
@@ -193,7 +195,7 @@ function goBackFromDifficulty() {
     } else {
         appState = 'select_enemy';
         document.getElementById('select-title').innerText = "対戦相手";
-        initSelectScreen(true);
+        initSelectScreen(false);
         switchScreen('screen-select');
     }
 }
@@ -209,50 +211,66 @@ function startGameMode(mode) {
     gameMode = mode;
     document.getElementById('select-title').innerText = "キャラクター選択";
     appState = 'select_player';
-    initSelectScreen(false);
+    initSelectScreen(mode === 'event_satan' ? false : false); // Satan is not selectable in either for now
     switchScreen('screen-select');
 }
 
 async function performFadeTransition(action) {
-    if (isProcessing) return;
+    if (isProcessing) {
+        if (typeof debugLog === 'function') debugLog("Fade blocked: isProcessing is true");
+        return;
+    }
     isProcessing = true;
+    const fade = document.getElementById('app-fade-layer') || document.getElementById('fade-overlay');
+
     try {
-        const fade = document.getElementById('fade-overlay');
-        const portraitContainer = document.querySelector('.portrait-container');
-        const portraits = document.querySelectorAll('.char-portrait');
-
-        if (fade) fade.classList.add('active');
-        await sleep(500);
-
-        if (portraitContainer) {
-            portraitContainer.style.display = 'none';
-            portraits.forEach(p => {
-                p.style.transition = 'none';
-            });
+        if (typeof debugLog === 'function') debugLog("Fade Start (V2)");
+        if (fade) {
+            fade.style.display = 'block';
+            // Force reflow
+            fade.offsetHeight;
+            fade.classList.add('active');
         }
 
-        if (action) action();
+        await sleep(650);
 
-        await new Promise(resolve => requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                setTimeout(resolve, 80);
-            });
-        }));
-
-        if (portraitContainer) {
-            portraitContainer.style.display = 'flex';
+        if (action) {
+            try {
+                if (typeof debugLog === 'function') debugLog("Action Start...");
+                await action();
+                if (typeof debugLog === 'function') debugLog("Action Complete.");
+            } catch (err) {
+                console.error("Action Error:", err);
+                if (typeof debugLog === 'function') debugLog("ACTION ERROR: " + err.message);
+            }
         }
 
-        if (fade) fade.classList.remove('active');
+        // Wait for DOM
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
 
-        await sleep(500);
-        if (portraits) {
-            portraits.forEach(p => {
-                p.style.transition = '';
-            });
+        if (fade) {
+            fade.classList.remove('active');
+            // Wait for transition
+            await sleep(650);
+            fade.style.display = 'none';
         }
+
+        // Nuclear cleanup
+        document.querySelectorAll('.fade-overlay').forEach(el => {
+            el.classList.remove('active');
+            el.style.display = 'none';
+        });
+
+    } catch (e) {
+        console.error("Fade failed:", e);
     } finally {
+        if (typeof debugLog === 'function') debugLog("Fade End.");
         isProcessing = false;
+        // Final safety unlock
+        if (fade) {
+            fade.classList.remove('active');
+            fade.style.display = 'none';
+        }
     }
 }
 
@@ -323,17 +341,50 @@ function closeCharDetail() {
     switchScreen('screen-select');
 }
 
+function showEventMenu() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-event-menu');
+}
+
+function startHighDifficulty() {
+    playSound(SOUNDS.seClick);
+    performFadeTransition(() => {
+        switchScreen('screen-high-difficulty');
+    });
+}
+
+function showHighDifficultyRules() {
+    playSound(SOUNDS.seClick);
+    performFadeTransition(() => {
+        switchScreen('screen-high-difficulty-rules');
+    });
+}
+
+function handleSatanBattle() {
+    playSound(SOUNDS.seClick);
+    // サタン戦開始時、まずはキャラクター選択画面へ
+    startGameMode('event_satan');
+}
+
+function startDefenseBattle() {
+    playSound(SOUNDS.seClick);
+    showConfirmModal("防衛戦コンテンツは現在準備中です。");
+}
+
 function confirmCharSelect() {
     playSound(SOUNDS.seClick);
     if (appState === 'select_player') {
         if (gameMode === 'story') {
             appState = 'select_difficulty';
             switchScreen('screen-difficulty');
+        } else if (gameMode === 'event_satan') {
+            // 高難易度サタン戦専用の導入へ
+            initEventSatanMode(pendingCharId);
         } else {
             playerConfig = CHARACTERS[pendingCharId];
             appState = 'select_enemy';
             document.getElementById('select-title').innerText = "対戦相手";
-            initSelectScreen(true);
+            initSelectScreen(false);
             switchScreen('screen-select');
         }
     } else if (appState === 'select_enemy') {
@@ -398,25 +449,4 @@ function confirmStageSelect(stageId) {
         { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
     ];
     setupDialogueScreen();
-}
-
-function showEventMenu() {
-    playSound(SOUNDS.seClick);
-    switchScreen('screen-event-menu');
-}
-
-function startHighDifficulty() {
-    playSound(SOUNDS.seClick);
-    switchScreen('screen-high-difficulty');
-}
-
-function showHighDifficultyRules() {
-    playSound(SOUNDS.seClick);
-    switchScreen('screen-high-difficulty-rules');
-}
-
-function handleSatanBattle() {
-    playSound(SOUNDS.seClick);
-    pendingCharId = playerConfig.id; // 現在選択中のキャラを引き継ぐ
-    initEventSatanMode(pendingCharId);
 }

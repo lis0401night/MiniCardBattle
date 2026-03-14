@@ -137,7 +137,7 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
     }
 
     applyPassiveSkillLogic(simState, 'blue');
-    applyPassiveSkillLogic(simState, 'red');
+    applyPassiveSkillLogic(simState, 'red', true); // 四騎士の属性自傷ダメージは評価に含めない
     calculateCombatPhase(simState, 'blue');
 
     // シミュレーション用のクリーンアップ（Drop増加等は不要なので直接nullにする）
@@ -154,8 +154,12 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
 function evaluateSimulatedState(myBoard, opBoard, myHP, mySP = 0) {
     if (myHP <= 0) return -1000000;
 
-    let score = myHP * 5000;
-    score += mySP * 400;
+    // HP評価の重みを、残りHPが多い時は少し下げる（自傷カードを使いやすくする）
+    let hpWeight = 5000;
+    if (myHP > 30) hpWeight = 1000; // 高HP時は1HPの価値を低く見積もる
+
+    let score = myHP * hpWeight;
+    score += (mySP || 0) * 400;
 
     for (let i = 0; i < 3; i++) {
         if (myBoard[i]) {

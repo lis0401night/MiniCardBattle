@@ -8,9 +8,9 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'copy', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick'].includes(skillId)) {
         playSound(SOUNDS.seSkill);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'copy': '複製', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     }
 
@@ -18,7 +18,9 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const currentState = {
         playerBoard, enemyBoard,
         playerHP, enemyHP,
-        playerSP, enemySP
+        playerSP, enemySP,
+        playerHand, enemyHand,
+        playerDiscard, enemyDiscard
     };
 
     // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick等)
@@ -86,10 +88,12 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         // エンジンによる状態変化をグローバル変数に反映
         playerHP = currentState.playerHP; enemyHP = currentState.enemyHP;
         playerSP = currentState.playerSP; enemySP = currentState.enemySP;
+        playerDiscard = currentState.playerDiscard; enemyDiscard = currentState.enemyDiscard;
+        updateDeckDisplay('blue'); updateDeckDisplay('red');
 
         // 演出: 盤面の大幅な変化（破壊等）を伴うスキルの後処理
-        if (['spread', 'snipe', 'berserk', 'sacrifice'].includes(skillId)) {
-            playSound(SOUNDS.seDamage);
+        if (['spread', 'snipe', 'berserk', 'sacrifice', 'morph'].includes(skillId)) {
+            playSound(o === 'blue' ? SOUNDS.seDamage : SOUNDS.seSkill); // 相手が変化させられた場合はダメージ音に近い感覚か、スキル音か。
             await sleep(100); // わずかに待つ
             if (await cleanupDestroyedCards()) {
                 // cleanup内でseDestroyは鳴る
@@ -100,6 +104,7 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         }
 
         renderBoard();
+        renderHand();
         updateHPBar();
         updateSPOrbs('blue');
         updateSPOrbs('red');

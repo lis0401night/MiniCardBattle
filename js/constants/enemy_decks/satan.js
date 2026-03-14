@@ -1,8 +1,8 @@
 ENEMY_DECKS.satan = {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'dealer', 'dealer', 'dealer',
-        'devil', 'devil', 'devil',
+        'dealer', 'dealer', 'dealer', 'dealer',
+        'devil', 'devil', 'devil', 'devil',
         'copy', 'copy',
         'mage', 'mage',
         'wall', 'wall',
@@ -11,24 +11,17 @@ ENEMY_DECKS.satan = {
     normal: [
         'golem', 'golem', 'golem', 'golem',
         'daemon',
-        'dealer', 'dealer',
-        'devil', 'devil',
-        'wall', 'wall',
-        'copy', 'copy',
-        'mage', 'mage', 'mage',
+        'dealer', 'dealer', 'dealer', 'dealer',
+        'devil', 'devil', 'devil', 'devil',
+        'mage', 'mage', 'mage', 'mage',
         'clone', 'clone', 'clone', 'clone',
     ],
     hard: [
+        'golem', 'golem', 'golem', 'golem',
         'daemon', 'daemon', 'daemon', 'daemon',
-        'cyberdragoon',
-        'champion',
-        'dragon',
-        'oldgod',
-        'wolf',
-        'empress',
-        'copy', 'copy',
-        'dealer', 'dealer',
-        'devil', 'devil',
+        'warlock', 'warlock', 'warlock', 'warlock',
+        'dealer', 'dealer', 'dealer', 'dealer',
+        'devil', 'devil', 'devil', 'devil',
         'clone', 'clone', 'clone', 'clone',
     ]
 };

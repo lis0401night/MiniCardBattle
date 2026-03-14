@@ -18,7 +18,9 @@ function generateDeck(owner, config, sessionId) {
         });
     } else {
         // 敵のデッキ生成
-        let recipe = ENEMY_DECKS[config.id] || ENEMY_DECKS.android;
+        let recipeId = config.id;
+        if (gameMode === 'event_satan') recipeId = 'satan_high';
+        let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
         let deckIds = [];
 
         if (recipe.easy && recipe.normal && recipe.hard) {
@@ -38,10 +40,10 @@ function generateDeck(owner, config, sessionId) {
         deckIds.forEach((cardId, i) => {
             const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
-            if (config.id === 'satan') p += 1; // サタン補正は維持
+            // if (config.id === 'satan') p += 1; // サタン補正は削除
 
             // ミラーマッチ（シャドウ）用のフィルタ処理
-            let filter = config.filter;
+            let filter = (config.id === 'satan') ? 'none' : config.filter;
             if (config.isShadow) {
                 filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
             }

@@ -82,7 +82,7 @@ function setupDialogueScreen() {
 function showNextDialogue(force = false) {
     if (isProcessing && !force) return;
     if (currentDialogueIndex >= dialogueQueue.length) {
-        processStoryNextStep();
+        handleProgressionNextStep();
         return;
     }
     playSound(SOUNDS.seClick);
@@ -156,18 +156,22 @@ function executeContinue() {
     imgEl.src = playerConfig.image;
     imgEl.classList.add('revive');
     setTimeout(() => {
-        appState = 'pre_dialogue';
-        let introText = (enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(enemyConfig, playerConfig, 'intro');
-        if (enemyConfig.isShadow) introText = "・・・・";
-        dialogueQueue = [
-            { speaker: 'enemy', text: introText },
-            { speaker: 'player', text: enemyConfig.isShadow ? (playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(playerConfig, enemyConfig, 'intro') }
-        ];
-        if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
-            introText = "……よくぞここまで辿り着いたな。" + getDialogue(enemyConfig, playerConfig, 'intro');
-            dialogueQueue[0].text = introText;
+        if (gameMode === 'event_satan') {
+            setupEventSatanConfrontation();
+        } else {
+            appState = 'pre_dialogue';
+            let introText = (enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(enemyConfig, playerConfig, 'intro');
+            if (enemyConfig.isShadow) introText = "・・・・";
+            dialogueQueue = [
+                { speaker: 'enemy', text: introText },
+                { speaker: 'player', text: enemyConfig.isShadow ? (playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(playerConfig, enemyConfig, 'intro') }
+            ];
+            if (enemyConfig.id === 'satan' && !enemyConfig.isShadow) {
+                introText = "……よくぞここまで辿り着いたな。" + getDialogue(enemyConfig, playerConfig, 'intro');
+                dialogueQueue[0].text = introText;
+            }
+            setupDialogueScreen();
         }
-        setupDialogueScreen();
     }, 2000);
 }
 
