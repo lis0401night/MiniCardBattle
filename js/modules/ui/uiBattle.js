@@ -76,7 +76,7 @@ function createCardDOM(c, isBoard = false) {
     if (c.stunTurns > 0) {
         filter = (filter || '') + ' grayscale(1) brightness(0.5)';
     }
-    const imgUrl = c.imgUrl || (c.id && !c.id.includes('_') ? `assets/card_${c.id}.jpg` : 'assets/card_none_backup.jpg');
+    const imgUrl = getCardImgUrl(c);
     d.innerHTML = `
         <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${filter};"></div>
         ${sH}

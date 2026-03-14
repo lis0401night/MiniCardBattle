@@ -19,3 +19,5 @@ var pendingCharId = null, lastBattleResult = null;
 var longPressTimer;
 var selectedStageId = null;
 var gameVolume = 0.5;
+var premiumCards = []; // プレミアムイラストを使用するカードIDのリスト
+var unlockedPremiumCards = []; // 解放済みのプレミアムカードのIDリスト

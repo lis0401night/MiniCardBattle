@@ -433,7 +433,8 @@ const UI_COMPONENTS = {
                     <div id="preview-skills-list" class="preview-skills-list"></div>
                     <p id="preview-card-flavor" class="preview-flavor-text"></p>
                 </div>
-                <button class="btn" style="margin-top: 15px; width: 100%; flex-shrink: 0;" onclick="closeCardPreview()">閉じる</button>
+                <button id="preview-premium-toggle" class="btn" style="display:none; margin-top: 10px; width: 100%; flex-shrink: 0; background: linear-gradient(45deg, #d946ef, #9333ea); font-size:0.9rem;">イラスト変更</button>
+                <button class="btn" style="margin-top: 10px; width: 100%; flex-shrink: 0;" onclick="closeCardPreview()">閉じる</button>
             </div>
         </div>
     </div>

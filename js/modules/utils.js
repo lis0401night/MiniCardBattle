@@ -57,3 +57,29 @@ function getSkillValue(c, skillId) {
     }
     return 0;
 }
+
+// カードの画像URLを取得（プレミアム設定を考慮）
+function getCardImgUrl(card) {
+    if (!card) return 'assets/card_none_backup.jpg';
+    const cardId = card.id || '';
+    
+    // 対戦データなどのidにはサフィックス（_1など）がついている場合があるのでベースIDを抽出
+    const baseId = cardId.split('_').pop(); 
+    const lookupId = (CARD_MASTER.find(m => m.id === baseId) || CARD_MASTER.find(m => m.id === cardId))?.id || baseId;
+
+    if (premiumCards.includes(lookupId)) {
+        return `assets/card_${lookupId}_premium.gif`;
+    }
+    return card.imgUrl || `assets/card_${lookupId}.jpg`;
+}
+
+// プレミアムカード設定の切り替え
+function togglePremiumCard(cardId) {
+    const index = premiumCards.indexOf(cardId);
+    if (index === -1) {
+        premiumCards.push(cardId);
+    } else {
+        premiumCards.splice(index, 1);
+    }
+    localStorage.setItem('mini_card_battle_premium_cards', JSON.stringify(premiumCards));
+}

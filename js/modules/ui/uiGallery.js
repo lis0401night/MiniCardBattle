@@ -33,14 +33,18 @@ function renderCardList() {
         const item = document.createElement('div');
         item.className = 'deck-card-item gallery-card-wrapper';
 
-        const imgUrl = template.imgUrl || `assets/card_${template.id}.jpg`;
+        const imgUrl = getCardImgUrl(template);
         const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
         const isOwned = ownedCount > 0;
         const opacity = isOwned ? "1" : "0.4";
 
+        const premiumIcon = unlockedPremiumCards.includes(template.id) ? 
+            `<div class="premium-toggle-icon" onclick="event.stopPropagation(); playSound(SOUNDS.seClick); togglePremiumCard('${template.id}'); renderCardList();" style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.85); color:${premiumCards.includes(template.id) ? '#d946ef' : '#94a3b8'}; padding:2px 6px; border-radius:10px; font-size:0.8rem; z-index:7; border:1px solid ${premiumCards.includes(template.id) ? '#d946ef' : '#475569'}; cursor:pointer;">✨</div>` : '';
+
         item.innerHTML = `
             <div class="card blue${rarityClass}" style="opacity:${opacity};">
                 <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${playerConfig.filter};"></div>
+                ${premiumIcon}
                 <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${template.power}</div>
                 ${renderSkillTag(template)}
                 <div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:#facc15; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid #facc15;">
@@ -48,7 +52,7 @@ function renderCardList() {
                 </div>
             </div>
         `;
-        item.onclick = () => openCardPreview({ ...template, imgUrl: imgUrl });
+        item.onclick = () => openCardPreview(template);
         grid.appendChild(item);
     });
 
@@ -82,6 +86,12 @@ function debugUnlockCards() {
                 playerInventory[card.id] = 4;
             }
         });
+        
+        // プレミアムカード(empress)の解放
+        if (!unlockedPremiumCards.includes('empress')) {
+            unlockedPremiumCards.push('empress');
+        }
+        
         saveDeck();
         playSound(SOUNDS.seSkill);
         showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
@@ -152,7 +162,7 @@ function populateCardPreview(prefix, card) {
 
     if (container) {
         container.innerHTML = '';
-        const cardImgUrl = card.imgUrl || `assets/card_${card.id}.jpg`;
+        const cardImgUrl = getCardImgUrl(card);
         const cardClone = document.createElement('div');
         const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
         cardClone.className = `card blue${rarityClass}`;
@@ -221,6 +231,32 @@ function populateCardPreview(prefix, card) {
         } else {
             flavorEl.innerText = '';
             flavorEl.style.display = 'none';
+        }
+    }
+    
+    // プレミアム切替ボタンの表示制御
+    const premiumToggleBtn = document.getElementById(`${prefix}-premium-toggle`);
+    if (premiumToggleBtn) {
+        // 解放済みのプレミアムカードの場合のみ表示
+        if (unlockedPremiumCards.includes(card.id)) {
+            premiumToggleBtn.style.display = 'block';
+            premiumToggleBtn.innerText = premiumCards.includes(card.id) ? '✨ 個別イラストON' : '✨ 個別イラストOFF';
+            premiumToggleBtn.style.background = premiumCards.includes(card.id) ? 'linear-gradient(45deg, #d946ef, #9333ea)' : '#475569';
+            premiumToggleBtn.onclick = (e) => {
+                e.stopPropagation();
+                playSound(SOUNDS.seClick);
+                togglePremiumCard(card.id);
+                // 再描画
+                populateCardPreview(prefix, card);
+                if (typeof renderCardList === 'function' && document.getElementById('screen-card-list').classList.contains('active')) {
+                    renderCardList();
+                }
+                if (typeof renderDeckEdit === 'function' && document.getElementById('screen-deck-edit').classList.contains('active')) {
+                    renderDeckEdit();
+                }
+            };
+        } else {
+            premiumToggleBtn.style.display = 'none';
         }
     }
 }
