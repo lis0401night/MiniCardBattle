@@ -38,7 +38,7 @@ function renderCardList() {
         const isOwned = ownedCount > 0;
         const opacity = isOwned ? "1" : "0.4";
 
-        const premiumIcon = unlockedPremiumCards.includes(template.id) ? 
+        const premiumIcon = unlockedPremiumCards.includes(template.id) ?
             `<div class="premium-toggle-icon" onclick="event.stopPropagation(); playSound(SOUNDS.seClick); togglePremiumCard('${template.id}'); renderCardList();" style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.85); color:${premiumCards.includes(template.id) ? '#d946ef' : '#94a3b8'}; padding:2px 6px; border-radius:10px; font-size:0.8rem; z-index:7; border:1px solid ${premiumCards.includes(template.id) ? '#d946ef' : '#475569'}; cursor:pointer;">✨</div>` : '';
 
         item.innerHTML = `
@@ -86,7 +86,7 @@ function debugUnlockCards() {
                 playerInventory[card.id] = 4;
             }
         });
-        
+
         // プレミアムカード(empress, assassin, cyberdragoon, dragon)の解放
         const premiumTargets = ['empress', 'assassin', 'cyberdragoon', 'dragon'];
         premiumTargets.forEach(id => {
@@ -94,7 +94,7 @@ function debugUnlockCards() {
                 unlockedPremiumCards.push(id);
             }
         });
-        
+
         saveDeck();
         playSound(SOUNDS.seSkill);
         showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
@@ -201,7 +201,7 @@ function populateCardPreview(prefix, card) {
     if (skillsList) {
         skillsList.innerHTML = '';
         let skillCandidates = [];
-        
+
         // 1. 基本スキル
         if (card.skill && card.skill !== 'none' && card.skill !== undefined) {
             skillCandidates.push({ id: card.skill, value: card.skillValue });
@@ -221,7 +221,7 @@ function populateCardPreview(prefix, card) {
                     item.className = 'preview-skill-item';
                     const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
                     const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
-                    
+
                     if (sk.id === 'choice' && Array.isArray(card.choices)) {
                         let subDetailsHtml = '';
                         card.choices.forEach(cho => {
@@ -237,7 +237,7 @@ function populateCardPreview(prefix, card) {
                                 `;
                             }
                         });
-                        
+
                         item.innerHTML = `
                             <details class="choice-accordion" style="width: 100%;">
                                 <summary style="list-style: none; cursor: pointer; outline: none; width: 100%;">
@@ -281,7 +281,7 @@ function populateCardPreview(prefix, card) {
     if (premiumToggleBtn) {
         if (unlockedPremiumCards.includes(card.id)) {
             premiumToggleBtn.style.display = 'block';
-            premiumToggleBtn.innerText = premiumCards.includes(card.id) ? '✨ 個別イラストON' : '✨ 個別イラストOFF';
+            premiumToggleBtn.innerText = premiumCards.includes(card.id) ? '✨ プレミアムON' : '✨ プレミアムOFF';
             premiumToggleBtn.style.background = premiumCards.includes(card.id) ? 'linear-gradient(45deg, #d946ef, #9333ea)' : '#475569';
             premiumToggleBtn.onclick = (e) => {
                 e.stopPropagation();

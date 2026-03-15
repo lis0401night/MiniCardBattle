@@ -424,14 +424,45 @@ async function showDefenseBattleList() {
                 return;
             }
 
-            players.forEach(p => {
+            // 自分のポイントを取得
+            const myPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+            
+            // ポイント降順でソート
+            players.sort((a, b) => (b.points || 0) - (a.points || 0));
+
+            players.forEach((p, index) => {
                 const char = CHARACTERS[p.character] || CHARACTERS.android;
+                const pPoints = p.points || 0;
+                
+                // 勝利時の獲得ポイント計算
+                let winPoints = 1;
+                if (pPoints >= myPoints * 2 && pPoints > 0) winPoints = 5;
+                else if (pPoints > myPoints) winPoints = 3;
+
+                // 順位による枠の色設定
+                let borderColor = '#cd7f32'; // 4位以下 (ブロンズ)
+                let extraClass = '';
+                if (index === 0) {
+                    extraClass = 'legendary';
+                    borderColor = 'transparent'; // CSSでアニメーション境界線をつける想定
+                } else if (index === 1) {
+                    borderColor = '#facc15'; // 2位 (ゴールド)
+                } else if (index === 2) {
+                    borderColor = '#e2e8f0'; // 3位 (シルバー)
+                }
+
                 const banner = document.createElement('button');
-                banner.className = 'btn-banner';
-                banner.style.borderColor = '#cd7f32'; // ブロンズカードと同じ色
+                banner.className = `btn-banner ${extraClass}`;
+                banner.style.borderColor = borderColor;
                 banner.innerHTML = `
-                    <img src="${char.icon}" class="banner-icon">
-                    <span class="banner-text" style="color: ${char.color};">${p.name}</span>
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <div style="display: flex; align-items: center;">
+                            <img src="${char.icon}" class="banner-icon">
+                            <span class="banner-text" style="color: ${char.color}; margin-right: 10px;">${p.name}</span>
+                            <span style="color: #cbd5e1; font-size: 0.85rem;">(Pt: ${pPoints})</span>
+                        </div>
+                        <div style="color: #10b981; font-weight: bold; font-size: 0.9rem;">Win +${winPoints}</div>
+                    </div>
                 `;
                 
                 banner.onclick = () => startAttackBattle(p);
@@ -595,5 +626,227 @@ function confirmStageSelect(stageId) {
             { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
         ];
         setupDialogueScreen();
+    }
+}
+
+// --- 交換所関連ロジック ---
+
+let exchangeDebugClickCount = 0;
+
+function showExchangeScreen() {
+    playSound(SOUNDS.seClick);
+    exchangeDebugClickCount = 0;
+    switchScreen('screen-exchange');
+    renderExchange();
+
+    // デバッグ用：タイトル10回クリックで100pt付与
+    const titleEl = document.getElementById('exchange-title');
+    if (titleEl) {
+        titleEl.onclick = () => {
+            exchangeDebugClickCount++;
+            if (exchangeDebugClickCount >= 10) {
+                exchangeDebugClickCount = 0;
+                playSound(SOUNDS.seSkill);
+                let currentPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+                let totalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+                currentPoints += 100;
+                totalPoints += 100;
+                localStorage.setItem('mini_card_battle_defense_points', currentPoints);
+                localStorage.setItem('mini_card_battle_defense_total_points', totalPoints);
+                showAlertModal("【デバッグ】ポイントを100Pt獲得しました！", () => renderExchange());
+            }
+        };
+    }
+}
+
+function renderExchange() {
+    const listContainer = document.getElementById('exchange-item-grid');
+    const pointsDisplay = document.getElementById('exchange-points-display');
+    if (!listContainer || !pointsDisplay) return;
+
+    const currentPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+    const totalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+    pointsDisplay.innerText = `所持ポイント: ${currentPoints} / 総ポイント: ${totalPoints}`;
+
+    listContainer.innerHTML = '';
+
+    EXCHANGE_LINEUP.forEach(itemInfo => {
+        const itemObj = CARD_MASTER.find(c => c.id === itemInfo.id) || CARD_MASTER[0];
+        
+        // 状態をチェック（「所持上限到達・プレミアム取得済み」または「ポイント不足」）
+        let canExchange = true;
+        let isMaxed = false;
+        let ownedCount = 0;
+
+        if (itemInfo.type === 'premium') {
+            if (unlockedPremiumCards.includes(itemInfo.id)) {
+                canExchange = false;
+                isMaxed = true;
+            }
+        } else if (itemInfo.type === 'card') {
+            ownedCount = playerInventory[itemInfo.id] || 0;
+            if (ownedCount >= 4) {
+                canExchange = false;
+                isMaxed = true;
+            }
+        }
+
+        if (currentPoints < itemInfo.cost) {
+            canExchange = false;
+        }
+
+        const opacity = canExchange ? "1.0" : (isMaxed ? "0.3" : "0.6");
+        const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
+        const imgUrl = getCardImgUrl(itemObj);
+
+        // バッジや所持数など
+        const countBadge = itemInfo.type === 'card' ? 
+            `<div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:#facc15; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid #facc15;">${ownedCount}/4</div>` : '';
+
+        const itemEl = document.createElement('div');
+        itemEl.className = 'deck-card-item';
+        itemEl.style.opacity = opacity;
+        itemEl.style.cursor = canExchange ? 'pointer' : 'not-allowed';
+
+        itemEl.innerHTML = `
+            <div class="card blue${rarityClass}" style="width:80px; height:120px; position:relative; display:block;">
+                <div class="card-bg" style="background-image: url('${imgUrl}');"></div>
+                ${countBadge}
+                <div class="card-power" style="font-size:1.4rem; bottom:0; right:4px;">${itemObj.power}</div>
+                ${renderSkillTag(itemObj)}
+            </div>
+        `;
+
+        // 常に詳細画面を開けるようにする
+        itemEl.onclick = () => showExchangeDetail(itemInfo.id, itemInfo.type, itemInfo.cost, itemObj, canExchange, isMaxed);
+
+        listContainer.appendChild(itemEl);
+    });
+}
+
+let pendingExchange = null;
+
+function showExchangeDetail(id, type, cost, itemObj, canExchange, isMaxed) {
+    playSound(SOUNDS.seClick);
+    pendingExchange = { id, type, cost };
+
+    const detailScreen = document.getElementById('screen-exchange-detail');
+    if (!detailScreen) return;
+
+    document.getElementById('exchange-detail-name').innerText = type === 'premium' ? `${itemObj.name} (プレミアム)` : `${itemObj.name} (カード)`;
+    document.getElementById('exchange-detail-flavor').innerText = itemObj.flavor || '...';
+    document.getElementById('exchange-detail-cost').innerText = `${cost} pt`;
+
+    // スキルの表示
+    const skillsList = document.getElementById('exchange-detail-skills-list');
+    skillsList.innerHTML = '';
+    
+    let skillsToShow = [];
+    if (itemObj.skill && itemObj.skill !== 'none') {
+        skillsToShow.push({ id: itemObj.skill, value: itemObj.skillValue });
+    }
+    if (Array.isArray(itemObj.skills)) {
+        skillsToShow = skillsToShow.concat(itemObj.skills);
+    }
+
+    if (skillsToShow.length > 0) {
+        skillsToShow.forEach(sk => {
+            const sData = SKILLS[sk.id];
+            if (sData) {
+                const valStr = sk.value ? ` ${sk.value}` : '';
+                skillsList.innerHTML += `
+                    <div style="background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; border-left: 3px solid #60a5fa; margin-bottom: 5px;">
+                        <div style="font-weight: bold; color: #60a5fa; font-size: 0.9rem; margin-bottom: 3px;">
+                            ${sData.icon} ${sData.name}${valStr}
+                        </div>
+                        <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;">
+                            ${sData.description}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    } else {
+        skillsList.innerHTML = '<div class="skill-item" style="justify-content:center; color:#94a3b8;">スキルなし</div>';
+    }
+
+    const btn = document.getElementById('btn-exchange-confirm');
+    if (btn) {
+        if (isMaxed) {
+            btn.innerText = "交換済み";
+            btn.style.background = "#475569";
+            btn.style.color = "#94a3b8";
+            btn.onclick = () => { playSound(SOUNDS.seClick); showAlertModal(type === 'premium' ? "既にプレミアム化済みです。" : "所持上限(4枚)に達しています。"); };
+        } else if (!canExchange) {
+            btn.innerText = "ポイント不足";
+            btn.style.background = "#475569";
+            btn.style.color = "#94a3b8";
+            btn.onclick = () => { playSound(SOUNDS.seClick); showAlertModal("ポイントが足りません！"); };
+        } else {
+            btn.innerText = "交換";
+            btn.style.background = "linear-gradient(45deg, #f97316, #ea580c)";
+            btn.style.color = "#ffffff";
+            btn.onclick = confirmExchange;
+        }
+    }
+
+    const cardContainer = document.getElementById('exchange-detail-card-container');
+    const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
+    let imgUrl = getCardImgUrl(itemObj);
+    if (type === 'premium') {
+        imgUrl = imgUrl.replace('.jpg', '_premium.jpg');
+    }
+
+    cardContainer.innerHTML = `
+        <div class="card blue${rarityClass}" style="width:120px; height:180px; position:relative; display:block; transform: scale(1.2); margin-top:10px; margin-bottom:10px;">
+            <div class="card-bg" style="background-image: url('${imgUrl}');"></div>
+            <div class="card-power" style="font-size:2rem; bottom:0; right:6px;">${itemObj.power}</div>
+            ${renderSkillTag(itemObj)}
+        </div>
+    `;
+
+    detailScreen.style.display = 'flex';
+}
+
+function closeExchangeDetail() {
+    playSound(SOUNDS.seClick);
+    pendingExchange = null;
+    const detailScreen = document.getElementById('screen-exchange-detail');
+    if (detailScreen) detailScreen.style.display = 'none';
+}
+
+function confirmExchange() {
+    if (!pendingExchange) return;
+    const { id, type, cost } = pendingExchange;
+    
+    playSound(SOUNDS.seClick);
+    let currentPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+    
+    if (currentPoints < cost) {
+        showAlertModal("ポイントが足りません！");
+        return;
+    }
+
+    // Double clear pending exchange to avoid double clicks
+    pendingExchange = null;
+    closeExchangeDetail();
+
+    // 交換処理
+    let currentPointsInner = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+    if (currentPointsInner < cost) return;
+
+    currentPointsInner -= cost;
+    localStorage.setItem('mini_card_battle_defense_points', currentPointsInner);
+
+    if (type === 'premium') {
+        if (!unlockedPremiumCards.includes(id)) unlockedPremiumCards.push(id);
+        localStorage.setItem('mini_card_battle_unlocked_premium', JSON.stringify(unlockedPremiumCards));
+        playSound(SOUNDS.seSkill);
+        showAlertModal(`プレミアム特典を解放しました！\n（デッキ編成画面で切り替えられます）`, () => renderExchange());
+    } else {
+        playerInventory[id] = (playerInventory[id] || 0) + 1;
+        localStorage.setItem('mini_card_battle_inventory', JSON.stringify(playerInventory));
+        playSound(SOUNDS.seSkill);
+        showAlertModal(`カードを獲得しました！\n（デッキ編成画面で登録できます）`, () => renderExchange());
     }
 }

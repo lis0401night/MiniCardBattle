@@ -22,6 +22,7 @@ if (!$data || !isset($data['uuid']) || !isset($data['name']) || !isset($data['ch
 }
 
 $stage = isset($data['stage']) ? preg_replace('/[^a-z0-9_]/', '', $data['stage']) : 'plain';
+$timestamp = time();
 
 // パラメータのバリデーション・サニタイズ
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
@@ -40,6 +41,19 @@ if (!is_dir($dir)) {
     mkdir($dir, 0777, true);
 }
 
+// 既存のポイントを取得（あれば）
+$existing_points = 0;
+$filename = "{$dir}/{$uuid}.js";
+if (file_exists($filename)) {
+    $content = file_get_contents($filename);
+    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+        $existing_data = json_decode($matches[2], true);
+        if (isset($existing_data['points'])) {
+            $existing_points = $existing_data['points'];
+        }
+    }
+}
+
 // JSファイルの内容を生成
 // PLAYER_DECKS グローバルオブジェクトにデータを追加する形式
 $player_data = [
@@ -48,6 +62,7 @@ $player_data = [
     'character' => $character,
     'stage' => $stage,
     'deck' => $deck,
+    'points' => $existing_points,
     'timestamp' => $timestamp
 ];
 $data_json = json_encode($player_data);

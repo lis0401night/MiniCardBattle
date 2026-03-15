@@ -267,6 +267,7 @@ const UI_COMPONENTS = {
             <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669);" onclick="startDefenseRegistration()">防衛デッキ登録</button>
             <button id="btn-start-attack" class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); display:none;" onclick="showDefenseBattleList()">攻撃開始</button>
             <div id="btn-start-attack-disabled" class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed; display:block;">攻撃開始（未登録）</div>
+            <button class="btn" style="background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 10px;" onclick="showExchangeScreen()">交換所</button>
         </div>
         <button class="btn" style="margin-top: 40px; background: #475569;" onclick="switchScreen('screen-event-menu')">戻る</button>
     </div>
@@ -359,6 +360,45 @@ const UI_COMPONENTS = {
             <div style="display: flex; gap: 10px; width: 100%;">
                 <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="closePlayerNameModal()">キャンセル</button>
                 <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="submitDefenseDeck()">完了</button>
+            </div>
+        </div>
+    </div>
+    `,
+
+    exchangeScreen: `
+    <!-- 交換所画面 -->
+    <div id="screen-exchange" class="screen">
+        <h2 id="exchange-title" style="color: #f97316; margin-bottom: 5px; font-size: 1.2rem; cursor: pointer;">交換所</h2>
+        <div id="exchange-points-display" style="font-size: 0.9rem; margin-bottom: 10px; color: #cbd5e1;">所持ポイント: 0 / 総ポイント: 0</div>
+        
+        <div class="card-list-container">
+            <div id="exchange-item-grid" class="card-list-grid-3col"></div>
+        </div>
+
+        <button class="btn" style="margin-top: 15px; background: #475569;" onclick="switchScreen('screen-defense-menu')">戻る</button>
+    </div>
+    `,
+
+    exchangeDetailScreen: `
+    <!-- 交換所詳細確認画面 -->
+    <div id="screen-exchange-detail" class="screen" style="background: rgba(0,0,0,0.85); z-index: 50;">
+        <div class="preview-content" style="position:relative; width: 90%; max-width: 350px;">
+            <div id="exchange-detail-card-container"></div>
+            <div class="preview-details">
+                <h2 id="exchange-detail-name">Name</h2>
+                <div class="preview-scroll-area">
+                    <div id="exchange-detail-skills-list" class="preview-skills-list"></div>
+                    <p id="exchange-detail-flavor" class="preview-flavor-text"></p>
+                </div>
+                <div style="background: rgba(0,0,0,0.5); padding: 5px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-top: 10px; border: 1px solid #475569; text-align: center;">
+                    <div style="color: #facc15; font-weight: bold; font-size: 0.7rem; margin-bottom: 2px;">必要ポイント</div>
+                    <div id="exchange-detail-cost" style="font-size: 1.2rem; color: #10b981; font-weight: bold;">0 pt</div>
+                </div>
+                <!-- ボタンを横並びに配置 -->
+                <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px; flex-shrink: 0;">
+                    <button class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: #475569; margin-top: 0; font-size: 0.9rem;" onclick="closeExchangeDetail()">戻る</button>
+                    <button id="btn-exchange-confirm" class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 0; font-size: 0.9rem;" onclick="confirmExchange()">交換</button>
+                </div>
             </div>
         </div>
     </div>

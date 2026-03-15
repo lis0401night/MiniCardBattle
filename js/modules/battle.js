@@ -943,9 +943,42 @@ function endBattle() {
         
         // 防衛戦：報酬も台詞もスキップして戻る
         if (gameMode === 'defense_attack') {
-            appState = 'select_enemy';
-            initSelectScreen(false);
-            switchScreen('screen-select');
+            if (lastBattleResult === 'win') {
+                // ポイント計算
+                const myPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+                let myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+                const enemyPoints = enemyConfig.points || 0;
+                
+                let winPoints = 1;
+                if (enemyPoints >= myPoints * 2 && enemyPoints > 0) winPoints = 5;
+                else if (enemyPoints > myPoints) winPoints = 3;
+
+                const newPoints = myPoints + winPoints;
+                myTotalPoints += winPoints;
+
+                // ローカルの保存
+                localStorage.setItem('mini_card_battle_defense_points', newPoints);
+                localStorage.setItem('mini_card_battle_defense_total_points', myTotalPoints);
+
+                // サーバーへの送信
+                const uuid = getOrCreateUUID();
+                fetch('api/update_points.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uuid: uuid, points: newPoints })
+                }).catch(err => console.error("Failed to update points:", err));
+
+                playSound(SOUNDS.seSkill);
+                showAlertModal(`防衛戦に勝利しました！\n防衛ポイントを ${winPoints} Pt 獲得しました！`, () => {
+                    appState = 'select_enemy';
+                    initSelectScreen(false);
+                    switchScreen('screen-select');
+                });
+            } else {
+                appState = 'select_enemy';
+                initSelectScreen(false);
+                switchScreen('screen-select');
+            }
             return;
         }
 
