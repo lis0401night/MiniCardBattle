@@ -64,8 +64,19 @@ function setupDialogueScreen() {
     }
     const pLeft = document.getElementById('portrait-left');
     const pRight = document.getElementById('portrait-right');
+
+    // 一時的にアニメーションを無効化してリセット（ちらつき防止）
+    pLeft.classList.add('no-transition');
+    pRight.classList.add('no-transition');
+
     pLeft.classList.remove('active');
     pRight.classList.remove('active');
+
+    // わずかな遅延の後にtransitionを戻す（レンダリング確定後）
+    requestAnimationFrame(() => {
+        pLeft.classList.remove('no-transition');
+        pRight.classList.remove('no-transition');
+    });
     if (appState === 'post_dialogue') {
         if (lastBattleResult === 'win') pRightImg = enemyConfig.imageLose;
         else if (lastBattleResult === 'lose') pLeftImg = playerConfig.imageLose;
