@@ -20,7 +20,9 @@ if (!$data || !isset($data['uuid']) || !isset($data['points'])) {
 }
 
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
-$points = intval($data['points']);
+$points = isset($data['points']) ? intval($data['points']) : 0;
+$increment = isset($data['increment']) ? (bool)$data['increment'] : false;
+$defense_wins = isset($data['defense_wins']) ? intval($data['defense_wins']) : 0;
 
 if (strlen($uuid) < 10) {
     echo json_encode(['success' => false, 'error' => 'Invalid uuid format']);
@@ -41,7 +43,15 @@ $content = file_get_contents($filename);
 if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
     $playerData = json_decode($matches[2], true);
     if ($playerData) {
-        $playerData['points'] = $points;
+        if ($increment) {
+            $playerData['points'] = ($playerData['points'] ?? 0) + $points;
+        } else {
+            $playerData['points'] = $points;
+        }
+
+        if ($defense_wins > 0) {
+            $playerData['defense_wins'] = ($playerData['defense_wins'] ?? 0) + $defense_wins;
+        }
         $playerData['timestamp'] = time();
 
         $data_json = json_encode($playerData);
@@ -51,7 +61,11 @@ PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
         
         if (file_put_contents($filename, $js_content)) {
-            echo json_encode(['success' => true]);
+            echo json_encode([
+                'success' => true,
+                'points' => $playerData['points'],
+                'defense_wins' => $playerData['defense_wins'] ?? 0
+            ]);
             exit;
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to save updated file']);

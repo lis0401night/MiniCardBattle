@@ -10,6 +10,6 @@ const EXCHANGE_LINEUP = [
     { id: 'dragon', type: 'premium', cost: 10 },
     { id: 'assassin', type: 'premium', cost: 10 },
     { id: 'empress', type: 'premium', cost: 10 },
-    { id: 'badwolf', type: 'card', cost: 3 },
+    { id: 'badwolf', type: 'card', cost: 5 },
     { id: 'redhood', type: 'card', cost: 5 }
 ];
