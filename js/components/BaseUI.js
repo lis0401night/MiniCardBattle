@@ -114,7 +114,7 @@ const UI_COMPONENTS = {
                 <li>先に相手リーダーのHPを0にすれば勝利です。</li>
             </ul>
         </div>
-        <button class="btn" style="width: 250px; background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
     </div>
     `,
 

@@ -13,9 +13,16 @@ function createDamagePopup(targetEl, text, color = '#ef4444') {
 }
 
 function getDialogue(speakerConfig, targetConfig, type) {
+    if (!speakerConfig.dialogue) return "...";
     const dict = speakerConfig.dialogue[type];
+    if (!dict) return "...";
+
+    // 以前のバージョンなど、辞書ではなく直接文字列が格納されている場合への対応
+    if (typeof dict === 'string') return dict;
+
+    // 通常のオブジェクト形式
     if (targetConfig && dict[targetConfig.id]) return dict[targetConfig.id];
-    return dict.default;
+    return dict.default || "...";
 }
 
 function playSound(audio) { if (audio) { audio.currentTime = 0; audio.volume = gameVolume; audio.play().catch(() => { }); } }
@@ -63,7 +70,7 @@ function getCardImgUrl(card) {
     if (!card) return 'assets/card_none_backup.jpg';
     const cardId = card.id || '';
 
-    // 対戦データなどのidにはサフィックス（_1など）がついている場合があるのでベースIDを抽出
+    // 对戦データなどのidにはサフィックス（_1など）がついている場合があるのでベースIDを抽出
     const baseId = cardId.split('_').pop();
     const lookupId = (CARD_MASTER.find(m => m.id === baseId) || CARD_MASTER.find(m => m.id === cardId))?.id || baseId;
 

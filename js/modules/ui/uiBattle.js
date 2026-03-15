@@ -215,7 +215,10 @@ function showCardReward(enemyId) {
         return;
     }
 
-    let recipe = ENEMY_DECKS[enemyId] || ENEMY_DECKS.android;
+    let recipeId = enemyId;
+    if (gameMode === 'event_satan' && enemyId === 'satan') recipeId = 'satan_high';
+
+    let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
     let enemyDeckIds = [];
     if (recipe.easy && recipe.normal && recipe.hard) {
         if (typeof aiLevel !== 'undefined') {
@@ -241,7 +244,12 @@ function showCardReward(enemyId) {
             initSelectScreen(true);
             switchScreen('screen-select');
         } else {
-            setupDialogueScreen();
+            // ストーリーモードで報酬がない場合は、appStateを更新してから進行
+            if (gameMode === 'story' && appState === 'post_dialogue') {
+                handleStoryProgression();
+            } else {
+                setupDialogueScreen();
+            }
         }
         return;
     }
@@ -285,6 +293,11 @@ function closeRewardScreen() {
         initSelectScreen(true);
         switchScreen('screen-select');
     } else {
-        setupDialogueScreen();
+        // ストーリーモードでは重複再生を防ぐため、既に演出が始まっていないか確認
+        if (appState === 'post_dialogue') {
+            handleStoryProgression();
+        } else {
+            setupDialogueScreen();
+        }
     }
 }

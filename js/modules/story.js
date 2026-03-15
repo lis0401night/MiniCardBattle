@@ -41,7 +41,8 @@ function handleStoryProgression() {
             showContinueScreen();
         } else {
             // 戦闘に勝利した場合、中間のストーリーがあるか判定
-            if (playerConfig.interBattleStory && enemyConfig.id !== 'satan') {
+            const isSatanBattle = enemyConfig.id === 'satan' && !enemyConfig.isShadow;
+            if (playerConfig.interBattleStory && !isSatanBattle) {
                 appState = 'inter_battle_story';
                 dialogueQueue = [];
 
