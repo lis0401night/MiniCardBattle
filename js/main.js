@@ -33,7 +33,7 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
         if (hasSkill(newCard, 'legendary') && l !== 1) {
             playSound(SOUNDS.seDamage);
             showConfirmModal(
-                `「${newCard.name}」は伝説のカードのため、中央のレーンにしか配置できません。`,
+                `「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`,
                 () => { },
                 null,
                 true // 警告モード（OKボタンのみ）
@@ -45,7 +45,7 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
         if (hasSkill(newCard, 'takeover') && playerBoard[l] === null) {
             playSound(SOUNDS.seDamage);
             showConfirmModal(
-                `「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか配置できません。`,
+                `「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`,
                 () => { },
                 null,
                 true // 警告モード（OKボタンのみ）

@@ -6,14 +6,18 @@ function generateDeck(owner, config, sessionId) {
     let deck = [];
     if (owner === 'blue') {
         deck = playerDeckSelection.map((t, i) => {
-            const imgUrl = getCardImgUrl(t);
+            const isPremium = premiumCards.includes(t.id);
+            const tempObj = { ...t, isPremium: isPremium };
+            const imgUrl = getCardImgUrl(tempObj);
             return {
                 ...t,
+                baseId: t.id,
                 id: `${owner}_${sessionId}_${i}`,
                 owner: owner,
                 imgUrl: imgUrl,
                 filter: config.filter,
                 currentPower: t.power,
+                isPremium: isPremium,
                 skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
             };
         });
@@ -39,7 +43,10 @@ function generateDeck(owner, config, sessionId) {
             deckIds = Array.isArray(ENEMY_DECKS.android) ? ENEMY_DECKS.android : (ENEMY_DECKS.android.normal || []);
         }
 
-        deckIds.forEach((cardId, i) => {
+        deckIds.forEach((cardItem, i) => {
+            let cardId = typeof cardItem === 'object' ? cardItem.id : cardItem;
+            let isPremium = typeof cardItem === 'object' ? (cardItem.isPremium || false) : false;
+
             const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
             // if (config.id === 'satan') p += 1; // サタン補正は削除
@@ -50,14 +57,17 @@ function generateDeck(owner, config, sessionId) {
                 filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
             }
 
-            const imgUrl = getCardImgUrl(t);
+            const tempObj = { ...t, isPremium: isPremium };
+            const imgUrl = getCardImgUrl(tempObj);
             deck.push({
                 ...t,
+                baseId: t.id,
                 id: `${owner}_${sessionId}_${i}`,
                 owner: owner,
                 imgUrl: imgUrl,
                 filter: filter,
                 currentPower: p,
+                isPremium: isPremium,
                 skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
             });
         });
@@ -334,7 +344,7 @@ async function submitDefenseDeck() {
         name: playerName,
         character: playerConfig.id,
         stage: selectedStageId, // 追加
-        deck: playerDeckSelection.map(c => c.id)
+        deck: playerDeckSelection.map(c => ({ id: c.id, isPremium: premiumCards.includes(c.id) }))
     };
 
     console.log("Registering defense deck:", payload);

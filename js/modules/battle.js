@@ -455,12 +455,12 @@ async function waitSkillChoice(choices, owner, card) {
     // AIの場合
     if (owner === 'red') {
         const aiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
-        
+
         // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後）
         if (typeof aiDecision !== 'undefined' && aiDecision && aiDecision.choiceIndex !== undefined) {
-             const idx = aiDecision.choiceIndex;
-             delete aiDecision.choiceIndex; // 使い終わったら消去
-             return choices[idx];
+            const idx = aiDecision.choiceIndex;
+            delete aiDecision.choiceIndex; // 使い終わったら消去
+            return choices[idx];
         }
 
         // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
@@ -518,7 +518,7 @@ async function waitSkillChoice(choices, owner, card) {
                 </div>
                 <p class="preview-skill-desc" style="text-align: center;">${skillDef.desc(sk.value)}</p>
             `;
-            
+
             btn.onmouseover = () => {
                 btn.style.transform = 'scale(1.02)';
                 btn.style.borderColor = '#facc15';
@@ -940,7 +940,7 @@ function endBattle() {
     isProcessing = false; // バトル結果表示と同時にフラグをリセット
     setTimeout(() => {
         playSound(SOUNDS.bgmTitle);
-        
+
         // 防衛戦：報酬も台詞もスキップして戻る
         if (gameMode === 'defense_attack') {
             if (lastBattleResult === 'win') {
@@ -948,7 +948,7 @@ function endBattle() {
                 const myPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
                 let myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
                 const enemyPoints = enemyConfig.points || 0;
-                
+
                 let winPoints = 1;
                 if (enemyPoints >= myPoints * 2 && enemyPoints > 0) winPoints = 5;
                 else if (enemyPoints > myPoints) winPoints = 3;
@@ -969,7 +969,7 @@ function endBattle() {
                 }).catch(err => console.error("Failed to update points:", err));
 
                 playSound(SOUNDS.seSkill);
-                showAlertModal(`防衛戦に勝利しました！\n防衛ポイントを ${winPoints} Pt 獲得しました！`, () => {
+                showAlertModal(`防衛戦に勝利しました！\n防衛戦ポイントを ${winPoints} Pt 獲得しました！`, () => {
                     appState = 'select_enemy';
                     initSelectScreen(false);
                     switchScreen('screen-select');

@@ -253,7 +253,7 @@ const UI_COMPONENTS = {
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #7f1d1d);" onclick="startHighDifficulty()">高難易度</button>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #065f46);" onclick="showDefenseMenu()">防衛戦</button>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
-            <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+            <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-mode-select')">戻る</button>
         </div>
     </div>
     `,
@@ -269,7 +269,7 @@ const UI_COMPONENTS = {
             <div id="btn-start-attack-disabled" class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed; display:block;">攻撃開始（未登録）</div>
             <button class="btn" style="background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 10px;" onclick="showExchangeScreen()">交換所</button>
         </div>
-        <button class="btn" style="margin-top: 40px; background: #475569;" onclick="switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 40px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
     </div>
     `,
 
@@ -280,7 +280,7 @@ const UI_COMPONENTS = {
         <div class="banner-container" id="defense-player-list" style="max-height: 420px; overflow-y: auto; padding: 5px;">
             <!-- プレイヤーリストがここに動的に生成されます -->
         </div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-defense-menu')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-defense-menu')">戻る</button>
     </div>
     `,
 
@@ -296,7 +296,7 @@ const UI_COMPONENTS = {
                 <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>※防衛戦のバトルではカードを獲得できません。</b></li>
             </ul>
         </div>
-        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-defense-menu')">戻る</button>
+        <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-defense-menu')">戻る</button>
     </div>
     `,
 
@@ -313,7 +313,7 @@ const UI_COMPONENTS = {
             </button>
         </div>
 
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
     </div>
     `,
 
@@ -328,7 +328,7 @@ const UI_COMPONENTS = {
                 <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>遥かに強力な相手のため、ストーリーやフリーバトルでカードを集めてから挑むように注意してください。</b></li>
             </ul>
         </div>
-        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-high-difficulty')">戻る</button>
+        <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-high-difficulty')">戻る</button>
     </div>
     `,
 

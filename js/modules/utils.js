@@ -65,16 +65,28 @@ function getSkillValue(c, skillId) {
     return 0;
 }
 
+const VALID_PREMIUM_GIFS = ['assassin', 'cyberdragon', 'dragon', 'empress'];
+
 // カードの画像URLを取得（プレミアム設定を考慮）
 function getCardImgUrl(card) {
     if (!card) return 'assets/card_none_backup.jpg';
-    const cardId = card.id || '';
+    
+    let lookupId = card.baseId;
+    if (!lookupId) {
+        const cardId = card.id || '';
+        const baseIdExtracted = cardId.split('_').pop();
+        lookupId = (CARD_MASTER.find(m => m.id === baseIdExtracted) || CARD_MASTER.find(m => m.id === cardId))?.id || baseIdExtracted;
+    }
 
-    // 对戦データなどのidにはサフィックス（_1など）がついている場合があるのでベースIDを抽出
-    const baseId = cardId.split('_').pop();
-    const lookupId = (CARD_MASTER.find(m => m.id === baseId) || CARD_MASTER.find(m => m.id === cardId))?.id || baseId;
+    // isPremiumフラグが明示的に設定されている場合はそれを優先
+    if (card.isPremium === true && VALID_PREMIUM_GIFS.includes(lookupId)) {
+        return `assets/card_${lookupId}_premium.gif`;
+    } else if (card.isPremium === false) {
+        return card.imgUrl || `assets/card_${lookupId}.jpg`;
+    }
 
-    if (premiumCards.includes(lookupId)) {
+    // フラグがない場合は従来のグローバル設定を参照
+    if (premiumCards.includes(lookupId) && VALID_PREMIUM_GIFS.includes(lookupId)) {
         return `assets/card_${lookupId}_premium.gif`;
     }
     return card.imgUrl || `assets/card_${lookupId}.jpg`;
