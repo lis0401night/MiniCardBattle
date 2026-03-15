@@ -21,6 +21,8 @@ if (!$data || !isset($data['uuid']) || !isset($data['name']) || !isset($data['ch
     exit;
 }
 
+$stage = isset($data['stage']) ? preg_replace('/[^a-z0-9_]/', '', $data['stage']) : 'plain';
+
 // パラメータのバリデーション・サニタイズ
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
 $name = htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8');
@@ -40,23 +42,19 @@ if (!is_dir($dir)) {
 
 // JSファイルの内容を生成
 // PLAYER_DECKS グローバルオブジェクトにデータを追加する形式
-$deck_json = json_encode($deck);
-$timestamp = date('Y-m-d H:i:s');
+$player_data = [
+    'uuid' => $uuid,
+    'name' => $name,
+    'character' => $character,
+    'stage' => $stage,
+    'deck' => $deck,
+    'timestamp' => $timestamp
+];
+$data_json = json_encode($player_data);
+
 $js_content = <<<EOT
-/**
- * Player Defense Deck Data
- * Registered at: {$timestamp}
- */
-if (typeof PLAYER_DECKS === 'undefined') {
-    var PLAYER_DECKS = {};
-}
-PLAYER_DECKS['{$uuid}'] = {
-    uuid: '{$uuid}',
-    name: '{$name}',
-    character: '{$character}',
-    deck: {$deck_json},
-    timestamp: '{$timestamp}'
-};
+if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
+PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
 
 // ファイル保存

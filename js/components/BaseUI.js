@@ -227,19 +227,13 @@ const UI_COMPONENTS = {
             </div>
             <div class="deck-controls">
                 <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;">
-                    <button class="action-btn" onclick="exportDeckXML()" style="font-size: 0.75rem; padding: 5px 10px;">保存(XML)</button>
-                    <label class="action-btn" style="font-size: 0.75rem; padding: 5px 10px; cursor: pointer; display: flex; align-items: center;">
-                        読込(XML)
-                        <input type="file" id="import-xml-input" style="display:none;" accept=".xml" onchange="importDeckXML(event)">
-                    </label>
-                </div>
-                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;">
                     <button class="action-btn" onclick="resetDeck()" style="background: #1e40af; font-size: 0.75rem; padding: 5px 10px;">初期デッキに戻す</button>
                     <button class="action-btn" onclick="clearDeck()" style="background: #7f1d1d; font-size: 0.75rem; padding: 5px 10px;">全削除</button>
                 </div>
             </div>
             <button id="btn-finish-deck" class="btn" onclick="finishDeckEdit()" style="margin-top: 10px; width: 100%; opacity: 0.5;">バトル開始！</button>
         </div>
+        <button class="btn" onclick="goBackFromDeckEdit()" style="background: #475569;">戻る</button>
     </div>
     `,
 
@@ -271,9 +265,37 @@ const UI_COMPONENTS = {
         <div style="display: flex; flex-direction: column; gap: 15px; width: 250px;">
             <button class="btn btn-yellow" onclick="showDefenseRules()">ルール</button>
             <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669);" onclick="startDefenseRegistration()">防衛デッキ登録</button>
-            <button class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed;">攻撃開始（未実装）</button>
+            <button id="btn-start-attack" class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); display:none;" onclick="showDefenseBattleList()">攻撃開始</button>
+            <div id="btn-start-attack-disabled" class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed; display:block;">攻撃開始（未登録）</div>
         </div>
         <button class="btn" style="margin-top: 40px; background: #475569;" onclick="switchScreen('screen-event-menu')">戻る</button>
+    </div>
+    `,
+
+    defenseBattleListScreen: `
+    <!-- 防衛戦対戦相手一覧画面 -->
+    <div id="screen-defense-battle-list" class="screen">
+        <h2 style="color: #ffffff; margin-bottom: 20px;">対戦相手を選択</h2>
+        <div class="banner-container" id="defense-player-list" style="max-height: 420px; overflow-y: auto; padding: 5px;">
+            <!-- プレイヤーリストがここに動的に生成されます -->
+        </div>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="switchScreen('screen-defense-menu')">戻る</button>
+    </div>
+    `,
+
+    defenseRulesScreen: `
+    <!-- 防衛戦ルール画面 -->
+    <div id="screen-defense-rules" class="screen">
+        <h2 style="color: #10b981;">ルール</h2>
+        <div class="rule-box">
+            <ul>
+                <li>自分の「防衛デッキ」を登録すると、他のプレイヤーの攻撃対象になります。</li>
+                <li>キャラクター、ステージ、20枚のデッキを登録します。</li>
+                <li>「攻撃開始」は他のプレイヤーの防衛デッキに攻撃を仕掛けます！</li>
+                <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>※防衛戦のバトルではカードを獲得できません。</b></li>
+            </ul>
+        </div>
+        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-defense-menu')">戻る</button>
     </div>
     `,
 
@@ -335,8 +357,8 @@ const UI_COMPONENTS = {
             <input type="text" id="input-player-name" placeholder="名前を入力..." maxlength="12" 
                 style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; margin-bottom: 25px; outline: none; text-align: center;">
             <div style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.9rem;" onclick="closePlayerNameModal()">キャンセル</button>
-                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.9rem;" onclick="submitDefenseDeck()">完了</button>
+                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="closePlayerNameModal()">キャンセル</button>
+                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="submitDefenseDeck()">完了</button>
             </div>
         </div>
     </div>

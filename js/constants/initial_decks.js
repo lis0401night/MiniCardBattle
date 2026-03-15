@@ -3,7 +3,7 @@
  */
 const INITIAL_PLAYER_DECK = [
     'golem', 'golem', 'golem', 'golem',
-    'clone', 'clone', 'golem', 'golem',
+    'clone', 'clone', 'clone', 'clone',
     'dinosaur', 'dinosaur',
     'sniper', 'sniper',
     'diviner', 'diviner',

@@ -2,6 +2,14 @@
 // イベントリスナーのセットアップと初期化
 // ==========================================
 
+// モバイルのツールバーを考慮した高さ計算 (--vh)
+function setVh() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+window.addEventListener('resize', setVh);
+setVh();
+
 // 1. UIコンポーネントの構築と挿入
 const appContainer = document.getElementById('app-container');
 if (appContainer) {

@@ -103,3 +103,38 @@ function setupEventSatanConfrontation() {
     dialogueQueue = confrontationLines;
     setupDialogueScreen();
 }
+
+/**
+ * 他プレイヤーのデッキデータをJSファイルから読み込む
+ */
+async function loadPlayerDeck(uuid) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = `api/decks/players/${uuid}.js?t=${Date.now()}`;
+        script.onload = () => {
+            if (typeof PLAYER_DECKS !== 'undefined' && PLAYER_DECKS[uuid]) {
+                const data = PLAYER_DECKS[uuid];
+                // 敵デッキデータとして整形
+                const enemyDeckData = {
+                    id: 'player_defense',
+                    name: data.name,
+                    character: data.character,
+                    deck: data.deck
+                };
+                // ENEMY_DECKSに一時的に登録
+                ENEMY_DECKS['player_defense'] = data.deck;
+                
+                document.body.removeChild(script);
+                resolve(enemyDeckData);
+            } else {
+                document.body.removeChild(script);
+                reject(new Error('Player deck data not found in script'));
+            }
+        };
+        script.onerror = () => {
+            document.body.removeChild(script);
+            reject(new Error('Failed to load player deck script'));
+        };
+        document.body.appendChild(script);
+    });
+}

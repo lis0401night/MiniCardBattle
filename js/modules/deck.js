@@ -20,6 +20,7 @@ function generateDeck(owner, config, sessionId) {
         // 敵のデッキ生成
         let recipeId = config.id;
         if (gameMode === 'event_satan') recipeId = 'satan_high';
+        if (gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
         let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
         let deckIds = [];
 
@@ -330,6 +331,7 @@ async function submitDefenseDeck() {
         uuid: uuid,
         name: playerName,
         character: playerConfig.id,
+        stage: selectedStageId, // 追加
         deck: playerDeckSelection.map(c => c.id)
     };
 
@@ -350,7 +352,7 @@ async function submitDefenseDeck() {
         const result = await response.json();
         if (result.success) {
             showAlertModal("防衛デッキの登録が完了しました！", () => {
-                switchScreen('screen-defense-menu');
+                showDefenseMenu();
             });
         } else {
             throw new Error(result.error || 'Unknown error');

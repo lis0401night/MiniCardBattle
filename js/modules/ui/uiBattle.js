@@ -207,6 +207,12 @@ function returnToTitle() {
 let pendingRewardCard = null;
 
 function showCardReward(enemyId) {
+    // 防衛戦では報酬（カード獲得）をスキップ
+    if (gameMode === 'defense_attack') {
+        setupDialogueScreen();
+        return;
+    }
+
     let recipe = ENEMY_DECKS[enemyId] || ENEMY_DECKS.android;
     let enemyDeckIds = [];
     if (recipe.easy && recipe.normal && recipe.hard) {

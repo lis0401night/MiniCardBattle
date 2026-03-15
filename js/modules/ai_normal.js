@@ -97,7 +97,7 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
  */
 function simulateAndEvaluate(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null) {
     const simState = simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill, currentMySP, tokenLanes);
-    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP, simState.enemySP);
+    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP, simState.playerHP, simState.enemySP);
 }
 
 /**
@@ -138,7 +138,12 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
 
     applyPassiveSkillLogic(simState, 'blue');
     applyPassiveSkillLogic(simState, 'red', true); // 四騎士の属性自傷ダメージは評価に含めない
+    
+    // 相手の攻撃を受けた後の状態
     calculateCombatPhase(simState, 'blue');
+    
+    // 自分の攻撃（今の盤面で相手にどうダメージを与えるか）も評価対象に含める
+    calculateCombatPhase(simState, 'red');
 
     // シミュレーション用のクリーンアップ（Drop増加等は不要なので直接nullにする）
     [simState.playerBoard, simState.enemyBoard].forEach(b => {
@@ -151,21 +156,30 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
 /**
  * シミュレーション結果の盤面評価を行う
  */
-function evaluateSimulatedState(myBoard, opBoard, myHP, mySP = 0) {
+function evaluateSimulatedState(myBoard, opBoard, myHP, opHP, mySP = 0) {
     if (myHP <= 0) return -1000000;
+    if (opHP <= 0) return 2000000; // 勝利は最優先
 
     // HP評価の重みを、残りHPが多い時は少し下げる（自傷カードを使いやすくする）
     let hpWeight = 5000;
     if (myHP > 30) hpWeight = 1000; // 高HP時は1HPの価値を低く見積もる
 
     let score = myHP * hpWeight;
+    score -= opHP * 3000; // 相手のHPを減らすことを評価
     score += (mySP || 0) * 400;
 
     for (let i = 0; i < 3; i++) {
         if (myBoard[i]) {
             const p = myBoard[i].currentPower;
             score += 2500;
-            score += p * 350;
+            
+            // 攻撃可能なカードの価値を高く、防衛専用(defender)の価値を低く見積もる
+            if (hasSkill(myBoard[i], 'defender')) {
+                score += p * 100; // 防御としての価値
+            } else {
+                score += p * 400; // 攻撃・盤面維持力としての価値
+            }
+            
             if (hasSkill(myBoard[i], 'legendary')) score += 3000;
         }
         if (opBoard[i]) {
@@ -173,7 +187,7 @@ function evaluateSimulatedState(myBoard, opBoard, myHP, mySP = 0) {
             score -= 1500;
             score -= ep * 250;
         } else {
-            score += 1000;
+            score += 1500; // 相手のレーンが空いている（攻撃が通る）ことを評価
         }
     }
     return score;
@@ -233,5 +247,6 @@ function simulateAndEvaluateToken(token, l, board, opBoard, hp, sp) {
     });
 
     calculateCombatPhase(simState, 'blue');
-    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP, simState.enemySP);
+    calculateCombatPhase(simState, 'red');
+    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP, simState.playerHP, simState.enemySP);
 }

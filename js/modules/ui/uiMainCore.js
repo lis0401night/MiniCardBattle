@@ -175,7 +175,9 @@ function handleOptionsTitleClick() {
 
 function goBackFromSelect() {
     playSound(SOUNDS.seClick);
-    if (appState === 'select_enemy') {
+    if (gameMode === 'defense_register') {
+        switchScreen('screen-defense-menu');
+    } else if (appState === 'select_enemy') {
         appState = 'select_player';
         document.getElementById('select-title').innerText = "キャラクター選択";
         initSelectScreen(false);
@@ -187,7 +189,9 @@ function goBackFromSelect() {
 
 function goBackFromDifficulty() {
     playSound(SOUNDS.seClick);
-    if (gameMode === 'story') {
+    if (gameMode === 'defense_register') {
+        switchScreen('screen-defense-menu');
+    } else if (gameMode === 'story') {
         appState = 'select_player';
         document.getElementById('select-title').innerText = "キャラクター選択";
         initSelectScreen(false);
@@ -202,8 +206,43 @@ function goBackFromDifficulty() {
 
 function goBackFromStage() {
     playSound(SOUNDS.seClick);
-    appState = 'select_difficulty';
-    switchScreen('screen-difficulty');
+    if (gameMode === 'defense_register') {
+        appState = 'select_player';
+        document.getElementById('select-title').innerText = "防衛キャラクター選択";
+        initSelectScreen(false);
+        switchScreen('screen-select');
+    } else {
+        appState = 'select_difficulty';
+        switchScreen('screen-difficulty');
+    }
+}
+
+function goBackFromDeckEdit() {
+    playSound(SOUNDS.seClick);
+    if (gameMode === 'defense_register') {
+        // ステージ選択に戻る
+        appState = 'select_stage';
+        initStageSelectScreen();
+        switchScreen('screen-stage-select');
+    } else if (gameMode === 'defense_attack') {
+        // キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
+        appState = 'select_player';
+        document.getElementById('select-title').innerText = "キャラクター選択";
+        initSelectScreen(false);
+        switchScreen('screen-select');
+    } else if (gameMode === 'story') {
+        // 難易度選択に戻る
+        appState = 'select_difficulty';
+        switchScreen('screen-difficulty');
+    } else if (gameMode === 'event_satan') {
+        // 高難易度画面に戻る
+        switchScreen('screen-high-difficulty');
+    } else {
+        // フリー対戦など：ステージ選択に戻る
+        appState = 'select_stage';
+        initStageSelectScreen();
+        switchScreen('screen-stage-select');
+    }
 }
 
 function startGameMode(mode) {
@@ -368,12 +407,95 @@ function handleSatanBattle() {
 
 function showDefenseMenu() {
     playSound(SOUNDS.seClick);
+    const hasRegistered = localStorage.getItem('mini_card_battle_deck_defense') !== null;
+    const startBtn = document.getElementById('btn-start-attack');
+    const disabledBtn = document.getElementById('btn-start-attack-disabled');
+
+    if (startBtn && disabledBtn) {
+        if (hasRegistered) {
+            startBtn.style.display = 'block';
+            disabledBtn.style.display = 'none';
+        } else {
+            startBtn.style.display = 'none';
+            disabledBtn.style.display = 'block';
+        }
+    }
     switchScreen('screen-defense-menu');
+}
+
+async function showDefenseBattleList() {
+    playSound(SOUNDS.seClick);
+    const listContainer = document.getElementById('defense-player-list');
+    listContainer.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">読み込み中...</div>';
+    switchScreen('screen-defense-battle-list');
+
+    try {
+        const response = await fetch('api/get_player_decks.php');
+        const result = await response.json();
+
+        if (result.success) {
+            listContainer.innerHTML = '';
+            const myUuid = getOrCreateUUID();
+            const players = result.players.filter(p => p.uuid !== myUuid);
+
+            if (players.length === 0) {
+                listContainer.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">対戦相手がいません</div>';
+                return;
+            }
+
+            players.forEach(p => {
+                const char = CHARACTERS[p.character] || CHARACTERS.android;
+                const banner = document.createElement('button');
+                banner.className = 'btn-banner';
+                banner.style.borderColor = '#cd7f32'; // ブロンズカードと同じ色
+                banner.innerHTML = `
+                    <img src="${char.icon}" class="banner-icon">
+                    <span class="banner-text" style="color: ${char.color};">${p.name}</span>
+                `;
+                
+                banner.onclick = () => startAttackBattle(p);
+                listContainer.appendChild(banner);
+            });
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (err) {
+        console.error("Failed to fetch player list:", err);
+        listContainer.innerHTML = '<div style="color:#ef4444; text-align:center; padding:20px;">読み込みに失敗しました</div>';
+    }
+}
+
+async function startAttackBattle(enemyPlayerData) {
+    playSound(SOUNDS.seClick);
+
+    try {
+        // デッキデータをロード（ENEMY_DECKS['player_defense']に登録される）
+        await loadPlayerDeck(enemyPlayerData.uuid);
+        
+        gameMode = 'defense_attack';
+        aiLevel = 3; // 防衛戦のAIは常にハード（レベル3）固定
+
+        // 敵の設定を保存
+        enemyConfig = { ...CHARACTERS[enemyPlayerData.character] || CHARACTERS.android };
+        enemyConfig.playerName = enemyPlayerData.name;
+        enemyConfig.uuid = enemyPlayerData.uuid;
+        enemyConfig.stageId = enemyPlayerData.stage;
+        selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
+
+        // 自分のキャラクター選択から開始
+        appState = 'select_player';
+        document.getElementById('select-title').innerText = "自分のキャラクター選択";
+        initSelectScreen(false);
+        switchScreen('screen-select');
+    } catch (err) {
+        console.error("Failed to start attack battle:", err);
+        showAlertModal("対戦データの読み込みに失敗しました。");
+    }
 }
 
 function showDefenseRules() {
     playSound(SOUNDS.seClick);
-    showAlertModal("【防衛戦ルール】\n\n1. 自分の「防衛デッキ」を登録すると、他のプレイヤーの攻撃対象になります。\n2. 登録時には名前とキャラクター、30枚のデッキを選択します。\n3. 他のプレイヤーが作成したデッキと戦う「攻撃開始」は今後のアップデートで追加予定です！");
+    switchScreen('screen-defense-rules');
 }
 
 function startDefenseRegistration() {
@@ -405,7 +527,13 @@ function confirmCharSelect() {
             // 高難易度サタン戦専用の導入へ
             initEventSatanMode(pendingCharId);
         } else if (gameMode === 'defense_register') {
-            // 防衛登録時は対戦相手・難易度・ステージをスキップしてデッキ編集へ
+            // 防衛登録：次はステージ選択
+            playerConfig = CHARACTERS[pendingCharId];
+            appState = 'select_stage';
+            initStageSelectScreen();
+            switchScreen('screen-stage-select');
+        } else if (gameMode === 'defense_attack') {
+            // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
             playerConfig = CHARACTERS[pendingCharId];
             startBattleFlow();
         } else {
@@ -428,6 +556,10 @@ function confirmDifficulty(level) {
     storyDifficulty = level;
     if (gameMode === 'story') {
         initStoryMode(pendingCharId);
+    } else if (gameMode === 'defense_attack') {
+        // 攻撃側：難易度選択の後はステージを敵の設定からロード（またはランダム）
+        selectedStageId = enemyConfig.stageId || 'plain';
+        startBattleFlow();
     } else {
         appState = 'select_stage';
         initStageSelectScreen();
@@ -470,11 +602,17 @@ function confirmStageSelect(stageId) {
     } else {
         selectedStageId = stageId;
     }
-    battleCount = 1;
-    appState = 'pre_dialogue';
-    dialogueQueue = [
-        { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'intro') },
-        { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
-    ];
-    setupDialogueScreen();
+
+    if (gameMode === 'defense_register') {
+        // 防衛登録：ステージ選択の次はデッキ編集
+        startBattleFlow();
+    } else {
+        battleCount = 1;
+        appState = 'pre_dialogue';
+        dialogueQueue = [
+            { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'intro') },
+            { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
+        ];
+        setupDialogueScreen();
+    }
 }
