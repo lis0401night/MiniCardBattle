@@ -94,7 +94,12 @@ const UI_COMPONENTS = {
     <!-- ギャラリーメニュー画面 -->
     <div id="screen-gallery-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">ギャラリー</h2>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #059669);" onclick="showCardList()">カード一覧</button>
+        <div class="menu-btn-grid">
+            <div class="menu-img-btn" style="grid-column: 1 / -1; max-width: 50%; margin: 0 auto;" onclick="showCardList()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.GALLERY_CARD_LIST}');"></div>
+                <div class="menu-btn-label">カード一覧</div>
+            </div>
+        </div>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
             <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
         </div>
@@ -266,8 +271,16 @@ const UI_COMPONENTS = {
     <!-- イベントメニュー画面 -->
     <div id="screen-event-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">イベント</h2>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #7f1d1d);" onclick="startHighDifficulty()">高難易度</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #065f46);" onclick="showDefenseMenu()">防衛戦</button>
+        <div class="menu-btn-grid">
+            <div class="menu-img-btn" onclick="startHighDifficulty()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.EVENT_HIGH_DIFF}');"></div>
+                <div class="menu-btn-label">高難易度</div>
+            </div>
+            <div class="menu-img-btn" onclick="showDefenseMenu()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.EVENT_DEFENSE}');"></div>
+                <div class="menu-btn-label">防衛戦</div>
+            </div>
+        </div>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
             <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-mode-select')">戻る</button>
         </div>
