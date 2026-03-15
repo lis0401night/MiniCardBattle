@@ -10,7 +10,7 @@ ENEMY_DECKS.android = {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'cyberdragoon',
+        'cyberdragon',
         'cyberman', 'cyberman',
         'bigai', 'bigai',
         'titan', 'titan',
@@ -20,7 +20,7 @@ ENEMY_DECKS.android = {
         'diviner', 'diviner', 'diviner',
     ],
     hard: [
-        'cyberdragoon', 'cyberdragoon', 'cyberdragoon', 'cyberdragoon',
+        'cyberdragon', 'cyberdragon', 'cyberdragon', 'cyberdragon',
         'cyberman', 'cyberman', 'cyberman', 'cyberman',
         'bigai', 'bigai', 'bigai', 'bigai',
         'titan', 'titan',

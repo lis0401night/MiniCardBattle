@@ -87,8 +87,8 @@ function debugUnlockCards() {
             }
         });
 
-        // プレミアムカード(empress, assassin, cyberdragoon, dragon)の解放
-        const premiumTargets = ['empress', 'assassin', 'cyberdragoon', 'dragon'];
+        // プレミアムカード(empress, assassin, cyberdragon, dragon)の解放
+        const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon'];
         premiumTargets.forEach(id => {
             if (!unlockedPremiumCards.includes(id)) {
                 unlockedPremiumCards.push(id);

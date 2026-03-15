@@ -695,9 +695,13 @@ function renderExchange() {
             canExchange = false;
         }
 
+        // バッジや所持数など
         const opacity = canExchange ? "1.0" : (isMaxed ? "0.3" : "0.6");
         const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
-        const imgUrl = getCardImgUrl(itemObj);
+        let imgUrl = getCardImgUrl(itemObj);
+        if (itemInfo.type === 'premium') {
+            imgUrl = imgUrl.replace('.jpg', '_premium.gif');
+        }
 
         // バッジや所持数など
         const countBadge = itemInfo.type === 'card' ? 
@@ -741,33 +745,64 @@ function showExchangeDetail(id, type, cost, itemObj, canExchange, isMaxed) {
     const skillsList = document.getElementById('exchange-detail-skills-list');
     skillsList.innerHTML = '';
     
-    let skillsToShow = [];
+    let skillCandidates = [];
     if (itemObj.skill && itemObj.skill !== 'none') {
-        skillsToShow.push({ id: itemObj.skill, value: itemObj.skillValue });
+        skillCandidates.push({ id: itemObj.skill, value: itemObj.skillValue });
     }
     if (Array.isArray(itemObj.skills)) {
-        skillsToShow = skillsToShow.concat(itemObj.skills);
+        skillCandidates = skillCandidates.concat(itemObj.skills);
     }
 
-    if (skillsToShow.length > 0) {
-        skillsToShow.forEach(sk => {
-            const sData = SKILLS[sk.id];
-            if (sData) {
-                const valStr = sk.value ? ` ${sk.value}` : '';
-                skillsList.innerHTML += `
-                    <div style="background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; border-left: 3px solid #60a5fa; margin-bottom: 5px;">
-                        <div style="font-weight: bold; color: #60a5fa; font-size: 0.9rem; margin-bottom: 3px;">
-                            ${sData.icon} ${sData.name}${valStr}
-                        </div>
-                        <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;">
-                            ${sData.description}
-                        </div>
-                    </div>
-                `;
+    if (skillCandidates.length > 0) {
+        skillCandidates.forEach(sk => {
+            const s = SKILLS[sk.id];
+            if (s) {
+                const item = document.createElement('div');
+                item.className = 'preview-skill-item';
+                const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
+                const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+
+                if (sk.id === 'choice' && Array.isArray(itemObj.choices)) {
+                    let subDetailsHtml = '';
+                    itemObj.choices.forEach(cho => {
+                        const cs = SKILLS[cho.id];
+                        if (cs) {
+                            const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
+                            const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                            subDetailsHtml += `
+                                <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
+                                    <div class="preview-skill-badge" style="background: rgba(148, 163, 184, 0.2); border-color: #94a3b8; color: #94a3b8; font-size: 0.75rem;">${cs.icon} ${cs.name}${cVal}</div>
+                                    <p class="preview-skill-desc" style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 0 0;">${cDesc}</p>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    item.innerHTML = `
+                        <details class="choice-accordion" style="width: 100%;">
+                            <summary style="list-style: none; cursor: pointer; outline: none; width: 100%;">
+                                <div class="preview-skill-badge" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 110px; position: relative; margin: 0 auto;">
+                                    <span>${s.icon} ${s.name}${val}</span>
+                                    <span class="accordion-icon" style="font-size: 0.8rem; transition: transform 0.2s; position: absolute; right: 8px;">▼</span>
+                                </div>
+                                <p class="preview-skill-desc" style="margin-top: 6px; margin-bottom: 8px; color: #f8fafc; text-align: center;">${desc}</p>
+                            </summary>
+                            <div class="accordion-content" style="margin-top: 5px;">
+                                ${subDetailsHtml}
+                            </div>
+                        </details>
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <div class="preview-skill-badge">${s.icon} ${s.name}${val}</div>
+                        <p class="preview-skill-desc">${desc}</p>
+                    `;
+                }
+                skillsList.appendChild(item);
             }
         });
     } else {
-        skillsList.innerHTML = '<div class="skill-item" style="justify-content:center; color:#94a3b8;">スキルなし</div>';
+        skillsList.innerHTML = '<p class="preview-skill-desc">能力なし</p>';
     }
 
     const btn = document.getElementById('btn-exchange-confirm');
@@ -794,7 +829,7 @@ function showExchangeDetail(id, type, cost, itemObj, canExchange, isMaxed) {
     const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
     let imgUrl = getCardImgUrl(itemObj);
     if (type === 'premium') {
-        imgUrl = imgUrl.replace('.jpg', '_premium.jpg');
+        imgUrl = imgUrl.replace('.jpg', '_premium.gif');
     }
 
     cardContainer.innerHTML = `

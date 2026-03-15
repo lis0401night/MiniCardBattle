@@ -37,7 +37,7 @@ const CARD_MASTER = [
     { id: 'barrier', name: '聖光の護り手', power: 4, skills: [{ id: 'guardian' }, { id: 'support', value: 1 }], rarity: 2, flavor: '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。', imgUrl: 'assets/card_barrier.jpg' },
     { id: 'warlock', name: '煉獄の拷問官', power: 4, skills: [{ id: 'sacrifice', value: 4 }, { id: 'berserk', value: 4 }, { id: 'spread', value: 4 }], rarity: 2, flavor: '燃え盛る炎の鞭を振るう魔界の拷問官。その一振りは敵を焼き払い、自らの魂さえも劫火の糧とする。', imgUrl: 'assets/card_warlock.jpg' },
     { id: 'dealer', name: 'デビル・ディーラー', power: 5, skills: [{ id: 'sacrifice', value: 2 }, { id: 'draw', value: 4 }], rarity: 2, flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。', imgUrl: 'assets/card_dealer.jpg' },
-    { id: 'cyberdragoon', name: '試作型ドラグーン', power: 5, skills: [{ id: 'legendary' }, { id: 'spread', value: 3 }, { id: 'charge', value: -3 }], rarity: 3, flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。', imgUrl: 'assets/card_cyberdragon.jpg' },
+    { id: 'cyberdragon', name: '試作型ドラグーン', power: 5, skills: [{ id: 'legendary' }, { id: 'spread', value: 3 }, { id: 'charge', value: -3 }], rarity: 3, flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。', imgUrl: 'assets/card_cyberdragon.jpg' },
     { id: 'cyberman', name: 'ライオット・キーパー', power: 6, skills: [{ id: 'charge', value: -1 }], rarity: 3, flavor: '「システム始動……これより排除を開始する。」最新型の暴徒鎮圧用ドロイド。', imgUrl: 'assets/card_cyberman.jpg' },
     { id: 'dragon', name: 'ファイア・ドラゴン', power: 6, skills: [{ id: 'legendary' }, { id: 'berserk', value: 2 }, { id: 'spread', value: 2 }], rarity: 3, flavor: '炎を纏った紅蓮の翼。その咆哮は敵を焼き払い、荒ぶる魔力は周囲をも巻き込む。' },
     { id: 'drifter', name: 'アッシュランドの放浪者', power: 4, rarity: 3, skill: 'double_strike', flavor: '灼熱の砂塵を切り裂く双剣。彼の歩みの後には、切り刻まれた絶望のみが残る。', imgUrl: 'assets/card_drifter.jpg' },

@@ -6,7 +6,7 @@ const DECK_SIZE = 20;
 
 // 交換所ラインナップ
 const EXCHANGE_LINEUP = [
-    { id: 'cyberdragoon', type: 'premium', cost: 10 },
+    { id: 'cyberdragon', type: 'premium', cost: 10 },
     { id: 'dragon', type: 'premium', cost: 10 },
     { id: 'assassin', type: 'premium', cost: 10 },
     { id: 'empress', type: 'premium', cost: 10 },
