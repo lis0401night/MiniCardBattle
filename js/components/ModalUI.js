@@ -12,12 +12,13 @@ Object.assign(UI_COMPONENTS, {
                 <h2 id="preview-card-name">Card Name</h2>
                 <div class="preview-scroll-area">
                     <div id="preview-skills-list" class="preview-skills-list"></div>
-                    <p id="preview-card-flavor" class="preview-flavor-text"></p>
-                </div>
+                <p id="preview-card-flavor" class="preview-flavor-text"></p>
+                </div> <!-- .preview-scroll-area -->
+                <button id="preview-premium-toggle" class="btn" style="display:none; margin-top: 10px; width: 100%; flex-shrink: 0; background: linear-gradient(45deg, #d946ef, #9333ea); font-size: 0.9rem; padding: 10px 5px;">✨ プレミアムイラスト</button>
                 <button class="btn" style="margin-top: 15px; width: 100%; flex-shrink: 0;" onclick="closeCardPreview()">閉じる</button>
-            </div>
-        </div>
-    </div>
+            </div> <!-- .preview-details -->
+        </div> <!-- .preview-content -->
+    </div> <!-- #card-preview-modal -->
     `,
 
     confirmModal: `

@@ -87,6 +87,7 @@ Object.assign(UI_COMPONENTS, {
                 <div class="preview-scroll-area">
                     <div id="reward-skills-list" class="preview-skills-list"></div>
                     <p id="reward-card-flavor" class="preview-flavor-text"></p>
+                    <button id="reward-premium-toggle" class="btn" style="display:none; margin-top: 10px; width: 100%; flex-shrink: 0; background: linear-gradient(45deg, #d946ef, #9333ea); font-size: 0.9rem; padding: 10px 5px;">✨ プレミアムイラスト</button>
                 </div>
                 <button id="btn-reward-next" class="btn" style="display:none; margin-top: 15px; width: 100%; flex-shrink: 0; background: linear-gradient(45deg, #22c55e, #16a34a);" onclick="event.stopPropagation(); closeRewardScreen()">次へ</button>
             </div>
@@ -153,6 +154,19 @@ Object.assign(UI_COMPONENTS, {
         </div>
     </div>
     `,
+
+    skillChoiceScreen: `
+    <!-- スキル選択モーダル -->
+    <div id="screen-skill-choice" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+        <div class="skill-modal-box modal-pop-animation">
+            <h2 style="color: #facc15; margin-bottom: 20px; text-align: center;">スキルを選択</h2>
+            <div id="skill-choice-container" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                <!-- ここに選択肢が動的に挿入されます -->
+            </div>
+        </div>
+    </div>
+    `,
+
 
     endingScreen: `
     <!-- 7. エンディングイラスト表示画面 -->

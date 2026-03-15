@@ -35,7 +35,9 @@ function handleProgressionNextStep() {
 function handleFreeBattleProgression() {
     if (appState === 'post_dialogue') {
         performFadeTransition(() => {
-            startGameMode('free');
+            appState = 'select_enemy';
+            initSelectScreen(false);
+            switchScreen('screen-select');
         });
     } else if (appState === 'pre_dialogue') {
         startBattleFlow();

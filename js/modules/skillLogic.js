@@ -8,9 +8,9 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice'].includes(skillId)) {
         playSound(SOUNDS.seSkill);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     }
 
@@ -23,7 +23,16 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         playerDiscard, enemyDiscard
     };
 
-    // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick等)
+    // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice等)
+    if (skillId === 'choice') {
+        const choice = await waitSkillChoice(c.choices, o, c);
+        if (choice) {
+            // 選択されたスキルを再帰的に実行
+            await resolveActiveSkillEffect(o, l, c, choice.id, choice.value);
+        }
+        return;
+    }
+
     if (skillId === 'draw') {
         const h = o === 'blue' ? playerHand : enemyHand;
         const count = skillValue || 1;

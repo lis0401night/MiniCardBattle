@@ -316,28 +316,9 @@ async function performFadeTransition(action) {
 function initSelectScreen(includeSatan) {
     const grid = document.getElementById('char-grid');
     grid.innerHTML = '';
-    if (includeSatan) {
-        const randomEl = document.createElement('div');
-        randomEl.className = 'char-card';
-        randomEl.style.backgroundColor = '#000000';
-        randomEl.style.backgroundImage = 'none';
-        randomEl.innerHTML = `
-            <div style="position: absolute; width: 150%; height: 150%; top: -25%; left: -25%; background: radial-gradient(circle, rgba(255,255,255,0.4) 10%, rgba(255,255,255,0) 60%); filter: blur(10px); pointer-events: none;"></div>
-            <div class="char-name" style="color:#ffffff; z-index: 2;">ランダム</div>
-        `;
-        randomEl.onclick = () => {
-            playSound(SOUNDS.seClick);
-            const selectableIds = Object.keys(CHARACTERS).filter(id => id !== 'satan');
-            const randomId = selectableIds[Math.floor(Math.random() * selectableIds.length)];
-            enemyConfig = CHARACTERS[randomId];
-            appState = 'select_difficulty';
-            switchScreen('screen-difficulty');
-        };
-        grid.appendChild(randomEl);
-    }
 
     Object.values(CHARACTERS).forEach(char => {
-        if (!includeSatan && char.id === 'satan') return;
+        if (char.id === 'satan') return;
         const el = document.createElement('div');
         el.className = 'char-card';
         el.style.backgroundImage = `url('${char.image}')`;

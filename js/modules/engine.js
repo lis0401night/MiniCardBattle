@@ -18,6 +18,9 @@ function applyActiveSkillLogic(state, owner, l, sid, val) {
     if (!c) return;
 
     switch (sid) {
+        case 'choice':
+            // 選択スキル自体は純粋ロジックでは解決できない（上位のシミュレーション層で展開済みのため）
+            break;
         case 'support':
             const sAdj = l === 1 ? [0, 2] : [1];
             sAdj.forEach(j => { if (b[j]) b[j].currentPower += (val || 2); });

@@ -49,11 +49,12 @@ async function executeEnemyAI() {
 
             if (typeof aiLevel !== 'undefined' && aiLevel === 1) {
                 // イージー難易度 (ai_easy.js)
-                decision = getEasyDecision();
+                aiDecision = getEasyDecision();
             } else {
                 // ノーマル以上 (ai_normal.js)
-                decision = getNormalDecision();
+                aiDecision = getNormalDecision();
             }
+            decision = aiDecision;
 
             // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
             if (decision.useSkill) {

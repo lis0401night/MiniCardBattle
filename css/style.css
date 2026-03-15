@@ -2459,3 +2459,30 @@ h2 {
         padding: 0 5px;
     }
 }
+
+/* ===== 「選択」アコーディオン用のスタイル ===== */
+.choice-accordion {
+    width: 100%;
+}
+
+.choice-accordion summary {
+    display: block;
+}
+
+.choice-accordion summary::-webkit-details-marker {
+    display: none; /* デフォルトの矢印を消す */
+}
+
+.choice-accordion[open] .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.choice-accordion .preview-skill-badge,
+.choice-accordion .card-skill-tag {
+    transition: background 0.2s;
+}
+
+.choice-accordion:hover .preview-skill-badge,
+.choice-accordion:hover .card-skill-tag {
+    filter: brightness(1.2);
+}

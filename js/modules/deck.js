@@ -8,12 +8,13 @@ function generateDeck(owner, config, sessionId) {
         deck = playerDeckSelection.map((t, i) => {
             const imgUrl = getCardImgUrl(t);
             return {
-                id: `${owner}_${sessionId}_${i}`, owner: owner,
-                imgUrl: imgUrl, filter: config.filter,
-                basePower: t.power, power: t.power, currentPower: t.power, name: t.name,
-                skill: t.skill, skillValue: t.skillValue,
-                skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined,
-                flavor: t.flavor, rarity: t.rarity
+                ...t,
+                id: `${owner}_${sessionId}_${i}`,
+                owner: owner,
+                imgUrl: imgUrl,
+                filter: config.filter,
+                currentPower: t.power,
+                skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
             };
         });
     } else {
@@ -51,12 +52,13 @@ function generateDeck(owner, config, sessionId) {
 
             const imgUrl = getCardImgUrl(t);
             deck.push({
-                id: `${owner}_${sessionId}_${i}`, owner: owner,
-                imgUrl: imgUrl, filter: filter,
-                basePower: p, power: p, currentPower: p, name: t.name,
-                skill: t.skill, skillValue: t.skillValue,
-                skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined,
-                flavor: t.flavor, rarity: t.rarity
+                ...t,
+                id: `${owner}_${sessionId}_${i}`,
+                owner: owner,
+                imgUrl: imgUrl,
+                filter: filter,
+                currentPower: p,
+                skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
             });
         });
     }

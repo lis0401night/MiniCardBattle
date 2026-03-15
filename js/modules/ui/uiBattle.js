@@ -14,10 +14,11 @@ function updateCardDetail(c) {
         }
         b.style.color = (isDiscardingMode || isPlacementMode) ? '#facc15' : '#94a3b8';
     } else {
-        let skillCandidates = [];
+        let skillCandidates = [];        // 1. 基本スキル
         if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
             skillCandidates.push({ id: c.skill, value: c.skillValue });
         }
+        // 2. 複数スキル配列
         if (Array.isArray(c.skills)) {
             c.skills.forEach(sk => {
                 skillCandidates.push({ id: sk.id, value: sk.value });
@@ -48,12 +49,45 @@ function updateCardDetail(c) {
                     const val = isBind ? '' : (sk.value ?? '');
                     const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
                     const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
-                    html += `<div class="skill-header">
-                        <div class="card-skill-tag" style="background:${isBind ? '#475569' : ''}; border-color:${isBind ? '#ef4444' : ''}; color:${isBind ? '#fca5a5' : ''};">
-                            ${s.icon} ${skillName}${val}${countSuffix}
+                    
+                    if (sk.id === 'choice' && Array.isArray(c.choices)) {
+                        let subDetailsHtml = '';
+                        c.choices.forEach(cho => {
+                            const cs = SKILLS[cho.id];
+                            if (cs) {
+                                const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
+                                const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                                subDetailsHtml += `
+                                    <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
+                                        <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${cs.icon} ${cs.name}${cVal}</div>
+                                        <div class="skill-desc" style="font-size: 0.8rem; color: #94a3b8; padding-left: 0;">${cDesc}</div>
+                                    </div>
+                                `;
+                            }
+                        });
+
+                        html += `
+                            <details class="choice-accordion" style="margin-bottom: 4px; width: 100%;">
+                                <summary style="list-style: none; cursor: pointer; outline: none; width: 100%;">
+                                    <div class="card-skill-tag" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 110px; position: relative; margin: 0 auto;">
+                                        <span>${s.icon} ${skillName}${val}${countSuffix}</span>
+                                        <span class="accordion-icon" style="font-size: 0.7rem; position: absolute; right: 8px;">▼</span>
+                                    </div>
+                                    <div class="skill-desc" style="margin-top: 2px; margin-bottom: 4px; color: #f8fafc; text-align: center;">${skillEffect}</div>
+                                </summary>
+                                <div class="accordion-content" style="margin-top: 5px;">
+                                    ${subDetailsHtml}
+                                </div>
+                            </details>
+                        `;
+                    } else {
+                        html += `<div class="skill-header">
+                            <div class="card-skill-tag" style="background:${isBind ? '#475569' : ''}; border-color:${isBind ? '#ef4444' : ''}; color:${isBind ? '#fca5a5' : ''};">
+                                ${s.icon} ${skillName}${val}${countSuffix}
+                            </div>
                         </div>
-                    </div>
-                    <div class="skill-desc">${skillEffect}</div>`;
+                        <div class="skill-desc">${skillEffect}</div>`;
+                    }
                 }
             });
         } else {
@@ -239,9 +273,9 @@ function showCardReward(enemyId) {
     });
 
     if (eligibleIds.length === 0) {
-        if (gameMode === 'free' || gameMode === 'defense_attack') {
+        if (gameMode === 'defense_attack') {
             appState = 'select_enemy';
-            initSelectScreen(true);
+            initSelectScreen(false);
             switchScreen('screen-select');
         } else {
             // ストーリーモードで報酬がない場合は、appStateを更新してから進行
@@ -288,14 +322,18 @@ function closeRewardScreen() {
     playSound(SOUNDS.seClick);
     document.getElementById('screen-reward').classList.remove('active');
     
-    if (gameMode === 'free' || gameMode === 'defense_attack') {
+    if (gameMode === 'defense_attack') {
         appState = 'select_enemy';
-        initSelectScreen(true);
+        initSelectScreen(false);
         switchScreen('screen-select');
     } else {
         // ストーリーモードでは重複再生を防ぐため、既に演出が始まっていないか確認
         if (appState === 'post_dialogue') {
-            handleStoryProgression();
+            if (gameMode === 'story') {
+                handleStoryProgression();
+            } else {
+                setupDialogueScreen();
+            }
         } else {
             setupDialogueScreen();
         }

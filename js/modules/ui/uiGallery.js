@@ -159,9 +159,11 @@ function setupLongPress(element, cardData) {
 }
 
 function populateCardPreview(prefix, card) {
+    if (!card) return;
     const container = document.getElementById(`${prefix}-card-container`);
     const nameEl = document.getElementById(`${prefix}-card-name`);
     const flavorEl = document.getElementById(`${prefix}-card-flavor`);
+    const skillsList = document.getElementById(`${prefix}-skills-list`);
 
     if (container) {
         container.innerHTML = '';
@@ -175,50 +177,87 @@ function populateCardPreview(prefix, card) {
             <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
             <div class="card-power">${card.currentPower || card.power}</div>
         `;
+        // スキルバッジの描画（BaseUI.js の renderSkillTag を再利用）
+        if (typeof renderSkillTag === 'function') {
+            const skillTagHtml = renderSkillTag(card, false);
+            if (skillTagHtml) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = skillTagHtml;
+                if (tempDiv.firstChild) {
+                    const badges = tempDiv.firstChild;
+                    cardClone.appendChild(badges);
+                }
+            }
+        }
         container.appendChild(cardClone);
     }
 
     if (nameEl) {
         nameEl.innerText = card.name;
-        const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
+        const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15', 4: '#fde047' };
         nameEl.style.color = rarityColors[card.rarity] || '#fff';
     }
 
-    const skillsList = document.getElementById(`${prefix}-skills-list`);
     if (skillsList) {
         skillsList.innerHTML = '';
         let skillCandidates = [];
+        
+        // 1. 基本スキル
         if (card.skill && card.skill !== 'none' && card.skill !== undefined) {
             skillCandidates.push({ id: card.skill, value: card.skillValue });
         }
+        // 2. 複数スキル配列
         if (Array.isArray(card.skills)) {
             card.skills.forEach(sk => {
                 skillCandidates.push({ id: sk.id, value: sk.value });
             });
         }
-        let grouped = [];
-        skillCandidates.forEach(c => {
-            const existing = grouped.find(g => g.id === c.id && g.value === c.value);
-            if (existing) {
-                existing.count++;
-            } else {
-                grouped.push({ ...c, count: 1 });
-            }
-        });
 
-        if (grouped.length > 0) {
-            grouped.forEach(sk => {
+        if (skillCandidates.length > 0) {
+            skillCandidates.forEach(sk => {
                 const s = SKILLS[sk.id];
                 if (s) {
                     const item = document.createElement('div');
                     item.className = 'preview-skill-item';
-                    const val = sk.value === null || sk.value === undefined ? '' : sk.value;
+                    const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
                     const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
-                    const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
-                    item.innerHTML = `
-                        <div class="preview-skill-badge">${s.icon} ${s.name}${val}${countSuffix}</div>
-                        <p class="preview-skill-desc">${desc}</p>
-                    `;
+                    
+                    if (sk.id === 'choice' && Array.isArray(card.choices)) {
+                        let subDetailsHtml = '';
+                        card.choices.forEach(cho => {
+                            const cs = SKILLS[cho.id];
+                            if (cs) {
+                                const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
+                                const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                                subDetailsHtml += `
+                                    <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
+                                        <div class="preview-skill-badge" style="background: rgba(148, 163, 184, 0.2); border-color: #94a3b8; color: #94a3b8; font-size: 0.75rem;">${cs.icon} ${cs.name}${cVal}</div>
+                                        <p class="preview-skill-desc" style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 0 0;">${cDesc}</p>
+                                    </div>
+                                `;
+                            }
+                        });
+                        
+                        item.innerHTML = `
+                            <details class="choice-accordion" style="width: 100%;">
+                                <summary style="list-style: none; cursor: pointer; outline: none; width: 100%;">
+                                    <div class="preview-skill-badge" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 110px; position: relative; margin: 0 auto;">
+                                        <span>${s.icon} ${s.name}${val}</span>
+                                        <span class="accordion-icon" style="font-size: 0.8rem; transition: transform 0.2s; position: absolute; right: 8px;">▼</span>
+                                    </div>
+                                    <p class="preview-skill-desc" style="margin-top: 6px; margin-bottom: 8px; color: #f8fafc; text-align: center;">${desc}</p>
+                                </summary>
+                                <div class="accordion-content" style="margin-top: 5px;">
+                                    ${subDetailsHtml}
+                                </div>
+                            </details>
+                        `;
+                    } else {
+                        item.innerHTML = `
+                            <div class="preview-skill-badge">${s.icon} ${s.name}${val}</div>
+                            <p class="preview-skill-desc">${desc}</p>
+                        `;
+                    }
                     skillsList.appendChild(item);
                 }
             });
@@ -236,11 +275,10 @@ function populateCardPreview(prefix, card) {
             flavorEl.style.display = 'none';
         }
     }
-    
+
     // プレミアム切替ボタンの表示制御
     const premiumToggleBtn = document.getElementById(`${prefix}-premium-toggle`);
     if (premiumToggleBtn) {
-        // 解放済みのプレミアムカードの場合のみ表示
         if (unlockedPremiumCards.includes(card.id)) {
             premiumToggleBtn.style.display = 'block';
             premiumToggleBtn.innerText = premiumCards.includes(card.id) ? '✨ 個別イラストON' : '✨ 個別イラストOFF';
@@ -249,12 +287,11 @@ function populateCardPreview(prefix, card) {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
                 togglePremiumCard(card.id);
-                // 再描画
                 populateCardPreview(prefix, card);
-                if (typeof renderCardList === 'function' && document.getElementById('screen-card-list').classList.contains('active')) {
+                if (typeof renderCardList === 'function' && document.getElementById('screen-card-list') && document.getElementById('screen-card-list').classList.contains('active')) {
                     renderCardList();
                 }
-                if (typeof renderDeckEdit === 'function' && document.getElementById('screen-deck-edit').classList.contains('active')) {
+                if (typeof renderDeckEdit === 'function' && document.getElementById('screen-deck-edit') && document.getElementById('screen-deck-edit').classList.contains('active')) {
                     renderDeckEdit();
                 }
             };
@@ -266,6 +303,10 @@ function populateCardPreview(prefix, card) {
 
 function openCardPreview(card) {
     const modal = document.getElementById('card-preview-modal');
+    if (!modal) {
+        console.error("Card preview modal not found!");
+        return;
+    }
     populateCardPreview('preview', card);
     modal.style.display = 'flex';
     playSound(SOUNDS.seClick);

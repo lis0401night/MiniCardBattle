@@ -59,9 +59,17 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
 
                         const isOverwrite = myBoard[l] !== null;
-                        let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
                         
-                        candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, simState });
+                        // 「選択」スキルの場合は、それぞれの選択肢でシミュレーションを行う
+                        if (hasSkill(card, 'choice') && Array.isArray(card.choices)) {
+                            for (let cIdx = 0; cIdx < card.choices.length; cIdx++) {
+                                let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdx);
+                                candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdx, simState });
+                            }
+                        } else {
+                            let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
+                            candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, simState });
+                        }
                     }
                 }
                 // 2. 「パス」という選択肢
@@ -135,7 +143,7 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
  * 仮想位置でのシミュレーション実行（状態を返す）
  * 順序は常に リーダースキル -> カード配置
  */
-function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null) {
+function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined) {
     const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
     let simState = {
         playerBoard: currentOpBoard.map(cloneCard),
@@ -143,7 +151,11 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
         playerHP: playerHP,
         enemyHP: currentMyHP,
         playerSP: playerSP,
-        enemySP: currentMySP || 0
+        enemySP: currentMySP || 0,
+        playerHand: playerHand.map(cloneCard), // Morph等で必要
+        enemyHand: hand.map(cloneCard),
+        playerDiscard: playerDiscard.map(cloneCard),
+        enemyDiscard: enemyDiscard.map(cloneCard)
     };
 
     // 1. スキル使用 (常に先出し)
@@ -152,15 +164,33 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
         applyLeaderSkillLogic(simState, 'red', enemyConfig.leaderSkill.action, tokenLanes);
     }
 
-    // 2. カードをプレイ (1の後の盤面に対して行われるため、召喚時効果がトークンを参照できる)
+    // 2. カードをプレイ
     if (handIdx !== -1) {
         const playedCard = cloneCard(hand[handIdx]);
         playedCard.currentPower = playedCard.power;
         simState.enemyBoard[laneIdx] = playedCard;
 
         let skills = [];
-        if (playedCard.skill && playedCard.skill !== 'none') skills.push({ id: playedCard.skill, value: playedCard.skillValue });
-        if (Array.isArray(playedCard.skills)) skills = skills.concat(playedCard.skills);
+        if (playedCard.skill && playedCard.skill !== 'none') {
+            // 選択スキルの場合、choiceIndexがあればその内容を、なければそのまま追加
+            if (playedCard.skill === 'choice' && choiceIndex !== undefined && playedCard.choices && playedCard.choices[choiceIndex]) {
+                const chr = playedCard.choices[choiceIndex];
+                skills.push({ id: chr.id, value: chr.value });
+            } else {
+                skills.push({ id: playedCard.skill, value: playedCard.skillValue });
+            }
+        }
+        if (Array.isArray(playedCard.skills)) {
+            // skills配列内にも選択スキルがある場合（通常はない想定だが念のため）
+            playedCard.skills.forEach(sk => {
+                if (sk.id === 'choice' && choiceIndex !== undefined && playedCard.choices && playedCard.choices[choiceIndex]) {
+                    const chr = playedCard.choices[choiceIndex];
+                    skills.push({ id: chr.id, value: chr.value });
+                } else {
+                    skills.push(sk);
+                }
+            });
+        }
 
         skills.forEach(sk => {
             applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value);

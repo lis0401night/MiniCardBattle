@@ -31,13 +31,14 @@ const SKILLS = {
     takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードの置かれているレーンにしか配置できない。' },
     pierce: { name: '貫通', icon: '🏹', desc: (val) => '自分のターンに、戦闘で敵を破壊した時、自身のパワーの分だけ相手リーダーにダメージを与える。' },
     explode: { name: '誘爆', icon: '💥', desc: (val) => `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。` },
-    contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、リーダーに${val || 3}ダメージ。` }
+    contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、リーダーに${val || 3}ダメージ。` },
+    choice: { name: '選択', icon: '❓', desc: (val) => '召喚時、二つのスキルから一つを選んで発動する。' }
 };
 
 // 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）
 const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

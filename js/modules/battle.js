@@ -446,11 +446,104 @@ async function waitPlayerHandSelection(count, owner) {
             };
         });
     });
+}/**
+ * 召喚時スキル「選択」の選択を待機する
+ */
+async function waitSkillChoice(choices, owner, card) {
+    if (!choices || choices.length === 0) return null;
+
+    // AIの場合
+    if (owner === 'red') {
+        const aiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
+        
+        // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後）
+        if (typeof aiDecision !== 'undefined' && aiDecision && aiDecision.choiceIndex !== undefined) {
+             const idx = aiDecision.choiceIndex;
+             delete aiDecision.choiceIndex; // 使い終わったら消去
+             return choices[idx];
+        }
+
+        // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
+        if (aiLevel <= 1) {
+            // Easy: ランダム
+            return choices[Math.floor(Math.random() * choices.length)];
+        } else {
+            // Normal/Hard: ここで簡易的にシミュレーション
+            // 本来は意思決定時に行われるべきだが、フォールバックとして実装
+            console.log("AI performing on-the-fly skill choice simulation");
+            let bestIdx = 0;
+            let bestScore = -Infinity;
+            const originalBoard = enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
+            const originalPlayerBoard = playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
+
+            for (let i = 0; i < choices.length; i++) {
+                const simState = {
+                    playerBoard: originalPlayerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                    enemyBoard: originalBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                    playerHP, enemyHP, playerSP, enemySP
+                };
+                // 簡易シミュレーション
+                const lane = enemyBoard.indexOf(card);
+                if (lane !== -1) {
+                    applyActiveSkillLogic(simState, 'red', lane, choices[i].id, choices[i].value);
+                    calculateCombatPhase(simState, 'blue');
+                    // スコア計算
+                    let score = simState.enemyHP - simState.playerHP;
+                    for (let b of simState.enemyBoard) if (b) score += b.currentPower;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestIdx = i;
+                    }
+                }
+            }
+            return choices[bestIdx];
+        }
+    }
+
+    // プレイヤーの場合
+    return new Promise((resolve) => {
+        const screen = document.getElementById('screen-skill-choice');
+        const container = document.getElementById('skill-choice-container');
+        container.innerHTML = '';
+
+        choices.forEach((sk, idx) => {
+            const skillDef = SKILLS[sk.id] || SKILLS.none;
+            const btn = document.createElement('div');
+            btn.className = 'preview-skill-item';
+            btn.style.cursor = 'pointer';
+            btn.style.transition = 'transform 0.2s, border-color 0.2s';
+            btn.innerHTML = `
+                <div class="preview-skill-badge" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0 auto 10px auto; width: fit-content; min-width: 120px;">
+                    ${skillDef.icon} ${skillDef.name} ${sk.value || ''}
+                </div>
+                <p class="preview-skill-desc" style="text-align: center;">${skillDef.desc(sk.value)}</p>
+            `;
+            
+            btn.onmouseover = () => {
+                btn.style.transform = 'scale(1.02)';
+                btn.style.borderColor = '#facc15';
+            };
+            btn.onmouseout = () => {
+                btn.style.transform = 'scale(1)';
+                btn.style.borderColor = 'rgba(250, 204, 21, 0.1)';
+            };
+
+            btn.onclick = () => {
+                playSound(SOUNDS.seClick);
+                screen.style.display = 'none';
+                resolve(choices[idx]);
+            };
+            container.appendChild(btn);
+        });
+
+        screen.style.display = 'flex';
+        // アニメーション再発火
+        const box = screen.querySelector('.skill-modal-box');
+        box.classList.remove('modal-pop-animation');
+        void box.offsetWidth;
+        box.classList.add('modal-pop-animation');
+    });
 }
-
-
-
-
 async function discardCard(owner, card, lane) {
     if (card.skill === 'split' && lane !== undefined) {
         triggerSplitSkill(owner, lane, card);
@@ -851,19 +944,27 @@ function endBattle() {
         // 防衛戦：報酬も台詞もスキップして戻る
         if (gameMode === 'defense_attack') {
             appState = 'select_enemy';
-            initSelectScreen(true);
+            initSelectScreen(false);
             switchScreen('screen-select');
             return;
         }
 
         // フリーバトル：勝利時は報酬表示、敗北/引き分けは戻る（台詞はスキップ）
+        // フリーバトル：勝利時は報酬表示、敗北/引き分けは戻る
         if (gameMode === 'free') {
+            appState = 'post_dialogue';
             if (lastBattleResult === 'win') {
+                dialogueQueue = [
+                    { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') },
+                    { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }
+                ];
                 showCardReward(enemyConfig.id);
             } else {
-                appState = 'select_enemy';
-                initSelectScreen(true);
-                switchScreen('screen-select');
+                dialogueQueue = [
+                    { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') },
+                    { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }
+                ];
+                setupDialogueScreen();
             }
             return;
         }
