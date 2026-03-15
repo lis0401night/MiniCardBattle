@@ -846,7 +846,29 @@ function endBattle() {
     t.style.color = lastBattleResult === 'win' ? "#facc15" : "#fff";
     isProcessing = false; // バトル結果表示と同時にフラグをリセット
     setTimeout(() => {
-        playSound(SOUNDS.bgmTitle); appState = 'post_dialogue';
+        playSound(SOUNDS.bgmTitle);
+        
+        // 防衛戦：報酬も台詞もスキップして戻る
+        if (gameMode === 'defense_attack') {
+            appState = 'select_enemy';
+            initSelectScreen(true);
+            switchScreen('screen-select');
+            return;
+        }
+
+        // フリーバトル：勝利時は報酬表示、敗北/引き分けは戻る（台詞はスキップ）
+        if (gameMode === 'free') {
+            if (lastBattleResult === 'win') {
+                showCardReward(enemyConfig.id);
+            } else {
+                appState = 'select_enemy';
+                initSelectScreen(true);
+                switchScreen('screen-select');
+            }
+            return;
+        }
+
+        appState = 'post_dialogue';
         if (lastBattleResult === 'win') {
             dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }];
             showCardReward(enemyConfig.id);

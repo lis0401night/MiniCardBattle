@@ -1236,7 +1236,13 @@ function showCardReward(enemyId) {
     });
 
     if (eligibleIds.length === 0) {
-        setupDialogueScreen();
+        if (gameMode === 'free' || gameMode === 'defense_attack') {
+            appState = 'select_enemy';
+            initSelectScreen(true);
+            switchScreen('screen-select');
+        } else {
+            setupDialogueScreen();
+        }
         return;
     }
 
@@ -1284,5 +1290,12 @@ function revealRewardCard() {
 function closeRewardScreen() {
     playSound(SOUNDS.seClick);
     document.getElementById('screen-reward').classList.remove('active');
-    setupDialogueScreen();
+
+    if (gameMode === 'free' || gameMode === 'defense_attack') {
+        appState = 'select_enemy';
+        initSelectScreen(true);
+        switchScreen('screen-select');
+    } else {
+        setupDialogueScreen();
+    }
 }

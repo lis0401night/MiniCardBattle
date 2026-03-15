@@ -209,7 +209,9 @@ let pendingRewardCard = null;
 function showCardReward(enemyId) {
     // 防衛戦では報酬（カード獲得）をスキップ
     if (gameMode === 'defense_attack') {
-        setupDialogueScreen();
+        appState = 'select_enemy';
+        initSelectScreen(true);
+        switchScreen('screen-select');
         return;
     }
 
@@ -234,7 +236,13 @@ function showCardReward(enemyId) {
     });
 
     if (eligibleIds.length === 0) {
-        setupDialogueScreen();
+        if (gameMode === 'free' || gameMode === 'defense_attack') {
+            appState = 'select_enemy';
+            initSelectScreen(true);
+            switchScreen('screen-select');
+        } else {
+            setupDialogueScreen();
+        }
         return;
     }
 
@@ -271,5 +279,12 @@ function revealRewardCard() {
 function closeRewardScreen() {
     playSound(SOUNDS.seClick);
     document.getElementById('screen-reward').classList.remove('active');
-    setupDialogueScreen();
+    
+    if (gameMode === 'free' || gameMode === 'defense_attack') {
+        appState = 'select_enemy';
+        initSelectScreen(true);
+        switchScreen('screen-select');
+    } else {
+        setupDialogueScreen();
+    }
 }
