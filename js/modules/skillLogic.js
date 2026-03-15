@@ -92,13 +92,15 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         updateDeckDisplay('blue'); updateDeckDisplay('red');
 
         // 演出: 盤面の大幅な変化（破壊等）を伴うスキルの後処理
-        if (['spread', 'snipe', 'berserk', 'sacrifice', 'morph'].includes(skillId)) {
-            playSound(o === 'blue' ? SOUNDS.seDamage : SOUNDS.seSkill); // 相手が変化させられた場合はダメージ音に近い感覚か、スキル音か。
-            await sleep(100); // わずかに待つ
-            if (await cleanupDestroyedCards()) {
-                // cleanup内でseDestroyは鳴る
-            }
+        if (['spread', 'snipe', 'berserk', 'sacrifice'].includes(skillId)) {
+            playSound(SOUNDS.seDamage);
+            await sleep(100);
+            await cleanupDestroyedCards();
             if (skillId === 'sacrifice') checkWinCondition();
+        } else if (skillId === 'morph') {
+            playSound(SOUNDS.seSkill);
+            await sleep(100);
+            await cleanupDestroyedCards();
         } else {
             await cleanupDestroyedCards();
         }
