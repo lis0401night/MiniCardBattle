@@ -211,8 +211,10 @@ async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = 
             return tokenLanes.slice(0, count);
         }
         // 無ければ評価を行う（強制使用時など）
-        const allLanes = board.map((_, i) => i);
-        return evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill);
+        const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+        const actualCount = Math.min(count, emptyLanes.length);
+        if (actualCount === 0) return [];
+        return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, actualCount, isLeaderSkill);
     }
 
     // プレイヤーの場合：常に手動選択（自動選択は行わない）
