@@ -65,12 +65,28 @@ const UI_COMPONENTS = {
     <!-- モード選択画面 -->
     <div id="screen-mode-select" class="screen">
         <button class="btn-circle btn-gear" onclick="showOptions()">⚙</button>
-        <h1 class="game-title" style="display:block; margin-bottom: 40px;">LANE<br>DEFENDERS</h1>
-        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showRules()">遊び方</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #b91c1c);" onclick="startGameMode('story')">ストーリー</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #3b82f6, #1d4ed8);" onclick="startGameMode('free')">フリーバトル</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #f97316, #db2777);" onclick="showEventMenu()">イベント</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #8b5cf6, #6d28d9);" onclick="showGallery()">ギャラリー</button>
+        <div class="menu-btn-grid">
+            <div class="menu-img-btn" onclick="showRules()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_RULES}');"></div>
+                <div class="menu-btn-label">遊び方</div>
+            </div>
+            <div class="menu-img-btn" onclick="startGameMode('story')">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_STORY}');"></div>
+                <div class="menu-btn-label">ストーリー</div>
+            </div>
+            <div class="menu-img-btn" onclick="startGameMode('free')">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_FREE}');"></div>
+                <div class="menu-btn-label">フリーバトル</div>
+            </div>
+            <div class="menu-img-btn" onclick="showEventMenu()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_EVENT}');"></div>
+                <div class="menu-btn-label">イベント</div>
+            </div>
+            <div class="menu-img-btn" style="grid-column: 1 / 2;" onclick="showGallery()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_GALLERY}');"></div>
+                <div class="menu-btn-label">ギャラリー</div>
+            </div>
+        </div>
     </div>
     `,
 
