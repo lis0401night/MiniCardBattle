@@ -975,17 +975,17 @@ function endBattle() {
                     switchScreen('screen-select');
                 });
             } else if (lastBattleResult === 'lose') {
-                // 負けた場合は敵に5ポイントと防衛回数を付与する
+                // 負けた場合は敵に3ポイントと防衛回数を付与する
                 const enemyUuid = enemyConfig.uuid;
                 if (enemyUuid) {
                     fetch('api/update_points.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ uuid: enemyUuid, points: 5, increment: true, defense_wins: 1 })
+                        body: JSON.stringify({ uuid: enemyUuid, points: 3, increment: true, defense_wins: 1 })
                     }).catch(err => console.error("Failed to update enemy points:", err));
                 }
 
-                showAlertModal(`防衛戦に敗北しました…\n相手に防衛ポイントが 5 Pt 付与されました。`, () => {
+                showAlertModal(`防衛戦に敗北しました…\n相手に防衛ポイントが 3 Pt 付与されました。`, () => {
                     appState = 'select_enemy';
                     initSelectScreen(false);
                     switchScreen('screen-select');
