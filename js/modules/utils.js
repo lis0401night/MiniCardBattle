@@ -62,9 +62,9 @@ function getSkillValue(c, skillId) {
 function getCardImgUrl(card) {
     if (!card) return 'assets/card_none_backup.jpg';
     const cardId = card.id || '';
-    
+
     // 対戦データなどのidにはサフィックス（_1など）がついている場合があるのでベースIDを抽出
-    const baseId = cardId.split('_').pop(); 
+    const baseId = cardId.split('_').pop();
     const lookupId = (CARD_MASTER.find(m => m.id === baseId) || CARD_MASTER.find(m => m.id === cardId))?.id || baseId;
 
     if (premiumCards.includes(lookupId)) {
@@ -82,4 +82,22 @@ function togglePremiumCard(cardId) {
         premiumCards.splice(index, 1);
     }
     localStorage.setItem('mini_card_battle_premium_cards', JSON.stringify(premiumCards));
+}
+
+// プレイヤーの一意なIDを取得または生成
+function getOrCreateUUID() {
+    let uuid = localStorage.getItem('mini_card_battle_uuid');
+    if (!uuid) {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            uuid = crypto.randomUUID();
+        } else {
+            // 代替の簡易UUID生成
+            uuid = 'xxxx-xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        localStorage.setItem('mini_card_battle_uuid', uuid);
+    }
+    return uuid;
 }

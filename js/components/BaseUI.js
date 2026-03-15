@@ -257,10 +257,23 @@ const UI_COMPONENTS = {
     <div id="screen-event-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">イベント</h2>
         <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #ef4444, #7f1d1d);" onclick="startHighDifficulty()">高難易度</button>
-        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #065f46);" onclick="startDefenseBattle()">防衛戦</button>
+        <button class="btn" style="width: 250px; margin-bottom: 20px; background: linear-gradient(45deg, #10b981, #065f46);" onclick="showDefenseMenu()">防衛戦</button>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
             <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
         </div>
+    </div>
+    `,
+
+    defenseMenuScreen: `
+    <!-- 防衛戦メニュー画面 -->
+    <div id="screen-defense-menu" class="screen">
+        <h2 style="color: #10b981; margin-bottom: 30px;">防衛戦</h2>
+        <div style="display: flex; flex-direction: column; gap: 15px; width: 250px;">
+            <button class="btn btn-yellow" onclick="showDefenseRules()">ルール</button>
+            <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669);" onclick="startDefenseRegistration()">防衛デッキ登録</button>
+            <button class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed;">攻撃開始（未実装）</button>
+        </div>
+        <button class="btn" style="margin-top: 40px; background: #475569;" onclick="switchScreen('screen-event-menu')">戻る</button>
     </div>
     `,
 
@@ -309,6 +322,22 @@ const UI_COMPONENTS = {
             <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 20px; text-align: center; line-height: 1.4;">
                 バックアップしたXMLファイルを保存するか、保存したファイルからデータを復元できます。
             </p>
+        </div>
+    </div>
+    `,
+
+    playerNameModal: `
+    <!-- プレイヤー名入力モーダル -->
+    <div id="modal-player-name" class="screen" style="background: rgba(0,0,0,0.85); z-index: 100;">
+        <div style="background: var(--panel-bg); border: 2px solid #10b981; border-radius: 12px; padding: 30px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+            <h2 style="color: #10b981; margin-bottom: 20px; font-size: 1.2rem;">プレイヤーネーム登録</h2>
+            <p style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 15px; text-align: center;">防衛デッキに使用する名前を入力してください。</p>
+            <input type="text" id="input-player-name" placeholder="名前を入力..." maxlength="12" 
+                style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; margin-bottom: 25px; outline: none; text-align: center;">
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.9rem;" onclick="closePlayerNameModal()">キャンセル</button>
+                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.9rem;" onclick="submitDefenseDeck()">完了</button>
+            </div>
         </div>
     </div>
     `

@@ -77,14 +77,21 @@ function getInitialDeck(charId) {
 }
 
 function loadDeck() {
-    // リーダーごとに個別のキーを使用
-    const key = `mini_card_battle_deck_${playerConfig.id}`;
+    // リーダーごとに個別のキーを使用 (防衛登録時は共通キー)
+    let key = `mini_card_battle_deck_${playerConfig.id}`;
+    if (typeof gameMode !== 'undefined' && gameMode === 'defense_register') {
+        key = 'mini_card_battle_deck_defense';
+    }
+
     const saved = localStorage.getItem(key);
     if (saved) {
         try {
-            playerDeckSelection = JSON.parse(saved).map(savedCard => {
-                const t = CARD_MASTER.find(m => m.id === savedCard.id);
-                return t ? { ...t } : savedCard;
+            const parsed = JSON.parse(saved);
+            playerDeckSelection = parsed.map(item => {
+                // itemが文字列（IDのみ）の場合と、オブジェクト（旧形式）の両方に対応
+                const id = typeof item === 'string' ? item : (item.id || "");
+                const t = CARD_MASTER.find(m => m.id === id);
+                return t ? { ...t } : (typeof item === 'string' ? { id: item } : item);
             });
         } catch (e) {
             console.error("Deck load error:", e);
@@ -142,11 +149,18 @@ function loadDeck() {
 }
 
 function saveDeck() {
-    const key = `mini_card_battle_deck_${playerConfig.id}`;
-    localStorage.setItem(key, JSON.stringify(playerDeckSelection));
+    if (typeof gameMode !== 'undefined' && gameMode === 'defense_register') {
+        // 防衛デッキはIDの配列として保存（サーバー送信形式に合わせる）
+        const defenseDeck = playerDeckSelection.map(c => c.id);
+        localStorage.setItem('mini_card_battle_deck_defense', JSON.stringify(defenseDeck));
+    } else {
+        const key = `mini_card_battle_deck_${playerConfig.id}`;
+        localStorage.setItem(key, JSON.stringify(playerDeckSelection));
+    }
+
     const invKey = `mini_card_battle_inventory`;
     localStorage.setItem(invKey, JSON.stringify(playerInventory));
-    
+
     // プレミアムカード解放状態もセーブ
     localStorage.setItem('mini_card_battle_unlocked_premium', JSON.stringify(unlockedPremiumCards));
 }
@@ -176,7 +190,7 @@ function renderDeckEdit() {
         const opacity = remaining <= 0 ? "0.4" : "1";
         const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
 
-        const premiumIcon = unlockedPremiumCards.includes(template.id) ? 
+        const premiumIcon = unlockedPremiumCards.includes(template.id) ?
             `<div class="premium-toggle-icon" onclick="event.stopPropagation(); playSound(SOUNDS.seClick); togglePremiumCard('${template.id}'); renderDeckEdit();" style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.85); color:${premiumCards.includes(template.id) ? '#d946ef' : '#94a3b8'}; padding:2px 6px; border-radius:10px; font-size:0.8rem; z-index:7; border:1px solid ${premiumCards.includes(template.id) ? '#d946ef' : '#475569'}; cursor:pointer;">✨</div>` : '';
 
         item.innerHTML = `
@@ -209,8 +223,8 @@ function renderDeckEdit() {
         // IDから画像URLを特定
         const cardImgUrl = getCardImgUrl(card);
         const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-        
-        const premiumIcon = unlockedPremiumCards.includes(card.id) ? 
+
+        const premiumIcon = unlockedPremiumCards.includes(card.id) ?
             `<div class="premium-toggle-icon" onclick="event.stopPropagation(); playSound(SOUNDS.seClick); togglePremiumCard('${card.id}'); renderDeckEdit();" style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.85); color:${premiumCards.includes(card.id) ? '#d946ef' : '#94a3b8'}; padding:2px 6px; border-radius:10px; font-size:0.8rem; z-index:7; border:1px solid ${premiumCards.includes(card.id) ? '#d946ef' : '#475569'}; cursor:pointer;">✨</div>` : '';
 
         item.innerHTML = `
@@ -229,6 +243,12 @@ function renderDeckEdit() {
 
     countDisplay.innerText = `カード枚数: ${playerDeckSelection.length} / ${DECK_SIZE}`;
     finishBtn.style.opacity = playerDeckSelection.length === DECK_SIZE ? "1" : "0.5";
+
+    if (gameMode === 'defense_register') {
+        finishBtn.innerText = "編成完了";
+    } else {
+        finishBtn.innerText = "バトル開始！";
+    }
 }
 
 function addCardToDeck(template) {
@@ -275,8 +295,70 @@ function finishDeckEdit() {
     }
     playSound(SOUNDS.seClick);
     saveDeck(); // ここでまとめて保存
-    appState = 'battle';
-    prepareBattle();
+
+    if (gameMode === 'defense_register') {
+        const modal = document.getElementById('modal-player-name');
+        if (modal) {
+            modal.style.display = 'flex';
+            const nameInput = document.getElementById('input-player-name');
+            if (nameInput) {
+                // 保存されている名前があれば初期値にする
+                const savedName = localStorage.getItem('mini_card_battle_player_name');
+                if (savedName) nameInput.value = savedName;
+            }
+        }
+    } else {
+        appState = 'battle';
+        prepareBattle();
+    }
+}
+
+async function submitDefenseDeck() {
+    const nameInput = document.getElementById('input-player-name');
+    const playerName = nameInput ? nameInput.value.trim() : "";
+
+    if (!playerName) {
+        showAlertModal("プレイヤーネームを入力してください。");
+        return;
+    }
+
+    playSound(SOUNDS.seClick);
+    localStorage.setItem('mini_card_battle_player_name', playerName);
+
+    const uuid = getOrCreateUUID();
+    const payload = {
+        uuid: uuid,
+        name: playerName,
+        character: playerConfig.id,
+        deck: playerDeckSelection.map(c => c.id)
+    };
+
+    console.log("Registering defense deck:", payload);
+
+    // UIを閉じる
+    closePlayerNameModal();
+
+    try {
+        const response = await fetch('api/register_deck.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const result = await response.json();
+        if (result.success) {
+            showAlertModal("防衛デッキの登録が完了しました！", () => {
+                switchScreen('screen-defense-menu');
+            });
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (err) {
+        console.error("Registration error:", err);
+        showAlertModal("登録に失敗しました。サーバーの設定や接続を確認してください。\n" + err.message);
+    }
 }
 
 function exportDeckXML() {

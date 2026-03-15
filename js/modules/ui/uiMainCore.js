@@ -366,9 +366,33 @@ function handleSatanBattle() {
     startGameMode('event_satan');
 }
 
-function startDefenseBattle() {
+function showDefenseMenu() {
     playSound(SOUNDS.seClick);
-    showConfirmModal("防衛戦コンテンツは現在準備中です。");
+    switchScreen('screen-defense-menu');
+}
+
+function showDefenseRules() {
+    playSound(SOUNDS.seClick);
+    showAlertModal("【防衛戦ルール】\n\n1. 自分の「防衛デッキ」を登録すると、他のプレイヤーの攻撃対象になります。\n2. 登録時には名前とキャラクター、30枚のデッキを選択します。\n3. 他のプレイヤーが作成したデッキと戦う「攻撃開始」は今後のアップデートで追加予定です！");
+}
+
+function startDefenseRegistration() {
+    playSound(SOUNDS.seClick);
+    gameMode = 'defense_register';
+    appState = 'select_player';
+    document.getElementById('select-title').innerText = "防衛キャラクター選択";
+    initSelectScreen(false);
+    switchScreen('screen-select');
+}
+
+function closePlayerNameModal() {
+    playSound(SOUNDS.seClick);
+    const modal = document.getElementById('modal-player-name');
+    if (modal) modal.style.display = 'none';
+}
+
+function startDefenseBattle() {
+    showDefenseMenu();
 }
 
 function confirmCharSelect() {
@@ -380,6 +404,10 @@ function confirmCharSelect() {
         } else if (gameMode === 'event_satan') {
             // 高難易度サタン戦専用の導入へ
             initEventSatanMode(pendingCharId);
+        } else if (gameMode === 'defense_register') {
+            // 防衛登録時は対戦相手・難易度・ステージをスキップしてデッキ編集へ
+            playerConfig = CHARACTERS[pendingCharId];
+            startBattleFlow();
         } else {
             playerConfig = CHARACTERS[pendingCharId];
             appState = 'select_enemy';
