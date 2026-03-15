@@ -16,6 +16,8 @@ function generateDeck(owner, config, sessionId) {
                 owner: owner,
                 imgUrl: imgUrl,
                 filter: config.filter,
+                power: t.power,
+                basePower: t.power,
                 currentPower: t.power,
                 isPremium: isPremium,
                 skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
@@ -66,6 +68,8 @@ function generateDeck(owner, config, sessionId) {
                 owner: owner,
                 imgUrl: imgUrl,
                 filter: filter,
+                power: p,
+                basePower: t.power,
                 currentPower: p,
                 isPremium: isPremium,
                 skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
