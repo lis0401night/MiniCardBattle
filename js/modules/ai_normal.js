@@ -59,17 +59,14 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
 
                         const isOverwrite = myBoard[l] !== null;
-                        let score = simulateAndEvaluate(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
-                        if (isNaN(score)) score = -2000000;
-                        if (isOverwrite) score -= 0.1;
-
-                        candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, score });
+                        let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
+                        
+                        candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, simState });
                     }
                 }
                 // 2. 「パス」という選択肢
-                let passScore = simulateAndEvaluate(-1, -1, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
-                if (isNaN(passScore)) passScore = -2000000;
-                candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill, tokenLanes, skillOrder: order, score: passScore + 0.1 });
+                let passSimState = simulateMove(-1, -1, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
+                candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill, tokenLanes, skillOrder: order, simState: passSimState });
             }
         }
     };
@@ -77,28 +74,62 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     testMoves(false); // スキルを使わないパターン
     if (canUseSkill) testMoves(true); // スキルを使うパターン
 
-    candidates.sort((a, b) => b.score - a.score);
-    // スコアが同じならトークンが多い方を少しだけ優先（盤面アドバンテージ）
+    const startHP = myHP;
+
     candidates.sort((a, b) => {
-        if (Math.abs(b.score - a.score) < 0.01) {
-            const laneA = a.tokenLanes ? a.tokenLanes.length : 0;
-            const laneB = b.tokenLanes ? b.tokenLanes.length : 0;
-            return laneB - laneA;
-        }
-        return b.score - a.score;
+        const stateA = a.simState;
+        const stateB = b.simState;
+
+        // 1. ティア判定 (敗北 > 大ダメージ > 安全)
+        const getTier = (state) => {
+            if (state.enemyHP <= 0) return 3; // 敗北
+            if (state.enemyHP <= startHP - 4) return 2; // 大ダメージ (4以上減少)
+            return 1; // 安全 (3以下減少)
+        };
+
+        const tierA = getTier(stateA);
+        const tierB = getTier(stateB);
+
+        if (tierA !== tierB) return tierA - tierB; // ティアが低い（1に近い）方を優先
+
+        // 2. 勝利判定 (相手HP 0以下は最優先、ティア1内なら勝利を狙う)
+        if (stateA.playerHP <= 0 && stateB.playerHP > 0) return -1;
+        if (stateB.playerHP <= 0 && stateA.playerHP > 0) return 1;
+
+        // 3. 盤面アドバンテージ (自分のパワー合計 - 相手のパワー合計)
+        const getAdvantage = (state) => {
+            let myPower = 0;
+            let opPower = 0;
+            for (let i = 0; i < 3; i++) {
+                if (state.enemyBoard[i]) myPower += state.enemyBoard[i].currentPower;
+                if (state.playerBoard[i]) opPower += state.playerBoard[i].currentPower;
+            }
+            return myPower - opPower;
+        };
+
+        const advA = getAdvantage(stateA);
+        const advB = getAdvantage(stateB);
+        if (advA !== advB) return advB - advA;
+
+        // 4. カード枚数
+        const getCount = (board) => board.filter(c => c !== null).length;
+        const countA = getCount(stateA.enemyBoard);
+        const countB = getCount(stateB.enemyBoard);
+        if (countA !== countB) return countB - countA;
+
+        return 0;
     });
 
-    console.log("AI Candidates (top 3):", candidates.slice(0, 3));
+    console.log("AI Candidates (top 3):", candidates.slice(0, 3).map(c => ({
+        index: c.index,
+        lane: c.lane,
+        hp: c.simState.enemyHP,
+        tier: (c.simState.enemyHP <= 0 ? 3 : (c.simState.enemyHP <= startHP - 4 ? 2 : 1))
+    })));
     return candidates[0];
 }
 
-/**
- * 仮想盤面でのシミュレーションと評価
- */
-function simulateAndEvaluate(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null) {
-    const simState = simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill, currentMySP, tokenLanes);
-    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP, simState.playerHP, simState.enemySP);
-}
+// 以下の関数は getBestSimulatedMove に統合されました
 
 /**
  * 仮想位置でのシミュレーション実行（状態を返す）
@@ -136,14 +167,17 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
         });
     }
 
-    applyPassiveSkillLogic(simState, 'blue');
-    applyPassiveSkillLogic(simState, 'red', true); // 四騎士の属性自傷ダメージは評価に含めない
+    // AIのターンは「自分の攻撃」が終わった後に回ってくるため、
+    // ここから先のイベントは「次のプレイヤー（青）のターン開始」と「プレイヤーの攻撃」である。
+
+    // 3. 次のプレイヤー（青）のターン開始処理（契約ダメージや成長）
+    applyPassiveSkillLogic(simState, 'blue'); 
     
-    // 相手の攻撃を受けた後の状態
+    // 自分の攻撃（red）は既に行われているのでここでは計算しない。
+    // ただし、AIが出したばかりのカードによる「次のターン以降の脅威」は盤面評価でカバーされる。
+    
+    // 4. プレイヤーの攻撃
     calculateCombatPhase(simState, 'blue');
-    
-    // 自分の攻撃（今の盤面で相手にどうダメージを与えるか）も評価対象に含める
-    calculateCombatPhase(simState, 'red');
 
     // シミュレーション用のクリーンアップ（Drop増加等は不要なので直接nullにする）
     [simState.playerBoard, simState.enemyBoard].forEach(b => {
@@ -153,45 +187,7 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
     return simState;
 }
 
-/**
- * シミュレーション結果の盤面評価を行う
- */
-function evaluateSimulatedState(myBoard, opBoard, myHP, opHP, mySP = 0) {
-    if (myHP <= 0) return -1000000;
-    if (opHP <= 0) return 2000000; // 勝利は最優先
-
-    // HP評価の重みを、残りHPが多い時は少し下げる（自傷カードを使いやすくする）
-    let hpWeight = 5000;
-    if (myHP > 30) hpWeight = 1000; // 高HP時は1HPの価値を低く見積もる
-
-    let score = myHP * hpWeight;
-    score -= opHP * 3000; // 相手のHPを減らすことを評価
-    score += (mySP || 0) * 400;
-
-    for (let i = 0; i < 3; i++) {
-        if (myBoard[i]) {
-            const p = myBoard[i].currentPower;
-            score += 2500;
-            
-            // 攻撃可能なカードの価値を高く、防衛専用(defender)の価値を低く見積もる
-            if (hasSkill(myBoard[i], 'defender')) {
-                score += p * 100; // 防御としての価値
-            } else {
-                score += p * 400; // 攻撃・盤面維持力としての価値
-            }
-            
-            if (hasSkill(myBoard[i], 'legendary')) score += 3000;
-        }
-        if (opBoard[i]) {
-            const ep = opBoard[i].currentPower;
-            score -= 1500;
-            score -= ep * 250;
-        } else {
-            score += 1500; // 相手のレーンが空いている（攻撃が通る）ことを評価
-        }
-    }
-    return score;
-}
+// 以下の関数は getBestSimulatedMove に統合されました
 
 /**
  * トークン配置用の評価
@@ -207,7 +203,16 @@ function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = 
         const available = allLanes.filter(l => !results.includes(l));
 
         for (let l of available) {
-            const score = simulateAndEvaluateToken(tokenCard, l, currentBoard, playerBoard, enemyHP, enemySP);
+            const simState = simulateAndEvaluateToken(tokenCard, l, currentBoard, playerBoard, enemyHP, enemySP);
+            
+            // トークン配置は簡易的に「相手HPをどれだけ削れるか」または「盤面パワー」でソート
+            let score = (simState.enemyHP > 0 ? 10000 : -10000);
+            score -= simState.playerHP * 100;
+            for(let i=0; i<3; i++) {
+                if(simState.enemyBoard[i]) score += simState.enemyBoard[i].currentPower * 10;
+                if(simState.playerBoard[i]) score -= simState.playerBoard[i].currentPower * 10;
+            }
+
             if (!isNaN(score) && score > bestScore) {
                 bestScore = score;
                 bestLane = l;
@@ -246,7 +251,9 @@ function simulateAndEvaluateToken(token, l, board, opBoard, hp, sp) {
         applyActiveSkillLogic(simState, 'red', l, sk.id, sk.value);
     });
 
+    // AIのターンは攻撃後なので、次はプレイヤーのターン開始処理と攻撃
+    applyPassiveSkillLogic(simState, 'blue');
     calculateCombatPhase(simState, 'blue');
-    calculateCombatPhase(simState, 'red');
-    return evaluateSimulatedState(simState.enemyBoard, simState.playerBoard, simState.enemyHP, simState.playerHP, simState.enemySP);
+
+    return simState;
 }

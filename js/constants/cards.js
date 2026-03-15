@@ -51,9 +51,9 @@ const CARD_MASTER = [
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'bahamut', name: '終焉の双頭龍', power: 7, rarity: 3, skills: [{ id: 'legendary' }, { id: 'double_strike' }, { id: 'sacrifice', value: 2 }, { id: 'berserk', value: 2 }], flavor: '二つの首が天を仰ぎ、終末の咆哮を上げる。その翼が振り下ろされる時、世界は劫火に包まれる。', imgUrl: 'assets/card_bahamut.jpg' },
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
-    { id: 'whiterider', name: '征服の使徒', power: 6, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'snipe', value: 8 }], flavor: '第一の封印が解かれし時、白馬に乗れる者が現る。彼は征服の上に更なる征服を重ねんとし、その矢は逃れ得ぬ運命を射抜く。' },
+    { id: 'whiterider', name: '征服の使徒', power: 6, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'snipe', value: 8 }, { id: 'guardian' }], flavor: '第一の封印が解かれし時、白馬に乗れる者が現る。彼は征服の上に更なる征服を重ねんとし、その矢は逃れ得ぬ運命を射抜く。' },
     { id: 'redrider', name: '戦争の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'quick' }], flavor: '第二の封印。火の如き赤き馬に乗れる者、地上から平和を奪い去る。その大剣が振るわれる時、終わりなき争いの火蓋が切って落とされる。' },
-    { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'morph', value: 2 }], flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
+    { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'morph', value: 2 }, { id: 'deadly' }], flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
     { id: 'palerider', name: '死の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
