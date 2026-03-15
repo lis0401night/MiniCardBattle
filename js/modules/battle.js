@@ -985,11 +985,9 @@ function endBattle() {
                     }).catch(err => console.error("Failed to update enemy points:", err));
                 }
 
-                showAlertModal(`防衛戦に敗北しました…\n相手に防衛ポイントが 3 Pt 付与されました。`, () => {
-                    appState = 'select_enemy';
-                    initSelectScreen(false);
-                    switchScreen('screen-select');
-                });
+                appState = 'select_enemy';
+                initSelectScreen(false);
+                switchScreen('screen-select');
             } else {
                 appState = 'select_enemy';
                 initSelectScreen(false);
@@ -1031,6 +1029,15 @@ function endBattle() {
 
 function returnToTitle() {
     showConfirmModal('バトルを諦めてタイトルに戻りますか？', () => {
+        // 防衛戦でリタイアした場合も、相手に3ポイントと防衛回数を付与する
+        if (gameMode === 'defense_attack' && typeof enemyConfig !== 'undefined' && enemyConfig.uuid) {
+            fetch('api/update_points.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uuid: enemyConfig.uuid, points: 3, increment: true, defense_wins: 1 })
+            }).catch(err => console.error("Failed to update enemy points on retire:", err));
+        }
+
         stopAllBGM();
         playSound(SOUNDS.bgmTitle);
         appState = 'title';

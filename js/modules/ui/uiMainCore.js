@@ -402,13 +402,13 @@ async function showDefenseMenu() {
         winsDisplay.style.marginBottom = '20px';
         winsDisplay.style.fontWeight = 'bold';
         winsDisplay.style.textAlign = 'center';
-        
+
         const title = document.querySelector('#screen-defense-menu h2');
         if (title) {
             title.insertAdjacentElement('afterend', winsDisplay);
         }
     }
-    
+
     if (hasRegistered) {
         winsDisplay.innerText = 'データ取得中...';
     } else {
@@ -436,7 +436,7 @@ async function showDefenseMenu() {
                 if (myData) {
                     const wins = myData.defense_wins || 0;
                     const pts = myData.points || 0;
-                    winsDisplay.innerText = `防衛に ${wins} 回成功しました！\n(防衛ポイント: ${pts} Pt)`;
+                    winsDisplay.innerText = `防衛に ${wins} 回成功しました！\n(防衛戦ポイント: ${pts} Pt)`;
                     localStorage.setItem('mini_card_battle_defense_points', pts);
                     localStorage.setItem('mini_card_battle_defense_wins', wins);
                 } else {
@@ -449,7 +449,7 @@ async function showDefenseMenu() {
             console.error(e);
             const localWins = localStorage.getItem('mini_card_battle_defense_wins') || 0;
             const localPts = localStorage.getItem('mini_card_battle_defense_points') || 0;
-            winsDisplay.innerText = `防衛に ${localWins} 回成功しました！\n(防衛ポイント: ${localPts} Pt)`;
+            winsDisplay.innerText = `防衛に ${localWins} 回成功しました！\n(防衛戦ポイント: ${localPts} Pt)`;
         }
     }
 }
@@ -476,14 +476,14 @@ async function showDefenseBattleList() {
 
             // 自分のポイントを取得
             const myPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
-            
+
             // ポイント降順でソート
             players.sort((a, b) => (b.points || 0) - (a.points || 0));
 
             players.forEach((p, index) => {
                 const char = CHARACTERS[p.character] || CHARACTERS.android;
                 const pPoints = p.points || 0;
-                
+
                 // 勝利時の獲得ポイント計算
                 let winPoints = 1;
                 if (pPoints >= myPoints * 2 && pPoints > 0) winPoints = 5;
@@ -514,7 +514,7 @@ async function showDefenseBattleList() {
                         <div style="color: #10b981; font-weight: bold; font-size: 0.9rem;">Win +${winPoints}</div>
                     </div>
                 `;
-                
+
                 banner.onclick = () => startAttackBattle(p);
                 listContainer.appendChild(banner);
             });
@@ -533,7 +533,7 @@ async function startAttackBattle(enemyPlayerData) {
     try {
         // デッキデータをロード（ENEMY_DECKS['player_defense']に登録される）
         await loadPlayerDeck(enemyPlayerData.uuid);
-        
+
         gameMode = 'defense_attack';
         aiLevel = 3; // 防衛戦のAIは常にハード（レベル3）固定
 
@@ -722,7 +722,7 @@ function renderExchange() {
 
     EXCHANGE_LINEUP.forEach(itemInfo => {
         const itemObj = CARD_MASTER.find(c => c.id === itemInfo.id) || CARD_MASTER[0];
-        
+
         // 状態をチェック（「所持上限到達・プレミアム取得済み」または「ポイント不足」）
         let canExchange = true;
         let isMaxed = false;
@@ -754,7 +754,7 @@ function renderExchange() {
         }
 
         // バッジや所持数など
-        const countBadge = itemInfo.type === 'card' ? 
+        const countBadge = itemInfo.type === 'card' ?
             `<div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.85); color:#facc15; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:0.75rem; z-index:6; border:1px solid #facc15;">${ownedCount}/4</div>` : '';
 
         const itemEl = document.createElement('div');
@@ -794,7 +794,7 @@ function showExchangeDetail(id, type, cost, itemObj, canExchange, isMaxed) {
     // スキルの表示
     const skillsList = document.getElementById('exchange-detail-skills-list');
     skillsList.innerHTML = '';
-    
+
     let skillCandidates = [];
     if (itemObj.skill && itemObj.skill !== 'none') {
         skillCandidates.push({ id: itemObj.skill, value: itemObj.skillValue });
@@ -903,10 +903,10 @@ function closeExchangeDetail() {
 function confirmExchange() {
     if (!pendingExchange) return;
     const { id, type, cost } = pendingExchange;
-    
+
     playSound(SOUNDS.seClick);
     let currentPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
-    
+
     if (currentPoints < cost) {
         showAlertModal("ポイントが足りません！");
         return;
