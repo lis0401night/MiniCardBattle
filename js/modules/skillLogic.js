@@ -130,61 +130,64 @@ async function triggerStartTurnPassive(owner, lane) {
     if (!c) return false;
 
     let triggered = false;
-    // Growth
-    if (hasSkill(c, 'growth')) {
-        const val = getSkillValue(c, 'growth') || 1;
-        c.power += val; c.currentPower += val;
-        updateCardPowerOnly(lane, side);
-        const prefix = val > 0 ? '+' : ''; const color = val > 0 ? '#4ade80' : '#ef4444';
-        const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
-        if (cEl) createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
-        if (c.currentPower <= 0) {
-            if (!(await discardCard(owner, c, lane))) board[lane] = null;
-            playSound(SOUNDS.seDestroy);
-        }
-        else playSound(SOUNDS.seSkill);
-        triggered = true;
-        await sleep(500); // 演出の完了を待機
-    }
+    
+    // 発動対象スキルのリストを作成（定義順に1つずつ処理）
+    let skillsToResolve = [];
+    if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
+    if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
-    // Invincible
-    if (c) {
-        if (Array.isArray(c.skills)) {
-            const invIdx = c.skills.findIndex(sk => sk.id === 'invincible');
-            if (invIdx !== -1) {
-                c.skills[invIdx].value--;
-                if (c.skills[invIdx].value <= 0) {
-                    c.skills.splice(invIdx, 1);
-                    const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
-                    if (cEl) createDamagePopup(cEl, '無敵終了', '#94a3b8');
-                }
-                triggered = true;
+    for (const sk of skillsToResolve) {
+        // Growth (成長)
+        if (sk.id === 'growth') {
+            const val = sk.value || 1;
+            c.power += val; c.currentPower += val;
+            updateCardPowerOnly(lane, side);
+            const prefix = val > 0 ? '+' : ''; const color = val > 0 ? '#4ade80' : '#ef4444';
+            const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
+            if (cEl) createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
+            if (c.currentPower <= 0) {
+                if (!(await discardCard(owner, c, lane))) board[lane] = null;
+                playSound(SOUNDS.seDestroy);
             }
-        } else if (c.skill === 'invincible') {
-            c.skillValue--;
-            if (c.skillValue <= 0) {
-                c.skill = 'none';
+            else playSound(SOUNDS.seSkill);
+            triggered = true;
+            await sleep(500);
+            if (!board[lane]) break; // 破壊されたら終了
+        }
+
+        // Invincible (無敵) - カウントダウン
+        if (sk.id === 'invincible') {
+            sk.value--;
+            if (sk.value <= 0) {
+                // スキルリストから削除
+                if (c.skill === 'invincible') {
+                    c.skill = 'none';
+                } else if (Array.isArray(c.skills)) {
+                    const idx = c.skills.indexOf(sk);
+                    if (idx !== -1) c.skills.splice(idx, 1);
+                }
                 const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
                 if (cEl) createDamagePopup(cEl, '無敵終了', '#94a3b8');
             }
             triggered = true;
-            await sleep(300); // 演出の完了を待機
+            await sleep(300);
+        }
+
+        // Contract (契約)
+        if (sk.id === 'contract') {
+            const val = sk.value || 3;
+            const hpFill = document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill');
+
+            if (owner === 'blue') playerHP -= val;
+            else enemyHP -= val;
+
+            playSound(SOUNDS.seDamage);
+            if (hpFill) createDamagePopup(hpFill, `契約 -${val}`, '#ef4444');
+            updateHPBar();
+            triggered = true;
+            await sleep(1000); // 契約演出をしっかり見せる
         }
     }
 
-    // Contract (契約)
-    if (c && hasSkill(c, 'contract')) {
-        const val = getSkillValue(c, 'contract') || 3;
-        const hpFill = document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill');
-
-        if (owner === 'blue') playerHP -= val;
-        else enemyHP -= val;
-
-        playSound(SOUNDS.seDamage);
-        if (hpFill) createDamagePopup(hpFill, `契約 -${val}`, '#ef4444');
-        updateHPBar();
-        triggered = true;
-        await sleep(800); // 契約演出（ダメージポップアップ）をしっかり見せる
-    }
     return triggered;
 }
