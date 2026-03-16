@@ -923,6 +923,14 @@ function confirmExchange() {
     currentPointsInner -= cost;
     localStorage.setItem('mini_card_battle_defense_points', currentPointsInner);
 
+    // サーバーに同機
+    const myUuid = getOrCreateUUID();
+    fetch('api/update_points.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid: myUuid, points: currentPointsInner })
+    }).catch(err => console.error("Failed to sync points to server:", err));
+
     if (type === 'premium') {
         if (!unlockedPremiumCards.includes(id)) unlockedPremiumCards.push(id);
         localStorage.setItem('mini_card_battle_unlocked_premium', JSON.stringify(unlockedPremiumCards));
