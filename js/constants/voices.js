@@ -128,6 +128,8 @@ const VOICE_CATEGORIES = {
 };
 
 // ボイス再生用の関数
+const voiceAudioCache = {};
+
 function playCardVoice(category, situation = 'play') {
     if (!category || !VOICE_CATEGORIES[category] || !VOICE_CATEGORIES[category][situation]) {
         return;
@@ -135,8 +137,15 @@ function playCardVoice(category, situation = 'play') {
 
     try {
         const audioPath = VOICE_CATEGORIES[category][situation];
+        
+        // キャッシュから取得、なければ生成
+        let voiceAudio = voiceAudioCache[audioPath];
+        if (!voiceAudio) {
+            voiceAudio = new Audio(audioPath);
+            voiceAudioCache[audioPath] = voiceAudio;
+        }
+
         const categoryVolume = VOICE_CATEGORIES[category].volume || 1.0;
-        const voiceAudio = new Audio(audioPath);
 
         // ゲームのマスターボリュームを取得
         const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
@@ -148,6 +157,7 @@ function playCardVoice(category, situation = 'play') {
         finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
 
         voiceAudio.volume = finalVolume;
+        voiceAudio.currentTime = 0; // 最初から再生
         voiceAudio.play().catch(e => {
             console.warn("Card voice play failed:", e);
         });

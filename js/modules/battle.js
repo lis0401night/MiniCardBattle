@@ -872,12 +872,15 @@ async function executeSingleCombat(atk, l) {
             let ag = (l === 1) ? (hasSkill(aB[0], 'guardian') ? 0 : (hasSkill(aB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(aB[1], 'guardian') ? 1 : null) : (hasSkill(aB[1], 'guardian') ? 1 : null));
             if (ag !== null) aLane = ag;
         }
-
+ 
         const realDef = dB[dLane], realAtk = aB[aLane];
         realDef.currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) realAtk.currentPower -= dAtk;
-
-        // 演出: ダメージ反映のための再描画
-        renderBoard();
+ 
+        // 演出: ダメージ反映のためのピンポイント更新（renderBoardはアニメーションを壊すため避ける）
+        updateCardPowerOnly(dLane, atk === 'blue' ? 'enemy' : 'player');
+        if (!hasSkill(dB[l], 'defender')) {
+            updateCardPowerOnly(aLane, atk === 'blue' ? 'player' : 'enemy');
+        }
         const dE_new = document.querySelector(`${dR} .cell[data-lane="${dLane}"] .card`);
         const aE_new = document.querySelector(`${aR} .cell[data-lane="${aLane}"] .card`);
 

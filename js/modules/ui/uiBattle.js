@@ -233,6 +233,24 @@ function renderBoard() {
     }
 }
 
+/**
+ * 特定のレーンのカードパワー表示のみを更新する（アニメーション中断防止用）
+ */
+function updateCardPowerOnly(lane, side) {
+    const board = side === 'player' ? playerBoard : enemyBoard;
+    const card = board[lane];
+    if (!card) return;
+
+    const laneId = side === 'player' ? 'player-lanes' : 'enemy-lanes';
+    const cell = document.querySelector(`#${laneId} .cell[data-lane="${lane}"]`);
+    if (!cell) return;
+
+    const powerEl = cell.querySelector('.card-power');
+    if (powerEl) {
+        powerEl.innerText = card.currentPower;
+    }
+}
+
 function showDeckRefreshEffect(owner) {
     const battleScreen = document.getElementById('screen-battle');
     if (!battleScreen) return;

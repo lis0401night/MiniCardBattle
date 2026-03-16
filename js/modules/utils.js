@@ -27,29 +27,33 @@ function getDialogue(speakerConfig, targetConfig, type) {
 
 function playSound(audio) {
     if (audio) {
+        const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+
         // bgmから始まるファイル（ループ再生するもの）はクローンせずそのまま再生する
-        // これを行わないと stopAllBGM でクローン元の音声しか停止できず鳴り続けてしまう
         if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
             audio.currentTime = 0;
-            audio.volume = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+            audio.volume = baseVol;
             audio.play().catch(() => {});
             return;
         }
 
-        // 効果音の場合はクローンを作成して再生することで、連続再生や他音との競合を避ける
+        // 効果音の場合
         try {
-            const clone = audio.cloneNode();
-            clone.volume = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
-            clone.play().catch(e => {
-                console.warn("Sound play failed:", e);
-                // クローンで失敗した場合はオリジナルで試行
+            // 再生中でないならそのまま使い、再生中ならクローンを作る（連続再生対応）
+            if (audio.paused || audio.ended) {
                 audio.currentTime = 0;
+                audio.volume = baseVol;
                 audio.play().catch(() => {});
-            });
+            } else {
+                const clone = audio.cloneNode();
+                clone.volume = baseVol;
+                clone.play().catch(() => {});
+                // クローンは再生終了後に自動でガベージコレクション対象になるよう明示的な後処理は不要だが、
+                // 大量に作りすぎないためのセーフティ（必要なら追加）
+            }
         } catch (e) {
-            // クローン不可な場合は従来通り直接再生
             audio.currentTime = 0;
-            audio.volume = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+            audio.volume = baseVol;
             audio.play().catch(() => {});
         }
     }
