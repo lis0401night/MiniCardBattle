@@ -48,24 +48,29 @@ const VOICE_CATEGORIES = {
         volume: 1.0
     },
     // 人間・亜人系
-    'human_male': {
-        play: 'assets/voice/voice_human_male_play.wav',
-        death: 'assets/voice/voice_human_male_death.wav',
+    'human_male_normal': {
+        play: 'assets/voice/voice_human_male_normal_play.wav',
+        death: 'assets/voice/voice_human_male_normal_death.wav',
         volume: 1.0
     },
-    'human_male2': {
+    'human_male_ikemen': {
+        play: 'assets/voice/voice_human_male_ikemen_play.wav',
+        death: 'assets/voice/voice_human_male_ikemen_death.wav',
+        volume: 1.0
+    },
+    'human_male3': {
         play: 'assets/voice/voice_human_male2_play.wav',
         death: 'assets/voice/voice_human_male2_death.wav',
         volume: 1.0
     },
-    'human_female': {
-        play: 'assets/voice/voice_human_female_play.wav',
-        death: 'assets/voice/voice_human_female_death.wav',
+    'human_female_ikemen': {
+        play: 'assets/voice/voice_human_female_ikemen_play.wav',
+        death: 'assets/voice/voice_human_female_ikemen_death.wav',
         volume: 1.0
     },
-    'human_female2': {
-        play: 'assets/voice/voice_human_female2_play.wav',
-        death: 'assets/voice/voice_human_female2_death.wav',
+    'human_female_young': {
+        play: 'assets/voice/voice_human_female_young_play.wav',
+        death: 'assets/voice/voice_human_female_young_death.wav',
         volume: 1.0
     },
     'human_female3': {
