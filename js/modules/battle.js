@@ -534,7 +534,7 @@ async function waitSkillChoice(choices, owner, card) {
 }
 async function discardCard(owner, card, lane) {
     if (card.skill === 'split' && lane !== undefined) {
-        triggerSplitSkill(owner, lane, card);
+        await triggerSplitSkill(owner, lane, card);
         return true; // 分裂した場合は墓地に行かず場に残る（上書きされる）
     }
     if (card.isToken) return false;
@@ -559,6 +559,28 @@ async function discardCard(owner, card, lane) {
     return false;
 }
 
+async function triggerSplitSkill(owner, lane, card) {
+    const board = owner === 'blue' ? playerBoard : enemyBoard;
+    const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
+    const val = card.skillValue || 2;
+
+    board[lane] = {
+        id: `sp_${Date.now()}_${lane}`,
+        owner,
+        ...tL,
+        imgUrl: 'assets/card_legs.jpg',
+        power: val,
+        currentPower: val,
+        rarity: tL.rarity || 1
+    };
+
+    playSound(SOUNDS.sePlace);
+    updateCardVisuals(lane, owner, board[lane]);
+    const cEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
+    if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
+    await sleep(300);
+}
+
 function updateDeckDisplay(owner) {
     const d = owner === 'blue' ? playerDeck : enemyDeck;
     const ds = owner === 'blue' ? playerDiscard : enemyDiscard;
@@ -572,70 +594,49 @@ function updateDeckDisplay(owner) {
 }
 
 async function cleanupDestroyedCards() {
-    let destroyedItems = [];
-    [playerBoard, enemyBoard].forEach((board, bIdx) => {
-        const side = bIdx === 0 ? 'player' : 'enemy';
-        for (let i = 0; i < 3; i++) {
-            if (board[i] && board[i].currentPower <= 0) {
-                const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
-                destroyedItems.push({ board, index: i, el, owner: bIdx === 0 ? 'blue' : 'red', card: board[i] });
+    let anyDestroyedAtAll = false;
+    while (true) {
+        let destroyedItems = [];
+        [playerBoard, enemyBoard].forEach((board, bIdx) => {
+            const side = bIdx === 0 ? 'player' : 'enemy';
+            for (let i = 0; i < 3; i++) {
+                if (board[i] && board[i].currentPower <= 0) {
+                    const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
+                    destroyedItems.push({ board, index: i, el, owner: bIdx === 0 ? 'blue' : 'red', card: board[i] });
+                }
             }
+        });
+
+        if (destroyedItems.length === 0) break;
+        anyDestroyedAtAll = true;
+
+        // 演出: 破壊されるカードを揺らす & ボイス再生
+        destroyedItems.forEach(item => {
+            if (item.el) item.el.classList.add('anim-shake');
+            if (item.card && item.card.voiceCategory) {
+                playCardVoice(item.card.voiceCategory, 'death');
+            }
+        });
+        playSound(SOUNDS.seDamage);
+        await sleep(400);
+
+        // 実際の除去処理
+        for (const item of destroyedItems) {
+            if (item.board[item.index] !== item.card) continue;
+            item.board[item.index] = null;
+            await discardCard(item.owner, item.card, item.index);
         }
-    });
 
-    if (destroyedItems.length === 0) return false;
-
-    // 演出: 破壊されるカードを揺らす & ボイス再生
-    destroyedItems.forEach(item => {
-        if (item.el) item.el.classList.add('anim-shake');
-        if (item.card && item.card.voiceCategory) {
-            playCardVoice(item.card.voiceCategory, 'death');
+        playSound(SOUNDS.seDestroy);
+        for (const item of destroyedItems) {
+            removeCardFromBoard(item.index, item.owner);
         }
-    });
-    playSound(SOUNDS.seDamage);
-    await sleep(400);
-
-    // 実際の除去処理
-    for (const item of destroyedItems) {
-        // 【重要】再起呼び出し対策：すでに処理済みの場合はスキップ
-        if (item.board[item.index] !== item.card) continue;
-
-        // 一旦消去（Splitスキルの場合は discardCard -> triggerSplitSkill 内で改めて上書き配置される）
-        item.board[item.index] = null;
-        await discardCard(item.owner, item.card, item.index);
+        await sleep(200); // 連鎖がある場合、少し間を空ける
     }
-
-    playSound(SOUNDS.seDestroy);
-    // renderBoard(); // アニメーションを壊すため避ける
-    for (const item of destroyedItems) {
-        removeCardFromBoard(item.index, item.owner);
-    }
-    return true;
+    return anyDestroyedAtAll;
 }
 
-function triggerSplitSkill(owner, lane, card) {
-    const board = owner === 'blue' ? playerBoard : enemyBoard;
-    const tL = CARD_MASTER.find(m => m.id === 'legs');
-    const val = card.skillValue || 1;
-
-    board[lane] = {
-        id: `sp_${Date.now()}_${lane}`,
-        owner,
-        ...tL,
-        imgUrl: 'assets/card_legs.jpg',
-        power: val,
-        currentPower: val,
-        rarity: tL.rarity || 1
-    };
-
-    setTimeout(() => {
-        playSound(SOUNDS.sePlace);
-        // renderBoard(); // アニメーション中かもしれないのでピンポイント更新
-        updateCardVisuals(lane, owner, board[lane]);
-        const cEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
-        if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
-    }, 100);
-}
+// 以前の定義を削除
 async function triggerExplodeSkill(owner, lane, card) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
     const side = owner === 'blue' ? 'player' : 'enemy';

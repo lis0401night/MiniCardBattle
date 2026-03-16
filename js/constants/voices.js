@@ -142,6 +142,7 @@ function playCardVoice(category, situation = 'play') {
         let voiceAudio = voiceAudioCache[audioPath];
         if (!voiceAudio) {
             voiceAudio = new Audio(audioPath);
+            voiceAudio.load(); // 事前にロードを開始
             voiceAudioCache[audioPath] = voiceAudio;
         }
 
@@ -156,11 +157,16 @@ function playCardVoice(category, situation = 'play') {
         // 音量が1.0（100%）を超えないように制限
         finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
 
-        voiceAudio.volume = finalVolume;
-        voiceAudio.currentTime = 0; // 最初から再生
-        voiceAudio.play().catch(e => {
-            console.warn("Card voice play failed:", e);
-        });
+        if (voiceAudio.paused || voiceAudio.ended) {
+            voiceAudio.volume = finalVolume;
+            voiceAudio.currentTime = 0;
+            voiceAudio.play().catch(e => console.warn("Card voice play failed:", e));
+        } else {
+            // 再生中の場合はクローンを作成して重ねる
+            const clone = voiceAudio.cloneNode();
+            clone.volume = finalVolume;
+            clone.play().catch(e => console.warn("Card voice clone play failed:", e));
+        }
     } catch (e) {
         console.error("Card voice initialization failed:", e);
     }
