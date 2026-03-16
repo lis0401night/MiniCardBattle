@@ -2575,20 +2575,23 @@ h2 {
 
 /* 難易度選択画面のレイアウト調整 */
 .difficulty-button-row {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
     justify-content: center;
+    width: 100%;
+    height: 50px; /* ボタンの高さに合わせる */
 }
 
 .difficulty-button-row .btn {
     margin-top: 0;
-    flex: 1;
-    max-width: 200px;
+    width: 200px;
+    flex: none;
 }
 
 .btn-check-deck {
+    position: absolute;
+    left: calc(50% + 104px); /* ボタンの中央(50%) + 半分(100px) + 隙間(4px) */
     width: 44px;
     height: 44px;
     padding: 0;

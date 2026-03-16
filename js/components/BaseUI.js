@@ -178,15 +178,15 @@ const UI_COMPONENTS = {
         <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center;">
             <div class="difficulty-button-row">
                 <button class="btn" style="background: #22c55e;" onclick="confirmDifficulty(1)">初級</button>
-                <button id="btn-check-deck-1" class="btn-check-deck" onclick="openEnemyDeckPreview(1)" title="デッキ確認" style="display: none;">🔍</button>
+                <button id="btn-check-deck-1" class="btn-check-deck" onclick="openEnemyDeckPreview(1)" title="デッキ確認">🔍</button>
             </div>
             <div class="difficulty-button-row">
                 <button class="btn" style="background: #eab308;" onclick="confirmDifficulty(2)">中級</button>
-                <button id="btn-check-deck-2" class="btn-check-deck" onclick="openEnemyDeckPreview(2)" title="デッキ確認" style="display: none;">🔍</button>
+                <button id="btn-check-deck-2" class="btn-check-deck" onclick="openEnemyDeckPreview(2)" title="デッキ確認">🔍</button>
             </div>
             <div class="difficulty-button-row">
                 <button class="btn" style="background: #ef4444;" onclick="confirmDifficulty(3)">上級</button>
-                <button id="btn-check-deck-3" class="btn-check-deck" onclick="openEnemyDeckPreview(3)" title="デッキ確認" style="display: none;">🔍</button>
+                <button id="btn-check-deck-3" class="btn-check-deck" onclick="openEnemyDeckPreview(3)" title="デッキ確認">🔍</button>
             </div>
         </div>
         <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromDifficulty()">戻る</button>
