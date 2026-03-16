@@ -629,9 +629,15 @@ async function cleanupDestroyedCards() {
 
         playSound(SOUNDS.seDestroy);
         for (const item of destroyedItems) {
-            removeCardFromBoard(item.index, item.owner);
+            const side = item.owner === 'blue' ? 'player' : 'enemy';
+            // 如果 card 还在 board 上（由于 Split 技能重新放置了），则不删除而是更新显示
+            if (item.board[item.index] === null) {
+                removeCardFromBoard(item.index, side);
+            } else {
+                updateCardVisuals(item.index, side, item.board[item.index]);
+            }
         }
-        await sleep(200); // 連鎖がある場合、少し間を空ける
+        await sleep(200); // 連続破壊の際の間隔
     }
     return anyDestroyedAtAll;
 }

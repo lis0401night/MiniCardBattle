@@ -39,12 +39,12 @@ function playSound(audio) {
 
         // 効果音の場合
         try {
+            // 再生中でないならそのまま使い、再生中ならクローンを作る（低遅延・同時再生対応）
             if (audio.paused || audio.ended) {
                 audio.currentTime = 0;
                 audio.volume = baseVol;
                 audio.play().catch(() => {});
             } else {
-                // 再生中の場合はクローンを作成（連続再生対応）
                 const clone = audio.cloneNode();
                 clone.volume = baseVol;
                 clone.play().catch(() => {});

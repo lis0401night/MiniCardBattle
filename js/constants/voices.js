@@ -138,34 +138,31 @@ function playCardVoice(category, situation = 'play') {
     try {
         const audioPath = VOICE_CATEGORIES[category][situation];
         
-        // キャッシュから取得、なければ生成
+        // キャッシュからテンプレートを取得し、再生中ならクローンして重ねる
         let voiceAudio = voiceAudioCache[audioPath];
         if (!voiceAudio) {
             voiceAudio = new Audio(audioPath);
-            voiceAudio.load(); // 事前にロードを開始
+            voiceAudio.load();
             voiceAudioCache[audioPath] = voiceAudio;
         }
 
         const categoryVolume = VOICE_CATEGORIES[category].volume || 1.0;
-
-        // ゲームのマスターボリュームを取得
         const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
-
-        // マスターボリューム × ボイス全体倍率 × カテゴリ個別倍率
         let finalVolume = baseVol * VOICE_SETTINGS.globalVolumeMultiplier * categoryVolume;
-
-        // 音量が1.0（100%）を超えないように制限
         finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
 
-        if (voiceAudio.paused || voiceAudio.ended) {
-            voiceAudio.volume = finalVolume;
-            voiceAudio.currentTime = 0;
-            voiceAudio.play().catch(e => console.warn("Card voice play failed:", e));
-        } else {
-            // 再生中の場合はクローンを作成して重ねる
-            const clone = voiceAudio.cloneNode();
-            clone.volume = finalVolume;
-            clone.play().catch(e => console.warn("Card voice clone play failed:", e));
+        try {
+            if (voiceAudio.paused || voiceAudio.ended) {
+                voiceAudio.volume = finalVolume;
+                voiceAudio.currentTime = 0;
+                voiceAudio.play().catch(e => console.warn("Card voice play failed:", e));
+            } else {
+                const clone = voiceAudio.cloneNode();
+                clone.volume = finalVolume;
+                clone.play().catch(e => console.warn("Card voice clone play failed:", e));
+            }
+        } catch (e) {
+            console.warn("playCardVoice execution failed:", e);
         }
     } catch (e) {
         console.error("Card voice initialization failed:", e);
