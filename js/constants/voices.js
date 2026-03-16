@@ -112,7 +112,7 @@ const VOICE_CATEGORIES = {
     'machine_new': {
         play: 'assets/voice/voice_machine_new_play.wav',
         death: 'assets/voice/voice_machine_new_death.wav',
-        volume: 1.0
+        volume: 0.5
     },
     // 特殊系
     'alien': {
