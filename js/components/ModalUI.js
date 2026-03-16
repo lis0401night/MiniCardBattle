@@ -5,7 +5,7 @@
 Object.assign(UI_COMPONENTS, {
     cardPreviewModal: `
     <!-- カードプレビューモーダル（長押しで表示） -->
-    <div id="card-preview-modal" class="modal-overlay" onclick="closeCardPreview()">
+    <div id="card-preview-modal" class="modal-overlay" onclick="closeCardPreview()" style="z-index: 2100;">
         <div class="preview-content" onclick="event.stopPropagation()">
             <div id="preview-card-container"></div>
             <div class="preview-details">
@@ -68,6 +68,18 @@ Object.assign(UI_COMPONENTS, {
                 ブラウザのキャッシュにより問題が継続する場合があります。<br>下のボタンから最新状態で再読み込みしてください。
             </p>
             <button class="btn" style="width: 100%; background: linear-gradient(135deg, #3b82f6, #8b5cf6);" onclick="reloadGame()">更新してタイトルへ</button>
+        </div>
+    </div>
+    `,
+    enemyDeckModal: `
+    <!-- 敵デッキ確認モーダル -->
+    <div id="modal-enemy-deck" class="modal-overlay" onclick="closeEnemyDeckModal()">
+        <div class="skill-modal-box modal-pop-animation" style="width: 95%; max-width: 440px; padding: 20px;" onclick="event.stopPropagation()">
+            <h2 id="enemy-deck-title" style="color: #facc15; margin-bottom: 15px;">敵デッキ確認</h2>
+            <div class="card-list-container">
+                <div id="enemy-deck-grid" class="card-list-grid-3col" style="padding: 10px;"></div>
+            </div>
+            <button class="btn" style="margin-top: 20px; width: 100%;" onclick="closeEnemyDeckModal()">閉じる</button>
         </div>
     </div>
     `

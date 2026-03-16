@@ -2572,3 +2572,61 @@ h2 {
     overflow-wrap: break-word;
     line-height: 1.2;
 }
+
+/* 難易度選択画面のレイアウト調整 */
+.difficulty-button-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+}
+
+.difficulty-button-row .btn {
+    margin-top: 0;
+    flex: 1;
+    max-width: 200px;
+}
+
+.btn-check-deck {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 1.2rem;
+    background: rgba(30, 41, 59, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-check-deck:hover {
+    background: rgba(51, 65, 85, 0.9);
+    border-color: #facc15;
+    color: #facc15;
+}
+
+/* 敵デッキモーダル用 */
+#modal-enemy-deck .card-list-container {
+    height: 60vh;
+    max-height: 500px;
+}
+
+.card-count-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.3);
+}

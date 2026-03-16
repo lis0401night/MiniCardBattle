@@ -574,6 +574,7 @@ function confirmCharSelect() {
         if (gameMode === 'story') {
             appState = 'select_difficulty';
             switchScreen('screen-difficulty');
+            updateDifficultyCheckButtons();
         } else if (gameMode === 'event_satan') {
             // 高難易度サタン戦専用の導入へ
             initEventSatanMode(pendingCharId);
@@ -598,6 +599,7 @@ function confirmCharSelect() {
         enemyConfig = CHARACTERS[pendingCharId];
         appState = 'select_difficulty';
         switchScreen('screen-difficulty');
+        updateDifficultyCheckButtons();
     }
 }
 
@@ -940,4 +942,85 @@ function confirmExchange() {
         playSound(SOUNDS.seSkill);
         showAlertModal(`カードを獲得しました！\n（デッキ編成画面で登録できます）`, () => renderExchange());
     }
+}
+
+/**
+ * 敵のデッキプレビューを表示
+ */
+function openEnemyDeckPreview(level) {
+    if (!enemyConfig || !ENEMY_DECKS[enemyConfig.id]) {
+        showAlertModal("このキャラクターのデッキデータが見つかりません。");
+        return;
+    }
+
+    const levelKeys = { 1: 'easy', 2: 'normal', 3: 'hard' };
+    const key = levelKeys[level];
+    const deckIds = ENEMY_DECKS[enemyConfig.id][key];
+
+    if (!deckIds || deckIds.length === 0) {
+        showAlertModal("該難易度のデッキデータが空です。");
+        return;
+    }
+
+    const grid = document.getElementById('enemy-deck-grid');
+    const title = document.getElementById('enemy-deck-title');
+    const modal = document.getElementById('modal-enemy-deck');
+
+    if (!grid || !modal) return;
+
+    title.innerText = `${enemyConfig.name} [${level === 1 ? '初級' : level === 2 ? '中級' : '上級'}]`;
+    grid.innerHTML = '';
+
+    // IDごとに集計
+    const counts = {};
+    deckIds.forEach(id => {
+        counts[id] = (counts[id] || 0) + 1;
+    });
+
+    // 集計順にカード表示
+    Object.keys(counts).forEach(cardId => {
+        const template = CARD_MASTER.find(c => c.id === cardId);
+        if (!template) return;
+
+        const count = counts[cardId];
+        const item = document.createElement('div');
+        item.className = 'deck-card-item';
+        item.style.position = 'relative';
+
+        const imgUrl = getCardImgUrl(template);
+        const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
+
+        item.innerHTML = `
+            <div class="card red${rarityClass}" style="width:100%; height:100%;">
+                <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${enemyConfig.filter || 'none'};"></div>
+                <div class="card-power" style="font-size:1.2rem; bottom:0; right:2px;">${template.power}</div>
+                ${typeof renderSkillTag === 'function' ? renderSkillTag(template) : ''}
+                <div class="card-count-badge">×${count}</div>
+            </div>
+        `;
+        // 長押しまたはクリックで詳細
+        item.onclick = (e) => {
+            e.stopPropagation();
+            if (typeof openCardPreview === 'function') openCardPreview(template);
+        };
+        grid.appendChild(item);
+    });
+
+    modal.style.display = 'flex';
+    playSound(SOUNDS.seClick);
+}
+
+function closeEnemyDeckModal() {
+    const modal = document.getElementById('modal-enemy-deck');
+    if (modal) {
+        modal.style.display = 'none';
+        playSound(SOUNDS.seClick);
+    }
+}
+
+function updateDifficultyCheckButtons() {
+    const showChecks = (gameMode === 'free');
+    document.querySelectorAll('.btn-check-deck').forEach(btn => {
+        btn.style.display = showChecks ? 'flex' : 'none';
+    });
 }
