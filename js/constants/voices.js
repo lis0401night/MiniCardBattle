@@ -54,6 +54,16 @@ const VOICE_CATEGORIES = {
         volume: 1.0
     },
     'human_female': {
+        play: 'assets/voice/voice_human_female_play.wav',
+        death: 'assets/voice/voice_human_female_death.wav',
+        volume: 1.0
+    },
+    'human_female2': {
+        play: 'assets/voice/voice_human_female2_play.wav',
+        death: 'assets/voice/voice_human_female2_death.wav',
+        volume: 1.0
+    },
+    'human_female3': {
         play: 'assets/voice/voice_human_female_play.mp3',
         death: 'assets/voice/voice_human_female_death.mp3',
         volume: 1.0
@@ -104,13 +114,13 @@ function playCardVoice(category, situation = 'play') {
 
         // ゲームのマスターボリュームを取得
         const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
-        
+
         // マスターボリューム × ボイス全体倍率 × カテゴリ個別倍率
         let finalVolume = baseVol * VOICE_SETTINGS.globalVolumeMultiplier * categoryVolume;
-        
+
         // 音量が1.0（100%）を超えないように制限
         finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
-        
+
         voiceAudio.volume = finalVolume;
         voiceAudio.play().catch(e => {
             console.warn("Card voice play failed:", e);
