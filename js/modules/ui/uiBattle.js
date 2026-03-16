@@ -122,10 +122,30 @@ function createCardDOM(c, isBoard = false) {
 function renderHand() {
     const e = document.getElementById('player-hand'); e.innerHTML = '';
     playerHand.forEach((c, i) => {
-        const d = createCardDOM(c, false); d.className += " hand-card" + (i === selectedCardIndex ? " selected" : "");
+        const d = createCardDOM(c, false); 
+        let classes = " hand-card";
+        if (i === selectedCardIndex) classes += " selected";
+        if (isDiscardingMode && discardSelectedIndices.includes(i)) classes += " selected";
+        if (isDiscardingMode) classes += " can-select";
+        d.className += classes;
         d.onclick = () => {
             if (isProcessing && !isDiscardingMode) return;
             playSound(SOUNDS.seClick);
+            
+            if (isDiscardingMode) {
+                // 手札入替モード時のトグル処理
+                if (discardSelectedIndices.includes(i)) {
+                    const idx = discardSelectedIndices.indexOf(i);
+                    discardSelectedIndices.splice(idx, 1);
+                } else {
+                    if (discardSelectedIndices.length < discardMaxCount) {
+                        discardSelectedIndices.push(i);
+                    }
+                }
+                renderHand();
+                return;
+            }
+
             if (selectedCardIndex === i) {
                 selectedCardIndex = null;
                 updateCardDetail(null);
@@ -168,7 +188,7 @@ function renderBoard() {
             const d = createCardDOM(playerBoard[i], true);
             if (selectedBoardLaneIndex === i && selectedBoardSide === 'player') d.classList.add('selected');
             d.onclick = (ev) => {
-                if (selectedCardIndex !== null || (isProcessing && !isDiscardingMode)) return;
+                if (selectedCardIndex !== null || isPlacementMode || (isProcessing && !isDiscardingMode)) return;
                 ev.stopPropagation();
                 playSound(SOUNDS.seClick);
                 if (selectedBoardLaneIndex === i && selectedBoardSide === 'player') {
@@ -191,7 +211,7 @@ function renderBoard() {
             const d = createCardDOM(enemyBoard[i], true);
             if (selectedBoardLaneIndex === i && selectedBoardSide === 'enemy') d.classList.add('selected');
             d.onclick = (ev) => {
-                if (selectedCardIndex !== null || (isProcessing && !isDiscardingMode)) return;
+                if (selectedCardIndex !== null || isPlacementMode || (isProcessing && !isDiscardingMode)) return;
                 ev.stopPropagation();
                 playSound(SOUNDS.seClick);
                 if (selectedBoardLaneIndex === i && selectedBoardSide === 'enemy') {

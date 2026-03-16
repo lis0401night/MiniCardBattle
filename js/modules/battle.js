@@ -387,14 +387,14 @@ async function waitPlayerHandSelection(count, owner) {
 
     // プレイヤーの場合：手動選択
     return new Promise((resolve) => {
-        const selectedIndices = [];
+        discardSelectedIndices = [];
         const handEl = document.getElementById('player-hand');
-        const cards = handEl.querySelectorAll('.hand-card');
 
         // 手札入れ替え用のプロンプトを表示
         isDiscardingMode = true;
         discardMaxCount = count;
         updateCardDetail(null);
+        renderHand(); // 描画更新してクリックハンドラを適用させる
 
         // 「ターン終了」ボタンを「選択終了」に切り替え
         const endBtn = document.getElementById('btn-end-turn');
@@ -408,45 +408,24 @@ async function waitPlayerHandSelection(count, owner) {
 
         const cleanUp = () => {
             isDiscardingMode = false;
+            const result = [...discardSelectedIndices];
+            discardSelectedIndices = [];
             discardMaxCount = 0;
             updateCardDetail(null);
-            cards.forEach((card) => {
-                card.classList.remove('selected');
-                card.style.pointerEvents = '';
-            });
+
             // ボタンを元に戻す
             endBtn.innerText = originalBtnText;
             endBtn.style.cssText = originalBtnStyle;
             endBtn.onclick = originalBtnOnclick;
             renderHand(); // 通常の状態に戻す
+            return result;
         };
 
         endBtn.onclick = () => {
             playSound(SOUNDS.seClick);
-            cleanUp();
-            resolve(selectedIndices);
+            const indices = cleanUp();
+            resolve(indices);
         };
-
-        cards.forEach((card, i) => {
-            card.classList.add('can-select'); // CSSで強調するため（もしあれば）
-            card.onclick = (ev) => {
-                ev.stopPropagation();
-                playSound(SOUNDS.seClick);
-
-                if (selectedIndices.includes(i)) {
-                    // 選択解除
-                    const idx = selectedIndices.indexOf(i);
-                    selectedIndices.splice(idx, 1);
-                    card.classList.remove('selected');
-                } else {
-                    // 選択
-                    if (selectedIndices.length < count) {
-                        selectedIndices.push(i);
-                        card.classList.add('selected');
-                    }
-                }
-            };
-        });
     });
 }/**
  * 召喚時スキル「選択」の選択を待機する
