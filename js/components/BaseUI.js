@@ -53,7 +53,7 @@ function renderSkillTag(card, isBoard = false) {
 const UI_COMPONENTS = {
     titleScreen: `
     <!-- 1. タイトル画面 -->
-    <div id="screen-title" class="screen active" onclick="goToModeSelect()">
+    <div id="screen-title" class="screen active" onpointerdown="goToModeSelect()">
         <img src="assets/title_img.jpg" alt="Key Visual" class="title-visual"
             onerror="this.style.display='none'; document.querySelector('.game-title').style.display='block';">
         <h1 class="game-title">LANE<br>DEFENDERS</h1>
@@ -64,25 +64,25 @@ const UI_COMPONENTS = {
     modeSelectScreen: `
     <!-- モード選択画面 -->
     <div id="screen-mode-select" class="screen">
-        <button class="btn-circle btn-gear" onclick="showOptions()">⚙</button>
+        <button class="btn-circle btn-gear" onpointerdown="showOptions()">⚙</button>
         <div class="menu-btn-grid">
-            <div class="menu-img-btn" onclick="showRules()">
+            <div class="menu-img-btn" onpointerdown="showRules()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_RULES}');"></div>
                 <div class="menu-btn-label">遊び方</div>
             </div>
-            <div class="menu-img-btn" onclick="startGameMode('story')">
+            <div class="menu-img-btn" onpointerdown="startGameMode('story')">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_STORY}');"></div>
                 <div class="menu-btn-label">ストーリー</div>
             </div>
-            <div class="menu-img-btn" onclick="startGameMode('free')">
+            <div class="menu-img-btn" onpointerdown="startGameMode('free')">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_FREE}');"></div>
                 <div class="menu-btn-label">フリーバトル</div>
             </div>
-            <div class="menu-img-btn" onclick="showEventMenu()">
+            <div class="menu-img-btn" onpointerdown="showEventMenu()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_EVENT}');"></div>
                 <div class="menu-btn-label">イベント</div>
             </div>
-            <div class="menu-img-btn" style="grid-column: 1 / 2;" onclick="showGallery()">
+            <div class="menu-img-btn" style="grid-column: 1 / 2;" onpointerdown="showGallery()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.MENU_GALLERY}');"></div>
                 <div class="menu-btn-label">ギャラリー</div>
             </div>
@@ -95,13 +95,13 @@ const UI_COMPONENTS = {
     <div id="screen-gallery-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">ギャラリー</h2>
         <div class="menu-btn-grid">
-            <div class="menu-img-btn" style="grid-column: 1 / -1; max-width: 50%; margin: 0 auto;" onclick="showCardList()">
+            <div class="menu-img-btn" style="grid-column: 1 / -1; max-width: 50%; margin: 0 auto;" onpointerdown="showCardList()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.GALLERY_CARD_LIST}');"></div>
                 <div class="menu-btn-label">カード一覧</div>
             </div>
         </div>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
-            <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+            <button class="btn" style="background: #475569;" onpointerdown="switchScreen('screen-mode-select')">戻る</button>
         </div>
     </div>
     `,
@@ -116,14 +116,14 @@ const UI_COMPONENTS = {
             <div id="gallery-card-grid" class="card-list-grid-3col"></div>
         </div>
 
-        <button class="btn" style="margin-top: 15px; background: #475569;" onclick="switchScreen('screen-gallery-menu')">戻る</button>
+        <button class="btn" style="margin-top: 15px; background: #475569;" onpointerdown="switchScreen('screen-gallery-menu')">戻る</button>
     </div>
     `,
 
     rulesScreen: `
     <!-- 2. ルール説明画面 -->
     <div id="screen-rules" class="screen">
-        <h2 onclick="debugUnlockCards()">遊び方</h2>
+        <h2 onpointerdown="debugUnlockCards()">遊び方</h2>
         <div class="rule-box">
             <ul>
                 <li><b>【デッキ編成】デッキに同じカードは4枚まで入れられます。</b></li>
@@ -146,7 +146,7 @@ const UI_COMPONENTS = {
         <div class="select-scroll-area">
             <div class="char-grid" id="char-grid"></div>
         </div>
-        <button class="btn" style="margin-top: 20px; background: #475569;" onclick="goBackFromSelect()">戻る</button>
+        <button class="btn" style="margin-top: 20px; background: #475569;" onpointerdown="goBackFromSelect()">戻る</button>
     </div>
     `,
 
@@ -164,8 +164,8 @@ const UI_COMPONENTS = {
                 <div id="detail-leader-desc" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Skill Desc</div>
             </div>
             <div style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn" style="flex: 1; background: #475569; margin-top: 0;" onclick="closeCharDetail()">戻る</button>
-                <button class="btn" style="flex: 1; background: linear-gradient(45deg, #3b82f6, #1d4ed8); margin-top: 0;" onclick="confirmCharSelect()">決定</button>
+                <button class="btn" style="flex: 1; background: #475569; margin-top: 0;" onpointerdown="closeCharDetail()">戻る</button>
+                <button class="btn" style="flex: 1; background: linear-gradient(45deg, #3b82f6, #1d4ed8); margin-top: 0;" onpointerdown="confirmCharSelect()">決定</button>
             </div>
         </div>
     </div>
@@ -177,19 +177,19 @@ const UI_COMPONENTS = {
         <h2 style="font-weight: 900;">難易度</h2>
         <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center;">
             <div class="difficulty-button-row">
-                <button class="btn" style="background: #22c55e;" onclick="confirmDifficulty(1)">初級</button>
-                <button id="btn-check-deck-1" class="btn-check-deck" onclick="openEnemyDeckPreview(1)" title="デッキ確認">🔍</button>
+                <button class="btn" style="background: #22c55e;" onpointerdown="confirmDifficulty(1)">初級</button>
+                <button id="btn-check-deck-1" class="btn-check-deck" onpointerdown="openEnemyDeckPreview(1)" title="デッキ確認">🔍</button>
             </div>
             <div class="difficulty-button-row">
-                <button class="btn" style="background: #eab308;" onclick="confirmDifficulty(2)">中級</button>
-                <button id="btn-check-deck-2" class="btn-check-deck" onclick="openEnemyDeckPreview(2)" title="デッキ確認">🔍</button>
+                <button class="btn" style="background: #eab308;" onpointerdown="confirmDifficulty(2)">中級</button>
+                <button id="btn-check-deck-2" class="btn-check-deck" onpointerdown="openEnemyDeckPreview(2)" title="デッキ確認">🔍</button>
             </div>
             <div class="difficulty-button-row">
-                <button class="btn" style="background: #ef4444;" onclick="confirmDifficulty(3)">上級</button>
-                <button id="btn-check-deck-3" class="btn-check-deck" onclick="openEnemyDeckPreview(3)" title="デッキ確認">🔍</button>
+                <button class="btn" style="background: #ef4444;" onpointerdown="confirmDifficulty(3)">上級</button>
+                <button id="btn-check-deck-3" class="btn-check-deck" onpointerdown="openEnemyDeckPreview(3)" title="デッキ確認">🔍</button>
             </div>
         </div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="goBackFromDifficulty()">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onpointerdown="goBackFromDifficulty()">戻る</button>
     </div>
     `,
 
@@ -200,14 +200,14 @@ const UI_COMPONENTS = {
         <div class="select-scroll-area">
             <div class="char-grid" id="stage-grid"></div>
         </div>
-        <button class="btn" style="margin-top: 20px; background: #475569;" onclick="goBackFromStage()">戻る</button>
+        <button class="btn" style="margin-top: 20px; background: #475569;" onpointerdown="goBackFromStage()">戻る</button>
     </div>
     `,
 
     optionsScreen: `
     <!-- オプション画面 -->
     <div id="screen-options" class="screen">
-        <h2 style="color: #facc15; margin-bottom: 30px;" onclick="handleOptionsTitleClick()">オプション</h2>
+        <h2 style="color: #facc15; margin-bottom: 30px;" onpointerdown="handleOptionsTitleClick()">オプション</h2>
         
         <div style="width: 280px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 30px;">
             <div style="margin-bottom: 20px;">
@@ -223,15 +223,15 @@ const UI_COMPONENTS = {
             <div style="border-top: 1px solid #334155; padding-top: 20px;">
                 <label style="display: block; margin-bottom: 10px; color: #cbd5e1; font-size: 0.9rem;">データ管理</label>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="btn" style="background: #475569; width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="showSyncDataModal()">データ連携</button>
-                    <button class="btn" style="background: #7f1d1d; width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="resetGameData()">データ削除</button>
+                    <button class="btn" style="background: #475569; width: 100%; margin-top: 0; font-size: 0.9rem;" onpointerdown="showSyncDataModal()">データ連携</button>
+                    <button class="btn" style="background: #7f1d1d; width: 100%; margin-top: 0; font-size: 0.9rem;" onpointerdown="resetGameData()">データ削除</button>
                 </div>
                 <p style="color: #64748b; font-size: 0.7rem; margin-top: 8px; text-align: center;">※デッキと所持カードが初期化されます</p>
             </div>
 
             <div style="border-top: 1px solid #334155; padding-top: 20px; margin-top: 20px;">
                 <label style="display: block; margin-bottom: 10px; color: #cbd5e1; font-size: 0.9rem;">更新</label>
-                <button class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); width: 100%; margin-top: 0; font-size: 0.9rem;" onclick="reloadGame()">更新してタイトルへ</button>
+                <button class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); width: 100%; margin-top: 0; font-size: 0.9rem;" onpointerdown="reloadGame()">更新してタイトルへ</button>
             </div>
         </div>
 
@@ -257,13 +257,13 @@ const UI_COMPONENTS = {
             </div>
             <div class="deck-controls">
                 <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;">
-                    <button class="action-btn" onclick="resetDeck()" style="background: #1e40af; font-size: 0.75rem; padding: 5px 10px;">初期デッキに戻す</button>
-                    <button class="action-btn" onclick="clearDeck()" style="background: #7f1d1d; font-size: 0.75rem; padding: 5px 10px;">全削除</button>
+                    <button class="action-btn" onpointerdown="resetDeck()" style="background: #1e40af; font-size: 0.75rem; padding: 5px 10px;">初期デッキに戻す</button>
+                    <button class="action-btn" onpointerdown="clearDeck()" style="background: #7f1d1d; font-size: 0.75rem; padding: 5px 10px;">全削除</button>
                 </div>
             </div>
-            <button id="btn-finish-deck" class="btn" onclick="finishDeckEdit()" style="margin-top: 10px; width: 100%; opacity: 0.5;">バトル開始！</button>
+            <button id="btn-finish-deck" class="btn" onpointerdown="finishDeckEdit()" style="margin-top: 10px; width: 100%; opacity: 0.5;">バトル開始！</button>
         </div>
-        <button class="btn" onclick="goBackFromDeckEdit()" style="background: #475569;">戻る</button>
+        <button class="btn" onpointerdown="goBackFromDeckEdit()" style="background: #475569;">戻る</button>
     </div>
     `,
 
@@ -281,17 +281,17 @@ const UI_COMPONENTS = {
     <div id="screen-event-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">イベント</h2>
         <div class="menu-btn-grid">
-            <div class="menu-img-btn" onclick="startHighDifficulty()">
+            <div class="menu-img-btn" onpointerdown="startHighDifficulty()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.EVENT_HIGH_DIFF}');"></div>
                 <div class="menu-btn-label">高難易度</div>
             </div>
-            <div class="menu-img-btn" onclick="showDefenseMenu()">
+            <div class="menu-img-btn" onpointerdown="showDefenseMenu()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.EVENT_DEFENSE}');"></div>
                 <div class="menu-btn-label">防衛戦</div>
             </div>
         </div>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
-            <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-mode-select')">戻る</button>
+            <button class="btn" style="background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-mode-select')">戻る</button>
         </div>
     </div>
     `,
@@ -301,13 +301,13 @@ const UI_COMPONENTS = {
     <div id="screen-defense-menu" class="screen">
         <h2 style="color: #10b981; margin-bottom: 30px;">防衛戦</h2>
         <div style="display: flex; flex-direction: column; gap: 15px; width: 250px;">
-            <button class="btn btn-yellow" onclick="showDefenseRules()">ルール</button>
-            <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669);" onclick="startDefenseRegistration()">防衛デッキ登録</button>
-            <button id="btn-start-attack" class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); display:none;" onclick="showDefenseBattleList()">攻撃開始</button>
+            <button class="btn btn-yellow" onpointerdown="showDefenseRules()">ルール</button>
+            <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669);" onpointerdown="startDefenseRegistration()">防衛デッキ登録</button>
+            <button id="btn-start-attack" class="btn" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); display:none;" onpointerdown="showDefenseBattleList()">攻撃開始</button>
             <div id="btn-start-attack-disabled" class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed; display:block;">攻撃開始（未登録）</div>
-            <button class="btn" style="background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 10px;" onclick="showExchangeScreen()">交換所</button>
+            <button class="btn" style="background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 10px;" onpointerdown="showExchangeScreen()">交換所</button>
         </div>
-        <button class="btn" style="margin-top: 40px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 40px; background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
     </div>
     `,
 
@@ -318,7 +318,7 @@ const UI_COMPONENTS = {
         <div class="banner-container" id="defense-player-list" style="max-height: 420px; overflow-y: auto; padding: 5px;">
             <!-- プレイヤーリストがここに動的に生成されます -->
         </div>
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-defense-menu')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-defense-menu')">戻る</button>
     </div>
     `,
 
@@ -334,7 +334,7 @@ const UI_COMPONENTS = {
                 <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>※防衛戦のバトルではカードを獲得できません。</b></li>
             </ul>
         </div>
-        <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-defense-menu')">戻る</button>
+        <button class="btn" style="background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-defense-menu')">戻る</button>
     </div>
     `,
 
@@ -342,16 +342,16 @@ const UI_COMPONENTS = {
     <!-- 高難易度画面 -->
     <div id="screen-high-difficulty" class="screen">
         <h2 style="color: #facc15; margin-bottom: 20px;">高難易度</h2>
-        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onclick="showHighDifficultyRules()">ルール</button>
+        <button class="btn btn-yellow" style="width: 250px; margin-bottom: 20px;" onpointerdown="showHighDifficultyRules()">ルール</button>
         
         <div class="banner-container">
-            <button class="btn-banner legendary" onclick="handleSatanBattle()">
+            <button class="btn-banner legendary" onpointerdown="handleSatanBattle()">
                 <img src="assets/icon_satan.png" class="banner-icon">
                 <span class="banner-text" style="color: #ef4444;">復活の魔王 サタン</span>
             </button>
         </div>
 
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
     </div>
     `,
 
@@ -366,7 +366,7 @@ const UI_COMPONENTS = {
                 <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>遥かに強力な相手のため、ストーリーやフリーバトルでカードを集めてから挑むように注意してください。</b></li>
             </ul>
         </div>
-        <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-high-difficulty')">戻る</button>
+        <button class="btn" style="background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-high-difficulty')">戻る</button>
     </div>
     `,
 
@@ -376,9 +376,9 @@ const UI_COMPONENTS = {
         <div style="background: var(--panel-bg); border: 2px solid #94a3b8; border-radius: 12px; padding: 30px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
             <h2 style="color: #f8fafc; margin-bottom: 20px;">データ連携</h2>
             <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
-                <button class="btn" style="background: linear-gradient(45deg, #0ea5e9, #2563eb); margin-top: 0;" onclick="backupDataToXML()">バックアップ</button>
-                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); margin-top: 0;" onclick="importDataFromXML()">データ取込</button>
-                <button class="btn" style="background: #475569; margin-top: 5px;" onclick="closeSyncDataModal()">戻る</button>
+                <button class="btn" style="background: linear-gradient(45deg, #0ea5e9, #2563eb); margin-top: 0;" onpointerdown="backupDataToXML()">バックアップ</button>
+                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); margin-top: 0;" onpointerdown="importDataFromXML()">データ取込</button>
+                <button class="btn" style="background: #475569; margin-top: 5px;" onpointerdown="closeSyncDataModal()">戻る</button>
             </div>
             <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 20px; text-align: center; line-height: 1.4;">
                 バックアップしたXMLファイルを保存するか、保存したファイルからデータを復元できます。
@@ -396,8 +396,8 @@ const UI_COMPONENTS = {
             <input type="text" id="input-player-name" placeholder="名前を入力..." maxlength="12" 
                 style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; margin-bottom: 25px; outline: none; text-align: center;">
             <div style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="closePlayerNameModal()">キャンセル</button>
-                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="submitDefenseDeck()">完了</button>
+                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onpointerdown="closePlayerNameModal()">キャンセル</button>
+                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onpointerdown="submitDefenseDeck()">完了</button>
             </div>
         </div>
     </div>
@@ -413,7 +413,7 @@ const UI_COMPONENTS = {
             <div id="exchange-item-grid" class="card-list-grid-3col"></div>
         </div>
 
-        <button class="btn" style="margin-top: 15px; background: #475569;" onclick="switchScreen('screen-defense-menu')">戻る</button>
+        <button class="btn" style="margin-top: 15px; background: #475569;" onpointerdown="switchScreen('screen-defense-menu')">戻る</button>
     </div>
     `,
 
@@ -434,8 +434,8 @@ const UI_COMPONENTS = {
                 </div>
                 <!-- ボタンを横並びに配置 -->
                 <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px; flex-shrink: 0;">
-                    <button class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: #475569; margin-top: 0; font-size: 0.9rem;" onclick="closeExchangeDetail()">戻る</button>
-                    <button id="btn-exchange-confirm" class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 0; font-size: 0.9rem;" onclick="confirmExchange()">交換</button>
+                    <button class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: #475569; margin-top: 0; font-size: 0.9rem;" onpointerdown="closeExchangeDetail()">戻る</button>
+                    <button id="btn-exchange-confirm" class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 0; font-size: 0.9rem;" onpointerdown="confirmExchange()">交換</button>
                 </div>
             </div>
         </div>

@@ -25,29 +25,39 @@ function getDialogue(speakerConfig, targetConfig, type) {
     return dict.default || "...";
 }
 
-function playSound(audio) {
+async function playSound(audio) {
     if (audio) {
+        // 初回再生時に音声をアンロック（モバイル Safari 対策）
+        if (typeof unlockAudio === 'function') {
+            unlockAudio();
+        }
+
         const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
 
-        // bgmから始まるファイル（ループ再生するもの）はクローンせずそのまま再生する
+        // BGM (ループ音) の処理
         if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
             audio.currentTime = 0;
             audio.volume = baseVol;
-            audio.play().catch(() => {});
+            const p = audio.play();
+            if (p !== undefined) p.catch(() => {});
             return;
         }
 
-        // 効果音の場合
+        // SE (効果音) の処理
         try {
-            // 再生中でないならそのまま使い、再生中ならクローンを作る（低遅延・同時再生対応）
+            // Android Chrome等は再生中なら単に currentTime=0 で即座に反応するが、
+            // 重ねて鳴らす必要がある場合はクローンを作る
             if (audio.paused || audio.ended) {
-                audio.currentTime = 0;
                 audio.volume = baseVol;
-                audio.play().catch(() => {});
+                audio.currentTime = 0;
+                const p = audio.play();
+                if (p !== undefined) p.catch(() => {});
             } else {
+                // 重複再生が必要な場合のみクローンを生成（オーバーヘッド抑制）
                 const clone = audio.cloneNode();
                 clone.volume = baseVol;
-                clone.play().catch(() => {});
+                const p = clone.play();
+                if (p !== undefined) p.catch(() => {});
             }
         } catch (e) {
             console.warn("playSound failed:", e);
@@ -65,14 +75,31 @@ function stopAllBGM() {
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 // 画面遷移
+let isTransitioning = false;
 function switchScreen(id) {
+    if (isTransitioning) return; // 遷移中は入力を無視
+    isTransitioning = true;
+
     // モバイル等でのボタン選択状態（Sticky Focus）を解除
     if (document.activeElement && document.activeElement.tagName !== 'BODY') {
         document.activeElement.blur();
     }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+
+    // 300ms間は次の入力を受け付けない（ゴーストクリック対策）
+    setTimeout(() => {
+        isTransitioning = false;
+    }, 300);
 }
+
+// ゴーストクリック（pointerdown後の遅延clickイベント）をグローバルで無効化
+window.addEventListener('click', (e) => {
+    if (isTransitioning) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+}, true); // キャプチャフェーズで阻止
 
 // 判定補助: 特定のスキルを所持しているか
 function hasSkill(c, skillId) {

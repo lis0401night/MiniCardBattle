@@ -172,14 +172,18 @@ function playCardVoice(category, situation = 'play') {
         finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
 
         try {
+            if (typeof unlockAudio === 'function') unlockAudio();
+
             if (voiceAudio.paused || voiceAudio.ended) {
                 voiceAudio.volume = finalVolume;
                 voiceAudio.currentTime = 0;
-                voiceAudio.play().catch(e => console.warn("Card voice play failed:", e));
+                const p = voiceAudio.play();
+                if (p !== undefined) p.catch(e => console.warn("Card voice play failed:", e));
             } else {
                 const clone = voiceAudio.cloneNode();
                 clone.volume = finalVolume;
-                clone.play().catch(e => console.warn("Card voice clone play failed:", e));
+                const p = clone.play();
+                if (p !== undefined) p.catch(e => console.warn("Card voice clone play failed:", e));
             }
         } catch (e) {
             console.warn("playCardVoice execution failed:", e);

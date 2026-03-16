@@ -137,6 +137,7 @@ h2 {
     align-items: center;
     justify-content: center;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    touch-action: manipulation;
 }
 
 @media (hover: hover) {
@@ -624,6 +625,7 @@ h2 {
     transition: transform 0.2s, border-color 0.2s;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 @media (hover: hover) {
@@ -2553,6 +2555,7 @@ h2 {
     justify-content: center;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 .menu-img-bg {
@@ -2632,6 +2635,7 @@ h2 {
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
+    touch-action: manipulation;
 }
 
 .btn-check-deck:hover {

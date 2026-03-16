@@ -23,9 +23,10 @@ if (typeof loadDeck === 'function') {
 
 // 2. 盤面のセルクリックイベントのバインド
 document.querySelectorAll('#player-lanes .cell').forEach(cell => {
-    cell.onclick = async () => {
-        if (typeof isProcessing === 'undefined') return;
-        if (isProcessing || selectedCardIndex === null) return;
+    cell.onpointerdown = async (e) => {
+        if (typeof isProcessing === 'undefined' || typeof isTransitioning === 'undefined') return;
+        if (isProcessing || isTransitioning || selectedCardIndex === null) return;
+        
         const l = parseInt(cell.getAttribute('data-lane'));
         const newCard = playerHand[selectedCardIndex];
 
