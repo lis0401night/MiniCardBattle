@@ -1,9 +1,9 @@
 /**
- * ミニカードバトル - 敵AIロジック（ノーマル・シミュレーション版）
+ * ミニカードバトル - 敵AIロジック（中級・シミュレーション版）
  */
 
 /**
- * ノーマル以上の意思決定
+ * 中級以上の意思決定
  * @returns {Object} { index, lane, isOverwrite, useSkill }
  */
 function getNormalDecision() {
@@ -59,7 +59,7 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
 
                         const isOverwrite = myBoard[l] !== null;
-                        
+
                         // 「選択」スキルの場合は、それぞれの選択肢でシミュレーションを行う
                         if (hasSkill(card, 'choice') && Array.isArray(card.choices)) {
                             for (let cIdx = 0; cIdx < card.choices.length; cIdx++) {
@@ -201,11 +201,11 @@ function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, cu
     // ここから先のイベントは「次のプレイヤー（青）のターン開始」と「プレイヤーの攻撃」である。
 
     // 3. 次のプレイヤー（青）のターン開始処理（契約ダメージや成長）
-    applyPassiveSkillLogic(simState, 'blue'); 
-    
+    applyPassiveSkillLogic(simState, 'blue');
+
     // 自分の攻撃（red）は既に行われているのでここでは計算しない。
     // ただし、AIが出したばかりのカードによる「次のターン以降の脅威」は盤面評価でカバーされる。
-    
+
     // 4. プレイヤーの攻撃
     calculateCombatPhase(simState, 'blue');
 
@@ -234,13 +234,13 @@ function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = 
 
         for (let l of available) {
             const simState = simulateAndEvaluateToken(tokenCard, l, currentBoard, playerBoard, enemyHP, enemySP);
-            
+
             // トークン配置は簡易的に「相手HPをどれだけ削れるか」または「盤面パワー」でソート
             let score = (simState.enemyHP > 0 ? 10000 : -10000);
             score -= simState.playerHP * 100;
-            for(let i=0; i<3; i++) {
-                if(simState.enemyBoard[i]) score += simState.enemyBoard[i].currentPower * 10;
-                if(simState.playerBoard[i]) score -= simState.playerBoard[i].currentPower * 10;
+            for (let i = 0; i < 3; i++) {
+                if (simState.enemyBoard[i]) score += simState.enemyBoard[i].currentPower * 10;
+                if (simState.playerBoard[i]) score -= simState.playerBoard[i].currentPower * 10;
             }
 
             if (!isNaN(score) && score > bestScore) {

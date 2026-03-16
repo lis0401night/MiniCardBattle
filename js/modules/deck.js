@@ -360,7 +360,15 @@ async function submitDefenseDeck() {
         const response = await fetch('api/register_deck.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                uuid: getOrCreateUUID(),
+                name: playerName,
+                character: currentSelectedCharId,
+                stage: selectedStageId || 'plain',
+                deck: playerDeckSelection,
+                points: parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
+                total_points: parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0
+            })
         });
 
         if (!response.ok) throw new Error('Network response was not ok');

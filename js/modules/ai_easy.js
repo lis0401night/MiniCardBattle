@@ -1,9 +1,9 @@
 /**
- * ミニカードバトル - 敵AIロジック（イージー・ランダム版）
+ * ミニカードバトル - 敵AIロジック（初級・ランダム版）
  */
 
 /**
- * イージー難易度の意思決定
+ * 初級難易度の意思決定
  * @returns {Object} { index, lane, isOverwrite, useSkill }
  */
 function getEasyDecision() {

@@ -925,28 +925,42 @@ function endBattle() {
         // 防衛戦：報酬も台詞もスキップして戻る
         if (gameMode === 'defense_attack') {
             if (lastBattleResult === 'win') {
-                // ポイント計算
-                const myPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
-                let myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
-                const enemyPoints = enemyConfig.points || 0;
+                // ポイント計算（総ポイント基準）
+                const myCurrentPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+                const myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || myCurrentPoints;
+                const enemyTotalPoints = enemyConfig.total_points || enemyConfig.points || 0;
 
                 let winPoints = 1;
-                if (enemyPoints >= myPoints * 2 && enemyPoints > 0) winPoints = 5;
-                else if (enemyPoints > myPoints) winPoints = 3;
+                if (enemyTotalPoints > myTotalPoints) {
+                    if (enemyTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
+                        winPoints = 5;
+                    } else {
+                        winPoints = 3;
+                    }
+                }
 
-                const newPoints = myPoints + winPoints;
-                myTotalPoints += winPoints;
+                // UI表示の整合性を優先する場合（もし敵設定に保持されていたらそちらを信頼）
+                if (enemyConfig.calculatedWinPoints) {
+                    winPoints = enemyConfig.calculatedWinPoints;
+                }
+
+                const newCurrentPoints = myCurrentPoints + winPoints;
+                const newTotalPoints = myTotalPoints + winPoints;
 
                 // ローカルの保存
-                localStorage.setItem('mini_card_battle_defense_points', newPoints);
-                localStorage.setItem('mini_card_battle_defense_total_points', myTotalPoints);
+                localStorage.setItem('mini_card_battle_defense_points', newCurrentPoints);
+                localStorage.setItem('mini_card_battle_defense_total_points', newTotalPoints);
 
                 // サーバーへの送信
                 const uuid = getOrCreateUUID();
                 fetch('api/update_points.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uuid: uuid, points: newPoints })
+                    body: JSON.stringify({ 
+                        uuid: uuid, 
+                        points: newCurrentPoints,
+                        total_points: newTotalPoints
+                    })
                 }).catch(err => console.error("Failed to update points:", err));
 
                 playSound(SOUNDS.seSkill);
@@ -960,7 +974,13 @@ function endBattle() {
                     fetch('api/update_points.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ uuid: enemyUuid, points: 3, increment: true, defense_wins: 1 })
+                        body: JSON.stringify({ 
+                            uuid: enemyUuid, 
+                            points: 3, 
+                            total_points: 3, // 総ポイントも加算
+                            increment: true, 
+                            defense_wins: 1 
+                        })
                     }).catch(err => console.error("Failed to update enemy points:", err));
                 }
 
@@ -1009,7 +1029,13 @@ function returnToTitle() {
             fetch('api/update_points.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uuid: enemyConfig.uuid, points: 3, increment: true, defense_wins: 1 })
+                body: JSON.stringify({ 
+                    uuid: enemyConfig.uuid, 
+                    points: 3, 
+                    total_points: 3, // 総ポイントも加算
+                    increment: true, 
+                    defense_wins: 1 
+                })
             }).catch(err => console.error("Failed to update enemy points on retire:", err));
         }
 

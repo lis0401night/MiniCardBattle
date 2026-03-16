@@ -19,10 +19,8 @@ function startNextBattleSequence() {
         enemyConfig.isShadow = false;
     }
     if (gameMode === 'story') {
-        if (storyDifficulty === 1) aiLevel = 1;
-        else if (storyDifficulty === 3) aiLevel = 3;
-        else aiLevel = Math.min(3, Math.ceil(battleCount / 2.5));
-        console.log(`Story Mode Battle: ${battleCount}, aiLevel set to: ${aiLevel} (Chosen: ${storyDifficulty})`);
+        aiLevel = storyDifficulty;
+        console.log(`Story Mode Battle: ${battleCount}, aiLevel set to: ${aiLevel}`);
     }
     appState = 'pre_dialogue';
     let introText = (enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(enemyConfig, playerConfig, 'intro');

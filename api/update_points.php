@@ -21,6 +21,7 @@ if (!$data || !isset($data['uuid']) || !isset($data['points'])) {
 
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
 $points = isset($data['points']) ? intval($data['points']) : 0;
+$total_points = isset($data['total_points']) ? intval($data['total_points']) : 0;
 $increment = isset($data['increment']) ? (bool)$data['increment'] : false;
 $defense_wins = isset($data['defense_wins']) ? intval($data['defense_wins']) : 0;
 
@@ -45,8 +46,14 @@ if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
     if ($playerData) {
         if ($increment) {
             $playerData['points'] = ($playerData['points'] ?? 0) + $points;
+            if ($total_points > 0) {
+                $playerData['total_points'] = ($playerData['total_points'] ?? $playerData['points'] ?? 0) + $total_points;
+            }
         } else {
             $playerData['points'] = $points;
+            if ($total_points > 0) {
+                $playerData['total_points'] = $total_points;
+            }
         }
 
         if ($defense_wins > 0) {
@@ -64,6 +71,7 @@ EOT;
             echo json_encode([
                 'success' => true,
                 'points' => $playerData['points'],
+                'total_points' => $playerData['total_points'] ?? $playerData['points'] ?? 0,
                 'defense_wins' => $playerData['defense_wins'] ?? 0
             ]);
             exit;

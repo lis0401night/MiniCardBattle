@@ -23,7 +23,7 @@ async function executeEnemyAI() {
             if (enemyConfig.id === 'cthulhu' || enemyConfig.id === 'cleric') {
                 shouldForceSkill = true;
             }
-            // イージー難易度の場合、アイギス・リナの「空撃ち」を除き100%使用
+            // 初級難易度の場合、アイギス・リナの「空撃ち」を除き100%使用
             else if (typeof aiLevel !== 'undefined' && aiLevel === 1) {
                 if (enemyConfig.id === 'android' || enemyConfig.id === 'elf') {
                     // 相手の場にカードがある場合のみ使用（空撃ち防止）
@@ -48,10 +48,10 @@ async function executeEnemyAI() {
             let decision;
 
             if (typeof aiLevel !== 'undefined' && aiLevel === 1) {
-                // イージー難易度 (ai_easy.js)
+                // 初級難易度 (ai_easy.js)
                 aiDecision = getEasyDecision();
             } else {
-                // ノーマル以上 (ai_normal.js)
+                // 中級以上 (ai_normal.js)
                 aiDecision = getNormalDecision();
             }
             decision = aiDecision;
@@ -93,10 +93,10 @@ function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSk
     if (owner === 'blue') return [...allLanes].sort(() => Math.random() - 0.5).slice(0, count);
 
     if (typeof aiLevel !== 'undefined' && aiLevel === 1) {
-        // イージー: ランダム
+        // 初級: ランダム
         return [...allLanes].sort(() => Math.random() - 0.5).slice(0, count);
     } else {
-        // ノーマル以上: シミュレーション (ai_normal.js)
+        // 中級以上: シミュレーション (ai_normal.js)
         return getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill);
     }
 }

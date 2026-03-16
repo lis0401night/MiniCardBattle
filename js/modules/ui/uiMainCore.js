@@ -403,16 +403,26 @@ async function showDefenseMenu() {
                 if (myData) {
                     const wins = myData.defense_wins || 0;
                     const pts = myData.points || 0;
+                    const totalPts = myData.total_points || pts;
+
+                    const localPts = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+                    const localTotalPts = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+
+                    // サーバーの値が0でローカルに値がある場合は、サーバーの初期化ミスと判断して上書きを避ける
+                    const finalPts = (pts === 0 && localPts > 0) ? localPts : pts;
+                    const finalTotalPts = (totalPts === 0 && localTotalPts > 0) ? localTotalPts : totalPts;
+
                     const lastWins = parseInt(localStorage.getItem('mini_card_battle_defense_wins')) || 0;
                     const newWinsCount = wins - lastWins;
 
                     if (newWinsCount > 0) {
                         showAlertModal(
-                            `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛戦ポイント: ${pts} Pt`,
+                            `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛戦ポイント: ${finalPts} Pt`,
                             () => { }
                         );
                     }
-                    localStorage.setItem('mini_card_battle_defense_points', pts);
+                    localStorage.setItem('mini_card_battle_defense_points', finalPts);
+                    localStorage.setItem('mini_card_battle_defense_total_points', finalTotalPts);
                     localStorage.setItem('mini_card_battle_defense_wins', wins);
                 }
             }
@@ -443,19 +453,24 @@ async function showDefenseBattleList() {
             }
 
             // 自分のポイントを取得
-            const myPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+            const myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
 
-            // ポイント降順でソート
-            players.sort((a, b) => (b.points || 0) - (a.points || 0));
+            // ポイント降順でソート（総ポイント基準）
+            players.sort((a, b) => (b.total_points || b.points || 0) - (a.total_points || a.points || 0));
 
             players.forEach((p, index) => {
                 const char = CHARACTERS[p.character] || CHARACTERS.android;
-                const pPoints = p.points || 0;
+                const pTotalPoints = p.total_points || p.points || 0;
 
                 // 勝利時の獲得ポイント計算
                 let winPoints = 1;
-                if (pPoints >= myPoints * 2 && pPoints > 0) winPoints = 5;
-                else if (pPoints > myPoints) winPoints = 3;
+                if (pTotalPoints > myTotalPoints) {
+                    if (pTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
+                        winPoints = 5;
+                    } else {
+                        winPoints = 3;
+                    }
+                }
 
                 // 順位による枠の色設定
                 let borderColor = '#cd7f32'; // 4位以下 (ブロンズ)
@@ -477,13 +492,16 @@ async function showDefenseBattleList() {
                         <div style="display: flex; align-items: center;">
                             <img src="${char.icon}" class="banner-icon">
                             <span class="banner-text" style="color: ${char.color}; margin-right: 10px;">${p.name}</span>
-                            <span style="color: #cbd5e1; font-size: 0.85rem;">(Pt: ${pPoints})</span>
+                            <span style="color: #cbd5e1; font-size: 0.85rem;">(Pt: ${pTotalPoints})</span>
                         </div>
                         <div style="color: #10b981; font-weight: bold; font-size: 0.9rem;">Win +${winPoints}</div>
                     </div>
                 `;
 
-                banner.onclick = () => startAttackBattle(p);
+                banner.onclick = () => {
+                    p.calculatedWinPoints = winPoints; // 計算済みポイントを一時保持
+                    startAttackBattle(p);
+                };
                 listContainer.appendChild(banner);
             });
         } else {
@@ -503,13 +521,15 @@ async function startAttackBattle(enemyPlayerData) {
         await loadPlayerDeck(enemyPlayerData.uuid);
 
         gameMode = 'defense_attack';
-        aiLevel = 3; // 防衛戦のAIは常にハード（レベル3）固定
+        aiLevel = 3; // 防衛戦のAIは常に上級（レベル3）固定
 
         // 敵の設定を保存
         enemyConfig = { ...CHARACTERS[enemyPlayerData.character] || CHARACTERS.android };
         enemyConfig.playerName = enemyPlayerData.name;
         enemyConfig.uuid = enemyPlayerData.uuid;
         enemyConfig.points = enemyPlayerData.points || 0;
+        enemyConfig.total_points = enemyPlayerData.total_points || enemyPlayerData.points || 0;
+        enemyConfig.calculatedWinPoints = enemyPlayerData.calculatedWinPoints; // リスト表示時の計算結果
         enemyConfig.stageId = enemyPlayerData.stage;
         selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
@@ -898,10 +918,15 @@ function confirmExchange() {
 
     // サーバーに同機
     const myUuid = getOrCreateUUID();
+    const totalPointsInner = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || currentPointsInner;
     fetch('api/update_points.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: myUuid, points: currentPointsInner })
+        body: JSON.stringify({
+            uuid: myUuid,
+            points: currentPointsInner,
+            total_points: totalPointsInner
+        })
     }).catch(err => console.error("Failed to sync points to server:", err));
 
     if (type === 'premium') {

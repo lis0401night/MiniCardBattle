@@ -21,6 +21,9 @@ if (!$data || !isset($data['uuid']) || !isset($data['name']) || !isset($data['ch
     exit;
 }
 
+$initial_points = isset($data['points']) ? intval($data['points']) : 0;
+$initial_total_points = isset($data['total_points']) ? intval($data['total_points']) : $initial_points;
+
 $stage = isset($data['stage']) ? preg_replace('/[^a-z0-9_]/', '', $data['stage']) : 'plain';
 $timestamp = time();
 
@@ -41,15 +44,19 @@ if (!is_dir($dir)) {
     mkdir($dir, 0777, true);
 }
 
-// 既存のポイントを取得（あれば）
-$existing_points = 0;
+// 既存のデータを引き継ぐ（あれば）
+$existing_points = $initial_points;
+$existing_total_points = $initial_total_points;
+$existing_defense_wins = 0;
 $filename = "{$dir}/{$uuid}.js";
 if (file_exists($filename)) {
     $content = file_get_contents($filename);
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
         $existing_data = json_decode($matches[2], true);
-        if (isset($existing_data['points'])) {
-            $existing_points = $existing_data['points'];
+        if ($existing_data) {
+            $existing_points = isset($existing_data['points']) ? intval($existing_data['points']) : $initial_points;
+            $existing_total_points = isset($existing_data['total_points']) ? intval($existing_data['total_points']) : (isset($existing_data['points']) ? intval($existing_data['points']) : $initial_total_points);
+            $existing_defense_wins = $existing_data['defense_wins'] ?? 0;
         }
     }
 }
@@ -63,6 +70,8 @@ $player_data = [
     'stage' => $stage,
     'deck' => $deck,
     'points' => $existing_points,
+    'total_points' => $existing_total_points,
+    'defense_wins' => $existing_defense_wins,
     'timestamp' => $timestamp
 ];
 $data_json = json_encode($player_data);
