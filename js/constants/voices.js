@@ -47,6 +47,21 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_undead_death.wav',
         volume: 1.0
     },
+    'bird': {
+        play: 'assets/voice/voice_bird_play.wav',
+        death: 'assets/voice/voice_bird_death.wav',
+        volume: 1.0
+    },
+    'insect': {
+        play: 'assets/voice/voice_insect_play.wav',
+        death: 'assets/voice/voice_insect_death.wav',
+        volume: 1.0
+    },
+    'horse': {
+        play: 'assets/voice/voice_horse_play.wav',
+        death: 'assets/voice/voice_horse_death.wav',
+        volume: 1.0
+    },
     // 人間・亜人系
     'human_male_normal': {
         play: 'assets/voice/voice_human_male_normal_play.wav',
@@ -98,6 +113,11 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_dark_death.wav',
         volume: 1.0
     },
+    'sword': {
+        play: 'assets/voice/voice_sword_play.wav',
+        death: 'assets/voice/voice_sword_death.wav',
+        volume: 1.0
+    },
     // 無機物系
     'rock': {
         play: 'assets/voice/voice_rock_play.wav',
@@ -137,7 +157,7 @@ function playCardVoice(category, situation = 'play') {
 
     try {
         const audioPath = VOICE_CATEGORIES[category][situation];
-        
+
         // キャッシュからテンプレートを取得し、再生中ならクローンして重ねる
         let voiceAudio = voiceAudioCache[audioPath];
         if (!voiceAudio) {
