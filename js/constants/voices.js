@@ -47,11 +47,6 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_undead_death.wav',
         volume: 1.0
     },
-    'machine': {
-        play: 'assets/voice/voice_machine_play.wav',
-        death: 'assets/voice/voice_machine_death.wav',
-        volume: 1.0
-    },
     // 人間・亜人系
     'human_male_normal': {
         play: 'assets/voice/voice_human_male_normal_play.wav',
@@ -101,6 +96,22 @@ const VOICE_CATEGORIES = {
     'dark': {
         play: 'assets/voice/voice_dark_play.wav',
         death: 'assets/voice/voice_dark_death.wav',
+        volume: 1.0
+    },
+    // 無機物系
+    'rock': {
+        play: 'assets/voice/voice_rock_play.wav',
+        death: 'assets/voice/voice_rock_death.wav',
+        volume: 0.5
+    },
+    'machine_old': {
+        play: 'assets/voice/voice_machine_old_play.wav',
+        death: 'assets/voice/voice_machine_old_death.wav',
+        volume: 1.0
+    },
+    'machine_new': {
+        play: 'assets/voice/voice_machine_new_play.wav',
+        death: 'assets/voice/voice_machine_new_death.wav',
         volume: 1.0
     },
     // 特殊系
