@@ -533,15 +533,23 @@ async function waitSkillChoice(choices, owner, card) {
     });
 }
 async function discardCard(owner, card, lane) {
-    if (card.skill === 'split' && lane !== undefined) {
-        await triggerSplitSkill(owner, lane, card);
-        return true; // 分裂した場合は墓地に行かず場に残る（上書きされる）
-    }
     if (card.isToken) return false;
-    // 誘爆スキルの判定
-    if (hasSkill(card, 'explode') && lane !== undefined) {
-        await triggerExplodeSkill(owner, lane, card);
+    let skillsToResolve = [];
+    if (card.skill && card.skill !== 'none') skillsToResolve.push({ id: card.skill, value: card.skillValue });
+    if (Array.isArray(card.skills)) skillsToResolve = skillsToResolve.concat(card.skills);
+
+    for (const sk of skillsToResolve) {
+        // 分裂(split)
+        if (sk.id === 'split' && lane !== undefined) {
+             await triggerSplitSkill(owner, lane, card);
+             return true; // 分裂した場合は墓地に行かず場に残る
+        }
+        // 誘爆(explode)
+        if (sk.id === 'explode' && lane !== undefined) {
+            await triggerExplodeSkill(owner, lane, card);
+        }
     }
+
     // スキル発動フラグをリセット
     card.skillTriggered = false;
     card.stunTurns = 0;
@@ -610,12 +618,15 @@ async function cleanupDestroyedCards() {
         if (destroyedItems.length === 0) break;
         anyDestroyedAtAll = true;
 
-        // 演出: 破壊されるカードを揺らす & ボイス再生
+        // 演出: 死亡ボイス再生（揺れよりも先に開始）
         destroyedItems.forEach(item => {
-            if (item.el) item.el.classList.add('anim-shake');
             if (item.card && item.card.voiceCategory) {
                 playCardVoice(item.card.voiceCategory, 'death');
             }
+        });
+        // その後に揺らす
+        destroyedItems.forEach(item => {
+            if (item.el) item.el.classList.add('anim-shake');
         });
         playSound(SOUNDS.seDamage);
         await sleep(400);
@@ -637,7 +648,7 @@ async function cleanupDestroyedCards() {
                 updateCardVisuals(item.index, side, item.board[item.index]);
             }
         }
-        await sleep(200); // 連続破壊の際の間隔
+        await sleep(400); // 連続破壊の際の間隔
     }
     return anyDestroyedAtAll;
 }
@@ -800,9 +811,14 @@ async function triggerStartTurnSkills(owner) {
             triggered = true;
             // renderBoard(); // ループ内での全体再描画を避ける
             if (checkWinCondition()) return;
+            updateHPBar();
+            await sleep(1000); // 契約演出（ダメージポップアップ）をしっかり見せる
         }
     }
-    if (triggered) renderBoard();
+    if (triggered) {
+        renderBoard();
+        await sleep(600); // ターン開始スキルの演出終了後、DOMが安定するまで十分に待機
+    }
 }
 
 async function resolveOnPlaySkill(o, l, c) {
@@ -814,11 +830,12 @@ async function resolveOnPlaySkill(o, l, c) {
     if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
     if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
-    // 速攻(quick)は一番最後に発動するように調整（潜伏による無敵付与などを優先させるため）
+    // スキル定義順に1つずつ処理（quickはゲームバランス上の理由で最後に調整する場合があるが、基本は定義順）
+    // ユーザー要求に従い、一旦純粋な定義順（上から順）にするが、quickの特殊性は維持が必要か検討
     skillsToResolve.sort((a, b) => {
-        if (a.id === 'quick') return 1;
+        if (a.id === 'quick') return 1; 
         if (b.id === 'quick') return -1;
-        return 0;
+        return 0; // 基本は順番維持
     });
 
     for (const sk of skillsToResolve) {
@@ -845,10 +862,19 @@ async function executeSingleCombat(atk, l) {
     if (!aE) return;
 
     // 演出: 攻撃アニメーション
-    aE.offsetHeight; // 強制リフロー
-    aE.classList.add(an); 
-    playSound(SOUNDS.seAttack);
-    await sleep(350); // 0.7sアニメーションの衝突タイミング(約50%)に合わせる
+    // Safari等での不発を防ぐため、一度ステータスを確定させてから次のフレームでクラスを追加
+    aE.classList.remove(an); // 念のため削除
+    void aE.offsetHeight;    // 強制リフロー (VOiDで副作用を明示)
+    
+    await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            aE.classList.add(an);
+            playSound(SOUNDS.seAttack);
+            resolve();
+        });
+    }));
+    
+    await sleep(400); // アニメーション衝突タイミング(0.8sの50%)
 
     // ロジカルなダメージ処理の前に少し待機して衝撃を表現
     // (この間にDamagePopupが表示されると気持ちいい)
