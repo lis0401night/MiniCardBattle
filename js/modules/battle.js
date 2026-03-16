@@ -606,7 +606,10 @@ async function cleanupDestroyedCards() {
     }
 
     playSound(SOUNDS.seDestroy);
-    renderBoard();
+    // renderBoard(); // アニメーションを壊すため避ける
+    for (const item of destroyedItems) {
+        removeCardFromBoard(item.index, item.owner);
+    }
     return true;
 }
 
@@ -627,7 +630,8 @@ function triggerSplitSkill(owner, lane, card) {
 
     setTimeout(() => {
         playSound(SOUNDS.sePlace);
-        renderBoard();
+        // renderBoard(); // アニメーション中かもしれないのでピンポイント更新
+        updateCardVisuals(lane, owner, board[lane]);
         const cEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
         if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
     }, 100);
@@ -650,7 +654,8 @@ async function triggerExplodeSkill(owner, lane, card) {
 
     if (targetsFound) {
         playSound(SOUNDS.seDamage);
-        renderBoard(); // 先に描画を更新
+        // renderBoard(); // アニメーションを壊すため避ける
+        adj.forEach(j => updateCardPowerOnly(j, side));
 
         // 描画更新後の新しいDOM要素に対して演出をかける
         adj.forEach(j => {
@@ -896,12 +901,14 @@ async function executeSingleCombat(atk, l) {
         if (dD && !aD && hasSkill(aC, 'soul_bind')) {
             const val = getSkillValue(aC, 'soul_bind') || 2;
             aC.currentPower += val;
+            updateCardPowerOnly(aLane, atk === 'blue' ? 'player' : 'enemy');
             if (aE_new) createDamagePopup(aE_new, `+${val}`, '#4ade80');
             playSound(SOUNDS.seSkill);
         }
         if (aD && !dD && hasSkill(dB[l], 'soul_bind')) {
             const val = getSkillValue(dB[l], 'soul_bind') || 2;
             dB[l].currentPower += val;
+            updateCardPowerOnly(dLane, atk === 'blue' ? 'enemy' : 'player');
             if (dE_new) createDamagePopup(dE_new, `+${val}`, '#4ade80');
             playSound(SOUNDS.seSkill);
         }

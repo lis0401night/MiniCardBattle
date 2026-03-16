@@ -180,6 +180,29 @@ function highlightLanes() {
     });
 }
 
+/**
+ * 特定のレーンのカード表示のみを更新する
+ */
+function updateCardVisuals(lane, side, card) {
+    const parent = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"]`);
+    if (!parent) return;
+    if (!card) {
+        parent.innerHTML = '';
+        return;
+    }
+    const d = createCardDOM(card, true);
+    parent.innerHTML = '';
+    parent.appendChild(d);
+}
+
+/**
+ * 特定のレーンのカードを削除する（ Surgical update ）
+ */
+function removeCardFromBoard(lane, side) {
+    const parent = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"]`);
+    if (parent) parent.innerHTML = '';
+}
+
 function renderBoard() {
     for (let i = 0; i < 3; i++) {
         const p = document.querySelector(`#player-lanes .cell[data-lane="${i}"]`), e = document.querySelector(`#enemy-lanes .cell[data-lane="${i}"]`);
