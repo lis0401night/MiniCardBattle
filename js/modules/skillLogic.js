@@ -144,6 +144,7 @@ async function triggerStartTurnPassive(owner, lane) {
         }
         else playSound(SOUNDS.seSkill);
         triggered = true;
+        await sleep(500); // 演出の完了を待機
     }
 
     // Invincible
@@ -167,6 +168,7 @@ async function triggerStartTurnPassive(owner, lane) {
                 if (cEl) createDamagePopup(cEl, '無敵終了', '#94a3b8');
             }
             triggered = true;
+            await sleep(300); // 演出の完了を待機
         }
     }
 
@@ -182,6 +184,7 @@ async function triggerStartTurnPassive(owner, lane) {
         if (hpFill) createDamagePopup(hpFill, `契約 -${val}`, '#ef4444');
         updateHPBar();
         triggered = true;
+        await sleep(800); // 契約演出（ダメージポップアップ）をしっかり見せる
     }
     return triggered;
 }

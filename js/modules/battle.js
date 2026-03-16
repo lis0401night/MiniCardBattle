@@ -630,7 +630,7 @@ async function cleanupDestroyedCards() {
         playSound(SOUNDS.seDestroy);
         for (const item of destroyedItems) {
             const side = item.owner === 'blue' ? 'player' : 'enemy';
-            // 如果 card 还在 board 上（由于 Split 技能重新放置了），则不删除而是更新显示
+            // スプリットスキル等によって新しいカードが配置されている場合は削除せず更新する
             if (item.board[item.index] === null) {
                 removeCardFromBoard(item.index, side);
             } else {
@@ -733,10 +733,10 @@ async function endPlayerTurn() {
     if (!confirmed) return;
     isProcessing = true;
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
-    selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard(); endTurnLogic('blue');
+    selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard(); await endTurnLogic('blue');
 }
 
-function endTurnLogic(o) {
+async function endTurnLogic(o) {
     // 全ボードの拘束（スタン）状態の更新（ターン終了時に減算）
     [playerBoard, enemyBoard].forEach(board => {
         board.forEach(c => {
@@ -753,7 +753,7 @@ function endTurnLogic(o) {
 
     if (!isBattleEnded) {
         renderBoard();
-        startTurn(o === 'blue' ? 'red' : 'blue');
+        await startTurn(o === 'blue' ? 'red' : 'blue');
     }
 }
 
@@ -845,6 +845,7 @@ async function executeSingleCombat(atk, l) {
     if (!aE) return;
 
     // 演出: 攻撃アニメーション
+    aE.offsetHeight; // 強制リフロー
     aE.classList.add(an); 
     playSound(SOUNDS.seAttack);
     await sleep(350); // 0.7sアニメーションの衝突タイミング(約50%)に合わせる
