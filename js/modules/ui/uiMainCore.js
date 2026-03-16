@@ -280,41 +280,17 @@ async function performFadeTransition(action) {
                 if (typeof debugLog === 'function') debugLog("Action Complete.");
             } catch (err) {
                 console.error("Action Error:", err);
-                if (typeof debugLog === 'function') debugLog("ACTION ERROR: " + err.message);
             }
         }
-
-        // Wait for DOM
-        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
-
-        if (fade) {
-            fade.classList.remove('active');
-            // Wait for transition
-            await sleep(650);
-            fade.style.display = 'none';
-        }
-
-        // Nuclear cleanup
-        document.querySelectorAll('.fade-overlay').forEach(el => {
-            el.classList.remove('active');
-            el.style.display = 'none';
-        });
-
-    } catch (e) {
-        console.error("Fade failed:", e);
     } finally {
         if (typeof debugLog === 'function') debugLog("Fade End.");
         isProcessing = false;
-        // Final safety unlock
-        if (fade) {
-            fade.classList.remove('active');
-            fade.style.display = 'none';
-        }
     }
 }
 
 function initSelectScreen(includeSatan) {
     const grid = document.getElementById('char-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     Object.values(CHARACTERS).forEach(char => {
@@ -392,29 +368,6 @@ async function showDefenseMenu() {
     const startBtn = document.getElementById('btn-start-attack');
     const disabledBtn = document.getElementById('btn-start-attack-disabled');
 
-    // defenseWins表示要素があるか確認し、なければ作成・表示する
-    let winsDisplay = document.getElementById('defense-wins-display');
-    if (!winsDisplay) {
-        winsDisplay = document.createElement('div');
-        winsDisplay.id = 'defense-wins-display';
-        winsDisplay.style.color = '#facc15';
-        winsDisplay.style.fontSize = '1.1rem';
-        winsDisplay.style.marginBottom = '20px';
-        winsDisplay.style.fontWeight = 'bold';
-        winsDisplay.style.textAlign = 'center';
-
-        const title = document.querySelector('#screen-defense-menu h2');
-        if (title) {
-            title.insertAdjacentElement('afterend', winsDisplay);
-        }
-    }
-
-    if (hasRegistered) {
-        winsDisplay.innerText = 'データ取得中...';
-    } else {
-        winsDisplay.innerText = '';
-    }
-
     if (startBtn && disabledBtn) {
         if (hasRegistered) {
             startBtn.style.display = 'block';
@@ -428,7 +381,7 @@ async function showDefenseMenu() {
 
     if (hasRegistered) {
         try {
-            const response = await fetch('api/get_player_decks.php');
+            const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`);
             const result = await response.json();
             if (result.success) {
                 const myUuid = getOrCreateUUID();
@@ -436,20 +389,21 @@ async function showDefenseMenu() {
                 if (myData) {
                     const wins = myData.defense_wins || 0;
                     const pts = myData.points || 0;
-                    winsDisplay.innerText = `防衛に ${wins} 回成功しました！\n(防衛戦ポイント: ${pts} Pt)`;
+                    const lastWins = parseInt(localStorage.getItem('mini_card_battle_defense_wins')) || 0;
+                    const newWinsCount = wins - lastWins;
+
+                    if (newWinsCount > 0) {
+                        showAlertModal(
+                            `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛戦ポイント: ${pts} Pt`,
+                            () => { }
+                        );
+                    }
                     localStorage.setItem('mini_card_battle_defense_points', pts);
                     localStorage.setItem('mini_card_battle_defense_wins', wins);
-                } else {
-                    winsDisplay.innerText = '';
                 }
-            } else {
-                winsDisplay.innerText = '';
             }
         } catch (e) {
             console.error(e);
-            const localWins = localStorage.getItem('mini_card_battle_defense_wins') || 0;
-            const localPts = localStorage.getItem('mini_card_battle_defense_points') || 0;
-            winsDisplay.innerText = `防衛に ${localWins} 回成功しました！\n(防衛戦ポイント: ${localPts} Pt)`;
         }
     }
 }
