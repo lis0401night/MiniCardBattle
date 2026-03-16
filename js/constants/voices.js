@@ -27,6 +27,11 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_beast_death.wav',
         volume: 1.0
     },
+    'wolf': {
+        play: 'assets/voice/voice_wolf_play.wav',
+        death: 'assets/voice/voice_wolf_death.wav',
+        volume: 1.0
+    },
     'dragon': {
         play: 'assets/voice/voice_dragon_play.wav',
         death: 'assets/voice/voice_dragon_death.wav',
