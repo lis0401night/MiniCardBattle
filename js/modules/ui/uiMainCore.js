@@ -282,6 +282,20 @@ async function performFadeTransition(action) {
                 console.error("Action Error:", err);
             }
         }
+
+        // 描画更新を待ってからフェードアウト開始
+        await new Promise(resolve => requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                setTimeout(resolve, 50);
+            });
+        }));
+
+        if (fade) {
+            fade.classList.remove('active');
+            // フェードアウトの完了（transition: 0.5s等）を待機して非表示にする
+            await sleep(650);
+            fade.style.display = 'none';
+        }
     } finally {
         if (typeof debugLog === 'function') debugLog("Fade End.");
         isProcessing = false;
@@ -577,9 +591,11 @@ function confirmDifficulty(level) {
         selectedStageId = enemyConfig.stageId || 'plain';
         startBattleFlow();
     } else {
-        appState = 'select_stage';
-        initStageSelectScreen();
-        switchScreen('screen-stage-select');
+        performFadeTransition(() => {
+            appState = 'select_stage';
+            initStageSelectScreen();
+            switchScreen('screen-stage-select');
+        });
     }
 }
 
@@ -623,13 +639,15 @@ function confirmStageSelect(stageId) {
         // 防衛登録：ステージ選択の次はデッキ編集
         startBattleFlow();
     } else {
-        battleCount = 1;
-        appState = 'pre_dialogue';
-        dialogueQueue = [
-            { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'intro') },
-            { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') }
-        ];
-        setupDialogueScreen();
+        performFadeTransition(() => {
+            battleCount = 1;
+            appState = 'pre_dialogue';
+            dialogueQueue = [
+                { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'intro') || "・・・・" },
+                { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'intro') || "・・・・" }
+            ];
+            setupDialogueScreen();
+        });
     }
 }
 
