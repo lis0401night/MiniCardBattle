@@ -3,8 +3,8 @@ ENEMY_DECKS.dragon = {
         'golem', 'golem', 'golem', 'golem',
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
-        'dancer', 'dancer', 'dancer',
-        'dinosaur', 'dinosaur', 'dinosaur',
+        'dancer', 'dancer', 'dancer', 'dancer',
+        'dinosaur', 'dinosaur',
         'cheetah', 'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
 
@@ -25,8 +25,7 @@ ENEMY_DECKS.dragon = {
         'drifter', 'drifter', 'drifter', 'drifter',
         'berserker', 'berserker', 'berserker', 'berserker',
         'babydragon', 'babydragon',
-        'dragonewt', 'dragonewt',
-        'dancer', 'dancer',
+        'dragonewt', 'dragonewt', 'dragonewt', 'dragonewt',
         'dinosaur', 'dinosaur',
     ]
 };

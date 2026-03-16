@@ -17,7 +17,7 @@ ENEMY_DECKS.android = {
         'mantis', 'mantis',
         'diviner', 'diviner',
         'cleric', 'cleric',
-        'diviner', 'diviner', 'diviner',
+        'clone', 'clone', 'clone',
     ],
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon', 'cyberdragon',

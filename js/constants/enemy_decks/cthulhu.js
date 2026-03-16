@@ -1,8 +1,7 @@
 ENEMY_DECKS.cthulhu = {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'tortoise', 'tortoise',
-        'prince', 'prince',
+        'tortoise', 'tortoise'
         'copy', 'copy',
         'charger', 'charger', 'charger',
         'diviner', 'diviner', 'diviner',
