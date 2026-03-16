@@ -791,11 +791,11 @@ async function triggerStartTurnSkills(owner) {
         const tr = await triggerStartTurnPassive(owner, i);
         if (tr) {
             triggered = true;
-            renderBoard();
-            await sleep(600); // 各レーンの発動ごとに待機して、複数が重ならないようにする
+            // renderBoard(); // ループ内での全体再描画を避ける
             if (checkWinCondition()) return;
         }
     }
+    if (triggered) renderBoard();
 }
 
 async function resolveOnPlaySkill(o, l, c) {
@@ -830,8 +830,12 @@ async function resolveOnPlaySkill(o, l, c) {
 
 async function executeSingleCombat(atk, l) {
     const aB = atk === 'blue' ? playerBoard : enemyBoard, dB = atk === 'blue' ? enemyBoard : playerBoard, aR = atk === 'blue' ? '#player-lanes' : '#enemy-lanes', dR = atk === 'blue' ? '#enemy-lanes' : '#player-lanes', an = atk === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
-    const aC = aB[l]; if (!aC || hasSkill(aC, 'defender')) return;
-    const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`); if (!aE) return;
+    const aC = aB[l];
+    if (!aC || hasSkill(aC, 'defender')) return;
+    if (aC.stunTurns > 0) return; // スタン（拘束）中は攻撃しない
+
+    const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`);
+    if (!aE) return;
 
     // 演出: 攻撃アニメーション
     aE.classList.add(an); 
@@ -934,7 +938,8 @@ async function executeSingleCombat(atk, l) {
         else { playerHP -= d; createDamagePopup(document.getElementById('player-hp-fill'), `-${d}`); showSpeechBubble('blue'); }
         updateHPBar(); if (checkWinCondition()) return; await sleep(400); document.body.classList.remove('anim-shake');
     }
-    if (aE) aE.classList.remove(an); renderBoard();
+    if (aE) aE.classList.remove(an);
+    // renderBoard(); // アニメーション消失防止のため、各レーン終了時の全体描画は避ける
 }
 
 async function executeCombatPhase(atk) {
@@ -944,6 +949,7 @@ async function executeCombatPhase(atk) {
         if (isBattleEnded) break;
         await sleep(200);
     }
+    renderBoard(); // 全ての戦闘終了後に一度だけ整合性を取るために描画
 }
 
 function endBattle() {

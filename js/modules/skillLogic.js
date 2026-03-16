@@ -134,6 +134,7 @@ async function triggerStartTurnPassive(owner, lane) {
     if (hasSkill(c, 'growth')) {
         const val = getSkillValue(c, 'growth') || 1;
         c.power += val; c.currentPower += val;
+        updateCardPowerOnly(lane, side);
         const prefix = val > 0 ? '+' : ''; const color = val > 0 ? '#4ade80' : '#ef4444';
         const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
         if (cEl) createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
