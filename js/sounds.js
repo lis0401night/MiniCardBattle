@@ -29,4 +29,7 @@ Object.keys(SOUNDS).forEach(key => {
         SOUNDS[key].loop = true;
     }
 });
-Object.values(SOUNDS).forEach(audio => { audio.volume = 0.3; });
+Object.values(SOUNDS).forEach(audio => { 
+    audio.volume = 0.3; 
+    audio.load(); // 事前にロードを開始して遅延を防ぐ
+});

@@ -39,7 +39,7 @@ function playSound(audio) {
 
         // 効果音の場合
         try {
-            // 再生中でないならそのまま使い、再生中ならクローンを作る（連続再生対応）
+            // 再生中でないならそのまま使い、再生中ならクローンを作る（低遅延・同時再生対応）
             if (audio.paused || audio.ended) {
                 audio.currentTime = 0;
                 audio.volume = baseVol;
@@ -48,13 +48,9 @@ function playSound(audio) {
                 const clone = audio.cloneNode();
                 clone.volume = baseVol;
                 clone.play().catch(() => {});
-                // クローンは再生終了後に自動でガベージコレクション対象になるよう明示的な後処理は不要だが、
-                // 大量に作りすぎないためのセーフティ（必要なら追加）
             }
         } catch (e) {
-            audio.currentTime = 0;
-            audio.volume = baseVol;
-            audio.play().catch(() => {});
+            console.warn("playSound failed:", e);
         }
     }
 }

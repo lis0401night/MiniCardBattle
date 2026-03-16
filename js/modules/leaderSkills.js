@@ -20,7 +20,7 @@ async function activateLeaderSkill(owner, tokenLanes = null) {
     updateSPOrbs(owner);
 
     // 演出
-    playSound(SOUNDS.seLegend);
+    playSound(SOUNDS.seLegend); 
     await showLeaderSkillCutin(config, isBlue, owner);
 
     // スキル効果の実行
