@@ -951,9 +951,7 @@ function endBattle() {
 
                 playSound(SOUNDS.seSkill);
                 showAlertModal(`防衛戦に勝利しました！\n防衛戦ポイントを ${winPoints} Pt 獲得しました！`, () => {
-                    appState = 'select_enemy';
-                    initSelectScreen(false);
-                    switchScreen('screen-select');
+                    showDefenseBattleList();
                 });
             } else if (lastBattleResult === 'lose') {
                 // 負けた場合は敵に3ポイントと防衛回数を付与する
@@ -966,13 +964,9 @@ function endBattle() {
                     }).catch(err => console.error("Failed to update enemy points:", err));
                 }
 
-                appState = 'select_enemy';
-                initSelectScreen(false);
-                switchScreen('screen-select');
+                showDefenseBattleList();
             } else {
-                appState = 'select_enemy';
-                initSelectScreen(false);
-                switchScreen('screen-select');
+                showDefenseBattleList();
             }
             return;
         }

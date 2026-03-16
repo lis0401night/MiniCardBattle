@@ -509,6 +509,7 @@ async function startAttackBattle(enemyPlayerData) {
         enemyConfig = { ...CHARACTERS[enemyPlayerData.character] || CHARACTERS.android };
         enemyConfig.playerName = enemyPlayerData.name;
         enemyConfig.uuid = enemyPlayerData.uuid;
+        enemyConfig.points = enemyPlayerData.points || 0;
         enemyConfig.stageId = enemyPlayerData.stage;
         selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
