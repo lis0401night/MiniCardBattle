@@ -88,9 +88,9 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_human_female_young_death.wav',
         volume: 1.0
     },
-    'human_female3': {
-        play: 'assets/voice/voice_human_female_play.wav',
-        death: 'assets/voice/voice_human_female_death.wav',
+    'human_female_assassin': {
+        play: 'assets/voice/voice_human_female_assassin_play.wav',
+        death: 'assets/voice/voice_human_female_assassin_death.wav',
         volume: 1.0
     },
     'warrior': {
