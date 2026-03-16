@@ -13,33 +13,33 @@ const VOICE_SETTINGS = {
 const VOICE_CATEGORIES = {
     // モンスター系
     'monster_large': {
-        play: 'assets/voice/voice_monster_large_play.mp3',
-        death: 'assets/voice/voice_monster_large_death.mp3',
+        play: 'assets/voice/voice_monster_large_play.wav',
+        death: 'assets/voice/voice_monster_large_death.wav',
         volume: 1.0 // カテゴリごとの個別音量調整
     },
     'monster_small': {
-        play: 'assets/voice/voice_monster_small_play.mp3',
-        death: 'assets/voice/voice_monster_small_death.mp3',
+        play: 'assets/voice/voice_monster_small_play.wav',
+        death: 'assets/voice/voice_monster_small_death.wav',
         volume: 1.0
     },
     'beast': {
-        play: 'assets/voice/voice_beast_play.mp3',
-        death: 'assets/voice/voice_beast_death.mp3',
+        play: 'assets/voice/voice_beast_play.wav',
+        death: 'assets/voice/voice_beast_death.wav',
         volume: 1.0
     },
     'dragon': {
-        play: 'assets/voice/voice_dragon_play.mp3',
-        death: 'assets/voice/voice_dragon_death.mp3',
+        play: 'assets/voice/voice_dragon_play.wav',
+        death: 'assets/voice/voice_dragon_death.wav',
         volume: 1.0
     },
     'undead': {
-        play: 'assets/voice/voice_undead_play.mp3',
-        death: 'assets/voice/voice_undead_death.mp3',
+        play: 'assets/voice/voice_undead_play.wav',
+        death: 'assets/voice/voice_undead_death.wav',
         volume: 1.0
     },
     'machine': {
-        play: 'assets/voice/voice_machine_play.mp3',
-        death: 'assets/voice/voice_machine_death.mp3',
+        play: 'assets/voice/voice_machine_play.wav',
+        death: 'assets/voice/voice_machine_death.wav',
         volume: 1.0
     },
     // 人間・亜人系
@@ -64,39 +64,39 @@ const VOICE_CATEGORIES = {
         volume: 1.0
     },
     'human_female3': {
-        play: 'assets/voice/voice_human_female_play.mp3',
-        death: 'assets/voice/voice_human_female_death.mp3',
+        play: 'assets/voice/voice_human_female_play.wav',
+        death: 'assets/voice/voice_human_female_death.wav',
         volume: 1.0
     },
     'warrior': {
-        play: 'assets/voice/voice_warrior_play.mp3',
-        death: 'assets/voice/voice_warrior_death.mp3',
+        play: 'assets/voice/voice_warrior_play.wav',
+        death: 'assets/voice/voice_warrior_death.wav',
         volume: 1.0
     },
     'mage': {
-        play: 'assets/voice/voice_mage_play.mp3',
-        death: 'assets/voice/voice_mage_death.mp3',
+        play: 'assets/voice/voice_mage_play.wav',
+        death: 'assets/voice/voice_mage_death.wav',
         volume: 1.0
     },
     'holy': {
-        play: 'assets/voice/voice_holy_play.mp3',
-        death: 'assets/voice/voice_holy_death.mp3',
+        play: 'assets/voice/voice_holy_play.wav',
+        death: 'assets/voice/voice_holy_death.wav',
         volume: 1.0
     },
     'dark': {
-        play: 'assets/voice/voice_dark_play.mp3',
-        death: 'assets/voice/voice_dark_death.mp3',
+        play: 'assets/voice/voice_dark_play.wav',
+        death: 'assets/voice/voice_dark_death.wav',
         volume: 1.0
     },
     // 特殊系
     'alien': {
-        play: 'assets/voice/voice_alien_play.mp3',
-        death: 'assets/voice/voice_alien_death.mp3',
+        play: 'assets/voice/voice_alien_play.wav',
+        death: 'assets/voice/voice_alien_death.wav',
         volume: 1.0
     },
     'god': {
-        play: 'assets/voice/voice_god_play.mp3',
-        death: 'assets/voice/voice_god_death.mp3',
+        play: 'assets/voice/voice_god_play.wav',
+        death: 'assets/voice/voice_god_death.wav',
         volume: 1.0
     }
 };
