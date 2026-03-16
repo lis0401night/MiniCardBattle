@@ -61,7 +61,7 @@ const VOICE_CATEGORIES = {
     'human_male_ikemen': {
         play: 'assets/voice/voice_human_male_ikemen_play.wav',
         death: 'assets/voice/voice_human_male_ikemen_death.wav',
-        volume: 1.0
+        volume: 1.2
     },
     'human_male3': {
         play: 'assets/voice/voice_human_male2_play.wav',
