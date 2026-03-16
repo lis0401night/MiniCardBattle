@@ -585,9 +585,12 @@ async function cleanupDestroyedCards() {
 
     if (destroyedItems.length === 0) return false;
 
-    // 演出: 破壊されるカードを揺らす
+    // 演出: 破壊されるカードを揺らす & ボイス再生
     destroyedItems.forEach(item => {
         if (item.el) item.el.classList.add('anim-shake');
+        if (item.card && item.card.voiceCategory) {
+            playCardVoice(item.card.voiceCategory, 'death');
+        }
     });
     playSound(SOUNDS.seDamage);
     await sleep(400);
