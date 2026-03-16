@@ -27,6 +27,15 @@ function getDialogue(speakerConfig, targetConfig, type) {
 
 function playSound(audio) {
     if (audio) {
+        // bgmから始まるファイル（ループ再生するもの）はクローンせずそのまま再生する
+        // これを行わないと stopAllBGM でクローン元の音声しか停止できず鳴り続けてしまう
+        if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
+            audio.currentTime = 0;
+            audio.volume = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+            audio.play().catch(() => {});
+            return;
+        }
+
         // 効果音の場合はクローンを作成して再生することで、連続再生や他音との競合を避ける
         try {
             const clone = audio.cloneNode();

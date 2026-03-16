@@ -750,10 +750,18 @@ async function playCard(o, hI, l) {
     if (b[l]) {
         if (!(await discardCard(o, b[l], l))) b[l] = null;
     }
-    b[l] = h.splice(hI, 1)[0]; playSound(SOUNDS.sePlace);
+    b[l] = h.splice(hI, 1)[0]; 
+    const c = b[l];
+    
+    // 配置音とボイスの再生
+    playSound(SOUNDS.sePlace);
+    if (c.voiceCategory) {
+        playCardVoice(c.voiceCategory, 'play');
+    }
+
     if (o === 'blue') { selectedCardIndex = null; updateCardDetail(null); }
     renderHand(); renderBoard();
-    const c = b[l];
+
     // 出現時スキルの発動（単一または複数）
     if (hasActiveSkill(c)) {
         await resolveOnPlaySkill(o, l, c);
