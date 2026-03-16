@@ -626,7 +626,11 @@ async function cleanupDestroyedCards() {
         });
         // その後に揺らす
         destroyedItems.forEach(item => {
-            if (item.el) item.el.classList.add('anim-shake');
+            if (item.el) {
+                requestAnimationFrame(() => {
+                    item.el.classList.add('anim-shake');
+                });
+            }
         });
         playSound(SOUNDS.seDamage);
         await sleep(400);
@@ -679,7 +683,9 @@ async function triggerExplodeSkill(owner, lane, card) {
         adj.forEach(j => {
             const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${j}"] .card`);
             if (cEl) {
-                cEl.classList.add('anim-shake');
+                requestAnimationFrame(() => {
+                    cEl.classList.add('anim-shake');
+                });
                 createDamagePopup(cEl, `誘爆 -${val}`, '#ef4444');
             }
         });

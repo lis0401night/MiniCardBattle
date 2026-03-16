@@ -1250,6 +1250,11 @@ h2 {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s, border-color 0.3s;
     overflow: hidden;
     cursor: pointer;
+    /* Safari GPU Acceleration & Flicker Fixes */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
 }
 
 /* 盤面のカードはセルに合わせて拡大 */
@@ -1658,20 +1663,18 @@ h2 {
     margin-top: 2px;
 }
 
-.anim-attack-up {
-    animation: attack-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.card.anim-attack-up {
+    animation: attack-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
     z-index: 20;
     transition: none !important;
     will-change: transform;
-    backface-visibility: hidden;
 }
 
-.anim-attack-down {
-    animation: attack-down 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.card.anim-attack-down {
+    animation: attack-down 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
     z-index: 20;
     transition: none !important;
     will-change: transform;
-    backface-visibility: hidden;
 }
 
 @keyframes attack-up {
@@ -1690,8 +1693,8 @@ h2 {
     100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
-.anim-shake {
-    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+.card.anim-shake {
+    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both !important;
     will-change: transform;
 }
 
@@ -1719,8 +1722,8 @@ h2 {
     }
 }
 
-.anim-mega-shake {
-    animation: mega-shake 0.8s cubic-bezier(.36, .07, .19, .97) both;
+.card.anim-mega-shake {
+    animation: mega-shake 0.8s cubic-bezier(.36, .07, .19, .97) both !important;
     will-change: transform;
 }
 
