@@ -25,7 +25,26 @@ function getDialogue(speakerConfig, targetConfig, type) {
     return dict.default || "...";
 }
 
-function playSound(audio) { if (audio) { audio.currentTime = 0; audio.volume = gameVolume; audio.play().catch(() => { }); } }
+function playSound(audio) {
+    if (audio) {
+        // 効果音の場合はクローンを作成して再生することで、連続再生や他音との競合を避ける
+        try {
+            const clone = audio.cloneNode();
+            clone.volume = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+            clone.play().catch(e => {
+                console.warn("Sound play failed:", e);
+                // クローンで失敗した場合はオリジナルで試行
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
+            });
+        } catch (e) {
+            // クローン不可な場合は従来通り直接再生
+            audio.currentTime = 0;
+            audio.volume = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+            audio.play().catch(() => {});
+        }
+    }
+}
 function stopSound(audio) { if (audio && audio.pause) { audio.pause(); audio.currentTime = 0; } }
 function stopAllBGM() {
     Object.keys(SOUNDS).forEach(key => {

@@ -196,7 +196,14 @@ function showEnemySkillConfirm() {
 }
 
 function closeSkillConfirm() { playSound(SOUNDS.seClick); document.getElementById('screen-skill-confirm').style.display = 'none'; }
-function executeSkillFromConfirm() { closeSkillConfirm(); activateLeaderSkill('blue'); }
+function executeSkillFromConfirm() {
+    // 実行直前にもう一度チェック（モーダル表示中に状態が変わった可能性への備え）
+    if (isProcessing || isBattleEnded || document.getElementById('turn-status').innerText !== "YOUR TURN") {
+        return; 
+    }
+    closeSkillConfirm();
+    activateLeaderSkill('blue');
+}
 
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
