@@ -139,10 +139,12 @@ h2 {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 92, 246, 0.4);
-    border-color: rgba(255, 255, 255, 0.6);
+@media (hover: hover) {
+    .btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 92, 246, 0.4);
+        border-color: rgba(255, 255, 255, 0.6);
+    }
 }
 
 .btn:active {
@@ -205,11 +207,13 @@ h2 {
     }
 }
 
-.btn-banner:hover {
-    background: rgba(51, 65, 85, 0.9);
-    border-color: #facc15;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+@media (hover: hover) {
+    .btn-banner:hover {
+        background: rgba(51, 65, 85, 0.9);
+        border-color: #facc15;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    }
 }
 
 .btn-banner:active {
@@ -250,11 +254,13 @@ h2 {
     padding: 0;
 }
 
-.btn-circle:hover {
-    background: rgba(51, 65, 85, 0.9);
-    border-color: #facc15;
-    color: #facc15;
-    transform: scale(1.1);
+@media (hover: hover) {
+    .btn-circle:hover {
+        background: rgba(51, 65, 85, 0.9);
+        border-color: #facc15;
+        color: #facc15;
+        transform: scale(1.1);
+    }
 }
 
 .btn-circle:active {
@@ -270,8 +276,10 @@ h2 {
     /* 歯車は少し大きく */
 }
 
-.btn-gear:hover {
-    transform: rotate(45deg) scale(1.1);
+@media (hover: hover) {
+    .btn-gear:hover {
+        transform: rotate(45deg) scale(1.1);
+    }
 }
 
 .btn-battle-help {
@@ -428,13 +436,11 @@ h2 {
     display: block !important;
 }
 
-.card-list-grid-3col .deck-card-item:hover {
-    transform: scale(1.05);
-    z-index: 10;
-}
-
-.card-list-grid-3col .deck-card-item:hover {
-    transform: scale(1.05);
+@media (hover: hover) {
+    .card-list-grid-3col .deck-card-item:hover {
+        transform: scale(1.05);
+        z-index: 10;
+    }
 }
 
 /* ===== タイトル画面 ===== */
@@ -620,7 +626,13 @@ h2 {
     overflow: hidden;
 }
 
-.char-card:hover,
+@media (hover: hover) {
+    .char-card:hover {
+        transform: scale(1.05);
+        border-color: #facc15;
+        z-index: 10;
+    }
+}
 .char-card:active {
     transform: scale(1.05);
     border-color: #facc15;
@@ -1566,10 +1578,12 @@ h2 {
     width: auto;
 }
 
-.enemy-skill-btn:hover {
-    background: #475569;
-    transform: scale(1.05);
-    /* 上下移動は削除 */
+@media (hover: hover) {
+    .enemy-skill-btn:hover {
+        background: #475569;
+        transform: scale(1.05);
+        /* 上下移動は削除 */
+    }
 }
 
 .enemy-skill-btn:active {
@@ -2482,9 +2496,11 @@ h2 {
     transition: background 0.2s;
 }
 
-.choice-accordion:hover .preview-skill-badge,
-.choice-accordion:hover .card-skill-tag {
-    filter: brightness(1.2);
+@media (hover: hover) {
+    .choice-accordion:hover .preview-skill-badge,
+    .choice-accordion:hover .card-skill-tag {
+        filter: brightness(1.2);
+    }
 }
 
 /* メインメニュー用グリッドレイアウト */
@@ -2524,14 +2540,16 @@ h2 {
     z-index: 0;
 }
 
-.menu-img-btn:hover .menu-img-bg {
-    transform: scale(1.15);
-}
+@media (hover: hover) {
+    .menu-img-btn:hover .menu-img-bg {
+        transform: scale(1.15);
+    }
 
-.menu-img-btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 92, 246, 0.4);
-    border-color: #facc15;
+    .menu-img-btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 92, 246, 0.4);
+        border-color: #facc15;
+    }
 }
 
 .menu-img-btn:active {

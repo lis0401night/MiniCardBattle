@@ -38,6 +38,10 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 // 画面遷移
 function switchScreen(id) {
+    // モバイル等でのボタン選択状態（Sticky Focus）を解除
+    if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+        document.activeElement.blur();
+    }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
 }
