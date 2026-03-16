@@ -1659,13 +1659,29 @@ h2 {
 }
 
 .anim-attack-up {
-    transform: translateY(-30px) scale(1.1) !important;
+    animation: attack-up 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     z-index: 20;
 }
 
 .anim-attack-down {
-    transform: translateY(30px) scale(1.1) !important;
+    animation: attack-down 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     z-index: 20;
+}
+
+@keyframes attack-up {
+    0% { transform: translateY(0) scale(1); }
+    20% { transform: translateY(10px) scale(0.95); } /* 溜め (Wind-up) */
+    45% { transform: translateY(-35px) scale(1.1); } /* 衝突 (Hit) */
+    75% { transform: translateY(-35px) scale(1.1); } /* ヒットストップ (Hit-stop) */
+    100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes attack-down {
+    0% { transform: translateY(0) scale(1); }
+    20% { transform: translateY(-10px) scale(0.95); } /* 溜め (Wind-up) */
+    45% { transform: translateY(35px) scale(1.1); } /* 衝突 (Hit) */
+    75% { transform: translateY(35px) scale(1.1); } /* ヒットストップ (Hit-stop) */
+    100% { transform: translateY(0) scale(1); }
 }
 
 .anim-shake {

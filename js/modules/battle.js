@@ -829,7 +829,13 @@ async function executeSingleCombat(atk, l) {
     const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`); if (!aE) return;
 
     // 演出: 攻撃アニメーション
-    aE.classList.add(an); playSound(SOUNDS.seAttack); await sleep(300);
+    aE.classList.add(an); 
+    playSound(SOUNDS.seAttack);
+    await sleep(350); // 0.7sアニメーションの衝突タイミング(約50%)に合わせる
+
+    // ロジカルなダメージ処理の前に少し待機して衝撃を表現
+    // (この間にDamagePopupが表示されると気持ちいい)
+
 
     // --- ロジックの実行 (Engineの呼び出し) ---
     const currentState = {
