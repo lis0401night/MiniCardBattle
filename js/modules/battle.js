@@ -60,10 +60,7 @@ function prepareBattle() {
 function initBattleState() {
     try {
         // 全てのBGMを停止
-        stopSound(SOUNDS.bgmTitle);
-        stopSound(SOUNDS.bgmBattle);
-        stopSound(SOUNDS.bgmLastBattle);
-        stopSound(SOUNDS.bgmStageAndroid);
+        stopAllBGM();
 
         // ステージ情報の取得
         const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
