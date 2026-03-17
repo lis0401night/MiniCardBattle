@@ -1283,10 +1283,7 @@ function endBattle() {
         if (lastBattleResult === 'win') {
             dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }];
 
-            // 実績: ストーリークリア
-            if (gameMode === 'story' && enemyConfig && typeof incrementStat === 'function') {
-                incrementStat('storyClears', enemyConfig.id);
-            }
+            // showCardReward(enemyConfig.id); // original call
 
             showCardReward(enemyConfig.id);
         } else {

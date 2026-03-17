@@ -121,7 +121,7 @@ function renderAchievementsList() {
         if (ach.reward) {
             const rewardStatus = savedData.isRewarded ? 
                 '<span style="color:#94a3b8">(取得済)</span>' : 
-                `<button class="btn" style="padding:2px 8px; font-size:0.7rem; min-height:20px; margin:0; background: ${isUnlocked ? '' : '#475569'}; opacity: ${isUnlocked ? '1' : '0.6'};" onpointerdown="event.stopPropagation(); handleClaimAchievement('${ach.id}')">受け取る</button>`;
+                `<button class="btn" style="padding:2px 8px; font-size:0.7rem; min-height:20px; margin:0; background: ${isUnlocked ? '' : '#475569'}; opacity: ${isUnlocked ? '1' : '0.6'};" onclick="event.stopPropagation(); handleClaimAchievement('${ach.id}')">受け取る</button>`;
             
             // "playmat" -> "プレイマット", "card" -> "カード"
             let rewardTypeText = ach.reward.type;
@@ -154,7 +154,7 @@ function renderAchievementsList() {
         `;
 
         if (isClaimable) {
-            el.onpointerdown = () => handleClaimAchievement(ach.id);
+            el.onclick = () => handleClaimAchievement(ach.id);
             el.style.cursor = 'pointer';
         }
 

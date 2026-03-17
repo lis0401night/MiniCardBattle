@@ -42,6 +42,11 @@ function startEndingSequence() {
     playSound(SOUNDS.bgmEnding);
     dialogueQueue = playerConfig.dialogue.ending;
     currentDialogueIndex = 0;
+
+    // 実績: ストーリークリア (完遂時にプレイヤーキャラクターのIDで記録)
+    if (typeof incrementStat === 'function' && playerConfig && playerConfig.id) {
+        incrementStat('storyClears', playerConfig.id);
+    }
     document.getElementById('portrait-left').src = playerConfig.image;
     document.getElementById('portrait-left').classList.add('active');
     document.getElementById('portrait-right').style.display = 'none';
