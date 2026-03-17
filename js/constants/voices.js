@@ -62,6 +62,11 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_horse_death.wav',
         volume: 1.0
     },
+    'lizard': {
+        play: 'assets/voice/voice_lizard_play.wav',
+        death: 'assets/voice/voice_lizard_death.wav',
+        volume: 1.0
+    },
     // 人間・亜人系
     'human_male_normal': {
         play: 'assets/voice/voice_human_male_normal_play.wav',
