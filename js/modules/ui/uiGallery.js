@@ -52,7 +52,7 @@ function renderCardList() {
                 </div>
             </div>
         `;
-        item.onpointerdown = () => { if(!isTransitioning) openCardPreview(template); };
+        item.onclick = () => { if(!isTransitioning) openCardPreview(template); };
         grid.appendChild(item);
     });
 

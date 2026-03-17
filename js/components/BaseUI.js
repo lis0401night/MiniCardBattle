@@ -135,7 +135,7 @@ const UI_COMPONENTS = {
                 <li>先に相手リーダーのHPを0にすれば勝利です。</li>
             </ul>
         </div>
-        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <button class="btn" style="background: #475569;" onpointerdown="switchScreen('screen-mode-select')">戻る</button>
     </div>
     `,
 
@@ -235,7 +235,7 @@ const UI_COMPONENTS = {
             </div>
         </div>
 
-        <button class="btn" style="background: #475569;" onclick="switchScreen('screen-mode-select')">戻る</button>
+        <button class="btn" style="background: #475569;" onpointerdown="switchScreen('screen-mode-select')">戻る</button>
     </div>
     `,
 
@@ -372,7 +372,7 @@ const UI_COMPONENTS = {
 
     syncDataModal: `
     <!-- データ連携モーダル -->
-    <div id="screen-sync-data" class="screen" style="background: rgba(0,0,0,0.85); z-index: 70;">
+    <div id="screen-sync-data" class="screen" style="background: rgba(0,0,0,0.85); z-index: 70; display: none;">
         <div style="background: var(--panel-bg); border: 2px solid #94a3b8; border-radius: 12px; padding: 30px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
             <h2 style="color: #f8fafc; margin-bottom: 20px;">データ連携</h2>
             <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
@@ -389,7 +389,7 @@ const UI_COMPONENTS = {
 
     playerNameModal: `
     <!-- プレイヤー名入力モーダル -->
-    <div id="modal-player-name" class="screen" style="background: rgba(0,0,0,0.85); z-index: 100;">
+    <div id="modal-player-name" class="screen" style="background: rgba(0,0,0,0.85); z-index: 100; display: none;">
         <div style="background: var(--panel-bg); border: 2px solid #10b981; border-radius: 12px; padding: 30px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
             <h2 style="color: #10b981; margin-bottom: 20px; font-size: 1.2rem;">プレイヤーネーム登録</h2>
             <p style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 15px; text-align: center;">防衛デッキに使用する名前を入力してください。</p>
@@ -419,7 +419,7 @@ const UI_COMPONENTS = {
 
     exchangeDetailScreen: `
     <!-- 交換所詳細確認画面 -->
-    <div id="screen-exchange-detail" class="screen" style="background: rgba(0,0,0,0.85); z-index: 50;">
+    <div id="screen-exchange-detail" class="screen" style="background: rgba(0,0,0,0.85); z-index: 50; display: none;">
         <div class="preview-content" style="position:relative; width: 90%; max-width: 350px;">
             <div id="exchange-detail-card-container"></div>
             <div class="preview-details">
@@ -440,5 +440,10 @@ const UI_COMPONENTS = {
             </div>
         </div>
     </div>
+    `,
+
+    fadeLayer: `
+    <!-- 全画面フェードレイヤー -->
+    <div id="fade-overlay" class="fade-overlay"></div>
     `
 };

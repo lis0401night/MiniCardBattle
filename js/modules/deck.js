@@ -363,7 +363,7 @@ async function submitDefenseDeck() {
             body: JSON.stringify({
                 uuid: getOrCreateUUID(),
                 name: playerName,
-                character: currentSelectedCharId,
+                character: playerConfig.id,
                 stage: selectedStageId || 'plain',
                 deck: playerDeckSelection,
                 points: parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,

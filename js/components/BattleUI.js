@@ -112,7 +112,6 @@ Object.assign(UI_COMPONENTS, {
             <div id="speaker-name">Name</div>
             <div id="dialogue-text">Dialogue text goes here...</div>
         </div>
-        <div id="fade-overlay" class="fade-overlay"></div>
     </div>
     `,
 

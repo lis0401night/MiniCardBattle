@@ -103,7 +103,7 @@ function switchScreen(id) {
     // 300ms間は次の入力を受け付けない（ゴーストクリック対策）
     setTimeout(() => {
         isTransitioning = false;
-    }, 300);
+    }, 150);
 }
 
 // ゴーストクリック（pointerdown後の遅延clickイベント）をグローバルで無効化
