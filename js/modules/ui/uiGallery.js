@@ -123,8 +123,10 @@ function renderAchievementsList() {
                 '<span style="color:#94a3b8">(取得済)</span>' : 
                 `<button class="btn" style="padding:2px 8px; font-size:0.7rem; min-height:20px; margin:0; background: ${isUnlocked ? '' : '#475569'}; opacity: ${isUnlocked ? '1' : '0.6'};" onpointerdown="event.stopPropagation(); handleClaimAchievement('${ach.id}')">受け取る</button>`;
             
-            // "playmat" -> "プレイマット"
-            const rewardTypeText = ach.reward.type === 'playmat' ? 'プレイマット' : ach.reward.type;
+            // "playmat" -> "プレイマット", "card" -> "カード"
+            let rewardTypeText = ach.reward.type;
+            if (ach.reward.type === 'playmat') rewardTypeText = 'プレイマット';
+            else if (ach.reward.type === 'card') rewardTypeText = 'カード';
             rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; color: #facc15;">報酬: ${rewardTypeText} ${rewardStatus}</div>`;
         } else if (isUnlocked) {
             rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; font-weight:bold; color: #facc15;">✨ 達成！ ✨</div>`;
@@ -173,7 +175,7 @@ function showCardAcquisitionModal(cardId) {
     const card = CARD_MASTER.find(c => c.id === cardId);
     if (!card) return;
 
-    playSound(SOUNDS.seLegend);
+    playSound(SOUNDS.seSkill);
 
     // モーダルの作成
     const modal = document.createElement('div');
@@ -183,10 +185,6 @@ function showCardAcquisitionModal(cardId) {
     
     modal.innerHTML = `
         <div class="preview-content acquisition-glow" onclick="event.stopPropagation()">
-            <div style="width: 100%; text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #facc15; font-size: 1.8rem; text-shadow: 0 0 15px rgba(242, 201, 76, 0.8);">CARD UNLOCKED!</h2>
-                <p style="color: #fff; font-weight: bold;">新カードを獲得しました！</p>
-            </div>
             <div id="acquisition-card-container"></div>
             <div class="preview-details">
                 <h2 id="acquisition-card-name" style="font-size: 1.5rem;">${card.name}</h2>
