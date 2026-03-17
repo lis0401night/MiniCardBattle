@@ -73,9 +73,9 @@ const VOICE_CATEGORIES = {
         death: 'assets/voice/voice_human_male_ikemen_death.wav',
         volume: 1.2
     },
-    'human_male3': {
-        play: 'assets/voice/voice_human_male2_play.wav',
-        death: 'assets/voice/voice_human_male2_death.wav',
+    'human_male_warrior': {
+        play: 'assets/voice/voice_human_male_warrior_play.wav',
+        death: 'assets/voice/voice_human_male_warrior_death.wav',
         volume: 1.0
     },
     'human_female_ikemen': {
