@@ -5,68 +5,114 @@
 function prepareBattle() {
     switchScreen('screen-loading');
     const sessionId = Date.now();
-    playerDeck = generateDeck('blue', playerConfig, sessionId);
-    enemyDeck = generateDeck('red', enemyConfig, sessionId);
+    let isFinished = false;
+
+    try {
+        playerDeck = generateDeck('blue', playerConfig, sessionId);
+        enemyDeck = generateDeck('red', enemyConfig, sessionId);
+    } catch (e) {
+        console.error("Deck generation error:", e);
+        // エラー時も空のデッキで続行を試みる（フリーズ回避）
+        playerDeck = playerDeck || [];
+        enemyDeck = enemyDeck || [];
+    }
+    
     const allCards = [...playerDeck, ...enemyDeck];
     let loaded = 0;
-    const finishLoading = () => setTimeout(initBattleState, 500);
-    const updateProgress = () => {
-        loaded++;
-        document.getElementById('loading-text').innerText = `Generating Cards... ${Math.floor((loaded / allCards.length) * 100)}%`;
-        if (loaded === allCards.length) finishLoading();
+
+    const finishLoading = () => {
+        if (isFinished) return;
+        isFinished = true;
+        setTimeout(initBattleState, 500);
     };
-    if (allCards.length === 0) finishLoading();
+
+    // セーフティタイムアウト: 5秒経過したら強制的に開始
+    setTimeout(() => {
+        if (!isFinished) {
+            console.warn("Battle loading timed out. Forcing start...");
+            finishLoading();
+        }
+    }, 5000);
+
+    const updateProgress = () => {
+        if (isFinished) return;
+        loaded++;
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) {
+            loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+        }
+        if (loaded >= allCards.length) finishLoading();
+    };
+
+    if (allCards.length === 0) {
+        finishLoading();
+        return;
+    }
+
     allCards.forEach(card => {
         const img = new Image();
-        img.onload = updateProgress; img.onerror = updateProgress;
+        img.onload = updateProgress;
+        img.onerror = updateProgress;
         img.src = card.imgUrl;
     });
 }
 
 function initBattleState() {
-    // 全てのBGMを停止
-    stopSound(SOUNDS.bgmTitle);
-    stopSound(SOUNDS.bgmBattle);
-    stopSound(SOUNDS.bgmLastBattle);
-    stopSound(SOUNDS.bgmStageAndroid);
+    try {
+        // 全てのBGMを停止
+        stopSound(SOUNDS.bgmTitle);
+        stopSound(SOUNDS.bgmBattle);
+        stopSound(SOUNDS.bgmLastBattle);
+        stopSound(SOUNDS.bgmStageAndroid);
 
-    // ステージ情報の取得
-    const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
-    const stageData = STAGES[stageId];
+        // ステージ情報の取得
+        const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
+        const stageData = STAGES[stageId];
 
-    // BGMの再生
-    const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-    playSound(SOUNDS[bgmKey]);
-    playerMaxHP = MAX_HP;
-    enemyMaxHP = (gameMode === 'event_satan') ? 100 : (enemyConfig.id === 'satan') ? 40 : MAX_HP;
-    if (gameMode === 'event_satan') aiLevel = 3; // 念のため再セット
-    playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
-    playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
-    playerBoard = [null, null, null]; enemyBoard = [null, null, null];
-    isProcessing = false; selectedCardIndex = null; isBattleEnded = false; updateCardDetail(null);
-    document.getElementById('player-icon').src = playerConfig.icon;
-    document.getElementById('enemy-icon').src = enemyConfig.icon;
-    document.getElementById('player-name').innerText = playerConfig.name;
-    document.getElementById('enemy-name').innerText = enemyConfig.name;
+        // BGMの再生
+        const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
+        playSound(SOUNDS[bgmKey]);
+        playerMaxHP = MAX_HP;
+        enemyMaxHP = (gameMode === 'event_satan') ? 100 : (enemyConfig.id === 'satan') ? 40 : MAX_HP;
+        if (gameMode === 'event_satan') aiLevel = 3; // 念のため再セット
+        playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
+        playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
+        playerBoard = [null, null, null]; enemyBoard = [null, null, null];
+        isProcessing = false; selectedCardIndex = null; isBattleEnded = false; updateCardDetail(null);
+        document.getElementById('player-icon').src = playerConfig.icon;
+        document.getElementById('enemy-icon').src = enemyConfig.icon;
+        document.getElementById('player-name').innerText = playerConfig.name;
+        document.getElementById('enemy-name').innerText = enemyConfig.name;
 
-    // 敵アイコンのフィルタ処理（シャドウ対応）
-    const enemyIconImg = document.getElementById('enemy-icon');
-    enemyIconImg.src = enemyConfig.icon;
-    if (enemyConfig.isShadow) {
-        enemyIconImg.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
-    } else {
-        enemyIconImg.style.filter = 'none';
+        // 敵アイコンのフィルタ処理（シャドウ対応）
+        const enemyIconImg = document.getElementById('enemy-icon');
+        if (enemyIconImg) {
+            enemyIconImg.src = enemyConfig.icon;
+            if (enemyConfig.isShadow) {
+                enemyIconImg.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
+            } else {
+                enemyIconImg.style.filter = 'none';
+            }
+        }
+
+        const bs = document.getElementById('screen-battle');
+        if (bs) {
+            bs.style.backgroundColor = '#0f172a';
+            bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
+        }
+        
+        updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
+        updateDeckDisplay('blue'); updateDeckDisplay('red');
+        for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
+        
+        // 先攻・後攻の決定演出へ
+        determineTurnOrder();
+    } catch (e) {
+        console.error("Critical error in initBattleState:", e);
+        showAlertModal("バトルの初期化中にエラーが発生しました。タイトルに戻ります。", () => {
+            location.reload();
+        });
     }
-
-    const bs = document.getElementById('screen-battle');
-    bs.style.backgroundColor = '#0f172a';
-    bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
-    updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
-    updateDeckDisplay('blue'); updateDeckDisplay('red');
-    for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
-    
-    // 先攻・後攻の決定演出へ
-    determineTurnOrder();
 }
 
 function updateHPBar() {
