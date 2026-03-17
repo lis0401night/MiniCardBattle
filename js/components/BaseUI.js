@@ -95,12 +95,12 @@ const UI_COMPONENTS = {
     <div id="screen-gallery-menu" class="screen">
         <h2 style="color: #facc15; margin-bottom: 40px;">ギャラリー</h2>
         <div class="menu-btn-grid">
-            <div class="menu-img-btn" style="grid-column: 1 / -1; max-width: 50%; margin: 0 auto;" onpointerdown="showCardList()">
+            <div class="menu-img-btn" onpointerdown="showCardList()">
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.GALLERY_CARD_LIST}');"></div>
                 <div class="menu-btn-label">カード一覧</div>
             </div>
-            <div class="menu-img-btn" style="grid-column: 1 / -1; max-width: 50%; margin: 0 auto; margin-top: 15px;" onpointerdown="showAchievements()">
-                <div class="menu-img-bg" style="background-color: #3b82f6;"></div>
+            <div class="menu-img-btn" onpointerdown="showAchievements()">
+                <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.GALLERY_ACHIEVEMENTS}');"></div>
                 <div class="menu-btn-label">実績</div>
             </div>
         </div>

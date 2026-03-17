@@ -6,5 +6,6 @@ const UI_IMAGES = {
     MENU_GALLERY: 'assets/ui_gallerybutton01.png',
     EVENT_HIGH_DIFF: 'assets/ui_event_highdiffbutton01.png',
     EVENT_DEFENSE: 'assets/ui_event_defensebutton01.png',
-    GALLERY_CARD_LIST: 'assets/ui_cardlistbutton01.png'
+    GALLERY_CARD_LIST: 'assets/ui_cardlistbutton01.png',
+    GALLERY_ACHIEVEMENTS: 'assets/ui_achievementsbutton01.png'
 };
