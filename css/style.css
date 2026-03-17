@@ -1183,6 +1183,7 @@ h2 {
 }
 
 .battle-board {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1192,6 +1193,7 @@ h2 {
     border-radius: 16px;
     border: 1px solid #334155;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    overflow: hidden; /* プレイマットのはみ出しをカット */
     flex-shrink: 1;
     min-height: 0;
     height: clamp(200px, 42vh, 450px);
@@ -1199,7 +1201,36 @@ h2 {
     align-self: center;
 }
 
+/* プレイマット (盤面背景) */
+.playmat {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%; /* 盤面の半分 */
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+    opacity: 0.6; /* イラストが強すぎないように調整 */
+    transition: background-image 0.5s ease;
+}
+
+.playmat.enemy {
+    top: 0;
+    border-radius: 16px 16px 0 0;
+    /* 敵側のプレイマット背景（デフォルト） */
+}
+
+.playmat.player {
+    bottom: 0;
+    border-radius: 0 0 16px 16px;
+    /* 味方側のプレイマット背景 */
+    background-image: url('../assets/board_android.png');
+}
+
 .lane-row {
+    position: relative;
+    z-index: 1; /* プレイマットより手前に */
     display: flex;
     height: calc(50% - min(10px, 1vh));
     gap: min(20px, 2vw, 2vh);

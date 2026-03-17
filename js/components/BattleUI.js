@@ -32,6 +32,9 @@ Object.assign(UI_COMPONENTS, {
         </div>
         <!-- 盤面 (3レーン) -->
         <div class="battle-board">
+            <div id="playmat-enemy" class="playmat enemy"></div>
+            <div id="playmat-player" class="playmat player"></div>
+            
             <div class="lane-row" id="enemy-lanes">
                 <div class="cell" data-lane="0"></div>
                 <div class="cell" data-lane="1"></div>
