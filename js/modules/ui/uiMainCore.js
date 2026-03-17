@@ -644,7 +644,7 @@ function initStageSelectScreen() {
             d.style.backgroundImage = `url('assets/background_${s.id}.png')`;
             d.innerHTML = `<div class="char-name" style="color:#ffffff">${s.name}</div>`;
         }
-        d.onpointerdown = () => { if(!isTransitioning) confirmStageSelect(s.id); };
+        d.onclick = () => { if(!isTransitioning) confirmStageSelect(s.id); };
         grid.appendChild(d);
     });
 }
@@ -687,7 +687,7 @@ function showExchangeScreen() {
     // デバッグ用：タイトル10回クリックで100pt付与
     const titleEl = document.getElementById('exchange-title');
     if (titleEl) {
-        titleEl.onpointerdown = () => {
+        titleEl.onclick = () => {
             exchangeDebugClickCount++;
             if (exchangeDebugClickCount >= 10) {
                 exchangeDebugClickCount = 0;
@@ -767,7 +767,7 @@ function renderExchange() {
         `;
 
         // 常に詳細画面を開けるようにする
-        itemEl.onpointerdown = () => { if(!isTransitioning) showExchangeDetail(itemInfo.id, itemInfo.type, itemInfo.cost, itemObj, canExchange, isMaxed); };
+        itemEl.onclick = () => { if(!isTransitioning) showExchangeDetail(itemInfo.id, itemInfo.type, itemInfo.cost, itemObj, canExchange, isMaxed); };
 
         listContainer.appendChild(itemEl);
     });
@@ -856,17 +856,17 @@ function showExchangeDetail(id, type, cost, itemObj, canExchange, isMaxed) {
             btn.innerText = "交換済み";
             btn.style.background = "#475569";
             btn.style.color = "#94a3b8";
-            btn.onpointerdown = () => { if(isTransitioning)return; playSound(SOUNDS.seClick); showAlertModal(type === 'premium' ? "既にプレミアム化済みです。" : "所持上限(4枚)に達しています。"); };
+            btn.onclick = () => { if(isTransitioning)return; playSound(SOUNDS.seClick); showAlertModal(type === 'premium' ? "既にプレミアム化済みです。" : "所持上限(4枚)に達しています。"); };
         } else if (!canExchange) {
             btn.innerText = "ポイント不足";
             btn.style.background = "#475569";
             btn.style.color = "#94a3b8";
-            btn.onpointerdown = () => { if(isTransitioning)return; playSound(SOUNDS.seClick); showAlertModal("ポイントが足りません！"); };
+            btn.onclick = () => { if(isTransitioning)return; playSound(SOUNDS.seClick); showAlertModal("ポイントが足りません！"); };
         } else {
             btn.innerText = "交換";
             btn.style.background = "linear-gradient(45deg, #f97316, #ea580c)";
             btn.style.color = "#ffffff";
-            btn.onpointerdown = () => { if(!isTransitioning) confirmExchange(); };
+            btn.onclick = () => { if(!isTransitioning) confirmExchange(); };
         }
     }
 

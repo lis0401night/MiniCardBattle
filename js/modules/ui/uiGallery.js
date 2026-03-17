@@ -39,7 +39,7 @@ function renderCardList() {
         const opacity = isOwned ? "1" : "0.4";
 
         const premiumIcon = unlockedPremiumCards.includes(template.id) ?
-            `<div class="premium-toggle-icon" onpointerdown="event.stopPropagation(); if(isTransitioning)return; playSound(SOUNDS.seClick); togglePremiumCard('${template.id}'); renderCardList();" style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.85); color:${premiumCards.includes(template.id) ? '#d946ef' : '#94a3b8'}; padding:2px 6px; border-radius:10px; font-size:0.8rem; z-index:7; border:1px solid ${premiumCards.includes(template.id) ? '#d946ef' : '#475569'}; cursor:pointer;">✨</div>` : '';
+            `<div class="premium-toggle-icon" onclick="event.stopPropagation(); if(isTransitioning)return; playSound(SOUNDS.seClick); togglePremiumCard('${template.id}'); renderCardList();" style="position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.85); color:${premiumCards.includes(template.id) ? '#d946ef' : '#94a3b8'}; padding:2px 6px; border-radius:10px; font-size:0.8rem; z-index:7; border:1px solid ${premiumCards.includes(template.id) ? '#d946ef' : '#475569'}; cursor:pointer;">✨</div>` : '';
 
         item.innerHTML = `
             <div class="card blue${rarityClass}" style="opacity:${opacity};">

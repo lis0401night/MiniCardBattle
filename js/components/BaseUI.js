@@ -351,7 +351,7 @@ const UI_COMPONENTS = {
             </button>
         </div>
 
-        <button class="btn" style="margin-top: 30px; background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
     </div>
     `,
 
@@ -366,7 +366,7 @@ const UI_COMPONENTS = {
                 <li style="color: #fb7185; margin-top: 10px; list-style: none;"><b>遥かに強力な相手のため、ストーリーやフリーバトルでカードを集めてから挑むように注意してください。</b></li>
             </ul>
         </div>
-        <button class="btn" style="background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-high-difficulty')">戻る</button>
+        <button class="btn" style="background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-high-difficulty')">戻る</button>
     </div>
     `,
 
@@ -376,9 +376,9 @@ const UI_COMPONENTS = {
         <div style="background: var(--panel-bg); border: 2px solid #94a3b8; border-radius: 12px; padding: 30px; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
             <h2 style="color: #f8fafc; margin-bottom: 20px;">データ連携</h2>
             <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
-                <button class="btn" style="background: linear-gradient(45deg, #0ea5e9, #2563eb); margin-top: 0;" onpointerdown="backupDataToXML()">バックアップ</button>
-                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); margin-top: 0;" onpointerdown="importDataFromXML()">データ取込</button>
-                <button class="btn" style="background: #475569; margin-top: 5px;" onpointerdown="closeSyncDataModal()">戻る</button>
+                <button class="btn" style="background: linear-gradient(45deg, #0ea5e9, #2563eb); margin-top: 0;" onclick="backupDataToXML()">バックアップ</button>
+                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); margin-top: 0;" onclick="importDataFromXML()">データ取込</button>
+                <button class="btn" style="background: #475569; margin-top: 5px;" onclick="closeSyncDataModal()">戻る</button>
             </div>
             <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 20px; text-align: center; line-height: 1.4;">
                 バックアップしたXMLファイルを保存するか、保存したファイルからデータを復元できます。
@@ -396,8 +396,8 @@ const UI_COMPONENTS = {
             <input type="text" id="input-player-name" placeholder="名前を入力..." maxlength="12" 
                 style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; margin-bottom: 25px; outline: none; text-align: center;">
             <div style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onpointerdown="closePlayerNameModal()">キャンセル</button>
-                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onpointerdown="submitDefenseDeck()">完了</button>
+                <button class="btn" style="flex:1; background: #475569; margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="closePlayerNameModal()">キャンセル</button>
+                <button class="btn" style="flex:1; background: linear-gradient(45deg, #10b981, #059669); margin-top: 0; font-size: 0.85rem; padding-left: 10px; padding-right: 10px; white-space: nowrap;" onclick="submitDefenseDeck()">完了</button>
             </div>
         </div>
     </div>

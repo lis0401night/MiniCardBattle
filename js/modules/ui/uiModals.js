@@ -26,13 +26,13 @@ function showConfirmModal(message, onConfirm, onCancel = null, isAlert = false) 
         box.classList.add('modal-pop-animation');
     }
 
-    okBtn.onpointerdown = () => {
+    okBtn.onclick = () => {
         playSound(SOUNDS.seClick);
         modal.style.display = 'none';
         if (onConfirm) onConfirm();
     };
 
-    cancelBtn.onpointerdown = () => {
+    cancelBtn.onclick = () => {
         playSound(SOUNDS.seClick);
         modal.style.display = 'none';
         if (onCancel) onCancel();
