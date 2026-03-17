@@ -151,7 +151,7 @@ async function triggerStartTurnPassive(owner, lane) {
             }
             else playSound(SOUNDS.seSkill);
             triggered = true;
-            await sleep(500);
+            await sleep(200);
             if (!board[lane]) break; // 破壊されたら終了
         }
 
@@ -170,7 +170,7 @@ async function triggerStartTurnPassive(owner, lane) {
                 if (cEl) createDamagePopup(cEl, '無敵終了', '#94a3b8');
             }
             triggered = true;
-            await sleep(300);
+            await sleep(150);
         }
 
         // Contract (契約)
@@ -185,7 +185,7 @@ async function triggerStartTurnPassive(owner, lane) {
             if (hpFill) createDamagePopup(hpFill, `契約 -${val}`, '#ef4444');
             updateHPBar();
             triggered = true;
-            await sleep(1000); // 契約演出をしっかり見せる
+            await sleep(500); // 契約演出をしっかり見せる
         }
     }
 

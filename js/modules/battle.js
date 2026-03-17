@@ -819,12 +819,12 @@ async function triggerStartTurnSkills(owner) {
             // renderBoard(); // ループ内での全体再描画を避ける
             if (checkWinCondition()) return;
             updateHPBar();
-            await sleep(1000); // 契約演出（ダメージポップアップ）をしっかり見せる
+            await sleep(300); // 契約演出（ダメージポップアップ）をしっかり見せる
         }
     }
     if (triggered) {
         renderBoard();
-        await sleep(600); // ターン開始スキルの演出終了後、DOMが安定するまで十分に待機
+        await sleep(200); // ターン開始スキルの演出終了後、DOMが安定するまで待機
     }
 }
 
