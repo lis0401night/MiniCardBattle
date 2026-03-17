@@ -178,6 +178,8 @@ function goBackFromSelect() {
     playSound(SOUNDS.seClick);
     if (gameMode === 'defense_register') {
         switchScreen('screen-defense-menu');
+    } else if (gameMode === 'event_satan') {
+        switchScreen('screen-high-difficulty');
     } else if (appState === 'select_enemy') {
         appState = 'select_player';
         document.getElementById('select-title').innerText = "キャラクター選択";
@@ -359,16 +361,12 @@ function showEventMenu() {
 
 function startHighDifficulty() {
     playSound(SOUNDS.seClick);
-    performFadeTransition(() => {
-        switchScreen('screen-high-difficulty');
-    });
+    switchScreen('screen-high-difficulty');
 }
 
 function showHighDifficultyRules() {
     playSound(SOUNDS.seClick);
-    performFadeTransition(() => {
-        switchScreen('screen-high-difficulty-rules');
-    });
+    switchScreen('screen-high-difficulty-rules');
 }
 
 function handleSatanBattle() {
@@ -615,11 +613,9 @@ function confirmDifficulty(level) {
         selectedStageId = enemyConfig.stageId || 'plain';
         startBattleFlow();
     } else {
-        performFadeTransition(() => {
-            appState = 'select_stage';
-            initStageSelectScreen();
-            switchScreen('screen-stage-select');
-        });
+        appState = 'select_stage';
+        initStageSelectScreen();
+        switchScreen('screen-stage-select');
     }
 }
 
