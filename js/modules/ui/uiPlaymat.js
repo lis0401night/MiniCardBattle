@@ -45,10 +45,9 @@ function renderPlaymatList() {
     noneItem.onclick = () => selectPlaymat(null);
     container.appendChild(noneItem);
 
-    // 所持しているプレイマットをID順にソートして表示
+    // 所持しているプレイマットを定数ファイルの順番どおりに表示
     const available = PLAYMAT_MASTER
-        .filter(p => ownedPlaymats.includes(p.id))
-        .sort((a, b) => a.id.localeCompare(b.id));
+        .filter(p => ownedPlaymats.includes(p.id));
 
     available.forEach(p => {
         const item = document.createElement('div');

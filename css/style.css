@@ -15,14 +15,14 @@
     --color-legend: #facc15;
 }
 
-/* 画面全体の幅をスマホサイズに制限し、PCでは中央に配置 */
+/* 画面全体�E幁E��スマ�Eサイズに制限し、PCでは中央に配置 */
 html {
     background-color: #000;
     width: 100%;
     height: 100%;
     height: 100dvh;
     font-size: 16px;
-    /* OSのフォントサイズ設定の影響を固定化 */
+    /* OSのフォントサイズ設定�E影響を固定化 */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
 }
@@ -77,7 +77,7 @@ body {
     display: flex;
 }
 
-/* 各種メニュー画面の背景設定 */
+/* 吁E��メニュー画面の背景設宁E*/
 #screen-mode-select,
 #screen-rules,
 #screen-select,
@@ -100,7 +100,7 @@ body {
     background-position: center;
 }
 
-/* ギャラリー関連画面の背景設定 */
+/* ギャラリー関連画面の背景設宁E*/
 #screen-gallery-menu,
 #screen-card-list,
 #screen-achievements {
@@ -110,7 +110,7 @@ body {
     background-position: center;
 }
 
-/* バトル画面の背景設定（JSで動的に変更されます） */
+/* バトル画面の背景設定！ESで動的に変更されます！E*/
 #screen-battle {
     background-size: cover;
     background-position: center;
@@ -245,7 +245,7 @@ h2 {
     letter-spacing: 1px;
 }
 
-/* 共通の形（円形アイコンボタン） */
+/* 共通�E形�E��E形アイコンボタン�E�E*/
 .btn-circle {
     width: 44px;
     height: 44px;
@@ -277,13 +277,13 @@ h2 {
     transform: scale(0.9);
 }
 
-/* 各ボタン固有の設定 */
+/* 吁E�Eタン固有�E設宁E*/
 .btn-gear {
     position: absolute;
     top: 20px;
     right: 20px;
     font-size: 2rem;
-    /* 歯車は少し大きく */
+    /* 歯車�E少し大きく */
 }
 
 @media (hover: hover) {
@@ -321,7 +321,7 @@ h2 {
     box-sizing: border-box;
 }
 
-/* 山札リセット演出 */
+/* 山札リセチE��演�E */
 .deck-refresh-effect {
     position: absolute;
     left: 50%;
@@ -363,7 +363,7 @@ h2 {
     }
 }
 
-/* ギャラリー・カード一覧共通 */
+/* ギャラリー・カード一覧共送E*/
 .card-list-container {
     width: 95%;
     max-width: 440px;
@@ -378,7 +378,7 @@ h2 {
     margin-bottom: 10px;
 }
 
-/* スクロールバーのデザイン統一 (Global & Custom) */
+/* スクロールバ�EのチE��イン統一 (Global & Custom) */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -423,7 +423,7 @@ h2 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
-    /* 縦横均等な余白 */
+    /* 縦横坁E��な余白 */
 }
 
 .card-list-grid-3col .deck-card-item {
@@ -527,7 +527,7 @@ h2 {
     text-shadow: 1px 1px 2px #000;
 }
 
-/* ===== ローディング画面 ===== */
+/* ===== ローチE��ング画面 ===== */
 .loader {
     border: 6px solid #334155;
     border-top: 6px solid #38bdf8;
@@ -571,16 +571,16 @@ h2 {
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    /* 上下いっぱいに広げる */
+    /* 上下いっぱぁE��庁E��めE*/
     padding: 10px 0;
-    /* 上下の微調整 */
+    /* 上下�E微調整 */
 }
 
 #screen-reward {
     flex-direction: column;
     padding: 20px;
     background: rgba(0, 0, 0, 0.85) !important;
-    /* 戦闘画面を背景に見せる */
+    /* 戦闘画面を背景に見せめE*/
     z-index: 100;
 }
 
@@ -708,7 +708,7 @@ h2 {
     display: none !important;
 }
 
-/* フェード演出 */
+/* フェード演�E */
 .fade-overlay {
     position: fixed;
     top: 0;
@@ -766,7 +766,7 @@ h2 {
     flex-grow: 1;
 }
 
-/* ===== デッキ編集画面のレイアウト修正 (横一列スクロール) ===== */
+/* ===== チE��キ編雁E��面のレイアウト修正 (横一列スクロール) ===== */
 .deck-edit-container {
     width: 100% !important;
     display: flex !important;
@@ -817,7 +817,7 @@ h2 {
 
 
 
-/* ===== コンティニュー画面 ===== */
+/* ===== コンチE��ニュー画面 ===== */
 #screen-continue {
     text-align: center;
 }
@@ -855,7 +855,7 @@ h2 {
     margin: 0;
 }
 
-/* ===== スキルカットイン演出 ===== */
+/* ===== スキルカチE��イン演�E ===== */
 #screen-cutin {
     position: absolute;
     top: 0;
@@ -1009,7 +1009,7 @@ h2 {
 .hp-area {
     display: flex;
     flex-direction: column;
-    /* 縦に並べる */
+    /* 縦に並べめE*/
     justify-content: center;
     align-items: center;
     width: 100%;
@@ -1028,7 +1028,7 @@ h2 {
     position: relative;
 }
 
-/* アイコンとSPオーブ */
+/* アイコンとSPオーチE*/
 .icon-wrapper {
     position: relative;
 }
@@ -1045,11 +1045,11 @@ h2 {
     background-color: #334155;
     flex-shrink: 0;
     margin-right: calc(min(110px, 15vh) * -0.22);
-    /* HPバーと重ねるためにマイナス値 */
+    /* HPバ�Eと重�Eるためにマイナス値 */
     position: relative;
     /* z-index用 */
     z-index: 2;
-    /* HPバーより手前に表示 */
+    /* HPバ�Eより手前に表示 */
     transition: all 0.3s;
 }
 
@@ -1076,16 +1076,16 @@ h2 {
     position: absolute;
     bottom: -35px;
     /* アクションボタンの高さに合わせる */
-    /* アイコンの中央とオーブ全体の中心を揃える */
+    /* アイコンの中央とオーブ�E体�E中忁E��揁E��めE*/
     left: calc(110px / 2);
-    /* char-iconのwidthの半分を指定 */
+    /* char-iconのwidthの半�Eを指宁E*/
     transform: translateX(-50%);
     display: flex;
     justify-content: center;
     gap: 4px;
     z-index: 10;
     width: max-content;
-    /* アイコン幅に縛られず重なりを防止 */
+    /* アイコン幁E��縛られず重なりを防止 */
 }
 
 .orb {
@@ -1109,7 +1109,7 @@ h2 {
     position: absolute;
     top: -15px;
     left: 95px;
-    /* アイコンを避けるため右に移動 */
+    /* アイコンを避けるため右に移勁E*/
     background: rgba(255, 255, 255, 0.95);
     color: #000;
     padding: 6px 12px;
@@ -1144,7 +1144,7 @@ h2 {
     display: flex;
     flex-direction: column;
     width: calc(100% - 85px);
-    /* アイコン拡大に伴いHPバーをさらに短縮 */
+    /* アイコン拡大に伴いHPバ�Eをさらに短縮 */
     position: relative;
     z-index: 1;
     /* アイコンの奥に表示 */
@@ -1155,7 +1155,7 @@ h2 {
     font-size: 1.4rem;
     margin-bottom: 2px;
     margin-left: 25px;
-    /* アイコンとの重なりを防ぐ */
+    /* アイコンとの重なりを防ぁE*/
     text-shadow: 1px 1px 2px #000;
 }
 
@@ -1202,7 +1202,7 @@ h2 {
     border-radius: 16px;
     border: 1px solid #334155;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
-    overflow: hidden; /* プレイマットのはみ出しをカット */
+    overflow: hidden; /* プレイマット�Eはみ出しをカチE�� */
     flex-shrink: 1;
     min-height: 0;
     height: clamp(200px, 42vh, 450px);
@@ -1210,24 +1210,24 @@ h2 {
     align-self: center;
 }
 
-/* プレイマット (盤面背景) */
+/* プレイマッチE(盤面背景) */
 .playmat {
     position: absolute;
     left: 0;
     width: 100%;
-    height: 50%; /* 盤面の半分 */
+    height: 50%; /* 盤面の半�E */
     z-index: 0;
     background-size: cover;
     background-position: center;
     pointer-events: none;
-    opacity: 0.6; /* イラストが強すぎないように調整 */
+    opacity: 0.8; /* �Z���𒲐� */
     transition: background-image 0.5s ease;
 }
 
 .playmat.enemy {
     top: 0;
     border-radius: 16px 16px 0 0;
-    /* 敵側のプレイマット背景（デフォルト） */
+    /* 敵側のプレイマット背景�E�デフォルト！E*/
 }
 
 .playmat.player {
@@ -1299,7 +1299,7 @@ h2 {
     transform-style: preserve-3d;
 }
 
-/* 盤面のカードはセルに合わせて拡大 */
+/* 盤面のカード�Eセルに合わせて拡大 */
 .cell .card {
     width: 100%;
     height: 100%;
@@ -1324,7 +1324,7 @@ h2 {
     z-index: 4;
 }
 
-/* レジェンドはオーバーレイ不要 */
+/* レジェンド�Eオーバ�Eレイ不要E*/
 .card.rarity-4::before {
     content: none;
 }
@@ -1339,7 +1339,7 @@ h2 {
     box-shadow: 0 0 8px rgba(251, 113, 133, 0.4);
 }
 
-/* レアリティ別の枠色 */
+/* レアリチE��別の枠色 */
 .card.rarity-1 {
     border-color: #cd7f32;
     /* Bronze */
@@ -1381,7 +1381,7 @@ h2 {
     }
 }
 
-/* 選択時のハイライトはレアリティより優先 */
+/* 選択時のハイライト�EレアリチE��より優允E*/
 .card.selected,
 .card.board-selected {
     border-color: #fff !important;
@@ -1419,7 +1419,7 @@ h2 {
     letter-spacing: -1.5px;
 }
 
-/* 盤面のカードはパワー表示も大きく */
+/* 盤面のカード�Eパワー表示も大きく */
 .cell .card-power {
     font-size: 1.9rem;
     right: 4px;
@@ -1450,7 +1450,7 @@ h2 {
     color: #fff;
 }
 
-/* 盤面のカードはバッジも少し大きく */
+/* 盤面のカード�Eバッジも少し大きく */
 .cell .card-skill {
     font-size: 0.7rem;
     padding: 2px 6px;
@@ -1460,7 +1460,7 @@ h2 {
 .hand-area {
     display: flex;
     gap: 1.5%;
-    /* 画面幅に応じた隙間 */
+    /* 画面幁E��応じた隙閁E*/
     height: 16vh;
     min-height: 70px;
     max-height: 150px;
@@ -1491,24 +1491,24 @@ h2 {
     box-shadow: 0 0 15px var(--color-blue);
     border-color: var(--color-blue);
     z-index: 10;
-    /* transformを使用しているため、通常はレイアウト破綻しませんが、
-       念のためマージン等による押し出しが発生しないことを保証します */
+    /* transformを使用してぁE��ため、E��常はレイアウト破綻しませんが、E
+       念のためマ�Eジン等による押し�Eしが発生しなぁE��とを保証しまぁE*/
 }
 
 .card.hand-card {
     width: calc((100% - (1.5% * 4)) / 5);
-    /* 5枚が等間隔に並ぶよう計算 */
+    /* 5枚が等間隔に並ぶよう計箁E*/
     max-width: 90px;
     height: auto !important;
     aspect-ratio: 2 / 3 !important;
     position: relative !important;
-    /* 絶対配置を解除して高さを確保 */
+    /* 絶対配置を解除して高さを確俁E*/
     flex-shrink: 0;
 }
 
 .card.hand-card .card-power {
     font-size: clamp(1.2rem, 4vw, 1.6rem);
-    /* 画面幅に合わせて可変、かつ最小/最大を制限 */
+    /* 画面幁E��合わせて可変、かつ最封E最大を制陁E*/
     bottom: 2px;
     right: 4px;
 }
@@ -1547,7 +1547,7 @@ h2 {
 .controls {
     display: flex;
     justify-content: flex-end;
-    /* 右寄せにする */
+    /* 右寁E��にする */
     width: 100%;
     max-width: 400px;
     padding: 0 10px;
@@ -1556,10 +1556,10 @@ h2 {
 
 .deck-info {
     font-size: 0.75rem;
-    /* 少し小さくしてスッキリさせる */
+    /* 少し小さくしてスチE��リさせめE*/
     color: #cbd5e1;
     align-self: flex-end;
-    /* 右寄せにする */
+    /* 右寁E��にする */
     margin-top: 2px;
     margin-right: 2px;
     text-shadow: 1px 1px 2px #000;
@@ -1581,7 +1581,7 @@ h2 {
     background: #334155;
 }
 
-/* スキルボタン発動可能時のアニメーション */
+/* スキルボタン発動可能時�Eアニメーション */
 @keyframes pulse {
     0% {
         transform: scale(1);
@@ -1610,7 +1610,7 @@ h2 {
     grid-column: 3 / 4;
     /* 右側に配置 */
     justify-self: end;
-    /* 右寄せ */
+    /* 右寁E�� */
     z-index: 10;
 
     /* action-btnのレイアウトを継承 */
@@ -1629,7 +1629,7 @@ h2 {
     .enemy-skill-btn:hover {
         background: #475569;
         transform: scale(1.05);
-        /* 上下移動は削除 */
+        /* 上下移動�E削除 */
     }
 }
 
@@ -1637,16 +1637,16 @@ h2 {
     background: #1e293b;
 }
 
-/* カード能力表示エリア（かぶせ表示） */
+/* カード�E力表示エリア�E�かぶせ表示�E�E*/
 .card-detail-wrapper {
     width: 100%;
     max-width: 400px;
     height: 0;
-    /* 領域を確保しない */
+    /* 領域を確保しなぁE*/
     margin-bottom: 0;
     position: relative;
     z-index: 50;
-    /* 他のUIより手前に表示 */
+    /* 他�EUIより手前に表示 */
 }
 
 .card-detail-box {
@@ -1667,7 +1667,7 @@ h2 {
     bottom: 0;
     overflow-y: auto;
     max-height: 60vh;
-    /* 画面からはみ出さない程度の緩い制限に変更 */
+    /* 画面からはみ出さなぁE��度の緩ぁE��限に変更 */
     flex-direction: column;
     justify-content: center;
     gap: 4px;
@@ -1721,17 +1721,17 @@ h2 {
 
 @keyframes attack-up {
     0% { transform: translate3d(0, 0, 0) scale(1); }
-    30% { transform: translate3d(0, 12px, 0) scale(0.92); } /* 深い溜め */
-    50% { transform: translate3d(0, -38px, 0) scale(1.15); } /* 衝突 */
-    80% { transform: translate3d(0, -38px, 0) scale(1.15); } /* 長いヒットストップ */
+    30% { transform: translate3d(0, 12px, 0) scale(0.92); } /* 深ぁE��め */
+    50% { transform: translate3d(0, -38px, 0) scale(1.15); } /* 衝突E*/
+    80% { transform: translate3d(0, -38px, 0) scale(1.15); } /* 長ぁE��チE��ストッチE*/
     100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
 @keyframes attack-down {
     0% { transform: translate3d(0, 0, 0) scale(1); }
-    30% { transform: translate3d(0, -12px, 0) scale(0.92); } /* 深い溜め */
-    50% { transform: translate3d(0, 38px, 0) scale(1.15); } /* 衝突 */
-    80% { transform: translate3d(0, 38px, 0) scale(1.15); } /* 長いヒットストップ */
+    30% { transform: translate3d(0, -12px, 0) scale(0.92); } /* 深ぁE��め */
+    50% { transform: translate3d(0, 38px, 0) scale(1.15); } /* 衝突E*/
+    80% { transform: translate3d(0, 38px, 0) scale(1.15); } /* 長ぁE��チE��ストッチE*/
     100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
@@ -1802,7 +1802,7 @@ h2 {
     transition-duration: 4s !important;
 }
 
-/* ポップアップ関連 */
+/* ポップアチE�E関連 */
 .damage-popup {
     position: absolute;
     color: #ef4444;
@@ -1881,7 +1881,7 @@ h2 {
     transform: scale(0.95);
 }
 
-/* ===== カード拡大プレビューモーダル（中央配置） ===== */
+/* ===== カード拡大プレビューモーダル�E�中央配置�E�E===== */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -2004,7 +2004,7 @@ h2 {
     margin: 0;
 }
 
-/* ===== デッキ編集画面の特殊レイアウト ===== */
+/* ===== チE��キ編雁E��面の特殊レイアウチE===== */
 #screen-deck-edit {
     padding: 10px;
     justify-content: flex-start;
@@ -2065,7 +2065,7 @@ h2 {
     height: 115px;
 }
 
-/* モーダルの完全中央配置 */
+/* モーダルの完�E中央配置 */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -2132,9 +2132,9 @@ h2 {
     padding: 8px 5px;
     /* パディングを少し削る */
     font-size: 0.85rem;
-    /* 文字を小さくする */
+    /* 斁E��を小さくすめE*/
     white-space: nowrap;
-    /* 改行を防ぐ */
+    /* 改行を防ぁE*/
 }
 
 .btn-secondary {
@@ -2200,7 +2200,7 @@ h2 {
     width: 100%;
 }
 
-/* ===== モバイル対応: 画面の高さが小さい端末 ===== */
+/* ===== モバイル対忁E 画面の高さが小さぁE��末 ===== */
 @media (max-height: 700px) {
     .preview-content {
         padding: 15px;
@@ -2367,7 +2367,7 @@ h2 {
     }
 }
 
-/* ===== 超小型端末: さらに小さい画面 ===== */
+/* ===== 趁E��型端末: さらに小さぁE��面 ===== */
 @media (max-height: 600px) {
     .preview-content {
         padding: 12px;
@@ -2518,7 +2518,7 @@ h2 {
     }
 }
 
-/* ===== モバイル対応: 画面幅が狭い端末 ===== */
+/* ===== モバイル対忁E 画面幁E��狭ぁE��末 ===== */
 @media (max-width: 400px) {
     .lane-row {
         gap: 8px;
@@ -2543,7 +2543,7 @@ h2 {
     }
 }
 
-/* ===== 「選択」アコーディオン用のスタイル ===== */
+/* ===== 「選択」アコーチE��オン用のスタイル ===== */
 .choice-accordion {
     width: 100%;
 }
@@ -2553,7 +2553,7 @@ h2 {
 }
 
 .choice-accordion summary::-webkit-details-marker {
-    display: none; /* デフォルトの矢印を消す */
+    display: none; /* チE��ォルト�E矢印を消す */
 }
 
 .choice-accordion[open] .accordion-icon {
@@ -2572,7 +2572,7 @@ h2 {
     }
 }
 
-/* メインメニュー用グリッドレイアウト */
+/* メインメニュー用グリチE��レイアウチE*/
 .menu-btn-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -2643,7 +2643,7 @@ h2 {
     line-height: 1.2;
 }
 
-/* 遊び方画面のセクション分け */
+/* 遊�E方画面のセクション刁E�� */
 .rule-box {
     width: 100%;
     max-width: 400px;
@@ -2705,7 +2705,7 @@ h2 {
 
 .btn-check-deck {
     position: absolute;
-    left: calc(50% + 104px); /* ボタンの中央(50%) + 半分(100px) + 隙間(4px) */
+    left: calc(50% + 104px); /* ボタンの中央(50%) + 半�E(100px) + 隙間(4px) */
     width: 44px;
     height: 44px;
     padding: 0;
@@ -2728,7 +2728,7 @@ h2 {
     color: #facc15;
 }
 
-/* 敵デッキモーダル用 */
+/* 敵チE��キモーダル用 */
 #modal-enemy-deck .card-list-container {
     height: 60vh;
     max-height: 500px;
@@ -2749,7 +2749,7 @@ h2 {
     border: 1px solid rgba(255,255,255,0.3);
 }
 
-/* ===== 先攻・後攻決定演出 ===== */
+/* ===== 先攻・後攻決定演�E ===== */
 #screen-turn-order {
     display: none;
     flex-direction: column;
@@ -2805,7 +2805,7 @@ h2 {
 .to-result-label.top { /* Positioned via JS */ }
 .to-result-label.bottom { /* Positioned via JS */ }
 
-/* シャッフルアニメーション */
+/* シャチE��ルアニメーション */
 @keyframes toShuffleLeft {
     0% { transform: translateX(-80px) rotate(-5deg); z-index: 1005; }
     50% { transform: translateX(80px) rotate(5deg); z-index: 1000; }
