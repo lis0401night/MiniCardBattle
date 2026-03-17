@@ -105,8 +105,8 @@ function renderAchievementsList() {
             CARD_MASTER.filter(c => !c.isToken && !c.id.includes('token')).length : 
             ach.targetValue;
             
-        // ストーリー系はターゲット値がキャラID、プログレスがクリア回数（基本1で最大1にする）
-        const isStory = ach.type === 'story_clear';
+        // ストーリー系・ハードストーリー系はターゲット値がキャラID、プログレスがクリア回数（基本1で最大1にする）
+        const isStory = ach.type === 'story_clear' || ach.type === 'story_clear_hard';
         const displayProgress = isStory ? (progress > 0 ? 1 : 0) : progress;
         const displayTarget = isStory ? 1 : target;
         
@@ -168,6 +168,8 @@ function handleClaimAchievement(id) {
             showPlaymatAcquisitionModal(result.rewardName, result.rewardValue);
         } else if (result.rewardType === 'card') {
             showCardAcquisitionModal(result.rewardValue);
+        } else if (result.rewardType === 'premium') {
+            showPremiumAcquisitionModal(result.rewardValue);
         }
     }
     renderAchievementsList();
@@ -205,6 +207,50 @@ function showCardAcquisitionModal(cardId) {
     populateCardPreview('acquisition', card);
 
     // 誤タップ防止：0.5秒後にボタンを有効化
+    setTimeout(() => {
+        const btn = modal.querySelector('.ok-button');
+        if (btn) {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.onclick = () => {
+                playSound(SOUNDS.seClick);
+                document.body.removeChild(modal);
+            };
+        }
+    }, 500);
+}
+
+function showPremiumAcquisitionModal(cardId) {
+    const card = CARD_MASTER.find(c => c.id === cardId);
+    if (!card) return;
+
+    playSound(SOUNDS.seSkill);
+
+    const modal = document.createElement('div');
+    modal.id = 'premium-acquisition-modal';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex !important; justify-content: center !important; align-items: center !important; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); animation: fadeIn 0.4s;';
+    
+    const premiumCardData = { ...card, isPremium: true };
+
+    modal.innerHTML = `
+        <div class="preview-content acquisition-glow" style="margin: 0 !important; cursor: default; border-color: #d946ef; box-shadow: 0 0 30px rgba(217, 70, 239, 0.5);" onclick="event.stopPropagation()">
+            <div id="premium-acquisition-card-container"></div>
+            <div class="preview-details">
+                <div style="background: linear-gradient(45deg, #d946ef, #9333ea); color: white; padding: 2px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-bottom: 5px; align-self: center; display: inline-block;">PREMIUM UNLOCK</div>
+                <h2 id="premium-acquisition-card-name" style="margin-top: 5px;">${card.name}</h2>
+                <div class="preview-scroll-area">
+                    <div id="premium-acquisition-skills-list" class="preview-skills-list"></div>
+                    <p id="premium-acquisition-card-flavor" class="preview-flavor-text">${card.flavor || ''}</p>
+                </div>
+                <button class="btn ok-button" style="margin-top: 15px; width: 110px; align-self: center; background: linear-gradient(45deg, #d946ef, #9333ea); color: #fff; font-weight: bold; pointer-events: none; opacity: 0.5;">OK</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    populateCardPreview('premium-acquisition', premiumCardData);
+
     setTimeout(() => {
         const btn = modal.querySelector('.ok-button');
         if (btn) {
@@ -348,7 +394,7 @@ function debugUnlockAchievements() {
         ACHIEVEMENT_MASTER.forEach(ach => {
             const data = achievementData.achievements[ach.id] || { progress: 0, isUnlocked: false };
             data.isUnlocked = true;
-            if (ach.type === 'story_clear') {
+            if (ach.type === 'story_clear' || ach.type === 'story_clear_hard') {
                 data.progress = 1;
             } else {
                 data.progress = ach.targetValue || 100;
@@ -433,7 +479,7 @@ function populateCardPreview(prefix, card) {
         const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
         cardClone.className = `card blue${rarityClass}`;
         cardClone.style.width = "180px";
-        cardClone.style.height = "270px";
+        cardClone.style.height = "240px";
         cardClone.innerHTML = `
             <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${playerConfig.filter};"></div>
             <div class="card-power">${card.currentPower || card.power}</div>
