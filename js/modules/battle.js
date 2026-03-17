@@ -268,6 +268,7 @@ async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = 
             cell.classList.add('highlight');
             cell.onclick = async (ev) => {
                 ev.stopPropagation();
+                if (selected.includes(i)) return; // 既に選択済みなら無視
                 playSound(SOUNDS.seClick);
 
                 // 既にカードがあるレーンの場合は確認

@@ -23,7 +23,7 @@ if (typeof loadDeck === 'function') {
 
 // 2. 盤面のセルクリックイベントのバインド
 document.querySelectorAll('#player-lanes .cell').forEach(cell => {
-    cell.onpointerdown = async (e) => {
+    cell.onclick = async (e) => {
         if (typeof isProcessing === 'undefined' || typeof isTransitioning === 'undefined') return;
         if (isProcessing || isTransitioning || selectedCardIndex === null) return;
         
