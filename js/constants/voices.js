@@ -150,15 +150,45 @@ const VOICE_CATEGORIES = {
 // ボイス再生用の関数
 const voiceAudioCache = {};
 
-function playCardVoice(category, situation = 'play') {
+async function playCardVoice(category, situation = 'play') {
     if (!category || !VOICE_CATEGORIES[category] || !VOICE_CATEGORIES[category][situation]) {
         return;
     }
 
-    try {
-        const audioPath = VOICE_CATEGORIES[category][situation];
+    const audioPath = VOICE_CATEGORIES[category][situation];
+    const categoryVolume = VOICE_CATEGORIES[category].volume || 1.0;
+    const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+    let finalVolume = baseVol * VOICE_SETTINGS.globalVolumeMultiplier * categoryVolume;
+    finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
 
-        // キャッシュからテンプレートを取得し、再生中ならクローンして重ねる
+    // Web Audio API による再生
+    if (audioCtx) {
+        try {
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+            // キャッシュにバッファがない場合は新しくロード
+            if (!voiceBuffers[audioPath]) {
+                voiceBuffers[audioPath] = await loadAndDecodeAudio(audioPath);
+            }
+
+            const buffer = voiceBuffers[audioPath];
+            if (buffer) {
+                const source = audioCtx.createBufferSource();
+                const gainNode = audioCtx.createGain();
+                source.buffer = buffer;
+                gainNode.gain.value = finalVolume;
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                source.start(0);
+                return;
+            }
+        } catch (e) {
+            console.warn("Web Audio voice play failed:", e);
+        }
+    }
+
+    // フォールバック: HTML5 Audio
+    try {
         let voiceAudio = voiceAudioCache[audioPath];
         if (!voiceAudio) {
             voiceAudio = new Audio(audioPath);
@@ -166,29 +196,18 @@ function playCardVoice(category, situation = 'play') {
             voiceAudioCache[audioPath] = voiceAudio;
         }
 
-        const categoryVolume = VOICE_CATEGORIES[category].volume || 1.0;
-        const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
-        let finalVolume = baseVol * VOICE_SETTINGS.globalVolumeMultiplier * categoryVolume;
-        finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));
-
-        try {
-            if (typeof unlockAudio === 'function') unlockAudio();
-
-            if (voiceAudio.paused || voiceAudio.ended) {
-                voiceAudio.volume = finalVolume;
-                voiceAudio.currentTime = 0;
-                const p = voiceAudio.play();
-                if (p !== undefined) p.catch(e => console.warn("Card voice play failed:", e));
-            } else {
-                const clone = voiceAudio.cloneNode();
-                clone.volume = finalVolume;
-                const p = clone.play();
-                if (p !== undefined) p.catch(e => console.warn("Card voice clone play failed:", e));
-            }
-        } catch (e) {
-            console.warn("playCardVoice execution failed:", e);
+        if (voiceAudio.paused || voiceAudio.ended) {
+            voiceAudio.volume = finalVolume;
+            voiceAudio.currentTime = 0;
+            const p = voiceAudio.play();
+            if (p !== undefined) p.catch(e => console.warn("Fallback voice play failed:", e));
+        } else {
+            const clone = voiceAudio.cloneNode();
+            clone.volume = finalVolume;
+            const p = clone.play();
+            if (p !== undefined) p.catch(e => console.warn("Fallback voice clone play failed:", e));
         }
     } catch (e) {
-        console.error("Card voice initialization failed:", e);
+        console.warn("Fallback voice logic failed:", e);
     }
 }

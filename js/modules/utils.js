@@ -25,42 +25,55 @@ function getDialogue(speakerConfig, targetConfig, type) {
     return dict.default || "...";
 }
 
-async function playSound(audio) {
-    if (audio) {
-        // 初回再生時に音声をアンロック（モバイル Safari 対策）
-        if (typeof unlockAudio === 'function') {
-            unlockAudio();
-        }
+async function playSound(audioOrKey) {
+    if (!audioOrKey) return;
 
-        const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
+    // 初回再生時に音声をアンロック（モバイル Safari 対策）
+    if (typeof unlockAudio === 'function' && !isAudioUnlocked) {
+        unlockAudio();
+    }
 
-        // BGM (ループ音) の処理
-        if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
-            audio.currentTime = 0;
-            audio.volume = baseVol;
-            const p = audio.play();
-            if (p !== undefined) p.catch(() => {});
-            return;
-        }
+    const baseVol = (typeof gameVolume !== 'undefined') ? gameVolume : 0.3;
 
-        // SE (効果音) の処理
+    // 1. Web Audio (SE) の処理
+    const seKey = (typeof audioOrKey === 'string') ? audioOrKey : null;
+    if (seKey && audioCtx && seBuffers[seKey]) {
+        const buffer = seBuffers[seKey];
+        const source = audioCtx.createBufferSource();
+        const gainNode = audioCtx.createGain();
+        source.buffer = buffer;
+        gainNode.gain.value = baseVol;
+        source.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        source.start(0);
+        return;
+    }
+
+    // 2. HTML5 Audio (BGM または Web Audio失敗時のフォールバック)
+    const audio = (typeof audioOrKey === 'string') ? SOUNDS[audioOrKey] : audioOrKey;
+    if (audio instanceof Audio) {
         try {
-            // Android Chrome等は再生中なら単に currentTime=0 で即座に反応するが、
-            // 重ねて鳴らす必要がある場合はクローンを作る
-            if (audio.paused || audio.ended) {
-                audio.volume = baseVol;
+            audio.volume = baseVol;
+            // BGM (ループ音) の処理
+            if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
                 audio.currentTime = 0;
                 const p = audio.play();
-                if (p !== undefined) p.catch(() => {});
+                if (p !== undefined) p.catch(() => { });
             } else {
-                // 重複再生が必要な場合のみクローンを生成（オーバーヘッド抑制）
-                const clone = audio.cloneNode();
-                clone.volume = baseVol;
-                const p = clone.play();
-                if (p !== undefined) p.catch(() => {});
+                // SEとしてAudio要素を鳴らす場合（予備ロジック）
+                if (audio.paused || audio.ended) {
+                    audio.currentTime = 0;
+                    const p = audio.play();
+                    if (p !== undefined) p.catch(() => { });
+                } else {
+                    const clone = audio.cloneNode();
+                    clone.volume = baseVol;
+                    const p = clone.play();
+                    if (p !== undefined) p.catch(() => { });
+                }
             }
         } catch (e) {
-            console.warn("playSound failed:", e);
+            console.warn("HTML5 Audio playback failed:", e);
         }
     }
 }
