@@ -393,7 +393,7 @@ const UI_COMPONENTS = {
             </button>
         </div>
 
-        <button class="btn" style="margin-top: 30px; background: #475569;" onclick="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 30px; background: #475569;" onpointerdown="showEventMenu()">戻る</button>
     </div>
     `,
 

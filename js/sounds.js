@@ -26,6 +26,7 @@ const SOUNDS = {
     bgmLastBattle: new Audio('assets/bgm_lastbattle.mp3'),
     bgmGallery: new Audio('assets/bgm_gallery.mp3'),
     bgmDefense: new Audio('assets/bgm_defense.mp3'),
+    bgmHighDifficulty: new Audio('assets/bgm_high_difficulty.mp3'),
     bgmStageAndroid: new Audio('assets/bgm_stage_android01.mp3'),
     bgmStageDragon: new Audio('assets/bgm_stage_dragon01.mp3'),
     bgmStageKnight: new Audio('assets/bgm_stage_knight01.mp3'),
