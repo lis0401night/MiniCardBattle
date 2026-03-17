@@ -101,6 +101,22 @@ function initBattleState() {
             bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
         }
 
+        // プレイマットの適用
+        const enemyPlaymat = bs ? bs.querySelector('.playmat.enemy') : null;
+        const playerPlaymat = bs ? bs.querySelector('.playmat.player') : null;
+        if (enemyPlaymat) {
+            let eMat = null;
+            if (gameMode === 'defense_attack' && enemyConfig.playmat) {
+                const pm = PLAYMAT_MASTER.find(p => p.id === enemyConfig.playmat);
+                if (pm) eMat = pm.image;
+            }
+            enemyPlaymat.style.backgroundImage = eMat ? `url('${eMat}')` : 'none';
+        }
+        if (playerPlaymat) {
+            const pm = PLAYMAT_MASTER.find(p => p.id === selectedPlaymatId);
+            playerPlaymat.style.backgroundImage = pm ? `url('${pm.image}')` : 'none';
+        }
+
         updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
         updateDeckDisplay('blue'); updateDeckDisplay('red');
         for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }

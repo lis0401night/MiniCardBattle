@@ -2825,4 +2825,14 @@ h2 {
     opacity: 0;
     transition: opacity 0.8s ease-in-out;
 }
-
+
+/* ===== •ñVŠl“¾‰‰o ===== */
+@keyframes reward-glow {
+    0% { box-shadow: 0 0 5px #facc15; border-color: #eab308; }
+    100% { box-shadow: 0 0 20px #fef08a; border-color: #fde047; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

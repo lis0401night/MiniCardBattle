@@ -119,15 +119,22 @@ function renderAchievementsList() {
         
         let rewardHtml = '';
         if (ach.reward) {
-            // 将来的な報酬表示
-            const rewardStatus = savedData.isRewarded ? '<span style="color:#94a3b8">(取得済)</span>' : `<button class="btn" style="padding:2px 8px; font-size:0.7rem; min-height:20px; margin:0;" onclick="if(typeof isTransitioning === 'undefined' || !isTransitioning){claimAchievementReward('${ach.id}'); renderAchievementsList();}">受け取る</button>`;
-            rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; color: #facc15;">報酬: ${ach.reward.type} ${rewardStatus}</div>`;
+            const rewardStatus = savedData.isRewarded ? 
+                '<span style="color:#94a3b8">(取得済)</span>' : 
+                `<button class="btn" style="padding:2px 8px; font-size:0.7rem; min-height:20px; margin:0; background: ${isUnlocked ? '' : '#475569'}; opacity: ${isUnlocked ? '1' : '0.6'};" onpointerdown="event.stopPropagation(); handleClaimAchievement('${ach.id}')">受け取る</button>`;
+            
+            // "playmat" -> "プレイマット"
+            const rewardTypeText = ach.reward.type === 'playmat' ? 'プレイマット' : ach.reward.type;
+            rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; color: #facc15;">報酬: ${rewardTypeText} ${rewardStatus}</div>`;
         } else if (isUnlocked) {
             rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; font-weight:bold; color: #facc15;">✨ 達成！ ✨</div>`;
         }
 
         const el = document.createElement('div');
-        el.style.cssText = `background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; padding: 10px; text-align: left; width: 100%; box-sizing: border-box;`;
+        const isClaimable = ach.reward && isUnlocked && !savedData.isRewarded;
+        const rewardHighlight = isClaimable ? 'box-shadow: 0 0 15px #facc15; border-color: #facc15; animation: reward-glow 2s infinite alternate;' : '';
+        
+        el.style.cssText = `background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; padding: 10px; text-align: left; width: 100%; box-sizing: border-box; position: relative; ${rewardHighlight}`;
         el.innerHTML = `
             <div style="font-weight: bold; color: ${titleColor}; margin-bottom: 5px; font-size: 1rem;">${ach.title}</div>
             <div style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 8px;">${ach.description}</div>
@@ -139,8 +146,51 @@ function renderAchievementsList() {
                 ${rewardHtml}
             </div>
         `;
+
+        if (isClaimable) {
+            el.onpointerdown = () => handleClaimAchievement(ach.id);
+            el.style.cursor = 'pointer';
+        }
+
         container.appendChild(el);
     });
+}
+
+function handleClaimAchievement(id) {
+    if (typeof isTransitioning !== 'undefined' && isTransitioning) return;
+    const result = claimAchievementReward(id);
+    if (result && result.rewardType === 'playmat') {
+        showPlaymatAcquisitionModal(result.rewardName, result.rewardValue);
+    }
+    renderAchievementsList();
+}
+
+function showPlaymatAcquisitionModal(name, id) {
+    const playmat = PLAYMAT_MASTER.find(p => p.id === id);
+    const msg = `プレイマット「${name}」を入手しました！`;
+    
+    // 既存のモーダルを流用するか、簡易的なポップアップを出す
+    const modal = document.createElement('div');
+    modal.className = 'screen';
+    modal.style.cssText = 'background: rgba(0,0,0,0.85); z-index: 1000; display: flex; animation: fadeIn 0.3s;';
+    modal.innerHTML = `
+        <div style="background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(242, 201, 76, 0.5);">
+            <h2 style="color: #facc15; margin-bottom: 20px;">プレイマット獲得！</h2>
+            <div style="width: 100%; height: 160px; border-radius: 8px; overflow: hidden; border: 2px solid #facc15; margin-bottom: 20px; box-shadow: 0 0 15px rgba(242, 201, 76, 0.3);">
+                <img src="${playmat.image}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <p style="color: #fff; font-size: 1.1rem; font-weight: bold; text-align: center; margin-bottom: 25px;">${msg}</p>
+            <button class="btn" style="background: linear-gradient(45deg, #facc15, #eab308); color: #000; font-weight: bold; width: 100%; margin-top: 0;">OK</button>
+        </div>
+    `;
+    
+    modal.querySelector('button').onclick = () => {
+        playSound(SOUNDS.seClick);
+        document.body.removeChild(modal);
+    };
+    
+    playSound(SOUNDS.seSkill);
+    document.body.appendChild(modal);
 }
 
 function renderAchievementsStats() {
@@ -227,6 +277,28 @@ function debugUnlockCards() {
         saveDeck();
         playSound(SOUNDS.seSkill);
         showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
+    }
+}
+
+let achievementsClickCount = 0;
+function debugUnlockAchievements() {
+    achievementsClickCount++;
+    if (achievementsClickCount >= 10) {
+        achievementsClickCount = 0;
+        ACHIEVEMENT_MASTER.forEach(ach => {
+            const data = achievementData.achievements[ach.id] || { progress: 0, isUnlocked: false };
+            data.isUnlocked = true;
+            if (ach.type === 'story_clear') {
+                data.progress = 1;
+            } else {
+                data.progress = ach.targetValue || 100;
+            }
+            achievementData.achievements[ach.id] = data;
+        });
+        saveAchievements();
+        renderAchievementsList();
+        playSound(SOUNDS.seSkill);
+        showAlertModal("デバッグモード：すべての実績を解除しました！");
     }
 }
 

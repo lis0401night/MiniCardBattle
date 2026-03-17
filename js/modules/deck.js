@@ -163,6 +163,27 @@ function loadDeck() {
     } else {
         unlockedPremiumCards = [];
     }
+
+    // 所持プレイマットの読み込み
+    const playmatsKey = `mini_card_battle_owned_playmats`;
+    const playmatsSaved = localStorage.getItem(playmatsKey);
+    if (playmatsSaved) {
+        try {
+            ownedPlaymats = JSON.parse(playmatsSaved);
+        } catch (e) {
+            console.error("Owned playmats load error:", e);
+            ownedPlaymats = [];
+        }
+    } else {
+        ownedPlaymats = [];
+    }
+
+    // 選択中プレイマットの読み込み
+    let playmatSelectKey = `mini_card_battle_playmat_${playerConfig.id}`;
+    if (typeof gameMode !== 'undefined' && gameMode === 'defense_register') {
+        playmatSelectKey = 'mini_card_battle_playmat_defense';
+    }
+    selectedPlaymatId = localStorage.getItem(playmatSelectKey) || null;
 }
 
 function saveDeck() {
@@ -180,6 +201,20 @@ function saveDeck() {
 
     // プレミアムカード解放状態もセーブ
     localStorage.setItem('mini_card_battle_unlocked_premium', JSON.stringify(unlockedPremiumCards));
+
+    // 選択中プレイマットもセーブ
+    let playmatSelectKey = `mini_card_battle_playmat_${playerConfig.id}`;
+    if (typeof gameMode !== 'undefined' && gameMode === 'defense_register') {
+        playmatSelectKey = 'mini_card_battle_playmat_defense';
+    }
+    if (selectedPlaymatId) {
+        localStorage.setItem(playmatSelectKey, selectedPlaymatId);
+    } else {
+        localStorage.removeItem(playmatSelectKey);
+    }
+
+    // 所持プレイマットもセーブ
+    localStorage.setItem('mini_card_battle_owned_playmats', JSON.stringify(ownedPlaymats));
 }
 
 function startBattleFlow() {
@@ -366,6 +401,7 @@ async function submitDefenseDeck() {
                 character: playerConfig.id,
                 stage: selectedStageId || 'plain',
                 deck: playerDeckSelection,
+                playmat: selectedPlaymatId, // 追加
                 points: parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
                 total_points: parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0
             })

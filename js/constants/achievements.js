@@ -36,7 +36,7 @@ const ACHIEVEMENT_MASTER = [
         description: 'アイギスのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'android',
-        reward: null
+        reward: { type: 'playmat', value: 'android', name: 'アイギス' }
     },
     {
         id: 'story_dragon',
@@ -44,7 +44,7 @@ const ACHIEVEMENT_MASTER = [
         description: 'イグニスのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'dragon',
-        reward: null
+        reward: { type: 'playmat', value: 'dragon', name: 'イグニス' }
     },
     {
         id: 'story_knight',
@@ -52,7 +52,7 @@ const ACHIEVEMENT_MASTER = [
         description: 'セレスティアのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'knight',
-        reward: null
+        reward: { type: 'playmat', value: 'knight', name: 'セレスティア' }
     },
     {
         id: 'story_cthulhu',
@@ -60,7 +60,7 @@ const ACHIEVEMENT_MASTER = [
         description: 'ナイアのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'cthulhu',
-        reward: null
+        reward: { type: 'playmat', value: 'cthulhu', name: 'ナイア' }
     },
     {
         id: 'story_elf',
@@ -68,7 +68,7 @@ const ACHIEVEMENT_MASTER = [
         description: 'リナのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'elf',
-        reward: null
+        reward: { type: 'playmat', value: 'elf', name: 'リナ' }
     },
     {
         id: 'story_cleric',
@@ -76,7 +76,7 @@ const ACHIEVEMENT_MASTER = [
         description: 'エリシアのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'cleric',
-        reward: null
+        reward: { type: 'playmat', value: 'cleric', name: 'エリシア' }
     },
     // --- フリーバトル勝利数 ---
     {
@@ -225,8 +225,17 @@ function claimAchievementReward(id) {
         return true;
     }
 
-    // 將来的に報酬（スキン・プレイマット・カード等）を付与する処理をここに記述
-    // 例: activateReward(master.reward.type, master.reward.value);
+    // 将来的に報酬（スキン・プレイマット・カード等）を付与する処理をここに記述
+    if (master.reward.type === 'playmat') {
+        if (!ownedPlaymats.includes(master.reward.value)) {
+            ownedPlaymats.push(master.reward.value);
+            // プレイマット獲得アニメーション/演出用フラグを返す
+            ach.isRewarded = true;
+            saveAchievements();
+            saveDeck(); // ownedPlaymats を保存するために呼ぶ
+            return { success: true, rewardType: 'playmat', rewardValue: master.reward.value, rewardName: master.reward.name };
+        }
+    }
 
     ach.isRewarded = true;
     saveAchievements();

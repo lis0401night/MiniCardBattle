@@ -23,3 +23,4 @@ var selectedStageId = null;
 var gameVolume = 0.5;
 var premiumCards = []; // プレミアムイラストを使用するカードIDのリスト
 var unlockedPremiumCards = []; // 解放済みのプレミアムカードのIDリスト
+var selectedPlaymatId = null; // 現在選択中のプレイマットID

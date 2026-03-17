@@ -545,6 +545,7 @@ async function startAttackBattle(enemyPlayerData) {
         enemyConfig.total_points = enemyPlayerData.total_points || enemyPlayerData.points || 0;
         enemyConfig.calculatedWinPoints = enemyPlayerData.calculatedWinPoints; // リスト表示時の計算結果
         enemyConfig.stageId = enemyPlayerData.stage;
+        enemyConfig.playmat = enemyPlayerData.playmat; // 追加
         selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
         // 自分のキャラクター選択から開始

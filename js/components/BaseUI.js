@@ -127,7 +127,7 @@ const UI_COMPONENTS = {
     achievementsScreen: `
     <!-- 実績画面 -->
     <div id="screen-achievements" class="screen">
-        <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;">実績</h2>
+        <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;" onpointerdown="debugUnlockAchievements()">実績</h2>
         <div class="accordion-container" style="width: 100%; max-width: 400px; margin-bottom: 15px;">
             <div class="accordion-header" onclick="toggleAchievementSection('stats')" style="background: #334155; padding: 10px; border-radius: 8px; cursor: pointer; color: #fff; font-weight: bold;">
                 ▼ プレイ統計（リーダー使用率など）
@@ -286,6 +286,10 @@ const UI_COMPONENTS = {
     <div id="screen-deck-edit" class="screen">
         <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;">デッキ構築</h2>
         <div id="deck-count-display" style="font-size: 0.9rem; margin-bottom: 10px;">カード枚数: 0 / 30</div>
+        
+        <!-- アクセサリー設定ボタン -->
+        <button class="btn-circle btn-accessory" onpointerdown="showPlaymatModal()" style="position: absolute; top: 15px; right: 15px; width: 44px; height: 44px; font-size: 1.2rem; background: rgba(30, 41, 59, 0.8); border: 2px solid #facc15; z-index: 10;">🖼️</button>
+
         <div class="deck-edit-container">
             <!-- 上段: 現在のデッキ -->
             <div class="deck-section">
@@ -479,6 +483,23 @@ const UI_COMPONENTS = {
                     <button class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: #475569; margin-top: 0; font-size: 0.9rem;" onpointerdown="closeExchangeDetail()">戻る</button>
                     <button id="btn-exchange-confirm" class="btn" style="flex: 1; min-height: 40px; padding: 5px; background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 0; font-size: 0.9rem;" onpointerdown="confirmExchange()">交換</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    `,
+
+    playmatSelectionModal: `
+    <!-- プレイマット選択モーダル -->
+    <div id="modal-playmat-selection" class="screen" style="background: rgba(0,0,0,0.85); z-index: 80; display: none;">
+        <div style="background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+            <h2 style="color: #facc15; margin-bottom: 15px; font-size: 1.2rem;">プレイマット設定</h2>
+            
+            <div id="playmat-list-container" style="width: 100%; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 5px; box-sizing: border-box;">
+                <!-- プレイマットリストがここに生成されます -->
+            </div>
+
+            <div style="margin-top: 15px; width: 100%; display: flex; justify-content: center;">
+                <button class="btn" style="background: #475569; width: 100%; margin-top: 0;" onpointerdown="closePlaymatModal()">戻る</button>
             </div>
         </div>
     </div>
