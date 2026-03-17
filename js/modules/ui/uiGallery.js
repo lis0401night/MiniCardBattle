@@ -127,7 +127,9 @@ function renderAchievementsList() {
             let rewardTypeText = ach.reward.type;
             if (ach.reward.type === 'playmat') rewardTypeText = 'プレイマット';
             else if (ach.reward.type === 'card') rewardTypeText = 'カード';
-            rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; color: #facc15;">報酬: ${rewardTypeText} ${rewardStatus}</div>`;
+            rewardHtml = `
+                <span style="font-size: 0.8rem; color: #facc15;">報酬: ${rewardTypeText}</span>
+                ${rewardStatus}`;
         } else if (isUnlocked) {
             rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; font-weight:bold; color: #facc15;">✨ 達成！ ✨</div>`;
         }
@@ -143,9 +145,11 @@ function renderAchievementsList() {
             <div style="width: 100%; background: #0f172a; border-radius: 4px; height: 12px; margin-bottom: 4px; overflow: hidden; border: 1px solid #334155;">
                 <div style="width: ${percentage}%; height: 100%; background: ${isUnlocked ? '#10b981' : '#3b82f6'}; transition: width 0.3s ease;"></div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
                 <span style="font-size: 0.8rem; color: #94a3b8;">${displayProgress} / ${displayTarget}</span>
-                ${rewardHtml}
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${rewardHtml}
+                </div>
             </div>
         `;
 
@@ -181,18 +185,20 @@ function showCardAcquisitionModal(cardId) {
     const modal = document.createElement('div');
     modal.id = 'card-acquisition-modal';
     modal.className = 'modal-overlay';
-    modal.style.cssText = 'z-index: 2200; display: flex; animation: fadeIn 0.4s;';
+    // プレビューモーダルと全く同じスタイル定義を適用（インラインでの強制力を持たせる）
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex !important; justify-content: center !important; align-items: center !important; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); animation: fadeIn 0.4s;';
     
+    // preview-content の構造を完全に踏襲
     modal.innerHTML = `
-        <div class="preview-content acquisition-glow" onclick="event.stopPropagation()">
+        <div class="preview-content acquisition-glow" style="margin: 0 !important; cursor: default;" onclick="event.stopPropagation()">
             <div id="acquisition-card-container"></div>
             <div class="preview-details">
-                <h2 id="acquisition-card-name" style="font-size: 1.5rem;">${card.name}</h2>
+                <h2 id="acquisition-card-name">${card.name}</h2>
                 <div class="preview-scroll-area">
                     <div id="acquisition-skills-list" class="preview-skills-list"></div>
                     <p id="acquisition-card-flavor" class="preview-flavor-text">${card.flavor || ''}</p>
                 </div>
-                <button class="btn" style="margin-top: 15px; width: 100%; background: linear-gradient(45deg, #facc15, #eab308); color: #000; font-weight: bold;" onclick="closeCardAcquisition()">OK</button>
+                <button class="btn ok-button" style="margin-top: 15px; width: 110px; align-self: center; background: linear-gradient(45deg, #facc15, #eab308); color: #000; font-weight: bold; pointer-events: none; opacity: 0.5;">OK</button>
             </div>
         </div>
     `;
@@ -200,40 +206,50 @@ function showCardAcquisitionModal(cardId) {
     document.body.appendChild(modal);
     populateCardPreview('acquisition', card);
 
-    // OKボタンのイベント
-    window.closeCardAcquisition = () => {
-        playSound(SOUNDS.seClick);
-        document.body.removeChild(modal);
-        delete window.closeCardAcquisition;
-    };
+    // 誤タップ防止：0.5秒後にボタンを有効化
+    setTimeout(() => {
+        const btn = modal.querySelector('.ok-button');
+        if (btn) {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.onclick = () => {
+                playSound(SOUNDS.seClick);
+                document.body.removeChild(modal);
+            };
+        }
+    }, 500);
 }
 
 function showPlaymatAcquisitionModal(name, id) {
     const playmat = PLAYMAT_MASTER.find(p => p.id === id);
     const msg = `プレイマット「${name}」を入手しました！`;
     
-    // 既存のモーダルを流用するか、簡易的なポップアップを出す
     const modal = document.createElement('div');
-    modal.className = 'screen';
-    modal.style.cssText = 'background: rgba(0,0,0,0.85); z-index: 1000; display: flex; animation: fadeIn 0.3s;';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex !important; justify-content: center !important; align-items: center !important; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); animation: fadeIn 0.3s;';
     modal.innerHTML = `
-        <div style="background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(242, 201, 76, 0.5);">
+        <div style="background: var(--panel-bg); border: 2px solid #facc15; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 30px rgba(242, 201, 76, 0.5);" onclick="event.stopPropagation()">
             <h2 style="color: #facc15; margin-bottom: 20px;">プレイマット獲得！</h2>
             <div style="width: 100%; height: 160px; border-radius: 8px; overflow: hidden; border: 2px solid #facc15; margin-bottom: 20px; box-shadow: 0 0 15px rgba(242, 201, 76, 0.3);">
                 <img src="${playmat.image}" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             <p style="color: #fff; font-size: 1.1rem; font-weight: bold; text-align: center; margin-bottom: 25px;">${msg}</p>
-            <button class="btn" style="background: linear-gradient(45deg, #facc15, #eab308); color: #000; font-weight: bold; width: 100%; margin-top: 0;">OK</button>
+            <button class="btn ok-button" style="background: linear-gradient(45deg, #facc15, #eab308); color: #000; font-weight: bold; width: 110px; align-self: center; margin-top: 0; pointer-events: none; opacity: 0.5;">OK</button>
         </div>
     `;
     
-    // 誤タップ防止のため、少し遅れてからクリック可能にする
+    // 誤タップ防止：少し遅れてからクリック可能にする
     setTimeout(() => {
-        modal.querySelector('button').onclick = () => {
-            playSound(SOUNDS.seClick);
-            document.body.removeChild(modal);
-        };
-    }, 300);
+        const btn = modal.querySelector('.ok-button');
+        if (btn) {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.onclick = () => {
+                playSound(SOUNDS.seClick);
+                document.body.removeChild(modal);
+            };
+        }
+    }, 500);
     
     playSound(SOUNDS.seSkill);
     document.body.appendChild(modal);

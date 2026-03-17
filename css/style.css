@@ -1928,12 +1928,14 @@ h2 {
 }
 
 #preview-card-container,
-#reward-card-container {
+#reward-card-container,
+#acquisition-card-container {
     margin-bottom: 20px;
 }
 
 #preview-card-container .card,
-#reward-card-container .card {
+#reward-card-container .card,
+#acquisition-card-container .card {
     width: 180px;
     height: 240px;
     cursor: default;
