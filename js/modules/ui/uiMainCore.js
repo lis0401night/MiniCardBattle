@@ -368,6 +368,10 @@ function showEventMenu() {
 
 function startHighDifficulty() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmHighDifficulty.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmHighDifficulty);
+    }
     switchScreen('screen-high-difficulty');
 }
 
