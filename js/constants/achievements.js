@@ -56,7 +56,7 @@ const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'story_android_hard',
-        title: '機械人形の究極回路',
+        title: '感情の最適解',
         description: 'アイギスでハードモードのストーリーをクリアする',
         type: 'story_clear_hard',
         targetValue: 'android',
@@ -72,7 +72,7 @@ const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'story_dragon_hard',
-        title: '竜姫の極限焦熱',
+        title: '猛火の灰燼',
         description: 'イグニスでハードモードのストーリーをクリアする',
         type: 'story_clear_hard',
         targetValue: 'dragon',
@@ -88,7 +88,7 @@ const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'story_knight_hard',
-        title: '光の絶対領域',
+        title: '白銀の誓光',
         description: 'セレスティアでハードモードのストーリーをクリアする',
         type: 'story_clear_hard',
         targetValue: 'knight',
@@ -104,7 +104,7 @@ const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'story_cthulhu_hard',
-        title: '深淵の至高狂気',
+        title: '無窮の深淵',
         description: 'ナイアでハードモードのストーリーをクリアする',
         type: 'story_clear_hard',
         targetValue: 'cthulhu',
@@ -120,7 +120,7 @@ const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'story_elf_hard',
-        title: '記憶の完全同期',
+        title: '真理の銀矢',
         description: 'リナでハードモードのストーリーをクリアする',
         type: 'story_clear_hard',
         targetValue: 'elf',
@@ -136,7 +136,7 @@ const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'story_cleric_hard',
-        title: '真なる救済の夜明け',
+        title: '背徳の聖女',
         description: 'エリシアでハードモードのストーリーをクリアする',
         type: 'story_clear_hard',
         targetValue: 'cleric',
