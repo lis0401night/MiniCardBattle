@@ -5,73 +5,119 @@
 function prepareBattle() {
     switchScreen('screen-loading');
     const sessionId = Date.now();
-    playerDeck = generateDeck('blue', playerConfig, sessionId);
-    enemyDeck = generateDeck('red', enemyConfig, sessionId);
+    let isFinished = false;
+
+    try {
+        playerDeck = generateDeck('blue', playerConfig, sessionId);
+        enemyDeck = generateDeck('red', enemyConfig, sessionId);
+    } catch (e) {
+        console.error("Deck generation error:", e);
+        // エラー時も空のデッキで続行を試みる（フリーズ回避）
+        playerDeck = playerDeck || [];
+        enemyDeck = enemyDeck || [];
+    }
+
     const allCards = [...playerDeck, ...enemyDeck];
     let loaded = 0;
-    const finishLoading = () => setTimeout(initBattleState, 500);
-    const updateProgress = () => {
-        loaded++;
-        document.getElementById('loading-text').innerText = `Generating Cards... ${Math.floor((loaded / allCards.length) * 100)}%`;
-        if (loaded === allCards.length) finishLoading();
+
+    const finishLoading = () => {
+        if (isFinished) return;
+        isFinished = true;
+        setTimeout(initBattleState, 500);
     };
-    if (allCards.length === 0) finishLoading();
+
+    // セーフティタイムアウト: 5秒経過したら強制的に開始
+    setTimeout(() => {
+        if (!isFinished) {
+            console.warn("Battle loading timed out. Forcing start...");
+            finishLoading();
+        }
+    }, 5000);
+
+    const updateProgress = () => {
+        if (isFinished) return;
+        loaded++;
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) {
+            loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+        }
+        if (loaded >= allCards.length) finishLoading();
+    };
+
+    if (allCards.length === 0) {
+        finishLoading();
+        return;
+    }
+
     allCards.forEach(card => {
         const img = new Image();
-        img.onload = updateProgress; img.onerror = updateProgress;
+        img.onload = updateProgress;
+        img.onerror = updateProgress;
         img.src = card.imgUrl;
     });
 }
 
 function initBattleState() {
-    // 全てのBGMを停止
-    stopSound(SOUNDS.bgmTitle);
-    stopSound(SOUNDS.bgmBattle);
-    stopSound(SOUNDS.bgmLastBattle);
-    stopSound(SOUNDS.bgmStageAndroid);
+    try {
+        // 全てのBGMを停止
+        stopSound(SOUNDS.bgmTitle);
+        stopSound(SOUNDS.bgmBattle);
+        stopSound(SOUNDS.bgmLastBattle);
+        stopSound(SOUNDS.bgmStageAndroid);
 
-    // ステージ情報の取得
-    const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
-    const stageData = STAGES[stageId];
+        // ステージ情報の取得
+        const stageId = (gameMode === 'story') ? (enemyConfig.stageId || 'android') : (selectedStageId || 'android');
+        const stageData = STAGES[stageId];
 
-    // BGMの再生
-    const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-    playSound(SOUNDS[bgmKey]);
-    playerMaxHP = MAX_HP;
-    enemyMaxHP = (gameMode === 'event_satan') ? 100 : (enemyConfig.id === 'satan') ? 40 : MAX_HP;
-    if (gameMode === 'event_satan') aiLevel = 3; // 念のため再セット
-    playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
-    playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
-    playerBoard = [null, null, null]; enemyBoard = [null, null, null];
-    isProcessing = false; selectedCardIndex = null; isBattleEnded = false; updateCardDetail(null);
-    document.getElementById('player-icon').src = playerConfig.icon;
-    document.getElementById('enemy-icon').src = enemyConfig.icon;
-    document.getElementById('player-name').innerText = playerConfig.name;
-    document.getElementById('enemy-name').innerText = enemyConfig.name;
+        // BGMの再生
+        const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
+        playSound(SOUNDS[bgmKey]);
+        playerMaxHP = MAX_HP;
+        enemyMaxHP = (gameMode === 'event_satan') ? 100 : (enemyConfig.id === 'satan') ? 40 : MAX_HP;
+        if (gameMode === 'event_satan') aiLevel = 3; // 念のため再セット
+        playerHP = playerMaxHP; enemyHP = enemyMaxHP; playerSP = 0; enemySP = 0;
+        playerHand = []; enemyHand = []; playerDiscard = []; enemyDiscard = [];
+        playerBoard = [null, null, null]; enemyBoard = [null, null, null];
+        isProcessing = false; selectedCardIndex = null; isBattleEnded = false; updateCardDetail(null);
+        document.getElementById('player-icon').src = playerConfig.icon;
+        document.getElementById('enemy-icon').src = enemyConfig.icon;
+        document.getElementById('player-name').innerText = playerConfig.name;
+        document.getElementById('enemy-name').innerText = enemyConfig.name;
 
-    // 敵アイコンのフィルタ処理（シャドウ対応）
-    const enemyIconImg = document.getElementById('enemy-icon');
-    enemyIconImg.src = enemyConfig.icon;
-    if (enemyConfig.isShadow) {
-        enemyIconImg.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
-    } else {
-        enemyIconImg.style.filter = 'none';
+        // 敵アイコンのフィルタ処理（シャドウ対応）
+        const enemyIconImg = document.getElementById('enemy-icon');
+        if (enemyIconImg) {
+            enemyIconImg.src = enemyConfig.icon;
+            if (enemyConfig.isShadow) {
+                enemyIconImg.style.filter = 'grayscale(1) brightness(0.6) contrast(1.2)';
+            } else {
+                enemyIconImg.style.filter = 'none';
+            }
+        }
+
+        const bs = document.getElementById('screen-battle');
+        if (bs) {
+            bs.style.backgroundColor = '#0f172a';
+            bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
+        }
+
+        updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
+        updateDeckDisplay('blue'); updateDeckDisplay('red');
+        for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
+
+        // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
+        if (typeof incrementStat === 'function' && playerConfig && playerConfig.id) {
+            incrementStat('leaderUsage', playerConfig.id, 1);
+        }
+
+        // 先攻・後攻の決定演出へ
+        determineTurnOrder();
+    } catch (e) {
+        console.error("Critical error in initBattleState:", e);
+        showAlertModal("バトルの初期化中にエラーが発生しました。タイトルに戻ります。", () => {
+            location.reload();
+        });
     }
-
-    const bs = document.getElementById('screen-battle');
-    bs.style.backgroundColor = '#0f172a';
-    bs.style.backgroundImage = `url('assets/background_${stageId}.png')`;
-    updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
-    updateDeckDisplay('blue'); updateDeckDisplay('red');
-    for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
-    
-    // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
-    if (typeof incrementStat === 'function' && playerConfig && playerConfig.id) {
-        incrementStat('leaderUsage', playerConfig.id, 1);
-    }
-
-    // 先攻・後攻の決定演出へ
-    determineTurnOrder();
 }
 
 function updateHPBar() {
@@ -206,7 +252,7 @@ function closeSkillConfirm() { playSound(SOUNDS.seClick); document.getElementByI
 function executeSkillFromConfirm() {
     // 実行直前にもう一度チェック（モーダル表示中に状態が変わった可能性への備え）
     if (isProcessing || isBattleEnded || document.getElementById('turn-status').innerText !== "YOUR TURN") {
-        return; 
+        return;
     }
     closeSkillConfirm();
     activateLeaderSkill('blue');
@@ -549,8 +595,8 @@ async function discardCard(owner, card, lane) {
     for (const sk of skillsToResolve) {
         // 分裂(split)
         if (sk.id === 'split' && lane !== undefined) {
-             await triggerSplitSkill(owner, lane, card);
-             return true; // 分裂した場合は墓地に行かず場に残る
+            await triggerSplitSkill(owner, lane, card);
+            return true; // 分裂した場合は墓地に行かず場に残る
         }
         // 誘爆(explode)
         if (sk.id === 'explode' && lane !== undefined) {
@@ -799,9 +845,9 @@ async function playCard(o, hI, l) {
     if (b[l]) {
         if (!(await discardCard(o, b[l], l))) b[l] = null;
     }
-    b[l] = h.splice(hI, 1)[0]; 
+    b[l] = h.splice(hI, 1)[0];
     const c = b[l];
-    
+
     // 配置音とボイスの再生
     playSound(SOUNDS.sePlace);
     if (c.voiceCategory) {
@@ -848,36 +894,36 @@ async function triggerStartTurnSkills(owner) {
 async function determineTurnOrder() {
     isProcessing = true;
     turnCount = 0;
-    
+
     // UIの初期化
     const app = document.getElementById('app-container');
     const screen = document.createElement('div');
     screen.innerHTML = UI_COMPONENTS.turnOrderScreen;
     app.appendChild(screen.firstChild);
-    
+
     const toScreen = document.getElementById('screen-turn-order');
     const card1 = document.getElementById('to-card-1');
     const card2 = document.getElementById('to-card-2');
     const labelTop = document.getElementById('to-result-top');
     const labelBottom = document.getElementById('to-result-bottom');
-    
+
     toScreen.classList.add('active');
     playSound(SOUNDS.seSkill);
-    
+
     // シャッフル開始
     card1.classList.add('anim-shuffle-left');
     card2.classList.add('anim-shuffle-right');
-    
+
     await sleep(1500);
-    
+
     // シャッフル停止
     card1.classList.remove('anim-shuffle-left');
     card2.classList.remove('anim-shuffle-right');
-    
+
     // 結果の決定
     const playerFirst = Math.random() < 0.5;
     firstPlayer = playerFirst ? 'blue' : 'red';
-    
+
     // カードの移動
     if (playerFirst) {
         // プレイヤー先攻: first_playerが下(自分)、second_playerが上(敵)
@@ -892,17 +938,17 @@ async function determineTurnOrder() {
         labelBottom.innerText = 'SECOND';
         labelTop.innerText = 'FIRST';
     }
-    
+
     playSound(SOUNDS.seLegend);
     labelTop.style.opacity = '1';
     labelBottom.style.opacity = '1';
-    
+
     await sleep(2000);
-    
+
     // フェードアウトしてバトル開始
     toScreen.classList.add('to-fade-out');
     await sleep(800);
-    
+
     toScreen.remove(); // 演出用画面を削除
     switchScreen('screen-battle');
     isProcessing = false;
@@ -921,7 +967,7 @@ async function resolveOnPlaySkill(o, l, c) {
     // スキル定義順に1つずつ処理（quickはゲームバランス上の理由で最後に調整する場合があるが、基本は定義順）
     // ユーザー要求に従い、一旦純粋な定義順（上から順）にするが、quickの特殊性は維持が必要か検討
     skillsToResolve.sort((a, b) => {
-        if (a.id === 'quick') return 1; 
+        if (a.id === 'quick') return 1;
         if (b.id === 'quick') return -1;
         return 0; // 基本は順番維持
     });
@@ -953,7 +999,7 @@ async function executeSingleCombat(atk, l) {
     // Safari等での不発を防ぐため、一度ステータスを確定させてから次のフレームでクラスを追加
     aE.classList.remove(an); // 念のため削除
     void aE.offsetHeight;    // 強制リフロー (VOiDで副作用を明示)
-    
+
     await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             aE.classList.add(an);
@@ -961,7 +1007,7 @@ async function executeSingleCombat(atk, l) {
             resolve();
         });
     }));
-    
+
     await sleep(400); // アニメーション衝突タイミング(0.8sの50%)
 
     // ロジカルなダメージ処理の前に少し待機して衝撃を表現
@@ -1003,10 +1049,10 @@ async function executeSingleCombat(atk, l) {
             let ag = (l === 1) ? (hasSkill(aB[0], 'guardian') ? 0 : (hasSkill(aB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(aB[1], 'guardian') ? 1 : null) : (hasSkill(aB[1], 'guardian') ? 1 : null));
             if (ag !== null) aLane = ag;
         }
- 
+
         const realDef = dB[dLane], realAtk = aB[aLane];
         realDef.currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) realAtk.currentPower -= dAtk;
- 
+
         // 演出: ダメージ反映のためのピンポイント更新（renderBoardはアニメーションを壊すため避ける）
         updateCardPowerOnly(dLane, atk === 'blue' ? 'enemy' : 'player');
         if (!hasSkill(dB[l], 'defender')) {
@@ -1118,8 +1164,8 @@ function endBattle() {
                 fetch('api/update_points.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        uuid: uuid, 
+                    body: JSON.stringify({
+                        uuid: uuid,
                         points: newCurrentPoints,
                         total_points: newTotalPoints
                     })
@@ -1136,12 +1182,12 @@ function endBattle() {
                     fetch('api/update_points.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            uuid: enemyUuid, 
-                            points: 3, 
+                        body: JSON.stringify({
+                            uuid: enemyUuid,
+                            points: 3,
                             total_points: 3, // 総ポイントも加算
-                            increment: true, 
-                            defense_wins: 1 
+                            increment: true,
+                            defense_wins: 1
                         })
                     }).catch(err => console.error("Failed to update enemy points:", err));
                 }
@@ -1180,12 +1226,12 @@ function endBattle() {
         appState = 'post_dialogue';
         if (lastBattleResult === 'win') {
             dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }];
-            
+
             // 実績: ストーリークリア
             if (gameMode === 'story' && enemyConfig && typeof incrementStat === 'function') {
                 incrementStat('storyClears', enemyConfig.id);
             }
-            
+
             showCardReward(enemyConfig.id);
         } else {
             dialogueQueue = [{ speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }];
@@ -1201,12 +1247,12 @@ function returnToTitle() {
             fetch('api/update_points.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    uuid: enemyConfig.uuid, 
-                    points: 3, 
+                body: JSON.stringify({
+                    uuid: enemyConfig.uuid,
+                    points: 3,
                     total_points: 3, // 総ポイントも加算
-                    increment: true, 
-                    defense_wins: 1 
+                    increment: true,
+                    defense_wins: 1
                 })
             }).catch(err => console.error("Failed to update enemy points on retire:", err));
         }
@@ -1225,36 +1271,36 @@ function returnToTitle() {
 async function determineTurnOrder() {
     isProcessing = true;
     turnCount = 0;
-    
+
     // UIの初期化
     const app = document.getElementById('app-container');
     const screen = document.createElement('div');
     screen.innerHTML = UI_COMPONENTS.turnOrderScreen;
     app.appendChild(screen.firstChild);
-    
+
     const toScreen = document.getElementById('screen-turn-order');
     const card1 = document.getElementById('to-card-1');
     const card2 = document.getElementById('to-card-2');
     const labelTop = document.getElementById('to-result-top');
     const labelBottom = document.getElementById('to-result-bottom');
-    
+
     toScreen.classList.add('active');
     playSound(SOUNDS.seSkill);
-    
+
     // シャッフル開始
     card1.classList.add('anim-shuffle-left');
     card2.classList.add('anim-shuffle-right');
-    
+
     await sleep(1500);
-    
+
     // シャッフル停止
     card1.classList.remove('anim-shuffle-left');
     card2.classList.remove('anim-shuffle-right');
-    
+
     // 結果の決定
     const playerFirst = Math.random() < 0.5;
     firstPlayer = playerFirst ? 'blue' : 'red';
-    
+
     // カードの移動
     if (playerFirst) {
         // プレイヤー先攻: first_playerが下(自分)、second_playerが上(敵)
@@ -1269,17 +1315,17 @@ async function determineTurnOrder() {
         labelBottom.innerText = 'SECOND';
         labelTop.innerText = 'FIRST';
     }
-    
+
     playSound(SOUNDS.seLegend);
     labelTop.style.opacity = '1';
     labelBottom.style.opacity = '1';
-    
+
     await sleep(2000);
-    
+
     // フェードアウトしてバトル開始
     toScreen.classList.add('to-fade-out');
     await sleep(800);
-    
+
     toScreen.remove(); // 演出用画面を削除
     switchScreen('screen-battle');
     isProcessing = false;

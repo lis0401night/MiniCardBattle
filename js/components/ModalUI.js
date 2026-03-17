@@ -40,16 +40,31 @@ Object.assign(UI_COMPONENTS, {
     <div id="modal-rules" class="rules-modal-overlay" onclick="closeRulesModal()">
         <div class="skill-modal-box modal-pop-animation" style="width: 90%; max-width: 400px; padding: 25px;" onclick="event.stopPropagation()">
             <h2 style="color: #facc15; margin-bottom: 20px;">遊び方</h2>
-            <div class="rule-box" style="background: rgba(0,0,0,0.5); border: 1px solid #334155; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; text-align: left;">
-                <ul style="padding-left: 20px; color: #cbd5e1; font-size: 0.9rem; line-height: 1.6;">
-                    <li><b>【デッキ編成】</b>デッキには同じカードは4枚まで入れられます。</li>
-                    <li>毎ターン、手札から1枚を自分のレーンに<b>配置</b>します。（置き直しの場合、下のカードは破棄されます）</li>
-                    <li><b>自分のターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
-                    <li>正面に敵がいれば戦闘となり、お互いのパワーが引かれます。</li>
-                    <li>正面が空いていれば<b>相手リーダーに直接ダメージ！</b></li>
-                    <li><b>【リーダー能力】</b>毎ターン「SP」が溜まります。SPがMAXになると、カードの配置前に「リーダースキル」ボタンから必殺技を発動できます！</li>
-                    <li>先に相手リーダーのHPを0にすれば勝利です。</li>
-                </ul>
+            <div class="rule-box" style="max-height: 350px;">
+                <div class="rule-section">
+                    <div class="rule-category">【デッキ編成】</div>
+                    <ul>
+                        <li>デッキに同じカードは4枚まで入れられます。</li>
+                    </ul>
+                </div>
+                <div class="rule-section">
+                    <div class="rule-category">【バトル】</div>
+                    <ul>
+                        <li>毎ターン、手札から1枚を自分のレーンに召喚します。<span style="color:#94a3b8">（先攻1ターン目は中央のみ）</span></li>
+                        <li>置き直しの場合、下のカードは破棄されます。</li>
+                        <li><b>ターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
+                        <li>正面に敵がいれば戦闘となり、お互いにパワー分ダメージを与えます。</li>
+                        <li>正面が空いていれば敵リーダーに直接ダメージ！</li>
+                        <li>相手リーダーのHPを0にすれば勝利です。</li>
+                    </ul>
+                </div>
+                <div class="rule-section">
+                    <div class="rule-category">【リーダー能力】</div>
+                    <ul>
+                        <li>毎ターン「SP」が溜まります。<span style="color:#94a3b8">（先攻1ターン目は溜まりません）</span></li>
+                        <li>SPがMAXで「リーダースキル」を発動可能！</li>
+                    </ul>
+                </div>
             </div>
             <button class="btn" style="margin-top: 20px; width: 100%;" onclick="closeRulesModal()">閉じる</button>
         </div>

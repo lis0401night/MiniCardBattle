@@ -2603,6 +2603,50 @@ h2 {
     line-height: 1.2;
 }
 
+/* 遊び方画面のセクション分け */
+.rule-box {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.rule-section {
+    margin-bottom: 25px;
+}
+
+.rule-section:last-child {
+    margin-bottom: 0;
+}
+
+.rule-category {
+    color: #facc15;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    border-left: 4px solid #facc15;
+    padding-left: 12px;
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.15), transparent);
+    text-align: left;
+}
+
+.rule-box ul {
+    margin: 0;
+    padding-left: 20px;
+    text-align: left;
+}
+
+.rule-box li {
+    margin-bottom: 10px;
+    color: #cbd5e1;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
 /* 難易度選択画面のレイアウト調整 */
 .difficulty-button-row {
     position: relative;
