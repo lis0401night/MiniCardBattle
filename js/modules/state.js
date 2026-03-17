@@ -11,6 +11,7 @@ var playerDiscard, enemyDiscard;
 var playerBoard, enemyBoard;
 var appState = 'title', gameMode = 'story', aiLevel = 1, storyDifficulty = 1;
 var isProcessing = false, selectedCardIndex = null, isBattleEnded = false;
+var firstPlayer = 'blue', turnCount = 0; // 先攻・後攻管理用
 var aiDecision = null; // AIの決定（選択スキルの結果等を含む）を一時保持用
 var selectedBoardLaneIndex = null, selectedBoardSide = null; // 場のカード選択用
 var isDiscardingMode = false, discardMaxCount = 0, discardSelectedIndices = []; // 手札入替時のプロンプト用

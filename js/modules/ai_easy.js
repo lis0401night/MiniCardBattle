@@ -26,11 +26,16 @@ function getEasyDecision() {
             } else if (hasSkill(card, 'takeover')) {
                 occupiedLanes.forEach(l => possibleLanes.push(l));
             } else {
-                // 空きを優先するが、空きがなければ上書きも候補
-                if (emptyLanes.length > 0) {
-                    emptyLanes.forEach(l => possibleLanes.push(l));
+                // 1ターン目の制限 (先攻RED)
+                if (turnCount === 1 && firstPlayer === 'red') {
+                    possibleLanes.push(1);
                 } else {
-                    [0, 1, 2].forEach(l => possibleLanes.push(l));
+                    // 空きを優先するが、空きがなければ上書きも候補
+                    if (emptyLanes.length > 0) {
+                        emptyLanes.forEach(l => possibleLanes.push(l));
+                    } else {
+                        [0, 1, 2].forEach(l => possibleLanes.push(l));
+                    }
                 }
             }
         }

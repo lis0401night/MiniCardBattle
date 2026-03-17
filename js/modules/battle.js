@@ -64,7 +64,9 @@ function initBattleState() {
     updateHPBar(); updateSPOrbs('blue'); updateSPOrbs('red'); renderBoard();
     updateDeckDisplay('blue'); updateDeckDisplay('red');
     for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
-    switchScreen('screen-battle'); startTurn('blue');
+    
+    // 先攻・後攻の決定演出へ
+    determineTurnOrder();
 }
 
 function updateHPBar() {
@@ -722,12 +724,21 @@ async function startTurn(owner) {
     if (isBattleEnded) return; isProcessing = true;
     const s = document.getElementById('turn-status'); s.innerText = owner === 'blue' ? "YOUR TURN" : "ENEMY TURN"; s.style.color = owner === 'blue' ? "var(--color-blue)" : "var(--color-red)";
     const c = owner === 'blue' ? playerConfig : enemyConfig;
-    if (c.leaderSkill.cost) { if (owner === 'blue') playerSP = Math.min(c.leaderSkill.cost, playerSP + 1); else enemySP = Math.min(c.leaderSkill.cost, enemySP + 1); }
-    updateSPOrbs(owner);
+    // ターン数のカウント
+    turnCount++;
 
     // ターン開始時スキルの発動
     await triggerStartTurnSkills(owner);
     if (isBattleEnded) return;
+
+    // SPの増加（先攻の1ターン目は増えない）
+    if (turnCount > 1) {
+        if (c.leaderSkill.cost) {
+            if (owner === 'blue') playerSP = Math.min(c.leaderSkill.cost, playerSP + 1);
+            else enemySP = Math.min(c.leaderSkill.cost, enemySP + 1);
+        }
+        updateSPOrbs(owner);
+    }
 
     if ((owner === 'blue' ? playerBoard : enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
 
@@ -809,23 +820,88 @@ function hasActiveSkill(c) {
 
 async function triggerStartTurnSkills(owner) {
     const board = owner === 'blue' ? playerBoard : enemyBoard;
-    const side = owner === 'blue' ? 'player' : 'enemy';
     let triggered = false;
 
     for (let i = 0; i < 3; i++) {
         const tr = await triggerStartTurnPassive(owner, i);
         if (tr) {
             triggered = true;
-            // renderBoard(); // ループ内での全体再描画を避ける
             if (checkWinCondition()) return;
             updateHPBar();
-            await sleep(300); // 契約演出（ダメージポップアップ）をしっかり見せる
+            await sleep(300);
         }
     }
     if (triggered) {
         renderBoard();
-        await sleep(200); // ターン開始スキルの演出終了後、DOMが安定するまで待機
+        await sleep(200);
     }
+}
+
+/**
+ * 先攻・後攻を決定する演出
+ */
+async function determineTurnOrder() {
+    isProcessing = true;
+    turnCount = 0;
+    
+    // UIの初期化
+    const app = document.getElementById('app-container');
+    const screen = document.createElement('div');
+    screen.innerHTML = UI_COMPONENTS.turnOrderScreen;
+    app.appendChild(screen.firstChild);
+    
+    const toScreen = document.getElementById('screen-turn-order');
+    const card1 = document.getElementById('to-card-1');
+    const card2 = document.getElementById('to-card-2');
+    const labelTop = document.getElementById('to-result-top');
+    const labelBottom = document.getElementById('to-result-bottom');
+    
+    toScreen.classList.add('active');
+    playSound(SOUNDS.seSkill);
+    
+    // シャッフル開始
+    card1.classList.add('anim-shuffle-left');
+    card2.classList.add('anim-shuffle-right');
+    
+    await sleep(1500);
+    
+    // シャッフル停止
+    card1.classList.remove('anim-shuffle-left');
+    card2.classList.remove('anim-shuffle-right');
+    
+    // 結果の決定
+    const playerFirst = Math.random() < 0.5;
+    firstPlayer = playerFirst ? 'blue' : 'red';
+    
+    // カードの移動
+    if (playerFirst) {
+        // プレイヤー先攻: first_playerが下(自分)、second_playerが上(敵)
+        card1.style.transform = 'translateY(120px) scale(1.1)';
+        card2.style.transform = 'translateY(-220px) scale(0.9)';
+        labelBottom.innerText = 'FIRST';
+        labelTop.innerText = 'SECOND';
+    } else {
+        // 敵先攻: second_playerが下(自分)、first_playerが上(敵)
+        card1.style.transform = 'translateY(-220px) scale(0.9)';
+        card2.style.transform = 'translateY(120px) scale(1.1)';
+        labelBottom.innerText = 'SECOND';
+        labelTop.innerText = 'FIRST';
+    }
+    
+    playSound(SOUNDS.seLegend);
+    labelTop.style.opacity = '1';
+    labelBottom.style.opacity = '1';
+    
+    await sleep(2000);
+    
+    // フェードアウトしてバトル開始
+    toScreen.classList.add('to-fade-out');
+    await sleep(800);
+    
+    toScreen.remove(); // 演出用画面を削除
+    switchScreen('screen-battle');
+    isProcessing = false;
+    startTurn(firstPlayer);
 }
 
 async function resolveOnPlaySkill(o, l, c) {
@@ -1126,4 +1202,71 @@ function returnToTitle() {
         isProcessing = false;
         switchScreen('screen-mode-select');
     });
+}
+
+/**
+ * 先攻・後攻を決定する演出
+ */
+async function determineTurnOrder() {
+    isProcessing = true;
+    turnCount = 0;
+    
+    // UIの初期化
+    const app = document.getElementById('app-container');
+    const screen = document.createElement('div');
+    screen.innerHTML = UI_COMPONENTS.turnOrderScreen;
+    app.appendChild(screen.firstChild);
+    
+    const toScreen = document.getElementById('screen-turn-order');
+    const card1 = document.getElementById('to-card-1');
+    const card2 = document.getElementById('to-card-2');
+    const labelTop = document.getElementById('to-result-top');
+    const labelBottom = document.getElementById('to-result-bottom');
+    
+    toScreen.classList.add('active');
+    playSound(SOUNDS.seSkill);
+    
+    // シャッフル開始
+    card1.classList.add('anim-shuffle-left');
+    card2.classList.add('anim-shuffle-right');
+    
+    await sleep(1500);
+    
+    // シャッフル停止
+    card1.classList.remove('anim-shuffle-left');
+    card2.classList.remove('anim-shuffle-right');
+    
+    // 結果の決定
+    const playerFirst = Math.random() < 0.5;
+    firstPlayer = playerFirst ? 'blue' : 'red';
+    
+    // カードの移動
+    if (playerFirst) {
+        // プレイヤー先攻: first_playerが下(自分)、second_playerが上(敵)
+        card1.style.transform = 'translateY(120px) scale(1.1)';
+        card2.style.transform = 'translateY(-220px) scale(0.9)';
+        labelBottom.innerText = 'FIRST';
+        labelTop.innerText = 'SECOND';
+    } else {
+        // 敵先攻: second_playerが下(自分)、first_playerが上(敵)
+        card1.style.transform = 'translateY(-220px) scale(0.9)';
+        card2.style.transform = 'translateY(120px) scale(1.1)';
+        labelBottom.innerText = 'SECOND';
+        labelTop.innerText = 'FIRST';
+    }
+    
+    playSound(SOUNDS.seLegend);
+    labelTop.style.opacity = '1';
+    labelBottom.style.opacity = '1';
+    
+    await sleep(2000);
+    
+    // フェードアウトしてバトル開始
+    toScreen.classList.add('to-fade-out');
+    await sleep(800);
+    
+    toScreen.remove(); // 演出用画面を削除
+    switchScreen('screen-battle');
+    isProcessing = false;
+    startTurn(firstPlayer);
 }

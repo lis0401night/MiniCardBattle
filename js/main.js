@@ -30,6 +30,20 @@ document.querySelectorAll('#player-lanes .cell').forEach(cell => {
         const l = parseInt(cell.getAttribute('data-lane'));
         const newCard = playerHand[selectedCardIndex];
 
+        // 1ターン目の制限: 先攻プレイヤーは中央のみ
+        if (turnCount === 1 && firstPlayer === 'blue') {
+            if (l !== 1) {
+                playSound(SOUNDS.seDamage);
+                showConfirmModal(
+                    '1ターン目は中央にしか配置できません',
+                    () => { },
+                    null,
+                    true // 警告モード
+                );
+                return;
+            }
+        }
+
         // 伝説カードの配置制限
         if (hasSkill(newCard, 'legendary') && l !== 1) {
             playSound(SOUNDS.seDamage);

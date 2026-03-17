@@ -55,6 +55,9 @@ function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
                         if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
 
+                        // 1ターン目の制限 (先攻RED)
+                        if (turnCount === 1 && firstPlayer === 'red' && l !== 1) continue;
+
                         // 「スキル先出し」かつ、その場所にトークンが置かれる場合は上書き不可
                         if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
 

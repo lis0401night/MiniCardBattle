@@ -183,5 +183,17 @@ Object.assign(UI_COMPONENTS, {
         <p id="result-desc">すべてのライバルを撃破しました！</p>
         <button class="btn" onclick="location.reload()">タイトルへ戻る</button>
     </div>
+    `,
+
+    turnOrderScreen: `
+    <!-- 先攻・後攻決定画面 -->
+    <div id="screen-turn-order" class="screen" style="background: rgba(0,0,0,0.9); z-index: 1000; overflow: hidden;">
+        <div id="turn-order-container" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+            <div id="to-card-1" class="turn-order-card"></div>
+            <div id="to-card-2" class="turn-order-card"></div>
+            <div id="to-result-top" class="to-result-label top"></div>
+            <div id="to-result-bottom" class="to-result-label bottom"></div>
+        </div>
+    </div>
     `
 });

@@ -170,6 +170,13 @@ function highlightLanes() {
             c.classList.remove('highlight');
         } else {
             const card = playerHand[selectedCardIndex];
+            // 1ターン目の制限 (先攻の場合)
+            if (turnCount === 1 && firstPlayer === 'blue') {
+                if (i === 1) c.classList.add('highlight');
+                else c.classList.remove('highlight');
+                return;
+            }
+            // 伝説の制限
             if (hasSkill(card, 'legendary')) {
                 if (i === 1) c.classList.add('highlight');
                 else c.classList.remove('highlight');

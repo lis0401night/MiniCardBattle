@@ -2663,4 +2663,79 @@ h2 {
     z-index: 10;
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     border: 1px solid rgba(255,255,255,0.3);
-}
+}
+
+/* ===== 先攻・後攻決定演出 ===== */
+#screen-turn-order {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 1000;
+}
+
+#screen-turn-order.active {
+    display: flex;
+}
+
+.turn-order-card {
+    position: absolute;
+    width: 140px;
+    height: 200px;
+    border-radius: 12px;
+    border: 3px solid #facc15;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(250, 204, 21, 0.4);
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1001;
+}
+
+#to-card-1 { background-image: url('../assets/first_player.jpg'); }
+#to-card-2 { background-image: url('../assets/second_player.jpg'); }
+
+.to-result-label {
+    position: absolute;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 20px #facc15, 2px 2px 0 #000;
+    opacity: 0;
+    transition: opacity 0.4s;
+    z-index: 1002;
+    pointer-events: none;
+    font-family: 'Outfit', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.to-result-label.top { top: 15%; }
+.to-result-label.bottom { bottom: 15%; }
+
+/* シャッフルアニメーション */
+@keyframes toShuffleLeft {
+    0% { transform: translateX(-80px) rotate(-5deg); z-index: 1005; }
+    50% { transform: translateX(80px) rotate(5deg); z-index: 1000; }
+    100% { transform: translateX(-80px) rotate(-5deg); z-index: 1005; }
+}
+
+@keyframes toShuffleRight {
+    0% { transform: translateX(80px) rotate(5deg); z-index: 1000; }
+    50% { transform: translateX(-80px) rotate(-5deg); z-index: 1005; }
+    100% { transform: translateX(80px) rotate(5deg); z-index: 1000; }
+}
+
+.anim-shuffle-left { animation: toShuffleLeft 0.35s ease-in-out infinite; }
+.anim-shuffle-right { animation: toShuffleRight 0.35s ease-in-out infinite; }
+
+.to-fade-out {
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+
