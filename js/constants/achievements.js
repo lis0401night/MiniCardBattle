@@ -11,15 +11,31 @@ const ACHIEVEMENT_MASTER = [
         description: '異なるカードを10種類集める',
         type: 'collection',
         targetValue: 10,
-        reward: null
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    {
+        id: 'collect_20',
+        title: '素人収集家',
+        description: '異なるカードを20種類集める',
+        type: 'collection',
+        targetValue: 20,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
     },
     {
         id: 'collect_30',
-        title: '熟練の収集家',
+        title: '熟練収集家',
         description: '異なるカードを30種類集める',
         type: 'collection',
         targetValue: 30,
-        reward: null
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    {
+        id: 'collect_40',
+        title: '達人収集家',
+        description: '異なるカードを40種類集める',
+        type: 'collection',
+        targetValue: 40,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
     },
     {
         id: 'collect_all',
@@ -111,7 +127,7 @@ let achievementData = {
     stats: {
         leaderUsage: {}, // leaderId: count
         storyClears: {}, // leaderId: count
-        freeBattleWins: 0 
+        freeBattleWins: 0
     }
 };
 
@@ -160,11 +176,11 @@ function incrementStat(type, key = null, amount = 1) {
 // 所持カード数の実績チェック
 function checkCollectionAchievements() {
     if (!window.playerInventory) return;
-    
+
     // トークン以外のマスタカード枚数を計算
     const validMasterCards = CARD_MASTER.filter(c => !c.isToken && !c.id.includes('token'));
     const totalValidMasterCount = validMasterCards.length;
-    
+
     // 所持している有効なカードの種類数
     let ownedCount = 0;
     validMasterCards.forEach(c => {
@@ -198,12 +214,12 @@ function updateAchievement(id, currentValue, targetValue) {
     if (!achievementData.achievements[id]) {
         achievementData.achievements[id] = { progress: 0, isUnlocked: false, isRewarded: false };
     }
-    
+
     const ach = achievementData.achievements[id];
     if (ach.isUnlocked) return; // 既に達成済みなら何もしない
 
     ach.progress = Math.min(currentValue, targetValue);
-    
+
     if (ach.progress >= targetValue) {
         ach.isUnlocked = true;
         ach.progress = targetValue;
@@ -235,6 +251,13 @@ function claimAchievementReward(id) {
             saveDeck(); // ownedPlaymats を保存するために呼ぶ
             return { success: true, rewardType: 'playmat', rewardValue: master.reward.value, rewardName: master.reward.name };
         }
+    } else if (master.reward.type === 'card') {
+        const cardId = master.reward.value;
+        playerInventory[cardId] = (playerInventory[cardId] || 0) + 1;
+        ach.isRewarded = true;
+        saveAchievements();
+        saveDeck();
+        return { success: true, rewardType: 'card', rewardValue: cardId, rewardName: master.reward.name };
     }
 
     ach.isRewarded = true;

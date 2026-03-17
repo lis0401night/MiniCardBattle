@@ -629,6 +629,26 @@ async function discardCard(owner, card, lane) {
     if (Array.isArray(card.skills)) {
         card.skills = card.skills.filter(sk => sk.id !== 'invincible');
     }
+    
+    // 変相の復帰処理
+    if (card.originalCardId) {
+        const originalMaster = CARD_MASTER.find(m => m.id === card.originalCardId);
+        if (originalMaster) {
+            card.name = originalMaster.name;
+            card.power = originalMaster.power || 0;
+            card.basePower = originalMaster.power || 0;
+            card.currentPower = originalMaster.power || 0;
+            card.skill = originalMaster.skill || 'none';
+            card.skillValue = originalMaster.skillValue || 0;
+            card.skills = originalMaster.skills ? JSON.parse(JSON.stringify(originalMaster.skills)) : [];
+            card.choices = originalMaster.choices ? JSON.parse(JSON.stringify(originalMaster.choices)) : [];
+            card.rarity = originalMaster.rarity;
+            card.imgUrl = originalMaster.imgUrl;
+            card.flavor = originalMaster.flavor;
+            card.voiceCategory = originalMaster.voiceCategory;
+            delete card.originalCardId;
+        }
+    }
 
     if ('basePower' in card) { card.power = card.basePower; }
     card.currentPower = card.power;

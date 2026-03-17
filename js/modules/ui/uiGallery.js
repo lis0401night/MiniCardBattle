@@ -159,10 +159,55 @@ function renderAchievementsList() {
 function handleClaimAchievement(id) {
     if (typeof isTransitioning !== 'undefined' && isTransitioning) return;
     const result = claimAchievementReward(id);
-    if (result && result.rewardType === 'playmat') {
-        showPlaymatAcquisitionModal(result.rewardName, result.rewardValue);
+    if (result && result.success) {
+        if (result.rewardType === 'playmat') {
+            showPlaymatAcquisitionModal(result.rewardName, result.rewardValue);
+        } else if (result.rewardType === 'card') {
+            showCardAcquisitionModal(result.rewardValue);
+        }
     }
     renderAchievementsList();
+}
+
+function showCardAcquisitionModal(cardId) {
+    const card = CARD_MASTER.find(c => c.id === cardId);
+    if (!card) return;
+
+    playSound(SOUNDS.seLegend);
+
+    // モーダルの作成
+    const modal = document.createElement('div');
+    modal.id = 'card-acquisition-modal';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'z-index: 2200; display: flex; animation: fadeIn 0.4s;';
+    
+    modal.innerHTML = `
+        <div class="preview-content acquisition-glow" onclick="event.stopPropagation()">
+            <div style="width: 100%; text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #facc15; font-size: 1.8rem; text-shadow: 0 0 15px rgba(242, 201, 76, 0.8);">CARD UNLOCKED!</h2>
+                <p style="color: #fff; font-weight: bold;">新カードを獲得しました！</p>
+            </div>
+            <div id="acquisition-card-container"></div>
+            <div class="preview-details">
+                <h2 id="acquisition-card-name" style="font-size: 1.5rem;">${card.name}</h2>
+                <div class="preview-scroll-area">
+                    <div id="acquisition-skills-list" class="preview-skills-list"></div>
+                    <p id="acquisition-card-flavor" class="preview-flavor-text">${card.flavor || ''}</p>
+                </div>
+                <button class="btn" style="margin-top: 15px; width: 100%; background: linear-gradient(45deg, #facc15, #eab308); color: #000; font-weight: bold;" onclick="closeCardAcquisition()">OK</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    populateCardPreview('acquisition', card);
+
+    // OKボタンのイベント
+    window.closeCardAcquisition = () => {
+        playSound(SOUNDS.seClick);
+        document.body.removeChild(modal);
+        delete window.closeCardAcquisition;
+    };
 }
 
 function showPlaymatAcquisitionModal(name, id) {
@@ -184,10 +229,13 @@ function showPlaymatAcquisitionModal(name, id) {
         </div>
     `;
     
-    modal.querySelector('button').onclick = () => {
-        playSound(SOUNDS.seClick);
-        document.body.removeChild(modal);
-    };
+    // 誤タップ防止のため、少し遅れてからクリック可能にする
+    setTimeout(() => {
+        modal.querySelector('button').onclick = () => {
+            playSound(SOUNDS.seClick);
+            document.body.removeChild(modal);
+        };
+    }, 300);
     
     playSound(SOUNDS.seSkill);
     document.body.appendChild(modal);

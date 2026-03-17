@@ -23,7 +23,57 @@ async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         playerDiscard, enemyDiscard
     };
 
-    // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice等)
+    // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
+    if (skillId === 'metamorph') {
+        // 全マスタカード（トークン含む）からランダムに1枚選択
+        const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
+        
+        // 演出
+        playSound(SOUNDS.seSkill);
+        if (cEl) {
+            createDamagePopup(cEl, '変相', '#facc15');
+            cEl.classList.add('anim-shake');
+            await sleep(300);
+        }
+
+        // 元のIDを保持（破壊時に戻る用）
+        if (!c.originalCardId) c.originalCardId = 'baldanders';
+
+        // 性能の上書き
+        c.name = randomMaster.name;
+        c.power = randomMaster.power;
+        c.currentPower = randomMaster.power;
+        c.basePower = randomMaster.power;
+        c.skill = randomMaster.skill || 'none';
+        c.skillValue = randomMaster.skillValue || 0;
+        c.skills = randomMaster.skills ? JSON.parse(JSON.stringify(randomMaster.skills)) : [];
+        c.choices = randomMaster.choices ? JSON.parse(JSON.stringify(randomMaster.choices)) : [];
+        c.rarity = randomMaster.rarity;
+        
+        // イラストの決定（トークン等の特殊なマッピングを考慮）
+        let imgUrl = randomMaster.imgUrl;
+        if (!imgUrl) {
+            if (randomMaster.id === 'token_soldier') imgUrl = 'assets/card_soldier.jpg';
+            else if (randomMaster.id === 'token_ignis') imgUrl = 'assets/char_dragon.png';
+            else if (randomMaster.id === 'token_satan') imgUrl = 'assets/char_satan.png';
+            else imgUrl = `assets/card_${randomMaster.id}.jpg`;
+        }
+        c.imgUrl = imgUrl;
+
+        c.flavor = randomMaster.flavor;
+        c.voiceCategory = randomMaster.voiceCategory;
+
+        // 見た目の更新
+        renderBoard();
+        await sleep(500);
+
+        // 変身後のカードが召喚時スキルを持っていれば発動
+        if (hasActiveSkill(c)) {
+            await resolveOnPlaySkill(o, l, c);
+        }
+        return;
+    }
+
     if (skillId === 'choice') {
         const choice = await waitSkillChoice(c.choices, o, c);
         if (choice) {
