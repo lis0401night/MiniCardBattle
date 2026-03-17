@@ -4,6 +4,10 @@
 
 function showGallery() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmGallery.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmGallery);
+    }
     switchScreen('screen-gallery-menu');
 }
 

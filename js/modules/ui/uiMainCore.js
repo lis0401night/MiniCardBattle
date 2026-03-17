@@ -18,7 +18,10 @@ console.log("!!! uiMainCore.js Version 1.2 Loaded !!!");
 
 function goToModeSelect() {
     playSound(SOUNDS.seClick);
-    playSound(SOUNDS.bgmTitle);
+    if (SOUNDS.bgmTitle.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmTitle);
+    }
     switchScreen('screen-mode-select');
 }
 
@@ -356,6 +359,10 @@ function closeCharDetail() {
 
 function showEventMenu() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmTitle.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmTitle);
+    }
     switchScreen('screen-event-menu');
 }
 
@@ -377,6 +384,10 @@ function handleSatanBattle() {
 
 async function showDefenseMenu() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmDefense.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmDefense);
+    }
     const hasRegistered = localStorage.getItem('mini_card_battle_deck_defense') !== null;
     const startBtn = document.getElementById('btn-start-attack');
     const disabledBtn = document.getElementById('btn-start-attack-disabled');

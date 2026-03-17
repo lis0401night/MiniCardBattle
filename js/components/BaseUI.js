@@ -105,7 +105,7 @@ const UI_COMPONENTS = {
             </div>
         </div>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
-            <button class="btn" style="background: #475569;" onpointerdown="switchScreen('screen-mode-select')">戻る</button>
+            <button class="btn" style="background: #475569;" onpointerdown="goToModeSelect()">戻る</button>
         </div>
     </div>
     `,
@@ -349,7 +349,7 @@ const UI_COMPONENTS = {
             <div id="btn-start-attack-disabled" class="btn" style="background: #475569; opacity: 0.5; cursor: not-allowed; display:block;">攻撃開始（未登録）</div>
             <button class="btn" style="background: linear-gradient(45deg, #f97316, #ea580c); margin-top: 10px;" onpointerdown="showExchangeScreen()">交換所</button>
         </div>
-        <button class="btn" style="margin-top: 40px; background: #475569;" onpointerdown="playSound(SOUNDS.seClick); switchScreen('screen-event-menu')">戻る</button>
+        <button class="btn" style="margin-top: 40px; background: #475569;" onpointerdown="showEventMenu()">戻る</button>
     </div>
     `,
 
