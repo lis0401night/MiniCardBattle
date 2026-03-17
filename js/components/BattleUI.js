@@ -186,7 +186,6 @@ Object.assign(UI_COMPONENTS, {
     `,
 
     turnOrderScreen: `
-    <!-- 先攻・後攻決定画面 -->
     <div id="screen-turn-order" class="screen" style="background: rgba(0,0,0,0.9); z-index: 1000; overflow: hidden;">
         <div id="turn-order-container" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
             <div id="to-card-1" class="turn-order-card"></div>
