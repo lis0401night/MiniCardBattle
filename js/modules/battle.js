@@ -65,6 +65,11 @@ function initBattleState() {
     updateDeckDisplay('blue'); updateDeckDisplay('red');
     for (let i = 0; i < 4; i++) { drawCard('blue'); drawCard('red'); }
     
+    // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
+    if (typeof incrementStat === 'function' && playerConfig && playerConfig.id) {
+        incrementStat('leaderUsage', playerConfig.id, 1);
+    }
+
     // 先攻・後攻の決定演出へ
     determineTurnOrder();
 }
@@ -1157,6 +1162,10 @@ function endBattle() {
                     { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') },
                     { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }
                 ];
+                // 実績: フリーバトル勝利
+                if (typeof incrementStat === 'function') {
+                    incrementStat('freeBattleWins');
+                }
                 showCardReward(enemyConfig.id);
             } else {
                 dialogueQueue = [
@@ -1171,6 +1180,12 @@ function endBattle() {
         appState = 'post_dialogue';
         if (lastBattleResult === 'win') {
             dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }];
+            
+            // 実績: ストーリークリア
+            if (gameMode === 'story' && enemyConfig && typeof incrementStat === 'function') {
+                incrementStat('storyClears', enemyConfig.id);
+            }
+            
             showCardReward(enemyConfig.id);
         } else {
             dialogueQueue = [{ speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'win') }];

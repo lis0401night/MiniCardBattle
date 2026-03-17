@@ -99,6 +99,10 @@ const UI_COMPONENTS = {
                 <div class="menu-img-bg" style="background-image: url('${UI_IMAGES.GALLERY_CARD_LIST}');"></div>
                 <div class="menu-btn-label">カード一覧</div>
             </div>
+            <div class="menu-img-btn" style="grid-column: 1 / -1; max-width: 50%; margin: 0 auto; margin-top: 15px;" onpointerdown="showAchievements()">
+                <div class="menu-img-bg" style="background-color: #3b82f6;"></div>
+                <div class="menu-btn-label">実績</div>
+            </div>
         </div>
         <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px; width: 100%; display: flex; justify-content: center;">
             <button class="btn" style="background: #475569;" onpointerdown="switchScreen('screen-mode-select')">戻る</button>
@@ -114,6 +118,29 @@ const UI_COMPONENTS = {
         
         <div class="card-list-container">
             <div id="gallery-card-grid" class="card-list-grid-3col"></div>
+        </div>
+
+        <button class="btn" style="margin-top: 15px; background: #475569;" onpointerdown="switchScreen('screen-gallery-menu')">戻る</button>
+    </div>
+    `,
+
+    achievementsScreen: `
+    <!-- 実績画面 -->
+    <div id="screen-achievements" class="screen">
+        <h2 style="color: #facc15; margin-bottom: 5px; font-size: 1.2rem;">実績</h2>
+        <div class="accordion-container" style="width: 100%; max-width: 400px; margin-bottom: 15px;">
+            <div class="accordion-header" onclick="toggleAchievementSection('stats')" style="background: #334155; padding: 10px; border-radius: 8px; cursor: pointer; color: #fff; font-weight: bold;">
+                ▼ プレイ統計（リーダー使用率など）
+            </div>
+            <div id="achievements-stats-content" class="accordion-content" style="display: block; padding: 10px; background: #1e293b; border-radius: 0 0 8px 8px;">
+                <!-- グラフ等がここに生成されます -->
+            </div>
+        </div>
+        
+        <div class="card-list-container" style="flex: 1; min-height: 0;">
+            <div id="achievements-list-container" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <!-- 実績リストがここに生成されます -->
+            </div>
         </div>
 
         <button class="btn" style="margin-top: 15px; background: #475569;" onpointerdown="switchScreen('screen-gallery-menu')">戻る</button>

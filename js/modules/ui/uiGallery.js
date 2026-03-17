@@ -59,6 +59,131 @@ function renderCardList() {
     countEl.innerText = `カード枚数: ${ownedKindCount} / ${masterCards.length}`;
 }
 
+// --- 実績UI ---
+
+function showAchievements() {
+    if (typeof isTransitioning !== 'undefined' && isTransitioning) return;
+    playSound(SOUNDS.seClick);
+    
+    // 最新の所持カード情報を反映
+    if (typeof checkCollectionAchievements === 'function') {
+        checkCollectionAchievements();
+        saveAchievements();
+    }
+    
+    renderAchievementsList();
+    renderAchievementsStats();
+    switchScreen('screen-achievements');
+}
+
+function toggleAchievementSection(sectionId) {
+    if (typeof isTransitioning !== 'undefined' && isTransitioning) return;
+    playSound(SOUNDS.seClick);
+    const content = document.getElementById(`achievements-${sectionId}-content`);
+    // 表示状態のトグル
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+    } else {
+        content.style.display = 'none';
+    }
+}
+
+function renderAchievementsList() {
+    const container = document.getElementById('achievements-list-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    ACHIEVEMENT_MASTER.forEach(ach => {
+        const savedData = achievementData.achievements[ach.id] || { progress: 0, isUnlocked: false };
+        const progress = savedData.progress;
+        const target = ach.targetValue === -1 ? 
+            CARD_MASTER.filter(c => !c.isToken && !c.id.includes('token')).length : 
+            ach.targetValue;
+            
+        // ストーリー系はターゲット値がキャラID、プログレスがクリア回数（基本1で最大1にする）
+        const isStory = ach.type === 'story_clear';
+        const displayProgress = isStory ? (progress > 0 ? 1 : 0) : progress;
+        const displayTarget = isStory ? 1 : target;
+        
+        const isUnlocked = savedData.isUnlocked;
+        const percentage = Math.min(100, Math.floor((displayProgress / displayTarget) * 100));
+        
+        const bgColor = isUnlocked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(0, 0, 0, 0.5)';
+        const borderColor = isUnlocked ? '#10b981' : '#475569';
+        const titleColor = isUnlocked ? '#34d399' : '#f8fafc';
+        
+        let rewardHtml = '';
+        if (ach.reward) {
+            // 将来的な報酬表示
+            const rewardStatus = savedData.isRewarded ? '<span style="color:#94a3b8">(取得済)</span>' : `<button class="btn" style="padding:2px 8px; font-size:0.7rem; min-height:20px; margin:0;" onclick="if(typeof isTransitioning === 'undefined' || !isTransitioning){claimAchievementReward('${ach.id}'); renderAchievementsList();}">受け取る</button>`;
+            rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; color: #facc15;">報酬: ${ach.reward.type} ${rewardStatus}</div>`;
+        } else if (isUnlocked) {
+            rewardHtml = `<div style="font-size: 0.8rem; margin-top: 5px; font-weight:bold; color: #facc15;">✨ 達成！ ✨</div>`;
+        }
+
+        const el = document.createElement('div');
+        el.style.cssText = `background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; padding: 10px; text-align: left; width: 100%; box-sizing: border-box;`;
+        el.innerHTML = `
+            <div style="font-weight: bold; color: ${titleColor}; margin-bottom: 5px; font-size: 1rem;">${ach.title}</div>
+            <div style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 8px;">${ach.description}</div>
+            <div style="width: 100%; background: #0f172a; border-radius: 4px; height: 12px; margin-bottom: 4px; overflow: hidden; border: 1px solid #334155;">
+                <div style="width: ${percentage}%; height: 100%; background: ${isUnlocked ? '#10b981' : '#3b82f6'}; transition: width 0.3s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; color: #94a3b8;">${displayProgress} / ${displayTarget}</span>
+                ${rewardHtml}
+            </div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function renderAchievementsStats() {
+    const container = document.getElementById('achievements-stats-content');
+    if (!container) return;
+    
+    const stats = achievementData.stats;
+    const usageObj = stats.leaderUsage || {};
+    
+    // 合計使用回数を計算
+    const totalUsage = Object.values(usageObj).reduce((sum, count) => sum + count, 0);
+    
+    // キャラクターを使用回数の降順でソート
+    const sortedChars = Object.values(CHARACTERS)
+        .filter(c => c.id !== 'satan') // サタンは除外
+        .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0));
+
+    let html = `<div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 5px;">
+        <div>フリーバトル勝利数: <span style="color:#facc15; font-weight:bold;">${stats.freeBattleWins || 0}</span> 回</div>
+    </div>
+    <div style="font-weight: bold; color: #f8fafc; margin-bottom: 10px; font-size: 0.95rem;">各リーダー利用率 (合計: ${totalUsage}回)</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">`;
+
+    sortedChars.forEach(char => {
+        const count = usageObj[char.id] || 0;
+        const percentage = totalUsage > 0 ? Math.floor((count / totalUsage) * 100) : 0;
+        
+        html += `
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <img src="${char.icon}" style="width: 32px; height: 32px; border-radius: 4px; border: 1px solid ${char.color};">
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px;">
+                        <span style="color: ${char.color};">${char.name}</span>
+                        <span style="color: #cbd5e1;">${count} 回 (${percentage}%)</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; border: 1px solid #334155;">
+                        <div style="width: ${percentage}%; height: 100%; background: ${char.color};"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
 function showRulesModal() {
     playSound(SOUNDS.seClick);
     const modal = document.getElementById('modal-rules');

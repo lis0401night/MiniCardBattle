@@ -55,6 +55,7 @@ function resetGameData() {
                     localStorage.removeItem(key);
                 }
             });
+            // 新規作成された実績データも初期化対象に含まれる
             playSound(SOUNDS.seDestroy);
             showAlertModal("データをリセットしました。タイトルに戻ります。", () => {
                 location.reload();

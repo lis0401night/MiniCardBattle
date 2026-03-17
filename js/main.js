@@ -20,6 +20,9 @@ if (appContainer) {
 if (typeof loadDeck === 'function') {
     loadDeck();
 }
+if (typeof loadAchievements === 'function') {
+    loadAchievements();
+}
 
 // 2. 盤面のセルクリックイベントのバインド
 document.querySelectorAll('#player-lanes .cell').forEach(cell => {
