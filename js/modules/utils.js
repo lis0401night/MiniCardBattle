@@ -137,7 +137,7 @@ function getSkillValue(c, skillId) {
     return 0;
 }
 
-const VALID_PREMIUM_GIFS = ['assassin', 'cyberdragon', 'dragon', 'empress', 'oldgod', 'wolf'];
+const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'dinosaur', 'diviner', 'dragon', 'empress', 'golem', 'oldgod', 'sniper', 'wolf'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）
 function getCardImgUrl(card) {

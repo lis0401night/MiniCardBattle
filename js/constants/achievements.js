@@ -55,12 +55,28 @@ const ACHIEVEMENT_MASTER = [
         reward: { type: 'playmat', value: 'android', name: 'アイギス' }
     },
     {
+        id: 'story_android_hard',
+        title: '機械人形の究極回路',
+        description: 'アイギスでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'android',
+        reward: { type: 'premium', value: 'golem', name: '大理石のゴーレム', isPremiumUnlock: true }
+    },
+    {
         id: 'story_dragon',
         title: '竜姫の凱旋',
         description: 'イグニスのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'dragon',
         reward: { type: 'playmat', value: 'dragon', name: 'イグニス' }
+    },
+    {
+        id: 'story_dragon_hard',
+        title: '竜姫の極限焦熱',
+        description: 'イグニスでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'dragon',
+        reward: { type: 'premium', value: 'dinosaur', name: '古代の大蜥蜴', isPremiumUnlock: true }
     },
     {
         id: 'story_knight',
@@ -71,12 +87,28 @@ const ACHIEVEMENT_MASTER = [
         reward: { type: 'playmat', value: 'knight', name: 'セレスティア' }
     },
     {
+        id: 'story_knight_hard',
+        title: '光の絶対領域',
+        description: 'セレスティアでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'knight',
+        reward: { type: 'premium', value: 'clone', name: '鏡の戦士', isPremiumUnlock: true }
+    },
+    {
         id: 'story_cthulhu',
         title: '深淵の呼び声',
         description: 'ナイアのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'cthulhu',
         reward: { type: 'playmat', value: 'cthulhu', name: 'ナイア' }
+    },
+    {
+        id: 'story_cthulhu_hard',
+        title: '深淵の至高狂気',
+        description: 'ナイアでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'cthulhu',
+        reward: { type: 'premium', value: 'diviner', name: '星詠みの占術士', isPremiumUnlock: true }
     },
     {
         id: 'story_elf',
@@ -87,12 +119,28 @@ const ACHIEVEMENT_MASTER = [
         reward: { type: 'playmat', value: 'elf', name: 'リナ' }
     },
     {
+        id: 'story_elf_hard',
+        title: '記憶の完全同期',
+        description: 'リナでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'elf',
+        reward: { type: 'premium', value: 'sniper', name: '森の射手', isPremiumUnlock: true }
+    },
+    {
         id: 'story_cleric',
         title: '偽りの救済',
         description: 'エリシアのストーリーをクリアする',
         type: 'story_clear',
         targetValue: 'cleric',
         reward: { type: 'playmat', value: 'cleric', name: 'エリシア' }
+    },
+    {
+        id: 'story_cleric_hard',
+        title: '真なる救済の夜明け',
+        description: 'エリシアでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'cleric',
+        reward: { type: 'premium', value: 'cleric', name: '見習い修道女', isPremiumUnlock: true }
     },
     // --- フリーバトル勝利数 ---
     {
@@ -127,6 +175,7 @@ let achievementData = {
     stats: {
         leaderUsage: {}, // leaderId: count
         storyClears: {}, // leaderId: count
+        storyClearsHard: {}, // leaderId: count
         freeBattleWins: 0
     }
 };
@@ -142,10 +191,11 @@ function loadAchievements() {
             // 構造の互換性維持
             achievementData = {
                 achievements: parsed.achievements || {},
-                stats: parsed.stats || { leaderUsage: {}, storyClears: {}, freeBattleWins: 0 }
+                stats: parsed.stats || { leaderUsage: {}, storyClears: {}, storyClearsHard: {}, freeBattleWins: 0 }
             };
             if (!achievementData.stats.leaderUsage) achievementData.stats.leaderUsage = {};
             if (!achievementData.stats.storyClears) achievementData.stats.storyClears = {};
+            if (!achievementData.stats.storyClearsHard) achievementData.stats.storyClearsHard = {};
             if (typeof achievementData.stats.freeBattleWins !== 'number') achievementData.stats.freeBattleWins = 0;
         } catch (e) {
             console.error("Failed to parse achievements data", e);
@@ -166,6 +216,9 @@ function incrementStat(type, key = null, amount = 1) {
     } else if (type === 'storyClears' && key) {
         achievementData.stats.storyClears[key] = (achievementData.stats.storyClears[key] || 0) + amount;
         checkStoryAchievements(key);
+    } else if (type === 'storyClearsHard' && key) {
+        achievementData.stats.storyClearsHard[key] = (achievementData.stats.storyClearsHard[key] || 0) + amount;
+        checkStoryHardAchievements(key);
     } else if (type === 'freeBattleWins') {
         achievementData.stats.freeBattleWins += amount;
         checkFreeBattleAchievements();
@@ -197,6 +250,14 @@ function checkCollectionAchievements() {
 function checkStoryAchievements(leaderId) {
     ACHIEVEMENT_MASTER.filter(a => a.type === 'story_clear' && a.targetValue === leaderId).forEach(ach => {
         const clears = achievementData.stats.storyClears[leaderId] || 0;
+        updateAchievement(ach.id, clears, 1);
+    });
+}
+
+// ストーリークリア（ハード）実績のチェック
+function checkStoryHardAchievements(leaderId) {
+    ACHIEVEMENT_MASTER.filter(a => a.type === 'story_clear_hard' && a.targetValue === leaderId).forEach(ach => {
+        const clears = achievementData.stats.storyClearsHard[leaderId] || 0;
         updateAchievement(ach.id, clears, 1);
     });
 }
@@ -258,6 +319,22 @@ function claimAchievementReward(id) {
         saveAchievements();
         saveDeck();
         return { success: true, rewardType: 'card', rewardValue: cardId, rewardName: master.reward.name };
+    } else if (master.reward.type === 'premium') {
+        const cardId = master.reward.value;
+        // プレミアム解放
+        if (!unlockedPremiumCards.includes(cardId)) {
+            unlockedPremiumCards.push(cardId);
+        }
+        if (!premiumCards.includes(cardId)) {
+            premiumCards.push(cardId);
+        }
+        localStorage.setItem('mini_card_battle_unlocked_premium', JSON.stringify(unlockedPremiumCards));
+        localStorage.setItem('mini_card_battle_premium_cards', JSON.stringify(premiumCards));
+
+        ach.isRewarded = true;
+        saveAchievements();
+        saveDeck();
+        return { success: true, rewardType: 'premium', rewardValue: cardId, rewardName: master.reward.name };
     }
 
     ach.isRewarded = true;

@@ -1280,7 +1280,13 @@ function endBattle() {
         if (lastBattleResult === 'win') {
             dialogueQueue = [{ speaker: 'enemy', text: getDialogue(enemyConfig, playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(playerConfig, enemyConfig, 'win') }];
 
-            // showCardReward(enemyConfig.id); // original call
+            // 実績: ストーリークリア
+            if (gameMode === 'story' && enemyConfig && enemyConfig.id === 'satan' && typeof incrementStat === 'function') {
+                incrementStat('storyClears', playerConfig.id);
+                if (typeof aiLevel !== 'undefined' && aiLevel === 3) {
+                    incrementStat('storyClearsHard', playerConfig.id);
+                }
+            }
 
             showCardReward(enemyConfig.id);
         } else {
