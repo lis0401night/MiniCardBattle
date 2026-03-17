@@ -2746,12 +2746,15 @@ h2 {
 
 .to-result-label {
     position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     font-size: 2.5rem;
     font-weight: 900;
     color: #fff;
     text-shadow: 0 0 20px #facc15, 2px 2px 0 #000;
     opacity: 0;
-    transition: opacity 0.4s;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 1002;
     pointer-events: none;
     font-family: 'Outfit', sans-serif;
@@ -2759,8 +2762,8 @@ h2 {
     letter-spacing: 2px;
 }
 
-.to-result-label.top { top: 15%; }
-.to-result-label.bottom { bottom: 15%; }
+.to-result-label.top { /* Positioned via JS */ }
+.to-result-label.bottom { /* Positioned via JS */ }
 
 /* シャッフルアニメーション */
 @keyframes toShuffleLeft {

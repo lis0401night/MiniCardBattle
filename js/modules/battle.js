@@ -897,15 +897,31 @@ async function determineTurnOrder() {
 
     // UIの初期化
     const app = document.getElementById('app-container');
-    const screen = document.createElement('div');
-    screen.innerHTML = UI_COMPONENTS.turnOrderScreen;
-    app.appendChild(screen.firstChild);
+    if (!app) return;
+
+    // insertAdjacentHTML を使用して、テンプレート内の空白やコメントに関わらず正しく挿入する
+    app.insertAdjacentHTML('beforeend', UI_COMPONENTS.turnOrderScreen);
 
     const toScreen = document.getElementById('screen-turn-order');
+    if (!toScreen) {
+        console.error("Failed to initialize turn order screen (element not found)");
+        isProcessing = false;
+        startTurn(Math.random() < 0.5 ? 'blue' : 'red');
+        return;
+    }
+
     const card1 = document.getElementById('to-card-1');
     const card2 = document.getElementById('to-card-2');
     const labelTop = document.getElementById('to-result-top');
     const labelBottom = document.getElementById('to-result-bottom');
+
+    if (!card1 || !card2 || !labelTop || !labelBottom) {
+        console.error("Turn order UI elements missing");
+        if (toScreen) toScreen.remove();
+        isProcessing = false;
+        startTurn(Math.random() < 0.5 ? 'blue' : 'red');
+        return;
+    }
 
     toScreen.classList.add('active');
     playSound(SOUNDS.seSkill);
@@ -926,15 +942,19 @@ async function determineTurnOrder() {
 
     // カードの移動
     if (playerFirst) {
-        // プレイヤー先攻: first_playerが下(自分)、second_playerが上(敵)
-        card1.style.transform = 'translateY(120px) scale(1.1)';
-        card2.style.transform = 'translateY(-220px) scale(0.9)';
+        // プレイヤー先攻: card1(first_player)が下、card2(second_player)が上
+        card1.style.transform = 'translateY(140px) scale(1.1)';
+        card2.style.transform = 'translateY(-140px) scale(0.9)';
+        labelBottom.style.transform = 'translate(-50%, calc(-50% + 280px))'; // プレイヤー(下)のカードの下
+        labelTop.style.transform = 'translate(-50%, calc(-50% - 280px))';    // 相手(上)のカードの上
         labelBottom.innerText = 'FIRST';
         labelTop.innerText = 'SECOND';
     } else {
-        // 敵先攻: second_playerが下(自分)、first_playerが上(敵)
-        card1.style.transform = 'translateY(-220px) scale(0.9)';
-        card2.style.transform = 'translateY(120px) scale(1.1)';
+        // 敵先攻: card2(second_player)が下、card1(first_player)が上
+        card1.style.transform = 'translateY(-140px) scale(0.9)';
+        card2.style.transform = 'translateY(140px) scale(1.1)';
+        labelBottom.style.transform = 'translate(-50%, calc(-50% + 280px))'; // プレイヤー(下)のカードの下
+        labelTop.style.transform = 'translate(-50%, calc(-50% - 280px))';    // 相手(上)のカードの上
         labelBottom.innerText = 'SECOND';
         labelTop.innerText = 'FIRST';
     }
@@ -1265,69 +1285,3 @@ function returnToTitle() {
     });
 }
 
-/**
- * 先攻・後攻を決定する演出
- */
-async function determineTurnOrder() {
-    isProcessing = true;
-    turnCount = 0;
-
-    // UIの初期化
-    const app = document.getElementById('app-container');
-    const screen = document.createElement('div');
-    screen.innerHTML = UI_COMPONENTS.turnOrderScreen;
-    app.appendChild(screen.firstChild);
-
-    const toScreen = document.getElementById('screen-turn-order');
-    const card1 = document.getElementById('to-card-1');
-    const card2 = document.getElementById('to-card-2');
-    const labelTop = document.getElementById('to-result-top');
-    const labelBottom = document.getElementById('to-result-bottom');
-
-    toScreen.classList.add('active');
-    playSound(SOUNDS.seSkill);
-
-    // シャッフル開始
-    card1.classList.add('anim-shuffle-left');
-    card2.classList.add('anim-shuffle-right');
-
-    await sleep(1500);
-
-    // シャッフル停止
-    card1.classList.remove('anim-shuffle-left');
-    card2.classList.remove('anim-shuffle-right');
-
-    // 結果の決定
-    const playerFirst = Math.random() < 0.5;
-    firstPlayer = playerFirst ? 'blue' : 'red';
-
-    // カードの移動
-    if (playerFirst) {
-        // プレイヤー先攻: first_playerが下(自分)、second_playerが上(敵)
-        card1.style.transform = 'translateY(120px) scale(1.1)';
-        card2.style.transform = 'translateY(-220px) scale(0.9)';
-        labelBottom.innerText = 'FIRST';
-        labelTop.innerText = 'SECOND';
-    } else {
-        // 敵先攻: second_playerが下(自分)、first_playerが上(敵)
-        card1.style.transform = 'translateY(-220px) scale(0.9)';
-        card2.style.transform = 'translateY(120px) scale(1.1)';
-        labelBottom.innerText = 'SECOND';
-        labelTop.innerText = 'FIRST';
-    }
-
-    playSound(SOUNDS.seLegend);
-    labelTop.style.opacity = '1';
-    labelBottom.style.opacity = '1';
-
-    await sleep(2000);
-
-    // フェードアウトしてバトル開始
-    toScreen.classList.add('to-fade-out');
-    await sleep(800);
-
-    toScreen.remove(); // 演出用画面を削除
-    switchScreen('screen-battle');
-    isProcessing = false;
-    startTurn(firstPlayer);
-}
