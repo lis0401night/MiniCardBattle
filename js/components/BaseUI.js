@@ -499,7 +499,7 @@ const UI_COMPONENTS = {
             </div>
 
             <div style="margin-top: 15px; width: 100%; display: flex; justify-content: center;">
-                <button class="btn" style="background: #475569; width: 100%; margin-top: 0;" onpointerdown="closePlaymatModal()">戻る</button>
+                <button class="btn" style="background: #475569; margin-top: 0;" onpointerdown="closePlaymatModal()">戻る</button>
             </div>
         </div>
     </div>

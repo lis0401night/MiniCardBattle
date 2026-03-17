@@ -72,7 +72,6 @@ function renderPlaymatList() {
                 <img src="${p.image}" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             <div style="flex: 1; font-weight: bold; font-size: 0.9rem;">${p.name}</div>
-            ${isSelected ? '<span style="color: #facc15; font-weight: bold;">SELECTED</span>' : ''}
         `;
         
         item.onclick = () => selectPlaymat(p.id);
