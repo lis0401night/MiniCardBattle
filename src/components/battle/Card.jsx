@@ -24,10 +24,6 @@ export default function Card({
     if (cardObj.owner === 'red' && GameState.enemyConfig && GameState.enemyConfig.isShadow) {
         filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
     }
-    // スタン中の色変更
-    if (cardObj.stunTurns && cardObj.stunTurns > 0) {
-        filter = (filter || '') + ' grayscale(1) brightness(0.5)';
-    }
 
     const imgUrl = getCardImgUrl(cardObj);
     

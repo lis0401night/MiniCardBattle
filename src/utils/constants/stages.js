@@ -8,5 +8,6 @@ export const STAGES = {
     cthulhu: { id: 'cthulhu', name: '狂気の深淵', bgm: 'bgmStageCthulhu' },
     elf: { id: 'elf', name: '迷いの森', bgm: 'bgmStageElf' },
     cleric: { id: 'cleric', name: '静寂の聖堂', bgm: 'bgmStageCleric' },
+    devilhunter: { id: 'devilhunter', name: '旧首都', bgm: 'bgmStageDevilhunter' },
     satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' }
 };

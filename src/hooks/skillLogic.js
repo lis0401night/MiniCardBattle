@@ -145,7 +145,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, '拘束', '#facc15');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
         if (eB[l]) {
-            eB[l].stunTurns = 2; eB[l].stunAppliedThisTurn = true;
+            eB[l].stunTurns = 2;
             const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
             if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); }
         }
@@ -169,7 +169,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         await sleep(400);
     } else if (skillId === 'standby') {
         const turns = skillValue || 1;
-        c.stunTurns = turns; c.stunAppliedThisTurn = true;
+        c.stunTurns = turns;
         if (cEl) cEl.classList.add('anim-shake');
         await sleep(500);
     } else if (skillId === 'resurrect') {

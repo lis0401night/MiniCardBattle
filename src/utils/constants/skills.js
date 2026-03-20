@@ -35,7 +35,7 @@ export const SKILLS = {
     choice: { name: '選択', icon: '🌓', desc: (val) => '召喚時、二つのスキルから一つを選んで発動する。' },
     metamorph: { name: '変身', icon: '❓', desc: (val) => '召喚時、全カードの中からランダムに1枚に変身し、その能力を発動する。' },
     resurrect: { name: '復活', icon: '⚰️', desc: (val) => `召喚時、自分の墓地からパワー${val}以下のカード1枚を選択して配置する。` },
-    standby: { name: '待機', icon: '⏳', desc: (val) => `召喚時、自身に${val}ターン防衛を付与する。` },
+    standby: { name: '待機', icon: '⏳', desc: (val) => `召喚時、自身に${val}ターン防御を付与する。` },
     artillery: { name: '砲撃', icon: '💥', desc: (val) => `召喚時、相手リーダーに${val}ダメージ` }
 };
 
