@@ -771,7 +771,7 @@ export default function GlobalModals() {
               <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px' }}>パワー{discardSelectionData.maxPow}以下のカードを1枚場に出します。</p>
             )}
             <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
-              <div className="card-list-grid-3col" style={{ padding: '10px' }}>
+              <div id="gallery-card-grid" className="card-list-grid-3col">
                  {discardSelectionData.cards.map((cardItem, idx) => {
                     const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
                     const rarityClass = cardItem.rarity ? ` rarity-${cardItem.rarity}` : '';
@@ -789,7 +789,7 @@ export default function GlobalModals() {
                                setDiscardSelectionData(null);
                                if (cb) cb(cardItem);
                            }}
-                           style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0 }}
+                           style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0, minWidth: '90px' }}
                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                        >

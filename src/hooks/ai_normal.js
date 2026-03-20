@@ -42,7 +42,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             if (action === 'holy_march') {
                 const emptyLanes = [0, 1, 2].filter(l => myBoard[l] === null);
                 tokenLanePatterns = getCombinations(emptyLanes, Math.min(emptyLanes.length, 2));
-            } else if (action === 'satan_avatar' || action === 'dragon_summon') {
+            } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'devilhunter_resurrect') {
                 const emptyLanes = [0, 1, 2].filter(l => myBoard[l] === null);
                 tokenLanePatterns = getCombinations(emptyLanes, Math.min(emptyLanes.length, 1));
             }

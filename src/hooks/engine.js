@@ -155,6 +155,23 @@ export function applyActiveSkillLogic(state, owner, l, sid, val) {
                 }
             }
             break;
+        case 'resurrect':
+            const maxPow = val || 1;
+            const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
+            if (validCards.length > 0) {
+                const sorted = [...validCards].sort((a, b) => b.power - a.power);
+                const selectedCard = sorted[0];
+                const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                if (emptyLanes.length > 0) {
+                    const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
+                    b[targetLane] = { ...selectedCard, id: `res_sim_${Date.now()}` };
+                    b[targetLane].currentPower = b[targetLane].power;
+                    b[targetLane].skillTriggered = true; // 召喚効果は連鎖しない想定
+                    b[targetLane].stunTurns = 0;
+                }
+            }
+            break;
         case 'stealth':
         case 'invincible':
             if (!Array.isArray(c.skills)) c.skills = [{ id: 'invincible', value: val || 1 }];
@@ -175,6 +192,26 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {
                 eBoard[i].currentPower -= 4;
+            }
+        }
+    } else if (action === 'devilhunter_resurrect') {
+        const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
+        const validCards = discard.filter(card => (card.power || 0) <= 10 && !card.isToken);
+        if (validCards.length > 0) {
+            const sorted = [...validCards].sort((a, b) => b.power - a.power);
+            const selectedCard = sorted[0];
+            let l = -1;
+            if (tokenLanes && tokenLanes.length > 0) {
+                l = tokenLanes[0];
+            } else {
+                const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+                if (emptyLanes.length > 0) l = emptyLanes[0];
+            }
+            if (l !== -1) {
+                board[l] = { ...selectedCard, id: `res_sim_${Date.now()}` };
+                board[l].currentPower = board[l].power;
+                board[l].skillTriggered = true;
+                board[l].stunTurns = 0;
             }
         }
     } else if (action === 'satan_avatar' || action === 'dragon_summon') {

@@ -252,29 +252,46 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             }
             
             if (selectedCard) {
-                // ランダムな空きレーンを選択
-                const targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                let targetLane = null;
                 
-                // 墓地からの削除
-                const actualIdx = discard.indexOf(selectedCard);
-                if (actualIdx !== -1) discard.splice(actualIdx, 1);
-                
-                // 盤面への配置
-                board[targetLane] = { ...selectedCard, id: `res_${Date.now()}` };
-                board[targetLane].currentPower = board[targetLane].power;
-                board[targetLane].skillTriggered = true; // 召喚時効果は不発
-                board[targetLane].stunTurns = 0;
-                board[targetLane].stunAppliedThisTurn = false;
-                
-                playSound(SOUNDS.sePlace);
-                renderBoard();
-                
-                const cEl = document.querySelector(`#${isBlue ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`);
-                if (cEl) {
-                    cEl.classList.add('anim-card-play');
-                    createDamagePopup(cEl, '復活', '#4ade80');
+                if (isBlue) {
+                    const tLanes = await waitPlayerLaneSelection(1, 'blue', selectedCard, true);
+                    if (tLanes && tLanes.length > 0) {
+                        targetLane = tLanes[0];
+                    }
+                } else {
+                    // AIはシミュレーション(ai_normal.js => waitPlayerLaneSelection => tokenLanes)で決めるが、
+                    // 万が一引数がなければランダム空きレーンを保証
+                    if (tokenLanes && tokenLanes.length > 0) {
+                        targetLane = tokenLanes[0];
+                    } else {
+                        targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                    }
                 }
-                await sleep(500);
+                
+                if (targetLane !== null && targetLane !== undefined) {
+                    // 墓地からの削除
+                    const actualIdx = discard.indexOf(selectedCard);
+                    if (actualIdx !== -1) discard.splice(actualIdx, 1);
+                    if (typeof updateDeckDisplay === 'function') updateDeckDisplay(isBlue ? 'blue' : 'red');
+                    
+                    // 盤面への配置
+                    board[targetLane] = { ...selectedCard, id: `res_${Date.now()}` };
+                    board[targetLane].currentPower = board[targetLane].power;
+                    board[targetLane].skillTriggered = true; // 召喚時効果は不発
+                    board[targetLane].stunTurns = 0;
+                    board[targetLane].stunAppliedThisTurn = false;
+                    
+                    if (typeof playSound === 'function') playSound(SOUNDS.sePlace);
+                    if (typeof renderBoard === 'function') renderBoard();
+                    
+                    const cEl = document.querySelector(`#${isBlue ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                    if (cEl) {
+                        cEl.classList.add('anim-card-play');
+                        if (typeof createDamagePopup === 'function') createDamagePopup(cEl, '復活', '#4ade80');
+                    }
+                    if (typeof sleep === 'function') await sleep(500);
+                }
             }
         }
     }

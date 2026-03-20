@@ -1,10 +1,8 @@
-import { ENEMY_DECKS } from '../enemy_decks.js';
-
-ENEMY_DECKS.cleric = {
+export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'shade', 'shade',
-        'zombie', 'zombie',
+        'monk', 'monk',
+        'barrier', 'barrier',
         'crenellatedwall', 'crenellatedwall', 'crenellatedwall',
         'wall', 'wall', 'wall',
         'cleric', 'cleric', 'cleric',
@@ -13,9 +11,9 @@ ENEMY_DECKS.cleric = {
     normal: [
         'golem', 'golem', 'golem', 'golem',
         'empress',
-        'vampire', 'vampire',
-        'shade', 'shade',
-        'zombie', 'zombie',
+        'fire', 'fire',
+        'incinerator', 'incinerator',
+        'monk', 'monk',
         'barrier', 'barrier',
         'crenellatedwall', 'crenellatedwall',
         'wall', 'wall',
@@ -23,9 +21,9 @@ ENEMY_DECKS.cleric = {
     ],
     hard: [
         'empress', 'empress', 'empress', 'empress',
-        'vampire', 'vampire', 'vampire', 'vampire',
-        'shade', 'shade', 'shade', 'shade',
-        'zombie', 'zombie',
+        'fire', 'fire', 'fire', 'fire',
+        'incinerator', 'incinerator', 'incinerator', 'incinerator',
+        'monk', 'monk',
         'barrier', 'barrier',
         'cleric', 'cleric', 'cleric', 'cleric',
     ]

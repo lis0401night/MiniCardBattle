@@ -250,7 +250,7 @@ export const CHARACTERS = {
     },
     devilhunter: {
         id: 'devilhunter', stageId: 'devilhunter', name: '悪魔狩り マリア',
-        desc: '悪魔狩り生業とするクールな女性。背中の棺桶には、倒した悪魔の魂を封じ込められている。',
+        desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
         filter: 'sepia(0.3) contrast(1.1)', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_devilhunter.png', imageLose: 'assets/characters/char_devilhunter_lose.png', icon: 'assets/icons/icon_devilhunter.png', color: '#64748b',
         leaderSkill: { name: '棺桶の目覚め', desc: '(SP:5) 自分の墓地からパワー10以下のカードを1枚選び、配置する。', cost: 5, action: 'devilhunter_resurrect' },

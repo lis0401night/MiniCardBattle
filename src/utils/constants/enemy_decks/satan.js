@@ -1,6 +1,4 @@
-import { ENEMY_DECKS } from '../enemy_decks.js';
-
-ENEMY_DECKS.satan = {
+export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'dealer', 'dealer', 'dealer', 'dealer',

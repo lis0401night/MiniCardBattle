@@ -1,6 +1,4 @@
-import { ENEMY_DECKS } from '../enemy_decks.js';
-
-ENEMY_DECKS.knight = {
+export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'commander', 'commander',

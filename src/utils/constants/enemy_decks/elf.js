@@ -1,6 +1,4 @@
-import { ENEMY_DECKS } from '../enemy_decks.js';
-
-ENEMY_DECKS.elf = {
+export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'spider', 'spider',

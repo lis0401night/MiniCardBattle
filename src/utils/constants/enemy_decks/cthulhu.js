@@ -1,6 +1,4 @@
-import { ENEMY_DECKS } from '../enemy_decks.js';
-
-ENEMY_DECKS.cthulhu = {
+export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'tortoise', 'tortoise',
