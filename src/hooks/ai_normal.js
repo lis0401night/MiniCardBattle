@@ -240,11 +240,19 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
         const available = allLanes.filter(l => !results.includes(l));
 
         for (let l of available) {
+            const isOverwrite = currentBoard[l] !== null;
             const simState = simulateAndEvaluateToken(tokenCard, l, currentBoard, GameState.playerBoard, GameState.enemyHP, GameState.enemySP);
 
             // トークン配置は簡易的に「相手HPをどれだけ削れるか」または「盤面パワー」でソート
             let score = (simState.enemyHP > 0 ? 10000 : -10000);
             score -= simState.playerHP * 100;
+            
+            // 無意味な上書き配置を避けるためのペナルティ（空きレーンを最優先させる）
+            if (isOverwrite) {
+                // 上書きされる元のカードのパワー分と定数ペナルティ
+                score -= 50 + (currentBoard[l].currentPower * 10);
+            }
+
             for (let i = 0; i < 3; i++) {
                 if (simState.enemyBoard[i]) score += simState.enemyBoard[i].currentPower * 10;
                 if (simState.playerBoard[i]) score -= simState.playerBoard[i].currentPower * 10;

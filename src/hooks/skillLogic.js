@@ -159,7 +159,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             inheritedSkills = inheritedSkills.concat(c.skills.filter(sk => sk.id !== 'clone'));
         }
 
-        const selectedLanes = await waitPlayerLaneSelection(count, o, tC, false);
+        // AIのシミュレーション用に、実際に配置されるトークンの情報を構築
+        const simulatedToken = {
+            ...tC,
+            power: c.power,
+            currentPower: c.currentPower,
+            skills: inheritedSkills
+        };
+        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false);
         for (let i = 0; i < selectedLanes.length; i++) {
             const tL = selectedLanes[i];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;

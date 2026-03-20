@@ -966,10 +966,10 @@ export async function executeSingleCombat(atk, l) {
     await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             if (atk === 'blue') {
-                aCell.style.animation = 'attack-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                aCell.style.animation = 'attack-up 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards';
                 aCell.style.zIndex = '20';
             } else {
-                aCell.style.animation = 'attack-down 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                aCell.style.animation = 'attack-down 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards';
                 aCell.style.zIndex = '20';
             }
             playSound(SOUNDS.seAttack);
@@ -977,7 +977,7 @@ export async function executeSingleCombat(atk, l) {
         });
     }));
 
-    await sleep(400); // アニメーション衝突タイミング(0.8sの50%)
+    await sleep(600); // アニメーション衝突タイミング(1.2sの50%)
     // 衝突後に元の状態へ戻す
     if (aCell) {
         aCell.style.animation = '';
