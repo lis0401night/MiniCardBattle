@@ -21,11 +21,6 @@ export default function DeckEditorScreen() {
   const [isDefenseConfig, setIsDefenseConfig] = useState(false);
 
   const updateDeckEditor = () => {
-    // 既存の loadDeck を呼び出してグローバル変数を最新化
-    if (typeof loadDeck === 'function') {
-      loadDeck();
-    }
-    
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
     setInventory(GameState.playerInventory || {});
     setPremiumCards(GameState.premiumCards || []);
@@ -35,6 +30,9 @@ export default function DeckEditorScreen() {
   };
 
   useEffect(() => {
+    if (typeof loadDeck === 'function') {
+      loadDeck();
+    }
     updateDeckEditor();
     // 既存の再描画関数をフック
     setRenderDeckEditHook(updateDeckEditor);
