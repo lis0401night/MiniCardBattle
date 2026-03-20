@@ -203,7 +203,7 @@ export default function DeckEditorScreen() {
                      onPointerCancel={cancelLongPress}
                      onClick={() => handleClick(id, removeCard)}>
                   <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block' }}>
-                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: cardObj.filter || 'none' }}></div>
+                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: card.filter || 'none' }}></div>
                     
                     {isPremUnlocked && (
                       <div
