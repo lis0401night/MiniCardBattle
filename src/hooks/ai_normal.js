@@ -273,7 +273,11 @@ export function simulateAndEvaluateToken(token, l, board, opBoard, hp, sp) {
         playerHP: GameState.playerHP,
         enemyHP: hp,
         playerSP: GameState.playerSP,
-        enemySP: sp || 0
+        enemySP: sp || 0,
+        playerHand: GameState.playerHand.map(cloneCard),
+        enemyHand: GameState.enemyHand.map(cloneCard),
+        playerDiscard: GameState.playerDiscard.map(cloneCard),
+        enemyDiscard: GameState.enemyDiscard.map(cloneCard)
     };
 
     const playedToken = cloneCard(token);

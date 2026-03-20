@@ -28,7 +28,6 @@ export function generateDeck(owner, config, sessionId) {
                 id: `${owner}_${sessionId}_${i}`,
                 owner: owner,
                 imgUrl: imgUrl,
-                filter: config.filter,
                 power: t.power,
                 basePower: t.power,
                 currentPower: t.power,
@@ -66,8 +65,8 @@ export function generateDeck(owner, config, sessionId) {
             let p = t.power;
             // if (config.id === 'satan') p += 1; // サタン補正は削除
 
-            // ミラーマッチ（シャドウ）用のフィルタ処理
-            let filter = (config.id === 'satan') ? 'none' : config.filter;
+            // ミラーマッチ（シャドウ）用のフィルタ処理のみ適用
+            let filter = undefined;
             if (config.isShadow) {
                 filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
             }
