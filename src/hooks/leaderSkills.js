@@ -225,5 +225,57 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             renderBoard();
             await sleep(300);
         }
+    } else if (action === 'devilhunter_resurrect') {
+        const maxPow = 10;
+        const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
+        const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
+        
+        // 空きレーンを探す
+        const emptyLanes = [];
+        for (let i = 0; i < 3; i++) {
+            if (!board[i]) emptyLanes.push(i);
+        }
+
+        if (validCards.length > 0 && emptyLanes.length > 0) {
+            let selectedCard = null;
+            if (!isBlue) {
+                const sorted = [...validCards].sort((a, b) => b.power - a.power);
+                selectedCard = sorted[0];
+            } else {
+                if (window.showDiscardSelectionModalReact) {
+                    selectedCard = await new Promise(resolve => {
+                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card));
+                    });
+                } else {
+                    selectedCard = validCards[0];
+                }
+            }
+            
+            if (selectedCard) {
+                // ランダムな空きレーンを選択
+                const targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+                
+                // 墓地からの削除
+                const actualIdx = discard.indexOf(selectedCard);
+                if (actualIdx !== -1) discard.splice(actualIdx, 1);
+                
+                // 盤面への配置
+                board[targetLane] = { ...selectedCard, id: `res_${Date.now()}` };
+                board[targetLane].currentPower = board[targetLane].power;
+                board[targetLane].skillTriggered = true; // 召喚時効果は不発
+                board[targetLane].stunTurns = 0;
+                board[targetLane].stunAppliedThisTurn = false;
+                
+                playSound(SOUNDS.sePlace);
+                renderBoard();
+                
+                const cEl = document.querySelector(`#${isBlue ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                if (cEl) {
+                    cEl.classList.add('anim-card-play');
+                    createDamagePopup(cEl, '復活', '#4ade80');
+                }
+                await sleep(500);
+            }
+        }
     }
 }

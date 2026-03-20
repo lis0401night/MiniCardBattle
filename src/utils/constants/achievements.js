@@ -147,6 +147,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'cleric',
         reward: { type: 'premium', value: 'cleric', name: '見習い修道女', isPremiumUnlock: true }
     },
+    {
+        id: 'story_devilhunter',
+        title: '仕事の流儀',
+        description: 'マリアのストーリーをクリアする',
+        type: 'story_clear',
+        targetValue: 'devilhunter',
+        reward: { type: 'playmat', value: 'devilhunter', name: 'マリア' }
+    },
+    {
+        id: 'story_devilhunter_hard',
+        title: '特大の棺桶',
+        description: 'マリアでハードモードのストーリーをクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'devilhunter',
+        reward: null // 仮設定。必要に応じて特定のプレミアムカード報酬を設定
+    },
     // --- フリーバトル勝利数 ---
     {
         id: 'free_win_5',

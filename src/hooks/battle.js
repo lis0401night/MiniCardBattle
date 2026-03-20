@@ -804,9 +804,10 @@ export async function endPlayerTurn() {
         );
     });
     if (!confirmed) return;
-    GameState.isProcessing = true;
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
     GameState.selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
+    // processActionQueue内でロックするため、ここは解除しておく（または最初からセットしない）
+    GameState.isProcessing = false;
     dispatchBattleAction({ type: 'endTurn', owner: 'blue' });
 }
 
@@ -937,7 +938,7 @@ export async function resolveOnPlaySkill(o, l, c) {
 export async function executeSingleCombat(atk, l) {
     const aB = atk === 'blue' ? GameState.playerBoard : GameState.enemyBoard, dB = atk === 'blue' ? GameState.enemyBoard : GameState.playerBoard, aR = atk === 'blue' ? '#player-lanes' : '#enemy-lanes', dR = atk === 'blue' ? '#enemy-lanes' : '#player-lanes', an = atk === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
     const aC = aB[l];
-    if (!aC || hasSkill(aC, 'defender')) return;
+    if (!aC) return;
     if (aC.stunTurns > 0) return; // スタン（拘束）中は攻撃しない
 
     const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`);

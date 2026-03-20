@@ -780,15 +780,18 @@ export default function GlobalModals() {
                            key={idx} 
                            className="deck-card-item gallery-card-wrapper" 
                            onClick={() => {
-                               if (discardSelectionData.isViewOnly) return;
                                playSound?.(SOUNDS?.seClick);
+                               if (discardSelectionData.isViewOnly) {
+                                   if (window.showCardDetailReact) window.showCardDetailReact(cardItem);
+                                   return;
+                               }
                                const cb = discardSelectionData.onSelect;
                                setDiscardSelectionData(null);
                                if (cb) cb(cardItem);
                            }}
-                           style={{ cursor: discardSelectionData.isViewOnly ? 'default' : 'pointer', transition: 'transform 0.2s' }}
-                           onMouseOver={(e) => { if (!discardSelectionData.isViewOnly) e.currentTarget.style.transform = 'scale(1.05)'; }}
-                           onMouseOut={(e) => { if (!discardSelectionData.isViewOnly) e.currentTarget.style.transform = 'scale(1)'; }}
+                           style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0 }}
+                           onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                           onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                        >
                           <div className={`card blue${rarityClass}`}>
                               <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
