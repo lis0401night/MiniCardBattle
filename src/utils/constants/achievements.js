@@ -163,6 +163,15 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'devilhunter',
         reward: { type: 'premium', value: 'necromancer', name: 'ヴィス・ガルドの背教者', isPremiumUnlock: true }
     },
+    // --- イベントクリア ---
+    {
+        id: 'event_satan_clear',
+        title: '復活の魔王',
+        description: '高難易度イベントでサタンを倒す',
+        type: 'event_clear',
+        targetValue: 'satan_high',
+        reward: { type: 'playmat', value: 'satan', name: 'サタン' }
+    },
     // --- フリーバトル勝利数 ---
     {
         id: 'free_win_5',
@@ -211,10 +220,11 @@ export function loadAchievements() {
             const parsed = JSON.parse(saved);
             // 構造の互換性維持
             achievementData.achievements = parsed.achievements || {};
-            achievementData.stats = parsed.stats || { leaderUsage: {}, storyClears: {}, storyClearsHard: {}, freeBattleWins: 0 };
+            achievementData.stats = parsed.stats || { leaderUsage: {}, storyClears: {}, storyClearsHard: {}, eventClear: {}, freeBattleWins: 0 };
             if (!achievementData.stats.leaderUsage) achievementData.stats.leaderUsage = {};
             if (!achievementData.stats.storyClears) achievementData.stats.storyClears = {};
             if (!achievementData.stats.storyClearsHard) achievementData.stats.storyClearsHard = {};
+            if (!achievementData.stats.eventClear) achievementData.stats.eventClear = {};
             if (typeof achievementData.stats.freeBattleWins !== 'number') achievementData.stats.freeBattleWins = 0;
         } catch (e) {
             console.error("Failed to parse achievements data", e);
@@ -238,6 +248,10 @@ function incrementStat(type, key = null, amount = 1) {
     } else if (type === 'storyClearsHard' && key) {
         achievementData.stats.storyClearsHard[key] = (achievementData.stats.storyClearsHard[key] || 0) + amount;
         checkStoryHardAchievements(key);
+    } else if (type === 'eventClear' && key) {
+        achievementData.stats.eventClear = achievementData.stats.eventClear || {};
+        achievementData.stats.eventClear[key] = (achievementData.stats.eventClear[key] || 0) + amount;
+        checkEventAchievements(key);
     } else if (type === 'freeBattleWins') {
         achievementData.stats.freeBattleWins += amount;
         checkFreeBattleAchievements();
@@ -277,6 +291,14 @@ function checkStoryAchievements(leaderId) {
 function checkStoryHardAchievements(leaderId) {
     ACHIEVEMENT_MASTER.filter(a => a.type === 'story_clear_hard' && a.targetValue === leaderId).forEach(ach => {
         const clears = achievementData.stats.storyClearsHard[leaderId] || 0;
+        updateAchievement(ach.id, clears, 1);
+    });
+}
+
+// イベントクリア実績のチェック
+function checkEventAchievements(eventId) {
+    ACHIEVEMENT_MASTER.filter(a => a.type === 'event_clear' && a.targetValue === eventId).forEach(ach => {
+        const clears = achievementData.stats.eventClear[eventId] || 0;
         updateAchievement(ach.id, clears, 1);
     });
 }

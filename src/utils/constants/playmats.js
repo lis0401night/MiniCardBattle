@@ -43,7 +43,12 @@ export const PLAYMAT_MASTER = [
         id: 'devilhunter',
         name: 'マリア',
         image: 'assets/boards/board_devilhunter.png',
-        targetCharacter: 'devilhunter'
+    },
+    {
+        id: 'satan',
+        name: 'サタン',
+        image: 'assets/boards/board_satan.png',
+        targetCharacter: 'satan'
     }
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）

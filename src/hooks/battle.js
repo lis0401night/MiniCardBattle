@@ -1195,6 +1195,11 @@ export function endBattle() {
                 }
             }
 
+            // 実績: 高難易度イベントクリア
+            if (GameState.gameMode === 'event_satan' && typeof incrementStat === 'function') {
+                incrementStat('eventClear', 'satan_high');
+            }
+
             showCardReward(GameState.enemyConfig.id);
         } else {
             GameState.dialogueQueue = [{ speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win') }];
