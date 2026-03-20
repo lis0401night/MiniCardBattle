@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { playSound, isTransitioning, switchScreen, getCardImgUrl, togglePremiumCard } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { loadDeck } from '../hooks/deck.js';
+import { loadDeck, saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { setRenderCardListHook, openCardPreview } from '../hooks/uiGallery.js';
+import { showAlertModal } from '../hooks/uiModals.js';
 
 export default function CardListScreen() {
   const [masterCards, setMasterCards] = useState([]);
@@ -13,6 +14,37 @@ export default function CardListScreen() {
   const [inventory, setInventory] = useState({});
   const [unlockedPremium, setUnlockedPremium] = useState([]);
   const [activePremium, setActivePremium] = useState([]);
+  const [clickCount, setClickCount] = useState(0);
+
+  const handleTitleClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+    if (newCount >= 10) {
+      setClickCount(0);
+      
+      if (CARD_MASTER && GameState.playerInventory) {
+        CARD_MASTER.forEach(card => {
+          if (!card.isToken) {
+            GameState.playerInventory[card.id] = 4;
+          }
+        });
+      }
+
+      const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf'];
+      if (GameState.unlockedPremiumCards) {
+        premiumTargets.forEach(id => {
+          if (!GameState.unlockedPremiumCards.includes(id)) {
+            GameState.unlockedPremiumCards.push(id);
+          }
+        });
+      }
+
+      if (typeof saveDeck === 'function') saveDeck();
+      if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
+      if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
+      updateList();
+    }
+  };
 
   const updateList = () => {
     const _masterCards = (CARD_MASTER || []).filter((c) => !c.isToken);
@@ -52,7 +84,7 @@ export default function CardListScreen() {
 
   return (
     <div id="screen-card-list" className="screen active">
-      <h2 style={{ color: '#facc15', marginBottom: '5px', fontSize: '1.2rem' }}>カード一覧</h2>
+      <h2 onClick={handleTitleClick} style={{ color: '#facc15', marginBottom: '5px', fontSize: '1.2rem', cursor: 'pointer', userSelect: 'none' }}>カード一覧</h2>
       <div id="card-list-count" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
         カード枚数: {ownedKindCount} / {masterCards.length}
       </div>

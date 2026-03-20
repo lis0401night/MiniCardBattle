@@ -1,4 +1,5 @@
 import React from 'react';
+import { GameState } from '../../hooks/gameState.js';
 
 export default function PlayerArea({ 
     playerConfig, 
@@ -38,8 +39,9 @@ export default function PlayerArea({
                             {playerHP} / {playerMaxHP}
                         </div>
                     </div>
-                    <div id="deck-info" className="deck-info">
-                        Deck: {deckCount} / Drop: {dropCount}
+                    <div id="deck-info" className="deck-info" style={{ fontSize: '1rem', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                        <span>山札: {deckCount} / 墓地: {dropCount}</span>
+                        <button className="action-btn" style={{ padding: '2px 8px', fontSize: '0.75rem' }} onClick={(e) => { e.stopPropagation(); window.showDiscardSelectionModalReact?.(GameState.playerDiscard, 999, null, true); }}>確認</button>
                     </div>
                 </div>
             </div>

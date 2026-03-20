@@ -288,6 +288,7 @@ export function goBackFromDeckEdit() {
 
 export function startGameMode(mode) {
     playSound(SOUNDS.seClick);
+    GameState.lastBattleResult = null;
     GameState.gameMode = mode;
     GameState.appState = 'select_player';
     initSelectScreen(false);

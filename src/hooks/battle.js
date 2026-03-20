@@ -142,7 +142,10 @@ export function initBattleState() {
         GameState.playerHP = GameState.playerMaxHP; GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
         GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
-        GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; updateCardDetail(null);
+        GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; 
+        GameState.isPlacementMode = false; GameState.placementToken = null; GameState.placementSelectedLanes = [];
+        GameState.isEnemyTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
+        updateCardDetail(null);
         if (updateBattleUIHook) updateBattleUIHook();
 
         // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
@@ -635,15 +638,9 @@ export async function triggerSplitSkill(owner, lane, card) {
 }
 
 export function updateDeckDisplay(owner) {
-    const d = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-    const ds = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-    if (owner === 'blue') {
-        const el = document.getElementById('deck-info');
-        if (el) el.innerText = `Deck: ${d.length} / Drop: ${ds.length}`;
-    } else {
-        const el = document.getElementById('enemy-deck-info');
-        if (el) el.innerText = `Deck: ${d.length} / Drop: ${ds.length}`;
-    }
+    // DOMによる deck-info の innerText 上書きは React のツリーを破壊するため削除。
+    // 代わりに React 側の再描画フックを呼び出します（PlayerArea / EnemyArea に反映される）
+    if (updateBattleUIHook) updateBattleUIHook();
 }
 
 export async function cleanupDestroyedCards() {

@@ -1,47 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-import { CARD_MASTER } from '../utils/constants/cards.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { saveDeck } from '../hooks/deck.js';
-import { GameState } from '../hooks/gameState.js';
-import { showAlertModal } from '../hooks/uiModals.js';
 
 export default function RulesScreen() {
-  const [clickCount, setClickCount] = useState(0);
-
-  const handleTitleClick = () => {
-    const newCount = clickCount + 1;
-    setClickCount(newCount);
-    if (newCount >= 10) {
-      setClickCount(0);
-      
-      if (CARD_MASTER && GameState.playerInventory) {
-        CARD_MASTER.forEach(card => {
-          if (!card.isToken) {
-            GameState.playerInventory[card.id] = 4;
-          }
-        });
-      }
-
-      const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf'];
-      if (GameState.unlockedPremiumCards) {
-        premiumTargets.forEach(id => {
-          if (!GameState.unlockedPremiumCards.includes(id)) {
-            GameState.unlockedPremiumCards.push(id);
-          }
-        });
-      }
-
-      if (typeof saveDeck === 'function') saveDeck();
-      if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-      if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
-    }
-  };
-
   return (
     <div id="screen-rules" className="screen active">
-      <h2 onClick={handleTitleClick} style={{ cursor: 'pointer', userSelect: 'none' }}>遊び方</h2>
+      <h2 style={{ color: '#facc15', marginBottom: '20px' }}>遊び方</h2>
       <div className="rule-box">
         <div className="rule-section">
           <div className="rule-category">【デッキ編成】</div>

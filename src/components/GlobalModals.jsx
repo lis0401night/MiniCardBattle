@@ -26,6 +26,7 @@ export default function GlobalModals() {
   const [selectedPlaymatState, setSelectedPlaymatState] = useState(null);
   const [skillConfirmData, setSkillConfirmData] = useState(null);
   const [skillChoiceData, setSkillChoiceData] = useState(null);
+  const [discardSelectionData, setDiscardSelectionData] = useState(null);
   const [rulesVisible, setRulesVisible] = useState(false);
 
   const handleCloseCardPreview = (e) => {
@@ -161,6 +162,11 @@ export default function GlobalModals() {
 
     window.closeSkillChoiceModalReact = () => {
       setSkillChoiceData(null);
+    };
+
+    window.showDiscardSelectionModalReact = (cards, maxPow, onSelect, isViewOnly = false) => {
+      playSound?.(SOUNDS?.seClick);
+      setDiscardSelectionData({ cards, maxPow, onSelect, isViewOnly });
     };
 
     window.showRulesModal = () => {
@@ -751,6 +757,64 @@ export default function GlobalModals() {
                     })}
                 </div>
             </div>
+        </div>
+      )}
+
+      {/* Discard Selection Modal */}
+      {discardSelectionData && (
+        <div className="modal-overlay" style={{ zIndex: 3500, display: 'flex' }}>
+          <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ color: '#facc15', marginBottom: '10px' }}>
+              {discardSelectionData.isViewOnly ? '墓地一覧' : '復活させるカードを選択'}
+            </h2>
+            {!discardSelectionData.isViewOnly && (
+              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px' }}>パワー{discardSelectionData.maxPow}以下のカードを1枚場に出します。</p>
+            )}
+            <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+              <div className="card-list-grid-3col" style={{ padding: '10px' }}>
+                 {discardSelectionData.cards.map((cardItem, idx) => {
+                    const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
+                    const rarityClass = cardItem.rarity ? ` rarity-${cardItem.rarity}` : '';
+                    return (
+                       <div 
+                           key={idx} 
+                           className="deck-card-item gallery-card-wrapper" 
+                           onClick={() => {
+                               if (discardSelectionData.isViewOnly) return;
+                               playSound?.(SOUNDS?.seClick);
+                               const cb = discardSelectionData.onSelect;
+                               setDiscardSelectionData(null);
+                               if (cb) cb(cardItem);
+                           }}
+                           style={{ cursor: discardSelectionData.isViewOnly ? 'default' : 'pointer', transition: 'transform 0.2s' }}
+                           onMouseOver={(e) => { if (!discardSelectionData.isViewOnly) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                           onMouseOut={(e) => { if (!discardSelectionData.isViewOnly) e.currentTarget.style.transform = 'scale(1)'; }}
+                       >
+                          <div className={`card blue${rarityClass}`}>
+                              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+                              <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{cardItem.power}</div>
+                              {renderSkillTagReact(cardItem)}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#fff', textAlign: 'center', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {cardItem.name}
+                          </div>
+                       </div>
+                    );
+                 })}
+                 {discardSelectionData.cards.length === 0 && (
+                    <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>墓地にはカードがありません</div>
+                 )}
+              </div>
+            </div>
+            {/* 閲覧モード時は常に「閉じる」を表示。選択モード時はカードがない時のみ表示 */}
+            {(discardSelectionData.isViewOnly || discardSelectionData.cards.length === 0) && (
+                <button className="btn" style={{ marginTop: '20px', width: '100%', background: '#475569' }} onClick={() => {
+                    const cb = discardSelectionData.onSelect;
+                    setDiscardSelectionData(null);
+                    if (cb && !discardSelectionData.isViewOnly) cb(null);
+                }}>閉じる</button>
+            )}
+          </div>
         </div>
       )}
 

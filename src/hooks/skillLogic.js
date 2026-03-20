@@ -16,9 +16,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect'].includes(skillId)) {
         playSound(SOUNDS.seSkill);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     }
 
@@ -150,6 +150,76 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); }
         }
         await sleep(500);
+    } else if (skillId === 'artillery') {
+        const dmg = skillValue || 1;
+        await sleep(300);
+        if (o === 'blue') {
+            GameState.enemyHP -= dmg;
+            createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
+            const eh = document.getElementById('playmat-enemy');
+            if (eh) eh.classList.add('anim-shake');
+        } else {
+            GameState.playerHP -= dmg;
+            createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
+            document.body.classList.add('anim-shake');
+            setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+        }
+        updateHPBar();
+        checkWinCondition();
+        await sleep(400);
+    } else if (skillId === 'standby') {
+        const turns = skillValue || 1;
+        c.stunTurns = turns; c.stunAppliedThisTurn = true;
+        if (cEl) cEl.classList.add('anim-shake');
+        await sleep(500);
+    } else if (skillId === 'resurrect') {
+        const maxPow = skillValue || 1;
+        const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
+        
+        if (validCards.length > 0) {
+            let selectedCard = null;
+            if (o === 'red') {
+                const sorted = [...validCards].sort((a, b) => b.power - a.power);
+                selectedCard = sorted[0];
+            } else {
+                if (window.showDiscardSelectionModalReact) {
+                    selectedCard = await new Promise(resolve => {
+                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card));
+                    });
+                } else {
+                    selectedCard = validCards[0];
+                }
+            }
+            
+            if (selectedCard) {
+                // 配置先を選ばせる
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false);
+                if (tLanes && tLanes.length > 0) {
+                    const targetLane = tLanes[0];
+                    const dIdx = discard.findIndex(cd => cb => cb.id === selectedCard.id);
+                    // 完全一致するオブジェクトを手動で削除
+                    const actualIdx = discard.indexOf(selectedCard);
+                    if (actualIdx !== -1) discard.splice(actualIdx, 1);
+                    updateDeckDisplay(o);
+                    
+                    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+                    if (board[targetLane]) {
+                        if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                    }
+                    board[targetLane] = { ...selectedCard, id: `res_${Date.now()}` };
+                    board[targetLane].currentPower = board[targetLane].power;
+                    board[targetLane].skillTriggered = true; // 召喚効果は発動しない
+                    board[targetLane].stunTurns = 0;
+                    board[targetLane].stunAppliedThisTurn = false;
+                    
+                    playSound(SOUNDS.sePlace);
+                    renderBoard();
+                    await sleep(400);
+                }
+            }
+        }
+        await sleep(300);
     } else {
         // 標準的なスキルは共通エンジンを使用
         applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0);
