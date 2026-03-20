@@ -168,18 +168,18 @@ export function getSkillValue(c, skillId) {
     return 0;
 }
 
-export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'dinosaur', 'diviner', 'dragon', 'empress', 'golem', 'oldgod', 'sniper', 'wolf'];
+export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'dinosaur', 'diviner', 'dragon', 'empress', 'golem', 'oldgod', 'sniper', 'wolf', 'necromancer'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
     if (!card) return 'assets/cards/card_default.jpg';
     if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
-    
+
     // 特定のトークンの例外処理（旧imgUrl設定の復元）
     if (card.id === 'token_soldier') return 'assets/cards/card_soldier.jpg';
     if (card.id === 'token_ignis' || card.baseId === 'token_ignis') return 'assets/characters/char_dragon.png';
     if (card.id === 'token_satan' || card.baseId === 'token_satan') return 'assets/characters/char_satan.png';
-    
+
     let lookupId = card.baseId || card.id;
     // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
     if (lookupId.includes('_') && !lookupId.startsWith('token_') && !lookupId.startsWith('cl_')) {
