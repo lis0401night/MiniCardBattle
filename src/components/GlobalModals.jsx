@@ -11,6 +11,9 @@ import { renderCardList, openCardPreview, setShowCardAcquisitionModalHook, setSh
 import { backupDataToXML, importDataFromXML, reloadGame, confirmCharSelect, confirmExchange, setCloseEnemyDeckModalHook } from '../hooks/uiMainCore.js';
 import { setShowConfirmModalHook, setShowAlertModalHook, setShowErrorModalHook } from '../hooks/uiModals.js';
 
+let g_discardLongPressTimer = null;
+let g_discardHasLongPressed = false;
+
 export default function GlobalModals() {
   const [confirmData, setConfirmData] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -779,7 +782,20 @@ export default function GlobalModals() {
                        <div 
                            key={idx} 
                            className="deck-card-item gallery-card-wrapper" 
+                           onPointerDown={(e) => {
+                               if (e.pointerType === 'mouse' && e.button !== 0) return;
+                               g_discardHasLongPressed = false;
+                               g_discardLongPressTimer = setTimeout(() => {
+                                   g_discardHasLongPressed = true;
+                                   if (window.showCardDetailReact) window.showCardDetailReact(cardItem);
+                               }, 600);
+                           }}
+                           onPointerUp={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                           onPointerLeave={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                           onPointerCancel={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                           onContextMenu={(e) => e.preventDefault()}
                            onClick={() => {
+                               if (g_discardHasLongPressed) return;
                                playSound?.(SOUNDS?.seClick);
                                if (discardSelectionData.isViewOnly) {
                                    if (window.showCardDetailReact) window.showCardDetailReact(cardItem);
