@@ -253,7 +253,10 @@ export const CHARACTERS = {
         desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
         filter: 'sepia(0.3) contrast(1.1)', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_devilhunter.png', imageLose: 'assets/characters/char_devilhunter_lose.png', icon: 'assets/icons/icon_devilhunter.png', color: '#64748b',
-        leaderSkill: { name: '冥府の呼び声', desc: '(SP:5) 自分の墓地からパワー10以下のカードを1枚選び、配置する。', cost: 5, action: 'devilhunter_resurrect' },
+        leaderSkill: { name: '冥府の呼び声', desc: '(SP:5) 自分の墓地からパワー10以下のカードを1枚選び、自分のれーん配置する。', cost: 5, action: 'devilhunter_resurrect' },
+        preBattleLine: 'さぁ、仕事の時間よ。',
+        mirrorIntro: '自分の過去と向き合うなんて、三流のやることよ。私の弾丸でとっとと終わらせてあげる。',
+        narratorIntro: '棺桶を背負った彼女は「悪魔狩り」と呼ばれるデビルハンター。その重い棺の中には、かつての獲物たちから奪った多数の魂が封じ込められている。',
         dialogue: {
             intro: { android: '心のないガラクタね。弾丸の無駄遣いだけど、掃除してあげる。', dragon: 'でっかいトカゲね。その鱗、リボルバーで撃ち抜けるかしら？', knight: '正義のごっこ遊びはおしまいよ、騎士様。', cthulhu: '狂気なんて、硝煙の匂いで上書きしてあげるわ。', elf: '迷子のエルフね。私の棺桶の中でゆっくり眠りなさい。', cleric: 'インチキ臭い神様ね。私の銃の方がよっぽど信じられるわ。', satan: 'アンタが魔王ね。その魂、棺桶の特等席に案内してあげる。', default: "私の棺桶……今日はちょうど空いてるのよね。" },
             win: { android: 'ただのスクラップね。資源回収にでも回すわ。', dragon: 'いい毛皮が取れそうね。少し焦げちゃったけど。', knight: '堅いだけで隙だらけよ。甘いわね。', cthulhu: '海鮮は嫌いじゃないけど、アンタはパス。', elf: '安らかに眠りなさい。夢の中で過去を探すといいわ。', cleric: '祈る暇も無かったみたいね。可哀想に。', satan: '魔王の魂……極上のコレクションが一つ増えたわ。', default: "塵一つ残さない……それが私の仕事だから。" },
@@ -281,8 +284,8 @@ export const CHARACTERS = {
             { speaker: 'narrator', text: '赤黒い瘴気が渦巻く玉座の間。マリアは冷たい笑みを浮かべ、復活した魔王サタンへと静かにリボルバーを向けた。' }
         ],
         storyIntro: [
-            { speaker: 'player', text: '雇い主さん、こちらの反応……良い獲物がいるって聞いたけど。' },
-            { speaker: 'narrator', text: '棺桶を背負った彼女は、リボルバーのシリンダーを回して笑った。' }
+            '雇い主さん、魔界から現れたっていう魔王サタン…。良い獲物だと思わない？',
+            '私の棺桶、今日はちょうど空いてるのよね。さあ、特大の悪魔を狩りに行きましょ。'
         ]
     },
     satan: {

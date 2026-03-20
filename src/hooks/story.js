@@ -28,8 +28,12 @@ export function initStoryMode(charId) {
     GameState.dialogueQueue = [
         { speaker: 'narrator', text: GameState.playerConfig.narratorIntro }
     ];
-    GameState.playerConfig.storyIntro.forEach(text => {
-        GameState.dialogueQueue.push({ speaker: 'player', text: text });
+    GameState.playerConfig.storyIntro.forEach(item => {
+        if (typeof item === 'string') {
+            GameState.dialogueQueue.push({ speaker: 'player', text: item });
+        } else {
+            GameState.dialogueQueue.push(item);
+        }
     });
 
     performFadeTransition(() => {
@@ -64,8 +68,12 @@ export function handleStoryProgression() {
                 }
 
                 if (storyLines) {
-                    storyLines.forEach(text => {
-                        GameState.dialogueQueue.push({ speaker: 'player', text: text });
+                    storyLines.forEach(item => {
+                        if (typeof item === 'string') {
+                            GameState.dialogueQueue.push({ speaker: 'player', text: item });
+                        } else {
+                            GameState.dialogueQueue.push(item);
+                        }
                     });
                     performFadeTransition(() => {
                         setupDialogueScreen();
