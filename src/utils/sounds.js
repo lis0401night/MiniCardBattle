@@ -46,6 +46,7 @@ export const AUDIO_INSTANCES = {
     bgmStageCthulhu: new Audio('assets/audio/bgm/bgm_stage_cthulhu01.mp3'),
     bgmStageElf: new Audio('assets/audio/bgm/bgm_stage_elf01.mp3'),
     bgmStageCleric: new Audio('assets/audio/bgm/bgm_stage_cleric01.mp3'),
+    bgmStageDevilHunter: new Audio('assets/audio/bgm/bgm_stage_devilhunter01.mp3'),
     bgmStageSatan: new Audio('assets/audio/bgm/bgm_stage_satan01.mp3'),
     // SE (Web Audio API用フォールバックとしても事前生成しておく)
     seClick: new Audio('assets/audio/se/se_click.mp3'),
@@ -108,7 +109,7 @@ export let isAudioUnlocked = false;
  */
 export async function unlockAudio() {
     if (isAudioUnlocked) return;
-    
+
     // AudioContext の初期化
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();

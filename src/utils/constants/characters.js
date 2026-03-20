@@ -253,7 +253,7 @@ export const CHARACTERS = {
         desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
         filter: 'sepia(0.3) contrast(1.1)', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_devilhunter.png', imageLose: 'assets/characters/char_devilhunter_lose.png', icon: 'assets/icons/icon_devilhunter.png', color: '#64748b',
-        leaderSkill: { name: '棺桶の目覚め', desc: '(SP:5) 自分の墓地からパワー10以下のカードを1枚選び、配置する。', cost: 5, action: 'devilhunter_resurrect' },
+        leaderSkill: { name: '冥府の呼び声', desc: '(SP:5) 自分の墓地からパワー10以下のカードを1枚選び、配置する。', cost: 5, action: 'devilhunter_resurrect' },
         dialogue: {
             intro: { android: '心のないガラクタね。弾丸の無駄遣いだけど、掃除してあげる。', dragon: 'でっかいトカゲね。その鱗、リボルバーで撃ち抜けるかしら？', knight: '正義のごっこ遊びはおしまいよ、騎士様。', cthulhu: '狂気なんて、硝煙の匂いで上書きしてあげるわ。', elf: '迷子のエルフね。私の棺桶の中でゆっくり眠りなさい。', cleric: 'インチキ臭い神様ね。私の銃の方がよっぽど信じられるわ。', satan: 'アンタが魔王ね。その魂、棺桶の特等席に案内してあげる。', default: "私の棺桶……今日はちょうど空いてるのよね。" },
             win: { android: 'ただのスクラップね。資源回収にでも回すわ。', dragon: 'いい毛皮が取れそうね。少し焦げちゃったけど。', knight: '堅いだけで隙だらけよ。甘いわね。', cthulhu: '海鮮は嫌いじゃないけど、アンタはパス。', elf: '安らかに眠りなさい。夢の中で過去を探すといいわ。', cleric: '祈る暇も無かったみたいね。可哀想に。', satan: '魔王の魂……極上のコレクションが一つ増えたわ。', default: "塵一つ残さない……それが私の仕事だから。" },

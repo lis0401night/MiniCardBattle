@@ -62,7 +62,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_android_hard',
         title: '感情の最適解',
-        description: 'アイギスでハードモードのストーリーをクリアする',
+        description: 'アイギスのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'android',
         reward: { type: 'premium', value: 'golem', name: '大理石のゴーレム', isPremiumUnlock: true }
@@ -78,7 +78,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_dragon_hard',
         title: '猛火の灰燼',
-        description: 'イグニスでハードモードのストーリーをクリアする',
+        description: 'イグニスのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'dragon',
         reward: { type: 'premium', value: 'dinosaur', name: '古代の大蜥蜴', isPremiumUnlock: true }
@@ -94,7 +94,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_knight_hard',
         title: '白銀の誓光',
-        description: 'セレスティアでハードモードのストーリーをクリアする',
+        description: 'セレスティアのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'knight',
         reward: { type: 'premium', value: 'clone', name: '鏡の戦士', isPremiumUnlock: true }
@@ -110,7 +110,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_cthulhu_hard',
         title: '無窮の深淵',
-        description: 'ナイアでハードモードのストーリーをクリアする',
+        description: 'ナイアのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'cthulhu',
         reward: { type: 'premium', value: 'diviner', name: '星詠みの占術士', isPremiumUnlock: true }
@@ -126,7 +126,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_elf_hard',
         title: '真理の銀矢',
-        description: 'リナでハードモードのストーリーをクリアする',
+        description: 'リナのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'elf',
         reward: { type: 'premium', value: 'sniper', name: '森の射手', isPremiumUnlock: true }
@@ -142,7 +142,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_cleric_hard',
         title: '背徳の聖女',
-        description: 'エリシアでハードモードのストーリーをクリアする',
+        description: 'エリシアのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'cleric',
         reward: { type: 'premium', value: 'cleric', name: '見習い修道女', isPremiumUnlock: true }
@@ -158,10 +158,10 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'story_devilhunter_hard',
         title: '特大の棺桶',
-        description: 'マリアでハードモードのストーリーをクリアする',
+        description: 'マリアのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'devilhunter',
-        reward: null // 仮設定。必要に応じて特定のプレミアムカード報酬を設定
+        reward: { type: 'premium', value: 'necromancer', name: 'ヴィス・ガルドの背教者', isPremiumUnlock: true }
     },
     // --- フリーバトル勝利数 ---
     {
