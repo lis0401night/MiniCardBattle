@@ -24,7 +24,7 @@ export default {
         'highelf', 'highelf', 'highelf', 'highelf',
         'mage', 'mage', 'mage', 'mage',
         'bard', 'bard',
-        'spider', 'spider',
         'sniper', 'sniper', 'sniper', 'sniper',
+        'charger', 'charger',
     ]
 };

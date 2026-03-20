@@ -22,9 +22,9 @@ export default {
     hard: [
         'collector', 'collector', 'collector', 'collector',
         'vampire', 'vampire', 'vampire', 'vampire',
-        'shade', 'shade',
-        'zombie', 'zombie',
         'franken', 'franken', 'franken', 'franken',
+        'shade', 'shade',
+        'diviner', 'diviner',
         'necromancer', 'necromancer', 'necromancer', 'necromancer',
     ]
 };

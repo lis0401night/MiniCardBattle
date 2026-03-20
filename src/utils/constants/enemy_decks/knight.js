@@ -22,8 +22,8 @@ export default {
         'champion', 'champion', 'champion', 'champion',
         'assassin', 'assassin', 'assassin', 'assassin',
         'commander', 'commander', 'commander', 'commander',
-        'lightpaladin', 'lightpaladin',
         'darkpaladin', 'darkpaladin',
+        'ninja', 'ninja',
         'clone', 'clone', 'clone', 'clone',
     ]
 };

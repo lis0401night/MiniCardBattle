@@ -23,8 +23,7 @@ export default {
         'empress', 'empress', 'empress', 'empress',
         'fire', 'fire', 'fire', 'fire',
         'incinerator', 'incinerator', 'incinerator', 'incinerator',
-        'monk', 'monk',
-        'barrier', 'barrier',
+        'monk', 'monk', 'monk', 'monk',
         'cleric', 'cleric', 'cleric', 'cleric',
     ]
 };

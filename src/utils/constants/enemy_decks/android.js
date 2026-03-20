@@ -23,8 +23,7 @@ export default {
         'cyberdragon', 'cyberdragon', 'cyberdragon', 'cyberdragon',
         'cyberman', 'cyberman', 'cyberman', 'cyberman',
         'bigai', 'bigai', 'bigai', 'bigai',
-        'titan', 'titan',
-        'mantis', 'mantis',
+        'titan', 'titan', 'titan', 'titan',
         'clone', 'clone', 'clone', 'clone',
     ]
 };

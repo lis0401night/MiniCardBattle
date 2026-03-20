@@ -24,8 +24,8 @@ export default {
         'dragon', 'dragon', 'dragon', 'dragon',
         'drifter', 'drifter', 'drifter', 'drifter',
         'berserker', 'berserker', 'berserker', 'berserker',
-        'babydragon', 'babydragon',
         'dragonewt', 'dragonewt', 'dragonewt', 'dragonewt',
         'dinosaur', 'dinosaur',
+        'dancer', 'dancer',
     ]
 };
