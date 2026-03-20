@@ -20,7 +20,7 @@ export const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'collect_20',
-        title: '素人収集家',
+        title: 'Mr.コレクター',
         description: '異なるカードを20種類集める',
         type: 'collection',
         targetValue: 20,
@@ -28,7 +28,7 @@ export const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'collect_30',
-        title: '熟練収集家',
+        title: '真理の探究者',
         description: '異なるカードを30種類集める',
         type: 'collection',
         targetValue: 30,
@@ -36,7 +36,7 @@ export const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'collect_40',
-        title: '達人収集家',
+        title: '魂の目録',
         description: '異なるカードを40種類集める',
         type: 'collection',
         targetValue: 40,
@@ -48,8 +48,41 @@ export const ACHIEVEMENT_MASTER = [
         description: 'すべてのカードを集める（トークン等を除く）',
         type: 'collection',
         targetValue: -1, // プログラム側で全枚数を計算して判定
-        reward: null
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
     },
+    // --- フリーバトル勝利数 ---
+    {
+        id: 'free_win_5',
+        title: '駆け出しの闘士',
+        description: 'フリーバトルで累計5回勝利する',
+        type: 'free_battle_win',
+        targetValue: 5,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    {
+        id: 'free_win_20',
+        title: '強者',
+        description: 'フリーバトルで累計20回勝利する',
+        type: 'free_battle_win',
+        targetValue: 20,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    {
+        id: 'free_win_30',
+        title: '百戦錬磨',
+        description: 'フリーバトルで累計30回勝利する',
+        type: 'free_battle_win',
+        targetValue: 30,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    {
+        id: 'free_win_40',
+        title: '闘技場の覇者',
+        description: 'フリーバトルで累計40回勝利する',
+        type: 'free_battle_win',
+        targetValue: 40,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    }
     // --- ストーリークリア ---
     {
         id: 'story_android',
@@ -172,31 +205,6 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'satan_high',
         reward: { type: 'playmat', value: 'satan', name: 'サタン' }
     },
-    // --- フリーバトル勝利数 ---
-    {
-        id: 'free_win_5',
-        title: '駆け出しの闘士',
-        description: 'フリーバトルで累計5回勝利する',
-        type: 'free_battle_win',
-        targetValue: 5,
-        reward: null
-    },
-    {
-        id: 'free_win_20',
-        title: '百戦錬磨',
-        description: 'フリーバトルで累計20回勝利する',
-        type: 'free_battle_win',
-        targetValue: 20,
-        reward: null
-    },
-    {
-        id: 'free_win_50',
-        title: '闘技場の覇者',
-        description: 'フリーバトルで累計50回勝利する',
-        type: 'free_battle_win',
-        targetValue: 50,
-        reward: null
-    }
 ];
 
 // --- 実績・履歴データの管理 ---

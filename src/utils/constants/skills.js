@@ -36,13 +36,14 @@ export const SKILLS = {
     metamorph: { name: '変身', icon: '❓', desc: (val) => '召喚時、全カードの中からランダムに1枚に変身し、その能力を発動する。' },
     resurrect: { name: '復活', icon: '⚰️', desc: (val) => `召喚時、自分の墓地からパワー${val}以下のカード1枚を選択して配置する。` },
     standby: { name: '待機', icon: '⏳', desc: (val) => `召喚時、自身に${val}ターン防御を付与する。` },
-    artillery: { name: '砲撃', icon: '💥', desc: (val) => `召喚時、相手リーダーに${val}ダメージ` }
+    artillery: { name: '砲撃', icon: '💥', desc: (val) => `召喚時、相手リーダーに${val}ダメージ` },
+    shuffle: { name: '攪乱', icon: '🃏', desc: (val) => '召喚時、お互いの手札を全て捨て、墓地をリセットする。その後、お互いにカードを4枚引く。' }
 };
 
 // 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

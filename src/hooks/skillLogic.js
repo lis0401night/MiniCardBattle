@@ -1,6 +1,6 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic } from './engine.js';
@@ -107,6 +107,35 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             drawCard(o);
         }
         await sleep(500);
+    } else if (skillId === 'shuffle') {
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '攪乱', '#facc15');
+        ['blue', 'red'].forEach(p => {
+            const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
+            const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+            const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+            
+            // 手札・墓地をデッキに戻す
+            while(h.length > 0) d.push(h.pop());
+            while(g.length > 0) d.push(g.pop());
+            
+            // デッキを再シャッフル
+            shuffleArray(d);
+            
+            // 互いに4枚引く
+            for(let i = 0; i < 4; i++) {
+                if (d.length > 0) {
+                    const card = d.shift();
+                    // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）
+                    card.uid = `${p}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                    h.push(card);
+                }
+            }
+        });
+        
+        updateDeckDisplay('blue');
+        updateDeckDisplay('red');
+        renderHand();
+        await sleep(600);
     } else if (skillId === 'clone') {
         const count = skillValue || 1;
         const tC = CARD_MASTER.find(m => m.id === 'token_clone');
