@@ -33,3 +33,6 @@ test_puppeteer.js
 
 # Backup directories
 backup/
+
+# Large Assets
+*.psd
