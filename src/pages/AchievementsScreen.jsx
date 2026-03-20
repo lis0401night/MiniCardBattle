@@ -117,7 +117,7 @@ export default function AchievementsScreen() {
         {statsOpen && (
           <div className="accordion-content" style={{ display: 'block', padding: '10px', background: '#1e293b', borderRadius: '0 0 8px 8px' }}>
             <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '15px', borderBottom: '1px solid #334155', paddingBottom: '5px' }}>
-              <div>フリーバトル勝利数: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{stats.freeBattleWins || 0}</span> 回</div>
+              <div>バトル勝利数: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{stats.freeBattleWins || 0}</span> 回</div>
             </div>
             <div style={{ fontWeight: 'bold', color: '#f8fafc', marginBottom: '10px', fontSize: '0.95rem' }}>
               各リーダー利用率 (合計: {leaderUsage.totalUsage || 0}回)

@@ -1093,6 +1093,12 @@ export function endBattle() {
     GameState.currentTurn = null;
     if (updateBattleUIHook) updateBattleUIHook();
     GameState.isProcessing = false; // バトル結果表示と同時にフラグをリセット
+    
+    // 全モード共通：実績用の勝利カウントアップ
+    if (GameState.lastBattleResult === 'win' && typeof incrementStat === 'function') {
+        incrementStat('freeBattleWins');
+    }
+
     setTimeout(() => {
         playSound(SOUNDS.bgmTitle);
 
@@ -1174,10 +1180,6 @@ export function endBattle() {
                     { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose') },
                     { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win') }
                 ];
-                // 実績: フリーバトル勝利
-                if (typeof incrementStat === 'function') {
-                    incrementStat('freeBattleWins');
-                }
                 showCardReward(GameState.enemyConfig.id);
             } else {
                 GameState.dialogueQueue = [

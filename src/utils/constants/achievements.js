@@ -46,7 +46,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'free_win_5',
         title: '駆け出しの闘士',
-        description: 'フリーバトルで累計5回勝利する',
+        description: 'バトルで累計5回勝利する',
         type: 'free_battle_win',
         targetValue: 5,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
@@ -54,7 +54,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'free_win_20',
         title: '強者',
-        description: 'フリーバトルで累計20回勝利する',
+        description: 'バトルで累計20回勝利する',
         type: 'free_battle_win',
         targetValue: 20,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
@@ -62,7 +62,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'free_win_30',
         title: '百戦錬磨',
-        description: 'フリーバトルで累計30回勝利する',
+        description: 'バトルで累計30回勝利する',
         type: 'free_battle_win',
         targetValue: 30,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
@@ -70,7 +70,7 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'free_win_40',
         title: '闘技場の覇者',
-        description: 'フリーバトルで累計40回勝利する',
+        description: 'バトルで累計40回勝利する',
         type: 'free_battle_win',
         targetValue: 40,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
