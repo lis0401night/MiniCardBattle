@@ -64,7 +64,7 @@ export const CARD_MASTER = [
     { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'morph', value: 2 }, { id: 'deadly' }], voiceCategory: 'horse', flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
     { id: 'palerider', name: '死の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], voiceCategory: 'horse', flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
     { id: 'baldanders', name: 'バルトアンデルス', power: 0, skill: 'metamorph', rarity: 4, voiceCategory: 'rock', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
-    { id: 'shuffler', name: 'シャッフラー', power: 5, skills: [{ id: 'legendary' }, { id: 'shuffle' }], rarity: 3, voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
+    { id: 'shuffler', name: 'シャッフラー', power: 5, skill: 'shuffle', rarity: 4, voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     // トークンカード
     { id: 'token_soldier', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },

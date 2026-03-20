@@ -82,7 +82,7 @@ export const ACHIEVEMENT_MASTER = [
         type: 'free_battle_win',
         targetValue: 40,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
-    }
+    },
     // --- ストーリークリア ---
     {
         id: 'story_android',
@@ -204,7 +204,7 @@ export const ACHIEVEMENT_MASTER = [
         type: 'event_clear',
         targetValue: 'satan_high',
         reward: { type: 'playmat', value: 'satan', name: 'サタン' }
-    },
+    }
 ];
 
 // --- 実績・履歴データの管理 ---
