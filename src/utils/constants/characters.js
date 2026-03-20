@@ -251,10 +251,10 @@ export const CHARACTERS = {
     devilhunter: {
         id: 'devilhunter', stageId: 'devilhunter', name: '悪魔狩り マリア',
         desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
-        easeOfUse: 2,
+        easeOfUse: 1,
         filter: 'sepia(0.3) contrast(1.1)', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_devilhunter.png', imageLose: 'assets/characters/char_devilhunter_lose.png', icon: 'assets/icons/icon_devilhunter.png', imageEnding: 'assets/characters/char_devilhunter_ending.png', color: '#64748b',
-        leaderSkill: { name: '棺の解放', desc: '(SP:5) 自分の墓地からパワー10以下のカードを1枚選び、自分のれーん配置する。', cost: 5, action: 'devilhunter_resurrect' },
+        leaderSkill: { name: '棺の解放', desc: '(SP:3) 自分の墓地からパワー10以下のカードを1枚選び、自分のレーンに配置する。', cost: 3, action: 'devilhunter_resurrect' },
         preBattleLine: 'さぁ、仕事の時間よ。',
         mirrorIntro: '自分の過去と向き合うなんて、三流のやることよ。私の弾丸でとっとと終わらせてあげる。',
         narratorIntro: '棺桶を背負った彼女は「悪魔狩り」と呼ばれる。その重い棺の中には、かつての獲物たちから奪った多数の魂が封じ込められている。',

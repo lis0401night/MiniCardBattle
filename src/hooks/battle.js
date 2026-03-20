@@ -685,9 +685,8 @@ export async function cleanupDestroyedCards() {
         // その後に揺らす
         destroyedItems.forEach(item => {
             if (item.el) {
-                requestAnimationFrame(() => {
-                    item.el.classList.add('anim-shake');
-                });
+                // Reactの再描画競合を避けるため、requestAnimationFrameを外して即座にクラスを付与
+                item.el.classList.add('anim-shake');
             }
         });
         playSound(SOUNDS.seDamage);
@@ -843,6 +842,13 @@ export async function playCard(o, hI, l) {
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand, b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     // 上書き配置時の破棄処理
     if (b[l]) {
+        const side = o === 'blue' ? 'player' : 'enemy';
+        const el = document.querySelector(`#${side}-lanes .cell[data-lane="${l}"] .card`);
+        if (el) {
+            el.classList.add('anim-shake');
+            playSound(SOUNDS.seDamage);
+            await sleep(300);
+        }
         if (!(await discardCard(o, b[l], l))) b[l] = null;
     }
     b[l] = h.splice(hI, 1)[0];
