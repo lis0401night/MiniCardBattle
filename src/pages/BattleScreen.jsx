@@ -253,10 +253,8 @@ export default function BattleScreen() {
                         className={`action-btn leader-skill-btn ${GameState.playerSP >= (GameState.playerConfig?.leaderSkill?.cost || 5) && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode ? 'ready glow active' : ''}`}
                         onClick={(e) => { 
                             e.stopPropagation(); 
-                            if (GameState.playerSP >= (GameState.playerConfig?.leaderSkill?.cost || 5) && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode) {
-                                playSound(SOUNDS.seClick); 
-                                showSkillConfirm(); 
-                            }
+                            playSound(SOUNDS.seClick); 
+                            showSkillConfirm(); 
                         }}
                     >
                         リーダースキル

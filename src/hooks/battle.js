@@ -243,18 +243,27 @@ export function showSpeechBubble(target) {
 }
 
 export function showSkillConfirm() {
-    if (GameState.isProcessing || GameState.isBattleEnded || GameState.currentTurn !== 'player' || GameState.isPlacementMode) return;
+    const s = GameState.playerConfig.leaderSkill; if (!s) return;
     playSound(SOUNDS.seClick);
-    const s = GameState.playerConfig.leaderSkill; if (!s.cost) return;
     
     let statusText = "";
     let color = "";
     let canExecute = false;
 
-    if (GameState.playerSP >= s.cost) { 
-        statusText = "発動可能です！"; 
-        color = "#4ade80"; 
-        canExecute = true; 
+    if (!s.cost) {
+        statusText = "パッシブスキル（常に発動）";
+        color = "#4ade80";
+        canExecute = false;
+    } else if (GameState.playerSP >= s.cost) { 
+        if (!GameState.isProcessing && !GameState.isBattleEnded && GameState.currentTurn === 'player' && !GameState.isPlacementMode) {
+            statusText = "発動可能です！"; 
+            color = "#4ade80"; 
+            canExecute = true; 
+        } else {
+            statusText = "現在発動できません（自分のターン待機中のみ）"; 
+            color = "#facc15"; 
+            canExecute = false; 
+        }
     } else { 
         statusText = `発動まであと ${s.cost - GameState.playerSP} SP`; 
         color = "#f87171"; 
