@@ -1,2 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
 node_modules/
 .env
+
+# Vite / React production builds
+dist/
+dist-ssr/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.sw?
+
+# Refactoring & Migration Scratch Scripts
+analyze.cjs
+check_syntax.js
+check_syntax_all.js
+fix_globals.cjs
+fix_interpolations.cjs
+migrate_assets.cjs
+migrate_code_paths.cjs
+test.js
+test_console.js
+test_flow.js
+test_puppeteer.js
+
+# Backup directories
+backup/

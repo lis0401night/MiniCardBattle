@@ -1,0 +1,11 @@
+export const UI_IMAGES = {
+    MENU_STORY: 'assets/ui/ui_storybutton01.png',
+    MENU_EVENT: 'assets/ui/ui_eventbutton01.png',
+    MENU_RULES: 'assets/ui/ui_rulebutton01.png',
+    MENU_FREE: 'assets/ui/ui_freebattlebutton01.png',
+    MENU_GALLERY: 'assets/ui/ui_gallerybutton01.png',
+    EVENT_HIGH_DIFF: 'assets/ui/ui_event_highdiffbutton01.png',
+    EVENT_DEFENSE: 'assets/ui/ui_event_defensebutton01.png',
+    GALLERY_CARD_LIST: 'assets/ui/ui_cardlistbutton01.png',
+    GALLERY_ACHIEVEMENTS: 'assets/ui/ui_achievementsbutton01.png'
+};

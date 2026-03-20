@@ -7,14 +7,28 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Mini Card Battle</title>
     <!-- 本番環境でPWA化する時にコメントを外してください -->
+    <!-- 本番環境でPWA化する時にコメントを外してください -->
     <!-- <link rel="manifest" href="manifest.json"> -->
-    <link rel="stylesheet" href="css/style.css">
     <script>
         window.onerror = function (msg, url, line, col, error) {
             if (typeof showErrorModal === 'function') {
                 showErrorModal(msg + "\nLine: " + line + "\nURL: " + url);
             } else {
                 alert("Critical Error: " + msg + "\nLine: " + line + "\nURL: " + url);
+            }
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            alert("Unhandled Promise Rejection: " + event.reason);
+        });
+        const origConsoleError = console.error;
+        console.error = function(...args) {
+            origConsoleError.apply(console, args);
+            // Ignore benign React DevTools errors or warnings
+            const msg = args.join(' ');
+            if (msg.includes("Warning:") || msg.includes("react-devtools")) return;
+            // React render crash alert
+            if (msg.includes("Uncaught") || msg.includes("Minified React error") || msg.includes("is not defined") || msg.includes("read properties")) {
+                alert("React Rendering Error: " + msg.substring(0, 200));
             }
         };
     </script>
@@ -25,60 +39,8 @@
     <!-- アプリケーションのUIコンポーネントがここに動的に挿入されます -->
     <div id="app-container"></div>
 
-    <!-- ===== JSファイルの読み込み ===== -->
-    <!-- 定数データ -->
-    <script src="js/constants/config.js"></script>
-    <script src="js/constants/skills.js"></script>
-    <script src="js/constants/stages.js"></script>
-    <script src="js/constants/characters.js"></script>
-    <script src="js/constants/uiImages.js"></script>
-    <script src="js/constants/voices.js"></script>
-    <script src="js/constants/cards.js"></script>
-    <script src="js/constants/achievements.js"></script>
-    <script src="js/constants/initial_decks.js"></script>
-    <script src="js/constants/playmats.js"></script>
-    <script src="js/constants/enemy_decks.js"></script>
-    <script src="js/constants/enemy_decks/android.js"></script>
-    <script src="js/constants/enemy_decks/dragon.js"></script>
-    <script src="js/constants/enemy_decks/knight.js"></script>
-    <script src="js/constants/enemy_decks/cthulhu.js"></script>
-    <script src="js/constants/enemy_decks/elf.js"></script>
-    <script src="js/constants/enemy_decks/cleric.js"></script>
-    <script src="js/constants/enemy_decks/satan.js"></script>
-    <script src="js/constants/enemy_decks/satan_high.js"></script>
-
-    <!-- UIコンポーネント（テンプレート群） -->
-    <script src="js/components/BaseUI.js"></script>
-    <script src="js/components/BattleUI.js"></script>
-    <script src="js/components/ModalUI.js"></script>
-
-    <!-- システム -->
-    <script src="js/sounds.js"></script>
-    <script src="js/modules/state.js"></script>
-    <script src="js/modules/utils.js"></script>
-    <script src="js/modules/progression.js"></script>
-
-    <!-- UIロジック（分割後） -->
-    <script src="js/modules/ui/uiMainCore.js"></script>
-    <script src="js/modules/ui/uiGallery.js"></script>
-    <script src="js/modules/ui/uiPlaymat.js"></script>
-    <script src="js/modules/ui/uiBattle.js"></script>
-    <script src="js/modules/ui/uiDialogue.js"></script>
-    <script src="js/modules/ui/uiModals.js"></script>
-    <script src="js/modules/deck.js"></script>
-    <script src="js/modules/engine.js"></script>
-    <script src="js/modules/skillLogic.js"></script>
-    <script src="js/modules/leaderSkills.js"></script>
-    <script src="js/modules/battle.js"></script>
-    <script src="js/modules/ai_easy.js"></script>
-    <script src="js/modules/ai_normal.js"></script>
-    <script src="js/modules/ai.js"></script>
-
-    <script src="js/modules/story.js"></script>
-    <script src="js/modules/events.js"></script>
-
     <!-- メインエントリー -->
-    <script src="js/main.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 
 </html>

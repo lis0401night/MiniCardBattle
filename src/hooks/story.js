@@ -1,0 +1,108 @@
+import { CHARACTERS } from '../utils/constants/characters.js';
+import { switchScreen } from '../utils/gameUtils.js';
+import { startBattleFlow } from './deck.js';
+import { GameState } from './gameState.js';
+import { startNextBattleSequence, setupDialogueScreen, showContinueScreen } from './uiDialogue.js';
+import { performFadeTransition } from './uiMainCore.js';
+
+// ==========================================
+// ストーリーモード進行管理 (story.js)
+// ==========================================
+
+export function initStoryMode(charId) {
+    GameState.playerConfig = CHARACTERS[charId];
+
+    // 他のキャラクターのIDをランダムに並び替え（プレイヤーとサタンは除く）
+    const otherIds = Object.keys(CHARACTERS).filter(id => id !== charId && id !== 'satan');
+    for (let i = otherIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [otherIds[i], otherIds[j]] = [otherIds[j], otherIds[i]];
+    }
+
+    // ストーリー構成: 1-3戦目(ランダム), 4戦目(自分/影), 5-6戦目(残りランダム), 7戦目(サタン)
+    GameState.storyQueue = [otherIds[0], otherIds[1], otherIds[2], 'shadow', otherIds[3], otherIds[4], 'satan'];
+
+    GameState.battleCount = 1;
+    GameState.appState = 'story_intro';
+
+    GameState.dialogueQueue = [
+        { speaker: 'narrator', text: GameState.playerConfig.narratorIntro }
+    ];
+    GameState.playerConfig.storyIntro.forEach(text => {
+        GameState.dialogueQueue.push({ speaker: 'player', text: text });
+    });
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
+/**
+ * ストーリーモードの進行管理
+ */
+export function handleStoryProgression() {
+    if (GameState.appState === 'pre_dialogue') {
+        startBattleFlow();
+    } else if (GameState.appState === 'post_dialogue') {
+        if (GameState.lastBattleResult === 'lose') {
+            showContinueScreen();
+        } else {
+            // 戦闘に勝利した場合、中間のストーリーがあるか判定
+            const isSatanBattle = GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow;
+            if (GameState.playerConfig.interBattleStory && !isSatanBattle) {
+                GameState.appState = 'inter_battle_story';
+                GameState.dialogueQueue = [];
+
+                let storyLines = null;
+                const stories = GameState.playerConfig.interBattleStory;
+
+                if (stories[GameState.battleCount]) {
+                    storyLines = stories[GameState.battleCount];
+                } else if (stories.default && stories.default.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * stories.default.length);
+                    storyLines = stories.default[randomIndex];
+                }
+
+                if (storyLines) {
+                    storyLines.forEach(text => {
+                        GameState.dialogueQueue.push({ speaker: 'player', text: text });
+                    });
+                    performFadeTransition(() => {
+                        setupDialogueScreen();
+                    });
+                } else {
+                    // ストーリーが無ければ即座にカウントアップして次へ
+                    GameState.battleCount++;
+                    performFadeTransition(() => {
+                        startNextBattleSequence();
+                    });
+                }
+            } else {
+                // 通常勝利またはサタン戦後のストーリー用
+                GameState.battleCount++;
+                performFadeTransition(() => {
+                    startNextBattleSequence();
+                });
+            }
+        }
+    } else if (GameState.appState === 'story_intro') {
+        performFadeTransition(() => {
+            startNextBattleSequence();
+        });
+    } else if (GameState.appState === 'inter_battle_story') {
+        GameState.battleCount++;
+        performFadeTransition(() => {
+            startNextBattleSequence();
+        });
+    } else if (GameState.appState === 'ending_dialogue') {
+        GameState.appState = 'ending_illust';
+        switchScreen('screen-ending-illust');
+        const img = document.getElementById('ending-illust-img');
+        const txt = document.getElementById('ending-text');
+        img.src = GameState.playerConfig.imageEnding;
+        setTimeout(() => {
+            img.style.opacity = 1;
+            txt.style.opacity = 1;
+        }, 100);
+    }
+}

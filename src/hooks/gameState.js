@@ -1,0 +1,33 @@
+import { CHARACTERS } from '../utils/constants/characters.js';
+
+export const GameState = {
+    playerConfig: CHARACTERS.android,
+    enemyConfig: CHARACTERS.dragon,
+    playerDeckSelection: [],
+    playerInventory: {},
+    playerHP: 0, enemyHP: 0, playerMaxHP: 0, enemyMaxHP: 0, playerSP: 0, enemySP: 0,
+    playerHand: [], enemyHand: [], playerDeck: [], enemyDeck: [],
+    playerDiscard: [], enemyDiscard: [],
+    playerBoard: [null, null, null], enemyBoard: [null, null, null],
+    appState: 'title', gameMode: 'story', aiLevel: 1, storyDifficulty: 1,
+    isProcessing: false, selectedCardIndex: null, isBattleEnded: false,
+    firstPlayer: 'blue', turnCount: 0,
+    battlePhase: 'INIT', actionQueue: [], combatStep: 0,
+    aiDecision: null,
+    selectedBoardLaneIndex: null, selectedBoardSide: null,
+    isDiscardingMode: false, discardMaxCount: 0, discardSelectedIndices: [],
+    isPlacementMode: false,
+    battleCount: 1, storyQueue: [], dialogueQueue: [], currentDialogueIndex: 0,
+    pendingCharId: null, lastBattleResult: null,
+    longPressTimer: null,
+    selectedStageId: null,
+    gameVolume: 0.5,
+    premiumCards: [],
+    unlockedPremiumCards: [],
+    selectedPlaymatId: null
+};
+
+// Global fallback for browser debugging
+if (typeof window !== 'undefined') {
+    window.GameState = GameState;
+}
