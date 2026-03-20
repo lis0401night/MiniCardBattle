@@ -1,4 +1,5 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { setupEventSatanConfrontation } from './events.js';

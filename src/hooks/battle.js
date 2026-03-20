@@ -1,6 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
+import { incrementStat } from '../utils/constants/achievements.js';
 import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';

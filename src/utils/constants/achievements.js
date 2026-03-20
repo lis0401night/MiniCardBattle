@@ -42,14 +42,6 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 40,
         reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
     },
-    {
-        id: 'collect_all',
-        title: 'カードマスター',
-        description: 'すべてのカードを集める（トークン等を除く）',
-        type: 'collection',
-        targetValue: -1, // プログラム側で全枚数を計算して判定
-        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
-    },
     // --- フリーバトル勝利数 ---
     {
         id: 'free_win_5',
@@ -247,7 +239,7 @@ export function saveAchievements() {
 }
 
 // 統計データの更新
-function incrementStat(type, key = null, amount = 1) {
+export function incrementStat(type, key = null, amount = 1) {
     if (type === 'leaderUsage' && key) {
         achievementData.stats.leaderUsage[key] = (achievementData.stats.leaderUsage[key] || 0) + amount;
     } else if (type === 'storyClears' && key) {
