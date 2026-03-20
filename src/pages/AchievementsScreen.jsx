@@ -147,7 +147,7 @@ export default function AchievementsScreen() {
           {achievements.map((ach) => {
              const savedData = achievementData?.achievements?.[ach.id] || { progress: 0, isUnlocked: false };
              const progress = savedData.progress;
-             const isStory = ach.type === 'story_clear' || ach.type === 'story_clear_hard';
+             const isStory = ach.type === 'story_clear' || ach.type === 'story_clear_hard' || ach.type === 'event_clear';
              
              let target = ach.targetValue;
              if (target === -1 && CARD_MASTER) {

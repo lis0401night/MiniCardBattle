@@ -117,7 +117,18 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             // 手札・墓地をデッキに戻す
             while(h.length > 0) d.push(h.pop());
             while(g.length > 0) d.push(g.pop());
-            
+        });
+        
+        // 捨てた状態で一度待機する
+        updateDeckDisplay('blue');
+        updateDeckDisplay('red');
+        renderHand();
+        await sleep(1200);
+
+        ['blue', 'red'].forEach(p => {
+            const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
+            const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+
             // デッキを再シャッフル
             shuffleArray(d);
             

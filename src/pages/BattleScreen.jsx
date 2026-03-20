@@ -88,6 +88,9 @@ export default function BattleScreen() {
         }
         if (GameState.isProcessing || (typeof isTransitioning === 'function' && isTransitioning())) return;
         
+        // 相手ターン中または戦闘中（攻撃アニメーション等）は操作不可
+        if (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT') return;
+
         // カード配置処理
         if (GameState.selectedCardIndex !== null && side === 'player') {
             const newCard = GameState.playerHand[GameState.selectedCardIndex];
@@ -146,6 +149,8 @@ export default function BattleScreen() {
 
     const handleHandCardClick = (idx) => {
         if (GameState.isProcessing && !GameState.isDiscardingMode) return;
+        if (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT') return;
+
         playSound(SOUNDS.seClick);
         
         if (GameState.isDiscardingMode) {
