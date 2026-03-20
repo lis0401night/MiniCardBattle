@@ -142,7 +142,7 @@ export function initBattleState() {
         GameState.playerHP = GameState.playerMaxHP; GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
         GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
-        GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; 
+        GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
         GameState.isPlacementMode = false; GameState.placementToken = null; GameState.placementSelectedLanes = [];
         GameState.isEnemyTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
         updateCardDetail(null);
@@ -445,16 +445,22 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
                 
                 if (GameState.targetSelectedLanes.length >= count) {
                     setTimeout(() => {
-                        GameState.isEnemyTargetMode = false;
-                        const result = [...GameState.targetSelectedLanes];
-                        GameState.targetSelectedLanes = [];
-                        GameState.targetMaxCount = 0;
-                        window.handleEnemyLaneClick = null;
-                        if (updateBattleUIHook) updateBattleUIHook();
-                        resolve(result);
+                        window.finishEnemySelection();
                     }, 300);
                 }
             }
+        };
+
+        window.finishEnemySelection = () => {
+            playSound(SOUNDS.seClick);
+            GameState.isEnemyTargetMode = false;
+            const result = [...GameState.targetSelectedLanes];
+            GameState.targetSelectedLanes = [];
+            GameState.targetMaxCount = 0;
+            window.handleEnemyLaneClick = null;
+            window.finishEnemySelection = null;
+            if (updateBattleUIHook) updateBattleUIHook();
+            resolve(result);
         };
 
         if (updateBattleUIHook) updateBattleUIHook();

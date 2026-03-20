@@ -265,7 +265,7 @@ export default function BattleScreen() {
                         リーダースキル
                     </button>
                     {GameState.isPlacementMode ? (
-                        <button id="btn-end-turn" className="action-btn" style={{ background: '#ef4444', borderColor: '#dc2626' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishPlacementSelection) window.finishPlacementSelection(); }}>配置終了</button>
+                        <button id="btn-end-turn" className="action-btn" style={{ background: '#ef4444', borderColor: '#dc2626' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishPlacement) window.finishPlacement(); }}>配置終了</button>
                     ) : GameState.isDiscardingMode ? (
                         <button id="btn-end-turn" className="action-btn" style={{ background: '#facc15', color: '#000', borderColor: '#eab308' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishHandSelection) window.finishHandSelection(); }}>選択終了</button>
                     ) : GameState.isEnemyTargetMode ? (
