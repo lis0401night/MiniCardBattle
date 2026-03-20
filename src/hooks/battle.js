@@ -897,6 +897,7 @@ export async function determineTurnOrder() {
 
     if (window.startTurnOrderReact) {
         window.startTurnOrderReact((firstPlayer) => {
+            GameState.firstPlayer = firstPlayer;
             GameState.isProcessing = false;
             startTurn(firstPlayer);
         });
