@@ -244,7 +244,7 @@ export function populateCardPreview(prefix, card) {
         cardClone.style.width = "180px";
         cardClone.style.height = "240px";
         cardClone.innerHTML = `
-            <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${GameState.playerConfig.filter};"></div>
+            <div class="card-bg" style="background-image: url('${cardImgUrl}'); filter: ${card.filter || 'none'};"></div>
             <div class="card-power">${card.currentPower || card.power}</div>
         `;
         // スキルバッジの描画（BaseUI.js の renderSkillTag を再利用）

@@ -203,7 +203,7 @@ export default function DeckEditorScreen() {
                      onPointerCancel={cancelLongPress}
                      onClick={() => handleClick(id, removeCard)}>
                   <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block' }}>
-                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: GameState.playerConfig?.filter || 'none' }}></div>
+                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: cardObj.filter || 'none' }}></div>
                     
                     {isPremUnlocked && (
                       <div
@@ -256,7 +256,7 @@ export default function DeckEditorScreen() {
                      onPointerCancel={cancelLongPress}
                      onClick={() => handleClick(template, addCard)}>
                   <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block', opacity }}>
-                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: GameState.playerConfig?.filter || 'none' }}></div>
+                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: template.filter || 'none' }}></div>
                     
                     {isPremUnlocked && (
                       <div

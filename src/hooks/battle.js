@@ -842,13 +842,6 @@ export async function playCard(o, hI, l) {
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand, b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     // 上書き配置時の破棄処理
     if (b[l]) {
-        const side = o === 'blue' ? 'player' : 'enemy';
-        const el = document.querySelector(`#${side}-lanes .cell[data-lane="${l}"] .card`);
-        if (el) {
-            el.classList.add('anim-shake');
-            playSound(SOUNDS.seDamage);
-            await sleep(300);
-        }
         if (!(await discardCard(o, b[l], l))) b[l] = null;
     }
     b[l] = h.splice(hI, 1)[0];
@@ -966,10 +959,10 @@ export async function executeSingleCombat(atk, l) {
     await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             if (atk === 'blue') {
-                aCell.style.animation = 'attack-up 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                aCell.style.animation = 'attack-up 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
                 aCell.style.zIndex = '20';
             } else {
-                aCell.style.animation = 'attack-down 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                aCell.style.animation = 'attack-down 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
                 aCell.style.zIndex = '20';
             }
             playSound(SOUNDS.seAttack);
@@ -977,7 +970,7 @@ export async function executeSingleCombat(atk, l) {
         });
     }));
 
-    await sleep(600); // アニメーション衝突タイミング(1.2sの50%)
+    await sleep(500); // アニメーション衝突タイミング(1.0sの50%)
     // 衝突後に元の状態へ戻す
     if (aCell) {
         aCell.style.animation = '';

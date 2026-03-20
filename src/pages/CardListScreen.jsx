@@ -97,7 +97,7 @@ export default function CardListScreen() {
             const opacity = isOwned ? '1' : '0.4';
             const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
             const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
-            const filter = GameState.playerConfig?.filter || 'none';
+            const filter = template.filter || 'none';
 
             const hasPremiumUnlocked = unlockedPremium.includes(template.id);
             const isPremiumActive = activePremium.includes(template.id);

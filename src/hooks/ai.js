@@ -21,7 +21,11 @@ export async function executeEnemyAI() {
 
         // --- リーダースキルの活用 ---
         const skill = GameState.enemyConfig.leaderSkill;
-        const canUseSkill = skill && GameState.enemySP >= skill.cost;
+        let canUseSkill = skill && GameState.enemySP >= skill.cost;
+        // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
+        if (canUseSkill && GameState.enemyConfig.id === 'devilhunter') {
+            canUseSkill = GameState.enemyDiscard.some(c => (c.power || 0) <= 10 && !c.isToken);
+        }
 
         // リーダースキルの先行使用（強制使用）
         let shouldForceSkill = false;

@@ -20,7 +20,12 @@ export function getNormalDecision() {
 export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     let candidates = [];
     const skill = GameState.enemyConfig.leaderSkill;
-    const canUseSkill = skill && mySP >= skill.cost && (GameState.enemyConfig.id !== 'cthulhu' && GameState.enemyConfig.id !== 'cleric');
+    let canUseSkill = skill && mySP >= skill.cost && (GameState.enemyConfig.id !== 'cthulhu' && GameState.enemyConfig.id !== 'cleric');
+    // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
+    if (canUseSkill && GameState.enemyConfig.id === 'devilhunter') {
+        const discard = GameState.enemyDiscard || [];
+        canUseSkill = discard.some(c => (c.power || 0) <= 10 && !c.isToken);
+    }
 
     // トークン配置の組合せを生成するヘルパー
     const getCombinations = (arr, k) => {
