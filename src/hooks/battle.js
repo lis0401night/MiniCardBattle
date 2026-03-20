@@ -474,11 +474,11 @@ export async function waitPlayerHandSelection(count, owner) {
     const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
     if (hand.length === 0) return [];
 
-    // AIの場合：最もパワーが低いカードを選択
+    // AIの場合：ランダムにカードを選択
     if (owner === 'red') {
-        const sortedWithIndex = hand.map((c, i) => ({ c, i })).sort((a, b) => a.c.power - b.c.power);
+        const indices = hand.map((_, i) => i).sort(() => Math.random() - 0.5);
         const selectedCount = Math.min(count, hand.length);
-        return sortedWithIndex.slice(0, selectedCount).map(x => x.i);
+        return indices.slice(0, selectedCount);
     }
 
     // プレイヤーの場合：手動選択

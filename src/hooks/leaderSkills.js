@@ -176,10 +176,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                     }
                 }
             } else {
-                // AIは自動でパワーの低いカードを最大2枚捨てる
+                // AIは自動でランダムなカードを最大2枚捨てる
                 while (dc < 2 && h.length > 0) {
-                    let mp = Math.min(...h.map(c => c.power)), mi = h.findIndex(c => c.power === mp);
-                    await discardCard(owner, h.splice(mi, 1)[0]);
+                    let rIdx = Math.floor(Math.random() * h.length);
+                    await discardCard(owner, h.splice(rIdx, 1)[0]);
                     dc++;
                 }
             }

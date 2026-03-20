@@ -2,7 +2,7 @@ export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'tortoise', 'tortoise',
-        'copy', 'copy',
+        'prince', 'prince',
         'charger', 'charger', 'charger',
         'diviner', 'diviner', 'diviner',
         'clone', 'clone', 'clone', 'clone',
@@ -24,7 +24,6 @@ export default {
         'octopus', 'octopus', 'octopus', 'octopus',
         'copy', 'copy', 'copy', 'copy',
         'tortoise', 'tortoise', 'tortoise', 'tortoise',
-        'prince', 'prince',
         'clone', 'clone', 'clone', 'clone',
     ]
 };
