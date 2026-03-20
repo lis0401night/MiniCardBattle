@@ -15,14 +15,19 @@ export const VOICE_SETTINGS = {
 
 export const VOICE_CATEGORIES = {
     // モンスター系
-    'monster_large': {
-        play: 'assets/audio/voice/voice_monster_large_play.wav',
-        death: 'assets/audio/voice/voice_monster_large_death.wav',
+    'monster': {
+        play: 'assets/audio/voice/voice_monster_play.wav',
+        death: 'assets/audio/voice/voice_monster_death.wav',
         volume: 1.0 // カテゴリごとの個別音量調整
     },
     'monster_small': {
         play: 'assets/audio/voice/voice_monster_small_play.wav',
         death: 'assets/audio/voice/voice_monster_small_death.wav',
+        volume: 1.0
+    },
+    'devil': {
+        play: 'assets/audio/voice/voice_devil_play.wav',
+        death: 'assets/audio/voice/voice_devil_death.wav',
         volume: 1.0
     },
     'beast': {
