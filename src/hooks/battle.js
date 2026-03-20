@@ -761,8 +761,20 @@ export function drawCard(owner) {
 
 export async function startTurn(owner) {
     if (GameState.isBattleEnded) return; GameState.isProcessing = true;
+    
+    // スタン（拘束/待機）状態の更新（そのプレイヤーのターン開始時に減算）
+    const myBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    myBoard.forEach(c => {
+        if (c && c.stunTurns > 0) {
+            c.stunTurns--;
+        }
+    });
+
     GameState.currentTurn = owner === 'blue' ? 'player' : 'enemy';
     if (updateBattleUIHook) updateBattleUIHook();
+    renderBoard(); // スタン状態の見た目更新のため描画
+    await sleep(50); // Reactの再描画(DOM更新)を確実に行わせるための待機時間
+
     const c = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
     // ターン数のカウント
     GameState.turnCount++;
@@ -812,20 +824,6 @@ export async function endPlayerTurn() {
 }
 
 export async function endTurnLogic(o) {
-    // 全ボードの拘束（スタン）状態の更新（ターン終了時に減算）
-    [GameState.playerBoard, GameState.enemyBoard].forEach(board => {
-        board.forEach(c => {
-            if (c && c.stunTurns > 0) {
-                if (c.stunAppliedThisTurn) {
-                    // 出した直後のターンは減らしすぎないようにスキップ
-                    c.stunAppliedThisTurn = false;
-                } else {
-                    c.stunTurns--;
-                }
-            }
-        });
-    });
-
     if (!GameState.isBattleEnded) {
         renderBoard();
         await startTurn(o === 'blue' ? 'red' : 'blue');
@@ -939,25 +937,39 @@ export async function executeSingleCombat(atk, l) {
     const aB = atk === 'blue' ? GameState.playerBoard : GameState.enemyBoard, dB = atk === 'blue' ? GameState.enemyBoard : GameState.playerBoard, aR = atk === 'blue' ? '#player-lanes' : '#enemy-lanes', dR = atk === 'blue' ? '#enemy-lanes' : '#player-lanes', an = atk === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
     const aC = aB[l];
     if (!aC) return;
-    if (aC.stunTurns > 0) return; // スタン（拘束）中は攻撃しない
+    if (hasSkill(aC, 'defender')) return; // 防御スキル（本来のもの、または拘束/待機による一時的な状態）を持つ場合は攻撃しない
 
-    const aE = document.querySelector(`${aR} .cell[data-lane="${l}"] .card`);
-    if (!aE) return;
+    // 攻撃直前の非同期レンダリング完了を待つ（スタン明けの再描画によるクラスのリセットを防ぐため）
+    await sleep(100);
+
+    const aCell = document.querySelector(`${aR} .cell[data-lane="${l}"]`);
+    if (!aCell) return;
 
     // 演出: 攻撃アニメーション
-    // Safari等での不発を防ぐため、一度ステータスを確定させてから次のフレームでクラスを追加
-    aE.classList.remove(an); // 念のため削除
-    void aE.offsetHeight;    // 強制リフロー (VOiDで副作用を明示)
+    // Safari等での不発を防ぐため、一度ステータスを確定させてから次のフレームで追加
+    aCell.style.animation = 'none'; // 念のため削除
+    void aCell.offsetHeight;    // 強制リフロー (VOiDで副作用を明示)
 
     await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            aE.classList.add(an);
+            if (atk === 'blue') {
+                aCell.style.animation = 'attack-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                aCell.style.zIndex = '20';
+            } else {
+                aCell.style.animation = 'attack-down 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+                aCell.style.zIndex = '20';
+            }
             playSound(SOUNDS.seAttack);
             resolve();
         });
     }));
 
     await sleep(400); // アニメーション衝突タイミング(0.8sの50%)
+    // 衝突後に元の状態へ戻す
+    if (aCell) {
+        aCell.style.animation = '';
+        aCell.style.zIndex = '';
+    }
 
     // ロジカルなダメージ処理の前に少し待機して衝撃を表現
     // (この間にDamagePopupが表示されると気持ちいい)
@@ -1055,7 +1067,6 @@ export async function executeSingleCombat(atk, l) {
         else { GameState.playerHP -= d; createDamagePopup(document.getElementById('player-hp-fill'), `-${d}`); showSpeechBubble('blue'); }
         updateHPBar(); if (checkWinCondition()) return; await sleep(400); document.body.classList.remove('anim-shake');
     }
-    if (aE) aE.classList.remove(an);
     // renderBoard(); // アニメーション消失防止のため、各レーン終了時の全体描画は避ける
 }
 
