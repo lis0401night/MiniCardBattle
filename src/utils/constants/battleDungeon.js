@@ -11,13 +11,11 @@ export const getDungeonEnemyCandidates = () => {
     return CARD_MASTER.slice(startIndex, endIndex + 1);
 };
 
-// 提示するレンタルデッキを3つランダム生成する（各リーダーのイージーデッキ）
+// 提示するレンタルデッキをすべて生成する（各リーダーのイージーデッキ）
 export const getRentalDeckOptions = () => {
     const leaderIds = Object.keys(ENEMY_DECKS).filter(id => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan'); 
-    const shuffled = [...leaderIds].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 3);
     
-    return selected.map(id => {
+    return leaderIds.map(id => {
         const char = CHARACTERS[id];
         const deck = ENEMY_DECKS[id].easy || [];
         return {
@@ -25,6 +23,7 @@ export const getRentalDeckOptions = () => {
             name: char.name,
             icon: char.icon,
             desc: char.desc,
+            color: char.color,
             deck: deck
         };
     });
@@ -78,7 +77,7 @@ export const generateDungeonEnemy = (winStreak) => {
         id: `dungeon_${leaderCard.id}`,
         stageId: 'plain',
         name: leaderCard.name,
-        desc: leaderCard.flavor || 'バトルダンジョンの敵',
+        desc: leaderCard.flavor || '試練の宮殿の敵',
         easeOfUse: 3,
         filter: 'none',
         cardType: 'set1',

@@ -10,7 +10,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 export function initBattleDungeon() {
     playSound(SOUNDS.seClick);
     GameState.gameMode = 'battle_dungeon';
-    
+
     // 中断データがあるか確認
     if (localStorage.getItem('mini_card_battle_dungeon_save')) {
         GameState.dungeonState = 'resume_select';
@@ -44,7 +44,7 @@ export function loadDungeonProgress() {
         const data = JSON.parse(json);
         GameState.dungeonWinStreak = data.winStreak || 0;
         GameState.dungeonCards = data.cards || [];
-        
+
         // 保存されていたデッキ構成を復元
         if (data.deck) {
             GameState.playerDeckSelection = data.deck.map(id => {
@@ -57,7 +57,7 @@ export function loadDungeonProgress() {
         GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
         GameState.dungeonState = data.dungeonState || 'select_opponent';
         GameState.gameMode = 'battle_dungeon';
-        
+
         // 再描画を促す
         if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
         return true;
@@ -77,31 +77,23 @@ export function selectRentalDeck(deckData) {
     playSound(SOUNDS.seSelect);
     // 初期デッキ付与（所持プール）
     GameState.dungeonCards = [...deckData.deck];
-    // 初期デッキ選択状態（バトルデッキ）をセット
+    // 初期デッキ選択状態（デッキ）をセット
     GameState.playerDeckSelection = [...deckData.deck].map(id => {
         const template = CARD_MASTER.find(c => c.id === id);
         return template ? { ...template } : null;
     }).filter(Boolean);
-    
+
     GameState.playerConfig = CHARACTERS[deckData.leaderId];
-    GameState.dungeonState = 'select_own_cards';
-    
+    GameState.dungeonState = 'select_opponent';
+    generateNextOpponents();
+
     // 最初のリーダー確定タイミングで保存
     saveDungeonProgress();
-    
+
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
 }
 
-export function selectOwnCards(cardIds) {
-    playSound(SOUNDS.seSkill);
-    // 追加で選んだ自社カードを付与
-    GameState.dungeonCards = GameState.dungeonCards.concat(cardIds);
-    GameState.dungeonState = 'select_opponent';
-    generateNextOpponents();
-    
-    // 対戦相手が決まったタイミングで保存
-    saveDungeonProgress();
-}
+
 
 export function generateNextOpponents() {
     const enemy1 = generateDungeonEnemy(GameState.dungeonWinStreak);
@@ -129,7 +121,7 @@ export function startDungeonBattle(enemyIndex) {
 
     // ダンジョン敵の場合は専用デッキを設定
     if (enemy.dungeonDeck) {
-         GameState.enemyDeckConfig = enemy.dungeonDeck;
+        GameState.enemyDeckConfig = enemy.dungeonDeck;
     }
 
     // 会話シーンのセットアップへ
@@ -152,10 +144,10 @@ export function winDungeonBattle() {
         localStorage.setItem('mini_card_battle_dungeon_max_streak', GameState.dungeonMaxWinStreak);
     }
     GameState.dungeonState = 'reward';
-    
+
     // 勝利直後に保存（報酬選択前でも中断可能にするため）
     saveDungeonProgress();
-    
+
     switchScreen('screen-battle-dungeon');
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
 }
@@ -165,7 +157,7 @@ export function selectRewardCard(cardId) {
     GameState.dungeonCards.push(cardId);
     GameState.dungeonState = 'select_opponent';
     generateNextOpponents();
-    
+
     // 報酬獲得後に保存
     saveDungeonProgress();
 }
@@ -196,10 +188,10 @@ export function retireDungeon() {
     GameState.dungeonOpponents = [];
     GameState.dungeonState = 'none';
     GameState.gameMode = 'title';
-    
+
     // 中断データを削除
     clearDungeonSave();
-    
+
     switchScreen('screen-mode-select');
 }
 

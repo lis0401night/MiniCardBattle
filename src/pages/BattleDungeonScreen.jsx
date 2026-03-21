@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GameState } from '../hooks/gameState.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { selectRentalDeck, selectOwnCards, startDungeonBattle, retireDungeon, selectRewardCard, loadDungeonProgress, saveDungeonProgress } from '../hooks/battleDungeon.js';
+import { selectRentalDeck, startDungeonBattle, retireDungeon, selectRewardCard, loadDungeonProgress, saveDungeonProgress } from '../hooks/battleDungeon.js';
 import { playSound, getCardImgUrl, switchScreen } from '../utils/gameUtils.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -11,9 +11,6 @@ import { setupLongPress } from '../hooks/uiGallery.js';
 export default function BattleDungeonScreen() {
     const [dungeonState, setDungeonState] = useState(GameState.dungeonState);
     const [renderTick, setRenderTick] = useState(0);
-
-    // 画面下部の共通ボタンで使用する情報を保持
-    const [selectedOwnCards, setSelectedOwnCards] = useState([]);
 
     useEffect(() => {
         window.renderBattleDungeonReact = () => {
@@ -31,7 +28,7 @@ export default function BattleDungeonScreen() {
             switchScreen('screen-mode-select');
         } else {
             // 進行中はリタイア確認
-            showConfirmModal("バトルダンジョンをリタイアしますか？\n（現在の進行状況は失われます）", () => {
+            showConfirmModal("試練の宮殿をリタイアしますか？\n（現在の進行状況は失われます）", () => {
                 retireDungeon();
             });
         }
@@ -45,18 +42,10 @@ export default function BattleDungeonScreen() {
         });
     };
 
-    const handleConfirmOwnCards = () => {
-        if (selectedOwnCards.length === 0) return;
-        showConfirmModal(`${selectedOwnCards.length}枚のカードを持ち込みます。よろしいですか？`, () => {
-            selectOwnCards(selectedOwnCards);
-        });
-    };
-
     const renderContent = () => {
         switch (dungeonState) {
             case 'resume_select': return <ResumeSelect />;
             case 'select_rental_deck': return <RentalDeckSelect />;
-            case 'select_own_cards': return <OwnCardSelect selectedCards={selectedOwnCards} setSelectedCards={setSelectedOwnCards} />;
             case 'select_opponent': return <OpponentSelect />;
             case 'reward': return <RewardSelect />;
             case 'battle': return <div style={{ color: '#fff' }}>バトル中...</div>;
@@ -66,29 +55,16 @@ export default function BattleDungeonScreen() {
 
     const getTitle = () => {
         switch (dungeonState) {
-            case 'resume_select': return 'ダンジョン再開確認';
+            case 'resume_select': return '試練の宮殿';
             case 'select_rental_deck': return 'レンタルデッキ選択';
-            case 'select_own_cards': return '持ち込みカード選択';
             case 'select_opponent': return '対戦相手選択';
             case 'reward': return '報酬選択';
-            default: return 'バトルダンジョン';
+            default: return '試練の宮殿';
         }
     };
 
     // 画面下部のボタン表示を制御
     const renderBottomButton = () => {
-        if (dungeonState === 'select_own_cards') {
-            return (
-                <button 
-                    className={selectedOwnCards.length > 0 ? "btn-primary" : "btn"} 
-                    style={{ background: selectedOwnCards.length > 0 ? '' : '#334155' }} 
-                    onClick={handleConfirmOwnCards}
-                    disabled={selectedOwnCards.length === 0}
-                >
-                    {selectedOwnCards.length}枚で決定
-                </button>
-            );
-        }
         if (dungeonState === 'select_opponent') {
             return (
                 <button className="btn" style={{ background: '#475569' }} onClick={handleSuspendAction}>
@@ -105,16 +81,16 @@ export default function BattleDungeonScreen() {
     };
 
     return (
-        <div id="screen-battle-dungeon" className="screen active">
+        <div id="screen-battle-dungeon" className="screen active" style={{ overflowY: 'auto' }}>
             <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>
-                {getTitle()} (連勝: {GameState.dungeonWinStreak})
+                {getTitle()}
             </h2>
 
-            <div className="dungeon-content" style={{ flex: 1, width: '100%', overflowY: 'auto', boxSizing: 'border-box', padding: '10px 0' }}>
+            <div className="dungeon-content" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 0' }}>
                 {renderContent()}
             </div>
 
-            <div style={{ marginTop: '20px', borderTop: '1px solid #334155', paddingTop: '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: '30px', width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
                 {renderBottomButton()}
             </div>
         </div>
@@ -132,6 +108,7 @@ function ResumeSelect() {
 
     const handleRestart = () => {
         showConfirmModal("中断データを消去して、最初からやり直します。よろしいですか？", () => {
+            playSound(SOUNDS.seClick);
             localStorage.removeItem('mini_card_battle_dungeon_save');
             GameState.dungeonWinStreak = 0;
             GameState.dungeonCards = [];
@@ -141,32 +118,47 @@ function ResumeSelect() {
         });
     };
 
-    const handleCheckDeck = () => {
+    const handleCheckPocket = () => {
+        playSound(SOUNDS.seClick);
         const json = localStorage.getItem('mini_card_battle_dungeon_save');
         if (json) {
             const data = JSON.parse(json);
             if (window.showEnemyDeckModal) {
-                window.showEnemyDeckModal(data.cards, "現在のデッキ");
+                window.showEnemyDeckModal(data.cards, "所持カード確認");
+            }
+        }
+    };
+
+    const handleCheckDeck = () => {
+        playSound(SOUNDS.seClick);
+        const json = localStorage.getItem('mini_card_battle_dungeon_save');
+        if (json) {
+            const data = JSON.parse(json);
+            if (window.showEnemyDeckModal) {
+                const deck = data.deck || data.cards.slice(0, 20); // 未保存対処
+                window.showEnemyDeckModal(deck, "デッキ確認");
             }
         }
     };
 
     return (
         <div style={{ textAlign: 'center', color: '#fff', padding: '20px' }}>
-            <p style={{ marginBottom: '20px' }}>中断されたデータがあります。続きからプレイしますか？</p>
-            
             <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '20px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '30px' }}>
                 <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>現在の記録: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{GameState.dungeonWinStreak} 連勝</span></div>
                 <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '15px' }}>最高記録: {GameState.dungeonMaxWinStreak} 連勝</div>
-                <button className="btn" style={{ fontSize: '0.8rem', padding: '10px', width: 'auto' }} onClick={handleCheckDeck}>現在のデッキを確認</button>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button className="btn" style={{ fontSize: '0.8rem', padding: '10px 12px', width: 'auto', margin: 0, background: '#475569' }} onClick={handleCheckPocket}>所持カード確認</button>
+                    <button className="btn" style={{ fontSize: '0.8rem', padding: '10px 12px', width: 'auto', margin: 0, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' }} onClick={handleCheckDeck}>デッキ確認</button>
+                </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-                <button className="btn-primary" style={{ width: '220px' }} onClick={handleResume}>
+                <button className="btn" style={{ width: '220px', background: 'linear-gradient(45deg, #10b981, #059669)', padding: '12px' }} onClick={handleResume}>
                     再開する
                 </button>
-                <button className="btn" style={{ width: '220px', background: '#334155' }} onClick={handleRestart}>
-                    初めからやり直す
+                <button className="btn" style={{ width: '220px', background: '#334155', color: '#fff' }} onClick={handleRestart}>
+                    リタイア
                 </button>
             </div>
         </div>
@@ -189,15 +181,15 @@ function DungeonMiniCard({ id, onClick, isSelected, count, showCount = true, sca
     if (!card) return null;
 
     return (
-        <div 
+        <div
             ref={cardRef}
-            onClick={onClick} 
+            onClick={onClick}
             className="dungeon-mini-card-wrapper"
-            style={{ 
-                position: 'relative', 
-                width: `${60 * scale}px`, 
-                height: `${84 * scale}px`, 
-                cursor: 'pointer', 
+            style={{
+                position: 'relative',
+                width: `${60 * scale}px`,
+                height: `${84 * scale}px`,
+                cursor: 'pointer',
                 border: isSelected ? `${3 * scale}px solid #facc15` : `${1 * scale}px solid #475569`,
                 boxSizing: 'border-box',
                 borderRadius: `${4 * scale}px`,
@@ -222,85 +214,97 @@ function DungeonMiniCard({ id, onClick, isSelected, count, showCount = true, sca
 
 function RentalDeckSelect() {
     const options = useMemo(() => getRentalDeckOptions(), []);
+    const [previewOpt, setPreviewOpt] = useState(null);
 
-    const handleSelect = (opt) => {
-        showConfirmModal(`${opt.name} のデッキをレンタルしますか？`, () => {
-            selectRentalDeck(opt);
-        });
+    const handleSelectPreview = (opt) => {
+        playSound(SOUNDS.seClick);
+        setPreviewOpt(opt);
     };
 
-    const handlePreviewDeck = (e, opt) => {
-        e.stopPropagation();
+    const handleConfirm = () => {
         playSound(SOUNDS.seClick);
-        if (window.showEnemyDeckModal) {
-            window.showEnemyDeckModal(opt.deck, `${opt.name} [レンタル]`);
-        }
+        selectRentalDeck(previewOpt);
+    };
+
+    const handleCancel = () => {
+        playSound(SOUNDS.seClick);
+        setPreviewOpt(null);
     };
 
     return (
         <div style={{ textAlign: 'center', color: '#fff' }}>
-            <h3>レンタルするデッキを1つ選んでください</h3>
-            <p style={{ marginBottom: '20px', fontSize: '0.9rem', color: '#cbd5e1' }}>各キャラクターの[初級]デッキの内容が獲得できます。</p>
+            <h3 style={{ marginBottom: '20px' }}>レンタルするデッキを1つ選んでください</h3>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
                 {options.map((opt, i) => (
-                    <div key={i} className="dungeon-deck-card" onClick={() => handleSelect(opt)}
-                         style={{ background: '#1e293b', border: '2px solid #475569', borderRadius: '12px', padding: '15px', width: '100%', maxWidth: '400px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', position: 'relative' }}>
-                        <img src={opt.icon} alt={opt.name} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #334155' }} />
-                        <div style={{ textAlign: 'left', flex: 1 }}>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f8fafc' }}>{opt.name}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>カード {opt.deck.length}枚</div>
-                        </div>
-                        <button 
-                            className="btn" 
-                            style={{ padding: '8px 12px', fontSize: '0.8rem', background: '#334155', margin: 0, width: 'auto' }}
-                            onClick={(e) => handlePreviewDeck(e, opt)}
+                    <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', width: '100%', maxWidth: '400px' }}>
+                        <button
+                            className="btn-banner"
+                            style={{ flex: 1, margin: 0, borderColor: '#475569' }}
+                            onClick={() => handleSelectPreview(opt)}
                         >
-                            中身を確認
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <img src={opt.icon} className="banner-icon" alt={opt.name} />
+                                    <span className="banner-text" style={{ color: opt.color || '#f8fafc', textShadow: '0px 0px 4px rgba(0,0,0,0.8)', marginRight: '10px' }}>
+                                        {opt.name}
+                                    </span>
+                                </div>
+                            </div>
                         </button>
                     </div>
                 ))}
             </div>
+
+            {/* プレビューモーダル */}
+            {previewOpt && (
+                <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex' }} onClick={handleCancel}>
+                    <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
+                        <h2 style={{ color: '#facc15', marginBottom: '15px' }}>{previewOpt.name} [レンタル]</h2>
+                        <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+                            <div className="card-list-grid-3col" style={{ padding: '10px' }}>
+                                {(() => {
+                                    const grouped = {};
+                                    previewOpt.deck.forEach(cardId => {
+                                        if (!grouped[cardId]) grouped[cardId] = 0;
+                                        grouped[cardId]++;
+                                    });
+
+                                    return Object.keys(grouped).map((cardId) => {
+                                        const count = grouped[cardId];
+                                        const template = CARD_MASTER?.find(m => m.id === cardId);
+                                        if (!template) return null;
+
+                                        const displayCard = { ...template, owner: 'red' };
+                                        const imgUrl = getCardImgUrl ? getCardImgUrl(displayCard) : '';
+                                        const rarityClass = displayCard.rarity ? ` rarity-${displayCard.rarity}` : '';
+                                        return (
+                                            <div key={cardId} className="deck-card-item gallery-card-wrapper" onClick={() => window.openCardPreview && window.openCardPreview(displayCard)}>
+                                                <div className={`card red${rarityClass}`}>
+                                                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+                                                    <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{displayCard.power}</div>
+                                                    {window.renderSkillTag && <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(displayCard, false) }}></div>}
+                                                    <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: '#facc15', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 6, border: '1px solid #facc15' }}>
+                                                        x{count}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '20px' }}>
+                            <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={handleCancel}>戻る</button>
+                            <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleConfirm}>決定</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
-}
 
-function OwnCardSelect({ selectedCards, setSelectedCards }) {
-    const inventory = GameState.playerInventory || {};
-    const inventoryKeys = useMemo(() => Object.keys(inventory).filter(k => inventory[k] > 0), [inventory]);
 
-    const toggleCard = (id) => {
-        playSound(SOUNDS.seSelect);
-        if (selectedCards.includes(id)) {
-            setSelectedCards(selectedCards.filter(c => c !== id));
-        } else {
-            if (selectedCards.length >= 3) return;
-            setSelectedCards([...selectedCards, id]);
-        }
-    };
-
-    return (
-        <div style={{ color: '#fff', textAlign: 'center' }}>
-            <h3>自分の所持カードから持ち込む (最大3枚)</h3>
-            <p style={{ marginBottom: '15px', fontSize: '0.85rem', color: '#cbd5e1' }}>
-                選んだカードはダンジョン用のデッキに追加されます。<br/>
-                カードを長押しで詳細をプレビューできます。
-            </p>
-            
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', paddingBottom: '40px' }}>
-                {inventoryKeys.length === 0 && <div style={{ color: '#94a3b8', marginTop: '20px' }}>所持カードがありません</div>}
-                {inventoryKeys.map(id => (
-                    <DungeonMiniCard 
-                        key={id} 
-                        id={id} 
-                        onClick={() => toggleCard(id)} 
-                        isSelected={selectedCards.includes(id)}
-                        count={inventory[id]}
-                        scale={1.1}
-                    />
-                ))}
-            </div>
-        </div>
-    );
 }
 
 function OpponentSelect() {
@@ -323,7 +327,7 @@ function OpponentSelect() {
             <div style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 'bold', border: '1px solid rgba(250, 204, 21, 0.3)' }}>
                 現在 {GameState.dungeonWinStreak} 連勝中
             </div>
-            
+
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
                 <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: '#334155' }} onClick={handleCheckDeck}>
                     デッキ確認
@@ -332,11 +336,11 @@ function OpponentSelect() {
 
             <h3>対戦相手を選択</h3>
             <p style={{ marginBottom: '20px', fontSize: '0.9rem', color: '#cbd5e1' }}>どちらかの相手を選んでバトルを開始します。</p>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
                 {opps.map((e, i) => (
                     <div key={i} className="dungeon-opponent-card" onClick={() => handleSelect(i)}
-                         style={{ background: '#1e293b', border: '2px solid #334155', borderRadius: '12px', padding: '15px', width: '100%', maxWidth: '400px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        style={{ background: '#1e293b', border: '2px solid #334155', borderRadius: '12px', padding: '15px', width: '100%', maxWidth: '400px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #ef4444', boxShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
                             <img src={e.image} alt={e.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
@@ -367,16 +371,16 @@ function RewardSelect() {
         <div id="screen-reward" style={{ color: '#fff', textAlign: 'center', width: '100%', height: '100%' }}>
             <h3 style={{ color: '#facc15' }}>バトル勝利！</h3>
             <p style={{ marginBottom: '15px', fontSize: '0.85rem', color: '#cbd5e1' }}>
-                倒した相手のデッキから1枚選んで獲得できます。<br/>
+                倒した相手のデッキから1枚選んで獲得できます。<br />
                 カードを長押しで詳細をプレビューできます。
             </p>
-            
+
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', paddingBottom: '40px' }}>
                 {uniqueCards.map((id) => (
                     <div key={id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                        <DungeonMiniCard 
-                            id={id} 
-                            onClick={() => handleSelect(id)} 
+                        <DungeonMiniCard
+                            id={id}
+                            onClick={() => handleSelect(id)}
                             showCount={false}
                             scale={1.2}
                         />

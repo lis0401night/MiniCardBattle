@@ -134,7 +134,10 @@ export function initBattleState() {
         stopAllBGM();
 
         // ステージ情報の取得
-        const stageId = (GameState.gameMode === 'story') ? (GameState.enemyConfig.stageId || 'android') : (GameState.selectedStageId || 'android');
+        let stageId = (GameState.gameMode === 'story') ? (GameState.enemyConfig.stageId || 'android') : (GameState.selectedStageId || 'android');
+        if (GameState.gameMode === 'battle_dungeon') {
+            stageId = 'dungeon';
+        }
         const stageData = STAGES[stageId];
 
         // BGMの再生

@@ -46,7 +46,7 @@ export default function ModeSelectScreen() {
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_DUNGEON || ''}')`, backgroundColor: '#475569' }}
           ></div>
-          <div className="menu-btn-label">バトルダンジョン</div>
+          <div className="menu-btn-label">試練の宮殿</div>
         </div>
         <div
           className="menu-img-btn"

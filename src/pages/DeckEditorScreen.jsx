@@ -22,18 +22,18 @@ export default function DeckEditorScreen() {
 
   const updateDeckEditor = () => {
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
-    
+
     if (GameState.gameMode === 'battle_dungeon') {
-        const dInv = {};
-        (GameState.dungeonCards || []).forEach(id => { dInv[id] = (dInv[id] || 0) + 1; });
-        setInventory(dInv);
-        const validIds = Object.keys(dInv);
-        setMasterCards((CARD_MASTER || []).filter(c => validIds.includes(c.id)));
+      const dInv = {};
+      (GameState.dungeonCards || []).forEach(id => { dInv[id] = (dInv[id] || 0) + 1; });
+      setInventory(dInv);
+      const validIds = Object.keys(dInv);
+      setMasterCards((CARD_MASTER || []).filter(c => validIds.includes(c.id)));
     } else {
-        setInventory(GameState.playerInventory || {});
-        setMasterCards((CARD_MASTER || []).filter(c => !c.isToken));
+      setInventory(GameState.playerInventory || {});
+      setMasterCards((CARD_MASTER || []).filter(c => !c.isToken));
     }
-    
+
     setIsDefenseConfig(GameState.gameMode === 'defense_register');
   };
 
@@ -56,11 +56,11 @@ export default function DeckEditorScreen() {
     if (deckSelection.length >= DECK_SIZE) return;
     const inDeckCount = deckSelection.filter(c => c.id === template.id).length;
     const ownedCount = inventory[template.id] || 0;
-    
+
     // 所持数限界、またはルールとして4枚上限（UIメッセージは別途だがロジックとしては防ぐ）
     if (inDeckCount >= ownedCount || inDeckCount >= 4) {
       if (inDeckCount >= 4 && showAlertModal) {
-         showAlertModal('デッキに同じカードは4枚まで入れられます。');
+        showAlertModal('デッキに同じカードは4枚まで入れられます。');
       }
       return;
     }
@@ -114,7 +114,7 @@ export default function DeckEditorScreen() {
       showAlertModal?.(`デッキを${DECK_SIZE}枚にしてください！`);
       return;
     }
-    
+
     playSound?.(SOUNDS?.seClick);
     // グローバルなsaveDeckを呼び出し
     if (typeof saveDeck === 'function') {
@@ -154,11 +154,11 @@ export default function DeckEditorScreen() {
     playSound?.(SOUNDS?.seClick);
     showConfirmModal?.("デッキを初期状態に戻しますか？", () => {
       if (GameState.gameMode === 'battle_dungeon') {
-          const initial = (GameState.dungeonCards || []).slice(0, 20).map(id => ({ ...CARD_MASTER.find(c => c.id === id) })).filter(Boolean);
-          syncToGlobal(initial);
+        const initial = (GameState.dungeonCards || []).slice(0, 20).map(id => ({ ...CARD_MASTER.find(c => c.id === id) })).filter(Boolean);
+        syncToGlobal(initial);
       } else {
-          const initial = getInitialDeck ? getInitialDeck(GameState.playerConfig?.id) : [];
-          syncToGlobal([...initial]);
+        const initial = getInitialDeck ? getInitialDeck(GameState.playerConfig?.id) : [];
+        syncToGlobal([...initial]);
       }
     });
   };
@@ -207,15 +207,15 @@ export default function DeckEditorScreen() {
               const isPremActive = GameState.premiumCards.includes(card.id);
 
               return (
-                <div key={card.id} className="deck-card-item" 
-                     onPointerDown={(e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; handlePointerDown(card); }}
-                     onPointerUp={cancelLongPress}
-                     onPointerLeave={cancelLongPress}
-                     onPointerCancel={cancelLongPress}
-                     onClick={() => handleClick(id, removeCard)}>
+                <div key={card.id} className="deck-card-item"
+                  onPointerDown={(e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; handlePointerDown(card); }}
+                  onPointerUp={cancelLongPress}
+                  onPointerLeave={cancelLongPress}
+                  onPointerCancel={cancelLongPress}
+                  onClick={() => handleClick(id, removeCard)}>
                   <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block' }}>
                     <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: card.filter || 'none' }}></div>
-                    
+
                     {isPremUnlocked && (
                       <div
                         className="premium-toggle-icon"
@@ -226,11 +226,11 @@ export default function DeckEditorScreen() {
                         ✨
                       </div>
                     )}
-                    
+
                     <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{card.power}</div>
-                    
+
                     {window.renderSkillTag && <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(card) }}></div>}
-                    
+
                     <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: '#facc15', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 6, border: '1px solid #facc15' }}>
                       x{count}
                     </div>
@@ -252,7 +252,7 @@ export default function DeckEditorScreen() {
               const inDeckCount = deckSelection.filter(c => c.id === template.id).length;
               const remaining = ownedCount - inDeckCount;
               const canAdd = remaining > 0 && inDeckCount < 4;
-              
+
               const opacity = !canAdd ? '0.4' : '1';
               const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
               const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
@@ -260,15 +260,15 @@ export default function DeckEditorScreen() {
               const isPremActive = GameState.premiumCards.includes(template.id);
 
               return (
-                <div key={template.id} className="deck-card-item" 
-                     onPointerDown={(e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; handlePointerDown(template); }}
-                     onPointerUp={cancelLongPress}
-                     onPointerLeave={cancelLongPress}
-                     onPointerCancel={cancelLongPress}
-                     onClick={() => handleClick(template, addCard)}>
+                <div key={template.id} className="deck-card-item"
+                  onPointerDown={(e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; handlePointerDown(template); }}
+                  onPointerUp={cancelLongPress}
+                  onPointerLeave={cancelLongPress}
+                  onPointerCancel={cancelLongPress}
+                  onClick={() => handleClick(template, addCard)}>
                   <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block', opacity }}>
                     <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: template.filter || 'none' }}></div>
-                    
+
                     {isPremUnlocked && (
                       <div
                         className="premium-toggle-icon"
@@ -279,11 +279,11 @@ export default function DeckEditorScreen() {
                         ✨
                       </div>
                     )}
-                    
+
                     <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{template.power}</div>
-                    
+
                     {window.renderSkillTag && <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(template) }}></div>}
-                    
+
                     <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: canAdd ? '#facc15' : '#ef4444', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 6, border: `1px solid ${canAdd ? '#facc15' : '#ef4444'}` }}>
                       {inDeckCount}/{ownedCount}
                     </div>
@@ -296,14 +296,14 @@ export default function DeckEditorScreen() {
 
         <div className="deck-controls">
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '10px' }}>
-             <button className="action-btn" style={{ background: '#1e40af', fontSize: '0.75rem', padding: '5px 10px' }} onClick={resetDeck}>初期デッキに戻す</button>
-             <button className="action-btn" style={{ background: '#7f1d1d', fontSize: '0.75rem', padding: '5px 10px' }} onClick={clearDeck}>全削除</button>
+            <button className="action-btn" style={{ background: '#1e40af', fontSize: '0.75rem', padding: '5px 10px' }} onClick={resetDeck}>初期デッキに戻す</button>
+            <button className="action-btn" style={{ background: '#7f1d1d', fontSize: '0.75rem', padding: '5px 10px' }} onClick={clearDeck}>全削除</button>
           </div>
         </div>
 
-        <button 
-          id="btn-finish-deck" 
-          className="btn" 
+        <button
+          id="btn-finish-deck"
+          className="btn"
           style={{ marginTop: '10px', width: '100%', opacity: deckSelection.length === DECK_SIZE ? 1 : 0.5 }}
           onClick={handleFinish}
         >

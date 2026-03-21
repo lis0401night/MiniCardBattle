@@ -183,7 +183,7 @@ export default function BattleScreen() {
         openCardPreview(card);
     };
 
-    const stageId = (GameState.gameMode === 'story') ? (GameState.enemyConfig?.stageId || 'android') : (GameState.selectedStageId || 'android');
+    const stageId = GameState.gameMode === 'battle_dungeon' ? 'dungeon' : (GameState.gameMode === 'story') ? (GameState.enemyConfig?.stageId || 'android') : (GameState.selectedStageId || 'android');
     const battleStyle = {
         backgroundColor: '#0f172a',
         backgroundImage: `url('assets/backgrounds/background_${stageId}.png')`
