@@ -142,6 +142,8 @@ export function initBattleState() {
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.id === 'satan') ? 40 : MAX_HP;
         if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
         GameState.playerHP = GameState.playerMaxHP; GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
+        GameState.turnCount = 0; GameState.firstPlayer = 'blue';
+        GameState.turnCount = 0;
         GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
         GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
