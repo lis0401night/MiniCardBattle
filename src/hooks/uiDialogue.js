@@ -167,30 +167,10 @@ export let continueCount = 9;
 export function showContinueScreen() {
     stopSound(SOUNDS.bgmTitle);
     switchScreen('screen-continue');
-    document.getElementById('continue-img').src = GameState.playerConfig.imageLose;
-    document.getElementById('continue-img').classList.remove('revive');
-    document.getElementById('continue-buttons').style.display = 'flex';
-    continueCount = 9;
-    document.getElementById('continue-count').innerText = continueCount;
-    continueTimer = setInterval(() => {
-        continueCount--;
-        if (continueCount < 0) {
-            clearInterval(continueTimer);
-            executeGameOver();
-        } else {
-            document.getElementById('continue-count').innerText = continueCount;
-        }
-    }, 1000);
 }
 
 export function executeContinue() {
-    if (continueTimer) clearInterval(continueTimer);
     playSound(SOUNDS.seContinue);
-    document.getElementById('continue-count').innerText = "YES!";
-    document.getElementById('continue-buttons').style.display = 'none';
-    const imgEl = document.getElementById('continue-img');
-    imgEl.src = GameState.playerConfig.image;
-    imgEl.classList.add('revive');
     setTimeout(() => {
         if (GameState.gameMode === 'event_satan') {
             setupEventSatanConfrontation();
@@ -212,7 +192,6 @@ export function executeContinue() {
 }
 
 export function executeGameOver() {
-    if (continueTimer) clearInterval(continueTimer);
     GameState.appState = 'title';
     stopAllBGM();
     switchScreen('screen-mode-select');

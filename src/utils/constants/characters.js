@@ -252,7 +252,7 @@ export const CHARACTERS = {
         id: 'devilhunter', stageId: 'devilhunter', name: '悪魔狩り マリア',
         desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
         easeOfUse: 1,
-        filter: 'sepia(0.3) contrast(1.1)', cardType: 'set2', cardBg: 'bg2',
+        filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_devilhunter.png', imageLose: 'assets/characters/char_devilhunter_lose.png', icon: 'assets/icons/icon_devilhunter.png', imageEnding: 'assets/characters/char_devilhunter_ending.png', color: '#64748b',
         leaderSkill: { name: '棺の解放', desc: '(SP:4) 自分の墓地からパワー10以下のカードを1枚選び、自分のレーンに配置する。', cost: 4, action: 'devilhunter_resurrect' },
         preBattleLine: 'さぁ、仕事の時間よ。',
@@ -292,7 +292,7 @@ export const CHARACTERS = {
     satan: {
         id: 'satan', stageId: 'satan', name: '魔王 サタン',
         desc: '魔界を統べる絶対的な恐怖の象徴。すべてを無に帰す圧倒的な力を持つ。',
-        filter: 'contrast(1.5) brightness(0.7) sepia(1) hue-rotate(-50deg) saturate(3)', cardType: 'set3', cardBg: 'bg3',
+        filter: 'none', cardType: 'set3', cardBg: 'bg3',
         image: 'assets/characters/char_satan.png', imageLose: 'assets/characters/char_satan_lose.png', icon: 'assets/icons/icon_satan.png', color: '#dc2626',
         leaderSkill: { name: '魔王の化身', desc: '(SP:6) 自分のレーンに「サタンの化身(P:10)」を1体召喚する。', cost: 6, action: 'satan_avatar' },
         preBattleLine: '我は絶対……ひれ伏すがよい。',

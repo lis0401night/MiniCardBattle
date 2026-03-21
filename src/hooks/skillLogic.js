@@ -61,7 +61,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         // イラストの決定（トークン等の特殊なマッピングを考慮）
         let imgUrl = randomMaster.imgUrl;
         if (!imgUrl) {
-            if (randomMaster.id === 'token_soldier') imgUrl = 'assets/cards/card_soldier.jpg';
+            if (randomMaster.id === 'token_knight') imgUrl = 'assets/cards/card_token_knight.jpg';
             else if (randomMaster.id === 'token_ignis') imgUrl = 'assets/characters/char_dragon.png';
             else if (randomMaster.id === 'token_satan') imgUrl = 'assets/characters/char_satan.png';
             else imgUrl = `assets/cards/card_${randomMaster.id}.jpg`;

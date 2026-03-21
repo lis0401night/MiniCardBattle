@@ -5,41 +5,63 @@ import { executeContinue, executeGameOver } from '../hooks/uiDialogue.js';
 export default function ContinueScreen() {
     const [count, setCount] = useState(9);
     const [continueImg, setContinueImg] = useState('');
+    const [isRevived, setIsRevived] = useState(false);
+    const [countText, setCountText] = useState('9');
 
     useEffect(() => {
-        // コンティニュー画面を開いた時の初期設定
         setCount(9);
-        if (GameState.enemyConfig && GameState.enemyConfig.character) {
+        setCountText('9');
+        setIsRevived(false);
+        if (GameState.playerConfig && GameState.playerConfig.imageLose) {
+            setContinueImg(GameState.playerConfig.imageLose);
+        } else if (GameState.enemyConfig && GameState.enemyConfig.character) {
             setContinueImg(GameState.enemyConfig.character.image);
         }
 
-        // カウントダウン
         const timer = setInterval(() => {
-            setCount(prev => {
-                if (prev <= 0) {
-                    clearInterval(timer);
-                    executeGameOver();
-                    return 0;
-                }
-                return prev - 1;
-            });
+            setCount(prev => prev - 1);
         }, 1000);
 
         return () => clearInterval(timer);
     }, []);
 
+    useEffect(() => {
+        if (count >= 0 && !isRevived) {
+            setCountText(count.toString());
+        }
+        if (count <= 0 && !isRevived) {
+            handleGameOver();
+        }
+    }, [count, isRevived]);
+
+    const handleContinue = () => {
+        if (isRevived) return;
+        setIsRevived(true);
+        setCountText('YES!');
+        if (GameState.playerConfig && GameState.playerConfig.image) {
+            setContinueImg(GameState.playerConfig.image);
+        }
+        executeContinue();
+    };
+
+    const handleGameOver = () => {
+        if (isRevived) return;
+        setIsRevived(true);
+        executeGameOver();
+    };
+
     return (
         <div id="screen-continue" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <h1 style={{ color: '#ef4444', fontSize: '3rem', textShadow: '0 0 10px #ef4444', marginBottom: 0 }}>CONTINUE?</h1>
             <div className="continue-img-container" style={{ position: 'relative', margin: '20px 0' }}>
-                <img id="continue-img" className="continue-img" src={continueImg} alt="Continue" style={{ width: '200px', height: 'auto', borderRadius: '12px', border: '2px solid #334155' }} />
+                <img id="continue-img" className={`continue-img ${isRevived ? 'revive' : ''}`} src={continueImg || undefined} alt="Continue" style={{ width: '200px', height: 'auto', borderRadius: '12px', border: '2px solid #334155' }} />
                 <div id="continue-count" style={{ position: 'absolute', bottom: '10px', right: '10px', fontSize: '4rem', fontWeight: 'bold', color: '#fff', textShadow: '0 0 15px #ef4444, 2px 2px 0 #000' }}>
-                    {count}
+                    {countText}
                 </div>
             </div>
-            <div id="continue-buttons" style={{ display: 'flex', gap: '20px' }}>
-                <button className="btn" onClick={() => executeContinue()} style={{ background: 'linear-gradient(45deg, #22c55e, #16a34a)', padding: '15px 40px', fontSize: '1.5rem' }}>YES</button>
-                <button className="btn" onClick={() => executeGameOver()} style={{ background: 'linear-gradient(45deg, #64748b, #475569)', padding: '15px 40px', fontSize: '1.5rem' }}>NO</button>
+            <div id="continue-buttons" style={{ display: 'flex', gap: '20px', visibility: isRevived ? 'hidden' : 'visible' }}>
+                <button className="btn" onClick={handleContinue} style={{ background: 'linear-gradient(45deg, #22c55e, #16a34a)', padding: '15px 40px', fontSize: '1.5rem' }}>YES</button>
+                <button className="btn" onClick={handleGameOver} style={{ background: 'linear-gradient(45deg, #64748b, #475569)', padding: '15px 40px', fontSize: '1.5rem' }}>NO</button>
             </div>
         </div>
     );

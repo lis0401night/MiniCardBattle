@@ -20,10 +20,7 @@ export default function Card({
 
     const rarityClass = cardObj.rarity ? ` rarity-${cardObj.rarity}` : '';
     let filter = cardObj.filter;
-    // シャドウ化の特殊処理（敵側のみ）
-    if (cardObj.owner === 'red' && GameState.enemyConfig && GameState.enemyConfig.isShadow) {
-        filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
-    }
+    // シャドウ化の特殊処理（敵側のみ）は削除
 
     const imgUrl = getCardImgUrl(cardObj);
     

@@ -29,7 +29,7 @@ export async function activateLeaderSkill(owner, tokenLanes = null) {
     updateSPOrbs(owner);
 
     // 演出
-    playSound(SOUNDS.seLegend); 
+    playSound(SOUNDS.seLegend);
     await showLeaderSkillCutin(config, isBlue, owner);
 
     // スキル効果の実行
@@ -133,18 +133,18 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             board[l] = action === 'satan_avatar' ?
-                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: CHARACTERS['satan'].image, filter: 'grayscale(1) brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)', currentPower: tS.power, rarity: tS.rarity || 1 } :
-                { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: CHARACTERS['dragon'].image, filter: 'none', currentPower: tI.power, rarity: tI.rarity || 1 };
+                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: 'assets/characters/card_token_satan.jpg', filter: 'none', currentPower: tS.power, rarity: tS.rarity || 1 } :
+                { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: 'assets/cards/card_token_dragon.jpg', filter: 'none', currentPower: tI.power, rarity: tI.rarity || 1 };
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(500);
         }
     } else if (action === 'holy_march') {
-        const tK = CARD_MASTER.find(m => m.id === 'token_soldier');
+        const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes);
 
         for (let l of selectedLanes) {
-            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/cards/card_soldier.jpg', filter: 'none', currentPower: tK.power, rarity: tK.rarity || 1 };
+            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/cards/card_token_knight.jpg', filter: 'none', currentPower: tK.power, rarity: tK.rarity || 1 };
         }
         if (selectedLanes.length > 0) {
             playSound(SOUNDS.sePlace);
@@ -229,7 +229,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const maxPow = 10;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
         const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
-        
+
         // 空きレーンを探す
         const emptyLanes = [];
         for (let i = 0; i < 3; i++) {
@@ -250,10 +250,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                     selectedCard = validCards[0];
                 }
             }
-            
+
             if (selectedCard) {
                 let targetLane = null;
-                
+
                 if (isBlue) {
                     const tLanes = await waitPlayerLaneSelection(1, 'blue', selectedCard, true);
                     if (tLanes && tLanes.length > 0) {
@@ -268,23 +268,23 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                         targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
                     }
                 }
-                
+
                 if (targetLane !== null && targetLane !== undefined) {
                     // 墓地からの削除
                     const actualIdx = discard.indexOf(selectedCard);
                     if (actualIdx !== -1) discard.splice(actualIdx, 1);
                     if (typeof updateDeckDisplay === 'function') updateDeckDisplay(isBlue ? 'blue' : 'red');
-                    
+
                     // 盤面への配置
                     board[targetLane] = { ...selectedCard, id: `res_${Date.now()}` };
                     board[targetLane].currentPower = board[targetLane].power;
                     board[targetLane].skillTriggered = true; // 召喚時効果は不発
                     board[targetLane].stunTurns = 0;
                     board[targetLane].stunAppliedThisTurn = false;
-                    
+
                     if (typeof playSound === 'function') playSound(SOUNDS.sePlace);
                     if (typeof renderBoard === 'function') renderBoard();
-                    
+
                     const cEl = document.querySelector(`#${isBlue ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`);
                     if (cEl) {
                         cEl.classList.add('anim-card-play');

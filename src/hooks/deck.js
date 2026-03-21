@@ -63,13 +63,6 @@ export function generateDeck(owner, config, sessionId) {
 
             const t = CARD_MASTER.find(m => m.id === cardId) || CARD_MASTER[0];
             let p = t.power;
-            // if (config.id === 'satan') p += 1; // サタン補正は削除
-
-            // ミラーマッチ（シャドウ）用のフィルタ処理のみ適用
-            let filter = undefined;
-            if (config.isShadow) {
-                filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
-            }
 
             const tempObj = { ...t, isPremium: isPremium };
             const imgUrl = getCardImgUrl(tempObj);
@@ -79,7 +72,6 @@ export function generateDeck(owner, config, sessionId) {
                 id: `${owner}_${sessionId}_${i}`,
                 owner: owner,
                 imgUrl: imgUrl,
-                filter: filter,
                 power: p,
                 basePower: t.power,
                 currentPower: p,
@@ -347,9 +339,9 @@ export async function submitDefenseDeck(providedName = null) {
                 name: playerName,
                 character: GameState.playerConfig.id,
                 stage: GameState.selectedStageId || 'plain',
-                deck: GameState.playerDeckSelection.map(c => ({ 
-                    id: c.id, 
-                    isPremium: GameState.premiumCards ? GameState.premiumCards.includes(c.id) : false 
+                deck: GameState.playerDeckSelection.map(c => ({
+                    id: c.id,
+                    isPremium: GameState.premiumCards ? GameState.premiumCards.includes(c.id) : false
                 })),
                 playmat: GameState.selectedPlaymatId,
                 points: parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,

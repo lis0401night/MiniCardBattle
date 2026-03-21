@@ -66,7 +66,7 @@ export const CARD_MASTER = [
     { id: 'baldanders', name: 'バルトアンデルス', power: 0, skill: 'metamorph', rarity: 4, voiceCategory: 'rock', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', power: 5, skill: 'shuffle', rarity: 4, voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     // トークンカード
-    { id: 'token_soldier', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: 'セレスティアの号令で召喚された騎士。' },
+    { id: 'token_knight', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'sword', flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },

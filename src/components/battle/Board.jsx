@@ -26,10 +26,10 @@ export default function Board({
         <div className="battle-board">
             {/* 敵・味方のプレイマット背景領域 */}
             {GameState.enemyConfig && GameState.enemyConfig.playmat && (
-                <div id="playmat-enemy" className="playmat enemy" style={{ backgroundImage: getPlaymatUrl(GameState.enemyConfig.playmat), filter: GameState.enemyConfig.isShadow ? 'grayscale(0.5)' : 'none' }}></div>
+                <div id="playmat-enemy" className="playmat enemy" style={{ backgroundImage: getPlaymatUrl(GameState.enemyConfig.playmat) }}></div>
             )}
             {(GameState.selectedPlaymatId || (GameState.playerConfig && GameState.playerConfig.playmat)) && (
-                <div id="playmat-player" className="playmat player" style={{ backgroundImage: getPlaymatUrl(GameState.selectedPlaymatId || GameState.playerConfig.playmat), filter: GameState.playerConfig?.isShadow ? 'grayscale(0.5)' : 'none' }}></div>
+                <div id="playmat-player" className="playmat player" style={{ backgroundImage: getPlaymatUrl(GameState.selectedPlaymatId || GameState.playerConfig.playmat) }}></div>
             )}
 
             {/* 敵陣レーン */}

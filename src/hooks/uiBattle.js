@@ -135,12 +135,6 @@ export function createCardDOM(c, isBoard = false) {
     const d = document.createElement('div'); d.className = `card ${c.owner}${rarityClass}`;
     let sH = renderSkillTag(c, isBoard);
     let filter = c.filter;
-    if (c.owner === 'red' && GameState.enemyConfig.isShadow) {
-        filter = 'grayscale(1) brightness(0.7) contrast(1.2)';
-    }
-    if (c.stunTurns > 0) {
-        filter = (filter || '') + ' grayscale(1) brightness(0.5)';
-    }
     const imgUrl = getCardImgUrl(c);
     d.innerHTML = `
         <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${filter};"></div>
