@@ -367,14 +367,26 @@ function RewardSelect() {
 
     const handleSelect = (id) => {
         const c = CARD_MASTER.find(m => m.id === id);
-        showConfirmModal(`${c.name} をレンタルカードに加えますか？`, () => {
+        showConfirmModal(`${c.name} を獲得しますか？`, () => {
             selectRewardCard(id);
         });
     };
 
+    const enemy = GameState.enemyConfig;
+
     return (
         <div id="screen-reward" style={{ color: '#fff', textAlign: 'center', width: '100%', height: '100%' }}>
             <h3 style={{ color: '#facc15' }}>バトル勝利！</h3>
+
+            {enemy && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', marginTop: '10px' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #64748b', marginBottom: '10px' }}>
+                        <img src={enemy.image} alt={enemy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{enemy.name} のデッキ</div>
+                </div>
+            )}
+
             <p style={{ marginBottom: '15px', fontSize: '0.85rem', color: '#cbd5e1' }}>
                 倒した相手のデッキから1枚選んで獲得できます。<br />
                 カードを長押しで詳細をプレビューできます。

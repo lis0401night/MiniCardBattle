@@ -72,8 +72,8 @@ export function setupDialogueScreen() {
     const isCenter = (GameState.appState === 'story_intro' || GameState.appState === 'inter_battle_story');
 
     if (GameState.appState === 'post_dialogue') {
-        if (GameState.lastBattleResult === 'win') pRightImg = GameState.enemyConfig.imageLose;
-        else if (GameState.lastBattleResult === 'lose') pLeftImg = GameState.playerConfig.imageLose;
+        if (GameState.lastBattleResult === 'win') pRightImg = GameState.enemyConfig.imageLose || GameState.enemyConfig.image;
+        else if (GameState.lastBattleResult === 'lose') pLeftImg = GameState.playerConfig.imageLose || GameState.playerConfig.image;
     }
     
     window.currentDialogueData = window.currentDialogueData || {};

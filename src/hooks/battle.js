@@ -146,7 +146,14 @@ export function initBattleState() {
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
         if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
-        GameState.playerHP = GameState.playerMaxHP; GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
+        
+        if (GameState.gameMode === 'battle_dungeon') {
+            GameState.playerHP = (typeof GameState.dungeonPlayerHP !== 'undefined') ? GameState.dungeonPlayerHP : GameState.playerMaxHP;
+        } else {
+            GameState.playerHP = GameState.playerMaxHP;
+        }
+        
+        GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
         GameState.turnCount = 0; GameState.firstPlayer = 'blue';
         GameState.turnCount = 0;
         GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
@@ -345,9 +352,29 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         }
         // 無ければ評価を行う（強制使用時など）
         const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-        const actualCount = Math.min(count, emptyLanes.length);
-        if (actualCount === 0) return [];
-        return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, actualCount, isLeaderSkill);
+        
+        // リーダースキル等で上書きを許容する場合
+        if (isLeaderSkill) {
+            let selectedLanes = [...emptyLanes];
+            if (selectedLanes.length >= count) {
+                // 空きが十分にあるなら、その中から評価して選択
+                return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count, isLeaderSkill);
+            } else {
+                // 空きが足りない場合は、埋まっているレーンから適当に（あるいは弱いカードから）上書き対象として選ぶ
+                const occupiedLanes = [0, 1, 2].filter(i => !emptyLanes.includes(i));
+                // 上書き対象を決める簡易評価（パワーが低い順）
+                occupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
+                while (selectedLanes.length < count && occupiedLanes.length > 0) {
+                    selectedLanes.push(occupiedLanes.shift());
+                }
+                return selectedLanes;
+            }
+        } else {
+            // 通常の配置（上書き不可）
+            const actualCount = Math.min(count, emptyLanes.length);
+            if (actualCount === 0) return [];
+            return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, actualCount, isLeaderSkill);
+        }
     }
 
     // プレイヤーの場合：手動選択

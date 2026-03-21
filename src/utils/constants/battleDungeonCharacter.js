@@ -417,6 +417,18 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
 };
 
 export function getDungeonCharacterDialogue(id) {
+    if (id.startsWith('dungeon_boss_')) {
+        const parts = id.split('_');
+        const charId = parts[2]; // e.g. dungeon_boss_aegis_12345 -> aegis
+        if (charId && CHARACTERS[charId]) {
+            const char = CHARACTERS[charId];
+            return {
+                preBattleLine: char.preBattleLine || (char.dialogue?.intro?.default) || '……',
+                dialogue: char.dialogue
+            };
+        }
+    }
+
     const rawId = id.replace('dungeon_', '');
     
     // 直接のID一致をチェック（golem, vampire等）

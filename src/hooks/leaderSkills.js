@@ -3,7 +3,7 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
 import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
 import { applyLeaderSkillLogic } from './engine.js';
@@ -243,4 +243,17 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
     // 再描画
     renderBoard();
+
+    // 召喚時スキル（アクティブスキル）を持つカードが今回召喚されていた場合、事後発動する
+    const targetBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    for (let i = 0; i < 3; i++) {
+        const cd = targetBoard[i];
+        if (cd && cd.skillTriggered === false) {
+            if (hasActiveSkill(cd)) {
+                await resolveOnPlaySkill(owner, i, cd);
+            } else {
+                cd.skillTriggered = true;
+            }
+        }
+    }
 }

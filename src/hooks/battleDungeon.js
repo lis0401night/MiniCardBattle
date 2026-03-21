@@ -1,4 +1,4 @@
-import { getRentalDeckOptions, generateDungeonEnemy, getDungeonEnemyCandidates } from '../utils/constants/battleDungeon.js';
+import { getRentalDeckOptions, getDungeonEnemyCandidates } from '../utils/constants/battleDungeon.js';
 import { GameState } from './gameState.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
@@ -19,6 +19,7 @@ export function initBattleDungeon() {
         GameState.dungeonCards = [];
         GameState.dungeonOpponents = [];
         GameState.playerDeckSelection = null; // デッキ状態をリセットしレンタル構成を優先
+        delete GameState.dungeonPlayerHP; // HPをリセット（MAXから開始）
         GameState.dungeonState = 'select_rental_deck';
     }
     switchScreen('screen-battle-dungeon');
@@ -32,6 +33,7 @@ export function saveDungeonProgress() {
         opponents: GameState.dungeonOpponents,
         leaderId: GameState.playerConfig?.id,
         dungeonState: GameState.dungeonState,
+        playerHP: typeof GameState.dungeonPlayerHP !== 'undefined' ? GameState.dungeonPlayerHP : GameState.playerHP,
         timestamp: Date.now()
     };
     localStorage.setItem('mini_card_battle_dungeon_save', JSON.stringify(saveData));
@@ -56,6 +58,7 @@ export function loadDungeonProgress() {
         GameState.dungeonOpponents = data.opponents || [];
         GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
         GameState.dungeonState = data.dungeonState || 'select_opponent';
+        if (data.playerHP !== undefined) GameState.dungeonPlayerHP = data.playerHP;
         GameState.gameMode = 'battle_dungeon';
 
         // 再描画を促す
@@ -96,16 +99,10 @@ export function selectRentalDeck(deckData) {
 
 
 export function generateNextOpponents() {
-    const enemy1 = generateDungeonEnemy(GameState.dungeonWinStreak);
-    let enemy2 = generateDungeonEnemy(GameState.dungeonWinStreak);
-    // 同じ敵が出ないようにする（フェイルセーフ含む）
-    let retry = 0;
-    while (enemy1.id === enemy2.id && retry < 10) {
-        enemy2 = generateDungeonEnemy(GameState.dungeonWinStreak);
-        retry++;
-    }
-    GameState.dungeonOpponents = [enemy1, enemy2];
-    if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
+    import('../utils/constants/battleDungeon.js').then(({ generateDungeonOpponentsList }) => {
+        GameState.dungeonOpponents = generateDungeonOpponentsList(GameState.dungeonWinStreak);
+        if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
+    });
 }
 
 export function startDungeonBattle(enemyIndex) {
@@ -144,6 +141,7 @@ export function winDungeonBattle() {
         localStorage.setItem('mini_card_battle_dungeon_max_streak', GameState.dungeonMaxWinStreak);
     }
     GameState.dungeonState = 'reward';
+    GameState.dungeonPlayerHP = GameState.playerHP; // 現在のHPを引き継ぐ
 
     // 勝利直後に保存（報酬選択前でも中断可能にするため）
     saveDungeonProgress();
@@ -187,6 +185,7 @@ export function retireDungeon() {
     GameState.dungeonWinStreak = 0;
     GameState.dungeonOpponents = [];
     GameState.dungeonState = 'none';
+    delete GameState.dungeonPlayerHP;
     GameState.gameMode = 'title';
 
     // 中断データを削除
