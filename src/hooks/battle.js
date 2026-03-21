@@ -11,10 +11,11 @@ import { SOUNDS } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
 import { generateDeck } from './deck.js';
-import { applyActiveSkillLogic, calculateCombatPhase } from './engine.js';
+import { applyActiveSkillLogic, calculateCombatPhase, applySingleCombat } from './engine.js';
 import { GameState } from './gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import { resolveActiveSkillEffect, triggerStartTurnPassive } from './skillLogic.js';
+import { playEvents } from './eventRenderer.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showDefenseBattleList } from './uiMainCore.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
@@ -947,150 +948,48 @@ export async function resolveOnPlaySkill(o, l, c) {
 }
 
 export async function executeSingleCombat(atk, l) {
-    const aB = atk === 'blue' ? GameState.playerBoard : GameState.enemyBoard, dB = atk === 'blue' ? GameState.enemyBoard : GameState.playerBoard, aR = atk === 'blue' ? '#player-lanes' : '#enemy-lanes', dR = atk === 'blue' ? '#enemy-lanes' : '#player-lanes', an = atk === 'blue' ? 'anim-attack-up' : 'anim-attack-down';
-    const aC = aB[l];
-    if (!aC) return;
-    if (hasSkill(aC, 'defender')) return; // 防御スキル（本来のもの、または拘束/待機による一時的な状態）を持つ場合は攻撃しない
-
-    // 攻撃直前の非同期レンダリング完了を待つ（スタン明けの再描画によるクラスのリセットを防ぐため）
-    await sleep(100);
-
-    const aCell = document.querySelector(`${aR} .cell[data-lane="${l}"]`);
-    if (!aCell) return;
-
-    // 演出: 攻撃アニメーション
-    // Safari等での不発を防ぐため、一度ステータスを確定させてから次のフレームで追加
-    aCell.style.animation = 'none'; // 念のため削除
-    void aCell.offsetHeight;    // 強制リフロー (VOiDで副作用を明示)
-
-    await new Promise(resolve => requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            if (atk === 'blue') {
-                aCell.style.animation = 'attack-up 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
-                aCell.style.zIndex = '20';
-            } else {
-                aCell.style.animation = 'attack-down 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
-                aCell.style.zIndex = '20';
-            }
-            playSound(SOUNDS.seAttack);
-            resolve();
-        });
-    }));
-
-    await sleep(500); // アニメーション衝突タイミング(1.0sの50%)
-    // 衝突後に元の状態へ戻す
-    if (aCell) {
-        aCell.style.animation = '';
-        aCell.style.zIndex = '';
-    }
-
-    // ロジカルなダメージ処理の前に少し待機して衝撃を表現
-    // (この間にDamagePopupが表示されると気持ちいい)
-
-
-    // --- ロジックの実行 (Engineの呼び出し) ---
-    const currentState = {
-        playerBoard: GameState.playerBoard, enemyBoard: GameState.enemyBoard,
+    // quick スキル等での単発攻撃に対応するための簡易ラッパー
+    const state = {
+        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         playerHP: GameState.playerHP, enemyHP: GameState.enemyHP
     };
-
-    // calculateCombatPhaseは指定したサイドの攻撃1回分ではなく、そのターンの全レーン分を回すように定義してしまったので、
-    // ここでは1レーン分だけの簡易的な計算機として使うか、calculateCombatPhaseを修正する。
-    // 今回は整合性を取るため、engine.js側の1レーン分計算を抽出するのが望ましいが、一旦個別計算を現状維持しつつ engine.js を改良する。
-    // (ここでは既存のロジックが十分複雑なので、一旦 engine.js 側の calculateCombatPhase は AI 予測用とし、実機は今のコードベースを維持する方がバグが少ない)
-    // ただし、ユーザーの要望は「全く同じロジック」なので、やはり共通化する。
-
-    // [修正案]: engine.js に calculateSingleLaneCombat を追加するか、実機側を state 管理に寄せる。
-    // 今回は工数と安全策を取り、engine.js のロジックを AI.js からフル活用できる形にする。
-
-    // TODO: 次のステップで AI.js を完全に engine.js 依存に書き換える。
-    // 現状の実機 battle.js は演出が密結合しているため、大規模な破壊を避ける。
-
-    if (dB[l]) {
-        let dDef = aC.currentPower, dAtk = dB[l].currentPower;
-        if (hasSkill(dB[l], 'sturdy')) dDef = Math.floor(dDef / 2); if (hasSkill(aC, 'sturdy')) dAtk = Math.floor(dAtk / 2);
-        if (hasSkill(dB[l], 'invincible')) dDef = 0; if (hasSkill(aC, 'invincible')) dAtk = 0;
-
-        // 連撃（ダブルストライク）: 与えるダメージ2倍
-        if (hasSkill(aC, 'double_strike')) dDef *= 2;
-        if (hasSkill(dB[l], 'double_strike')) dAtk *= 2;
-
-        let dLane = l;
-        let dg = (l === 1) ? (hasSkill(dB[0], 'guardian') ? 0 : (hasSkill(dB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(dB[1], 'guardian') ? 1 : null) : (hasSkill(dB[1], 'guardian') ? 1 : null));
-        if (dg !== null) dLane = dg;
-        let aLane = l;
-        if (!hasSkill(dB[l], 'defender')) {
-            let ag = (l === 1) ? (hasSkill(aB[0], 'guardian') ? 0 : (hasSkill(aB[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(aB[1], 'guardian') ? 1 : null) : (hasSkill(aB[1], 'guardian') ? 1 : null));
-            if (ag !== null) aLane = ag;
-        }
-
-        const realDef = dB[dLane], realAtk = aB[aLane];
-        realDef.currentPower -= dDef; if (!hasSkill(dB[l], 'defender')) realAtk.currentPower -= dAtk;
-
-        // 演出: ダメージ反映のためのピンポイント更新（renderBoardはアニメーションを壊すため避ける）
-        updateCardPowerOnly(dLane, atk === 'blue' ? 'enemy' : 'player');
-        if (!hasSkill(dB[l], 'defender')) {
-            updateCardPowerOnly(aLane, atk === 'blue' ? 'player' : 'enemy');
-        }
-        const dE_new = document.querySelector(`${dR} .cell[data-lane="${dLane}"] .card`);
-        const aE_new = document.querySelector(`${aR} .cell[data-lane="${aLane}"] .card`);
-
-        if (dE_new) { createDamagePopup(dE_new, `-${dDef}`); }
-        if (!hasSkill(dB[l], 'defender') && aE_new) { createDamagePopup(aE_new, `-${dAtk}`); }
-        playSound(SOUNDS.seDamage);
-        await sleep(400);
-
-        if (dDef > 0 && hasSkill(aC, 'deadly')) realDef.currentPower = 0;
-        if (dAtk > 0 && hasSkill(dB[l], 'deadly')) realAtk.currentPower = 0;
-
-        let aD = realAtk.currentPower <= 0, dD = realDef.currentPower <= 0;
-        if (dD && !aD && hasSkill(aC, 'soul_bind')) {
-            const val = getSkillValue(aC, 'soul_bind') || 2;
-            aC.currentPower += val;
-            updateCardPowerOnly(aLane, atk === 'blue' ? 'player' : 'enemy');
-            if (aE_new) createDamagePopup(aE_new, `+${val}`, '#4ade80');
-            playSound(SOUNDS.seSkill);
-        }
-        if (aD && !dD && hasSkill(dB[l], 'soul_bind')) {
-            const val = getSkillValue(dB[l], 'soul_bind') || 2;
-            dB[l].currentPower += val;
-            updateCardPowerOnly(dLane, atk === 'blue' ? 'enemy' : 'player');
-            if (dE_new) createDamagePopup(dE_new, `+${val}`, '#4ade80');
-            playSound(SOUNDS.seSkill);
-        }
-
-        // 破壊演出（async化したクリーンアップを使用）
-        const destroyed = await cleanupDestroyedCards();
-
-        if (dD && !aD && hasSkill(aC, 'pierce')) {
-            let pD = aC.currentPower;
-            if (hasSkill(aC, 'double_strike')) pD *= 2;
-            if (pD > 0) {
-                await sleep(200); playSound(SOUNDS.seDamage);
-                if (atk === 'blue') { GameState.enemyHP -= pD; createDamagePopup(document.getElementById('enemy-hp-fill'), `-${pD}`); }
-                else { GameState.playerHP -= pD; createDamagePopup(document.getElementById('player-hp-fill'), `-${pD}`); }
-                updateHPBar(); if (checkWinCondition()) return;
-            }
-        }
-    } else {
-        let d = aC.currentPower;
-        if (hasSkill(aC, 'double_strike')) d *= 2;
-        playSound(SOUNDS.seDamage); document.body.classList.add('anim-shake');
-        if (atk === 'blue') { GameState.enemyHP -= d; createDamagePopup(document.getElementById('enemy-hp-fill'), `-${d}`); showSpeechBubble('red'); }
-        else { GameState.playerHP -= d; createDamagePopup(document.getElementById('player-hp-fill'), `-${d}`); showSpeechBubble('blue'); }
-        updateHPBar(); if (checkWinCondition()) return; await sleep(400); document.body.classList.remove('anim-shake');
-    }
-    // renderBoard(); // アニメーション消失防止のため、各レーン終了時の全体描画は避ける
+    
+    // 特定のレーンだけ発火させるための個別処理
+    const events = [];
+    applySingleCombat(state, atk, l, events);
+    
+    
+    // UI/演出の実行（イベントログ内で状態も同期更新される）
+    await playEvents(events);
+    checkWinCondition();
 }
 
 export async function executeCombatPhase(atk) {
+    // 盤面に攻撃可能なカードが1枚もなければ何もしない
     const b = atk === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    for (let i = 0; i < 3; i++) if (b[i]) {
-        await executeSingleCombat(atk, i);
-        if (GameState.isBattleEnded) break;
-        await sleep(200);
-    }
-    renderBoard(); // 全ての戦闘終了後に一度だけ整合性を取るために描画
+    if (!b.some(x => x !== null)) return;
+
+    // --- ロジックの実行 (Engineの呼び出し) ---
+    const currentState = {
+        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP
+    };
+
+    // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
+    const events = calculateCombatPhase(currentState, atk, []);
+
+    // --- UI/演出の実行 (Rendererの呼び出し) ---
+    // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）
+    // イベント再生中にGameStateも連動して更新される
+    await playEvents(events);
+
+    // 整合性を取るために最終的な盤面状態を描画
+    renderBoard();
+
+    // 勝敗判定
+    checkWinCondition();
 }
 
 export function endBattle() {

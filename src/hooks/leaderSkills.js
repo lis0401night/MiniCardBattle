@@ -6,6 +6,8 @@ import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic } from './battle.js';
 import { GameState } from './gameState.js';
 import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
+import { applyLeaderSkillLogic } from './engine.js';
+import { playEvents } from './eventRenderer.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -101,44 +103,27 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
 }
 
 export async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null) {
-    const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
-    const eBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
-    const defO = isBlue ? 'red' : 'blue';
-    const defS = isBlue ? 'enemy' : 'player';
+    const currentState = {
+        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+        playerSP: GameState.playerSP, enemySP: GameState.enemySP,
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
+    };
 
-    if (action === 'annihilation') {
-        for (let i = 0; i < 3; i++) {
-            if (eBoard[i]) {
-                const t = document.querySelector(`#${defS}-lanes .cell[data-lane="${i}"] .card`);
-                if (t) { createDamagePopup(t, '-4'); }
-                eBoard[i].currentPower -= 4;
-            }
-        }
-        renderBoard();
-        playSound(SOUNDS.seDamage);
-        await sleep(500);
+    let events = [];
 
-        for (let i = 0; i < 3; i++) {
-            if (eBoard[i] && eBoard[i].currentPower <= 0) {
-            }
-        }
-        await cleanupDestroyedCards();
-        renderBoard();
-    } else if (action === 'satan_avatar' || action === 'dragon_summon') {
+    // UIの介入（対象の選択等）が必要なスキルは事前に処理
+    if (action === 'satan_avatar' || action === 'dragon_summon') {
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
-
         const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes);
-        if (selectedLanes.length > 0) {
-            const l = selectedLanes[0];
-            board[l] = action === 'satan_avatar' ?
-                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: 'assets/cards/card_token_satan.jpg', filter: 'none', currentPower: tS.power, rarity: tS.rarity || 1 } :
-                { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: 'assets/cards/card_token_dragon.jpg', filter: 'none', currentPower: tI.power, rarity: tI.rarity || 1 };
-            playSound(SOUNDS.sePlace);
-            renderBoard();
-            await sleep(500);
-        }
+        if (selectedLanes.length === 0) return; // キャンセルされた場合
+        tokenLanes = selectedLanes;
     } else if (action === 'dungeon_summon_leader') {
         const config = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
         const tokenCard = CARD_MASTER.find(m => m.id === config.leaderCardId);
@@ -155,99 +140,18 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes);
-
-        for (let l of selectedLanes) {
-            board[l] = { id: `tk_k_${Date.now()}_${l}`, owner, ...tK, imgUrl: 'assets/cards/card_token_knight.jpg', filter: 'none', currentPower: tK.power, rarity: tK.rarity || 1 };
-        }
-        if (selectedLanes.length > 0) {
-            playSound(SOUNDS.sePlace);
-            renderBoard();
-            await sleep(400);
-        }
-
-        let bf = false;
-        for (let i = 0; i < 3; i++) if (board[i]) {
-            board[i].currentPower += 2;
-            board[i].power += 2;
-            const t = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`);
-            if (t) createDamagePopup(t, '+2', '#4ade80');
-            bf = true;
-        }
-        if (bf) { renderBoard(); await sleep(500); }
-    } else if (action === 'abyss_ritual') {
-        const h = isBlue ? GameState.playerHand : GameState.enemyHand;
-        let dc = 0;
-        if (h.length > 0) {
-            if (isBlue) {
-                // プレイヤーは手動で0〜2枚選択
-                const selectedIndices = await waitPlayerHandSelection(2, owner);
-                if (selectedIndices.length > 0) {
-                    selectedIndices.sort((a, b) => b - a);
-                    for (let i of selectedIndices) {
-                        await discardCard(owner, h.splice(i, 1)[0]);
-                        dc++;
-                    }
-                }
-            } else {
-                // AIは自動でランダムなカードを最大2枚捨てる
-                while (dc < 2 && h.length > 0) {
-                    let rIdx = Math.floor(Math.random() * h.length);
-                    await discardCard(owner, h.splice(rIdx, 1)[0]);
-                    dc++;
-                }
-            }
-            for (let i = 0; i < dc; i++) drawCard(owner);
-        }
-        h.forEach(c => {
-            c.power += 1;
-            c.currentPower += 1;
-        });
-        if (isBlue) renderHand();
-        playSound(SOUNDS.seSkill);
-        await sleep(500);
-    } else if (action === 'dark_ritual') {
-        const d = 2;
-        playSound(SOUNDS.seDamage);
-        if (isBlue) {
-            GameState.enemyHP -= d;
-            GameState.playerHP = Math.min(MAX_HP, GameState.playerHP + d);
-            createDamagePopup(document.getElementById('enemy-hp-fill'), `-${d}`);
-            createDamagePopup(document.getElementById('player-hp-fill'), `+${d}`, '#4ade80');
-        } else {
-            GameState.playerHP -= d;
-            GameState.enemyHP = Math.min(MAX_HP, GameState.enemyHP + d);
-            createDamagePopup(document.getElementById('player-hp-fill'), `-${d}`);
-            createDamagePopup(document.getElementById('enemy-hp-fill'), `+${d}`, '#4ade80');
-        }
-        updateHPBar();
-        await sleep(500);
+        tokenLanes = selectedLanes;
     } else if (action === 'targeted_destruction') {
         const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner);
-        if (selectedLanes.length > 0) {
-            const l = selectedLanes[0];
-            const targetCell = document.querySelector(`#${isBlue ? 'enemy' : 'player'}-lanes .cell[data-lane="${l}"] .card`);
-            if (targetCell) {
-                createDamagePopup(targetCell, '破壊');
-            }
-            playSound(SOUNDS.seDamage);
-            await sleep(500);
-            eBoard[l].currentPower = 0; // 無条件破壊のため、パワーを0に設定してからクリーンアップを呼ぶ
-            if (await cleanupDestroyedCards()) {
-                // cleanup内で破壊音などは処理済み
-            }
-            renderBoard();
-            await sleep(300);
-        }
+        if (selectedLanes.length === 0) return;
+        tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
     } else if (action === 'devilhunter_resurrect') {
         const maxPow = 10;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
-        const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
-
-        // 空きレーンを探す
-        const emptyLanes = [];
-        for (let i = 0; i < 3; i++) {
-            if (!board[i]) emptyLanes.push(i);
-        }
+        const validCards = discard.filter(c => (c.power || 0) <= maxPow && !c.isToken);
+        const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+        let emptyLanes = [];
+        for (let i = 0; i < 3; i++) if (!board[i]) emptyLanes.push(i);
 
         if (validCards.length > 0 && emptyLanes.length > 0) {
             let selectedCard = null;
@@ -263,49 +167,78 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                     selectedCard = validCards[0];
                 }
             }
+            if (!selectedCard) return;
 
-            if (selectedCard) {
-                let targetLane = null;
+            // 復活させる対象を engine に伝えるために無理くり渡しちゃうか、UI介入でここまで決まったら
+            // 配置レーンも決めます。
+            const tLanes = await waitPlayerLaneSelection(1, owner, selectedCard, true);
+            if (!tLanes || tLanes.length === 0) return;
 
-                if (isBlue) {
-                    const tLanes = await waitPlayerLaneSelection(1, 'blue', selectedCard, true);
-                    if (tLanes && tLanes.length > 0) {
-                        targetLane = tLanes[0];
-                    }
-                } else {
-                    // AIはシミュレーション(ai_normal.js => waitPlayerLaneSelection => tokenLanes)で決めるが、
-                    // 万が一引数がなければランダム空きレーンを保証
-                    if (tokenLanes && tokenLanes.length > 0) {
-                        targetLane = tokenLanes[0];
-                    } else {
-                        targetLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+            // Engine側へ伝えるための事前準備（引数だけでは足りないので、Engineが拾えるように選択カード情報を付与するか、ここでやってしまうか）
+            // この蘇生アクションは UI 依存度が高すぎるため、蘇生処理の解決だけは部分的に残しつつ engineの枠組みに乗せる。
+            // 状態への手動反映
+            const actualIdx = discard.indexOf(selectedCard);
+            if (actualIdx !== -1) discard.splice(actualIdx, 1);
+
+            const targetLane = tLanes[0];
+            const resurrectedCard = { ...selectedCard, id: `res_${Date.now()}` };
+            resurrectedCard.currentPower = resurrectedCard.power;
+            resurrectedCard.skillTriggered = true; // 召喚時効果は不発
+            resurrectedCard.stunTurns = 0;
+            resurrectedCard.stunAppliedThisTurn = false;
+            board[targetLane] = resurrectedCard;
+
+            events.push({ type: 'leader_skill', skill: action, side: owner });
+            events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
+        } else {
+            return; // 復活対象や空きがない
+        }
+    } else if (action === 'abyss_ritual') {
+        // engineにabyss_ritualは未実装だったため、ここで同等に処理しeventsにプッシュします。
+        const h = isBlue ? GameState.playerHand : GameState.enemyHand;
+        let dc = 0;
+        if (h.length > 0) {
+            if (isBlue) {
+                const selectedIndices = await waitPlayerHandSelection(2, owner);
+                if (selectedIndices.length > 0) {
+                    selectedIndices.sort((a, b) => b - a);
+                    for (let i of selectedIndices) {
+                        await discardCard(owner, h.splice(i, 1)[0]);
+                        dc++;
                     }
                 }
-
-                if (targetLane !== null && targetLane !== undefined) {
-                    // 墓地からの削除
-                    const actualIdx = discard.indexOf(selectedCard);
-                    if (actualIdx !== -1) discard.splice(actualIdx, 1);
-                    if (typeof updateDeckDisplay === 'function') updateDeckDisplay(isBlue ? 'blue' : 'red');
-
-                    // 盤面への配置
-                    board[targetLane] = { ...selectedCard, id: `res_${Date.now()}` };
-                    board[targetLane].currentPower = board[targetLane].power;
-                    board[targetLane].skillTriggered = true; // 召喚時効果は不発
-                    board[targetLane].stunTurns = 0;
-                    board[targetLane].stunAppliedThisTurn = false;
-
-                    if (typeof playSound === 'function') playSound(SOUNDS.sePlace);
-                    if (typeof renderBoard === 'function') renderBoard();
-
-                    const cEl = document.querySelector(`#${isBlue ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`);
-                    if (cEl) {
-                        cEl.classList.add('anim-card-play');
-                        if (typeof createDamagePopup === 'function') createDamagePopup(cEl, '復活', '#4ade80');
-                    }
-                    if (typeof sleep === 'function') await sleep(500);
+            } else {
+                while (dc < 2 && h.length > 0) {
+                    let rIdx = Math.floor(Math.random() * h.length);
+                    await discardCard(owner, h.splice(rIdx, 1)[0]);
+                    dc++;
                 }
             }
+            for (let i = 0; i < dc; i++) drawCard(owner);
         }
+
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        h.forEach(c => {
+            c.power += 1;
+            c.currentPower += 1;
+        });
+        if (isBlue) renderHand();
+        playSound(SOUNDS.seSkill);
+        await sleep(500);
+        return; // Engineに移譲せずここで完了とする（手札操作のUI依存度が強いため）
     }
+
+    // Engineの共通ロジック呼び出し
+    // 上のif文でeventsを手動構築したもの (abyss_ritual, devilhunter_resurrect) 以外を実行
+    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual') {
+        // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
+        // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
+        applyLeaderSkillLogic(currentState, owner, action, tokenLanes, events);
+    }
+
+    // イベントログを再生（再生中にGameStateと描画が逐次更新される）
+    await playEvents(events);
+
+    // 再描画
+    renderBoard();
 }

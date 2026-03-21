@@ -23,7 +23,7 @@ export default function BattleScreen() {
     // 強制再描画フックの登録
     useEffect(() => {
         setUpdateBattleUIHook(() => setRenderVersion(v => v + 1));
-        
+
         setUpdateCardDetailHook((html, color) => {
             setCardDetailHtml(html);
             setCardDetailColor(color);
@@ -47,7 +47,7 @@ export default function BattleScreen() {
             // 初期ドロー (Strict Mode での重複ドロー防止のため配列が空かチェック)
             if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
                 for (let i = 0; i < 4; i++) {
-                    drawCard('blue'); 
+                    drawCard('blue');
                     drawCard('red');
                 }
             }
@@ -87,7 +87,7 @@ export default function BattleScreen() {
             return;
         }
         if (GameState.isProcessing || (typeof isTransitioning === 'function' && isTransitioning())) return;
-        
+
         // 相手ターン中または戦闘中（攻撃アニメーション等）は操作不可
         if (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT') return;
 
@@ -97,19 +97,19 @@ export default function BattleScreen() {
 
             if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue' && lane !== 1) {
                 playSound(SOUNDS.seDamage);
-                showConfirmModal('1ターン目は中央にしか配置できません', () => {}, null, true);
+                showConfirmModal('1ターン目は中央のレーンにしか召喚できません', () => { }, null, true);
                 return;
             }
-            
+
             if (hasSkill && hasSkill(newCard, 'legendary') && lane !== 1) {
                 playSound(SOUNDS.seDamage);
-                showConfirmModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`, () => {}, null, true);
+                showConfirmModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`, () => { }, null, true);
                 return;
             }
 
             if (hasSkill && hasSkill(newCard, 'takeover') && GameState.playerBoard[lane] === null) {
                 playSound(SOUNDS.seDamage);
-                showConfirmModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`, () => {}, null, true);
+                showConfirmModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`, () => { }, null, true);
                 return;
             }
 
@@ -152,7 +152,7 @@ export default function BattleScreen() {
         if (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT') return;
 
         playSound(SOUNDS.seClick);
-        
+
         if (GameState.isDiscardingMode) {
             if (GameState.discardSelectedIndices.includes(idx)) {
                 const arrIdx = GameState.discardSelectedIndices.indexOf(idx);
@@ -193,8 +193,8 @@ export default function BattleScreen() {
         <div id="screen-battle" className="screen active" style={battleStyle}>
             <button className="btn-circle btn-battle-help" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); window.showRulesModal(); }}>？</button>
             <button className="btn-circle btn-battle-retire" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); returnToTitle(); }}>🏳</button>
-            
-            <EnemyArea 
+
+            <EnemyArea
                 enemyConfig={GameState.enemyConfig}
                 enemyHP={GameState.enemyHP}
                 enemyMaxHP={GameState.enemyMaxHP === 0 ? 1 : GameState.enemyMaxHP}
@@ -203,23 +203,23 @@ export default function BattleScreen() {
             />
 
             <div className="turn-area">
-                <div id="turn-status" style={{ 
+                <div id="turn-status" style={{
                     color: GameState.lastBattleResult === 'win' ? '#facc15' :
-                           GameState.lastBattleResult === 'lose' ? '#fff' :
-                           GameState.currentTurn === 'player' ? 'var(--color-blue)' :
-                           GameState.currentTurn === 'enemy' ? 'var(--color-red)' : '#facc15'
+                        GameState.lastBattleResult === 'lose' ? '#fff' :
+                            GameState.currentTurn === 'player' ? 'var(--color-blue)' :
+                                GameState.currentTurn === 'enemy' ? 'var(--color-red)' : '#facc15'
                 }}>
-                    {GameState.lastBattleResult === 'win' ? 'YOU WIN!' : 
-                     GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' : 
-                     GameState.lastBattleResult === 'draw' ? 'DRAW' :
-                     GameState.currentTurn === 'player' ? 'YOUR TURN' :
-                     GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
-                     ''}
+                    {GameState.lastBattleResult === 'win' ? 'YOU WIN!' :
+                        GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' :
+                            GameState.lastBattleResult === 'draw' ? 'DRAW' :
+                                GameState.currentTurn === 'player' ? 'YOUR TURN' :
+                                    GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
+                                        ''}
                 </div>
                 <button className="action-btn enemy-skill-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); showEnemySkillConfirm(); }}>敵スキル</button>
             </div>
 
-            <Board 
+            <Board
                 playerBoard={GameState.playerBoard}
                 enemyBoard={GameState.enemyBoard}
                 selectedBoardLaneIndex={GameState.selectedBoardLaneIndex}
@@ -228,7 +228,7 @@ export default function BattleScreen() {
                 onCardLongPress={handleCardLongPress}
             />
 
-            <PlayerArea 
+            <PlayerArea
                 playerConfig={GameState.playerConfig}
                 playerHP={GameState.playerHP}
                 playerMaxHP={GameState.playerMaxHP === 0 ? 1 : GameState.playerMaxHP}
@@ -243,23 +243,23 @@ export default function BattleScreen() {
             />
 
             <div className="card-detail-wrapper">
-                <div 
-                    id="card-detail-view" 
-                    className="card-detail-box" 
-                    style={{ color: cardDetailColor }} 
-                    dangerouslySetInnerHTML={{ __html: cardDetailHtml }} 
+                <div
+                    id="card-detail-view"
+                    className="card-detail-box"
+                    style={{ color: cardDetailColor }}
+                    dangerouslySetInnerHTML={{ __html: cardDetailHtml }}
                 ></div>
             </div>
 
             <div className="controls">
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                        id="btn-leader-skill" 
+                    <button
+                        id="btn-leader-skill"
                         className={`action-btn leader-skill-btn ${GameState.playerSP >= (GameState.playerConfig?.leaderSkill?.cost || 5) && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode ? 'ready glow active' : ''}`}
-                        onClick={(e) => { 
-                            e.stopPropagation(); 
-                            playSound(SOUNDS.seClick); 
-                            showSkillConfirm(); 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            playSound(SOUNDS.seClick);
+                            showSkillConfirm();
                         }}
                     >
                         リーダースキル
@@ -276,7 +276,7 @@ export default function BattleScreen() {
                 </div>
             </div>
 
-            <Hand 
+            <Hand
                 playerHand={GameState.playerHand}
                 selectedCardIndex={GameState.selectedCardIndex}
                 isDiscardingMode={GameState.isDiscardingMode}
@@ -285,9 +285,9 @@ export default function BattleScreen() {
                 onCardLongPress={handleCardLongPress}
             />
 
-            <TurnOrderOverlay 
-                startAnim={startTurnOrderAnim} 
-                onComplete={handleTurnOrderComplete} 
+            <TurnOrderOverlay
+                startAnim={startTurnOrderAnim}
+                onComplete={handleTurnOrderComplete}
             />
 
             {/* リーダースキルカットイン用DOM（レガシー互換） */}
