@@ -7,7 +7,7 @@ import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
 import { generateDeck } from './deck.js';
@@ -955,14 +955,7 @@ export async function resolveOnPlaySkill(o, l, c) {
     if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
     if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
-    // スキル定義順に1つずつ処理（quickはゲームバランス上の理由で最後に調整する場合があるが、基本は定義順）
-    // ユーザー要求に従い、一旦純粋な定義順（上から順）にするが、quickの特殊性は維持が必要か検討
-    skillsToResolve.sort((a, b) => {
-        if (a.id === 'quick') return 1;
-        if (b.id === 'quick') return -1;
-        return 0; // 基本は順番維持
-    });
-
+    // 召喚時に複数のスキルがある場合は、配列の手前からスキルを順番に処理する
     for (const sk of skillsToResolve) {
         if (ACTIVE_SKILLS.includes(sk.id)) {
             await resolveActiveSkillEffect(o, l, c, sk.id, sk.value);

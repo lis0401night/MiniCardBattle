@@ -1,7 +1,7 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
@@ -18,7 +18,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
 
     // 演出用のポップアップと音（一括した基本演出）
     if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect'].includes(skillId)) {
-        playSound(SOUNDS.seSkill);
+        playSkillSound(skillId);
         const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
@@ -42,7 +42,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
         
         // 演出
-        playSound(SOUNDS.seSkill);
+        playSkillSound(skillId);
         if (cEl) {
             createDamagePopup(cEl, '変相', '#facc15');
             cEl.classList.add('anim-shake');
@@ -99,7 +99,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     if (skillId === 'draw') {
         const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         const count = skillValue || 1;
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '入替', '#facc15');
+        playSkillSound(skillId); createDamagePopup(cEl, '入替', '#facc15');
         const selectedIndices = await waitPlayerHandSelection(count, o);
         if (selectedIndices.length > 0) {
             selectedIndices.sort((a, b) => b - a);
@@ -113,7 +113,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         }
         await sleep(500);
     } else if (skillId === 'shuffle') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '攪乱', '#facc15');
+        playSkillSound(skillId); createDamagePopup(cEl, '攪乱', '#facc15');
         ['blue', 'red'].forEach(p => {
             const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;

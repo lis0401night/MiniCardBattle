@@ -13,9 +13,9 @@ export const SE_PATHS = {
     sePlace: 'assets/audio/se/se_place.mp3',
     seAttack: 'assets/audio/se/se_attack.mp3',
     seDamage: 'assets/audio/se/se_damage.mp3',
-    seSkill: 'assets/audio/se/se_skill.mp3',
+    seSkill: 'assets/audio/se/se_skill_default.mp3',
     seDestroy: 'assets/audio/se/se_destroy.mp3',
-    seContinue: 'assets/audio/se/se_skill.mp3',
+    seContinue: 'assets/audio/se/se_skill_default.mp3',
     seLegend: 'assets/audio/se/se_legend.mp3'
 };
 
@@ -25,9 +25,9 @@ export const SOUNDS = {
     sePlace: 'assets/audio/se/se_place.mp3',
     seAttack: 'assets/audio/se/se_attack.mp3',
     seDamage: 'assets/audio/se/se_damage.mp3',
-    seSkill: 'assets/audio/se/se_skill.mp3',
+    seSkill: 'assets/audio/se/se_skill_default.mp3',
     seDestroy: 'assets/audio/se/se_destroy.mp3',
-    seContinue: 'assets/audio/se/se_skill.mp3',
+    seContinue: 'assets/audio/se/se_skill_default.mp3',
     seLegend: 'assets/audio/se/se_legend.mp3'
 };
 
@@ -54,9 +54,9 @@ export const AUDIO_INSTANCES = {
     sePlace: new Audio('assets/audio/se/se_place.mp3'),
     seAttack: new Audio('assets/audio/se/se_attack.mp3'),
     seDamage: new Audio('assets/audio/se/se_damage.mp3'),
-    seSkill: new Audio('assets/audio/se/se_skill.mp3'),
+    seSkill: new Audio('assets/audio/se/se_skill_default.mp3'),
     seDestroy: new Audio('assets/audio/se/se_destroy.mp3'),
-    seContinue: new Audio('assets/audio/se/se_skill.mp3'),
+    seContinue: new Audio('assets/audio/se/se_skill_default.mp3'),
     seLegend: new Audio('assets/audio/se/se_legend.mp3')
 };
 
@@ -133,7 +133,30 @@ export async function unlockAudio() {
     osc.start(0);
     osc.stop(0.1);
 
-    await Promise.all(loadPromises);
     isAudioUnlocked = true;
     console.log("Web Audio Context Unlocked and SE Buffers Loaded");
+}
+
+export function playSkillSound(skillId) {
+    const backupSound = SOUNDS.seSkill;
+    if (!skillId || skillId === 'none') {
+        playSound(backupSound);
+        return;
+    }
+    
+    const url = `assets/audio/se/se_skill_${skillId}.mp3`;
+    const audio = new Audio();
+    audio.volume = 0.3;
+    
+    audio.addEventListener('canplaythrough', () => {
+        audio.play().catch(e => console.warn(`Failed to play SE for ${skillId}`, e));
+    });
+    
+    audio.addEventListener('error', () => {
+        // 読み込みエラー（ファイルが存在しない等）の場合はデフォルトの効果音を再生
+        playSound(backupSound);
+    });
+    
+    audio.src = url;
+    audio.load();
 }
