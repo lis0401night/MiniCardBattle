@@ -9,5 +9,6 @@ export const STAGES = {
     elf: { id: 'elf', name: '迷いの森', bgm: 'bgmStageElf' },
     cleric: { id: 'cleric', name: '静寂の聖堂', bgm: 'bgmStageCleric' },
     devilhunter: { id: 'devilhunter', name: '旧市街', bgm: 'bgmStageDevilHunter' },
-    satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' }
+    satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' },
+    dungeon: { id: 'dungeon', name: '試練の宮殿', bgm: 'bgmStageKnight', imageId: 'knight' }
 };

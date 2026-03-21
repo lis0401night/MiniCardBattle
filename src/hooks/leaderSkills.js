@@ -1,7 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
-import { createDamagePopup, playSound, sleep } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic } from './battle.js';
 import { GameState } from './gameState.js';
@@ -135,6 +135,19 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             board[l] = action === 'satan_avatar' ?
                 { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: 'assets/cards/card_token_satan.jpg', filter: 'none', currentPower: tS.power, rarity: tS.rarity || 1 } :
                 { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: 'assets/cards/card_token_dragon.jpg', filter: 'none', currentPower: tI.power, rarity: tI.rarity || 1 };
+            playSound(SOUNDS.sePlace);
+            renderBoard();
+            await sleep(500);
+        }
+    } else if (action === 'dungeon_summon_leader') {
+        const config = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
+        const tokenCard = CARD_MASTER.find(m => m.id === config.leaderCardId);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, true, tokenLanes);
+        if (selectedLanes.length > 0) {
+            const l = selectedLanes[0];
+            const imgUrl = getCardImgUrl(tokenCard) || `assets/cards/card_${tokenCard.id}.jpg`;
+            board[l] = { id: `dng_tk_${Date.now()}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
+            board[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため（この後のフローでエンジン側が拾う？ いや、スキルでは発動しないかも）
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(500);

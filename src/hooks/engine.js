@@ -214,8 +214,12 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
                 board[l].stunTurns = 0;
             }
         }
-    } else if (action === 'satan_avatar' || action === 'dragon_summon') {
-        const power = action === 'satan_avatar' ? 10 : 7;
+    } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dungeon_summon_leader') {
+        let power = 5;
+        if (action === 'satan_avatar') power = 10;
+        else if (action === 'dragon_summon') power = 7;
+        else if (action === 'dungeon_summon_leader') power = 6; // 一般的なリーダーを想定した強めの仮パワー設定
+
         let l = -1;
         if (tokenLanes && tokenLanes.length > 0) {
             l = tokenLanes[0];
@@ -225,7 +229,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null) {
         }
 
         if (l !== -1) {
-            board[l] = { id: `tk_${Date.now()}`, owner, power, currentPower: power };
+            board[l] = { id: `tk_${Date.now()}`, owner, power, currentPower: power, isToken: true };
         }
     } else if (action === 'holy_march') {
         // 騎士召喚（最大2体）

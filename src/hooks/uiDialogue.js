@@ -90,6 +90,7 @@ export function setupDialogueScreen() {
 export async function showNextDialogue(force = false) {
     if (GameState.isProcessing && !force) return;
     if (GameState.currentDialogueIndex >= GameState.dialogueQueue.length) {
+        GameState.isProcessing = false;
         handleProgressionNextStep();
         return;
     }

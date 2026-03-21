@@ -22,10 +22,18 @@ export default function DeckEditorScreen() {
 
   const updateDeckEditor = () => {
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
-    setInventory(GameState.playerInventory || {});
-    setPremiumCards(GameState.premiumCards || []);
-    setUnlockedPremium(GameState.unlockedPremiumCards || []);
-    setMasterCards((CARD_MASTER || []).filter(c => !c.isToken));
+    
+    if (GameState.gameMode === 'battle_dungeon') {
+        const dInv = {};
+        (GameState.dungeonCards || []).forEach(id => { dInv[id] = (dInv[id] || 0) + 1; });
+        setInventory(dInv);
+        const validIds = Object.keys(dInv);
+        setMasterCards((CARD_MASTER || []).filter(c => validIds.includes(c.id)));
+    } else {
+        setInventory(GameState.playerInventory || {});
+        setMasterCards((CARD_MASTER || []).filter(c => !c.isToken));
+    }
+    
     setIsDefenseConfig(GameState.gameMode === 'defense_register');
   };
 
@@ -145,8 +153,13 @@ export default function DeckEditorScreen() {
   const resetDeck = () => {
     playSound?.(SOUNDS?.seClick);
     showConfirmModal?.("デッキを初期状態に戻しますか？", () => {
-      const initial = getInitialDeck ? getInitialDeck(GameState.playerConfig?.id) : [];
-      syncToGlobal([...initial]);
+      if (GameState.gameMode === 'battle_dungeon') {
+          const initial = (GameState.dungeonCards || []).slice(0, 20).map(id => ({ ...CARD_MASTER.find(c => c.id === id) })).filter(Boolean);
+          syncToGlobal(initial);
+      } else {
+          const initial = getInitialDeck ? getInitialDeck(GameState.playerConfig?.id) : [];
+          syncToGlobal([...initial]);
+      }
     });
   };
 

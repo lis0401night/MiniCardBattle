@@ -24,7 +24,12 @@ export const GameState = {
     gameVolume: 0.5,
     premiumCards: [],
     unlockedPremiumCards: [],
-    selectedPlaymatId: null
+    selectedPlaymatId: null,
+    dungeonWinStreak: 0,
+    dungeonCards: [],
+    dungeonOpponents: [],
+    dungeonState: 'none',
+    dungeonMaxWinStreak: parseInt(localStorage.getItem('mini_card_battle_dungeon_max_streak')) || 0
 };
 
 // Global fallback for browser debugging

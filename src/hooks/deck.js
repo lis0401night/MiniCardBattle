@@ -37,24 +37,28 @@ export function generateDeck(owner, config, sessionId) {
         });
     } else {
         // 敵のデッキ生成
-        let recipeId = config.id;
-        if (GameState.gameMode === 'event_satan') recipeId = 'satan_high';
-        if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
-        let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
         let deckIds = [];
-
-        if (recipe.easy && recipe.normal && recipe.hard) {
-            if (typeof GameState.aiLevel !== 'undefined') {
-                if (GameState.aiLevel == 1) deckIds = recipe.easy;
-                else if (GameState.aiLevel == 3) deckIds = recipe.hard;
-                else deckIds = recipe.normal;
-            } else {
-                deckIds = recipe.normal;
-            }
-        } else if (Array.isArray(recipe)) {
-            deckIds = recipe;
+        if (GameState.gameMode === 'battle_dungeon' && config.dungeonDeck) {
+            deckIds = config.dungeonDeck;
         } else {
-            deckIds = Array.isArray(ENEMY_DECKS.android) ? ENEMY_DECKS.android : (ENEMY_DECKS.android.normal || []);
+            let recipeId = config.id;
+            if (GameState.gameMode === 'event_satan') recipeId = 'satan_high';
+            if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
+            let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
+
+            if (recipe.easy && recipe.normal && recipe.hard) {
+                if (typeof GameState.aiLevel !== 'undefined') {
+                    if (GameState.aiLevel == 1) deckIds = recipe.easy;
+                    else if (GameState.aiLevel == 3) deckIds = recipe.hard;
+                    else deckIds = recipe.normal;
+                } else {
+                    deckIds = recipe.normal;
+                }
+            } else if (Array.isArray(recipe)) {
+                deckIds = recipe;
+            } else {
+                deckIds = Array.isArray(ENEMY_DECKS.android) ? ENEMY_DECKS.android : (ENEMY_DECKS.android.normal || []);
+            }
         }
 
         deckIds.forEach((cardItem, i) => {
@@ -98,8 +102,17 @@ export function getInitialDeck(charId) {
 }
 
 export function loadDeck() {
+    if (GameState.gameMode === 'battle_dungeon') {
+        // ダンジョンモードでは現在の所持カードを強制的に同期し、20枚制限を設けない
+        GameState.playerDeckSelection = (GameState.dungeonCards || []).map(id => {
+            const template = CARD_MASTER.find(c => c.id === id);
+            return template ? { ...template } : null;
+        }).filter(Boolean);
+        return;
+    }
+
     // リーダーごとに個別のキーを使用 (防衛登録時は共通キー)
-    let key = `mini_card_battle_deck_${GameState.playerConfig.id}`;
+    let key = `mini_card_battle_deck_${GameState.playerConfig?.id || 'default'}`;
     if (typeof GameState.gameMode !== 'undefined' && GameState.gameMode === 'defense_register') {
         key = 'mini_card_battle_deck_defense';
     }
@@ -191,6 +204,10 @@ export function loadDeck() {
 }
 
 export function saveDeck() {
+    if (GameState.gameMode === 'battle_dungeon') {
+        return; // ダンジョン中は恒常セーブデータにデッキを上書きしない
+    }
+
     if (typeof GameState.gameMode !== 'undefined' && GameState.gameMode === 'defense_register') {
         // 防衛デッキはIDの配列として保存（サーバー送信形式に合わせる）
         const defenseDeck = GameState.playerDeckSelection.map(c => c.id);
@@ -276,7 +293,7 @@ export function resetDeck() {
 }
 
 export function finishDeckEdit() {
-    if (GameState.playerDeckSelection.length !== DECK_SIZE) {
+    if (GameState.gameMode !== 'battle_dungeon' && GameState.playerDeckSelection.length !== DECK_SIZE) {
         playSound(SOUNDS.seClick);
         showAlertModal(`デッキを${DECK_SIZE}枚にしてください！`);
         return;

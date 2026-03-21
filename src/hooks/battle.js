@@ -18,6 +18,7 @@ import { resolveActiveSkillEffect, triggerStartTurnPassive } from './skillLogic.
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showDefenseBattleList } from './uiMainCore.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
+import { winDungeonBattle, loseDungeonBattle, retireDungeon } from './battleDungeon.js';
 
 // ==========================================
 // イベント駆動型タスクキューエンジン (State Machine Core)
@@ -139,7 +140,7 @@ export function initBattleState() {
         const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
-        GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.id === 'satan') ? 40 : MAX_HP;
+        GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
         if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
         GameState.playerHP = GameState.playerMaxHP; GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
         GameState.turnCount = 0; GameState.firstPlayer = 'blue';
@@ -1124,6 +1125,23 @@ export function endBattle() {
         }
 
         // --- モード別の勝利/敗北時の固有処理 (API呼び出しや実績) ---
+        if (GameState.gameMode === 'battle_dungeon') {
+            import('../utils/constants/battleDungeonCharacter.js').then(({ getDungeonCharacterDialogue }) => {
+                const dialogueData = getDungeonCharacterDialogue(GameState.enemyConfig.id);
+                let endText = GameState.lastBattleResult === 'win' ? 
+                    (dialogueData.dialogue?.lose?.default || '') : 
+                    (dialogueData.dialogue?.win?.default || '');
+
+                GameState.dialogueQueue = [
+                    { speaker: 'enemy', text: endText }
+                ];
+                import('./uiDialogue.js').then(({ setupDialogueScreen }) => {
+                    setupDialogueScreen();
+                });
+            });
+            return;
+        }
+
         if (GameState.gameMode === 'defense_attack') {
             if (GameState.lastBattleResult === 'win') {
                 // ポイント計算（総ポイント基準）
@@ -1247,6 +1265,11 @@ export function endBattle() {
 
 export function returnToTitle() {
     showConfirmModal('バトルを諦めてタイトルに戻りますか？', () => {
+        if (GameState.gameMode === 'battle_dungeon') {
+            retireDungeon();
+            return;
+        }
+
         // 防衛戦でリタイアした場合も、相手に3ポイントと防衛回数を付与する
         if (GameState.gameMode === 'defense_attack' && typeof GameState.enemyConfig !== 'undefined' && GameState.enemyConfig.uuid) {
             fetch('api/update_points.php', {

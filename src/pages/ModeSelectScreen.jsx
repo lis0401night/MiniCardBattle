@@ -41,9 +41,15 @@ export default function ModeSelectScreen() {
           ></div>
           <div className="menu-btn-label">イベント</div>
         </div>
+        <div className="menu-img-btn" onClick={() => startGameMode?.('battle_dungeon')}>
+          <div
+            className="menu-img-bg"
+            style={{ backgroundImage: `url('${images.MENU_DUNGEON || ''}')`, backgroundColor: '#475569' }}
+          ></div>
+          <div className="menu-btn-label">バトルダンジョン</div>
+        </div>
         <div
           className="menu-img-btn"
-          style={{ gridColumn: '1 / 2' }}
           onClick={() => showGallery?.()}
         >
           <div

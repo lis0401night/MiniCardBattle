@@ -44,14 +44,14 @@ export default function DialogueScreen() {
                 <img 
                     id="portrait-left" 
                     className={`char-portrait ${d.leftActive ? 'active' : ''}`} 
-                    src={d.leftImage || ''} 
+                    src={d.leftImage || null} 
                     alt="Player" 
                     style={{ visibility: d.leftImage ? 'visible' : 'hidden' }}
                 />
                 <img 
                     id="portrait-right" 
                     className={`char-portrait ${d.rightActive ? 'active' : ''}`} 
-                    src={d.rightImage || ''} 
+                    src={d.rightImage || null} 
                     alt="Enemy" 
                     style={{ 
                         filter: d.rightFilter || 'none', 

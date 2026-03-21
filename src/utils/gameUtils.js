@@ -118,15 +118,17 @@ let switchScreenHook = null;
 export function setSwitchScreenHook(hook) { switchScreenHook = hook; }
 
 export function switchScreen(id) {
+    if (isTransitioning) return;
+    
     if (switchScreenHook) {
         switchScreenHook(id);
-        return;
+    } else {
+        executeSwitchScreen(id);
     }
-    executeSwitchScreen(id);
 }
 
 export function executeSwitchScreen(id) {
-    if (isTransitioning) return; // 遷移中は入力を無視
+    if (isTransitioning) return;
     isTransitioning = true;
 
     // モバイル等でのボタン選択状態（Sticky Focus）を解除

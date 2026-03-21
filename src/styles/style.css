@@ -90,6 +90,7 @@ body {
 #screen-stage-select,
 #screen-defense-menu,
 #screen-defense-battle-list,
+#screen-battle-dungeon,
 #modal-player-name {
     background-color: #0f172a;
     background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('/assets/backgrounds/background_select.png');
@@ -2528,6 +2529,8 @@ h2 {
     margin-top: 20px;
 }
 
+
+
 .menu-img-btn {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -2744,8 +2747,8 @@ h2 {
     letter-spacing: 2px;
 }
 
-.to-result-label.top {  }
-.to-result-label.bottom {  }
+/* .to-result-label.top {  } */
+/* .to-result-label.bottom {  } */
 
 @keyframes toShuffleLeft {
     0% { transform: translateX(-80px) rotate(-5deg); z-index: 1005; }

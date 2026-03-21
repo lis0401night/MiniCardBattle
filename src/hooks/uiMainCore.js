@@ -13,6 +13,7 @@ import { initStoryMode } from './story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { openCardPreview } from './uiGallery.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
+import { initBattleDungeon } from './battleDungeon.js';
 
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)
@@ -278,6 +279,10 @@ export function goBackFromDeckEdit() {
     } else if (GameState.gameMode === 'event_satan') {
         // 高難易度画面に戻る
         switchScreen('screen-high-difficulty');
+    } else if (GameState.gameMode === 'battle_dungeon') {
+        GameState.dungeonState = 'select_opponent';
+        switchScreen('screen-battle-dungeon');
+        if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
     } else {
         // フリー対戦など：ステージ選択に戻る
         GameState.appState = 'select_stage';
@@ -290,56 +295,59 @@ export function startGameMode(mode) {
     playSound(SOUNDS.seClick);
     GameState.lastBattleResult = null;
     GameState.gameMode = mode;
+
+    if (mode === 'battle_dungeon') {
+        initBattleDungeon();
+        return;
+    }
+
     GameState.appState = 'select_player';
     initSelectScreen(false);
     switchScreen('screen-select');
 }
 
 export async function performFadeTransition(action) {
-    if (GameState.isProcessing) {
-        if (typeof debugLog === 'function') debugLog("Fade blocked: GameState.isProcessing is true");
-        return;
-    }
+    if (GameState.isProcessing) return;
     GameState.isProcessing = true;
-    const fade = document.getElementById('app-fade-layer') || document.getElementById('fade-overlay');
+
+    const getFadeLayer = () => document.getElementById('app-fade-layer') || document.getElementById('fade-overlay');
+    let fade = getFadeLayer();
 
     try {
-        if (typeof debugLog === 'function') debugLog("Fade Start (V2)");
         if (fade) {
             fade.style.display = 'block';
-            // Force reflow
-            fade.offsetHeight;
+            fade.offsetHeight; // Force reflow
             fade.classList.add('active');
+            await sleep(650);
         }
-
-        await sleep(650);
 
         if (action) {
-            try {
-                if (typeof debugLog === 'function') debugLog("Action Start...");
-                await action();
-                if (typeof debugLog === 'function') debugLog("Action Complete.");
-            } catch (err) {
-                console.error("Action Error:", err);
-            }
+            await action();
         }
 
-        // 描画更新を待ってからフェードアウト開始
+        // Reactの再描画などを確実に待機
         await new Promise(resolve => requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                setTimeout(resolve, 50);
+                setTimeout(() => {
+                    resolve();
+                }, 100);
             });
         }));
 
+        // アクション（switchScreenなど）によってDOMが再構築された可能性を考慮し、フェード要素を再取得
+        fade = getFadeLayer();
         if (fade) {
             fade.classList.remove('active');
-            // フェードアウトの完了（transition: 0.5s等）を待機して非表示にする
             await sleep(650);
             fade.style.display = 'none';
+            console.log("performFadeTransition: Fading out DONE (display: none set)");
         }
+    } catch (err) {
+        console.error("Fade Transition Error:", err);
     } finally {
-        if (typeof debugLog === 'function') debugLog("Fade End.");
         GameState.isProcessing = false;
+        if (typeof debugLog === 'function') debugLog("Fade End.");
+        console.log("performFadeTransition: FINALLY block executed.");
     }
 }
 
@@ -701,6 +709,14 @@ export function confirmExchange() {
  * 敵のデッキプレビューを表示
  */
 export function openEnemyDeckPreview(level) {
+    if (GameState.gameMode === 'battle_dungeon' && GameState.enemyConfig && GameState.enemyConfig.dungeonDeck) {
+        const titleText = `${GameState.enemyConfig.name} [上級]`;
+        if (window.showEnemyDeckModal) {
+            window.showEnemyDeckModal(GameState.enemyConfig.dungeonDeck, titleText);
+        }
+        return;
+    }
+
     if (!GameState.enemyConfig || !ENEMY_DECKS[GameState.enemyConfig.id]) {
         if (window.showAlertModalHook) window.showAlertModalHook("このキャラクターのデッキデータが見つかりません。");
         return;
