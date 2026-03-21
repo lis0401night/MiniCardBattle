@@ -83,7 +83,7 @@ export default function BattleDungeonScreen() {
     return (
         <div id="screen-battle-dungeon" className="screen active" style={{ overflowY: 'auto' }}>
             <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>
-                {getTitle()}
+                {getTitle()} ({GameState.dungeonWinStreak + 1} 階)
             </h2>
 
             <div className="dungeon-content" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 0' }}>
@@ -144,8 +144,8 @@ function ResumeSelect() {
     return (
         <div style={{ textAlign: 'center', color: '#fff', padding: '20px' }}>
             <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '20px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '30px' }}>
-                <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>現在の記録: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{GameState.dungeonWinStreak} 連勝</span></div>
-                <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '15px' }}>最高記録: {GameState.dungeonMaxWinStreak} 連勝</div>
+                <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>到達階: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{GameState.dungeonWinStreak + 1} 階</span></div>
+                <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '15px' }}>最高到達階: {GameState.dungeonMaxWinStreak + 1} 階</div>
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                     <button className="btn" style={{ fontSize: '0.8rem', padding: '10px 12px', width: 'auto', margin: 0, background: '#475569' }} onClick={handleCheckPocket}>所持カード確認</button>
@@ -316,26 +316,33 @@ function OpponentSelect() {
         });
     };
 
+    const handleCheckPocket = () => {
+        if (window.showEnemyDeckModal) {
+            window.showEnemyDeckModal(GameState.dungeonCards, "所持カード確認");
+        }
+    };
+
     const handleCheckDeck = () => {
         if (window.showEnemyDeckModal) {
-            window.showEnemyDeckModal(GameState.dungeonCards, "現在のデッキ");
+            const currentDeck = GameState.playerDeckSelection ? GameState.playerDeckSelection.filter(Boolean) : GameState.dungeonCards.slice(0, 20);
+            window.showEnemyDeckModal(currentDeck, "デッキ確認");
         }
     };
 
     return (
         <div style={{ color: '#fff', textAlign: 'center' }}>
             <div style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 'bold', border: '1px solid rgba(250, 204, 21, 0.3)' }}>
-                現在 {GameState.dungeonWinStreak} 連勝中
+                現在 {GameState.dungeonWinStreak + 1} 階
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
-                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: '#334155' }} onClick={handleCheckDeck}>
+                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: '#475569' }} onClick={handleCheckPocket}>
+                    所持カード確認
+                </button>
+                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' }} onClick={handleCheckDeck}>
                     デッキ確認
                 </button>
             </div>
-
-            <h3>対戦相手を選択</h3>
-            <p style={{ marginBottom: '20px', fontSize: '0.9rem', color: '#cbd5e1' }}>どちらかの相手を選んでバトルを開始します。</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
                 {opps.map((e, i) => (
@@ -346,9 +353,7 @@ function OpponentSelect() {
                         </div>
                         <div style={{ textAlign: 'left', flex: 1 }}>
                             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f8fafc' }}>{e.name}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '4px' }}>AIレベル: 上級</div>
                         </div>
-                        <div style={{ color: '#ef4444', fontWeight: 'bold' }}>挑む ▷</div>
                     </div>
                 ))}
             </div>

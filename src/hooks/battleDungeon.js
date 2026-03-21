@@ -165,7 +165,7 @@ export function selectRewardCard(cardId) {
 export function loseDungeonBattle() {
     playSound(SOUNDS.seDamage);
     showConfirmModal(
-        `敗北しました……。現在の連勝数: ${GameState.dungeonWinStreak}\nリトライしますか？それともリタイアしますか？`,
+        `敗北しました……。到達階層: ${GameState.dungeonWinStreak + 1} 階\nリトライしますか？それともリタイアしますか？`,
         () => {
             // リトライ
             GameState.dungeonState = 'select_opponent';
