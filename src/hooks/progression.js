@@ -3,7 +3,8 @@ import { startBattleFlow } from './deck.js';
 import { handleEventProgression } from './events.js';
 import { GameState } from './gameState.js';
 import { handleStoryProgression } from './story.js';
-import { performFadeTransition, initSelectScreen } from './uiMainCore.js';
+import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { performFadeTransition, initSelectScreen, showDefenseBattleList } from './uiMainCore.js';
 
 /**
  * Mini Card Battle - 共通進行管理 (progression.js)
@@ -18,6 +19,12 @@ export function handleProgressionNextStep() {
 
     if (GameState.gameMode === 'free') {
         handleFreeBattleProgression();
+    } else if (GameState.gameMode === 'defense_attack') {
+        if (typeof showDefenseBattleList === 'function') {
+            showDefenseBattleList();
+        } else {
+            switchScreen('screen-mode-select');
+        }
     } else if (GameState.gameMode === 'event_satan') {
         if (typeof handleEventProgression === 'function') {
             handleEventProgression();

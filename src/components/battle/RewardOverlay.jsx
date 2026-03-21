@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GameState } from '../../hooks/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { playSound, getCardImgUrl } from '../../utils/gameUtils.js';
+import { playSound, getCardImgUrl, stopAllBGM } from '../../utils/gameUtils.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import { saveDeck } from '../../hooks/deck.js';
 import { initSelectScreen } from '../../hooks/uiMainCore.js';
@@ -45,21 +45,8 @@ export default function RewardOverlay() {
         playSound(SOUNDS.seClick);
         setIsVisible(false);
 
-        if (GameState.gameMode === 'defense_attack') {
-            GameState.appState = 'select_enemy';
-            initSelectScreen(false);
-            switchScreen('screen-select');
-        } else {
-            if (GameState.appState === 'post_dialogue') {
-                if (GameState.gameMode === 'story') {
-                    handleStoryProgression();
-                } else {
-                    setupDialogueScreen();
-                }
-            } else {
-                setupDialogueScreen();
-            }
-        }
+        // 報酬確認が終わったら、ダイアログ（会話）シーンへ移行する
+        setupDialogueScreen();
     };
 
     const renderSkillTagReact = (c) => {

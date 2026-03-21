@@ -1108,7 +1108,22 @@ export function endBattle() {
     setTimeout(() => {
         playSound(SOUNDS.bgmTitle);
 
-        // 防衛戦：報酬も台詞もスキップして戻る
+        GameState.appState = 'post_dialogue'; // 全モード共通の設定
+
+        // 勝敗に応じたダイアログのセット (全モード共通)
+        if (GameState.lastBattleResult === 'win') {
+            GameState.dialogueQueue = [
+                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose') },
+                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win') }
+            ];
+        } else {
+            GameState.dialogueQueue = [
+                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') },
+                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win') }
+            ];
+        }
+
+        // --- モード別の勝利/敗北時の固有処理 (API呼び出しや実績) ---
         if (GameState.gameMode === 'defense_attack') {
             if (GameState.lastBattleResult === 'win') {
                 // ポイント計算（総ポイント基準）
@@ -1148,11 +1163,13 @@ export function endBattle() {
                         total_points: newTotalPoints
                     })
                 }).catch(err => console.error("Failed to update points:", err));
-
+                
+                // ポイント獲得のアラートを出してから、会話へ進む
                 playSound(SOUNDS.seSkill);
                 showAlertModal(`防衛戦に勝利しました！\n防衛戦ポイントを ${winPoints} Pt 獲得しました！`, () => {
-                    showDefenseBattleList();
+                    setupDialogueScreen();
                 });
+                return;
             } else if (GameState.lastBattleResult === 'lose') {
                 // 負けた場合は敵に3ポイントと防衛回数を付与する
                 const enemyUuid = GameState.enemyConfig.uuid;
@@ -1177,73 +1194,20 @@ export function endBattle() {
             return;
         }
 
-        // フリーバトル：勝利時は報酬表示、敗北/引き分けは戻る（台詞はスキップ）
-        // フリーバトル：勝利時は報酬表示、敗北/引き分けは戻る
-        if (GameState.gameMode === 'free') {
-            GameState.appState = 'post_dialogue';
-            if (GameState.lastBattleResult === 'win') {
-                GameState.dialogueQueue = [
-                    { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose') },
-                    { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win') }
-                ];
-                let recipeId = GameState.enemyConfig.id;
-                if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
-
-                const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
-                
-                let deckList = [];
-                if (Array.isArray(ENEMY_DECKS[recipeId])) {
-                    deckList = ENEMY_DECKS[recipeId];
-                } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
-                    deckList = ENEMY_DECKS[recipeId][diffKey];
-                } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
-                    deckList = ENEMY_DECKS[recipeId]['normal'];
-                }
-
-                if (deckList.length > 0) {
-                    const uniqueCards = [...new Set(deckList)];
-                    // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
-                    const availableCards = uniqueCards.filter(cid => {
-                        const count = GameState.playerInventory[cid] || 0;
-                        return count < 4;
-                    });
-
-                    if (availableCards.length > 0) {
-                        const rewardCardId = availableCards[Math.floor(Math.random() * availableCards.length)];
-                        showCardReward(rewardCardId);
-                        return;
-                    }
-                }
-                // ドロップ候補がない場合は報酬なしで次へ
-                setupDialogueScreen();
-            } else {
-                GameState.dialogueQueue = [
-                    { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') },
-                    { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win') }
-                ];
-                setupDialogueScreen();
-            }
-            return;
-        }
-
-        GameState.appState = 'post_dialogue';
+        // --- 防衛戦以外（フリー、ストーリー、高難易度など）の処理 ---
         if (GameState.lastBattleResult === 'win') {
-            GameState.dialogueQueue = [{ speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose') }, { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win') }];
-
-            // 実績: ストーリークリア
+            // 実績の加算処理
             if (GameState.gameMode === 'story' && GameState.enemyConfig && GameState.enemyConfig.id === 'satan' && typeof incrementStat === 'function') {
                 incrementStat('storyClears', GameState.playerConfig.id);
                 if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 3) {
                     incrementStat('storyClearsHard', GameState.playerConfig.id);
                 }
             }
-
-            // 実績: 高難易度イベントクリア
             if (GameState.gameMode === 'event_satan' && typeof incrementStat === 'function') {
                 incrementStat('eventClear', 'satan_high');
             }
 
-            // 報酬カード抽選
+            // --- カードドロップ抽選・表示処理 ---
             let recipeId = GameState.enemyConfig.id;
             if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
 
@@ -1269,15 +1233,13 @@ export function endBattle() {
                 if (availableCards.length > 0) {
                     const rewardCardId = availableCards[Math.floor(Math.random() * availableCards.length)];
                     showCardReward(rewardCardId);
-                    return;
+                    return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
                 }
             }
-            // ドロップ候補がない場合は報酬なしで次へ
-            setupDialogueScreen();
-        } else {
-            GameState.dialogueQueue = [{ speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win') }];
-            setupDialogueScreen();
         }
+
+        // ドロップがない、全所持、または敗北/引き分けの場合はそのまま会話画面へ
+        setupDialogueScreen();
     }, 1500);
 }
 
