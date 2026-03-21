@@ -686,7 +686,9 @@ export async function cleanupDestroyedCards() {
         // その後に揺らす
         destroyedItems.forEach(item => {
             if (item.el) {
-                // Reactの再描画競合を避けるため、requestAnimationFrameを外して即座にクラスを付与
+                // アニメーションを再トリガーするために一度クラスを外してリフロー
+                item.el.classList.remove('anim-shake');
+                void item.el.offsetWidth; 
                 item.el.classList.add('anim-shake');
             }
         });

@@ -71,12 +71,7 @@ export default function Board({
                     const selectedCard = GameState.selectedCardIndex !== null && GameState.playerHand ? GameState.playerHand[GameState.selectedCardIndex] : null;
                     
                     if (GameState.isPlacementMode) {
-                        const token = GameState.placementToken;
-                        if (token && hasSkill && hasSkill(token, 'legendary') && lane !== 1) {
-                            isHighlight = false;
-                        } else {
-                            isHighlight = !GameState.placementSelectedLanes?.includes(lane);
-                        }
+                        isHighlight = !GameState.placementSelectedLanes?.includes(lane);
                     } else if (selectedCard) {
                         if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
                             isHighlight = (lane === 1);

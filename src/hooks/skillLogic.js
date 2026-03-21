@@ -194,9 +194,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         if (eB[l]) {
             eB[l].stunTurns = 2;
             const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
-            if (tEl) { tEl.classList.add('anim-shake'); createDamagePopup(tEl, '拘束', '#94a3b8'); }
+            if (tEl) { 
+                tEl.classList.add('anim-shake'); 
+                createDamagePopup(tEl, '拘束', '#94a3b8'); 
+            }
+            await sleep(500);
+            if (tEl) tEl.classList.remove('anim-shake');
+        } else {
+            await sleep(500);
         }
-        await sleep(500);
     } else if (skillId === 'artillery') {
         const dmg = skillValue || 1;
         await sleep(300);
@@ -217,8 +223,13 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'standby') {
         const turns = skillValue || 1;
         c.stunTurns = turns;
-        if (cEl) cEl.classList.add('anim-shake');
+        if (cEl) {
+            cEl.classList.remove('anim-shake');
+            void cEl.offsetWidth; // リフロー
+            cEl.classList.add('anim-shake');
+        }
         await sleep(500);
+        if (cEl) cEl.classList.remove('anim-shake');
     } else if (skillId === 'resurrect') {
         const maxPow = skillValue || 1;
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
