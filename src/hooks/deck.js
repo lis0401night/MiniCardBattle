@@ -103,11 +103,12 @@ export function getInitialDeck(charId) {
 
 export function loadDeck() {
     if (GameState.gameMode === 'battle_dungeon') {
-        // ダンジョンモードでは現在の所持カードを強制的に同期し、20枚制限を設けない
-        GameState.playerDeckSelection = (GameState.dungeonCards || []).map(id => {
-            const template = CARD_MASTER.find(c => c.id === id);
-            return template ? { ...template } : null;
-        }).filter(Boolean);
+        if (!GameState.playerDeckSelection || GameState.playerDeckSelection.length !== 20) {
+            GameState.playerDeckSelection = (GameState.dungeonCards || []).slice(0, 20).map(id => {
+                const template = CARD_MASTER.find(c => c.id === id);
+                return template ? { ...template } : null;
+            }).filter(Boolean);
+        }
         return;
     }
 
@@ -293,7 +294,7 @@ export function resetDeck() {
 }
 
 export function finishDeckEdit() {
-    if (GameState.gameMode !== 'battle_dungeon' && GameState.playerDeckSelection.length !== DECK_SIZE) {
+    if (GameState.playerDeckSelection.length !== DECK_SIZE) {
         playSound(SOUNDS.seClick);
         showAlertModal(`デッキを${DECK_SIZE}枚にしてください！`);
         return;

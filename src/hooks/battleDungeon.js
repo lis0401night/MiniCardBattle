@@ -5,6 +5,7 @@ import { showConfirmModal, showAlertModal } from './uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { initSelectScreen, startGameMode } from './uiMainCore.js';
 import { startBattleFlow } from './deck.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
 
 export function initBattleDungeon() {
     playSound(SOUNDS.seClick);
@@ -27,6 +28,7 @@ export function saveDungeonProgress() {
     const saveData = {
         winStreak: GameState.dungeonWinStreak,
         cards: GameState.dungeonCards,
+        deck: (GameState.playerDeckSelection || []).map(c => c.id), // デッキ構成を保存
         opponents: GameState.dungeonOpponents,
         leaderId: GameState.playerConfig?.id,
         dungeonState: GameState.dungeonState,
@@ -42,6 +44,15 @@ export function loadDungeonProgress() {
         const data = JSON.parse(json);
         GameState.dungeonWinStreak = data.winStreak || 0;
         GameState.dungeonCards = data.cards || [];
+        
+        // 保存されていたデッキ構成を復元
+        if (data.deck) {
+            GameState.playerDeckSelection = data.deck.map(id => {
+                const template = CARD_MASTER.find(c => c.id === id);
+                return template ? { ...template } : null;
+            }).filter(Boolean);
+        }
+
         GameState.dungeonOpponents = data.opponents || [];
         GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
         GameState.dungeonState = data.dungeonState || 'select_opponent';
@@ -64,13 +75,20 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 
 export function selectRentalDeck(deckData) {
     playSound(SOUNDS.seSelect);
-    // 初期デッキ付与
+    // 初期デッキ付与（所持プール）
     GameState.dungeonCards = [...deckData.deck];
+    // 初期デッキ選択状態（バトルデッキ）をセット
+    GameState.playerDeckSelection = [...deckData.deck].map(id => {
+        const template = CARD_MASTER.find(c => c.id === id);
+        return template ? { ...template } : null;
+    }).filter(Boolean);
+    
     GameState.playerConfig = CHARACTERS[deckData.leaderId];
     GameState.dungeonState = 'select_own_cards';
     
-    // 最初のカード選択前には保存しない（リーダー未確定などがあるため） 
-    // もしくはここでも保存してもよい。
+    // 最初のリーダー確定タイミングで保存
+    saveDungeonProgress();
+    
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
 }
 
