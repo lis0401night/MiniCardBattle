@@ -1,6 +1,7 @@
 import { createDamagePopup, playSound, sleep } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
 import { updateHPBar, updateSPOrbs, updateDeckDisplay, cleanupDestroyedCards } from './battle.js';
 import { updateCardPowerOnly, renderBoard, renderHand } from './uiBattle.js';
 import { GameState } from './gameState.js';
@@ -125,8 +126,18 @@ export async function playEvents(events) {
                 renderBoard(); 
                 playSound(SOUNDS.sePlace);
                 
-                if (ev.card && ev.card.voiceCategory) {
-                    playCardVoice(ev.card.voiceCategory, 'play');
+                let voiceCat = ev.card ? ev.card.voiceCategory : null;
+                if (!voiceCat && ev.card) {
+                    const baseId = ev.card.baseId || ev.card.id;
+                    const cMaster = CARD_MASTER.find(m => m.id === baseId || m.name === ev.card.name);
+                    if (cMaster && cMaster.voiceCategory) {
+                        voiceCat = cMaster.voiceCategory;
+                        ev.card.voiceCategory = voiceCat;
+                    }
+                }
+                
+                if (voiceCat) {
+                    playCardVoice(voiceCat, 'play');
                 }
                 
                 await sleep(300);
