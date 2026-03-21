@@ -55,7 +55,7 @@ export default function BattleDungeonScreen() {
 
     const getTitle = () => {
         switch (dungeonState) {
-            case 'resume_select': return '試練の宮殿';
+            case 'resume_select': return '試練の宮殿 再開';
             case 'select_rental_deck': return 'レンタルデッキ選択';
             case 'select_opponent': return '対戦相手選択';
             case 'reward': return '報酬選択';
@@ -83,7 +83,7 @@ export default function BattleDungeonScreen() {
     return (
         <div id="screen-battle-dungeon" className="screen active" style={{ overflowY: 'auto' }}>
             <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>
-                {getTitle()} ({GameState.dungeonWinStreak + 1} 階)
+                {getTitle()}{dungeonState !== 'resume_select' && ` (${GameState.dungeonWinStreak + 1} 階)`}
             </h2>
 
             <div className="dungeon-content" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 0' }}>

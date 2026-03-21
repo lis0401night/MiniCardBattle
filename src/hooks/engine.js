@@ -96,11 +96,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             const spVal = val || 2;
             [l - 1, l, l + 1].forEach(j => {
                 if (j >= 0 && j < 3 && eB[j]) {
-                    if (!hasSkill(eB[j], 'invincible')) {
-                        let d = spVal;
-                        eB[j].currentPower -= d;
-                        events.push({ type: 'damage_card', side: oppOwner, lane: j, amount: d, source: 'spread' });
-                    }
+                    let d = spVal;
+                    eB[j].currentPower -= d;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: j, amount: d, source: 'spread' });
                 }
             });
             break;
@@ -115,11 +113,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
                 }
             }
             if (maxL !== -1) {
-                if (!hasSkill(eB[maxL], 'invincible')) {
-                    let d = snVal;
-                    eB[maxL].currentPower -= d;
-                    events.push({ type: 'damage_card', side: oppOwner, lane: maxL, amount: d, source: 'snipe' });
-                }
+                let d = snVal;
+                eB[maxL].currentPower -= d;
+                events.push({ type: 'damage_card', side: oppOwner, lane: maxL, amount: d, source: 'snipe' });
             }
             break;
         case 'berserk':
@@ -127,10 +123,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             const bAdj = l === 1 ? [0, 2] : [1];
             bAdj.forEach(j => {
                 if (b[j]) {
-                    if (!hasSkill(b[j], 'invincible')) {
-                        b[j].currentPower -= bVal;
-                        events.push({ type: 'damage_card', side: owner, lane: j, amount: bVal, source: 'berserk' });
-                    }
+                    b[j].currentPower -= bVal;
+                    events.push({ type: 'damage_card', side: owner, lane: j, amount: bVal, source: 'berserk' });
                 }
             });
             break;
@@ -412,9 +406,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     if (!aC || hasSkill(aC, 'defender')) return events;
 
     let dLane = l;
-    // 守護チェック
-    let dg = (l === 1) ? (hasSkill(defBoard[0], 'guardian') ? 0 : (hasSkill(defBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(defBoard[1], 'guardian') ? 1 : null) : (hasSkill(defBoard[1], 'guardian') ? 1 : null));
-    if (dg !== null) dLane = dg;
+    // 守護チェック（味方がいる場合のみ身代わりになる）
+    if (defBoard[l]) {
+        let dg = (l === 1) ? (hasSkill(defBoard[0], 'guardian') ? 0 : (hasSkill(defBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(defBoard[1], 'guardian') ? 1 : null) : (hasSkill(defBoard[1], 'guardian') ? 1 : null));
+        if (dg !== null) dLane = dg;
+    }
 
     const dC = defBoard[dLane];
     let aP = aC.currentPower;
@@ -501,15 +497,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                     if (hasSkill(deadCard, 'explode')) {
                         const dmg = getSkillValue(deadCard, 'explode') || 2;
                         [i - 1, i + 1].forEach(adj => {
-                            if (adj >= 0 && adj < 3) {
-                                if (state.playerBoard[adj] && !hasSkill(state.playerBoard[adj], 'invincible')) {
-                                    state.playerBoard[adj].currentPower -= dmg;
-                                    events.push({ type: 'damage_card', side: 'blue', lane: adj, amount: dmg, source: 'explode' });
-                                }
-                                if (state.enemyBoard[adj] && !hasSkill(state.enemyBoard[adj], 'invincible')) {
-                                    state.enemyBoard[adj].currentPower -= dmg;
-                                    events.push({ type: 'damage_card', side: 'red', lane: adj, amount: dmg, source: 'explode' });
-                                }
+                            if (adj >= 0 && adj < 3 && b[adj]) {
+                                b[adj].currentPower -= dmg;
+                                events.push({ type: 'damage_card', side: boardSide, lane: adj, amount: dmg, source: 'explode' });
                             }
                         });
                     }
@@ -549,7 +539,7 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
                         const val = getSkillValue(deadCard, 'explode') || 3;
                         const adj = i === 1 ? [0, 2] : [1];
                         adj.forEach(j => {
-                            if (b[j] && !hasSkill(b[j], 'invincible')) {
+                            if (b[j]) {
                                 b[j].currentPower -= val;
                                 events.push({ type: 'damage_card', side: boardSide, lane: j, amount: val, source: 'explode' });
                             }

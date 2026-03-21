@@ -15,9 +15,12 @@ import { GameState } from './gameState.js';
 export async function playEvents(events) {
     if (!events || !Array.isArray(events) || events.length === 0) return;
 
-    for (const ev of events) {
+    for (let i = 0; i < events.length; i++) {
+        const ev = events[i];
         const sidePrefix = ev.side === 'blue' ? 'player' : 'enemy';
         const oppPrefix = ev.side === 'blue' ? 'enemy' : 'player';
+        const nextEv = events[i + 1];
+        const isNextDamage = nextEv && ['damage_card', 'damage_player', 'deadly'].includes(nextEv.type);
 
         switch (ev.type) {
             case 'damage_card': {
@@ -36,8 +39,10 @@ export async function playEvents(events) {
                     createDamagePopup(cEl, label, '#ef4444');
                 }
                 updateCardPowerOnly(ev.lane, sidePrefix);
-                playSound(SOUNDS.seDamage);
-                await sleep(200);
+                if (!isNextDamage) {
+                    playSound(SOUNDS.seDamage);
+                    await sleep(300);
+                }
                 break;
             }
             case 'power_change': {
@@ -70,8 +75,10 @@ export async function playEvents(events) {
                     createDamagePopup(cEl, '必殺', '#991b1b');
                 }
                 updateCardPowerOnly(ev.lane, sidePrefix);
-                playSound(SOUNDS.seDamage);
-                await sleep(200);
+                if (!isNextDamage) {
+                    playSound(SOUNDS.seDamage);
+                    await sleep(300);
+                }
                 break;
             }
             case 'damage_player': {
@@ -98,8 +105,10 @@ export async function playEvents(events) {
                 }
                 
                 updateHPBar();
-                playSound(SOUNDS.seDamage);
-                await sleep(300);
+                if (!isNextDamage) {
+                    playSound(SOUNDS.seDamage);
+                    await sleep(300);
+                }
                 break;
             }
             case 'heal_player': {

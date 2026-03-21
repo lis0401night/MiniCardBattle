@@ -126,16 +126,18 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         tokenLanes = selectedLanes;
     } else if (action === 'dungeon_summon_leader') {
         const config = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
+        const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const tokenCard = CARD_MASTER.find(m => m.id === config.leaderCardId);
         const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, true, tokenLanes);
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl(tokenCard) || `assets/cards/card_${tokenCard.id}.jpg`;
-            board[l] = { id: `dng_tk_${Date.now()}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
-            board[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため（この後のフローでエンジン側が拾う？ いや、スキルでは発動しないかも）
-            playSound(SOUNDS.sePlace);
-            renderBoard();
-            await sleep(500);
+            b[l] = { id: `dng_tk_${Date.now()}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
+            b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
+            
+            // Add custom summon event to play correct standard visualizer pipeline
+            events.push({ type: 'leader_skill', skill: action, side: owner });
+            events.push({ type: 'summon_card', side: owner, lane: l, card: b[l], source: 'dungeon_summon_leader' });
         }
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
@@ -229,8 +231,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     }
 
     // Engineの共通ロジック呼び出し
-    // 上のif文でeventsを手動構築したもの (abyss_ritual, devilhunter_resurrect) 以外を実行
-    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual') {
+    // 上のif文でeventsを手動構築したもの (abyss_ritual, devilhunter_resurrect, dungeon_summon_leader) 以外を実行
+    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'dungeon_summon_leader') {
         // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
         // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
         applyLeaderSkillLogic(currentState, owner, action, tokenLanes, events);
