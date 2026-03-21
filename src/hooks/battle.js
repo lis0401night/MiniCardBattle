@@ -1232,7 +1232,9 @@ export function endBattle() {
 
                 if (availableCards.length > 0) {
                     const rewardCardId = availableCards[Math.floor(Math.random() * availableCards.length)];
-                    showCardReward(rewardCardId);
+                    if (window.showCardRewardReact) {
+                        window.showCardRewardReact(rewardCardId);
+                    }
                     return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
                 }
             }

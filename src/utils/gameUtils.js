@@ -186,7 +186,7 @@ export function getCardImgUrl(card) {
     // 特定のトークンの例外処理（旧imgUrl設定の復元）
     if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
     if (card.id === 'token_ignis' || card.baseId === 'token_ignis') return 'assets/cards/card_token_dragon.jpg';
-    if (card.id === 'token_satan' || card.baseId === 'token_satan') return 'assets/characters/card_token_satan.jpg';
+    if (card.id === 'token_satan' || card.baseId === 'token_satan') return 'assets/cards/card_token_satan.jpg';
 
     let lookupId = card.baseId || card.id;
     // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する

@@ -133,7 +133,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             board[l] = action === 'satan_avatar' ?
-                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: 'assets/characters/card_token_satan.jpg', filter: 'none', currentPower: tS.power, rarity: tS.rarity || 1 } :
+                { id: `tk_s_${Date.now()}`, owner, ...tS, imgUrl: 'assets/cards/card_token_satan.jpg', filter: 'none', currentPower: tS.power, rarity: tS.rarity || 1 } :
                 { id: `tk_i_${Date.now()}`, owner, ...tI, imgUrl: 'assets/cards/card_token_dragon.jpg', filter: 'none', currentPower: tI.power, rarity: tI.rarity || 1 };
             playSound(SOUNDS.sePlace);
             renderBoard();
