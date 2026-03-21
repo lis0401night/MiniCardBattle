@@ -334,6 +334,10 @@ export function applySingleCombat(state, attackerSide, l) {
                 defHP -= pDmg;
             }
         }
+        
+        let aD = aC.currentPower <= 0, dD = dC.currentPower <= 0;
+        if (dD && !aD && hasSkill(aC, 'soul_bind')) aC.currentPower += getSkillValue(aC, 'soul_bind') || 2;
+        if (aD && !dD && hasSkill(dC, 'soul_bind')) dC.currentPower += getSkillValue(dC, 'soul_bind') || 2;
     } else {
         let finalDmg = aP;
         if (hasSkill(aC, 'double_strike')) finalDmg *= 2;
