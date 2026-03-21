@@ -7,5 +7,6 @@ export const UI_IMAGES = {
     EVENT_HIGH_DIFF: 'assets/ui/ui_event_highdiffbutton01.png',
     EVENT_DEFENSE: 'assets/ui/ui_event_defensebutton01.png',
     GALLERY_CARD_LIST: 'assets/ui/ui_cardlistbutton01.png',
-    GALLERY_ACHIEVEMENTS: 'assets/ui/ui_achievementsbutton01.png'
+    GALLERY_ACHIEVEMENTS: 'assets/ui/ui_achievementsbutton01.png',
+    MENU_DUNGEON: 'assets/ui/ui_dungionbutton01.png',
 };
