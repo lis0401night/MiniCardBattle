@@ -3,8 +3,9 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
-import { applyActiveSkillLogic } from './engine.js';
+import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
+import { playEvents } from './eventRenderer.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -20,15 +21,19 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         playSound(SOUNDS.seSkill);
         const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
+        await sleep(200); // Popupを見せる間
     }
 
     // --- ロジックの実行 (Engineの呼び出し) ---
     const currentState = {
-        playerBoard: GameState.playerBoard, enemyBoard: GameState.enemyBoard,
+        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
         playerSP: GameState.playerSP, enemySP: GameState.enemySP,
-        playerHand: GameState.playerHand, enemyHand: GameState.enemyHand,
-        playerDiscard: GameState.playerDiscard, enemyDiscard: GameState.enemyDiscard
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
     };
 
     // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
@@ -148,9 +153,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         renderHand();
         await sleep(600);
     } else if (skillId === 'clone') {
+        // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
         const count = skillValue || 1;
         const tC = CARD_MASTER.find(m => m.id === 'token_clone');
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '分身', '#facc15');
 
         // スキルの引き継ぎ（分身以外）
         let inheritedSkills = [];
@@ -159,7 +164,6 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             inheritedSkills = inheritedSkills.concat(c.skills.filter(sk => sk.id !== 'clone'));
         }
 
-        // AIのシミュレーション用に、実際に配置されるトークンの情報を構築
         const simulatedToken = {
             ...tC,
             power: c.power,
@@ -167,10 +171,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             skills: inheritedSkills
         };
         const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false);
+        
+        let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
-            const tL = selectedLanes[i];
+            const targetLane = selectedLanes[i];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-            board[tL] = {
+            const newToken = {
                 id: `cl_${Date.now()}_${i}`,
                 owner: o,
                 ...tC,
@@ -182,10 +188,13 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 rarity: c.rarity || 1,
                 basePower: c.power,
                 voiceCategory: c.voiceCategory,
-                skills: inheritedSkills // スキルを引き継ぐ
+                skills: JSON.parse(JSON.stringify(inheritedSkills)) // スキルを引き継ぐ
             };
-            renderBoard(); await sleep(300);
+            board[targetLane] = newToken;
+            events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
         }
+        await playEvents(events);
+
     } else if (skillId === 'quick') {
         await sleep(400); await executeSingleCombat(o, l);
     } else if (skillId === 'bind') {
@@ -279,35 +288,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         }
         await sleep(300);
     } else {
-        // 標準的なスキルは共通エンジンを使用
-        applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0);
+        // 標準的なスキルは完全に Engine と Renderer に移譲
+        let events = [];
+        applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0, events);
 
-        // エンジンによる状態変化をグローバル変数に反映
-        GameState.playerHP = currentState.playerHP; GameState.enemyHP = currentState.enemyHP;
-        GameState.playerSP = currentState.playerSP; GameState.enemySP = currentState.enemySP;
-        GameState.playerDiscard = currentState.playerDiscard; GameState.enemyDiscard = currentState.enemyDiscard;
-        updateDeckDisplay('blue'); updateDeckDisplay('red');
-
-        // 演出: 盤面の大幅な変化（破壊等）を伴うスキルの後処理
-        if (['spread', 'snipe', 'berserk', 'sacrifice'].includes(skillId)) {
-            playSound(SOUNDS.seDamage);
-            await sleep(100);
-            await cleanupDestroyedCards();
+        // エンジンのイベントによって状態と描画が同期される
+        if (events.length > 0) {
+            await playEvents(events);
             if (skillId === 'sacrifice') checkWinCondition();
-        } else if (skillId === 'morph') {
-            playSound(SOUNDS.seSkill);
-            await sleep(100);
-            await cleanupDestroyedCards();
-        } else {
-            await cleanupDestroyedCards();
         }
-
-        renderBoard();
-        renderHand();
-        updateHPBar();
-        updateSPOrbs('blue');
-        updateSPOrbs('red');
-        await sleep(500);
     }
 }
 
@@ -317,63 +306,58 @@ export async function triggerStartTurnPassive(owner, lane) {
     const c = board[lane];
     if (!c) return false;
 
-    let triggered = false;
+    // invincible のターン処理等のために一度 Engine の全体処理を呼ぶべきだが、
+    // 既存構成が「カードごとに順次再生」のため、一旦ここで個別評価し、
+    // Renderer に流し込む。
     
-    // 発動対象スキルのリストを作成（定義順に1つずつ処理）
+    let triggered = false;
+    let events = [];
+    
+    // Engine 内の個別処理を真似て状態更新ログを作成
     let skillsToResolve = [];
     if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
     if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
     for (const sk of skillsToResolve) {
-        // Growth (成長)
         if (sk.id === 'growth') {
             const val = sk.value || 1;
             c.power += val; c.currentPower += val;
-            updateCardPowerOnly(lane, side);
-            const prefix = val > 0 ? '+' : ''; const color = val > 0 ? '#4ade80' : '#ef4444';
-            const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
-            if (cEl) createDamagePopup(cEl, `成長 ${prefix}${val}`, color);
-            if (c.currentPower <= 0) {
-                if (!(await discardCard(owner, c, lane))) board[lane] = null;
-                playSound(SOUNDS.seDestroy);
-            }
-            else playSound(SOUNDS.seSkill);
+            events.push({ type: 'power_change', side: owner, lane, amount: val, source: 'growth' });
             triggered = true;
-            await sleep(200);
-            if (!board[lane]) break; // 破壊されたら終了
         }
 
-        // Invincible (無敵) - カウントダウン
         if (sk.id === 'invincible') {
             sk.value--;
             if (sk.value <= 0) {
-                // スキルリストから削除
-                if (c.skill === 'invincible') {
-                    c.skill = 'none';
-                } else if (Array.isArray(c.skills)) {
+                if (c.skill === 'invincible') c.skill = 'none';
+                else if (Array.isArray(c.skills)) {
                     const idx = c.skills.indexOf(sk);
                     if (idx !== -1) c.skills.splice(idx, 1);
                 }
                 const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
-                if (cEl) createDamagePopup(cEl, '無敵終了', '#94a3b8');
+                if (cEl) {
+                    createDamagePopup(cEl, '無敵終了', '#94a3b8');
+                    await sleep(150);
+                }
             }
             triggered = true;
-            await sleep(150);
         }
 
-        // Contract (契約)
         if (sk.id === 'contract') {
             const val = sk.value || 3;
-            const hpFill = document.getElementById(owner === 'blue' ? 'player-hp-fill' : 'enemy-hp-fill');
-
             if (owner === 'blue') GameState.playerHP -= val;
             else GameState.enemyHP -= val;
-
-            playSound(SOUNDS.seDamage);
-            if (hpFill) createDamagePopup(hpFill, `契約 -${val}`, '#ef4444');
-            updateHPBar();
+            events.push({ type: 'damage_player', side: owner, amount: val, source: 'contract' });
             triggered = true;
-            await sleep(500); // 契約演出をしっかり見せる
+        }
+    }
+
+    if (events.length > 0) {
+        await playEvents(events);
+        // パワーアップ等の結果、HP0の場合は除去
+        if (c.currentPower <= 0) {
+            if (!(await discardCard(owner, c, lane))) board[lane] = null;
+            playSound(SOUNDS.seDestroy);
         }
     }
 

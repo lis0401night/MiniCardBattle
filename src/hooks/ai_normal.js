@@ -221,11 +221,6 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // 4. プレイヤーの攻撃
     calculateCombatPhase(simState, 'blue');
 
-    // シミュレーション用のクリーンアップ（Drop増加等は不要なので直接nullにする）
-    [simState.playerBoard, simState.enemyBoard].forEach(b => {
-        for (let i = 0; i < 3; i++) if (b[i] && b[i].currentPower <= 0) b[i] = null;
-    });
-
     return simState;
 }
 
