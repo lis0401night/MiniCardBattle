@@ -321,7 +321,7 @@ export async function triggerStartTurnPassive(owner, lane) {
     for (const sk of skillsToResolve) {
         if (sk.id === 'growth') {
             const val = sk.value || 1;
-            c.power += val; c.currentPower += val;
+            c.power += val; // RendererがcurrentPowerを処理するのでここはpowerのみアップ
             events.push({ type: 'power_change', side: owner, lane, amount: val, source: 'growth' });
             triggered = true;
         }
@@ -345,8 +345,7 @@ export async function triggerStartTurnPassive(owner, lane) {
 
         if (sk.id === 'contract') {
             const val = sk.value || 3;
-            if (owner === 'blue') GameState.playerHP -= val;
-            else GameState.enemyHP -= val;
+            // HP減少はRenderer側で実施されるためここでは行わない
             events.push({ type: 'damage_player', side: owner, amount: val, source: 'contract' });
             triggered = true;
         }
