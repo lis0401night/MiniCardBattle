@@ -72,7 +72,7 @@ export async function playEvents(events) {
 
                 const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
                 if (cEl) {
-                    createDamagePopup(cEl, '必殺', '#991b1b');
+                    createDamagePopup(cEl, '破壊', '#991b1b');
                 }
                 updateCardPowerOnly(ev.lane, sidePrefix);
                 if (!isNextDamage) {

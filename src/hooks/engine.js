@@ -251,6 +251,16 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 4, source: 'annihilation' });
             }
         }
+    } else if (action === 'targeted_destruction') {
+        if (tokenLanes && tokenLanes.length > 0) {
+            const tgtLane = tokenLanes[0];
+            const targetCard = eBoard[tgtLane];
+            if (targetCard) {
+                events.push({ type: 'leader_skill', skill: action, side: owner });
+                events.push({ type: 'destroy_cards', targets: [{ side: oppOwner, lane: tgtLane, card: targetCard }] });
+                eBoard[tgtLane] = null;
+            }
+        }
     } else if (action === 'devilhunter_resurrect') {
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
         const validCards = discard.filter(card => (card.power || 0) <= 10 && !card.isToken);
