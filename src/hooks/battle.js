@@ -1,5 +1,6 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { MAX_HP } from '../utils/constants/config.js';
+import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
@@ -1181,7 +1182,36 @@ export function endBattle() {
                     { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose') },
                     { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win') }
                 ];
-                showCardReward(GameState.enemyConfig.id);
+                let recipeId = GameState.enemyConfig.id;
+                if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
+
+                const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
+                
+                let deckList = [];
+                if (Array.isArray(ENEMY_DECKS[recipeId])) {
+                    deckList = ENEMY_DECKS[recipeId];
+                } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
+                    deckList = ENEMY_DECKS[recipeId][diffKey];
+                } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
+                    deckList = ENEMY_DECKS[recipeId]['normal'];
+                }
+
+                if (deckList.length > 0) {
+                    const uniqueCards = [...new Set(deckList)];
+                    // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
+                    const availableCards = uniqueCards.filter(cid => {
+                        const count = GameState.playerInventory[cid] || 0;
+                        return count < 4;
+                    });
+
+                    if (availableCards.length > 0) {
+                        const rewardCardId = availableCards[Math.floor(Math.random() * availableCards.length)];
+                        showCardReward(rewardCardId);
+                        return;
+                    }
+                }
+                // ドロップ候補がない場合は報酬なしで次へ
+                setupDialogueScreen();
             } else {
                 GameState.dialogueQueue = [
                     { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') },
@@ -1209,7 +1239,37 @@ export function endBattle() {
                 incrementStat('eventClear', 'satan_high');
             }
 
-            showCardReward(GameState.enemyConfig.id);
+            // 報酬カード抽選
+            let recipeId = GameState.enemyConfig.id;
+            if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
+
+            const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
+            
+            let deckList = [];
+            if (Array.isArray(ENEMY_DECKS[recipeId])) {
+                deckList = ENEMY_DECKS[recipeId];
+            } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
+                deckList = ENEMY_DECKS[recipeId][diffKey];
+            } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
+                deckList = ENEMY_DECKS[recipeId]['normal'];
+            }
+
+            if (deckList.length > 0) {
+                const uniqueCards = [...new Set(deckList)];
+                // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
+                const availableCards = uniqueCards.filter(cid => {
+                    const count = GameState.playerInventory[cid] || 0;
+                    return count < 4;
+                });
+
+                if (availableCards.length > 0) {
+                    const rewardCardId = availableCards[Math.floor(Math.random() * availableCards.length)];
+                    showCardReward(rewardCardId);
+                    return;
+                }
+            }
+            // ドロップ候補がない場合は報酬なしで次へ
+            setupDialogueScreen();
         } else {
             GameState.dialogueQueue = [{ speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') }, { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win') }];
             setupDialogueScreen();
