@@ -74,7 +74,7 @@ export default function DungeonMenuScreen() {
         
         <button 
           className="btn" 
-          style={{ background: 'linear-gradient(45deg, #f97316, #ea580c)', marginTop: '10px' }} 
+          style={{ background: 'linear-gradient(45deg, #f97316, #ea580c)' }} 
           onClick={handleExchangeClick}
         >
           交換所

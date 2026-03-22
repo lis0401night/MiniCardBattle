@@ -16,7 +16,7 @@ import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
  * @param {Array} events - オプションのイベントログ配列
  * @returns {Array} 発生したイベントログ
  */
-export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
+export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], simulatedTokenLanes = null) {
     const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
     const eB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
     const oppOwner = owner === 'blue' ? 'red' : 'blue';
@@ -197,9 +197,15 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             }
 
             for (let i = 0; i < cloneCount; i++) {
-                const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
-                if (emptyLanes.length > 0) {
-                    const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > i) {
+                    targetLane = simulatedTokenLanes[i];
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1 && b[targetLane] === null) {
                     const newToken = {
                         ...tC,
                         id: `cl_sim_${Date.now()}_${i}`,
@@ -207,7 +213,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
                         isPremium: c.isPremium,
                         imgUrl: c.imgUrl, // シミュ内では元の情報を保持していればOK (UI表示は後で行われる)
                         rarity: c.rarity || 1,
-                        basePower: c.power,
+                        power: c.power || 1,
+                        basePower: c.basePower || c.power || 1,
+                        currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 1),
                         skills: JSON.parse(JSON.stringify(inheritedSkills)),
                         voiceCategory: c.voiceCategory || 'sword'
                     };
@@ -223,9 +231,16 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             if (validCards.length > 0) {
                 const sorted = [...validCards].sort((a, b) => b.power - a.power);
                 const selectedCard = sorted[0];
-                const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
-                if (emptyLanes.length > 0) {
-                    const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
+                
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                    targetLane = simulatedTokenLanes[0];
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1 && b[targetLane] === null) {
                     const resurrectedCard = { 
                         ...selectedCard, 
                         id: `res_sim_${Date.now()}`,
@@ -579,6 +594,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                                 imgUrl: 'assets/cards/card_legs.jpg',
                                 power: val,
                                 currentPower: val,
+                                basePower: val,
                                 rarity: tL.rarity || 1
                             }
                         });
@@ -650,6 +666,7 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
                                 imgUrl: 'assets/cards/card_legs.jpg',
                                 power: val,
                                 currentPower: val,
+                                basePower: val,
                                 rarity: tL.rarity || 1
                             }
                         });

@@ -34,6 +34,7 @@ export function saveDungeonProgress() {
         deck: (GameState.playerDeckSelection || []).map(c => c.id), // デッキ構成を保存
         opponents: GameState.dungeonOpponents,
         playerConfig: GameState.playerConfig, // 動的リーダー全データ
+        enemyConfig: GameState.enemyConfig, // 動的敵リーダー全データ
         dungeonState: GameState.dungeonState,
         playerHP: typeof GameState.dungeonPlayerHP !== 'undefined' ? GameState.dungeonPlayerHP : 20,
         timestamp: Date.now()
@@ -66,6 +67,10 @@ export function loadDungeonProgress() {
             GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
         } else {
             GameState.playerConfig = CHARACTERS.android;
+        }
+
+        if (data.enemyConfig) {
+            GameState.enemyConfig = data.enemyConfig;
         }
 
         GameState.dungeonState = data.dungeonState || 'select_opponent';

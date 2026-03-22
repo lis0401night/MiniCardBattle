@@ -105,7 +105,15 @@ export default function BattleDungeonScreen() {
                 {getTitle()}{(dungeonState !== 'resume_select' && dungeonState !== 'select_rental_deck') && ` (${GameState.dungeonWinStreak + 1} 階)`}
             </h2>
 
-            <div className="dungeon-content" style={{ flex: 1, width: '100%', overflowY: 'auto', boxSizing: 'border-box', padding: '10px 0' }}>
+            {dungeonState === 'select_rental_deck' && (
+                <div style={{ textAlign: 'center', flexShrink: 0, marginBottom: '10px' }}>
+                    <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '15px', borderRadius: '12px', border: '1px solid #334155', display: 'inline-block', minWidth: '200px' }}>
+                        <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>最高到達階: {GameState.dungeonMaxWinStreak + 1} 階</div>
+                    </div>
+                </div>
+            )}
+
+            <div className="dungeon-content" style={{ flex: 1, width: '100%', overflowY: dungeonState === 'reward' ? 'hidden' : 'auto', boxSizing: 'border-box', padding: '10px 0', display: 'flex', flexDirection: 'column' }}>
                 {renderContent()}
             </div>
 
@@ -276,7 +284,6 @@ function RentalDeckSelect() {
 
     return (
         <div style={{ textAlign: 'center', color: '#fff' }}>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
                 {options.map((opt, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', width: '100%', maxWidth: '400px' }}>
@@ -403,8 +410,9 @@ function OpponentSelect() {
 
     return (
         <div style={{ color: '#fff', textAlign: 'center' }}>
-            <div style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 'bold', border: '1px solid rgba(250, 204, 21, 0.3)' }}>
-                現在 {GameState.dungeonWinStreak + 1} 階
+            <div style={{ background: 'rgba(234, 179, 8, 0.15)', padding: '12px', borderRadius: '12px', marginBottom: '20px', border: '1px solid rgba(250, 204, 21, 0.3)' }}>
+                <div style={{ color: '#facc15', fontWeight: 'bold', marginBottom: '5px' }}>現在 {GameState.dungeonWinStreak + 1} 階</div>
+                <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>最高到達階: {GameState.dungeonMaxWinStreak + 1} 階</div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
@@ -458,40 +466,80 @@ function RewardSelect() {
         });
     };
 
+    const handleCheckPocket = () => {
+        playSound(SOUNDS.seClick);
+        if (window.showEnemyDeckModal) {
+            window.showEnemyDeckModal(GameState.dungeonCards, "所持カード確認");
+        }
+    };
+
+    const handleCheckDeck = () => {
+        playSound(SOUNDS.seClick);
+        if (window.showEnemyDeckModal) {
+            const currentDeck = GameState.playerDeckSelection ? GameState.playerDeckSelection.filter(Boolean) : GameState.dungeonCards.slice(0, 20);
+            window.showEnemyDeckModal(currentDeck, "デッキ確認");
+        }
+    };
+
     const enemy = GameState.enemyConfig;
 
     return (
-        <div id="screen-reward" style={{ color: '#fff', textAlign: 'center', width: '100%', height: '100%' }}>
-            <h3 style={{ color: '#facc15' }}>バトル勝利！</h3>
+        <div id="screen-reward" style={{ color: '#fff', textAlign: 'center', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
 
             {enemy && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', marginTop: '10px' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #64748b', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '5px', marginTop: '10px', flexShrink: 0 }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #64748b', marginBottom: '5px' }}>
                         <img src={enemy.image} alt={enemy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{enemy.name} のデッキ</div>
                 </div>
             )}
 
-            <p style={{ marginBottom: '15px', fontSize: '0.85rem', color: '#cbd5e1' }}>
-                倒した相手のデッキから1枚選んで獲得できます。<br />
-                カードを長押しで詳細をプレビューできます。
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '10px', flexShrink: 0 }}>
+                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: '#475569', margin: 0 }} onClick={handleCheckPocket}>
+                    所持カード確認
+                </button>
+                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleCheckDeck}>
+                    デッキ確認
+                </button>
+            </div>
+
+            <p style={{ marginBottom: '10px', fontSize: '0.85rem', color: '#cbd5e1', flexShrink: 0 }}>
+                倒した相手のデッキから1枚選んで獲得できます。
             </p>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', paddingBottom: '40px' }}>
-                {uniqueCards.map((id) => (
-                    <div key={id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                        <DungeonMiniCard
-                            id={id}
-                            onClick={() => handleSelect(id)}
-                            showCount={false}
-                            scale={1.2}
-                        />
-                        <div style={{ fontSize: '11px', color: '#cbd5e1', width: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {CARD_MASTER.find(c => c.id === id)?.name}
-                        </div>
-                    </div>
-                ))}
+            <div style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                border: '1px solid #475569',
+                borderRadius: '8px',
+                padding: '15px 10px',
+                margin: '0 auto',
+                maxWidth: '380px',
+                width: '100%',
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)'
+            }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px 5px', justifyItems: 'center' }}>
+                    {uniqueCards.map((id) => {
+                        const ownedCount = GameState.dungeonCards ? GameState.dungeonCards.filter(c => c === id).length : 0;
+                        const isMaxLimit = ownedCount >= 4;
+                        return (
+                            <div key={id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', filter: isMaxLimit ? 'brightness(0.5)' : 'none', opacity: isMaxLimit ? 0.7 : 1 }}>
+                                <DungeonMiniCard
+                                    id={id}
+                                    onClick={() => handleSelect(id)}
+                                    showCount={false}
+                                    scale={1.2}
+                                />
+                                <div style={{ fontSize: '11px', color: '#cbd5e1', width: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {CARD_MASTER.find(c => c.id === id)?.name}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
         </div>
     );
