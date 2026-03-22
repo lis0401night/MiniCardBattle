@@ -593,20 +593,20 @@ export default function GlobalModals() {
         <div className="modal-overlay" style={{ zIndex: 3200, display: 'flex', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', animation: 'fadeIn 0.3s' }} onClick={() => pointAcquisitionData.onClose && pointAcquisitionData.onClose()}>
           <div className="skill-modal-box modal-pop-animation" style={{ border: `2px solid ${pointAcquisitionData.color || '#facc15'}`, textAlign: 'center', maxWidth: '400px', width: '90%', padding: '30px 20px', boxShadow: `0 0 40px ${pointAcquisitionData.color || '#facc15'}66` }} onClick={e => e.stopPropagation()}>
             <h2 style={{ color: pointAcquisitionData.color || '#facc15', marginBottom: '20px', fontSize: '1.4rem', textShadow: '1px 1px 2px #000' }}>{pointAcquisitionData.title}</h2>
-            
+
             <p style={{ color: '#fff', fontSize: '1rem', marginBottom: '10px', whiteSpace: 'pre-line', lineHeight: '1.5' }}>{pointAcquisitionData.message}</p>
-            
+
             <div style={{ fontSize: '3.5rem', margin: '20px 0', fontWeight: 'bold', color: '#fff', textShadow: `0 0 20px ${pointAcquisitionData.color || '#facc15'}` }}>
               ✨ <span style={{ color: pointAcquisitionData.color || '#facc15' }}>{pointAcquisitionData.points}</span> <span style={{ fontSize: '1.5rem' }}>Pt</span>
             </div>
-            
+
             {pointAcquisitionData.totalPoints !== undefined && (
               <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '30px' }}>現在の累計: {pointAcquisitionData.totalPoints} Pt</p>
             )}
-            
-            <button 
-              className="btn ok-button" 
-              style={{ width: '150px', margin: '0 auto', background: `linear-gradient(45deg, ${pointAcquisitionData.color || '#facc15'}, ${pointAcquisitionData.darkColor || '#eab308'})`, color: '#000', fontWeight: 'bold' }} 
+
+            <button
+              className="btn ok-button"
+              style={{ width: '150px', margin: '0 auto', background: `linear-gradient(45deg, ${pointAcquisitionData.color || '#facc15'}, ${pointAcquisitionData.darkColor || '#eab308'})`, color: '#000', fontWeight: 'bold' }}
               onClick={() => {
                 playSound?.(SOUNDS?.seClick);
                 if (pointAcquisitionData.onClose) pointAcquisitionData.onClose();
@@ -1016,7 +1016,7 @@ export default function GlobalModals() {
                   <li>置き直しの場合、下のカードは破棄されます。</li>
                   <li><b>ターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
                   <li>正面に敵がいれば戦闘となり、お互いにパワー分ダメージを与えます。</li>
-                  <li>正面が空いていれば敵リーダーに直接ダメージ！</li>
+                  <li>正面が空いていれば相手リーダーに直接ダメージ！</li>
                   <li>相手リーダーのHPを0にすれば勝利です。</li>
                 </ul>
               </div>

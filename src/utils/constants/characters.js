@@ -213,7 +213,7 @@ export const CHARACTERS = {
         easeOfUse: 1,
         filter: 'none', cardType: 'set4', cardBg: 'bg1',
         image: 'assets/characters/char_cleric.png', imageLose: 'assets/characters/char_cleric_lose.png', icon: 'assets/icons/icon_cleric.png', imageEnding: 'assets/characters/char_cleric_ending.png', color: '#94a3b8',
-        leaderSkill: { name: '暗黒の審判', desc: '(SP:3) 敵リーダーに3ダメージを与え、自身のHPを3回復する。', cost: 3, action: 'dark_ritual' },
+        leaderSkill: { name: '暗黒の審判', desc: '(SP:3) 相手リーダーに3ダメージを与え、自身のHPを3回復する。', cost: 3, action: 'dark_ritual' },
         preBattleLine: 'あら、私に逆らうなんて。身の程をわきまえなさい。',
         mirrorIntro: '私の偽物……？ フフ、その醜い姿で私と同じ聖職者を名乗るなんて。異端者として焼き払ってあげるわ。',
         narratorIntro: '教会の重鎮でありながら、裏では禁忌の術を操る女、エリシア。彼女の微笑みは、地獄への招待状に他ならない。',
