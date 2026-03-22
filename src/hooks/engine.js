@@ -15,8 +15,7 @@ import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
  * @param {number} val skillValue
  * @param {Array} events - オプションのイベントログ配列
  * @returns {Array} 発生したイベントログ
- */
-export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
+export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], simulatedTokenLanes = null) {
     const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
     const eB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
     const oppOwner = owner === 'blue' ? 'red' : 'blue';
@@ -197,9 +196,15 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             }
 
             for (let i = 0; i < cloneCount; i++) {
-                const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
-                if (emptyLanes.length > 0) {
-                    const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > i) {
+                    targetLane = simulatedTokenLanes[i];
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1 && b[targetLane] === null) {
                     const newToken = {
                         ...tC,
                         id: `cl_sim_${Date.now()}_${i}`,
@@ -223,9 +228,16 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             if (validCards.length > 0) {
                 const sorted = [...validCards].sort((a, b) => b.power - a.power);
                 const selectedCard = sorted[0];
-                const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
-                if (emptyLanes.length > 0) {
-                    const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
+                
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                    targetLane = simulatedTokenLanes[0];
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1 && b[targetLane] === null) {
                     const resurrectedCard = { 
                         ...selectedCard, 
                         id: `res_sim_${Date.now()}`,

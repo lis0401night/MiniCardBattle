@@ -94,15 +94,41 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
                         const isOverwrite = myBoard[l] !== null;
 
-                        // 「選択」スキルの場合は、それぞれの選択肢でシミュレーションを行う
-                        if (hasSkill(card, 'choice') && Array.isArray(card.choices)) {
-                            for (let cIdx = 0; cIdx < card.choices.length; cIdx++) {
-                                let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdx);
-                                candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdx, simState });
+                        // 追加: アキレーンのパターン抽出
+                        let tempBoard = [...myBoard];
+                        if (useSkill && order === 'before' && tokenLanes) {
+                             tokenLanes.forEach(tl => tempBoard[tl] = 'token');
+                        }
+                        tempBoard[l] = 'card';
+                        
+                        const emptyLanesAfterPlay = [0, 1, 2].filter(idx => tempBoard[idx] === null);
+
+                        let cardTokenLanePatterns = [null];
+                        if (emptyLanesAfterPlay.length > 0) {
+                            if (hasSkill(card, 'resurrect') || hasSkill(card, 'summon')) {
+                                cardTokenLanePatterns = emptyLanesAfterPlay.map(idx => [idx]);
+                            } else if (hasSkill(card, 'clone')) {
+                                let cloneCount = 1;
+                                if (card.skill === 'clone') cloneCount = card.skillValue || 1;
+                                else if (card.skills) {
+                                    const csk = card.skills.find(s => s.id === 'clone');
+                                    if (csk) cloneCount = csk.value || 1;
+                                }
+                                cardTokenLanePatterns = getCombinations(emptyLanesAfterPlay, Math.min(emptyLanesAfterPlay.length, cloneCount));
                             }
-                        } else {
-                            let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
-                            candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, simState });
+                        }
+
+                        for (let cardTokenLanes of cardTokenLanePatterns) {
+                            // 「選択」スキルの場合は、それぞれの選択肢でシミュレーションを行う
+                            if (hasSkill(card, 'choice') && Array.isArray(card.choices)) {
+                                for (let cIdx = 0; cIdx < card.choices.length; cIdx++) {
+                                    let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdx, cardTokenLanes);
+                                    candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdx, cardTokenLanes, simState });
+                                }
+                            } else {
+                                let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, undefined, cardTokenLanes);
+                                candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, cardTokenLanes, simState });
+                            }
                         }
                     }
                 }
@@ -155,7 +181,9 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             finalCandidates = safeCandidates;
         } else {
             // ⑦ ④～⑥の条件が存在しない（絶対に4ダメージ以上受ける）なら除外した③の中で（つまり aliveCandidates の中で）
-            finalCandidates = aliveCandidates;
+            // 修正：一番被ダメージが少ないグループを抽出
+            let minDmg = Math.min(...aliveCandidates.map(c => c.simState.combatDamageTaken));
+            finalCandidates = aliveCandidates.filter(c => c.simState.combatDamageTaken === minDmg);
         }
     }
 
@@ -197,7 +225,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
  * 仮想位置でのシミュレーション実行（状態を返す）
  * 順序は常に リーダースキル -> カード配置
  */
-export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined) {
+export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined, cardTokenLanes = null) {
     const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
     let simState = {
         playerBoard: currentOpBoard.map(cloneCard),
@@ -247,7 +275,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         }
 
         skills.forEach(sk => {
-            applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value);
+            applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
         });
     }
 
@@ -277,79 +305,38 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
  * トークン配置用の評価
  */
 export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false) {
-    const results = [];
-    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
-    let currentBoard = GameState.enemyBoard.map(cloneCard);
-
-    for (let k = 0; k < count; k++) {
-        let bestScore = -Infinity;
-        let bestLane = -1;
-        const available = allLanes.filter(l => !results.includes(l));
-
-        for (let l of available) {
-            const isOverwrite = currentBoard[l] !== null;
-            const simState = simulateAndEvaluateToken(tokenCard, l, currentBoard, GameState.playerBoard, GameState.enemyHP, GameState.enemySP);
-
-            // トークン配置は簡易的に「相手HPをどれだけ削れるか」または「盤面パワー」でソート
-            let score = (simState.enemyHP > 0 ? 10000 : -10000);
-            score -= simState.playerHP * 100;
-            
-            // 無意味な上書き配置を避けるためのペナルティ（空きレーンを最優先させる）
-            if (isOverwrite) {
-                // 上書きされる元のカードのパワー分と定数ペナルティ
-                score -= 50 + ((Number(currentBoard[l].currentPower) || Number(currentBoard[l].power) || 0) * 10);
-            }
-
-            for (let i = 0; i < 3; i++) {
-                if (simState.enemyBoard[i]) score += (Number(simState.enemyBoard[i].currentPower) || Number(simState.enemyBoard[i].power) || 0) * 10;
-                if (simState.playerBoard[i]) score -= (Number(simState.playerBoard[i].currentPower) || Number(simState.playerBoard[i].power) || 0) * 10;
-            }
-
-            if (!isNaN(score) && score > bestScore) {
-                bestScore = score;
-                bestLane = l;
-            }
-        }
-        if (bestLane !== -1) {
-            results.push(bestLane);
-            const t = cloneCard(tokenCard);
-            t.currentPower = t.power;
-            currentBoard[bestLane] = t;
+    // 意思決定時にすでに最適な配置先（cardTokenLanes / tokenLanes）が計算されていれば、再評価（点数方式）をせずにそのまま使う！
+    if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
+        if (!isLeaderSkill && GameState.aiDecision.cardTokenLanes && GameState.aiDecision.cardTokenLanes.length > 0) {
+            const decidedLanes = GameState.aiDecision.cardTokenLanes;
+            delete GameState.aiDecision.cardTokenLanes; // 使い切ったら消去
+            return decidedLanes.slice(0, count); // count分を返す
+        } else if (isLeaderSkill && GameState.aiDecision.tokenLanes && GameState.aiDecision.tokenLanes.length > 0) {
+            const decidedLanes = GameState.aiDecision.tokenLanes;
+            delete GameState.aiDecision.tokenLanes; // 使い切ったら消去
+            return decidedLanes.slice(0, count);
         }
     }
+
+    // 中級以上のAIがシミュレーション結果を持たずに呼ばれた場合（不測の事態）の最低限のフォールバック
+    // （ランダムなどの思考介入は行わず、手前の空いているレーン順に機械的に詰める）
+    const results = [];
+    
+    // 1. 空きレーンを優先
+    for (let l of allLanes) {
+        if (GameState.enemyBoard[l] === null && results.length < count) {
+            results.push(l);
+        }
+    }
+    
+    // 2. 空きが足りなければ上書き可能な若いレーンで妥協
+    if (results.length < count) {
+        for (let l of allLanes) {
+            if (!results.includes(l) && results.length < count) {
+                results.push(l);
+            }
+        }
+    }
+    
     return results;
-}
-
-export function simulateAndEvaluateToken(token, l, board, opBoard, hp, sp) {
-    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
-    let simState = {
-        playerBoard: opBoard.map(cloneCard),
-        enemyBoard: board.map(cloneCard),
-        playerHP: GameState.playerHP,
-        enemyHP: hp,
-        playerSP: GameState.playerSP,
-        enemySP: sp || 0,
-        playerHand: GameState.playerHand.map(cloneCard),
-        enemyHand: GameState.enemyHand.map(cloneCard),
-        playerDiscard: GameState.playerDiscard.map(cloneCard),
-        enemyDiscard: GameState.enemyDiscard.map(cloneCard)
-    };
-
-    const playedToken = cloneCard(token);
-    playedToken.currentPower = playedToken.power;
-    simState.enemyBoard[l] = playedToken;
-
-    let skills = [];
-    if (playedToken.skill && playedToken.skill !== 'none') skills.push({ id: playedToken.skill, value: playedToken.skillValue });
-    if (Array.isArray(playedToken.skills)) skills = skills.concat(playedToken.skills);
-
-    skills.forEach(sk => {
-        applyActiveSkillLogic(simState, 'red', l, sk.id, sk.value);
-    });
-
-    // AIのターンは攻撃後なので、次はプレイヤーのターン開始処理と攻撃
-    applyPassiveSkillLogic(simState, 'blue');
-    calculateCombatPhase(simState, 'blue');
-
-    return simState;
 }
