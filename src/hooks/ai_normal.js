@@ -75,7 +75,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             }
         }
 
-        const orders = useSkill ? ['before', 'after'] : ['before'];
+        const orders = ['before']; // スキルはルール上必ずカード配置の前に発動するため、'after'パターンは違反として廃止
 
         for (let tokenLanes of tokenLanePatterns) {
             for (let order of orders) {
@@ -138,7 +138,10 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
         if (stateA.playerHP <= 0 && stateB.playerHP > 0) return -1;
         if (stateB.playerHP <= 0 && stateA.playerHP > 0) return 1;
 
-        // 3. 盤面アドバンテージ (自分のパワー合計 - 相手のパワー合計)
+        // 3. 被ダメージの最小化（同一ティア同士なら、自分のHPが多く残る方を優先する）
+        if (stateA.enemyHP !== stateB.enemyHP) return stateB.enemyHP - stateA.enemyHP;
+
+        // 4. 盤面アドバンテージ (自分のパワー合計 - 相手のパワー合計)
         const getAdvantage = (state) => {
             let myPower = 0;
             let opPower = 0;

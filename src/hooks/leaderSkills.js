@@ -191,7 +191,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
             // 復活させる対象を engine に伝えるために無理くり渡しちゃうか、UI介入でここまで決まったら
             // 配置レーンも決めます。
-            const tLanes = await waitPlayerLaneSelection(1, owner, selectedCard, true, null, false);
+            const tLanes = await waitPlayerLaneSelection(1, owner, selectedCard, true, tokenLanes, false);
             if (!tLanes || tLanes.length === 0) return;
 
             // Engine側へ伝えるための事前準備（引数だけでは足りないので、Engineが拾えるように選択カード情報を付与するか、ここでやってしまうか）
