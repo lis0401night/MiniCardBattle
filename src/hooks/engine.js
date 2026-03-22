@@ -213,7 +213,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         isPremium: c.isPremium,
                         imgUrl: c.imgUrl, // シミュ内では元の情報を保持していればOK (UI表示は後で行われる)
                         rarity: c.rarity || 1,
-                        basePower: c.power,
+                        power: c.power || 1,
+                        basePower: c.basePower || c.power || 1,
+                        currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 1),
                         skills: JSON.parse(JSON.stringify(inheritedSkills)),
                         voiceCategory: c.voiceCategory || 'sword'
                     };
@@ -592,6 +594,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                                 imgUrl: 'assets/cards/card_legs.jpg',
                                 power: val,
                                 currentPower: val,
+                                basePower: val,
                                 rarity: tL.rarity || 1
                             }
                         });
@@ -663,6 +666,7 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
                                 imgUrl: 'assets/cards/card_legs.jpg',
                                 power: val,
                                 currentPower: val,
+                                basePower: val,
                                 rarity: tL.rarity || 1
                             }
                         });

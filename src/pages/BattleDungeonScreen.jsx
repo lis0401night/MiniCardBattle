@@ -526,21 +526,21 @@ function RewardSelect() {
                         const ownedCount = GameState.dungeonCards ? GameState.dungeonCards.filter(c => c === id).length : 0;
                         const isMaxLimit = ownedCount >= 4;
                         return (
-                        <div key={id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', filter: isMaxLimit ? 'brightness(0.5)' : 'none', opacity: isMaxLimit ? 0.7 : 1 }}>
-                            <DungeonMiniCard
-                                id={id}
-                                onClick={() => handleSelect(id)}
-                                showCount={false}
-                                scale={1.2}
-                            />
-                            <div style={{ fontSize: '11px', color: '#cbd5e1', width: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {CARD_MASTER.find(c => c.id === id)?.name}
+                            <div key={id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', filter: isMaxLimit ? 'brightness(0.5)' : 'none', opacity: isMaxLimit ? 0.7 : 1 }}>
+                                <DungeonMiniCard
+                                    id={id}
+                                    onClick={() => handleSelect(id)}
+                                    showCount={false}
+                                    scale={1.2}
+                                />
+                                <div style={{ fontSize: '11px', color: '#cbd5e1', width: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {CARD_MASTER.find(c => c.id === id)?.name}
+                                </div>
                             </div>
-                        </div>
-                    )})}
+                        )
+                    })}
                 </div>
             </div>
-            <div style={{ height: '40px' }}></div>
         </div>
     );
 }
