@@ -179,6 +179,10 @@ export async function playEvents(events) {
                 break;
             }
             case 'add_hand': {
+                const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
+                if (hand.length < 5) {
+                    hand.push(ev.card);
+                }
                 renderHand();
                 updateDeckDisplay(ev.side);
                 playSound(SOUNDS.seDraw);
@@ -186,7 +190,35 @@ export async function playEvents(events) {
                 break;
             }
             case 'discard': {
+                const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
+                if (ev.card && ev.card.uid) {
+                    const idx = hand.findIndex(c => c.uid === ev.card.uid);
+                    if (idx !== -1) {
+                        const discardedCard = hand.splice(idx, 1)[0];
+                        const discardArr = ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                        
+                        // 墓地送り時の完全リセット
+                        const masterData = CARD_MASTER.find(m => m.id === (discardedCard.baseId || discardedCard.id));
+                        let restoredCard;
+                        if (masterData) {
+                            restoredCard = JSON.parse(JSON.stringify(masterData));
+                            restoredCard.uid = discardedCard.uid;
+                            restoredCard.owner = ev.side;
+                            restoredCard.baseId = discardedCard.baseId || discardedCard.id;
+                            if (discardedCard.isPremium !== undefined) restoredCard.isPremium = discardedCard.isPremium;
+                            restoredCard.basePower = restoredCard.power;
+                            restoredCard.currentPower = restoredCard.power;
+                        } else {
+                            restoredCard = { ...discardedCard };
+                            if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
+                            restoredCard.currentPower = restoredCard.power;
+                            restoredCard.skills = [];
+                        }
+                        discardArr.push(restoredCard);
+                    }
+                }
                 updateDeckDisplay(ev.side);
+                renderHand();
                 break;
             }
             case 'add_skill': {
@@ -280,7 +312,25 @@ export async function playEvents(events) {
                     if (deadCard) {
                         if (!deadCard.isToken) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                            discard.push(deadCard);
+                            
+                            const masterData = CARD_MASTER.find(m => m.id === (deadCard.baseId || deadCard.id));
+                            let restoredCard;
+                            if (masterData) {
+                                restoredCard = JSON.parse(JSON.stringify(masterData));
+                                restoredCard.uid = deadCard.uid;
+                                restoredCard.owner = target.side;
+                                restoredCard.baseId = deadCard.baseId || deadCard.id;
+                                if (deadCard.isPremium !== undefined) restoredCard.isPremium = deadCard.isPremium;
+                                restoredCard.basePower = restoredCard.power;
+                                restoredCard.currentPower = restoredCard.power;
+                            } else {
+                                restoredCard = { ...deadCard };
+                                if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
+                                restoredCard.currentPower = restoredCard.power;
+                                restoredCard.skills = [];
+                            }
+                            
+                            discard.push(restoredCard);
                             updateDeckDisplay(target.side);
                         }
                         board[target.lane] = null;

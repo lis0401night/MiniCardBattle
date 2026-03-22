@@ -848,7 +848,13 @@ export function drawCard(owner) {
         showDeckRefreshEffect(owner);
     }
 
-    if (d.length > 0) h.push(d.pop());
+    if (d.length > 0) {
+        const drawn = d.pop();
+        if (drawn.currentPower === undefined || Number.isNaN(drawn.currentPower) || (drawn.currentPower <= 0 && (drawn.power || 0) > 0)) {
+            drawn.currentPower = drawn.power || 0;
+        }
+        h.push(drawn);
+    }
 
     updateDeckDisplay(owner);
     if (owner === 'blue') renderHand();
@@ -935,6 +941,12 @@ export async function playCard(o, hI, l) {
     }
     b[l] = h.splice(hI, 1)[0];
     const c = b[l];
+
+    // 旧環境データ由来等のパワー欠落・異常(手札なのに0やNaN)を自動修復
+    if (c.currentPower === undefined || Number.isNaN(c.currentPower) || (c.currentPower <= 0 && (c.power || 0) > 0)) {
+        c.currentPower = c.power || 0;
+        c.basePower = c.power || 0;
+    }
 
     // 配置音とボイスの再生
     playSound(SOUNDS.sePlace);

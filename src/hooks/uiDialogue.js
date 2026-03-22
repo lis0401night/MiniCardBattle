@@ -1,6 +1,6 @@
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
-import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
+import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { setupEventSatanConfrontation } from './events.js';
 import { GameState } from './gameState.js';
@@ -70,14 +70,17 @@ export function setupDialogueScreen() {
     GameState.isProcessing = false;
     GameState.currentDialogueIndex = 0;
     
-    let pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'image');
-    let pRightImg = GameState.enemyConfig.image;
+    let pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'image') || getCardImgUrl(GameState.playerConfig);
+    let pRightImg = GameState.enemyConfig.image || getCardImgUrl(GameState.enemyConfig);
     
     const isCenter = (GameState.appState === 'story_intro' || GameState.appState === 'inter_battle_story');
 
     if (GameState.appState === 'post_dialogue') {
-        if (GameState.lastBattleResult === 'win') pRightImg = GameState.enemyConfig.imageLose || GameState.enemyConfig.image;
-        else if (GameState.lastBattleResult === 'lose') pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'imageLose');
+        if (GameState.lastBattleResult === 'win') pRightImg = GameState.enemyConfig.imageLose || pRightImg;
+        else if (GameState.lastBattleResult === 'lose') {
+            const loseImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'imageLose');
+            pLeftImg = loseImg || pLeftImg;
+        }
     }
     
     window.currentDialogueData = window.currentDialogueData || {};
