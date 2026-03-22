@@ -356,7 +356,7 @@ export function executeSkillFromConfirm() {
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
  */
-export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null) {
+export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true) {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     // AIの場合：
     if (owner === 'red') {
@@ -423,7 +423,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             playSound(SOUNDS.seClick);
 
             const newCard = GameState.placementToken;
-            if (newCard) {
+            if (newCard && checkConstraints) {
                 if (hasSkill(newCard, 'legendary') && laneIndex !== 1) {
                     playSound(SOUNDS.seDamage);
                     showAlertModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`);

@@ -40,7 +40,7 @@ export default function DungeonMenuScreen() {
       id="screen-dungeon-menu" 
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('/assets/backgrounds/background_dungeon.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_dungeon.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}

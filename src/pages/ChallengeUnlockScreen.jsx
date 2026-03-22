@@ -41,7 +41,7 @@ export default function ChallengeUnlockScreen() {
 
     return (
         <div id="screen-challenge-unlock" className="screen active" style={{
-            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('/assets/backgrounds/background_dungeon.png')`,
+            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_dungeon.png')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto'

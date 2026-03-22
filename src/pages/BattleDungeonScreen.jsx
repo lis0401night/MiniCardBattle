@@ -96,7 +96,7 @@ export default function BattleDungeonScreen() {
     return (
         <div id="screen-battle-dungeon" className="screen active" style={{
             display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden',
-            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('/assets/backgrounds/background_dungeon.png')`,
+            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_dungeon.png')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
         }}>

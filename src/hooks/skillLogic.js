@@ -179,7 +179,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             currentPower: c.currentPower,
             skills: inheritedSkills
         };
-        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false);
+        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false);
 
         let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
@@ -306,8 +306,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             }
 
             if (selectedCard) {
-                // 配置先を選ばせる
-                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false);
+                // 配置先を選ばせる (制約チェックはしない)
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, false);
                 if (tLanes && tLanes.length > 0) {
                     const targetLane = tLanes[0];
                     const dIdx = discard.findIndex(cd => cb => cb.id === selectedCard.id);
@@ -348,7 +348,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             isToken: true
         };
 
-        const tLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false);
+        const tLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, null, false);
         let events = [];
 
         if (tLanes && tLanes.length > 0) {
