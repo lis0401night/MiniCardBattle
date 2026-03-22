@@ -8,6 +8,23 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'static',
-    emptyOutDir: true
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          gameCore: [
+            './src/hooks/uiMainCore.js',
+            './src/hooks/uiDialogue.js',
+            './src/hooks/deck.js',
+            './src/hooks/battle.js',
+            './src/hooks/battleDungeon.js',
+            './src/utils/constants/battleDungeon.js',
+            './src/utils/constants/battleDungeonCharacter.js'
+          ]
+        }
+      }
+    }
   }
 })
