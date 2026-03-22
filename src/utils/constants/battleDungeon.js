@@ -95,7 +95,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
 
     let deck = [leaderCard.id, leaderCard.id, leaderCard.id, leaderCard.id];
     const lRarity = leaderCard.rarity || targetRarity;
-    
+
     const cardCounts = {};
     deck.forEach(id => {
         cardCounts[id] = (cardCounts[id] || 0) + 1;
@@ -104,9 +104,9 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     // ヘルパー: 指定レアリティからN枚ピックしてデッキに追加
     const pickCards = (targetR, count) => {
         let pool = candidates.filter(c => c.rarity === targetR && c.id !== leaderCard.id);
-        for(let i=0; i<count; i++) {
+        for (let i = 0; i < count; i++) {
             let available = pool.filter(c => (cardCounts[c.id] || 0) < 4);
-            if(available.length === 0) break;
+            if (available.length === 0) break;
             let picked = available[Math.floor(Math.random() * available.length)];
             deck.push(picked.id);
             cardCounts[picked.id] = (cardCounts[picked.id] || 0) + 1;
@@ -123,7 +123,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     } else if (lRarity === 2) {
         pickCards(2, 3);
     }
-    
+
     // 残りの枠はすべてブロンズ(レアリティ1)
     pickCards(1, 20 - deck.length);
 
@@ -157,7 +157,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
         color: '#dc2626',
         leaderSkill: {
             name: `${leaderCard.name}の召喚`,
-            desc: `(SP:${leaderCost}) 自身のレーンに「${leaderCard.name}(P:${leaderCard.power})」を1体召喚する。`,
+            desc: `(SP:${leaderCost}) 自分のレーンに「${leaderCard.name}(P:${leaderCard.power})」を1体召喚する。`,
             cost: leaderCost,
             action: 'dungeon_summon_leader'
         },
@@ -177,7 +177,7 @@ export const generateCharacterBossEnemy = (floorNum) => {
     const leaderIds = Object.keys(ENEMY_DECKS).filter(id => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan');
     const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
     const char = CHARACTERS[bossId];
-    
+
     // 30階まではノーマル、40階以降はハード
     const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
     const deck = ENEMY_DECKS[bossId][difficultyMode] || ENEMY_DECKS[bossId].normal || [];
