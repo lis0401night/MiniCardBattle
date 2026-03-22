@@ -1460,12 +1460,26 @@ h2 {
     border-radius: 12px;
     width: 100%;
     max-width: 480px;
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     align-items: flex-end;
     flex-shrink: 0;
     box-sizing: border-box;
-    justify-content: center;
+    /* justify-content: center だと溢れた際に左端にスクロールできないため、
+       flex-start + margin: auto (擬似要素) で中央寄せとスクロールを両立する */
+    justify-content: flex-start;
+}
+
+.hand-area::-webkit-scrollbar {
+    display: none;
+}
+
+.hand-area::before,
+.hand-area::after {
+    content: '';
+    margin: auto;
 }
 
 .hand-card {

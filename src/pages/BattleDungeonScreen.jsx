@@ -105,6 +105,14 @@ export default function BattleDungeonScreen() {
                 {getTitle()}{(dungeonState !== 'resume_select' && dungeonState !== 'select_rental_deck') && ` (${GameState.dungeonWinStreak + 1} 階)`}
             </h2>
 
+            {dungeonState === 'select_rental_deck' && (
+                <div style={{ textAlign: 'center', flexShrink: 0, marginBottom: '10px' }}>
+                    <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '15px', borderRadius: '12px', border: '1px solid #334155', display: 'inline-block', minWidth: '200px' }}>
+                        <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>最高到達階: {GameState.dungeonMaxWinStreak + 1} 階</div>
+                    </div>
+                </div>
+            )}
+
             <div className="dungeon-content" style={{ flex: 1, width: '100%', overflowY: dungeonState === 'reward' ? 'hidden' : 'auto', boxSizing: 'border-box', padding: '10px 0', display: 'flex', flexDirection: 'column' }}>
                 {renderContent()}
             </div>
@@ -276,11 +284,6 @@ function RentalDeckSelect() {
 
     return (
         <div style={{ textAlign: 'center', color: '#fff' }}>
-
-            <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '15px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '20px', display: 'inline-block', minWidth: '200px' }}>
-                <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>最高到達階: {GameState.dungeonMaxWinStreak + 1} 階</div>
-            </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
                 {options.map((opt, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', width: '100%', maxWidth: '400px' }}>
