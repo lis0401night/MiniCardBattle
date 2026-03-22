@@ -315,9 +315,9 @@ export default function GlobalModals() {
               PREMIUM UNLOCK
             </div>
           )}
-          <h2 style={{ color: nameColor, marginTop: showPremiumTag ? '5px' : '0' }}>
+          <h2 className={card.rarity === 4 && !isSkin ? 'rarity-4-text' : ''} style={{ color: nameColor, marginTop: showPremiumTag ? '5px' : '0' }}>
             {styleProps.titleName || card.name}
-            {styleProps.displayType && <span style={{ color: '#3b82f6', marginLeft: '5px' }}>({styleProps.displayType})</span>}
+            {styleProps.displayType && <span className="skip-rarity-text" style={{ color: '#3b82f6', marginLeft: '5px', WebkitBackgroundClip: 'border-box', WebkitTextFillColor: 'initial' }}>({styleProps.displayType})</span>}
           </h2>
 
           <div className="preview-scroll-area">

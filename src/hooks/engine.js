@@ -54,46 +54,58 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             }
             break;
         case 'morph':
-            const eH = owner === 'blue' ? state.enemyHand : state.playerHand;
-            if (eH && eH.length > 0) {
+            const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
+            if (eHandRef && eHandRef.length > 0) {
                 const count = val || 1;
-                // 手札からパワーの上位N枚を選ぶための候補リストを作成
-                // （同値の場合は左手優先 = インデックスが小さい方優先）
-                let candidates = eH.map((card, index) => ({ power: card.power || 0, index })).sort((a, b) => {
-                    if (b.power !== a.power) return b.power - a.power;
-                    return a.index - b.index; // 同値ならインデックス昇順
-                });
+                let processedCount = 0;
+                let processLoop = true;
 
-                // 上位N件を取得
-                const toProcess = candidates.slice(0, count);
+                while(processedCount < count && processLoop) {
+                    processLoop = false;
+                    let maxP = -1;
+                    let maxIndex = -1;
+                    
+                    // パワーの最も高いカード（虚空を除く）を探す。同値は左優先（インデックスが小さい）
+                    for (let i = 0; i < eHandRef.length; i++) {
+                        const targetCard = eHandRef[i];
+                        // このループで新しく追加した虚空は対象外にするための簡易チェック
+                        if (targetCard.name === '虚空' && targetCard.power === 1 && targetCard.isMorphToken) {
+                            continue;
+                        }
 
-                // インデックスを降順（後ろから）にしてスプライス削除できるようにする
-                toProcess.sort((a, b) => b.index - a.index);
+                        const p = targetCard.power || 0;
+                        if (p > maxP) {
+                            maxP = p;
+                            maxIndex = i;
+                        }
+                    }
 
-                // 各カードを削除して、破棄イベントを発行
-                for (let i = 0; i < toProcess.length; i++) {
-                    const idx = toProcess[i].index;
-                    const discarded = eH.splice(idx, 1)[0];
-                    const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
-                    if (eD) eD.push(discarded);
-                    events.push({ type: 'discard', side: oppOwner, card: JSON.parse(JSON.stringify(discarded)) });
-                }
+                    if (maxIndex !== -1) {
+                        // 見つかったカードを削除して手札に追加
+                        const discarded = eHandRef.splice(maxIndex, 1)[0];
+                        const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
+                        if (eD) eD.push(discarded);
+                        events.push({ type: 'discard', side: oppOwner, card: JSON.parse(JSON.stringify(discarded)) });
 
-                // 削除した枚数分、新しく虚空トークンを追加してイベントを発行
-                const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
-                for (let k = 0; k < toProcess.length; k++) {
-                    const voidToken = {
-                        ...voidTpl,
-                        id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${k}`,
-                        filter: voidTpl.filter,
-                        power: voidTpl.power,
-                        currentPower: voidTpl.power,
-                        basePower: voidTpl.power,
-                        skill: voidTpl.skill || 'none',
-                        voiceCategory: voidTpl.voiceCategory || 'undead'
-                    };
-                    eH.push(voidToken);
-                    events.push({ type: 'add_hand', side: oppOwner, card: voidToken, source: 'morph' });
+                        const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+                        const voidToken = {
+                            ...voidTpl,
+                            id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_vp${processedCount}`,
+                            filter: voidTpl.filter,
+                            power: voidTpl.power,
+                            currentPower: voidTpl.power,
+                            basePower: voidTpl.power,
+                            skill: voidTpl.skill || 'none',
+                            voiceCategory: voidTpl.voiceCategory || 'undead',
+                            isToken: true,
+                            isMorphToken: true // シミュレーション中の自爆を防ぐフラグ
+                        };
+                        eHandRef.push(voidToken);
+                        events.push({ type: 'add_hand', side: oppOwner, card: voidToken, source: 'morph' });
+
+                        processedCount++;
+                        processLoop = true;
+                    }
                 }
             }
             break;

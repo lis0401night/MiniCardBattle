@@ -1329,6 +1329,32 @@ h2 {
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
 
+.rarity-4-text {
+    background-image: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) !important;
+    background-size: 300% 300% !important;
+    animation: rainbow-move-text 4s linear infinite !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+}
+
+.rarity-4-border {
+    border: 2px solid transparent !important;
+    background-image: linear-gradient(var(--panel-bg, #1e293b), var(--panel-bg, #1e293b)),
+        linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) !important;
+    background-clip: padding-box, border-box !important;
+    background-origin: padding-box, border-box !important;
+    background-size: 100% 100%, 300% 300% !important;
+    animation: rainbow-move 4s linear infinite !important;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3) !important;
+}
+
+@keyframes rainbow-move-text {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 @keyframes rainbow-move {
     0% {
         background-position: 0% 50%, 0% 50%;

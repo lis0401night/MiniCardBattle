@@ -1016,13 +1016,8 @@ export async function resolveOnPlaySkill(o, l, c) {
 
     // 発動対象スキルのリストを作成
     let skillsToResolve = [];
-    if (Array.isArray(c.skills) && c.skills.length > 0) {
-        // 新しい配列形式 (skills) が存在する場合は、そちらを優先（旧形式の重複実行を防ぐ）
-        skillsToResolve = skillsToResolve.concat(c.skills);
-    } else if (c.skill && c.skill !== 'none') {
-        // 古い単一形式 (skill + skillValue) しかない場合
-        skillsToResolve.push({ id: c.skill, value: c.skillValue });
-    }
+    if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
+    if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
     // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
     skillsToResolve.sort((a, b) => {

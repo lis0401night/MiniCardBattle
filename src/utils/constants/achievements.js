@@ -75,7 +75,7 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 40,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
     },
-    // --- バトルダンジョン到達階層 ---
+    // --- 試練の宮殿到達階層 ---
     {
         id: 'dungeon_reach_5',
         title: '迷宮への入り口',

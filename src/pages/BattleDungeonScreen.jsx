@@ -13,6 +13,7 @@ const getRarityColor = (rarity) => {
         case 1: return '#b45309'; // Bronze
         case 2: return '#94a3b8'; // Silver
         case 3: return '#facc15'; // Gold
+        case 4: return '#c084fc'; // Legend (Purple)
         default: return '#475569';
     }
 };
@@ -176,12 +177,12 @@ function ResumeSelect() {
                 {saveData && saveData.playerConfig && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
                         <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '8px', fontWeight: 'bold' }}>現在のリーダー</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 20px', borderRadius: '12px', border: `2px solid ${getRarityColor(pConf.rarity)}`, minWidth: '250px' }}>
-                            <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${getRarityColor(pConf.rarity)}` }}>
-                                <img src={pConf.icon || pConf.image} alt={pConf.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div className={pConf.rarity === 4 ? 'rarity-4-border' : ''} style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 20px', borderRadius: '12px', border: `2px solid ${getRarityColor(pConf.rarity)}`, minWidth: '250px' }}>
+                            <div className={pConf.rarity === 4 ? 'rarity-4-border' : ''} style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${getRarityColor(pConf.rarity)}` }}>
+                                <img src={pConf.icon || pConf.image} alt={pConf.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                             </div>
                             <div style={{ textAlign: 'left' }}>
-                                <div style={{ fontWeight: 'bold', color: getRarityColor(pConf.rarity), fontSize: '1.1rem' }}>{pConf.name}</div>
+                                <div className={pConf.rarity === 4 ? 'rarity-4-text' : ''} style={{ fontWeight: 'bold', color: getRarityColor(pConf.rarity), fontSize: '1.1rem' }}>{pConf.name}</div>
                                 <div style={{ fontSize: '1.1rem', color: pCurrentHp <= 5 ? '#ef4444' : '#f8fafc', fontWeight: 'bold', marginTop: '2px' }}>HP: {pCurrentHp} / 20</div>
                             </div>
                         </div>
@@ -280,16 +281,16 @@ function RentalDeckSelect() {
                 {options.map((opt, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', width: '100%', maxWidth: '400px' }}>
                         <button
-                            className="btn-banner"
+                            className={`btn-banner ${opt.rarity === 4 && !opt.isCharacterLeader ? 'rarity-4-border' : ''}`}
                             style={{ flex: 1, margin: 0, borderColor: opt.isCharacterLeader ? 'var(--border-color, #334155)' : getRarityColor(opt.rarity), borderWidth: '2px' }}
                             onClick={() => handleSelectPreview(opt)}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%' }}>
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: opt.isCharacterLeader ? '2px solid #334155' : `2px solid ${getRarityColor(opt.rarity)}`, marginRight: '15px', flexShrink: 0 }}>
-                                        <img src={opt.icon} alt={opt.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div className={opt.rarity === 4 && !opt.isCharacterLeader ? 'rarity-4-border' : ''} style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: opt.isCharacterLeader ? '2px solid #334155' : `2px solid ${getRarityColor(opt.rarity)}`, marginRight: '15px', flexShrink: 0 }}>
+                                        <img src={opt.icon} alt={opt.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                                     </div>
-                                    <span className="banner-text" style={{ color: opt.isCharacterLeader ? (opt.color || '#fff') : getRarityColor(opt.rarity), textShadow: '0px 0px 4px rgba(0,0,0,0.8)' }}>
+                                    <span className={`banner-text ${opt.rarity === 4 && !opt.isCharacterLeader ? 'rarity-4-text' : ''}`} style={{ color: opt.isCharacterLeader ? (opt.color || '#fff') : getRarityColor(opt.rarity), textShadow: (opt.rarity === 4 && !opt.isCharacterLeader) ? 'none' : '0px 0px 4px rgba(0,0,0,0.8)' }}>
                                         {opt.name}
                                     </span>
                                 </div>
@@ -303,7 +304,7 @@ function RentalDeckSelect() {
             {previewOpt && (
                 <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex' }} onClick={handleCancel}>
                     <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
-                        <h2 style={{ color: previewOpt.isCharacterLeader ? (previewOpt.color || '#fff') : getRarityColor(previewOpt.rarity), marginBottom: '15px' }}>{previewOpt.name}</h2>
+                        <h2 className={previewOpt.rarity === 4 && !previewOpt.isCharacterLeader ? 'rarity-4-text' : ''} style={{ color: previewOpt.isCharacterLeader ? (previewOpt.color || '#fff') : getRarityColor(previewOpt.rarity), marginBottom: '15px', textShadow: (previewOpt.rarity === 4 && !previewOpt.isCharacterLeader) ? 'none' : 'auto' }}>{previewOpt.name}</h2>
                         <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
                             <div className="card-list-grid-3col" style={{ padding: '10px' }}>
                                 {(() => {
@@ -408,12 +409,12 @@ function OpponentSelect() {
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '8px', fontWeight: 'bold' }}>現在のリーダー</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 20px', borderRadius: '12px', border: `2px solid ${getRarityColor(pConf.rarity)}`, minWidth: '250px' }}>
-                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${getRarityColor(pConf.rarity)}` }}>
-                        <img src={pConf.icon || pConf.image} alt={pConf.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div className={pConf.rarity === 4 ? 'rarity-4-border' : ''} style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 20px', borderRadius: '12px', border: `2px solid ${getRarityColor(pConf.rarity)}`, minWidth: '250px' }}>
+                    <div className={pConf.rarity === 4 ? 'rarity-4-border' : ''} style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${getRarityColor(pConf.rarity)}` }}>
+                        <img src={pConf.icon || pConf.image} alt={pConf.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                     </div>
                     <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontWeight: 'bold', color: getRarityColor(pConf.rarity), fontSize: '1.1rem' }}>{pConf.name}</div>
+                        <div className={pConf.rarity === 4 ? 'rarity-4-text' : ''} style={{ fontWeight: 'bold', color: getRarityColor(pConf.rarity), fontSize: '1.1rem' }}>{pConf.name}</div>
                         <div style={{ fontSize: '1.1rem', color: pCurrentHp <= 5 ? '#ef4444' : '#f8fafc', fontWeight: 'bold', marginTop: '2px' }}>HP: {pCurrentHp} / {pMaxHp}</div>
                     </div>
                 </div>
@@ -430,13 +431,13 @@ function OpponentSelect() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
                 {opps.map((e, i) => (
-                    <div key={i} className="dungeon-opponent-card" onClick={() => handleSelect(i)}
+                    <div key={i} className={`dungeon-opponent-card ${e.rarity === 4 ? 'rarity-4-border' : ''}`} onClick={() => handleSelect(i)}
                         style={{ background: '#1e293b', border: `2px solid ${getRarityColor(e.rarity)}`, borderRadius: '12px', padding: '15px', width: '100%', maxWidth: '400px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${getRarityColor(e.rarity)}`, boxShadow: `0 0 10px ${getRarityColor(e.rarity)}` }}>
-                            <img src={e.image} alt={e.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div className={e.rarity === 4 ? 'rarity-4-border' : ''} style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${getRarityColor(e.rarity)}`, boxShadow: `0 0 10px ${getRarityColor(e.rarity)}` }}>
+                            <img src={e.image} alt={e.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                         </div>
                         <div style={{ textAlign: 'left', flex: 1 }}>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: getRarityColor(e.rarity) }}>{e.name}</div>
+                            <div className={e.rarity === 4 ? 'rarity-4-text' : ''} style={{ fontSize: '1.2rem', fontWeight: 'bold', color: getRarityColor(e.rarity) }}>{e.name}</div>
                             <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginTop: '4px', fontWeight: 'bold' }}>HP: {getEnemyHp(e.rarity)}</div>
                         </div>
                     </div>

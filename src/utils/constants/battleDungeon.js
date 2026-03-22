@@ -3,10 +3,10 @@ import { CHARACTERS } from './characters.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
 import { getDungeonCharacterDialogue } from './battleDungeonCharacter.js';
 
-// 敵候補のカードリストを取得（golemからvampireまで）
+// 敵候補のカードリストを取得（golemからdicejugglerまで、トークン以外）
 export const getDungeonEnemyCandidates = () => {
     const startIndex = CARD_MASTER.findIndex(c => c.id === 'golem');
-    const endIndex = CARD_MASTER.findIndex(c => c.id === 'vampire');
+    const endIndex = CARD_MASTER.findIndex(c => c.id === 'dicejuggler');
     if (startIndex === -1 || endIndex === -1) return [];
     return CARD_MASTER.slice(startIndex, endIndex + 1);
 };
@@ -94,7 +94,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     const leaderCard = validLeaders[Math.floor(Math.random() * validLeaders.length)];
 
     let deck = [leaderCard.id, leaderCard.id, leaderCard.id, leaderCard.id];
-    const poolRarityMax = (leaderCard.rarity === 1) ? 1 : 2;
+    const poolRarityMax = leaderCard.rarity || targetRarity;
     const randomPool = candidates.filter(c => c.rarity <= poolRarityMax);
     
     // リーダーカードは既に4枚入っているので抽選プールから除外

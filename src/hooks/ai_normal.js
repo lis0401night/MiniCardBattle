@@ -121,8 +121,8 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     const getAdvantage = (state) => {
         let myPower = 0; let opPower = 0;
         for (let i = 0; i < 3; i++) {
-            if (state.enemyBoard[i]) myPower += state.enemyBoard[i].currentPower;
-            if (state.playerBoard[i]) opPower += state.playerBoard[i].currentPower;
+            if (state.enemyBoard[i]) myPower += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
+            if (state.playerBoard[i]) opPower += (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
         }
         return myPower - opPower;
     };
@@ -297,12 +297,12 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
             // 無意味な上書き配置を避けるためのペナルティ（空きレーンを最優先させる）
             if (isOverwrite) {
                 // 上書きされる元のカードのパワー分と定数ペナルティ
-                score -= 50 + (currentBoard[l].currentPower * 10);
+                score -= 50 + ((Number(currentBoard[l].currentPower) || Number(currentBoard[l].power) || 0) * 10);
             }
 
             for (let i = 0; i < 3; i++) {
-                if (simState.enemyBoard[i]) score += simState.enemyBoard[i].currentPower * 10;
-                if (simState.playerBoard[i]) score -= simState.playerBoard[i].currentPower * 10;
+                if (simState.enemyBoard[i]) score += (Number(simState.enemyBoard[i].currentPower) || Number(simState.enemyBoard[i].power) || 0) * 10;
+                if (simState.playerBoard[i]) score -= (Number(simState.playerBoard[i].currentPower) || Number(simState.playerBoard[i].power) || 0) * 10;
             }
 
             if (!isNaN(score) && score > bestScore) {
