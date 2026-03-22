@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-import { CHARACTERS } from '../utils/constants/characters.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { GameState } from '../hooks/gameState.js';
 import { goBackFromSelect, showCharDetail } from '../hooks/uiMainCore.js';
 
 export default function CharacterSelectScreen() {
   const [characters, setCharacters] = useState([]);
   const [title, setTitle] = useState("キャラクター選択");
+  const [renderVersion, setRenderVersion] = useState(0);
 
   useEffect(() => {
     // CHARACTERSはオブジェクト形式
@@ -30,9 +31,11 @@ export default function CharacterSelectScreen() {
     // 画面切り替え時に再評価させるためのフックを追加
     const originalInit = window.initSelectScreenReact;
     window.initSelectScreenReact = updateTitle;
+    window.forceUpdateSelectScreen = () => setRenderVersion(v => v + 1);
 
     return () => {
       window.initSelectScreenReact = originalInit;
+      window.forceUpdateSelectScreen = null;
     };
   }, []);
 
@@ -48,16 +51,20 @@ export default function CharacterSelectScreen() {
       
       <div className="select-scroll-area">
         <div className="char-grid" id="char-grid">
-          {characters.map(char => (
-            <div 
-              key={char.id} 
-              className="char-card" 
-              style={{ backgroundImage: `url('${char.image}')` }}
-              onClick={() => handleSelect(char)}
-            >
-              <div className="char-name" style={{ color: char.color }}>{char.name}</div>
-            </div>
-          ))}
+          {characters.map(char => {
+            const isEnemySelection = GameState.appState === 'select_enemy';
+            const bgImage = isEnemySelection ? char.image : getSkinImage(char, GameState.playerSkins[char.id], 'image');
+            return (
+              <div 
+                key={char.id} 
+                className="char-card" 
+                style={{ backgroundImage: `url('${bgImage}')` }}
+                onClick={() => handleSelect(char)}
+              >
+                <div className="char-name" style={{ color: char.color }}>{char.name}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

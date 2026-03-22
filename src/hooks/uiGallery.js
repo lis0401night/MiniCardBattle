@@ -377,6 +377,8 @@ export function openCardPreview(card) {
     if (openCardPreviewHook) return openCardPreviewHook(card);
     executeOpenCardPreview(card);
 }
+// プレビューをどこからでも呼べるようグローバルに登録
+window.openCardPreview = openCardPreview;
 export function executeOpenCardPreview(card) {
     const modal = document.getElementById('card-preview-modal');
     if (!modal) {

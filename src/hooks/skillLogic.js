@@ -6,6 +6,7 @@ import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, 
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
+import { PASSIVE_SKILLS } from '../utils/constants/skills.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -17,9 +18,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -33,14 +34,16 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
         enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
         playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+        playerConfig: GameState.playerConfig,
+        enemyConfig: GameState.enemyConfig
     };
 
     // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
     if (skillId === 'metamorph') {
         // 全マスタカード（トークン含む）からランダムに1枚選択
         const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
-        
+
         // 演出
         playSkillSound(skillId);
         if (cEl) {
@@ -62,7 +65,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         c.skills = randomMaster.skills ? JSON.parse(JSON.stringify(randomMaster.skills)) : [];
         c.choices = randomMaster.choices ? JSON.parse(JSON.stringify(randomMaster.choices)) : [];
         c.rarity = randomMaster.rarity;
-        
+
         // イラストの決定（トークン等の特殊なマッピングを考慮）
         let imgUrl = randomMaster.imgUrl;
         if (!imgUrl) {
@@ -90,6 +93,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     if (skillId === 'choice') {
         const choice = await waitSkillChoice(c.choices, o, c);
         if (choice) {
+            // もしパッシブスキル（機能が場に留まるスキル）を選んだ場合はカード自身に永続付与する
+            if (PASSIVE_SKILLS.includes(choice.id)) {
+                if (!Array.isArray(c.skills)) c.skills = [];
+                c.skills.push({ id: choice.id, value: choice.value || 0 });
+                renderBoard(); // UI反映
+            }
             // 選択されたスキルを再帰的に実行
             await resolveActiveSkillEffect(o, l, c, choice.id, choice.value);
         }
@@ -118,12 +127,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-            
+
             // 手札・墓地をデッキに戻す
-            while(h.length > 0) d.push(h.pop());
-            while(g.length > 0) d.push(g.pop());
+            while (h.length > 0) d.push(h.pop());
+            while (g.length > 0) d.push(g.pop());
         });
-        
+
         // 捨てた状態で一度待機する
         updateDeckDisplay('blue');
         updateDeckDisplay('red');
@@ -136,9 +145,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
 
             // デッキを再シャッフル
             shuffleArray(d);
-            
+
             // 互いに4枚引く
-            for(let i = 0; i < 4; i++) {
+            for (let i = 0; i < 4; i++) {
                 if (d.length > 0) {
                     const card = d.shift();
                     // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）
@@ -147,7 +156,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 }
             }
         });
-        
+
         updateDeckDisplay('blue');
         updateDeckDisplay('red');
         renderHand();
@@ -171,7 +180,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             skills: inheritedSkills
         };
         const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false);
-        
+
         let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
             const targetLane = selectedLanes[i];
@@ -195,17 +204,54 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         }
         await playEvents(events);
 
+    } else if (skillId === 'fate') {
+        const roll = Math.floor(Math.random() * 6) + 1;
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '運命', '#facc15');
+        await sleep(500);
+        
+        if (roll <= 5) {
+            const dmg = roll;
+            if (o === 'blue') {
+                GameState.enemyHP -= dmg;
+                createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
+                const eh = document.getElementById('playmat-enemy');
+                if (eh) eh.classList.add('anim-shake');
+            } else {
+                GameState.playerHP -= dmg;
+                createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
+                document.body.classList.add('anim-shake');
+                setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+            }
+        } else {
+            const dmg = 6;
+            if (o === 'blue') {
+                GameState.playerHP -= dmg;
+                createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
+                document.body.classList.add('anim-shake');
+                setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+            } else {
+                GameState.enemyHP -= dmg;
+                createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
+                const eh = document.getElementById('playmat-enemy');
+                if (eh) eh.classList.add('anim-shake');
+            }
+        }
+        updateHPBar();
+        checkWinCondition();
+        await sleep(400);
+
     } else if (skillId === 'quick') {
         await sleep(400); await executeSingleCombat(o, l);
     } else if (skillId === 'bind') {
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, '拘束', '#facc15');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
         if (eB[l]) {
-            eB[l].stunTurns = 2;
+            const turns = (skillValue || 1) + 1;
+            eB[l].stunTurns = turns;
             const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
-            if (tEl) { 
-                tEl.classList.add('anim-shake'); 
-                createDamagePopup(tEl, '拘束', '#94a3b8'); 
+            if (tEl) {
+                tEl.classList.add('anim-shake');
+                createDamagePopup(tEl, '拘束', '#94a3b8');
             }
             await sleep(500);
             if (tEl) tEl.classList.remove('anim-shake');
@@ -230,7 +276,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         checkWinCondition();
         await sleep(400);
     } else if (skillId === 'standby') {
-        const turns = skillValue || 1;
+        const turns = (skillValue || 1) + 1;
         c.stunTurns = turns;
         if (cEl) {
             cEl.classList.remove('anim-shake');
@@ -243,7 +289,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const maxPow = skillValue || 1;
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
-        
+
         if (validCards.length > 0) {
             let selectedCard = null;
             if (o === 'red') {
@@ -258,7 +304,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     selectedCard = validCards[0];
                 }
             }
-            
+
             if (selectedCard) {
                 // 配置先を選ばせる
                 const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false);
@@ -269,7 +315,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     const actualIdx = discard.indexOf(selectedCard);
                     if (actualIdx !== -1) discard.splice(actualIdx, 1);
                     updateDeckDisplay(o);
-                    
+
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                     if (board[targetLane]) {
                         if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
@@ -279,7 +325,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     board[targetLane].skillTriggered = true; // 召喚効果は発動しない
                     board[targetLane].stunTurns = 0;
                     board[targetLane].stunAppliedThisTurn = false;
-                    
+
                     playSound(SOUNDS.sePlace);
                     renderBoard();
                     await sleep(400);
@@ -287,6 +333,45 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             }
         }
         await sleep(300);
+    } else if (skillId === 'summon') {
+        const val = skillValue || 1;
+        const tokenId = `token_${c.baseId || c.id}`;
+        let tC = CARD_MASTER.find(m => m.id === tokenId);
+        if (!tC) {
+            tC = { id: `token_${Date.now()}`, name: '召喚獣', power: val, rarity: 1, isToken: true };
+        }
+
+        const simulatedToken = {
+            ...tC,
+            power: val,
+            currentPower: val,
+            isToken: true
+        };
+
+        const tLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false);
+        let events = [];
+
+        if (tLanes && tLanes.length > 0) {
+            const targetLane = tLanes[0];
+            const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+            const newToken = {
+                id: `sm_${Date.now()}_${targetLane}`,
+                owner: o,
+                ...tC,
+                isToken: true,
+                power: val,
+                currentPower: val,
+                basePower: val,
+                rarity: c.rarity || 1
+            };
+            board[targetLane] = newToken;
+            events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
+        }
+
+        if (events.length > 0) {
+            await playEvents(events);
+        }
     } else {
         // 標準的なスキルは完全に Engine と Renderer に移譲
         let events = [];
@@ -309,10 +394,10 @@ export async function triggerStartTurnPassive(owner, lane) {
     // invincible のターン処理等のために一度 Engine の全体処理を呼ぶべきだが、
     // 既存構成が「カードごとに順次再生」のため、一旦ここで個別評価し、
     // Renderer に流し込む。
-    
+
     let triggered = false;
     let events = [];
-    
+
     // Engine 内の個別処理を真似て状態更新ログを作成
     let skillsToResolve = [];
     if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });

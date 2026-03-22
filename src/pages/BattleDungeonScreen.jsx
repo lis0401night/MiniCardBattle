@@ -8,6 +8,15 @@ import { showConfirmModal } from '../hooks/uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { setupLongPress } from '../hooks/uiGallery.js';
 
+const getRarityColor = (rarity) => {
+    switch (rarity) {
+        case 1: return '#b45309'; // Bronze
+        case 2: return '#94a3b8'; // Silver
+        case 3: return '#facc15'; // Gold
+        default: return '#475569';
+    }
+};
+
 export default function BattleDungeonScreen() {
     const [dungeonState, setDungeonState] = useState(GameState.dungeonState);
     const [renderTick, setRenderTick] = useState(0);
@@ -24,8 +33,12 @@ export default function BattleDungeonScreen() {
         if (dungeonState === 'resume_select' || dungeonState === 'select_rental_deck') {
             // 最初の画面ではセーブデータを消さずに戻る
             playSound(SOUNDS.seClick);
-            GameState.gameMode = 'title';
-            switchScreen('screen-mode-select');
+            GameState.gameMode = null;
+            if (window.showDungeonMenu) {
+                window.showDungeonMenu();
+            } else {
+                switchScreen('screen-dungeon-menu');
+            }
         } else {
             // 進行中はリタイア確認
             showConfirmModal("試練の宮殿をリタイアしますか？\n（現在の進行状況は失われます）", () => {
@@ -56,7 +69,7 @@ export default function BattleDungeonScreen() {
     const getTitle = () => {
         switch (dungeonState) {
             case 'resume_select': return '試練の宮殿 再開';
-            case 'select_rental_deck': return 'レンタルデッキ選択';
+            case 'select_rental_deck': return 'リーダー選択';
             case 'select_opponent': return '対戦相手選択';
             case 'reward': return '報酬選択';
             default: return '試練の宮殿';
@@ -81,16 +94,21 @@ export default function BattleDungeonScreen() {
     };
 
     return (
-        <div id="screen-battle-dungeon" className="screen active" style={{ overflowY: 'auto' }}>
-            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>
-                {getTitle()}{dungeonState !== 'resume_select' && ` (${GameState.dungeonWinStreak + 1} 階)`}
+        <div id="screen-battle-dungeon" className="screen active" style={{
+            display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden',
+            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('/assets/backgrounds/background_dungeon.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+        }}>
+            <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center', flexShrink: 0 }}>
+                {getTitle()}{(dungeonState !== 'resume_select' && dungeonState !== 'select_rental_deck') && ` (${GameState.dungeonWinStreak + 1} 階)`}
             </h2>
 
-            <div className="dungeon-content" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 0' }}>
+            <div className="dungeon-content" style={{ flex: 1, width: '100%', overflowY: 'auto', boxSizing: 'border-box', padding: '10px 0' }}>
                 {renderContent()}
             </div>
 
-            <div style={{ marginTop: '30px', width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <div style={{ padding: '15px 0 20px 0', width: '100%', display: 'flex', justifyContent: 'center', flexShrink: 0, background: 'transparent' }}>
                 {renderBottomButton()}
             </div>
         </div>
@@ -101,20 +119,26 @@ export default function BattleDungeonScreen() {
  * 再開・やり直し選択画面
  */
 function ResumeSelect() {
+    const saveData = useMemo(() => {
+        const json = localStorage.getItem('mini_card_battle_dungeon_save');
+        if (json) return JSON.parse(json);
+        return null;
+    }, []);
+    const pConf = saveData?.playerConfig || { name: 'Player', rarity: 4, icon: '' };
+    const pCurrentHp = saveData?.playerHP !== undefined ? saveData.playerHP : 20;
+
     const handleResume = () => {
         playSound(SOUNDS.seClick);
         loadDungeonProgress();
     };
 
     const handleRestart = () => {
-        showConfirmModal("中断データを消去して、最初からやり直します。よろしいですか？", () => {
+        showConfirmModal("中断データを消去して、最初からやり直します。よろしいですか？\n（到達階層に応じた試練ポイントは獲得できます）", () => {
             playSound(SOUNDS.seClick);
-            localStorage.removeItem('mini_card_battle_dungeon_save');
-            GameState.dungeonWinStreak = 0;
-            GameState.dungeonCards = [];
-            GameState.dungeonOpponents = [];
-            GameState.dungeonState = 'select_rental_deck';
-            if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
+            if (saveData && typeof saveData.winStreak !== 'undefined') {
+                GameState.dungeonWinStreak = saveData.winStreak;
+            }
+            retireDungeon();
         });
     };
 
@@ -123,6 +147,7 @@ function ResumeSelect() {
         const json = localStorage.getItem('mini_card_battle_dungeon_save');
         if (json) {
             const data = JSON.parse(json);
+            if (data.playerConfig) GameState.playerConfig = data.playerConfig;
             if (window.showEnemyDeckModal) {
                 window.showEnemyDeckModal(data.cards, "所持カード確認");
             }
@@ -134,6 +159,7 @@ function ResumeSelect() {
         const json = localStorage.getItem('mini_card_battle_dungeon_save');
         if (json) {
             const data = JSON.parse(json);
+            if (data.playerConfig) GameState.playerConfig = data.playerConfig;
             if (window.showEnemyDeckModal) {
                 const deck = data.deck || data.cards.slice(0, 20); // 未保存対処
                 window.showEnemyDeckModal(deck, "デッキ確認");
@@ -144,8 +170,23 @@ function ResumeSelect() {
     return (
         <div style={{ textAlign: 'center', color: '#fff', padding: '20px' }}>
             <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '20px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '30px' }}>
-                <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>到達階: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{GameState.dungeonWinStreak + 1} 階</span></div>
+                <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>到達階: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{(saveData?.winStreak || 0) + 1} 階</span></div>
                 <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '15px' }}>最高到達階: {GameState.dungeonMaxWinStreak + 1} 階</div>
+
+                {saveData && saveData.playerConfig && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '8px', fontWeight: 'bold' }}>現在のリーダー</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 20px', borderRadius: '12px', border: `2px solid ${getRarityColor(pConf.rarity)}`, minWidth: '250px' }}>
+                            <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${getRarityColor(pConf.rarity)}` }}>
+                                <img src={pConf.icon || pConf.image} alt={pConf.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                            <div style={{ textAlign: 'left' }}>
+                                <div style={{ fontWeight: 'bold', color: getRarityColor(pConf.rarity), fontSize: '1.1rem' }}>{pConf.name}</div>
+                                <div style={{ fontSize: '1.1rem', color: pCurrentHp <= 5 ? '#ef4444' : '#f8fafc', fontWeight: 'bold', marginTop: '2px' }}>HP: {pCurrentHp} / 20</div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                     <button className="btn" style={{ fontSize: '0.8rem', padding: '10px 12px', width: 'auto', margin: 0, background: '#475569' }} onClick={handleCheckPocket}>所持カード確認</button>
@@ -213,6 +254,7 @@ function DungeonMiniCard({ id, onClick, isSelected, count, showCount = true, sca
 }
 
 function RentalDeckSelect() {
+    // 候補は初回描画時にランダムで3体生成される
     const options = useMemo(() => getRentalDeckOptions(), []);
     const [previewOpt, setPreviewOpt] = useState(null);
 
@@ -233,20 +275,21 @@ function RentalDeckSelect() {
 
     return (
         <div style={{ textAlign: 'center', color: '#fff' }}>
-            <h3 style={{ marginBottom: '20px' }}>レンタルするデッキを1つ選んでください</h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
                 {options.map((opt, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', width: '100%', maxWidth: '400px' }}>
                         <button
                             className="btn-banner"
-                            style={{ flex: 1, margin: 0, borderColor: '#475569' }}
+                            style={{ flex: 1, margin: 0, borderColor: opt.isCharacterLeader ? 'var(--border-color, #334155)' : getRarityColor(opt.rarity), borderWidth: '2px' }}
                             onClick={() => handleSelectPreview(opt)}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%' }}>
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <img src={opt.icon} className="banner-icon" alt={opt.name} />
-                                    <span className="banner-text" style={{ color: opt.color || '#f8fafc', textShadow: '0px 0px 4px rgba(0,0,0,0.8)', marginRight: '10px' }}>
+                                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: opt.isCharacterLeader ? '2px solid #334155' : `2px solid ${getRarityColor(opt.rarity)}`, marginRight: '15px', flexShrink: 0 }}>
+                                        <img src={opt.icon} alt={opt.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                    <span className="banner-text" style={{ color: opt.isCharacterLeader ? (opt.color || '#fff') : getRarityColor(opt.rarity), textShadow: '0px 0px 4px rgba(0,0,0,0.8)' }}>
                                         {opt.name}
                                     </span>
                                 </div>
@@ -260,7 +303,7 @@ function RentalDeckSelect() {
             {previewOpt && (
                 <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex' }} onClick={handleCancel}>
                     <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
-                        <h2 style={{ color: '#facc15', marginBottom: '15px' }}>{previewOpt.name} [レンタル]</h2>
+                        <h2 style={{ color: previewOpt.isCharacterLeader ? (previewOpt.color || '#fff') : getRarityColor(previewOpt.rarity), marginBottom: '15px' }}>{previewOpt.name}</h2>
                         <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
                             <div className="card-list-grid-3col" style={{ padding: '10px' }}>
                                 {(() => {
@@ -294,9 +337,28 @@ function RentalDeckSelect() {
                                 })()}
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '20px' }}>
-                            <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={handleCancel}>戻る</button>
-                            <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleConfirm}>決定</button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '20px' }}>
+                            <button
+                                className="btn"
+                                style={{ background: '#475569', margin: 0, padding: '8px', fontSize: '1rem' }}
+                                onClick={() => {
+                                    playSound(SOUNDS.seClick);
+                                    if (window.showSkillConfirmModalReact && previewOpt.originalData && previewOpt.originalData.leaderSkill) {
+                                        window.showSkillConfirmModalReact({
+                                            skill: previewOpt.originalData.leaderSkill,
+                                            statusText: '',
+                                            color: '#94a3b8',
+                                            canExecute: false
+                                        });
+                                    }
+                                }}
+                            >
+                                リーダースキル
+                            </button>
+                            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={handleCancel}>戻る</button>
+                                <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleConfirm}>決定</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -329,10 +391,32 @@ function OpponentSelect() {
         }
     };
 
+    const pConf = GameState.playerConfig || { name: 'Player', rarity: 4, icon: '' };
+    const pCurrentHp = GameState.dungeonPlayerHP !== undefined ? GameState.dungeonPlayerHP : 20;
+    const pMaxHp = 20;
+
+    const getEnemyHp = (r) => {
+        const rarity = r || 4;
+        return rarity === 1 ? 10 : (rarity === 2 ? 15 : 20);
+    };
+
     return (
         <div style={{ color: '#fff', textAlign: 'center' }}>
             <div style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 'bold', border: '1px solid rgba(250, 204, 21, 0.3)' }}>
                 現在 {GameState.dungeonWinStreak + 1} 階
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '8px', fontWeight: 'bold' }}>現在のリーダー</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(15, 23, 42, 0.8)', padding: '10px 20px', borderRadius: '12px', border: `2px solid ${getRarityColor(pConf.rarity)}`, minWidth: '250px' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${getRarityColor(pConf.rarity)}` }}>
+                        <img src={pConf.icon || pConf.image} alt={pConf.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontWeight: 'bold', color: getRarityColor(pConf.rarity), fontSize: '1.1rem' }}>{pConf.name}</div>
+                        <div style={{ fontSize: '1.1rem', color: pCurrentHp <= 5 ? '#ef4444' : '#f8fafc', fontWeight: 'bold', marginTop: '2px' }}>HP: {pCurrentHp} / {pMaxHp}</div>
+                    </div>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
@@ -347,12 +431,13 @@ function OpponentSelect() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
                 {opps.map((e, i) => (
                     <div key={i} className="dungeon-opponent-card" onClick={() => handleSelect(i)}
-                        style={{ background: '#1e293b', border: '2px solid #334155', borderRadius: '12px', padding: '15px', width: '100%', maxWidth: '400px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #ef4444', boxShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
+                        style={{ background: '#1e293b', border: `2px solid ${getRarityColor(e.rarity)}`, borderRadius: '12px', padding: '15px', width: '100%', maxWidth: '400px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: `3px solid ${getRarityColor(e.rarity)}`, boxShadow: `0 0 10px ${getRarityColor(e.rarity)}` }}>
                             <img src={e.image} alt={e.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div style={{ textAlign: 'left', flex: 1 }}>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f8fafc' }}>{e.name}</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: getRarityColor(e.rarity) }}>{e.name}</div>
+                            <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginTop: '4px', fontWeight: 'bold' }}>HP: {getEnemyHp(e.rarity)}</div>
                         </div>
                     </div>
                 ))}

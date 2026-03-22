@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { playSound, stopAllBGM, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showEventMenu, showDefenseMenu, showDefenseBattleList, showDefenseRules, startDefenseRegistration, showExchangeScreen } from '../hooks/uiMainCore.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+import { showPointAcquisitionModal } from '../hooks/uiModals.js';
 
 export default function DefenseMenuScreen() {
   const [hasRegistered, setHasRegistered] = useState(false);
@@ -42,12 +42,18 @@ export default function DefenseMenuScreen() {
 
               const lastWins = parseInt(localStorage.getItem('mini_card_battle_defense_wins')) || 0;
               const newWinsCount = wins - lastWins;
+              const newPoints = finalPts - localPts; // 今回増えたポイント
 
-              if (newWinsCount > 0 && showAlertModal) {
-                  showAlertModal(
-                      `防衛に ${newWinsCount} 回新しく成功しました！\\n現在の防衛戦ポイント: ${finalPts} Pt`,
-                      () => { }
-                  );
+              if (newWinsCount > 0 && showPointAcquisitionModal) {
+                  showPointAcquisitionModal({
+                      title: '防衛成功！',
+                      message: `防衛に ${newWinsCount}回 新しく成功しました！`,
+                      points: newPoints > 0 ? newPoints : 0,
+                      totalPoints: finalPts,
+                      color: '#10b981',      // エメラルドグリーン系
+                      darkColor: '#059669',
+                      onClose: () => {}
+                  });
               }
               localStorage.setItem('mini_card_battle_defense_points', finalPts);
               localStorage.setItem('mini_card_battle_defense_total_points', finalTotalPts);

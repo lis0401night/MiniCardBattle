@@ -75,6 +75,39 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 40,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
     },
+    // --- バトルダンジョン到達階層 ---
+    {
+        id: 'dungeon_reach_5',
+        title: '迷宮への入り口',
+        description: '試練の宮殿で5Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 5,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_10',
+        title: '試練の始まり',
+        description: '試練の宮殿で10Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 10,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_20',
+        title: '深淵なる探索者',
+        description: '試練の宮殿で20Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 20,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_30',
+        title: '宮殿の支配者',
+        description: '試練の宮殿で30Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 30,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
     // --- ストーリークリア ---
     {
         id: 'story_android',
@@ -206,7 +239,8 @@ export const achievementData = {
         leaderUsage: {}, // leaderId: count
         storyClears: {}, // leaderId: count
         storyClearsHard: {}, // leaderId: count
-        freeBattleWins: 0
+        freeBattleWins: 0,
+        maxDungeonFloor: 0
     }
 };
 
@@ -226,6 +260,7 @@ export function loadAchievements() {
             if (!achievementData.stats.storyClearsHard) achievementData.stats.storyClearsHard = {};
             if (!achievementData.stats.eventClear) achievementData.stats.eventClear = {};
             if (typeof achievementData.stats.freeBattleWins !== 'number') achievementData.stats.freeBattleWins = 0;
+            if (typeof achievementData.stats.maxDungeonFloor !== 'number') achievementData.stats.maxDungeonFloor = 0;
         } catch (e) {
             console.error("Failed to parse achievements data", e);
         }
@@ -255,6 +290,11 @@ export function incrementStat(type, key = null, amount = 1) {
     } else if (type === 'freeBattleWins') {
         achievementData.stats.freeBattleWins += amount;
         checkFreeBattleAchievements();
+    } else if (type === 'maxDungeonFloor') {
+        if (amount > (achievementData.stats.maxDungeonFloor || 0)) {
+            achievementData.stats.maxDungeonFloor = amount;
+            checkDungeonAchievements();
+        }
     }
     saveAchievements();
 }
@@ -308,6 +348,14 @@ function checkFreeBattleAchievements() {
     const wins = achievementData.stats.freeBattleWins;
     ACHIEVEMENT_MASTER.filter(a => a.type === 'free_battle_win').forEach(ach => {
         updateAchievement(ach.id, wins, ach.targetValue);
+    });
+}
+
+// 試練の宮殿到達階層のチェック
+function checkDungeonAchievements() {
+    const floor = achievementData.stats.maxDungeonFloor || 0;
+    ACHIEVEMENT_MASTER.filter(a => a.type === 'dungeon_reach').forEach(ach => {
+        updateAchievement(ach.id, floor, ach.targetValue);
     });
 }
 
@@ -381,6 +429,8 @@ export function claimAchievementReward(id) {
     ach.isRewarded = true;
     saveAchievements();
     return true;
+    return true;
 }
 
 window.loadAchievements = loadAchievements;
+window.incrementStat = incrementStat;

@@ -45,6 +45,15 @@ export async function playEvents(events) {
                 }
                 break;
             }
+            case 'immune_block': {
+                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                if (cEl) {
+                    createDamagePopup(cEl, '無効', '#94a3b8');
+                }
+                playSound(SOUNDS.seSkill);
+                await sleep(200);
+                break;
+            }
             case 'power_change': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 if (board[ev.lane]) board[ev.lane].currentPower += ev.amount; // 増減そのまま
@@ -112,17 +121,34 @@ export async function playEvents(events) {
                 break;
             }
             case 'heal_player': {
-                if (ev.side === 'blue') GameState.playerHP += ev.amount;
-                else GameState.enemyHP += ev.amount;
+                let actualHeal = 0;
+                if (ev.side === 'blue') {
+                    const before = GameState.playerHP;
+                    GameState.playerHP = Math.min(GameState.playerMaxHP, GameState.playerHP + ev.amount);
+                    actualHeal = GameState.playerHP - before;
+                } else {
+                    const before = GameState.enemyHP;
+                    GameState.enemyHP = Math.min(GameState.enemyMaxHP, GameState.enemyHP + ev.amount);
+                    actualHeal = GameState.enemyHP - before;
+                }
 
-                const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
-                if (hpFill) createDamagePopup(hpFill, `+${ev.amount}`, '#4ade80');
+                if (actualHeal > 0) {
+                    const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
+                    if (hpFill) createDamagePopup(hpFill, `+${actualHeal}`, '#4ade80');
+                }
                 updateHPBar();
                 playSound(SOUNDS.seSkill);
                 await sleep(300);
                 break;
             }
             case 'charge_sp': {
+                if (ev.side === 'blue') {
+                    const pMaxSP = GameState.playerConfig?.leaderSkill?.cost || 5;
+                    GameState.playerSP = Math.min(pMaxSP, Math.max(0, GameState.playerSP + ev.amount));
+                } else {
+                    const eMaxSP = GameState.enemyConfig?.leaderSkill?.cost || 5;
+                    GameState.enemySP = Math.min(eMaxSP, Math.max(0, GameState.enemySP + ev.amount));
+                }
                 updateSPOrbs(ev.side);
                 playSound(SOUNDS.seSkill);
                 await sleep(200);
@@ -226,7 +252,10 @@ export async function playEvents(events) {
                         const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
                         if (cell) {
                             const cardEl = cell.querySelector('.card');
-                            if (cardEl) cardEl.classList.add('anim-card-destroy');
+                            if (cardEl) {
+                                cardEl.classList.add('anim-shake');
+                                cardEl.classList.add('anim-card-destroy');
+                            }
                         }
                         
                         if (deadCard.voiceCategory && !playedVoices.has(deadCard.voiceCategory)) {
@@ -260,7 +289,10 @@ export async function playEvents(events) {
                         const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
                         if (cell) {
                              const cardEl = cell.querySelector('.card');
-                             if (cardEl) cardEl.classList.remove('anim-card-destroy');
+                             if (cardEl) {
+                                cardEl.classList.remove('anim-shake');
+                                cardEl.classList.remove('anim-card-destroy');
+                             }
                         }
                     }
                 }
@@ -270,4 +302,7 @@ export async function playEvents(events) {
             }
         }
     }
+    
+    // 全てのアニメーションが完了するのを確実に待つためのバッファ
+    await sleep(600);
 }

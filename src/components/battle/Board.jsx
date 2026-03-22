@@ -71,7 +71,20 @@ export default function Board({
                     const selectedCard = GameState.selectedCardIndex !== null && GameState.playerHand ? GameState.playerHand[GameState.selectedCardIndex] : null;
                     
                     if (GameState.isPlacementMode) {
-                        isHighlight = !GameState.placementSelectedLanes?.includes(lane);
+                        const tCard = GameState.placementToken;
+                        if (GameState.placementSelectedLanes?.includes(lane)) {
+                            isHighlight = false;
+                        } else if (tCard) {
+                            if (hasSkill && hasSkill(tCard, 'legendary')) {
+                                isHighlight = (lane === 1);
+                            } else if (hasSkill && hasSkill(tCard, 'takeover')) {
+                                isHighlight = (card !== null);
+                            } else {
+                                isHighlight = true;
+                            }
+                        } else {
+                            isHighlight = true;
+                        }
                     } else if (selectedCard) {
                         if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
                             isHighlight = (lane === 1);

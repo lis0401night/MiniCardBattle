@@ -96,9 +96,13 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             const spVal = val || 2;
             [l - 1, l, l + 1].forEach(j => {
                 if (j >= 0 && j < 3 && eB[j]) {
-                    let d = spVal;
-                    eB[j].currentPower -= d;
-                    events.push({ type: 'damage_card', side: oppOwner, lane: j, amount: d, source: 'spread' });
+                    if (!hasSkill(eB[j], 'immune')) {
+                        let d = spVal;
+                        eB[j].currentPower -= d;
+                        events.push({ type: 'damage_card', side: oppOwner, lane: j, amount: d, source: 'spread' });
+                    } else {
+                        events.push({ type: 'immune_block', side: oppOwner, lane: j, source: 'spread' });
+                    }
                 }
             });
             break;
@@ -113,9 +117,13 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
                 }
             }
             if (maxL !== -1) {
-                let d = snVal;
-                eB[maxL].currentPower -= d;
-                events.push({ type: 'damage_card', side: oppOwner, lane: maxL, amount: d, source: 'snipe' });
+                if (!hasSkill(eB[maxL], 'immune')) {
+                    let d = snVal;
+                    eB[maxL].currentPower -= d;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: maxL, amount: d, source: 'snipe' });
+                } else {
+                    events.push({ type: 'immune_block', side: oppOwner, lane: maxL, source: 'snipe' });
+                }
             }
             break;
         case 'berserk':
@@ -123,15 +131,19 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             const bAdj = l === 1 ? [0, 2] : [1];
             bAdj.forEach(j => {
                 if (b[j]) {
-                    b[j].currentPower -= bVal;
-                    events.push({ type: 'damage_card', side: owner, lane: j, amount: bVal, source: 'berserk' });
+                    if (!hasSkill(b[j], 'immune')) {
+                        b[j].currentPower -= bVal;
+                        events.push({ type: 'damage_card', side: owner, lane: j, amount: bVal, source: 'berserk' });
+                    } else {
+                        events.push({ type: 'immune_block', side: owner, lane: j, source: 'berserk' });
+                    }
                 }
             });
             break;
         case 'heal':
             const hAmt = val || 3;
-            if (owner === 'blue') state.playerHP = Math.min(20, state.playerHP + hAmt);
-            else state.enemyHP = Math.min(20, state.enemyHP + hAmt);
+            if (owner === 'blue') state.playerHP = Math.min(state.playerMaxHP, state.playerHP + hAmt);
+            else state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + hAmt);
             events.push({ type: 'heal_player', side: owner, amount: hAmt });
             break;
         case 'sacrifice':
@@ -142,8 +154,10 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             break;
         case 'charge':
             const chgAmt = val || 2;
-            if (owner === 'blue') state.playerSP = Math.max(0, state.playerSP + chgAmt);
-            else state.enemySP = Math.max(0, state.enemySP + chgAmt);
+            const pMaxSP = state.playerConfig?.leaderSkill?.cost || 5;
+            const eMaxSP = state.enemyConfig?.leaderSkill?.cost || 5;
+            if (owner === 'blue') state.playerSP = Math.min(pMaxSP, Math.max(0, state.playerSP + chgAmt));
+            else state.enemySP = Math.min(eMaxSP, Math.max(0, state.enemySP + chgAmt));
             events.push({ type: 'charge_sp', side: owner, amount: chgAmt });
             break;
         case 'quick':
@@ -247,8 +261,12 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         events.push({ type: 'leader_skill', skill: action, side: owner });
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {
-                eBoard[i].currentPower -= 4;
-                events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 4, source: 'annihilation' });
+                if (!hasSkill(eBoard[i], 'immune')) {
+                    eBoard[i].currentPower -= 4;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 4, source: 'annihilation' });
+                } else {
+                    events.push({ type: 'immune_block', side: oppOwner, lane: i, source: 'annihilation' });
+                }
             }
         }
     } else if (action === 'targeted_destruction') {
@@ -346,10 +364,10 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         const d = 2;
         if (isBlue) {
             state.enemyHP -= d;
-            state.playerHP = Math.min(20, state.playerHP + d);
+            state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
         } else {
             state.playerHP -= d;
-            state.enemyHP = Math.min(20, state.enemyHP + d);
+            state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + d);
         }
         events.push({ type: 'damage_player', side: oppOwner, amount: d, source: 'dark_ritual' });
         events.push({ type: 'heal_player', side: owner, amount: d, source: 'dark_ritual' });
@@ -367,8 +385,12 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
         }
         if (maxL !== -1) {
-            eBoard[maxL].currentPower = 0;
-            events.push({ type: 'deadly', side: oppOwner, lane: maxL, source: 'targeted_destruction' });
+            if (!hasSkill(eBoard[maxL], 'immune')) {
+                eBoard[maxL].currentPower = 0;
+                events.push({ type: 'deadly', side: oppOwner, lane: maxL, source: 'targeted_destruction' });
+            } else {
+                events.push({ type: 'immune_block', side: oppOwner, lane: maxL, source: 'targeted_destruction' });
+            }
         }
     }
 
@@ -397,6 +419,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
  */
 export function calculateCombatPhase(state, attackerSide, events = []) {
     for (let l = 0; l < 3; l++) {
+        if (state.playerHP <= 0 || state.enemyHP <= 0) break;
         applySingleCombat(state, attackerSide, l, events);
     }
     return events;
@@ -413,50 +436,66 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     const defSide = attackerSide === 'blue' ? 'red' : 'blue';
 
     const aC = atkBoard[l];
-    if (!aC || hasSkill(aC, 'defender')) return events;
+    if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0) return events;
 
     let dLane = l;
-    // 守護チェック（味方がいる場合のみ身代わりになる）
     if (defBoard[l]) {
         let dg = (l === 1) ? (hasSkill(defBoard[0], 'guardian') ? 0 : (hasSkill(defBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(defBoard[1], 'guardian') ? 1 : null) : (hasSkill(defBoard[1], 'guardian') ? 1 : null));
         if (dg !== null) dLane = dg;
     }
 
+    let aLane = l;
+    if (atkBoard[l]) {
+        let ag = (l === 1) ? (hasSkill(atkBoard[0], 'guardian') ? 0 : (hasSkill(atkBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(atkBoard[1], 'guardian') ? 1 : null) : (hasSkill(atkBoard[1], 'guardian') ? 1 : null));
+        if (ag !== null) aLane = ag;
+    }
+
     const dC = defBoard[dLane];
+    const originalTarget = defBoard[l];
     let aP = aC.currentPower;
+    
+    // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）
+    const aC_defend = atkBoard[aLane];
 
     events.push({ type: 'attack', attackerSide, lane: l, targetLane: dLane });
 
     if (dC) {
-        let dP = dC.currentPower;
+        let dP = originalTarget ? originalTarget.currentPower : 0;
         let dmgToDef = aP;
         let dmgToAtk = dP;
 
         if (hasSkill(dC, 'sturdy')) dmgToDef = Math.floor(dmgToDef / 2);
-        if (hasSkill(aC, 'sturdy')) dmgToAtk = Math.floor(dmgToAtk / 2);
+        if (hasSkill(aC_defend, 'sturdy')) dmgToAtk = Math.floor(dmgToAtk / 2);
         if (hasSkill(dC, 'invincible')) dmgToDef = 0;
-        if (hasSkill(aC, 'invincible')) dmgToAtk = 0;
+        if (hasSkill(aC_defend, 'invincible')) dmgToAtk = 0;
 
         // 連撃（ダブルストライク）: 与えるダメージ2倍
         if (hasSkill(aC, 'double_strike')) dmgToDef *= 2;
-        if (hasSkill(dC, 'double_strike')) dmgToAtk *= 2;
+        if (originalTarget && hasSkill(originalTarget, 'double_strike')) dmgToAtk *= 2;
 
-        const originalTarget = defBoard[l];
         const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
 
         if (dmgToDef > 0) events.push({ type: 'damage_card', side: defSide, lane: dLane, amount: dmgToDef });
-        if (!isOriginalTargetDefender && dmgToAtk > 0) events.push({ type: 'damage_card', side: attackerSide, lane: l, amount: dmgToAtk });
+        if (!isOriginalTargetDefender && dmgToAtk > 0) events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
 
         dC.currentPower -= dmgToDef;
-        if (!isOriginalTargetDefender) aC.currentPower -= dmgToAtk;
+        if (!isOriginalTargetDefender) aC_defend.currentPower -= dmgToAtk;
 
         if (dmgToDef > 0 && hasSkill(aC, 'deadly')) {
-            dC.currentPower = 0;
-            events.push({ type: 'deadly', side: defSide, lane: dLane });
+            if (!hasSkill(dC, 'immune')) {
+                dC.currentPower = 0;
+                events.push({ type: 'deadly', side: defSide, lane: dLane });
+            } else {
+                events.push({ type: 'immune_block', side: defSide, lane: dLane, source: 'deadly' });
+            }
         }
-        if (dmgToAtk > 0 && hasSkill(dC, 'deadly')) {
-            aC.currentPower = 0;
-            events.push({ type: 'deadly', side: attackerSide, lane: l });
+        if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'deadly')) {
+            if (!hasSkill(aC_defend, 'immune')) {
+                aC_defend.currentPower = 0;
+                events.push({ type: 'deadly', side: attackerSide, lane: aLane });
+            } else {
+                events.push({ type: 'immune_block', side: attackerSide, lane: aLane, source: 'deadly' });
+            }
         }
 
         if (dC.currentPower <= 0) {
@@ -469,7 +508,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         // 魂縛
-        let aD = aC.currentPower <= 0, dD = dC.currentPower <= 0;
+        let aD = aC_defend.currentPower <= 0, dD = dC.currentPower <= 0;
         if (dD && !aD && hasSkill(aC, 'soul_bind')) {
             const val = getSkillValue(aC, 'soul_bind') || 2;
             aC.currentPower += val;
@@ -494,6 +533,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     while (anyDestroyed) {
         anyDestroyed = false;
         let destroyedThisLoop = [];
+        let tokensToSummonThisLoop = [];
         [state.playerBoard, state.enemyBoard].forEach((b, bIdx) => {
             const boardSide = bIdx === 0 ? 'blue' : 'red';
             const oppSide = bIdx === 0 ? 'red' : 'blue';
@@ -504,12 +544,34 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                     b[i] = null;
                     anyDestroyed = true;
 
+                    if (hasSkill(deadCard, 'split')) {
+                        const val = getSkillValue(deadCard, 'split') || 2;
+                        const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
+                        tokensToSummonThisLoop.push({
+                            side: boardSide,
+                            lane: i,
+                            card: {
+                                id: `sp_${Date.now()}_${i}`,
+                                owner: boardSide,
+                                ...tL,
+                                imgUrl: 'assets/cards/card_legs.jpg',
+                                power: val,
+                                currentPower: val,
+                                rarity: tL.rarity || 1
+                            }
+                        });
+                    }
+
                     if (hasSkill(deadCard, 'explode')) {
-                        const dmg = getSkillValue(deadCard, 'explode') || 2;
+                        const dmg = getSkillValue(deadCard, 'explode') || 3;
                         [i - 1, i + 1].forEach(adj => {
                             if (adj >= 0 && adj < 3 && b[adj]) {
-                                b[adj].currentPower -= dmg;
-                                events.push({ type: 'damage_card', side: boardSide, lane: adj, amount: dmg, source: 'explode' });
+                                if (!hasSkill(b[adj], 'immune')) {
+                                    b[adj].currentPower -= dmg;
+                                    events.push({ type: 'damage_card', side: boardSide, lane: adj, amount: dmg, source: 'explode' });
+                                } else {
+                                    events.push({ type: 'immune_block', side: boardSide, lane: adj, source: 'explode' });
+                                }
                             }
                         });
                     }
@@ -520,6 +582,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         if (destroyedThisLoop.length > 0) {
             events.push({ type: 'destroy_cards', targets: destroyedThisLoop });
         }
+        tokensToSummonThisLoop.forEach(t => {
+            const board = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
+            if (!board[t.lane]) {
+                board[t.lane] = t.card;
+                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: t.card, source: 'split' });
+            }
+        });
     }
 
     return events;
@@ -535,6 +604,7 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
     while (anyDestroyed) {
         anyDestroyed = false;
         let destroyedThisLoop = [];
+        let tokensToSummonThisLoop = [];
         [state.playerBoard, state.enemyBoard].forEach((b, bIdx) => {
             const boardSide = bIdx === 0 ? 'blue' : 'red';
             const oppSide = bIdx === 0 ? 'red' : 'blue';
@@ -544,18 +614,52 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
                     destroyedThisLoop.push({ side: boardSide, lane: i, card: deadCard });
                     b[i] = null;
                     anyDestroyed = true;
+
+                    if (hasSkill(deadCard, 'split')) {
+                        const val = getSkillValue(deadCard, 'split') || 2;
+                        const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
+                        tokensToSummonThisLoop.push({
+                            side: boardSide,
+                            lane: i,
+                            card: {
+                                id: `sp_${Date.now()}_${i}`,
+                                owner: boardSide,
+                                ...tL,
+                                imgUrl: 'assets/cards/card_legs.jpg',
+                                power: val,
+                                currentPower: val,
+                                rarity: tL.rarity || 1
+                            }
+                        });
+                    }
+
                     // 誘爆チェック
                     if (hasSkill(deadCard, 'explode')) {
                         const val = getSkillValue(deadCard, 'explode') || 3;
                         const adj = i === 1 ? [0, 2] : [1];
                         adj.forEach(j => {
                             if (b[j]) {
-                                b[j].currentPower -= val;
-                                events.push({ type: 'damage_card', side: boardSide, lane: j, amount: val, source: 'explode' });
+                                if (!hasSkill(b[j], 'immune')) {
+                                    b[j].currentPower -= val;
+                                    events.push({ type: 'damage_card', side: boardSide, lane: j, amount: val, source: 'explode' });
+                                } else {
+                                    events.push({ type: 'immune_block', side: boardSide, lane: j, source: 'explode' });
+                                }
                             }
                         });
                     }
                 }
+            }
+        });
+        
+        if (destroyedThisLoop.length > 0) {
+            events.push({ type: 'destroy_cards', targets: destroyedThisLoop });
+        }
+        tokensToSummonThisLoop.forEach(t => {
+            const board = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
+            if (!board[t.lane]) {
+                board[t.lane] = t.card;
+                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: t.card, source: 'split' });
             }
         });
     }

@@ -1,9 +1,9 @@
 import { getRentalDeckOptions, getDungeonEnemyCandidates } from '../utils/constants/battleDungeon.js';
 import { GameState } from './gameState.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
-import { showConfirmModal, showAlertModal } from './uiModals.js';
+import { playSound, switchScreen, executeSwitchScreen, getOrCreateUUID } from '../utils/gameUtils.js';
+import { showConfirmModal, showAlertModal, showPointAcquisitionModal } from './uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { initSelectScreen, startGameMode } from './uiMainCore.js';
+import { initSelectScreen, startGameMode, showDungeonMenu } from './uiMainCore.js';
 import { startBattleFlow } from './deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 
@@ -31,9 +31,9 @@ export function saveDungeonProgress() {
         cards: GameState.dungeonCards,
         deck: (GameState.playerDeckSelection || []).map(c => c.id), // デッキ構成を保存
         opponents: GameState.dungeonOpponents,
-        leaderId: GameState.playerConfig?.id,
+        playerConfig: GameState.playerConfig, // 動的リーダー全データ
         dungeonState: GameState.dungeonState,
-        playerHP: typeof GameState.dungeonPlayerHP !== 'undefined' ? GameState.dungeonPlayerHP : GameState.playerHP,
+        playerHP: typeof GameState.dungeonPlayerHP !== 'undefined' ? GameState.dungeonPlayerHP : 20,
         timestamp: Date.now()
     };
     localStorage.setItem('mini_card_battle_dungeon_save', JSON.stringify(saveData));
@@ -56,7 +56,16 @@ export function loadDungeonProgress() {
         }
 
         GameState.dungeonOpponents = data.opponents || [];
-        GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
+        
+        // プレイヤーコンフィグを直接復元（無い場合は従来のleaderIdもしくはandroidでフォールバック）
+        if (data.playerConfig) {
+            GameState.playerConfig = data.playerConfig;
+        } else if (data.leaderId) {
+            GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
+        } else {
+            GameState.playerConfig = CHARACTERS.android;
+        }
+
         GameState.dungeonState = data.dungeonState || 'select_opponent';
         if (data.playerHP !== undefined) GameState.dungeonPlayerHP = data.playerHP;
         GameState.gameMode = 'battle_dungeon';
@@ -86,21 +95,22 @@ export function selectRentalDeck(deckData) {
         return template ? { ...template } : null;
     }).filter(Boolean);
 
-    GameState.playerConfig = CHARACTERS[deckData.leaderId];
+    GameState.playerConfig = deckData.originalData;
     GameState.dungeonState = 'select_opponent';
-    generateNextOpponents();
-
-    // 最初のリーダー確定タイミングで保存
-    saveDungeonProgress();
+    // 最初のリーダー確定タイミングで保存（非同期の対戦相手生成完了後）
+    generateNextOpponents(() => {
+        saveDungeonProgress();
+    });
 
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
 }
 
 
 
-export function generateNextOpponents() {
+export function generateNextOpponents(callback) {
     import('../utils/constants/battleDungeon.js').then(({ generateDungeonOpponentsList }) => {
         GameState.dungeonOpponents = generateDungeonOpponentsList(GameState.dungeonWinStreak);
+        if (callback) callback();
         if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
     });
 }
@@ -123,14 +133,11 @@ export function startDungeonBattle(enemyIndex) {
 
     // 会話シーンのセットアップへ
     GameState.appState = 'pre_dialogue';
-    import('../utils/constants/battleDungeonCharacter.js').then(({ getDungeonCharacterDialogue }) => {
-        const dialogueData = getDungeonCharacterDialogue(enemy.id);
-        GameState.dialogueQueue = [
-            { speaker: 'enemy', text: dialogueData.preBattleLine || '我が前に立ち塞がるか。' }
-        ];
-        import('./uiDialogue.js').then(({ setupDialogueScreen }) => {
-            setupDialogueScreen();
-        });
+    GameState.dialogueQueue = [
+        { speaker: 'enemy', text: enemy.preBattleLine || '我が前に立ち塞がるか。' }
+    ];
+    import('./uiDialogue.js').then(({ setupDialogueScreen }) => {
+        setupDialogueScreen();
     });
 }
 
@@ -139,6 +146,9 @@ export function winDungeonBattle() {
     if (GameState.dungeonWinStreak > GameState.dungeonMaxWinStreak) {
         GameState.dungeonMaxWinStreak = GameState.dungeonWinStreak;
         localStorage.setItem('mini_card_battle_dungeon_max_streak', GameState.dungeonMaxWinStreak);
+    }
+    if (typeof window.incrementStat === 'function') {
+        window.incrementStat('maxDungeonFloor', null, GameState.dungeonWinStreak + 1);
     }
     GameState.dungeonState = 'reward';
     GameState.dungeonPlayerHP = GameState.playerHP; // 現在のHPを引き継ぐ
@@ -154,10 +164,10 @@ export function selectRewardCard(cardId) {
     playSound(SOUNDS.seGet);
     GameState.dungeonCards.push(cardId);
     GameState.dungeonState = 'select_opponent';
-    generateNextOpponents();
-
-    // 報酬獲得後に保存
-    saveDungeonProgress();
+    generateNextOpponents(() => {
+        // 報酬獲得後に保存
+        saveDungeonProgress();
+    });
 }
 
 export function loseDungeonBattle() {
@@ -179,19 +189,69 @@ export function loseDungeonBattle() {
     );
 }
 
+export function calculateDungeonPoints(winStreak) {
+    if (winStreak <= 0) return 0;
+    if (winStreak <= 2) return 1;
+    if (winStreak <= 4) return 2;
+    if (winStreak === 5) return 5;
+    if (winStreak <= 7) return 6;
+    if (winStreak <= 9) return 7;
+    if (winStreak === 10) return 10;
+    return 11;
+}
+
 export function retireDungeon() {
-    playSound(SOUNDS.seClick);
+    const currentStreak = GameState.dungeonWinStreak || 0;
+    const earnedPoints = calculateDungeonPoints(currentStreak);
+
     GameState.dungeonCards = [];
     GameState.dungeonWinStreak = 0;
     GameState.dungeonOpponents = [];
     GameState.dungeonState = 'none';
     delete GameState.dungeonPlayerHP;
-    GameState.gameMode = 'title';
+    GameState.gameMode = null; // ゲームモードをクリア
 
     // 中断データを削除
     clearDungeonSave();
 
-    switchScreen('screen-mode-select');
+    if (earnedPoints > 0) {
+        let currentPts = parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
+        let totalPts = parseInt(localStorage.getItem('mini_card_battle_challenge_total_points')) || 0;
+        currentPts += earnedPoints;
+        totalPts += earnedPoints;
+        localStorage.setItem('mini_card_battle_challenge_points', currentPts);
+        localStorage.setItem('mini_card_battle_challenge_total_points', totalPts);
+
+        showPointAcquisitionModal({
+            title: '試練終了',
+            message: `ダンジョンの挑戦が終了しました。\n到達階層: ${currentStreak + 1}階（クリア: ${currentStreak}階）`,
+            points: earnedPoints,
+            totalPoints: totalPts,
+            color: '#facc15',
+            darkColor: '#eab308',
+            onClose: () => {
+                showDungeonMenu();
+            }
+        });
+
+        const uuid = getOrCreateUUID();
+        const playerName = localStorage.getItem('mini_card_battle_player_name') || 'Player';
+        const maxStreak = GameState.dungeonMaxWinStreak || currentStreak;
+        fetch('api/challenge/players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                uuid: uuid,
+                name: playerName,
+                points: currentPts,
+                total_points: totalPts,
+                maxWinStreak: maxStreak
+            })
+        }).catch(err => console.error('Failed to save challenge points:', err));
+
+    } else {
+        showDungeonMenu(); // ダンジョンメニューに戻る
+    }
 }
 
 export function handleBattleDungeonProgression() {

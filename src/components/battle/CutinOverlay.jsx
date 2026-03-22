@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GameState } from '../../hooks/gameState.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playSound, sleep } from '../../utils/gameUtils.js';
+import { getSkinImage } from '../../utils/constants/characters.js';
 
 export default function CutinOverlay() {
     const [cutinData, setCutinData] = useState(null);
@@ -29,7 +30,7 @@ export default function CutinOverlay() {
             <div id="cutin-bg" className="cutin-bg" style={{ background: bgGradient }}></div>
             <img 
                 id="cutin-char-img" 
-                src={config.image} 
+                src={isBlue ? getSkinImage(config, GameState.playerSkins[config.id], 'image') : config.image} 
                 className="cutin-char" 
                 alt="Cutin Character"
                 style={{ animation: 'slideIn 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards' }}

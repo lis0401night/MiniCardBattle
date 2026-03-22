@@ -26,3 +26,10 @@ export function showErrorModal(message) {
     console.warn("GlobalModals not mounted: showErrorModal fallback missing");
     if (typeof stopAllBGM === 'function') stopAllBGM();
 }
+
+export let showPointAcquisitionModalHook = null;
+export function setShowPointAcquisitionModalHook(h) { showPointAcquisitionModalHook = h; }
+export function showPointAcquisitionModal(data) {
+    if (showPointAcquisitionModalHook) return showPointAcquisitionModalHook(data);
+    console.warn("GlobalModals not mounted: showPointAcquisitionModal fallback missing");
+}

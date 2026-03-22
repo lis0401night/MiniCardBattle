@@ -1,5 +1,5 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { SKILLS } from '../utils/constants/skills.js';
@@ -297,7 +297,7 @@ export function startGameMode(mode) {
     GameState.gameMode = mode;
 
     if (mode === 'battle_dungeon') {
-        initBattleDungeon();
+        showDungeonMenu();
         return;
     }
 
@@ -458,6 +458,20 @@ export async function showDefenseMenu() {
     }
 }
 
+export function showDungeonMenu() {
+    playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmTitle.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmTitle);
+    }
+    switchScreen('screen-dungeon-menu');
+}
+
+export function showDungeonRules() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-dungeon-rules');
+}
+
 export async function showDefenseBattleList() {
     playSound(SOUNDS.seClick);
     switchScreen('screen-defense-battle-list');
@@ -482,6 +496,15 @@ export async function startAttackBattle(enemyPlayerData) {
         GameState.enemyConfig.calculatedWinPoints = enemyPlayerData.calculatedWinPoints; // リスト表示時の計算結果
         GameState.enemyConfig.stageId = enemyPlayerData.stage;
         GameState.enemyConfig.playmat = enemyPlayerData.playmat; // 追加
+        
+        // --- 敵のスキン情報の反映 ---
+        const skinIdToUse = enemyPlayerData.skin || 'default';
+        if (typeof getSkinImage === 'function') {
+            GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, skinIdToUse, 'image');
+            GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, skinIdToUse, 'imageLose');
+            GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, skinIdToUse, 'icon');
+        }
+
         GameState.selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
         // 自分のキャラクター選択から開始

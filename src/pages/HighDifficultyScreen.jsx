@@ -4,8 +4,16 @@ import { showEventMenu, showHighDifficultyRules, handleSatanBattle } from '../ho
 
 export default function HighDifficultyScreen() {
   return (
-    <div id="screen-high-difficulty" className="screen active">
-      <h2 style={{ color: '#facc15', marginBottom: '20px' }}>高難易度</h2>
+    <div 
+      id="screen-high-difficulty" 
+      className="screen active"
+      style={{
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('/assets/backgrounds/background_satan.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      <h2 style={{ color: '#ef4444', marginBottom: '20px', textShadow: '0 0 15px rgba(239, 68, 68, 0.6)' }}>高難易度</h2>
       <button
         className="btn btn-yellow"
         style={{ width: '250px', marginBottom: '20px' }}

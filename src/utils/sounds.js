@@ -39,6 +39,7 @@ export const AUDIO_INSTANCES = {
     bgmLastBattle: new Audio('assets/audio/bgm/bgm_lastbattle.mp3'),
     bgmGallery: new Audio('assets/audio/bgm/bgm_gallery.mp3'),
     bgmDefense: new Audio('assets/audio/bgm/bgm_defense.mp3'),
+    bgmChallenge: new Audio('assets/audio/bgm/bgm_challenge.mp3'),
     bgmHighDifficulty: new Audio('assets/audio/bgm/bgm_high_difficulty.mp3'),
     bgmStageAndroid: new Audio('assets/audio/bgm/bgm_stage_android01.mp3'),
     bgmStageDragon: new Audio('assets/audio/bgm/bgm_stage_dragon01.mp3'),

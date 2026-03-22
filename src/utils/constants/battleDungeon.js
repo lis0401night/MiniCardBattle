@@ -11,22 +11,78 @@ export const getDungeonEnemyCandidates = () => {
     return CARD_MASTER.slice(startIndex, endIndex + 1);
 };
 
-// 提示するレンタルデッキをすべて生成する（各リーダーのイージーデッキ）
+// 試練の宮殿の初期プレイヤー候補を生成する
 export const getRentalDeckOptions = () => {
-    const leaderIds = Object.keys(ENEMY_DECKS).filter(id => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan');
+    let options = [];
+    let usedNames = new Set();
 
-    return leaderIds.map(id => {
-        const char = CHARACTERS[id];
-        const deck = ENEMY_DECKS[id].easy || [];
-        return {
-            leaderId: id,
-            name: char.name,
-            icon: char.icon,
-            desc: char.desc,
-            color: char.color,
-            deck: deck
+    // ヘルパー：指定レアリティの敵を追加
+    const addEnemyOption = (rarity) => {
+        let enemy = generateGenericDungeonEnemy(rarity);
+        let retry = 0;
+
+        while (usedNames.has(enemy.name) && retry < 10) {
+            enemy = generateGenericDungeonEnemy(rarity);
+            retry++;
+        }
+        usedNames.add(enemy.name);
+
+        options.push({
+            leaderId: enemy.id,
+            name: enemy.name,
+            icon: enemy.icon,
+            desc: enemy.desc,
+            color: enemy.color,
+            rarity: enemy.rarity || rarity,
+            deck: enemy.dungeonDeck,
+            originalData: enemy,
+            isCardLeader: true
+        });
+    };
+
+    // デフォルト: 2種類のブロンズキャラクター(rarity 1)を生成
+    for (let i = 0; i < 2; i++) {
+        addEnemyOption(1);
+    }
+
+    // 開放状態を読み取って候補を追加
+    try {
+        const unlocks = JSON.parse(localStorage.getItem('mini_card_battle_dungeon_unlocks')) || {};
+
+        if (unlocks.char_silver) { addEnemyOption(2); addEnemyOption(2); }
+        if (unlocks.char_gold) { addEnemyOption(3); addEnemyOption(3); }
+        if (unlocks.char_legend) { addEnemyOption(4); addEnemyOption(4); }
+
+        const addCharDecks = (difficultyKey, label) => {
+            const leaderIds = Object.keys(ENEMY_DECKS).filter(id => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan');
+            leaderIds.forEach(id => {
+                const char = CHARACTERS[id];
+                const deck = ENEMY_DECKS[id][difficultyKey];
+                if (deck && deck.length > 0) {
+                    options.push({
+                        leaderId: id,
+                        name: `${char.name} [${label}]`,
+                        icon: char.icon,
+                        desc: char.desc,
+                        color: char.color,
+                        rarity: difficultyKey === 'easy' ? 1 : difficultyKey === 'normal' ? 2 : 3,
+                        deck: deck,
+                        originalData: { ...char, preBattleLine: char.preBattleLine || '', hp: 20 },
+                        isCharacterLeader: true
+                    });
+                }
+            });
         };
-    });
+
+        if (unlocks.deck_easy) addCharDecks('easy', 'イージー');
+        if (unlocks.deck_normal) addCharDecks('normal', 'ノーマル');
+        if (unlocks.deck_hard) addCharDecks('hard', 'ハード');
+
+    } catch (e) {
+        console.error("Failed to load dungeon unlocks:", e);
+    }
+
+    return options;
 };
 
 // 指定したレアリティの汎用敵を1体生成する
@@ -40,10 +96,22 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     let deck = [leaderCard.id, leaderCard.id, leaderCard.id, leaderCard.id];
     const poolRarityMax = (leaderCard.rarity === 1) ? 1 : 2;
     const randomPool = candidates.filter(c => c.rarity <= poolRarityMax);
+    
+    // リーダーカードは既に4枚入っているので抽選プールから除外
+    const safePool = randomPool.filter(c => c.id !== leaderCard.id);
+    
+    const cardCounts = {};
+    deck.forEach(id => {
+        cardCounts[id] = (cardCounts[id] || 0) + 1;
+    });
 
     for (let i = 0; i < 16; i++) {
-        const randomCard = randomPool[Math.floor(Math.random() * randomPool.length)];
+        const availablePool = safePool.filter(c => (cardCounts[c.id] || 0) < 4);
+        if (availablePool.length === 0) break; // 候補が枯渇した時のフェイルセーフ
+
+        const randomCard = availablePool[Math.floor(Math.random() * availablePool.length)];
         deck.push(randomCard.id);
+        cardCounts[randomCard.id] = (cardCounts[randomCard.id] || 0) + 1;
     }
 
     let hp = 1; // デバッグ用に一律1
@@ -75,6 +143,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
         preBattleLine: dialogueData.preBattleLine,
         dialogue: dialogueData.dialogue,
         hp: hp,
+        rarity: leaderCard.rarity || targetRarity,
         dungeonDeck: deck
     };
 };
@@ -85,7 +154,7 @@ export const generateCharacterBossEnemy = () => {
     const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
     const char = CHARACTERS[bossId];
     const deck = ENEMY_DECKS[bossId].hard || ENEMY_DECKS[bossId].normal || [];
-    
+
     return {
         ...char,
         id: `dungeon_boss_${bossId}_${Date.now()}`,
@@ -99,7 +168,7 @@ export const generateCharacterBossEnemy = () => {
 // 階層に基づいた敵候補の配列を返す
 export const generateDungeonOpponentsList = (winStreak) => {
     const battleNumber = winStreak + 1;
-    const cyclePos = ((battleNumber - 1) % 10) + 1; 
+    const cyclePos = ((battleNumber - 1) % 10) + 1;
 
     // ルーティン設定
     // 1,2: 銅(1)*2  3,4: 銀(2)*2  5: 金(3)*2  6,7: 銅(1)*2  8,9: 銀(2)*2  10: キャラ(Hard)*1
@@ -126,7 +195,7 @@ export const generateDungeonOpponentsList = (winStreak) => {
         let opp2 = generateGenericDungeonEnemy(targetRarity);
         let retry = 0;
         // 名前が被らないようにリトライ
-        while(opp1.name === opp2.name && retry < 10) {
+        while (opp1.name === opp2.name && retry < 10) {
             opp2 = generateGenericDungeonEnemy(targetRarity);
             retry++;
         }

@@ -362,6 +362,7 @@ export async function submitDefenseDeck(providedName = null) {
                     isPremium: GameState.premiumCards ? GameState.premiumCards.includes(c.id) : false
                 })),
                 playmat: GameState.selectedPlaymatId,
+                skin: GameState.playerSkins ? GameState.playerSkins[GameState.playerConfig.id] : null,
                 points: parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
                 total_points: parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0
             })

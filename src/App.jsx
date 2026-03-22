@@ -11,9 +11,13 @@ import DefenseMenuScreen from './pages/DefenseMenuScreen.jsx';
 import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
 import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
 import HighDifficultyRulesScreen from './pages/HighDifficultyRulesScreen.jsx';
+import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
+import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
 import CardListScreen from './pages/CardListScreen.jsx';
 import AchievementsScreen from './pages/AchievementsScreen.jsx';
 import ExchangeScreen from './pages/ExchangeScreen.jsx';
+import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
+import ChallengeUnlockScreen from './pages/ChallengeUnlockScreen.jsx';
 import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
 import DeckEditorScreen from './pages/DeckEditorScreen.jsx';
 import CharacterSelectScreen from './pages/CharacterSelectScreen.jsx';
@@ -106,7 +110,11 @@ export default function App() {
       {currentScreen === 'screen-card-list' && <CardListScreen />}
       {currentScreen === 'screen-achievements' && <AchievementsScreen />}
       {currentScreen === 'screen-exchange' && <ExchangeScreen />}
+      {currentScreen === 'screen-challenge-exchange' && <ChallengeExchangeScreen />}
+      {currentScreen === 'screen-challenge-unlock' && <ChallengeUnlockScreen />}
       {currentScreen === 'screen-defense-battle-list' && <DefenseBattleListScreen />}
+      {currentScreen === 'screen-dungeon-menu' && <DungeonMenuScreen />}
+      {currentScreen === 'screen-dungeon-rules' && <DungeonRulesScreen />}
       {currentScreen === 'screen-deck-edit' && <DeckEditorScreen />}
       {currentScreen === 'screen-select' && <CharacterSelectScreen />}
       {currentScreen === 'screen-difficulty' && <DifficultySelectScreen />}

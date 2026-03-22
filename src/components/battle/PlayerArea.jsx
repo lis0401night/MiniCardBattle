@@ -1,5 +1,6 @@
 import React from 'react';
 import { GameState } from '../../hooks/gameState.js';
+import { getSkinImage } from '../../utils/constants/characters.js';
 
 export default function PlayerArea({ 
     playerConfig, 
@@ -17,7 +18,7 @@ export default function PlayerArea({
         <div className="hp-area">
             <div className="status-container">
                 <div className="icon-wrapper" id="player-icon-wrap" onClick={onLeaderSkillClick} style={{ cursor: 'pointer' }}>
-                    <img id="player-icon" className="char-icon blue" src={playerConfig.icon} alt="player icon" />
+                    <img id="player-icon" className="char-icon blue" src={getSkinImage(playerConfig, GameState.playerSkins[playerConfig.id], 'icon')} alt="player icon" />
                     <div id="player-sp-orbs" className="sp-orbs">
                         {Array.from({ length: maxSpCount }).map((_, i) => (
                             <div key={`sp-${i}`} className={`orb ${i < spCount ? 'filled' : ''}`}></div>

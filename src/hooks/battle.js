@@ -148,6 +148,21 @@ export function initBattleState() {
         if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
         
         if (GameState.gameMode === 'battle_dungeon') {
+            // 敵のHPはレアリティで決定
+            const eRarity = GameState.enemyConfig.rarity || 4;
+            GameState.enemyMaxHP = eRarity === 1 ? 10 : (eRarity === 2 ? 15 : 20);
+            
+            // リーダースキルのSP要件もレアリティで決定（キャラクター以外も対応）
+            if (GameState.playerConfig && GameState.playerConfig.leaderSkill && GameState.playerConfig.leaderSkill.cost) {
+                const pRarity = GameState.playerConfig.rarity || 4;
+                GameState.playerConfig = { ...GameState.playerConfig, leaderSkill: { ...GameState.playerConfig.leaderSkill } };
+                GameState.playerConfig.leaderSkill.cost = pRarity === 1 ? 3 : (pRarity === 2 ? 4 : 5);
+            }
+            if (GameState.enemyConfig && GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.cost) {
+                GameState.enemyConfig = { ...GameState.enemyConfig, leaderSkill: { ...GameState.enemyConfig.leaderSkill } };
+                GameState.enemyConfig.leaderSkill.cost = eRarity === 1 ? 3 : (eRarity === 2 ? 4 : 5);
+            }
+
             GameState.playerHP = (typeof GameState.dungeonPlayerHP !== 'undefined') ? GameState.dungeonPlayerHP : GameState.playerMaxHP;
         } else {
             GameState.playerHP = GameState.playerMaxHP;
@@ -406,6 +421,20 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         window.handlePlacementLaneClick = async (laneIndex) => {
             if (GameState.placementSelectedLanes.includes(laneIndex)) return;
             playSound(SOUNDS.seClick);
+
+            const newCard = GameState.placementToken;
+            if (newCard) {
+                if (hasSkill(newCard, 'legendary') && laneIndex !== 1) {
+                    playSound(SOUNDS.seDamage);
+                    showAlertModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`);
+                    return;
+                }
+                if (hasSkill(newCard, 'takeover') && board[laneIndex] === null) {
+                    playSound(SOUNDS.seDamage);
+                    showAlertModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`);
+                    return;
+                }
+            }
 
             // 既にカードがあるレーンの場合は確認
             if (board[laneIndex] !== null) {

@@ -1,5 +1,5 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -61,13 +61,28 @@ export async function activateLeaderSkill(owner, tokenLanes = null) {
 }
 
 export async function showLeaderSkillCutin(config, isBlue, owner) {
+    if (window.showCutinReact) {
+        window.showCutinReact(config, isBlue);
+        const bId = owner === 'blue' ? 'player-speech' : 'enemy-speech';
+        const b = document.getElementById(bId);
+        if (b && config.dialogue.skill) {
+            b.innerText = config.dialogue.skill;
+            b.classList.add('active');
+        }
+        await sleep(2500);
+        if (b) b.classList.remove('active');
+        return;
+    }
+
     const cutin = document.getElementById('screen-cutin');
     const cImg = document.getElementById('cutin-char-img');
     const cTxt = document.getElementById('cutin-text');
     const cBg = document.getElementById('cutin-bg');
 
-    if (config.image) {
-        cImg.src = config.image;
+    const imgSrc = isBlue ? getSkinImage(config, GameState.playerSkins[config.id], 'image') : config.image;
+
+    if (imgSrc) {
+        cImg.src = imgSrc;
     } else {
         cImg.removeAttribute('src');
     }
@@ -129,9 +144,11 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const tokenCard = CARD_MASTER.find(m => m.id === config.leaderCardId);
         const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, true, tokenLanes);
+        if (selectedLanes.length === 0) return;
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl(tokenCard) || `assets/cards/card_${tokenCard.id}.jpg`;
+            if (b[l]) { await discardCard(owner, b[l], l); }
             b[l] = { id: `dng_tk_${Date.now()}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
             b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
             
@@ -142,6 +159,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes);
+        if (selectedLanes.length === 0) return;
         tokenLanes = selectedLanes;
     } else if (action === 'targeted_destruction') {
         const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner);
@@ -202,6 +220,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (h.length > 0) {
             if (isBlue) {
                 const selectedIndices = await waitPlayerHandSelection(2, owner);
+                if (selectedIndices.length === 0) return; // 捨てない等キャンセル時
                 if (selectedIndices.length > 0) {
                     selectedIndices.sort((a, b) => b - a);
                     for (let i of selectedIndices) {

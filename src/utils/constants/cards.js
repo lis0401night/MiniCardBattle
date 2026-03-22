@@ -59,17 +59,20 @@ export const CARD_MASTER = [
     { id: 'daemon', name: '魔界の尖兵', power: 7, skill: 'sacrifice', skillValue: 3, rarity: 3, voiceCategory: 'devil', flavor: '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。' },
     { id: 'badwolf', name: '幻影の狼', power: 1, rarity: 3, skills: [{ id: 'legendary' }, { id: 'choice' }], choices: [{ id: 'clone', value: 2 }, { id: 'lone_wolf', value: 2 }], voiceCategory: 'wolf', flavor: '森の深淵に潜む、実体なき銀狼。その姿を見た者は、一頭の獲物を追うつもりが、いつの間にか群れに囲まれていることに気付くのだ。' },
     { id: 'redhood', name: 'レッドフード', power: 3, rarity: 3, skills: [{ id: 'legendary' }, { id: 'choice' }], choices: [{ id: 'snipe', value: 5 }, { id: 'spread', value: 1 }], voiceCategory: 'human_female_ikemen', flavor: '赤い頭巾に隠された鋭い眼光。彼女のクロスボウから放たれる矢は、森の静寂を破ることなく標的の心臓を射抜く。' },
+    { id: 'queen', name: '嫉妬の女王', power: 4, rarity: 3, skills: [{ id: 'legendary' }, { id: 'choice' }], choices: [{ id: 'draw', value: 3 }, { id: 'deadly' }], voiceCategory: 'human_female_ikemen', flavor: '”世界で一番美しいのは誰？”——その問いに答える者がいなくなるまで、ただ愚か者を狩り尽くすのみ。' },
+    { id: 'snowwhite', name: 'スノウホワイト', power: 5, rarity: 3, skills: [{ id: 'legendary' }, { id: 'immune' }], voiceCategory: 'human_female_assassin', flavor: '”鏡よ鏡”。いつから私が、毒を盛られて黙っているようなお姫様だと錯覚していた？純白の鎧は復讐の誓い。' },
     { id: 'whiterider', name: '征服の使徒', power: 6, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'snipe', value: 8 }, { id: 'guardian' }], voiceCategory: 'horse', flavor: '第一の封印が解かれし時、白馬に乗れる者が現る。彼は征服の上に更なる征服を重ねんとし、その矢は逃れ得ぬ運命を射抜く。' },
     { id: 'redrider', name: '戦争の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'quick' }], voiceCategory: 'horse', flavor: '第二の封印。火の如き赤き馬に乗れる者、地上から平和を奪い去る。その大剣が振るわれる時、終わりなき争いの火蓋が切って落とされる。' },
     { id: 'blackrider', name: '飢餓の使徒', power: 5, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'morph', value: 2 }, { id: 'deadly' }], voiceCategory: 'horse', flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
     { id: 'palerider', name: '死の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], voiceCategory: 'horse', flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
     { id: 'baldanders', name: 'バルトアンデルス', power: 0, skill: 'metamorph', rarity: 4, voiceCategory: 'rock', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', power: 5, skill: 'shuffle', rarity: 4, voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
+    { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', image: 'assets/cards/card_dicejuggler.jpg', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。', voiceCategory: 'human_ikemen' },
     // トークンカード
     { id: 'token_knight', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'sword', flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },
     { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '切り離されてもなお蠢き続ける蛸の足。' },
-    { id: 'token_void', name: '虚空', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '形なき虚無の欠片。それは何も生み出さず、ただそこにあるだけの空虚。' },
+    { id: 'token_void', name: '虚空', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '形なき虚無の欠片。それは何も生み出さず、ただそこにあるだけの空虚。' }
 ];

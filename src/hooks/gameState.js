@@ -3,6 +3,8 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 export const GameState = {
     playerConfig: CHARACTERS.android,
     enemyConfig: CHARACTERS.dragon,
+    playerSkins: JSON.parse(localStorage.getItem('mini_card_battle_player_skins')) || {},
+    unlockedSkins: JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || [],
     playerDeckSelection: [],
     playerInventory: {},
     playerHP: 0, enemyHP: 0, playerMaxHP: 0, enemyMaxHP: 0, playerSP: 0, enemySP: 0,

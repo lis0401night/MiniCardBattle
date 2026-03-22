@@ -1,4 +1,4 @@
-import { CHARACTERS } from '../utils/constants/characters.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -55,9 +55,13 @@ export function startEndingSequence() {
     if (typeof incrementStat === 'function' && GameState.playerConfig && GameState.playerConfig.id) {
         incrementStat('storyClears', GameState.playerConfig.id);
     }
-    document.getElementById('portrait-left').src = GameState.playerConfig.image;
-    document.getElementById('portrait-left').classList.add('active');
-    document.getElementById('portrait-right').style.display = 'none';
+    
+    window.currentDialogueData = window.currentDialogueData || {};
+    window.currentDialogueData.centerMode = true;
+    window.currentDialogueData.leftImage = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'image');
+    window.currentDialogueData.rightDisplay = 'none';
+
+    document.getElementById('portrait-left').src = window.currentDialogueData.leftImage;
     switchScreen('screen-dialogue');
     showNextDialogue(true);
 }
@@ -66,14 +70,14 @@ export function setupDialogueScreen() {
     GameState.isProcessing = false;
     GameState.currentDialogueIndex = 0;
     
-    let pLeftImg = GameState.playerConfig.image;
+    let pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'image');
     let pRightImg = GameState.enemyConfig.image;
     
     const isCenter = (GameState.appState === 'story_intro' || GameState.appState === 'inter_battle_story');
 
     if (GameState.appState === 'post_dialogue') {
         if (GameState.lastBattleResult === 'win') pRightImg = GameState.enemyConfig.imageLose || GameState.enemyConfig.image;
-        else if (GameState.lastBattleResult === 'lose') pLeftImg = GameState.playerConfig.imageLose || GameState.playerConfig.image;
+        else if (GameState.lastBattleResult === 'lose') pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'imageLose');
     }
     
     window.currentDialogueData = window.currentDialogueData || {};
@@ -101,7 +105,7 @@ export async function showNextDialogue(force = false) {
 
     // 1人（モノローグ）状態から対戦相手が登場した時の暗転演出
     let didFade = false;
-    if (window.currentDialogueData.centerMode && (cur.speaker === 'enemy' || cur.speaker !== 'player')) {
+    if (window.currentDialogueData.centerMode && (cur.speaker === 'enemy' || cur.speaker !== 'player') && GameState.appState !== 'ending_dialogue') {
         // centerMode のまま敵のターンが来たら、2人画面へ移行するべく暗転する
         if (cur.speaker === 'enemy') {
             GameState.isProcessing = true; // クリック連打を防止

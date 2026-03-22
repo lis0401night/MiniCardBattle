@@ -33,7 +33,7 @@ export const CHARACTERS = {
         },
         dialogue: {
             intro: { dragon: '対象の熱源反応を確認。警戒してください。', knight: '対象の装甲、旧式と推測。物理演算を開始します。', cthulhu: '非論理的生命体を検出。排除プログラムを実行します。', elf: '未知の生体反応を確認。過去データの照合に失敗。追跡を開始。', cleric: '高エネルギーの魔力反応を検出。精神汚染の危険性あり。警戒を最大に。', satan: '分類不能な超高エネルギー体を確認。リミッターを解除します。', devilhunter: '武装した不審者を検知。危険度【高】と判定し、迎撃します。', default: 'マスター、バトルプロトコルを開始します。' },
-            win: { dragon: '熱源の鎮火を確認。', knight: '旧式装甲の突破完了。', cthulhu: '非論理的エラーを排除. ', elf: '対象の沈黙。記憶データの断片を回収。', cleric: '異端エネルギーの霧散を確認。', satan: '対象の完全消滅を確認。私の、勝ちです。', devilhunter: '武装解除。不法投棄された棺桶は回収します。', default: '対象の沈黙を確認。ミッションコンプリート。' },
+            win: { dragon: '熱源の鎮火を確認。', knight: '旧式装甲の突破完了。', cthulhu: '非論理的エラーを排除。', elf: '対象の沈黙。記憶データの断片を回収。', cleric: '異端エネルギーの霧散を確認。', satan: '対象の完全消滅を確認。私の、勝ちです。', devilhunter: '武装解除。不法投棄された棺桶は回収します。', default: '対象の沈黙を確認。ミッションコンプリート。' },
             lose: { dragon: '装甲溶解……システムダウン……', knight: '計算外の攻撃力……機能停止します……', cthulhu: '精神侵染……マスター、逃げ……て……', elf: '光学センサー破損……視界が……', cleric: '聖なる力による回路短絡……修復不能……', satan: 'マスター……ごめんなさい……', devilhunter: '目標の火力……計算を大きく上回って……', default: '致命的なエラー……再起動します……' },
             damage: ['シールド損傷！', 'ダメージ軽微。', 'エラー発生！', '出力低下。'],
             skill: 'リミッター解除、対象を殲滅します！',
@@ -309,3 +309,51 @@ export const CHARACTERS = {
         }
     }
 };
+
+// --- スキン定義とヘルパー関数 ---
+const SKIN_NAMES = {
+    android: '水陸両用装備',
+    dragon: '真夏の焔竜姫',
+    knight: '波打ち際の騎士',
+    cthulhu: '深海のサマースイム',
+    elf: '水辺の流浪者',
+    cleric: '背徳のサマーバカンス',
+    devilhunter: '渚の悪魔狩り',
+    satan: '真夏の魔界王'
+};
+
+Object.values(CHARACTERS).forEach(char => {
+    char.skins = {
+        default: {
+            id: 'default',
+            name: '通常',
+            image: char.image,
+            imageLose: char.imageLose,
+            icon: char.icon,
+            iconDamage: char.icon.replace('.png', '_damage.png')
+        },
+        summer: {
+            id: 'summer',
+            name: SKIN_NAMES[char.id] || '水着スキン',
+            image: `assets/characters/char_${char.id}_summer.png`,
+            imageLose: `assets/characters/char_${char.id}_summer_lose.png`,
+            icon: `assets/icons/icon_${char.id}_summer.png`,
+            iconDamage: `assets/icons/icon_${char.id}_summer_damage.png`
+        }
+    };
+});
+
+/**
+ * 指定したキャラクター・スキン・タイプに応じた画像パスを取得する
+ * @param {string|Object} charIdOrObj - キャラクターIDまたはキャラクターオブジェクト
+ * @param {string} skinId - スキンID ('default', 'summer' etc.)
+ * @param {string} type - 画像タイプ ('image', 'imageLose', 'icon', 'iconDamage')
+ * @returns {string} 画像パス
+ */
+export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
+    const char = typeof charIdOrObj === 'string' ? CHARACTERS[charIdOrObj] : charIdOrObj;
+    if (!char) return '';
+    if (!char.skins) return char[type] || '';
+    const skin = char.skins[skinId] || char.skins['default'];
+    return skin[type] || char[type] || '';
+}

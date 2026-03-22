@@ -4,7 +4,7 @@
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;
 
-// 交換所ラインナップ
+// 防衛戦 交換所ラインナップ
 export const EXCHANGE_LINEUP = [
     { id: 'cyberdragon', type: 'premium', cost: 20 },
     { id: 'dragon', type: 'premium', cost: 20 },
@@ -15,4 +15,17 @@ export const EXCHANGE_LINEUP = [
     { id: 'vampire', type: 'premium', cost: 20 },
     { id: 'badwolf', type: 'card', cost: 5 },
     { id: 'redhood', type: 'card', cost: 5 }
+];
+
+// 試練の宮殿 交換所ラインナップ
+export const CHALLENGE_EXCHANGE_LINEUP = [
+    { id: 'android_summer', type: 'skin', charId: 'android', name: '水陸両用装備', description: '研究所より支給された耐熱・耐水処理を施した特殊換装とのこと。', cost: 20 },
+    { id: 'dragon_summer', type: 'skin', charId: 'dragon', name: '真夏の焔竜姫', description: '太陽の熱よりも熱い竜の息吹。水辺でも彼女の炎が消えることは決してない。', cost: 20 },
+    { id: 'knight_summer', type: 'skin', charId: 'knight', name: '波打ち際の騎士', description: '鎧を脱ぎ捨て、ひとときの休息を楽しむ騎士。その剣腕は水着姿でも少しも鈍らない。', cost: 20 },
+    { id: 'cthulhu_summer', type: 'skin', charId: 'cthulhu', name: '深海のサマースイム', description: '深淵から現れた名状しがたき水着姿。彼女が泳ぐたび、波間に狂気が蠢くという。', cost: 20 },
+    { id: 'elf_summer', type: 'skin', charId: 'elf', name: '水辺の流浪者', description: '森を抜け出し、海辺にやってきた流浪のエルフ。波の音に耳を傾ける穏やかな時間。', cost: 20 },
+    { id: 'cleric_summer', type: 'skin', charId: 'cleric', name: '背徳のサマーバカンス', description: '神職の務めを忘れ、開放的な夏を満喫する聖職者。神の慈悲は海よりも広いらしい。', cost: 20 },
+    { id: 'devilhunter_summer', type: 'skin', charId: 'devilhunter', name: '渚の悪魔狩り', description: '悪魔を狩るのも夏休みが必要だ。ただし、銃の手入れだけは怠らない。', cost: 20 },
+    { id: 'queen', type: 'card', cost: 5 },
+    { id: 'snowwhite', type: 'card', cost: 5 }
 ];

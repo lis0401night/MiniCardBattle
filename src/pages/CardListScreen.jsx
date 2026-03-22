@@ -83,7 +83,7 @@ export default function CardListScreen() {
   };
 
   return (
-    <div id="screen-card-list" className="screen active">
+    <div id="screen-card-list" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto' }}>
       <h2 onClick={handleTitleClick} style={{ color: '#facc15', marginBottom: '5px', fontSize: '1.2rem', cursor: 'pointer', userSelect: 'none' }}>カード一覧</h2>
       <div id="card-list-count" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
         カード枚数: {ownedKindCount} / {masterCards.length}

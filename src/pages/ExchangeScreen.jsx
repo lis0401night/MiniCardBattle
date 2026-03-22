@@ -50,10 +50,10 @@ export default function ExchangeScreen() {
   };
 
   return (
-    <div id="screen-exchange" className="screen active">
+    <div id="screen-exchange" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto' }}>
       <h2 
         id="exchange-title" 
-        style={{ color: '#f97316', marginBottom: '5px', fontSize: '1.2rem', cursor: 'pointer' }}
+        style={{ color: '#10b981', marginBottom: '5px', cursor: 'pointer', textShadow: '0 0 15px rgba(16, 185, 129, 0.6)' }}
         onClick={handleTitleClick}
       >
         交換所

@@ -429,7 +429,11 @@ export function getDungeonCharacterDialogue(id) {
         }
     }
 
-    const rawId = id.replace('dungeon_', '');
+    // dungeon_ やタイムスタンプ等の付加情報を除外して純粋なIDを取得
+    let rawId = id.replace('dungeon_', '');
+    if (rawId.includes('_') && !rawId.startsWith('token_')) {
+        rawId = rawId.split('_')[0];
+    }
     
     // 直接のID一致をチェック（golem, vampire等）
     if (DUNGEON_CHARACTER_DIALOGUE[rawId]) {
