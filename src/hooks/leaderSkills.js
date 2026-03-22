@@ -201,7 +201,11 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             if (actualIdx !== -1) discard.splice(actualIdx, 1);
 
             const targetLane = tLanes[0];
-            const resurrectedCard = { ...selectedCard, id: `res_${Date.now()}` };
+            const resurrectedCard = { 
+                ...selectedCard, 
+                id: `res_${Date.now()}`,
+                baseId: selectedCard.baseId || selectedCard.id
+            };
             resurrectedCard.currentPower = resurrectedCard.power;
             resurrectedCard.skillTriggered = true; // 召喚時効果は不発
             resurrectedCard.stunTurns = 0;

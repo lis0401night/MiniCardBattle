@@ -700,13 +700,8 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
         restoredCard = JSON.parse(JSON.stringify(masterData));
         restoredCard.uid = card.uid; // IDなどの一意のプロパティは引き継ぐ
         restoredCard.owner = owner;
+        restoredCard.baseId = card.baseId || card.id; // 画像URL等の解決に必須
         if (card.isPremium !== undefined) restoredCard.isPremium = card.isPremium;
-        if (restoredCard.skills && restoredCard.skills.length > 0) {
-            restoredCard.skill = restoredCard.skills[0].id;
-            restoredCard.skillValue = restoredCard.skills[0].value;
-        } else if (!restoredCard.skill) {
-            restoredCard.skill = 'none';
-        }
         restoredCard.basePower = restoredCard.power;
         restoredCard.currentPower = restoredCard.power;
     } else {
@@ -734,6 +729,7 @@ export async function triggerSplitSkill(owner, lane, card) {
         imgUrl: 'assets/cards/card_legs.jpg',
         power: val,
         currentPower: val,
+        basePower: val,
         rarity: tL.rarity || 1
     };
 
@@ -1011,7 +1007,14 @@ export async function resolveOnPlaySkill(o, l, c) {
     if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
     if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
-    // 召喚時に複数のスキルがある場合は、配列の手前からスキルを順番に処理する
+    // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
+    skillsToResolve.sort((a, b) => {
+        const order = { 'quick': 100, 'choice': 90 }; // 数値が大きいほど後回し
+        const orderA = order[a.id] || 0;
+        const orderB = order[b.id] || 0;
+        return orderA - orderB;
+    });
+
     for (const sk of skillsToResolve) {
         if (ACTIVE_SKILLS.includes(sk.id)) {
             await resolveActiveSkillEffect(o, l, c, sk.id, sk.value);

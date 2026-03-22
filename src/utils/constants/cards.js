@@ -69,7 +69,7 @@ export const CARD_MASTER = [
     { id: 'palerider', name: '死の使徒', power: 4, rarity: 4, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], voiceCategory: 'horse', flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
     { id: 'baldanders', name: 'バルトアンデルス', power: 0, skill: 'metamorph', rarity: 4, voiceCategory: 'rock', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', power: 5, skill: 'shuffle', rarity: 4, voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
-    { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', image: 'assets/cards/card_dicejuggler.jpg', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。', voiceCategory: 'human_ikemen' },
+    { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。', voiceCategory: 'human_ikemen' },
     // トークンカード
     { id: 'token_knight', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'sword', flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },

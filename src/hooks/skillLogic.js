@@ -192,10 +192,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 isPremium: (c.isPremium !== undefined) ? c.isPremium : GameState.premiumCards.includes(c.baseId || c.id),
                 imgUrl: getCardImgUrl(c), // 本体の画像URLを確定させて焼き付ける
                 filter: c.filter,
-                power: c.power,
-                currentPower: c.currentPower,
+                power: c.power || 0,
+                currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 0),
                 rarity: c.rarity || 1,
-                basePower: c.power,
+                basePower: c.basePower !== undefined ? c.basePower : (c.power || 0),
                 voiceCategory: c.voiceCategory,
                 skills: JSON.parse(JSON.stringify(inheritedSkills)) // スキルを引き継ぐ
             };
@@ -360,10 +360,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 // カードのステータスを初期状態にリセット
                 const masterData = CARD_MASTER.find(m => m.id === (selectedCard.baseId || selectedCard.id));
                 const restoredCard = masterData ? JSON.parse(JSON.stringify(masterData)) : { ...selectedCard };
-                if (restoredCard.skills) {
-                    restoredCard.skill = restoredCard.skills[0]?.id || 'none';
-                    restoredCard.skillValue = restoredCard.skills[0]?.value || 0;
-                }
+                restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
                 restoredCard.basePower = restoredCard.power;
                 restoredCard.currentPower = restoredCard.power;
                 

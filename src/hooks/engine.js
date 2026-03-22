@@ -209,7 +209,11 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
                 const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
                 if (emptyLanes.length > 0) {
                     const targetLane = emptyLanes[0]; // シミュレーション上は前方優先
-                    const resurrectedCard = { ...selectedCard, id: `res_sim_${Date.now()}` };
+                    const resurrectedCard = { 
+                        ...selectedCard, 
+                        id: `res_sim_${Date.now()}`,
+                        baseId: selectedCard.baseId || selectedCard.id
+                    };
                     resurrectedCard.currentPower = resurrectedCard.power;
                     resurrectedCard.skillTriggered = true; // 召喚効果は連鎖しない想定
                     resurrectedCard.stunTurns = 0;
@@ -452,7 +456,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     const dC = defBoard[dLane];
     const originalTarget = defBoard[l];
-    let aP = aC.currentPower;
+    let aP = Number(aC.currentPower ?? aC.power ?? 0) || 0;
     
     // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）
     const aC_defend = atkBoard[aLane];
@@ -460,7 +464,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     events.push({ type: 'attack', attackerSide, lane: l, targetLane: dLane });
 
     if (dC) {
-        let dP = originalTarget ? originalTarget.currentPower : 0;
+        let dP = originalTarget ? (Number(originalTarget.currentPower ?? originalTarget.power ?? 0) || 0) : 0;
         let dmgToDef = aP;
         let dmgToAtk = dP;
 
