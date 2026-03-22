@@ -1,6 +1,7 @@
 import { hasSkill } from '../utils/gameUtils.js';
 import { applyActiveSkillLogic, applyLeaderSkillLogic, calculateCombatPhase, applyPassiveSkillLogic } from './engine.js';
 import { GameState } from './gameState.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（中級・シミュレーション版）
@@ -50,6 +51,23 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
                 // 上書きも考慮するため全レーンをシミュレーション対象とする
                 tokenLanePatterns = [[0], [1], [2]];
+                
+                // dungeon_summon_leaderの場合はカード自体の制約（伝説・生贄）を適用して候補を絞る
+                if (action === 'dungeon_summon_leader' && GameState.enemyConfig && GameState.enemyConfig.leaderCardId) {
+                    const lc = CARD_MASTER.find(c => c.id === GameState.enemyConfig.leaderCardId);
+                    if (lc) {
+                        if (hasSkill(lc, 'legendary')) {
+                            // 伝説は中央レーン（[1]）のみ
+                            tokenLanePatterns = [[1]];
+                        }
+                        if (hasSkill(lc, 'takeover')) {
+                            // 生贄はすでにカードが存在するレーンのみ（上書き専用）
+                            tokenLanePatterns = tokenLanePatterns.filter(pattern => myBoard[pattern[0]] !== null);
+                        }
+                    }
+                }
+                
+                if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
             } else if (action === 'targeted_destruction') {
                 // 星墜ちの矢: 相手の場のカードが存在するレーンを破壊対象としてシミュレーションする
                 tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null).map(l => [l]);
