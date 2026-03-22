@@ -4,7 +4,7 @@ export default {
         'spider', 'spider',
         'mage', 'mage',
         'charger', 'charger', 'charger',
-        'diviner', 'diviner', 'diviner',
+        'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
         'scorpion', 'scorpion', 'scorpion',
     ],
@@ -16,7 +16,7 @@ export default {
         'mage', 'mage',
         'spider', 'spider',
         'charger', 'charger',
-        'diviner', 'diviner',
+        'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
     ],
     hard: [

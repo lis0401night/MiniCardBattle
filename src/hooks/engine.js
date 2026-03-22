@@ -224,6 +224,36 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             }
             break;
+        case 'reinforce':
+            // AIシミュレーション用: 手札の枚数が十分ある前提で最大数捨てるとしてトークンを手札に加える
+            const h = owner === 'blue' ? state.playerHand : state.enemyHand;
+            const actualReinforceCount = Math.min(val || 1, h.length);
+
+            for (let i = 0; i < actualReinforceCount; i++) {
+                if (h.length > 0) h.shift(); // 先頭から捨てるモック
+            }
+
+            const rTC = {
+                id: 'token_reinforce',
+                name: c.name,
+                isToken: true,
+                rarity: c.rarity || 1,
+                power: c.currentPower !== undefined ? c.currentPower : (c.power || 1),
+                basePower: c.basePower || c.power || 1,
+                currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 1),
+                voiceCategory: c.voiceCategory || 'lizard'
+            };
+
+            for (let i = 0; i < actualReinforceCount; i++) {
+                h.push({ 
+                    ...rTC, 
+                    id: `rf_sim_${Date.now()}_${i}`, 
+                    owner,
+                    imgUrl: c.imgUrl,
+                    isPremium: c.isPremium
+                });
+            }
+            break;
         case 'resurrect':
             const maxPow = val || 1;
             const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;

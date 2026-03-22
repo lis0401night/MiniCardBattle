@@ -5,7 +5,7 @@ export default {
         'dragonewt', 'dragonewt',
         'dancer', 'dancer', 'dancer', 'dancer',
         'dinosaur', 'dinosaur',
-        'cheetah', 'cheetah', 'cheetah',
+        'lizardman', 'lizardman', 'lizardman',
         'chameleon', 'chameleon', 'chameleon',
 
     ],
@@ -17,7 +17,7 @@ export default {
         'dragonewt', 'dragonewt',
         'berserker', 'berserker',
         'dancer', 'dancer', 'dancer',
-        'cheetah', 'cheetah',
+        'lizardman', 'lizardman',
         'dinosaur', 'dinosaur',
     ],
     hard: [

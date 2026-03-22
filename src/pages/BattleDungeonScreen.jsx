@@ -512,16 +512,18 @@ function RewardSelect() {
                 background: 'rgba(15, 23, 42, 0.6)',
                 border: '1px solid #475569',
                 borderRadius: '8px',
-                padding: '15px 10px',
+                padding: '15px 5px',
                 margin: '0 auto',
                 maxWidth: '380px',
                 width: '100%',
+                boxSizing: 'border-box',
                 flex: 1,
                 minHeight: 0,
                 overflowY: 'auto',
+                overflowX: 'hidden',
                 boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)'
             }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px 5px', justifyItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px 5px', justifyItems: 'center', width: '100%' }}>
                     {uniqueCards.map((id) => {
                         const ownedCount = GameState.dungeonCards ? GameState.dungeonCards.filter(c => c === id).length : 0;
                         const isMaxLimit = ownedCount >= 4;

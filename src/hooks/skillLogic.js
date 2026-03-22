@@ -372,6 +372,58 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 await sleep(400);
             }
         }
+    } else if (skillId === 'reinforce') {
+        const count = skillValue || 1;
+        playSkillSound('summon'); // 汎用の音
+        if (cEl) createDamagePopup(cEl, '増援', '#facc15');
+
+        const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        
+        // AIはランダム、プレイヤーは手動選択のUIを待機
+        const selectedHandIndices = await waitPlayerHandSelection(count, o);
+        let discardedCount = 0;
+        
+        if (selectedHandIndices && selectedHandIndices.length > 0) {
+            // 降順ソートして削除のずれを防ぐ
+            selectedHandIndices.sort((a, b) => b - a);
+            for (let i of selectedHandIndices) {
+                const discarded = h.splice(i, 1)[0];
+                await discardCard(o, discarded);
+                discardedCount++;
+            }
+        }
+
+        if (discardedCount > 0) {
+            const tokenId = `token_${c.baseId || c.id}`;
+            let tC = CARD_MASTER.find(m => m.id === tokenId);
+            if (!tC) {
+                tC = CARD_MASTER.find(m => m.id === 'token_reinforce');
+                if (!tC) tC = { id: 'token_reinforce', name: '増援', power: c.currentPower, rarity: c.rarity || 1, isToken: true, voiceCategory: c.voiceCategory, flavor: '呼び声に応え、現れた仲間。' };
+            }
+
+            for (let i = 0; i < discardedCount; i++) {
+                const newToken = {
+                    id: `rf_${Date.now()}_${i}`,
+                    owner: o,
+                    ...tC,
+                    isToken: true,
+                    isPremium: (c.isPremium !== undefined) ? c.isPremium : GameState.premiumCards.includes(c.baseId || c.id),
+                    name: c.name,
+                    power: c.currentPower !== undefined ? c.currentPower : (c.power || 0),
+                    currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 0),
+                    basePower: c.basePower !== undefined ? c.basePower : (c.power || 0),
+                    imgUrl: getCardImgUrl(c),
+                    filter: c.filter,
+                    rarity: c.rarity || 1,
+                    voiceCategory: c.voiceCategory,
+                    uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+                };
+                h.push(newToken);
+            }
+            updateDeckDisplay(o);
+            if (o === 'blue') renderHand();
+        }
+        await sleep(300);
     } else if (skillId === 'summon') {
         const val = skillValue || 1;
         const tokenId = `token_${c.baseId || c.id}`;

@@ -41,13 +41,13 @@ export const SKILLS = {
     summon: { name: '召喚', icon: '✨', desc: (val) => `召喚時、自分のレーンに、パワー${val}のトークンを配置する。` },
     immune: { name: '無効', icon: '🚫', desc: (val) => '能力による破壊やダメージを受けない。' },
     fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
-    salvage: { name: '回収', icon: '🧲', desc: (val) => '召喚時、自分の墓地からカードを1枚選択して手札に加える。' }
+    salvage: { name: '回収', icon: '🧲', desc: (val) => '召喚時、自分の墓地からカードを1枚選択して手札に加える。' },
+    reinforce: { name: '増援', icon: '📣', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。` }
 };
 
-// 召喚時にのみ発動するスキル（ボード上では発動後に非表示にする）
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
