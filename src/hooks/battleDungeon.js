@@ -169,21 +169,8 @@ export function selectRewardCard(cardId) {
 
 export function loseDungeonBattle() {
     playSound(SOUNDS.seDamage);
-    showConfirmModal(
-        `敗北しました……。到達階層: ${GameState.dungeonWinStreak + 1} 階\nリトライしますか？それともリタイアしますか？`,
-        () => {
-            // リトライ
-            GameState.dungeonState = 'select_opponent';
-            switchScreen('screen-battle-dungeon');
-            if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
-        },
-        "リトライ",
-        "リタイア",
-        () => {
-            // リタイア
-            retireDungeon();
-        }
-    );
+    // 試練の宮殿にリトライ機能はないため、直ちにリタイア処理（ポイント精算）へ移行する
+    retireDungeon();
 }
 
 export function calculateDungeonPoints(winStreak) {

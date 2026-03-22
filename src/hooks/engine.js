@@ -377,23 +377,23 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         events.push({ type: 'heal_player', side: owner, amount: d, source: 'dark_ritual' });
     } else if (action === 'targeted_destruction') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
-        let maxL = -1, maxP = -1;
-        for (let i = 0; i < 3; i++) {
-            if (eBoard[i]) {
-                const p = eBoard[i].currentPower;
-                // 同値の場合は左（iが小さい方）を優先
-                if (p > maxP) {
-                    maxP = p;
-                    maxL = i;
+        let targetLane = (tokenLanes && tokenLanes.length > 0) ? tokenLanes[0] : -1;
+        // フォールバック（未指定の場合）
+        if (targetLane === -1) {
+            let maxP = -1;
+            for (let i = 0; i < 3; i++) {
+                if (eBoard[i] && eBoard[i].currentPower > maxP) {
+                    maxP = eBoard[i].currentPower;
+                    targetLane = i;
                 }
             }
         }
-        if (maxL !== -1) {
-            if (!hasSkill(eBoard[maxL], 'immune')) {
-                eBoard[maxL].currentPower = 0;
-                events.push({ type: 'deadly', side: oppOwner, lane: maxL, source: 'targeted_destruction' });
+        if (targetLane !== -1 && eBoard[targetLane]) {
+            if (!hasSkill(eBoard[targetLane], 'immune')) {
+                eBoard[targetLane].currentPower = 0;
+                events.push({ type: 'deadly', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
             } else {
-                events.push({ type: 'immune_block', side: oppOwner, lane: maxL, source: 'targeted_destruction' });
+                events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
             }
         }
     }

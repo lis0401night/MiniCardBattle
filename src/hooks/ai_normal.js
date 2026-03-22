@@ -50,6 +50,10 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
                 // 上書きも考慮するため全レーンをシミュレーション対象とする
                 tokenLanePatterns = [[0], [1], [2]];
+            } else if (action === 'targeted_destruction') {
+                // 星墜ちの矢: 相手の場のカードが存在するレーンを破壊対象としてシミュレーションする
+                tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null).map(l => [l]);
+                if (tokenLanePatterns.length === 0) tokenLanePatterns = [null]; // 空撃ちしかできない場合
             }
         }
 

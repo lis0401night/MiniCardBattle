@@ -162,18 +162,18 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (selectedLanes.length === 0) return;
         tokenLanes = selectedLanes;
     } else if (action === 'targeted_destruction') {
-        const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner);
-        if (selectedLanes.length === 0) return;
-        tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
+        if (!tokenLanes || tokenLanes.length === 0) {
+            const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner);
+            if (selectedLanes.length === 0) return;
+            tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
+        }
     } else if (action === 'devilhunter_resurrect') {
         const maxPow = 10;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
         const validCards = discard.filter(c => (c.power || 0) <= maxPow && !c.isToken);
         const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
-        let emptyLanes = [];
-        for (let i = 0; i < 3; i++) if (!board[i]) emptyLanes.push(i);
 
-        if (validCards.length > 0 && emptyLanes.length > 0) {
+        if (validCards.length > 0) {
             let selectedCard = null;
             if (!isBlue) {
                 const sorted = [...validCards].sort((a, b) => b.power - a.power);
