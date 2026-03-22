@@ -147,8 +147,8 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     if (winCandidates.length > 0) {
         finalCandidates = winCandidates;
     } else {
-        // ③ 4ダメージ以上受ける手は除外（条件2）
-        const safeCandidates = aliveCandidates.filter(c => (startHP - c.simState.enemyHP) < 4);
+        // ③ 相手の攻撃によるダメージが4以上になる手は除外（自傷ダメージは除外条件に含めない）
+        const safeCandidates = aliveCandidates.filter(c => c.simState.combatDamageTaken < 4);
 
         if (safeCandidates.length > 0) {
             // ④～⑥の条件が存在する（4ダメージ未満の手がある）
@@ -260,8 +260,13 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // 自分の攻撃（red）は既に行われているのでここでは計算しない。
     // ただし、AIが出したばかりのカードによる「次のターン以降の脅威」は盤面評価でカバーされる。
 
+    const hpBeforeCombat = simState.enemyHP;
+
     // 4. プレイヤーの攻撃
     calculateCombatPhase(simState, 'blue');
+
+    // 相手の攻撃による純粋なダメージを記録（条件2の評価用）
+    simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
 
     return simState;
 }
