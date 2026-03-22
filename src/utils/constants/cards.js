@@ -16,7 +16,7 @@ export const CARD_MASTER = [
     { id: 'charger', name: '虹ハチドリ', power: 1, skill: 'charge', skillValue: 1, rarity: 1, voiceCategory: 'bird', flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。' },
     { id: 'crenellatedwall', name: '民兵団の射手', power: 5, skills: [{ id: 'spread', value: 1 }, { id: 'defender' }], rarity: 1, voiceCategory: 'human_male_normal', flavor: '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。' },
     { id: 'dancer', name: '魅惑の踊り子', power: 2, rarity: 1, skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }], voiceCategory: 'human_female_ikemen', flavor: '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。' },
-    { id: 'chameleon', name: '迷彩カメレオン', power: 3, skill: 'immune', skillValue: 1, rarity: 1, voiceCategory: 'lizard', flavor: '周囲の景色に完璧に溶け込む擬態能力。じっと潜んだその姿は、どんな熟練の狩人にも見抜くことはできない。' },
+    { id: 'chameleon', name: '迷彩カメレオン', power: 3, skill: 'immune', rarity: 1, voiceCategory: 'lizard', flavor: '周囲の景色に完璧に溶け込む擬態能力。じっと潜んだその姿は、どんな熟練の狩人にも見抜くことはできない。' },
     { id: 'necromancer', name: 'ヴィス・ガルドの背教者', power: 2, skill: 'resurrect', skillValue: 4, rarity: 1, voiceCategory: 'human_female_ikemen', flavor: '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。' },
     { id: 'goat', name: 'スケープゴート', power: 2, rarity: 1, skills: [{ id: 'sacrifice', value: 3 }, { id: 'charge', value: 2 }], voiceCategory: 'monster', flavor: '不吉な儀式の供物として捧げられる山羊。その命が尽きる時、主には強大な魔力が還元される。' },
     { id: 'devil', name: '地獄の放火魔', power: 2, skills: [{ id: 'spread', value: 3 }, { id: 'explode', value: 3 }], rarity: 1, voiceCategory: 'devil', flavor: '背中のタンクには地獄の業火が詰まっている。初めて武器を与えられた小悪魔は、その焦熱を振り撒くことに至上の喜びを感じていた。' },
