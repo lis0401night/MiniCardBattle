@@ -298,7 +298,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             } else {
                 if (window.showDiscardSelectionModalReact) {
                     selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card));
+                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card), { title: '復活させるカードを選択', desc: `パワー${maxPow}以下のカードを1枚場に出します。` });
                     });
                 } else {
                     selectedCard = validCards[0];
@@ -346,7 +346,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             } else {
                 if (window.showDiscardSelectionModalReact) {
                     selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, 999, (card) => resolve(card));
+                        window.showDiscardSelectionModalReact(validCards, 999, (card) => resolve(card), { title: '回収するカードを選択', desc: '墓地からカードを1枚選び、手札に加えます。' });
                     });
                 } else {
                     selectedCard = validCards[0];

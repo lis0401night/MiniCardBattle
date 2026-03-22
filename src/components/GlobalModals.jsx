@@ -204,9 +204,10 @@ export default function GlobalModals() {
       setSkillChoiceData(null);
     };
 
-    window.showDiscardSelectionModalReact = (cards, maxPow, onSelect, isViewOnly = false) => {
+    window.showDiscardSelectionModalReact = (cards, maxPow, onSelect, options = {}) => {
       playSound?.(SOUNDS?.seClick);
-      setDiscardSelectionData({ cards, maxPow, onSelect, isViewOnly });
+      const optArgs = typeof options === 'boolean' ? { isViewOnly: options } : options;
+      setDiscardSelectionData({ cards, maxPow, onSelect, ...optArgs });
     };
 
     window.showRulesModal = () => {
@@ -927,10 +928,12 @@ export default function GlobalModals() {
         <div className="modal-overlay" style={{ zIndex: 3500, display: 'flex' }}>
           <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ color: '#facc15', marginBottom: '10px' }}>
-              {discardSelectionData.isViewOnly ? '墓地一覧' : '復活させるカードを選択'}
+              {discardSelectionData.isViewOnly ? '墓地一覧' : (discardSelectionData.title || '復活させるカードを選択')}
             </h2>
             {!discardSelectionData.isViewOnly && (
-              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px' }}>パワー{discardSelectionData.maxPow}以下のカードを1枚場に出します。</p>
+              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px' }}>
+                {discardSelectionData.desc || `パワー${discardSelectionData.maxPow}以下のカードを1枚場に出します。`}
+              </p>
             )}
             <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
               <div id="gallery-card-grid" className="card-list-grid-3col">
@@ -984,14 +987,12 @@ export default function GlobalModals() {
                 )}
               </div>
             </div>
-            {/* 閲覧モード時は常に「閉じる」を表示。選択モード時はカードがない時のみ表示 */}
-            {(discardSelectionData.isViewOnly || discardSelectionData.cards.length === 0) && (
-              <button className="btn" style={{ marginTop: '20px', width: '100%', background: '#475569' }} onClick={() => {
-                const cb = discardSelectionData.onSelect;
-                setDiscardSelectionData(null);
-                if (cb && !discardSelectionData.isViewOnly) cb(null);
-              }}>閉じる</button>
-            )}
+            {/* 閲覧モードと選択モード両方で閉じる/選択しないボタンを表示 */}
+            <button className="btn" style={{ marginTop: '20px', width: '100%', background: '#475569' }} onClick={() => {
+              const cb = discardSelectionData.onSelect;
+              setDiscardSelectionData(null);
+              if (cb && !discardSelectionData.isViewOnly) cb(null);
+            }}>{discardSelectionData.isViewOnly ? '閉じる' : '選択しない'}</button>
           </div>
         </div>
       )}

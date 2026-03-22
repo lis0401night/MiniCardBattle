@@ -693,9 +693,29 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
         }
     }
 
-    if ('basePower' in card) { card.power = card.basePower; }
-    card.currentPower = card.power;
-    (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(card);
+    // マスターデータから完全な初期状態を再構成して墓地へ
+    let restoredCard;
+    const masterData = CARD_MASTER.find(m => m.id === (card.baseId || card.id));
+    if (masterData) {
+        restoredCard = JSON.parse(JSON.stringify(masterData));
+        restoredCard.uid = card.uid; // IDなどの一意のプロパティは引き継ぐ
+        restoredCard.owner = owner;
+        if (card.isPremium !== undefined) restoredCard.isPremium = card.isPremium;
+        if (restoredCard.skills && restoredCard.skills.length > 0) {
+            restoredCard.skill = restoredCard.skills[0].id;
+            restoredCard.skillValue = restoredCard.skills[0].value;
+        } else if (!restoredCard.skill) {
+            restoredCard.skill = 'none';
+        }
+    } else {
+        // マスターデータが見つからない場合（特殊トークン等）のフォールバック
+        restoredCard = { ...card };
+        if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
+        restoredCard.currentPower = restoredCard.power;
+        restoredCard.skills = []; // 付与されたスキルなどをクリア
+    }
+
+    (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
     updateDeckDisplay(owner);
     return false;
 }

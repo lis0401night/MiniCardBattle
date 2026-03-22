@@ -181,7 +181,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             } else {
                 if (window.showDiscardSelectionModalReact) {
                     selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card));
+                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card), { title: '復活させるカードを選択', desc: `パワー${maxPow}以下のカードを1枚場に出します。` });
                     });
                 } else {
                     selectedCard = validCards[0];
