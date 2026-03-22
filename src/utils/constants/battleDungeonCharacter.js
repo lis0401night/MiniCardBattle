@@ -2,6 +2,8 @@
  * Mini Card Battle - Battle Dungeon Characters
  * ダンジョンモードの敵リーダーとしての会話テキストを管理します。
  */
+import { CHARACTERS } from './characters.js';
+
 
 /**
  * リーダーカードIDからボイスカテゴリ（セリフセットID）へのマッピング

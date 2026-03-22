@@ -26,16 +26,16 @@ export async function playEvents(events) {
             case 'damage_card': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 if (board[ev.lane]) board[ev.lane].currentPower -= ev.amount;
-                
+
                 const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
                 if (cEl) {
                     cEl.classList.remove('anim-shake');
                     void cEl.offsetWidth; // reflow
                     cEl.classList.add('anim-shake');
-                    
+
                     let label = `-${ev.amount}`;
                     if (ev.source === 'explode') label = `誘爆 ${label}`;
-                    
+
                     createDamagePopup(cEl, label, '#ef4444');
                 }
                 updateCardPowerOnly(ev.lane, sidePrefix);
@@ -63,11 +63,11 @@ export async function playEvents(events) {
                     const isBuff = ev.amount > 0;
                     const prefix = isBuff ? '+' : '';
                     const color = isBuff ? '#4ade80' : '#ef4444';
-                    
+
                     let label = `${prefix}${ev.amount}`;
                     if (ev.source === 'growth') label = `成長 ${label}`;
-                    else if (ev.source === 'soul_bind') label = `吸収 ${label}`;
-                    
+                    else if (ev.source === 'soul_bind') label = `魂縛 ${label}`;
+
                     createDamagePopup(cEl, label, color);
                 }
                 updateCardPowerOnly(ev.lane, sidePrefix);
@@ -100,7 +100,7 @@ export async function playEvents(events) {
                     if (ev.source === 'contract') label = `契約 ${label}`;
                     createDamagePopup(hpFill, label, '#ef4444');
                 }
-                
+
                 // プレイヤー側の画面揺らし
                 const playmat = document.getElementById(`playmat-${sidePrefix}`);
                 if (playmat) {
@@ -112,7 +112,7 @@ export async function playEvents(events) {
                     void document.body.offsetWidth;
                     document.body.classList.add('anim-shake');
                 }
-                
+
                 updateHPBar();
                 if (!isNextDamage) {
                     playSound(SOUNDS.seDamage);
@@ -158,9 +158,9 @@ export async function playEvents(events) {
             case 'summon_card': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 board[ev.lane] = ev.card;
-                renderBoard(); 
+                renderBoard();
                 playSound(SOUNDS.sePlace);
-                
+
                 let voiceCat = ev.card ? ev.card.voiceCategory : null;
                 if (!voiceCat && ev.card) {
                     const baseId = ev.card.baseId || ev.card.id;
@@ -170,17 +170,20 @@ export async function playEvents(events) {
                         ev.card.voiceCategory = voiceCat;
                     }
                 }
-                
+
                 if (voiceCat) {
                     playCardVoice(voiceCat, 'play');
                 }
-                
+
                 await sleep(300);
                 break;
             }
             case 'add_hand': {
                 const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
                 if (hand.length < 5) {
+                    if (!ev.card.uid) {
+                        ev.card.uid = `${ev.side}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                    }
                     hand.push(ev.card);
                 }
                 renderHand();
@@ -196,7 +199,7 @@ export async function playEvents(events) {
                     if (idx !== -1) {
                         const discardedCard = hand.splice(idx, 1)[0];
                         const discardArr = ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                        
+
                         // 墓地送り時の完全リセット
                         const masterData = CARD_MASTER.find(m => m.id === (discardedCard.baseId || discardedCard.id));
                         let restoredCard;
@@ -228,7 +231,7 @@ export async function playEvents(events) {
                     if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
                     targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
                 }
-                
+
                 const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
                 const skillNameText = ev.skillId === 'invincible' ? '無敵' : 'スキル付与';
                 if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
@@ -247,7 +250,7 @@ export async function playEvents(events) {
                 if (atkEl) {
                     atkEl.style.animation = 'none'; // リセット
                     void atkEl.offsetHeight; // リフロー
-                    
+
                     if (ev.attackerSide === 'blue') {
                         atkEl.style.animation = 'attack-up 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
                     } else {
@@ -255,7 +258,7 @@ export async function playEvents(events) {
                     }
                     atkEl.style.zIndex = '20';
                     playSound(SOUNDS.seAttack);
-                    
+
                     // 1秒のアニメーション終了後にスタイルを元に戻す
                     setTimeout(() => {
                         if (atkEl) {
@@ -270,16 +273,16 @@ export async function playEvents(events) {
             }
             case 'destroy_cards': {
                 if (!ev.targets || ev.targets.length === 0) break;
-                
+
                 let anyValidTarget = false;
                 let playedVoices = new Set();
-                
+
                 // フェーズ1: 一斉にアニメーションと音を再生
                 for (const target of ev.targets) {
                     const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
                     const board = target.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                     const deadCard = board[target.lane];
-                    
+
                     if (deadCard) {
                         const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
                         if (cell) {
@@ -289,7 +292,7 @@ export async function playEvents(events) {
                                 cardEl.classList.add('anim-card-destroy');
                             }
                         }
-                        
+
                         if (deadCard.voiceCategory && !playedVoices.has(deadCard.voiceCategory)) {
                             playCardVoice(deadCard.voiceCategory, 'death');
                             playedVoices.add(deadCard.voiceCategory);
@@ -297,22 +300,22 @@ export async function playEvents(events) {
                         anyValidTarget = true;
                     }
                 }
-                
+
                 if (!anyValidTarget) break;
-                
+
                 playSound(SOUNDS.seDestroy); // SEは1回だけ
                 await sleep(400); // 破壊アニメーション待ち
-                
+
                 // フェーズ2: 一斉にデータを消去・墓地送りにして再描画
                 for (const target of ev.targets) {
                     const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
                     const board = target.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                     const deadCard = board[target.lane];
-                    
+
                     if (deadCard) {
                         if (!deadCard.isToken) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                            
+
                             const masterData = CARD_MASTER.find(m => m.id === (deadCard.baseId || deadCard.id));
                             let restoredCard;
                             if (masterData) {
@@ -329,30 +332,30 @@ export async function playEvents(events) {
                                 restoredCard.currentPower = restoredCard.power;
                                 restoredCard.skills = [];
                             }
-                            
+
                             discard.push(restoredCard);
                             updateDeckDisplay(target.side);
                         }
                         board[target.lane] = null;
-                        
+
                         // アニメーション用クラスのクリーンアップ
                         const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
                         if (cell) {
-                             const cardEl = cell.querySelector('.card');
-                             if (cardEl) {
+                            const cardEl = cell.querySelector('.card');
+                            if (cardEl) {
                                 cardEl.classList.remove('anim-shake');
                                 cardEl.classList.remove('anim-card-destroy');
-                             }
+                            }
                         }
                     }
                 }
-                
+
                 renderBoard();
                 break;
             }
         }
     }
-    
+
     // 全てのアニメーションが完了するのを確実に待つためのバッファ
     await sleep(600);
 }

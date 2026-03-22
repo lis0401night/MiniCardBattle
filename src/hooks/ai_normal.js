@@ -118,60 +118,77 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
     const startHP = myHP;
 
-    candidates.sort((a, b) => {
-        const stateA = a.simState;
-        const stateB = b.simState;
+    const getAdvantage = (state) => {
+        let myPower = 0; let opPower = 0;
+        for (let i = 0; i < 3; i++) {
+            if (state.enemyBoard[i]) myPower += state.enemyBoard[i].currentPower;
+            if (state.playerBoard[i]) opPower += state.playerBoard[i].currentPower;
+        }
+        return myPower - opPower;
+    };
 
-        // 1. ティア判定 (敗北 > 大ダメージ > 安全)
-        const getTier = (state) => {
-            if (state.enemyHP <= 0) return 3; // 敗北
-            if (state.enemyHP <= startHP - 4) return 2; // 大ダメージ (4以上減少)
-            return 1; // 安全 (3以下減少)
-        };
+    const getCountDiff = (state) => {
+        const myCount = state.enemyBoard.filter(c => c !== null).length;
+        const opCount = state.playerBoard.filter(c => c !== null).length;
+        return myCount - opCount;
+    };
 
-        const tierA = getTier(stateA);
-        const tierB = getTier(stateB);
+    // ① シミュレーションを行って全通り出す (candidates はすでにある)
 
-        if (tierA !== tierB) return tierA - tierB; // ティアが低い（1に近い）方を優先
+    // ② 負ける手は除外（条件1）
+    let aliveCandidates = candidates.filter(c => c.simState.enemyHP > 0);
+    // ⑧ それもない（どこに何を出しても負ける）ならランダムのために全復活
+    if (aliveCandidates.length === 0) aliveCandidates = candidates;
 
-        // 2. 勝利判定 (相手HP 0以下は最優先、ティア1内なら勝利を狙う)
-        if (stateA.playerHP <= 0 && stateB.playerHP > 0) return -1;
-        if (stateB.playerHP <= 0 && stateA.playerHP > 0) return 1;
+    let finalCandidates = [];
 
-        // 3. 被ダメージの最小化（同一ティア同士なら、自分のHPが多く残る方を優先する）
-        if (stateA.enemyHP !== stateB.enemyHP) return stateB.enemyHP - stateA.enemyHP;
+    // ★追加（暗黙の条件）: 相手を倒せる手（勝利）があれば最優先
+    const winCandidates = aliveCandidates.filter(c => c.simState.playerHP <= 0);
+    if (winCandidates.length > 0) {
+        finalCandidates = winCandidates;
+    } else {
+        // ③ 4ダメージ以上受ける手は除外（条件2）
+        const safeCandidates = aliveCandidates.filter(c => (startHP - c.simState.enemyHP) < 4);
 
-        // 4. 盤面アドバンテージ (自分のパワー合計 - 相手のパワー合計)
-        const getAdvantage = (state) => {
-            let myPower = 0;
-            let opPower = 0;
-            for (let i = 0; i < 3; i++) {
-                if (state.enemyBoard[i]) myPower += state.enemyBoard[i].currentPower;
-                if (state.playerBoard[i]) opPower += state.playerBoard[i].currentPower;
-            }
-            return myPower - opPower;
-        };
+        if (safeCandidates.length > 0) {
+            // ④～⑥の条件が存在する（4ダメージ未満の手がある）
+            finalCandidates = safeCandidates;
+        } else {
+            // ⑦ ④～⑥の条件が存在しない（絶対に4ダメージ以上受ける）なら除外した③の中で（つまり aliveCandidates の中で）
+            finalCandidates = aliveCandidates;
+        }
+    }
 
-        const advA = getAdvantage(stateA);
-        const advB = getAdvantage(stateB);
-        if (advA !== advB) return advB - advA;
+    // ④ 自分のパワー - プレイヤーのパワーが最も大きくなる手を選ぶ（基本条件）
+    // ⑤ ④が同列なら自分とプレイヤーの残るカード枚数の差を決める（基本条件）
+    // ⑥ ⑤も同列ならその中からランダム（基本条件）
+    // これらをソートで実現し、最も優秀な同列グループの中から1つをランダムに選ぶ
+    
+    // ソートしやすいように基本条件スコアを一次算出
+    finalCandidates.forEach(c => {
+        c.advDiff = getAdvantage(c.simState);
+        c.countDiff = getCountDiff(c.simState);
+    });
 
-        // 4. カード枚数
-        const getCount = (board) => board.filter(c => c !== null).length;
-        const countA = getCount(stateA.enemyBoard);
-        const countB = getCount(stateB.enemyBoard);
-        if (countA !== countB) return countB - countA;
-
+    // ④と⑤の順で降順ソート
+    finalCandidates.sort((a, b) => {
+        if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff;
+        if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff;
         return 0;
     });
 
-    console.log("AI Candidates (top 3):", candidates.slice(0, 3).map(c => ({
-        index: c.index,
-        lane: c.lane,
-        hp: c.simState.enemyHP,
-        tier: (c.simState.enemyHP <= 0 ? 3 : (c.simState.enemyHP <= startHP - 4 ? 2 : 1))
-    })));
-    return candidates[0];
+    const topCandidate = finalCandidates[0];
+    const topAdv = topCandidate.advDiff;
+    const topCount = topCandidate.countDiff;
+
+    // ④と⑤が完全に同等の最善手グループを抽出
+    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount);
+
+    // ⑥ ⑤も同列ならその中からランダム
+    const finalDecision = bestGroup[Math.floor(Math.random() * bestGroup.length)];
+
+    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount);
+    return finalDecision;
 }
 
 // 以下の関数は getBestSimulatedMove に統合されました

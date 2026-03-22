@@ -57,38 +57,43 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = []) {
             const eH = owner === 'blue' ? state.enemyHand : state.playerHand;
             if (eH && eH.length > 0) {
                 const count = val || 1;
-                for (let k = 0; k < count; k++) {
-                    if (eH.length === 0) break;
-                    let maxIdx = -1;
-                    let maxP = -1;
-                    for (let i = 0; i < eH.length; i++) {
-                        if (eH[i].power > maxP) {
-                            maxP = eH[i].power;
-                            maxIdx = i;
-                        }
-                    }
-                    if (maxIdx !== -1) {
-                        // 捨てて虚空を加える
-                        const discarded = eH.splice(maxIdx, 1)[0];
-                        const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
-                        if (eD) eD.push(discarded);
-                        events.push({ type: 'discard', side: oppOwner, card: JSON.parse(JSON.stringify(discarded)) });
+                // 手札からパワーの上位N枚を選ぶための候補リストを作成
+                // （同値の場合は左手優先 = インデックスが小さい方優先）
+                let candidates = eH.map((card, index) => ({ power: card.power || 0, index })).sort((a, b) => {
+                    if (b.power !== a.power) return b.power - a.power;
+                    return a.index - b.index; // 同値ならインデックス昇順
+                });
 
-                        const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
-                        // 虚空トークンの追加
-                        const voidToken = {
-                            ...voidTpl,
-                            id: `token_void_${Date.now()}_${k}`,
-                            filter: voidTpl.filter,
-                            power: voidTpl.power,
-                            currentPower: voidTpl.power,
-                            basePower: voidTpl.power,
-                            skill: voidTpl.skill || 'none',
-                            voiceCategory: voidTpl.voiceCategory || 'undead'
-                        };
-                        eH.push(voidToken);
-                        events.push({ type: 'add_hand', side: oppOwner, card: voidToken, source: 'morph' });
-                    }
+                // 上位N件を取得
+                const toProcess = candidates.slice(0, count);
+
+                // インデックスを降順（後ろから）にしてスプライス削除できるようにする
+                toProcess.sort((a, b) => b.index - a.index);
+
+                // 各カードを削除して、破棄イベントを発行
+                for (let i = 0; i < toProcess.length; i++) {
+                    const idx = toProcess[i].index;
+                    const discarded = eH.splice(idx, 1)[0];
+                    const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
+                    if (eD) eD.push(discarded);
+                    events.push({ type: 'discard', side: oppOwner, card: JSON.parse(JSON.stringify(discarded)) });
+                }
+
+                // 削除した枚数分、新しく虚空トークンを追加してイベントを発行
+                const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+                for (let k = 0; k < toProcess.length; k++) {
+                    const voidToken = {
+                        ...voidTpl,
+                        id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_${k}`,
+                        filter: voidTpl.filter,
+                        power: voidTpl.power,
+                        currentPower: voidTpl.power,
+                        basePower: voidTpl.power,
+                        skill: voidTpl.skill || 'none',
+                        voiceCategory: voidTpl.voiceCategory || 'undead'
+                    };
+                    eH.push(voidToken);
+                    events.push({ type: 'add_hand', side: oppOwner, card: voidToken, source: 'morph' });
                 }
             }
             break;

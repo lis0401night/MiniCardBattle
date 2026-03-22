@@ -114,7 +114,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
         cardCounts[randomCard.id] = (cardCounts[randomCard.id] || 0) + 1;
     }
 
-    let hp = 1; // デバッグ用に一律1
+    let hp = 20; // 敵のHPはデフォルト20
 
     const imagePath = leaderCard.image || `assets/cards/card_${leaderCard.id}.jpg`;
     const dialogueData = getDungeonCharacterDialogue(leaderCard.id);
@@ -148,19 +148,22 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     };
 };
 
-// 指定したキャラクターのハード用敵を1体生成する
-export const generateCharacterBossEnemy = () => {
+// 指定したキャラクターのボス用敵を階層に応じて生成する
+export const generateCharacterBossEnemy = (floorNum) => {
     const leaderIds = Object.keys(ENEMY_DECKS).filter(id => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan');
     const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
     const char = CHARACTERS[bossId];
-    const deck = ENEMY_DECKS[bossId].hard || ENEMY_DECKS[bossId].normal || [];
+    
+    // 30階まではノーマル、40階以降はハード
+    const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
+    const deck = ENEMY_DECKS[bossId][difficultyMode] || ENEMY_DECKS[bossId].normal || [];
 
     return {
         ...char,
         id: `dungeon_boss_${bossId}_${Date.now()}`,
         isDungeonEnemy: true,
         fixedAiLevel: 3,
-        hp: 1, // キャラクターHPもデバッグ用に一律1
+        hp: char.hp || 20,
         dungeonDeck: deck
     };
 };
@@ -189,7 +192,7 @@ export const generateDungeonOpponentsList = (winStreak) => {
 
     let opponents = [];
     if (isBoss) {
-        opponents.push(generateCharacterBossEnemy());
+        opponents.push(generateCharacterBossEnemy(battleNumber));
     } else {
         const opp1 = generateGenericDungeonEnemy(targetRarity);
         let opp2 = generateGenericDungeonEnemy(targetRarity);

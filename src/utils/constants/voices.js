@@ -135,7 +135,7 @@ export const VOICE_CATEGORIES = {
     'rock': {
         play: 'assets/audio/voice/voice_rock_play.wav',
         death: 'assets/audio/voice/voice_rock_death.wav',
-        volume: 0.5
+        volume: 1.0
     },
     'machine_old': {
         play: 'assets/audio/voice/voice_machine_old_play.wav',

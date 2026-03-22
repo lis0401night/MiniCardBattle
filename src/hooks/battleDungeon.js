@@ -6,6 +6,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import { initSelectScreen, startGameMode, showDungeonMenu, performFadeTransition } from './uiMainCore.js';
 import { startBattleFlow } from './deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS } from '../utils/constants/characters.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 
 export function initBattleDungeon() {
@@ -83,8 +84,6 @@ export function loadDungeonProgress() {
 export function clearDungeonSave() {
     localStorage.removeItem('mini_card_battle_dungeon_save');
 }
-
-import { CHARACTERS } from '../utils/constants/characters.js';
 
 export function selectRentalDeck(deckData) {
     playSound(SOUNDS.seSelect);
