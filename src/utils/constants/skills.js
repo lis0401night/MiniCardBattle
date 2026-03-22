@@ -39,7 +39,7 @@ export const SKILLS = {
     artillery: { name: '砲撃', icon: '💥', desc: (val) => `召喚時、相手リーダーに${val}ダメージ` },
     shuffle: { name: '攪乱', icon: '🃏', desc: (val) => '召喚時、お互いの手札を全て捨て、墓地をリセットする。その後、お互いにカードを4枚引く。' },
     summon: { name: '召喚', icon: '✨', desc: (val) => `召喚時、自分のレーンに、パワー${val}のトークンを配置する。` },
-    immune: { name: '無効', icon: '🚫', desc: (val) => '能力による破壊、ダメージを受けない。' },
+    immune: { name: '無効', icon: '🚫', desc: (val) => '能力による破壊やダメージを受けない。' },
     fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
     salvage: { name: '回収', icon: '🧲', desc: (val) => '召喚時、自分の墓地からカードを1枚選択して手札に加える。' }
 };
