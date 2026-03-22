@@ -136,14 +136,14 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes, false);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes, true);
         if (selectedLanes.length === 0) return; // キャンセルされた場合
         tokenLanes = selectedLanes;
     } else if (action === 'dungeon_summon_leader') {
         const config = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
         const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const tokenCard = CARD_MASTER.find(m => m.id === config.leaderCardId);
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, true, tokenLanes, false);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, true, tokenLanes, true);
         if (selectedLanes.length === 0) return;
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
@@ -151,7 +151,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             if (b[l]) { await discardCard(owner, b[l], l); }
             b[l] = { id: `dng_tk_${Date.now()}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
             b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
-            
+
             // Add custom summon event to play correct standard visualizer pipeline
             events.push({ type: 'leader_skill', skill: action, side: owner });
             events.push({ type: 'summon_card', side: owner, lane: l, card: b[l], source: 'dungeon_summon_leader' });
@@ -201,8 +201,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             if (actualIdx !== -1) discard.splice(actualIdx, 1);
 
             const targetLane = tLanes[0];
-            const resurrectedCard = { 
-                ...selectedCard, 
+            const resurrectedCard = {
+                ...selectedCard,
                 id: `res_${Date.now()}`,
                 baseId: selectedCard.baseId || selectedCard.id
             };
