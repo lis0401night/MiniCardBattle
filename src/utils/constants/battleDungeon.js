@@ -94,30 +94,54 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     const leaderCard = validLeaders[Math.floor(Math.random() * validLeaders.length)];
 
     let deck = [leaderCard.id, leaderCard.id, leaderCard.id, leaderCard.id];
-    const poolRarityMax = leaderCard.rarity || targetRarity;
-    const randomPool = candidates.filter(c => c.rarity <= poolRarityMax);
-    
-    // リーダーカードは既に4枚入っているので抽選プールから除外
-    const safePool = randomPool.filter(c => c.id !== leaderCard.id);
+    const lRarity = leaderCard.rarity || targetRarity;
     
     const cardCounts = {};
     deck.forEach(id => {
         cardCounts[id] = (cardCounts[id] || 0) + 1;
     });
 
-    for (let i = 0; i < 16; i++) {
-        const availablePool = safePool.filter(c => (cardCounts[c.id] || 0) < 4);
-        if (availablePool.length === 0) break; // 候補が枯渇した時のフェイルセーフ
+    // ヘルパー: 指定レアリティからN枚ピックしてデッキに追加
+    const pickCards = (targetR, count) => {
+        let pool = candidates.filter(c => c.rarity === targetR && c.id !== leaderCard.id);
+        for(let i=0; i<count; i++) {
+            let available = pool.filter(c => (cardCounts[c.id] || 0) < 4);
+            if(available.length === 0) break;
+            let picked = available[Math.floor(Math.random() * available.length)];
+            deck.push(picked.id);
+            cardCounts[picked.id] = (cardCounts[picked.id] || 0) + 1;
+        }
+    };
 
-        const randomCard = availablePool[Math.floor(Math.random() * availablePool.length)];
-        deck.push(randomCard.id);
-        cardCounts[randomCard.id] = (cardCounts[randomCard.id] || 0) + 1;
+    if (lRarity >= 4) {
+        pickCards(4, 3);
+        pickCards(3, 3);
+        pickCards(2, 3);
+    } else if (lRarity === 3) {
+        pickCards(3, 3);
+        pickCards(2, 3);
+    } else if (lRarity === 2) {
+        pickCards(2, 3);
+    }
+    
+    // 残りの枠はすべてブロンズ(レアリティ1)
+    pickCards(1, 20 - deck.length);
+
+    // デッキ枯渇のフェイルセーフ(万が一20枚に満たない場合)
+    while (deck.length < 20) {
+        let available = candidates.filter(c => c.rarity === 1 && c.id !== leaderCard.id);
+        if (available.length === 0) break;
+        let picked = available[Math.floor(Math.random() * available.length)];
+        deck.push(picked.id);
     }
 
     let hp = 20; // 敵のHPはデフォルト20
 
     const imagePath = leaderCard.image || `assets/cards/card_${leaderCard.id}.jpg`;
     const dialogueData = getDungeonCharacterDialogue(leaderCard.id);
+
+    const RarityCostMap = { 1: 3, 2: 4, 3: 5, 4: 5 };
+    const leaderCost = RarityCostMap[leaderCard.rarity || targetRarity] || 3;
 
     return {
         id: `dungeon_${leaderCard.id}_${Date.now()}_${Math.random()}`,
@@ -133,8 +157,8 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
         color: '#dc2626',
         leaderSkill: {
             name: `${leaderCard.name}の召喚`,
-            desc: `(SP:3) 自身のレーンに「${leaderCard.name}(P:${leaderCard.power})」を1体召喚する。`,
-            cost: 3,
+            desc: `(SP:${leaderCost}) 自身のレーンに「${leaderCard.name}(P:${leaderCard.power})」を1体召喚する。`,
+            cost: leaderCost,
             action: 'dungeon_summon_leader'
         },
         leaderCardId: leaderCard.id,
