@@ -20,6 +20,7 @@ import { setupDialogueScreen } from './uiDialogue.js';
 import { showDefenseBattleList } from './uiMainCore.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
 import { winDungeonBattle, loseDungeonBattle, retireDungeon } from './battleDungeon.js';
+import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 
 // ==========================================
 // イベント駆動型タスクキューエンジン (State Machine Core)
@@ -396,14 +397,16 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
     return new Promise((resolve) => {
         GameState.isPlacementMode = true;
         GameState.placementCount = count;
-        GameState.placementToken = tokenCard;
+        GameState.placementToken = tokenCard || null;
         GameState.placementSelectedLanes = [];
+        GameState.placementCheckConstraints = checkConstraints;
         updateCardDetail(null);
 
         const cleanUp = () => {
             GameState.isPlacementMode = false;
             GameState.placementCount = 0;
             GameState.placementToken = null;
+            GameState.placementCheckConstraints = true;
             const result = [...GameState.placementSelectedLanes];
             GameState.placementSelectedLanes = [];
             window.handlePlacementLaneClick = null;

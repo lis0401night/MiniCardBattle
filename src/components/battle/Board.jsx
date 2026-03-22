@@ -72,9 +72,10 @@ export default function Board({
                     
                     if (GameState.isPlacementMode) {
                         const tCard = GameState.placementToken;
+                        const checkEnv = GameState.placementCheckConstraints !== false; // フラグが明示的にfalseなら制約無視
                         if (GameState.placementSelectedLanes?.includes(lane)) {
                             isHighlight = false;
-                        } else if (tCard) {
+                        } else if (tCard && checkEnv) {
                             if (hasSkill && hasSkill(tCard, 'legendary')) {
                                 isHighlight = (lane === 1);
                             } else if (hasSkill && hasSkill(tCard, 'takeover')) {
