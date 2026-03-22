@@ -276,7 +276,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         checkWinCondition();
         await sleep(400);
     } else if (skillId === 'standby') {
-        const turns = (skillValue || 1) + 1;
+        const turns = (skillValue || 1);
         c.stunTurns = turns;
         if (cEl) {
             cEl.classList.remove('anim-shake');
@@ -364,6 +364,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     restoredCard.skill = restoredCard.skills[0]?.id || 'none';
                     restoredCard.skillValue = restoredCard.skills[0]?.value || 0;
                 }
+                restoredCard.basePower = restoredCard.power;
+                restoredCard.currentPower = restoredCard.power;
                 
                 hand.push({ ...restoredCard, uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` });
                 

@@ -707,6 +707,8 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
         } else if (!restoredCard.skill) {
             restoredCard.skill = 'none';
         }
+        restoredCard.basePower = restoredCard.power;
+        restoredCard.currentPower = restoredCard.power;
     } else {
         // マスターデータが見つからない場合（特殊トークン等）のフォールバック
         restoredCard = { ...card };
