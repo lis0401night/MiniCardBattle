@@ -18,9 +18,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -357,7 +357,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 const actualIdx = discard.indexOf(selectedCard);
                 if (actualIdx !== -1) discard.splice(actualIdx, 1);
                 
-                hand.push({ ...selectedCard, uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` });
+                // カードのステータスを初期状態にリセット
+                const masterData = CARD_MASTER.find(m => m.id === (selectedCard.baseId || selectedCard.id));
+                const restoredCard = masterData ? JSON.parse(JSON.stringify(masterData)) : { ...selectedCard };
+                if (restoredCard.skills) {
+                    restoredCard.skill = restoredCard.skills[0]?.id || 'none';
+                    restoredCard.skillValue = restoredCard.skills[0]?.value || 0;
+                }
+                
+                hand.push({ ...restoredCard, uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` });
                 
                 playSound(SOUNDS.seDraw);
                 updateDeckDisplay(o);

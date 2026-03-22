@@ -452,8 +452,8 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                 });
                 if (!confirmed) return;
                 
-                // 既存カードを破棄
-                if (!(await discardCard(owner, board[laneIndex], laneIndex))) board[laneIndex] = null;
+                // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
+                if (!(await discardCard(owner, board[laneIndex], laneIndex, false))) board[laneIndex] = null;
                 if (updateBattleUIHook) updateBattleUIHook();
             }
 
@@ -643,21 +643,23 @@ export async function waitSkillChoice(choices, owner, card) {
         }
     });
 }
-export async function discardCard(owner, card, lane) {
+export async function discardCard(owner, card, lane, isDestroyed = true) {
     if (card.isToken) return false;
     let skillsToResolve = [];
     if (card.skill && card.skill !== 'none') skillsToResolve.push({ id: card.skill, value: card.skillValue });
     if (Array.isArray(card.skills)) skillsToResolve = skillsToResolve.concat(card.skills);
 
     for (const sk of skillsToResolve) {
-        // 分裂(split)
-        if (sk.id === 'split' && lane !== undefined) {
-            await triggerSplitSkill(owner, lane, card);
-            return true; // 分裂した場合は墓地に行かず場に残る
-        }
-        // 誘爆(explode)
-        if (sk.id === 'explode' && lane !== undefined) {
-            await triggerExplodeSkill(owner, lane, card);
+        if (isDestroyed) {
+            // 分裂(split)
+            if (sk.id === 'split' && lane !== undefined) {
+                await triggerSplitSkill(owner, lane, card);
+                return true; // 分裂した場合は墓地に行かず場に残る
+            }
+            // 誘爆(explode)
+            if (sk.id === 'explode' && lane !== undefined) {
+                await triggerExplodeSkill(owner, lane, card);
+            }
         }
     }
 
@@ -909,9 +911,9 @@ export async function endTurnLogic(o) {
 
 export async function playCard(o, hI, l) {
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand, b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    // 上書き配置時の破棄処理
+    // 上書き配置時の破棄処理（破壊効果は発動させない）
     if (b[l]) {
-        if (!(await discardCard(o, b[l], l))) b[l] = null;
+        if (!(await discardCard(o, b[l], l, false))) b[l] = null;
     }
     b[l] = h.splice(hI, 1)[0];
     const c = b[l];

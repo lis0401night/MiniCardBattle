@@ -79,7 +79,8 @@ export async function executeEnemyAI() {
             if (decision.index !== -1 && decision.lane !== -1) {
                 if (decision.isOverwrite) {
                     const oldCard = GameState.enemyBoard[decision.lane];
-                    await discardCard('red', oldCard, decision.lane);
+                    // 強いカードを置くために既存のカードを破棄（上書きなので破壊効果は発動しない）
+                    await discardCard('red', oldCard, decision.lane, false);
                 }
                 await playCard('red', decision.index, decision.lane);
                 await sleep(600);

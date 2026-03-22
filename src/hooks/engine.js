@@ -474,12 +474,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         if (originalTarget && hasSkill(originalTarget, 'double_strike')) dmgToAtk *= 2;
 
         const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
+        if (isOriginalTargetDefender) dmgToAtk = 0; // 防御は反撃ダメージを与えない
 
         if (dmgToDef > 0) events.push({ type: 'damage_card', side: defSide, lane: dLane, amount: dmgToDef });
-        if (!isOriginalTargetDefender && dmgToAtk > 0) events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
+        if (dmgToAtk > 0) events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
 
         dC.currentPower -= dmgToDef;
-        if (!isOriginalTargetDefender) aC_defend.currentPower -= dmgToAtk;
+        aC_defend.currentPower -= dmgToAtk;
 
         if (dmgToDef > 0 && hasSkill(aC, 'deadly')) {
             if (!hasSkill(dC, 'immune')) {
