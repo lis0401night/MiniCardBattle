@@ -15,6 +15,7 @@ import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
  * @param {number} val skillValue
  * @param {Array} events - オプションのイベントログ配列
  * @returns {Array} 発生したイベントログ
+ */
 export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], simulatedTokenLanes = null) {
     const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
     const eB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
