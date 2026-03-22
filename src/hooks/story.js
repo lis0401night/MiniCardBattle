@@ -105,12 +105,5 @@ export function handleStoryProgression() {
     } else if (GameState.appState === 'ending_dialogue') {
         GameState.appState = 'ending_illust';
         switchScreen('screen-ending-illust');
-        const img = document.getElementById('ending-illust-img');
-        const txt = document.getElementById('ending-text');
-        img.src = GameState.playerConfig.imageEnding;
-        setTimeout(() => {
-            img.style.opacity = 1;
-            txt.style.opacity = 1;
-        }, 100);
     }
 }
