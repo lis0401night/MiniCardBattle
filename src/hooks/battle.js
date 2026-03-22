@@ -1075,21 +1075,16 @@ export function endBattle() {
             ];
         }
 
-        // --- モード別の勝利/敗北時の固有処理 (API呼び出しや実績) ---
         if (GameState.gameMode === 'battle_dungeon') {
-            import('../utils/constants/battleDungeonCharacter.js').then(({ getDungeonCharacterDialogue }) => {
-                const dialogueData = getDungeonCharacterDialogue(GameState.enemyConfig.id);
-                let endText = GameState.lastBattleResult === 'win' ? 
-                    (dialogueData.dialogue?.lose?.default || '') : 
-                    (dialogueData.dialogue?.win?.default || '');
+            const dialogueData = getDungeonCharacterDialogue(GameState.enemyConfig.id);
+            let endText = GameState.lastBattleResult === 'win' ? 
+                (dialogueData.dialogue?.lose?.default || '') : 
+                (dialogueData.dialogue?.win?.default || '');
 
-                GameState.dialogueQueue = [
-                    { speaker: 'enemy', text: endText }
-                ];
-                import('./uiDialogue.js').then(({ setupDialogueScreen }) => {
-                    setupDialogueScreen();
-                });
-            });
+            GameState.dialogueQueue = [
+                { speaker: 'enemy', text: endText }
+            ];
+            setupDialogueScreen();
             return;
         }
 

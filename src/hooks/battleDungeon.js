@@ -1,11 +1,12 @@
-import { getRentalDeckOptions, getDungeonEnemyCandidates } from '../utils/constants/battleDungeon.js';
+import { getRentalDeckOptions, getDungeonEnemyCandidates, generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
 import { GameState } from './gameState.js';
 import { playSound, switchScreen, executeSwitchScreen, getOrCreateUUID } from '../utils/gameUtils.js';
 import { showConfirmModal, showAlertModal, showPointAcquisitionModal } from './uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { initSelectScreen, startGameMode, showDungeonMenu } from './uiMainCore.js';
+import { initSelectScreen, startGameMode, showDungeonMenu, performFadeTransition } from './uiMainCore.js';
 import { startBattleFlow } from './deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { setupDialogueScreen } from './uiDialogue.js';
 
 export function initBattleDungeon() {
     playSound(SOUNDS.seClick);
@@ -108,11 +109,9 @@ export function selectRentalDeck(deckData) {
 
 
 export function generateNextOpponents(callback) {
-    import('../utils/constants/battleDungeon.js').then(({ generateDungeonOpponentsList }) => {
-        GameState.dungeonOpponents = generateDungeonOpponentsList(GameState.dungeonWinStreak);
-        if (callback) callback();
-        if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
-    });
+    GameState.dungeonOpponents = generateDungeonOpponentsList(GameState.dungeonWinStreak);
+    if (callback) callback();
+    if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
 }
 
 export function startDungeonBattle(enemyIndex) {
@@ -136,9 +135,7 @@ export function startDungeonBattle(enemyIndex) {
     GameState.dialogueQueue = [
         { speaker: 'enemy', text: enemy.preBattleLine || '我が前に立ち塞がるか。' }
     ];
-    import('./uiDialogue.js').then(({ setupDialogueScreen }) => {
-        setupDialogueScreen();
-    });
+    setupDialogueScreen();
 }
 
 export function winDungeonBattle() {
@@ -257,19 +254,15 @@ export function retireDungeon() {
 export function handleBattleDungeonProgression() {
     if (GameState.appState === 'pre_dialogue') {
         GameState.appState = 'select_player';
-        import('./deck.js').then(({ startBattleFlow }) => {
-            startBattleFlow();
-        });
+        startBattleFlow();
     } else if (GameState.appState === 'post_dialogue') {
-        import('./uiMainCore.js').then(({ performFadeTransition }) => {
-            performFadeTransition(() => {
-                GameState.appState = 'menu';
-                if (GameState.lastBattleResult === 'win') {
-                    winDungeonBattle();
-                } else {
-                    loseDungeonBattle();
-                }
-            });
+        performFadeTransition(() => {
+            GameState.appState = 'menu';
+            if (GameState.lastBattleResult === 'win') {
+                winDungeonBattle();
+            } else {
+                loseDungeonBattle();
+            }
         });
     }
 }

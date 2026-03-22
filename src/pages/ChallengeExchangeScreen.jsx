@@ -3,6 +3,7 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import { GameState } from '../hooks/gameState.js';
+import { saveDeck } from '../hooks/deck.js';
 import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
@@ -89,9 +90,7 @@ export default function ChallengeExchangeScreen() {
             const newInventory = { ...inventory, [item.id]: currentCount + 1 };
             setInventory(newInventory);
             GameState.playerInventory = newInventory;
-            import('../hooks/deck.js').then(({ saveDeck }) => {
-                if (saveDeck) saveDeck();
-            });
+            if (typeof saveDeck === 'function') saveDeck();
             showAlertModal(`「${item.displayName || item.id}」を1枚交換しました！`);
         } else {
             const newUnlocked = [...unlockedSkins, item.id];
