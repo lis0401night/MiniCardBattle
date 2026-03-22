@@ -485,29 +485,27 @@ function RewardSelect() {
 
     return (
         <div id="screen-reward" style={{ color: '#fff', textAlign: 'center', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ color: '#facc15', flexShrink: 0 }}>バトル勝利！</h3>
 
             {enemy && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', marginTop: '10px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '15px' }}>
-                        <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: '#475569', margin: 0 }} onClick={handleCheckPocket}>
-                            所持カード確認
-                        </button>
-                        <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleCheckDeck}>
-                            デッキ確認
-                        </button>
-                    </div>
-
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #64748b', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '5px', marginTop: '10px', flexShrink: 0 }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #64748b', marginBottom: '5px' }}>
                         <img src={enemy.image} alt={enemy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{enemy.name} のデッキ</div>
                 </div>
             )}
 
-            <p style={{ marginBottom: '15px', fontSize: '0.85rem', color: '#cbd5e1', flexShrink: 0 }}>
-                倒した相手のデッキから1枚選んで獲得できます。<br />
-                カードを長押しで詳細をプレビューできます。
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '10px', flexShrink: 0 }}>
+                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: '#475569', margin: 0 }} onClick={handleCheckPocket}>
+                    所持カード確認
+                </button>
+                <button className="btn" style={{ padding: '8px 12px', fontSize: '0.8rem', width: 'auto', background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleCheckDeck}>
+                    デッキ確認
+                </button>
+            </div>
+
+            <p style={{ marginBottom: '10px', fontSize: '0.85rem', color: '#cbd5e1', flexShrink: 0 }}>
+                倒した相手のデッキから1枚選んで獲得できます。
             </p>
 
             <div style={{
