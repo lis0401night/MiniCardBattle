@@ -382,7 +382,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
     } else if (action === 'dark_ritual') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
-        const d = 2;
+        const d = 3;
         if (isBlue) {
             state.enemyHP -= d;
             state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
