@@ -6,7 +6,7 @@ export default {
         'dancer', 'dancer', 'dancer', 'dancer',
         'dinosaur', 'dinosaur',
         'cheetah', 'cheetah', 'cheetah',
-        'sniper', 'sniper', 'sniper',
+        'airship', 'airship', 'airship',
 
     ],
     normal: [

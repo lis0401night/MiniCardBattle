@@ -333,6 +333,38 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             }
         }
         await sleep(300);
+    } else if (skillId === 'salvage') {
+        const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        const validCards = discard.filter(card => !card.isToken);
+
+        if (validCards.length > 0) {
+            let selectedCard = null;
+            if (o === 'red') {
+                const sorted = [...validCards].sort((a, b) => b.power - a.power);
+                selectedCard = sorted[0];
+            } else {
+                if (window.showDiscardSelectionModalReact) {
+                    selectedCard = await new Promise(resolve => {
+                        window.showDiscardSelectionModalReact(validCards, 999, (card) => resolve(card));
+                    });
+                } else {
+                    selectedCard = validCards[0];
+                }
+            }
+
+            if (selectedCard) {
+                const actualIdx = discard.indexOf(selectedCard);
+                if (actualIdx !== -1) discard.splice(actualIdx, 1);
+                
+                hand.push({ ...selectedCard, uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` });
+                
+                playSound(SOUNDS.seDraw);
+                updateDeckDisplay(o);
+                renderHand();
+                await sleep(400);
+            }
+        }
     } else if (skillId === 'summon') {
         const val = skillValue || 1;
         const tokenId = `token_${c.baseId || c.id}`;

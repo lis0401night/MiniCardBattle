@@ -3,7 +3,7 @@ export default {
         'golem', 'golem', 'golem', 'golem',
         'titan', 'titan',
         'mantis', 'mantis',
-        'wall', 'wall', 'wall',
+        'airship', 'airship', 'airship',
         'cleric', 'cleric', 'cleric',
         'diviner', 'diviner', 'diviner',
         'clone', 'clone', 'clone',
