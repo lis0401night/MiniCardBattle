@@ -7,6 +7,82 @@ import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
  */
 
 /**
+ * 破壊されたカードのクリーンアップと、破壊時スキルの処理を行う共通関数
+ */
+function processDestructionTriggers(state, events) {
+    let anyDestroyedAtAll = false;
+    let anyDestroyed = true;
+    while (anyDestroyed) {
+        anyDestroyed = false;
+        let destroyedThisLoop = [];
+        let tokensToSummonThisLoop = [];
+        const targets = [
+            { board: state.playerBoard, side: 'blue', oppSide: 'red' },
+            { board: state.enemyBoard, side: 'red', oppSide: 'blue' }
+        ];
+
+        targets.forEach(({ board, side, oppSide }) => {
+            for (let i = 0; i < 3; i++) {
+                if (board[i] && board[i].currentPower <= 0) {
+                    const deadCard = board[i];
+                    destroyedThisLoop.push({ side, lane: i, card: deadCard });
+                    board[i] = null;
+                    anyDestroyed = true;
+                    anyDestroyedAtAll = true;
+
+                    // 分裂(split)
+                    if (hasSkill(deadCard, 'split')) {
+                        const val = getSkillValue(deadCard, 'split') || 2;
+                        const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
+                        tokensToSummonThisLoop.push({
+                            side,
+                            lane: i,
+                            card: {
+                                id: `sp_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
+                                owner: side,
+                                ...tL,
+                                imgUrl: 'assets/cards/card_legs.jpg',
+                                power: val,
+                                currentPower: val,
+                                basePower: val,
+                                rarity: tL.rarity || 1
+                            }
+                        });
+                    }
+
+                    // 誘爆(explode)
+                    if (hasSkill(deadCard, 'explode')) {
+                        const dmg = getSkillValue(deadCard, 'explode') || 3;
+                        [i - 1, i + 1].forEach(adj => {
+                            if (adj >= 0 && adj < 3 && board[adj]) {
+                                if (!hasSkill(board[adj], 'immune')) {
+                                    board[adj].currentPower -= dmg;
+                                    events.push({ type: 'damage_card', side, lane: adj, amount: dmg, source: 'explode' });
+                                } else {
+                                    events.push({ type: 'immune_block', side, lane: adj, source: 'explode' });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+
+        if (destroyedThisLoop.length > 0) {
+            events.push({ type: 'destroy_cards', targets: destroyedThisLoop });
+        }
+        tokensToSummonThisLoop.forEach(t => {
+            const tgtBoard = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
+            if (!tgtBoard[t.lane]) {
+                tgtBoard[t.lane] = t.card;
+                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: t.card, source: 'split' });
+            }
+        });
+    }
+    return anyDestroyedAtAll;
+}
+
+/**
  * 配置時スキルの効果を適用する (純粋関数)
  * @param {Object} state { b, eB, pHP, eHP, pSP, eSP, ... }
  * @param {string} owner 'blue' or 'red'
@@ -56,33 +132,29 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'morph':
             const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
             if (eHandRef && eHandRef.length > 0) {
-                const count = val || 1;
-                let processedCount = 0;
-                let processLoop = true;
+                const count = Number(val) || 1;
+                
+                // 対象となるカード（虚空を除く）を抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
+                const validTargets = eHandRef
+                    .map((card, idx) => ({ card, idx }))
+                    .filter(t => !(t.card.name === '虚空' && (t.card.power === 1 || t.card.basePower === 1)))
+                    .sort((a, b) => {
+                        const pA = a.card.currentPower ?? a.card.power ?? 0;
+                        const pB = b.card.currentPower ?? b.card.power ?? 0;
+                        if (pB !== pA) return pB - pA;
+                        return a.idx - b.idx; // インデックスが小さい方を優先
+                    });
 
-                while(processedCount < count && processLoop) {
-                    processLoop = false;
-                    let maxP = -1;
-                    let maxIndex = -1;
-                    
-                    // パワーの最も高いカード（虚空を除く）を探す。同値は左優先（インデックスが小さい）
-                    for (let i = 0; i < eHandRef.length; i++) {
-                        const targetCard = eHandRef[i];
-                        // このループで新しく追加した虚空は対象外にするための簡易チェック
-                        if (targetCard.name === '虚空' && targetCard.power === 1 && targetCard.isMorphToken) {
-                            continue;
-                        }
+                const actualCount = Math.min(count, validTargets.length);
+                console.log(`[DEBUG] morph executed. val(skillValue): ${val}, count: ${count}, validTargets length: ${validTargets.length}, actualCount: ${actualCount}`);
 
-                        const p = targetCard.power || 0;
-                        if (p > maxP) {
-                            maxP = p;
-                            maxIndex = i;
-                        }
-                    }
-
-                    if (maxIndex !== -1) {
-                        // 見つかったカードを削除して手札に追加
-                        const discarded = eHandRef.splice(maxIndex, 1)[0];
+                for (let i = 0; i < actualCount; i++) {
+                    const targetInfo = validTargets[i];
+                    // eHandRef から対象カードを探して削除
+                    // （※途中で削除するとインデックスがずれるため、一意なプロパティで検索するか、あるいは直接オブジェクト参照で削除する）
+                    const removeIdx = eHandRef.findIndex(c => c === targetInfo.card);
+                    if (removeIdx !== -1) {
+                        const discarded = eHandRef.splice(removeIdx, 1)[0];
                         const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
                         if (eD) eD.push(discarded);
                         events.push({ type: 'discard', side: oppOwner, card: JSON.parse(JSON.stringify(discarded)) });
@@ -90,7 +162,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
                         const voidToken = {
                             ...voidTpl,
-                            id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_vp${processedCount}`,
+                            id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_vp${i}`,
+                            uid: `${oppOwner}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_voidvp${i}`,
                             filter: voidTpl.filter,
                             power: voidTpl.power,
                             currentPower: voidTpl.power,
@@ -98,13 +171,10 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                             skill: voidTpl.skill || 'none',
                             voiceCategory: voidTpl.voiceCategory || 'undead',
                             isToken: true,
-                            isMorphToken: true // シミュレーション中の自爆を防ぐフラグ
+                            isMorphToken: true
                         };
                         eHandRef.push(voidToken);
                         events.push({ type: 'add_hand', side: oppOwner, card: voidToken, source: 'morph' });
-
-                        processedCount++;
-                        processLoop = true;
                     }
                 }
             }
@@ -297,19 +367,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             break;
     }
 
-    let destroyed = [];
-    for (let i = 0; i < 3; i++) {
-        if (state.playerBoard[i] && state.playerBoard[i].currentPower <= 0) {
-            destroyed.push({ side: 'blue', lane: i, card: state.playerBoard[i] });
-            state.playerBoard[i] = null;
-        }
-        if (state.enemyBoard[i] && state.enemyBoard[i].currentPower <= 0) {
-            destroyed.push({ side: 'red', lane: i, card: state.enemyBoard[i] });
-            state.enemyBoard[i] = null;
-        }
-    }
-    if (destroyed.length > 0) events.push({ type: 'destroy_cards', targets: destroyed });
-
+    processDestructionTriggers(state, events);
     return events;
 }
 
@@ -404,7 +462,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             const tK = CARD_MASTER.find(m => m.id === 'token_knight');
             const tk = { id: `tk_k_${Date.now()}_${lane}`, owner, ...tK, currentPower: tK.power, rarity: tK.rarity || 1, imgUrl: 'assets/cards/card_token_knight.jpg' };
             board[lane] = tk;
-            events.push({ type: 'summon_token', side: owner, lane, card: tk, source: 'holy_march' });
+            // 後続のループで tk自身が +2 されるため、イベントに積むcardは追加時点のものをディープコピーしておく
+            events.push({ type: 'summon_token', side: owner, lane, card: JSON.parse(JSON.stringify(tk)), source: 'holy_march' });
             count++;
         };
 
@@ -460,19 +519,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
     }
 
-    let destroyed = [];
-    for (let i = 0; i < 3; i++) {
-        if (state.playerBoard[i] && state.playerBoard[i].currentPower <= 0) {
-            destroyed.push({ side: 'blue', lane: i, card: state.playerBoard[i] });
-            state.playerBoard[i] = null;
-        }
-        if (state.enemyBoard[i] && state.enemyBoard[i].currentPower <= 0) {
-            destroyed.push({ side: 'red', lane: i, card: state.enemyBoard[i] });
-            state.enemyBoard[i] = null;
-        }
-    }
-    if (destroyed.length > 0) events.push({ type: 'destroy_cards', targets: destroyed });
-
+    processDestructionTriggers(state, events);
     return events;
 }
 
@@ -596,69 +643,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     if (attackerSide === 'blue') state.enemyHP = defHP;
     else state.playerHP = defHP;
 
-    let anyDestroyed = true;
-    while (anyDestroyed) {
-        anyDestroyed = false;
-        let destroyedThisLoop = [];
-        let tokensToSummonThisLoop = [];
-        [state.playerBoard, state.enemyBoard].forEach((b, bIdx) => {
-            const boardSide = bIdx === 0 ? 'blue' : 'red';
-            const oppSide = bIdx === 0 ? 'red' : 'blue';
-            for (let i = 0; i < 3; i++) {
-                if (b[i] && b[i].currentPower <= 0) {
-                    const deadCard = b[i];
-                    destroyedThisLoop.push({ side: boardSide, lane: i, card: deadCard });
-                    b[i] = null;
-                    anyDestroyed = true;
-
-                    if (hasSkill(deadCard, 'split')) {
-                        const val = getSkillValue(deadCard, 'split') || 2;
-                        const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
-                        tokensToSummonThisLoop.push({
-                            side: boardSide,
-                            lane: i,
-                            card: {
-                                id: `sp_${Date.now()}_${i}`,
-                                owner: boardSide,
-                                ...tL,
-                                imgUrl: 'assets/cards/card_legs.jpg',
-                                power: val,
-                                currentPower: val,
-                                basePower: val,
-                                rarity: tL.rarity || 1
-                            }
-                        });
-                    }
-
-                    if (hasSkill(deadCard, 'explode')) {
-                        const dmg = getSkillValue(deadCard, 'explode') || 3;
-                        [i - 1, i + 1].forEach(adj => {
-                            if (adj >= 0 && adj < 3 && b[adj]) {
-                                if (!hasSkill(b[adj], 'immune')) {
-                                    b[adj].currentPower -= dmg;
-                                    events.push({ type: 'damage_card', side: boardSide, lane: adj, amount: dmg, source: 'explode' });
-                                } else {
-                                    events.push({ type: 'immune_block', side: boardSide, lane: adj, source: 'explode' });
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        });
-
-        if (destroyedThisLoop.length > 0) {
-            events.push({ type: 'destroy_cards', targets: destroyedThisLoop });
-        }
-        tokensToSummonThisLoop.forEach(t => {
-            const board = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
-            if (!board[t.lane]) {
-                board[t.lane] = t.card;
-                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: t.card, source: 'split' });
-            }
-        });
-    }
-
+    processDestructionTriggers(state, events);
     return events;
 }
 
@@ -668,70 +653,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
  */
 export function applyPassiveSkillLogic(state, side, skipContract = false, events = []) {
     // シミュレーション用のクリーンアップと誘爆の処理
-    let anyDestroyed = true;
-    while (anyDestroyed) {
-        anyDestroyed = false;
-        let destroyedThisLoop = [];
-        let tokensToSummonThisLoop = [];
-        [state.playerBoard, state.enemyBoard].forEach((b, bIdx) => {
-            const boardSide = bIdx === 0 ? 'blue' : 'red';
-            const oppSide = bIdx === 0 ? 'red' : 'blue';
-            for (let i = 0; i < 3; i++) {
-                if (b[i] && b[i].currentPower <= 0) {
-                    const deadCard = b[i];
-                    destroyedThisLoop.push({ side: boardSide, lane: i, card: deadCard });
-                    b[i] = null;
-                    anyDestroyed = true;
-
-                    if (hasSkill(deadCard, 'split')) {
-                        const val = getSkillValue(deadCard, 'split') || 2;
-                        const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
-                        tokensToSummonThisLoop.push({
-                            side: boardSide,
-                            lane: i,
-                            card: {
-                                id: `sp_${Date.now()}_${i}`,
-                                owner: boardSide,
-                                ...tL,
-                                imgUrl: 'assets/cards/card_legs.jpg',
-                                power: val,
-                                currentPower: val,
-                                basePower: val,
-                                rarity: tL.rarity || 1
-                            }
-                        });
-                    }
-
-                    // 誘爆チェック
-                    if (hasSkill(deadCard, 'explode')) {
-                        const val = getSkillValue(deadCard, 'explode') || 3;
-                        const adj = i === 1 ? [0, 2] : [1];
-                        adj.forEach(j => {
-                            if (b[j]) {
-                                if (!hasSkill(b[j], 'immune')) {
-                                    b[j].currentPower -= val;
-                                    events.push({ type: 'damage_card', side: boardSide, lane: j, amount: val, source: 'explode' });
-                                } else {
-                                    events.push({ type: 'immune_block', side: boardSide, lane: j, source: 'explode' });
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        });
-        
-        if (destroyedThisLoop.length > 0) {
-            events.push({ type: 'destroy_cards', targets: destroyedThisLoop });
-        }
-        tokensToSummonThisLoop.forEach(t => {
-            const board = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
-            if (!board[t.lane]) {
-                board[t.lane] = t.card;
-                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: t.card, source: 'split' });
-            }
-        });
-    }
+    processDestructionTriggers(state, events);
 
     const b = side === 'blue' ? state.playerBoard : state.enemyBoard;
     for (let i = 0; i < 3; i++) {

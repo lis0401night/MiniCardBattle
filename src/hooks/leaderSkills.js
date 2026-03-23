@@ -224,8 +224,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (h.length > 0) {
             if (isBlue) {
                 const selectedIndices = await waitPlayerHandSelection(2, owner);
-                if (selectedIndices.length === 0) return; // 捨てない等キャンセル時
-                if (selectedIndices.length > 0) {
+                // キャンセル(選ばずに完了)した場合でも、手札破棄が0枚になるだけで、後続の全体バフは発動させます
+                if (selectedIndices && selectedIndices.length > 0) {
                     selectedIndices.sort((a, b) => b - a);
                     for (let i of selectedIndices) {
                         await discardCard(owner, h.splice(i, 1)[0]);

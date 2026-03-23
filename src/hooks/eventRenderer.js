@@ -194,8 +194,24 @@ export async function playEvents(events) {
             }
             case 'discard': {
                 const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
-                if (ev.card && ev.card.uid) {
-                    const idx = hand.findIndex(c => c.uid === ev.card.uid);
+                if (ev.card) {
+                    let idx = -1;
+                    if (ev.card.uid) {
+                        idx = hand.findIndex(c => c.uid === ev.card.uid);
+                    }
+                    // フォールバック: UIDで見つからなかった場合、非同期ズレ対策として名前やIDが一致するカードを手札の最後から探して破棄する
+                    if (idx === -1) {
+                         // uid比較ではなく、最も一致度が高いもの（基本は後ろのもの）を選ぶ
+                         for (let j = hand.length - 1; j >= 0; j--) {
+                             const c = hand[j];
+                             if ((c.uid && ev.card.uid && c.uid === ev.card.uid) || 
+                                 (c.id === ev.card.id) || 
+                                 (c.name === ev.card.name && c.power === ev.card.power)) {
+                                 idx = j;
+                                 break;
+                             }
+                         }
+                    }
                     if (idx !== -1) {
                         const discardedCard = hand.splice(idx, 1)[0];
                         const discardArr = ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;

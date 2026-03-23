@@ -28,6 +28,16 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
         canUseSkill = discard.some(c => (c.power || 0) <= 10 && !c.isToken);
     }
 
+    // ダンジョン用召喚スキルで、生贄（takeover）の場合、自分の場にカードが1枚もなければ空撃ちしない
+    if (canUseSkill && skill.action === 'dungeon_summon_leader' && GameState.enemyConfig.leaderCardId) {
+        const lc = CARD_MASTER.find(c => c.id === GameState.enemyConfig.leaderCardId);
+        if (lc && (lc.skill === 'takeover' || (lc.skills && lc.skills.some(s => s.id === 'takeover')))) {
+            if (!myBoard.some(c => c !== null)) {
+                canUseSkill = false;
+            }
+        }
+    }
+
     // トークン配置の組合せを生成するヘルパー
     const getCombinations = (arr, k) => {
         if (k === 0) return [[]];

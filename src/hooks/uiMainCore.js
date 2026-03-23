@@ -217,10 +217,11 @@ export function goBackFromSelect() {
     playSound(SOUNDS.seClick);
     if (GameState.gameMode === 'defense_register') {
         switchScreen('screen-defense-menu');
+    } else if (GameState.gameMode === 'defense_attack') {
+        switchScreen('screen-defense-battle-list');
     } else if (GameState.gameMode === 'event_satan') {
         switchScreen('screen-high-difficulty');
     } else if (GameState.appState === 'select_enemy') {
-        GameState.appState = 'select_player';
         GameState.appState = 'select_player';
         initSelectScreen(false);
         switchScreen('screen-select');

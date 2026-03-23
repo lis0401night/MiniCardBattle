@@ -4,6 +4,7 @@ import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
 import { discardCard, endTurnLogic, playCard } from './battle.js';
 import { GameState } from './gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（シミュレーション・オーバーホール版）
@@ -25,6 +26,16 @@ export async function executeEnemyAI() {
         // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
         if (canUseSkill && GameState.enemyConfig.id === 'devilhunter') {
             canUseSkill = GameState.enemyDiscard.some(c => (c.power || 0) <= 10 && !c.isToken);
+        }
+        
+        // ダンジョン用召喚スキルで、生贄（takeover）の場合、自分の場にカードが1枚もなければ空撃ちしない
+        if (canUseSkill && skill.action === 'dungeon_summon_leader' && GameState.enemyConfig.leaderCardId) {
+            const lc = CARD_MASTER.find(c => c.id === GameState.enemyConfig.leaderCardId);
+            if (lc && (lc.skill === 'takeover' || (lc.skills && lc.skills.some(s => s.id === 'takeover')))) {
+                if (!GameState.enemyBoard.some(c => c !== null)) {
+                    canUseSkill = false;
+                }
+            }
         }
 
         // リーダースキルの先行使用（強制使用）

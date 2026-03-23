@@ -149,17 +149,22 @@ export function initBattleState() {
         if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
         
         if (GameState.gameMode === 'battle_dungeon') {
-            // 敵のHPはレアリティで決定
-            const eRarity = GameState.enemyConfig.rarity || 4;
-            GameState.enemyMaxHP = eRarity === 1 ? 10 : (eRarity === 2 ? 15 : 20);
+            // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
+            if (GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader') {
+                const eRarity = GameState.enemyConfig.rarity || 4;
+                GameState.enemyMaxHP = eRarity === 1 ? 10 : (eRarity === 2 ? 15 : 20);
+            } else {
+                GameState.enemyMaxHP = GameState.enemyConfig.hp || 20;
+            }
             
-            // リーダースキルのSP要件もレアリティで決定（キャラクター以外も対応）
-            if (GameState.playerConfig && GameState.playerConfig.leaderSkill && GameState.playerConfig.leaderSkill.cost) {
+            // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定
+            if (GameState.playerConfig && GameState.playerConfig.leaderSkill && GameState.playerConfig.leaderSkill.action === 'dungeon_summon_leader') {
                 const pRarity = GameState.playerConfig.rarity || 4;
                 GameState.playerConfig = { ...GameState.playerConfig, leaderSkill: { ...GameState.playerConfig.leaderSkill } };
                 GameState.playerConfig.leaderSkill.cost = pRarity === 1 ? 3 : (pRarity === 2 ? 4 : 5);
             }
-            if (GameState.enemyConfig && GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.cost) {
+            if (GameState.enemyConfig && GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader') {
+                const eRarity = GameState.enemyConfig.rarity || 4;
                 GameState.enemyConfig = { ...GameState.enemyConfig, leaderSkill: { ...GameState.enemyConfig.leaderSkill } };
                 GameState.enemyConfig.leaderSkill.cost = eRarity === 1 ? 3 : (eRarity === 2 ? 4 : 5);
             }
@@ -367,29 +372,46 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             return tokenLanes.slice(0, count);
         }
         // 無ければ評価を行う（強制使用時など）
-        const emptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-        
+        let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+        let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i));
+
+        // カード制約の適用
+        if (checkConstraints && tokenCard) {
+            const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
+            const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
+
+            if (hasLegendary) {
+                // 伝説は中央(lane 1)のみ
+                validEmptyLanes = validEmptyLanes.filter(i => i === 1);
+                validOccupiedLanes = validOccupiedLanes.filter(i => i === 1);
+            }
+            if (hasTakeover) {
+                // 生贄は必ず上書きされる（空きレーンには配置できない）
+                validEmptyLanes = [];
+            }
+        }
+
         // リーダースキル等で上書きを許容する場合
         if (isLeaderSkill) {
-            let selectedLanes = [...emptyLanes];
-            if (selectedLanes.length >= count) {
-                // 空きが十分にあるなら、その中から評価して選択
-                return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, count, isLeaderSkill);
-            } else {
-                // 空きが足りない場合は、埋まっているレーンから適当に（あるいは弱いカードから）上書き対象として選ぶ
-                const occupiedLanes = [0, 1, 2].filter(i => !emptyLanes.includes(i));
+            let selectedLanes = [...validEmptyLanes];
+            
+            // 生贄（takeover）等で空きレーンに置けない、あるいは空きスペース以上のcountが要求されている場合、埋まっているレーンから選ぶ
+            if (selectedLanes.length < count && validOccupiedLanes.length > 0) {
                 // 上書き対象を決める簡易評価（パワーが低い順）
+                let occupiedLanes = [...validOccupiedLanes];
                 occupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
                 while (selectedLanes.length < count && occupiedLanes.length > 0) {
                     selectedLanes.push(occupiedLanes.shift());
                 }
-                return selectedLanes;
             }
+            
+            // 最終的に必要な数に達していなくても、あるだけ返す
+            return selectedLanes.slice(0, count);
         } else {
             // 通常の配置（上書き不可）
-            const actualCount = Math.min(count, emptyLanes.length);
+            const actualCount = Math.min(count, validEmptyLanes.length);
             if (actualCount === 0) return [];
-            return evaluateBestLanesForToken(emptyLanes, owner, tokenCard, actualCount, isLeaderSkill);
+            return validEmptyLanes.slice(0, actualCount); // 今回は簡略化のため空きの中からそのまま選択
         }
     }
 
