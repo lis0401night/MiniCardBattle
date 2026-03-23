@@ -2,9 +2,9 @@ export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'spider', 'spider',
-        'bard', 'bard',
+        'mage', 'mage',
         'charger', 'charger', 'charger',
-        'cheetah', 'cheetah', 'cheetah',
+        'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
         'scorpion', 'scorpion', 'scorpion',
     ],
@@ -15,15 +15,16 @@ export default {
         'bard', 'bard',
         'mage', 'mage',
         'spider', 'spider',
-        'bird', 'bird',
         'charger', 'charger',
+        'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
     ],
     hard: [
         'wolf', 'wolf', 'wolf', 'wolf',
         'highelf', 'highelf', 'highelf', 'highelf',
         'mage', 'mage', 'mage', 'mage',
-        'bird', 'bird', 'bird', 'bird',
+        'bard', 'bard',
         'sniper', 'sniper', 'sniper', 'sniper',
+        'charger', 'charger',
     ]
 };

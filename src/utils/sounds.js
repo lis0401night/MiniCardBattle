@@ -112,30 +112,34 @@ export let isAudioUnlocked = false;
 export async function unlockAudio() {
     if (isAudioUnlocked) return;
 
-    // AudioContext の初期化
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+        // AudioContext の初期化
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // 全てのSEを非同期でロード開始
+        const loadPromises = Object.entries(SE_PATHS).map(([key, url]) => loadSE(key, url));
+
+        // AudioContext のレジューム（これがアンロックの肝）
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+
+        // ダミー再生（念のため）
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(0);
+        osc.stop(0.1);
+
+        isAudioUnlocked = true;
+        console.log("Web Audio Context Unlocked and SE Buffers Loaded");
+    } catch (e) {
+        console.warn("Failed to unlock audio context (Browser restriction):", e);
     }
-
-    // 全てのSEを非同期でロード開始
-    const loadPromises = Object.entries(SE_PATHS).map(([key, url]) => loadSE(key, url));
-
-    // AudioContext のレジューム（これがアンロックの肝）
-    if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-    }
-
-    // ダミー再生（念のため）
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    gain.gain.value = 0;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(0);
-    osc.stop(0.1);
-
-    isAudioUnlocked = true;
-    console.log("Web Audio Context Unlocked and SE Buffers Loaded");
 }
 
 export function playSkillSound(skillId) {

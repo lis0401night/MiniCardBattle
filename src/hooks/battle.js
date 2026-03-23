@@ -741,14 +741,22 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
 export async function triggerSplitSkill(owner, lane, card) {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
-    const val = card.skillValue || 2;
+    const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs' };
+    const testId = card.baseId || card.id;
+    const tokenId = tokenMap[testId] || 'legs';
+    const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
+    
+    // skillValueが取得できない場合の安全策としてトークンのデフォルトpowerを使用
+    let val = card.skillValue;
+    if (val === undefined || val === null || isNaN(val)) {
+        val = tL.power || 2;
+    }
 
     board[lane] = {
         id: `sp_${Date.now()}_${lane}`,
         owner,
         ...tL,
-        imgUrl: 'assets/cards/card_legs.jpg',
+        imgUrl: `assets/cards/card_${tokenId}.jpg`,
         power: val,
         currentPower: val,
         basePower: val,
@@ -1068,7 +1076,11 @@ export async function executeSingleCombat(atk, l) {
     const state = {
         playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP
+        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
     };
     
     // 特定のレーンだけ発火させるための個別処理
@@ -1090,7 +1102,11 @@ export async function executeCombatPhase(atk) {
     const currentState = {
         playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP
+        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
     };
 
     // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る

@@ -6,7 +6,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
 import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
-import { applyLeaderSkillLogic } from './engine.js';
+import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 
 // ==========================================
@@ -259,6 +259,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
         // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
         applyLeaderSkillLogic(currentState, owner, action, tokenLanes, events);
+        // リーダースキルによるダメージ・破壊を処理し、分裂等の誘発効果をイベントに積む
+        processDestructionTriggers(currentState, events);
     }
 
     // イベントログを再生（再生中にGameStateと描画が逐次更新される）

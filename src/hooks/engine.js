@@ -9,7 +9,7 @@ import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
 /**
  * 破壊されたカードのクリーンアップと、破壊時スキルの処理を行う共通関数
  */
-function processDestructionTriggers(state, events) {
+export function processDestructionTriggers(state, events) {
     let anyDestroyedAtAll = false;
     let anyDestroyed = true;
     while (anyDestroyed) {
@@ -32,8 +32,12 @@ function processDestructionTriggers(state, events) {
 
                     // 分裂(split)
                     if (hasSkill(deadCard, 'split')) {
-                        const val = getSkillValue(deadCard, 'split') || 2;
-                        const tL = CARD_MASTER.find(m => m.id === 'legs') || { name: '蛸足', power: 1 };
+                        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs' };
+                        const baseId = deadCard.baseId || deadCard.id;
+                        const tokenId = tokenMap[baseId] || 'legs';
+                        const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
+                        const val = getSkillValue(deadCard, 'split') || tL.power || 2;
+                        
                         tokensToSummonThisLoop.push({
                             side,
                             lane: i,
@@ -41,7 +45,7 @@ function processDestructionTriggers(state, events) {
                                 id: `sp_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
                                 owner: side,
                                 ...tL,
-                                imgUrl: 'assets/cards/card_legs.jpg',
+                                imgUrl: `assets/cards/card_${tokenId}.jpg`,
                                 power: val,
                                 currentPower: val,
                                 basePower: val,
@@ -75,7 +79,7 @@ function processDestructionTriggers(state, events) {
             const tgtBoard = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
             if (!tgtBoard[t.lane]) {
                 tgtBoard[t.lane] = t.card;
-                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: t.card, source: 'split' });
+                events.push({ type: 'summon_token', side: t.side, lane: t.lane, card: JSON.parse(JSON.stringify(t.card)), source: 'split' });
             }
         });
     }
@@ -290,7 +294,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         voiceCategory: c.voiceCategory || 'sword'
                     };
                     b[targetLane] = newToken;
-                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: newToken, source: 'clone' });
+                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'clone' });
                 }
             }
             break;
@@ -355,7 +359,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     const removeIdx = eD.findIndex(x => x.id === selectedCard.id);
                     if (removeIdx !== -1) eD.splice(removeIdx, 1);
 
-                    events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'resurrect' });
+                    events.push({ type: 'summon_card', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'resurrect' });
                 }
             }
             break;
@@ -427,7 +431,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 const removeIdx = discard.findIndex(x => x.id === selectedCard.id);
                 if (removeIdx !== -1) discard.splice(removeIdx, 1);
 
-                events.push({ type: 'summon_card', side: owner, lane: l, card: resurrectedCard, source: 'devilhunter_resurrect' });
+                events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'devilhunter_resurrect' });
             }
         }
     } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dungeon_summon_leader') {
@@ -452,7 +456,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             else newToken.imgUrl = 'assets/cards/card_token_dragon.jpg';
 
             board[l] = newToken;
-            events.push({ type: 'summon_token', side: owner, lane: l, card: newToken, source: action });
+            events.push({ type: 'summon_token', side: owner, lane: l, card: JSON.parse(JSON.stringify(newToken)), source: action });
         }
     } else if (action === 'holy_march') {
         // 騎士召喚（最大2体）
@@ -617,7 +621,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                 let pDmg = Math.max(0, aC.currentPower);
                 if (hasSkill(aC, 'double_strike')) pDmg *= 2;
                 defHP -= pDmg;
-                if (pDmg > 0) events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
+                if (pDmg > 0) {
+                    events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
+                    applyExtort(aC, defSide, attackerSide, aLane, events, state);
+                }
             }
         }
 
@@ -638,6 +645,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         if (hasSkill(aC, 'double_strike')) finalDmg *= 2;
         defHP -= finalDmg;
         events.push({ type: 'damage_player', side: defSide, amount: finalDmg, source: 'direct_attack' });
+        applyExtort(aC, defSide, attackerSide, aLane, events, state);
     }
 
     if (attackerSide === 'blue') state.enemyHP = defHP;
@@ -673,4 +681,54 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
     }
 
     return events;
+}
+
+/**
+ * 簒奪スキルの適用 (指定した相手プレイヤーの手札をランダムに虚空に変換)
+ */
+function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
+    if (!hasSkill(aC, 'extort')) return;
+
+    const val = getSkillValue(aC, 'extort') || 1;
+    const oppHand = oppSide === 'blue' ? state.playerHand : state.enemyHand;
+    const oppDiscard = oppSide === 'blue' ? state.playerDiscard : state.enemyDiscard;
+
+    if (oppHand && oppHand.length > 0) {
+        let activated = false;
+        for (let i = 0; i < val; i++) {
+            const validIndices = oppHand.map((card, idx) => ({ card, idx }))
+                .filter(t => !(t.card.name === '虚空' && (t.card.power === 1 || t.card.basePower === 1)))
+                .map(t => t.idx);
+            
+            if (validIndices.length === 0) break;
+
+            if (!activated) {
+                events.push({ type: 'skill_popup', side: attackerSide, lane: aLane, skillName: '簒奪' });
+                activated = true;
+            }
+
+            const randIndex = validIndices[Math.floor(Math.random() * validIndices.length)];
+            const discarded = oppHand.splice(randIndex, 1)[0];
+            oppDiscard.push(discarded);
+
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+            const voidToken = {
+                ...voidTpl,
+                id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_extort${i}`,
+                uid: `${oppSide}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_voidext${i}`,
+                filter: voidTpl.filter,
+                power: voidTpl.power,
+                currentPower: voidTpl.power,
+                basePower: voidTpl.power,
+                skill: voidTpl.skill || 'none',
+                voiceCategory: voidTpl.voiceCategory || 'undead',
+                isToken: true,
+                isMorphToken: true
+            };
+            oppHand.push(voidToken);
+
+            events.push({ type: 'discard', side: oppSide, card: JSON.parse(JSON.stringify(discarded)), source: 'extort' });
+            events.push({ type: 'add_hand', side: oppSide, card: JSON.parse(JSON.stringify(voidToken)), source: 'extort' });
+        }
+    }
 }

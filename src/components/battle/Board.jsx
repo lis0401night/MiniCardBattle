@@ -45,6 +45,7 @@ export default function Board({
                         >
                             {card && (
                                 <Card 
+                                    key={`enemy-card-${lane}-${card.uid || card.id}`}
                                     cardObj={card} 
                                     isBoard={true} 
                                     className={isSelected ? "selected" : ""}
@@ -114,6 +115,7 @@ export default function Board({
                         >
                             {card && (
                                 <Card 
+                                    key={`player-card-${lane}-${card.uid || card.id}`}
                                     cardObj={card} 
                                     isBoard={true} 
                                     className={isSelected ? "selected" : ""}

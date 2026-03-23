@@ -1,6 +1,6 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
@@ -189,6 +189,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 id: `cl_${Date.now()}_${i}`,
                 owner: o,
                 ...tC,
+                isToken: true,
+                name: '分身',
                 isPremium: (c.isPremium !== undefined) ? c.isPremium : GameState.premiumCards.includes(c.baseId || c.id),
                 imgUrl: getCardImgUrl(c), // 本体の画像URLを確定させて焼き付ける
                 filter: c.filter,
@@ -216,11 +218,13 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
                 const eh = document.getElementById('playmat-enemy');
                 if (eh) eh.classList.add('anim-shake');
+                await triggerExtortInAction(c, o);
             } else {
                 GameState.playerHP -= dmg;
                 createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
                 document.body.classList.add('anim-shake');
                 setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+                await triggerExtortInAction(c, o);
             }
         } else {
             const dmg = 6;
@@ -272,6 +276,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             document.body.classList.add('anim-shake');
             setTimeout(() => document.body.classList.remove('anim-shake'), 400);
         }
+        await triggerExtortInAction(c, o);
         updateHPBar();
         checkWinCondition();
         await sleep(400);
@@ -408,7 +413,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     ...tC,
                     isToken: true,
                     isPremium: (c.isPremium !== undefined) ? c.isPremium : GameState.premiumCards.includes(c.baseId || c.id),
-                    name: c.name,
+                    name: '増援',
                     power: c.currentPower !== undefined ? c.currentPower : (c.power || 0),
                     currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 0),
                     basePower: c.basePower !== undefined ? c.basePower : (c.power || 0),
@@ -537,4 +542,59 @@ export async function triggerStartTurnPassive(owner, lane) {
     }
 
     return triggered;
+}
+
+/**
+ * UI側での簒奪（強奪）発動用ヘルパー
+ */
+async function triggerExtortInAction(c, o) {
+    if (!hasSkill(c, 'extort')) return;
+    const val = getSkillValue(c, 'extort') || 1;
+    const oppSide = o === 'blue' ? 'red' : 'blue';
+    const eHandRef = oppSide === 'blue' ? GameState.playerHand : GameState.enemyHand;
+    const eD = oppSide === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+    
+    if (eHandRef && eHandRef.length > 0) {
+        let discardedAmount = 0;
+        for (let i = 0; i < val; i++) {
+            const validIndices = eHandRef.map((card, idx) => ({ card, idx }))
+                .filter(t => !(t.card.name === '虚空' && (t.card.power === 1 || t.card.basePower === 1)))
+                .map(t => t.idx);
+            
+            if (validIndices.length === 0) break;
+
+            const randIndex = validIndices[Math.floor(Math.random() * validIndices.length)];
+            const discarded = eHandRef.splice(randIndex, 1)[0];
+            if (eD) eD.push(discarded);
+
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+            const voidToken = {
+                ...voidTpl,
+                id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_extUI${i}`,
+                uid: `${oppSide}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_voidextUI${i}`,
+                filter: voidTpl.filter,
+                power: voidTpl.power,
+                currentPower: voidTpl.power,
+                basePower: voidTpl.power,
+                skill: voidTpl.skill || 'none',
+                voiceCategory: voidTpl.voiceCategory || 'undead',
+                isToken: true,
+                isMorphToken: true
+            };
+            eHandRef.push(voidToken);
+            discardedAmount++;
+        }
+        
+        if (discardedAmount > 0) {
+            const lane = GameState.playerBoard.indexOf(c) !== -1 ? GameState.playerBoard.indexOf(c) : GameState.enemyBoard.indexOf(c);
+            const side = GameState.playerBoard.indexOf(c) !== -1 ? 'player' : 'enemy';
+            if (lane !== -1) {
+                const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
+                if (cEl) createDamagePopup(cEl, '簒奪', '#facc15');
+            }
+            playSound(SOUNDS.seSkill);
+            renderHand();
+            await sleep(300);
+        }
+    }
 }

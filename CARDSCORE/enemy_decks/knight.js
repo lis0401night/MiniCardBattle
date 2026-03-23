@@ -13,9 +13,9 @@ export default {
         'champion',
         'assassin', 'assassin',
         'commander', 'commander',
-        'hero', 'hero',
         'darkpaladin', 'darkpaladin',
         'ninja', 'ninja', 'ninja',
+        'crenellatedwall', 'crenellatedwall',
         'clone', 'clone', 'clone', 'clone',
     ],
     hard: [
@@ -23,7 +23,7 @@ export default {
         'assassin', 'assassin', 'assassin', 'assassin',
         'commander', 'commander', 'commander', 'commander',
         'darkpaladin', 'darkpaladin',
-        'hero', 'hero',
+        'ninja', 'ninja',
         'clone', 'clone', 'clone', 'clone',
     ]
 };

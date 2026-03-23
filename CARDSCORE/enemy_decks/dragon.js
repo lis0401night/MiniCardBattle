@@ -6,7 +6,8 @@ export default {
         'dancer', 'dancer', 'dancer', 'dancer',
         'dinosaur', 'dinosaur',
         'lizardman', 'lizardman', 'lizardman',
-        'scorpion', 'scorpion', 'scorpion',
+        'chameleon', 'chameleon', 'chameleon',
+
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
@@ -17,14 +18,14 @@ export default {
         'berserker', 'berserker',
         'dancer', 'dancer', 'dancer',
         'lizardman', 'lizardman',
-        'wyvern', 'wyvern',
+        'dinosaur', 'dinosaur',
     ],
     hard: [
         'dragon', 'dragon', 'dragon', 'dragon',
         'drifter', 'drifter', 'drifter', 'drifter',
         'berserker', 'berserker', 'berserker', 'berserker',
         'dragonewt', 'dragonewt', 'dragonewt', 'dragonewt',
-        'wyvern', 'wyvern',
+        'dinosaur', 'dinosaur',
         'dancer', 'dancer',
     ]
 };

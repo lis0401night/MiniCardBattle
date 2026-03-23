@@ -38,6 +38,13 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
         }
     }
 
+    // 対象破壊（targeted_destruction）の場合、相手の場に破壊可能（immuneでない）カードが存在しなければ空撃ちしない
+    if (canUseSkill && skill.action === 'targeted_destruction') {
+        if (!opBoard.some(c => c !== null && !hasSkill(c, 'immune'))) {
+            canUseSkill = false;
+        }
+    }
+
     // トークン配置の組合せを生成するヘルパー
     const getCombinations = (arr, k) => {
         if (k === 0) return [[]];
@@ -79,9 +86,10 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                 
                 if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
             } else if (action === 'targeted_destruction') {
-                // 星墜ちの矢: 相手の場のカードが存在するレーンを破壊対象としてシミュレーションする
-                tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null).map(l => [l]);
-                if (tokenLanePatterns.length === 0) tokenLanePatterns = [null]; // 空撃ちしかできない場合
+                // 星墜ちの矢 / リナのスキル等: 相手の場のカードが存在し、immuneでないレーンを破壊対象としてシミュレーションする
+                tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
+                // もし候補がなくても前のチェックで弾かれるはずだが、念の為
+                if (tokenLanePatterns.length === 0) tokenLanePatterns = [null]; 
             }
         }
 

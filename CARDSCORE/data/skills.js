@@ -12,7 +12,7 @@ export const SKILLS = {
     morph: { name: '変化', icon: '🌀', desc: (val) => `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数「虚空」を加える。（同値の場合は左優先）` },
     double_strike: { name: '連撃', icon: '⚔️', desc: () => '戦闘時、与えるダメージが2倍になる。' },
     support: { name: '援護', icon: '🚩', desc: (val) => `召喚時、自分の場の隣のレーンのカードのパワーを+${val || 2}する。` },
-    defender: { name: '防御', icon: '🧱', desc: (val) => '攻撃せず、敵カードやリーダーにダメージを与えられない。' },
+    defender: { name: '防御', icon: '🧱', desc: (val) => '攻撃せず、カードやリーダーにダメージを与えられない。' },
     clone: { name: '分身', icon: '👥', desc: (val) => `召喚時、自分のレーンに、自身と同じパワーと能力のトークンを${val || 1}体まで配置する。` },
     lone_wolf: { name: '単騎', icon: '🐺', desc: (val) => `召喚時、自分の空いているレーンの数×${val || 3}だけパワーを上げる。` },
     soul_bind: { name: '魂縛', icon: '⛓️', desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。` },
@@ -43,7 +43,7 @@ export const SKILLS = {
     fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
     salvage: { name: '回収', icon: '🧲', desc: (val) => '召喚時、自分の墓地からカードを1枚選択して手札に加える。' },
     reinforce: { name: '増援', icon: '📣', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。` },
-    extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空」を加える。` }
+    extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、「虚空」にする。` }
 };
 
 export const ACTIVE_SKILLS = [

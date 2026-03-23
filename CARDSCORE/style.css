@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    background-color: #f8fafc;
+    overflow-x: hidden;
+}
+
+/* レイアウト調整: 左右のパネルの高さを固定して揃える */
+.analysis-container {
+    display: flex;
+    gap: 1.5rem;
+    height: calc(100vh - 140px); /* ナビゲーションと余白を差し引いた高さ */
+    min-height: 500px;
+}
+
+.panel-scroll {
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* タブ管理 */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-btn.active {
+    background-color: #4f46e5;
+    color: white;
+}
+
+/* カスタムスクロールバー */
+.scroll-custom::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scroll-custom::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scroll-custom::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.scroll-custom::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 数値入力の調整 */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* アニメーション */
+.loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}
+
+/* カードテーブルの微調整 */
+.card-row:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+}
+
+/* モバイル対応のフォールバック */
+@media (max-width: 1024px) {
+    .analysis-container {
+        flex-direction: column;
+        height: auto;
+    }
+    .panel-scroll {
+        height: 500px;
+    }
+}

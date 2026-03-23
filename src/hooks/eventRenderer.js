@@ -255,6 +255,16 @@ export async function playEvents(events) {
                 await sleep(200);
                 break;
             }
+            case 'skill_popup': {
+                const atkPfx = ev.side === 'blue' ? 'player' : 'enemy';
+                const cEl = document.querySelector(`#${atkPfx}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                if (cEl) {
+                    createDamagePopup(cEl, ev.skillName, '#facc15');
+                    playSound(SOUNDS.seSkill);
+                    await sleep(300);
+                }
+                break;
+            }
             case 'leader_skill': {
                 playSound(SOUNDS.seSkill);
                 await sleep(400);
