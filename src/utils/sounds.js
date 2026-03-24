@@ -1,6 +1,8 @@
 /**
  * Mini Card Battle - Sound Management (Web Audio API Optimized)
  */
+import { GameState } from '../hooks/gameState.js';
+
 
 // Web Audio API Context
 export let audioCtx = null;
@@ -151,7 +153,8 @@ export function playSkillSound(skillId) {
     
     const url = `assets/audio/se/se_skill_${skillId}.mp3`;
     const audio = new Audio();
-    audio.volume = 0.3;
+    const baseVol = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
+    audio.volume = baseVol;
     
     audio.addEventListener('canplaythrough', () => {
         audio.play().catch(e => console.warn(`Failed to play SE for ${skillId}`, e));
