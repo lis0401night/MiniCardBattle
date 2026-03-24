@@ -68,7 +68,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
                 // 上書きも考慮するため全レーンをシミュレーション対象とする
                 tokenLanePatterns = [[0], [1], [2]];
-                
+
                 // dungeon_summon_leaderの場合はカード自体の制約（伝説・生贄）を適用して候補を絞る
                 if (action === 'dungeon_summon_leader' && GameState.enemyConfig && GameState.enemyConfig.leaderCardId) {
                     const lc = CARD_MASTER.find(c => c.id === GameState.enemyConfig.leaderCardId);
@@ -83,13 +83,13 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         }
                     }
                 }
-                
+
                 if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
             } else if (action === 'targeted_destruction') {
                 // 星墜ちの矢 / リナのスキル等: 相手の場のカードが存在し、immuneでないレーンを破壊対象としてシミュレーションする
                 tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
                 // もし候補がなくても前のチェックで弾かれるはずだが、念の為
-                if (tokenLanePatterns.length === 0) tokenLanePatterns = [null]; 
+                if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
             }
         }
 
@@ -115,10 +115,10 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         // 追加: アキレーンのパターン抽出
                         let tempBoard = [...myBoard];
                         if (useSkill && order === 'before' && tokenLanes) {
-                             tokenLanes.forEach(tl => tempBoard[tl] = 'token');
+                            tokenLanes.forEach(tl => tempBoard[tl] = 'token');
                         }
                         tempBoard[l] = 'card';
-                        
+
                         const emptyLanesAfterPlay = [0, 1, 2].filter(idx => tempBoard[idx] === null);
 
                         let cardTokenLanePatterns = [null];
@@ -207,33 +207,36 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
     // ④ 自分のパワー - プレイヤーのパワーが最も大きくなる手を選ぶ（基本条件）
     // ⑤ ④が同列なら自分とプレイヤーの残るカード枚数の差を決める（基本条件）
-    // ⑥ ⑤も同列ならその中からランダム（基本条件）
+    // ⑥ ⑤も同列なら、相手の攻撃による被ダメージが最も少ない手を選ぶ（追加条件）
+    // ⑦ ⑥も同列ならその中からランダム（基本条件）
     // これらをソートで実現し、最も優秀な同列グループの中から1つをランダムに選ぶ
-    
+
     // ソートしやすいように基本条件スコアを一次算出
     finalCandidates.forEach(c => {
         c.advDiff = getAdvantage(c.simState);
         c.countDiff = getCountDiff(c.simState);
     });
 
-    // ④と⑤の順で降順ソート
+    // ④、⑤、⑥の順でソート
     finalCandidates.sort((a, b) => {
-        if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff;
-        if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff;
+        if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff; // ④ 降順
+        if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff; // ⑤ 降順
+        if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken; // ⑥ 昇順（ダメージが少ない方が良い）
         return 0;
     });
 
     const topCandidate = finalCandidates[0];
     const topAdv = topCandidate.advDiff;
     const topCount = topCandidate.countDiff;
+    const topDmg = topCandidate.simState.combatDamageTaken;
 
-    // ④と⑤が完全に同等の最善手グループを抽出
-    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount);
+    // ④と⑤と⑥が完全に同等の最善手グループを抽出
+    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg);
 
-    // ⑥ ⑤も同列ならその中からランダム
+    // ⑦ ⑥も同列ならその中からランダム
     const finalDecision = bestGroup[Math.floor(Math.random() * bestGroup.length)];
 
-    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount);
+    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg);
     return finalDecision;
 }
 
@@ -344,14 +347,14 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
     // 中級以上のAIがシミュレーション結果を持たずに呼ばれた場合（不測の事態）の最低限のフォールバック
     // （ランダムなどの思考介入は行わず、手前の空いているレーン順に機械的に詰める）
     const results = [];
-    
+
     // 1. 空きレーンを優先
     for (let l of allLanes) {
         if (GameState.enemyBoard[l] === null && results.length < count) {
             results.push(l);
         }
     }
-    
+
     // 2. 空きが足りなければ上書き可能な若いレーンで妥協
     if (results.length < count) {
         for (let l of allLanes) {
@@ -360,6 +363,6 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
             }
         }
     }
-    
+
     return results;
 }
