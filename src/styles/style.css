@@ -1732,6 +1732,17 @@ h2 {
     100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
+.card.anim-card-destroy {
+    animation: cardDestroy 0.4s ease forwards !important;
+}
+
+@keyframes cardDestroy {
+    0% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0 #ef4444); opacity: 1; }
+    50% { transform: scale(1.1); filter: brightness(1.5) drop-shadow(0 0 15px #ef4444); opacity: 0.8; }
+    100% { transform: scale(0.5); filter: brightness(2) drop-shadow(0 0 30px #ef4444); opacity: 0; }
+}
+
+
 .card.anim-shake {
     animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both !important;
     will-change: transform;

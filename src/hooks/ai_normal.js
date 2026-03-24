@@ -300,8 +300,13 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // AIのターンは「自分の攻撃」が終わった後に回ってくるため、
     // ここから先のイベントは「次のプレイヤー（青）のターン開始」と「プレイヤーの攻撃」である。
 
-    // 3. 次のプレイヤー（青）のターン開始処理（契約ダメージや成長）
+    // 3. 次のプレイヤー（青）のターン開始処理（成長・契約ダメージ・スタン解除）
     applyPassiveSkillLogic(simState, 'blue');
+    simState.playerBoard.forEach(c => {
+        if (c && c.stunTurns > 0) {
+            c.stunTurns--;
+        }
+    });
 
     // 自分の攻撃（red）は既に行われているのでここでは計算しない。
     // ただし、AIが出したばかりのカードによる「次のターン以降の脅威」は盤面評価でカバーされる。

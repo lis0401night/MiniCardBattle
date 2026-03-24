@@ -367,7 +367,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'invincible':
             if (!Array.isArray(c.skills)) c.skills = [{ id: 'invincible', value: val || 1 }];
             else c.skills.push({ id: 'invincible', value: val || 1 });
-            events.push({ type: 'add_skill', side: owner, lane: l, skillId: 'invincible', value: val || 1 });
+            events.push({ type: 'add_skill', side: owner, lane: l, skillId: 'invincible', value: val || 1, source: sid });
             break;
     }
 
@@ -397,16 +397,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 }
             }
         }
-    } else if (action === 'targeted_destruction') {
-        if (tokenLanes && tokenLanes.length > 0) {
-            const tgtLane = tokenLanes[0];
-            const targetCard = eBoard[tgtLane];
-            if (targetCard) {
-                events.push({ type: 'leader_skill', skill: action, side: owner });
-                events.push({ type: 'destroy_cards', targets: [{ side: oppOwner, lane: tgtLane, card: targetCard }] });
-                eBoard[tgtLane] = null;
-            }
-        }
+
     } else if (action === 'devilhunter_resurrect') {
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
         const validCards = discard.filter(card => (card.power || 0) <= 10 && !card.isToken);
@@ -455,6 +446,11 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             if (action === 'satan_avatar') newToken.imgUrl = 'assets/cards/card_token_satan.jpg';
             else newToken.imgUrl = 'assets/cards/card_token_dragon.jpg';
 
+            if (board[l] !== null) {
+                events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
+                board[l] = null;
+            }
+
             board[l] = newToken;
             events.push({ type: 'summon_token', side: owner, lane: l, card: JSON.parse(JSON.stringify(newToken)), source: action });
         }
@@ -473,7 +469,11 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
         if (tokenLanes && tokenLanes.length > 0) {
             for (let l of tokenLanes) {
-                if (board[l] === null) addKnight(l);
+                if (board[l] !== null) {
+                    events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
+                    board[l] = null;
+                }
+                addKnight(l);
             }
         } else {
             for (let i = 0; i < 3 && count < 2; i++) {
@@ -583,8 +583,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
         if (hasSkill(dC, 'sturdy')) dmgToDef = Math.floor(dmgToDef / 2);
         if (hasSkill(aC_defend, 'sturdy')) dmgToAtk = Math.floor(dmgToAtk / 2);
-        if (hasSkill(dC, 'invincible')) dmgToDef = 0;
-        if (hasSkill(aC_defend, 'invincible')) dmgToAtk = 0;
+        if (hasSkill(dC, 'invincible')) {
+            if (dmgToDef > 0) events.push({ type: 'invincible_block', side: defSide, lane: dLane });
+            dmgToDef = 0;
+        }
+        if (hasSkill(aC_defend, 'invincible')) {
+            if (dmgToAtk > 0) events.push({ type: 'invincible_block', side: attackerSide, lane: aLane });
+            dmgToAtk = 0;
+        }
 
         // 連撃（ダブルストライク）: 与えるダメージ2倍
         if (hasSkill(aC, 'double_strike')) dmgToDef *= 2;

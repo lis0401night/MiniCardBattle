@@ -175,6 +175,15 @@ export async function playEvents(events) {
                     playCardVoice(voiceCat, 'play');
                 }
 
+                setTimeout(() => {
+                    const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                    if (cEl) {
+                        if (ev.source === 'split') {
+                            createDamagePopup(cEl, '分裂', '#facc15');
+                        }
+                    }
+                }, 50);
+
                 await sleep(300);
                 break;
             }
@@ -249,10 +258,20 @@ export async function playEvents(events) {
                 }
 
                 const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                const skillNameText = ev.skillId === 'invincible' ? '無敵' : 'スキル付与';
+                let skillNameText = ev.skillId === 'invincible' ? '無敵' : 'スキル付与';
+                if (ev.source === 'stealth') skillNameText = '潜伏';
                 if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
                 playSound(SOUNDS.seSkill);
                 await sleep(200);
+                break;
+            }
+            case 'invincible_block': {
+                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                if (cEl) {
+                    createDamagePopup(cEl, '無敵', '#cbd5e1');
+                    playSound(SOUNDS.seSkill);
+                }
+                await sleep(300);
                 break;
             }
             case 'skill_popup': {

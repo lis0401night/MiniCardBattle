@@ -118,17 +118,6 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
 }
 
 export async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null) {
-    const currentState = {
-        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
-        playerSP: GameState.playerSP, enemySP: GameState.enemySP,
-        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
-    };
-
     let events = [];
 
     // UIの介入（対象の選択等）が必要なスキルは事前に処理
@@ -136,14 +125,14 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes, true);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, false, tokenLanes, true);
         if (selectedLanes.length === 0) return; // キャンセルされた場合
         tokenLanes = selectedLanes;
     } else if (action === 'dungeon_summon_leader') {
         const config = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
         const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const tokenCard = CARD_MASTER.find(m => m.id === config.leaderCardId);
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, true, tokenLanes, true);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, tokenCard, false, tokenLanes, true);
         if (selectedLanes.length === 0) return;
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
@@ -158,7 +147,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         }
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
-        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes, false);
+        const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, false, tokenLanes, false);
         if (selectedLanes.length === 0) return;
         tokenLanes = selectedLanes;
     } else if (action === 'targeted_destruction') {
@@ -191,7 +180,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
             // 復活させる対象を engine に伝えるために無理くり渡しちゃうか、UI介入でここまで決まったら
             // 配置レーンも決めます。
-            const tLanes = await waitPlayerLaneSelection(1, owner, selectedCard, true, tokenLanes, false);
+            const tLanes = await waitPlayerLaneSelection(1, owner, selectedCard, false, tokenLanes, false);
             if (!tLanes || tLanes.length === 0) return;
 
             // Engine側へ伝えるための事前準備（引数だけでは足りないので、Engineが拾えるように選択カード情報を付与するか、ここでやってしまうか）
@@ -255,6 +244,17 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
     // Engineの共通ロジック呼び出し
     // 上のif文でeventsを手動構築したもの (abyss_ritual, devilhunter_resurrect, dungeon_summon_leader) 以外を実行
+    const currentState = {
+        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+        playerSP: GameState.playerSP, enemySP: GameState.enemySP,
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
+    };
+
     if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'dungeon_summon_leader') {
         // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
         // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
