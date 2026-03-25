@@ -25,6 +25,7 @@ export const CARD_MASTER = [
     { id: 'titan', name: '旧式タイタン', power: 8, skill: 'growth', skillValue: -2, rarity: 2, voiceCategory: 'machine_old', flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。' },
     { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], rarity: 2, voiceCategory: 'machine_old', flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。' },
     { id: 'bigai', name: 'サイクロプス Mk-II', power: 3, skills: [{ id: 'charge', value: -1 }, { id: 'snipe', value: 5 }], rarity: 2, voiceCategory: 'machine_new', flavor: '単眼の狙撃特化型自律ユニット。一撃必殺の精度を誇る。' },
+    { id: 'mechanic', name: 'ダクト街の技師', power: 4, skill: 'summon', skillValue: 1, rarity: 2, voiceCategory: 'human_female_ikemen', flavor: '廃れた近未来都市で生きる腕利きのメカニック。彼女の作るドローンはどんな狭い隙間にも潜り込む。' },
     { id: 'babydragon', name: 'ドラゴンの雛', power: 2, skill: 'growth', skillValue: 3, rarity: 2, voiceCategory: 'lizard', flavor: 'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。' },
     { id: 'dragonewt', name: '竜人族の騎兵', power: 4, skills: [{ id: 'pierce' }, { id: 'snipe', value: 2 }], rarity: 2, voiceCategory: 'horse', flavor: '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫き、遠方の獲物も逃さない。' },
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
@@ -42,7 +43,9 @@ export const CARD_MASTER = [
     { id: 'shark', name: 'メガロドン', power: 6, skills: [{ id: 'stealth', value: 1 }, { id: 'standby', value: 1 }], rarity: 2, voiceCategory: 'monster', flavor: '深き蒼から突如として現れる規格外の巨体。その顎が海面を割る時、逃げる術は既に残されていない。' },
     { id: 'barrier', name: '聖光の護り手', power: 4, skills: [{ id: 'guardian' }, { id: 'support', value: 1 }], voiceCategory: 'human_female_ikemen', rarity: 2, flavor: '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。' },
     { id: 'monk', name: '野営地の衛生兵', power: 3, skills: [{ id: 'sturdy' }, { id: 'heal', value: 1 }], rarity: 2, voiceCategory: 'human_male_warrior', flavor: '神の加護と鋼の肉体を持つ僧兵。その癒しの手は味方を救い、時に果敢な一撃は敵を砕く。' },
+    { id: 'icon', name: '慈愛', power: 2, skills: [{ id: 'heal', value: 5 }, { id: 'defender' }, { id: 'sturdy' }], rarity: 2, voiceCategory: 'rock', flavor: '古より伝わる小さな彫像。ただそこにあるだけで、周囲に清らかな癒しと絶対の護りをもたらす。' },
     { id: 'incinerator', name: 'インシネレーター', power: 3, skill: 'artillery', skillValue: 1, rarity: 2, voiceCategory: 'human_female_ikemen', flavor: '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。' },
+    { id: 'plaguedoctor', name: '烏羽の医師', power: 3, rarity: 2, skills: [{ id: 'choice' }], choices: [{ id: 'heal', value: 2 }, { id: 'spread', value: 1 }], voiceCategory: 'human_female_ikemen', flavor: '彼女の処方箋は、明日を繋ぐ特効薬か、あるいは安息へと誘う安楽死の劇薬か' },
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, voiceCategory: 'undead', flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'specter', name: '魂の徴税人', power: 4, skills: [{ id: 'pierce' }, { id: 'extort', value: 1 }], rarity: 2, voiceCategory: 'undead', flavor: '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。' },
     { id: 'franken', name: 'オールドヘイヴンの怪物', power: 8, skill: 'standby', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。' },
@@ -83,5 +86,6 @@ export const CARD_MASTER = [
     { id: 'token_reinforce', name: '増援', power: 4, skill: 'none', isToken: true, rarity: 1, flavor: '呼び声に応え、現れた仲間。' },
     { id: 'legs', name: '蛸足', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '切り離されてもなお蠢き続ける蛸の足。' },
     { id: 'token_void', name: '虚空', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '形なき虚無の欠片。それは何も生み出さず、ただそこにあるだけの空虚。' },
-    { id: 'token_ent', name: 'エント', power: 5, skill: 'none', isToken: true, rarity: 1, flavor: '永き眠りから目覚めた大樹の精霊。森を脅かす者には、容赦のない鉄槌が下される。' }
+    { id: 'token_ent', name: 'エント', power: 5, skill: 'none', isToken: true, rarity: 1, flavor: '永き眠りから目覚めた大樹の精霊。森を脅かす者には、容赦のない鉄槌が下される。' },
+    { id: 'token_drone', name: 'ドローン', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'machine_new', flavor: '小型の索敵無人機。' }
 ];

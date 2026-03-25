@@ -161,6 +161,46 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         updateDeckDisplay('red');
         renderHand();
         await sleep(600);
+    } else if (skillId === 'summon') {
+        const count = skillValue || 1;
+        const tC = CARD_MASTER.find(m => m.id === 'token_drone') || {
+            id: 'token_drone', name: 'ドローン', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'machine_new'
+        };
+
+        const simulatedToken = {
+            ...tC,
+            power: 1,
+            currentPower: 1,
+            basePower: 1,
+            skills: []
+        };
+        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false);
+
+        let events = [];
+        for (let i = 0; i < selectedLanes.length; i++) {
+            const targetLane = selectedLanes[i];
+            const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+            const newToken = {
+                id: `sm_${Date.now()}_${i}`,
+                owner: o,
+                ...tC,
+                isToken: true,
+                name: 'ドローン',
+                isPremium: (c.isPremium !== undefined) ? c.isPremium : GameState.premiumCards.includes(c.baseId || c.id),
+                imgUrl: typeof getCardImgUrl === 'function' && tC.imgUrl === undefined ? getCardImgUrl(tC) : (tC.imgUrl || 'assets/cards/card_token_drone.jpg'),
+                filter: c.filter,
+                power: 1,
+                currentPower: 1,
+                rarity: 1,
+                basePower: 1,
+                voiceCategory: 'machine_new',
+                skills: []
+            };
+            board[targetLane] = newToken;
+            events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
+        }
+        await playEvents(events);
+
     } else if (skillId === 'clone') {
         // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
         const count = skillValue || 1;

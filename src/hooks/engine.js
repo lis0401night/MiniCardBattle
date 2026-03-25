@@ -254,6 +254,41 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'quick':
             applySingleCombat(state, owner, l, events);
             break;
+        case 'summon':
+            const summonCount = val || 1;
+            const sTC = {
+                id: 'token_drone',
+                name: 'ドローン',
+                isToken: true,
+                rarity: 1,
+                voiceCategory: 'machine_new'
+            };
+            for (let i = 0; i < summonCount; i++) {
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > i) {
+                    targetLane = simulatedTokenLanes[i];
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1 && b[targetLane] === null) {
+                    const newToken = {
+                        ...sTC,
+                        id: `sm_sim_${Date.now()}_${i}`,
+                        owner,
+                        isPremium: c.isPremium,
+                        imgUrl: '', // resolved in UI
+                        power: 1,
+                        basePower: 1,
+                        currentPower: 1,
+                        skills: []
+                    };
+                    b[targetLane] = newToken;
+                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'summon' });
+                }
+            }
+            break;
         case 'clone':
             const cloneCount = val || 1;
             const tC = {
