@@ -5,7 +5,7 @@ import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { getDialogue, playSound, stopAllBGM, sleep, isTransitioning, switchScreen, getCardImgUrl, getOrCreateUUID, renderSkillTag } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { startBattleFlow } from './deck.js';
 import { initEventSatanMode, loadPlayerDeck } from './events.js';
 import { GameState } from './gameState.js';
@@ -65,9 +65,9 @@ export function showOptions() {
 export function updateVolume(val) {
     GameState.gameVolume = parseFloat(val);
     // すべての Audio インスタンス（BGM/SEのフォールバック等）へ即座に音量を反映
-    Object.keys(SOUNDS).forEach(key => {
-        if (SOUNDS[key] && typeof SOUNDS[key].volume !== 'undefined') {
-            SOUNDS[key].volume = GameState.gameVolume;
+    Object.keys(AUDIO_INSTANCES).forEach(key => {
+        if (AUDIO_INSTANCES[key] && typeof AUDIO_INSTANCES[key].volume !== 'undefined') {
+            AUDIO_INSTANCES[key].volume = GameState.gameVolume;
         }
     });
     localStorage.setItem('mini_card_battle_volume', GameState.gameVolume);
