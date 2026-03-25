@@ -192,7 +192,17 @@ export default function BattleScreen() {
     return (
         <div id="screen-battle" className="screen active" style={battleStyle}>
             <button className="btn-circle btn-battle-help" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); window.showRulesModal(); }}>？</button>
-            <button className="btn-circle btn-battle-retire" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); returnToTitle(); }}>🏳</button>
+            <button 
+                className={`btn-circle btn-battle-retire ${GameState.lastBattleResult ? 'disabled' : ''}`} 
+                onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (!GameState.lastBattleResult) {
+                        playSound(SOUNDS.seClick); 
+                        returnToTitle(); 
+                    }
+                }}
+                disabled={!!GameState.lastBattleResult}
+            >🏳</button>
 
             <EnemyArea
                 enemyConfig={GameState.enemyConfig}

@@ -253,6 +253,8 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         enemyBoard: currentMyBoard.map(cloneCard),
         playerHP: GameState.playerHP,
         enemyHP: currentMyHP,
+        playerMaxHP: GameState.playerMaxHP,
+        enemyMaxHP: GameState.enemyMaxHP,
         playerSP: GameState.playerSP,
         enemySP: currentMySP || 0,
         playerHand: GameState.playerHand.map(cloneCard), // Morph等で必要

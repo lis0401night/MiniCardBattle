@@ -1,8 +1,8 @@
 export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'monk', 'monk',
         'barrier', 'barrier',
+        'charity', 'charity',
         'crenellatedwall', 'crenellatedwall', 'crenellatedwall',
         'wall', 'wall', 'wall',
         'cleric', 'cleric', 'cleric',
@@ -13,18 +13,17 @@ export default {
         'empress',
         'fire', 'fire',
         'incinerator', 'incinerator',
-        'monk', 'monk',
-        'barrier', 'barrier',
-        'crenellatedwall', 'crenellatedwall',
-        'icon', 'icon',
-        'cleric', 'cleric', 'cleric',
+        'charity', 'charity',
+        'doom', 'doom',
+        'wall', 'wall', 'wall',
+        'cleric', 'cleric', 'cleric', 'cleric',
     ],
     hard: [
         'empress', 'empress', 'empress', 'empress',
         'fire', 'fire', 'fire', 'fire',
-        'incinerator', 'incinerator', 'incinerator', 'incinerator',
-        'monk', 'monk',
-        'icon', 'icon',
-        'cleric', 'cleric', 'cleric', 'cleric',
+        'incinerator', 'incinerator', 'incinerator',
+        'charity', 'charity', 'charity',
+        'doom', 'doom', 'doom',
+        'wall', 'wall', 'wall',
     ]
 };
