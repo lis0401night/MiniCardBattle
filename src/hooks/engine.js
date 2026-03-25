@@ -183,6 +183,23 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             }
             break;
+        case 'toxic':
+            if (eB[l]) {
+                const toxVal = val || 1;
+                eB[l].skills = eB[l].skills || [];
+                if (eB[l].skill === 'growth') {
+                    eB[l].skillValue = (eB[l].skillValue || 0) - toxVal;
+                } else {
+                    const exist = eB[l].skills.find(s => s.id === 'growth');
+                    if (exist) {
+                        exist.value = (exist.value || 0) - toxVal;
+                    } else {
+                        eB[l].skills.push({ id: 'growth', value: -toxVal });
+                    }
+                }
+                events.push({ type: 'add_skill', side: oppOwner, lane: l, skillId: 'growth', skillValue: -toxVal, source: 'toxic' });
+            }
+            break;
         case 'spread':
             const spVal = val || 2;
             [l - 1, l, l + 1].forEach(j => {

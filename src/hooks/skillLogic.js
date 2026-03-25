@@ -286,6 +286,40 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
 
     } else if (skillId === 'quick') {
         await sleep(400); await executeSingleCombat(o, l);
+    } else if (skillId === 'toxic') {
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '有毒', '#10b981');
+        const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+        if (eB[l]) {
+            const toxVal = skillValue || 1;
+            eB[l].skills = eB[l].skills || [];
+            
+            if (eB[l].skill === 'growth') {
+                eB[l].skillValue = (eB[l].skillValue || 0) - toxVal;
+            } else {
+                const exist = eB[l].skills.find(s => s.id === 'growth');
+                if (exist) {
+                    exist.value = (exist.value || 0) - toxVal;
+                } else {
+                    eB[l].skills.push({ id: 'growth', value: -toxVal });
+                }
+            }
+            
+            const tgtSide = o === 'blue' ? 'enemy' : 'player';
+            const tEl = document.querySelector(`#${tgtSide}-lanes .cell[data-lane="${l}"] .card`);
+            if (tEl) {
+                tEl.classList.add('anim-shake');
+                createDamagePopup(tEl, `成長-${toxVal}`, '#10b981');
+                if (window.updateCardVisualsReact) window.updateCardVisualsReact(l, tgtSide);
+                else {
+                    const ubHook = window.updateBattleUIHook;
+                    if (ubHook) ubHook();
+                }
+            }
+            await sleep(500);
+            if (tEl) tEl.classList.remove('anim-shake');
+        } else {
+            await sleep(500);
+        }
     } else if (skillId === 'bind') {
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, '拘束', '#facc15');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
