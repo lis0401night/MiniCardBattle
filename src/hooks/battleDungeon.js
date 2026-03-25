@@ -179,13 +179,18 @@ export function loseDungeonBattle() {
 
 export function calculateDungeonPoints(winStreak) {
     if (winStreak <= 0) return 0;
-    if (winStreak <= 2) return 1;
-    if (winStreak <= 4) return 2;
-    if (winStreak === 5) return 5;
-    if (winStreak <= 7) return 6;
-    if (winStreak <= 9) return 7;
-    if (winStreak === 10) return 10;
-    return 11;
+    
+    const basePoints = Math.floor(winStreak / 10) * 10;
+    const remainder = winStreak % 10;
+    
+    let remainderPoints = 0;
+    if (remainder === 1 || remainder === 2) remainderPoints = 1;
+    else if (remainder === 3 || remainder === 4) remainderPoints = 2;
+    else if (remainder === 5) remainderPoints = 3;
+    else if (remainder === 6 || remainder === 7) remainderPoints = 4;
+    else if (remainder === 8 || remainder === 9) remainderPoints = 5;
+    
+    return basePoints + remainderPoints;
 }
 
 export function retireDungeon() {

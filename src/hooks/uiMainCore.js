@@ -64,12 +64,16 @@ export function showOptions() {
 
 export function updateVolume(val) {
     GameState.gameVolume = parseFloat(val);
-    // すべての Audio インスタンス（BGM/SEのフォールバック等）へ即座に音量を反映
+    // すべての Audio インスタンス（BGM/SEのフォールバック等）へ即座に音量を反映 (PC＆非iOS用)
     Object.keys(AUDIO_INSTANCES).forEach(key => {
         if (AUDIO_INSTANCES[key] && typeof AUDIO_INSTANCES[key].volume !== 'undefined') {
             AUDIO_INSTANCES[key].volume = GameState.gameVolume;
         }
     });
+    // Web Audio Gain Nodeの更新 (iOSなどモバイル用)
+    if (typeof window.updateBgmGainNodes === 'function') {
+        window.updateBgmGainNodes(GameState.gameVolume);
+    }
     localStorage.setItem('mini_card_battle_volume', GameState.gameVolume);
 }
 

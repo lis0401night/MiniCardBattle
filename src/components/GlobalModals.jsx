@@ -10,7 +10,7 @@ import { saveDeck, renderDeckEdit, submitDefenseDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { renderCardList, openCardPreview, setShowCardAcquisitionModalHook, setShowPremiumAcquisitionModalHook, setShowPlaymatAcquisitionModalHook, setOpenCardPreviewHook, setCloseCardPreviewHook } from '../hooks/uiGallery.js';
 import { backupDataToXML, importDataFromXML, reloadGame, confirmCharSelect, confirmExchange, setCloseEnemyDeckModalHook } from '../hooks/uiMainCore.js';
-import { setShowConfirmModalHook, setShowAlertModalHook, setShowErrorModalHook, setShowPointAcquisitionModalHook } from '../hooks/uiModals.js';
+import { showAlertModal, setShowConfirmModalHook, setShowAlertModalHook, setShowErrorModalHook, setShowPointAcquisitionModalHook } from '../hooks/uiModals.js';
 
 let g_discardLongPressTimer = null;
 let g_discardHasLongPressed = false;

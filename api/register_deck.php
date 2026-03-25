@@ -32,6 +32,8 @@ $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
 $name = htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8');
 $character = preg_replace('/[^a-z0-9_]/', '', $data['character']);
 $deck = $data['deck'];
+$skin = isset($data['skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['skin']) : 'default';
+$playmat = isset($data['playmat']) ? preg_replace('/[^a-z0-9_]/', '', $data['playmat']) : null;
 
 if (strlen($uuid) < 10 || count($deck) !== 20) {
     echo json_encode(['success' => false, 'error' => 'Invalid data format']);
@@ -67,6 +69,8 @@ $player_data = [
     'uuid' => $uuid,
     'name' => $name,
     'character' => $character,
+    'skin' => $skin,
+    'playmat' => $playmat,
     'stage' => $stage,
     'deck' => $deck,
     'points' => $existing_points,

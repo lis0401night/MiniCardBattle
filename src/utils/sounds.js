@@ -105,8 +105,19 @@ export async function loadSE(key, url) {
     }
 }
 
-// モバイル向けの音声アンロックフラグ
 export let isAudioUnlocked = false;
+export const bgmGainNodes = {};
+
+export function updateBgmGainNodes(vol) {
+    if (!audioCtx) return;
+    Object.values(bgmGainNodes).forEach(gainNode => {
+        if (gainNode && gainNode.gain) {
+            // Apply volume instantly or with a very short ramp to avoid clicks
+            gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.01);
+        }
+    });
+}
+window.updateBgmGainNodes = updateBgmGainNodes; // Fallback exposing
 
 /**
  * モバイルブラウザの音声制限を解除する
@@ -127,6 +138,24 @@ export async function unlockAudio() {
         if (audioCtx.state === 'suspended') {
             await audioCtx.resume();
         }
+
+        // BGMをWeb Audio APIルーターに通す (iOS等での動的音量制御のため)
+        Object.keys(AUDIO_INSTANCES).forEach(key => {
+            if (key.startsWith('bgm') && !bgmGainNodes[key]) {
+                try {
+                    const audio = AUDIO_INSTANCES[key];
+                    const source = audioCtx.createMediaElementSource(audio);
+                    const gainNode = audioCtx.createGain();
+                    const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
+                    gainNode.gain.value = baseVol;
+                    source.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    bgmGainNodes[key] = gainNode;
+                } catch (err) {
+                    console.warn("Failed to route BGM to Web Audio API", err);
+                }
+            }
+        });
 
         // ダミー再生（念のため）
         const osc = audioCtx.createOscillator();
