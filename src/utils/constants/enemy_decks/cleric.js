@@ -16,14 +16,15 @@ export default {
         'monk', 'monk',
         'barrier', 'barrier',
         'crenellatedwall', 'crenellatedwall',
-        'wall', 'wall',
+        'icon', 'icon',
         'cleric', 'cleric', 'cleric',
     ],
     hard: [
         'empress', 'empress', 'empress', 'empress',
         'fire', 'fire', 'fire', 'fire',
         'incinerator', 'incinerator', 'incinerator', 'incinerator',
-        'monk', 'monk', 'monk', 'monk',
+        'monk', 'monk',
+        'icon', 'icon',
         'cleric', 'cleric', 'cleric', 'cleric',
     ]
 };

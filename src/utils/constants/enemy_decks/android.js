@@ -15,15 +15,15 @@ export default {
         'bigai', 'bigai',
         'titan', 'titan',
         'mantis', 'mantis',
+        'mechanic', 'mechanic',
         'diviner', 'diviner',
-        'cleric', 'cleric',
         'clone', 'clone', 'clone',
     ],
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon', 'cyberdragon',
         'cyberman', 'cyberman', 'cyberman', 'cyberman',
         'bigai', 'bigai', 'bigai', 'bigai',
-        'titan', 'titan', 'titan', 'titan',
+        'mechanic', 'mechanic', 'mechanic', 'mechanic',
         'clone', 'clone', 'clone', 'clone',
     ]
 };
