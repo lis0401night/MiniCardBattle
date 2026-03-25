@@ -148,7 +148,6 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, false, tokenLanes, false);
-        if (selectedLanes.length === 0) return;
         tokenLanes = selectedLanes;
     } else if (action === 'targeted_destruction') {
         if (!tokenLanes || tokenLanes.length === 0) {

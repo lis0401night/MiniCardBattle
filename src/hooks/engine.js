@@ -519,7 +519,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             count++;
         };
 
-        if (tokenLanes && tokenLanes.length > 0) {
+        if (tokenLanes !== null) {
             for (let l of tokenLanes) {
                 if (board[l] !== null) {
                     events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
