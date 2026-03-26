@@ -173,20 +173,19 @@
         async function init() {
             try {
                 // ESMを使ってモジュールとしてインポート
-                const cardsModule = await import('./data/cards.js');
-                const skillsModule = await import('./data/skills.js');
-                const skillPointsModule = await import('./data/skill_points.js');
+                const cardsModule = await import('./src/utils/constants/cards.js');
+                const skillsModule = await import('./src/utils/constants/skills.js');
+                const skillPointsModule = await import('./src/utils/constants/skill_points.js');
 
                 cardData = cardsModule.CARD_MASTER || [];
                 skillData = skillsModule.SKILLS || {};
                 pointSettings = skillPointsModule.SKILL_POINTS || {};
 
                 // 敵デッキをダイナミックインポート
-                // enemy_decks_files.js やディレクトリ内のファイルを自動取得するのはブラウザ環境では難しいため、リストを定義
-                const deckFiles = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'satan'];
+                const deckFiles = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'satan', 'devilhunter', 'satan_high'];
                 for (const file of deckFiles) {
                     try {
-                        const deckModule = await import(`./enemy_decks/${file}.js`);
+                        const deckModule = await import(`./src/utils/constants/enemy_decks/${file}.js`);
                         const deck = deckModule.default || deckModule[file] || deckModule.ENEMY_DECKS?.[file];
                         if (deck) {
                             deckData[file] = deck;
