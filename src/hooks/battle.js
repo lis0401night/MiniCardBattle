@@ -367,9 +367,10 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
     // AIの場合：
     if (owner === 'red') {
         // すでにシミュレーションで決定された配置があればそれを使う
-        if (tokenLanes && tokenLanes.length > 0) {
-            console.log("AI using pre-calculated tokenLanes:", tokenLanes);
-            return tokenLanes.slice(0, count);
+        const aiLanes = (tokenLanes && tokenLanes.length > 0) ? tokenLanes : (GameState.aiTokenLanes || []);
+        if (aiLanes.length > 0) {
+            console.log("AI using pre-calculated tokenLanes:", aiLanes);
+            return aiLanes.slice(0, count);
         }
         // 無ければ評価を行う（強制使用時など）
         let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
