@@ -51,7 +51,7 @@ export const SKILL_POINTS = {
         "multiplier": 1.2
     },
     "hero": {
-        "base": 1,
+        "base": 0.5,
         "multiplier": 2
     },
     "charge": {
@@ -80,7 +80,7 @@ export const SKILL_POINTS = {
     },
     "lone_wolf": {
         "base": 0,
-        "multiplier": 2
+        "multiplier": 1
     },
     "soul_bind": {
         "base": 0,
@@ -121,5 +121,57 @@ export const SKILL_POINTS = {
     "contract": {
         "base": 0,
         "multiplier": -1
+    },
+    "choice": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "metamorph": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "resurrect": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "standby": {
+        "base": 0,
+        "multiplier": -1.5
+    },
+    "artillery": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "shuffle": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "summon": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "immune": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "fate": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "salvage": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "reinforce": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "extort": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "toxic": {
+        "base": 0,
+        "multiplier": 0
     }
 };
