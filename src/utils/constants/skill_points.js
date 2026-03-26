@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Skill Points Configuration
  */
-const SKILL_POINTS = {
+export const SKILL_POINTS = {
     "quick": {
         "base": 3,
         "multiplier": 0

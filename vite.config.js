@@ -22,6 +22,10 @@ export default defineConfig({
     emptyOutDir: true,
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
+      input: {
+        main: './index.html',
+        cardscore: './cardscore.html'
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
