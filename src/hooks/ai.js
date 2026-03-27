@@ -41,8 +41,8 @@ export async function executeEnemyAI() {
         // リーダースキルの先行使用（強制使用）
         let shouldForceSkill = false;
         if (canUseSkill) {
-            // ナイア、エリシアは難易度によらず優先使用（デッキ圧縮・回復）
-            if (GameState.enemyConfig.id === 'cthulhu' || GameState.enemyConfig.id === 'cleric') {
+            // ナイア、エリシア、クロエは難易度によらず優先使用（デッキ圧縮、回復、ターンスキップ）
+            if (GameState.enemyConfig.id === 'cthulhu' || GameState.enemyConfig.id === 'cleric' || GameState.enemyConfig.id === 'witch') {
                 shouldForceSkill = true;
             }
             // 初級難易度の場合、アイギス・リナの「空撃ち」を除き100%使用
