@@ -927,7 +927,25 @@ export async function startTurn(owner) {
         updateSPOrbs(owner);
     }
 
-    if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
+    let skipAttack = false;
+    if (GameState.attackSkipIndicator === owner) {
+        skipAttack = true;
+        GameState.attackSkipIndicator = null;
+    }
+
+    if (skipAttack) {
+        if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) {
+            const st = document.getElementById('turn-status');
+            if (st) {
+                st.innerText = "ATTACK PHASE SKIPPED!";
+                st.style.color = "#c084fc";
+                playSound(SOUNDS.seSkill);
+            }
+            await sleep(1000);
+        }
+    } else {
+        if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
+    }
 
     drawCard(owner);
     if (owner === 'blue') {
