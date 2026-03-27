@@ -525,6 +525,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
         GameState.isEnemyTargetMode = true;
         GameState.targetMaxCount = count;
         GameState.targetSelectedLanes = [];
+        updateCardDetail(null);
 
         window.handleEnemyLaneClick = (laneIndex) => {
             if (targetBoard[laneIndex] === null) return;
@@ -550,6 +551,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
             GameState.targetMaxCount = 0;
             window.handleEnemyLaneClick = null;
             window.finishEnemySelection = null;
+            updateCardDetail(null);
             if (updateBattleUIHook) updateBattleUIHook();
             resolve(result);
         };
@@ -586,6 +588,7 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
         GameState.isAlliedTargetMode = true;
         GameState.targetMaxCount = count;
         GameState.targetSelectedLanes = [];
+        updateCardDetail(null);
 
         window.handleAlliedLaneClick = (laneIndex) => {
             if (targetBoard[laneIndex] === null) return;
@@ -611,6 +614,7 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
             GameState.targetMaxCount = 0;
             window.handleAlliedLaneClick = null;
             window.finishAlliedSelection = null;
+            updateCardDetail(null);
             if (updateBattleUIHook) updateBattleUIHook();
             resolve(result);
         };
