@@ -264,6 +264,9 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (currentState.turnSkipIndicator) {
             GameState.turnSkipIndicator = currentState.turnSkipIndicator;
         }
+        if (currentState.damageHalvedIndicator) {
+            GameState.damageHalvedIndicator = currentState.damageHalvedIndicator;
+        }
     }
 
     // イベントログを再生（再生中にGameStateと描画が逐次更新される）

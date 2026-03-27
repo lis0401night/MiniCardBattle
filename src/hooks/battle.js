@@ -962,6 +962,11 @@ export function drawCard(owner) {
 export async function startTurn(owner) {
     if (GameState.isBattleEnded) return; GameState.isProcessing = true;
     
+    // 相手が受けるダメージ半減をターン開始時にリセット
+    if (GameState.damageHalvedIndicator === owner) {
+        GameState.damageHalvedIndicator = null;
+    }
+    
     // スタン（拘束/待機）状態の更新（そのプレイヤーのターン開始時に減算）
     const myBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     myBoard.forEach(c => {

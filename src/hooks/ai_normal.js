@@ -269,7 +269,8 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         playerHand: GameState.playerHand.map(cloneCard),
         enemyHand: hand.map(cloneCard),
         playerDiscard: GameState.playerDiscard.map(cloneCard),
-        enemyDiscard: GameState.enemyDiscard.map(cloneCard)
+        enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+        damageHalvedIndicator: GameState.damageHalvedIndicator
     };
 
     // 1. スキル使用 (常に先出し)

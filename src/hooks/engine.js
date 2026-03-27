@@ -636,6 +636,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
     } else if (action === 'time_stop') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         state.turnSkipIndicator = oppOwner;
+        state.damageHalvedIndicator = oppOwner;
     }
 
     processDestructionTriggers(state, events);
@@ -741,6 +742,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             if (hasSkill(aC, 'pierce')) {
                 let pDmg = Math.max(0, aC.currentPower);
                 if (hasSkill(aC, 'double_strike')) pDmg *= 2;
+                if (state.damageHalvedIndicator === defSide) pDmg = Math.ceil(pDmg / 2);
                 defHP -= pDmg;
                 if (pDmg > 0) {
                     events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
@@ -764,6 +766,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     } else {
         let finalDmg = aP;
         if (hasSkill(aC, 'double_strike')) finalDmg *= 2;
+        if (state.damageHalvedIndicator === defSide) finalDmg = Math.ceil(finalDmg / 2);
         defHP -= finalDmg;
         events.push({ type: 'damage_player', side: defSide, amount: finalDmg, source: 'direct_attack' });
         applyExtort(aC, defSide, attackerSide, aLane, events, state);
@@ -794,7 +797,8 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
             events.push({ type: 'power_change', side, lane: i, amount: v, source: 'growth' });
         }
         if (hasSkill(c, 'contract') && !skipContract) {
-            const v = getSkillValue(c, 'contract') || 3;
+            let v = getSkillValue(c, 'contract') || 3;
+            if (state.damageHalvedIndicator === side) v = Math.ceil(v / 2);
             if (side === 'blue') state.playerHP -= v;
             else state.enemyHP -= v;
             events.push({ type: 'damage_player', side, amount: v, source: 'contract' });
