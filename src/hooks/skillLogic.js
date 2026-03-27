@@ -296,7 +296,6 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         
         if (roll <= 5) {
             let dmg = roll;
-            if (GameState.damageHalvedIndicator === (o === 'blue' ? 'red' : 'blue')) dmg = Math.ceil(dmg / 2);
             if (o === 'blue') {
                 GameState.enemyHP -= dmg;
                 createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
@@ -312,7 +311,6 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             }
         } else {
             let dmg = 6;
-            if (GameState.damageHalvedIndicator === o) dmg = Math.ceil(dmg / 2);
             if (o === 'blue') {
                 GameState.playerHP -= dmg;
                 createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
@@ -383,7 +381,6 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         }
     } else if (skillId === 'artillery') {
         let dmg = skillValue || 1;
-        if (GameState.damageHalvedIndicator === (o === 'blue' ? 'red' : 'blue')) dmg = Math.ceil(dmg / 2);
         await sleep(300);
         if (o === 'blue') {
             GameState.enemyHP -= dmg;

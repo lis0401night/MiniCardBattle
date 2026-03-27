@@ -264,8 +264,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (currentState.turnSkipIndicator) {
             GameState.turnSkipIndicator = currentState.turnSkipIndicator;
         }
-        if (currentState.damageHalvedIndicator) {
-            GameState.damageHalvedIndicator = currentState.damageHalvedIndicator;
+        if (currentState.attackSkipIndicator) {
+            GameState.attackSkipIndicator = currentState.attackSkipIndicator;
         }
     }
 
