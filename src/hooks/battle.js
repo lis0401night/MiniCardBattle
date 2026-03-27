@@ -999,15 +999,7 @@ export async function startTurn(owner) {
     }
 
     if (skipAttack) {
-        if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) {
-            const st = document.getElementById('turn-status');
-            if (st) {
-                st.innerText = "ATTACK PHASE SKIPPED!";
-                st.style.color = "#c084fc";
-                playSound(SOUNDS.seSkill);
-            }
-            await sleep(1000);
-        }
+        // 何もせず攻撃フェーズをスキップ
     } else {
         if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
     }
