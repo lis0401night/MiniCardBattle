@@ -180,8 +180,8 @@ export function initBattleState() {
         GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
         GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
-        GameState.isPlacementMode = false; GameState.placementToken = null; GameState.placementSelectedLanes = [];
-        GameState.isEnemyTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
+        GameState.isPlacementMode = false; GameState.placementCount = 0; GameState.placementToken = null; GameState.placementSelectedLanes = [];
+        GameState.isEnemyTargetMode = false; GameState.isAlliedTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
         updateCardDetail(null);
         if (updateBattleUIHook) updateBattleUIHook();
 
@@ -559,6 +559,67 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
 }
 
 /**
+ * 自分の場のカードを選択させるユーティリティ（強化スキル用など）
+ */
+export async function waitPlayerAlliedLaneSelection(count, owner) {
+    const isBlue = owner === 'blue';
+    const targetBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+
+    // ターゲット可能なレーン（配置されている場所）を取得
+    const occupiedLanes = targetBoard.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+
+    if (occupiedLanes.length === 0) return [];
+
+    // AIの場合：パワーが最も高いカード優先
+    if (owner === 'red') {
+        const sortedLanes = [...occupiedLanes].sort((a, b) => {
+            const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
+            if (diff !== 0) return diff;
+            return a - b;
+        });
+        return sortedLanes.slice(0, count);
+    }
+
+    if (occupiedLanes.length <= count) return occupiedLanes;
+
+    return new Promise((resolve) => {
+        GameState.isAlliedTargetMode = true;
+        GameState.targetMaxCount = count;
+        GameState.targetSelectedLanes = [];
+
+        window.handleAlliedLaneClick = (laneIndex) => {
+            if (targetBoard[laneIndex] === null) return;
+            playSound(SOUNDS.seClick);
+            
+            if (!GameState.targetSelectedLanes.includes(laneIndex)) {
+                GameState.targetSelectedLanes.push(laneIndex);
+                if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
+                
+                if (GameState.targetSelectedLanes.length >= count) {
+                    setTimeout(() => {
+                        window.finishAlliedSelection();
+                    }, 300);
+                }
+            }
+        };
+
+        window.finishAlliedSelection = () => {
+            playSound(SOUNDS.seClick);
+            GameState.isAlliedTargetMode = false;
+            const result = [...GameState.targetSelectedLanes];
+            GameState.targetSelectedLanes = [];
+            GameState.targetMaxCount = 0;
+            window.handleAlliedLaneClick = null;
+            window.finishAlliedSelection = null;
+            if (updateBattleUIHook) updateBattleUIHook();
+            resolve(result);
+        };
+
+        if (updateBattleUIHook) updateBattleUIHook();
+    });
+}
+
+/**
  * プレイヤーまたはAIに手札からカードを選択させるユーティリティ（入替スキル用）
  */
 export async function waitPlayerHandSelection(count, owner, forceExact = false) {
@@ -927,25 +988,7 @@ export async function startTurn(owner) {
         updateSPOrbs(owner);
     }
 
-    let skipAttack = false;
-    if (GameState.attackSkipIndicator === owner) {
-        skipAttack = true;
-        GameState.attackSkipIndicator = null;
-    }
-
-    if (skipAttack) {
-        if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) {
-            const st = document.getElementById('turn-status');
-            if (st) {
-                st.innerText = "ATTACK PHASE SKIPPED!";
-                st.style.color = "#c084fc";
-                playSound(SOUNDS.seSkill);
-            }
-            await sleep(1000);
-        }
-    } else {
-        if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
-    }
+    if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
 
     drawCard(owner);
     if (owner === 'blue') {

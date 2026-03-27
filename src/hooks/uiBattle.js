@@ -33,10 +33,20 @@ export function updateCardDetail(c) {
 
     if (!c) {
         if (GameState.isDiscardingMode) {
-            html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">捨てるカードを${GameState.discardMaxCount}枚まで選んでください</div>`;
+            if (GameState.isDiscardingExact) {
+                html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">捨てるカードを${GameState.discardMaxCount}枚選んでください</div>`;
+            } else {
+                html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">捨てるカードを${GameState.discardMaxCount}枚まで選んでください</div>`;
+            }
             textColor = '#facc15';
         } else if (GameState.isPlacementMode) {
             html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">配置する場所を選んでください</div>`;
+            textColor = '#facc15';
+        } else if (GameState.isEnemyTargetMode) {
+            html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">相手のカードを${GameState.targetMaxCount}枚選んでください</div>`;
+            textColor = '#facc15';
+        } else if (GameState.isAlliedTargetMode) {
+            html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">自分のカードを${GameState.targetMaxCount}枚選んでください</div>`;
             textColor = '#facc15';
         }
     } else {

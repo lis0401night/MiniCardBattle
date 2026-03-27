@@ -425,6 +425,21 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 });
             }
             break;
+        case 'enhance':
+            const occupy = b.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+            if (occupy.length > 0) {
+                const tl = occupy.sort((a,b) => b[b].currentPower - b[a].currentPower)[0];
+                const tC = b[tl];
+                if (!Array.isArray(tC.skills)) tC.skills = [];
+                let existingGrowth = tC.skills.find(sk => sk.id === 'growth');
+                if (existingGrowth) {
+                    existingGrowth.value += val;
+                } else {
+                    tC.skills.push({ id: 'growth', value: val });
+                }
+                events.push({ type: 'skill', skill: 'enhance', side: owner, lane: tl, card: JSON.parse(JSON.stringify(tC)) });
+            }
+            break;
         case 'resurrect':
             const maxPow = val || 1;
             const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
@@ -621,7 +636,6 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
     } else if (action === 'time_stop') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         state.turnSkipIndicator = oppOwner;
-        state.attackSkipIndicator = owner;
     }
 
     processDestructionTriggers(state, events);

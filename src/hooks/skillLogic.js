@@ -2,7 +2,7 @@ import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -210,6 +210,39 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
         await playEvents(events);
+
+    } else if (skillId === 'enhance') {
+        const val = skillValue || 1;
+        const b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        
+        // 味方の場にいるカードを選択 (最大1枚)
+        const targetLanes = await waitPlayerAlliedLaneSelection(1, o);
+        if (targetLanes && targetLanes.length > 0) {
+            const tl = targetLanes[0];
+            const tC = b[tl];
+            if (tC) {
+                // 成長+valを付与する
+                if (!Array.isArray(tC.skills)) tC.skills = [];
+                const existingGrowth = tC.skills.find(sk => sk.id === 'growth');
+                if (existingGrowth) {
+                    existingGrowth.value += val;
+                } else {
+                    tC.skills.push({ id: 'growth', value: val });
+                }
+                
+                // 演出
+                const tEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${tl}"] .card`);
+                if (tEl) {
+                    createDamagePopup(tEl, `成長+${val}`, '#22c55e');
+                    tEl.classList.add('anim-heal');
+                    playSound(SOUNDS.seSkill);
+                    await sleep(400);
+                    tEl.classList.remove('anim-heal');
+                }
+                
+                renderBoard();
+            }
+        }
 
     } else if (skillId === 'clone') {
         // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す

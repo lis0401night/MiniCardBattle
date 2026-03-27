@@ -266,11 +266,10 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         enemyMaxHP: GameState.enemyMaxHP,
         playerSP: GameState.playerSP,
         enemySP: currentMySP || 0,
-        playerHand: GameState.playerHand.map(cloneCard), // Morph等で必要
+        playerHand: GameState.playerHand.map(cloneCard),
         enemyHand: hand.map(cloneCard),
         playerDiscard: GameState.playerDiscard.map(cloneCard),
-        enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-        attackSkipIndicator: GameState.attackSkipIndicator
+        enemyDiscard: GameState.enemyDiscard.map(cloneCard)
     };
 
     // 1. スキル使用 (常に先出し)

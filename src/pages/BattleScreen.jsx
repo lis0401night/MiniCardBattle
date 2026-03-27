@@ -86,6 +86,14 @@ export default function BattleScreen() {
             if (side === 'enemy' && window.handleEnemyLaneClick) window.handleEnemyLaneClick(lane);
             return;
         }
+        if (GameState.isAlliedTargetMode) {
+            if (side === 'player' && window.handleAlliedLaneClick) window.handleAlliedLaneClick(lane);
+            return;
+        }
+        if (GameState.isAlliedTargetMode) {
+            if (side === 'player' && window.handleAlliedLaneClick) window.handleAlliedLaneClick(lane);
+            return;
+        }
         if (GameState.isProcessing || (typeof isTransitioning === 'function' && isTransitioning())) return;
 
         // 相手ターン中または戦闘中（攻撃アニメーション等）は操作不可
@@ -292,6 +300,8 @@ export default function BattleScreen() {
                         </button>
                     ) : GameState.isEnemyTargetMode ? (
                         <button id="btn-end-turn" className="action-btn" style={{ background: '#475569', borderColor: '#334155' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishEnemyTargetSelection) window.finishEnemyTargetSelection(); }}>キャンセル</button>
+                    ) : GameState.isAlliedTargetMode ? (
+                        <button id="btn-end-turn" className="action-btn" style={{ background: '#475569', borderColor: '#334155' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishAlliedSelection) window.finishAlliedSelection(); }}>キャンセル</button>
                     ) : (
                         <button id="btn-end-turn" className="action-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); endPlayerTurn(); }}>ターン終了</button>
                     )}
