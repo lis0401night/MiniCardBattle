@@ -52,7 +52,7 @@ export const CARD_MASTER = [
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, voiceCategory: 'undead', flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'specter', name: '魂の徴税人', power: 4, skills: [{ id: 'pierce' }, { id: 'extort', value: 1 }], rarity: 2, voiceCategory: 'undead', flavor: '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。' },
     { id: 'franken', name: 'オールドヘイヴンの怪物', power: 8, skill: 'standby', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。' },
-    { id: 'mage', name: '学院の雷撃魔導士', power: 2, skill: 'enhance', skillValue: 2, rarity: 2, voiceCategory: 'human_female_ikemen', flavor: '魔導アカデミーの雷撃魔導士。周囲の魔力を吸収し、雷撃を放つ。' },
+    { id: 'mage', name: '学院の雷撃魔導士', power: 3, skill: 'enhance', skillValue: 2, rarity: 2, voiceCategory: 'human_female_ikemen', flavor: '魔導アカデミーの雷撃魔導士。周囲の魔力を吸収し、雷撃を放つ。' },
     { id: 'dragonfire', name: 'ドラゴンファイア', rarity: 2, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'artillery', value: 3 }, { id: 'snipe', value: 8 }], flavor: '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。' },
     { id: 'gargoyle', name: 'ガーゴイル', rarity: 2, voiceCategory: 'sword', power: 5, skills: [{ id: 'sturdy' }, { id: 'standby', value: 1 }], flavor: '塔の頂から見下ろす冷たい石の瞳。夜の帳が下りる時、それは獲物を狙う狩人となる。' },
     { id: 'battlemage', name: 'ギルドの戦闘魔導士', rarity: 2, voiceCategory: 'human_male_warrior', power: 4, skills: [{ id: 'convert', value: 1 }, { id: 'snipe', value: 3 }], flavor: '剣と魔法を操る魔導士。彼らが招集されたということは、困難な任務であることを意味する' },
