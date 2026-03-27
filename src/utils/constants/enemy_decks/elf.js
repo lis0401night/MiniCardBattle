@@ -13,7 +13,7 @@ export default {
         'wolf',
         'highelf', 'highelf',
         'bard', 'bard',
-        'mage', 'mage',
+        'bear', 'bear',
         'spider', 'spider',
         'bird', 'bird',
         'charger', 'charger',
@@ -22,7 +22,7 @@ export default {
     hard: [
         'wolf', 'wolf', 'wolf', 'wolf',
         'highelf', 'highelf', 'highelf', 'highelf',
-        'mage', 'mage', 'mage', 'mage',
+        'bear', 'bear', 'bear', 'bear',
         'bird', 'bird', 'bird', 'bird',
         'sniper', 'sniper', 'sniper', 'sniper',
     ]
