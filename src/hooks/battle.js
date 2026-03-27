@@ -616,7 +616,8 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
         if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndex !== undefined) {
             const idx = GameState.aiDecision.choiceIndex;
             delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
-            return [choices[idx]];
+            const indices = Array.isArray(idx) ? idx : [idx];
+            return indices.map(i => choices[i]);
         }
 
         // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
