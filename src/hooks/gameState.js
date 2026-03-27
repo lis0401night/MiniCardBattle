@@ -23,6 +23,7 @@ export const GameState = {
     pendingCharId: null, lastBattleResult: null,
     longPressTimer: null,
     selectedStageId: null,
+    turnSkipIndicator: null,
     gameVolume: 0.5,
     premiumCards: [],
     unlockedPremiumCards: [],

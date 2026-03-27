@@ -260,6 +260,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         applyLeaderSkillLogic(currentState, owner, action, tokenLanes, events);
         // リーダースキルによるダメージ・破壊を処理し、分裂等の誘発効果をイベントに積む
         processDestructionTriggers(currentState, events);
+
+        if (currentState.turnSkipIndicator) {
+            GameState.turnSkipIndicator = currentState.turnSkipIndicator;
+        }
     }
 
     // イベントログを再生（再生中にGameStateと描画が逐次更新される）

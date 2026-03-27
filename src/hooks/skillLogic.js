@@ -91,16 +91,19 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     }
 
     if (skillId === 'choice') {
-        const choice = await waitSkillChoice(c.choices, o, c);
-        if (choice) {
-            // もしパッシブスキル（機能が場に留まるスキル）を選んだ場合はカード自身に永続付与する
-            if (PASSIVE_SKILLS.includes(choice.id)) {
-                if (!Array.isArray(c.skills)) c.skills = [];
-                c.skills.push({ id: choice.id, value: choice.value || 0 });
-                renderBoard(); // UI反映
+        const choiceArray = await waitSkillChoice(c.choices, o, c, skillValue);
+        if (choiceArray) {
+            const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];
+            for (const choice of arr) {
+                // もしパッシブスキル（機能が場に留まるスキル）を選んだ場合はカード自身に永続付与する
+                if (PASSIVE_SKILLS.includes(choice.id)) {
+                    if (!Array.isArray(c.skills)) c.skills = [];
+                    c.skills.push({ id: choice.id, value: choice.value || 0 });
+                    renderBoard(); // UI反映
+                }
+                // 選択されたスキルを順に実行
+                await resolveActiveSkillEffect(o, l, c, choice.id, choice.value);
             }
-            // 選択されたスキルを再帰的に実行
-            await resolveActiveSkillEffect(o, l, c, choice.id, choice.value);
         }
         return;
     }
@@ -162,19 +165,26 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         renderHand();
         await sleep(600);
     } else if (skillId === 'summon') {
-        const count = skillValue || 1;
-        const tC = CARD_MASTER.find(m => m.id === 'token_drone') || {
-            id: 'token_drone', name: 'ドローン', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'machine_new'
+        const pValue = skillValue || 1;
+        let tName = 'ドローン';
+        let tId = 'token_drone';
+        if (pValue >= 5) {
+            tName = 'ゴーレム';
+            tId = 'token_golem';
+        }
+        
+        const tC = CARD_MASTER.find(m => m.id === tId) || {
+            id: tId, name: tName, power: pValue, skill: 'none', isToken: true, rarity: 1, voiceCategory: pValue >= 5 ? 'monster' : 'machine_new'
         };
 
         const simulatedToken = {
             ...tC,
-            power: 1,
-            currentPower: 1,
-            basePower: 1,
+            power: pValue,
+            currentPower: pValue,
+            basePower: pValue,
             skills: []
         };
-        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false);
+        const selectedLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, null, false);
 
         let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
@@ -185,15 +195,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 owner: o,
                 ...tC,
                 isToken: true,
-                name: 'ドローン',
+                name: tName,
                 isPremium: (c.isPremium !== undefined) ? c.isPremium : GameState.premiumCards.includes(c.baseId || c.id),
-                imgUrl: typeof getCardImgUrl === 'function' && tC.imgUrl === undefined ? getCardImgUrl(tC) : (tC.imgUrl || 'assets/cards/card_token_drone.jpg'),
+                imgUrl: typeof getCardImgUrl === 'function' && tC.imgUrl === undefined ? getCardImgUrl(tC) : (tC.imgUrl || `assets/cards/card_${tId}.jpg`),
                 filter: c.filter,
-                power: 1,
-                currentPower: 1,
+                power: pValue,
+                currentPower: pValue,
                 rarity: 1,
-                basePower: 1,
-                voiceCategory: 'machine_new',
+                basePower: pValue,
+                voiceCategory: pValue >= 5 ? 'monster' : 'machine_new',
                 skills: []
             };
             board[targetLane] = newToken;
@@ -495,6 +505,35 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     filter: c.filter,
                     rarity: c.rarity || 1,
                     voiceCategory: c.voiceCategory,
+                    uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+                };
+                h.push(newToken);
+            }
+            updateDeckDisplay(o);
+            if (o === 'blue') renderHand();
+        }
+        await sleep(300);
+    } else if (skillId === 'convert') {
+        const val = skillValue || 1;
+        const discardIndices = await waitPlayerHandSelection(val, o, true);
+        if (discardIndices && discardIndices.length > 0) {
+            const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+            const d = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+            discardIndices.sort((a,b) => b - a);
+            discardIndices.forEach(idx => {
+                const dropped = h.splice(idx, 1)[0];
+                d.push(dropped);
+            });
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+            for (let i = 0; i < discardIndices.length; i++) {
+                const newToken = {
+                    id: `void_${Date.now()}_${i}`,
+                    owner: o,
+                    ...voidTpl,
+                    isToken: true,
+                    power: 1, basePower: 1, currentPower: 1,
+                    imgUrl: o === 'blue' ? getCardImgUrl(voidTpl) : '',
+                    rarity: 1,
                     uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
                 };
                 h.push(newToken);

@@ -277,7 +277,19 @@ export default function BattleScreen() {
                     {GameState.isPlacementMode ? (
                         <button id="btn-end-turn" className="action-btn" style={{ background: '#ef4444', borderColor: '#dc2626' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishPlacement) window.finishPlacement(); }}>配置終了</button>
                     ) : GameState.isDiscardingMode ? (
-                        <button id="btn-end-turn" className="action-btn" style={{ background: '#facc15', color: '#000', borderColor: '#eab308' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishHandSelection) window.finishHandSelection(); }}>選択終了</button>
+                        <button
+                            id="btn-end-turn"
+                            className="action-btn"
+                            style={{
+                                background: GameState.isDiscardingExact && GameState.discardSelectedIndices.length !== Math.min(GameState.playerHand.length, GameState.discardMaxCount) ? '#475569' : '#facc15',
+                                color: GameState.isDiscardingExact && GameState.discardSelectedIndices.length !== Math.min(GameState.playerHand.length, GameState.discardMaxCount) ? '#94a3b8' : '#000',
+                                borderColor: GameState.isDiscardingExact && GameState.discardSelectedIndices.length !== Math.min(GameState.playerHand.length, GameState.discardMaxCount) ? '#334155' : '#eab308',
+                                pointerEvents: GameState.isDiscardingExact && GameState.discardSelectedIndices.length !== Math.min(GameState.playerHand.length, GameState.discardMaxCount) ? 'none' : 'auto'
+                            }}
+                            onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishHandSelection) window.finishHandSelection(); }}
+                        >
+                            選択終了
+                        </button>
                     ) : GameState.isEnemyTargetMode ? (
                         <button id="btn-end-turn" className="action-btn" style={{ background: '#475569', borderColor: '#334155' }} onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); if (window.finishEnemyTargetSelection) window.finishEnemyTargetSelection(); }}>キャンセル</button>
                     ) : (

@@ -133,6 +133,17 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 events.push({ type: 'power_change', side: owner, lane: l, amount: wVal, source: 'lone_wolf' });
             }
             break;
+        case 'invade': {
+            const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            const uniqueTypes = new Set((discard || []).map(card => card.baseId || card.id)).size;
+            const totalCount = (discard || []).length;
+            const powerDiff = (uniqueTypes * 2) - totalCount;
+            if (powerDiff !== 0) {
+                c.currentPower += powerDiff;
+                events.push({ type: 'power_change', side: owner, lane: l, amount: powerDiff, source: 'invade' });
+            }
+            break;
+        }
         case 'morph':
             const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
             if (eHandRef && eHandRef.length > 0) {
@@ -271,16 +282,36 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'quick':
             applySingleCombat(state, owner, l, events);
             break;
+        case 'convert':
+            const convertCount = val || 1;
+            const actualConvertCount = Math.min(convertCount, h.length);
+            for (let i = 0; i < actualConvertCount; i++) {
+                h.pop(); // simply pop from hand
+                const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+                const newToken = {
+                    ...voidTpl,
+                    isToken: true,
+                    power: 1, basePower: 1, currentPower: 1
+                };
+                h.push(newToken);
+            }
+            break;
         case 'summon':
-            const summonCount = val || 1;
+            const summonTargetPower = val || 1;
+            let tNameEngine = 'ドローン';
+            let tIdEngine = 'token_drone';
+            if (summonTargetPower >= 5) {
+                tNameEngine = 'ゴーレム';
+                tIdEngine = 'token_golem';
+            }
             const sTC = {
-                id: 'token_drone',
-                name: 'ドローン',
+                id: tIdEngine,
+                name: tNameEngine,
                 isToken: true,
                 rarity: 1,
-                voiceCategory: 'machine_new'
+                voiceCategory: summonTargetPower >= 5 ? 'monster' : 'machine_new'
             };
-            for (let i = 0; i < summonCount; i++) {
+            for (let i = 0; i < 1; i++) {
                 let targetLane = -1;
                 if (simulatedTokenLanes && simulatedTokenLanes.length > i) {
                     targetLane = simulatedTokenLanes[i];
@@ -296,9 +327,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         owner,
                         isPremium: c.isPremium,
                         imgUrl: '', // resolved in UI
-                        power: 1,
-                        basePower: 1,
-                        currentPower: 1,
+                        power: summonTargetPower,
+                        basePower: summonTargetPower,
+                        currentPower: summonTargetPower,
                         skills: []
                     };
                     b[targetLane] = newToken;
@@ -573,6 +604,9 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
             }
         }
+    } else if (action === 'time_stop') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        state.turnSkipIndicator = oppOwner;
     }
 
     processDestructionTriggers(state, events);

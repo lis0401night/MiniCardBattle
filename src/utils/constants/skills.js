@@ -32,7 +32,7 @@ export const SKILLS = {
     pierce: { name: '貫通', icon: '🏹', desc: (val) => '自分のターンに、戦闘で敵を破壊した時、自身のパワーの分だけ相手リーダーにダメージを与える。' },
     explode: { name: '誘爆', icon: '💣', desc: (val) => `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。` },
     contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、リーダーに${val || 3}ダメージ。` },
-    choice: { name: '選択', icon: '🌓', desc: (val) => '召喚時、二つのスキルから一つを選んで発動する。' },
+    choice: { name: '選択', icon: '🌓', desc: (val) => `召喚時、以下のスキルから${val}つを選んで発動する。` },
     metamorph: { name: '変身', icon: '❓', desc: (val) => '召喚時、全カードの中からランダムに1枚に変身し、その能力を発動する。' },
     resurrect: { name: '復活', icon: '⚰️', desc: (val) => `召喚時、自分の墓地からパワー${val}以下のカード1枚を選択して配置する。` },
     standby: { name: '待機', icon: '⏳', desc: (val) => `召喚時、自身に${val}ターン防御を付与する。` },
@@ -44,12 +44,14 @@ export const SKILLS = {
     salvage: { name: '回収', icon: '🧲', desc: (val) => '召喚時、自分の墓地からカードを1枚選択して手札に加える。' },
     reinforce: { name: '増援', icon: '📣', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。` },
     extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空」を加える。` },
-    toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` }
+    toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` },
+    convert: { name: '転換', icon: '♻️', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空」を加える。` },
+    invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+2し、自分の墓地のカードの枚数につきパワーを-1する。' }
 };
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

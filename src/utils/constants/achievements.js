@@ -9,105 +9,6 @@ import { GameState } from '../../hooks/gameState.js';
 
 // 実績の定義
 export const ACHIEVEMENT_MASTER = [
-    // --- カード収集 ---
-    {
-        id: 'collect_10',
-        title: '見習い収集家',
-        description: '異なるカードを10種類集める',
-        type: 'collection',
-        targetValue: 10,
-        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
-    },
-    {
-        id: 'collect_20',
-        title: 'Mr.コレクター',
-        description: '異なるカードを20種類集める',
-        type: 'collection',
-        targetValue: 20,
-        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
-    },
-    {
-        id: 'collect_30',
-        title: '真理の探究者',
-        description: '異なるカードを30種類集める',
-        type: 'collection',
-        targetValue: 30,
-        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
-    },
-    {
-        id: 'collect_40',
-        title: '魂の目録',
-        description: '異なるカードを40種類集める',
-        type: 'collection',
-        targetValue: 40,
-        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
-    },
-    // --- フリーバトル勝利数 ---
-    {
-        id: 'free_win_5',
-        title: '駆け出しの闘士',
-        description: 'バトルで累計5回勝利する',
-        type: 'free_battle_win',
-        targetValue: 5,
-        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
-    },
-    {
-        id: 'free_win_20',
-        title: '強者',
-        description: 'バトルで累計20回勝利する',
-        type: 'free_battle_win',
-        targetValue: 20,
-        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
-    },
-    {
-        id: 'free_win_30',
-        title: '百戦錬磨',
-        description: 'バトルで累計30回勝利する',
-        type: 'free_battle_win',
-        targetValue: 30,
-        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
-    },
-    {
-        id: 'free_win_40',
-        title: '闘技場の覇者',
-        description: 'バトルで累計40回勝利する',
-        type: 'free_battle_win',
-        targetValue: 40,
-        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
-    },
-    // --- 試練の宮殿到達階層 ---
-    {
-        id: 'dungeon_reach_5',
-        title: '迷宮への入り口',
-        description: '試練の宮殿で5Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 5,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
-    {
-        id: 'dungeon_reach_10',
-        title: '試練の始まり',
-        description: '試練の宮殿で10Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 10,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
-    {
-        id: 'dungeon_reach_20',
-        title: '深淵なる探索者',
-        description: '試練の宮殿で20Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 20,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
-    {
-        id: 'dungeon_reach_30',
-        title: '宮殿の支配者',
-        description: '試練の宮殿で30Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 30,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
     // --- ストーリークリア ---
     {
         id: 'story_android',
@@ -221,6 +122,138 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'devilhunter',
         reward: { type: 'premium', value: 'necromancer', name: 'ヴィス・ガルドの背教者', isPremiumUnlock: true }
     },
+    // --- カード収集 ---
+    {
+        id: 'collect_10',
+        title: '見習い収集家',
+        description: '異なるカードを10種類集める',
+        type: 'collection',
+        targetValue: 10,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    {
+        id: 'collect_20',
+        title: 'Mr.コレクター',
+        description: '異なるカードを20種類集める',
+        type: 'collection',
+        targetValue: 20,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    {
+        id: 'collect_30',
+        title: '真理の探究者',
+        description: '異なるカードを30種類集める',
+        type: 'collection',
+        targetValue: 30,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    {
+        id: 'collect_40',
+        title: '魂の目録',
+        description: '異なるカードを40種類集める',
+        type: 'collection',
+        targetValue: 40,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    // --- フリーバトル勝利数 ---
+    {
+        id: 'free_win_10',
+        title: '駆け出しの闘士',
+        description: 'バトルで累計10回勝利する',
+        type: 'free_battle_win',
+        targetValue: 10,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    {
+        id: 'free_win_20',
+        title: '強者',
+        description: 'バトルで累計20回勝利する',
+        type: 'free_battle_win',
+        targetValue: 20,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    {
+        id: 'free_win_30',
+        title: '百戦錬磨',
+        description: 'バトルで累計30回勝利する',
+        type: 'free_battle_win',
+        targetValue: 30,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    {
+        id: 'free_win_40',
+        title: '闘技場の覇者',
+        description: 'バトルで累計40回勝利する',
+        type: 'free_battle_win',
+        targetValue: 40,
+        reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
+    },
+    // --- 試練の宮殿到達階層 ---
+    {
+        id: 'dungeon_reach_10',
+        title: '迷宮への入り口',
+        description: '試練の宮殿で10Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 10,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_20',
+        title: '試練の始まり',
+        description: '試練の宮殿で20Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 20,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_30',
+        title: '深淵なる探索者',
+        description: '試練の宮殿で30Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 30,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_40',
+        title: '宮殿の支配者',
+        description: '試練の宮殿で40Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 40,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    // --- 防衛戦勝利数 ---
+    {
+        id: 'defense_win_10',
+        title: 'いざ尋常に',
+        description: '防衛戦で累計10回勝利する',
+        type: 'defense_win',
+        targetValue: 10,
+        reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
+    },
+    {
+        id: 'defense_win_20',
+        title: '喧嘩屋',
+        description: '防衛戦で累計20回勝利する',
+        type: 'defense_win',
+        targetValue: 20,
+        reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
+    },
+    {
+        id: 'defense_win_30',
+        title: '城塞の守護者',
+        description: '防衛戦で累計30回勝利する',
+        type: 'defense_win',
+        targetValue: 30,
+        reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
+    },
+    {
+        id: 'defense_win_40',
+        title: '難攻不落',
+        description: '防衛戦で累計40回勝利する',
+        type: 'defense_win',
+        targetValue: 40,
+        reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
+    },
     // --- イベントクリア ---
     {
         id: 'event_satan_clear',
@@ -240,7 +273,8 @@ export const achievementData = {
         storyClears: {}, // leaderId: count
         storyClearsHard: {}, // leaderId: count
         freeBattleWins: 0,
-        maxDungeonFloor: 0
+        maxDungeonFloor: 0,
+        defenseWins: 0
     }
 };
 
@@ -261,6 +295,7 @@ export function loadAchievements() {
             if (!achievementData.stats.eventClear) achievementData.stats.eventClear = {};
             if (typeof achievementData.stats.freeBattleWins !== 'number') achievementData.stats.freeBattleWins = 0;
             if (typeof achievementData.stats.maxDungeonFloor !== 'number') achievementData.stats.maxDungeonFloor = 0;
+            if (typeof achievementData.stats.defenseWins !== 'number') achievementData.stats.defenseWins = 0;
         } catch (e) {
             console.error("Failed to parse achievements data", e);
         }
@@ -295,6 +330,9 @@ export function incrementStat(type, key = null, amount = 1) {
             achievementData.stats.maxDungeonFloor = amount;
             checkDungeonAchievements();
         }
+    } else if (type === 'defenseWins') {
+        achievementData.stats.defenseWins = (achievementData.stats.defenseWins || 0) + amount;
+        checkDefenseAchievements();
     }
     saveAchievements();
 }
@@ -356,6 +394,14 @@ function checkDungeonAchievements() {
     const floor = achievementData.stats.maxDungeonFloor || 0;
     ACHIEVEMENT_MASTER.filter(a => a.type === 'dungeon_reach').forEach(ach => {
         updateAchievement(ach.id, floor, ach.targetValue);
+    });
+}
+
+// 防衛戦勝利数のチェック
+function checkDefenseAchievements() {
+    const wins = achievementData.stats.defenseWins || 0;
+    ACHIEVEMENT_MASTER.filter(a => a.type === 'defense_win').forEach(ach => {
+        updateAchievement(ach.id, wins, ach.targetValue);
     });
 }
 

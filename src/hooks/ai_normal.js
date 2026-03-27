@@ -139,9 +139,18 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         for (let cardTokenLanes of cardTokenLanePatterns) {
                             // 「選択」スキルの場合は、それぞれの選択肢でシミュレーションを行う
                             if (hasSkill(card, 'choice') && Array.isArray(card.choices)) {
-                                for (let cIdx = 0; cIdx < card.choices.length; cIdx++) {
-                                    let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdx, cardTokenLanes);
-                                    candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdx, cardTokenLanes, simState });
+                                let choiceCount = 1;
+                                if (card.skill === 'choice') choiceCount = card.skillValue || 1;
+                                else if (card.skills) {
+                                    const csk = card.skills.find(s => s.id === 'choice');
+                                    if (csk) choiceCount = csk.value || 1;
+                                }
+                                const choiceIndices = card.choices.map((_, idx) => idx);
+                                const choiceCombinations = getCombinations(choiceIndices, Math.min(choiceIndices.length, choiceCount));
+                                
+                                for (let cIdxArr of choiceCombinations) {
+                                    let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdxArr, cardTokenLanes);
+                                    candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdxArr, cardTokenLanes, simState });
                                 }
                             } else {
                                 let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, undefined, cardTokenLanes);
@@ -278,9 +287,14 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         let skills = [];
         if (playedCard.skill && playedCard.skill !== 'none') {
             // 選択スキルの場合、choiceIndexがあればその内容を、なければそのまま追加
-            if (playedCard.skill === 'choice' && choiceIndex !== undefined && playedCard.choices && playedCard.choices[choiceIndex]) {
-                const chr = playedCard.choices[choiceIndex];
-                skills.push({ id: chr.id, value: chr.value });
+            if (playedCard.skill === 'choice' && choiceIndex !== undefined && playedCard.choices) {
+                const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
+                indices.forEach(idx => {
+                    if (playedCard.choices[idx]) {
+                        const chr = playedCard.choices[idx];
+                        skills.push({ id: chr.id, value: chr.value });
+                    }
+                });
             } else {
                 skills.push({ id: playedCard.skill, value: playedCard.skillValue });
             }
@@ -288,9 +302,14 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         if (Array.isArray(playedCard.skills)) {
             // skills配列内にも選択スキルがある場合（通常はない想定だが念のため）
             playedCard.skills.forEach(sk => {
-                if (sk.id === 'choice' && choiceIndex !== undefined && playedCard.choices && playedCard.choices[choiceIndex]) {
-                    const chr = playedCard.choices[choiceIndex];
-                    skills.push({ id: chr.id, value: chr.value });
+                if (sk.id === 'choice' && choiceIndex !== undefined && playedCard.choices) {
+                    const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
+                    indices.forEach(idx => {
+                        if (playedCard.choices[idx]) {
+                            const chr = playedCard.choices[idx];
+                            skills.push({ id: chr.id, value: chr.value });
+                        }
+                    });
                 } else {
                     skills.push(sk);
                 }
@@ -300,29 +319,39 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         skills.forEach(sk => {
             applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
         });
+
+        // 魔法カードなど、プレイ後にパワー0以下のカードは自動消滅する
+        if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) {
+            simState.enemyBoard[laneIdx] = null;
+        }
     }
 
     // AIのターンは「自分の攻撃」が終わった後に回ってくるため、
     // ここから先のイベントは「次のプレイヤー（青）のターン開始」と「プレイヤーの攻撃」である。
 
-    // 3. 次のプレイヤー（青）のターン開始処理（成長・契約ダメージ・スタン解除）
-    applyPassiveSkillLogic(simState, 'blue');
-    simState.playerBoard.forEach(c => {
-        if (c && c.stunTurns > 0) {
-            c.stunTurns--;
-        }
-    });
-
-    // 自分の攻撃（red）は既に行われているのでここでは計算しない。
-    // ただし、AIが出したばかりのカードによる「次のターン以降の脅威」は盤面評価でカバーされる。
-
     const hpBeforeCombat = simState.enemyHP;
 
-    // 4. プレイヤーの攻撃
-    calculateCombatPhase(simState, 'blue');
+    if (simState.turnSkipIndicator !== 'blue') {
+        // 3. 次のプレイヤー（青）のターン開始処理（成長・契約ダメージ・スタン解除）
+        applyPassiveSkillLogic(simState, 'blue');
+        simState.playerBoard.forEach(c => {
+            if (c && c.stunTurns > 0) {
+                c.stunTurns--;
+            }
+        });
 
-    // 相手の攻撃による純粋なダメージを記録（条件2の評価用）
-    simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+        // 自分の攻撃（red）は既に行われているのでここでは計算しない。
+        // ただし、AIが出したばかりのカードによる「次のターン以降の脅威」は盤面評価でカバーされる。
+
+        // 4. プレイヤーの攻撃
+        calculateCombatPhase(simState, 'blue');
+
+        // 相手の攻撃による純粋なダメージを記録（条件2の評価用）
+        simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+    } else {
+        simState.turnSkipIndicator = null;
+        simState.combatDamageTaken = 0;
+    }
 
     return simState;
 }

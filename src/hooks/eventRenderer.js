@@ -56,7 +56,13 @@ export async function playEvents(events) {
             }
             case 'power_change': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                if (board[ev.lane]) board[ev.lane].currentPower += ev.amount; // 増減そのまま
+                if (board[ev.lane]) {
+                    board[ev.lane].currentPower += ev.amount; // 増減そのまま
+                    if (ev.source === 'holy_march') {
+                        board[ev.lane].power += ev.amount; // 永続バフとして記録
+                        board[ev.lane].basePower = board[ev.lane].power;
+                    }
+                }
 
                 const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
                 if (cEl) {

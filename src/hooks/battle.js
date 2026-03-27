@@ -561,7 +561,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
 /**
  * プレイヤーまたはAIに手札からカードを選択させるユーティリティ（入替スキル用）
  */
-export async function waitPlayerHandSelection(count, owner) {
+export async function waitPlayerHandSelection(count, owner, forceExact = false) {
     const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
     if (hand.length === 0) return [];
 
@@ -578,12 +578,14 @@ export async function waitPlayerHandSelection(count, owner) {
 
         // 手札入れ替え用のプロンプトを表示
         GameState.isDiscardingMode = true;
+        GameState.isDiscardingExact = forceExact;
         GameState.discardMaxCount = count;
         updateCardDetail(null);
         renderHand(); // 描画更新
 
         const cleanUp = () => {
             GameState.isDiscardingMode = false;
+            GameState.isDiscardingExact = false;
             const result = [...GameState.discardSelectedIndices];
             GameState.discardSelectedIndices = [];
             GameState.discardMaxCount = 0;
@@ -603,7 +605,7 @@ export async function waitPlayerHandSelection(count, owner) {
 }/**
  * 召喚時スキル「選択」の選択を待機する
  */
-export async function waitSkillChoice(choices, owner, card) {
+export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
     if (!choices || choices.length === 0) return null;
 
     // AIの場合
@@ -614,19 +616,19 @@ export async function waitSkillChoice(choices, owner, card) {
         if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndex !== undefined) {
             const idx = GameState.aiDecision.choiceIndex;
             delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
-            return choices[idx];
+            return [choices[idx]];
         }
 
         // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
         if (localAiLevel <= 1) {
             // Easy: ランダム
-            return choices[Math.floor(Math.random() * choices.length)];
+            const shuffled = [...choices].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, Math.min(maxChoices, choices.length));
         } else {
             // Normal/Hard: ここで簡易的にシミュレーション
             // 本来は意思決定時に行われるべきだが、フォールバックとして実装
             console.log("AI performing on-the-fly skill choice simulation");
-            let bestIdx = 0;
-            let bestScore = -Infinity;
+            const scoredChoices = [];
             const originalBoard = GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
             const originalPlayerBoard = GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
 
@@ -638,19 +640,18 @@ export async function waitSkillChoice(choices, owner, card) {
                 };
                 // 簡易シミュレーション
                 const lane = GameState.enemyBoard.indexOf(card);
+                let score = -Infinity;
                 if (lane !== -1) {
                     applyActiveSkillLogic(simState, 'red', lane, choices[i].id, choices[i].value);
                     calculateCombatPhase(simState, 'blue');
                     // スコア計算
-                    let score = simState.enemyHP - simState.playerHP;
+                    score = simState.enemyHP - simState.playerHP;
                     for (let b of simState.enemyBoard) if (b) score += b.currentPower;
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestIdx = i;
-                    }
                 }
+                scoredChoices.push({ choice: choices[i], score });
             }
-            return choices[bestIdx];
+            scoredChoices.sort((a,b) => b.score - a.score);
+            return scoredChoices.slice(0, Math.min(maxChoices, choices.length)).map(x => x.choice);
         }
     }
 
@@ -658,11 +659,12 @@ export async function waitSkillChoice(choices, owner, card) {
     return new Promise((resolve) => {
         if (window.showSkillChoiceModalReact) {
             window.showSkillChoiceModalReact(choices, (selectedSkill) => {
-                resolve(selectedSkill);
-            });
+                resolve(selectedSkill); // App returns Array here automatically handled in UI
+            }, maxChoices);
         } else {
             // フォールバック（通常は発生しない）
-            resolve(choices[Math.floor(Math.random() * choices.length)]);
+            const shuffled = [...choices].sort(() => Math.random() - 0.5);
+            resolve(shuffled.slice(0, Math.min(maxChoices, choices.length)));
         }
     });
 }
@@ -958,7 +960,12 @@ export async function endPlayerTurn() {
 export async function endTurnLogic(o) {
     if (!GameState.isBattleEnded) {
         renderBoard();
-        await startTurn(o === 'blue' ? 'red' : 'blue');
+        let nextOwner = o === 'blue' ? 'red' : 'blue';
+        if (GameState.turnSkipIndicator === nextOwner) {
+            GameState.turnSkipIndicator = null;
+            nextOwner = o;
+        }
+        await startTurn(nextOwner);
     }
 }
 
@@ -992,6 +999,14 @@ export async function playCard(o, hI, l) {
     if (hasActiveSkill(c)) {
         await sleep(50); // React DOMコミット待機
         await resolveOnPlaySkill(o, l, c);
+    }
+
+    // 使い捨てスペル等のパワー0以下のカードは効果解決後に消去する
+    const finalCard = b[l];
+    if (finalCard && finalCard.currentPower <= 0) {
+        const events = [{ type: 'destroy_cards', targets: [{ side: o, lane: l, card: finalCard }] }];
+        // 破壊アニメーションと墓地送りを実行
+        await playEvents(events);
     }
 }
 
@@ -1139,7 +1154,15 @@ export function endBattle() {
     }
 
     setTimeout(() => {
-        playSound(SOUNDS.bgmTitle);
+        if (GameState.gameMode === 'battle_dungeon') {
+            playSound(SOUNDS.bgmChallenge);
+        } else if (GameState.gameMode === 'defense_attack') {
+            playSound(SOUNDS.bgmDefense);
+        } else if (GameState.gameMode === 'high_difficulty') {
+            playSound(SOUNDS.bgmHighDifficulty);
+        } else {
+            playSound(SOUNDS.bgmTitle);
+        }
 
         GameState.appState = 'post_dialogue'; // 全モード共通の設定
 

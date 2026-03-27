@@ -447,6 +447,9 @@ export async function showDefenseMenu() {
                     const newWinsCount = wins - lastWins;
 
                     if (newWinsCount > 0) {
+                        if (typeof window.incrementStat === 'function') {
+                            window.incrementStat('defenseWins', null, newWinsCount);
+                        }
                         showAlertModal(
                             `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛戦ポイント: ${finalPts} Pt`,
                             () => { }

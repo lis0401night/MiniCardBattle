@@ -196,8 +196,8 @@ export default function GlobalModals() {
       setSkillConfirmData(null);
     };
 
-    window.showSkillChoiceModalReact = (choices, onSelect) => {
-      setSkillChoiceData({ choices, onSelect });
+    window.showSkillChoiceModalReact = (choices, onSelect, maxChoices = 1) => {
+      setSkillChoiceData({ choices, onSelect, maxChoices, selectedIndices: [] });
     };
 
     window.closeSkillChoiceModalReact = () => {
@@ -877,11 +877,12 @@ export default function GlobalModals() {
       {skillChoiceData && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
           <div className="skill-modal-box modal-pop-animation">
-            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>スキルを選択</h2>
+            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>スキルを選択 {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
               {skillChoiceData.choices.map((sk, idx) => {
                 const skillDef = SKILLS[sk.id] || { name: '不明', icon: '❓', desc: () => '' };
                 const val = sk.value || '';
+                const isSelected = skillChoiceData.selectedIndices.includes(idx);
 
                 return (
                   <div
@@ -889,24 +890,42 @@ export default function GlobalModals() {
                     className="preview-skill-item"
                     style={{
                       cursor: 'pointer',
-                      transition: 'transform 0.2s, border-color 0.2s',
-                      border: '1px solid rgba(250, 204, 21, 0.1)',
+                      transition: 'transform 0.2s, border-color 0.2s, background-color 0.2s',
+                      border: `2px solid ${isSelected ? '#facc15' : 'rgba(250, 204, 21, 0.1)'}`,
+                      backgroundColor: isSelected ? 'rgba(250, 204, 21, 0.1)' : 'transparent',
                       borderRadius: '8px',
                       padding: '10px'
                     }}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
-                      const { onSelect } = skillChoiceData;
-                      setSkillChoiceData(null);
-                      if (onSelect) onSelect(sk);
+                      if (skillChoiceData.maxChoices === 1) {
+                        const { onSelect } = skillChoiceData;
+                        setSkillChoiceData(null);
+                        if (onSelect) onSelect([sk]);
+                      } else {
+                        // Multi-select toggle
+                        setSkillChoiceData(prev => {
+                          let newIndices = [...prev.selectedIndices];
+                          if (newIndices.includes(idx)) {
+                            newIndices = newIndices.filter(i => i !== idx);
+                          } else if (newIndices.length < prev.maxChoices) {
+                            newIndices.push(idx);
+                          }
+                          return { ...prev, selectedIndices: newIndices };
+                        });
+                      }
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                      e.currentTarget.style.borderColor = '#facc15';
+                      if (!isSelected) {
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                        e.currentTarget.style.borderColor = '#facc15';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.borderColor = 'rgba(250, 204, 21, 0.1)';
+                      if (!isSelected) {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.borderColor = 'rgba(250, 204, 21, 0.1)';
+                      }
                     }}
                   >
                     <div className="preview-skill-badge" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: '0 auto 10px auto', width: 'fit-content', minWidth: '120px' }}>
@@ -919,6 +938,26 @@ export default function GlobalModals() {
                 );
               })}
             </div>
+            {skillChoiceData.maxChoices > 1 && (
+              <button
+                className="btn ok-button"
+                style={{
+                  marginTop: '20px', width: '100%',
+                  background: skillChoiceData.selectedIndices.length > 0 ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
+                  color: skillChoiceData.selectedIndices.length > 0 ? '#fff' : '#94a3b8',
+                  pointerEvents: skillChoiceData.selectedIndices.length > 0 ? 'auto' : 'none'
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  const selectedSkills = skillChoiceData.selectedIndices.map(i => skillChoiceData.choices[i]);
+                  const { onSelect } = skillChoiceData;
+                  setSkillChoiceData(null);
+                  if (onSelect) onSelect(selectedSkills);
+                }}
+              >
+                決定
+              </button>
+            )}
           </div>
         </div>
       )}

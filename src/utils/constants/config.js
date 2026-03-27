@@ -26,6 +26,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
     { id: 'elf_summer', type: 'skin', charId: 'elf', name: '水辺の流浪者', description: '森を抜け出し、海辺にやってきた流浪のエルフ。波の音に耳を傾ける穏やかな時間。', cost: 20 },
     { id: 'cleric_summer', type: 'skin', charId: 'cleric', name: '背徳のサマーバカンス', description: '神職の務めを忘れ、開放的な夏を満喫する聖職者。神の慈悲は海よりも広いらしい。', cost: 20 },
     { id: 'devilhunter_summer', type: 'skin', charId: 'devilhunter', name: '渚の悪魔狩り', description: '悪魔を狩るのも夏休みが必要だ。ただし、銃の手入れだけは怠らない。', cost: 20 },
+    { id: 'witch_summer', type: 'skin', charId: 'witch', name: '不機嫌なサマー・グリモワール', description: '無理矢理取らされた夏休み。慣れない水着と照りつける太陽のせいで、全く読書に集中できていないようだ。', cost: 20 },
     { id: 'queen', type: 'card', cost: 5 },
     { id: 'snowwhite', type: 'card', cost: 5 }
 ];
