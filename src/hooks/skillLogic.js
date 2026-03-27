@@ -520,10 +520,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const d = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             discardIndices.sort((a,b) => b - a);
-            discardIndices.forEach(idx => {
+            for (let idx of discardIndices) {
                 const dropped = h.splice(idx, 1)[0];
-                d.push(dropped);
-            });
+                await discardCard(o, dropped);
+            }
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             for (let i = 0; i < discardIndices.length; i++) {
                 const newToken = {

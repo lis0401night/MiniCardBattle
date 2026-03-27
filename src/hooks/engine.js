@@ -171,7 +171,21 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     if (removeIdx !== -1) {
                         const discarded = eHandRef.splice(removeIdx, 1)[0];
                         const eD = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
-                        if (eD) eD.push(discarded);
+                        if (eD && !discarded.isToken) {
+                            const masterData = CARD_MASTER.find(m => m.id === (discarded.baseId || discarded.id));
+                            if (masterData) {
+                                const restoredCard = JSON.parse(JSON.stringify(masterData));
+                                restoredCard.uid = discarded.uid;
+                                restoredCard.owner = oppOwner;
+                                restoredCard.baseId = discarded.baseId || discarded.id;
+                                if (discarded.isPremium !== undefined) restoredCard.isPremium = discarded.isPremium;
+                                restoredCard.basePower = restoredCard.power;
+                                restoredCard.currentPower = restoredCard.power;
+                                eD.push(restoredCard);
+                            } else {
+                                eD.push({ ...discarded, currentPower: discarded.basePower || discarded.power, skills: [] });
+                            }
+                        }
                         events.push({ type: 'discard', side: oppOwner, card: JSON.parse(JSON.stringify(discarded)) });
 
                         const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
@@ -801,7 +815,21 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
 
             const randIndex = validIndices[Math.floor(Math.random() * validIndices.length)];
             const discarded = oppHand.splice(randIndex, 1)[0];
-            oppDiscard.push(discarded);
+            if (!discarded.isToken) {
+                const masterData = CARD_MASTER.find(m => m.id === (discarded.baseId || discarded.id));
+                if (masterData) {
+                    const restoredCard = JSON.parse(JSON.stringify(masterData));
+                    restoredCard.uid = discarded.uid;
+                    restoredCard.owner = oppSide;
+                    restoredCard.baseId = discarded.baseId || discarded.id;
+                    if (discarded.isPremium !== undefined) restoredCard.isPremium = discarded.isPremium;
+                    restoredCard.basePower = restoredCard.power;
+                    restoredCard.currentPower = restoredCard.power;
+                    oppDiscard.push(restoredCard);
+                } else {
+                    oppDiscard.push({ ...discarded, currentPower: discarded.basePower || discarded.power, skills: [] });
+                }
+            }
 
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {
