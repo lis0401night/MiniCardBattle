@@ -364,7 +364,7 @@ function RentalDeckSelect() {
                                 リーダースキル
                             </button>
                             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                                <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={handleCancel}>戻る</button>
+                                <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); handleCancel(e); }}>戻る</button>
                                 <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={handleConfirm}>決定</button>
                             </div>
                         </div>

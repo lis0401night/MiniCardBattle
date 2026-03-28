@@ -95,6 +95,37 @@ export default function RewardOverlay() {
                                 if (!s) return null;
                                 const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
                                 const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+
+                                if (sk.id === 'choice' && Array.isArray(card.choices)) {
+                                    return (
+                                        <div key={idx} className="preview-skill-item">
+                                            <details className="choice-accordion" style={{ width: '100%' }}>
+                                                <summary style={{ listStyle: 'none', cursor: 'pointer', outline: 'none', width: '100%' }}>
+                                                    <div className="preview-skill-badge" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '110px', position: 'relative', margin: '0 auto' }}>
+                                                        <span>{s.icon} {s.name}{val}</span>
+                                                        <span className="accordion-icon" style={{ fontSize: '0.8rem', transition: 'transform 0.2s', position: 'absolute', right: '8px' }}>▼</span>
+                                                    </div>
+                                                    <p className="preview-skill-desc" style={{ marginTop: '6px', marginBottom: '8px', color: '#f8fafc', textAlign: 'center' }}>{desc}</p>
+                                                </summary>
+                                                <div className="accordion-content" style={{ marginTop: '5px' }}>
+                                                    {card.choices.map((cho, cIdx) => {
+                                                        const cs = SKILLS?.[cho.id];
+                                                        if (!cs) return null;
+                                                        const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
+                                                        const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                                                        return (
+                                                            <div key={cIdx} style={{ marginLeft: '10px', borderLeft: '2px solid #475569', paddingLeft: '10px', marginTop: '8px', marginBottom: '8px' }}>
+                                                                <div className="preview-skill-badge" style={{ background: 'rgba(148, 163, 184, 0.2)', borderColor: '#94a3b8', color: '#94a3b8', fontSize: '0.75rem' }}>{cs.icon} {cs.name}{cVal}</div>
+                                                                <p className="preview-skill-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>{cDesc}</p>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </details>
+                                        </div>
+                                    );
+                                }
+
                                 return (
                                     <div key={idx} className="preview-skill-item">
                                         <div className="preview-skill-badge">{s.icon} {s.name}{val}</div>

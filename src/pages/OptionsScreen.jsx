@@ -110,7 +110,7 @@ export default function OptionsScreen() {
       <button
         className="btn"
         style={{ background: '#475569' }}
-        onClick={() => switchScreen('screen-mode-select')}
+        onClick={() => { window.playSound?.(window.SOUNDS?.seClick); switchScreen('screen-mode-select'); }}
       >
         戻る
       </button>

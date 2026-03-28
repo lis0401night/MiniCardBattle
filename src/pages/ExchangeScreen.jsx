@@ -132,7 +132,7 @@ export default function ExchangeScreen() {
       <button
         className="btn"
         style={{ marginTop: '15px', background: '#475569' }}
-        onClick={() => switchScreen?.('screen-defense-menu')}
+        onClick={() => { playSound?.(SOUNDS?.seClick); switchScreen?.('screen-defense-menu'); }}
       >
         戻る
       </button>

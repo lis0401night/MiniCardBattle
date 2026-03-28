@@ -412,7 +412,7 @@ export default function GlobalModals() {
                 <div style={{ fontSize: '1.2rem', color: '#10b981', fontWeight: 'bold' }}>{styleProps.exchangeData.cost} pt</div>
               </div>
               <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '10px', flexShrink: 0 }}>
-                <button className="btn" style={{ flex: 1, minHeight: '40px', padding: '5px', background: '#475569', marginTop: 0, fontSize: '0.9rem' }} onClick={window.closeExchangeDetailModal}>戻る</button>
+                <button className="btn" style={{ flex: 1, minHeight: '40px', padding: '5px', background: '#475569', marginTop: 0, fontSize: '0.9rem' }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeExchangeDetailModal(e); }}>戻る</button>
                 <button
                   className="btn"
                   style={{ flex: 1, minHeight: '40px', padding: '5px', background: styleProps.exchangeData.isMaxed || !styleProps.exchangeData.canExchange ? '#475569' : 'linear-gradient(45deg, #f97316, #ea580c)', color: styleProps.exchangeData.isMaxed || !styleProps.exchangeData.canExchange ? '#94a3b8' : '#ffffff', marginTop: 0, fontSize: '0.9rem' }}
@@ -690,7 +690,7 @@ export default function GlobalModals() {
             )}
 
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-              <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={window.closeCharDetailModal}>戻る</button>
+              <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeCharDetailModal(e); }}>戻る</button>
               <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={() => { setCharDetailData(null); confirmCharSelect?.(); }}>決定</button>
             </div>
           </div>
@@ -707,7 +707,7 @@ export default function GlobalModals() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
               <button className="btn" style={{ background: 'linear-gradient(45deg, #0ea5e9, #2563eb)', margin: 0 }} onClick={backupDataToXML}>バックアップ</button>
               <button className="btn" style={{ background: 'linear-gradient(45deg, #10b981, #059669)', margin: 0 }} onClick={importDataFromXML}>データ取込</button>
-              <button className="btn" style={{ background: '#475569', marginTop: '5px' }} onClick={window.closeSyncDataModalState}>戻る</button>
+              <button className="btn" style={{ background: '#475569', marginTop: '5px' }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeSyncDataModalState(e); }}>戻る</button>
             </div>
             <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '20px', textAlign: 'center', lineHeight: 1.4 }}>
               バックアップしたXMLファイルを保存するか、保存したファイルからデータを復元できます。
@@ -806,7 +806,7 @@ export default function GlobalModals() {
             </div>
 
             <div style={{ marginTop: '15px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <button className="btn" style={{ background: '#475569', margin: 0 }} onClick={window.closePlaymatSelectionModalState}>戻る</button>
+              <button className="btn" style={{ background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closePlaymatSelectionModalState(e); }}>戻る</button>
             </div>
           </div>
         </div>
@@ -865,7 +865,7 @@ export default function GlobalModals() {
             </div>
 
             <div style={{ marginTop: '15px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <button className="btn" style={{ background: '#475569', margin: 0 }} onClick={window.closeSkinSelectionModalState}>戻る</button>
+              <button className="btn" style={{ background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeSkinSelectionModalState(e); }}>戻る</button>
             </div>
           </div>
         </div>
