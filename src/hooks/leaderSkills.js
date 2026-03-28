@@ -16,8 +16,6 @@ import { playEvents } from './eventRenderer.js';
 export async function activateLeaderSkill(owner, tokenLanes = null) {
     if (GameState.isBattleEnded) return;
     const isBlue = owner === 'blue';
-    if (isBlue && (GameState.isProcessing || GameState.currentTurn !== 'player')) return;
-
     const sp = isBlue ? GameState.playerSP : GameState.enemySP;
     const config = isBlue ? GameState.playerConfig : GameState.enemyConfig;
     if (!config.leaderSkill.cost || sp < config.leaderSkill.cost) return;
@@ -79,7 +77,7 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
     const cTxt = document.getElementById('cutin-text');
     const cBg = document.getElementById('cutin-bg');
 
-    const imgSrc = isBlue ? getSkinImage(config, GameState.playerSkins[config.id], 'image') : config.image;
+    const imgSrc = isBlue ? getSkinImage(config, GameState.playerSkins[config.id], 'image') : getSkinImage(config, GameState.enemySkins?.[config.id], 'image');
 
     if (imgSrc) {
         cImg.src = imgSrc;

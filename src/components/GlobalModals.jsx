@@ -26,6 +26,7 @@ export default function GlobalModals() {
   const [exchangeDetailData, setExchangeDetailData] = useState(null);
   const [syncDataVisible, setSyncDataVisible] = useState(false);
   const [playerNameVisible, setPlayerNameVisible] = useState(false);
+  const [playerNameCallback, setPlayerNameCallback] = useState(null);
   const [playerNameInput, setPlayerNameInput] = useState('');
   const [playmatSelectionVisible, setPlaymatSelectionVisible] = useState(false);
   const [selectedPlaymatState, setSelectedPlaymatState] = useState(null);
@@ -167,14 +168,16 @@ export default function GlobalModals() {
       setSyncDataVisible(false);
     };
 
-    window.showPlayerNameModalState = () => {
+    window.showPlayerNameModalState = (callback) => {
       playSound?.(SOUNDS?.seClick);
       setPlayerNameInput('');
+      setPlayerNameCallback(() => callback);
       setPlayerNameVisible(true);
     };
 
     window.closePlayerNameModalState = () => {
       playSound?.(SOUNDS?.seClick);
+      setPlayerNameCallback(null);
       setPlayerNameVisible(false);
     };
 
@@ -305,8 +308,8 @@ export default function GlobalModals() {
     return (
       <div className={`preview-content ${styleProps.containerClass || ''}`} style={{ margin: styleProps.margin, cursor: 'default', borderColor: styleProps.borderColor, boxShadow: styleProps.boxShadow }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div 
-            className={`card blue${!isSkin ? rarityClass : ''}`} 
+          <div
+            className={`card blue${!isSkin ? rarityClass : ''}`}
             style={{ width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
             onClick={(e) => { e.stopPropagation(); setIsImageZoomed(true); playSound?.(SOUNDS?.seClick); }}
           >
@@ -568,21 +571,21 @@ export default function GlobalModals() {
 
       {/* Enlarged Image Overlay */}
       {isImageZoomed && cardPreviewData && (
-        <div 
+        <div
           style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.9)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           onClick={(e) => { e.stopPropagation(); setIsImageZoomed(false); playSound?.(SOUNDS?.seClick); }}
         >
-          <img 
-            src={cardPreviewData.styleProps?.imgUrl || (getCardImgUrl ? getCardImgUrl(cardPreviewData.card) : '')} 
-            style={{ 
-              width: 'min(95vw, calc(95vh * 2 / 3))', 
-              height: 'min(95vh, calc(95vw * 3 / 2))', 
-              objectFit: cardPreviewData.styleProps?.isSkin ? 'contain' : 'contain', 
-              borderRadius: '12px', 
+          <img
+            src={cardPreviewData.styleProps?.imgUrl || (getCardImgUrl ? getCardImgUrl(cardPreviewData.card) : '')}
+            style={{
+              width: 'min(95vw, calc(95vh * 2 / 3))',
+              height: 'min(95vh, calc(95vw * 3 / 2))',
+              objectFit: cardPreviewData.styleProps?.isSkin ? 'contain' : 'contain',
+              borderRadius: '12px',
               boxShadow: '0 0 40px rgba(0,0,0,0.8)',
               backgroundColor: cardPreviewData.styleProps?.isSkin ? 'transparent' : '#000'
-            }} 
-            alt="Enlarged" 
+            }}
+            alt="Enlarged"
           />
         </div>
       )}
@@ -721,7 +724,7 @@ export default function GlobalModals() {
         <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #10b981', borderRadius: '12px', padding: '30px', width: '90%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
             <h2 style={{ color: '#10b981', marginBottom: '20px', fontSize: '1.2rem' }}>プレイヤーネーム登録</h2>
-            <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px', textAlign: 'center' }}>防衛デッキに使用する名前を入力してください。</p>
+            <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px', textAlign: 'center' }}>プレイヤーネームを入力してください。</p>
             <input
               type="text"
               value={playerNameInput}
@@ -736,7 +739,9 @@ export default function GlobalModals() {
                 className="btn"
                 style={{ flex: 1, background: 'linear-gradient(45deg, #10b981, #059669)', margin: 0, fontSize: '0.85rem', paddingLeft: '10px', paddingRight: '10px', whiteSpace: 'nowrap' }}
                 onClick={() => {
-                  if (window.submitDefenseDeckWrapper) {
+                  if (playerNameCallback) {
+                    playerNameCallback(playerNameInput);
+                  } else if (window.submitDefenseDeckWrapper) {
                     window.submitDefenseDeckWrapper(playerNameInput);
                   } else if (submitDefenseDeck) {
                     submitDefenseDeck(playerNameInput);

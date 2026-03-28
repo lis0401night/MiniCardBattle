@@ -1,6 +1,7 @@
 import { ref, push, set, onValue, update, get, remove, serverTimestamp, onChildAdded, off } from "firebase/database";
 import { database } from "../utils/firebase.js";
 import { getOrCreateUUID } from "../utils/gameUtils.js";
+import { showAlertModal } from "./uiModals.js";
 
 // 現在参加しているルームのID
 export let currentRoomId = null;
@@ -51,6 +52,11 @@ export function listenToLobbyRooms(onUpdate) {
         // 作成日時の降順などで並び替えると良い
         availableRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         onUpdate(availableRooms);
+    }, (error) => {
+        console.error("Firebase listen error:", error);
+        if (error?.code === 'PERMISSION_DENIED' || (error?.message && error.message.includes('Permission denied'))) {
+            showAlertModal("【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。");
+        }
     });
 
     return unsubscribe;
@@ -216,6 +222,17 @@ export async function updatePlayerReady(config, isReadyStatus = true) {
     const pRef = ref(database, `${ROOMS_REF}/${currentRoomId}/${isHost ? 'host' : 'client'}`);
     await update(pRef, {
         leaderConfig: config,
+        isReady: isReadyStatus
+    });
+}
+
+/**
+ * 自身の準備状態のみを更新する（デッキデータは維持）
+ */
+export async function setPlayerReadyOnly(isReadyStatus) {
+    if (!currentRoomId || !database) return;
+    const pRef = ref(database, `${ROOMS_REF}/${currentRoomId}/${isHost ? 'host' : 'client'}`);
+    await update(pRef, {
         isReady: isReadyStatus
     });
 }

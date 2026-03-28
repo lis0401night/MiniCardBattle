@@ -253,8 +253,8 @@ export function returnToTitle() {
 export let pendingRewardCard = null;
 
 export function showCardReward(enemyId) {
-    // 防衛戦では報酬（カード獲得）をスキップ
-    if (GameState.gameMode === 'defense_attack') {
+    // 防衛戦やオンライン対戦では報酬（カード獲得）をスキップ
+    if (GameState.gameMode === 'defense_attack' || GameState.gameMode === 'online') {
         GameState.appState = 'select_enemy';
         initSelectScreen(true);
         switchScreen('screen-select');

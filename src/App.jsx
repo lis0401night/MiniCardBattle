@@ -27,6 +27,9 @@ import DialogueScreen from './pages/DialogueScreen.jsx';
 import BattleScreen from './pages/BattleScreen.jsx';
 import BattleDungeonScreen from './pages/BattleDungeonScreen.jsx';
 import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
+import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
+import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
+import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
 import { playSound, sleep, isTransitioning, switchScreen, setSwitchScreenHook, executeSwitchScreen, hasSkill } from './utils/gameUtils.js';
 import { SOUNDS } from './utils/sounds.js';
 import { checkWinCondition, discardCard, endTurnLogic, playCard, returnToTitle, showEnemySkillConfirm, showSkillConfirm, endPlayerTurn, closeSkillConfirm, executeSkillFromConfirm, showSpeechBubble } from './hooks/battle.js';
@@ -124,6 +127,9 @@ export default function App() {
       {currentScreen === 'screen-battle' && <BattleScreen />}
       {currentScreen === 'screen-battle-dungeon' && <BattleDungeonScreen />}
       {currentScreen === 'screen-online-menu' && <OnlineMenuScreen />}
+      {currentScreen === 'screen-online-rules' && <OnlineRulesScreen />}
+      {currentScreen === 'screen-online-search' && <OnlineRoomSearchScreen />}
+      {currentScreen === 'screen-online-lobby' && <OnlineLobbyScreen />}
       {currentScreen === 'screen-continue' && <ContinueScreen />}
       {currentScreen === 'screen-ending-illust' && <EndingScreen />}
       <GlobalModals />

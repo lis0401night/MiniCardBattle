@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 
-import { playSound, stopAllBGM } from '../utils/gameUtils.js';
+import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { goToModeSelect, showDungeonRules } from '../hooks/uiMainCore.js';
+import { showDungeonRules } from '../hooks/uiMainCore.js';
 import { initBattleDungeon } from '../hooks/battleDungeon.js';
 import { showAlertModal } from '../hooks/uiModals.js';
 import { GameState } from '../hooks/gameState.js';
@@ -83,7 +83,12 @@ export default function DungeonMenuScreen() {
       <button 
         className="btn" 
         style={{ marginTop: '40px', background: '#475569' }} 
-        onClick={() => goToModeSelect?.()}
+        onClick={() => {
+            playSound?.(SOUNDS.seClick);
+            stopAllBGM?.();
+            playSound?.(SOUNDS.bgmTitle);
+            switchScreen?.('screen-event-menu');
+        }}
       >
         戻る
       </button>

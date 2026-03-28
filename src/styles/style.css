@@ -91,7 +91,11 @@ body {
 #screen-defense-menu,
 #screen-defense-battle-list,
 #screen-battle-dungeon,
-#modal-player-name {
+#modal-player-name,
+#screen-online-menu,
+#screen-online-rules,
+#screen-online-search,
+#screen-online-lobby {
     background-color: #0f172a;
     background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('/assets/backgrounds/background_select.png');
     background-size: cover;

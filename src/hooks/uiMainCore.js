@@ -14,6 +14,7 @@ import { setupDialogueScreen } from './uiDialogue.js';
 import { openCardPreview } from './uiGallery.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
 import { initBattleDungeon } from './battleDungeon.js';
+import { setPlayerReadyOnly } from './multiplayer.js';
 
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)
@@ -230,7 +231,7 @@ export function goBackFromSelect() {
         initSelectScreen(false);
         switchScreen('screen-select');
     } else if (GameState.gameMode === 'online_deck_edit') {
-        switchScreen('screen-online-menu');
+        showOnlineLobby();
     } else {
         switchScreen('screen-mode-select');
     }
@@ -253,7 +254,7 @@ export function goBackFromDifficulty() {
 
 export function goBackFromStage() {
     playSound(SOUNDS.seClick);
-    if (GameState.gameMode === 'defense_register') {
+    if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
         GameState.appState = 'select_player';
         initSelectScreen(false);
         switchScreen('screen-select');
@@ -794,4 +795,23 @@ export function updateDifficultyCheckButtons() {
     document.querySelectorAll('.btn-check-deck').forEach(btn => {
         btn.style.display = showChecks ? 'flex' : 'none';
     });
+}
+
+// --- Online Routing ---
+export function showOnlineMenu() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-online-menu');
+}
+export function showOnlineRules() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-online-rules');
+}
+export function showOnlineSearch() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-online-search');
+}
+export function showOnlineLobby() {
+    playSound(SOUNDS.seClick);
+    setPlayerReadyOnly(false); // バトル終了後などにルームへ戻った際は準備完了状態を解除
+    switchScreen('screen-online-lobby');
 }

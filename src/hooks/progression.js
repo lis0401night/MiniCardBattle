@@ -4,7 +4,7 @@ import { handleEventProgression } from './events.js';
 import { GameState } from './gameState.js';
 import { handleStoryProgression } from './story.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { performFadeTransition, initSelectScreen, showDefenseBattleList } from './uiMainCore.js';
+import { performFadeTransition, initSelectScreen, showDefenseBattleList, showOnlineLobby } from './uiMainCore.js';
 import { handleBattleDungeonProgression } from './battleDungeon.js';
 
 /**
@@ -33,6 +33,12 @@ export function handleProgressionNextStep() {
         } else {
             console.error("handleEventProgression is not defined");
             switchScreen('screen-mode-select');
+        }
+    } else if (GameState.gameMode === 'online') {
+        if (typeof showOnlineLobby === 'function') {
+            showOnlineLobby();
+        } else {
+            switchScreen('screen-online-lobby');
         }
     } else {
         // デフォルトはストーリーモード

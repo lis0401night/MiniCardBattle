@@ -172,7 +172,6 @@ export function selectRewardCard(cardId) {
 }
 
 export function loseDungeonBattle() {
-    playSound(SOUNDS.seDamage);
     // 試練の宮殿にリトライ機能はないため、直ちにリタイア処理（ポイント精算）へ移行する
     retireDungeon();
 }

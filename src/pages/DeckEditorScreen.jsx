@@ -8,7 +8,7 @@ import { prepareBattle } from '../hooks/battle.js';
 import { getInitialDeck, loadDeck, saveDeck, setRenderDeckEditHook, clearDeck, resetDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { openCardPreview } from '../hooks/uiGallery.js';
-import { goBackFromDeckEdit } from '../hooks/uiMainCore.js';
+import { goBackFromDeckEdit, showOnlineLobby } from '../hooks/uiMainCore.js';
 import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
 import { showPlaymatModal } from '../hooks/uiPlaymat.js';
 
@@ -136,7 +136,8 @@ export default function DeckEditorScreen() {
         }
       }
     } else if (GameState.gameMode === 'online_deck_edit') {
-        switchScreen('screen-online-menu');
+        GameState.appState = 'online';
+        showOnlineLobby?.();
     } else {
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {

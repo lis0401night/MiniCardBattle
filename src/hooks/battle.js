@@ -6,7 +6,8 @@ import { incrementStat } from '../utils/constants/achievements.js';
 import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
-import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed } from '../utils/gameUtils.js';
+import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray } from '../utils/gameUtils.js';
+import { setPlayerReadyOnly } from './multiplayer.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
@@ -37,6 +38,9 @@ export async function dispatchBattleAction(action, isRemote = false) {
     }
 
     if (action.type === 'submitChoice') {
+        // 自分が送信した選択結果の反響(echo)は完全に無視する（自分のローカルはUIのPromiseで既に勝手に解決されているため）
+        if (action.owner === 'blue') return;
+
         if (pendingChoiceResolver) {
             pendingChoiceResolver(action.choiceData);
             pendingChoiceResolver = null;
@@ -45,6 +49,19 @@ export async function dispatchBattleAction(action, isRemote = false) {
             GameState.pendingChoices.push(action.choiceData);
         }
         return; // Do not process via queue, evaluate synchronously
+    }
+
+    if (action.type === 'retire') {
+        if (action.owner === 'blue') {
+            GameState.playerConfig.hp = 0;
+            GameState.playerHP = 0;
+        } else {
+            GameState.enemyConfig.hp = 0;
+            GameState.enemyHP = 0;
+        }
+        if (updateBattleUIHook) updateBattleUIHook();
+        checkWinCondition();
+        return;
     }
 
     GameState.actionQueue.push(action);
@@ -59,7 +76,7 @@ export async function processActionQueue() {
 
     while (GameState.actionQueue.length > 0) {
         const action = GameState.actionQueue.shift();
-        
+
         if (action.type === 'playCard') {
             await playCard(action.owner, action.handIndex, action.lane);
             if (checkWinCondition()) break;
@@ -77,10 +94,10 @@ export async function processActionQueue() {
                 await executeEnemyAI();
             }
         }
-        
+
         if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
     }
-    
+
     GameState.isProcessing = false;
     if (updateBattleUIHook) updateBattleUIHook();
 }
@@ -118,7 +135,7 @@ export function prepareBattle() {
 
             GameState.playerDeck = isHost ? hostDeck : clientDeck;
             GameState.enemyDeck = isHost ? clientDeck : hostDeck;
-            
+
             // アクション受信リスナー起動
             listenToRoomActions((snapshotVal) => {
                 const { action, actor } = snapshotVal;
@@ -126,7 +143,7 @@ export function prepareBattle() {
                 const isMe = (actor === (getIsHost() ? 'host' : 'client'));
                 // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
                 action.owner = isMe ? 'blue' : 'red';
-                
+
                 dispatchBattleAction(action, true);
             });
         } else {
@@ -198,7 +215,7 @@ export function initBattleState() {
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
         if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
-        
+
         if (GameState.gameMode === 'battle_dungeon') {
             // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
             if (GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader') {
@@ -207,7 +224,7 @@ export function initBattleState() {
             } else {
                 GameState.enemyMaxHP = GameState.enemyConfig.hp || 20;
             }
-            
+
             // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定
             if (GameState.playerConfig && GameState.playerConfig.leaderSkill && GameState.playerConfig.leaderSkill.action === 'dungeon_summon_leader') {
                 const pRarity = GameState.playerConfig.rarity || 4;
@@ -224,7 +241,7 @@ export function initBattleState() {
         } else {
             GameState.playerHP = GameState.playerMaxHP;
         }
-        
+
         GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
         GameState.turnCount = 0; GameState.firstPlayer = 'blue';
         GameState.turnCount = 0;
@@ -333,7 +350,7 @@ export function showSpeechBubble(target) {
 export function showSkillConfirm() {
     const s = GameState.playerConfig.leaderSkill; if (!s) return;
     playSound(SOUNDS.seClick);
-    
+
     let statusText = "";
     let color = "";
     let canExecute = false;
@@ -342,20 +359,20 @@ export function showSkillConfirm() {
         statusText = "パッシブスキル（常に発動）";
         color = "#4ade80";
         canExecute = false;
-    } else if (GameState.playerSP >= s.cost) { 
+    } else if (GameState.playerSP >= s.cost) {
         if (!GameState.isProcessing && !GameState.isBattleEnded && GameState.currentTurn === 'player' && !GameState.isPlacementMode) {
-            statusText = "発動可能です！"; 
-            color = "#4ade80"; 
-            canExecute = true; 
+            statusText = "発動可能です！";
+            color = "#4ade80";
+            canExecute = true;
         } else {
-            statusText = "現在発動できません（自分のターン待機中のみ）"; 
-            color = "#facc15"; 
-            canExecute = false; 
+            statusText = "現在発動できません（自分のターン待機中のみ）";
+            color = "#facc15";
+            canExecute = false;
         }
-    } else { 
-        statusText = `発動まであと ${s.cost - GameState.playerSP} SP`; 
-        color = "#f87171"; 
-        canExecute = false; 
+    } else {
+        statusText = `発動まであと ${s.cost - GameState.playerSP} SP`;
+        color = "#f87171";
+        canExecute = false;
     }
 
     if (window.showSkillConfirmModalReact) {
@@ -372,21 +389,21 @@ export function showSkillConfirm() {
 export function showEnemySkillConfirm() {
     playSound(SOUNDS.seClick);
     const s = GameState.enemyConfig.leaderSkill;
-    
+
     let statusText = "";
     let color = "";
 
-    if (!s.cost) { 
-        statusText = "パッシブスキル（常に発動）"; 
-        color = "#4ade80"; 
+    if (!s.cost) {
+        statusText = "パッシブスキル（常に発動）";
+        color = "#4ade80";
     } else {
         const r = Math.max(0, s.cost - GameState.enemySP);
-        if (r === 0) { 
-            statusText = "発動可能状態です！注意！"; 
-            color = "#ef4444"; 
-        } else { 
-            statusText = `発動まであと ${r} SP`; 
-            color = "#f87171"; 
+        if (r === 0) {
+            statusText = "発動可能状態です！注意！";
+            color = "#ef4444";
+        } else {
+            statusText = `発動まであと ${r} SP`;
+            color = "#f87171";
         }
     }
 
@@ -453,7 +470,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
         // リーダースキルや通常の召喚スキルで、空きが足りない場合は上書きを許容する
         let selectedLanes = [...validEmptyLanes];
-        
+
         // 生贄（takeover）等で空きレーンに置けない、あるいは空きスペース以上のcountが要求されている場合、埋まっているレーンから選ぶ
         if (selectedLanes.length < count && validOccupiedLanes.length > 0) {
             // 上書き対象を決める簡易評価（パワーが低い順）
@@ -463,7 +480,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                 selectedLanes.push(occupiedLanes.shift());
             }
         }
-        
+
         // 最終的に必要な数に達していなくても、あるだけ返す
         return selectedLanes.slice(0, count);
     }
@@ -489,6 +506,12 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             window.handlePlacementLaneClick = null;
             window.finishPlacement = null;
             updateCardDetail(null);
+
+            if (GameState.gameMode === 'online') {
+                // 送信先を同期
+                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: result });
+            }
+
             if (updateBattleUIHook) updateBattleUIHook();
             return result;
         };
@@ -528,7 +551,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                     );
                 });
                 if (!confirmed) return;
-                
+
                 // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
                 if (!(await discardCard(owner, board[laneIndex], laneIndex, false))) board[laneIndex] = null;
                 if (updateBattleUIHook) updateBattleUIHook();
@@ -592,11 +615,11 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
         window.handleEnemyLaneClick = (laneIndex) => {
             if (targetBoard[laneIndex] === null) return;
             playSound(SOUNDS.seClick);
-            
+
             if (!GameState.targetSelectedLanes.includes(laneIndex)) {
                 GameState.targetSelectedLanes.push(laneIndex);
                 if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
-                
+
                 if (GameState.targetSelectedLanes.length >= count) {
                     setTimeout(() => {
                         window.finishEnemySelection();
@@ -669,11 +692,11 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
         window.handleAlliedLaneClick = (laneIndex) => {
             if (targetBoard[laneIndex] === null) return;
             playSound(SOUNDS.seClick);
-            
+
             if (!GameState.targetSelectedLanes.includes(laneIndex)) {
                 GameState.targetSelectedLanes.push(laneIndex);
                 if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
-                
+
                 if (GameState.targetSelectedLanes.length >= count) {
                     setTimeout(() => {
                         window.finishAlliedSelection();
@@ -721,7 +744,7 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
 
     // AIの場合：ランダムにカードを選択
     if (owner === 'red') {
-        const indices = hand.map((_, i) => i).sort(() => getSeededRandom() - 0.5);
+        const indices = shuffleArray(hand.map((_, i) => i));
         const selectedCount = Math.min(count, hand.length);
         return indices.slice(0, selectedCount);
     }
@@ -753,7 +776,7 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
         window.finishHandSelection = () => {
             playSound(SOUNDS.seClick);
             const indices = cleanUp();
-            
+
             if (GameState.gameMode === 'online') {
                 sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: indices });
             }
@@ -790,7 +813,7 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
         // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
         if (localAiLevel <= 1) {
             // Easy: ランダム
-            const shuffled = [...choices].sort(() => getSeededRandom() - 0.5);
+            const shuffled = shuffleArray([...choices]);
             return shuffled.slice(0, Math.min(maxChoices, choices.length));
         } else {
             // Normal/Hard: ここで簡易的にシミュレーション
@@ -804,7 +827,7 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
                 const simState = {
                     playerBoard: originalPlayerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
                     enemyBoard: originalBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-                    playerHP: GameState.playerHP, enemyHP: GameState.enemyHP, playerSP: GameState.playerSP, enemySP : GameState.enemySP
+                    playerHP: GameState.playerHP, enemyHP: GameState.enemyHP, playerSP: GameState.playerSP, enemySP: GameState.enemySP
                 };
                 // 簡易シミュレーション
                 const lane = GameState.enemyBoard.indexOf(card);
@@ -818,7 +841,7 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
                 }
                 scoredChoices.push({ choice: choices[i], score });
             }
-            scoredChoices.sort((a,b) => b.score - a.score);
+            scoredChoices.sort((a, b) => b.score - a.score);
             return scoredChoices.slice(0, Math.min(maxChoices, choices.length)).map(x => x.choice);
         }
     }
@@ -834,7 +857,7 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
             }, maxChoices);
         } else {
             // フォールバック（通常は発生しない）
-            const shuffled = [...choices].sort(() => getSeededRandom() - 0.5);
+            const shuffled = shuffleArray([...choices]);
             resolve(shuffled.slice(0, Math.min(maxChoices, choices.length)));
         }
     });
@@ -868,7 +891,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     if (Array.isArray(card.skills)) {
         card.skills = card.skills.filter(sk => sk.id !== 'invincible');
     }
-    
+
     // 変相の復帰処理
     if (card.originalCardId) {
         const originalMaster = CARD_MASTER.find(m => m.id === card.originalCardId);
@@ -919,7 +942,7 @@ export async function triggerSplitSkill(owner, lane, card) {
     const testId = card.baseId || card.id;
     const tokenId = tokenMap[testId] || 'legs';
     const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
-    
+
     // skillValueが取得できない場合の安全策としてトークンのデフォルトpowerを使用
     let val = card.skillValue;
     if (val === undefined || val === null || isNaN(val)) {
@@ -978,7 +1001,7 @@ export async function cleanupDestroyedCards() {
             if (item.el) {
                 // アニメーションを再トリガーするために一度クラスを外してリフロー
                 item.el.classList.remove('anim-shake');
-                void item.el.offsetWidth; 
+                void item.el.offsetWidth;
                 item.el.classList.add('anim-shake');
             }
         });
@@ -1046,7 +1069,7 @@ export function drawCard(owner) {
     }
 
     if (d.length === 0 && ds.length > 0) {
-        d.push(...ds.sort(() => getSeededRandom() - 0.5));
+        d.push(...shuffleArray(ds));
         ds.length = 0;
         playSound(SOUNDS.seSkill);
         showDeckRefreshEffect(owner);
@@ -1066,7 +1089,7 @@ export function drawCard(owner) {
 
 export async function startTurn(owner) {
     if (GameState.isBattleEnded) return; GameState.isProcessing = true;
-    
+
     // スタン（拘束/待機）状態の更新（そのプレイヤーのターン開始時に減算）
     const myBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     myBoard.forEach(c => {
@@ -1114,9 +1137,9 @@ export async function startTurn(owner) {
         GameState.selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
         GameState.isProcessing = false;
         GameState.battlePhase = 'MAIN_ACTION';
-    } else { 
+    } else {
         GameState.isProcessing = false; // ★ロックを解除してからキューに積む
-        dispatchBattleAction({ type: 'enemyTurn' }); 
+        dispatchBattleAction({ type: 'enemyTurn' });
     }
 }
 
@@ -1279,12 +1302,12 @@ export async function executeSingleCombat(atk, l) {
         playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
         enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
     };
-    
+
     // 特定のレーンだけ発火させるための個別処理
     const events = [];
     applySingleCombat(state, atk, l, events);
-    
-    
+
+
     // UI/演出の実行（イベントログ内で状態も同期更新される）
     await playEvents(events);
     checkWinCondition();
@@ -1328,7 +1351,11 @@ export function endBattle() {
     GameState.currentTurn = null;
     if (updateBattleUIHook) updateBattleUIHook();
     GameState.isProcessing = false; // バトル結果表示と同時にフラグをリセット
-    
+
+    if (GameState.gameMode === 'online') {
+        setPlayerReadyOnly(false);
+    }
+
     // 全モード共通：実績用の勝利カウントアップ
     if (GameState.lastBattleResult === 'win' && typeof incrementStat === 'function') {
         incrementStat('freeBattleWins');
@@ -1362,8 +1389,8 @@ export function endBattle() {
 
         if (GameState.gameMode === 'battle_dungeon') {
             const dialogueData = getDungeonCharacterDialogue(GameState.enemyConfig.id);
-            let endText = GameState.lastBattleResult === 'win' ? 
-                (dialogueData.dialogue?.lose?.default || '') : 
+            let endText = GameState.lastBattleResult === 'win' ?
+                (dialogueData.dialogue?.lose?.default || '') :
                 (dialogueData.dialogue?.win?.default || '');
 
             GameState.dialogueQueue = [
@@ -1412,7 +1439,7 @@ export function endBattle() {
                         total_points: newTotalPoints
                     })
                 }).catch(err => console.error("Failed to update points:", err));
-                
+
                 // ポイント獲得のアラートを出してから、会話へ進む
                 playSound(SOUNDS.seSkill);
                 showAlertModal(`防衛戦に勝利しました！\n防衛戦ポイントを ${winPoints} Pt 獲得しました！`, () => {
@@ -1444,7 +1471,7 @@ export function endBattle() {
         }
 
         // --- 防衛戦以外（フリー、ストーリー、高難易度など）の処理 ---
-        if (GameState.lastBattleResult === 'win') {
+        if (GameState.lastBattleResult === 'win' && GameState.gameMode !== 'online') {
             // 実績の加算処理
             if (GameState.gameMode === 'story' && GameState.enemyConfig && GameState.enemyConfig.id === 'satan' && typeof incrementStat === 'function') {
                 incrementStat('storyClears', GameState.playerConfig.id);
@@ -1461,7 +1488,7 @@ export function endBattle() {
             if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
-            
+
             let deckList = [];
             if (Array.isArray(ENEMY_DECKS[recipeId])) {
                 deckList = ENEMY_DECKS[recipeId];
@@ -1495,33 +1522,7 @@ export function endBattle() {
 }
 
 export function returnToTitle() {
-    showConfirmModal('バトルを諦めてタイトルに戻りますか？', () => {
-        if (GameState.gameMode === 'battle_dungeon') {
-            retireDungeon();
-            return;
-        }
-
-        // 防衛戦でリタイアした場合も、相手に3ポイントと防衛回数を付与する
-        if (GameState.gameMode === 'defense_attack' && typeof GameState.enemyConfig !== 'undefined' && GameState.enemyConfig.uuid) {
-            fetch('api/update_points.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    uuid: GameState.enemyConfig.uuid,
-                    points: 3,
-                    total_points: 3, // 総ポイントも加算
-                    increment: true,
-                    defense_wins: 1
-                })
-            }).catch(err => console.error("Failed to update enemy points on retire:", err));
-        }
-
-        stopListeningToRoomActions();
-        stopAllBGM();
-        playSound(SOUNDS.bgmTitle);
-        GameState.appState = 'title';
-        GameState.isProcessing = false;
-        switchScreen('screen-mode-select');
+    showConfirmModal('バトルを諦めますか？', () => {
+        dispatchBattleAction({ type: 'retire', owner: 'blue' });
     });
 }
-

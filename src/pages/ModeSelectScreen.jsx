@@ -2,7 +2,7 @@ import React from 'react';
 
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../hooks/uiGallery.js';
-import { showRules, showOptions, startGameMode, showEventMenu } from '../hooks/uiMainCore.js';
+import { showRules, showOptions, startGameMode, showEventMenu, showOnlineMenu } from '../hooks/uiMainCore.js';
 import { switchScreen, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -44,10 +44,10 @@ export default function ModeSelectScreen() {
           <div className="menu-btn-label">イベント</div>
         </div>
 
-        <div className="menu-img-btn" onClick={() => { playSound(SOUNDS?.seClick); switchScreen('screen-online-menu'); }}>
+        <div className="menu-img-btn" onClick={() => { playSound(SOUNDS?.seClick); showOnlineMenu?.(); }}>
           <div
             className="menu-img-bg"
-            style={{ backgroundColor: '#0284c7' }}
+            style={{ backgroundImage: `url('${images.MENU_ONLINE || ''}')` }}
           ></div>
           <div className="menu-btn-label">オンライン対戦</div>
         </div>

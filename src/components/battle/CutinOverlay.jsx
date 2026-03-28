@@ -30,7 +30,7 @@ export default function CutinOverlay() {
             <div id="cutin-bg" className="cutin-bg" style={{ background: bgGradient }}></div>
             <img 
                 id="cutin-char-img" 
-                src={isBlue ? getSkinImage(config, GameState.playerSkins[config.id], 'image') : config.image} 
+                src={isBlue ? getSkinImage(config, GameState.playerSkins[config.id], 'image') : getSkinImage(config, GameState.enemySkins?.[config.id], 'image')} 
                 className="cutin-char" 
                 alt="Cutin Character"
                 style={{ animation: 'slideIn 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards' }}

@@ -3,7 +3,7 @@ import { getEasyDecision } from './ai_easy.js';
 import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
 import { discardCard, endTurnLogic, playCard } from './battle.js';
 import { GameState } from './gameState.js';
-import { getSeededRandom } from '../utils/gameUtils.js';
+import { getSeededRandom, shuffleArray } from '../utils/gameUtils.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 
@@ -114,11 +114,11 @@ export async function executeEnemyAI() {
  * トークン配置レーンの選択（難易度別ディスパッチャ）
  */
 export function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill = false) {
-    if (owner === 'blue') return [...allLanes].sort(() => getSeededRandom() - 0.5).slice(0, count);
+    if (owner === 'blue') return shuffleArray([...allLanes]).slice(0, count);
 
     if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
         // 初級: ランダム
-        return [...allLanes].sort(() => getSeededRandom() - 0.5).slice(0, count);
+        return shuffleArray([...allLanes]).slice(0, count);
     } else {
         // 中級以上: シミュレーション (ai_normal.js)
         return getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill);

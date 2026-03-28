@@ -3,12 +3,12 @@ import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import { ownedPlaymats, setOwnedPlaymats } from '../utils/constants/playmats.js';
-import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom } from '../utils/gameUtils.js';
+import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom, shuffleArray } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
 import { GameState } from './gameState.js';
 import { setupLongPress } from './uiGallery.js';
-import { showDefenseMenu, closePlayerNameModal } from './uiMainCore.js';
+import { showDefenseMenu, closePlayerNameModal, showOnlineLobby } from './uiMainCore.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
 
 // ==========================================
@@ -21,7 +21,7 @@ export function generateDeck(owner, config, sessionId) {
     // オンラインモード：事前に渡された専用デッキ配列を使用する
     if (GameState.gameMode === 'online' && config && Array.isArray(config.deck)) {
         deck = config.deck.map((t, i) => {
-            const isPremium = false; // Todo: プレミアム同期が必要なら後で追加
+            const isPremium = t.isPremium || false;
             const tempObj = { ...t, isPremium: isPremium };
             const imgUrl = getCardImgUrl(tempObj);
             return {
@@ -37,7 +37,7 @@ export function generateDeck(owner, config, sessionId) {
                 skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
             };
         });
-        return deck.sort(() => getSeededRandom() - 0.5);
+        return shuffleArray(deck);
     }
 
     if (owner === 'blue') {
@@ -107,7 +107,7 @@ export function generateDeck(owner, config, sessionId) {
             });
         });
     }
-    return deck.sort(() => getSeededRandom() - 0.5);
+    return shuffleArray(deck);
 }
 
 /**
@@ -237,11 +237,18 @@ export function saveDeck() {
         const defenseDeck = GameState.playerDeckSelection.map(c => c.id);
         localStorage.setItem('mini_card_battle_deck_defense', JSON.stringify(defenseDeck));
     } else if (GameState.gameMode === 'online_deck_edit') {
-        const payload = {
+        // デッキ自体は共通のもの（下の else if）で保存させる。オンライン専用には選択キャラとステージのみ記録する
+        const settings = {
             leaderId: GameState.playerConfig?.id || 'android',
-            deck: GameState.playerDeckSelection.map(c => c.id)
+            stage: GameState.selectedStageId || 'plain'
         };
-        localStorage.setItem('mini_card_battle_online_deck', JSON.stringify(payload));
+        localStorage.setItem('mini_card_battle_online_last_settings', JSON.stringify(settings));
+        
+        // 共通デッキキーへ保存を続行する
+        if (GameState.playerConfig) {
+            const key = `mini_card_battle_deck_${GameState.playerConfig.id}`;
+            localStorage.setItem(key, JSON.stringify(GameState.playerDeckSelection));
+        }
     } else if (GameState.playerConfig) {
         const key = `mini_card_battle_deck_${GameState.playerConfig.id}`;
         localStorage.setItem(key, JSON.stringify(GameState.playerDeckSelection));
@@ -345,6 +352,10 @@ export function finishDeckEdit() {
                 }
             }
         }
+    } else if (GameState.gameMode === 'online_deck_edit') {
+        GameState.appState = 'online';
+        if (window.reloadOnlineLobbyConfig) window.reloadOnlineLobbyConfig();
+        showOnlineLobby();
     } else {
         GameState.appState = 'battle';
         prepareBattle();

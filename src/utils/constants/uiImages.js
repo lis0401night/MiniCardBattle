@@ -9,4 +9,5 @@ export const UI_IMAGES = {
     GALLERY_CARD_LIST: 'assets/ui/ui_cardlistbutton01.png',
     GALLERY_ACHIEVEMENTS: 'assets/ui/ui_achievementsbutton01.png',
     MENU_DUNGEON: 'assets/ui/ui_dungionbutton01.png',
+    MENU_ONLINE: 'assets/ui/ui_versusbutton01.png',
 };
