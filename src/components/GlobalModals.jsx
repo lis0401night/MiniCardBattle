@@ -35,11 +35,13 @@ export default function GlobalModals() {
   const [rulesVisible, setRulesVisible] = useState(false);
   const [skinSelectionVisible, setSkinSelectionVisible] = useState(false);
   const [selectedSkinState, setSelectedSkinState] = useState(null);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target !== e.currentTarget) return; // overlay click check
     playSound?.(SOUNDS?.seClick);
     setCardPreviewData(null);
+    setIsImageZoomed(false);
   };
 
   useEffect(() => {
@@ -303,7 +305,11 @@ export default function GlobalModals() {
     return (
       <div className={`preview-content ${styleProps.containerClass || ''}`} style={{ margin: styleProps.margin, cursor: 'default', borderColor: styleProps.borderColor, boxShadow: styleProps.boxShadow }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div className={`card blue${!isSkin ? rarityClass : ''}`} style={{ width: '180px', height: '240px', position: 'relative', overflow: 'hidden' }}>
+          <div 
+            className={`card blue${!isSkin ? rarityClass : ''}`} 
+            style={{ width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+            onClick={(e) => { e.stopPropagation(); setIsImageZoomed(true); playSound?.(SOUNDS?.seClick); }}
+          >
             <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: isSkin ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : 'center center' }}></div>
             {!isSkin && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower || card.power}</div>}
             {!isSkin && renderSkillTagReact(card)}
@@ -557,6 +563,27 @@ export default function GlobalModals() {
             cardPreviewData.card,
             cardPreviewData.styleProps || { showPreviewActions: true }
           )}
+        </div>
+      )}
+
+      {/* Enlarged Image Overlay */}
+      {isImageZoomed && cardPreviewData && (
+        <div 
+          style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.9)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          onClick={(e) => { e.stopPropagation(); setIsImageZoomed(false); playSound?.(SOUNDS?.seClick); }}
+        >
+          <img 
+            src={cardPreviewData.styleProps?.imgUrl || (getCardImgUrl ? getCardImgUrl(cardPreviewData.card) : '')} 
+            style={{ 
+              width: 'min(95vw, calc(95vh * 2 / 3))', 
+              height: 'min(95vh, calc(95vw * 3 / 2))', 
+              objectFit: cardPreviewData.styleProps?.isSkin ? 'contain' : 'contain', 
+              borderRadius: '12px', 
+              boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+              backgroundColor: cardPreviewData.styleProps?.isSkin ? 'transparent' : '#000'
+            }} 
+            alt="Enlarged" 
+          />
         </div>
       )}
 

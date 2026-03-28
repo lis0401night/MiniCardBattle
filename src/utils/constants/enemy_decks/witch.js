@@ -22,9 +22,9 @@ export default {
     hard: [
         'djinn', 'djinn', 'djinn', 'djinn',
         'book', 'book', 'book', 'book',
-        'battlemage', 'battlemage', 'mage', 'mage',
+        'battlemage', 'battlemage', 'battlemage', 'battlemage',
+        'mage', 'mage',
         'gargoyle', 'gargoyle', 'gargoyle', 'gargoyle',
-        'dragonfire', 'dragonfire',
         'beginnermagic', 'beginnermagic',
     ]
 };

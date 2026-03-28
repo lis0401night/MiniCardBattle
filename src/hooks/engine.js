@@ -136,8 +136,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'invade': {
             const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
             const uniqueTypes = new Set((discard || []).map(card => card.baseId || card.id)).size;
-            const totalCount = (discard || []).length;
-            const powerDiff = (uniqueTypes * 2) - totalCount;
+            const powerDiff = uniqueTypes;
             if (powerDiff !== 0) {
                 c.currentPower += powerDiff;
                 events.push({ type: 'power_change', side: owner, lane: l, amount: powerDiff, source: 'invade' });
@@ -297,17 +296,18 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             applySingleCombat(state, owner, l, events);
             break;
         case 'convert':
+            const convertHand = owner === 'blue' ? state.playerHand : state.enemyHand;
             const convertCount = val || 1;
-            const actualConvertCount = Math.min(convertCount, h.length);
+            const actualConvertCount = Math.min(convertCount, convertHand ? convertHand.length : 0);
             for (let i = 0; i < actualConvertCount; i++) {
-                h.pop(); // simply pop from hand
+                convertHand.pop(); // simply pop from hand
                 const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
                 const newToken = {
                     ...voidTpl,
                     isToken: true,
                     power: 1, basePower: 1, currentPower: 1
                 };
-                h.push(newToken);
+                convertHand.push(newToken);
             }
             break;
         case 'summon':
