@@ -270,7 +270,8 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         enemyHand: hand.map(cloneCard),
         playerDiscard: GameState.playerDiscard.map(cloneCard),
         enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-        attackSkipIndicator: GameState.attackSkipIndicator
+        extraTurnCount: GameState.extraTurnCount,
+        attackSkipCount: GameState.attackSkipCount
     };
 
     // 1. スキル使用 (常に先出し)
@@ -332,7 +333,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
 
     const hpBeforeCombat = simState.enemyHP;
 
-    if (simState.turnSkipIndicator !== 'blue') {
+    if (!(simState.extraTurnCount > 0)) {
         // 3. 次のプレイヤー（青）のターン開始処理（成長・契約ダメージ・スタン解除）
         applyPassiveSkillLogic(simState, 'blue');
         simState.playerBoard.forEach(c => {
@@ -350,7 +351,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         // 相手の攻撃による純粋なダメージを記録（条件2の評価用）
         simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
     } else {
-        simState.turnSkipIndicator = null;
+        simState.extraTurnCount--;
         simState.combatDamageTaken = 0;
     }
 

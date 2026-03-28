@@ -983,8 +983,8 @@ export async function startTurn(owner) {
     await triggerStartTurnSkills(owner);
     if (GameState.isBattleEnded) return;
 
-    // SPの増加（先攻の1ターン目は増えない）
-    if (GameState.turnCount > 1) {
+    // SPの増加（先攻の1ターン目や追加ターン中は増えない）
+    if (GameState.turnCount > 1 && GameState.attackSkipCount === 0) {
         if (c.leaderSkill.cost) {
             if (owner === 'blue') GameState.playerSP = Math.min(c.leaderSkill.cost, GameState.playerSP + 1);
             else GameState.enemySP = Math.min(c.leaderSkill.cost, GameState.enemySP + 1);
@@ -993,9 +993,9 @@ export async function startTurn(owner) {
     }
 
     let skipAttack = false;
-    if (GameState.attackSkipIndicator === owner) {
+    if (GameState.attackSkipCount > 0) {
         skipAttack = true;
-        GameState.attackSkipIndicator = null;
+        GameState.attackSkipCount--;
     }
 
     if (skipAttack) {
@@ -1037,8 +1037,8 @@ export async function endTurnLogic(o) {
     if (!GameState.isBattleEnded) {
         renderBoard();
         let nextOwner = o === 'blue' ? 'red' : 'blue';
-        if (GameState.turnSkipIndicator === nextOwner) {
-            GameState.turnSkipIndicator = null;
+        if (GameState.extraTurnCount > 0) {
+            GameState.extraTurnCount--;
             nextOwner = o;
         }
         await startTurn(nextOwner);

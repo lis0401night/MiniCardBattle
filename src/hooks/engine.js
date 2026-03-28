@@ -635,8 +635,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
     } else if (action === 'time_stop') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
-        state.turnSkipIndicator = oppOwner;
-        state.attackSkipIndicator = owner;
+        state.extraTurnCount = (state.extraTurnCount || 0) + 2;
+        state.attackSkipCount = (state.attackSkipCount || 0) + 2;
     }
 
     processDestructionTriggers(state, events);

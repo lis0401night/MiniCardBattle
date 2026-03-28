@@ -145,6 +145,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             events.push({ type: 'leader_skill', skill: action, side: owner });
             events.push({ type: 'summon_card', side: owner, lane: l, card: b[l], source: 'dungeon_summon_leader' });
         }
+        await sleep(500);
+        return; // Engineに移譲せずここで完了とする（手札操作のUI依存度が強いため）
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, false, tokenLanes, false);
@@ -261,11 +263,11 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         // リーダースキルによるダメージ・破壊を処理し、分裂等の誘発効果をイベントに積む
         processDestructionTriggers(currentState, events);
 
-        if (currentState.turnSkipIndicator) {
-            GameState.turnSkipIndicator = currentState.turnSkipIndicator;
+        if (currentState.extraTurnCount) {
+            GameState.extraTurnCount = currentState.extraTurnCount;
         }
-        if (currentState.attackSkipIndicator) {
-            GameState.attackSkipIndicator = currentState.attackSkipIndicator;
+        if (currentState.attackSkipCount) {
+            GameState.attackSkipCount = currentState.attackSkipCount;
         }
     }
 

@@ -122,6 +122,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'devilhunter',
         reward: { type: 'premium', value: 'necromancer', name: 'ヴィス・ガルドの背教者', isPremiumUnlock: true }
     },
+    {
+        id: 'story_witch',
+        title: '魔女の戯れ',
+        description: 'クロエのストーリーをクリアする',
+        type: 'story_clear',
+        targetValue: 'witch',
+        reward: { type: 'playmat', value: 'witch', name: 'クロエ' }
+    },
+    {
+        id: 'story_witch_hard',
+        title: '因果の果てに',
+        description: 'クロエのストーリー（上級）をクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'witch',
+        reward: { type: 'premium', value: 'mage', name: '学院の雷撃魔導士', isPremiumUnlock: true }
+    },
     // --- カード収集 ---
     {
         id: 'collect_10',

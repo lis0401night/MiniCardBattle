@@ -295,7 +295,7 @@ export const CHARACTERS = {
         easeOfUse: 1,
         filter: 'none', cardType: 'set1', cardBg: 'bg3',
         image: 'assets/characters/char_witch.png', imageLose: 'assets/characters/char_witch_lose.png', icon: 'assets/icons/icon_witch.png', imageEnding: 'assets/characters/char_witch_ending.png', color: '#db2777',
-        leaderSkill: { name: '因果律の掌握', desc: '(SP:5) 次の相手のターンをスキップする。\n(ただし発動後の次の自身のターンは攻撃できない)', cost: 5, action: 'time_stop' },
+        leaderSkill: { name: '因果律の掌握', desc: '(SP:6) 追加のターンを2回行う。\n(ただし、追加ターン時は攻撃できない)', cost: 6, action: 'time_stop' },
         preBattleLine: 'はあ…さっきも戦いませんでしたっけ？ 手っ取り早く終わらせますね。',
         mirrorIntro: '別の時間軸の私ですか。……正直、関わるだけ鬱陶しいです。',
         narratorIntro: '「時駆けの魔女」と呼ばれる才女、クロエ。彼女の紡ぐ術理は相手の時間を完全に支配する。',
@@ -315,24 +315,24 @@ export const CHARACTERS = {
         dialogue: {
             intro: {
                 android: '未来の兵器ですか？ まあ、別に驚きませんけど。',
-                dragon: '竜の熱気……さっき飛ばされた時代でも同じような目に遭った気がします。',
-                knight: '暑苦しい信念ですね。前の世界線の騎士もそんな感じでしたよ。',
+                dragon: '竜の熱気……この前に飛ばされたでも同じような目に遭った気がします。',
+                knight: '暑苦しい信念ですね。前に会った騎士もそんな感じでしたよ。',
                 cthulhu: 'うわ……。そういうドロドロしたのは一番面倒なんですよ。',
                 elf: '森の魔力……以前の時間軸でも嗅いだ匂いですね。',
                 cleric: '胡散臭いですね。私、そういうのは信じてないので。',
                 devilhunter: 'その棺桶……まさか私を入れるつもりじゃないですよね？',
-                satan: 'あれ？ あなたさっき倒しませんでしたっけ？ ……はあ、先輩、もう一回やりますよ。',
+                satan: 'もう一回倒してるんですけどね。 ……はあ、先輩、もう一回やりますよ。',
                 default: '面倒ですが、相手をしてあげますよ。先輩も少しは手伝ってくださいね。'
             },
             win: {
                 android: 'はい、スクラップの出来上がり。先輩、片付けお願いしますね。',
-                dragon: '熱いのは嫌いなんですよ。さっきの時代でも言いましたよね？',
+                dragon: '熱いのは嫌いなんですよ。さっきも言いましたよね？',
                 knight: 'いくら固くても、時間を止められちゃどうしようもないですよね。',
                 cthulhu: 'あーあ、制服が汚れちゃいました。最悪です。',
-                elf: '過去を探してるんですか？ 時間を渡るのも案外疲れますよ。',
-                cleric: '神様じゃ時間は止められないみたいですね。',
+                elf: '記憶を探してるんですか？ 過去なんて探しても疲れるだけですよ。',
+                cleric: '神様の力でも時間は止められないみたいですね。',
                 devilhunter: 'そんな物騒なものはしまっておいてください。',
-                satan: 'ほら、やっぱりさっき倒した魔王より弱かったじゃないですか。',
+                satan: 'この前に倒した魔王より弱かった気がしますけど。',
                 default: 'ほら、言ったでしょう。時間の無駄だったと。帰りますよ、先輩。'
             },
             lose: {
