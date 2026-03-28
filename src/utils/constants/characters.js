@@ -295,7 +295,7 @@ export const CHARACTERS = {
         easeOfUse: 1,
         filter: 'none', cardType: 'set1', cardBg: 'bg3',
         image: 'assets/characters/char_witch.png', imageLose: 'assets/characters/char_witch_lose.png', icon: 'assets/icons/icon_witch.png', imageEnding: 'assets/characters/char_witch_ending.png', color: '#db2777',
-        leaderSkill: { name: '因果律の掌握', desc: '(SP:6) 追加のターンを2回行う。\n(ただし、追加ターン時は攻撃できない)', cost: 6, action: 'time_stop' },
+        leaderSkill: { name: '因果律の掌握', desc: '(SP:6) 追加のターンを2回行う。\n(ただし、追加ターン中はSPは溜まらず攻撃もできない)', cost: 6, action: 'time_stop' },
         preBattleLine: 'はあ…さっきも戦いませんでしたっけ？ 手っ取り早く終わらせますね。',
         mirrorIntro: '別の時間軸の私ですか。……正直、関わるだけ鬱陶しいです。',
         narratorIntro: '「時駆けの魔女」と呼ばれる才女、クロエ。彼女の紡ぐ術理は相手の時間を完全に支配する。',
