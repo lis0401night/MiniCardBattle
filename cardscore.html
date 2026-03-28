@@ -182,7 +182,7 @@
                 pointSettings = skillPointsModule.SKILL_POINTS || {};
 
                 // 敵デッキをダイナミックインポート
-                const deckFiles = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'satan', 'devilhunter', 'satan_high'];
+                const deckFiles = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'satan', 'devilhunter', 'satan_high', 'witch'];
                 for (const file of deckFiles) {
                     try {
                         const deckModule = await import(`./src/utils/constants/enemy_decks/${file}.js`);
