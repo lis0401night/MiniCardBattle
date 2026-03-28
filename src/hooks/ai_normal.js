@@ -21,9 +21,9 @@ export function getNormalDecision() {
 export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     let candidates = [];
     const skill = GameState.enemyConfig.leaderSkill;
-    let canUseSkill = skill && mySP >= skill.cost && (GameState.enemyConfig.id !== 'cthulhu' && GameState.enemyConfig.id !== 'cleric');
+    let canUseSkill = skill && mySP >= skill.cost && (skill.action !== 'abyss_ritual' && skill.action !== 'dark_ritual' && skill.action !== 'time_stop');
     // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
-    if (canUseSkill && GameState.enemyConfig.id === 'devilhunter') {
+    if (canUseSkill && skill.action === 'devilhunter_resurrect') {
         const discard = GameState.enemyDiscard || [];
         canUseSkill = discard.some(c => (c.power || 0) <= 10 && !c.isToken);
     }
@@ -284,7 +284,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
 
     // 2. カードをプレイ
     if (handIdx !== -1) {
-        const playedCard = cloneCard(hand[handIdx]);
+        const playedCard = cloneCard(simState.enemyHand[handIdx]);
         playedCard.currentPower = playedCard.power;
         simState.enemyBoard[laneIdx] = playedCard;
 

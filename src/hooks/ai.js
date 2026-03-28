@@ -24,7 +24,7 @@ export async function executeEnemyAI() {
         const skill = GameState.enemyConfig.leaderSkill;
         let canUseSkill = skill && GameState.enemySP >= skill.cost;
         // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
-        if (canUseSkill && GameState.enemyConfig.id === 'devilhunter') {
+        if (canUseSkill && skill.action === 'devilhunter_resurrect') {
             canUseSkill = GameState.enemyDiscard.some(c => (c.power || 0) <= 10 && !c.isToken);
         }
         
@@ -42,12 +42,12 @@ export async function executeEnemyAI() {
         let shouldForceSkill = false;
         if (canUseSkill) {
             // ナイア、エリシア、クロエは難易度によらず優先使用（デッキ圧縮、回復、ターンスキップ）
-            if (GameState.enemyConfig.id === 'cthulhu' || GameState.enemyConfig.id === 'cleric' || GameState.enemyConfig.id === 'witch') {
+            if (skill.action === 'abyss_ritual' || skill.action === 'dark_ritual' || skill.action === 'time_stop') {
                 shouldForceSkill = true;
             }
             // 初級難易度の場合、アイギス・リナの「空撃ち」を除き100%使用
             else if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
-                if (GameState.enemyConfig.id === 'android' || GameState.enemyConfig.id === 'elf') {
+                if (skill.action === 'hero' || skill.action === 'targeted_destruction') {
                     // 相手の場にカードがある場合のみ使用（空撃ち防止）
                     if (GameState.playerBoard.some(c => c !== null)) {
                         shouldForceSkill = true;

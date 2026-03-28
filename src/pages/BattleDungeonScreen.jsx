@@ -3,7 +3,7 @@ import { GameState } from '../hooks/gameState.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { selectRentalDeck, startDungeonBattle, retireDungeon, selectRewardCard, loadDungeonProgress, saveDungeonProgress } from '../hooks/battleDungeon.js';
-import { playSound, getCardImgUrl, switchScreen } from '../utils/gameUtils.js';
+import { playSound, getCardImgUrl, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { setupLongPress } from '../hooks/uiGallery.js';
@@ -37,8 +37,16 @@ export default function BattleDungeonScreen() {
             GameState.gameMode = null;
             if (window.showDungeonMenu) {
                 window.showDungeonMenu();
+                stopAllBGM();
+                if (SOUNDS.bgmTitle && SOUNDS.bgmTitle.paused) {
+                    playSound(SOUNDS.bgmTitle);
+                }
             } else {
                 switchScreen('screen-dungeon-menu');
+                stopAllBGM();
+                if (SOUNDS.bgmTitle && SOUNDS.bgmTitle.paused) {
+                    playSound(SOUNDS.bgmTitle);
+                }
             }
         } else {
             // 進行中はリタイア確認
@@ -53,6 +61,10 @@ export default function BattleDungeonScreen() {
             playSound(SOUNDS.seClick);
             saveDungeonProgress();
             switchScreen('screen-mode-select');
+            stopAllBGM();
+            if (SOUNDS.bgmTitle && SOUNDS.bgmTitle.paused) {
+                playSound(SOUNDS.bgmTitle);
+            }
         });
     };
 
