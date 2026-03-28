@@ -43,18 +43,22 @@ export const DUNGEON_LEADER_VOICE_MAP = {
     'commander': 'human_male_warrior',
     'monk': 'human_male_warrior',
     'champion': 'human_male_warrior',
-    'diviner': 'human_female_ikemen',
-    'dancer': 'human_female_ikemen',
-    'necromancer': 'human_female_ikemen',
-    'mage': 'human_female_ikemen',
-    'barrier': 'human_female_ikemen',
-    'incinerator': 'human_female_ikemen',
-    'highelf': 'human_female_ikemen',
-    'redhood': 'human_female_ikemen',
-    'cleric': 'human_female_young',
-    'empress': 'human_female_young',
+    'diviner': 'human_female_cool',
+    'dancer': 'human_female_cool',
+    'necromancer': 'human_female_cool',
+    'mage': 'human_female_cool',
+    'barrier': 'human_female_cool',
+    'incinerator': 'human_female_cool',
+    'highelf': 'human_female_cool',
+    'redhood': 'human_female_cool',
+    'cleric': 'human_female_cute',
+    'empress': 'human_female_normal',
+    'hero': 'human_female_normal',
+    'mechanic': 'human_female_normal',
+    'dragonfire': 'magic',
+    'beginnermagic': 'magic',
     'assassin': 'human_female_assassin',
-    
+
     // 魔族・不死系
     'devil': 'devil',
     'daemon': 'devil',
@@ -65,9 +69,9 @@ export const DUNGEON_LEADER_VOICE_MAP = {
     'collector': 'undead',
 
     // 無機物・機械系
-    'golem': 'rock',
-    'wall': 'rock',
-    'baldanders': 'rock',
+    'golem': 'stone',
+    'wall': 'stone',
+    'baldanders': 'stone',
     'titan': 'machine_old',
     'mantis': 'machine_old',
     'fire': 'machine_old',
@@ -81,7 +85,7 @@ export const DUNGEON_LEADER_VOICE_MAP = {
     'clone': 'sword',
     'darkpaladin': 'sword',
     'token_knight': 'sword',
-    
+
     // 未設定・要確認
     // 'dealer': 'human_male_normal', // voiceCategory未設定のため保留
 };
@@ -234,7 +238,7 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
             ending: []
         }
     },
-    human_female_ikemen: {
+    human_female_cool: {
         preBattleLine: '私の前を歩こうなんて、100年早いわ。',
         dialogue: {
             intro: { default: '華麗に散らせてあげるわ。感謝なさい。' },
@@ -245,7 +249,7 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
             ending: []
         }
     },
-    human_female_young: {
+    human_female_cute: {
         preBattleLine: '私に勝てると思ってるんですか？',
         dialogue: {
             intro: { default: '一生懸命頑張りますから、覚悟してくださいね！' },
@@ -253,6 +257,17 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
             lose: { default: '負けちゃいました……。悔しいです。' },
             damage: ['いたっ！', 'ひどいです', 'まだ負けません'],
             skill: '精一杯の奇跡、受けてください！',
+            ending: []
+        }
+    },
+    human_female_normal: {
+        preBattleLine: '油断しないで。手加減はしないから！',
+        dialogue: {
+            intro: { default: '私の前に立ち塞がるなら、全力でいくわよ！' },
+            win: { default: 'ふぅ、なんとか勝てたわね。' },
+            lose: { default: '負けちゃった……まだまだ修行不足ね。' },
+            damage: ['ああっ！', '痛いっ！', 'やるわね！'],
+            skill: 'これでもくらえっ！',
             ending: []
         }
     },
@@ -293,7 +308,7 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
     },
 
     // --- 無機物・機械系 ---
-    rock: {
+    stone: {
         preBattleLine: '不壊の壁が、お前を拒む。',
         dialogue: {
             intro: { default: '沈黙の重圧、耐えられるか。' },
@@ -394,6 +409,17 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
             ending: []
         }
     },
+    magic: {
+        preBattleLine: '大地に流れるマナよ、我が呼びかけに応えよ。',
+        dialogue: {
+            intro: { default: '魔術の深淵、その身で味わうが良いわ。' },
+            win: { default: 'ふふん、計算通りの結末ね。' },
+            lose: { default: '術式が……破綻した……？' },
+            damage: ['きゃっ！', '魔力が……', 'くっ！'],
+            skill: '秘められし魔力よ、解き放たれよ！',
+            ending: []
+        }
+    },
     holy: {
         preBattleLine: '聖なる光がお前を照らし出すだろう。',
         dialogue: {
@@ -436,7 +462,7 @@ export function getDungeonCharacterDialogue(id) {
     if (rawId.includes('_') && !rawId.startsWith('token_')) {
         rawId = rawId.split('_')[0];
     }
-    
+
     // 直接のID一致をチェック（golem, vampire等）
     if (DUNGEON_CHARACTER_DIALOGUE[rawId]) {
         return DUNGEON_CHARACTER_DIALOGUE[rawId];

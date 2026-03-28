@@ -20,11 +20,6 @@ export const VOICE_CATEGORIES = {
         death: 'assets/audio/voice/voice_monster_death.wav',
         volume: 1.0 // カテゴリごとの個別音量調整
     },
-    'monster_small': {
-        play: 'assets/audio/voice/voice_monster_small_play.wav',
-        death: 'assets/audio/voice/voice_monster_small_death.wav',
-        volume: 1.0
-    },
     'devil': {
         play: 'assets/audio/voice/voice_devil_play.wav',
         death: 'assets/audio/voice/voice_devil_death.wav',
@@ -91,14 +86,19 @@ export const VOICE_CATEGORIES = {
         death: 'assets/audio/voice/voice_human_male_warrior_death.wav',
         volume: 1.0
     },
-    'human_female_ikemen': {
-        play: 'assets/audio/voice/voice_human_female_ikemen_play.wav',
-        death: 'assets/audio/voice/voice_human_female_ikemen_death.wav',
+    'human_female_cute': {
+        play: 'assets/audio/voice/voice_human_female_cute_play.wav',
+        death: 'assets/audio/voice/voice_human_female_cute_death.wav',
         volume: 1.0
     },
-    'human_female_young': {
-        play: 'assets/audio/voice/voice_human_female_young_play.wav',
-        death: 'assets/audio/voice/voice_human_female_young_death.wav',
+    'human_female_normal': {
+        play: 'assets/audio/voice/voice_human_female_normal_play.wav',
+        death: 'assets/audio/voice/voice_human_female_normal_death.wav',
+        volume: 1.0
+    },
+    'human_female_cool': {
+        play: 'assets/audio/voice/voice_human_female_cool_play.wav',
+        death: 'assets/audio/voice/voice_human_female_cool_death.wav',
         volume: 1.0
     },
     'human_female_assassin': {
@@ -106,40 +106,15 @@ export const VOICE_CATEGORIES = {
         death: 'assets/audio/voice/voice_human_female_assassin_death.wav',
         volume: 1.0
     },
-    'warrior': {
-        play: 'assets/audio/voice/voice_warrior_play.wav',
-        death: 'assets/audio/voice/voice_warrior_death.wav',
-        volume: 1.0
-    },
-    'mage': {
-        play: 'assets/audio/voice/voice_mage_play.wav',
-        death: 'assets/audio/voice/voice_mage_death.wav',
-        volume: 1.0
-    },
     'magic': {
         play: 'assets/audio/voice/voice_magic_play.wav',
         death: 'assets/audio/voice/voice_magic_death.wav',
         volume: 1.0
     },
-    'holy': {
-        play: 'assets/audio/voice/voice_holy_play.wav',
-        death: 'assets/audio/voice/voice_holy_death.wav',
-        volume: 1.0
-    },
-    'dark': {
-        play: 'assets/audio/voice/voice_dark_play.wav',
-        death: 'assets/audio/voice/voice_dark_death.wav',
-        volume: 1.0
-    },
-    'sword': {
-        play: 'assets/audio/voice/voice_sword_play.wav',
-        death: 'assets/audio/voice/voice_sword_death.wav',
-        volume: 1.0
-    },
     // 無機物系
-    'rock': {
-        play: 'assets/audio/voice/voice_rock_play.wav',
-        death: 'assets/audio/voice/voice_rock_death.wav',
+    'stone': {
+        play: 'assets/audio/voice/voice_stone_play.wav',
+        death: 'assets/audio/voice/voice_stone_death.wav',
         volume: 1.0
     },
     'machine_old': {
@@ -152,17 +127,11 @@ export const VOICE_CATEGORIES = {
         death: 'assets/audio/voice/voice_machine_new_death.wav',
         volume: 0.8
     },
-    // 特殊系
-    'alien': {
-        play: 'assets/audio/voice/voice_alien_play.wav',
-        death: 'assets/audio/voice/voice_alien_death.wav',
+    'sword': {
+        play: 'assets/audio/voice/voice_sword_play.wav',
+        death: 'assets/audio/voice/voice_sword_death.wav',
         volume: 1.0
     },
-    'god': {
-        play: 'assets/audio/voice/voice_god_play.wav',
-        death: 'assets/audio/voice/voice_god_death.wav',
-        volume: 1.0
-    }
 };
 
 // ボイス再生用の関数
