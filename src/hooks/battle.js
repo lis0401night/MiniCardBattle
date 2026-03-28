@@ -392,28 +392,21 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             }
         }
 
-        // リーダースキル等で上書きを許容する場合
-        if (isLeaderSkill) {
-            let selectedLanes = [...validEmptyLanes];
-            
-            // 生贄（takeover）等で空きレーンに置けない、あるいは空きスペース以上のcountが要求されている場合、埋まっているレーンから選ぶ
-            if (selectedLanes.length < count && validOccupiedLanes.length > 0) {
-                // 上書き対象を決める簡易評価（パワーが低い順）
-                let occupiedLanes = [...validOccupiedLanes];
-                occupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
-                while (selectedLanes.length < count && occupiedLanes.length > 0) {
-                    selectedLanes.push(occupiedLanes.shift());
-                }
+        // リーダースキルや通常の召喚スキルで、空きが足りない場合は上書きを許容する
+        let selectedLanes = [...validEmptyLanes];
+        
+        // 生贄（takeover）等で空きレーンに置けない、あるいは空きスペース以上のcountが要求されている場合、埋まっているレーンから選ぶ
+        if (selectedLanes.length < count && validOccupiedLanes.length > 0) {
+            // 上書き対象を決める簡易評価（パワーが低い順）
+            let occupiedLanes = [...validOccupiedLanes];
+            occupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
+            while (selectedLanes.length < count && occupiedLanes.length > 0) {
+                selectedLanes.push(occupiedLanes.shift());
             }
-            
-            // 最終的に必要な数に達していなくても、あるだけ返す
-            return selectedLanes.slice(0, count);
-        } else {
-            // 通常の配置（上書き不可）
-            const actualCount = Math.min(count, validEmptyLanes.length);
-            if (actualCount === 0) return [];
-            return validEmptyLanes.slice(0, actualCount); // 今回は簡略化のため空きの中からそのまま選択
         }
+        
+        // 最終的に必要な数に達していなくても、あるだけ返す
+        return selectedLanes.slice(0, count);
     }
 
     // プレイヤーの場合：手動選択
