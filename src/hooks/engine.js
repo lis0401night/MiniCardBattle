@@ -428,7 +428,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'enhance':
             const occupy = b.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
             if (occupy.length > 0) {
-                const tl = occupy.sort((a,b) => b[b].currentPower - b[a].currentPower)[0];
+                const tl = occupy.sort((idxA, idxB) => b[idxB].currentPower - b[idxA].currentPower)[0];
                 const tC = b[tl];
                 if (!Array.isArray(tC.skills)) tC.skills = [];
                 let existingGrowth = tC.skills.find(sk => sk.id === 'growth');
@@ -512,7 +512,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
     } else if (action === 'devilhunter_resurrect') {
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
-        const validCards = discard.filter(card => (card.power || 0) <= 10 && !card.isToken);
+        const validCards = discard.filter(card => !card.isToken);
         if (validCards.length > 0) {
             const sorted = [...validCards].sort((a, b) => b.power - a.power);
             const selectedCard = sorted[0];
@@ -697,8 +697,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         let dmgToDef = aP;
         let dmgToAtk = dP;
 
-        if (hasSkill(dC, 'sturdy')) dmgToDef = Math.floor(dmgToDef / 2);
-        if (hasSkill(aC_defend, 'sturdy')) dmgToAtk = Math.floor(dmgToAtk / 2);
+        if (hasSkill(dC, 'sturdy')) {
+            if (dmgToDef > 0) events.push({ type: 'sturdy_block', side: defSide, lane: dLane });
+            dmgToDef = Math.floor(dmgToDef / 2);
+        }
+        if (hasSkill(aC_defend, 'sturdy')) {
+            if (dmgToAtk > 0) events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
+            dmgToAtk = Math.floor(dmgToAtk / 2);
+        }
         if (hasSkill(dC, 'invincible')) {
             if (dmgToDef > 0) events.push({ type: 'invincible_block', side: defSide, lane: dLane });
             dmgToDef = 0;
@@ -709,8 +715,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         // 連撃（ダブルストライク）: 与えるダメージ2倍
-        if (hasSkill(aC, 'double_strike')) dmgToDef *= 2;
-        if (originalTarget && hasSkill(originalTarget, 'double_strike')) dmgToAtk *= 2;
+        if (hasSkill(aC, 'double_strike')) {
+            if (dmgToDef > 0) events.push({ type: 'double_strike_proc', side: attackerSide, lane: l });
+            dmgToDef *= 2;
+        }
+        if (originalTarget && hasSkill(originalTarget, 'double_strike')) {
+            if (dmgToAtk > 0) events.push({ type: 'double_strike_proc', side: defSide, lane: l });
+            dmgToAtk *= 2;
+        }
 
         const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
         if (isOriginalTargetDefender) dmgToAtk = 0; // 防御は反撃ダメージを与えない
@@ -764,7 +776,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
     } else {
         let finalDmg = aP;
-        if (hasSkill(aC, 'double_strike')) finalDmg *= 2;
+        if (hasSkill(aC, 'double_strike')) {
+            if (finalDmg > 0) events.push({ type: 'double_strike_proc', side: attackerSide, lane: l });
+            finalDmg *= 2;
+        }
         defHP -= finalDmg;
         events.push({ type: 'damage_player', side: defSide, amount: finalDmg, source: 'direct_attack' });
         applyExtort(aC, defSide, attackerSide, aLane, events, state);

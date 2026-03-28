@@ -54,6 +54,24 @@ export async function playEvents(events) {
                 await sleep(200);
                 break;
             }
+            case 'sturdy_block': {
+                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                if (cEl) {
+                    createDamagePopup(cEl, '頑丈', '#64748b');
+                }
+                playSound(SOUNDS.seSkill);
+                await sleep(200);
+                break;
+            }
+            case 'double_strike_proc': {
+                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                if (cEl) {
+                    createDamagePopup(cEl, '連撃', '#fbbf24');
+                }
+                playSound(SOUNDS.seSkill);
+                await sleep(200);
+                break;
+            }
             case 'power_change': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 if (board[ev.lane]) {

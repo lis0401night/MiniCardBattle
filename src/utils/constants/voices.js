@@ -116,6 +116,11 @@ export const VOICE_CATEGORIES = {
         death: 'assets/audio/voice/voice_mage_death.wav',
         volume: 1.0
     },
+    'magic': {
+        play: 'assets/audio/voice/voice_magic_play.wav',
+        death: 'assets/audio/voice/voice_magic_death.wav',
+        volume: 1.0
+    },
     'holy': {
         play: 'assets/audio/voice/voice_holy_play.wav',
         death: 'assets/audio/voice/voice_holy_death.wav',

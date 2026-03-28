@@ -158,9 +158,9 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
         }
     } else if (action === 'devilhunter_resurrect') {
-        const maxPow = 10;
+        const maxPow = 999;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
-        const validCards = discard.filter(c => (c.power || 0) <= maxPow && !c.isToken);
+        const validCards = discard.filter(c => !c.isToken);
         const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
         if (validCards.length > 0) {
@@ -171,7 +171,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             } else {
                 if (window.showDiscardSelectionModalReact) {
                     selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card), { title: '復活させるカードを選択', desc: `パワー${maxPow}以下のカードを1枚場に出します。` });
+                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card), { title: '復活させるカードを選択', desc: `カードを1枚場に出します。` });
                     });
                 } else {
                     selectedCard = validCards[0];

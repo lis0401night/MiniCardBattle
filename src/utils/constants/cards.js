@@ -54,7 +54,7 @@ export const CARD_MASTER = [
     { id: 'franken', name: 'オールドヘイヴンの怪物', power: 8, skill: 'standby', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。' },
     { id: 'dragonfire', name: 'ドラゴンファイア', rarity: 2, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'artillery', value: 3 }, { id: 'snipe', value: 8 }], flavor: '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。' },
     { id: 'mage', name: '学院の雷撃魔導士', power: 2, skill: 'spread', skillValue: 2, rarity: 2, voiceCategory: 'human_female_ikemen', flavor: '魔導アカデミーの雷撃魔導士。周囲の魔力を吸収し、雷撃を放つ。' },
-    { id: 'gargoyle', name: 'ガーゴイル', rarity: 2, voiceCategory: 'sword', power: 6, skills: [{ id: 'sturdy' }, { id: 'standby', value: 2 }], flavor: '塔の頂から見下ろす冷たい石の瞳。夜の帳が下りる時、それは獲物を狙う狩人となる。' },
+    { id: 'gargoyle', name: 'ガーゴイル', rarity: 2, voiceCategory: 'stone', power: 6, skills: [{ id: 'sturdy' }, { id: 'standby', value: 2 }], flavor: '塔の頂から見下ろす冷たい石の瞳。夜の帳が下りる時、それは獲物を狙う狩人となる。' },
     { id: 'battlemage', name: 'ギルドの戦闘魔導士', rarity: 2, voiceCategory: 'human_male_warrior', power: 4, skills: [{ id: 'convert', value: 1 }, { id: 'snipe', value: 3 }], flavor: '剣と魔法を操る魔導士。彼らが招集されたということは、困難な任務であることを意味する' },
     { id: 'warlock', name: '煉獄の拷問官', power: 4, skills: [{ id: 'sacrifice', value: 4 }, { id: 'berserk', value: 4 }, { id: 'spread', value: 4 }], rarity: 2, voiceCategory: 'undead', flavor: '燃え盛る炎の鞭を振るう魔界の拷問官。その一振りは敵を焼き払い、自らの魂さえも劫火の糧とする。' },
     { id: 'dealer', name: 'デビル・ディーラー', power: 5, skills: [{ id: 'sacrifice', value: 2 }, { id: 'draw', value: 4 }], rarity: 2, flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。' },
