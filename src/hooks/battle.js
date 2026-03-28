@@ -362,7 +362,7 @@ export function executeSkillFromConfirm() {
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
  */
-export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true) {
+export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true, buttonText = '配置終了') {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     // AIの場合：
     if (owner === 'red') {
@@ -423,6 +423,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         GameState.placementToken = tokenCard || null;
         GameState.placementSelectedLanes = [];
         GameState.placementCheckConstraints = checkConstraints;
+        GameState.placementButtonText = buttonText;
         updateCardDetail(null);
 
         const cleanUp = () => {
@@ -430,6 +431,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             GameState.placementCount = 0;
             GameState.placementToken = null;
             GameState.placementCheckConstraints = true;
+            GameState.placementButtonText = '配置終了';
             const result = [...GameState.placementSelectedLanes];
             GameState.placementSelectedLanes = [];
             window.handlePlacementLaneClick = null;
