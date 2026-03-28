@@ -1,4 +1,4 @@
-import { createDamagePopup, playSound, sleep } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -215,7 +215,7 @@ export async function playEvents(events) {
                 const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
                 if (hand.length < 5) {
                     if (!ev.card.uid) {
-                        ev.card.uid = `${ev.side}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                        ev.card.uid = `${ev.side}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}`;
                     }
                     hand.push(ev.card);
                 }

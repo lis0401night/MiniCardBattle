@@ -229,6 +229,8 @@ export function goBackFromSelect() {
         GameState.appState = 'select_player';
         initSelectScreen(false);
         switchScreen('screen-select');
+    } else if (GameState.gameMode === 'online_deck_edit') {
+        switchScreen('screen-online-menu');
     } else {
         switchScreen('screen-mode-select');
     }
@@ -288,6 +290,10 @@ export function goBackFromDeckEdit() {
         GameState.dungeonState = 'select_opponent';
         switchScreen('screen-battle-dungeon');
         if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
+    } else if (GameState.gameMode === 'online_deck_edit') {
+        GameState.appState = 'select_player';
+        initSelectScreen(false);
+        switchScreen('screen-select');
     } else {
         // フリー対戦など：ステージ選択に戻る
         GameState.appState = 'select_stage';
@@ -562,8 +568,8 @@ export function confirmCharSelect() {
         } else if (GameState.gameMode === 'event_satan') {
             // 高難易度サタン戦専用の導入へ
             initEventSatanMode(GameState.pendingCharId);
-        } else if (GameState.gameMode === 'defense_register') {
-            // 防衛登録：次はステージ選択
+        } else if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
+            // 防衛登録 / オンライン：次はステージ選択
             GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
             GameState.appState = 'select_stage';
             initStageSelectScreen();
@@ -616,8 +622,8 @@ export function confirmStageSelect(stageId) {
         GameState.selectedStageId = stageId;
     }
 
-    if (GameState.gameMode === 'defense_register') {
-        // 防衛登録：ステージ選択の次はデッキ編集
+    if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
+        // 防衛登録・オンライン：ステージ選択の次はデッキ編集
         startBattleFlow();
     } else {
         performFadeTransition(() => {

@@ -1,6 +1,6 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
@@ -42,7 +42,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
     if (skillId === 'metamorph') {
         // 全マスタカード（トークン含む）からランダムに1枚選択
-        const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
+        const randomMaster = CARD_MASTER[Math.floor(getSeededRandom() * CARD_MASTER.length)];
 
         // 演出
         playSkillSound(skillId);
@@ -154,7 +154,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 if (d.length > 0) {
                     const card = d.shift();
                     // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）
-                    card.uid = `${p}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                    card.uid = `${p}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}`;
                     h.push(card);
                 }
             }
@@ -290,7 +290,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         await playEvents(events);
 
     } else if (skillId === 'fate') {
-        const roll = Math.floor(Math.random() * 6) + 1;
+        const roll = Math.floor(getSeededRandom() * 6) + 1;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, '運命', '#facc15');
         await sleep(500);
         
@@ -486,7 +486,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 restoredCard.basePower = restoredCard.power;
                 restoredCard.currentPower = restoredCard.power;
                 
-                hand.push({ ...restoredCard, uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` });
+                hand.push({ ...restoredCard, uid: `${o}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}` });
                 
                 playSound(SOUNDS.seDraw);
                 updateDeckDisplay(o);
@@ -538,7 +538,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     filter: c.filter,
                     rarity: c.rarity || 1,
                     voiceCategory: c.voiceCategory,
-                    uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+                    uid: `${o}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}`
                 };
                 h.push(newToken);
             }
@@ -567,7 +567,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     power: 1, basePower: 1, currentPower: 1,
                     imgUrl: o === 'blue' ? getCardImgUrl(voidTpl) : '',
                     rarity: 1,
-                    uid: `${o}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+                    uid: `${o}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}`
                 };
                 h.push(newToken);
             }
@@ -709,15 +709,15 @@ async function triggerExtortInAction(c, o) {
             
             if (validIndices.length === 0) break;
 
-            const randIndex = validIndices[Math.floor(Math.random() * validIndices.length)];
+            const randIndex = validIndices[Math.floor(getSeededRandom() * validIndices.length)];
             const discarded = eHandRef.splice(randIndex, 1)[0];
             if (eD) eD.push(discarded);
 
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {
                 ...voidTpl,
-                id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_extUI${i}`,
-                uid: `${oppSide}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_voidextUI${i}`,
+                id: `token_void_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}_extUI${i}`,
+                uid: `${oppSide}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}_voidextUI${i}`,
                 filter: voidTpl.filter,
                 power: voidTpl.power,
                 currentPower: voidTpl.power,

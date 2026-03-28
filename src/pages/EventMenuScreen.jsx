@@ -3,7 +3,7 @@ import React from 'react';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { startHighDifficulty, showDefenseMenu } from '../hooks/uiMainCore.js';
+import { startHighDifficulty, showDefenseMenu, startGameMode } from '../hooks/uiMainCore.js';
 
 export default function EventMenuScreen() {
   const images = UI_IMAGES || {};
@@ -25,6 +25,13 @@ export default function EventMenuScreen() {
             style={{ backgroundImage: `url('${images.EVENT_DEFENSE || ''}')` }}
           ></div>
           <div className="menu-btn-label">防衛戦</div>
+        </div>
+        <div className="menu-img-btn" onClick={() => startGameMode?.('battle_dungeon')}>
+          <div
+            className="menu-img-bg"
+            style={{ backgroundImage: `url('${images.MENU_DUNGEON || ''}')`, backgroundColor: '#475569' }}
+          ></div>
+          <div className="menu-btn-label">試練の宮殿</div>
         </div>
       </div>
       <div

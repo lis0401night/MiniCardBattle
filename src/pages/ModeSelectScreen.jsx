@@ -3,6 +3,8 @@ import React from 'react';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../hooks/uiGallery.js';
 import { showRules, showOptions, startGameMode, showEventMenu } from '../hooks/uiMainCore.js';
+import { switchScreen, playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function ModeSelectScreen() {
   const images = UI_IMAGES || {};
@@ -41,12 +43,13 @@ export default function ModeSelectScreen() {
           ></div>
           <div className="menu-btn-label">イベント</div>
         </div>
-        <div className="menu-img-btn" onClick={() => startGameMode?.('battle_dungeon')}>
+
+        <div className="menu-img-btn" onClick={() => { playSound(SOUNDS?.seClick); switchScreen('screen-online-menu'); }}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_DUNGEON || ''}')`, backgroundColor: '#475569' }}
+            style={{ backgroundColor: '#0284c7' }}
           ></div>
-          <div className="menu-btn-label">試練の宮殿</div>
+          <div className="menu-btn-label">オンライン対戦</div>
         </div>
         <div
           className="menu-img-btn"

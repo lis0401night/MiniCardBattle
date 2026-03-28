@@ -1,4 +1,4 @@
-import { hasSkill } from '../utils/gameUtils.js';
+import { hasSkill, getSeededRandom } from '../utils/gameUtils.js';
 import { simulateMove } from './ai_normal.js';
 import { GameState } from './gameState.js';
 
@@ -64,7 +64,7 @@ export function getEasyDecision() {
     const lethalMoves = allCandidates.filter(c => c.playerHP <= 0);
     if (lethalMoves.length > 0) {
         console.log("Easy AI: Lethal detected!");
-        return lethalMoves[Math.floor(Math.random() * lethalMoves.length)];
+        return lethalMoves[Math.floor(getSeededRandom() * lethalMoves.length)];
     }
 
     // 2. 自滅回避 (自分のHPが0になる移動を除外)
@@ -78,7 +78,7 @@ export function getEasyDecision() {
         const survivalMoves = safeCandidates.filter(c => c.enemyHP > 0);
         if (survivalMoves.length > 0) {
             console.log("Easy AI: Survival move prioritized!");
-            return survivalMoves[Math.floor(Math.random() * survivalMoves.length)];
+            return survivalMoves[Math.floor(getSeededRandom() * survivalMoves.length)];
         }
     }
 
@@ -86,9 +86,9 @@ export function getEasyDecision() {
     // パス以外の有効な行動（手札を出す）が存在するなら、必ずそれを選択する（手札があるのにパスはしない）
     const playMoves = safeCandidates.filter(c => c.index !== -1);
     if (playMoves.length > 0) {
-        return playMoves[Math.floor(Math.random() * playMoves.length)];
+        return playMoves[Math.floor(getSeededRandom() * playMoves.length)];
     }
 
     // もし手札がない等でパス以外の手段がなければ、仕方なくパスする
-    return safeCandidates[Math.floor(Math.random() * safeCandidates.length)];
+    return safeCandidates[Math.floor(getSeededRandom() * safeCandidates.length)];
 }

@@ -1,4 +1,5 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { getSeededRandom } from '../utils/gameUtils.js';
 import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
 
 /**
@@ -42,7 +43,7 @@ export function processDestructionTriggers(state, events) {
                             side,
                             lane: i,
                             card: {
-                                id: `sp_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
+                                id: `sp_${Date.now()}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
                                 owner: side,
                                 ...tL,
                                 imgUrl: `assets/cards/card_${tokenId}.jpg`,
@@ -190,8 +191,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
                         const voidToken = {
                             ...voidTpl,
-                            id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_vp${i}`,
-                            uid: `${oppOwner}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_voidvp${i}`,
+                            id: `token_void_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}_vp${i}`,
+                            uid: `${oppOwner}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}_voidvp${i}`,
                             filter: voidTpl.filter,
                             power: voidTpl.power,
                             currentPower: voidTpl.power,
@@ -876,7 +877,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
                 activated = true;
             }
 
-            const randIndex = validIndices[Math.floor(Math.random() * validIndices.length)];
+            const randIndex = validIndices[Math.floor(getSeededRandom() * validIndices.length)];
             const discarded = oppHand.splice(randIndex, 1)[0];
             if (!discarded.isToken) {
                 const masterData = CARD_MASTER.find(m => m.id === (discarded.baseId || discarded.id));
@@ -897,8 +898,8 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {
                 ...voidTpl,
-                id: `token_void_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_extort${i}`,
-                uid: `${oppSide}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}_voidext${i}`,
+                id: `token_void_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}_extort${i}`,
+                uid: `${oppSide}_${Date.now()}_${getSeededRandom().toString(36).substr(2, 5)}_voidext${i}`,
                 filter: voidTpl.filter,
                 power: voidTpl.power,
                 currentPower: voidTpl.power,

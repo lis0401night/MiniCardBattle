@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GameState } from '../../hooks/gameState.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { playSound, sleep } from '../../utils/gameUtils.js';
+import { playSound, sleep, getSeededRandom } from '../../utils/gameUtils.js';
+import { getIsHost } from '../../hooks/multiplayer.js';
 
 export default function TurnOrderOverlay({ startAnim, onComplete }) {
     const [isVisible, setIsVisible] = useState(false);
@@ -27,7 +28,15 @@ export default function TurnOrderOverlay({ startAnim, onComplete }) {
             if (!mounted) return;
 
             // 結果の決定
-            const isFirst = Math.random() < 0.5;
+            let isFirst = false;
+            if (GameState.gameMode === 'online') {
+                const hostGoesFirst = getSeededRandom() < 0.5;
+                const iAmHost = getIsHost();
+                isFirst = (hostGoesFirst && iAmHost) || (!hostGoesFirst && !iAmHost);
+            } else {
+                isFirst = getSeededRandom() < 0.5;
+            }
+
             GameState.firstPlayer = isFirst ? 'blue' : 'red';
             setPlayerFirst(isFirst);
 

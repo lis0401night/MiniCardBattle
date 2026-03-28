@@ -3,7 +3,7 @@ import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import { ownedPlaymats, setOwnedPlaymats } from '../utils/constants/playmats.js';
-import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID } from '../utils/gameUtils.js';
+import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
 import { GameState } from './gameState.js';
@@ -17,6 +17,29 @@ import { showConfirmModal, showAlertModal } from './uiModals.js';
 
 export function generateDeck(owner, config, sessionId) {
     let deck = [];
+
+    // オンラインモード：事前に渡された専用デッキ配列を使用する
+    if (GameState.gameMode === 'online' && config && Array.isArray(config.deck)) {
+        deck = config.deck.map((t, i) => {
+            const isPremium = false; // Todo: プレミアム同期が必要なら後で追加
+            const tempObj = { ...t, isPremium: isPremium };
+            const imgUrl = getCardImgUrl(tempObj);
+            return {
+                ...t,
+                baseId: t.id,
+                id: `${owner}_${sessionId}_${i}`,
+                owner: owner,
+                imgUrl: imgUrl,
+                power: t.power,
+                basePower: t.power,
+                currentPower: t.power,
+                isPremium: isPremium,
+                skills: t.skills ? t.skills.map(s => ({ ...s })) : undefined
+            };
+        });
+        return deck.sort(() => getSeededRandom() - 0.5);
+    }
+
     if (owner === 'blue') {
         deck = GameState.playerDeckSelection.map((t, i) => {
             const isPremium = GameState.premiumCards.includes(t.id);
@@ -84,7 +107,7 @@ export function generateDeck(owner, config, sessionId) {
             });
         });
     }
-    return deck.sort(() => Math.random() - 0.5);
+    return deck.sort(() => getSeededRandom() - 0.5);
 }
 
 /**
@@ -213,6 +236,12 @@ export function saveDeck() {
         // 防衛デッキはIDの配列として保存（サーバー送信形式に合わせる）
         const defenseDeck = GameState.playerDeckSelection.map(c => c.id);
         localStorage.setItem('mini_card_battle_deck_defense', JSON.stringify(defenseDeck));
+    } else if (GameState.gameMode === 'online_deck_edit') {
+        const payload = {
+            leaderId: GameState.playerConfig?.id || 'android',
+            deck: GameState.playerDeckSelection.map(c => c.id)
+        };
+        localStorage.setItem('mini_card_battle_online_deck', JSON.stringify(payload));
     } else if (GameState.playerConfig) {
         const key = `mini_card_battle_deck_${GameState.playerConfig.id}`;
         localStorage.setItem(key, JSON.stringify(GameState.playerDeckSelection));

@@ -26,6 +26,7 @@ import StageSelectScreen from './pages/StageSelectScreen.jsx';
 import DialogueScreen from './pages/DialogueScreen.jsx';
 import BattleScreen from './pages/BattleScreen.jsx';
 import BattleDungeonScreen from './pages/BattleDungeonScreen.jsx';
+import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
 import { playSound, sleep, isTransitioning, switchScreen, setSwitchScreenHook, executeSwitchScreen, hasSkill } from './utils/gameUtils.js';
 import { SOUNDS } from './utils/sounds.js';
 import { checkWinCondition, discardCard, endTurnLogic, playCard, returnToTitle, showEnemySkillConfirm, showSkillConfirm, endPlayerTurn, closeSkillConfirm, executeSkillFromConfirm, showSpeechBubble } from './hooks/battle.js';
@@ -122,6 +123,7 @@ export default function App() {
       {currentScreen === 'screen-dialogue' && <DialogueScreen />}
       {currentScreen === 'screen-battle' && <BattleScreen />}
       {currentScreen === 'screen-battle-dungeon' && <BattleDungeonScreen />}
+      {currentScreen === 'screen-online-menu' && <OnlineMenuScreen />}
       {currentScreen === 'screen-continue' && <ContinueScreen />}
       {currentScreen === 'screen-ending-illust' && <EndingScreen />}
       <GlobalModals />

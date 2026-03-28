@@ -1,7 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
@@ -223,7 +223,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 }
             } else {
                 while (dc < 2 && h.length > 0) {
-                    let rIdx = Math.floor(Math.random() * h.length);
+                    let rIdx = Math.floor(getSeededRandom() * h.length);
                     await discardCard(owner, h.splice(rIdx, 1)[0]);
                     dc++;
                 }

@@ -135,6 +135,8 @@ export default function DeckEditorScreen() {
           }
         }
       }
+    } else if (GameState.gameMode === 'online_deck_edit') {
+        switchScreen('screen-online-menu');
     } else {
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {
@@ -307,7 +309,7 @@ export default function DeckEditorScreen() {
           style={{ marginTop: '10px', width: '100%', opacity: deckSelection.length === DECK_SIZE ? 1 : 0.5 }}
           onClick={handleFinish}
         >
-          {isDefenseConfig ? '編成完了' : 'バトル開始！'}
+          {isDefenseConfig || GameState.gameMode === 'online_deck_edit' ? '編成完了' : 'バトル開始！'}
         </button>
       </div>
 

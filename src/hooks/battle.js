@@ -6,12 +6,13 @@ import { incrementStat } from '../utils/constants/achievements.js';
 import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
-import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID } from '../utils/gameUtils.js';
+import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
 import { generateDeck } from './deck.js';
 import { applyActiveSkillLogic, calculateCombatPhase, applySingleCombat } from './engine.js';
+import { getIsHost, cachedRoomData, sendOnlineAction, listenToRoomActions, stopListeningToRoomActions } from './multiplayer.js';
 import { GameState } from './gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import { resolveActiveSkillEffect, triggerStartTurnPassive } from './skillLogic.js';
@@ -22,11 +23,30 @@ import { showConfirmModal, showAlertModal } from './uiModals.js';
 import { winDungeonBattle, loseDungeonBattle, retireDungeon } from './battleDungeon.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 
+export let pendingChoiceResolver = null;
+
 // ==========================================
 // イベント駆動型タスクキューエンジン (State Machine Core)
 // ==========================================
 
-export async function dispatchBattleAction(action) {
+export async function dispatchBattleAction(action, isRemote = false) {
+    if (GameState.gameMode === 'online' && !isRemote) {
+        // ローカルのアクションは直接キューに入れず、Firebaseのルームへ送信
+        await sendOnlineAction(action);
+        return;
+    }
+
+    if (action.type === 'submitChoice') {
+        if (pendingChoiceResolver) {
+            pendingChoiceResolver(action.choiceData);
+            pendingChoiceResolver = null;
+        } else {
+            if (!GameState.pendingChoices) GameState.pendingChoices = [];
+            GameState.pendingChoices.push(action.choiceData);
+        }
+        return; // Do not process via queue, evaluate synchronously
+    }
+
     GameState.actionQueue.push(action);
     if (!GameState.isProcessing) {
         await processActionQueue();
@@ -49,9 +69,13 @@ export async function processActionQueue() {
             await endTurnLogic(action.owner);
         } else if (action.type === 'endTurn') {
             await endTurnLogic(action.owner);
+        } else if (action.type === 'leaderSkill') {
+            await activateLeaderSkill(action.owner);
         } else if (action.type === 'enemyTurn') {
-            await sleep(500);
-            await executeEnemyAI();
+            if (GameState.gameMode !== 'online') {
+                await sleep(500);
+                await executeEnemyAI();
+            }
         }
         
         if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
@@ -67,7 +91,8 @@ export async function processActionQueue() {
 
 export function prepareBattle() {
     switchScreen('screen-loading');
-    const sessionId = Date.now();
+    const isOnline = GameState.gameMode === 'online';
+    const sessionId = isOnline ? (cachedRoomData?.battleSeed || Date.now()) : Date.now();
     let isFinished = false;
 
     // プレイマット設定の引き継ぎロード
@@ -80,8 +105,34 @@ export function prepareBattle() {
     }
 
     try {
-        GameState.playerDeck = generateDeck('blue', GameState.playerConfig, sessionId);
-        GameState.enemyDeck = generateDeck('red', GameState.enemyConfig, sessionId);
+        setRNGSeed(sessionId); // シードを完全に固定して初期化
+
+        if (isOnline) {
+            const isHost = getIsHost();
+            const hostConfig = isHost ? GameState.playerConfig : GameState.enemyConfig;
+            const clientConfig = isHost ? GameState.enemyConfig : GameState.playerConfig;
+
+            // オンライン時はホスト -> クライアントの順でデッキを生成し、乱数消費順を世界共通に固定する
+            const hostDeck = generateDeck(isHost ? 'blue' : 'red', hostConfig, sessionId);
+            const clientDeck = generateDeck(isHost ? 'red' : 'blue', clientConfig, sessionId);
+
+            GameState.playerDeck = isHost ? hostDeck : clientDeck;
+            GameState.enemyDeck = isHost ? clientDeck : hostDeck;
+            
+            // アクション受信リスナー起動
+            listenToRoomActions((snapshotVal) => {
+                const { action, actor } = snapshotVal;
+                // 自分自身が出したアクションか判定
+                const isMe = (actor === (getIsHost() ? 'host' : 'client'));
+                // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
+                action.owner = isMe ? 'blue' : 'red';
+                
+                dispatchBattleAction(action, true);
+            });
+        } else {
+            GameState.playerDeck = generateDeck('blue', GameState.playerConfig, sessionId);
+            GameState.enemyDeck = generateDeck('red', GameState.enemyConfig, sessionId);
+        }
     } catch (e) {
         console.error("Deck generation error:", e);
         // エラー時も空のデッキで続行を試みる（フリーズ回避）
@@ -259,7 +310,7 @@ export function showSpeechBubble(target) {
     const iconEl = document.getElementById(target === 'blue' ? 'player-icon' : 'enemy-icon');
 
     if (bubble) {
-        bubble.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+        bubble.innerText = phrases[Math.floor(getSeededRandom() * phrases.length)];
         bubble.classList.add('active');
 
         // アイコンをダメージ画像に変更
@@ -351,12 +402,12 @@ export function showEnemySkillConfirm() {
 
 export function closeSkillConfirm() { playSound(SOUNDS.seClick); if (window.closeSkillConfirmModalReact) window.closeSkillConfirmModalReact(); }
 export function executeSkillFromConfirm() {
-    // 実行直前にもう一度チェック（モーダル表示中に状態が変わった可能性への備え）
+    // 実行直前にもう一度チェック
     if (GameState.isProcessing || GameState.isBattleEnded || GameState.currentTurn !== 'player') {
         return;
     }
     closeSkillConfirm();
-    activateLeaderSkill('blue');
+    dispatchBattleAction({ type: 'leaderSkill', owner: 'blue' });
 }
 
 /**
@@ -364,6 +415,14 @@ export function executeSkillFromConfirm() {
  */
 export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true, buttonText = '配置終了') {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        return new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+    }
+
     // AIの場合：
     if (owner === 'red') {
         // すでにシミュレーションで決定された配置があればそれを使う
@@ -502,6 +561,17 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
 
     if (occupiedLanes.length === 0) return [];
 
+    // ターゲット数以下の場合は全選択
+    if (occupiedLanes.length <= count) return occupiedLanes;
+
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        return new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+    }
+
     // AIの場合：最もパワーが高いカードを選択（同値の場合は左＝インデックスが小さい方を優先）
     if (owner === 'red' || owner === 'blue') {
         const sortedLanes = [...occupiedLanes].sort((a, b) => {
@@ -512,9 +582,6 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
         if (owner === 'red') return sortedLanes.slice(0, count);
         // プレイヤー側で自動選択が必要な場合（現状は手動だが、一貫性のため）
     }
-
-    // ターゲット数以下の場合は全選択
-    if (occupiedLanes.length <= count) return occupiedLanes;
 
     return new Promise((resolve) => {
         GameState.isEnemyTargetMode = true;
@@ -547,6 +614,11 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
             window.handleEnemyLaneClick = null;
             window.finishEnemySelection = null;
             updateCardDetail(null);
+
+            if (GameState.gameMode === 'online') {
+                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: result });
+            }
+
             if (updateBattleUIHook) updateBattleUIHook();
             resolve(result);
         };
@@ -567,6 +639,17 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
 
     if (occupiedLanes.length === 0) return [];
 
+    // ターゲット数以下の場合は全選択
+    if (occupiedLanes.length <= count) return occupiedLanes;
+
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        return new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+    }
+
     // AIの場合：パワーが最も高いカード優先
     if (owner === 'red') {
         const sortedLanes = [...occupiedLanes].sort((a, b) => {
@@ -576,8 +659,6 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
         });
         return sortedLanes.slice(0, count);
     }
-
-    if (occupiedLanes.length <= count) return occupiedLanes;
 
     return new Promise((resolve) => {
         GameState.isAlliedTargetMode = true;
@@ -610,6 +691,11 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
             window.handleAlliedLaneClick = null;
             window.finishAlliedSelection = null;
             updateCardDetail(null);
+
+            if (GameState.gameMode === 'online') {
+                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: result });
+            }
+
             if (updateBattleUIHook) updateBattleUIHook();
             resolve(result);
         };
@@ -625,9 +711,17 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
     const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
     if (hand.length === 0) return [];
 
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        return new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+    }
+
     // AIの場合：ランダムにカードを選択
     if (owner === 'red') {
-        const indices = hand.map((_, i) => i).sort(() => Math.random() - 0.5);
+        const indices = hand.map((_, i) => i).sort(() => getSeededRandom() - 0.5);
         const selectedCount = Math.min(count, hand.length);
         return indices.slice(0, selectedCount);
     }
@@ -659,6 +753,11 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
         window.finishHandSelection = () => {
             playSound(SOUNDS.seClick);
             const indices = cleanUp();
+            
+            if (GameState.gameMode === 'online') {
+                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: indices });
+            }
+
             resolve(indices);
         };
     });
@@ -667,6 +766,14 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
  */
 export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
     if (!choices || choices.length === 0) return null;
+
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        return new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+    }
 
     // AIの場合
     if (owner === 'red') {
@@ -683,7 +790,7 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
         // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
         if (localAiLevel <= 1) {
             // Easy: ランダム
-            const shuffled = [...choices].sort(() => Math.random() - 0.5);
+            const shuffled = [...choices].sort(() => getSeededRandom() - 0.5);
             return shuffled.slice(0, Math.min(maxChoices, choices.length));
         } else {
             // Normal/Hard: ここで簡易的にシミュレーション
@@ -720,11 +827,14 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
     return new Promise((resolve) => {
         if (window.showSkillChoiceModalReact) {
             window.showSkillChoiceModalReact(choices, (selectedSkill) => {
+                if (GameState.gameMode === 'online') {
+                    sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: selectedSkill });
+                }
                 resolve(selectedSkill); // App returns Array here automatically handled in UI
             }, maxChoices);
         } else {
             // フォールバック（通常は発生しない）
-            const shuffled = [...choices].sort(() => Math.random() - 0.5);
+            const shuffled = [...choices].sort(() => getSeededRandom() - 0.5);
             resolve(shuffled.slice(0, Math.min(maxChoices, choices.length)));
         }
     });
@@ -936,7 +1046,7 @@ export function drawCard(owner) {
     }
 
     if (d.length === 0 && ds.length > 0) {
-        d.push(...ds.sort(() => Math.random() - 0.5));
+        d.push(...ds.sort(() => getSeededRandom() - 0.5));
         ds.length = 0;
         playSound(SOUNDS.seSkill);
         showDeckRefreshEffect(owner);
@@ -1121,7 +1231,7 @@ export async function determineTurnOrder() {
         });
     } else {
         // フォールバック
-        GameState.firstPlayer = Math.random() < 0.5 ? 'blue' : 'red';
+        GameState.firstPlayer = getSeededRandom() < 0.5 ? 'blue' : 'red';
         GameState.isProcessing = false;
         startTurn(GameState.firstPlayer);
     }
@@ -1370,7 +1480,7 @@ export function endBattle() {
                 });
 
                 if (availableCards.length > 0) {
-                    const rewardCardId = availableCards[Math.floor(Math.random() * availableCards.length)];
+                    const rewardCardId = availableCards[Math.floor(getSeededRandom() * availableCards.length)];
                     if (window.showCardRewardReact) {
                         window.showCardRewardReact(rewardCardId);
                     }
@@ -1406,6 +1516,7 @@ export function returnToTitle() {
             }).catch(err => console.error("Failed to update enemy points on retire:", err));
         }
 
+        stopListeningToRoomActions();
         stopAllBGM();
         playSound(SOUNDS.bgmTitle);
         GameState.appState = 'title';

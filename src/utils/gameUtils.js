@@ -9,7 +9,7 @@ import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
 
 export function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(getSeededRandom() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
@@ -111,6 +111,34 @@ export function stopAllBGM() {
     });
 }
 export const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+// PRNG (Pseudo-Random Number Generator) for Multiplayer Sync
+let currentRNG = Math.random;
+
+export function setRNGSeed(seed) {
+    let a = 0;
+    if (typeof seed === 'string') {
+        for (let i = 0; i < seed.length; i++) {
+            a = Math.imul(31, a) + seed.charCodeAt(i) | 0;
+        }
+    } else {
+        a = seed;
+    }
+    currentRNG = function() {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+
+export function resetRNG() {
+    currentRNG = Math.random;
+}
+
+export function getSeededRandom() {
+    return currentRNG();
+}
 
 // 画面遷移
 export let isTransitioning = false;
@@ -238,7 +266,7 @@ export function getOrCreateUUID() {
         } else {
             // 代替の簡易UUID生成
             uuid = 'xxxx-xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function (c) {
-                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                const r = getSeededRandom() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
         }

@@ -1,4 +1,4 @@
-import { hasSkill } from '../utils/gameUtils.js';
+import { hasSkill, getSeededRandom } from '../utils/gameUtils.js';
 import { applyActiveSkillLogic, applyLeaderSkillLogic, calculateCombatPhase, applyPassiveSkillLogic } from './engine.js';
 import { GameState } from './gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -245,7 +245,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg);
 
     // ⑦ ⑥も同列ならその中からランダム
-    const finalDecision = bestGroup[Math.floor(Math.random() * bestGroup.length)];
+    const finalDecision = bestGroup[Math.floor(getSeededRandom() * bestGroup.length)];
 
     console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg);
     return finalDecision;
