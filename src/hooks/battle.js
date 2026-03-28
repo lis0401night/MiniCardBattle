@@ -7,7 +7,7 @@ import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray } from '../utils/gameUtils.js';
-import { setPlayerReadyOnly } from './multiplayer.js';
+import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multiplayer.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
@@ -784,7 +784,46 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
             resolve(indices);
         };
     });
-}/**
+}
+
+/**
+ * 墓地から選択する共有ユーティリティ（復活、回収等）
+ */
+export async function waitPlayerDiscardSelection(validCards, maxPow, owner, title, desc) {
+    if (!validCards || validCards.length === 0) return null;
+
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        const choiceIdx = await new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+        return validCards[choiceIdx] || validCards[0];
+    }
+
+    // AIの場合
+    if (owner === 'red') {
+        const sorted = [...validCards].sort((a, b) => b.power - a.power);
+        return sorted[0];
+    }
+
+    // プレイヤーの場合
+    if (window.showDiscardSelectionModalReact) {
+        const card = await new Promise(resolve => {
+            window.showDiscardSelectionModalReact(validCards, maxPow, (c) => resolve(c), { title, desc });
+        });
+        
+        if (GameState.gameMode === 'online') {
+            const idx = validCards.findIndex(c => c.id === card.id);
+            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: idx !== -1 ? idx : 0 });
+        }
+        return card;
+    } else {
+        return validCards[0];
+    }
+}
+
+/**
  * 召喚時スキル「選択」の選択を待機する
  */
 export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
@@ -1354,6 +1393,9 @@ export function endBattle() {
 
     if (GameState.gameMode === 'online') {
         setPlayerReadyOnly(false);
+        if (getIsHost()) {
+            clearActionQueueAndRegenerateSeed();
+        }
     }
 
     // 全モード共通：実績用の勝利カウントアップ

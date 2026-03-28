@@ -238,6 +238,18 @@ export async function setPlayerReadyOnly(isReadyStatus) {
 }
 
 /**
+ * リマッチに向けてアクションキューを初期化し、新しいシードをセットする（ホスト専用）
+ */
+export async function clearActionQueueAndRegenerateSeed() {
+    if (!currentRoomId || !database || !isHost) return;
+    const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+    await update(roomRef, {
+        actionQueue: null,
+        battleSeed: Date.now()
+    });
+}
+
+/**
  * チャットメッセージを送信
  */
 export async function sendChatMessage(text, senderName) {

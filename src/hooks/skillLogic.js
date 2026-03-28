@@ -2,7 +2,7 @@ import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -413,19 +413,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
 
         if (validCards.length > 0) {
-            let selectedCard = null;
-            if (o === 'red') {
-                const sorted = [...validCards].sort((a, b) => b.power - a.power);
-                selectedCard = sorted[0];
-            } else {
-                if (window.showDiscardSelectionModalReact) {
-                    selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card), { title: '復活させるカードを選択', desc: `パワー${maxPow}以下のカードを1枚場に出します。` });
-                    });
-                } else {
-                    selectedCard = validCards[0];
-                }
-            }
+            const selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, o, '復活させるカードを選択', `パワー${maxPow}以下のカードを1枚場に出します。`);
 
             if (selectedCard) {
                 // 配置先を選ばせる (制約チェックはしない)
@@ -461,19 +449,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const validCards = discard.filter(card => !card.isToken);
 
         if (validCards.length > 0) {
-            let selectedCard = null;
-            if (o === 'red') {
-                const sorted = [...validCards].sort((a, b) => b.power - a.power);
-                selectedCard = sorted[0];
-            } else {
-                if (window.showDiscardSelectionModalReact) {
-                    selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, 999, (card) => resolve(card), { title: '回収するカードを選択', desc: '墓地からカードを1枚選び、手札に加えます。' });
-                    });
-                } else {
-                    selectedCard = validCards[0];
-                }
-            }
+            const selectedCard = await waitPlayerDiscardSelection(validCards, 999, o, '回収するカードを選択', '墓地からカードを1枚選び、手札に加えます。');
 
             if (selectedCard) {
                 const actualIdx = discard.indexOf(selectedCard);

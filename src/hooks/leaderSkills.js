@@ -3,7 +3,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
 import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
@@ -161,19 +161,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
         if (validCards.length > 0) {
-            let selectedCard = null;
-            if (!isBlue) {
-                const sorted = [...validCards].sort((a, b) => b.power - a.power);
-                selectedCard = sorted[0];
-            } else {
-                if (window.showDiscardSelectionModalReact) {
-                    selectedCard = await new Promise(resolve => {
-                        window.showDiscardSelectionModalReact(validCards, maxPow, (card) => resolve(card), { title: '復活させるカードを選択', desc: `カードを1枚場に出します。` });
-                    });
-                } else {
-                    selectedCard = validCards[0];
-                }
-            }
+            const selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, owner, '復活させるカードを選択', 'カードを1枚場に出します。');
             if (!selectedCard) return;
 
             // 復活させる対象を engine に伝えるために無理くり渡しちゃうか、UI介入でここまで決まったら
