@@ -291,7 +291,7 @@ export const CHARACTERS = {
     },
     witch: {
         id: 'witch', stageId: 'witch', name: '時駆けの魔女 クロエ',
-        desc: '普段は魔導アカデミーの生徒だが、自身の強大すぎる魔力が暴走すると別の時間軸へ飛ばされてしまう特異体質。面倒事には一切関わろうとしない。',
+        desc: '魔導アカデミーの生徒。自身の強大すぎる魔力が暴走すると別の時間軸へ飛ばされてしまう特異体質。面倒事には一切関わろうとしない。',
         easeOfUse: 1,
         filter: 'none', cardType: 'set1', cardBg: 'bg3',
         image: 'assets/characters/char_witch.png', imageLose: 'assets/characters/char_witch_lose.png', icon: 'assets/icons/icon_witch.png', imageEnding: 'assets/characters/char_witch_ending.png', color: '#db2777',
