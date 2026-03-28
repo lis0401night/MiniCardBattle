@@ -334,7 +334,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
-                if (targetLane !== -1 && b[targetLane] === null) {
+                if (targetLane !== -1) {
                     const newToken = {
                         ...sTC,
                         id: `sm_sim_${Date.now()}_${i}`,
@@ -376,7 +376,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
-                if (targetLane !== -1 && b[targetLane] === null) {
+                if (targetLane !== -1) {
                     const newToken = {
                         ...tC,
                         id: `cl_sim_${Date.now()}_${i}`,

@@ -122,10 +122,12 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         const emptyLanesAfterPlay = [0, 1, 2].filter(idx => tempBoard[idx] === null);
 
                         let cardTokenLanePatterns = [null];
+                        const cardHasSkill = (sk) => hasSkill(card, sk) || (Array.isArray(card.choices) && card.choices.some(s => s.id === sk));
+
                         if (emptyLanesAfterPlay.length > 0) {
-                            if (hasSkill(card, 'resurrect') || hasSkill(card, 'summon')) {
+                            if (cardHasSkill('resurrect') || cardHasSkill('summon')) {
                                 cardTokenLanePatterns = emptyLanesAfterPlay.map(idx => [idx]);
-                            } else if (hasSkill(card, 'clone')) {
+                            } else if (cardHasSkill('clone')) {
                                 let cloneCount = 1;
                                 if (card.skill === 'clone') cloneCount = card.skillValue || 1;
                                 else if (card.skills) {
