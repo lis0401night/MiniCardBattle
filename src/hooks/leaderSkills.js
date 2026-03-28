@@ -136,7 +136,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl(tokenCard) || `assets/cards/card_${tokenCard.id}.jpg`;
             if (b[l]) { await discardCard(owner, b[l], l); }
-            b[l] = { id: `dng_tk_${Date.now()}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
+            b[l] = { id: `dng_tk_${Math.floor(getSeededRandom() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
             b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
 
             // Add custom summon event to play correct standard visualizer pipeline
@@ -178,7 +178,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const targetLane = tLanes[0];
             const resurrectedCard = {
                 ...selectedCard,
-                id: `res_${Date.now()}`,
+                id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
                 baseId: selectedCard.baseId || selectedCard.id
             };
             resurrectedCard.currentPower = resurrectedCard.power;
@@ -197,23 +197,16 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const h = isBlue ? GameState.playerHand : GameState.enemyHand;
         let dc = 0;
         if (h.length > 0) {
-            if (isBlue) {
-                const selectedIndices = await waitPlayerHandSelection(2, owner);
-                // キャンセル(選ばずに完了)した場合でも、手札破棄が0枚になるだけで、後続の全体バフは発動させます
-                if (selectedIndices && selectedIndices.length > 0) {
-                    selectedIndices.sort((a, b) => b - a);
-                    for (let i of selectedIndices) {
-                        await discardCard(owner, h.splice(i, 1)[0]);
-                        dc++;
-                    }
-                }
-            } else {
-                while (dc < 2 && h.length > 0) {
-                    let rIdx = Math.floor(getSeededRandom() * h.length);
-                    await discardCard(owner, h.splice(rIdx, 1)[0]);
+            const selectedIndices = await waitPlayerHandSelection(2, owner);
+            // キャンセル(選ばずに完了)した場合でも、手札破棄が0枚になるだけで、後続の全体バフは発動させます
+            if (selectedIndices && selectedIndices.length > 0) {
+                selectedIndices.sort((a, b) => b - a);
+                for (let i of selectedIndices) {
+                    await discardCard(owner, h.splice(i, 1)[0]);
                     dc++;
                 }
             }
+
             for (let i = 0; i < dc; i++) drawCard(owner);
         }
 

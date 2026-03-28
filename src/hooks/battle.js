@@ -247,6 +247,7 @@ export function initBattleState() {
         GameState.turnCount = 0;
         GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
+        GameState.actionQueue = []; GameState.pendingChoices = [];
         GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
         GameState.isPlacementMode = false; GameState.placementCount = 0; GameState.placementToken = null; GameState.placementSelectedLanes = [];
         GameState.isEnemyTargetMode = false; GameState.isAlliedTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
@@ -798,6 +799,7 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
             if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
             else pendingChoiceResolver = resolve;
         });
+        if (choiceIdx === -1) return null;
         return validCards[choiceIdx] || validCards[0];
     }
 
@@ -814,8 +816,8 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
         });
         
         if (GameState.gameMode === 'online') {
-            const idx = validCards.findIndex(c => c.id === card.id);
-            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: idx !== -1 ? idx : 0 });
+            const idx = card ? validCards.findIndex(c => c === card) : -1;
+            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: idx });
         }
         return card;
     } else {
@@ -989,7 +991,7 @@ export async function triggerSplitSkill(owner, lane, card) {
     }
 
     board[lane] = {
-        id: `sp_${Date.now()}_${lane}`,
+        id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
         owner,
         ...tL,
         imgUrl: `assets/cards/card_${tokenId}.jpg`,
