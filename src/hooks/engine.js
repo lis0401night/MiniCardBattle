@@ -351,6 +351,38 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             }
             break;
+        case 'resurrect':
+            // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
+            const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            if (simDiscard.length === 0) break;
+            
+            // パワーが高い順にソートして一番強いのを取得し、シミュ内で墓地から取り除く
+            const sortedDiscard = [...simDiscard].sort((a, b) => b.power - a.power);
+            const simResCard = sortedDiscard[0];
+
+            let targetLaneRes = -1;
+            if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                targetLaneRes = simulatedTokenLanes[0];
+            } else {
+                const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null);
+                if (emptyLanesRes.length > 0) targetLaneRes = emptyLanesRes[0];
+            }
+
+            if (targetLaneRes !== -1) {
+                const newResToken = {
+                    ...simResCard,
+                    id: `rs_sim_${Date.now()}`,
+                    owner,
+                    currentPower: simResCard.power,
+                    skills: [] // 蘇生時は通常のOnPlayスキルは発動しない
+                };
+                b[targetLaneRes] = newResToken;
+                events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
+                
+                const resIdx = simDiscard.indexOf(simResCard);
+                if (resIdx !== -1) simDiscard.splice(resIdx, 1);
+            }
+            break;
         case 'clone':
             const cloneCount = val || 1;
             const tC = {
