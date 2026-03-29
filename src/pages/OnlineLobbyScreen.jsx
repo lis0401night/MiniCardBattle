@@ -131,6 +131,12 @@ export default function OnlineLobbyScreen() {
             });
         };
 
+        // コンポーネント再マウント時（対戦終了後等）にリスナーを再起動し、確実に最新の状態とコールバックを同期させる
+        const roomId = getCurrentRoomId();
+        if (roomId) {
+            listenToRoom(roomId);
+        }
+
         return () => {
             multiplayerCallbacks.onRoomUpdated = null;
             multiplayerCallbacks.onRoomClosed = null;
