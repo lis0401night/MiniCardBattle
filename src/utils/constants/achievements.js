@@ -242,7 +242,7 @@ export const ACHIEVEMENT_MASTER = [
         id: 'defense_win_10',
         title: 'いざ尋常に',
         description: '防衛戦で累計10回勝利する',
-        type: 'defense_win',
+        type: 'defense_attack_win',
         targetValue: 10,
         reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
     },
@@ -250,7 +250,7 @@ export const ACHIEVEMENT_MASTER = [
         id: 'defense_win_20',
         title: '喧嘩屋',
         description: '防衛戦で累計20回勝利する',
-        type: 'defense_win',
+        type: 'defense_attack_win',
         targetValue: 20,
         reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
     },
@@ -258,7 +258,7 @@ export const ACHIEVEMENT_MASTER = [
         id: 'defense_win_30',
         title: '城塞の守護者',
         description: '防衛戦で累計30回勝利する',
-        type: 'defense_win',
+        type: 'defense_attack_win',
         targetValue: 30,
         reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
     },
@@ -266,7 +266,7 @@ export const ACHIEVEMENT_MASTER = [
         id: 'defense_win_40',
         title: '難攻不落',
         description: '防衛戦で累計40回勝利する',
-        type: 'defense_win',
+        type: 'defense_attack_win',
         targetValue: 40,
         reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
     },
@@ -290,7 +290,8 @@ export const achievementData = {
         storyClearsHard: {}, // leaderId: count
         freeBattleWins: 0,
         maxDungeonFloor: 0,
-        defenseWins: 0
+        defenseWins: 0,
+        defenseAttackWins: 0
     }
 };
 
@@ -312,6 +313,7 @@ export function loadAchievements() {
             if (typeof achievementData.stats.freeBattleWins !== 'number') achievementData.stats.freeBattleWins = 0;
             if (typeof achievementData.stats.maxDungeonFloor !== 'number') achievementData.stats.maxDungeonFloor = 0;
             if (typeof achievementData.stats.defenseWins !== 'number') achievementData.stats.defenseWins = 0;
+            if (typeof achievementData.stats.defenseAttackWins !== 'number') achievementData.stats.defenseAttackWins = 0;
         } catch (e) {
             console.error("Failed to parse achievements data", e);
         }
@@ -349,6 +351,9 @@ export function incrementStat(type, key = null, amount = 1) {
     } else if (type === 'defenseWins') {
         achievementData.stats.defenseWins = (achievementData.stats.defenseWins || 0) + amount;
         checkDefenseAchievements();
+    } else if (type === 'defenseAttackWins') {
+        achievementData.stats.defenseAttackWins = (achievementData.stats.defenseAttackWins || 0) + amount;
+        checkDefenseAttackAchievements();
     }
     saveAchievements();
 }
@@ -413,10 +418,18 @@ function checkDungeonAchievements() {
     });
 }
 
-// 防衛戦勝利数のチェック
+// 防衛戦勝利数（防衛側のポイント連動等将来用）のチェック
 function checkDefenseAchievements() {
     const wins = achievementData.stats.defenseWins || 0;
     ACHIEVEMENT_MASTER.filter(a => a.type === 'defense_win').forEach(ach => {
+        updateAchievement(ach.id, wins, ach.targetValue);
+    });
+}
+
+// 防衛戦攻撃勝利数（プレイヤーが能動的に勝った数）のチェック
+function checkDefenseAttackAchievements() {
+    const wins = achievementData.stats.defenseAttackWins || 0;
+    ACHIEVEMENT_MASTER.filter(a => a.type === 'defense_attack_win').forEach(ach => {
         updateAchievement(ach.id, wins, ach.targetValue);
     });
 }

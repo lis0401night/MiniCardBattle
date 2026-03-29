@@ -1487,6 +1487,11 @@ export function endBattle() {
                     })
                 }).catch(err => console.error("Failed to update points:", err));
 
+                // 自身が攻撃して勝利した場合も実績「防衛戦勝利数」としてカウントする
+                if (typeof incrementStat === 'function') {
+                    incrementStat('defenseAttackWins');
+                }
+
                 // ポイント獲得のアラートを出してから、会話へ進む
                 playSound(SOUNDS.seSkill);
                 showAlertModal(`防衛戦に勝利しました！\n防衛戦ポイントを ${winPoints} Pt 獲得しました！`, () => {
