@@ -87,10 +87,10 @@ export const CHARACTERS = {
     knight: {
         id: 'knight', stageId: 'knight', name: '聖騎士 セレスティア',
         desc: '王国騎士団を率いる誇り高き騎士。聖なる加護と鉄壁の防御で仲間を守り抜く。',
-        easeOfUse: 2,
+        easeOfUse: 3,
         filter: 'none', cardType: 'set5', cardBg: 'bg1',
         image: 'assets/characters/char_knight.png', imageLose: 'assets/characters/char_knight_lose.png', icon: 'assets/icons/icon_knight.png', imageEnding: 'assets/characters/char_knight_ending.png', color: '#facc15',
-        leaderSkill: { name: '聖なる進軍', desc: '(SP:5) 自分のレーンに「騎士(P:1)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。', cost: 5, action: 'holy_march' },
+        leaderSkill: { name: '聖なる進軍', desc: '(SP:5) 自分のレーンに「騎士(P:2)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。', cost: 5, action: 'holy_march' },
         preBattleLine: '我が剣にかけて、勝利を誓おう！',
         mirrorIntro: '私の影……。迷いがあるというのか。だが止まってはいられない。魔王サタンを討ち、この世界に光を取り戻す。それが私の使命だ！',
         narratorIntro: '聖騎士団を率いる若き天才剣士、セレスティア。その白銀の鎧は、王国の人々の希望の象徴であった。',

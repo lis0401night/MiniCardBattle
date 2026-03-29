@@ -89,7 +89,7 @@ export const CARD_MASTER = [
     { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。', voiceCategory: 'human_male_ikemen' },
     { id: 'invader', name: '彼方からの侵略者', power: 0, rarity: 4, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
     // トークンカード
-    { id: 'token_knight', name: '騎士', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'sword', flavor: 'セレスティアの号令で召喚された騎士。' },
+    { id: 'token_knight', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'sword', flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', power: 10, skill: 'none', isToken: true, rarity: 1, flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', power: 1, skill: 'none', isToken: true, rarity: 1, flavor: '本体から生み出された分身。' },
