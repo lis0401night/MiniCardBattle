@@ -255,6 +255,11 @@ export function initBattleState() {
         GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
         GameState.isPlacementMode = false; GameState.placementCount = 0; GameState.placementToken = null; GameState.placementSelectedLanes = [];
         GameState.isEnemyTargetMode = false; GameState.isAlliedTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
+        GameState.isDiscardingMode = false; GameState.discardSelectedIndices = []; GameState.discardMaxCount = 0;
+        
+        // グローバルな待機リゾルバの確実なリセット
+        pendingChoiceResolver = null;
+        if (window.finishHandSelection) window.finishHandSelection = null;
         updateCardDetail(null);
         if (updateBattleUIHook) updateBattleUIHook();
 
@@ -799,12 +804,14 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
 
     // Check for Remote Choice Wait
     if (GameState.gameMode === 'online' && owner === 'red') {
-        const choiceIdx = await new Promise(resolve => {
+        const choiceStr = await new Promise(resolve => {
             if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
             else pendingChoiceResolver = resolve;
         });
-        if (choiceIdx === -1) return null;
-        return validCards[choiceIdx] || validCards[0];
+        if (!choiceStr || choiceStr === -1) return null;
+        // UID優先、なければidで検索して同期ズレを防ぐ
+        const matchingCard = validCards.find(c => c.uid === choiceStr || c.id === choiceStr);
+        return matchingCard || validCards[0];
     }
 
     // AIの場合
@@ -820,8 +827,8 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
         });
         
         if (GameState.gameMode === 'online') {
-            const idx = card ? validCards.findIndex(c => c === card) : -1;
-            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: idx });
+            const choiceStr = card ? (card.uid || card.id) : null;
+            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: choiceStr });
         }
         return card;
     } else {
