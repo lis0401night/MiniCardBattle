@@ -39,10 +39,6 @@ export default function BattleDungeonScreen() {
                 window.showDungeonMenu();
             } else {
                 switchScreen('screen-dungeon-menu');
-                stopAllBGM();
-                if (SOUNDS.bgmChallenge && SOUNDS.bgmChallenge.paused) {
-                    playSound(SOUNDS.bgmChallenge);
-                }
             }
         } else {
             // 進行中はリタイア確認
