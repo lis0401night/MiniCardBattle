@@ -245,7 +245,7 @@ export default function OnlineLobbyScreen() {
                     }} />
                     <div style={{ flex: 1 }}>
                         <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '5px' }}>
-                            {opData ? `(${opData.name})` : ''}
+                            {opData ? `${opData.name}` : ''}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                             {!opData ? (

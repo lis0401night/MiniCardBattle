@@ -351,7 +351,7 @@ export function showSpeechBubble(target) {
     const iconEl = document.getElementById(target === 'blue' ? 'player-icon' : 'enemy-icon');
 
     if (bubble) {
-        bubble.innerText = phrases[Math.floor(getSeededRandom() * phrases.length)];
+        bubble.innerText = phrases[Math.floor(Math.random() * phrases.length)];
         bubble.classList.add('active');
 
         // アイコンをダメージ画像に変更
