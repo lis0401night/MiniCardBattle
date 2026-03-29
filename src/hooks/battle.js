@@ -1307,6 +1307,14 @@ export async function determineTurnOrder() {
     GameState.isProcessing = true;
     GameState.turnCount = 0;
 
+    // ゲーム開始時の初期ドロー（両者4枚ずつ）
+    if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
+        for (let i = 0; i < 4; i++) {
+            drawCard('blue');
+            drawCard('red');
+        }
+    }
+
     if (window.startTurnOrderReact) {
         window.startTurnOrderReact((firstPlayer) => {
             GameState.firstPlayer = firstPlayer;

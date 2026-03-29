@@ -243,17 +243,16 @@ export default function OnlineLobbyScreen() {
                         background: opIcon ? `url('${opIcon}') center/cover` : 'rgba(0,0,0,0.5)'
                     }} />
                     <div style={{ flex: 1 }}>
-                        <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '5px' }}>対戦相手</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '5px' }}>
+                            対戦相手 {opData ? `(${opData.name})` : ''}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                             {!opData ? (
                                 <div style={{ color: '#94a3b8' }}>対戦相手を待っています...</div>
                             ) : (
-                                <>
-                                    <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>{opData.name} {opData.leaderConfig ? '✔️' : ''}</div>
-                                    <div style={{ color: opData.isReady ? '#10b981' : '#facc15', fontWeight: 'bold' }}>
-                                        {opData.isReady ? '準備完了！' : '準備中...'}
-                                    </div>
-                                </>
+                                <div style={{ color: opData.isReady ? '#10b981' : '#facc15', fontWeight: 'bold' }}>
+                                    {opData.isReady ? '準備完了！' : '準備中...'}
+                                </div>
                             )}
                         </div>
                     </div>

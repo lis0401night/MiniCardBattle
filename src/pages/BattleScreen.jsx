@@ -44,13 +44,6 @@ export default function BattleScreen() {
             await sleep(300);
             if (!mounted) return;
 
-            // 初期ドロー (Strict Mode での重複ドロー防止のため配列が空かチェック)
-            if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
-                for (let i = 0; i < 4; i++) {
-                    drawCard('blue');
-                    drawCard('red');
-                }
-            }
             setRenderVersion(v => v + 1);
 
             await sleep(300);
