@@ -180,17 +180,17 @@ export function listenToRoomActions(onActionReceived) {
     
     if (onlineActionUnsubscribe) {
         onlineActionUnsubscribe();
+        onlineActionUnsubscribe = null;
     }
     
     const actionsRef = ref(database, `${ROOMS_REF}/${currentRoomId}/actions`);
-    const unsubscribeFn = onChildAdded(actionsRef, (snapshot) => {
+    // Firebase v9 Modular APIでは、onChildAddedは直接Unsubscribe関数を返します
+    onlineActionUnsubscribe = onChildAdded(actionsRef, (snapshot) => {
         const val = snapshot.val();
         if (onActionReceived && val) {
             onActionReceived(val);
         }
     });
-    
-    onlineActionUnsubscribe = () => off(actionsRef, 'child_added', unsubscribeFn);
 }
 
 export function stopListeningToRoomActions() {
