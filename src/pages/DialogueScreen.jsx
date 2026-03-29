@@ -35,6 +35,8 @@ export default function DialogueScreen() {
         bgName = 'background_satan.png';
     } else if (GameState.gameMode === 'defense_attack') {
         bgName = 'background_defense.png';
+    } else if (GameState.gameMode && GameState.gameMode.startsWith('story')) {
+        bgName = 'background_story01.png';
     }
 
     return (

@@ -23,8 +23,16 @@ export default function StageSelectScreen() {
     }
   };
 
+  // 開発者の要件：ストーリー中の各種画面の背景を background_story01.png にする
+  const getBackgroundImage = () => {
+    if (GameState.gameMode && GameState.gameMode.startsWith('story')) {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_story01.png')`;
+    }
+    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`;
+  };
+
   return (
-    <div id="screen-stage-select" className="screen active">
+    <div id="screen-stage-select" className="screen active" style={{ backgroundImage: getBackgroundImage(), backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <h2>ステージ選択</h2>
       
       <div className="select-scroll-area">

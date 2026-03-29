@@ -206,7 +206,7 @@ export function getSkillValue(c, skillId) {
     return 0;
 }
 
-export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'dinosaur', 'diviner', 'dragon', 'empress', 'golem', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire'];
+export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'dinosaur', 'diviner', 'dragon', 'empress', 'golem', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {

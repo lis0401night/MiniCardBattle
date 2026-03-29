@@ -30,9 +30,9 @@ export default function EndingScreen() {
     if (step === 'result') {
         return (
             <div id="screen-result" className="screen active" style={{ backgroundColor: 'rgba(0,0,0,0.85)', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <h1 style={{ fontSize: '3rem', color: '#facc15', transition: 'opacity 2s', opacity: opacity }}>GAME CLEAR!</h1>
-                <p style={{ fontSize: '1.2rem', marginTop: '20px', color: '#fff', transition: 'opacity 2s', opacity: opacity }}>すべてのライバルを撃破し、エンディングを迎えました！</p>
-                <button className="btn" onClick={() => returnToTitle()} style={{ marginTop: '40px', transition: 'opacity 2s', opacity: opacity }}>タイトルへ</button>
+                <h1 style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', color: '#facc15', transition: 'opacity 2s', opacity: opacity, textAlign: 'center' }}>GAME CLEAR!</h1>
+                <p style={{ fontSize: 'clamp(1rem, 4vw, 1.2rem)', marginTop: '20px', color: '#fff', transition: 'opacity 2s', opacity: opacity, textAlign: 'center', padding: '0 20px' }}>すべてのライバルを撃破し、エンディングを迎えました！</p>
+                <button className="btn" onClick={() => { if(window.reloadGame) window.reloadGame(); else window.location.reload(); }} style={{ marginTop: '40px', transition: 'opacity 2s', opacity: opacity }}>タイトルへ</button>
             </div>
         );
     }
@@ -50,7 +50,7 @@ export default function EndingScreen() {
                 style={{ 
                     position: 'absolute', 
                     bottom: '10%', 
-                    fontSize: '2.2rem', 
+                    fontSize: 'clamp(1.5rem, 8vw, 3rem)', 
                     fontWeight: 'bold', 
                     color: '#fff', 
                     textShadow: '0 0 20px #facc15, 2px 2px 0 #000', 
