@@ -18,7 +18,7 @@ export const CARD_MASTER = [
     { id: 'charger', name: '虹ハチドリ', power: 1, skill: 'charge', skillValue: 1, rarity: 1, voiceCategory: 'bird', flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。' },
     { id: 'cleric', name: '見習い修道女', power: 3, skill: 'heal', skillValue: 2, rarity: 1, voiceCategory: 'human_female_cute', flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
     { id: 'wall', name: '城壁', power: 10, skill: 'defender', rarity: 1, voiceCategory: 'stone', flavor: '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。' },
-    { id: 'necromancer', name: 'ヴィス・ガルドの背教者', power: 2, skill: 'resurrect', skillValue: 4, rarity: 1, voiceCategory: 'human_female_cool', flavor: '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。' },
+    { id: 'necromancer', name: 'ヴィス・ガルドの背教者', power: 1, skill: 'resurrect', skillValue: 4, rarity: 1, voiceCategory: 'human_female_cool', flavor: '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。' },
     { id: 'zombie', name: '解き放たれた囚人', power: 1, skills: [{ id: 'clone', value: 2 }, { id: 'growth', value: -1 }], rarity: 1, voiceCategory: 'undead', flavor: 'かつて地下牢に繋がれていた者たちの成れの果て。その怨念は果てることなく、仲間を呼び寄せながら朽ちてゆく。' },
     { id: 'beginnermagic', name: '初級魔術', rarity: 1, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'summon', value: 5 }, { id: 'support', value: 3 }], flavor: '大地に流れる脈動をマナへと変換する基礎的な魔術。' },
     { id: 'snake', name: '蛇の使い魔', rarity: 1, voiceCategory: 'insect', power: 3, skill: 'toxic', skillValue: 3, flavor: '魔法使いに使役される毒蛇。術者の命令に従い、獲物を毒牙にかける。' },
