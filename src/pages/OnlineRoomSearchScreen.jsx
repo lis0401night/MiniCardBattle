@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showOnlineMenu, showOnlineLobby, closePlayerNameModal } from '../hooks/uiMainCore.js';
-import { listenToLobbyRooms, forceDeleteRoom, joinRoom } from '../hooks/multiplayer.js';
+import { listenToLobbyRooms, joinRoom } from '../hooks/multiplayer.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function OnlineRoomSearchScreen() {
@@ -49,19 +49,6 @@ export default function OnlineRoomSearchScreen() {
         }
     };
 
-    const handleForceDeleteRoom = (roomId) => {
-        playSound?.(SOUNDS.seClick);
-        if (window.showConfirmModalReact) {
-            window.showConfirmModalReact("このルームを強制解散しますか？", async () => {
-                await forceDeleteRoom(roomId);
-            }, () => { }, true);
-        } else {
-            showConfirmModal?.("このルームを強制解散しますか？", async () => {
-                await forceDeleteRoom(roomId);
-            });
-        }
-    };
-
     return (
         <div id="screen-online-search" className="screen active" style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
             <h2 style={{ color: '#38bdf8', margin: '20px 0', textAlign: 'center', textShadow: '0 0 10px rgba(56, 189, 248, 0.5)' }}>ルーム検索</h2>
@@ -91,13 +78,7 @@ export default function OnlineRoomSearchScreen() {
                                     >
                                         入室
                                     </button>
-                                    <button
-                                        className="btn"
-                                        style={{ margin: 0, padding: '5px 10px', fontSize: '0.8rem', whiteSpace: 'nowrap', width: 'auto', background: '#ef4444' }}
-                                        onClick={() => handleForceDeleteRoom(r.id)}
-                                    >
-                                        解散
-                                    </button>
+
                                 </div>
                             </div>
                         ))}

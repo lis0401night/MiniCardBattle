@@ -5,7 +5,11 @@ import { SOUNDS } from '../utils/sounds.js';
 
 export default function HighDifficultyRulesScreen() {
   return (
-    <div id="screen-high-difficulty-rules" className="screen active">
+    <div id="screen-high-difficulty-rules" className="screen active" style={{
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+    }}>
       <h2 style={{ color: '#ef4444', textShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }}>ルール</h2>
       <div className="rule-box">
         <ul>

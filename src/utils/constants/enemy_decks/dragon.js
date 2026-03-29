@@ -13,11 +13,11 @@ export default {
         'dragon',
         'drifter', 'drifter',
         'babydragon', 'babydragon',
+        'wyvern', 'wyvern',
         'dragonewt', 'dragonewt',
         'berserker', 'berserker',
-        'dancer', 'dancer', 'dancer',
         'lizardman', 'lizardman',
-        'wyvern', 'wyvern',
+        'dancer', 'dancer', 'dancer',
     ],
     hard: [
         'dragon', 'dragon', 'dragon', 'dragon',

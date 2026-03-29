@@ -44,9 +44,21 @@ export default function CharacterSelectScreen() {
        showCharDetail(char.id);
     }
   };
+  const getBackgroundImage = () => {
+    if (GameState.gameMode === 'event_satan') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
+    } else if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'defense_attack') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;
+    }
+    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`;
+  };
 
   return (
-    <div id="screen-select" className="screen active">
+    <div id="screen-select" className="screen active" style={{
+        backgroundImage: getBackgroundImage(),
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+    }}>
       <h2 id="select-title">{title}</h2>
       
       <div className="select-scroll-area">

@@ -14,9 +14,9 @@ export default {
         'highelf', 'highelf',
         'bard', 'bard',
         'bear', 'bear',
-        'spider', 'spider',
         'bird', 'bird',
         'charger', 'charger',
+        'chameleon', 'chameleon',
         'sniper', 'sniper', 'sniper',
     ],
     hard: [

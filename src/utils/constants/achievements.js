@@ -136,7 +136,7 @@ export const ACHIEVEMENT_MASTER = [
         description: 'クロエのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'witch',
-        reward: { type: 'none', value: 'none', name: 'なし（準備中）' }
+        reward: { type: 'premium', value: 'beginnermagic', name: '初級魔術', isPremiumUnlock: true }
     },
     // --- カード収集 ---
     {

@@ -1,4 +1,4 @@
-import { ref, push, set, onValue, update, get, remove, serverTimestamp, onChildAdded, off } from "firebase/database";
+import { ref, push, set, onValue, update, get, remove, serverTimestamp, onChildAdded, off, query, orderByChild, equalTo } from "firebase/database";
 import { database } from "../utils/firebase.js";
 import { getOrCreateUUID } from "../utils/gameUtils.js";
 import { showAlertModal } from "./uiModals.js";
@@ -68,7 +68,28 @@ export function listenToLobbyRooms(onUpdate) {
 export async function createRoom(hostName) {
     if (!database) throw new Error("Firebase not initialized");
     
+    const uuid = getOrCreateUUID();
     const roomsRef = ref(database, ROOMS_REF);
+
+    // 既存の自分が作ったルーム（ゴミ）を削除
+    try {
+        const snapshot = await get(roomsRef);
+        if (snapshot.exists()) {
+            const deletePromises = [];
+            snapshot.forEach(child => {
+                const roomData = child.val();
+                if (roomData.host && roomData.host.id === uuid) {
+                    deletePromises.push(remove(ref(database, `${ROOMS_REF}/${child.key}`)));
+                }
+            });
+            if (deletePromises.length > 0) {
+                await Promise.all(deletePromises);
+            }
+        }
+    } catch (e) {
+        console.error("Failed to cleanup old rooms:", e);
+    }
+
     const newRoomRef = push(roomsRef);
     
     const rngSeed = Math.floor(Math.random() * 100000000).toString();
@@ -80,7 +101,7 @@ export async function createRoom(hostName) {
         createdAt: serverTimestamp(),
         rngSeed: rngSeed,
         host: {
-            id: getOrCreateUUID(),
+            id: uuid,
             name: hostName || 'Player 1',
             isReady: false,
             leaderConfig: null

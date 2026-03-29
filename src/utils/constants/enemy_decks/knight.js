@@ -21,9 +21,9 @@ export default {
     hard: [
         'champion', 'champion', 'champion', 'champion',
         'assassin', 'assassin', 'assassin', 'assassin',
-        'commander', 'commander', 'commander', 'commander',
+        'commander', 'commander', 'commander',
+        'hero', 'hero', 'hero',
         'darkpaladin', 'darkpaladin',
-        'hero', 'hero',
         'clone', 'clone', 'clone', 'clone',
     ]
 };
