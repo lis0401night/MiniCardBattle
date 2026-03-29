@@ -233,6 +233,10 @@ export function goBackFromSelect() {
     } else if (GameState.gameMode === 'online_deck_edit') {
         showOnlineLobby();
     } else {
+        if (SOUNDS.bgmTitle.paused) {
+            stopAllBGM();
+            playSound(SOUNDS.bgmTitle);
+        }
         switchScreen('screen-mode-select');
     }
 }
@@ -475,9 +479,9 @@ export async function showDefenseMenu() {
 
 export function showDungeonMenu() {
     playSound(SOUNDS.seClick);
-    if (SOUNDS.bgmTitle.paused) {
+    if (SOUNDS.bgmChallenge.paused) {
         stopAllBGM();
-        playSound(SOUNDS.bgmTitle);
+        playSound(SOUNDS.bgmChallenge);
     }
     switchScreen('screen-dungeon-menu');
 }

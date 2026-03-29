@@ -2,7 +2,7 @@ import { createDamagePopup, playSound, sleep, getSeededRandom } from '../utils/g
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { updateHPBar, updateSPOrbs, updateDeckDisplay, cleanupDestroyedCards } from './battle.js';
+import { updateHPBar, updateSPOrbs, updateDeckDisplay, cleanupDestroyedCards, showSpeechBubble } from './battle.js';
 import { updateCardPowerOnly, renderBoard, renderHand } from './uiBattle.js';
 import { GameState } from './gameState.js';
 
@@ -138,6 +138,7 @@ export async function playEvents(events) {
                 }
 
                 updateHPBar();
+                showSpeechBubble(ev.side);
                 if (!isNextDamage) {
                     playSound(SOUNDS.seDamage);
                     await sleep(300);

@@ -62,6 +62,7 @@ export async function dispatchBattleAction(action, isRemote = false) {
             GameState.enemyConfig.hp = 0;
             GameState.enemyHP = 0;
         }
+        playSound(SOUNDS.seDamage);
         if (updateBattleUIHook) updateBattleUIHook();
         checkWinCondition();
         return;
@@ -311,7 +312,7 @@ export function triggerFinishVisuals() {
     // 画面全体のスローモーションと揺れ
     document.body.classList.add('slow-motion');
     document.body.classList.add('anim-mega-shake');
-    playSound(SOUNDS.seDamage); // 重厚な音（既存のSEを流用）
+    // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
 
     setTimeout(() => {
         document.body.classList.remove('anim-mega-shake');

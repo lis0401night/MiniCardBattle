@@ -14,12 +14,7 @@ import { showAlertModal } from '../hooks/uiModals.js';
 export default function OnlineMenuScreen() {
     const [isMatching, setIsMatching] = useState(false);
 
-    useEffect(() => {
-        if (SOUNDS?.bgmOnline?.paused) {
-            stopAllBGM?.();
-            playSound?.(SOUNDS.bgmOnline);
-        }
-    }, []);
+    // マウント時BGM処理はuiMainCore.js側で管理するため削除
 
     const handleCreateRoomClick = () => {
         playSound?.(SOUNDS.seClick);

@@ -9,12 +9,6 @@ export default function DefenseMenuScreen() {
   const [hasRegistered, setHasRegistered] = useState(false);
 
   useEffect(() => {
-    // 既存の showDefenseMenu() にあったBGM再生ロジック
-    if (SOUNDS?.bgmDefense?.paused) {
-      stopAllBGM?.();
-      playSound?.(SOUNDS.bgmDefense);
-    }
-    
     // 登録状態の確認
     const isReg = localStorage.getItem('mini_card_battle_deck_defense') !== null;
     setHasRegistered(isReg);

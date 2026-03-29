@@ -9,13 +9,6 @@ import { GameState } from '../hooks/gameState.js';
 
 export default function DungeonMenuScreen() {
   useEffect(() => {
-    // Top BGM (or Dungeon specific BGM)
-    if (SOUNDS?.bgmChallenge?.paused) {
-      stopAllBGM?.();
-      playSound?.(SOUNDS.bgmChallenge);
-    }
-    
-    // reset mode to dungeon_menu so navigation logic works gracefully
     GameState.gameMode = 'battle_dungeon_menu';
   }, []);
 
