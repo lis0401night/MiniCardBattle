@@ -246,20 +246,29 @@ export function initBattleState() {
             GameState.playerHP = GameState.playerMaxHP;
         }
 
-        GameState.enemyHP = GameState.enemyMaxHP; GameState.playerSP = 0; GameState.enemySP = 0;
-        GameState.turnCount = 0; GameState.firstPlayer = 'blue';
-        GameState.turnCount = 0;
-        GameState.playerHand = []; GameState.enemyHand = []; GameState.playerDiscard = []; GameState.enemyDiscard = [];
+        GameState.enemyHP = GameState.enemyMaxHP; 
+        GameState.playerSP = 0; GameState.enemySP = 0;
+        GameState.turnCount = 1; GameState.firstPlayer = 'blue';
+        GameState.battlePhase = 'INIT'; GameState.combatStep = 0;
+        GameState.playerHand = []; GameState.enemyHand = []; 
+        GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
         GameState.actionQueue = []; GameState.pendingChoices = [];
-        GameState.isProcessing = false; GameState.selectedCardIndex = null; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
+        GameState.isProcessing = false; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
+        GameState.selectedCardIndex = null; GameState.selectedBoardLaneIndex = null; GameState.selectedBoardSide = null;
+        GameState.aiDecision = null; GameState.extraTurnCount = 0; GameState.attackSkipCount = 0;
+        
+        // --- モード系フラグの完全リセット ---
         GameState.isPlacementMode = false; GameState.placementCount = 0; GameState.placementToken = null; GameState.placementSelectedLanes = [];
         GameState.isEnemyTargetMode = false; GameState.isAlliedTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
-        GameState.isDiscardingMode = false; GameState.discardSelectedIndices = []; GameState.discardMaxCount = 0;
+        GameState.isDiscardingMode = false; GameState.discardSelectedIndices = []; GameState.discardMaxCount = 0; GameState.isDiscardingExact = false;
         
-        // グローバルな待機リゾルバの確実なリセット
+        // --- グローバルコールバック・リゾルバの確実なリセット ---
         pendingChoiceResolver = null;
-        if (window.finishHandSelection) window.finishHandSelection = null;
+        window.finishHandSelection = null;
+        window.handlePlacementLaneClick = null; window.finishPlacement = null;
+        window.handleEnemyLaneClick = null; window.finishEnemyTargetSelection = null;
+        window.handleAlliedLaneClick = null; window.finishAlliedSelection = null;
         updateCardDetail(null);
         if (updateBattleUIHook) updateBattleUIHook();
 
