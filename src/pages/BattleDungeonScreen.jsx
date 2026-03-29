@@ -37,15 +37,11 @@ export default function BattleDungeonScreen() {
             GameState.gameMode = null;
             if (window.showDungeonMenu) {
                 window.showDungeonMenu();
-                stopAllBGM();
-                if (SOUNDS.bgmTitle && SOUNDS.bgmTitle.paused) {
-                    playSound(SOUNDS.bgmTitle);
-                }
             } else {
                 switchScreen('screen-dungeon-menu');
                 stopAllBGM();
-                if (SOUNDS.bgmTitle && SOUNDS.bgmTitle.paused) {
-                    playSound(SOUNDS.bgmTitle);
+                if (SOUNDS.bgmChallenge && SOUNDS.bgmChallenge.paused) {
+                    playSound(SOUNDS.bgmChallenge);
                 }
             }
         } else {
