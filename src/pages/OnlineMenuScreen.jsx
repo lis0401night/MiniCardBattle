@@ -5,7 +5,7 @@ import {
     showOnlineRules, 
     showOnlineSearch, 
     showOnlineLobby,
-    goBackFromSelect,
+    goToModeSelect,
     closePlayerNameModal
 } from '../hooks/uiMainCore.js';
 import { createRoom } from '../hooks/multiplayer.js';
@@ -77,7 +77,7 @@ export default function OnlineMenuScreen() {
             <button 
                 className="btn" 
                 style={{ marginTop: '40px', background: '#475569' }} 
-                onClick={() => goBackFromSelect?.()}
+                onClick={() => goToModeSelect?.()}
                 disabled={isMatching}
             >
                 戻る
