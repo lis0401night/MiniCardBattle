@@ -248,7 +248,7 @@ export function initBattleState() {
 
         GameState.enemyHP = GameState.enemyMaxHP; 
         GameState.playerSP = 0; GameState.enemySP = 0;
-        GameState.turnCount = 1; GameState.firstPlayer = 'blue';
+        GameState.turnCount = 0; GameState.firstPlayer = 'blue';
         GameState.battlePhase = 'INIT'; GameState.combatStep = 0;
         GameState.playerHand = []; GameState.enemyHand = []; 
         GameState.playerDiscard = []; GameState.enemyDiscard = [];
