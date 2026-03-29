@@ -64,7 +64,7 @@ export const CARD_MASTER = [
     { id: 'drifter', name: 'アッシュランドの放浪者', power: 4, rarity: 3, skill: 'double_strike', voiceCategory: 'human_male_ikemen', flavor: '灼熱の砂塵を切り裂く双剣。彼の歩みの後には、切り刻まれた絶望のみが残る。' },
     { id: 'champion', name: 'アリーナのチャンピオン', power: 1, skills: [{ id: 'legendary' }, { id: 'hero', value: 3 }], rarity: 3, voiceCategory: 'human_male_warrior', flavor: '観衆の歓声こそが彼の力。その雄姿は味方を鼓舞し、敵を圧倒する。' },
     { id: 'assassin', name: 'ギルドの暗殺者', power: 1, skills: [{ id: 'deadly' }, { id: 'stealth', value: 1 }, { id: 'quick' }], rarity: 3, voiceCategory: 'human_female_assassin', flavor: '黒い服と2つの短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。' },
-    { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'pierce' }], rarity: 3, voiceCategory: 'monster', flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
+    { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'stealth', value: 1 }, { id: 'pierce' }], rarity: 3, voiceCategory: 'monster', flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, voiceCategory: 'monster', flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'wolf', name: '真夜中の狩人', power: 3, skills: [{ id: 'legendary' }, { id: 'lone_wolf', value: 3 }], rarity: 3, voiceCategory: 'wolf', flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
     { id: 'highelf', name: 'ロストレイルの精鋭パトロール', power: 2, skills: [{ id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }, { id: 'snipe', value: 1 }], rarity: 3, voiceCategory: 'human_female_cool', flavor: '迷いの森を監視する精鋭。その神速の連射は、影すらも逃がさない。' },
