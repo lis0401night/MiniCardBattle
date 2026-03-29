@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { playSound } from '../utils/gameUtils.js';
+import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showOnlineMenu, showOnlineLobby, closePlayerNameModal } from '../hooks/uiMainCore.js';
 import { listenToLobbyRooms, forceDeleteRoom, joinRoom } from '../hooks/multiplayer.js';
@@ -12,7 +12,8 @@ export default function OnlineRoomSearchScreen() {
 
     useEffect(() => {
         const unsubscribe = listenToLobbyRooms((availableRooms) => {
-            setRooms(availableRooms);
+            const myId = getOrCreateUUID();
+            setRooms(availableRooms.filter(r => r.host?.id !== myId));
         });
         return () => {
             unsubscribe();
@@ -53,7 +54,7 @@ export default function OnlineRoomSearchScreen() {
         if (window.showConfirmModalReact) {
             window.showConfirmModalReact("このルームを強制解散しますか？", async () => {
                 await forceDeleteRoom(roomId);
-            }, () => {}, true);
+            }, () => { }, true);
         } else {
             showConfirmModal?.("このルームを強制解散しますか？", async () => {
                 await forceDeleteRoom(roomId);
@@ -64,10 +65,10 @@ export default function OnlineRoomSearchScreen() {
     return (
         <div id="screen-online-search" className="screen active" style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
             <h2 style={{ color: '#38bdf8', margin: '20px 0', textAlign: 'center', textShadow: '0 0 10px rgba(56, 189, 248, 0.5)' }}>ルーム検索</h2>
-            
+
             <div style={{ padding: '0 20px', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
                 <h3 style={{ color: '#94a3b8', fontSize: '1rem', borderBottom: '1px solid #334155', paddingBottom: '10px', marginBottom: '15px' }}>募集中のルーム</h3>
-                
+
                 {isJoining ? (
                     <div style={{ textAlign: 'center', margin: '40px 0' }}>
                         <div className="spinner" style={{ margin: '0 auto 20px' }}></div>
@@ -78,21 +79,21 @@ export default function OnlineRoomSearchScreen() {
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {rooms.map(r => (
-                            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.6)', padding: '15px', borderRadius: '8px', border: '1px solid #475569' }}>
+                            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '5px', flexWrap: 'wrap', background: 'rgba(15, 23, 42, 0.6)', padding: '15px', borderRadius: '8px', border: '1px solid #475569' }}>
                                 <div>
                                     <div style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.host?.name || '不明'} のルーム</div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button 
-                                        className="btn" 
-                                        style={{ margin: 0, padding: '8px 15px', width: 'auto', background: '#10b981' }} 
+                                <div style={{ display: 'flex', gap: '5px' }}>
+                                    <button
+                                        className="btn"
+                                        style={{ margin: 0, padding: '5px 10px', fontSize: '0.8rem', whiteSpace: 'nowrap', width: 'auto', background: '#10b981' }}
                                         onClick={() => handleJoinClick(r.id)}
                                     >
-                                        入室する
+                                        入室
                                     </button>
-                                    <button 
-                                        className="btn" 
-                                        style={{ margin: 0, padding: '8px 15px', width: 'auto', background: '#ef4444' }} 
+                                    <button
+                                        className="btn"
+                                        style={{ margin: 0, padding: '5px 10px', fontSize: '0.8rem', whiteSpace: 'nowrap', width: 'auto', background: '#ef4444' }}
                                         onClick={() => handleForceDeleteRoom(r.id)}
                                     >
                                         解散

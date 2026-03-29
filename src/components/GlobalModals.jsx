@@ -908,9 +908,9 @@ export default function GlobalModals() {
       {/* Skill Choice Modal */}
       {skillChoiceData && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
-          <div className="skill-modal-box modal-pop-animation">
-            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center' }}>スキルを選択 {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
+          <div className="skill-modal-box modal-pop-animation" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center', flexShrink: 0 }}>スキルを選択 {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', overflowY: 'auto', paddingRight: '5px' }}>
               {skillChoiceData.choices.map((sk, idx) => {
                 const skillDef = SKILLS[sk.id] || { name: '不明', icon: '❓', desc: () => '' };
                 const val = sk.value || '';
@@ -977,7 +977,8 @@ export default function GlobalModals() {
                   marginTop: '20px', width: '100%',
                   background: skillChoiceData.selectedIndices.length > 0 ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
                   color: skillChoiceData.selectedIndices.length > 0 ? '#fff' : '#94a3b8',
-                  pointerEvents: skillChoiceData.selectedIndices.length > 0 ? 'auto' : 'none'
+                  pointerEvents: skillChoiceData.selectedIndices.length > 0 ? 'auto' : 'none',
+                  flexShrink: 0
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);

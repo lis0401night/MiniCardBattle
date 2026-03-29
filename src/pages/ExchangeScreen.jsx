@@ -51,8 +51,8 @@ export default function ExchangeScreen() {
 
   return (
     <div id="screen-exchange" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto' }}>
-      <h2 
-        id="exchange-title" 
+      <h2
+        id="exchange-title"
         style={{ color: '#10b981', marginBottom: '5px', cursor: 'pointer', textShadow: '0 0 15px rgba(16, 185, 129, 0.6)' }}
         onClick={handleTitleClick}
       >
@@ -65,66 +65,66 @@ export default function ExchangeScreen() {
       <div className="card-list-container">
         <div id="exchange-item-grid" className="card-list-grid-3col">
           {exchangeItems.map((itemInfo, index) => {
-             const cardMaster = CARD_MASTER || [];
-             const itemObj = cardMaster.find(c => c.id === itemInfo.id) || cardMaster[0] || {};
-             
-             let canExchange = true;
-             let isMaxed = false;
-             let ownedCount = 0;
+            const cardMaster = CARD_MASTER || [];
+            const itemObj = cardMaster.find(c => c.id === itemInfo.id) || cardMaster[0] || {};
 
-             if (itemInfo.type === 'premium') {
-                 if (unlockedPremium.includes(itemInfo.id)) {
-                     canExchange = false;
-                     isMaxed = true;
-                 }
-             } else if (itemInfo.type === 'card') {
-                 ownedCount = inventory[itemInfo.id] || 0;
-                 if (ownedCount >= 4) {
-                     canExchange = false;
-                     isMaxed = true;
-                 }
-             }
+            let canExchange = true;
+            let isMaxed = false;
+            let ownedCount = 0;
 
-             if (points.current < itemInfo.cost) {
-                 canExchange = false;
-             }
+            if (itemInfo.type === 'premium') {
+              if (unlockedPremium.includes(itemInfo.id)) {
+                canExchange = false;
+                isMaxed = true;
+              }
+            } else if (itemInfo.type === 'card') {
+              ownedCount = inventory[itemInfo.id] || 0;
+              if (ownedCount >= 4) {
+                canExchange = false;
+                isMaxed = true;
+              }
+            }
 
-             const opacity = canExchange ? "1.0" : (isMaxed ? "0.3" : "0.6");
-             const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
-             
-             let imgUrl = getCardImgUrl ? getCardImgUrl(itemObj) : '';
-             if (itemInfo.type === 'premium') {
-                 imgUrl = imgUrl.replace('.jpg', '_premium.gif');
-             }
+            if (points.current < itemInfo.cost) {
+              canExchange = false;
+            }
 
-             return (
-               <div 
-                 key={index}
-                 className="deck-card-item" 
-                 style={{ opacity, cursor: canExchange ? 'pointer' : 'not-allowed' }}
-                 onClick={() => {
-                   if (!isTransitioning && showExchangeDetail) {
-                     showExchangeDetail(itemInfo.id, itemInfo.type, itemInfo.cost, itemObj, canExchange, isMaxed);
-                   }
-                 }}
-               >
-                 <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block' }}>
-                     <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
-                     
-                     {itemInfo.type === 'card' && (
-                         <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: '#facc15', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 6, border: '1px solid #facc15' }}>
-                             {ownedCount}/4
-                         </div>
-                     )}
-                     
-                     <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{itemObj.power}</div>
-                     
-                     {window.renderSkillTag && (
-                         <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(itemObj) }}></div>
-                     )}
-                 </div>
-               </div>
-             );
+            const opacity = canExchange ? "1.0" : (isMaxed ? "0.3" : "0.6");
+            const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
+
+            let imgUrl = getCardImgUrl ? getCardImgUrl(itemObj) : '';
+            if (itemInfo.type === 'premium') {
+              imgUrl = imgUrl.replace('.jpg', '_premium.gif');
+            }
+
+            return (
+              <div
+                key={index}
+                className="deck-card-item"
+                style={{ opacity, cursor: canExchange ? 'pointer' : 'not-allowed' }}
+                onClick={() => {
+                  if (!isTransitioning && showExchangeDetail) {
+                    showExchangeDetail(itemInfo.id, itemInfo.type, itemInfo.cost, itemObj, canExchange, isMaxed);
+                  }
+                }}
+              >
+                <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block' }}>
+                  <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+
+                  {itemInfo.type === 'card' && (
+                    <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: '#facc15', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 6, border: '1px solid #facc15' }}>
+                      {ownedCount}/4
+                    </div>
+                  )}
+
+                  <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{itemObj.power}</div>
+
+                  {window.renderSkillTag && (
+                    <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(itemObj) }}></div>
+                  )}
+                </div>
+              </div>
+            );
           })}
         </div>
       </div>
@@ -132,7 +132,10 @@ export default function ExchangeScreen() {
       <button
         className="btn"
         style={{ marginTop: '15px', background: '#475569' }}
-        onClick={() => { playSound?.(SOUNDS?.seClick); switchScreen?.('screen-defense-menu'); }}
+        onClick={() => {
+          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seClick);
+          switchScreen?.('screen-defense-menu');
+        }}
       >
         戻る
       </button>

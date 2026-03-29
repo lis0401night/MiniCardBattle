@@ -171,7 +171,10 @@ export default function CardListScreen() {
       <button
         className="btn"
         style={{ marginTop: '15px', background: '#475569' }}
-        onClick={() => switchScreen?.('screen-gallery-menu')}
+        onClick={() => {
+          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seClick);
+          switchScreen?.('screen-gallery-menu');
+        }}
       >
         戻る
       </button>

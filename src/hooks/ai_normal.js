@@ -112,30 +112,30 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
                         const isOverwrite = myBoard[l] !== null;
 
-                        // 追加: アキレーンのパターン抽出
+                        // 追加: 空きレーンのパターン抽出
                         let tempBoard = [...myBoard];
                         if (useSkill && order === 'before' && tokenLanes) {
                             tokenLanes.forEach(tl => tempBoard[tl] = 'token');
                         }
                         tempBoard[l] = 'card';
 
-                        const emptyLanesAfterPlay = [0, 1, 2].filter(idx => tempBoard[idx] === null);
+                        // 利用可能なトークン配置レーン（自分自身への上書きも自壊として含めた全レーン）
+                        const availableLanesForToken = [0, 1, 2];
 
                         let cardTokenLanePatterns = [null];
                         const cardHasSkill = (sk) => hasSkill(card, sk) || (Array.isArray(card.choices) && card.choices.some(s => s.id === sk));
 
-                        if (emptyLanesAfterPlay.length > 0) {
-                            if (cardHasSkill('resurrect') || cardHasSkill('summon')) {
-                                cardTokenLanePatterns = emptyLanesAfterPlay.map(idx => [idx]);
-                            } else if (cardHasSkill('clone')) {
-                                let cloneCount = 1;
-                                if (card.skill === 'clone') cloneCount = card.skillValue || 1;
-                                else if (card.skills) {
-                                    const csk = card.skills.find(s => s.id === 'clone');
-                                    if (csk) cloneCount = csk.value || 1;
-                                }
-                                cardTokenLanePatterns = getCombinations(emptyLanesAfterPlay, Math.min(emptyLanesAfterPlay.length, cloneCount));
+                        // トークン召喚時は上書きも考慮して自分以外の全レーンを候補にする
+                        if (cardHasSkill('resurrect') || cardHasSkill('summon')) {
+                            cardTokenLanePatterns = availableLanesForToken.map(idx => [idx]);
+                        } else if (cardHasSkill('clone')) {
+                            let cloneCount = 1;
+                            if (card.skill === 'clone') cloneCount = card.skillValue || 1;
+                            else if (card.skills) {
+                                const csk = card.skills.find(s => s.id === 'clone');
+                                if (csk) cloneCount = csk.value || 1;
                             }
+                            cardTokenLanePatterns = getCombinations(availableLanesForToken, Math.min(availableLanesForToken.length, cloneCount));
                         }
 
                         for (let cardTokenLanes of cardTokenLanePatterns) {
@@ -149,7 +149,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                                 }
                                 const choiceIndices = card.choices.map((_, idx) => idx);
                                 const choiceCombinations = getCombinations(choiceIndices, Math.min(choiceIndices.length, choiceCount));
-                                
+
                                 for (let cIdxArr of choiceCombinations) {
                                     let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdxArr, cardTokenLanes);
                                     candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdxArr, cardTokenLanes, simState });
@@ -217,37 +217,58 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     }
 
     // ④ 自分のパワー - プレイヤーのパワーが最も大きくなる手を選ぶ（基本条件）
-    // ⑤ ④が同列なら自分とプレイヤーの残るカード枚数の差を決める（基本条件）
     // ⑥ ⑤も同列なら、相手の攻撃による被ダメージが最も少ない手を選ぶ（追加条件）
-    // ⑦ ⑥も同列ならその中からランダム（基本条件）
+    // ⑦ ⑥も同列なら、特定のスキル（回復＞入替）の優先度が高い手を選ぶ（追加条件）
+    // ⑧ ⑦も同列ならその中からランダム（基本条件）
     // これらをソートで実現し、最も優秀な同列グループの中から1つをランダムに選ぶ
 
     // ソートしやすいように基本条件スコアを一次算出
     finalCandidates.forEach(c => {
         c.advDiff = getAdvantage(c.simState);
         c.countDiff = getCountDiff(c.simState);
+
+        let skillScore = 0;
+        if (c.index !== -1 && c.choiceIndex !== undefined) {
+            const card = hand[c.index];
+            if (card && card.choices) {
+                const indices = Array.isArray(c.choiceIndex) ? c.choiceIndex : [c.choiceIndex];
+                for (let idx of indices) {
+                    const skillId = card.choices[idx]?.id;
+                    if (skillId === 'heal') {
+                        // 自身の体力が満タンでない場合のみ回復を評価する
+                        if (startHP < GameState.enemyMaxHP) {
+                            skillScore += 2;
+                        }
+                    }
+                    else if (skillId === 'draw') skillScore += 1;
+                }
+            }
+        }
+        c.skillScore = skillScore;
     });
 
-    // ④、⑤、⑥の順でソート
+    // ④、⑤、⑥、⑦の順でソート
     finalCandidates.sort((a, b) => {
         if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff; // ④ 降順
         if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff; // ⑤ 降順
         if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken; // ⑥ 昇順（ダメージが少ない方が良い）
-        return 0;
+        if (a.skillScore !== b.skillScore) return b.skillScore - a.skillScore; // ⑦ スキル優先度（回復＞入替＞その他） 降順
+        return 0; // ⑧ 同列
     });
 
     const topCandidate = finalCandidates[0];
     const topAdv = topCandidate.advDiff;
     const topCount = topCandidate.countDiff;
     const topDmg = topCandidate.simState.combatDamageTaken;
+    const topSkill = topCandidate.skillScore;
 
-    // ④と⑤と⑥が完全に同等の最善手グループを抽出
-    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg);
+    // ④～⑦が完全に同等の最善手グループを抽出
+    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg && c.skillScore === topSkill);
 
-    // ⑦ ⑥も同列ならその中からランダム
+    // ⑧ ⑦も同列ならその中からランダム
     const finalDecision = bestGroup[Math.floor(getSeededRandom() * bestGroup.length)];
 
-    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg);
+    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg, "Best SkillScore:", topSkill);
     return finalDecision;
 }
 
@@ -285,7 +306,11 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // 2. カードをプレイ
     if (handIdx !== -1) {
         const playedCard = cloneCard(simState.enemyHand[handIdx]);
-        playedCard.currentPower = playedCard.power;
+        // パワー異常値（undefinedなど）を実機と同じように修復（魔法カードが壁として認識されるのを防ぐ）
+        if (playedCard.currentPower === undefined || Number.isNaN(playedCard.currentPower) || (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)) {
+            playedCard.currentPower = playedCard.power || 0;
+            playedCard.basePower = playedCard.power || 0;
+        }
         simState.enemyBoard[laneIdx] = playedCard;
 
         let skills = [];

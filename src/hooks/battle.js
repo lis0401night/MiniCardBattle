@@ -41,12 +41,15 @@ export async function dispatchBattleAction(action, isRemote = false) {
         // 自分が送信した選択結果の反響(echo)は完全に無視する（自分のローカルはUIのPromiseで既に勝手に解決されているため）
         if (action.owner === 'blue') return;
 
+        // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空配列とみなす
+        const choiceData = action.choiceData !== undefined ? action.choiceData : [];
+
         if (pendingChoiceResolver) {
-            pendingChoiceResolver(action.choiceData);
+            pendingChoiceResolver(choiceData);
             pendingChoiceResolver = null;
         } else {
             if (!GameState.pendingChoices) GameState.pendingChoices = [];
-            GameState.pendingChoices.push(action.choiceData);
+            GameState.pendingChoices.push(choiceData);
         }
         return; // Do not process via queue, evaluate synchronously
     }
