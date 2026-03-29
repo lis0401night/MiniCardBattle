@@ -6,7 +6,7 @@ export default {
         'charger', 'charger', 'charger',
         'cheetah', 'cheetah', 'cheetah',
         'sniper', 'sniper', 'sniper',
-        'scorpion', 'scorpion', 'scorpion',
+        'chameleon', 'chameleon', 'chameleon',
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',

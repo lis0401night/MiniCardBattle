@@ -46,13 +46,12 @@ export const SKILLS = {
     extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空」を加える。` },
     toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` },
     convert: { name: '転換', icon: '♻️', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空」を加える。` },
-    invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
-    enhance: { name: '強化', icon: '💎', desc: (val) => `召喚時、自分の場のカード1枚に成長+${val}を与える。` }
+    invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' }
 };
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'enhance'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

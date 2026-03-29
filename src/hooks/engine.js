@@ -458,21 +458,6 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 });
             }
             break;
-        case 'enhance':
-            const occupy = b.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
-            if (occupy.length > 0) {
-                const tl = occupy.sort((idxA, idxB) => b[idxB].currentPower - b[idxA].currentPower)[0];
-                const tC = b[tl];
-                if (!Array.isArray(tC.skills)) tC.skills = [];
-                let existingGrowth = tC.skills.find(sk => sk.id === 'growth');
-                if (existingGrowth) {
-                    existingGrowth.value += val;
-                } else {
-                    tC.skills.push({ id: 'growth', value: val });
-                }
-                events.push({ type: 'skill', skill: 'enhance', side: owner, lane: tl, card: JSON.parse(JSON.stringify(tC)) });
-            }
-            break;
         case 'resurrect':
             const maxPow = val || 1;
             const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
