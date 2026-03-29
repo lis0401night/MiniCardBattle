@@ -82,6 +82,7 @@ export default function OnlineLobbyScreen() {
                     const opData = isHost ? data.client : data.host;
 
                     const bSeed = data.battleSeed || Date.now();
+                    GameState.battleSeed = bSeed; // 最新のシードをGameStateに記録
                     const hostStage = data.host.leaderConfig?.stage || 'plain';
                     const clientStage = data.client.leaderConfig?.stage || 'plain';
                     GameState.selectedStageId = (bSeed % 2 === 0) ? hostStage : clientStage;

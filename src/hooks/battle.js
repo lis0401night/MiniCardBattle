@@ -113,7 +113,7 @@ export async function processActionQueue() {
 export function prepareBattle() {
     switchScreen('screen-loading');
     const isOnline = GameState.gameMode === 'online';
-    const sessionId = isOnline ? (cachedRoomData?.battleSeed || Date.now()) : Date.now();
+    const sessionId = isOnline ? (GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()) : Date.now();
     let isFinished = false;
 
     // プレイマット設定の引き継ぎロード
