@@ -7,7 +7,9 @@ import {
     getIsHost,
     updatePlayerReady,
     sendChatMessage,
-    cachedRoomData
+    cachedRoomData,
+    listenToRoom,
+    getCurrentRoomId
 } from '../hooks/multiplayer.js';
 import { showAlertModal } from '../hooks/uiModals.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
