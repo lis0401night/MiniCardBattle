@@ -30,7 +30,7 @@ export const CARD_MASTER = [
     { id: 'mechanic', name: 'ダクト街の技師', power: 4, skill: 'summon', skillValue: 1, rarity: 2, voiceCategory: 'human_female_normal', flavor: '廃れた近未来都市で生きる腕利きのメカニック。彼女の作るドローンはどんな狭い隙間にも潜り込む。' },
     { id: 'babydragon', name: 'ドラゴンの雛', power: 2, skill: 'growth', skillValue: 3, rarity: 2, voiceCategory: 'lizard', flavor: 'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。' },
     { id: 'dragonewt', name: '竜人族の騎兵', power: 4, skills: [{ id: 'pierce' }, { id: 'snipe', value: 2 }], rarity: 2, voiceCategory: 'horse', flavor: '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫き、遠方の獲物も逃さない。' },
-    { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
+    { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 3, rarity: 2, voiceCategory: 'giant', flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
     { id: 'wyvern', name: '群れのワイヴァーン', power: 7, skills: [{ id: 'takeover' }, { id: 'reinforce', value: 1 }], rarity: 2, voiceCategory: 'dragon', flavor: '空を滑る緑の影は、必ず二つ。一方を殺したと安堵するなら、それは間違いだ。その血の匂いは、雲の彼方から狂乱のもう一方を呼び寄せる。' },
     { id: 'commander', name: '前線の司令官', power: 3, skill: 'support', skillValue: 2, rarity: 2, voiceCategory: 'human_male_warrior', flavor: '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。' },
     { id: 'hero', name: '若き勇士', power: 2, skill: 'hero', skillValue: 2, voiceCategory: 'human_female_normal', rarity: 2, flavor: '安物の胸当てに、誇りと希望だけを詰め込んだ新米訓練兵。その不器用な剣筋も、いつか伝説へと連なる。' },
