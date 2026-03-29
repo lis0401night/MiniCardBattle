@@ -277,8 +277,13 @@ export function initBattleState() {
             incrementStat('leaderUsage', GameState.playerConfig.id, 1);
         }
 
-        // バトル画面への遷移シグナル。ここから先は BattleScreen.jsx のマウント時フックに委ねる
+        // バトル画面への遷移シグナル。ここから先は BattleScreen.jsx に委ねる
         switchScreen('screen-battle');
+        
+        // 画面切り替えとDOM構成を待機してから戦闘開始処理へ
+        setTimeout(() => {
+            determineTurnOrder();
+        }, 1000);
     } catch (e) {
         console.error("Critical error in initBattleState:", e);
         showAlertModal("バトルの初期化中にエラーが発生しました。タイトルに戻ります。", () => {

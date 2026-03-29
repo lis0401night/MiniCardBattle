@@ -35,36 +35,27 @@ export default function BattleScreen() {
         };
     }, []);
 
-    // バトル初期化シーケンス（マウント時）
+    const turnOrderResolver = React.useRef(null);
+    
+    // バトル進行側(battle.js)からのターン開始シグナルを受け取る
     useEffect(() => {
-        let mounted = true;
-
-        const initSequence = async () => {
-            // UIレンダー（黒背景など）が完了するまで少し待つ
-            await sleep(300);
-            if (!mounted) return;
-
-            setRenderVersion(v => v + 1);
-
-            await sleep(300);
-            if (!mounted) return;
-
-            // ターンオーダー演出開始フラグを立てる
+        window.startTurnOrderReact = (resolve) => {
+            turnOrderResolver.current = resolve;
             setStartTurnOrderAnim(true);
         };
 
-        initSequence();
-
         return () => {
-            mounted = false;
+            window.startTurnOrderReact = null;
         };
     }, []);
 
     const handleTurnOrderComplete = React.useCallback((firstPlayer) => {
         setStartTurnOrderAnim(false);
         setIsInitializing(false);
-        GameState.isProcessing = false;
-        startTurn(firstPlayer);
+        if (turnOrderResolver.current) {
+            turnOrderResolver.current(firstPlayer);
+            turnOrderResolver.current = null;
+        }
         setRenderVersion(v => v + 1);
     }, []);
 
