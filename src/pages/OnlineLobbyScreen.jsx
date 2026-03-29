@@ -110,7 +110,7 @@ export default function OnlineLobbyScreen() {
                     GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, opData.leaderConfig.skin || 'default', 'image');
                     GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, opData.leaderConfig.skin || 'default', 'imageLose');
                     GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, opData.leaderConfig.skin || 'default', 'icon');
-                    
+
                     if (!GameState.enemySkins) GameState.enemySkins = {};
                     GameState.enemySkins[GameState.enemyConfig.id] = opData.leaderConfig.skin || 'default';
 
@@ -216,7 +216,7 @@ export default function OnlineLobbyScreen() {
                         background: myIcon ? `url('${myIcon}') center/cover` : 'rgba(0,0,0,0.5)'
                     }} />
                     <div style={{ flex: 1 }}>
-                        <div style={{ color: '#38bdf8', fontSize: '0.9rem', marginBottom: '5px' }}>あなた ({myName})</div>
+                        <div style={{ color: '#38bdf8', fontSize: '0.9rem', marginBottom: '5px' }}>{myName}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
                             <div style={{ color: myData?.isReady ? '#10b981' : '#facc15', fontWeight: 'bold' }}>
                                 {myData?.isReady ? '準備完了！' : '準備中...'}
@@ -244,7 +244,7 @@ export default function OnlineLobbyScreen() {
                     }} />
                     <div style={{ flex: 1 }}>
                         <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '5px' }}>
-                            対戦相手 {opData ? `(${opData.name})` : ''}
+                            {opData ? `(${opData.name})` : ''}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                             {!opData ? (

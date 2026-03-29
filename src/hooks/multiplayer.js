@@ -244,7 +244,7 @@ export async function clearActionQueueAndRegenerateSeed() {
     if (!currentRoomId || !database || !isHost) return;
     const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
     await update(roomRef, {
-        actionQueue: null,
+        actions: null,
         battleSeed: Date.now()
     });
 }
