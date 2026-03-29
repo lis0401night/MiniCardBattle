@@ -128,7 +128,7 @@ export const CHARACTERS = {
     cthulhu: {
         id: 'cthulhu', stageId: 'cthulhu', name: '深淵の呼び声 ナイア',
         desc: '深き海より来たりし名状しがたき存在の眷属。相手の精神を削り、狂気へと誘う。',
-        easeOfUse: 1,
+        easeOfUse: 2,
         filter: 'none', cardType: 'set6', cardBg: 'bg3',
         image: 'assets/characters/char_cthulhu.png', imageLose: 'assets/characters/char_cthulhu_lose.png', icon: 'assets/icons/icon_cthulhu.png', imageEnding: 'assets/characters/char_cthulhu_ending.png', color: '#c084fc',
         leaderSkill: { name: '深淵の儀式', desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+1する。', cost: 3, action: 'abyss_ritual' },
@@ -251,7 +251,7 @@ export const CHARACTERS = {
     devilhunter: {
         id: 'devilhunter', stageId: 'devilhunter', name: '悪魔狩り マリア',
         desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
-        easeOfUse: 1,
+        easeOfUse: 2,
         filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_devilhunter.png', imageLose: 'assets/characters/char_devilhunter_lose.png', icon: 'assets/icons/icon_devilhunter.png', imageEnding: 'assets/characters/char_devilhunter_ending.png', color: '#64748b',
         leaderSkill: { name: '棺の解放', desc: '(SP:4) 自分の墓地からカードを1枚選び、自分のレーンに配置する。', cost: 4, action: 'devilhunter_resurrect' },

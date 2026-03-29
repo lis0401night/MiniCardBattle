@@ -16,8 +16,8 @@ export default {
         'mage', 'mage',
         'gargoyle', 'gargoyle',
         'dragonfire', 'dragonfire',
-        'charger', 'charger',
-        'sniper', 'sniper', 'sniper',
+        'snake', 'snake',
+        'beginnermagic', 'beginnermagic', 'beginnermagic',
     ],
     hard: [
         'djinn', 'djinn', 'djinn', 'djinn',

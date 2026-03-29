@@ -110,6 +110,9 @@ export default function OnlineLobbyScreen() {
                     GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, opData.leaderConfig.skin || 'default', 'image');
                     GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, opData.leaderConfig.skin || 'default', 'imageLose');
                     GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, opData.leaderConfig.skin || 'default', 'icon');
+                    
+                    if (!GameState.enemySkins) GameState.enemySkins = {};
+                    GameState.enemySkins[GameState.enemyConfig.id] = opData.leaderConfig.skin || 'default';
 
                     GameState.gameMode = 'online';
                     GameState.appState = 'battle';

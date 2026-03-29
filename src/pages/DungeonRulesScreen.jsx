@@ -9,7 +9,7 @@ export default function DungeonRulesScreen() {
       id="screen-dungeon-rules"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_dungeon.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}

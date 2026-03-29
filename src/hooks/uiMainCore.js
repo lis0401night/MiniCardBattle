@@ -520,6 +520,9 @@ export async function startAttackBattle(enemyPlayerData) {
             GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, skinIdToUse, 'icon');
         }
 
+        if (!GameState.enemySkins) GameState.enemySkins = {};
+        GameState.enemySkins[GameState.enemyConfig.id] = skinIdToUse;
+
         GameState.selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
         // 自分のキャラクター選択から開始
@@ -800,18 +803,34 @@ export function updateDifficultyCheckButtons() {
 // --- Online Routing ---
 export function showOnlineMenu() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmOnline && SOUNDS.bgmOnline.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmOnline);
+    }
     switchScreen('screen-online-menu');
 }
 export function showOnlineRules() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmOnline && SOUNDS.bgmOnline.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmOnline);
+    }
     switchScreen('screen-online-rules');
 }
 export function showOnlineSearch() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmOnline && SOUNDS.bgmOnline.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmOnline);
+    }
     switchScreen('screen-online-search');
 }
 export function showOnlineLobby() {
     playSound(SOUNDS.seClick);
+    if (SOUNDS.bgmOnline && SOUNDS.bgmOnline.paused) {
+        stopAllBGM();
+        playSound(SOUNDS.bgmOnline);
+    }
     setPlayerReadyOnly(false); // バトル終了後などにルームへ戻った際は準備完了状態を解除
     switchScreen('screen-online-lobby');
 }

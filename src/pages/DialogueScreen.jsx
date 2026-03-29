@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { showNextDialogue } from '../hooks/uiDialogue.js';
+import { GameState } from '../hooks/gameState.js';
 
 export default function DialogueScreen() {
     const [dialogueData, setDialogueData] = useState(() => window.currentDialogueData || {});
@@ -27,8 +28,21 @@ export default function DialogueScreen() {
 
     const d = dialogueData;
 
+    let bgName = 'background_select.png';
+    if (GameState.gameMode === 'battle_dungeon' || GameState.gameMode === 'dungeon') {
+        bgName = 'background_challenge.png';
+    } else if (GameState.gameMode === 'event_satan') {
+        bgName = 'background_satan.png';
+    } else if (GameState.gameMode === 'defense_attack') {
+        bgName = 'background_defense.png';
+    }
+
     return (
-        <div id="screen-dialogue" className="screen active">
+        <div id="screen-dialogue" className="screen active" style={{
+            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/${bgName}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+        }}>
             {/* 暗転レイヤー */}
             <div 
                 style={{

@@ -15,9 +15,9 @@ export default function OnlineMenuScreen() {
     const [isMatching, setIsMatching] = useState(false);
 
     useEffect(() => {
-        if (SOUNDS?.bgmDefense?.paused) {
+        if (SOUNDS?.bgmOnline?.paused) {
             stopAllBGM?.();
-            playSound?.(SOUNDS.bgmDefense);
+            playSound?.(SOUNDS.bgmOnline);
         }
     }, []);
 

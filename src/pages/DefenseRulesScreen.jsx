@@ -9,7 +9,7 @@ export default function DefenseRulesScreen() {
       id="screen-defense-rules"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
