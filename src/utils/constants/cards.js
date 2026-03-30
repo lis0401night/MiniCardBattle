@@ -9,7 +9,7 @@ export const CARD_MASTER = [
     { id: 'dinosaur', name: '古代の大蜥蜴', power: 8, skill: 'takeover', rarity: 1, voiceCategory: 'lizard', flavor: '古代の息吹を宿す巨大な爬虫類。その巨体を現すには、相応の代償が必要となる。' },
     { id: 'cheetah', name: '稲妻の猟豹', power: 2, skill: 'quick', rarity: 1, voiceCategory: 'beast', flavor: '稲妻を纏って戦場を駆ける最速の野獣。その爪が空気を切り裂く。' },
     { id: 'scorpion', name: '黒サソリ', power: 3, skill: 'deadly', rarity: 1, voiceCategory: 'insect', flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
-    { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], rarity: 2, voiceCategory: 'machine_old', flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。' },
+    { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], rarity: 1, voiceCategory: 'machine_old', flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。' },
     { id: 'airship', name: 'セレスタリアのサルベージ船', power: 4, rarity: 1, skill: 'salvage', voiceCategory: 'machine_old', flavor: '空飛ぶ巨大な飛行船。その甲板には、忘れ去られた過去の遺物が山のように積まれている。' },
     { id: 'dancer', name: '魅惑の踊り子', power: 2, rarity: 1, skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }], voiceCategory: 'human_female_cool', flavor: '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。' },
     { id: 'lizardman', name: '竜人族の斥候', power: 4, skill: 'reinforce', skillValue: 2, rarity: 1, voiceCategory: 'lizard', flavor: '湿地に潜み、獲物をつけ狙う追跡者。仲間を呼ぶその甲高い鳴き声は、無数の影が迫る前兆である。' },

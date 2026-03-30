@@ -3,7 +3,7 @@ export default {
         'golem', 'golem', 'golem', 'golem',
         'tortoise', 'tortoise',
         'prince', 'prince',
-        'charger', 'charger', 'charger',
+        'chameleon', 'chameleon', 'chameleon',
         'diviner', 'diviner', 'diviner',
         'clone', 'clone', 'clone', 'clone',
         'dinosaur', 'dinosaur',

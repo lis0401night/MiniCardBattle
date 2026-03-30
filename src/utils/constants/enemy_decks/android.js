@@ -23,8 +23,9 @@ export default {
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon', 'cyberdragon',
         'cyberman', 'cyberman', 'cyberman', 'cyberman',
-        'bigai', 'bigai', 'bigai', 'bigai',
+        'bigai', 'bigai', 'bigai',
         'mechanic', 'mechanic', 'mechanic', 'mechanic',
-        'mech', 'mech', 'mech', 'mech',
+        'mech', 'mech', 'mech',
+        'airship', 'airship',
     ]
 };
