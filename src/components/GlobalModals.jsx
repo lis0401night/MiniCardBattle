@@ -212,7 +212,7 @@ export default function GlobalModals() {
     window.showDiscardSelectionModalReact = (cards, maxPow, onSelect, options = {}) => {
       playSound?.(SOUNDS?.seClick);
       const optArgs = typeof options === 'boolean' ? { isViewOnly: options } : options;
-      setDiscardSelectionData({ cards, maxPow, onSelect, ...optArgs });
+      setDiscardSelectionData({ cards, maxPow, onSelect, selectedIndex: null, ...optArgs });
     };
 
     window.showRulesModal = () => {
@@ -910,7 +910,7 @@ export default function GlobalModals() {
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
           <div className="skill-modal-box modal-pop-animation" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center', flexShrink: 0 }}>スキルを選択 {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', overflowY: 'auto', paddingRight: '5px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', overflowY: skillChoiceData.choices.length > 3 ? 'auto' : 'visible', paddingRight: skillChoiceData.choices.length > 3 ? '5px' : '0' }}>
               {skillChoiceData.choices.map((sk, idx) => {
                 const skillDef = SKILLS[sk.id] || { name: '不明', icon: '❓', desc: () => '' };
                 const val = sk.value || '';
@@ -930,22 +930,21 @@ export default function GlobalModals() {
                     }}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
-                      if (skillChoiceData.maxChoices === 1) {
-                        const { onSelect } = skillChoiceData;
-                        setSkillChoiceData(null);
-                        if (onSelect) onSelect([sk]);
-                      } else {
-                        // Multi-select toggle
-                        setSkillChoiceData(prev => {
-                          let newIndices = [...prev.selectedIndices];
-                          if (newIndices.includes(idx)) {
-                            newIndices = newIndices.filter(i => i !== idx);
+                      setSkillChoiceData(prev => {
+                        let newIndices = [...prev.selectedIndices];
+                        if (newIndices.includes(idx)) {
+                          // すでに選択されていれば解除
+                          newIndices = newIndices.filter(i => i !== idx);
+                        } else {
+                          if (prev.maxChoices === 1) {
+                             // maxChoicesが1なら、前に選んだものを上書きしてこれだけにする
+                             newIndices = [idx];
                           } else if (newIndices.length < prev.maxChoices) {
-                            newIndices.push(idx);
+                             newIndices.push(idx);
                           }
-                          return { ...prev, selectedIndices: newIndices };
-                        });
-                      }
+                        }
+                        return { ...prev, selectedIndices: newIndices };
+                      });
                     }}
                     onMouseOver={(e) => {
                       if (!isSelected) {
@@ -970,27 +969,25 @@ export default function GlobalModals() {
                 );
               })}
             </div>
-            {skillChoiceData.maxChoices > 1 && (
-              <button
-                className="btn ok-button"
-                style={{
-                  marginTop: '20px', width: '100%',
-                  background: skillChoiceData.selectedIndices.length > 0 ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
-                  color: skillChoiceData.selectedIndices.length > 0 ? '#fff' : '#94a3b8',
-                  pointerEvents: skillChoiceData.selectedIndices.length > 0 ? 'auto' : 'none',
-                  flexShrink: 0
-                }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  const selectedSkills = skillChoiceData.selectedIndices.map(i => skillChoiceData.choices[i]);
-                  const { onSelect } = skillChoiceData;
-                  setSkillChoiceData(null);
-                  if (onSelect) onSelect(selectedSkills);
-                }}
-              >
-                決定
-              </button>
-            )}
+            <button
+              className="btn ok-button"
+              style={{
+                marginTop: '20px', width: '100%',
+                background: skillChoiceData.selectedIndices.length > 0 ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
+                color: skillChoiceData.selectedIndices.length > 0 ? '#fff' : '#94a3b8',
+                pointerEvents: skillChoiceData.selectedIndices.length > 0 ? 'auto' : 'none',
+                flexShrink: 0
+              }}
+              onClick={() => {
+                playSound?.(SOUNDS?.seClick);
+                const selectedSkills = skillChoiceData.selectedIndices.map(i => skillChoiceData.choices[i]);
+                const { onSelect } = skillChoiceData;
+                setSkillChoiceData(null);
+                if (onSelect) onSelect(selectedSkills);
+              }}
+            >
+              決定
+            </button>
           </div>
         </div>
       )}
@@ -1012,6 +1009,7 @@ export default function GlobalModals() {
                 {discardSelectionData.cards.map((cardItem, idx) => {
                   const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
                   const rarityClass = cardItem.rarity ? ` rarity-${cardItem.rarity}` : '';
+                  const isSelected = discardSelectionData.selectedIndex === idx;
                   return (
                     <div
                       key={idx}
@@ -1021,7 +1019,7 @@ export default function GlobalModals() {
                         g_discardHasLongPressed = false;
                         g_discardLongPressTimer = setTimeout(() => {
                           g_discardHasLongPressed = true;
-                          if (window.showCardDetailReact) window.showCardDetailReact(cardItem);
+                          setCardPreviewData({ card: cardItem });
                         }, 600);
                       }}
                       onPointerUp={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
@@ -1032,18 +1030,20 @@ export default function GlobalModals() {
                         if (g_discardHasLongPressed) return;
                         playSound?.(SOUNDS?.seClick);
                         if (discardSelectionData.isViewOnly) {
-                          if (window.showCardDetailReact) window.showCardDetailReact(cardItem);
+                          setCardPreviewData({ card: cardItem });
                           return;
                         }
-                        const cb = discardSelectionData.onSelect;
-                        setDiscardSelectionData(null);
-                        if (cb) cb(cardItem);
+                        // 選択状態をセットする
+                        setDiscardSelectionData(prev => ({ ...prev, selectedIndex: idx }));
                       }}
                       style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0, minWidth: '90px' }}
                       onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                       onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                     >
-                      <div className={`card blue${rarityClass}`}>
+                      <div className={`card blue${rarityClass}`} style={{ 
+                        transition: 'box-shadow 0.2s',
+                        boxShadow: isSelected ? '0 0 15px 5px #facc15' : (cardItem.rarity >= 3 ? '0 0 10px rgba(255, 215, 0, 0.5)' : 'none')
+                      }}>
                         <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
                         <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{cardItem.power}</div>
                         {renderSkillTagReact(cardItem)}
@@ -1059,12 +1059,32 @@ export default function GlobalModals() {
                 )}
               </div>
             </div>
-            {/* 閲覧モードと選択モード両方で閉じる/選択しないボタンを表示 */}
-            <button className="btn" style={{ marginTop: '20px', width: '100%', background: '#475569' }} onClick={() => {
+            {/* 閲覧モーダルでない場合は決定ボタンを表示 */}
+            {!discardSelectionData.isViewOnly && (
+              <button 
+                className="btn ok-button" 
+                style={{ 
+                  marginTop: '15px', width: '100%', 
+                  background: discardSelectionData.selectedIndex != null ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
+                  color: discardSelectionData.selectedIndex != null ? '#fff' : '#94a3b8',
+                  pointerEvents: discardSelectionData.selectedIndex != null ? 'auto' : 'none'
+                }} 
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  const cb = discardSelectionData.onSelect;
+                  const item = discardSelectionData.cards[discardSelectionData.selectedIndex];
+                  setDiscardSelectionData(null);
+                  if (cb) cb(item);
+                }}
+              >
+                決定
+              </button>
+            )}
+            <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
               const cb = discardSelectionData.onSelect;
               setDiscardSelectionData(null);
               if (cb && !discardSelectionData.isViewOnly) cb(null);
-            }}>{discardSelectionData.isViewOnly ? '閉じる' : '選択しない'}</button>
+            }}>{discardSelectionData.isViewOnly ? '閉じる' : 'キャンセル'}</button>
           </div>
         </div>
       )}

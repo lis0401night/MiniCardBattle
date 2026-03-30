@@ -50,7 +50,12 @@ export default function ExchangeScreen() {
   };
 
   return (
-    <div id="screen-exchange" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto' }}>
+    <div id="screen-exchange" className="screen active" style={{
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_defense.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto'
+    }}>
       <h2
         id="exchange-title"
         style={{ color: '#10b981', marginBottom: '5px', cursor: 'pointer', textShadow: '0 0 15px rgba(16, 185, 129, 0.6)' }}
