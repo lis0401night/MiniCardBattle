@@ -2,6 +2,7 @@ export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'titan', 'titan',
+        'mech', 'mech',
         'mantis', 'mantis',
         'airship', 'airship', 'airship',
         'cleric', 'cleric', 'cleric',
@@ -14,16 +15,16 @@ export default {
         'cyberman', 'cyberman',
         'bigai', 'bigai',
         'titan', 'titan',
-        'mantis', 'mantis',
+        'mech', 'mech',
         'mechanic', 'mechanic',
-        'diviner', 'diviner',
-        'clone', 'clone', 'clone',
+        'airship', 'airship', 'airship',
+        'mantis', 'mantis',
     ],
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon', 'cyberdragon',
         'cyberman', 'cyberman', 'cyberman', 'cyberman',
         'bigai', 'bigai', 'bigai', 'bigai',
         'mechanic', 'mechanic', 'mechanic', 'mechanic',
-        'clone', 'clone', 'clone', 'clone',
+        'mech', 'mech', 'mech', 'mech',
     ]
 };
