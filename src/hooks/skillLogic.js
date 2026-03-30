@@ -7,6 +7,7 @@ import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
 import { PASSIVE_SKILLS } from '../utils/constants/skills.js';
+import { getIsHost } from './multiplayer.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -126,7 +127,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         await sleep(500);
     } else if (skillId === 'shuffle') {
         playSkillSound(skillId); createDamagePopup(cEl, '攪乱', '#facc15');
-        ['blue', 'red'].forEach(p => {
+        
+        // オンライン対戦時、乱数シードの消費順序をホスト・ゲスト間で一致させるため、ホスト側の盤面から処理する順序に固定
+        let processOrder = ['blue', 'red'];
+        if (GameState.gameMode === 'online') {
+            processOrder = getIsHost() ? ['blue', 'red'] : ['red', 'blue'];
+        }
+
+        processOrder.forEach(p => {
             const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
@@ -142,7 +150,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         renderHand();
         await sleep(1200);
 
-        ['blue', 'red'].forEach(p => {
+        processOrder.forEach(p => {
             const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
 
