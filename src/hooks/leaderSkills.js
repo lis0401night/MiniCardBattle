@@ -136,7 +136,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl(tokenCard) || `assets/cards/card_${tokenCard.id}.jpg`;
             if (b[l]) { await discardCard(owner, b[l], l); }
-            b[l] = { id: `dng_tk_${Math.floor(getSeededRandom() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
+            b[l] = { id: `dng_tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
             b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
 
             // Add custom summon event to play correct standard visualizer pipeline
@@ -178,7 +178,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const targetLane = tLanes[0];
             const resurrectedCard = {
                 ...selectedCard,
-                id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
+                id: `res_${Math.floor(Math.random() * 1000000000)}`,
                 baseId: selectedCard.baseId || selectedCard.id
             };
             resurrectedCard.currentPower = resurrectedCard.power;

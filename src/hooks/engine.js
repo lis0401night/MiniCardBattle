@@ -43,7 +43,7 @@ export function processDestructionTriggers(state, events) {
                             side,
                             lane: i,
                             card: {
-                                id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
+                                id: `sp_${Math.floor(Math.random() * 1000000000)}_${i}_${Math.random().toString(36).substr(2, 5)}`,
                                 owner: side,
                                 ...tL,
                                 imgUrl: `assets/cards/card_${tokenId}.jpg`,
@@ -191,8 +191,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
                         const voidToken = {
                             ...voidTpl,
-                            id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_vp${i}`,
-                            uid: `${oppOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidvp${i}`,
+                            id: `token_void_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}_vp${i}`,
+                            uid: `${oppOwner}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}_voidvp${i}`,
                             filter: voidTpl.filter,
                             power: voidTpl.power,
                             currentPower: voidTpl.power,
@@ -338,7 +338,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (targetLane !== -1) {
                     const newToken = {
                         ...sTC,
-                        id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                        id: `sm_sim_${Math.floor(Math.random() * 1000000000)}_${i}`,
                         owner,
                         isPremium: c.isPremium,
                         imgUrl: '', // resolved in UI
@@ -372,7 +372,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             if (targetLaneRes !== -1) {
                 const newResToken = {
                     ...simResCard,
-                    id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    id: `rs_sim_${Math.floor(Math.random() * 1000000000)}`,
                     owner,
                     currentPower: simResCard.power,
                     skills: [] // 蘇生時は通常のOnPlayスキルは発動しない
@@ -412,7 +412,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (targetLane !== -1) {
                     const newToken = {
                         ...tC,
-                        id: `cl_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                        id: `cl_sim_${Math.floor(Math.random() * 1000000000)}_${i}`,
                         owner,
                         isPremium: c.isPremium,
                         imgUrl: c.imgUrl, // シミュ内では元の情報を保持していればOK (UI表示は後で行われる)
@@ -451,7 +451,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             for (let i = 0; i < actualReinforceCount; i++) {
                 h.push({ 
                     ...rTC, 
-                    id: `rf_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`, 
+                    id: `rf_sim_${Math.floor(Math.random() * 1000000000)}_${i}`, 
                     owner,
                     imgUrl: c.imgUrl,
                     isPremium: c.isPremium
@@ -477,7 +477,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (targetLane !== -1 && b[targetLane] === null) {
                     const resurrectedCard = { 
                         ...selectedCard, 
-                        id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                        id: `res_sim_${Math.floor(Math.random() * 1000000000)}`,
                         baseId: selectedCard.baseId || selectedCard.id
                     };
                     resurrectedCard.currentPower = resurrectedCard.power;
@@ -543,7 +543,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
             if (l !== -1) {
                 events.push({ type: 'leader_skill', skill: action, side: owner });
-                const resurrectedCard = { ...selectedCard, id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}` };
+                const resurrectedCard = { ...selectedCard, id: `res_sim_${Math.floor(Math.random() * 1000000000)}` };
                 resurrectedCard.currentPower = resurrectedCard.power;
                 resurrectedCard.skillTriggered = true;
                 resurrectedCard.stunTurns = 0;
@@ -572,7 +572,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         if (l !== -1) {
             events.push({ type: 'leader_skill', skill: action, side: owner });
             const tM = CARD_MASTER.find(m => m.id === (action === 'satan_avatar' ? 'token_satan' : 'token_ignis'));
-            const newToken = { id: `tk_${Math.floor(getSeededRandom() * 1000000000)}`, owner, ...tM, currentPower: power, rarity: tM.rarity || 1 };
+            const newToken = { id: `tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tM, currentPower: power, rarity: tM.rarity || 1 };
             if (action === 'satan_avatar') newToken.imgUrl = 'assets/cards/card_token_satan.jpg';
             else newToken.imgUrl = 'assets/cards/card_token_dragon.jpg';
 
@@ -590,7 +590,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         let count = 0;
         const addKnight = (lane) => {
             const tK = CARD_MASTER.find(m => m.id === 'token_knight');
-            const tk = { id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`, owner, ...tK, currentPower: tK.power, rarity: tK.rarity || 1, imgUrl: 'assets/cards/card_token_knight.jpg' };
+            const tk = { id: `tk_k_${Math.floor(Math.random() * 1000000000)}_${lane}`, owner, ...tK, currentPower: tK.power, rarity: tK.rarity || 1, imgUrl: 'assets/cards/card_token_knight.jpg' };
             board[lane] = tk;
             // 後続のループで tk自身が +2 されるため、イベントに積むcardは追加時点のものをディープコピーしておく
             events.push({ type: 'summon_token', side: owner, lane, card: JSON.parse(JSON.stringify(tk)), source: 'holy_march' });
@@ -881,8 +881,8 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {
                 ...voidTpl,
-                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_extort${i}`,
-                uid: `${oppSide}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidext${i}`,
+                id: `token_void_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}_extort${i}`,
+                uid: `${oppSide}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}_voidext${i}`,
                 filter: voidTpl.filter,
                 power: voidTpl.power,
                 currentPower: voidTpl.power,

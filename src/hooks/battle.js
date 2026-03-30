@@ -1016,7 +1016,7 @@ export async function triggerSplitSkill(owner, lane, card) {
     }
 
     board[lane] = {
-        id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
+        id: `sp_${Math.floor(Math.random() * 1000000000)}_${lane}`,
         owner,
         ...tL,
         imgUrl: `assets/cards/card_${tokenId}.jpg`,
