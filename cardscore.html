@@ -236,6 +236,11 @@
                     score += Number(p.base || 0) + (Number(value) * Number(p.multiplier || 0));
                 }
             });
+
+            if (activeSkills.some(sk => sk.id === 'defender')) {
+                score = score / 2;
+            }
+
             return Math.round(score * 10) / 10;
         }
 

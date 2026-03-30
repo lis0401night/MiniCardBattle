@@ -43,15 +43,15 @@ export const SKILL_POINTS = {
         "multiplier": -1.5
     },
     "bind": {
-        "base": 1,
-        "multiplier": 0
+        "base": 0,
+        "multiplier": 1
     },
     "growth": {
         "base": 0,
-        "multiplier": 1.2
+        "multiplier": 1
     },
     "hero": {
-        "base": 0.5,
+        "base": 0,
         "multiplier": 2
     },
     "charge": {
@@ -123,24 +123,24 @@ export const SKILL_POINTS = {
         "multiplier": -1
     },
     "choice": {
-        "base": 0,
+        "base": 1,
         "multiplier": 0
     },
     "metamorph": {
-        "base": 0,
+        "base": 5,
         "multiplier": 0
     },
     "resurrect": {
         "base": 0,
-        "multiplier": 0
+        "multiplier": 1
     },
     "standby": {
         "base": 0,
-        "multiplier": -1.5
+        "multiplier": -1
     },
     "artillery": {
         "base": 0,
-        "multiplier": 0
+        "multiplier": 2
     },
     "shuffle": {
         "base": 0,
@@ -148,30 +148,38 @@ export const SKILL_POINTS = {
     },
     "summon": {
         "base": 0,
-        "multiplier": 0
+        "multiplier": 1
     },
     "immune": {
-        "base": 0,
+        "base": 2,
         "multiplier": 0
     },
     "fate": {
-        "base": 0,
+        "base": 3,
         "multiplier": 0
     },
     "salvage": {
         "base": 0,
-        "multiplier": 0
+        "multiplier": 1
     },
     "reinforce": {
         "base": 0,
-        "multiplier": 0
+        "multiplier": 1
     },
     "extort": {
         "base": 0,
-        "multiplier": 0
+        "multiplier": 0.5
     },
     "toxic": {
         "base": 0,
+        "multiplier": 1
+    },
+    "convert": {
+        "base": 0,
+        "multiplier": -1
+    },
+    "invade": {
+        "base": 5,
         "multiplier": 0
     }
 };
