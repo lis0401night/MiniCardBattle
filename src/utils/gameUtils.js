@@ -124,11 +124,11 @@ export function setRNGSeed(seed) {
     } else {
         a = seed;
     }
-    currentRNG = function() {
-      var t = a += 0x6D2B79F5;
-      t = Math.imul(t ^ t >>> 15, t | 1);
-      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    currentRNG = function () {
+        var t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
     }
 }
 
@@ -147,7 +147,7 @@ export function setSwitchScreenHook(hook) { switchScreenHook = hook; }
 
 export function switchScreen(id) {
     if (isTransitioning) return;
-    
+
     if (switchScreenHook) {
         switchScreenHook(id);
     } else {
@@ -206,7 +206,7 @@ export function getSkillValue(c, skillId) {
     return 0;
 }
 
-export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'dinosaur', 'diviner', 'dragon', 'empress', 'golem', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic'];
+export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
@@ -220,7 +220,7 @@ export function getCardImgUrl(card) {
 
     let lookupId = card.baseId || card.id;
     if (!lookupId) return 'assets/cards/card_default.jpg';
-    
+
     // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
     if (lookupId.includes('_') && !lookupId.startsWith('token_') && !lookupId.startsWith('cl_')) {
         lookupId = lookupId.split('_')[0];

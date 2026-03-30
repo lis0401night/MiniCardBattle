@@ -3,7 +3,7 @@ import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import { ownedPlaymats, setOwnedPlaymats } from '../utils/constants/playmats.js';
-import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom, shuffleArray } from '../utils/gameUtils.js';
+import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom, shuffleArray, VALID_PREMIUM_GIFS } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
 import { GameState } from './gameState.js';
@@ -182,7 +182,8 @@ export function loadDeck() {
     const premiumSaved = localStorage.getItem(premiumKey);
     if (premiumSaved) {
         try {
-            GameState.premiumCards = JSON.parse(premiumSaved);
+            GameState.premiumCards = JSON.parse(premiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id));
+            localStorage.setItem(premiumKey, JSON.stringify(GameState.premiumCards)); // クリーンアップしたものを再保存
         } catch (e) {
             console.error("Premium cards load error:", e);
             GameState.premiumCards = [];
@@ -196,7 +197,8 @@ export function loadDeck() {
     const unlockedPremiumSaved = localStorage.getItem(unlockedPremiumKey);
     if (unlockedPremiumSaved) {
         try {
-            GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved);
+            GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id));
+            localStorage.setItem(unlockedPremiumKey, JSON.stringify(GameState.unlockedPremiumCards)); // クリーンアップしたものを再保存
         } catch (e) {
             console.error("Unlocked Premium load error:", e);
             GameState.unlockedPremiumCards = [];

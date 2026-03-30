@@ -40,7 +40,7 @@ export const ACHIEVEMENT_MASTER = [
         description: 'イグニスのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
         targetValue: 'dragon',
-        reward: { type: 'premium', value: 'dinosaur', name: '古代の大蜥蜴', isPremiumUnlock: true }
+        reward: { type: 'premium', value: 'dancer', name: '魅惑の踊り子', isPremiumUnlock: true }
     },
     {
         id: 'story_knight',
@@ -504,7 +504,62 @@ export function claimAchievementReward(id) {
     ach.isRewarded = true;
     saveAchievements();
     return true;
-    return true;
+}
+
+export function checkAndFixMissingRewards() {
+    if (!achievementData || !achievementData.achievements) return;
+    
+    let needsSave = false;
+    const cardClaimedCounts = {};
+
+    ACHIEVEMENT_MASTER.forEach(ach => {
+        const data = achievementData.achievements[ach.id];
+        if (!data || !data.isRewarded || !ach.reward) return;
+
+        const reward = ach.reward;
+
+        if (reward.type === 'playmat') {
+            if (!ownedPlaymats.includes(reward.value)) {
+                data.isRewarded = false;
+                needsSave = true;
+                console.log(`[修正] プレイマット ${reward.value} を未受取に戻しました`);
+            }
+        } else if (reward.type === 'premium') {
+            if (!GameState.unlockedPremiumCards.includes(reward.value)) {
+                data.isRewarded = false;
+                needsSave = true;
+                console.log(`[修正] プレミアムカード ${reward.value} を未受取に戻しました`);
+            }
+        } else if (reward.type === 'card') {
+            cardClaimedCounts[reward.value] = (cardClaimedCounts[reward.value] || 0) + 1;
+        }
+    });
+
+    const currentInventory = GameState.playerInventory || {};
+    
+    Object.keys(cardClaimedCounts).forEach(cardId => {
+        const claimedCount = cardClaimedCounts[cardId];
+        const actualCount = currentInventory[cardId] || 0;
+
+        if (actualCount < claimedCount) {
+            let missingCount = claimedCount - actualCount;
+            ACHIEVEMENT_MASTER.forEach(ach => {
+                const data = achievementData.achievements[ach.id];
+                if (data && data.isRewarded && ach.reward && ach.reward.type === 'card' && ach.reward.value === cardId) {
+                    if (missingCount > 0) {
+                        data.isRewarded = false;
+                        needsSave = true;
+                        missingCount--;
+                        console.log(`[修正] カード ${cardId} の不足のため、実績 ${ach.id} を未受取に戻しました`);
+                    }
+                }
+            });
+        }
+    });
+
+    if (needsSave) {
+        saveAchievements();
+    }
 }
 
 window.loadAchievements = loadAchievements;

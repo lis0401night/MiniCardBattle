@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { ACHIEVEMENT_MASTER, achievementData, claimAchievementReward, saveAchievements, checkCollectionAchievements } from '../utils/constants/achievements.js';
+import { ACHIEVEMENT_MASTER, achievementData, claimAchievementReward, saveAchievements, checkCollectionAchievements, checkAndFixMissingRewards } from '../utils/constants/achievements.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, isTransitioning, switchScreen } from '../utils/gameUtils.js';
@@ -16,6 +16,10 @@ export default function AchievementsScreen() {
   const [leaderUsage, setLeaderUsage] = useState([]);
 
   const updateAchievements = () => {
+    if (typeof checkAndFixMissingRewards === 'function') {
+      checkAndFixMissingRewards();
+    }
+    
     if (typeof checkCollectionAchievements === 'function') {
       checkCollectionAchievements();
       if (typeof saveAchievements === 'function') saveAchievements();
