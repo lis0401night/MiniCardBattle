@@ -14,7 +14,7 @@ export const CARD_MASTER = [
     { id: 'dancer', name: '魅惑の踊り子', power: 2, rarity: 1, skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }], voiceCategory: 'human_female_cool', flavor: '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。' },
     { id: 'lizardman', name: '竜人族の斥候', power: 4, skill: 'reinforce', skillValue: 2, rarity: 1, voiceCategory: 'lizard', flavor: '湿地に潜み、獲物をつけ狙う追跡者。仲間を呼ぶその甲高い鳴き声は、無数の影が迫る前兆である。' },
     { id: 'ninja', name: '忍者', power: 3, skill: 'stealth', skillValue: 1, rarity: 1, voiceCategory: 'human_male_normal', flavor: '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。' },
-    { id: 'crenellatedwall', name: '民兵団の射手', power: 5, skills: [{ id: 'spread', value: 1 }, { id: 'defender' }], rarity: 1, voiceCategory: 'human_male_normal', flavor: '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。' },
+    { id: 'crenellatedwall', name: '民兵団の射手', power: 6, skills: [{ id: 'spread', value: 1 }, { id: 'defender' }], rarity: 1, voiceCategory: 'human_male_normal', flavor: '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。' },
     { id: 'chameleon', name: '迷彩カメレオン', power: 3, skill: 'immune', rarity: 1, voiceCategory: 'lizard', flavor: '周囲の景色に完璧に溶け込む擬態能力。じっと潜んだその姿は、どんな熟練の狩人にも見抜くことはできない。' },
     { id: 'charger', name: '虹ハチドリ', power: 1, skill: 'charge', skillValue: 1, rarity: 1, voiceCategory: 'bird', flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。' },
     { id: 'cleric', name: '見習い修道女', power: 3, skill: 'heal', skillValue: 2, rarity: 1, voiceCategory: 'human_female_cute', flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
