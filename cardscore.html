@@ -328,8 +328,31 @@
             const grid = document.getElementById('points-grid');
             grid.innerHTML = Object.entries(skillData).filter(([k]) => k !== 'none').map(([k, s]) => {
                 const p = pointSettings[k] || { base: 0, multiplier: 0 };
+                
+                let settingsArea = `
+                    <div class="grid grid-cols-2 gap-2 md:gap-3 mt-auto">
+                        <div>
+                            <label class="text-[7px] md:text-[8px] font-black text-slate-500 uppercase block mb-1 tracking-widest">基礎点</label>
+                            <input type="number" step="0.5" value="${p.base}" oninput="window.updatePoint('${k}', 'base', this.value)" 
+                                class="w-full bg-slate-950 text-white px-2 py-1 md:py-2 rounded-xl border border-slate-700 text-right font-black text-[10px] md:text-xs outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all ${k === 'defender' ? 'cursor-not-allowed opacity-50' : ''}" ${k === 'defender' ? 'disabled' : ''}/>
+                        </div>
+                        <div>
+                            <label class="text-[7px] md:text-[8px] font-black text-slate-500 uppercase block mb-1 tracking-widest">倍率</label>
+                            <input type="number" step="0.1" value="${p.multiplier}" oninput="window.updatePoint('${k}', 'multiplier', this.value)" 
+                                class="w-full bg-slate-950 text-white px-2 py-1 md:py-2 rounded-xl border border-slate-700 text-right font-black text-[10px] md:text-xs outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all ${k === 'defender' ? 'cursor-not-allowed opacity-50' : ''}" ${k === 'defender' ? 'disabled' : ''}/>
+                        </div>
+                    </div>`;
+
+                if (k === 'defender') {
+                    settingsArea = `
+                    <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-red-500/30 bg-red-500/5">
+                        <span class="text-[9px] md:text-[10px] font-black text-red-400 tracking-wider">固定補正</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5">最終評価スコアを 1/2 倍</span>
+                    </div>`;
+                }
+
                 return `
-                <div class="p-4 rounded-2xl bg-slate-800/50 border border-white/5 hover:border-indigo-500/50 transition-all group">
+                <div class="p-4 rounded-2xl bg-slate-800/50 border border-white/5 hover:border-indigo-500/50 transition-all group flex flex-col h-full">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-3">
                             <span class="text-xl md:text-2xl group-hover:scale-125 transition-transform duration-300">${s.icon}</span>
@@ -339,18 +362,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 md:gap-3">
-                        <div>
-                            <label class="text-[7px] md:text-[8px] font-black text-slate-500 uppercase block mb-1 tracking-widest">基礎点</label>
-                            <input type="number" step="0.5" value="${p.base}" oninput="window.updatePoint('${k}', 'base', this.value)" 
-                                class="w-full bg-slate-950 text-white px-2 py-1 md:py-2 rounded-xl border border-slate-700 text-right font-black text-[10px] md:text-xs outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" />
-                        </div>
-                        <div>
-                            <label class="text-[7px] md:text-[8px] font-black text-slate-500 uppercase block mb-1 tracking-widest">倍率</label>
-                            <input type="number" step="0.1" value="${p.multiplier}" oninput="window.updatePoint('${k}', 'multiplier', this.value)" 
-                                class="w-full bg-slate-950 text-white px-2 py-1 md:py-2 rounded-xl border border-slate-700 text-right font-black text-[10px] md:text-xs outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" />
-                        </div>
-                    </div>
+                    ${settingsArea}
                 </div>`;
             }).join('');
         }
