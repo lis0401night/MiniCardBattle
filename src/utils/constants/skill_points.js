@@ -71,7 +71,7 @@ export const SKILL_POINTS = {
         "multiplier": 0
     },
     "defender": {
-        "base": -5,
+        "base": 0,
         "multiplier": 0
     },
     "clone": {
