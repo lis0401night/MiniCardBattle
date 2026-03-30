@@ -97,7 +97,8 @@ export function setupDialogueScreen() {
 export async function showNextDialogue(force = false) {
     if (GameState.isProcessing && !force) return;
     if (GameState.currentDialogueIndex >= GameState.dialogueQueue.length) {
-        GameState.isProcessing = true; // クリック連打による二重進行（ストーリーのスキップ等）を完全に防止
+        // 次の画面への遷移（performFadeTransition等）が isProcessing 判定を要求するため、false に戻す
+        GameState.isProcessing = false; 
         handleProgressionNextStep();
         return;
     }
