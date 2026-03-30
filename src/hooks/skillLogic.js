@@ -134,14 +134,26 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             processOrder = getIsHost() ? ['blue', 'red'] : ['red', 'blue'];
         }
 
-        processOrder.forEach(p => {
+        // オンライン対戦時、乱数シードの消費順序や効果の発動順序をホスト・ゲスト間で完全に一致させるため、ホストから順に処理
+        for (const p of processOrder) {
             const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
+            const hCards = [...h]; // 手札のコピーを保持
+            h.length = 0; // 手札の配列を先に空にする
+            
+            // 順番に1枚ずつ正規に捨てる（バフ・変相のリセットとトークンの自動消滅処理を適用するため）
+            for (let i = 0; i < hCards.length; i++) {
+                await discardCard(p, hCards[i], undefined, false);
+            }
+        }
+
+        processOrder.forEach(p => {
             const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
 
-            // 手札・墓地をデッキに戻す
-            while (h.length > 0) d.push(h.pop());
-            while (g.length > 0) d.push(g.pop());
+            // 墓地に送られた（リセット済みの）カードをデッキに全て戻す
+            while (g.length > 0) {
+                d.push(g.pop());
+            }
         });
 
         // 捨てた状態で一度待機する
