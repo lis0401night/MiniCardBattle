@@ -61,8 +61,19 @@ export async function playSound(audioOrKey) {
     const baseVol = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
 
     // 1. Web Audio (SE) の処理
-    const seKey = (typeof audioOrKey === 'string') ? audioOrKey : null;
-    if (seKey && audioCtx && seBuffers[seKey]) {
+    let seKey = null;
+    if (typeof audioOrKey === 'string') {
+        seKey = audioOrKey;
+    } else if (audioOrKey instanceof Audio) {
+        for (const [key, val] of Object.entries(SOUNDS)) {
+            if (val === audioOrKey) {
+                seKey = key;
+                break;
+            }
+        }
+    }
+
+    if (seKey && !seKey.startsWith('bgm') && audioCtx && seBuffers[seKey]) {
         const buffer = seBuffers[seKey];
         const source = audioCtx.createBufferSource();
         const gainNode = audioCtx.createGain();

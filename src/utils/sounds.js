@@ -178,24 +178,35 @@ export async function unlockAudio() {
 export function playSkillSound(skillId) {
     const backupSound = SOUNDS.seSkill;
     if (!skillId || skillId === 'none') {
-        playSound(backupSound);
+        if (typeof window.playSound === 'function') window.playSound(backupSound);
         return;
     }
     
     const url = `assets/audio/se/se_skill_${skillId}.mp3`;
-    const audio = new Audio();
-    const baseVol = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
-    audio.volume = baseVol;
     
-    audio.addEventListener('canplaythrough', () => {
-        audio.play().catch(e => console.warn(`Failed to play SE for ${skillId}`, e));
-    });
-    
-    audio.addEventListener('error', () => {
-        // 読み込みエラー（ファイルが存在しない等）の場合はデフォルトの効果音を再生
-        playSound(backupSound);
-    });
-    
-    audio.src = url;
-    audio.load();
+    if (audioCtx && typeof fetch === 'function') {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
+        
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error("not found");
+                return res.arrayBuffer();
+            })
+            .then(ab => audioCtx.decodeAudioData(ab))
+            .then(buffer => {
+                const source = audioCtx.createBufferSource();
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.value = baseVol;
+                source.buffer = buffer;
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                source.start(0);
+            })
+            .catch(e => {
+                if (typeof window.playSound === 'function') window.playSound(backupSound);
+            });
+    } else {
+        if (typeof window.playSound === 'function') window.playSound(backupSound);
+    }
 }
