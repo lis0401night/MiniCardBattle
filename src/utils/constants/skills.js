@@ -46,7 +46,8 @@ export const SKILLS = {
     extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空」を加える。` },
     toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` },
     convert: { name: '転換', icon: '♻️', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空」を加える。` },
-    invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' }
+    invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
+    equip: { name: '装備', icon: '🗡️', desc: (val) => '既にカードのあるレーンに配置したとき、下のカードに自身と同じパワーと能力を付与する。' }
 };
 
 export const ACTIVE_SKILLS = [

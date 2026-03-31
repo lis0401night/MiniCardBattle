@@ -1,4 +1,5 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
@@ -124,7 +125,9 @@ export function getInitialDeck(charId) {
     return deck.slice(0, DECK_SIZE); // 20枚
 }
 
+window.loadDeck = loadDeck;
 export function loadDeck() {
+    // 1. ダンジョン特殊処理
     if (GameState.gameMode === 'battle_dungeon') {
         if (!GameState.playerDeckSelection || GameState.playerDeckSelection.length !== 20) {
             GameState.playerDeckSelection = (GameState.dungeonCards || []).slice(0, 20).map(id => {
@@ -135,59 +138,24 @@ export function loadDeck() {
         return;
     }
 
-    // リーダーごとに個別のキーを使用 (防衛登録時は共通キー)
-    let key = `mini_card_battle_deck_${GameState.playerConfig?.id || 'default'}`;
-    if (typeof GameState.gameMode !== 'undefined' && GameState.gameMode === 'defense_register') {
-        key = 'mini_card_battle_deck_defense';
-    }
-
-    const saved = localStorage.getItem(key);
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            GameState.playerDeckSelection = parsed.map(item => {
-                // itemが文字列（IDのみ）の場合と、オブジェクト（旧形式）の両方に対応
-                const id = typeof item === 'string' ? item : (item.id || "");
-                const t = CARD_MASTER.find(m => m.id === id);
-                return t ? { ...t } : (typeof item === 'string' ? { id: item } : item);
-            });
-        } catch (e) {
-            console.error("Deck load error:", e);
-            GameState.playerDeckSelection = getInitialDeck(GameState.playerConfig.id);
-        }
-    } else {
-        GameState.playerDeckSelection = getInitialDeck(GameState.playerConfig.id);
-    }
-
-    // インベントリの読み込み
+    // 2. 全体（アカウント）設定のベース読み込み
+    // インベントリ
     const invKey = `mini_card_battle_inventory`;
     const invSaved = localStorage.getItem(invKey);
     if (invSaved) {
-        try {
-            GameState.playerInventory = JSON.parse(invSaved);
-        } catch (e) {
-            console.error("Inventory parse error:", e);
-            GameState.playerInventory = {};
-        }
+        try { GameState.playerInventory = JSON.parse(invSaved); } 
+        catch (e) { GameState.playerInventory = {}; }
     } else {
-        // 初期インベントリの作成（初期デッキのカードを所持）
         GameState.playerInventory = {};
-        INITIAL_PLAYER_DECK.forEach(id => {
-            GameState.playerInventory[id] = (GameState.playerInventory[id] || 0) + 1;
-        });
+        INITIAL_PLAYER_DECK.forEach(id => { GameState.playerInventory[id] = (GameState.playerInventory[id] || 0) + 1; });
     }
 
-    // プレミアムカード設定の読み込み
+    // プレミアムカード設定の読み込み（全体デフォルト）
     const premiumKey = `mini_card_battle_premium_cards`;
     const premiumSaved = localStorage.getItem(premiumKey);
     if (premiumSaved) {
-        try {
-            GameState.premiumCards = JSON.parse(premiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id));
-            localStorage.setItem(premiumKey, JSON.stringify(GameState.premiumCards)); // クリーンアップしたものを再保存
-        } catch (e) {
-            console.error("Premium cards load error:", e);
-            GameState.premiumCards = [];
-        }
+        try { GameState.premiumCards = JSON.parse(premiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id)); } 
+        catch (e) { GameState.premiumCards = []; }
     } else {
         GameState.premiumCards = [];
     }
@@ -196,13 +164,8 @@ export function loadDeck() {
     const unlockedPremiumKey = `mini_card_battle_unlocked_premium`;
     const unlockedPremiumSaved = localStorage.getItem(unlockedPremiumKey);
     if (unlockedPremiumSaved) {
-        try {
-            GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id));
-            localStorage.setItem(unlockedPremiumKey, JSON.stringify(GameState.unlockedPremiumCards)); // クリーンアップしたものを再保存
-        } catch (e) {
-            console.error("Unlocked Premium load error:", e);
-            GameState.unlockedPremiumCards = [];
-        }
+        try { GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id)); } 
+        catch (e) { GameState.unlockedPremiumCards = []; }
     } else {
         GameState.unlockedPremiumCards = [];
     }
@@ -211,50 +174,203 @@ export function loadDeck() {
     const playmatsKey = `mini_card_battle_owned_playmats`;
     const playmatsSaved = localStorage.getItem(playmatsKey);
     if (playmatsSaved) {
-        try {
-            setOwnedPlaymats(JSON.parse(playmatsSaved));
-        } catch (e) {
-            console.error("Owned playmats load error:", e);
-            setOwnedPlaymats([]);
-        }
+        try { setOwnedPlaymats(JSON.parse(playmatsSaved)); } 
+        catch (e) { setOwnedPlaymats([]); }
     } else {
         setOwnedPlaymats([]);
     }
 
+    // 3. デッキのロードと固有設定の適用
+
+    if (GameState.gameMode === 'defense_register') {
+        GameState.currentDeckIndex = 0; // 防衛時は必ず0番目を使用する
+        const defenseSaved = localStorage.getItem('mini_card_battle_defense_deck_obj');
+        if (defenseSaved) {
+            try { 
+                GameState.decks = [JSON.parse(defenseSaved)]; 
+                // キャラクター選択直後の場合は選択されたリーダーを強制適用する
+                if (GameState.playerConfig && GameState.playerConfig.id && GameState.appState === 'select_player') {
+                    GameState.decks[0].leaderId = GameState.playerConfig.id;
+                }
+            }
+            catch (e) { GameState.decks = []; }
+        } else {
+            // マイグレーション：古い構造からの引き継ぎ
+            const oldDef = localStorage.getItem('mini_card_battle_deck_defense');
+            if (oldDef) {
+                try {
+                    const cardsArr = JSON.parse(oldDef);
+                    GameState.decks = [{
+                        id: 'defense_deck',
+                        name: '防衛デッキ',
+                        leaderId: GameState.playerConfig?.id || 'android',
+                        playmatId: localStorage.getItem('mini_card_battle_playmat_defense') || null,
+                        playerSkins: {},
+                        premiumCards: [...GameState.premiumCards],
+                        cards: cardsArr
+                    }];
+                } catch (e) { GameState.decks = []; }
+            } else { GameState.decks = []; }
+        }
+    } else if (GameState.gameMode === 'battle_dungeon') {
+        GameState.currentDeckIndex = 0; // ダンジョン時は必ず0番目を使用する
+        const dungeonSaved = localStorage.getItem('mini_card_battle_dungeon_deck_obj');
+        if (dungeonSaved) {
+            try { GameState.decks = [JSON.parse(dungeonSaved)]; }
+            catch (e) { GameState.decks = []; }
+        } else {
+            // マイグレーション：既存の試練の宮殿中断データからの引き継ぎ
+            const oldSaveStr = localStorage.getItem('mini_card_battle_dungeon_save');
+            if (oldSaveStr) {
+                try {
+                    const data = JSON.parse(oldSaveStr);
+                    const deckCardsStr = data.deck || (data.cards ? data.cards.slice(0, 20) : []);
+                    GameState.decks = [{
+                        id: 'dungeon_deck',
+                        name: '試練の宮殿デッキ',
+                        leaderId: data.playerConfig?.id || data.leaderId || 'android',
+                        playmatId: null,
+                        playerSkins: {},
+                        premiumCards: [...GameState.premiumCards],
+                        cards: deckCardsStr
+                    }];
+                } catch (e) { GameState.decks = []; }
+            } else { GameState.decks = []; }
+        }
+    } else {
+        // 通常のデッキ（最大20個）
+        const decksSaved = localStorage.getItem('mini_card_battle_decks');
+        if (decksSaved) {
+            try { 
+                GameState.decks = JSON.parse(decksSaved); 
+            } 
+            catch (e) { GameState.decks = []; }
+        } else { GameState.decks = []; }
+
+        if (GameState.currentDeckIndex >= GameState.decks.length || GameState.currentDeckIndex < 0) {
+            GameState.currentDeckIndex = 0;
+        }
+    }
+
+    if (!GameState.decks || GameState.decks.length === 0) {
+        if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'battle_dungeon') {
+            createNewDeck('knight');
+            if (GameState.gameMode === 'defense_register') GameState.decks[0].name = '防衛デッキ';
+            if (GameState.gameMode === 'battle_dungeon') GameState.decks[0].name = '試練の宮殿デッキ';
+        } else {
+            // 新規プレイヤー向けの初期設定：全キャラクター（リーダー）分の初期デッキを生成
+            const leaderIds = Object.keys(CHARACTERS).filter(id => id !== 'player' && id !== 'unknown' && id !== 'npc' && id !== 'satan');
+            leaderIds.forEach(id => {
+                const char = CHARACTERS[id];
+                if (char && (!GameState.decks || GameState.decks.length < 20)) {
+                    const newIndex = createNewDeck(id);
+                    if (newIndex !== false && GameState.decks[newIndex]) {
+                        // 名前が長すぎないよう、シンプルにキャラ名+デッキにする
+                        const shortName = char.name.split(' ').pop(); // 「機動戦姫 アイギス」なら「アイギス」
+                        GameState.decks[newIndex].name = `${shortName}デッキ`.substring(0, 12);
+                    }
+                }
+            });
+            GameState.currentDeckIndex = 0;
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+            }
+        }
+    }
+
+    if (GameState.decks.length > 0) {
+        const activeDeck = GameState.decks[GameState.currentDeckIndex];
+        const templateChar = CHARACTERS[activeDeck.leaderId] || CHARACTERS.android;
+        if (!GameState.playerConfig || GameState.appState !== 'select_player') {
+            GameState.playerConfig = { ...templateChar };
+        }
+        GameState.selectedPlaymatId = activeDeck.playmatId || null;
+
+        // 【新規】デッキ固有のスキン・プレミアムをロード
+        if (!activeDeck.playerSkins) activeDeck.playerSkins = {};
+        GameState.playerSkins = { ...activeDeck.playerSkins };
+        
+        if (activeDeck.premiumCards) {
+            GameState.premiumCards = [...activeDeck.premiumCards];
+        } else {
+            activeDeck.premiumCards = [...GameState.premiumCards];
+        }
+
+        GameState.playerDeckSelection = activeDeck.cards.map(item => {
+            const id = typeof item === 'string' ? item : (item.id || "");
+            const t = CARD_MASTER.find(m => m.id === id);
+            return t ? { ...t } : (typeof item === 'string' ? { id: item } : item);
+        });
+    } else {
+        GameState.playerDeckSelection = getInitialDeck(GameState.playerConfig?.id || 'knight');
+    }
+
     // 選択中プレイマットの読み込み
-    let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig.id}`;
+    let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig?.id || 'android'}`;
     if (typeof GameState.gameMode !== 'undefined' && GameState.gameMode === 'defense_register') {
         playmatSelectKey = 'mini_card_battle_playmat_defense';
     }
-    GameState.selectedPlaymatId = localStorage.getItem(playmatSelectKey) || null;
+    // デッキに紐付いて無い場合のフォールバック
+    if (!GameState.selectedPlaymatId) {
+        GameState.selectedPlaymatId = localStorage.getItem(playmatSelectKey) || null;
+    }
+}
+
+export function createNewDeck(leaderId) {
+    if (!GameState.decks) GameState.decks = [];
+    if (GameState.decks.length >= 20) return false;
+
+    // 新規作成時のデフォルトプレミアム設定は常にグローバルの設定（LocalStorage）から取得する
+    const globalPremiumSrc = localStorage.getItem('mini_card_battle_premium_cards');
+    const globalPremiumCards = globalPremiumSrc ? JSON.parse(globalPremiumSrc).filter(id => VALID_PREMIUM_GIFS.includes(id)) : [];
+
+    const newDeck = {
+        id: `deck_${Date.now()}_${GameState.decks.length}`,
+        name: `デッキ${GameState.decks.length + 1}`,
+        leaderId: leaderId || 'knight',
+        playmatId: null,
+        playerSkins: {},
+        premiumCards: globalPremiumCards,
+        cards: getInitialDeck(leaderId || 'knight').map(c => c.id)
+    };
+    GameState.decks.push(newDeck);
+    if (GameState.gameMode !== 'defense_register' && GameState.gameMode !== 'battle_dungeon') {
+        localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+    }
+    return GameState.decks.length - 1; // 生成したデッキのインデックスを返す
+}
+
+export function saveCurrentEditDeck() {
+    if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
+        const activeDeck = GameState.decks[GameState.currentDeckIndex];
+        activeDeck.playmatId = GameState.selectedPlaymatId;
+        activeDeck.playerSkins = { ...GameState.playerSkins };
+        activeDeck.premiumCards = [...GameState.premiumCards];
+        activeDeck.cards = GameState.playerDeckSelection.map(c => typeof c === 'string' ? c : (c.baseId || c.id));
+        
+        if (GameState.gameMode === 'defense_register') {
+            localStorage.setItem('mini_card_battle_defense_deck_obj', JSON.stringify(activeDeck));
+            // 旧来の他モジュールからの参照のため配列版も残す
+            localStorage.setItem('mini_card_battle_deck_defense', JSON.stringify(activeDeck.cards));
+        } else if (GameState.gameMode === 'battle_dungeon') {
+            localStorage.setItem('mini_card_battle_dungeon_deck_obj', JSON.stringify(activeDeck));
+        } else {
+            localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+        }
+    }
 }
 
 export function saveDeck() {
-    if (GameState.gameMode === 'battle_dungeon') {
-        return; // ダンジョン中は恒常セーブデータにデッキを上書きしない
-    }
-
-    if (typeof GameState.gameMode !== 'undefined' && GameState.gameMode === 'defense_register') {
-        // 防衛デッキはIDの配列として保存（サーバー送信形式に合わせる）
-        const defenseDeck = GameState.playerDeckSelection.map(c => c.id);
-        localStorage.setItem('mini_card_battle_deck_defense', JSON.stringify(defenseDeck));
-    } else if (GameState.gameMode === 'online_deck_edit') {
-        // デッキ自体は共通のもの（下の else if）で保存させる。オンライン専用には選択キャラとステージのみ記録する
+    if (GameState.gameMode === 'online_deck_edit') {
         const settings = {
             leaderId: GameState.playerConfig?.id || 'android',
             stage: GameState.selectedStageId || 'plain'
         };
         localStorage.setItem('mini_card_battle_online_last_settings', JSON.stringify(settings));
-        
-        // 共通デッキキーへ保存を続行する
-        if (GameState.playerConfig) {
-            const key = `mini_card_battle_deck_${GameState.playerConfig.id}`;
-            localStorage.setItem(key, JSON.stringify(GameState.playerDeckSelection));
-        }
-    } else if (GameState.playerConfig) {
-        const key = `mini_card_battle_deck_${GameState.playerConfig.id}`;
-        localStorage.setItem(key, JSON.stringify(GameState.playerDeckSelection));
     }
+    
+    // 試練・防衛戦含め、デッキ自体の保存は `saveCurrentEditDeck` の分岐に一任する
+    saveCurrentEditDeck();
 
     const invKey = `mini_card_battle_inventory`;
     localStorage.setItem(invKey, JSON.stringify(GameState.playerInventory));

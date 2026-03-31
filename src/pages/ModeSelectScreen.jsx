@@ -2,8 +2,8 @@ import React from 'react';
 
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../hooks/uiGallery.js';
-import { showRules, showOptions, startGameMode, showEventMenu, showOnlineMenu } from '../hooks/uiMainCore.js';
-import { switchScreen, playSound } from '../utils/gameUtils.js';
+import { showRules, showOptions, showSoloMenu, showDeckEditMenu, showEventMenu, showOnlineMenu } from '../hooks/uiMainCore.js';
+import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function ModeSelectScreen() {
@@ -22,20 +22,23 @@ export default function ModeSelectScreen() {
           ></div>
           <div className="menu-btn-label">遊び方</div>
         </div>
-        <div className="menu-img-btn" onClick={() => startGameMode?.('story')}>
+
+        <div className="menu-img-btn" onClick={() => showDeckEditMenu?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_STORY || ''}')` }}
+            style={{ backgroundImage: `url('${images.MENU_DECK || ''}')` }}
           ></div>
-          <div className="menu-btn-label">ストーリー</div>
+          <div className="menu-btn-label">デッキ編成</div>
         </div>
-        <div className="menu-img-btn" onClick={() => startGameMode?.('free')}>
+
+        <div className="menu-img-btn" onClick={() => showSoloMenu?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_FREE || ''}')` }}
+            style={{ backgroundImage: `url('${images.MENU_SOLO || images.MENU_STORY || ''}')` }}
           ></div>
-          <div className="menu-btn-label">フリーバトル</div>
+          <div className="menu-btn-label">ソロモード</div>
         </div>
+
         <div className="menu-img-btn" onClick={() => showEventMenu?.()}>
           <div
             className="menu-img-bg"
@@ -49,12 +52,10 @@ export default function ModeSelectScreen() {
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_ONLINE || ''}')` }}
           ></div>
-          <div className="menu-btn-label">オンライン対戦</div>
+          <div className="menu-btn-label">オンライン</div>
         </div>
-        <div
-          className="menu-img-btn"
-          onClick={() => showGallery?.()}
-        >
+
+        <div className="menu-img-btn" onClick={() => showGallery?.()}>
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_GALLERY || ''}')` }}

@@ -1243,10 +1243,65 @@ export async function endTurnLogic(o) {
 
 export async function playCard(o, hI, l) {
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand, b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    // 上書き配置時の破棄処理（破壊効果は発動させない）
+    const playingCard = h[hI];
+    if (!playingCard) return;
+
     if (b[l]) {
-        if (!(await discardCard(o, b[l], l, false))) b[l] = null;
+        if (hasSkill(playingCard, 'equip')) {
+            const targetCard = b[l];
+
+            // 装備によるパワー加算
+            targetCard.basePower = (targetCard.basePower || 0) + (playingCard.power || 0);
+            targetCard.currentPower = (targetCard.currentPower || 0) + (playingCard.power || 0);
+
+            // スキルの統合
+            if (!targetCard.skills) {
+                targetCard.skills = targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                targetCard.skill = 'none';
+            }
+
+            const equipSkills = [];
+            if (playingCard.skill && playingCard.skill !== 'none' && playingCard.skill !== 'equip') {
+                equipSkills.push({ id: playingCard.skill, value: playingCard.skillValue });
+            }
+            if (playingCard.skills) {
+                playingCard.skills.forEach(s => {
+                    if (s.id !== 'equip') equipSkills.push(s);
+                });
+            }
+            targetCard.skills = targetCard.skills.concat(equipSkills);
+
+            // 手札の装備カードを消費して墓地へ
+            const consumedCard = h.splice(hI, 1)[0];
+            const discardPile = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+            discardPile.push(consumedCard);
+
+            // 配置音・ボイス
+            playSound(SOUNDS.sePlace);
+            if (playingCard.voiceCategory) {
+                playCardVoice(playingCard.voiceCategory, 'play');
+            }
+
+            if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
+            renderHand(); renderBoard();
+
+            // 装備カードが持っていたアクティブスキルを即時発動させる
+            for (const sk of equipSkills) {
+                if (ACTIVE_SKILLS.includes(sk.id)) {
+                    await sleep(50);
+                    await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value);
+                }
+            }
+            
+            await sleep(100);
+            renderBoard();
+            return; // 装備完了
+        } else {
+            // 通常の上書き配置時の破棄処理（破壊効果は発動させない）
+            if (!(await discardCard(o, b[l], l, false))) b[l] = null;
+        }
     }
+    
     b[l] = h.splice(hI, 1)[0];
     const c = b[l];
 

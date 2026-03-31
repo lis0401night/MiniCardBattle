@@ -89,6 +89,9 @@ export const CARD_MASTER = [
     { id: 'shuffler', name: 'シャッフラー', power: 5, skill: 'shuffle', rarity: 4, voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。', voiceCategory: 'human_male_ikemen' },
     { id: 'invader', name: '彼方からの侵略者', power: 0, rarity: 4, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
+    //    { id: 'booster', name: 'イーグルブースター', power: 0, skills: [{ id: 'equip' }, { id: 'quick' }], rarity: 3, voiceCategory: 'machine_new', flavor: '天空を駆ける鷲が如き加速力をもたらす推進器。対象は瞬く間に敵陣を強襲する。' },
+    //    { id: 'parasite', name: '未知生命体 X-01', power: 1, skills: [{ id: 'equip' }, { id: 'clone', value: 1 }, { id: 'growth', value: -1 }], rarity: 3, voiceCategory: 'monster', flavor: '未知の星から飛来した生命体。その姿は肉体と精神を侵食し、やがてもう一体の自分を生み出す。' },
+    //    { id: 'daemonarmor', name: '悪魔の鎧', power: 5, skills: [{ id: 'equip' }, { id: 'sacrifice', value: 2 }], rarity: 3, voiceCategory: 'sword', flavor: '真紅の血肉を喰らい、絶大なる力を対象に宿す呪われた甲冑。身に着けた者は代償として自らの生命を削り続ける。' },
     // トークンカード
     { id: 'token_knight', name: '騎士', power: 2, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'sword', flavor: 'セレスティアの号令で召喚された騎士。' },
     { id: 'token_ignis', name: 'イグニス', power: 7, skill: 'none', isToken: true, rarity: 1, flavor: '降臨した竜族の姫。' },

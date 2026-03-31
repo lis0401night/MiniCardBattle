@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { playSound, getCardImgUrl, togglePremiumCard } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -19,9 +20,21 @@ export default function DeckEditorScreen() {
   const [localPremiumCards, setPremiumCards] = useState([]);
   const [unlockedPremium, setUnlockedPremium] = useState([]);
   const [isDefenseConfig, setIsDefenseConfig] = useState(false);
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [deckName, setDeckName] = useState("");
+  const [tempDeckName, setTempDeckName] = useState("");
+
+  const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
+  const leaderId = deck.leaderId || GameState.playerConfig?.id || 'android';
 
   const updateDeckEditor = () => {
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
+    
+    const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
+    setDeckName(currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`);
+
+    setUnlockedPremium(GameState.unlockedPremiumCards || []);
 
     if (GameState.gameMode === 'battle_dungeon') {
       const dInv = {};
@@ -121,23 +134,12 @@ export default function DeckEditorScreen() {
       saveDeck();
     }
 
-    if (isDefenseConfig) {
-      if (window.showPlayerNameModalState) {
-        window.showPlayerNameModalState();
-      } else {
-        const modal = document.getElementById('modal-player-name');
-        if (modal) {
-          modal.style.display = 'flex';
-          const nameInput = document.getElementById('input-player-name');
-          if (nameInput) {
-            const savedName = localStorage.getItem('mini_card_battle_player_name');
-            if (savedName) nameInput.value = savedName;
-          }
-        }
-      }
-    } else if (GameState.gameMode === 'online_deck_edit') {
-        GameState.appState = 'online';
-        showOnlineLobby?.();
+    if (isDefenseConfig || GameState.gameMode === 'online_deck_edit') {
+      GameState.appState = 'select_stage';
+      if (typeof window.initStageSelectScreen === 'function') window.initStageSelectScreen();
+      if (typeof window.switchScreen === 'function') window.switchScreen('screen-stage-select');
+    } else if (GameState.gameMode === 'create_deck' || GameState.gameMode === 'free_deck_edit') {
+        if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit();
     } else {
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {
@@ -169,8 +171,17 @@ export default function DeckEditorScreen() {
   const handleTogglePremium = (e, cardId) => {
     e.stopPropagation();
     playSound?.(SOUNDS?.seClick);
-    togglePremiumCard?.(cardId);
+    togglePremiumCard?.(cardId, false);
     updateDeckEditor();
+  };
+
+  const handleSaveDeckName = () => {
+    setIsEditingName(false);
+    setDeckName(tempDeckName);
+    if (GameState.decks && GameState.decks[GameState.currentDeckIndex]) {
+        GameState.decks[GameState.currentDeckIndex].name = tempDeckName;
+        if (typeof saveDeck === 'function') saveDeck();
+    }
   };
 
   // デッキ内のカードをIDでグループ化してカウント
@@ -199,25 +210,103 @@ export default function DeckEditorScreen() {
         backgroundSize: 'cover',
         backgroundPosition: 'center'
     }}>
-      <h2 style={{ color: '#facc15', marginBottom: '20px' }}>
-        {isDefenseConfig ? '防衛デッキ構築' : 'デッキ構築'}
-      </h2>
-      <div id="deck-count-display" style={{ fontSize: '1rem', marginBottom: '15px', color: '#cbd5e1' }}>
-        カード枚数: {deckSelection.length} / {DECK_SIZE}
+      {/* 上部ヘッダー（タイトルとデッキ名）と右上のアイコン群 */}
+      <div style={{ position: 'relative', width: '100%', padding: '15px 15px 5px', boxSizing: 'border-box', minHeight: '60px' }}>
+          
+          {/* 中央揃えのタイトル・デッキ名 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 40px' }}>
+              {(isDefenseConfig || GameState.gameMode === 'battle_dungeon') ? (
+                  <h2 style={{ color: '#facc15', margin: 0, fontSize: '1.3rem', textAlign: 'center' }}>
+                    {isDefenseConfig ? '防衛デッキ構築' : 'デッキ構築'}
+                  </h2>
+              ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '100%' }}>
+                          <h2 
+                              onClick={() => { playSound?.(SOUNDS?.seClick); setTempDeckName(deckName); setIsEditingName(true); }} 
+                              style={{ color: '#facc15', margin: 0, fontSize: '1.3rem', textShadow: '1px 1px 2px #000', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer', textAlign: 'center' }}
+                              title="クリックして名前を編集"
+                          >
+                              {deckName}
+                          </h2>
+                      </div>
+                  </div>
+              )}
+          </div>
+          
+          {/* デッキ名変更モーダル */}
+          {isEditingName && (
+             <div style={{
+                 position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                 backgroundColor: 'rgba(0, 0, 0, 0.7)', zIndex: 9999,
+                 display: 'flex', justifyContent: 'center', alignItems: 'center'
+             }} onClick={() => setIsEditingName(false)}>
+                 <div style={{
+                     background: '#1e293b', border: '2px solid #facc15', borderRadius: '12px',
+                     padding: '20px', width: '80%', maxWidth: '350px',
+                     boxShadow: '0 10px 25px rgba(0,0,0,0.8)',
+                     display: 'flex', flexDirection: 'column', gap: '15px'
+                 }} onClick={e => e.stopPropagation()}>
+                     <h3 style={{ margin: 0, color: '#facc15', textAlign: 'center', fontSize: '1.2rem' }}>デッキ名の変更</h3>
+                     <input 
+                         type="text" 
+                         value={tempDeckName}
+                         onChange={(e) => setTempDeckName(e.target.value)}
+                         onKeyDown={(e) => { if (e.key === 'Enter') handleSaveDeckName(); }}
+                         autoFocus
+                         maxLength="12"
+                         style={{ 
+                             background: '#334155', color: '#fff', border: '1px solid #475569', 
+                             borderRadius: '8px', padding: '10px', fontSize: '1.2rem', 
+                             width: '100%', boxSizing: 'border-box', textAlign: 'center' 
+                         }}
+                     />
+                     <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px' }}>
+                         <button className="btn" style={{ background: '#64748b', margin: 0, padding: '8px', flex: 1, minWidth: '100px', whiteSpace: 'nowrap', fontSize: '1rem' }} onClick={() => setIsEditingName(false)}>キャンセル</button>
+                         <button className="btn" style={{ background: '#3b82f6', margin: 0, padding: '8px', flex: 1, minWidth: '100px', whiteSpace: 'nowrap', fontSize: '1rem' }} onClick={handleSaveDeckName}>決定</button>
+                     </div>
+                 </div>
+             </div>
+          )}
+
+          {/* 画面右上のアイコン群 (リーダーアイコン + プレイマット) */}
+          <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px', zIndex: 10 }}>
+            {/* リーダーアイコン（スキン変更） */}
+            {leaderId && leaderId !== 'player' && leaderId !== 'unknown' && leaderId !== 'npc' && (
+                <div style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => { 
+                    playSound?.(SOUNDS?.seClick);
+                    if (window.showCharDetailModal) {
+                        const charObj = CHARACTERS[leaderId];
+                        if (charObj) window.showCharDetailModal({ ...charObj, hideDecideButton: true, targetDeckIndex: GameState.currentDeckIndex });
+                    }
+                }}>
+                    <img 
+                        src={getSkinImage && CHARACTERS[leaderId] ? getSkinImage(CHARACTERS[leaderId], deck?.playerSkins?.[leaderId] || 'default', 'icon') : ''} 
+                        alt="Leader" 
+                        style={{ width: '38px', height: '38px', borderRadius: '50%', border: '2px solid #facc15', objectFit: 'cover' }}
+                    />
+                </div>
+            )}
+
+            {/* プレイマット設定ボタン */}
+            <button
+              className="btn-circle btn-accessory"
+              style={{ width: '38px', height: '38px', fontSize: '1.2rem', background: '#334155', border: '2px solid #475569', borderRadius: '50%', cursor: 'pointer', margin: 0, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => { if (typeof showPlaymatModal === 'function') showPlaymatModal(); }}
+            >
+              🖼️
+            </button>
+          </div>
       </div>
 
-      <button
-        className="btn-circle btn-accessory"
-        style={{ position: 'absolute', top: '15px', right: '15px', width: '45px', height: '45px', fontSize: '1.5rem', background: '#334155', border: '2px solid #475569', borderRadius: '50%', cursor: 'pointer', zIndex: 10 }}
-        onClick={() => showPlaymatModal?.()}
-      >
-        🖼️
-      </button>
 
       <div className="deck-edit-container">
         {/* 現在のデッキ */}
         <div className="deck-section">
-          <div className="deck-section-title">現在のデッキ（タップで削除）</div>
+          <div className="deck-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '10px' }}>
+              <span>現在のデッキ（タップで削除）</span>
+              <span style={{ color: deckSelection.length < DECK_SIZE ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>{deckSelection.length} / {DECK_SIZE}</span>
+          </div>
           <div id="deck-current-list" className="deck-list-horizontal">
             {Object.keys(groupedDeck).map((id) => {
               const { card, count } = groupedDeck[id];
@@ -228,13 +317,14 @@ export default function DeckEditorScreen() {
 
               return (
                 <div key={card.id} className="deck-card-item"
+                  style={{ width: '100px', height: '150px', flexShrink: 0 }}
                   onPointerDown={(e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; handlePointerDown(card); }}
                   onPointerUp={cancelLongPress}
                   onPointerLeave={cancelLongPress}
                   onPointerCancel={cancelLongPress}
                   onClick={() => handleClick(id, removeCard)}>
-                  <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block' }}>
-                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: card.filter || 'none' }}></div>
+                  <div className={`card blue${rarityClass}`} style={{ width: '100px', height: '150px', position: 'relative', display: 'block', overflow: 'hidden', padding: 0 }}>
+                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: card.filter || 'none', backgroundSize: 'cover', backgroundPosition: 'center', width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, borderRadius: 'inherit' }}></div>
 
                     {isPremUnlocked && (
                       <div
@@ -281,13 +371,14 @@ export default function DeckEditorScreen() {
 
               return (
                 <div key={template.id} className="deck-card-item"
+                  style={{ width: '100px', height: '150px', flexShrink: 0 }}
                   onPointerDown={(e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; handlePointerDown(template); }}
                   onPointerUp={cancelLongPress}
                   onPointerLeave={cancelLongPress}
                   onPointerCancel={cancelLongPress}
                   onClick={() => handleClick(template, addCard)}>
-                  <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block', opacity }}>
-                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: template.filter || 'none' }}></div>
+                  <div className={`card blue${rarityClass}`} style={{ width: '100px', height: '150px', position: 'relative', display: 'block', opacity, overflow: 'hidden', padding: 0 }}>
+                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: template.filter || 'none', backgroundSize: 'cover', backgroundPosition: 'center', width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, borderRadius: 'inherit' }}></div>
 
                     {isPremUnlocked && (
                       <div
@@ -314,26 +405,40 @@ export default function DeckEditorScreen() {
           </div>
         </div>
 
-        <div className="deck-controls">
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '10px' }}>
-            <button className="action-btn" style={{ background: '#1e40af', fontSize: '0.75rem', padding: '5px 10px' }} onClick={resetDeck}>初期デッキに戻す</button>
-            <button className="action-btn" style={{ background: '#7f1d1d', fontSize: '0.75rem', padding: '5px 10px' }} onClick={clearDeck}>全削除</button>
-          </div>
-        </div>
-
         <button
           id="btn-finish-deck"
           className="btn"
           style={{ marginTop: '10px', width: '100%', opacity: deckSelection.length === DECK_SIZE ? 1 : 0.5 }}
           onClick={handleFinish}
         >
-          {isDefenseConfig || GameState.gameMode === 'online_deck_edit' ? '編成完了' : 'バトル開始！'}
+          {isDefenseConfig || GameState.gameMode === 'create_deck' || GameState.gameMode === 'free_deck_edit' || GameState.gameMode === 'online_deck_edit' ? '編成完了' : 'バトル開始！'}
         </button>
       </div>
 
-      <button className="btn" style={{ background: '#475569', marginTop: '20px' }} onClick={() => goBackFromDeckEdit?.()}>
-        戻る
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', marginBottom: '20px', padding: '0 20px', width: '100%', boxSizing: 'border-box' }}>
+          {/* 左下：全削除ボタン */}
+          <button className="action-btn" style={{ background: '#7f1d1d', fontSize: '0.8rem', padding: '8px 15px', margin: 0, flexShrink: 0 }} onClick={clearDeck}>
+            全削除
+          </button>
+
+          {/* 中央：戻るボタン */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <button 
+               className="btn" 
+               style={{ background: '#475569', margin: 0 }} 
+               onClick={() => {
+                 playSound?.(SOUNDS?.seClick);
+                 if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
+                 if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit();
+               }}
+            >
+              戻る
+            </button>
+          </div>
+          
+          {/* スペーサー：右側のバランス取り */}
+          <div style={{ width: '60px', flexShrink: 0 }}></div>
+      </div>
     </div>
   );
 }

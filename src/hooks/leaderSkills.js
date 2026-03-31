@@ -134,7 +134,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (selectedLanes.length === 0) return;
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
-            const imgUrl = getCardImgUrl(tokenCard) || `assets/cards/card_${tokenCard.id}.jpg`;
+            const imgUrl = getCardImgUrl({ ...tokenCard, owner }) || `assets/cards/card_${tokenCard.id}.jpg`;
             if (b[l]) { await discardCard(owner, b[l], l); }
             b[l] = { id: `dng_tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
             b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため

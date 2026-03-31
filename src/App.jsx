@@ -3,6 +3,7 @@ import GlobalModals from './components/GlobalModals.jsx';
 import DamageOverlay from './components/common/DamageOverlay.jsx';
 import TitleScreen from './pages/TitleScreen.jsx';
 import ModeSelectScreen from './pages/ModeSelectScreen.jsx';
+import SoloMenuScreen from './pages/SoloMenuScreen.jsx';
 import RulesScreen from './pages/RulesScreen.jsx';
 import OptionsScreen from './pages/OptionsScreen.jsx';
 import GalleryMenuScreen from './pages/GalleryMenuScreen.jsx';
@@ -20,6 +21,7 @@ import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
 import ChallengeUnlockScreen from './pages/ChallengeUnlockScreen.jsx';
 import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
 import DeckEditorScreen from './pages/DeckEditorScreen.jsx';
+import DeckListScreen from './pages/DeckListScreen.jsx';
 import CharacterSelectScreen from './pages/CharacterSelectScreen.jsx';
 import DifficultySelectScreen from './pages/DifficultySelectScreen.jsx';
 import StageSelectScreen from './pages/StageSelectScreen.jsx';
@@ -103,6 +105,7 @@ export default function App() {
     <>
       {currentScreen === 'screen-title' && <TitleScreen />}
       {currentScreen === 'screen-mode-select' && <ModeSelectScreen />}
+      {currentScreen === 'screen-solo-menu' && <SoloMenuScreen />}
       {currentScreen === 'screen-rules' && <RulesScreen />}
       {currentScreen === 'screen-options' && <OptionsScreen />}
       {currentScreen === 'screen-gallery-menu' && <GalleryMenuScreen />}
@@ -119,6 +122,7 @@ export default function App() {
       {currentScreen === 'screen-defense-battle-list' && <DefenseBattleListScreen />}
       {currentScreen === 'screen-dungeon-menu' && <DungeonMenuScreen />}
       {currentScreen === 'screen-dungeon-rules' && <DungeonRulesScreen />}
+      {currentScreen === 'screen-deck-list' && <DeckListScreen />}
       {currentScreen === 'screen-deck-edit' && <DeckEditorScreen />}
       {currentScreen === 'screen-select' && <CharacterSelectScreen />}
       {currentScreen === 'screen-difficulty' && <DifficultySelectScreen />}

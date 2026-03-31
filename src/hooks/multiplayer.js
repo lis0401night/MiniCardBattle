@@ -321,3 +321,12 @@ export async function forceDeleteRoom(roomId) {
     const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
     await remove(roomRef).catch(e => console.error(e));
 }
+
+/**
+ * デバッグ用・すべてのルームを強制解散（削除）する
+ */
+export async function forceDeleteAllRooms() {
+    if (!database) return;
+    const roomsRef = ref(database, ROOMS_REF);
+    await remove(roomsRef).catch(e => console.error(e));
+}

@@ -170,7 +170,8 @@ export default function GlobalModals() {
 
     window.showPlayerNameModalState = (callback) => {
       playSound?.(SOUNDS?.seClick);
-      setPlayerNameInput('');
+      const savedName = localStorage.getItem('mini_card_battle_player_name');
+      setPlayerNameInput(savedName || '');
       setPlayerNameCallback(() => callback);
       setPlayerNameVisible(true);
     };
@@ -262,10 +263,18 @@ export default function GlobalModals() {
   const handleTogglePremium = (e, cardId) => {
     e.stopPropagation();
     playSound?.(SOUNDS?.seClick);
-    togglePremiumCard?.(cardId);
+    
+    // オプショナルチェーンによるundefinedを防ぐため明示的にboolean化
+    const isCardListScreen = !!document.getElementById('screen-card-list')?.classList.contains('active');
+    togglePremiumCard?.(cardId, isCardListScreen);
+
+    // デッキ編成画面であった場合、即座に対象デッキ固有設定として保存
+    if (!isCardListScreen && window.saveCurrentEditDeck) {
+        window.saveCurrentEditDeck();
+    }
 
     // 更新を反映するために画面を再描画要求
-    if (typeof renderCardList === 'function' && document.getElementById('screen-card-list')?.classList.contains('active')) {
+    if (typeof renderCardList === 'function' && isCardListScreen) {
       renderCardList();
     }
     if (typeof renderDeckEdit === 'function' && document.getElementById('screen-deck-edit')?.classList.contains('active')) {
@@ -652,39 +661,56 @@ export default function GlobalModals() {
       {/* Character Detail Modal */}
       {charDetailData && (
         <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 50, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
+          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '350px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)', boxSizing: 'border-box' }}>
             {(() => {
               const isEnemySelection = GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy;
-              const skinIdToUse = isEnemySelection ? 'default' : (selectedSkinState || GameState.playerSkins[charDetailData.id] || 'default');
-              return <img src={getSkinImage(charDetailData.id, skinIdToUse, 'image')} style={{ width: '160px', height: '200px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #334155', marginBottom: '15px' }} alt={charDetailData.name} />;
+              let skinIdToUse;
+              if (isEnemySelection) {
+                  skinIdToUse = 'default';
+              } else if (selectedSkinState) {
+                  skinIdToUse = selectedSkinState;
+              } else if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
+                  skinIdToUse = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
+              } else {
+                  skinIdToUse = GameState.playerSkins[charDetailData.id] || 'default';
+              }
+              return <img src={getSkinImage(charDetailData.id, skinIdToUse, 'image')} style={{ width: '140px', height: '175px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #334155', marginBottom: '10px', flexShrink: 0 }} alt={charDetailData.name} />;
             })()}
 
-            <h2 style={{ marginBottom: '5px', color: charDetailData.color || '#facc15', fontSize: '1.3rem', textAlign: 'center' }}>{charDetailData.name}</h2>
+            <h2 style={{ marginBottom: '5px', color: charDetailData.color || '#facc15', fontSize: '1.3rem', textAlign: 'center', flexShrink: 0 }}>{charDetailData.name}</h2>
 
             {charDetailData.easeOfUse && (
-              <div style={{ color: '#fbd38d', fontSize: '0.95rem', marginBottom: '5px', textShadow: '1px 1px 2px #000' }}>
+              <div style={{ color: '#fbd38d', fontSize: '0.95rem', marginBottom: '5px', textShadow: '1px 1px 2px #000', flexShrink: 0 }}>
                 使いやすさ: {'★'.repeat(charDetailData.easeOfUse)}{'☆'.repeat(3 - charDetailData.easeOfUse)}
               </div>
             )}
 
-            <p style={{ fontSize: '0.9rem', color: '#cbd5e1', textAlign: 'center', marginBottom: '15px', lineHeight: 1.4 }}>{charDetailData.desc}</p>
+            <div style={{ flex: 1, overflowY: 'auto', width: '100%', padding: '0 5px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p style={{ fontSize: '0.9rem', color: '#cbd5e1', textAlign: 'center', margin: 0, lineHeight: 1.4 }}>{charDetailData.desc}</p>
 
-            {charDetailData.leaderSkill && (
-              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', marginBottom: '15px', border: '1px solid #475569' }}>
-                <div style={{ color: '#facc15', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>【リーダー能力】</div>
-                <div style={{ fontWeight: 'bold', marginBottom: '3px', color: '#fff' }}>
-                  {charDetailData.leaderSkill.name} {charDetailData.leaderSkill.cost ? `(必要SP: ${charDetailData.leaderSkill.cost})` : ''}
+              {charDetailData.leaderSkill && (
+                <div style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', border: '1px solid #475569' }}>
+                  <div style={{ color: '#facc15', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>【リーダー能力】</div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '3px', color: '#fff' }}>
+                    {charDetailData.leaderSkill.name} {charDetailData.leaderSkill.cost ? `(必要SP: ${charDetailData.leaderSkill.cost})` : ''}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.3 }}>{charDetailData.leaderSkill.desc}</div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.3 }}>{charDetailData.leaderSkill.desc}</div>
-              </div>
-            )}
+              )}
+            </div>
 
             {!(GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy) && (
               <button
                 className="btn"
                 style={{ width: '100%', marginBottom: '10px', background: 'linear-gradient(45deg, #c084fc, #9333ea)', border: 'none', color: 'white', padding: '10px', borderRadius: '8px', fontWeight: 'bold', textShadow: '1px 1px 2px #000' }}
                 onClick={() => {
-                  setSelectedSkinState(GameState.playerSkins[charDetailData.id] || 'default');
+                  let initialSkin = 'default';
+                  if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
+                      initialSkin = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
+                  } else {
+                      initialSkin = GameState.playerSkins[charDetailData.id] || 'default';
+                  }
+                  setSelectedSkinState(initialSkin);
                   if (window.showSkinSelectionModalState) window.showSkinSelectionModalState();
                 }}
               >
@@ -694,7 +720,9 @@ export default function GlobalModals() {
 
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
               <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeCharDetailModal(e); }}>戻る</button>
-              <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={() => { setCharDetailData(null); confirmCharSelect?.(); }}>決定</button>
+              {!charDetailData.hideDecideButton && (
+                  <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={() => { setCharDetailData(null); confirmCharSelect?.(); }}>決定</button>
+              )}
             </div>
           </div>
         </div>
@@ -739,12 +767,18 @@ export default function GlobalModals() {
                 className="btn"
                 style={{ flex: 1, background: 'linear-gradient(45deg, #10b981, #059669)', margin: 0, fontSize: '0.85rem', paddingLeft: '10px', paddingRight: '10px', whiteSpace: 'nowrap' }}
                 onClick={() => {
+                  if (playerNameInput) {
+                    localStorage.setItem('mini_card_battle_player_name', playerNameInput);
+                  }
                   if (playerNameCallback) {
                     playerNameCallback(playerNameInput);
                   } else if (window.submitDefenseDeckWrapper) {
                     window.submitDefenseDeckWrapper(playerNameInput);
                   } else if (submitDefenseDeck) {
                     submitDefenseDeck(playerNameInput);
+                  }
+                  if (window.closePlayerNameModalState) {
+                    window.closePlayerNameModalState();
                   }
                 }}
               >
@@ -844,8 +878,33 @@ export default function GlobalModals() {
                     onClick={() => {
                       if (!isUnlocked) return;
                       playSound?.(SOUNDS?.seClick);
+
+                      // 1. グローバルの最新設定として保存（今まで通り）
                       GameState.playerSkins[charDetailData.id] = skinId;
-                      localStorage.setItem('mini_card_battle_player_skins', JSON.stringify(GameState.playerSkins));
+                      localStorage.setItem('mini_card_battle_skins', JSON.stringify(GameState.playerSkins));
+
+                      // 2. 指定されたデッキからのスキン変更なら、デッキ固有のスキンも更新する
+                      if (charDetailData.targetDeckIndex !== undefined) {
+                          const deckList = GameState.decks;
+                          if (deckList && deckList[charDetailData.targetDeckIndex]) {
+                              const targetDeck = deckList[charDetailData.targetDeckIndex];
+                              if (!targetDeck.playerSkins) targetDeck.playerSkins = {};
+                              targetDeck.playerSkins[charDetailData.id] = skinId;
+                              // 現在のモードが通常デッキの場合のみ、デッキ全体のシリアライズを更新する
+                              if (GameState.gameMode !== 'defense_register' && GameState.gameMode !== 'battle_dungeon') {
+                                  localStorage.setItem('mini_card_battle_decks', JSON.stringify(deckList));
+                              }
+                              // 防衛・試練等の固有セーブは、画面を閉じる際や `saveCurrentEditDeck` 側で担保される
+                              if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+                              if (typeof renderDeckEdit === 'function') renderDeckEdit();
+                          }
+                      } else {
+                          // 指定がない場合（キャラ選択画面など）の既存フロー
+                          if (window.saveCurrentEditDeck) window.saveCurrentEditDeck();
+                          if (window.saveDeck) window.saveDeck();
+                          if (typeof renderDeckEdit === 'function') renderDeckEdit();
+                      }
+
                       setSelectedSkinState(skinId);
                       if (window.closeSkinSelectionModalState) window.closeSkinSelectionModalState();
                       if (window.forceUpdateSelectScreen) window.forceUpdateSelectScreen();

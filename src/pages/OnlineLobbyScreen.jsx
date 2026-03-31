@@ -28,47 +28,65 @@ export default function OnlineLobbyScreen() {
     useEffect(() => {
         window.reloadOnlineLobbyConfig = () => {
             const storedName = localStorage.getItem('mini_card_battle_player_name') || 'Player';
-            const settingsJson = localStorage.getItem('mini_card_battle_online_last_settings');
-            let selLeaderId = 'android';
+            
+            let selIndex = GameState.currentDeckIndex || 0;
+            const decksSrc = localStorage.getItem('mini_card_battle_decks');
+            let decks = [];
+            if (decksSrc) {
+                try { decks = JSON.parse(decksSrc); } catch (e) {}
+            }
+
             let selStage = 'plain';
+            const settingsJson = localStorage.getItem('mini_card_battle_online_last_settings');
             if (settingsJson) {
                 try {
                     const parsed = JSON.parse(settingsJson);
-                    if (parsed.leaderId) selLeaderId = parsed.leaderId;
                     if (parsed.stage) selStage = parsed.stage;
+                    
+                    if (parsed.deckId && decks.length > 0) {
+                        const foundIndex = decks.findIndex(d => d.id === parsed.deckId);
+                        if (foundIndex !== -1) {
+                            selIndex = foundIndex;
+                            GameState.currentDeckIndex = selIndex;
+                        }
+                    }
                 } catch (e) { }
             }
-            const chara = CHARACTERS[selLeaderId] || CHARACTERS.android;
+            
+            const activeDeck = decks[selIndex] || decks[0] || null;
 
-            const deckKey = `mini_card_battle_deck_${selLeaderId}`;
-            const deckSaved = localStorage.getItem(deckKey);
-            let deckArray = [];
-            if (deckSaved) {
-                try { deckArray = JSON.parse(deckSaved); } catch (e) { }
+            if (activeDeck) {
+                const selLeaderId = activeDeck.leaderId || 'android';
+                const chara = CHARACTERS[selLeaderId] || CHARACTERS.android;
+                
+                const deckCards = (activeDeck.cards || []).map((cardId) => {
+                    // 古いセーブデータ互換性（カードがオブジェクトになっている場合等）
+                    const actualId = typeof cardId === 'object' ? cardId.id : cardId;
+                    const isPremium = activeDeck.premiumCards ? activeDeck.premiumCards.includes(actualId) : false;
+                    const template = CARD_MASTER.find(c => c.id === actualId);
+                    return template ? { ...template, isPremium } : null;
+                }).filter(Boolean);
+
+                const selSkin = activeDeck.playerSkins ? activeDeck.playerSkins[selLeaderId] : null;
+
+                setLocalReadyConfig({
+                    name: storedName,
+                    leaderConfig: chara,
+                    deck: deckCards,
+                    playmat: activeDeck.playmatId || null,
+                    skin: selSkin || null,
+                    stage: selStage
+                });
+            } else {
+                setLocalReadyConfig({
+                    name: storedName,
+                    leaderConfig: CHARACTERS.android,
+                    deck: [],
+                    playmat: null,
+                    skin: null,
+                    stage: selStage
+                });
             }
-
-            const unPremium = JSON.parse(localStorage.getItem('mini_card_battle_unlocked_premium')) || [];
-            const deckCards = deckArray.map(item => {
-                const cardId = typeof item === 'object' ? item.id : item;
-                const isPremium = unPremium.includes(cardId);
-                const template = CARD_MASTER.find(c => c.id === cardId);
-                return template ? { ...template, isPremium } : null;
-            }).filter(Boolean);
-
-            const skinsDict = JSON.parse(localStorage.getItem('mini_card_battle_player_skins')) || {};
-            const selSkin = skinsDict[selLeaderId] || null;
-
-            const playmatKey = `mini_card_battle_playmat_${selLeaderId}`;
-            const selPlaymat = localStorage.getItem(playmatKey) || null;
-
-            setLocalReadyConfig({
-                name: storedName,
-                leaderConfig: chara,
-                deck: deckCards,
-                playmat: selPlaymat,
-                skin: selSkin,
-                stage: selStage
-            });
         };
 
         window.reloadOnlineLobbyConfig();
@@ -161,9 +179,8 @@ export default function OnlineLobbyScreen() {
     const handleDeckEdit = () => {
         playSound(SOUNDS.seClick);
         GameState.gameMode = 'online_deck_edit';
-        GameState.appState = 'select_player';
-        if (window.initSelectScreenReact) window.initSelectScreenReact(false);
-        switchScreen('screen-select');
+        GameState.appState = 'select_deck';
+        switchScreen('screen-deck-list');
     };
 
     const handleSetReady = async () => {

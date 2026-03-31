@@ -3,9 +3,11 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 export const GameState = {
     playerConfig: CHARACTERS.android,
     enemyConfig: CHARACTERS.dragon,
-    playerSkins: JSON.parse(localStorage.getItem('mini_card_battle_player_skins')) || {},
+    playerSkins: {},
     unlockedSkins: JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || [],
-    playerDeckSelection: [],
+    decks: [], // 【追加】最大10個の別個デッキ
+    currentDeckIndex: 0, // 【追加】現在操作中のデッキインデックス
+    playerDeckSelection: [], // （旧）バトルや編集時の作業用として残す
     playerInventory: {},
     playerHP: 0, enemyHP: 0, playerMaxHP: 0, enemyMaxHP: 0, playerSP: 0, enemySP: 0,
     playerHand: [], enemyHand: [], playerDeck: [], enemyDeck: [],

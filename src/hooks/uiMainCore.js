@@ -6,7 +6,7 @@ import { SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { getDialogue, playSound, stopAllBGM, sleep, isTransitioning, switchScreen, getCardImgUrl, getOrCreateUUID, renderSkillTag } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { startBattleFlow } from './deck.js';
+import { startBattleFlow, createNewDeck, loadDeck } from './deck.js';
 import { initEventSatanMode, loadPlayerDeck } from './events.js';
 import { GameState } from './gameState.js';
 import { initStoryMode } from './story.js';
@@ -226,18 +226,30 @@ export function goBackFromSelect() {
         switchScreen('screen-defense-battle-list');
     } else if (GameState.gameMode === 'event_satan') {
         switchScreen('screen-high-difficulty');
+    } else if (GameState.appState === 'create_deck_select_char') {
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+        switchScreen('screen-deck-list');
     } else if (GameState.appState === 'select_enemy') {
-        GameState.appState = 'select_player';
-        initSelectScreen(false);
-        switchScreen('screen-select');
+        GameState.appState = 'select_deck';
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+        switchScreen('screen-deck-list');
     } else if (GameState.gameMode === 'online_deck_edit') {
         showOnlineLobby();
     } else {
+        // デッキ選択のフローから抜ける際にページネーションをリセット
+        GameState.deckListPage = 0;
+        
         if (SOUNDS.bgmTitle.paused) {
             stopAllBGM();
             playSound(SOUNDS.bgmTitle);
         }
-        switchScreen('screen-mode-select');
+        if (GameState.gameMode === 'story' || GameState.gameMode === 'free') {
+            switchScreen('screen-solo-menu');
+        } else {
+            switchScreen('screen-mode-select');
+        }
     }
 }
 
@@ -246,9 +258,8 @@ export function goBackFromDifficulty() {
     if (GameState.gameMode === 'defense_register') {
         switchScreen('screen-defense-menu');
     } else if (GameState.gameMode === 'story') {
-        GameState.appState = 'select_player';
-        initSelectScreen(false);
-        switchScreen('screen-select');
+        GameState.appState = 'select_deck';
+        switchScreen('screen-deck-list');
     } else {
         GameState.appState = 'select_enemy';
         initSelectScreen(false);
@@ -259,9 +270,11 @@ export function goBackFromDifficulty() {
 export function goBackFromStage() {
     playSound(SOUNDS.seClick);
     if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
-        GameState.appState = 'select_player';
-        initSelectScreen(false);
-        switchScreen('screen-select');
+        // 防衛・オンラインのステージ選択画面からは、直前のデッキ編集画面へと戻る
+        switchScreen('screen-deck-edit');
+    } else if (GameState.gameMode === 'free') {
+        GameState.appState = 'select_deck';
+        switchScreen('screen-deck-list');
     } else {
         GameState.appState = 'select_difficulty';
         switchScreen('screen-difficulty');
@@ -270,20 +283,15 @@ export function goBackFromStage() {
 
 export function goBackFromDeckEdit() {
     playSound(SOUNDS.seClick);
-    if (GameState.gameMode === 'defense_register') {
-        // ステージ選択に戻る
-        GameState.appState = 'select_stage';
-        initStageSelectScreen();
-        switchScreen('screen-stage-select');
-    } else if (GameState.gameMode === 'defense_attack') {
-        // キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
+    if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
+        // キャラクター選択に戻る
         GameState.appState = 'select_player';
-        const titleEl = document.getElementById('select-title');
-        if (titleEl) {
-            titleEl.innerText = "キャラクター選択";
-        }
         initSelectScreen(false);
         switchScreen('screen-select');
+    } else if (GameState.gameMode === 'defense_attack') {
+        // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
+        GameState.appState = 'select_deck';
+        switchScreen('screen-deck-list');
     } else if (GameState.gameMode === 'story') {
         // 難易度選択に戻る
         GameState.appState = 'select_difficulty';
@@ -296,15 +304,36 @@ export function goBackFromDeckEdit() {
         switchScreen('screen-battle-dungeon');
         if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
     } else if (GameState.gameMode === 'online_deck_edit') {
-        GameState.appState = 'select_player';
-        initSelectScreen(false);
-        switchScreen('screen-select');
+        GameState.appState = 'select_deck';
+        switchScreen('screen-deck-list');
+    } else if (GameState.gameMode === 'free_deck_edit') {
+        // マイデッキ編集：デッキ一覧に戻る
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+        switchScreen('screen-deck-list');
     } else {
-        // フリー対戦など：ステージ選択に戻る
-        GameState.appState = 'select_stage';
-        initStageSelectScreen();
-        switchScreen('screen-stage-select');
+        // フリー対戦など：デッキ選択（一覧）画面に戻る
+        GameState.appState = 'select_deck';
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+        switchScreen('screen-deck-list');
     }
+}
+
+export function showSoloMenu() {
+    playSound(SOUNDS.seClick);
+    switchScreen('screen-solo-menu');
+}
+
+export function showDeckEditMenu() {
+    playSound(SOUNDS.seClick);
+    GameState.gameMode = 'free_deck_edit';
+    GameState.appState = 'free_deck_edit';
+    GameState.deckListPage = 0; // メニューから入る際はページリセット
+    // 確実に現在の本来の通常デッキをロードし直す
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
 }
 
 export function startGameMode(mode) {
@@ -317,9 +346,11 @@ export function startGameMode(mode) {
         return;
     }
 
-    GameState.appState = 'select_player';
-    initSelectScreen(false);
-    switchScreen('screen-select');
+    GameState.appState = 'select_deck';
+    // デッキ選択画面遷移前に最新状態のデッキをリロードし、強制再描画を要求する
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
 }
 
 export async function performFadeTransition(action) {
@@ -547,9 +578,19 @@ export function showDefenseRules() {
 export function startDefenseRegistration() {
     playSound(SOUNDS.seClick);
     GameState.gameMode = 'defense_register';
-    GameState.appState = 'select_player';
-    initSelectScreen(false);
-    switchScreen('screen-select');
+
+    if (window.showPlayerNameModalState) {
+        window.showPlayerNameModalState((name) => {
+            GameState.playerName = name || 'プレイヤー';
+            GameState.appState = 'select_player';
+            initSelectScreen(false);
+            switchScreen('screen-select');
+        });
+    } else {
+        GameState.appState = 'select_player';
+        initSelectScreen(false);
+        switchScreen('screen-select');
+    }
 }
 
 export function closePlayerNameModal() {
@@ -568,7 +609,20 @@ export function startDefenseBattle() {
 
 export function confirmCharSelect() {
     playSound(SOUNDS.seClick);
-    if (GameState.appState === 'select_player') {
+    if (GameState.appState === 'create_deck_select_char') {
+        const charId = GameState.pendingCharId;
+        const deckIndex = createNewDeck(charId);
+        if (deckIndex !== false) {
+            GameState.currentDeckIndex = deckIndex;
+            loadDeck();
+            switchScreen('screen-deck-edit');
+        } else {
+            showAlertModal('デッキは最大10個までです。');
+        }
+        return;
+    }
+
+    if (GameState.appState === 'select_player' || GameState.appState === 'select_deck') {
         if (GameState.gameMode === 'story') {
             GameState.appState = 'select_difficulty';
             switchScreen('screen-difficulty');
@@ -576,12 +630,13 @@ export function confirmCharSelect() {
         } else if (GameState.gameMode === 'event_satan') {
             // 高難易度サタン戦専用の導入へ
             initEventSatanMode(GameState.pendingCharId);
+        } else if (GameState.gameMode === 'free_deck_edit') {
+            // マイデッキ編集時はそのままデッキ編成画面へ移行
+            switchScreen('screen-deck-edit');
         } else if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
-            // 防衛登録 / オンライン：次はステージ選択
+            // 防衛登録 / オンライン：ステージ選択を省略してすぐデッキ編集へ移行
             GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
-            GameState.appState = 'select_stage';
-            initStageSelectScreen();
-            switchScreen('screen-stage-select');
+            startBattleFlow();
         } else if (GameState.gameMode === 'defense_attack') {
             // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
             GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
@@ -630,9 +685,28 @@ export function confirmStageSelect(stageId) {
         GameState.selectedStageId = stageId;
     }
 
-    if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
-        // 防衛登録・オンライン：ステージ選択の次はデッキ編集
-        startBattleFlow();
+    if (GameState.gameMode === 'defense_register') {
+        // 防衛登録：ステージ選択の後はデータ保存処理へ
+        if (window.submitDefenseDeckWrapper) {
+            window.submitDefenseDeckWrapper(GameState.playerName || 'プレイヤー');
+        } else if (typeof submitDefenseDeck === 'function') {
+            submitDefenseDeck(GameState.playerName || 'プレイヤー');
+        }
+    } else if (GameState.gameMode === 'online_deck_edit') {
+        // ステージ選択が完了したので最新状態をオンライン設定として保存
+        const settings = {
+            leaderId: GameState.playerConfig?.id || 'android',
+            stage: GameState.selectedStageId || 'plain',
+            deckId: (GameState.decks && GameState.decks[GameState.currentDeckIndex]) ? GameState.decks[GameState.currentDeckIndex].id : null
+        };
+        localStorage.setItem('mini_card_battle_online_last_settings', JSON.stringify(settings));
+
+        GameState.appState = 'online';
+        if (typeof window.showOnlineLobby === 'function') {
+            window.showOnlineLobby();
+        } else {
+            switchScreen('screen-online-lobby');
+        }
     } else {
         performFadeTransition(() => {
             GameState.battleCount = 1;

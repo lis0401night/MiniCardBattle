@@ -103,6 +103,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         const card = hand[i];
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
                         if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
+                        if (hasSkill(card, 'equip') && myBoard[l] === null) continue; // 装備を空きレーンに出さない
 
                         // 1ターン目の制限 (先攻RED)
                         if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && l !== 1) continue;
@@ -306,32 +307,43 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // 2. カードをプレイ
     if (handIdx !== -1) {
         const playedCard = cloneCard(simState.enemyHand[handIdx]);
-        // パワー異常値（undefinedなど）を実機と同じように修復（魔法カードが壁として認識されるのを防ぐ）
-        if (playedCard.currentPower === undefined || Number.isNaN(playedCard.currentPower) || (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)) {
-            playedCard.currentPower = playedCard.power || 0;
-            playedCard.basePower = playedCard.power || 0;
-        }
-        simState.enemyBoard[laneIdx] = playedCard;
+        
+        if (hasSkill(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
+            // 装備：既存のカードに追加効果とパワーを付与し、装備カードは消費される。
+            const targetCard = simState.enemyBoard[laneIdx];
+            targetCard.basePower = (targetCard.basePower || 0) + (playedCard.power || 0);
+            targetCard.currentPower = (targetCard.currentPower || 0) + (playedCard.power || 0);
 
-        let skills = [];
-        if (playedCard.skill && playedCard.skill !== 'none') {
-            // 選択スキルの場合、choiceIndexがあればその内容を、なければそのまま追加
-            if (playedCard.skill === 'choice' && choiceIndex !== undefined && playedCard.choices) {
-                const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
-                indices.forEach(idx => {
-                    if (playedCard.choices[idx]) {
-                        const chr = playedCard.choices[idx];
-                        skills.push({ id: chr.id, value: chr.value });
-                    }
-                });
-            } else {
-                skills.push({ id: playedCard.skill, value: playedCard.skillValue });
+            let addedSkills = [];
+            if (playedCard.skill && playedCard.skill !== 'none' && playedCard.skill !== 'equip') {
+                addedSkills.push({ id: playedCard.skill, value: playedCard.skillValue });
             }
-        }
-        if (Array.isArray(playedCard.skills)) {
-            // skills配列内にも選択スキルがある場合（通常はない想定だが念のため）
-            playedCard.skills.forEach(sk => {
-                if (sk.id === 'choice' && choiceIndex !== undefined && playedCard.choices) {
+            if (playedCard.skills) {
+                playedCard.skills.forEach(s => {
+                    if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value });
+                });
+            }
+
+            if (!targetCard.skills) {
+                targetCard.skills = targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                targetCard.skill = 'none';
+            }
+            targetCard.skills = targetCard.skills.concat(addedSkills);
+
+            addedSkills.forEach(sk => {
+                applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
+            });
+        } else {
+            // 通常のプレイ処理
+            if (playedCard.currentPower === undefined || Number.isNaN(playedCard.currentPower) || (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)) {
+                playedCard.currentPower = playedCard.power || 0;
+                playedCard.basePower = playedCard.power || 0;
+            }
+            simState.enemyBoard[laneIdx] = playedCard;
+
+            let skills = [];
+            if (playedCard.skill && playedCard.skill !== 'none') {
+                if (playedCard.skill === 'choice' && choiceIndex !== undefined && playedCard.choices) {
                     const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
                     indices.forEach(idx => {
                         if (playedCard.choices[idx]) {
@@ -340,18 +352,32 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                         }
                     });
                 } else {
-                    skills.push(sk);
+                    skills.push({ id: playedCard.skill, value: playedCard.skillValue });
                 }
+            }
+            if (Array.isArray(playedCard.skills)) {
+                playedCard.skills.forEach(sk => {
+                    if (sk.id === 'choice' && choiceIndex !== undefined && playedCard.choices) {
+                        const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
+                        indices.forEach(idx => {
+                            if (playedCard.choices[idx]) {
+                                const chr = playedCard.choices[idx];
+                                skills.push({ id: chr.id, value: chr.value });
+                            }
+                        });
+                    } else {
+                        skills.push(sk);
+                    }
+                });
+            }
+
+            skills.forEach(sk => {
+                applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
             });
-        }
 
-        skills.forEach(sk => {
-            applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
-        });
-
-        // 魔法カードなど、プレイ後にパワー0以下のカードは自動消滅する
-        if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) {
-            simState.enemyBoard[laneIdx] = null;
+            if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) {
+                simState.enemyBoard[laneIdx] = null;
+            }
         }
     }
 

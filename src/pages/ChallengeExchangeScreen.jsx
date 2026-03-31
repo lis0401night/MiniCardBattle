@@ -113,19 +113,23 @@ export default function ChallengeExchangeScreen() {
         debugClickCount++;
         if (debugClickCount >= 10) {
             debugClickCount = 0;
-            playSound(SOUNDS?.seSkill);
-            const currentPts = parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
-            const totalPts = parseInt(localStorage.getItem('mini_card_battle_challenge_total_points')) || 0;
-            const newPts = currentPts + 100;
-            const newTotalPts = totalPts + 100;
-            
-            localStorage.setItem('mini_card_battle_challenge_points', newPts);
-            localStorage.setItem('mini_card_battle_challenge_total_points', newTotalPts);
-            setChallengePoints({ current: newPts, total: newTotalPts });
-            savePointsToServer(newPts, newTotalPts);
+            if (showConfirmModal) {
+                showConfirmModal("デバッグモードを起動して試練ポイントを100Pt獲得しますか？", () => {
+                    playSound(SOUNDS?.seSkill);
+                    const currentPts = parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
+                    const totalPts = parseInt(localStorage.getItem('mini_card_battle_challenge_total_points')) || 0;
+                    const newPts = currentPts + 100;
+                    const newTotalPts = totalPts + 100;
+                    
+                    localStorage.setItem('mini_card_battle_challenge_points', newPts);
+                    localStorage.setItem('mini_card_battle_challenge_total_points', newTotalPts);
+                    setChallengePoints({ current: newPts, total: newTotalPts });
+                    savePointsToServer(newPts, newTotalPts);
 
-            if (showAlertModal) {
-                showAlertModal("【デバッグ】試練ポイントを100Pt獲得しました！");
+                    if (showAlertModal) {
+                        showAlertModal("【デバッグ】試練ポイントを100Pt獲得しました！");
+                    }
+                });
             }
         }
     };

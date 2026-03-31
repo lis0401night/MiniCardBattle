@@ -6,7 +6,7 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, isTransitioning, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { setRenderAchievementsListHook, showCardAcquisitionModal, showPremiumAcquisitionModal, showPlaymatAcquisitionModal, setRenderAchievementsStatsHook } from '../hooks/uiGallery.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);
@@ -80,23 +80,27 @@ export default function AchievementsScreen() {
     if (newCount >= 10) {
       setClickCount(0);
 
-      if (ACHIEVEMENT_MASTER && achievementData) {
-        ACHIEVEMENT_MASTER.forEach(ach => {
-          const data = achievementData.achievements[ach.id] || { progress: 0, isUnlocked: false };
-          data.isUnlocked = true;
-          if (ach.type === 'story_clear' || ach.type === 'story_clear_hard') {
-            data.progress = 1;
-          } else {
-            data.progress = ach.targetValue || 100;
+      if (showConfirmModal) {
+        showConfirmModal("デバッグモードを起動して全ての実績を解除しますか？", () => {
+          if (ACHIEVEMENT_MASTER && achievementData) {
+            ACHIEVEMENT_MASTER.forEach(ach => {
+              const data = achievementData.achievements[ach.id] || { progress: 0, isUnlocked: false };
+              data.isUnlocked = true;
+              if (ach.type === 'story_clear' || ach.type === 'story_clear_hard') {
+                data.progress = 1;
+              } else {
+                data.progress = ach.targetValue || 100;
+              }
+              achievementData.achievements[ach.id] = data;
+            });
           }
-          achievementData.achievements[ach.id] = data;
+
+          if (typeof saveAchievements === 'function') saveAchievements();
+          updateAchievements(); // リアクティブに再描画
+          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
+          if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：すべての実績を解除しました！");
         });
       }
-
-      if (typeof saveAchievements === 'function') saveAchievements();
-      updateAchievements(); // リアクティブに再描画
-      if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-      if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：すべての実績を解除しました！");
     }
   };
 

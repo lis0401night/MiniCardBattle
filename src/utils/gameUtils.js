@@ -247,14 +247,16 @@ export function getCardImgUrl(card) {
 }
 
 // プレミアムカード設定の切り替え
-export function togglePremiumCard(cardId) {
+export function togglePremiumCard(cardId, saveToGlobal = true) {
     const index = GameState.premiumCards.indexOf(cardId);
     if (index === -1) {
         GameState.premiumCards.push(cardId);
     } else {
         GameState.premiumCards.splice(index, 1);
     }
-    localStorage.setItem('mini_card_battle_premium_cards', JSON.stringify(GameState.premiumCards));
+    if (saveToGlobal) {
+        localStorage.setItem('mini_card_battle_premium_cards', JSON.stringify(GameState.premiumCards));
+    }
 }
 
 // プレイヤーの一意なIDを取得または生成

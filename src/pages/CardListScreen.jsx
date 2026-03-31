@@ -6,7 +6,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import { loadDeck, saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { setRenderCardListHook, openCardPreview } from '../hooks/uiGallery.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function CardListScreen() {
   const [masterCards, setMasterCards] = useState([]);
@@ -22,31 +22,43 @@ export default function CardListScreen() {
     if (newCount >= 10) {
       setClickCount(0);
       
-      if (CARD_MASTER && GameState.playerInventory) {
-        CARD_MASTER.forEach(card => {
-          if (!card.isToken) {
-            GameState.playerInventory[card.id] = 4;
+      if (showConfirmModal) {
+        showConfirmModal("デバッグモードを起動して全カード・全スキンを解放しますか？", () => {
+          if (CARD_MASTER && GameState.playerInventory) {
+            CARD_MASTER.forEach(card => {
+              if (!card.isToken) {
+                GameState.playerInventory[card.id] = 4;
+              }
+            });
           }
+
+          const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf', 'cleric', 'nectromancer', 'vampire', 'beginnermagic'];
+          if (GameState.unlockedPremiumCards) {
+            premiumTargets.forEach(id => {
+              if (!GameState.unlockedPremiumCards.includes(id)) {
+                GameState.unlockedPremiumCards.push(id);
+              }
+            });
+          }
+
+          if (typeof saveDeck === 'function') saveDeck();
+          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
+          if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
+          updateList();
         });
       }
-
-      const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf'];
-      if (GameState.unlockedPremiumCards) {
-        premiumTargets.forEach(id => {
-          if (!GameState.unlockedPremiumCards.includes(id)) {
-            GameState.unlockedPremiumCards.push(id);
-          }
-        });
-      }
-
-      if (typeof saveDeck === 'function') saveDeck();
-      if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-      if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
-      updateList();
     }
   };
 
   const updateList = () => {
+    // 常にグローバルなプレミアム設定を優先ロードする（デッキ固有設定に汚染されないため）
+    const globalPremiumSrc = localStorage.getItem('mini_card_battle_premium_cards');
+    if (globalPremiumSrc) {
+        try { GameState.premiumCards = JSON.parse(globalPremiumSrc); } catch(e) {}
+    } else {
+        GameState.premiumCards = [];
+    }
+
     const _masterCards = (CARD_MASTER || []).filter((c) => !c.isToken);
     setMasterCards(_masterCards);
 
@@ -78,7 +90,7 @@ export default function CardListScreen() {
     e.stopPropagation();
     if (isTransitioning) return;
     playSound?.(SOUNDS?.seClick);
-    togglePremiumCard?.(templateId);
+    togglePremiumCard?.(templateId, true); // カード一覧からは常にグローバル保存
     updateList();
   };
 

@@ -1,4 +1,5 @@
 export const UI_IMAGES = {
+    MENU_SOLO: 'assets/ui/ui_solobutton01.png',
     MENU_STORY: 'assets/ui/ui_storybutton01.png',
     MENU_EVENT: 'assets/ui/ui_eventbutton01.png',
     MENU_RULES: 'assets/ui/ui_rulebutton01.png',
@@ -10,4 +11,5 @@ export const UI_IMAGES = {
     GALLERY_ACHIEVEMENTS: 'assets/ui/ui_achievementsbutton01.png',
     MENU_DUNGEON: 'assets/ui/ui_dungionbutton01.png',
     MENU_ONLINE: 'assets/ui/ui_versusbutton01.png',
+    MENU_DECK: 'assets/ui/ui_deckbutton01.png',
 };

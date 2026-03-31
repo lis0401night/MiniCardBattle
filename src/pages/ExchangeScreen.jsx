@@ -6,7 +6,7 @@ import { playSound, isTransitioning, switchScreen, getCardImgUrl } from '../util
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { setRenderExchangeHook, showExchangeDetail } from '../hooks/uiMainCore.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function ExchangeScreen() {
   const [points, setPoints] = useState({ current: 0, total: 0 });
@@ -34,17 +34,21 @@ export default function ExchangeScreen() {
     debugClickCount++;
     if (debugClickCount >= 10) {
       debugClickCount = 0;
-      playSound?.(SOUNDS?.seSkill);
-      let cPts = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
-      let tPts = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
-      cPts += 100;
-      tPts += 100;
-      localStorage.setItem('mini_card_battle_defense_points', cPts);
-      localStorage.setItem('mini_card_battle_defense_total_points', tPts);
-      if (showAlertModal) {
-        showAlertModal("【デバッグ】ポイントを100Pt獲得しました！", () => updateExchange());
-      } else {
-        updateExchange();
+      if (showConfirmModal) {
+        showConfirmModal("デバッグモードを起動して防衛ポイントを100Pt獲得しますか？", () => {
+          playSound?.(SOUNDS?.seSkill);
+          let cPts = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+          let tPts = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+          cPts += 100;
+          tPts += 100;
+          localStorage.setItem('mini_card_battle_defense_points', cPts);
+          localStorage.setItem('mini_card_battle_defense_total_points', tPts);
+          if (showAlertModal) {
+            showAlertModal("【デバッグ】ポイントを100Pt獲得しました！", () => updateExchange());
+          } else {
+            updateExchange();
+          }
+        });
       }
     }
   };
