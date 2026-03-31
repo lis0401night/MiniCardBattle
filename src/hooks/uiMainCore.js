@@ -560,10 +560,11 @@ export async function startAttackBattle(enemyPlayerData) {
 
         GameState.selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
-        // 自分のキャラクター選択から開始
-        GameState.appState = 'select_player';
-        initSelectScreen(false);
-        switchScreen('screen-select');
+        // 自分の使用するデッキを選択するためデッキ一覧画面から開始
+        GameState.appState = 'select_deck';
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+        switchScreen('screen-deck-list');
     } catch (err) {
         console.error("Failed to start attack battle:", err);
         showAlertModal("対戦データの読み込みに失敗しました。");
