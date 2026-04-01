@@ -273,7 +273,7 @@ export function initBattleState() {
         if (updateBattleUIHook) updateBattleUIHook();
 
         // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
-        if (typeof incrementStat === 'function' && GameState.playerConfig && GameState.playerConfig.id) {
+        if (typeof incrementStat === 'function' && GameState.playerConfig && GameState.playerConfig.id && GameState.gameMode !== 'practice') {
             incrementStat('leaderUsage', GameState.playerConfig.id, 1);
         }
 
@@ -1480,7 +1480,7 @@ export function endBattle() {
     }
 
     // 全モード共通：実績用の勝利カウントアップ
-    if (GameState.lastBattleResult === 'win' && typeof incrementStat === 'function') {
+    if (GameState.lastBattleResult === 'win' && typeof incrementStat === 'function' && GameState.gameMode !== 'practice') {
         incrementStat('freeBattleWins');
     }
 
