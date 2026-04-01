@@ -171,6 +171,22 @@ export async function unlockAudio() {
 
         isAudioUnlocked = true;
         console.log("Web Audio Context Unlocked and SE Buffers Loaded");
+        
+        // バックグラウンド・フォアグラウンド移行時の音声バグ対策 (iOS/Android Safari, Chrome)
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', () => {
+                if (!audioCtx) return;
+                if (document.visibilityState === 'hidden') {
+                    if (audioCtx.state === 'running') {
+                        audioCtx.suspend().catch(e => console.warn(e));
+                    }
+                } else if (document.visibilityState === 'visible') {
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume().catch(e => console.warn(e));
+                    }
+                }
+            });
+        }
     } catch (e) {
         console.warn("Failed to unlock audio context (Browser restriction):", e);
     }
