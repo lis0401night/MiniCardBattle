@@ -70,10 +70,21 @@ export default function DeckListScreen() {
 
     const handleSelectDeck = (index) => {
         playSound?.(SOUNDS?.seClick);
+        
+        if (GameState.appState === 'select_enemy_deck') {
+            GameState.pendingCharId = GameState.decks[index].leaderId;
+            GameState.practiceEnemyDeckIndex = index;
+            confirmCharSelect?.();
+            return;
+        }
+
         GameState.currentDeckIndex = index;
         loadDeck(); 
         
         if (GameState.appState === 'select_deck') {
+            if (GameState.gameMode === 'practice') {
+                GameState.practicePlayerDeckIndex = index;
+            }
             GameState.pendingCharId = GameState.decks[index].leaderId;
             confirmCharSelect?.();
         } else {
@@ -293,7 +304,9 @@ export default function DeckListScreen() {
         onPointerUp={handleGlobalPointerUp}
         onPointerCancel={handleGlobalPointerUp}
         >
-            <h2 style={{ color: '#facc15', marginBottom: '15px' }}>デッキ一覧</h2>
+            <h2 style={{ color: '#facc15', marginBottom: '15px' }}>
+                {GameState.appState === 'select_enemy_deck' ? '相手のデッキ' : 'デッキ一覧'}
+            </h2>
 
             <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                 {/* 左矢印 */}

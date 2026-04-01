@@ -664,8 +664,9 @@ export default function GlobalModals() {
           <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '350px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)', boxSizing: 'border-box' }}>
             {(() => {
               const isEnemySelection = GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy;
+              const isCreateDeck = GameState.appState === 'create_deck_select_char' || GameState.gameMode === 'defense_register' && GameState.appState === 'select_player';
               let skinIdToUse;
-              if (isEnemySelection) {
+              if (isEnemySelection || isCreateDeck) {
                   skinIdToUse = 'default';
               } else if (selectedSkinState) {
                   skinIdToUse = selectedSkinState;
@@ -705,7 +706,10 @@ export default function GlobalModals() {
                 style={{ width: '100%', marginBottom: '10px', background: 'linear-gradient(45deg, #c084fc, #9333ea)', border: 'none', color: 'white', padding: '10px', borderRadius: '8px', fontWeight: 'bold', textShadow: '1px 1px 2px #000' }}
                 onClick={() => {
                   let initialSkin = 'default';
-                  if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
+                  const isCreateDeck = GameState.appState === 'create_deck_select_char' || GameState.gameMode === 'defense_register' && GameState.appState === 'select_player';
+                  if (isCreateDeck) {
+                      initialSkin = 'default';
+                  } else if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
                       initialSkin = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
                   } else {
                       initialSkin = GameState.playerSkins[charDetailData.id] || 'default';

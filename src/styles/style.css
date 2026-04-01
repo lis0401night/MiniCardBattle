@@ -2590,8 +2590,9 @@ h2 {
 }
 
 .menu-btn-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 25px;
     width: 90%;
     max-width: 360px;
@@ -2601,7 +2602,8 @@ h2 {
 
 
 .menu-img-btn {
-    width: 100%;
+    width: calc(50% - 12.5px);
+    flex: 0 0 calc(50% - 12.5px);
     aspect-ratio: 1 / 1;
     border-radius: 12px;
     border: 2px solid #334155;

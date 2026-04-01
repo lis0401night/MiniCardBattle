@@ -12,6 +12,7 @@ import { GameState } from './gameState.js';
 import { initStoryMode } from './story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { openCardPreview } from './uiGallery.js';
+import { prepareBattle } from './battle.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
 import { initBattleDungeon } from './battleDungeon.js';
 import { setPlayerReadyOnly } from './multiplayer.js';
@@ -235,6 +236,10 @@ export function goBackFromSelect() {
         if (typeof window.loadDeck === 'function') window.loadDeck();
         if (window.forceUpdateDeckList) window.forceUpdateDeckList();
         switchScreen('screen-deck-list');
+    } else if (GameState.appState === 'select_enemy_deck') {
+        GameState.appState = 'select_deck';
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     } else if (GameState.gameMode === 'online_deck_edit') {
         showOnlineLobby();
     } else {
@@ -245,7 +250,7 @@ export function goBackFromSelect() {
             stopAllBGM();
             playSound(SOUNDS.bgmTitle);
         }
-        if (GameState.gameMode === 'story' || GameState.gameMode === 'free') {
+        if (GameState.gameMode === 'story' || GameState.gameMode === 'free' || GameState.gameMode === 'practice') {
             switchScreen('screen-solo-menu');
         } else {
             switchScreen('screen-mode-select');
@@ -274,6 +279,11 @@ export function goBackFromStage() {
         switchScreen('screen-deck-edit');
     } else if (GameState.gameMode === 'free') {
         GameState.appState = 'select_deck';
+        switchScreen('screen-deck-list');
+    } else if (GameState.gameMode === 'practice') {
+        GameState.appState = 'select_enemy_deck';
+        if (typeof window.loadDeck === 'function') window.loadDeck();
+        if (window.forceUpdateDeckList) window.forceUpdateDeckList();
         switchScreen('screen-deck-list');
     } else {
         GameState.appState = 'select_difficulty';
@@ -624,7 +634,12 @@ export function confirmCharSelect() {
     }
 
     if (GameState.appState === 'select_player' || GameState.appState === 'select_deck') {
-        if (GameState.gameMode === 'story') {
+        if (GameState.gameMode === 'practice') {
+            GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+            GameState.appState = 'select_enemy_deck';
+            if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+            return;
+        } else if (GameState.gameMode === 'story') {
             GameState.appState = 'select_difficulty';
             switchScreen('screen-difficulty');
             updateDifficultyCheckButtons();
@@ -637,7 +652,17 @@ export function confirmCharSelect() {
         } else if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
             // 防衛登録 / オンライン：ステージ選択を省略してすぐデッキ編集へ移行
             GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+            const chosenSkin = GameState.playerSkins[GameState.pendingCharId];
             startBattleFlow();
+            if (chosenSkin) {
+                GameState.playerSkins[GameState.pendingCharId] = chosenSkin;
+                if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
+                    if (!GameState.decks[GameState.currentDeckIndex].playerSkins) {
+                        GameState.decks[GameState.currentDeckIndex].playerSkins = {};
+                    }
+                    GameState.decks[GameState.currentDeckIndex].playerSkins[GameState.pendingCharId] = chosenSkin;
+                }
+            }
         } else if (GameState.gameMode === 'defense_attack') {
             // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
             GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
@@ -648,6 +673,21 @@ export function confirmCharSelect() {
             initSelectScreen(false);
             switchScreen('screen-select');
         }
+    } else if (GameState.appState === 'select_enemy_deck') {
+        GameState.enemyConfig = { ...CHARACTERS[GameState.pendingCharId] };
+        const enemyDeckData = GameState.decks[GameState.practiceEnemyDeckIndex];
+        const skinIdToUse = enemyDeckData.playerSkins?.[GameState.pendingCharId] || 'default';
+        if (!GameState.enemySkins) GameState.enemySkins = {};
+        GameState.enemySkins[GameState.pendingCharId] = skinIdToUse;
+        
+        if (typeof getSkinImage === 'function') {
+            GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, skinIdToUse, 'image');
+            GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, skinIdToUse, 'imageLose');
+            GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, skinIdToUse, 'icon');
+        }
+
+        GameState.aiLevel = 3;
+        confirmStageSelect('practice');
     } else if (GameState.appState === 'select_enemy') {
         GameState.enemyConfig = CHARACTERS[GameState.pendingCharId];
         GameState.appState = 'select_difficulty';
@@ -708,6 +748,14 @@ export function confirmStageSelect(stageId) {
         } else {
             switchScreen('screen-online-lobby');
         }
+    } else if (GameState.gameMode === 'practice') {
+        performFadeTransition(() => {
+            GameState.battleCount = 1;
+            GameState.appState = 'battle';
+            GameState.currentDeckIndex = GameState.practicePlayerDeckIndex;
+            loadDeck();
+            prepareBattle();
+        });
     } else {
         performFadeTransition(() => {
             GameState.battleCount = 1;

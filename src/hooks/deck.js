@@ -62,7 +62,13 @@ export function generateDeck(owner, config, sessionId) {
     } else {
         // 敵のデッキ生成
         let deckIds = [];
-        if (GameState.gameMode === 'battle_dungeon' && config.dungeonDeck) {
+        if (GameState.gameMode === 'practice') {
+            const enemyDeckData = GameState.decks[GameState.practiceEnemyDeckIndex];
+            deckIds = enemyDeckData.cards.map(id => ({
+                id: id,
+                isPremium: enemyDeckData.premiumCards ? enemyDeckData.premiumCards.includes(id) : false
+            }));
+        } else if (GameState.gameMode === 'battle_dungeon' && config.dungeonDeck) {
             deckIds = config.dungeonDeck;
         } else {
             let recipeId = config.id;

@@ -64,8 +64,7 @@ export default function CharacterSelectScreen() {
       <div className="select-scroll-area">
         <div className="char-grid" id="char-grid">
           {characters.map(char => {
-            const isEnemySelection = GameState.appState === 'select_enemy';
-            const bgImage = isEnemySelection ? char.image : getSkinImage(char, GameState.playerSkins[char.id], 'image');
+            const bgImage = char.image; // カタログ画面では常にデフォルト画像をサムネイルとして使用する
             return (
               <div 
                 key={char.id} 

@@ -2,6 +2,7 @@
  * Mini Card Battle - Stage Data
  */
 export const STAGES = {
+    practice: { id: 'practice', name: '仮想空間', bgm: 'bgmStagePractice' },
     android: { id: 'android', name: 'セクター7', bgm: 'bgmStageAndroid' },
     dragon: { id: 'dragon', name: '活火山', bgm: 'bgmStageDragon' },
     knight: { id: 'knight', name: '戦場', bgm: 'bgmStageKnight' },

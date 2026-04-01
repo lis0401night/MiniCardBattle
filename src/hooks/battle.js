@@ -466,46 +466,37 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
     // AIの場合：
     if (owner === 'red') {
-        // すでにシミュレーションで決定された配置があればそれを使う
-        const aiLanes = (tokenLanes && tokenLanes.length > 0) ? tokenLanes : (GameState.aiTokenLanes || []);
-        if (aiLanes.length > 0) {
-            console.log("AI using pre-calculated tokenLanes:", aiLanes);
-            return aiLanes.slice(0, count);
-        }
-        // 無ければ評価を行う（強制使用時など）
-        let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-        let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i));
+        // aiDecision 内のシミュレーション結果を利用する・または難易度に応じた評価を行う
+        let selectedLanes = evaluateBestLanesForToken([0, 1, 2], 'red', tokenCard, count, isLeaderSkill);
 
-        // カード制約の適用
+        // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
         if (checkConstraints && tokenCard) {
             const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
             const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
 
             if (hasLegendary) {
-                // 伝説は中央(lane 1)のみ
-                validEmptyLanes = validEmptyLanes.filter(i => i === 1);
-                validOccupiedLanes = validOccupiedLanes.filter(i => i === 1);
+                selectedLanes = selectedLanes.filter(i => i === 1);
             }
             if (hasTakeover) {
-                // 生贄は必ず上書きされる（空きレーンには配置できない）
-                validEmptyLanes = [];
+                selectedLanes = selectedLanes.filter(i => board[i] !== null);
             }
         }
 
-        // リーダースキルや通常の召喚スキルで、空きが足りない場合は上書きを許容する
-        let selectedLanes = [...validEmptyLanes];
-
-        // 生贄（takeover）等で空きレーンに置けない、あるいは空きスペース以上のcountが要求されている場合、埋まっているレーンから選ぶ
-        if (selectedLanes.length < count && validOccupiedLanes.length > 0) {
+        // それでも足りない場合、空きレーンや重複を許容する
+        if (selectedLanes.length < count) {
+            let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
+            let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i));
+            
+            while (selectedLanes.length < count && validEmptyLanes.length > 0) {
+                selectedLanes.push(validEmptyLanes.shift());
+            }
             // 上書き対象を決める簡易評価（パワーが低い順）
-            let occupiedLanes = [...validOccupiedLanes];
-            occupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
-            while (selectedLanes.length < count && occupiedLanes.length > 0) {
-                selectedLanes.push(occupiedLanes.shift());
+            validOccupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
+            while (selectedLanes.length < count && validOccupiedLanes.length > 0) {
+                selectedLanes.push(validOccupiedLanes.shift());
             }
         }
 
-        // 最終的に必要な数に達していなくても、あるだけ返す
         return selectedLanes.slice(0, count);
     }
 
@@ -1608,7 +1599,7 @@ export function endBattle() {
         }
 
         // --- 防衛戦以外（フリー、ストーリー、高難易度など）の処理 ---
-        if (GameState.lastBattleResult === 'win' && GameState.gameMode !== 'online') {
+        if (GameState.lastBattleResult === 'win' && GameState.gameMode !== 'online' && GameState.gameMode !== 'practice') {
             // 実績の加算処理
             if (GameState.gameMode === 'story' && GameState.enemyConfig && GameState.enemyConfig.id === 'satan' && typeof incrementStat === 'function') {
                 incrementStat('storyClears', GameState.playerConfig.id);
@@ -1651,6 +1642,18 @@ export function endBattle() {
                     return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
                 }
             }
+        }
+
+        if (GameState.gameMode === 'practice') {
+            GameState.appState = 'select_deck';
+            if (typeof window.loadDeck === 'function') window.loadDeck();
+            if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+            switchScreen('screen-deck-list');
+            if (SOUNDS.bgmTitle.paused) {
+                stopAllBGM();
+                playSound(SOUNDS.bgmTitle);
+            }
+            return;
         }
 
         // ドロップがない、全所持、または敗北/引き分けの場合はそのまま会話画面へ

@@ -1,6 +1,7 @@
 export const UI_IMAGES = {
     MENU_SOLO: 'assets/ui/ui_solobutton01.png',
     MENU_STORY: 'assets/ui/ui_storybutton01.png',
+    MENU_PRACTICE: 'assets/ui/ui_practice01.png',
     MENU_EVENT: 'assets/ui/ui_eventbutton01.png',
     MENU_RULES: 'assets/ui/ui_rulebutton01.png',
     MENU_FREE: 'assets/ui/ui_freebattlebutton01.png',

@@ -54,6 +54,7 @@ export const AUDIO_INSTANCES = {
     bgmStageWitch: new Audio('assets/audio/bgm/bgm_stage_witch01.mp3'),
     bgmStageSatan: new Audio('assets/audio/bgm/bgm_stage_satan01.mp3'),
     bgmStageDungeon: new Audio('assets/audio/bgm/bgm_stage_dungeon01.mp3'),
+    bgmStagePractice: new Audio('assets/audio/bgm/bgm_stage_practice01.mp3'),
     // SE (Web Audio API用フォールバックとしても事前生成しておく)
     seClick: new Audio('assets/audio/se/se_click.mp3'),
     sePlace: new Audio('assets/audio/se/se_place.mp3'),

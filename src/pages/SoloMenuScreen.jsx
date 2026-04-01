@@ -30,6 +30,13 @@ export default function SoloMenuScreen() {
           ></div>
           <div className="menu-btn-label">フリーバトル</div>
         </div>
+        <div className="menu-img-btn" onClick={() => startGameMode?.('practice')}>
+          <div
+            className="menu-img-bg"
+            style={{ backgroundImage: `url('${images.MENU_PRACTICE || ''}')` }}
+          ></div>
+          <div className="menu-btn-label">プラクティス</div>
+        </div>
       </div>
       <div
         style={{
