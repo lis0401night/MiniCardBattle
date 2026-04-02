@@ -14,9 +14,9 @@ export default {
         'fire', 'fire',
         'incinerator', 'incinerator',
         'charity', 'charity',
-        'light', 'light',
+        'light', 'light', 'light',
         'wall', 'wall', 'wall',
-        'cleric', 'cleric', 'cleric',
+        'cleric', 'cleric',
     ],
     hard: [
         'empress', 'empress', 'empress',
