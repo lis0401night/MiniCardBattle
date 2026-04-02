@@ -11,10 +11,10 @@ export default {
     normal: [
         'golem', 'golem', 'golem', 'golem',
         'drifter', 'drifter',
+        'dragon', 'dragon',
         'wyvern', 'wyvern',
         'babydragon', 'babydragon',
         'dragonewt', 'dragonewt',
-        'hammer', 'hammer',
         'lizardman', 'lizardman', 'lizardman',
         'dancer', 'dancer', 'dancer',
     ],
