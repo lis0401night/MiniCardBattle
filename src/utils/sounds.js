@@ -18,7 +18,10 @@ export const SE_PATHS = {
     seSkill: 'assets/audio/se/se_skill_default.mp3',
     seDestroy: 'assets/audio/se/se_destroy.mp3',
     seContinue: 'assets/audio/se/se_skill_default.mp3',
-    seLegend: 'assets/audio/se/se_legend.mp3'
+    seLegend: 'assets/audio/se/se_legend.mp3',
+    seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
+    seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
+    seSkillCharge: 'assets/audio/se/se_skill_charge.mp3'
 };
 
 export const SOUNDS = {
@@ -30,7 +33,10 @@ export const SOUNDS = {
     seSkill: 'assets/audio/se/se_skill_default.mp3',
     seDestroy: 'assets/audio/se/se_destroy.mp3',
     seContinue: 'assets/audio/se/se_skill_default.mp3',
-    seLegend: 'assets/audio/se/se_legend.mp3'
+    seLegend: 'assets/audio/se/se_legend.mp3',
+    seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
+    seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
+    seSkillCharge: 'assets/audio/se/se_skill_charge.mp3'
 };
 
 export const AUDIO_INSTANCES = {
@@ -63,7 +69,10 @@ export const AUDIO_INSTANCES = {
     seSkill: new Audio('assets/audio/se/se_skill_default.mp3'),
     seDestroy: new Audio('assets/audio/se/se_destroy.mp3'),
     seContinue: new Audio('assets/audio/se/se_skill_default.mp3'),
-    seLegend: new Audio('assets/audio/se/se_legend.mp3')
+    seLegend: new Audio('assets/audio/se/se_legend.mp3'),
+    seSkillBind: new Audio('assets/audio/se/se_skill_bind.mp3'),
+    seSkillToxic: new Audio('assets/audio/se/se_skill_toxic.mp3'),
+    seSkillCharge: new Audio('assets/audio/se/se_skill_charge.mp3')
 };
 
 // サウンドの初期設定

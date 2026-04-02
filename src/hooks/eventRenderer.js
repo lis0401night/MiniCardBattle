@@ -175,7 +175,7 @@ export async function playEvents(events) {
                     GameState.enemySP = Math.min(eMaxSP, Math.max(0, GameState.enemySP + ev.amount));
                 }
                 updateSPOrbs(ev.side);
-                playSound(SOUNDS.seSkill);
+                playSound(SOUNDS.seSkillCharge);
                 await sleep(200);
                 break;
             }

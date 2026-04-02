@@ -322,7 +322,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'quick') {
         await sleep(400); await executeSingleCombat(o, l);
     } else if (skillId === 'toxic') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '有毒', '#10b981');
+        playSound(SOUNDS.seSkillToxic); createDamagePopup(cEl, '有毒', '#10b981');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
         if (eB[l]) {
             const toxVal = skillValue || 1;
@@ -356,7 +356,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             await sleep(500);
         }
     } else if (skillId === 'bind') {
-        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '拘束', '#facc15');
+        playSound(SOUNDS.seSkillBind); createDamagePopup(cEl, '拘束', '#facc15');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
         if (eB[l]) {
             const turns = (skillValue || 1) + 1;
