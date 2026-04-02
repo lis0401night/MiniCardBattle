@@ -58,6 +58,11 @@ export async function playSound(audioOrKey) {
         unlockAudio();
     }
 
+    // バックグラウンド復帰後などに AudioContext が一時停止されたままの場合のフェイルセーフ
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(e => console.warn("Failed to resume audioCtx", e));
+    }
+
     const baseVol = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
 
     // 1. Web Audio (SE) の処理
@@ -113,7 +118,11 @@ export async function playSound(audioOrKey) {
         }
     }
 }
-export function stopSound(audio) { if (audio && audio.pause) { audio.pause(); audio.currentTime = 0; } }
+export function stopSound(audio) { 
+    if (audio && audio.pause) { 
+        audio.pause(); 
+    } 
+}
 export function stopAllBGM() {
     Object.keys(SOUNDS).forEach(key => {
         if (key.startsWith('bgm')) {
@@ -217,7 +226,7 @@ export function getSkillValue(c, skillId) {
     return 0;
 }
 
-export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic'];
+export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {

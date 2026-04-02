@@ -32,7 +32,7 @@ export default function CardListScreen() {
             });
           }
 
-          const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf', 'cleric', 'nectromancer', 'vampire', 'beginnermagic'];
+          const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf', 'cleric', 'nectromancer', 'vampire', 'beginnermagic', 'djinn'];
           if (GameState.unlockedPremiumCards) {
             premiumTargets.forEach(id => {
               if (!GameState.unlockedPremiumCards.includes(id)) {
