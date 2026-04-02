@@ -494,8 +494,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'call':
             const deck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
             const callMaxPow = val || 3;
-            if (deck.length > 0 && (deck[0].power || 0) <= callMaxPow) {
-                const calledCard = deck.shift();
+            if (deck.length > 0 && (deck[deck.length - 1].power || 0) <= callMaxPow) {
+                const calledCard = deck.pop();
                 
                 let targetLane = -1;
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
@@ -513,7 +513,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     b[targetLane] = calledCard;
                     events.push({ type: 'summon_card', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(calledCard)), source: 'call' });
                 } else {
-                    deck.unshift(calledCard);
+                    deck.push(calledCard);
                 }
             }
             break;

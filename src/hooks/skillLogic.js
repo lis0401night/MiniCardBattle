@@ -610,12 +610,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'call') {
         const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
         if (d.length > 0) {
-            const topCard = d[0];
+            const topCard = d[d.length - 1];
             if (cEl) createDamagePopup(cEl, `号令 (${topCard.name})`, '#facc15');
             
             if ((topCard.power || 0) <= (skillValue || 3)) {
                 // デッキトップを取り出す
-                d.shift();
+                d.pop();
                 updateDeckDisplay(o);
                 
                 // キャンセル可能なレーン選択
@@ -641,7 +641,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     }
                 } else {
                     // キャンセルされたのでデッキトップに戻す
-                    d.unshift(topCard);
+                    d.push(topCard);
                     updateDeckDisplay(o);
                 }
             } else {

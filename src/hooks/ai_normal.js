@@ -294,6 +294,8 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         enemyHand: hand.map(cloneCard),
         playerDiscard: GameState.playerDiscard.map(cloneCard),
         enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+        playerDeck: GameState.playerDeck.map(cloneCard),
+        enemyDeck: GameState.enemyDeck.map(cloneCard),
         extraTurnCount: GameState.extraTurnCount,
         attackSkipCount: GameState.attackSkipCount
     };
@@ -435,8 +437,12 @@ export function evaluateAdhocTokenLanes(tokenCard) {
         if (GameState.enemyBoard[l] === null) {
             let simState = {
                 playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
+                playerHand: GameState.playerHand.map(cloneCard), enemyHand: GameState.enemyHand.map(cloneCard),
+                playerDeck: GameState.playerDeck.map(cloneCard), enemyDeck: GameState.enemyDeck.map(cloneCard),
+                playerDiscard: GameState.playerDiscard.map(cloneCard), enemyDiscard: GameState.enemyDiscard.map(cloneCard),
                 playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
                 playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
+                playerSP: GameState.playerSP, enemySP: GameState.enemySP,
                 extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
             };
             simState.enemyBoard[l] = cloneCard(tokenCard);

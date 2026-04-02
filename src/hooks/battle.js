@@ -881,10 +881,16 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
             const originalPlayerBoard = GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
 
             for (let i = 0; i < choices.length; i++) {
+                const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
                 const simState = {
-                    playerBoard: originalPlayerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-                    enemyBoard: originalBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-                    playerHP: GameState.playerHP, enemyHP: GameState.enemyHP, playerSP: GameState.playerSP, enemySP: GameState.enemySP
+                    playerBoard: originalPlayerBoard.map(cloneCard),
+                    enemyBoard: originalBoard.map(cloneCard),
+                    playerHand: GameState.playerHand.map(cloneCard), enemyHand: GameState.enemyHand.map(cloneCard),
+                    playerDeck: GameState.playerDeck.map(cloneCard), enemyDeck: GameState.enemyDeck.map(cloneCard),
+                    playerDiscard: GameState.playerDiscard.map(cloneCard), enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+                    playerHP: GameState.playerHP, enemyHP: GameState.enemyHP, playerSP: GameState.playerSP, enemySP: GameState.enemySP,
+                    playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
+                    extraTurnCount: GameState.extraTurnCount, attackSkipCount: GameState.attackSkipCount
                 };
                 // 簡易シミュレーション
                 const lane = GameState.enemyBoard.indexOf(card);
