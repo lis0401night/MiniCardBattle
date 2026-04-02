@@ -175,12 +175,34 @@ export async function unlockAudio() {
         // バックグラウンド・フォアグラウンド移行時の音声バグ対策 (iOS/Android Safari, Chrome)
         if (typeof document !== 'undefined') {
             document.addEventListener('visibilitychange', () => {
+                const isHidden = document.visibilityState === 'hidden';
+                
+                // 全てのBGM等Audio要素を安全に退避・復帰
+                Object.values(AUDIO_INSTANCES).forEach(audio => {
+                    if (audio && typeof audio.pause === 'function') {
+                        if (isHidden) {
+                            if (!audio.paused) {
+                                audio._wasPlayingBeforeHide = true;
+                                audio.pause();
+                            } else {
+                                audio._wasPlayingBeforeHide = false;
+                            }
+                        } else {
+                            if (audio._wasPlayingBeforeHide) {
+                                const p = audio.play();
+                                if (p !== undefined) p.catch(() => {});
+                                audio._wasPlayingBeforeHide = false;
+                            }
+                        }
+                    }
+                });
+
                 if (!audioCtx) return;
-                if (document.visibilityState === 'hidden') {
+                if (isHidden) {
                     if (audioCtx.state === 'running') {
                         audioCtx.suspend().catch(e => console.warn(e));
                     }
-                } else if (document.visibilityState === 'visible') {
+                } else {
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume().catch(e => console.warn(e));
                     }

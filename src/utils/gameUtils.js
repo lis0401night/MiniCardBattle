@@ -118,7 +118,11 @@ export async function playSound(audioOrKey) {
         }
     }
 }
-export function stopSound(audio) { if (audio && audio.pause) { audio.pause(); audio.currentTime = 0; } }
+export function stopSound(audio) { 
+    if (audio && audio.pause) { 
+        audio.pause(); 
+    } 
+}
 export function stopAllBGM() {
     Object.keys(SOUNDS).forEach(key => {
         if (key.startsWith('bgm')) {
