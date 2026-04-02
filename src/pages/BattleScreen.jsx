@@ -36,7 +36,7 @@ export default function BattleScreen() {
     }, []);
 
     const turnOrderResolver = React.useRef(null);
-    
+
     // バトル進行側(battle.js)からのターン開始シグナルを受け取る
     useEffect(() => {
         window.startTurnOrderReact = (resolve) => {
@@ -107,9 +107,16 @@ export default function BattleScreen() {
 
             if (GameState.playerBoard[lane] !== null) {
                 const existingCard = GameState.playerBoard[lane];
-                const confirmed = await new Promise(resolve => {
-                    showConfirmModal(`「${existingCard.name}」を破棄して「${newCard.name}」を配置しますか？`, () => resolve(true), () => resolve(false));
-                });
+                let confirmed;
+                if (hasSkill && hasSkill(newCard, 'equip')) {
+                    confirmed = await new Promise(resolve => {
+                        showConfirmModal(`「${existingCard.name}」に「${newCard.name}」を装備しますか？`, () => resolve(true), () => resolve(false));
+                    });
+                } else {
+                    confirmed = await new Promise(resolve => {
+                        showConfirmModal(`「${existingCard.name}」を破棄して「${newCard.name}」を配置しますか？`, () => resolve(true), () => resolve(false));
+                    });
+                }
                 if (!confirmed) return;
             }
 
@@ -184,13 +191,13 @@ export default function BattleScreen() {
     return (
         <div id="screen-battle" className="screen active" style={battleStyle}>
             <button className="btn-circle btn-battle-help" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); window.showRulesModal(); }}>？</button>
-            <button 
-                className={`btn-circle btn-battle-retire ${GameState.lastBattleResult ? 'disabled' : ''}`} 
-                onClick={(e) => { 
-                    e.stopPropagation(); 
+            <button
+                className={`btn-circle btn-battle-retire ${GameState.lastBattleResult ? 'disabled' : ''}`}
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (!GameState.lastBattleResult) {
-                        playSound(SOUNDS.seClick); 
-                        returnToTitle(); 
+                        playSound(SOUNDS.seClick);
+                        returnToTitle();
                     }
                 }}
                 disabled={!!GameState.lastBattleResult}
