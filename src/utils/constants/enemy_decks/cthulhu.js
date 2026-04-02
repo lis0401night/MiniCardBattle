@@ -10,22 +10,21 @@ export default {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'oldgod',
+        'hound', 'hound',
         'octopus', 'octopus',
         'tortoise', 'tortoise',
         'shark', 'shark',
         'copy', 'copy',
-        'prince', 'prince',
         'diviner', 'diviner',
         'clone', 'clone',
-        'dinosaur',
+        'dinosaur', 'dinosaur',
     ],
     hard: [
-        'oldgod', 'oldgod', 'oldgod', 'oldgod',
+        'oldgod', 'oldgod',
+        'hound', 'hound', 'hound', 'hound',
         'octopus', 'octopus', 'octopus', 'octopus',
-        'copy', 'copy',
-        'shark', 'shark',
+        'copy', 'copy', 'copy', 'copy',
         'tortoise', 'tortoise', 'tortoise', 'tortoise',
-        'clone', 'clone', 'clone', 'clone',
+        'parasite', 'parasite',
     ]
 };

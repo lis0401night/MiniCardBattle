@@ -10,20 +10,21 @@ export default {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'champion',
+        'admiral', 'admiral',
         'assassin', 'assassin',
         'commander', 'commander',
-        'hero', 'hero',
-        'darkpaladin', 'darkpaladin',
-        'ninja', 'ninja', 'ninja',
-        'clone', 'clone', 'clone', 'clone',
-    ],
-    hard: [
-        'champion', 'champion', 'champion', 'champion',
-        'assassin', 'assassin', 'assassin', 'assassin',
-        'commander', 'commander', 'commander',
         'hero', 'hero', 'hero',
         'darkpaladin', 'darkpaladin',
+        'ninja', 'ninja',
+        'clone', 'clone', 'clone',
+    ],
+    hard: [
+        'champion', 'champion', 'champion',
+        'admiral', 'admiral', 'admiral',
+        'assassin', 'assassin', 'assassin', 'assassin',
+        'commander', 'commander',
+        'hero', 'hero',
+        'horse', 'horse',
         'clone', 'clone', 'clone', 'clone',
     ]
 };

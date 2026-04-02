@@ -8,19 +8,20 @@ export default {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'bahamut',
         'daemon', 'daemon',
+        'daemonarmor', 'daemonarmor',
         'warlock', 'warlock', 'warlock', 'warlock',
         'dealer', 'dealer', 'dealer',
         'devil', 'devil', 'devil',
-        'goat', 'goat', 'goat',
+        'goat', 'goat',
     ],
     hard: [
         'bahamut', 'bahamut', 'bahamut', 'bahamut',
         'daemon', 'daemon', 'daemon', 'daemon',
-        'warlock', 'warlock', 'warlock', 'warlock',
-        'dealer', 'dealer', 'dealer',
-        'devil', 'devil', 'devil',
+        'daemonarmor', 'daemonarmor', 'daemonarmor', 'daemonarmor',
+        'warlock', 'warlock',
+        'dealer', 'dealer',
+        'devil', 'devil',
         'goat', 'goat',
     ]
 };

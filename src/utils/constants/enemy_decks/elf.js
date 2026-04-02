@@ -10,20 +10,20 @@ export default {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'wolf',
         'highelf', 'highelf',
+        'wolf', 'wolf',
         'bard', 'bard',
         'bear', 'bear',
         'bird', 'bird',
-        'charger', 'charger',
-        'chameleon', 'chameleon',
-        'sniper', 'sniper', 'sniper',
+        'vine', 'vine',
+        'sniper', 'sniper', 'sniper', 'sniper',
     ],
     hard: [
         'wolf', 'wolf', 'wolf', 'wolf',
+        'caller', 'caller', 'caller', 'caller',
         'highelf', 'highelf', 'highelf', 'highelf',
-        'bear', 'bear', 'bear', 'bear',
-        'bird', 'bird', 'bird', 'bird',
+        'bard', 'bard',
+        'bird', 'bird',
         'sniper', 'sniper', 'sniper', 'sniper',
     ]
 };

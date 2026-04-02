@@ -23,7 +23,6 @@ export const CARD_MASTER = [
     { id: 'zombie', name: '解き放たれた囚人', power: 1, skills: [{ id: 'clone', value: 2 }, { id: 'growth', value: -1 }], rarity: 1, voiceCategory: 'undead', flavor: 'かつて地下牢に繋がれていた者たちの成れの果て。その怨念は果てることなく、仲間を呼び寄せながら朽ちてゆく。' },
     { id: 'beginnermagic', name: '初級魔術', rarity: 1, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'summon', value: 5 }, { id: 'support', value: 3 }], flavor: '大地に流れる脈動をマナへと変換する基礎的な魔術。' },
     { id: 'snake', name: '蛇の使い魔', rarity: 1, voiceCategory: 'insect', power: 3, skill: 'toxic', skillValue: 3, flavor: '魔法使いに使役される毒蛇。術者の命令に従い、獲物を毒牙にかける。' },
-    { id: 'cat', name: '食糧庫のコソ泥', power: 1, rarity: 2, skills: [{ id: 'quick' }, { id: 'extort', value: 2 }], voiceCategory: 'beast', flavor: '城の警備もなんのその、神出鬼没の小さな怪盗は宵の闇をすり抜けていく。' },
     { id: 'goat', name: 'スケープゴート', power: 3, rarity: 1, skills: [{ id: 'sacrifice', value: 3 }, { id: 'charge', value: 2 }], voiceCategory: 'monster', flavor: '不吉な儀式の供物として捧げられる山羊。その命が尽きる時、主には強大な魔力が還元される。' },
     { id: 'devil', name: '地獄の放火魔', power: 2, skills: [{ id: 'spread', value: 3 }, { id: 'explode', value: 3 }], rarity: 1, voiceCategory: 'devil', flavor: '背中のタンクには地獄の業火が詰まっている。初めて武器を与えられた小悪魔は、その焦熱を振り撒くことに至上の喜びを感じていた。' },
     { id: 'titan', name: '旧式タイタン', power: 8, skill: 'growth', skillValue: -2, rarity: 2, voiceCategory: 'machine_old', flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。' },
@@ -49,7 +48,8 @@ export const CARD_MASTER = [
     { id: 'tortoise', name: '鉄亀', power: 4, skill: 'sturdy', rarity: 2, voiceCategory: 'insect', flavor: '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。' },
     { id: 'prince', name: '星の王子', power: 1, skill: 'stealth', skillValue: 3, rarity: 2, voiceCategory: 'lizard', voiceCategory: 'monster', flavor: '黒き触手に抱かれた幼き王は、遥か宇宙の深淵から、我らの空へと帰還しつつある。' },
     { id: 'copy', name: '虚無の目覚め', power: 4, skill: 'morph', skillValue: 1, rarity: 2, voiceCategory: 'insect', voiceCategory: 'monster', flavor: 'その巨大な眼差しに見つめられた時、存在の意味は虚空へと霧散し、ただ静寂のみが残される。' },
-    { id: 'shark', name: 'メガロドン', power: 6, skills: [{ id: 'stealth', value: 1 }, { id: 'standby', value: 1 }], rarity: 2, voiceCategory: 'monster', flavor: '深き蒼から突如として現れる規格外の巨体。その顎が海面を割る時、逃げる術は既に残されていない。' },
+    { id: 'shark', name: 'メガロドン', power: 6, skills: [{ id: 'stealth', value: 1 }, { id: 'standby', value: 1 }], rarity: 2, voiceCategory: 'insect', flavor: '深き蒼から突如として現れる規格外の巨体。その顎が海面を割る時、逃げる術は既に残されていない。' },
+    { id: 'parasite', name: '招かれざる来訪者', power: 1, rarity: 2, skills: [{ id: 'equip' }, { id: 'clone', value: 1 }, { id: 'growth', value: -1 }], voiceCategory: 'insect', flavor: '宇宙の深淵から飛来した、冷たく蠢く無機生命体。音もなく宿主に取り付いて生命力を啜り、自らの似姿を静かに増殖させながら、やがて全てを空洞の石へと変えていく。' },
     { id: 'barrier', name: '聖光の護り手', power: 4, skills: [{ id: 'guardian' }, { id: 'support', value: 1 }], voiceCategory: 'human_female_cool', rarity: 2, flavor: '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。' },
     { id: 'charity', name: '慈愛', power: 3, skills: [{ id: 'heal', value: 4 }, { id: 'defender' }, { id: 'sturdy' }], rarity: 2, voiceCategory: 'stone', flavor: '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。' },
     { id: 'doom', name: '破滅', power: 3, skills: [{ id: 'spread', value: 6 }, { id: 'defender' }, { id: 'takeover' }], rarity: 2, voiceCategory: 'stone', flavor: '古より伝わる小さな彫像。周囲に底知れぬ絶望と絶大な破滅をもたらす' },
@@ -61,6 +61,7 @@ export const CARD_MASTER = [
     { id: 'franken', name: 'オールドヘイヴンの怪物', power: 8, skill: 'standby', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。' },
     { id: 'servant', name: '吸血鬼の従者', power: 2, rarity: 2, skills: [{ id: 'equip' }, { id: 'soul_bind', value: 3 }], voiceCategory: 'human_female', flavor: '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。' },
     { id: 'mage', name: '未熟な拡散魔導士', power: 1, skill: 'spread', skillValue: 2, rarity: 2, voiceCategory: 'human_female_cute', flavor: '魔導アカデミーの見習い魔導士。魔法のコントロールが苦手で、呪文を詠唱するたびに暴走した魔力が周囲へバラバラに散乱してしまう。' },
+    { id: 'cat', name: '食糧庫のコソ泥', power: 1, rarity: 2, skills: [{ id: 'quick' }, { id: 'extort', value: 2 }], voiceCategory: 'beast', flavor: '城の警備もなんのその、神出鬼没の小さな怪盗は宵の闇をすり抜けていく。' },
     { id: 'dragonfire', name: 'ドラゴンファイア', rarity: 2, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'artillery', value: 3 }, { id: 'snipe', value: 8 }], flavor: '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。' },
     { id: 'gargoyle', name: 'ガーゴイル', rarity: 2, voiceCategory: 'stone', power: 5, skills: [{ id: 'sturdy' }, { id: 'standby', value: 1 }], flavor: '塔の頂から見下ろす冷たい石の瞳。夜の帳が下りる時、それは獲物を狙う狩人となる。' },
     { id: 'battlemage', name: 'ギルドの戦闘魔導士', rarity: 2, voiceCategory: 'human_male_warrior', power: 4, skills: [{ id: 'convert', value: 1 }, { id: 'snipe', value: 3 }], flavor: '剣と魔法を操る魔導士。彼らが招集されたということは、困難な任務であることを意味する' },
@@ -75,7 +76,7 @@ export const CARD_MASTER = [
     { id: 'champion', name: 'アリーナのチャンピオン', power: 1, skills: [{ id: 'legendary' }, { id: 'hero', value: 3 }], rarity: 3, voiceCategory: 'human_male_warrior', flavor: '観衆の歓声こそが彼の力。その雄姿は味方を鼓舞し、敵を圧倒する。' },
     { id: 'assassin', name: 'ギルドの暗殺者', power: 1, skills: [{ id: 'deadly' }, { id: 'stealth', value: 1 }, { id: 'quick' }], rarity: 3, voiceCategory: 'human_female_assassin', flavor: '黒い服と2つの短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。' },
     { id: 'admiral', name: '慈悲なき提督', power: 5, rarity: 3, skills: [{ id: 'takeover' }, { id: 'summon', value: 2 }, { id: 'summon', value: 2 }], voiceCategory: 'human_male_ikemen', flavor: '狂気と野望を海図に描き、己の栄光のために部下をも駒として消費する冷酷なる海将。' },
-    { id: 'oldgod', name: '古の神', power: 10, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'stealth', value: 1 }, { id: 'pierce' }], rarity: 3, voiceCategory: 'monster', flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
+    { id: 'oldgod', name: '古の神', power: 9, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'stealth', value: 1 }, { id: 'pierce' }], rarity: 3, voiceCategory: 'monster', flavor: '深海の深淵より目覚めた、名もなき異形の神。その一撃は魂を貫く。' },
     { id: 'octopus', name: '深海の魔物', power: 4, skill: 'split', skillValue: 2, rarity: 3, voiceCategory: 'monster', flavor: '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。' },
     { id: 'hound', name: '破片の猟犬', power: 5, rarity: 3, skill: 'phase', voiceCategory: 'monster', flavor: '時間の死角から滲み出す次元の捕食者。その幾何学的な牙から逃れられる者は、過去にも未来にも存在しない。' },
     { id: 'wolf', name: '真夜中の狩人', power: 3, skills: [{ id: 'legendary' }, { id: 'lone_wolf', value: 3 }], rarity: 3, voiceCategory: 'wolf', flavor: '月の光を浴びて強靭な力を得る孤高の戦士。群れを嫌い、独りで獲物を追い詰める。' },
@@ -116,5 +117,6 @@ export const CARD_MASTER = [
     { id: 'token_ent', name: 'エント', power: 5, skill: 'none', isToken: true, rarity: 1, flavor: '永き眠りから目覚めた大樹の精霊。森を脅かす者には、容赦のない鉄槌が下される。' },
     { id: 'token_statue', name: '石像', power: 5, skills: [{ id: 'defender' }, { id: 'sturdy' }], isToken: true, rarity: 1, voiceCategory: 'stone', flavor: '石化させられた哀れな姿。' },
     { id: 'token_drone', name: 'ドローン', power: 1, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'machine_new', flavor: '小型の索敵無人機。' },
-    { id: 'token_golem', name: 'ゴーレム', power: 5, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'monster', flavor: '土と石で構成された自律型の魔法生物。' }
+    { id: 'token_golem', name: 'ゴーレム', power: 5, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'monster', flavor: '土と石で構成された自律型の魔法生物。' },
+    { id: 'token_phoenix', name: 'フェニックス', power: 6, skill: 'none', isToken: true, rarity: 1, voiceCategory: 'bird', flavor: '蘇った不死鳥。' }
 ];

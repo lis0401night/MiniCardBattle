@@ -10,20 +10,20 @@ export default {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'empress',
+        'panisher', 'panisher',
         'fire', 'fire',
         'incinerator', 'incinerator',
         'charity', 'charity',
-        'doom', 'doom',
+        'light', 'light',
         'wall', 'wall', 'wall',
-        'cleric', 'cleric', 'cleric', 'cleric',
+        'cleric', 'cleric', 'cleric',
     ],
     hard: [
-        'empress', 'empress', 'empress', 'empress',
+        'empress', 'empress', 'empress',
         'fire', 'fire', 'fire', 'fire',
-        'incinerator', 'incinerator', 'incinerator',
+        'panisher', 'panisher', 'panisher', 'panisher',
+        'incinerator', 'incinerator', 'incinerator', 'incinerator',
         'charity', 'charity', 'charity',
-        'doom', 'doom', 'doom',
-        'wall', 'wall', 'wall',
+        'doom', 'doom',
     ]
 };

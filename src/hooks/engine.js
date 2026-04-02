@@ -34,7 +34,11 @@ export function processDestructionTriggers(state, events) {
                     // 分裂(split)
                     if (hasSkill(deadCard, 'split')) {
                         const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix' };
-                        const baseId = deadCard.baseId || deadCard.id;
+                        let baseId = deadCard.baseId || deadCard.id;
+                        if (baseId && baseId.includes('_') && !baseId.startsWith('token_')) {
+                            const master = CARD_MASTER.find(c => c.name === deadCard.name);
+                            if (master) baseId = master.id;
+                        }
                         const tokenId = tokenMap[baseId] || 'legs';
                         const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
                         const val = getSkillValue(deadCard, 'split') || tL.power || 2;

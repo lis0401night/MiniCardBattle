@@ -419,14 +419,39 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     updateDeckDisplay(o);
 
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                    if (board[targetLane]) {
-                        if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                    if (board[targetLane] && hasSkill(selectedCard, 'equip')) {
+                        const targetCard = board[targetLane];
+                        // 装備によるパワー加算
+                        targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+                        targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+
+                        // スキルの統合
+                        if (!targetCard.skills) {
+                            targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                            targetCard.skill = 'none';
+                        }
+
+                        const equipSkills = [];
+                        if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+                            equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+                        }
+                        if (selectedCard.skills) {
+                            selectedCard.skills.forEach(s => {
+                                if (s.id !== 'equip') equipSkills.push(s);
+                            });
+                        }
+                        targetCard.skills = targetCard.skills.concat(equipSkills);
+                        // ※ユーザー指定に基づき、召喚ではないためアクティブスキルの即発動は行わない
+                    } else {
+                        if (board[targetLane]) {
+                            if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                        }
+                        board[targetLane] = { ...selectedCard, id: `res_${Math.floor(Math.random() * 1000000000)}` };
+                        board[targetLane].currentPower = board[targetLane].power;
+                        board[targetLane].skillTriggered = true; // 召喚効果は発動しない
+                        board[targetLane].stunTurns = 0;
+                        board[targetLane].stunAppliedThisTurn = false;
                     }
-                    board[targetLane] = { ...selectedCard, id: `res_${Math.floor(Math.random() * 1000000000)}` };
-                    board[targetLane].currentPower = board[targetLane].power;
-                    board[targetLane].skillTriggered = true; // 召喚効果は発動しない
-                    board[targetLane].stunTurns = 0;
-                    board[targetLane].stunAppliedThisTurn = false;
 
                     playSound(SOUNDS.sePlace);
                     renderBoard();
