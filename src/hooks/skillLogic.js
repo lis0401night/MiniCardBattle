@@ -188,7 +188,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const pValue = skillValue || 1;
         let tName = 'ドローン';
         let tId = 'token_drone';
-        if (pValue >= 5) {
+        const cId = c.baseId || c.id;
+        
+        if (cId === 'admiral') {
+            tId = 'token_knight';
+            tName = '騎士';
+        } else if (pValue >= 5) {
             tName = 'ゴーレム';
             tId = 'token_golem';
         }
@@ -223,7 +228,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 currentPower: pValue,
                 rarity: 1,
                 basePower: pValue,
-                voiceCategory: pValue >= 5 ? 'monster' : 'machine_new',
+                voiceCategory: tC.voiceCategory || (pValue >= 5 ? 'monster' : 'machine_new'),
                 skills: []
             };
             board[targetLane] = newToken;
@@ -576,6 +581,49 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
 
         if (events.length > 0) {
             await playEvents(events);
+        }
+    } else if (skillId === 'call') {
+        const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+        if (d.length > 0) {
+            const topCard = d[0];
+            if (cEl) createDamagePopup(cEl, `号令 (${topCard.name})`, '#facc15');
+            
+            if ((topCard.power || 0) <= (skillValue || 3)) {
+                // デッキトップを取り出す
+                d.shift();
+                updateDeckDisplay(o);
+                
+                // キャンセル可能なレーン選択
+                GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
+                const selectedLanes = await waitPlayerLaneSelection(1, o, topCard, false, null, true, true, '召喚終了');
+                GameState.placementMessage = null;
+
+                if (selectedLanes && selectedLanes.length > 0) {
+                    const targetLane = selectedLanes[0];
+                    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+                    
+                    topCard.uid = `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
+                    topCard.owner = o;
+                    
+                    board[targetLane] = topCard;
+                    
+                    let callEvents = [];
+                    callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: topCard, source: 'call' });
+                    await playEvents(callEvents);
+                    
+                    if (hasActiveSkill(topCard)) {
+                        await resolveOnPlaySkill(o, targetLane, topCard);
+                    }
+                } else {
+                    // キャンセルされたのでデッキトップに戻す
+                    d.unshift(topCard);
+                    updateDeckDisplay(o);
+                }
+            } else {
+                // 条件を満たさないため失敗
+                if (cEl) createDamagePopup(cEl, `不発 (${topCard.name})`, '#94a3b8');
+                await sleep(500);
+            }
         }
     } else {
         // 標準的なスキルは完全に Engine と Renderer に移譲

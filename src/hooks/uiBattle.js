@@ -40,7 +40,7 @@ export function updateCardDetail(c) {
             }
             textColor = '#facc15';
         } else if (GameState.isPlacementMode) {
-            html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">配置する場所を選んでください</div>`;
+            html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.placementMessage || '配置する場所を選んでください'}</div>`;
             textColor = '#facc15';
         } else if (GameState.isEnemyTargetMode) {
             html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">相手のカードを${GameState.targetMaxCount}枚選んでください</div>`;
@@ -61,6 +61,12 @@ export function updateCardDetail(c) {
                 skillCandidates.push({ id: sk.id, value: sk.value });
             });
         }
+        
+        const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
+        if (isOblivion) {
+            skillCandidates = skillCandidates.filter(sk => sk.id === 'oblivion' || sk.id === 'equip');
+        }
+
         if (c.stunTurns > 0) {
             skillCandidates.push({ id: 'defender', value: null, isBind: true });
         }

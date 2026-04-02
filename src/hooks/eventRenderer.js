@@ -179,6 +179,23 @@ export async function playEvents(events) {
                 await sleep(200);
                 break;
             }
+            case 'petrify': {
+                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+                board[ev.lane] = ev.card;
+                renderBoard();
+                playSound(SOUNDS.seSkill);
+
+                setTimeout(() => {
+                    const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                    if (cEl) {
+                        cEl.classList.add('anim-shake');
+                        createDamagePopup(cEl, '石化', '#64748b');
+                    }
+                }, 50);
+
+                await sleep(300);
+                break;
+            }
             case 'summon_token':
             case 'summon_card': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -383,7 +400,11 @@ export async function playEvents(events) {
                     const deadCard = board[target.lane];
 
                     if (deadCard) {
-                        if (!deadCard.isToken) {
+                        if (deadCard.originalRevertTarget) {
+                            const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                            discard.push(deadCard.originalRevertTarget);
+                            updateDeckDisplay(target.side);
+                        } else if (!deadCard.isToken) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
 
                             const masterData = CARD_MASTER.find(m => m.id === (deadCard.baseId || deadCard.id));

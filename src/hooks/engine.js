@@ -33,7 +33,7 @@ export function processDestructionTriggers(state, events) {
 
                     // 分裂(split)
                     if (hasSkill(deadCard, 'split')) {
-                        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs' };
+                        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix' };
                         const baseId = deadCard.baseId || deadCard.id;
                         const tokenId = tokenMap[baseId] || 'legs';
                         const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
@@ -315,16 +315,21 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const summonTargetPower = val || 1;
             let tNameEngine = 'ドローン';
             let tIdEngine = 'token_drone';
-            if (summonTargetPower >= 5) {
+            const engineCId = c.baseId || c.id;
+            if (engineCId === 'admiral') {
+                tIdEngine = 'token_knight';
+                tNameEngine = '騎士';
+            } else if (summonTargetPower >= 5) {
                 tNameEngine = 'ゴーレム';
                 tIdEngine = 'token_golem';
             }
+            const baseTC = CARD_MASTER.find(m => m.id === tIdEngine);
             const sTC = {
                 id: tIdEngine,
                 name: tNameEngine,
                 isToken: true,
                 rarity: 1,
-                voiceCategory: summonTargetPower >= 5 ? 'monster' : 'machine_new'
+                voiceCategory: baseTC ? baseTC.voiceCategory : (summonTargetPower >= 5 ? 'monster' : 'machine_new')
             };
             for (let i = 0; i < 1; i++) {
                 let targetLane = -1;
@@ -428,6 +433,30 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             }
             break;
+        case 'petrify':
+            if (eB[l]) {
+                const targetOriginal = JSON.parse(JSON.stringify(eB[l]));
+                const statueTpl = CARD_MASTER.find(m => m.id === 'token_statue') || { name: '石像', power: 5, rarity: 1 };
+                const statueToken = {
+                    ...statueTpl,
+                    id: `statue_${Math.floor(Math.random() * 1000000000)}`,
+                    baseId: 'token_statue',
+                    uid: `${oppOwner}_${Math.floor(Math.random() * 1000000000)}_statue`,
+                    owner: oppOwner,
+                    power: statueTpl.power,
+                    basePower: statueTpl.basePower || statueTpl.power,
+                    currentPower: statueTpl.power,
+                    isToken: true,
+                    skills: JSON.parse(JSON.stringify(statueTpl.skills || [])),
+                    voiceCategory: statueTpl.voiceCategory || 'stone',
+                    originalRevertTarget: targetOriginal // 石像破壊時に墓地へ行く元カード
+                };
+                
+                // 既存のカードを消すわけではなく変身扱いとするため、破壊イベントは積まない（あるいは変身イベントを積む）
+                eB[l] = statueToken;
+                events.push({ type: 'petrify', side: oppOwner, lane: l, card: JSON.parse(JSON.stringify(statueToken)), source: 'petrify' });
+            }
+            break;
         case 'reinforce':
             // AIシミュレーション用: 手札の枚数が十分ある前提で最大数捨てるとしてトークンを手札に加える
             const h = owner === 'blue' ? state.playerHand : state.enemyHand;
@@ -456,6 +485,32 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     imgUrl: c.imgUrl,
                     isPremium: c.isPremium
                 });
+            }
+            break;
+        case 'call':
+            const deck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
+            const callMaxPow = val || 3;
+            if (deck.length > 0 && (deck[0].power || 0) <= callMaxPow) {
+                const calledCard = deck.shift();
+                
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                    targetLane = simulatedTokenLanes[0];
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1 && b[targetLane] === null) {
+                    calledCard.uid = `${owner}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
+                    calledCard.owner = owner;
+                    calledCard.currentPower = calledCard.power;
+                    calledCard.skillTriggered = true; // prevent chain reacting in purely sim context, like resurrect does
+                    b[targetLane] = calledCard;
+                    events.push({ type: 'summon_card', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(calledCard)), source: 'call' });
+                } else {
+                    deck.unshift(calledCard);
+                }
             }
             break;
         case 'resurrect':
@@ -689,9 +744,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     const aC = atkBoard[l];
     if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0) return events;
 
+    const aHasPhase = hasSkill(aC, 'phase');
+
     let dLane = l;
     if (defBoard[l]) {
-        let dg = (l === 1) ? (hasSkill(defBoard[0], 'guardian') ? 0 : (hasSkill(defBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(defBoard[1], 'guardian') ? 1 : null) : (hasSkill(defBoard[1], 'guardian') ? 1 : null));
+        // 守護側も位相が一致しないとかばうことができない
+        const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase);
+        let dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
         if (dg !== null) dLane = dg;
     }
 
@@ -701,8 +760,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         if (ag !== null) aLane = ag;
     }
 
-    const dC = defBoard[dLane];
-    const originalTarget = defBoard[l];
+    let dC = defBoard[dLane];
+    if (dC && hasSkill(dC, 'phase') !== aHasPhase) {
+        dC = null; // 位相が合わないため完全すり抜け（直接攻撃扱い）
+    }
+    const originalTarget = (defBoard[l] && hasSkill(defBoard[l], 'phase') === aHasPhase) ? defBoard[l] : null;
     let aP = Number(aC.currentPower ?? aC.power ?? 0) || 0;
     
     // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）

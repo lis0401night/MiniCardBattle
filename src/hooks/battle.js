@@ -454,7 +454,7 @@ export function executeSkillFromConfirm() {
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
  */
-export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true, buttonText = '配置終了') {
+export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true, canCancel = false, buttonText = '配置終了') {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     // Check for Remote Choice Wait
     if (GameState.gameMode === 'online' && owner === 'red') {
@@ -467,7 +467,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
     // AIの場合：
     if (owner === 'red') {
         // aiDecision 内のシミュレーション結果を利用する・または難易度に応じた評価を行う
-        let selectedLanes = evaluateBestLanesForToken([0, 1, 2], 'red', tokenCard, count, isLeaderSkill);
+        let selectedLanes = evaluateBestLanesForToken([0, 1, 2], 'red', tokenCard, count, isLeaderSkill, canCancel);
 
         // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
         if (checkConstraints && tokenCard) {
@@ -995,7 +995,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
 export async function triggerSplitSkill(owner, lane, card) {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs' };
+    const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix' };
     const testId = card.baseId || card.id;
     const tokenId = tokenMap[testId] || 'legs';
     const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };

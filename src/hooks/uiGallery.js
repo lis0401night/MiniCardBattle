@@ -283,6 +283,11 @@ export function populateCardPreview(prefix, card) {
             });
         }
 
+        const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
+        if (isOblivion) {
+            skillCandidates = skillCandidates.filter(sk => sk.id === 'oblivion' || sk.id === 'equip');
+        }
+
         if (skillCandidates.length > 0) {
             skillCandidates.forEach(sk => {
                 const s = SKILLS[sk.id];

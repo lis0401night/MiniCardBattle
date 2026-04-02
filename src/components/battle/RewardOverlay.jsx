@@ -65,6 +65,11 @@ export default function RewardOverlay() {
         if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue });
         if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ id: sk.id, value: sk.value }));
 
+        const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
+        if (isOblivion) {
+            skillCandidates = skillCandidates.filter(sk => sk.id === 'oblivion' || sk.id === 'equip');
+        }
+
         return (
             <div className="preview-content" style={{ position: 'relative' }}>
                 <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

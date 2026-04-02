@@ -413,10 +413,79 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
 
 // 以下の関数は getBestSimulatedMove に統合されました
 
+export function evaluateAdhocTokenLanes(tokenCard) {
+    const allLanes = [0, 1, 2];
+    const candidates = [];
+    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
+
+    // キャンセルした場合のシミュレーション
+    let simCancel = {
+        playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
+        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+        playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
+        extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
+    };
+    applyPassiveSkillLogic(simCancel, 'blue');
+    calculateCombatPhase(simCancel, 'blue');
+    simCancel.combatDamageTaken = Math.max(0, GameState.enemyHP - simCancel.enemyHP);
+    candidates.push({ lane: [], simState: simCancel });
+
+    // 各空きレーンに配置した場合のシミュレーション
+    for (let l of allLanes) {
+        if (GameState.enemyBoard[l] === null) {
+            let simState = {
+                playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
+                playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+                playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
+                extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
+            };
+            simState.enemyBoard[l] = cloneCard(tokenCard);
+            applyPassiveSkillLogic(simState, 'blue');
+            calculateCombatPhase(simState, 'blue');
+            simState.combatDamageTaken = Math.max(0, GameState.enemyHP - simState.enemyHP);
+            candidates.push({ lane: [l], simState });
+        }
+    }
+
+    const getAdvantage = (state) => {
+        let adv = 0;
+        for (let i = 0; i < 3; i++) {
+            if (state.enemyBoard[i]) adv += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
+            if (state.playerBoard[i]) adv -= (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
+        }
+        return adv;
+    };
+    const getCountDiff = (state) => state.enemyBoard.filter(c => c).length - state.playerBoard.filter(c => c).length;
+
+    candidates.forEach(c => {
+        c.advDiff = getAdvantage(c.simState);
+        c.countDiff = getCountDiff(c.simState);
+    });
+
+    candidates.sort((a, b) => {
+        if (a.simState.enemyHP <= 0 && b.simState.enemyHP > 0) return 1;
+        if (b.simState.enemyHP <= 0 && a.simState.enemyHP > 0) return -1;
+        if (a.simState.playerHP <= 0 && b.simState.playerHP > 0) return -1;
+        if (b.simState.playerHP <= 0 && a.simState.playerHP > 0) return 1;
+        
+        if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff;
+        if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff;
+        if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken;
+        return 0;
+    });
+
+    return candidates[0].lane;
+}
+
 /**
  * トークン配置用の評価
  */
-export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false) {
+export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false) {
+    if (canCancel && owner === 'red') {
+        const adhocLanes = evaluateAdhocTokenLanes(tokenCard);
+        return adhocLanes;
+    }
+
     // 意思決定時にすでに最適な配置先（cardTokenLanes / tokenLanes）が計算されていれば、再評価（点数方式）をせずにそのまま使う！
     if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
         if (!isLeaderSkill && GameState.aiDecision.cardTokenLanes && GameState.aiDecision.cardTokenLanes.length > 0) {
