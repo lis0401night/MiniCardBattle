@@ -10,7 +10,7 @@ export default {
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
-        'panisher', 'panisher',
+        'empress', 'empress',
         'fire', 'fire',
         'incinerator', 'incinerator',
         'charity', 'charity',
@@ -21,7 +21,7 @@ export default {
     hard: [
         'empress', 'empress', 'empress',
         'fire', 'fire', 'fire', 'fire',
-        'panisher', 'panisher', 'panisher', 'panisher',
+        'punisher', 'punisher', 'punisher', 'punisher',
         'incinerator', 'incinerator', 'incinerator', 'incinerator',
         'charity', 'charity', 'charity',
         'doom', 'doom',
