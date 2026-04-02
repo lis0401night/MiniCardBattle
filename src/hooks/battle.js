@@ -246,23 +246,23 @@ export function initBattleState() {
             GameState.playerHP = GameState.playerMaxHP;
         }
 
-        GameState.enemyHP = GameState.enemyMaxHP; 
+        GameState.enemyHP = GameState.enemyMaxHP;
         GameState.playerSP = 0; GameState.enemySP = 0;
         GameState.turnCount = 0; GameState.firstPlayer = 'blue';
         GameState.battlePhase = 'INIT'; GameState.combatStep = 0;
-        GameState.playerHand = []; GameState.enemyHand = []; 
+        GameState.playerHand = []; GameState.enemyHand = [];
         GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
         GameState.actionQueue = []; GameState.pendingChoices = [];
         GameState.isProcessing = false; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
         GameState.selectedCardIndex = null; GameState.selectedBoardLaneIndex = null; GameState.selectedBoardSide = null;
         GameState.aiDecision = null; GameState.extraTurnCount = 0; GameState.attackSkipCount = 0;
-        
+
         // --- モード系フラグの完全リセット ---
         GameState.isPlacementMode = false; GameState.placementCount = 0; GameState.placementToken = null; GameState.placementSelectedLanes = [];
         GameState.isEnemyTargetMode = false; GameState.isAlliedTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
         GameState.isDiscardingMode = false; GameState.discardSelectedIndices = []; GameState.discardMaxCount = 0; GameState.isDiscardingExact = false;
-        
+
         // --- グローバルコールバック・リゾルバの確実なリセット ---
         pendingChoiceResolver = null;
         window.finishHandSelection = null;
@@ -279,7 +279,7 @@ export function initBattleState() {
 
         // バトル画面への遷移シグナル。ここから先は BattleScreen.jsx に委ねる
         switchScreen('screen-battle');
-        
+
         // 画面切り替えとDOM構成を待機してから戦闘開始処理へ
         setTimeout(() => {
             determineTurnOrder();
@@ -486,7 +486,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         if (selectedLanes.length < count) {
             let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
             let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i));
-            
+
             while (selectedLanes.length < count && validEmptyLanes.length > 0) {
                 selectedLanes.push(validEmptyLanes.shift());
             }
@@ -558,18 +558,30 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             if (board[laneIndex] !== null) {
                 const existingCard = board[laneIndex];
                 const tokenName = tokenCard ? tokenCard.name : 'トークン';
-                const confirmed = await new Promise(res => {
-                    showConfirmModal(
-                        `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
-                        () => res(true),
-                        () => res(false)
-                    );
-                });
-                if (!confirmed) return;
 
-                // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
-                if (!(await discardCard(owner, board[laneIndex], laneIndex, false))) board[laneIndex] = null;
-                if (updateBattleUIHook) updateBattleUIHook();
+                if (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) {
+                    const confirmed = await new Promise(res => {
+                        showConfirmModal(
+                            `「${existingCard.name}」に「${tokenName}」を装備させますか？`,
+                            () => res(true),
+                            () => res(false)
+                        );
+                    });
+                    if (!confirmed) return;
+                } else {
+                    const confirmed = await new Promise(res => {
+                        showConfirmModal(
+                            `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
+                            () => res(true),
+                            () => res(false)
+                        );
+                    });
+                    if (!confirmed) return;
+
+                    // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
+                    if (!(await discardCard(owner, board[laneIndex], laneIndex, false))) board[laneIndex] = null;
+                    if (updateBattleUIHook) updateBattleUIHook();
+                }
             }
 
             GameState.placementSelectedLanes.push(laneIndex);
@@ -830,7 +842,7 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
         const card = await new Promise(resolve => {
             window.showDiscardSelectionModalReact(validCards, maxPow, (c) => resolve(c), { title, desc });
         });
-        
+
         if (GameState.gameMode === 'online') {
             const choiceStr = card ? (card.uid || card.id) : null;
             sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: choiceStr });
@@ -1293,7 +1305,7 @@ export async function playCard(o, hI, l) {
                     await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value);
                 }
             }
-            
+
             await sleep(100);
             renderBoard();
             return; // 装備完了
@@ -1302,7 +1314,7 @@ export async function playCard(o, hI, l) {
             if (!(await discardCard(o, b[l], l, false))) b[l] = null;
         }
     }
-    
+
     b[l] = h.splice(hI, 1)[0];
     const c = b[l];
 

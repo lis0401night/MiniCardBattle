@@ -442,6 +442,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         }
                         targetCard.skills = targetCard.skills.concat(equipSkills);
                         // ※ユーザー指定に基づき、召喚ではないためアクティブスキルの即発動は行わない
+                        
+                        // 装備したカードは消費されて墓地へ行く
+                        discard.push(selectedCard);
                     } else {
                         if (board[targetLane]) {
                             if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
@@ -627,17 +630,48 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     const targetLane = selectedLanes[0];
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                     
-                    topCard.uid = `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
-                    topCard.owner = o;
-                    
-                    board[targetLane] = topCard;
-                    
-                    let callEvents = [];
-                    callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: topCard, source: 'call' });
-                    await playEvents(callEvents);
-                    
-                    if (hasActiveSkill(topCard)) {
-                        await resolveOnPlaySkill(o, targetLane, topCard);
+                    if (board[targetLane] && hasSkill(topCard, 'equip')) {
+                        const targetCard = board[targetLane];
+                        
+                        targetCard.basePower = (targetCard.basePower || 0) + (topCard.power || 0);
+                        targetCard.currentPower = (targetCard.currentPower || 0) + (topCard.power || 0);
+
+                        if (!targetCard.skills) {
+                            targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                            targetCard.skill = 'none';
+                        }
+                        const equipSkills = [];
+                        if (topCard.skill && topCard.skill !== 'none' && topCard.skill !== 'equip') {
+                            equipSkills.push({ id: topCard.skill, value: topCard.skillValue });
+                        }
+                        if (topCard.skills) {
+                            topCard.skills.forEach(s => {
+                                if (s.id !== 'equip') equipSkills.push(s);
+                            });
+                        }
+                        targetCard.skills = targetCard.skills.concat(equipSkills);
+
+                        // デッキから引いた号令カードを墓地に送る
+                        const discardPile = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                        discardPile.push(topCard);
+
+                        let callEvents = [];
+                        callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: targetCard, source: 'equip' });
+                        await playEvents(callEvents);
+                    } else {
+                        topCard.uid = `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
+                        topCard.owner = o;
+                        
+                        if (board[targetLane]) { await discardCard(o, board[targetLane], targetLane); }
+                        board[targetLane] = topCard;
+                        
+                        let callEvents = [];
+                        callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: topCard, source: 'call' });
+                        await playEvents(callEvents);
+                        
+                        if (hasActiveSkill(topCard)) {
+                            await resolveOnPlaySkill(o, targetLane, topCard);
+                        }
                     }
                 } else {
                     // キャンセルされたのでデッキトップに戻す

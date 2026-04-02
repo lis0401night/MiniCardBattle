@@ -59,7 +59,7 @@ export const CARD_MASTER = [
     { id: 'shade', name: '墓の亡霊', power: 4, skill: 'soul_bind', skillValue: 2, rarity: 2, voiceCategory: 'undead', flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'specter', name: '魂の徴税人', power: 4, skills: [{ id: 'pierce' }, { id: 'extort', value: 2 }], rarity: 2, voiceCategory: 'undead', flavor: '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。' },
     { id: 'franken', name: 'オールドヘイヴンの怪物', power: 8, skill: 'standby', skillValue: 2, rarity: 2, voiceCategory: 'giant', flavor: '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。' },
-    { id: 'servant', name: '吸血鬼の従者', power: 2, rarity: 2, skills: [{ id: 'equip' }, { id: 'soul_bind', value: 3 }], voiceCategory: 'human_female', flavor: '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。' },
+    { id: 'servant', name: '吸血鬼の従者', power: 3, rarity: 2, skills: [{ id: 'equip' }, { id: 'soul_bind', value: 2 }], voiceCategory: 'human_female', flavor: '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。' },
     { id: 'mage', name: '未熟な拡散魔導士', power: 1, skill: 'spread', skillValue: 2, rarity: 2, voiceCategory: 'human_female_cute', flavor: '魔導アカデミーの見習い魔導士。魔法のコントロールが苦手で、呪文を詠唱するたびに暴走した魔力が周囲へバラバラに散乱してしまう。' },
     { id: 'cat', name: '食糧庫のコソ泥', power: 1, rarity: 2, skills: [{ id: 'quick' }, { id: 'extort', value: 2 }], voiceCategory: 'beast', flavor: '城の警備もなんのその、神出鬼没の小さな怪盗は宵の闇をすり抜けていく。' },
     { id: 'dragonfire', name: 'ドラゴンファイア', rarity: 2, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'artillery', value: 3 }, { id: 'snipe', value: 8 }], flavor: '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。' },

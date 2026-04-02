@@ -135,13 +135,46 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl({ ...tokenCard, owner }) || `assets/cards/card_${tokenCard.id}.jpg`;
-            if (b[l]) { await discardCard(owner, b[l], l); }
-            b[l] = { id: `dng_tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
-            b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
+            
+            if (b[l] && hasSkill(tokenCard, 'equip')) {
+                const targetCard = b[l];
+                targetCard.basePower = (targetCard.basePower || 0) + (tokenCard.power || 0);
+                targetCard.currentPower = (targetCard.currentPower || 0) + (tokenCard.power || 0);
+                if (!targetCard.skills) {
+                    targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                    targetCard.skill = 'none';
+                }
+                const equipSkills = [];
+                if (tokenCard.skill && tokenCard.skill !== 'none' && tokenCard.skill !== 'equip') {
+                    equipSkills.push({ id: tokenCard.skill, value: tokenCard.skillValue });
+                }
+                if (tokenCard.skills) {
+                    tokenCard.skills.forEach(s => {
+                        if (s.id !== 'equip') equipSkills.push(s);
+                    });
+                }
+                targetCard.skills = targetCard.skills.concat(equipSkills);
 
-            // Add custom summon event to play correct standard visualizer pipeline
-            events.push({ type: 'leader_skill', skill: action, side: owner });
-            events.push({ type: 'summon_card', side: owner, lane: l, card: b[l], source: 'dungeon_summon_leader' });
+                events.push({ type: 'leader_skill', skill: action, side: owner });
+                events.push({ type: 'summon_card', side: owner, lane: l, card: targetCard, source: 'equip' });
+                // 召喚扱いではないためアクティブスキルは発動させない
+                targetCard.skillTriggered = true; 
+                
+                // リーダースキルで生成した装備カードを墓地へ送付
+                const discardPile = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                const eqToken = JSON.parse(JSON.stringify(tokenCard));
+                eqToken.uid = `eq_dng_${Math.floor(Math.random() * 1000000000)}`;
+                eqToken.owner = owner;
+                discardPile.push(eqToken);
+            } else {
+                if (b[l]) { await discardCard(owner, b[l], l); }
+                b[l] = { id: `dng_tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
+                b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
+
+                // Add custom summon event to play correct standard visualizer pipeline
+                events.push({ type: 'leader_skill', skill: action, side: owner });
+                events.push({ type: 'summon_card', side: owner, lane: l, card: b[l], source: 'dungeon_summon_leader' });
+            }
         }
         // フォールスルーして共通の playEvents と resolveOnPlaySkill を実行させる
     } else if (action === 'holy_march') {
