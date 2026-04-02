@@ -174,12 +174,21 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
     const startHP = myHP;
 
-    const getAdvantage = (state) => {
+    const getAdvantage = (state, candidate) => {
         let myPower = 0; let opPower = 0;
         for (let i = 0; i < 3; i++) {
             if (state.enemyBoard[i]) myPower += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
             if (state.playerBoard[i]) opPower += (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
         }
+        
+        // 号令（call）は期待値としてパワー+3として評価
+        if (candidate && candidate.index !== -1) {
+            const playedCard = hand[candidate.index];
+            if (playedCard && (playedCard.skill === 'call' || (playedCard.skills && playedCard.skills.some(s => s.id === 'call')))) {
+                myPower += 3;
+            }
+        }
+        
         return myPower - opPower;
     };
 
@@ -225,7 +234,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
     // ソートしやすいように基本条件スコアを一次算出
     finalCandidates.forEach(c => {
-        c.advDiff = getAdvantage(c.simState);
+        c.advDiff = getAdvantage(c.simState, c);
         c.countDiff = getCountDiff(c.simState);
 
         let skillScore = 0;

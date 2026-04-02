@@ -492,30 +492,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
             break;
         case 'call':
-            const deck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
-            const callMaxPow = val || 3;
-            if (deck.length > 0 && (deck[deck.length - 1].power || 0) <= callMaxPow) {
-                const calledCard = deck.pop();
-                
-                let targetLane = -1;
-                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
-                    targetLane = simulatedTokenLanes[0];
-                } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
-                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
-                }
-
-                if (targetLane !== -1 && b[targetLane] === null) {
-                    calledCard.uid = `${owner}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
-                    calledCard.owner = owner;
-                    calledCard.currentPower = calledCard.power;
-                    calledCard.skillTriggered = true; // prevent chain reacting in purely sim context, like resurrect does
-                    b[targetLane] = calledCard;
-                    events.push({ type: 'summon_card', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(calledCard)), source: 'call' });
-                } else {
-                    deck.push(calledCard);
-                }
-            }
+            // 号令は純粋ロジックでの完全なシミュレーションが不可能なため（ユーザー選択や期待値ベース評価を行うため）
+            // engine.jsでは盤面に干渉しない（ai_normal等で独自に+3として期待値評価する）
             break;
         case 'resurrect':
             const maxPow = val || 1;
