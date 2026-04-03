@@ -468,7 +468,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         
-        let discardIndices = await waitPlayerHandSelection(val || 1, o, false, '回収のために捨てる手札を選んでください');
+        let discardIndices = await waitPlayerHandSelection(skillValue || 1, o, false, '回収のために捨てる手札を選んでください');
         if (discardIndices && discardIndices.length > 0) {
             // 後ろから削除するためにインデックスを降順ソート
             const sortedIndices = [...discardIndices].sort((a, b) => b - a);

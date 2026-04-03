@@ -34,7 +34,7 @@ export const CARD_MASTER = [
     { id: 'dragonewt', name: '竜人族の騎兵', power: 4, skills: [{ id: 'pierce' }, { id: 'snipe', value: 2 }], rarity: 2, voiceCategory: 'horse', flavor: '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫き、遠方の獲物も逃さない。' },
     { id: 'berserker', name: '狂戦士', power: 7, skill: 'berserk', skillValue: 3, rarity: 2, voiceCategory: 'giant', flavor: '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。' },
     { id: 'wyvern', name: '群れのワイヴァーン', power: 7, skills: [{ id: 'takeover' }, { id: 'reinforce', value: 1 }], rarity: 2, voiceCategory: 'dragon', flavor: '空を滑る緑の影は、必ず二つ。一方を殺したと安堵するなら、それは間違いだ。その血の匂いは、雲の彼方から狂乱のもう一方を呼び寄せる。' },
-    { id: 'hammer', name: '雷神の鎚', power: 3, rarity: 2, skills: [{ id: 'equip' }, { id: 'snipe', value: 3 }, { id: 'salvage', value: 2 }], voiceCategory: 'stone', flavor: '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。' },
+    { id: 'hammer', name: '雷神の鎚', power: 2, rarity: 2, skills: [{ id: 'equip' }, { id: 'snipe', value: 3 }, { id: 'salvage', value: 1 }], voiceCategory: 'stone', flavor: '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。' },
     { id: 'commander', name: '前線の司令官', power: 3, skill: 'support', skillValue: 2, rarity: 2, voiceCategory: 'human_male_warrior', flavor: '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。' },
     { id: 'lightpaladin', name: '光の聖騎士', power: 5, skill: 'guardian', rarity: 2, voiceCategory: 'human_male_ikemen', flavor: '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。' },
     { id: 'darkpaladin', name: '闇の聖騎士', power: 5, skills: [{ id: 'sacrifice', value: 2 }, { id: 'deadly' }], rarity: 2, voiceCategory: 'sword', flavor: '「勝利のためなら、この命すらも捨て石にすぎん。」黒鉄の鎧に身を包んだ冷徹な騎士。' },
