@@ -662,6 +662,11 @@ export function confirmCharSelect() {
                     }
                     GameState.decks[GameState.currentDeckIndex].playerSkins[GameState.pendingCharId] = chosenSkin;
                 }
+                setTimeout(() => {
+                    import('./deck.js').then(m => {
+                        if (typeof m.renderDeckEdit === 'function') m.renderDeckEdit();
+                    });
+                }, 50);
             }
         } else if (GameState.gameMode === 'defense_attack') {
             // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
