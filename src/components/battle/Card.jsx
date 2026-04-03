@@ -72,6 +72,9 @@ export default function Card({
         >
             <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter || 'none' }}></div>
             {skillTagHtml && <div dangerouslySetInnerHTML={{ __html: skillTagHtml }} />}
+            {isBoard && cardObj.equippedCards && cardObj.equippedCards.length > 0 && (
+                <div className="card-skill-tag equip-badge" style={{ position: 'absolute', top: '-5px', left: '-5px', background: '#64748b', color: '#fff', borderColor: '#94a3b8', transform: 'scale(0.9)', zIndex: 10 }}>⚔️装備中</div>
+            )}
             <div className="card-power">{cardObj.currentPower !== undefined ? cardObj.currentPower : cardObj.power}</div>
         </div>
     );

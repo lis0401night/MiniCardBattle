@@ -443,8 +443,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         targetCard.skills = targetCard.skills.concat(equipSkills);
                         // ※ユーザー指定に基づき、召喚ではないためアクティブスキルの即発動は行わない
                         
-                        // 装備したカードは消費されて墓地へ行く
-                        discard.push(selectedCard);
+                        // 装備したカードは消費されて対象カードにアタッチされる
+                        targetCard.equippedCards = targetCard.equippedCards || [];
+                        targetCard.equippedCards.push(selectedCard);
                     } else {
                         if (board[targetLane]) {
                             if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
@@ -651,9 +652,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         }
                         targetCard.skills = targetCard.skills.concat(equipSkills);
 
-                        // デッキから引いた号令カードを墓地に送る
-                        const discardPile = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                        discardPile.push(topCard);
+                        // デッキから出た号令カードを対象にアタッチする
+                        targetCard.equippedCards = targetCard.equippedCards || [];
+                        targetCard.equippedCards.push(topCard);
 
                         let callEvents = [];
                         callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: targetCard, source: 'equip' });

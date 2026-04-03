@@ -31,7 +31,10 @@ export function updateCardDetail(c) {
     let html = '';
     let textColor = '#94a3b8';
 
-    if (!c) {
+    if (typeof c === 'string') {
+        html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">${c}</div>`;
+        textColor = '#facc15';
+    } else if (!c) {
         if (GameState.isDiscardingMode) {
             if (GameState.isDiscardingExact) {
                 html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">捨てるカードを${GameState.discardMaxCount}枚選んでください</div>`;

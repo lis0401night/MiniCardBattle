@@ -455,6 +455,10 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     voiceCategory: statueTpl.voiceCategory || 'stone',
                     originalRevertTarget: targetOriginal // 石像破壊時に墓地へ行く元カード
                 };
+
+                if (targetOriginal.equippedCards && targetOriginal.equippedCards.length > 0) {
+                    statueToken.equippedCards = JSON.parse(JSON.stringify(targetOriginal.equippedCards));
+                }
                 
                 // 既存のカードを消すわけではなく変身扱いとするため、破壊イベントは積まない（あるいは変身イベントを積む）
                 eB[l] = statueToken;

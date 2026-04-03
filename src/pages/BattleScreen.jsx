@@ -148,7 +148,7 @@ export default function BattleScreen() {
 
     const handleHandCardClick = (idx) => {
         if (GameState.isProcessing && !GameState.isDiscardingMode) return;
-        if (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT') return;
+        if (GameState.battlePhase !== 'MULLIGAN' && (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT')) return;
 
         playSound(SOUNDS.seClick);
 
@@ -213,17 +213,21 @@ export default function BattleScreen() {
 
             <div className="turn-area">
                 <div id="turn-status" style={{
-                    color: GameState.lastBattleResult === 'win' ? '#facc15' :
-                        GameState.lastBattleResult === 'lose' ? '#fff' :
-                            GameState.currentTurn === 'player' ? 'var(--color-blue)' :
-                                GameState.currentTurn === 'enemy' ? 'var(--color-red)' : '#facc15'
+                    color: GameState.battlePhase === 'MULLIGAN' ? '#fff' :
+                        GameState.lastBattleResult === 'win' ? '#facc15' :
+                            GameState.lastBattleResult === 'lose' ? '#fff' :
+                                GameState.currentTurn === 'player' ? 'var(--color-blue)' :
+                                    GameState.currentTurn === 'enemy' ? 'var(--color-red)' : '#facc15',
+                    fontSize: GameState.placementMessage ? '16px' : '24px'
                 }}>
-                    {GameState.lastBattleResult === 'win' ? 'YOU WIN!' :
-                        GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' :
-                            GameState.lastBattleResult === 'draw' ? 'DRAW' :
-                                GameState.currentTurn === 'player' ? 'YOUR TURN' :
-                                    GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
-                                        ''}
+                    {GameState.placementMessage ? GameState.placementMessage :
+                        GameState.battlePhase === 'MULLIGAN' ? 'MULLIGAN' :
+                            GameState.lastBattleResult === 'win' ? 'YOU WIN!' :
+                                GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' :
+                                    GameState.lastBattleResult === 'draw' ? 'DRAW' :
+                                        GameState.currentTurn === 'player' ? 'YOUR TURN' :
+                                            GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
+                                                ''}
                 </div>
                 <button className="action-btn enemy-skill-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); showEnemySkillConfirm(); }}>敵スキル</button>
             </div>

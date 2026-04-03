@@ -160,12 +160,12 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 // 召喚扱いではないためアクティブスキルは発動させない
                 targetCard.skillTriggered = true; 
                 
-                // リーダースキルで生成した装備カードを墓地へ送付
-                const discardPile = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                // リーダースキルで生成した装備カードを対象にアタッチ
                 const eqToken = JSON.parse(JSON.stringify(tokenCard));
                 eqToken.uid = `eq_dng_${Math.floor(Math.random() * 1000000000)}`;
                 eqToken.owner = owner;
-                discardPile.push(eqToken);
+                targetCard.equippedCards = targetCard.equippedCards || [];
+                targetCard.equippedCards.push(eqToken);
             } else {
                 if (b[l]) { await discardCard(owner, b[l], l); }
                 b[l] = { id: `dng_tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };

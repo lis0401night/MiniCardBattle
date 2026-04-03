@@ -318,7 +318,9 @@ export function updateSPOrbs(owner) {
 }
 
 export function checkWinCondition() {
-    if ((GameState.playerHP <= 0 || GameState.enemyHP <= 0) && !GameState.isBattleEnded) {
+    if (GameState.isBattleEnded) return true;
+    
+    if (GameState.playerHP <= 0 || GameState.enemyHP <= 0) {
         GameState.isBattleEnded = true;
         triggerFinishVisuals();
         setTimeout(endBattle, 2000);
@@ -757,7 +759,7 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
 /**
  * プレイヤーまたはAIに手札からカードを選択させるユーティリティ（入替スキル用）
  */
-export async function waitPlayerHandSelection(count, owner, forceExact = false) {
+export async function waitPlayerHandSelection(count, owner, forceExact = false, message = null) {
     const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
     if (hand.length === 0) return [];
 
@@ -784,7 +786,13 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false) 
         GameState.isDiscardingMode = true;
         GameState.isDiscardingExact = forceExact;
         GameState.discardMaxCount = count;
-        updateCardDetail(null);
+        
+        if (message) {
+            updateCardDetail(message);
+        } else {
+            updateCardDetail(null);
+        }
+        
         renderHand(); // 描画更新
 
         const cleanUp = () => {
@@ -938,6 +946,26 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
     });
 }
 export async function discardCard(owner, card, lane, isDestroyed = true) {
+    if (card.equippedCards && card.equippedCards.length > 0) {
+        const discardPile = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        for (const eqCard of card.equippedCards) {
+            let restoredEq;
+            const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
+            if (eqMaster) {
+                restoredEq = JSON.parse(JSON.stringify(eqMaster));
+                restoredEq.uid = eqCard.uid;
+                restoredEq.owner = eqCard.owner || owner;
+                restoredEq.baseId = eqCard.baseId || eqCard.id;
+                restoredEq.basePower = restoredEq.power;
+                restoredEq.currentPower = restoredEq.power;
+            } else {
+                restoredEq = { ...eqCard };
+            }
+            discardPile.push(restoredEq);
+        }
+        card.equippedCards = [];
+    }
+
     if (card.isToken) return false;
     let skillsToResolve = [];
     if (card.skill && card.skill !== 'none') skillsToResolve.push({ id: card.skill, value: card.skillValue });
@@ -1242,6 +1270,42 @@ export async function endPlayerTurn() {
 
 export async function endTurnLogic(o) {
     if (!GameState.isBattleEnded) {
+        const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        if (hand.length > 4) {
+            const discardCount = hand.length - 4;
+            GameState.placementMessage = null;
+            if (updateBattleUIHook) updateBattleUIHook();
+
+            if (o === 'blue') {
+                const indices = await waitPlayerHandSelection(discardCount, 'blue', true, '手札が上限を超えています。捨てるカードを選択してください。');
+                const sortedIndices = [...indices].sort((a, b) => b - a);
+                for (const idx of sortedIndices) {
+                    const card = GameState.playerHand.splice(idx, 1)[0];
+                    GameState.playerDiscard.push(card);
+                }
+            } else {
+                if (GameState.gameMode === 'online') {
+                    const indices = await waitPlayerHandSelection(discardCount, 'red', true);
+                    const sortedIndices = [...indices].sort((a, b) => b - a);
+                    for (const idx of sortedIndices) {
+                        const card = GameState.enemyHand.splice(idx, 1)[0];
+                        GameState.enemyDiscard.push(card);
+                    }
+                } else {
+                    let candidates = GameState.enemyHand.map((c, i) => ({ idx: i, power: c.power || 0 }));
+                    candidates.sort((a, b) => b.power - a.power);
+                    const sortedIndices = candidates.slice(0, discardCount).map(c => c.idx).sort((a, b) => b - a);
+                    for (const idx of sortedIndices) {
+                        const card = GameState.enemyHand.splice(idx, 1)[0];
+                        GameState.enemyDiscard.push(card);
+                    }
+                }
+            }
+
+            GameState.placementMessage = null;
+            renderHand();
+        }
+
         renderBoard();
         let nextOwner = o === 'blue' ? 'red' : 'blue';
         if (GameState.extraTurnCount > 0) {
@@ -1284,10 +1348,10 @@ export async function playCard(o, hI, l) {
             }
             targetCard.skills = targetCard.skills.concat(equipSkills);
 
-            // 手札の装備カードを消費して墓地へ
+            // 手札の装備カードを消費して対象カードにアタッチ
             const consumedCard = h.splice(hI, 1)[0];
-            const discardPile = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-            discardPile.push(consumedCard);
+            targetCard.equippedCards = targetCard.equippedCards || [];
+            targetCard.equippedCards.push(consumedCard);
 
             // 配置音・ボイス
             playSound(SOUNDS.sePlace);
@@ -1380,9 +1444,9 @@ export async function determineTurnOrder() {
     GameState.isProcessing = true;
     GameState.turnCount = 0;
 
-    // ゲーム開始時の初期ドロー（両者4枚ずつ）
+    // ゲーム開始時の初期ドロー（両者3枚ずつ）
     if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 3; i++) {
             drawCard('blue');
             drawCard('red');
         }
@@ -1392,13 +1456,86 @@ export async function determineTurnOrder() {
         window.startTurnOrderReact((firstPlayer) => {
             GameState.firstPlayer = firstPlayer;
             GameState.isProcessing = false;
-            startTurn(firstPlayer);
+            startMulliganPhase();
         });
     } else {
         // フォールバック
         GameState.firstPlayer = getSeededRandom() < 0.5 ? 'blue' : 'red';
         GameState.isProcessing = false;
-        startTurn(GameState.firstPlayer);
+        startMulliganPhase();
+    }
+}
+
+export async function startMulliganPhase() {
+    GameState.battlePhase = 'MULLIGAN';
+    GameState.placementMessage = null; // 中央のテキストはMULLIGANにするため除去するかBattleScreen.jsx側で制御
+    if (updateBattleUIHook) updateBattleUIHook();
+
+    let playerPromise = waitPlayerHandSelection(3, 'blue', false, '引き直すカードを3枚まで選んでください');
+    let enemyPromise;
+
+    if (GameState.gameMode === 'online') {
+        enemyPromise = waitPlayerHandSelection(3, 'red', false);
+    } else {
+        enemyPromise = new Promise(resolve => {
+            let aiIndices = [];
+            const aiHand = GameState.enemyHand;
+            const allTakeover = aiHand.length > 0 && aiHand.every(card => hasSkill(card, 'takeover'));
+            if (allTakeover) {
+                aiIndices = aiHand.map((_, i) => i);
+            }
+            resolve(aiIndices);
+        });
+    }
+
+    const [playerMulliganIndices, enemyMulliganIndices] = await Promise.all([playerPromise, enemyPromise]);
+
+    const processMulligan = (owner, indices) => {
+        if (!indices || indices.length === 0) return;
+        const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        const deck = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+
+        // 降順にソートして削除
+        const sortedIndices = [...indices].sort((a, b) => b - a);
+        for (const idx of sortedIndices) {
+            const card = hand.splice(idx, 1)[0];
+            deck.push(card);
+        }
+
+        // デッキをシャッフル
+        if (owner === 'blue') {
+            GameState.playerDeck = shuffleArray(deck);
+        } else {
+            GameState.enemyDeck = shuffleArray(deck);
+        }
+
+        // 戻した枚数だけドロー
+        for (let i = 0; i < indices.length; i++) {
+            drawCard(owner);
+        }
+    };
+
+    if (playerMulliganIndices && playerMulliganIndices.length > 0) {
+        processMulligan('blue', playerMulliganIndices);
+    }
+    if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
+        processMulligan('red', enemyMulliganIndices);
+    }
+
+    GameState.placementMessage = null;
+    GameState.battlePhase = 'BATTLE';
+
+    await sleep(800); // マリガン終了後に少し間をあける
+
+    if (GameState.gameMode === 'online') {
+        if (getIsHost()) {
+            if (GameState.firstPlayer === 'blue') await startTurn('blue');
+            else await startTurn('red');
+        } else {
+            renderBoard();
+        }
+    } else {
+        await startTurn(GameState.firstPlayer);
     }
 }
 

@@ -39,7 +39,7 @@ export default function GlobalModals() {
   const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   const handleCloseCardPreview = (e) => {
-    if (e && e.target !== e.currentTarget) return; // overlay click check
+    if (e && e.target.classList.contains('preview-content')) return;
     playSound?.(SOUNDS?.seClick);
     setCardPreviewData(null);
     setIsImageZoomed(false);
@@ -228,11 +228,6 @@ export default function GlobalModals() {
 
     window.showSkinSelectionModalState = () => {
       playSound?.(SOUNDS?.seClick);
-      // Access playerSkins via window.currentSkinCharId or pass it directly.
-      // Easiest is to set selectedSkinState based on the *current detailed character*
-      // which is passed down through charDetailData, but since we are inside useEffect
-      // and window.function doesn't have closure over current charDetailData unless we are careful,
-      // it's better to pass it as argument. But here we can just do it in the button click handler instead.
       setSkinSelectionVisible(true);
     };
 
@@ -264,23 +259,19 @@ export default function GlobalModals() {
     e.stopPropagation();
     playSound?.(SOUNDS?.seClick);
     
-    // オプショナルチェーンによるundefinedを防ぐため明示的にboolean化
     const isCardListScreen = !!document.getElementById('screen-card-list')?.classList.contains('active');
     togglePremiumCard?.(cardId, isCardListScreen);
 
-    // デッキ編成画面であった場合、即座に対象デッキ固有設定として保存
     if (!isCardListScreen && window.saveCurrentEditDeck) {
         window.saveCurrentEditDeck();
     }
 
-    // 更新を反映するために画面を再描画要求
     if (typeof renderCardList === 'function' && isCardListScreen) {
       renderCardList();
     }
     if (typeof renderDeckEdit === 'function' && document.getElementById('screen-deck-edit')?.classList.contains('active')) {
       renderDeckEdit();
     }
-    // Set state triggering re-render of preview
     setCardPreviewData(prev => ({ ...prev }));
   };
 
@@ -321,15 +312,44 @@ export default function GlobalModals() {
 
     return (
       <div className={`preview-content ${styleProps.containerClass || ''}`} style={{ margin: styleProps.margin, cursor: 'default', borderColor: styleProps.borderColor, boxShadow: styleProps.boxShadow }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div
-            className={`card blue${!isSkin ? rarityClass : ''}`}
-            style={{ width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
-            onClick={(e) => { e.stopPropagation(); setIsImageZoomed(true); playSound?.(SOUNDS?.seClick); }}
-          >
-            <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: isSkin ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : 'center center' }}></div>
-            {!isSkin && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower || card.power}</div>}
-            {!isSkin && renderSkillTagReact(card)}
+        <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+          {cardPreviewData?.parentCard && (
+            <button className="btn" style={{ position: 'absolute', top: 0, left: 0, padding: '5px 10px', fontSize: '0.8rem', zIndex: 20 }} onClick={(e) => { e.stopPropagation(); setCardPreviewData({ card: cardPreviewData.parentCard }); playSound?.(SOUNDS?.seClick); }}>
+              ⬅ 戻る
+            </button>
+          )}
+          <div style={{ position: 'relative', width: '180px', height: '240px' }}>
+            <div
+              className={`card blue${!isSkin ? rarityClass : ''}`}
+              style={{ width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+              onClick={(e) => { e.stopPropagation(); setIsImageZoomed(true); playSound?.(SOUNDS?.seClick); }}
+            >
+              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: isSkin ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : 'center center' }}></div>
+              {!isSkin && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower !== undefined ? card.currentPower : card.power}</div>}
+              {!isSkin && renderSkillTagReact(card)}
+              {!isSkin && card.equippedCards && card.equippedCards.length > 0 && (
+                  <div className="card-skill-tag equip-badge" style={{ position: 'absolute', top: '-5px', left: '-5px', background: '#64748b', color: '#fff', borderColor: '#94a3b8', transform: 'scale(0.9)', zIndex: 10 }}>⚔️装備中</div>
+              )}
+            </div>
+            {!isSkin && card.equippedCards && card.equippedCards.length > 0 && (
+              <div style={{ position: 'absolute', left: '100%', top: '0', marginLeft: '15px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 15 }}>
+                {card.equippedCards.map((eqCard, idx) => {
+                  const eqImgUrl = getCardImgUrl ? getCardImgUrl(eqCard) : '';
+                  return (
+                    <div 
+                      key={idx} 
+                      style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundImage: `url('${eqImgUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'pointer', border: '2px solid #94a3b8', boxShadow: '0 0 5px rgba(0,0,0,0.5)' }}
+                      title={`装備：${eqCard.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playSound?.(SOUNDS?.seClick);
+                        setCardPreviewData({ card: eqCard, parentCard: card });
+                      }}
+                    ></div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
         <div className="preview-details">
