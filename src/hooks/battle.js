@@ -97,12 +97,65 @@ export async function processActionQueue() {
                 await sleep(500);
                 await executeEnemyAI();
             }
+        } else if (action.type === 'syncState') {
+            applySyncState(action.state);
         }
 
         if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
+
+        // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
+        if (GameState.gameMode === 'online' && getIsHost() && action.type !== 'syncState' && action.type !== 'enemyTurn' && action.type !== 'submitChoice') {
+            sendOnlineAction({ type: 'syncState', state: generateSyncState() });
+        }
     }
 
     GameState.isProcessing = false;
+    if (updateBattleUIHook) updateBattleUIHook();
+}
+
+function generateSyncState() {
+    return {
+        playerHP: GameState.playerHP,
+        enemyHP: GameState.enemyHP,
+        playerSP: GameState.playerSP,
+        enemySP: GameState.enemySP,
+        playerBoard: JSON.parse(JSON.stringify(GameState.playerBoard)),
+        enemyBoard: JSON.parse(JSON.stringify(GameState.enemyBoard)),
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+        currentTurn: GameState.currentTurn,
+        turnCount: GameState.turnCount
+    };
+}
+
+function applySyncState(state) {
+    if (!state) return;
+    
+    // ホスト自身がエコーを受信した場合は無視
+    if (getIsHost()) return;
+
+    GameState.playerHP = state.playerHP;
+    GameState.enemyHP = state.enemyHP;
+    GameState.playerSP = state.playerSP;
+    GameState.enemySP = state.enemySP;
+    GameState.playerBoard = state.playerBoard;
+    GameState.enemyBoard = state.enemyBoard;
+    GameState.playerHand = state.playerHand;
+    GameState.enemyHand = state.enemyHand;
+    GameState.playerDiscard = state.playerDiscard;
+    GameState.enemyDiscard = state.enemyDiscard;
+    GameState.currentTurn = state.currentTurn;
+    GameState.turnCount = state.turnCount;
+
+    // 全てのUIを新しいステートに合わせて強制更新
+    updateHPBar('blue', GameState.playerHP);
+    updateHPBar('red', GameState.enemyHP);
+    updateSPOrbs('blue');
+    updateSPOrbs('red');
+    renderBoard();
+    renderHand();
     if (updateBattleUIHook) updateBattleUIHook();
 }
 
@@ -353,7 +406,7 @@ export function showSpeechBubble(target) {
     const iconEl = document.getElementById(target === 'blue' ? 'player-icon' : 'enemy-icon');
 
     if (bubble) {
-        bubble.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+        bubble.innerText = phrases[Math.floor(getSeededRandom() * phrases.length)];
         bubble.classList.add('active');
 
         // アイコンをダメージ画像に変更
@@ -1063,7 +1116,7 @@ export async function triggerSplitSkill(owner, lane, card) {
     }
 
     board[lane] = {
-        id: `sp_${Math.floor(Math.random() * 1000000000)}_${lane}`,
+        id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
         owner,
         ...tL,
         imgUrl: `assets/cards/card_${tokenId}.jpg`,

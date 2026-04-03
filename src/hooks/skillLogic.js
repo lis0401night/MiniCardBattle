@@ -174,7 +174,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 if (d.length > 0) {
                     const card = d.shift();
                     // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）
-                    card.uid = `${p}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
+                    card.uid = `${p}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                     h.push(card);
                 }
             }
@@ -216,7 +216,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const targetLane = selectedLanes[i];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
             const newToken = {
-                id: `sm_${Math.floor(Math.random() * 1000000000)}_${i}`,
+                id: `sm_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
                 owner: o,
                 ...tC,
                 isToken: true,
@@ -261,7 +261,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const targetLane = selectedLanes[i];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
             const newToken = {
-                id: `cl_${Math.floor(Math.random() * 1000000000)}_${i}`,
+                id: `cl_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
                 owner: o,
                 ...tC,
                 isToken: true,
@@ -450,7 +450,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         if (board[targetLane]) {
                             if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
                         }
-                        board[targetLane] = { ...selectedCard, id: `res_${Math.floor(Math.random() * 1000000000)}` };
+                        board[targetLane] = { ...selectedCard, id: `res_${Math.floor(getSeededRandom() * 1000000000)}` };
                         board[targetLane].currentPower = board[targetLane].power;
                         board[targetLane].skillTriggered = true; // 召喚効果は発動しない
                         board[targetLane].stunTurns = 0;
@@ -495,7 +495,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         restoredCard.basePower = restoredCard.power;
                         restoredCard.currentPower = restoredCard.power;
                         
-                        hand.push({ ...restoredCard, uid: `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}` });
+                        hand.push({ ...restoredCard, uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}` });
                         playSound(SOUNDS.seDraw);
                         updateDeckDisplay(o);
                         renderHand();
@@ -535,7 +535,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
 
             for (let i = 0; i < discardedCount; i++) {
                 const newToken = {
-                    id: `rf_${Math.floor(Math.random() * 1000000000)}_${i}`,
+                    id: `rf_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
                     owner: o,
                     ...tC,
                     isToken: true,
@@ -548,7 +548,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     filter: c.filter,
                     rarity: c.rarity || 1,
                     voiceCategory: c.voiceCategory,
-                    uid: `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`
+                    uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`
                 };
                 h.push(newToken);
             }
@@ -570,14 +570,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             for (let i = 0; i < discardIndices.length; i++) {
                 const newToken = {
-                    id: `void_${Math.floor(Math.random() * 1000000000)}_${i}`,
+                    id: `void_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
                     owner: o,
                     ...voidTpl,
                     isToken: true,
                     power: 1, basePower: 1, currentPower: 1,
                     imgUrl: o === 'blue' ? getCardImgUrl(voidTpl) : '',
                     rarity: 1,
-                    uid: `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`
+                    uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`
                 };
                 h.push(newToken);
             }
@@ -590,7 +590,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const tokenId = `token_${c.baseId || c.id}`;
         let tC = CARD_MASTER.find(m => m.id === tokenId);
         if (!tC) {
-            tC = { id: `token_${Math.floor(Math.random() * 1000000000)}`, name: '召喚獣', power: val, rarity: 1, isToken: true };
+            tC = { id: `token_${Math.floor(getSeededRandom() * 1000000000)}`, name: '召喚獣', power: val, rarity: 1, isToken: true };
         }
 
         const simulatedToken = {
@@ -608,7 +608,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
             const newToken = {
-                id: `sm_${Math.floor(Math.random() * 1000000000)}_${targetLane}`,
+                id: `sm_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`,
                 owner: o,
                 ...tC,
                 isToken: true,
@@ -673,7 +673,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: targetCard, source: 'equip' });
                         await playEvents(callEvents);
                     } else {
-                        topCard.uid = `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
+                        topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                         topCard.owner = o;
                         
                         if (board[targetLane]) { await discardCard(o, board[targetLane], targetLane); }
@@ -800,8 +800,8 @@ async function triggerExtortInAction(c, o) {
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {
                 ...voidTpl,
-                id: `token_void_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}_extUI${i}`,
-                uid: `${oppSide}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}_voidextUI${i}`,
+                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_extUI${i}`,
+                uid: `${oppSide}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidextUI${i}`,
                 filter: voidTpl.filter,
                 power: voidTpl.power,
                 currentPower: voidTpl.power,

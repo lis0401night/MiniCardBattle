@@ -162,13 +162,13 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 
                 // リーダースキルで生成した装備カードを対象にアタッチ
                 const eqToken = JSON.parse(JSON.stringify(tokenCard));
-                eqToken.uid = `eq_dng_${Math.floor(Math.random() * 1000000000)}`;
+                eqToken.uid = `eq_dng_${Math.floor(getSeededRandom() * 1000000000)}`;
                 eqToken.owner = owner;
                 targetCard.equippedCards = targetCard.equippedCards || [];
                 targetCard.equippedCards.push(eqToken);
             } else {
                 if (b[l]) { await discardCard(owner, b[l], l); }
-                b[l] = { id: `dng_tk_${Math.floor(Math.random() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
+                b[l] = { id: `dng_tk_${Math.floor(getSeededRandom() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
                 b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
 
                 // Add custom summon event to play correct standard visualizer pipeline
@@ -211,7 +211,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const targetLane = tLanes[0];
             const resurrectedCard = {
                 ...selectedCard,
-                id: `res_${Math.floor(Math.random() * 1000000000)}`,
+                id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
                 baseId: selectedCard.baseId || selectedCard.id
             };
             resurrectedCard.currentPower = resurrectedCard.power;

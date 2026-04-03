@@ -233,7 +233,7 @@ export async function playEvents(events) {
                 const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
                 if (hand.length < 5) {
                     if (!ev.card.uid) {
-                        ev.card.uid = `${ev.side}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}`;
+                        ev.card.uid = `${ev.side}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                     }
                     hand.push(ev.card);
                 }
