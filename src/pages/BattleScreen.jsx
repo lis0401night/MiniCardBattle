@@ -222,36 +222,12 @@ export default function BattleScreen() {
                 }}>
                     {GameState.battlePhase === 'MULLIGAN' && GameState.placementMessage ? GameState.placementMessage :
                         GameState.battlePhase === 'MULLIGAN' ? 'MULLIGAN' :
-                            GameState.lastBattleResult ? (
-                                <div id="battle-result" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.85)', padding: '20px 40px', borderRadius: '16px', color: '#fff', fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: 'bold', border: `4px solid ${GameState.lastBattleResult === 'win' ? '#facc15' : GameState.lastBattleResult === 'draw' ? '#94a3b8' : '#38bdf8'}`, zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                                    {GameState.lastBattleResult === 'win' ? 'WIN' : GameState.lastBattleResult === 'draw' ? 'DRAW' : 'LOSE'}
-                                    <div className="result-controls">
-                                        {GameState.gameMode === 'online' ? (
-                                            <button className="btn" onClick={async (e) => {
-                                                e.stopPropagation(); playSound(SOUNDS.seClick);
-                                                try {
-                                                    const { clearActionQueueAndRegenerateSeed, setPlayerReadyOnly, getIsHost } = await import('../hooks/multiplayer.js');
-                                                    await setPlayerReadyOnly(false);
-                                                    if (getIsHost()) {
-                                                        await clearActionQueueAndRegenerateSeed();
-                                                    }
-                                                } catch(err) { console.error(err); }
-                                                GameState.appState = 'online';
-                                                GameState.gameMode = 'online'; // keep gameMode
-                                                window.dispatchEvent(new Event('stopAllBGM'));
-                                                playSound(SOUNDS.bgmTitle);
-                                                const { switchScreen } = await import('../utils/gameUtils.js');
-                                                switchScreen('screen-online-lobby');
-                                            }}>ロビーへ戻る</button>
-                                        ) : (
-                                            <button className="btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); returnToTitle(); }}>タイトルへ</button>
-                                        )}
-                                    </div>
-                                </div>
-                            ) :
-                                GameState.currentTurn === 'player' ? 'YOUR TURN' :
-                                    GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
-                                        ''}
+                            GameState.lastBattleResult === 'win' ? 'YOU WIN!' :
+                                GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' :
+                                    GameState.lastBattleResult === 'draw' ? 'DRAW' :
+                                        GameState.currentTurn === 'player' ? 'YOUR TURN' :
+                                            GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
+                                                ''}
                 </div>
                 <button className="action-btn enemy-skill-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); showEnemySkillConfirm(); }}>敵スキル</button>
             </div>
