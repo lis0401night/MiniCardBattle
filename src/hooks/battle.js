@@ -1170,7 +1170,7 @@ export function drawCard(owner) {
     let d = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck, h = owner === 'blue' ? GameState.playerHand : GameState.enemyHand, ds = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
 
     // 手札がいっぱいの場合は何もしない
-    if (h.length >= 5) {
+    if (h.length >= 4) {
         updateDeckDisplay(owner);
         return;
     }
@@ -1271,8 +1271,8 @@ export async function endPlayerTurn() {
 export async function endTurnLogic(o) {
     if (!GameState.isBattleEnded) {
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        if (hand.length > 4) {
-            const discardCount = hand.length - 4;
+        if (hand.length > 3) {
+            const discardCount = hand.length - 3;
             GameState.placementMessage = null;
             if (updateBattleUIHook) updateBattleUIHook();
 

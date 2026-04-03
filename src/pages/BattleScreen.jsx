@@ -220,7 +220,7 @@ export default function BattleScreen() {
                                     GameState.currentTurn === 'enemy' ? 'var(--color-red)' : '#facc15',
                     fontSize: GameState.placementMessage ? '16px' : '24px'
                 }}>
-                    {GameState.placementMessage ? GameState.placementMessage :
+                    {GameState.battlePhase === 'MULLIGAN' && GameState.placementMessage ? GameState.placementMessage :
                         GameState.battlePhase === 'MULLIGAN' ? 'MULLIGAN' :
                             GameState.lastBattleResult === 'win' ? 'YOU WIN!' :
                                 GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' :

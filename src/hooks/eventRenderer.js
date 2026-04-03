@@ -400,6 +400,27 @@ export async function playEvents(events) {
                     const deadCard = board[target.lane];
 
                     if (deadCard) {
+                        if (deadCard.equippedCards && deadCard.equippedCards.length > 0) {
+                            const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                            for (const eqCard of deadCard.equippedCards) {
+                                let restoredEq;
+                                const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
+                                if (eqMaster) {
+                                    restoredEq = JSON.parse(JSON.stringify(eqMaster));
+                                    restoredEq.uid = eqCard.uid;
+                                    restoredEq.owner = eqCard.owner || target.side;
+                                    restoredEq.baseId = eqCard.baseId || eqCard.id;
+                                    restoredEq.basePower = restoredEq.power;
+                                    restoredEq.currentPower = restoredEq.power;
+                                } else {
+                                    restoredEq = { ...eqCard };
+                                }
+                                discard.push(restoredEq);
+                            }
+                            deadCard.equippedCards = [];
+                            updateDeckDisplay(target.side);
+                        }
+
                         if (deadCard.originalRevertTarget) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                             discard.push(deadCard.originalRevertTarget);

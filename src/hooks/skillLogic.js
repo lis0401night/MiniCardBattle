@@ -169,8 +169,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             // デッキを再シャッフル
             shuffleArray(d);
 
-            // 互いに4枚引く
-            for (let i = 0; i < 4; i++) {
+            // 互いに3枚引く
+            for (let i = 0; i < 3; i++) {
                 if (d.length > 0) {
                     const card = d.shift();
                     // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）
@@ -467,30 +467,43 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'salvage') {
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        const validCards = discard.filter(card => !card.isToken);
+        
+        let discardIndices = await waitPlayerHandSelection(val || 1, o, false, '回収のために捨てる手札を選んでください');
+        if (discardIndices && discardIndices.length > 0) {
+            // 後ろから削除するためにインデックスを降順ソート
+            const sortedIndices = [...discardIndices].sort((a, b) => b - a);
+            for (const idx of sortedIndices) {
+                const card = hand.splice(idx, 1)[0];
+                discard.push(card);
+            }
+            updateDeckDisplay(o);
+            renderHand();
 
-        if (validCards.length > 0) {
-            const selectedCard = await waitPlayerDiscardSelection(validCards, 999, o, '回収するカードを選択', '墓地からカードを1枚選び、手札に加えます。');
+            for (let i = 0; i < discardIndices.length; i++) {
+                const validCards = discard.filter(card => !card.isToken);
+                if (validCards.length > 0) {
+                    const selectedCard = await waitPlayerDiscardSelection(validCards, 999, o, '回収するカードを選択', '墓地からカードを1枚選び、手札に加えます。');
 
-            if (selectedCard) {
-                const actualIdx = discard.indexOf(selectedCard);
-                if (actualIdx !== -1) discard.splice(actualIdx, 1);
-                
-                // カードのステータスを初期状態にリセット
-                const masterData = CARD_MASTER.find(m => m.id === (selectedCard.baseId || selectedCard.id));
-                const restoredCard = masterData ? JSON.parse(JSON.stringify(masterData)) : { ...selectedCard };
-                restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
-                restoredCard.basePower = restoredCard.power;
-                restoredCard.currentPower = restoredCard.power;
-                
-                hand.push({ ...restoredCard, uid: `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}` });
-                
-                playSound(SOUNDS.seDraw);
-                updateDeckDisplay(o);
-                renderHand();
-                await sleep(400);
+                    if (selectedCard) {
+                        const actualIdx = discard.indexOf(selectedCard);
+                        if (actualIdx !== -1) discard.splice(actualIdx, 1);
+                        
+                        // カードのステータスを初期状態にリセット
+                        const masterData = CARD_MASTER.find(m => m.id === (selectedCard.baseId || selectedCard.id));
+                        const restoredCard = masterData ? JSON.parse(JSON.stringify(masterData)) : { ...selectedCard };
+                        restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
+                        restoredCard.basePower = restoredCard.power;
+                        restoredCard.currentPower = restoredCard.power;
+                        
+                        hand.push({ ...restoredCard, uid: `${o}_${Math.floor(Math.random() * 1000000000)}_${Math.random().toString(36).substr(2, 5)}` });
+                        playSound(SOUNDS.seDraw);
+                        updateDeckDisplay(o);
+                        renderHand();
+                    }
+                }
             }
         }
+        await sleep(400);
     } else if (skillId === 'reinforce') {
         const count = skillValue || 1;
         playSkillSound('summon'); // 汎用の音
