@@ -401,14 +401,15 @@ export async function playEvents(events) {
 
                     if (deadCard) {
                         if (deadCard.equippedCards && deadCard.equippedCards.length > 0) {
-                            const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                             for (const eqCard of deadCard.equippedCards) {
                                 let restoredEq;
+                                const eqOwner = eqCard.owner || target.side;
+                                const discard = eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                                 const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
                                 if (eqMaster) {
                                     restoredEq = JSON.parse(JSON.stringify(eqMaster));
                                     restoredEq.uid = eqCard.uid;
-                                    restoredEq.owner = eqCard.owner || target.side;
+                                    restoredEq.owner = eqOwner;
                                     restoredEq.baseId = eqCard.baseId || eqCard.id;
                                     restoredEq.basePower = restoredEq.power;
                                     restoredEq.currentPower = restoredEq.power;

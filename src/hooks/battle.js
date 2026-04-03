@@ -947,14 +947,15 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
 }
 export async function discardCard(owner, card, lane, isDestroyed = true) {
     if (card.equippedCards && card.equippedCards.length > 0) {
-        const discardPile = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         for (const eqCard of card.equippedCards) {
             let restoredEq;
+            const eqOwner = eqCard.owner || owner;
+            const discardPile = eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
             if (eqMaster) {
                 restoredEq = JSON.parse(JSON.stringify(eqMaster));
                 restoredEq.uid = eqCard.uid;
-                restoredEq.owner = eqCard.owner || owner;
+                restoredEq.owner = eqOwner;
                 restoredEq.baseId = eqCard.baseId || eqCard.id;
                 restoredEq.basePower = restoredEq.power;
                 restoredEq.currentPower = restoredEq.power;
@@ -964,6 +965,11 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             discardPile.push(restoredEq);
         }
         card.equippedCards = [];
+    }
+
+    if (card.originalRevertTarget) {
+        (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(card.originalRevertTarget);
+        updateDeckDisplay(owner);
     }
 
     if (card.isToken) return false;
