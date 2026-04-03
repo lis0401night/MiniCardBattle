@@ -1515,11 +1515,21 @@ export async function startMulliganPhase() {
         }
     };
 
-    if (playerMulliganIndices && playerMulliganIndices.length > 0) {
-        processMulligan('blue', playerMulliganIndices);
-    }
-    if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
-        processMulligan('red', enemyMulliganIndices);
+    if (getIsHost()) {
+        if (playerMulliganIndices && playerMulliganIndices.length > 0) {
+            processMulligan('blue', playerMulliganIndices);
+        }
+        if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
+            processMulligan('red', enemyMulliganIndices);
+        }
+    } else {
+        // 乱数消費順序をホストと完全に一致させるため、クライアント側はホスト(red)から先に処理する
+        if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
+            processMulligan('red', enemyMulliganIndices);
+        }
+        if (playerMulliganIndices && playerMulliganIndices.length > 0) {
+            processMulligan('blue', playerMulliganIndices);
+        }
     }
 
     GameState.placementMessage = null;
