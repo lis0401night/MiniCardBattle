@@ -818,7 +818,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
         if (hasSkill(aC, 'pierce')) {
             let pDmg = Math.max(0, aP - dP);
-            if (hasSkill(aC, 'double_strike')) pDmg *= 2;
             if (pDmg > 0) {
                 defHP -= pDmg;
                 events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
@@ -840,10 +839,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
     } else {
         let finalDmg = aP;
-        if (hasSkill(aC, 'double_strike')) {
-            if (finalDmg > 0) events.push({ type: 'double_strike_proc', side: attackerSide, lane: l });
-            finalDmg *= 2;
-        }
         defHP -= finalDmg;
         events.push({ type: 'damage_player', side: defSide, amount: finalDmg, source: 'direct_attack' });
         applyExtort(aC, defSide, attackerSide, aLane, events, state);
