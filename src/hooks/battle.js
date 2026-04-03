@@ -1537,16 +1537,7 @@ export async function startMulliganPhase() {
 
     await sleep(800); // マリガン終了後に少し間をあける
 
-    if (GameState.gameMode === 'online') {
-        if (getIsHost()) {
-            if (GameState.firstPlayer === 'blue') await startTurn('blue');
-            else await startTurn('red');
-        } else {
-            renderBoard();
-        }
-    } else {
-        await startTurn(GameState.firstPlayer);
-    }
+    await startTurn(GameState.firstPlayer);
 }
 
 export async function resolveOnPlaySkill(o, l, c) {
