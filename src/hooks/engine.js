@@ -300,6 +300,22 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'quick':
             applySingleCombat(state, owner, l, events);
             break;
+        case 'bless':
+            const blessHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+            if (blessHand && blessHand.length > 0) {
+                const blessVal = val || 1;
+                let bestCard = null;
+                for (let hc of blessHand) {
+                    if (!hc.isToken && (!bestCard || (hc.power || 0) > (bestCard.power || 0))) {
+                        bestCard = hc;
+                    }
+                }
+                if (!bestCard) bestCard = blessHand[0];
+                bestCard.power = (bestCard.power || 0) + blessVal;
+                bestCard.currentPower = (bestCard.currentPower || 0) + blessVal;
+                bestCard.basePower = (bestCard.basePower || 0) + blessVal;
+            }
+            break;
         case 'convert':
             const convertHand = owner === 'blue' ? state.playerHand : state.enemyHand;
             const convertCount = val || 1;
@@ -337,8 +353,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             };
             for (let i = 0; i < 1; i++) {
                 let targetLane = -1;
-                if (simulatedTokenLanes && simulatedTokenLanes.length > i) {
-                    targetLane = simulatedTokenLanes[i];
+                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                    targetLane = simulatedTokenLanes.shift();
                 } else {
                     const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
@@ -361,6 +377,38 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             }
             break;
+        case 'wall_create':
+            const wallPower = val || 10;
+            const wTC = CARD_MASTER.find(m => m.id === 'token_wall') || { name: 'トークン', power: 1 };
+            for (let i = 0; i < 1; i++) {
+                let targetLane = -1;
+                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                    targetLane = simulatedTokenLanes.shift();
+                } else {
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                }
+
+                if (targetLane !== -1) {
+                    const newToken = {
+                        ...wTC,
+                        id: `WC_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                        uid: `${owner}_WC_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                        owner,
+                        isPremium: c.isPremium,
+                        imgUrl: '',
+                        power: wallPower,
+                        basePower: wallPower,
+                        currentPower: wallPower,
+                        skill: 'defender',
+                        skills: [{ id: 'defender' }],
+                        isToken: true
+                    };
+                    b[targetLane] = newToken;
+                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'wall_create' });
+                }
+            }
+            break;
         case 'resurrect':
             // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
             const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
@@ -372,7 +420,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
 
             let targetLaneRes = -1;
             if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
-                targetLaneRes = simulatedTokenLanes[0];
+                targetLaneRes = simulatedTokenLanes.shift();
             } else {
                 const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null);
                 if (emptyLanesRes.length > 0) targetLaneRes = emptyLanesRes[0];
@@ -411,8 +459,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
 
             for (let i = 0; i < cloneCount; i++) {
                 let targetLane = -1;
-                if (simulatedTokenLanes && simulatedTokenLanes.length > i) {
-                    targetLane = simulatedTokenLanes[i];
+                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                    targetLane = simulatedTokenLanes.shift();
                 } else {
                     const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
@@ -892,18 +940,14 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
     if (oppHand && oppHand.length > 0) {
         let activated = false;
         for (let i = 0; i < val; i++) {
-            const validIndices = oppHand.map((card, idx) => ({ card, idx }))
-                .filter(t => !(t.card.name === '虚空' && (t.card.power === 1 || t.card.basePower === 1)))
-                .map(t => t.idx);
+            if (oppHand.length === 0) break;
             
-            if (validIndices.length === 0) break;
-
             if (!activated) {
                 events.push({ type: 'skill_popup', side: attackerSide, lane: aLane, skillName: '簒奪' });
                 activated = true;
             }
 
-            const randIndex = validIndices[Math.floor(getSeededRandom() * validIndices.length)];
+            const randIndex = Math.floor(getSeededRandom() * oppHand.length);
             const discarded = oppHand.splice(randIndex, 1)[0];
             if (!discarded.isToken) {
                 const masterData = CARD_MASTER.find(m => m.id === (discarded.baseId || discarded.id));

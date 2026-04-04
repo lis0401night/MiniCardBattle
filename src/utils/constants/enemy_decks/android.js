@@ -5,9 +5,8 @@ export default {
         'mech', 'mech',
         'mantis', 'mantis',
         'airship', 'airship',
-        'cleric', 'cleric', 'cleric',
-        'diviner', 'diviner',
-        'clone', 'clone', 'clone',
+        'armsuits', 'armsuits', 'armsuits', 'armsuits',
+        'cleric', 'cleric', 'cleric', 'cleric',
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
@@ -18,7 +17,7 @@ export default {
         'titan', 'titan',
         'mech', 'mech',
         'airship', 'airship',
-        'mantis', 'mantis',
+        'armsuits', 'armsuits',
     ],
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon',

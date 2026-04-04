@@ -36,11 +36,11 @@ export const SKILL_POINTS = {
     },
     "split": {
         "base": 0,
-        "multiplier": 0.5
+        "multiplier": 1
     },
     "sacrifice": {
         "base": 0,
-        "multiplier": -1.5
+        "multiplier": -0.7
     },
     "bind": {
         "base": 0,
@@ -75,8 +75,8 @@ export const SKILL_POINTS = {
         "multiplier": 0
     },
     "clone": {
-        "base": 3,
-        "multiplier": 0
+        "base": 0,
+        "multiplier": 3
     },
     "lone_wolf": {
         "base": 0,
@@ -84,10 +84,10 @@ export const SKILL_POINTS = {
     },
     "soul_bind": {
         "base": 0,
-        "multiplier": 0.5
+        "multiplier": 1
     },
     "sturdy": {
-        "base": 1,
+        "base": 2,
         "multiplier": 0
     },
     "berserk": {
@@ -123,8 +123,8 @@ export const SKILL_POINTS = {
         "multiplier": -1
     },
     "choice": {
-        "base": 1,
-        "multiplier": 0
+        "base": 0,
+        "multiplier": 1
     },
     "metamorph": {
         "base": 5,
@@ -181,5 +181,25 @@ export const SKILL_POINTS = {
     "invade": {
         "base": 5,
         "multiplier": 0
+    },
+    "equip": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "phase": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "petrify": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "oblivion": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "call": {
+        "base": 0,
+        "multiplier": 1
     }
 };

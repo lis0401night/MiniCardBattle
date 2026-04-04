@@ -9,7 +9,7 @@ export const SKILLS = {
     heal: { name: '回復', icon: '💚', desc: (val) => `召喚時、リーダーのHPを${val || 3}回復する。` },
     snipe: { name: '狙撃', icon: '🎯', desc: (val) => `召喚時、相手の場で最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）` },
     spread: { name: '拡散', icon: '☄️', desc: (val) => `召喚時、正面とその隣のレーンのカードに${val || 2}ダメージ。` },
-    morph: { name: '変化', icon: '🌀', desc: (val) => `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数「虚空」を加える。（同値の場合は左優先）` },
+    morph: { name: '変化', icon: '🌀', desc: (val) => `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数「虚空（パワー1）」を加える。（同値の場合は左優先）` },
     double_strike: { name: '連撃', icon: '⚔️', desc: () => '戦闘時、敵カードに与えるダメージが2倍になる。' },
     support: { name: '援護', icon: '🚩', desc: (val) => `召喚時、自分の場の隣のレーンのカードのパワーを+${val || 2}する。` },
     defender: { name: '防御', icon: '🧱', desc: (val) => '攻撃せず、敵カードやリーダーにダメージを与えられない。' },
@@ -43,20 +43,22 @@ export const SKILLS = {
     fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
     salvage: { name: '回収', icon: '🧲', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自分の墓地からカードを手札に加える。` },
     reinforce: { name: '増援', icon: '📣', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。` },
-    extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空」を加える。` },
+    extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空（パワー1）」を加える。` },
     toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` },
-    convert: { name: '転換', icon: '♻️', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空」を加える。` },
+    convert: { name: '転換', icon: '♻️', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空（パワー1）」を加える。` },
     invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
     equip: { name: '装備', icon: '🗡️', desc: (val) => '既にカードのあるレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。' },
     phase: { name: '位相', icon: '🌫️', desc: (val) => '位相を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。' },
     petrify: { name: '石化', icon: '🗿', desc: (val) => '召喚時、正面のカードを「石像（パワー5、防御、頑丈）」に変身させる。（破壊時、元のカードが墓地に置かれる）' },
     oblivion: { name: '忘却', icon: '⚪', desc: (val) => '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。' },
-    call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚する。` }
+    call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚する。` },
+    bless: { name: '祝福', icon: '🕯️', desc: (val) => `召喚時、手札のカード1枚を選び、パワーを+${val}する。` },
+    wall_create: { name: '造壁', icon: '🏰', desc: (val) => `召喚時、自分のレーンに、パワー${val}（防御）のトークンを配置する。` }
 };
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

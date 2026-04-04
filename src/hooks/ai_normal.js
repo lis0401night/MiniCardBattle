@@ -126,17 +126,19 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         let cardTokenLanePatterns = [null];
                         const cardHasSkill = (sk) => hasSkill(card, sk) || (Array.isArray(card.choices) && card.choices.some(s => s.id === sk));
 
-                        // トークン召喚時は上書きも考慮して自分以外の全レーンを候補にする
-                        if (cardHasSkill('resurrect') || cardHasSkill('summon')) {
-                            cardTokenLanePatterns = availableLanesForToken.map(idx => [idx]);
-                        } else if (cardHasSkill('clone')) {
-                            let cloneCount = 1;
-                            if (card.skill === 'clone') cloneCount = card.skillValue || 1;
-                            else if (card.skills) {
-                                const csk = card.skills.find(s => s.id === 'clone');
-                                if (csk) cloneCount = csk.value || 1;
-                            }
-                            cardTokenLanePatterns = getCombinations(availableLanesForToken, Math.min(availableLanesForToken.length, cloneCount));
+                        let totalTokenCount = 0;
+                        const countTokenSkills = (id, val) => {
+                            if (id === 'summon' || id === 'resurrect' || id === 'wall_create') totalTokenCount += 1;
+                            if (id === 'clone') totalTokenCount += (val || 1);
+                        };
+
+                        if (card.skill && card.skill !== 'none') countTokenSkills(card.skill, card.skillValue);
+                        if (Array.isArray(card.skills)) {
+                            card.skills.forEach(s => countTokenSkills(s.id, s.value));
+                        }
+
+                        if (totalTokenCount > 0) {
+                            cardTokenLanePatterns = getCombinations(availableLanesForToken, Math.min(availableLanesForToken.length, totalTokenCount));
                         }
 
                         for (let cardTokenLanes of cardTokenLanePatterns) {
@@ -341,8 +343,9 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
             }
             targetCard.skills = targetCard.skills.concat(addedSkills);
 
+            let cLanesForEquip = cardTokenLanes ? [...cardTokenLanes] : null;
             addedSkills.forEach(sk => {
-                applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
+                applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForEquip);
             });
         } else {
             // 通常のプレイ処理
@@ -382,8 +385,9 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                 });
             }
 
+            let cLanesForPass2 = cardTokenLanes ? [...cardTokenLanes] : null;
             skills.forEach(sk => {
-                applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cardTokenLanes);
+                applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass2);
             });
 
             if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) {

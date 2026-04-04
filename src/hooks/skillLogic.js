@@ -390,6 +390,46 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         updateHPBar();
         checkWinCondition();
         await sleep(400);
+    } else if (skillId === 'bless') {
+        const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        let targetIndices = await waitPlayerHandSelection(1, o, false, '手札のカードを1枚選んでください');
+        if (targetIndices && targetIndices.length > 0) {
+            const idx = targetIndices[0];
+            const card = hand[idx];
+            card.power = (card.power || 0) + (skillValue || 1);
+            card.basePower = (card.basePower || 0) + (skillValue || 1);
+            card.currentPower = (card.currentPower || 0) + (skillValue || 1);
+            playSound(SOUNDS.seSkill);
+            renderHand();
+            await sleep(300);
+        }
+    } else if (skillId === 'wall_create') {
+        const wallPower = skillValue || 10;
+        const wTC = CARD_MASTER.find(m => m.id === 'token_wall') || { name: 'トークン', power: 1 };
+        const sTC = {
+            ...wTC,
+            id: `WC_${Math.floor(getSeededRandom() * 1000000000)}`,
+            uid: `${o}_WC_${Math.floor(getSeededRandom() * 1000000000)}`,
+            isToken: true,
+            rarity: 1,
+            power: wallPower,
+            basePower: wallPower,
+            currentPower: wallPower,
+            skill: 'defender',
+            skills: [{ id: 'defender' }]
+        };
+        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, true);
+        if (tLanes && tLanes.length > 0) {
+            const targetLane = tLanes[0];
+            const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+            if (board[targetLane]) {
+                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+            }
+            board[targetLane] = sTC;
+            playSound(SOUNDS.sePlace);
+            renderBoard();
+            await sleep(400);
+        }
     } else if (skillId === 'standby') {
         const turns = (skillValue || 1);
         c.stunTurns = turns;
@@ -806,13 +846,8 @@ async function triggerExtortInAction(c, o) {
     if (eHandRef && eHandRef.length > 0) {
         let discardedAmount = 0;
         for (let i = 0; i < val; i++) {
-            const validIndices = eHandRef.map((card, idx) => ({ card, idx }))
-                .filter(t => !(t.card.name === '虚空' && (t.card.power === 1 || t.card.basePower === 1)))
-                .map(t => t.idx);
-            
-            if (validIndices.length === 0) break;
-
-            const randIndex = validIndices[Math.floor(getSeededRandom() * validIndices.length)];
+            if (eHandRef.length === 0) break;
+            const randIndex = Math.floor(getSeededRandom() * eHandRef.length);
             const discarded = eHandRef.splice(randIndex, 1)[0];
             if (eD) eD.push(discarded);
 
