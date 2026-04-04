@@ -25,7 +25,7 @@ export const CARD_MASTER = [
     { id: 'pray', name: '救済の祈り', power: 0, rarity: 1, skills: [{ id: 'choice', value: 1 }], choices: [{ id: 'wall_create', value: 10 }, { id: 'heal', value: 5 }], voiceCategory: 'magic', flavor: '神聖なる祈りは時に癒しとなり、時に強固な守りとなって信徒を庇護する。' },
     { id: 'necromancer', name: 'ヴィス・ガルドの背教者', power: 1, skill: 'resurrect', skillValue: 4, rarity: 1, voiceCategory: 'human_female_cool', flavor: '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。' },
     { id: 'zombie', name: '解き放たれた囚人', power: 1, skills: [{ id: 'clone', value: 2 }, { id: 'growth', value: -1 }], rarity: 1, voiceCategory: 'undead', flavor: 'かつて地下牢に繋がれていた者たちの成れの果て。その怨念は果てることなく、仲間を呼び寄せながら朽ちてゆく。' },
-    { id: 'beginnermagic', name: '初級魔術', rarity: 1, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'summon', value: 5 }, { id: 'support', value: 3 }], flavor: '大地に流れる脈動をマナへと変換する基礎的な魔術。' },
+    { id: 'beginnermagic', name: '初級魔術', rarity: 1, voiceCategory: 'magic', power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'summon', value: 5 }, { id: 'support', value: 3 }], voiceCategory: 'magic', flavor: '大地に流れる脈動をマナへと変換する基礎的な魔術。' },
     { id: 'snake', name: '蛇の使い魔', rarity: 1, voiceCategory: 'insect', power: 3, skill: 'toxic', skillValue: 3, flavor: '魔法使いに使役される毒蛇。術者の命令に従い、獲物を毒牙にかける。' },
     { id: 'goat', name: 'スケープゴート', power: 3, rarity: 1, skills: [{ id: 'sacrifice', value: 3 }, { id: 'charge', value: 2 }], voiceCategory: 'monster', flavor: '不吉な儀式の供物として捧げられる山羊。その命が尽きる時、主には強大な魔力が還元される。' },
     { id: 'devil', name: '地獄の放火魔', power: 2, skills: [{ id: 'spread', value: 3 }, { id: 'explode', value: 3 }], rarity: 1, voiceCategory: 'devil', flavor: '背中のタンクには地獄の業火が詰まっている。初めて武器を与えられた小悪魔は、その焦熱を振り撒くことに至上の喜びを感じていた。' },
