@@ -255,6 +255,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             skills: inheritedSkills
         };
         const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false);
+        if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
         let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
@@ -602,6 +603,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         };
 
         const tLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, null, false);
+        if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
         let events = [];
 
         if (tLanes && tLanes.length > 0) {
@@ -640,6 +642,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
                 const selectedLanes = await waitPlayerLaneSelection(1, o, topCard, false, null, true, true, '召喚終了');
                 GameState.placementMessage = null;
+                if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
                 if (selectedLanes && selectedLanes.length > 0) {
                     const targetLane = selectedLanes[0];
