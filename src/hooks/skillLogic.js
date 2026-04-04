@@ -398,6 +398,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             cEl.classList.add('anim-shake');
         }
         await sleep(500);
+        await sleep(500);
         if (cEl) cEl.classList.remove('anim-shake');
     } else if (skillId === 'resurrect') {
         const maxPow = skillValue || 1;
@@ -672,6 +673,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         let callEvents = [];
                         callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: targetCard, source: 'equip' });
                         await playEvents(callEvents);
+
+                        // 装備されたカードが持っていたアクティブスキルを即時発動させる
+                        for (const sk of equipSkills) {
+                            if (ACTIVE_SKILLS.includes(sk.id)) {
+                                await sleep(50);
+                                await resolveActiveSkillEffect(o, targetLane, targetCard, sk.id, sk.value);
+                            }
+                        }
                     } else {
                         topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                         topCard.owner = o;
@@ -685,6 +694,13 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                         
                         if (hasActiveSkill(topCard)) {
                             await resolveOnPlaySkill(o, targetLane, topCard);
+                        }
+
+                        // 使い捨てスペル等のパワー0以下のカードは、召喚効果解決後に消去する
+                        const finalCard = board[targetLane];
+                        if (finalCard && finalCard.currentPower <= 0) {
+                            const destroyEvents = [{ type: 'destroy_cards', targets: [{ side: o, lane: targetLane, card: finalCard }] }];
+                            await playEvents(destroyEvents);
                         }
                     }
                 } else {

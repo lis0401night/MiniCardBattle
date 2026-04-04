@@ -6,7 +6,7 @@ import { SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { getDialogue, playSound, stopAllBGM, sleep, isTransitioning, switchScreen, getCardImgUrl, getOrCreateUUID, renderSkillTag } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { startBattleFlow, createNewDeck, loadDeck } from './deck.js';
+import { startBattleFlow, createNewDeck, loadDeck, renderDeckEdit } from './deck.js';
 import { initEventSatanMode, loadPlayerDeck } from './events.js';
 import { GameState } from './gameState.js';
 import { initStoryMode } from './story.js';
@@ -663,9 +663,7 @@ export function confirmCharSelect() {
                     GameState.decks[GameState.currentDeckIndex].playerSkins[GameState.pendingCharId] = chosenSkin;
                 }
                 setTimeout(() => {
-                    import('./deck.js').then(m => {
-                        if (typeof m.renderDeckEdit === 'function') m.renderDeckEdit();
-                    });
+                    if (typeof renderDeckEdit === 'function') renderDeckEdit();
                 }, 50);
             }
         } else if (GameState.gameMode === 'defense_attack') {

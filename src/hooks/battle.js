@@ -125,6 +125,8 @@ function generateSyncState() {
         enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
         playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
         enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+        playerDeck: JSON.parse(JSON.stringify(GameState.playerDeck)),
+        enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck)),
         currentTurn: GameState.currentTurn,
         turnCount: GameState.turnCount
     };
@@ -143,12 +145,22 @@ function applySyncState(state) {
     GameState.playerSP = state.enemySP || 0;
     GameState.enemySP = state.playerSP || 0;
     
-    GameState.playerBoard = state.enemyBoard || [null, null, null];
-    GameState.enemyBoard = state.playerBoard || [null, null, null];
-    GameState.playerHand = state.enemyHand || [];
-    GameState.enemyHand = state.playerHand || [];
-    GameState.playerDiscard = state.enemyDiscard || [];
-    GameState.enemyDiscard = state.playerDiscard || [];
+    // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
+    const restoreArr = (arr, len = null) => {
+        if (!arr) return len !== null ? Array(len).fill(null) : [];
+        if (Array.isArray(arr)) return len !== null ? Array.from({ length: len }, (_, i) => arr[i] || null) : arr;
+        if (typeof arr === 'object') return len !== null ? Array.from({ length: len }, (_, i) => arr[i] || null) : Object.values(arr);
+        return len !== null ? Array(len).fill(null) : [];
+    };
+
+    GameState.playerBoard = restoreArr(state.enemyBoard, 3);
+    GameState.enemyBoard = restoreArr(state.playerBoard, 3);
+    GameState.playerHand = restoreArr(state.enemyHand);
+    GameState.enemyHand = restoreArr(state.playerHand);
+    GameState.playerDiscard = restoreArr(state.enemyDiscard);
+    GameState.enemyDiscard = restoreArr(state.playerDiscard);
+    GameState.playerDeck = restoreArr(state.enemyDeck);
+    GameState.enemyDeck = restoreArr(state.playerDeck);
     
     // ターン表記（player / enemy）もホストから見た主観なので逆転させる
     if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
