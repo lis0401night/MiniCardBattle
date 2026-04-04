@@ -6,7 +6,7 @@ import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, 
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
-import { PASSIVE_SKILLS } from '../utils/constants/skills.js';
+import { PASSIVE_SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { getIsHost } from './multiplayer.js';
 
 /**
@@ -469,7 +469,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         
-        let discardIndices = await waitPlayerHandSelection(skillValue || 1, o, false, '回収のために捨てる手札を選んでください');
+        let discardIndices = await waitPlayerHandSelection(skillValue || 1, o, false, `捨てるカードを${skillValue || 1}枚まで選んでください`);
         if (discardIndices && discardIndices.length > 0) {
             // 後ろから削除するためにインデックスを降順ソート
             const sortedIndices = [...discardIndices].sort((a, b) => b - a);
