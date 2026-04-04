@@ -415,8 +415,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             power: wallPower,
             basePower: wallPower,
             currentPower: wallPower,
-            skill: 'defender',
-            skills: [{ id: 'defender' }]
+            baseId: 'token_wall',
+            skills: []
         };
         const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, true);
         if (tLanes && tLanes.length > 0) {

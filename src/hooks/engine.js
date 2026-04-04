@@ -400,8 +400,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         power: wallPower,
                         basePower: wallPower,
                         currentPower: wallPower,
-                        skill: 'defender',
-                        skills: [{ id: 'defender' }],
+                        baseId: 'token_wall',
+                        skills: [],
                         isToken: true
                     };
                     b[targetLane] = newToken;
