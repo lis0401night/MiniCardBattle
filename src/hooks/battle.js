@@ -136,19 +136,25 @@ function applySyncState(state) {
     // ホスト自身がエコーを受信した場合は無視
     if (getIsHost()) return;
 
-    GameState.playerHP = state.playerHP || 0;
-    GameState.enemyHP = state.enemyHP || 0;
-    GameState.playerSP = state.playerSP || 0;
-    GameState.enemySP = state.enemySP || 0;
+    // クライアント（受信側）はホストから見て「敵（enemy）」なので、
+    // 送られてきた状態の player と enemy を反転させてローカルに適用しなければならない。
+    GameState.playerHP = state.enemyHP || 0;
+    GameState.enemyHP = state.playerHP || 0;
+    GameState.playerSP = state.enemySP || 0;
+    GameState.enemySP = state.playerSP || 0;
     
-    // Firebaseでは空配列がundefinedとして送信されるため、フォールバックを設ける
-    GameState.playerBoard = state.playerBoard || [null, null, null];
-    GameState.enemyBoard = state.enemyBoard || [null, null, null];
-    GameState.playerHand = state.playerHand || [];
-    GameState.enemyHand = state.enemyHand || [];
-    GameState.playerDiscard = state.playerDiscard || [];
-    GameState.enemyDiscard = state.enemyDiscard || [];
-    GameState.currentTurn = state.currentTurn;
+    GameState.playerBoard = state.enemyBoard || [null, null, null];
+    GameState.enemyBoard = state.playerBoard || [null, null, null];
+    GameState.playerHand = state.enemyHand || [];
+    GameState.enemyHand = state.playerHand || [];
+    GameState.playerDiscard = state.enemyDiscard || [];
+    GameState.enemyDiscard = state.playerDiscard || [];
+    
+    // ターン表記（player / enemy）もホストから見た主観なので逆転させる
+    if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
+    else if (state.currentTurn === 'enemy') GameState.currentTurn = 'player';
+    else GameState.currentTurn = state.currentTurn;
+    
     GameState.turnCount = state.turnCount;
 
     // 全てのUIを新しいステートに合わせて強制更新
