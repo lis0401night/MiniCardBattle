@@ -2,7 +2,7 @@ export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
         'prince', 'prince',
-        'shark', 'shark',
+        'slime', 'slime',
         'tortoise', 'tortoise',
         'jellyfish', 'jellyfish',
         'diviner', 'diviner', 'diviner', 'diviner',
@@ -12,8 +12,7 @@ export default {
         'golem', 'golem', 'golem', 'golem',
         'hound', 'hound',
         'octopus', 'octopus',
-        'prince', 'prince',
-        'shark', 'shark',
+        'shark', 'shark', 'shark', 'shark',
         'copy', 'copy',
         'slime', 'slime',
         'jellyfish', 'jellyfish',

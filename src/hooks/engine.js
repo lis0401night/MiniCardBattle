@@ -782,8 +782,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     let dLane = l;
     if (defBoard[l]) {
-        // 守護側も位相が一致しないとかばうことができない
-        const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase);
+        // 守護側も位相が一致しないとかばうことができないが、防御を持っていればブロック可能
+        const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
         let dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
         if (dg !== null) dLane = dg;
     }
@@ -796,9 +796,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     let dC = defBoard[dLane];
     if (dC && hasSkill(dC, 'phase') !== aHasPhase) {
-        dC = null; // 位相が合わないため完全すり抜け（直接攻撃扱い）
+        if (!hasSkill(dC, 'defender') && !(dC.stunTurns > 0)) {
+            dC = null; // 位相が合わないため完全すり抜け（直接攻撃扱い）
+        }
     }
-    const originalTarget = (defBoard[l] && hasSkill(defBoard[l], 'phase') === aHasPhase) ? defBoard[l] : null;
+    const originalTarget = (defBoard[l] && (hasSkill(defBoard[l], 'phase') === aHasPhase || hasSkill(defBoard[l], 'defender') || defBoard[l].stunTurns > 0)) ? defBoard[l] : null;
     let aP = Number(aC.currentPower ?? aC.power ?? 0) || 0;
     
     // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）

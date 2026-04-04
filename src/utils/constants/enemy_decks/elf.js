@@ -13,10 +13,9 @@ export default {
         'highelf', 'highelf',
         'wolf', 'wolf',
         'bard', 'bard',
-        'spider', 'spider',
         'bear', 'bear',
-        'bird', 'bird',
-        'vine', 'vine',
+        'vine', 'vine', 'vine', 'vine',
+        'chameleon', 'chameleon',
         'sniper', 'sniper',
     ],
     hard: [
