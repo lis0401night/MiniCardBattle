@@ -136,16 +136,18 @@ function applySyncState(state) {
     // ホスト自身がエコーを受信した場合は無視
     if (getIsHost()) return;
 
-    GameState.playerHP = state.playerHP;
-    GameState.enemyHP = state.enemyHP;
-    GameState.playerSP = state.playerSP;
-    GameState.enemySP = state.enemySP;
-    GameState.playerBoard = state.playerBoard;
-    GameState.enemyBoard = state.enemyBoard;
-    GameState.playerHand = state.playerHand;
-    GameState.enemyHand = state.enemyHand;
-    GameState.playerDiscard = state.playerDiscard;
-    GameState.enemyDiscard = state.enemyDiscard;
+    GameState.playerHP = state.playerHP || 0;
+    GameState.enemyHP = state.enemyHP || 0;
+    GameState.playerSP = state.playerSP || 0;
+    GameState.enemySP = state.enemySP || 0;
+    
+    // Firebaseでは空配列がundefinedとして送信されるため、フォールバックを設ける
+    GameState.playerBoard = state.playerBoard || [null, null, null];
+    GameState.enemyBoard = state.enemyBoard || [null, null, null];
+    GameState.playerHand = state.playerHand || [];
+    GameState.enemyHand = state.enemyHand || [];
+    GameState.playerDiscard = state.playerDiscard || [];
+    GameState.enemyDiscard = state.enemyDiscard || [];
     GameState.currentTurn = state.currentTurn;
     GameState.turnCount = state.turnCount;
 
