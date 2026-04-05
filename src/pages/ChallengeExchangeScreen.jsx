@@ -8,10 +8,12 @@ import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
 import { CHALLENGE_EXCHANGE_LINEUP } from '../utils/constants/config.js';
+import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 
 export default function ChallengeExchangeScreen() {
     const [challengePoints, setChallengePoints] = useState({ current: 0, total: 0 });
     const [unlockedSkins, setUnlockedSkins] = useState([]);
+    const [unlockedPlaymats, setUnlockedPlaymats] = useState([]);
     const [inventory, setInventory] = useState({});
     const [pointsUpdated, setPointsUpdated] = useState(false);
     const [previewItem, setPreviewItem] = useState(null);
@@ -26,6 +28,8 @@ export default function ChallengeExchangeScreen() {
         // Init Unlocked
         const userUnlocked = JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || [];
         setUnlockedSkins(userUnlocked);
+        const userPlaymats = JSON.parse(localStorage.getItem('mini_card_battle_owned_playmats')) || [];
+        setUnlockedPlaymats(userPlaymats);
         
         // Init Inventory
         setInventory(GameState.playerInventory || {});
@@ -92,6 +96,11 @@ export default function ChallengeExchangeScreen() {
             GameState.playerInventory = newInventory;
             if (typeof saveDeck === 'function') saveDeck();
             showAlertModal(`「${item.displayName || item.id}」を1枚交換しました！`);
+        } else if (item.type === 'playmat') {
+            const newUnlocked = [...unlockedPlaymats, item.id];
+            localStorage.setItem('mini_card_battle_owned_playmats', JSON.stringify(newUnlocked));
+            setUnlockedPlaymats(newUnlocked);
+            showAlertModal(`「${item.name}」を交換しました！\nデッキ編成画面等でプレイマットを変更できます。`);
         } else {
             const newUnlocked = [...unlockedSkins, item.id];
             localStorage.setItem('mini_card_battle_unlocked_skins', JSON.stringify(newUnlocked));
@@ -156,9 +165,12 @@ export default function ChallengeExchangeScreen() {
                 <div id="exchange-item-grid" className="card-list-grid-3col">
                     {CHALLENGE_EXCHANGE_LINEUP.map(item => {
                         const isCard = item.type === 'card';
+                        const isPlaymat = item.type === 'playmat';
                         let isUnlocked = false;
                         if (isCard) {
                             isUnlocked = (inventory[item.id] || 0) >= 4;
+                        } else if (isPlaymat) {
+                            isUnlocked = unlockedPlaymats.includes(item.id);
                         } else {
                             isUnlocked = unlockedSkins.includes(item.id);
                         }
@@ -167,7 +179,9 @@ export default function ChallengeExchangeScreen() {
                         const opacity = isUnlocked ? "0.3" : (canAfford ? "1.0" : "0.6");
                         const charObj = CHARACTERS[item.charId || item.id] || CHARACTERS.android;
                         
-                        const masterClass = isCard ? (CARD_MASTER.find(c => c.id === item.id) || {}) : {};
+                        let masterClass = {};
+                        if (isCard) masterClass = CARD_MASTER.find(c => c.id === item.id) || {};
+                        if (isPlaymat) masterClass = PLAYMAT_MASTER.find(p => p.id === item.id) || {};
                         const rarityClass = isCard && masterClass.rarity ? ` rarity-${masterClass.rarity}` : '';
 
                         let imgUrl = '';
@@ -176,13 +190,18 @@ export default function ChallengeExchangeScreen() {
 
                         if (isCard) {
                             imgUrl = masterClass.imgUrl || (typeof getCardImgUrl === 'function' ? getCardImgUrl(masterClass) : `assets/cards/card_${masterClass.id || item.id}.jpg`);
-                            displayName = masterClass.name;
-                            displayDesc = masterClass.flavor;
+                            displayName = masterClass.name || item.name;
+                            displayDesc = masterClass.flavor || item.description;
+                        } else if (isPlaymat) {
+                            imgUrl = masterClass.image || `assets/boards/board_${item.id.replace('pm_', '')}.png`;
+                            displayName = masterClass.name || item.name;
                         } else {
                             // スキンの場合
                             imgUrl = `assets/characters/char_${item.id}.png`;
                         }
                         
+                        const displayTypeLabel = isCard ? 'カード' : (isPlaymat ? 'プレイマット' : 'スキン');
+
                         return (
                             <div 
                                 key={item.id}
@@ -193,14 +212,14 @@ export default function ChallengeExchangeScreen() {
                                     if (window.showExchangeDetailModal) {
                                         window.showExchangeDetailModal({
                                             id: item.id,
-                                            type: isCard ? 'card' : 'skin',
+                                            type: item.type,
                                             cost: item.cost,
                                             itemObj: isCard ? masterClass : {},
-                                            titleColor: isCard ? null : (charObj ? charObj.color : '#fff'),
+                                            titleColor: isCard ? null : (isPlaymat ? '#facc15' : (charObj ? charObj.color : '#fff')),
                                             canExchange: canAfford,
                                             isMaxed: isUnlocked,
                                             titleName: displayName,
-                                            displayType: isCard ? 'カード' : 'スキン',
+                                            displayType: displayTypeLabel,
                                             displayFlavor: displayDesc,
                                             imgUrl: imgUrl,
                                             onConfirm: () => {
@@ -212,7 +231,7 @@ export default function ChallengeExchangeScreen() {
                                 }}
                             >
                                 <div className={`card blue${rarityClass}`} style={{ width: '80px', height: '120px', position: 'relative', display: 'block', overflow: 'hidden' }}>
-                                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, backgroundSize: isCard ? 'cover' : '200%', backgroundPosition: 'top center' }}></div>
+                                    <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, backgroundSize: isCard ? 'cover' : (isPlaymat ? 'contain' : '200%'), backgroundRepeat: 'no-repeat', backgroundPosition: isPlaymat ? 'center' : 'top center', backgroundColor: isPlaymat ? '#000' : '' }}></div>
                                     
                                     {isCard && (
                                         <>

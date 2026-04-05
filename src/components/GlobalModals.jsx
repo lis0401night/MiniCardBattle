@@ -136,9 +136,10 @@ export default function GlobalModals() {
         card: validItemObj || { id: data.id, name: data.titleName, flavor: data.displayFlavor, skills: [] },
         styleProps: {
           titleName: data.titleName || (data.itemObj?.name || data.id),
-          displayType: data.displayType || (data.type === 'premium' ? 'プレミアム' : data.type === 'skin' ? 'スキン' : 'カード'),
+          displayType: data.displayType || (data.type === 'playmat' ? 'プレイマット' : data.type === 'premium' ? 'プレミアム' : data.type === 'skin' ? 'スキン' : 'カード'),
           imgUrl: autoImgUrl,
           isSkin: data.type === 'skin',
+          isPlaymat: data.type === 'playmat',
           flavorOverride: data.displayFlavor,
           showPreviewActions: false,
           showExchangeActions: true,
@@ -318,20 +319,23 @@ export default function GlobalModals() {
               ⬅ 戻る
             </button>
           )}
-          <div style={{ position: 'relative', width: '180px', height: '240px' }}>
+          <div style={{ position: 'relative', width: styleProps.isPlaymat ? '280px' : '180px', height: styleProps.isPlaymat ? '140px' : '240px' }}>
             <div
-              className={`card blue${!isSkin ? rarityClass : ''}`}
-              style={{ width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+              className={styleProps.isPlaymat ? '' : `card blue${!isSkin ? rarityClass : ''}`}
+              style={styleProps.isPlaymat ? 
+                { width: '280px', height: '140px', position: 'relative', overflow: 'hidden', cursor: 'pointer', border: '2px solid #38bdf8', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.6)', backgroundColor: '#000' } : 
+                { width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer', backgroundColor: 'transparent' }
+              }
               onClick={(e) => { e.stopPropagation(); setIsImageZoomed(true); playSound?.(SOUNDS?.seClick); }}
             >
-              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: isSkin ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : 'center center' }}></div>
-              {!isSkin && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower !== undefined ? card.currentPower : card.power}</div>}
-              {!isSkin && renderSkillTagReact(card)}
-              {!isSkin && card.equippedCards && card.equippedCards.length > 0 && (
+              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: (isSkin || styleProps.isPlaymat) ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : (styleProps.isPlaymat ? 'center' : 'center center'), backgroundColor: styleProps.isPlaymat ? '#000' : '' }}></div>
+              {!isSkin && !styleProps.isPlaymat && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower !== undefined ? card.currentPower : card.power}</div>}
+              {!isSkin && !styleProps.isPlaymat && renderSkillTagReact(card)}
+              {!isSkin && !styleProps.isPlaymat && card.equippedCards && card.equippedCards.length > 0 && (
                   <div className="card-skill-tag equip-badge" style={{ position: 'absolute', top: '-5px', left: '-5px', background: '#64748b', color: '#fff', borderColor: '#94a3b8', transform: 'scale(0.9)', zIndex: 10 }}>⚔️装備中</div>
               )}
             </div>
-            {!isSkin && card.equippedCards && card.equippedCards.length > 0 && (
+            {!isSkin && !styleProps.isPlaymat && card.equippedCards && card.equippedCards.length > 0 && (
               <div style={{ position: 'absolute', left: '100%', top: '0', marginLeft: '15px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 15 }}>
                 {card.equippedCards.map((eqCard, idx) => {
                   const eqImgUrl = getCardImgUrl ? getCardImgUrl(eqCard) : '';
@@ -364,7 +368,7 @@ export default function GlobalModals() {
           </h2>
 
           <div className="preview-scroll-area">
-            {!isSkin && (
+            {!isSkin && !styleProps.isPlaymat && (
               <div className="preview-skills-list">
                 {skillCandidates.length > 0 ? skillCandidates.map((sk, idx) => {
                   const s = SKILLS?.[sk.id];
