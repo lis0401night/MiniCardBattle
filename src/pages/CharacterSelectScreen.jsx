@@ -30,7 +30,10 @@ export default function CharacterSelectScreen() {
     updateTitle();
     // 画面切り替え時に再評価させるためのフックを追加
     const originalInit = window.initSelectScreenReact;
-    window.initSelectScreenReact = updateTitle;
+    window.initSelectScreenReact = () => {
+       updateTitle();
+       setRenderVersion(v => v + 1);
+    };
     window.forceUpdateSelectScreen = () => setRenderVersion(v => v + 1);
 
     return () => {
@@ -64,10 +67,12 @@ export default function CharacterSelectScreen() {
       <div className="select-scroll-area">
         <div className="char-grid" id="char-grid">
           {characters.map(char => {
-            const bgImage = getSkinImage ? getSkinImage(char, GameState.playerSkins?.[char.id] || 'default', 'image') : char.image;
+            const isEnemySelection = GameState.appState === 'select_enemy';
+            const skinIdToUse = isEnemySelection ? 'default' : (GameState.playerSkins?.[char.id] || 'default');
+            const bgImage = getSkinImage ? getSkinImage(char, skinIdToUse, 'image') : char.image;
             return (
               <div 
-                key={char.id} 
+                key={char.id + "_" + renderVersion} 
                 className="char-card" 
                 style={{ backgroundImage: `url('${bgImage}')` }}
                 onClick={() => handleSelect(char)}

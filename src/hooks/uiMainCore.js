@@ -302,6 +302,16 @@ export function goBackFromDeckEdit() {
         // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
         GameState.appState = 'select_deck';
         switchScreen('screen-deck-list');
+    } else if (GameState.gameMode === 'create_deck') {
+        // 新規作成中にキャンセルして戻る場合、仮で作成されたデッキを破棄する
+        const index = GameState.currentDeckIndex;
+        if (index !== undefined && index >= 0 && GameState.decks && GameState.decks.length > index) {
+            GameState.decks.splice(index, 1);
+            localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+        }
+        GameState.appState = 'create_deck_select_char';
+        initSelectScreen(false);
+        switchScreen('screen-select');
     } else if (GameState.gameMode === 'story') {
         // 難易度選択に戻る
         GameState.appState = 'select_difficulty';
@@ -589,6 +599,8 @@ export function showDefenseRules() {
 export function startDefenseRegistration() {
     playSound(SOUNDS.seClick);
     GameState.gameMode = 'defense_register';
+    // 防衛デッキ新規登録時はプレイヤースキンをリセットし、デフォルト状態で選べるようにする
+    GameState.playerSkins = {};
 
     if (window.showPlayerNameModalState) {
         window.showPlayerNameModalState((name) => {
@@ -622,9 +634,15 @@ export function confirmCharSelect() {
     playSound(SOUNDS.seClick);
     if (GameState.appState === 'create_deck_select_char') {
         const charId = GameState.pendingCharId;
+        const chosenSkin = GameState.playerSkins[charId];
         const deckIndex = createNewDeck(charId);
         if (deckIndex !== false) {
             GameState.currentDeckIndex = deckIndex;
+            if (chosenSkin) {
+                if (!GameState.decks[deckIndex].playerSkins) GameState.decks[deckIndex].playerSkins = {};
+                GameState.decks[deckIndex].playerSkins[charId] = chosenSkin;
+                localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+            }
             loadDeck();
             switchScreen('screen-deck-edit');
         } else {
@@ -656,11 +674,21 @@ export function confirmCharSelect() {
             startBattleFlow();
             if (chosenSkin) {
                 GameState.playerSkins[GameState.pendingCharId] = chosenSkin;
-                if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
+                if (GameState.gameMode === 'defense_register' && GameState.defenseDeck) {
+                    if (!GameState.defenseDeck.playerSkins) GameState.defenseDeck.playerSkins = {};
+                    GameState.defenseDeck.playerSkins[GameState.pendingCharId] = chosenSkin;
+                    if (!GameState.decks) GameState.decks = [];
+                    GameState.decks[0] = GameState.defenseDeck;
+                    localStorage.setItem('mini_card_battle_defense_deck_obj', JSON.stringify(GameState.defenseDeck));
+                }
+                if (GameState.decks && GameState.currentDeckIndex >= 0 && GameState.decks.length > GameState.currentDeckIndex) {
                     if (!GameState.decks[GameState.currentDeckIndex].playerSkins) {
                         GameState.decks[GameState.currentDeckIndex].playerSkins = {};
                     }
                     GameState.decks[GameState.currentDeckIndex].playerSkins[GameState.pendingCharId] = chosenSkin;
+                    if (GameState.gameMode !== 'defense_register' && GameState.gameMode !== 'battle_dungeon') {
+                         localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+                    }
                 }
                 setTimeout(() => {
                     if (typeof renderDeckEdit === 'function') renderDeckEdit();

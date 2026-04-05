@@ -37,6 +37,7 @@ export default function GlobalModals() {
   const [skinSelectionVisible, setSkinSelectionVisible] = useState(false);
   const [selectedSkinState, setSelectedSkinState] = useState(null);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [simpleImagePreview, setSimpleImagePreview] = useState(null);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
@@ -692,16 +693,25 @@ export default function GlobalModals() {
               const isEnemySelection = GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy;
               const isCreateDeck = GameState.appState === 'create_deck_select_char' || GameState.gameMode === 'defense_register' && GameState.appState === 'select_player';
               let skinIdToUse;
-              if (isEnemySelection || isCreateDeck) {
+              if (isEnemySelection) {
                   skinIdToUse = 'default';
-              } else if (selectedSkinState) {
-                  skinIdToUse = selectedSkinState;
               } else if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
                   skinIdToUse = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
               } else {
                   skinIdToUse = GameState.playerSkins[charDetailData.id] || 'default';
               }
-              return <img src={getSkinImage(charDetailData.id, skinIdToUse, 'image')} style={{ width: '140px', height: '175px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #334155', marginBottom: '10px', flexShrink: 0 }} alt={charDetailData.name} />;
+              const imgSrc = getSkinImage(charDetailData.id, skinIdToUse, 'image');
+              return (
+                <img 
+                  src={imgSrc} 
+                  style={{ width: '140px', height: '175px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #334155', marginBottom: '10px', flexShrink: 0, cursor: 'pointer' }} 
+                  alt={charDetailData.name} 
+                  onClick={() => {
+                     playSound?.(SOUNDS?.seClick);
+                     setSimpleImagePreview(imgSrc);
+                  }}
+                />
+              );
             })()}
 
             <h2 style={{ marginBottom: '5px', color: charDetailData.color || '#facc15', fontSize: '1.3rem', textAlign: 'center', flexShrink: 0 }}>{charDetailData.name}</h2>
@@ -732,8 +742,9 @@ export default function GlobalModals() {
                 style={{ width: '100%', marginBottom: '10px', background: 'linear-gradient(45deg, #c084fc, #9333ea)', border: 'none', color: 'white', padding: '10px', borderRadius: '8px', fontWeight: 'bold', textShadow: '1px 1px 2px #000' }}
                 onClick={() => {
                   let initialSkin = 'default';
-                  const isCreateDeck = GameState.appState === 'create_deck_select_char' || GameState.gameMode === 'defense_register' && GameState.appState === 'select_player';
-                  if (isCreateDeck) {
+                  const isEnemySelection = GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy;
+                  
+                  if (isEnemySelection) {
                       initialSkin = 'default';
                   } else if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
                       initialSkin = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
@@ -1211,6 +1222,18 @@ export default function GlobalModals() {
             </div>
             <button className="btn" style={{ marginTop: '20px', width: '100%' }} onClick={window.closeRulesModal}>閉じる</button>
           </div>
+        </div>
+      )}
+
+      {/* Simple Image Preview Modal */}
+      {simpleImagePreview && (
+        <div className="modal-overlay" style={{ zIndex: 6000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)' }} onClick={() => setSimpleImagePreview(null)}>
+          <img 
+            src={simpleImagePreview} 
+            style={{ maxWidth: '95%', maxHeight: '95%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 0 30px rgba(0,0,0,1)' }} 
+            alt="Preview" 
+            onClick={(e) => { e.stopPropagation(); setSimpleImagePreview(null); }}
+          />
         </div>
       )}
     </>

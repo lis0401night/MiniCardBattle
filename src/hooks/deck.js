@@ -145,6 +145,16 @@ export function loadDeck() {
     }
 
     // 2. 全体（アカウント）設定のベース読み込み
+    // 全体スキン
+    const skinsKey = 'mini_card_battle_skins';
+    const skinsSaved = localStorage.getItem(skinsKey);
+    let globalSkins = {};
+    if (skinsSaved) {
+        try { globalSkins = JSON.parse(skinsSaved); } 
+        catch (e) { globalSkins = {}; }
+    }
+    GameState.playerSkins = { ...globalSkins };
+
     // インベントリ
     const invKey = `mini_card_battle_inventory`;
     const invSaved = localStorage.getItem(invKey);
@@ -294,7 +304,7 @@ export function loadDeck() {
 
         // 【新規】デッキ固有のスキン・プレミアムをロード
         if (!activeDeck.playerSkins) activeDeck.playerSkins = {};
-        GameState.playerSkins = { ...activeDeck.playerSkins };
+        GameState.playerSkins = { ...GameState.playerSkins, ...activeDeck.playerSkins };
         
         if (activeDeck.premiumCards) {
             GameState.premiumCards = [...activeDeck.premiumCards];

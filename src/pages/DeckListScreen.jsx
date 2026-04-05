@@ -115,10 +115,14 @@ export default function DeckListScreen() {
         GameState.prevGameModeForCreate = GameState.gameMode;
         GameState.prevAppStateForCreate = GameState.appState;
         
-        GameState.gameMode = 'create_deck';
-        GameState.appState = 'create_deck_select_char';
-        initSelectScreen?.(false);
-        switchScreen?.('screen-select');
+        if (typeof window.switchScreen === 'function') {
+            GameState.gameMode = 'create_deck';
+            GameState.appState = 'create_deck_select_char';
+            // 新規作成時はプレイヤースキンをリセットし、デフォルト状態で選べるようにする
+            GameState.playerSkins = {};
+            if (typeof window.initSelectScreenReact === 'function') window.initSelectScreenReact();
+            window.switchScreen('screen-select');
+        };
     };
 
     const handleBack = () => {
