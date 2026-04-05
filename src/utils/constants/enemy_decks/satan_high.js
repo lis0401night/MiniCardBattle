@@ -6,11 +6,12 @@ export default [
     'redrider', 'redrider', 'redrider',
     'blackrider', 'blackrider', 'blackrider',
     'palerider', 'palerider', 'palerider',
-    'bahamut', 'bahamut',
+    'bahamut',
     'daemon',
     'daemonarmor',
     'warlock',
     'dealer',
     'devil',
     'goat',
+    'zombie',
 ];

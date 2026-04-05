@@ -3,10 +3,10 @@ export default {
         'golem', 'golem', 'golem', 'golem',
         'shade', 'shade',
         'specter', 'specter',
-        'zombie', 'zombie',
+        'crenellatedwall', 'crenellatedwall',
         'necromancer', 'necromancer',
         'dinosaur', 'dinosaur', 'dinosaur', 'dinosaur',
-        'airship', 'airship', 'airship', 'airship',
+        'diviner', 'diviner', 'diviner', 'diviner',
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',

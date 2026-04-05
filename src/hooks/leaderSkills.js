@@ -1,7 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
@@ -153,7 +153,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                         if (s.id !== 'equip') equipSkills.push(s);
                     });
                 }
-                targetCard.skills = targetCard.skills.concat(equipSkills);
+                mergeCardSkills(targetCard, equipSkills);
 
                 events.push({ type: 'leader_skill', skill: action, side: owner });
                 events.push({ type: 'summon_card', side: owner, lane: l, card: targetCard, source: 'equip' });

@@ -4,7 +4,7 @@ export default {
         'commander', 'commander',
         'lightpaladin', 'lightpaladin',
         'ninja', 'ninja',
-        'crenellatedwall', 'crenellatedwall',
+        'mercenary', 'mercenary',
         'clone', 'clone', 'clone', 'clone',
         'sniper', 'sniper', 'sniper', 'sniper',
     ],
@@ -15,7 +15,7 @@ export default {
         'darkpaladin', 'darkpaladin', 'darkpaladin', 'darkpaladin',
         'commander', 'commander',
         'hero', 'hero',
-        'ninja', 'ninja',
+        'mercenary', 'mercenary',
         'clone', 'clone',
     ],
     hard: [

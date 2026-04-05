@@ -5,7 +5,7 @@ export default {
         'dealer', 'dealer',
         'devil', 'devil', 'devil', 'devil',
         'goat', 'goat', 'goat', 'goat',
-        'clone', 'clone', 'clone', 'clone',
+        'zombie', 'zombie', 'zombie', 'zombie',
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',
@@ -14,15 +14,17 @@ export default {
         'warlock', 'warlock',
         'dealer', 'dealer',
         'devil', 'devil', 'devil', 'devil',
-        'goat', 'goat', 'goat', 'goat',
+        'goat', 'goat',
+        'zombie', 'zombie',
     ],
     hard: [
-        'bahamut', 'bahamut', 'bahamut', 'bahamut',
+        'bahamut', 'bahamut',
         'daemon', 'daemon', 'daemon', 'daemon',
         'daemonarmor', 'daemonarmor', 'daemonarmor', 'daemonarmor',
         'warlock', 'warlock',
         'dealer', 'dealer',
         'devil', 'devil',
         'goat', 'goat',
+        'zombie', 'zombie',
     ]
 };

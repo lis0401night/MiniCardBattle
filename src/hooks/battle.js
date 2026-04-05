@@ -6,7 +6,7 @@ import { incrementStat } from '../utils/constants/achievements.js';
 import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
-import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray } from '../utils/gameUtils.js';
+import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray, mergeCardSkills } from '../utils/gameUtils.js';
 import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multiplayer.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
@@ -1425,7 +1425,7 @@ export async function playCard(o, hI, l) {
                     if (s.id !== 'equip') equipSkills.push(s);
                 });
             }
-            targetCard.skills = targetCard.skills.concat(equipSkills);
+            mergeCardSkills(targetCard, equipSkills);
 
             // 手札の装備カードを消費して対象カードにアタッチ
             const consumedCard = h.splice(hI, 1)[0];

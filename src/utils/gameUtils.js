@@ -234,6 +234,25 @@ export function getSkillValue(c, skillId) {
     return 0;
 }
 
+// 装備時などのスキル統合ロジック
+export function mergeCardSkills(targetCard, equipSkills) {
+    if (!targetCard.skills) {
+        targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+        targetCard.skill = 'none';
+    }
+
+    for (const newS of equipSkills) {
+        const existingInfo = targetCard.skills.find(s => s.id === newS.id);
+        if (existingInfo) {
+            if (newS.value !== undefined && newS.value !== null) {
+                existingInfo.value = (existingInfo.value || 0) + newS.value;
+            }
+        } else {
+            targetCard.skills.push({ ...newS });
+        }
+    }
+}
+
 export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決

@@ -1,4 +1,4 @@
-import { hasSkill, getSeededRandom } from '../utils/gameUtils.js';
+import { hasSkill, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
 import { applyActiveSkillLogic, applyLeaderSkillLogic, calculateCombatPhase, applyPassiveSkillLogic } from './engine.js';
 import { GameState } from './gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -103,7 +103,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         const card = hand[i];
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
                         if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
-                        if (hasSkill(card, 'equip') && myBoard[l] === null) continue; // 装備を空きレーンに出さない
+                        // 装備カードも空きレーンに召喚可能なので除外しない
 
                         // 1ターン目の制限 (先攻RED)
                         if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && l !== 1) continue;
@@ -337,11 +337,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                 });
             }
 
-            if (!targetCard.skills) {
-                targetCard.skills = targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
-                targetCard.skill = 'none';
-            }
-            targetCard.skills = targetCard.skills.concat(addedSkills);
+            mergeCardSkills(targetCard, addedSkills);
 
             let cLanesForEquip = cardTokenLanes ? [...cardTokenLanes] : null;
             addedSkills.forEach(sk => {

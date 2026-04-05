@@ -1,6 +1,6 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
@@ -21,7 +21,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     // 演出用のポップアップと音（一括した基本演出）
     if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '対価', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -127,7 +127,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         await sleep(500);
     } else if (skillId === 'shuffle') {
         playSkillSound(skillId); createDamagePopup(cEl, '攪乱', '#facc15');
-        
+
         // オンライン対戦時、乱数シードの消費順序をホスト・ゲスト間で一致させるため、ホスト側の盤面から処理する順序に固定
         let processOrder = ['blue', 'red'];
         if (GameState.gameMode === 'online') {
@@ -139,7 +139,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const hCards = [...h]; // 手札のコピーを保持
             h.length = 0; // 手札の配列を先に空にする
-            
+
             // 順番に1枚ずつ正規に捨てる（バフ・変相のリセットとトークンの自動消滅処理を適用するため）
             for (let i = 0; i < hCards.length; i++) {
                 await discardCard(p, hCards[i], undefined, false);
@@ -189,7 +189,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         let tName = 'ドローン';
         let tId = 'token_drone';
         const cId = c.baseId || c.id;
-        
+
         if (cId === 'admiral') {
             tId = 'token_knight';
             tName = '騎士';
@@ -197,7 +197,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             tName = 'ゴーレム';
             tId = 'token_golem';
         }
-        
+
         const tC = CARD_MASTER.find(m => m.id === tId) || {
             id: tId, name: tName, power: pValue, skill: 'none', isToken: true, rarity: 1, voiceCategory: pValue >= 5 ? 'monster' : 'machine_new'
         };
@@ -286,7 +286,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         const roll = Math.floor(getSeededRandom() * 6) + 1;
         playSound(SOUNDS.seSkill); createDamagePopup(cEl, '運命', '#facc15');
         await sleep(500);
-        
+
         if (roll <= 5) {
             let dmg = roll;
             if (o === 'blue') {
@@ -328,7 +328,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         if (eB[l]) {
             const toxVal = skillValue || 1;
             eB[l].skills = eB[l].skills || [];
-            
+
             if (eB[l].skill === 'growth') {
                 eB[l].skillValue = (eB[l].skillValue || 0) - toxVal;
             } else {
@@ -339,7 +339,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     eB[l].skills.push({ id: 'growth', value: -toxVal });
                 }
             }
-            
+
             const tgtSide = o === 'blue' ? 'enemy' : 'player';
             const tEl = document.querySelector(`#${tgtSide}-lanes .cell[data-lane="${l}"] .card`);
             if (tEl) {
@@ -482,9 +482,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                                 if (s.id !== 'equip') equipSkills.push(s);
                             });
                         }
-                        targetCard.skills = targetCard.skills.concat(equipSkills);
+                        mergeCardSkills(targetCard, equipSkills);
                         // ※ユーザー指定に基づき、召喚ではないためアクティブスキルの即発動は行わない
-                        
+
                         // 装備したカードは消費されて対象カードにアタッチされる
                         targetCard.equippedCards = targetCard.equippedCards || [];
                         targetCard.equippedCards.push(selectedCard);
@@ -509,7 +509,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     } else if (skillId === 'salvage') {
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        
+
         let discardIndices = await waitPlayerHandSelection(skillValue || 1, o, false, `捨てるカードを${skillValue || 1}枚まで選んでください`);
         if (discardIndices && discardIndices.length > 0) {
             // 後ろから削除するためにインデックスを降順ソート
@@ -529,14 +529,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     if (selectedCard) {
                         const actualIdx = discard.indexOf(selectedCard);
                         if (actualIdx !== -1) discard.splice(actualIdx, 1);
-                        
+
                         // カードのステータスを初期状態にリセット
                         const masterData = CARD_MASTER.find(m => m.id === (selectedCard.baseId || selectedCard.id));
                         const restoredCard = masterData ? JSON.parse(JSON.stringify(masterData)) : { ...selectedCard };
                         restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
                         restoredCard.basePower = restoredCard.power;
                         restoredCard.currentPower = restoredCard.power;
-                        
+
                         hand.push({ ...restoredCard, uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}` });
                         playSound(SOUNDS.seDraw);
                         updateDeckDisplay(o);
@@ -552,11 +552,11 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         if (cEl) createDamagePopup(cEl, '増援', '#facc15');
 
         const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        
+
         // AIはランダム、プレイヤーは手動選択のUIを待機
         const selectedHandIndices = await waitPlayerHandSelection(count, o);
         let discardedCount = 0;
-        
+
         if (selectedHandIndices && selectedHandIndices.length > 0) {
             // 降順ソートして削除のずれを防ぐ
             selectedHandIndices.sort((a, b) => b - a);
@@ -604,7 +604,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         if (discardIndices && discardIndices.length > 0) {
             const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
             const d = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-            discardIndices.sort((a,b) => b - a);
+            discardIndices.sort((a, b) => b - a);
             for (let idx of discardIndices) {
                 const dropped = h.splice(idx, 1)[0];
                 await discardCard(o, dropped);
@@ -672,12 +672,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         if (d.length > 0) {
             const topCard = d[d.length - 1];
             if (cEl) createDamagePopup(cEl, `号令 (${topCard.name})`, '#facc15');
-            
+
             if ((topCard.power || 0) <= (skillValue || 3)) {
                 // デッキトップを取り出す
                 d.pop();
                 updateDeckDisplay(o);
-                
+
                 // キャンセル可能なレーン選択
                 GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
                 const selectedLanes = await waitPlayerLaneSelection(1, o, topCard, false, null, true, true, '召喚終了');
@@ -687,10 +687,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                 if (selectedLanes && selectedLanes.length > 0) {
                     const targetLane = selectedLanes[0];
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                    
+
                     if (board[targetLane] && hasSkill(topCard, 'equip')) {
                         const targetCard = board[targetLane];
-                        
+
                         targetCard.basePower = (targetCard.basePower || 0) + (topCard.power || 0);
                         targetCard.currentPower = (targetCard.currentPower || 0) + (topCard.power || 0);
 
@@ -707,7 +707,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                                 if (s.id !== 'equip') equipSkills.push(s);
                             });
                         }
-                        targetCard.skills = targetCard.skills.concat(equipSkills);
+                        mergeCardSkills(targetCard, equipSkills);
 
                         // デッキから出た号令カードを対象にアタッチする
                         targetCard.equippedCards = targetCard.equippedCards || [];
@@ -727,14 +727,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     } else {
                         topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                         topCard.owner = o;
-                        
+
                         if (board[targetLane]) { await discardCard(o, board[targetLane], targetLane); }
                         board[targetLane] = topCard;
-                        
+
                         let callEvents = [];
                         callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: topCard, source: 'call' });
                         await playEvents(callEvents);
-                        
+
                         if (hasActiveSkill(topCard)) {
                             await resolveOnPlaySkill(o, targetLane, topCard);
                         }
@@ -842,7 +842,7 @@ async function triggerExtortInAction(c, o) {
     const oppSide = o === 'blue' ? 'red' : 'blue';
     const eHandRef = oppSide === 'blue' ? GameState.playerHand : GameState.enemyHand;
     const eD = oppSide === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-    
+
     if (eHandRef && eHandRef.length > 0) {
         let discardedAmount = 0;
         for (let i = 0; i < val; i++) {
@@ -868,7 +868,7 @@ async function triggerExtortInAction(c, o) {
             eHandRef.push(voidToken);
             discardedAmount++;
         }
-        
+
         if (discardedAmount > 0) {
             const lane = GameState.playerBoard.indexOf(c) !== -1 ? GameState.playerBoard.indexOf(c) : GameState.enemyBoard.indexOf(c);
             const side = GameState.playerBoard.indexOf(c) !== -1 ? 'player' : 'enemy';
