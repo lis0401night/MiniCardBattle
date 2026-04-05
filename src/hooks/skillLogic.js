@@ -516,7 +516,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const sortedIndices = [...discardIndices].sort((a, b) => b - a);
             for (const idx of sortedIndices) {
                 const card = hand.splice(idx, 1)[0];
-                discard.push(card);
+                await discardCard(o, card, undefined, false);
             }
             updateDeckDisplay(o);
             renderHand();
@@ -849,7 +849,7 @@ async function triggerExtortInAction(c, o) {
             if (eHandRef.length === 0) break;
             const randIndex = Math.floor(getSeededRandom() * eHandRef.length);
             const discarded = eHandRef.splice(randIndex, 1)[0];
-            if (eD) eD.push(discarded);
+            await discardCard(oppSide, discarded, undefined, false);
 
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {

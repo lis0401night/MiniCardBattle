@@ -562,6 +562,19 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
             let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i));
 
+            if (checkConstraints && tokenCard) {
+                const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
+                const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
+                
+                if (hasLegendary) {
+                    validEmptyLanes = validEmptyLanes.filter(i => i === 1);
+                    validOccupiedLanes = validOccupiedLanes.filter(i => i === 1);
+                }
+                if (hasTakeover) {
+                    validEmptyLanes = []; // 生贄（takeover）は空きレーン不可
+                }
+            }
+
             while (selectedLanes.length < count && validEmptyLanes.length > 0) {
                 selectedLanes.push(validEmptyLanes.shift());
             }
@@ -570,6 +583,11 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             while (selectedLanes.length < count && validOccupiedLanes.length > 0) {
                 selectedLanes.push(validOccupiedLanes.shift());
             }
+        }
+
+        // 最終的に十分なレーンが確保できず、キャンセル可能なら中止する
+        if (selectedLanes.length < count && canCancel) {
+            return [];
         }
 
         return selectedLanes.slice(0, count);

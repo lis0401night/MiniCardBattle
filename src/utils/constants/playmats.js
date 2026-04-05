@@ -55,7 +55,15 @@ export const PLAYMAT_MASTER = [
         name: 'サタン',
         image: 'assets/boards/board_satan.png',
         targetCharacter: 'satan'
-    }
+    },
+    { id: 'pm_android_summer', name: '水陸両用装備', image: 'assets/boards/board_android_summer.png' },
+    { id: 'pm_dragon_summer', name: '真夏の焔竜姫', image: 'assets/boards/board_dragon_summer.png' },
+    { id: 'pm_knight_summer', name: '波打ち際の騎士', image: 'assets/boards/board_knight_summer.png' },
+    { id: 'pm_cthulhu_summer', name: '深海のサマースイム', image: 'assets/boards/board_cthulhu_summer.png' },
+    { id: 'pm_elf_summer', name: '水辺の流浪者', image: 'assets/boards/board_elf_summer.png' },
+    { id: 'pm_cleric_summer', name: '背徳のサマーバカンス', image: 'assets/boards/board_cleric_summer.png' },
+    { id: 'pm_devilhunter_summer', name: '渚の悪魔狩り', image: 'assets/boards/board_devilhunter_summer.png' },
+    { id: 'pm_witch_summer', name: '不機嫌なサマー・グリモワール', image: 'assets/boards/board_witch_summer.png' }
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
 export let ownedPlaymats = []; // ['android', 'dragon', ...]

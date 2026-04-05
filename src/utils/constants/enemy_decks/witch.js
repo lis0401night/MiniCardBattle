@@ -6,7 +6,7 @@ export default {
         'snake', 'snake',
         'beginnermagic', 'beginnermagic',
         'scorpion', 'scorpion', 'scorpion', 'scorpion',
-        'armsuits', 'armsuits', 'armsuits', 'armsuits',
+        'airship', 'airship', 'airship', 'airship',
     ],
     normal: [
         'golem', 'golem', 'golem', 'golem',

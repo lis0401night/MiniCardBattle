@@ -4,8 +4,8 @@ export default {
         'titan', 'titan',
         'mech', 'mech',
         'mantis', 'mantis',
-        'airship', 'airship',
-        'armsuits', 'armsuits', 'armsuits', 'armsuits',
+        'armsuits', 'armsuits',
+        'airship', 'airship', 'airship', 'airship',
         'cleric', 'cleric', 'cleric', 'cleric',
     ],
     normal: [
@@ -15,8 +15,8 @@ export default {
         'dreadnought', 'dreadnought', 'dreadnought', 'dreadnought',
         'bigai', 'bigai',
         'mech', 'mech',
-        'airship', 'airship',
         'armsuits', 'armsuits',
+        'airship', 'airship',
     ],
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon',

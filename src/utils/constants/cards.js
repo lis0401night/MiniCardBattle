@@ -3,7 +3,7 @@
  */
 export const CARD_MASTER = [
     { id: 'golem', name: '大理石のゴーレム', power: 5, skill: 'none', rarity: 1, voiceCategory: 'stone', flavor: '魔法によって生命を吹き込まれた大理石の彫像。美しさと硬固さを兼ね備えている。' },
-    { id: 'armsuits', name: '強化外骨格', power: 2, skills: [{ id: 'equip' }, { id: 'sturdy' }], rarity: 1, voiceCategory: 'machine_new', flavor: '強固な鋼鉄の装甲を纏った者は、戦場において難攻不落の城塞と化す。例え操縦者が倒れようとも、内蔵されたAIが稼働を続け、その任務を全うするだろう。' },
+    { id: 'airship', name: 'セレスタリアのサルベージ船', power: 4, rarity: 1, skill: 'salvage', skillValue: 1, voiceCategory: 'machine_old', flavor: '空飛ぶ巨大な飛行船。その甲板には、忘れ去られた過去の遺物が山のように積まれている。' },
     { id: 'clone', name: '鏡の戦士', power: 2, skill: 'clone', skillValue: 1, rarity: 1, voiceCategory: 'sword', flavor: '妖精の鏡から這い出した実体のない騎士。本体と寸分違わぬ動きで幻惑する。' },
     { id: 'sniper', name: '森の射手', power: 2, skill: 'snipe', skillValue: 4, rarity: 1, voiceCategory: 'human_male_ikemen', flavor: '静寂に包まれた深い森を守るエルフの狩人。その矢は木の葉の間を縫い、目標を違わず射抜く。' },
     { id: 'diviner', name: '星詠みの占術士', power: 4, skill: 'draw', skillValue: 2, rarity: 1, voiceCategory: 'human_female_cool', flavor: '天球の運行を読み解き、運命の糸を紡ぎ直す導き手。' },
@@ -12,7 +12,7 @@ export const CARD_MASTER = [
     { id: 'scorpion', name: '黒サソリ', power: 3, skill: 'deadly', rarity: 1, voiceCategory: 'insect', flavor: '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。' },
     { id: 'cleric', name: '見習い修道女', power: 3, skill: 'heal', skillValue: 2, rarity: 1, voiceCategory: 'human_female_cute', flavor: '救済を志し修業に励む乙女。未熟ながらもその祈りは傷ついた心を癒やす。' },
     { id: 'mantis', name: '旧式マンティス', power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], rarity: 1, voiceCategory: 'machine_old', flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。' },
-    { id: 'airship', name: 'セレスタリアのサルベージ船', power: 4, rarity: 1, skill: 'salvage', skillValue: 1, voiceCategory: 'machine_old', flavor: '空飛ぶ巨大な飛行船。その甲板には、忘れ去られた過去の遺物が山のように積まれている。' },
+    { id: 'armsuits', name: '強化外骨格', power: 2, skills: [{ id: 'equip' }, { id: 'sturdy' }], rarity: 1, voiceCategory: 'machine_new', flavor: '強固な鋼鉄の装甲を纏った者は、戦場において難攻不落の城塞と化す。例え操縦者が倒れようとも、内蔵されたAIが稼働を続け、その任務を全うするだろう。' },
     { id: 'lizardman', name: '竜人族の斥候', power: 4, skill: 'reinforce', skillValue: 2, rarity: 1, voiceCategory: 'lizard', flavor: '湿地に潜み、獲物をつけ狙う追跡者。仲間を呼ぶその甲高い鳴き声は、無数の影が迫る前兆である。' },
     { id: 'dancer', name: '魅惑の踊り子', power: 2, rarity: 1, skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }], voiceCategory: 'human_female_cool', flavor: '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。' },
     { id: 'ninja', name: '忍者', power: 3, skill: 'stealth', skillValue: 1, rarity: 1, voiceCategory: 'human_male_normal', flavor: '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。' },
