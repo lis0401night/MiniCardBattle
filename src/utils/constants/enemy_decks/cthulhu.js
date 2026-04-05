@@ -22,9 +22,9 @@ export default {
         'oldgod', 'oldgod',
         'hound', 'hound', 'hound', 'hound',
         'octopus', 'octopus', 'octopus', 'octopus',
-        'shark', 'shark', 'shark',
-        'copy', 'copy', 'copy',
+        'copy', 'copy',
         'slime', 'slime',
         'parasite', 'parasite',
+        'jellyfish', 'jellyfish', 'jellyfish', 'jellyfish',
     ]
 };
