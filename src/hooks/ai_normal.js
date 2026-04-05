@@ -127,9 +127,11 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         const cardHasSkill = (sk) => hasSkill(card, sk) || (Array.isArray(card.choices) && card.choices.some(s => s.id === sk));
 
                         let totalTokenCount = 0;
+                        let enemyTargetCount = 0;
                         const countTokenSkills = (id, val) => {
                             if (id === 'summon' || id === 'resurrect' || id === 'wall_create') totalTokenCount += 1;
                             if (id === 'clone') totalTokenCount += (val || 1);
+                            if (id === 'dispel') enemyTargetCount += (val || 1);
                         };
 
                         if (card.skill && card.skill !== 'none') countTokenSkills(card.skill, card.skillValue);
@@ -139,6 +141,13 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
                         if (totalTokenCount > 0) {
                             cardTokenLanePatterns = getCombinations(availableLanesForToken, Math.min(availableLanesForToken.length, totalTokenCount));
+                        } else if (enemyTargetCount > 0) {
+                            const enemyOccupied = opBoard.map((c, idx) => c ? idx : -1).filter(idx => idx !== -1);
+                            let enemyCombinations = [[]]; // キャンセルパターン
+                            for(let k = 1; k <= Math.min(enemyTargetCount, enemyOccupied.length); k++) {
+                                enemyCombinations.push(...getCombinations(enemyOccupied, k));
+                            }
+                            cardTokenLanePatterns = enemyCombinations;
                         }
 
                         for (let cardTokenLanes of cardTokenLanePatterns) {

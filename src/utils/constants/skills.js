@@ -46,6 +46,7 @@ export const SKILLS = {
     extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空（パワー1）」を加える。` },
     toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` },
     convert: { name: '対価', icon: '⚖', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空（パワー1）」を加える。` },
+    dispel: { name: '解除', icon: '🔓', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択し、そのカードが装備中のカードを全て破壊する。対象が「装備」を持つカードならそのカードを破壊する。` },
     invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
     equip: { name: '装備', icon: '🗡️', desc: (val) => '既にカードのあるレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。' },
     phase: { name: '位相', icon: '🌫️', desc: (val) => '位相を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。ただし「防御」にはブロックされる。' },
@@ -58,7 +59,7 @@ export const SKILLS = {
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

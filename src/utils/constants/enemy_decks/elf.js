@@ -14,7 +14,7 @@ export default {
         'wolf', 'wolf',
         'bard', 'bard',
         'bear', 'bear',
-        'vine', 'vine', 'vine', 'vine',
+        'shaman', 'shaman', 'shaman', 'shaman',
         'chameleon', 'chameleon',
         'sniper', 'sniper',
     ],

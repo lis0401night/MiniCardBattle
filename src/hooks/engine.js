@@ -1,6 +1,6 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getSeededRandom } from '../utils/gameUtils.js';
-import { hasSkill, getSkillValue } from '../utils/gameUtils.js';
+import { hasSkill, getSkillValue, unmergeCardSkills } from '../utils/gameUtils.js';
 
 /**
  * Mini Card Battle - Core Game Engine
@@ -260,6 +260,74 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     events.push({ type: 'damage_card', side: oppOwner, lane: maxL, amount: d, source: 'snipe' });
                 } else {
                     events.push({ type: 'immune_block', side: oppOwner, lane: maxL, source: 'snipe' });
+                }
+            }
+            break;
+        case 'dispel':
+            const dpVal = val || 1;
+            const dispelTargetsEngine = [];
+            
+            if (simulatedTokenLanes) {
+                for (let i = 0; i < Math.min(dpVal, simulatedTokenLanes.length); i++) {
+                    const lIdx = simulatedTokenLanes[i];
+                    if (lIdx !== null && eB[lIdx]) {
+                        const tgtCard = eB[lIdx];
+                        const isEquipHost = tgtCard.equippedCards && tgtCard.equippedCards.length > 0;
+                        const isEquipItself = hasSkill(tgtCard, 'equip');
+                        if (isEquipHost || isEquipItself) {
+                            dispelTargetsEngine.push({ lane: lIdx, targetCard: tgtCard, isHost: isEquipHost, isSelf: isEquipItself });
+                        }
+                    }
+                }
+                simulatedTokenLanes.splice(0, dpVal); // 消費
+            } else {
+                for (let j = 0; j < 3; j++) {
+                    if (eB[j]) {
+                        const isEquipHost = eB[j].equippedCards && eB[j].equippedCards.length > 0;
+                        const isEquipItself = hasSkill(eB[j], 'equip');
+                        if (isEquipHost || isEquipItself) {
+                            let eqScore = isEquipItself ? 50 : 0;
+                            if (isEquipHost) eqScore += eB[j].equippedCards.reduce((sum, eq) => sum + (eq.power || 0), 0);
+                            dispelTargetsEngine.push({ lane: j, score: eqScore, targetCard: eB[j], isHost: isEquipHost, isSelf: isEquipItself });
+                        }
+                    }
+                }
+                dispelTargetsEngine.sort((a, b) => b.score - a.score || a.lane - b.lane);
+                if (dispelTargetsEngine.length > dpVal) dispelTargetsEngine.length = dpVal;
+            }
+
+            for (let i = 0; i < dispelTargetsEngine.length; i++) {
+                const maxL = dispelTargetsEngine[i].lane;
+                const tgt = dispelTargetsEngine[i].targetCard;
+                
+                if (dispelTargetsEngine[i].isHost) {
+                    let totalLoss = tgt.equippedCards.reduce((sum, eq) => sum + (eq.power || 0), 0);
+                    for (const eqC of tgt.equippedCards) {
+                        const equipSkills = [];
+                        if (eqC.skill && eqC.skill !== 'none' && eqC.skill !== 'equip') {
+                            equipSkills.push({ id: eqC.skill, value: eqC.skillValue });
+                        }
+                        if (eqC.skills) {
+                            eqC.skills.forEach(s => {
+                                if (s.id !== 'equip') equipSkills.push(s);
+                            });
+                        }
+                        unmergeCardSkills(tgt, equipSkills);
+                    }
+                    tgt.power -= totalLoss;
+                    tgt.currentPower -= totalLoss;
+                    tgt.basePower -= totalLoss;
+                    tgt.equippedCards = [];
+                    events.push({ type: 'dispel_equip', side: oppOwner, lane: maxL, amount: totalLoss, source: 'dispel' });
+                }
+                
+                if (dispelTargetsEngine[i].isSelf) {
+                    tgt.currentPower = 0;
+                }
+                
+                if (tgt.currentPower <= 0) {
+                    events.push({ type: 'destroy_card', side: oppOwner, lane: maxL, source: 'dispel_kill' });
+                    eB[maxL] = null;
                 }
             }
             break;

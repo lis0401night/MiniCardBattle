@@ -253,7 +253,26 @@ export function mergeCardSkills(targetCard, equipSkills) {
     }
 }
 
+export function unmergeCardSkills(targetCard, equipSkills) {
+    if (!targetCard.skills) return;
+
+    for (const eqS of equipSkills) {
+        const existingInfo = targetCard.skills.find(s => s.id === eqS.id);
+        if (existingInfo) {
+            if (eqS.value !== undefined && eqS.value !== null && existingInfo.value !== undefined && existingInfo.value !== null) {
+                existingInfo.value -= eqS.value;
+                if (existingInfo.value <= 0) {
+                    targetCard.skills = targetCard.skills.filter(s => s !== existingInfo);
+                }
+            } else {
+                targetCard.skills = targetCard.skills.filter(s => s !== existingInfo);
+            }
+        }
+    }
+}
+
 export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn'];
+export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'darkpaladin', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
@@ -280,15 +299,17 @@ export function getCardImgUrl(card) {
     }
 
     // isPremiumフラグが明示的に設定されている場合はそれを優先
-    if (card.isPremium === true && VALID_PREMIUM_GIFS.includes(lookupId)) {
-        return `assets/cards/card_${lookupId}_premium.gif`;
+    if (card.isPremium === true) {
+        if (VALID_PREMIUM_GIFS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.gif`;
+        if (VALID_PREMIUM_JPGS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.jpg`;
     } else if (card.isPremium === false) {
         return `assets/cards/card_${lookupId}.jpg`;
     }
 
     // フラグがない場合は従来のグローバル設定を参照（ただし敵のカードと明示されている場合は除く）
-    if (card.owner !== 'red' && GameState.premiumCards.includes(lookupId) && VALID_PREMIUM_GIFS.includes(lookupId)) {
-        return `assets/cards/card_${lookupId}_premium.gif`;
+    if (card.owner !== 'red' && (GameState.premiumCards && GameState.premiumCards.includes(lookupId))) {
+        if (VALID_PREMIUM_GIFS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.gif`;
+        if (VALID_PREMIUM_JPGS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.jpg`;
     }
     return `assets/cards/card_${lookupId}.jpg`;
 }

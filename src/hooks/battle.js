@@ -694,7 +694,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 /**
  * 相手の場のカードを選択させるユーティリティ（破壊スキル用など）
  */
-export async function waitPlayerEnemyLaneSelection(count, owner) {
+export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = false, message = null) {
     const isBlue = owner === 'blue';
     const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
     const targetSide = isBlue ? 'enemy' : 'player';
@@ -704,8 +704,8 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
 
     if (occupiedLanes.length === 0) return [];
 
-    // ターゲット数以下の場合は全選択
-    if (occupiedLanes.length <= count) return occupiedLanes;
+    // ターゲット数以下の場合は全選択（キャンセル不可の場合のみ）
+    if (!canCancel && occupiedLanes.length <= count) return occupiedLanes;
 
     // Check for Remote Choice Wait
     if (GameState.gameMode === 'online' && owner === 'red') {
@@ -715,8 +715,16 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
         });
     }
 
-    // AIの場合：最もパワーが高いカードを選択（同値の場合は左＝インデックスが小さい方を優先）
+    // AIの場合：判定済みのシミュレーション結果があれば優先
     if (owner === 'red' || owner === 'blue') {
+        if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
+            if (GameState.aiDecision.cardTokenLanes) {
+                const decidedLanes = GameState.aiDecision.cardTokenLanes;
+                delete GameState.aiDecision.cardTokenLanes;
+                return decidedLanes.slice(0, count);
+            }
+        }
+        
         const sortedLanes = [...occupiedLanes].sort((a, b) => {
             const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
             if (diff !== 0) return diff;
@@ -730,7 +738,13 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
         GameState.isEnemyTargetMode = true;
         GameState.targetMaxCount = count;
         GameState.targetSelectedLanes = [];
-        updateCardDetail(null);
+        GameState.isTargetCancelable = canCancel;
+        
+        if (message) {
+            updateCardDetail(message);
+        } else {
+            updateCardDetail(null);
+        }
 
         window.handleEnemyLaneClick = (laneIndex) => {
             if (targetBoard[laneIndex] === null) return;
@@ -742,20 +756,20 @@ export async function waitPlayerEnemyLaneSelection(count, owner) {
 
                 if (GameState.targetSelectedLanes.length >= count) {
                     setTimeout(() => {
-                        window.finishEnemySelection();
+                        if (window.finishEnemyTargetSelection) window.finishEnemyTargetSelection();
                     }, 300);
                 }
             }
         };
 
-        window.finishEnemySelection = () => {
+        window.finishEnemyTargetSelection = () => {
             playSound(SOUNDS.seClick);
             GameState.isEnemyTargetMode = false;
             const result = [...GameState.targetSelectedLanes];
             GameState.targetSelectedLanes = [];
             GameState.targetMaxCount = 0;
             window.handleEnemyLaneClick = null;
-            window.finishEnemySelection = null;
+            window.finishEnemyTargetSelection = null;
             updateCardDetail(null);
 
             if (GameState.gameMode === 'online') {

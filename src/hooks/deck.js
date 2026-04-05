@@ -4,7 +4,7 @@ import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import { ownedPlaymats, setOwnedPlaymats } from '../utils/constants/playmats.js';
-import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom, shuffleArray, VALID_PREMIUM_GIFS } from '../utils/gameUtils.js';
+import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom, shuffleArray, VALID_PREMIUM_GIFS, VALID_PREMIUM_JPGS } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
 import { GameState } from './gameState.js';
@@ -160,7 +160,7 @@ export function loadDeck() {
     const premiumKey = `mini_card_battle_premium_cards`;
     const premiumSaved = localStorage.getItem(premiumKey);
     if (premiumSaved) {
-        try { GameState.premiumCards = JSON.parse(premiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id)); } 
+        try { GameState.premiumCards = JSON.parse(premiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)); } 
         catch (e) { GameState.premiumCards = []; }
     } else {
         GameState.premiumCards = [];
@@ -170,7 +170,7 @@ export function loadDeck() {
     const unlockedPremiumKey = `mini_card_battle_unlocked_premium`;
     const unlockedPremiumSaved = localStorage.getItem(unlockedPremiumKey);
     if (unlockedPremiumSaved) {
-        try { GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id)); } 
+        try { GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved).filter(id => VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)); } 
         catch (e) { GameState.unlockedPremiumCards = []; }
     } else {
         GameState.unlockedPremiumCards = [];
@@ -328,7 +328,7 @@ export function createNewDeck(leaderId) {
 
     // 新規作成時のデフォルトプレミアム設定は常にグローバルの設定（LocalStorage）から取得する
     const globalPremiumSrc = localStorage.getItem('mini_card_battle_premium_cards');
-    const globalPremiumCards = globalPremiumSrc ? JSON.parse(globalPremiumSrc).filter(id => VALID_PREMIUM_GIFS.includes(id)) : [];
+    const globalPremiumCards = globalPremiumSrc ? JSON.parse(globalPremiumSrc).filter(id => VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)) : [];
 
     const newDeck = {
         id: `deck_${Date.now()}_${GameState.decks.length}`,

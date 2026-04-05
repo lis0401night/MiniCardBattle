@@ -126,10 +126,7 @@ export default function GlobalModals() {
       const validItemObj = (data.itemObj && Object.keys(data.itemObj).length > 0) ? data.itemObj : null;
 
       if (!autoImgUrl && validItemObj && typeof getCardImgUrl === 'function') {
-        autoImgUrl = getCardImgUrl(validItemObj);
-        if (data.type === 'premium') {
-          autoImgUrl = autoImgUrl.replace('.jpg', '_premium.gif');
-        }
+        autoImgUrl = getCardImgUrl(data.type === 'premium' ? { ...validItemObj, isPremium: true } : validItemObj);
       }
 
       setCardPreviewData({

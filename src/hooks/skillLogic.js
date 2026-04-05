@@ -1,8 +1,8 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -19,9 +19,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -355,6 +355,83 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             if (tEl) tEl.classList.remove('anim-shake');
         } else {
             await sleep(500);
+        }
+    } else if (skillId === 'dispel') {
+        playSound(SOUNDS.seSkillBind); // Wait, dispel sound doesn't exist, we use generic or bind sound. 
+        const tgtSide = o === 'blue' ? 'red' : 'blue';
+        const eB = tgtSide === 'red' ? GameState.enemyBoard : GameState.playerBoard;
+        const eD = tgtSide === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
+        const tCount = skillValue || 1;
+
+        let tLanes = await waitPlayerEnemyLaneSelection(tCount, o, true, `相手のカードを${tCount}枚選んでください`);
+        if (tLanes && tLanes.length > 0) {
+            for (let targetLane of tLanes) {
+                const targetCard = eB[targetLane];
+                if (!targetCard) continue;
+
+                const hasEquipSkill = hasSkill(targetCard, 'equip');
+                const hasEquippedItems = targetCard.equippedCards && targetCard.equippedCards.length > 0;
+
+                if (hasEquipSkill || hasEquippedItems) {
+                    let totalPowerLoss = 0;
+
+                    if (hasEquippedItems) {
+                        // 装備カードを全て破壊（墓地に送る）
+                        for (const eqCard of targetCard.equippedCards) {
+                            totalPowerLoss += eqCard.power;
+
+                            const equipSkills = [];
+                            if (eqCard.skill && eqCard.skill !== 'none' && eqCard.skill !== 'equip') {
+                                equipSkills.push({ id: eqCard.skill, value: eqCard.skillValue });
+                            }
+                            if (eqCard.skills) {
+                                eqCard.skills.forEach(s => {
+                                    if (s.id !== 'equip') equipSkills.push(s);
+                                });
+                            }
+                            unmergeCardSkills(targetCard, equipSkills);
+
+                            eD.push(eqCard); // 相手の墓地へ
+                        }
+                    }
+
+                    // アニメーションと表示更新
+                    const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                    if (tgtEl) {
+                        tgtEl.classList.add('anim-shake');
+                        createDamagePopup(tgtEl, hasEquipSkill ? '破壊' : `-${totalPowerLoss} 解除`, '#ef4444');
+                    }
+
+                    if (hasEquippedItems) {
+                        targetCard.power -= totalPowerLoss;
+                        targetCard.currentPower -= totalPowerLoss;
+                        targetCard.basePower -= totalPowerLoss;
+                        targetCard.equippedCards = [];
+                    }
+
+                    if (hasEquipSkill) {
+                        targetCard.currentPower = 0; // 装備スキルを持つカード本体を即死させる
+                    }
+
+                    if (targetCard.currentPower <= 0) {
+                        // パワーが0以下になった場合や即死処理が入った場合は破壊
+                        if (!(await discardCard(tgtSide, targetCard, targetLane, true))) eB[targetLane] = null;
+                    }
+                } else {
+                    const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                    if (tgtEl) {
+                        createDamagePopup(tgtEl, 'NO TARGET', '#94a3b8');
+                    }
+                }
+            }
+            renderBoard();
+        }
+        await sleep(500);
+        if (tLanes && tLanes.length > 0) {
+            for (let targetLane of tLanes) {
+                const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                if (tgtEl) tgtEl.classList.remove('anim-shake');
+            }
         }
     } else if (skillId === 'bind') {
         playSound(SOUNDS.seSkillBind); createDamagePopup(cEl, '拘束', '#facc15');

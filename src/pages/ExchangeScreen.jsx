@@ -101,10 +101,7 @@ export default function ExchangeScreen() {
             const opacity = canExchange ? "1.0" : (isMaxed ? "0.3" : "0.6");
             const rarityClass = itemObj.rarity ? ` rarity-${itemObj.rarity}` : '';
 
-            let imgUrl = getCardImgUrl ? getCardImgUrl(itemObj) : '';
-            if (itemInfo.type === 'premium') {
-              imgUrl = imgUrl.replace('.jpg', '_premium.gif');
-            }
+            let imgUrl = getCardImgUrl ? getCardImgUrl(itemInfo.type === 'premium' ? { ...itemObj, isPremium: true } : itemObj) : '';
 
             return (
               <div

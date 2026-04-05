@@ -183,7 +183,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         tokenLanes = selectedLanes;
     } else if (action === 'targeted_destruction') {
         if (!tokenLanes || tokenLanes.length === 0) {
-            const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner);
+            const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner, true, '破壊する相手のカードを1枚選んでください');
             if (selectedLanes.length === 0) return;
             tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
         }
