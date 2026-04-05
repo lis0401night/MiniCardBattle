@@ -21,6 +21,7 @@ export default function DeckEditorScreen() {
   const [localPremiumCards, setPremiumCards] = useState([]);
   const [unlockedPremium, setUnlockedPremium] = useState([]);
   const [isDefenseConfig, setIsDefenseConfig] = useState(false);
+  const [renderVersion, setRenderVersion] = useState(0);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [deckName, setDeckName] = useState("");
@@ -35,6 +36,7 @@ export default function DeckEditorScreen() {
   const leaderId = deck.leaderId || GameState.playerConfig?.id || 'android';
 
   const updateDeckEditor = () => {
+    setRenderVersion(v => v + 1);
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
 
     const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
