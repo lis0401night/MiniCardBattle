@@ -153,10 +153,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             if (eHandRef && eHandRef.length > 0) {
                 const count = Number(val) || 1;
                 
-                // 対象となるカード（虚空を除く）を抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
+                // 対象となるカードを抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
                 const validTargets = eHandRef
                     .map((card, idx) => ({ card, idx }))
-                    .filter(t => !(t.card.name === '虚空' && (t.card.power === 1 || t.card.basePower === 1)))
                     .sort((a, b) => {
                         const pA = a.card.currentPower ?? a.card.power ?? 0;
                         const pB = b.card.currentPower ?? b.card.power ?? 0;
@@ -165,6 +164,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     });
 
                 const actualCount = Math.min(count, validTargets.length);
+                const newTokens = [];
                 console.log(`[DEBUG] morph executed. val(skillValue): ${val}, count: ${count}, validTargets length: ${validTargets.length}, actualCount: ${actualCount}`);
 
                 for (let i = 0; i < actualCount; i++) {
@@ -206,10 +206,11 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                             isToken: true,
                             isMorphToken: true
                         };
-                        eHandRef.push(voidToken);
+                        newTokens.push(voidToken);
                         events.push({ type: 'add_hand', side: oppOwner, card: voidToken, source: 'morph' });
                     }
                 }
+                newTokens.forEach(t => eHandRef.push(t));
             }
             break;
         case 'toxic':
@@ -1009,6 +1010,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
 
     if (oppHand && oppHand.length > 0) {
         let activated = false;
+        const newTokens = [];
         for (let i = 0; i < val; i++) {
             if (oppHand.length === 0) break;
             
@@ -1049,10 +1051,11 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
                 isToken: true,
                 isMorphToken: true
             };
-            oppHand.push(voidToken);
+            newTokens.push(voidToken);
 
             events.push({ type: 'discard', side: oppSide, card: JSON.parse(JSON.stringify(discarded)), source: 'extort' });
             events.push({ type: 'add_hand', side: oppSide, card: JSON.parse(JSON.stringify(voidToken)), source: 'extort' });
         }
+        newTokens.forEach(t => oppHand.push(t));
     }
 }
