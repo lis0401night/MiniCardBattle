@@ -123,7 +123,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             });
             break;
         case 'hero':
-            const occ = b.filter(x => x !== null).length;
+            const occ = b.filter((x, idx) => x !== null && idx !== l).length;
             const hVal = occ * (val || 3);
             if (hVal > 0) {
                 c.currentPower += hVal;

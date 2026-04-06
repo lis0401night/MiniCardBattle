@@ -22,7 +22,7 @@ export const SKILLS = {
     sacrifice: { name: '代償', icon: '🩸', desc: (val) => `召喚時、自分リーダーに${val || 3}ダメージ` },
     bind: { name: '拘束', icon: '🕸️', desc: (val) => `召喚時、正面のカードに${val}ターンの間「防御」を持たせる。` },
     growth: { name: '成長', icon: '🌱', desc: (val) => `自分のターン開始時、パワーを${val >= 0 ? '+' : ''}${val}する。` },
-    hero: { name: '英雄', icon: '🏆', desc: (val) => `召喚時、自分の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
+    hero: { name: '英雄', icon: '🏆', desc: (val) => `召喚時、自分の他の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
     charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分リーダーのSPを${val >= 0 ? '+' : ''}${val}する` },
     stealth: { name: '潜伏', icon: '👣', desc: (val) => `召喚時、自身に無敵${val || 1}を付与する。` },
     invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` },
