@@ -291,7 +291,7 @@ export function goBackFromStage() {
     }
 }
 
-export function goBackFromDeckEdit() {
+export function goBackFromDeckEdit(isCancel = false) {
     playSound(SOUNDS.seClick);
     if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
         // キャラクター選択に戻る
@@ -303,15 +303,23 @@ export function goBackFromDeckEdit() {
         GameState.appState = 'select_deck';
         switchScreen('screen-deck-list');
     } else if (GameState.gameMode === 'create_deck') {
-        // 新規作成中にキャンセルして戻る場合、仮で作成されたデッキを破棄する
-        const index = GameState.currentDeckIndex;
-        if (index !== undefined && index >= 0 && GameState.decks && GameState.decks.length > index) {
-            GameState.decks.splice(index, 1);
-            localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+        if (isCancel) {
+            // 新規作成中にキャンセルして戻る場合、仮で作成されたデッキを破棄する
+            const index = GameState.currentDeckIndex;
+            if (index !== undefined && index >= 0 && GameState.decks && GameState.decks.length > index) {
+                GameState.decks.splice(index, 1);
+                localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
+            }
+            GameState.appState = 'create_deck_select_char';
+            initSelectScreen(false);
+            switchScreen('screen-select');
+        } else {
+            // 完了の場合、デッキ一覧に戻る
+            GameState.appState = 'select_deck';
+            if (typeof window.loadDeck === 'function') window.loadDeck();
+            if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+            switchScreen('screen-deck-list');
         }
-        GameState.appState = 'create_deck_select_char';
-        initSelectScreen(false);
-        switchScreen('screen-select');
     } else if (GameState.gameMode === 'story') {
         // 難易度選択に戻る
         GameState.appState = 'select_difficulty';

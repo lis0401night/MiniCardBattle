@@ -147,7 +147,7 @@ export default function DeckEditorScreen() {
       if (typeof window.initStageSelectScreen === 'function') window.initStageSelectScreen();
       if (typeof window.switchScreen === 'function') window.switchScreen('screen-stage-select');
     } else if (GameState.gameMode === 'create_deck' || GameState.gameMode === 'free_deck_edit') {
-      if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit();
+      if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(false);
     } else {
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {
@@ -473,7 +473,7 @@ export default function DeckEditorScreen() {
             onClick={() => {
               playSound?.(SOUNDS?.seClick);
               if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
-              if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit();
+              if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(true);
             }}
           >
             戻る
