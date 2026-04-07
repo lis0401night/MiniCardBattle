@@ -9,14 +9,14 @@ export default {
         'cheetah', 'cheetah', 'cheetah', 'cheetah',
     ],
     normal: [
-        'golem', 'golem', 'golem', 'golem',
         'highelf', 'highelf',
         'wolf', 'wolf',
+        'ranger', 'ranger',
         'bard', 'bard',
         'bear', 'bear',
         'shaman', 'shaman', 'shaman', 'shaman',
-        'chameleon', 'chameleon',
-        'sniper', 'sniper',
+        'chameleon', 'chameleon', 'chameleon',
+        'sniper', 'sniper', 'sniper',
     ],
     hard: [
         'wolf', 'wolf', 'wolf', 'wolf',

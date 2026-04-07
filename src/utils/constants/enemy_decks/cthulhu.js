@@ -9,22 +9,23 @@ export default {
         'clone', 'clone', 'clone', 'clone',
     ],
     normal: [
-        'golem', 'golem', 'golem', 'golem',
         'hound', 'hound',
         'octopus', 'octopus',
+        'ghostship', 'ghostship',
         'shark', 'shark', 'shark', 'shark',
         'copy', 'copy',
         'slime', 'slime',
-        'jellyfish', 'jellyfish',
-        'diviner', 'diviner',
+        'jellyfish', 'jellyfish', 'jellyfish',
+        'diviner', 'diviner', 'diviner',
     ],
     hard: [
         'oldgod', 'oldgod',
-        'hound', 'hound', 'hound', 'hound',
+        'hound', 'hound', 'hound',
         'octopus', 'octopus', 'octopus', 'octopus',
+        'ghostship', 'ghostship',
         'copy', 'copy',
         'slime', 'slime',
         'parasite', 'parasite',
-        'jellyfish', 'jellyfish', 'jellyfish', 'jellyfish',
+        'jellyfish', 'jellyfish', 'jellyfish',
     ]
 };

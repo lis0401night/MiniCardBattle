@@ -1180,11 +1180,18 @@ export default function GlobalModals() {
                 決定
               </button>
             )}
-            <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
-              const cb = discardSelectionData.onSelect;
-              setDiscardSelectionData(null);
-              if (cb && !discardSelectionData.isViewOnly) cb(null);
-            }}>{discardSelectionData.isViewOnly ? '閉じる' : 'キャンセル'}</button>
+            {(!discardSelectionData.isViewOnly && discardSelectionData.canCancel !== false) && (
+              <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
+                const cb = discardSelectionData.onSelect;
+                setDiscardSelectionData(null);
+                if (cb) cb(null);
+              }}>キャンセル</button>
+            )}
+            {discardSelectionData.isViewOnly && (
+              <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
+                setDiscardSelectionData(null);
+              }}>閉じる</button>
+            )}
           </div>
         </div>
       )}

@@ -9,22 +9,23 @@ export default {
         'cleric', 'cleric', 'cleric', 'cleric',
     ],
     normal: [
-        'golem', 'golem', 'golem', 'golem',
         'cyberman', 'cyberman',
         'booster', 'booster',
+        'gladiator', 'gladiator',
         'dreadnought', 'dreadnought', 'dreadnought', 'dreadnought',
         'bigai', 'bigai',
         'mech', 'mech',
-        'armsuits', 'armsuits',
-        'airship', 'airship',
+        'armsuits', 'armsuits', 'armsuits',
+        'airship', 'airship', 'airship',
     ],
     hard: [
         'cyberdragon', 'cyberdragon', 'cyberdragon',
-        'cyberman', 'cyberman', 'cyberman',
+        'cyberman', 'cyberman',
         'booster', 'booster',
+        'gladiator', 'gladiator',
         'bigai', 'bigai', 'bigai',
         'mech', 'mech', 'mech',
-        'titan', 'titan', 'titan',
+        'titan', 'titan',
         'mechanic', 'mechanic', 'mechanic',
     ]
 };

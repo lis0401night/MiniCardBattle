@@ -929,7 +929,7 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false, 
 /**
  * 墓地から選択する共有ユーティリティ（復活、回収等）
  */
-export async function waitPlayerDiscardSelection(validCards, maxPow, owner, title, desc) {
+export async function waitPlayerDiscardSelection(validCards, maxPow, owner, title, desc, canCancel = true) {
     if (!validCards || validCards.length === 0) return null;
 
     // Check for Remote Choice Wait
@@ -953,7 +953,7 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
     // プレイヤーの場合
     if (window.showDiscardSelectionModalReact) {
         const card = await new Promise(resolve => {
-            window.showDiscardSelectionModalReact(validCards, maxPow, (c) => resolve(c), { title, desc });
+            window.showDiscardSelectionModalReact(validCards, maxPow, (c) => resolve(c), { title, desc, canCancel });
         });
 
         if (GameState.gameMode === 'online') {

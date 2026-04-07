@@ -601,7 +601,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             for (let i = 0; i < discardIndices.length; i++) {
                 const validCards = discard.filter(card => !card.isToken);
                 if (validCards.length > 0) {
-                    const selectedCard = await waitPlayerDiscardSelection(validCards, 999, o, '回収するカードを選択', '墓地からカードを1枚選び、手札に加えます。');
+                    const selectedCard = await waitPlayerDiscardSelection(validCards, 999, o, '回収するカードを選択', '墓地からカードを1枚選び、手札に加えます。', false);
 
                     if (selectedCard) {
                         const actualIdx = discard.indexOf(selectedCard);
