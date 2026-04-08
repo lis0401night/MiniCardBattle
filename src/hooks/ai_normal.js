@@ -140,7 +140,12 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         }
 
                         if (totalTokenCount > 0) {
-                            cardTokenLanePatterns = getCombinations(availableLanesForToken, Math.min(availableLanesForToken.length, totalTokenCount));
+                            const maxCount = Math.min(availableLanesForToken.length, totalTokenCount);
+                            let tokenCombinations = [[]]; // キャンセルパターン (0枚)
+                            for(let k = 1; k <= maxCount; k++) {
+                                tokenCombinations.push(...getCombinations(availableLanesForToken, k));
+                            }
+                            cardTokenLanePatterns = tokenCombinations;
                         } else if (enemyTargetCount > 0) {
                             const enemyOccupied = opBoard.map((c, idx) => c ? idx : -1).filter(idx => idx !== -1);
                             let enemyCombinations = [[]]; // キャンセルパターン
