@@ -163,7 +163,15 @@ export function loadDeck() {
         catch (e) { GameState.playerInventory = {}; }
     } else {
         GameState.playerInventory = {};
-        INITIAL_PLAYER_DECK.forEach(id => { GameState.playerInventory[id] = (GameState.playerInventory[id] || 0) + 1; });
+    }
+
+    // 初期デッキのカードは必ず最低限持っているように補填する（アップデート時の後方互換用）
+    const initialCounts = {};
+    INITIAL_PLAYER_DECK.forEach(id => {
+        initialCounts[id] = (initialCounts[id] || 0) + 1;
+    });
+    for (const id in initialCounts) {
+        GameState.playerInventory[id] = Math.max(GameState.playerInventory[id] || 0, initialCounts[id]);
     }
 
     // プレミアムカード設定の読み込み（全体デフォルト）
