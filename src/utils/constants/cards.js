@@ -70,7 +70,7 @@ export const CARD_MASTER = [
     { id: 'shade', name: '墓の亡霊', rarity: 2, power: 4, skill: 'soul_bind', skillValue: 2, voiceCategory: 'undead', flavor: '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。' },
     { id: 'franken', name: 'オールドヘイヴンの怪物', rarity: 2, power: 8, skill: 'standby', skillValue: 2, voiceCategory: 'giant', flavor: '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。' },
     { id: 'plaguedoctor', name: '烏羽の医師', rarity: 2, power: 3, skills: [{ id: 'choice', value: 1 }], choices: [{ id: 'heal', value: 2 }, { id: 'toxic', value: 2 }], voiceCategory: 'human_female_cool', flavor: '彼女の処方箋は、明日を繋ぐ特効薬か、あるいは安息へと誘う安楽死の劇薬か' },
-    { id: 'servant', name: '吸血鬼の従者', rarity: 2, power: 3, skills: [{ id: 'equip' }, { id: 'soul_bind', value: 2 }], voiceCategory: 'human_female_cool', flavor: '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。' },
+    { id: 'servant', name: '吸血鬼の従者', rarity: 2, power: 2, skills: [{ id: 'equip' }, { id: 'soul_bind', value: 3 }], voiceCategory: 'human_female_cool', flavor: '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。' },
     { id: 'undeadking', name: '亡国のデス・ロード', rarity: 2, power: 2, skills: [{ id: 'legendary' }, { id: 'resurrect', value: 2 }, { id: 'resurrect', value: 2 }], voiceCategory: 'undead', flavor: '肉体が朽ち国が滅びようとも、永遠の忠誠の証である錆びた王冠を戴く骸の王。虚ろな眼窩の奥底で、死を超越した王の威光が今もなお冷たく輝いている。' },
     { id: 'cat', name: '食糧庫のコソ泥', rarity: 2, power: 1, skills: [{ id: 'quick' }, { id: 'extort', value: 2 }], voiceCategory: 'beast', flavor: '城の警備もなんのその、神出鬼没の小さな怪盗は宵の闇をすり抜けていく。' },
     { id: 'mage', name: '未熟な拡散魔導士', rarity: 2, power: 1, skill: 'spread', skillValue: 2, voiceCategory: 'human_female_cute', flavor: '魔導アカデミーの見習い魔導士。魔法のコントロールが苦手で、呪文を詠唱するたびに暴走した魔力が周囲へバラバラに散乱してしまう。' },

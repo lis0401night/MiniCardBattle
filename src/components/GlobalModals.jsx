@@ -1217,6 +1217,7 @@ export default function GlobalModals() {
                   <li>正面に敵がいれば戦闘となり、お互いにパワー分ダメージを与えます。</li>
                   <li>正面が空いていれば相手リーダーに直接ダメージ！</li>
                   <li>相手リーダーのHPを0にすれば勝利です。</li>
+                  <li>山札が0枚になると墓地から補充されますが、ペナルティとして<b>体力が半分（切り上げ）になるダメージ</b>を受けます。</li>
                 </ul>
               </div>
               <div className="rule-section">

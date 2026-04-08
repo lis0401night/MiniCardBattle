@@ -1291,6 +1291,23 @@ export function drawCard(owner) {
         ds.length = 0;
         playSound(SOUNDS.seSkill);
         showDeckRefreshEffect(owner);
+        
+        // 山札補充時のペナルティ（体力が半分（切り上げ）になるようにダメージ）
+        const currentHP = owner === 'blue' ? GameState.playerHP : GameState.enemyHP;
+        const newHP = Math.ceil(currentHP / 2);
+        const damage = currentHP - newHP;
+        
+        if (damage > 0) {
+            if (owner === 'blue') {
+                GameState.playerHP = newHP;
+            } else {
+                GameState.enemyHP = newHP;
+            }
+            createDamagePopup(document.getElementById(`${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`), `-${damage}`, '#ef4444');
+            playSound(SOUNDS.seDamage);
+            updateHPBar();
+            checkWinCondition();
+        }
     }
 
     if (d.length > 0) {
