@@ -21,7 +21,8 @@ export const SE_PATHS = {
     seLegend: 'assets/audio/se/se_legend.mp3',
     seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
     seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
-    seSkillCharge: 'assets/audio/se/se_skill_charge.mp3'
+    seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
+    seClock: 'assets/audio/se/se_clock.mp3'
 };
 
 export const SOUNDS = {
@@ -36,7 +37,8 @@ export const SOUNDS = {
     seLegend: 'assets/audio/se/se_legend.mp3',
     seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
     seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
-    seSkillCharge: 'assets/audio/se/se_skill_charge.mp3'
+    seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
+    seClock: 'assets/audio/se/se_clock.mp3'
 };
 
 export const AUDIO_INSTANCES = {
@@ -180,12 +182,12 @@ export async function unlockAudio() {
 
         isAudioUnlocked = true;
         console.log("Web Audio Context Unlocked and SE Buffers Loaded");
-        
+
         // バックグラウンド・フォアグラウンド移行時の音声バグ対策 (iOS/Android Safari, Chrome)
         if (typeof document !== 'undefined') {
             document.addEventListener('visibilitychange', () => {
                 const isHidden = document.visibilityState === 'hidden';
-                
+
                 // 全てのBGM等Audio要素を安全に退避・復帰
                 Object.values(AUDIO_INSTANCES).forEach(audio => {
                     if (audio && typeof audio.pause === 'function') {
@@ -199,7 +201,7 @@ export async function unlockAudio() {
                         } else {
                             if (audio._wasPlayingBeforeHide) {
                                 const p = audio.play();
-                                if (p !== undefined) p.catch(() => {});
+                                if (p !== undefined) p.catch(() => { });
                                 audio._wasPlayingBeforeHide = false;
                             }
                         }
@@ -229,13 +231,13 @@ export function playSkillSound(skillId) {
         if (typeof window.playSound === 'function') window.playSound(backupSound);
         return;
     }
-    
+
     const url = `assets/audio/se/se_skill_${skillId}.mp3`;
-    
+
     if (audioCtx && typeof fetch === 'function') {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
-        
+
         fetch(url)
             .then(res => {
                 if (!res.ok) throw new Error("not found");

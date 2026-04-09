@@ -292,6 +292,17 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         GameState.enemySealedLanes = currentState.enemySealedLanes;
     }
 
+    // 専用のVFX演出を再生
+    if (window.triggerVfx) {
+        if (action === 'annihilation') {
+            await sleep(200);
+            await window.triggerVfx('anm_android_arts', owner);
+        } else if (action === 'time_stop') {
+            await sleep(200);
+            await window.triggerVfx('anm_witch_arts', owner);
+        }
+    }
+
     // イベントログを再生（再生中にGameStateと描画が逐次更新される）
     await playEvents(events);
 
