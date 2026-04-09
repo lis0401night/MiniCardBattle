@@ -614,6 +614,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         GameState.placementSelectedLanes = [];
         GameState.placementCheckConstraints = checkConstraints;
         GameState.placementButtonText = buttonText;
+        GameState.placementRestrictLanes = tokenLanes || null;
         updateCardDetail(null);
 
         const cleanUp = () => {
@@ -622,6 +623,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             GameState.placementToken = null;
             GameState.placementCheckConstraints = true;
             GameState.placementButtonText = '配置終了';
+            GameState.placementRestrictLanes = null;
             const result = [...GameState.placementSelectedLanes];
             GameState.placementSelectedLanes = [];
             window.handlePlacementLaneClick = null;
@@ -644,6 +646,10 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
         window.handlePlacementLaneClick = async (laneIndex) => {
             if (GameState.placementSelectedLanes.includes(laneIndex)) return;
+            if (GameState.placementRestrictLanes && !GameState.placementRestrictLanes.includes(laneIndex)) {
+                playSound(SOUNDS.seDamage);
+                return;
+            }
             playSound(SOUNDS.seClick);
 
             const newCard = GameState.placementToken;

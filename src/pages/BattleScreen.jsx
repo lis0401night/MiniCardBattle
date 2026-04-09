@@ -95,19 +95,19 @@ export default function BattleScreen() {
 
             if (hasSkill && hasSkill(newCard, 'legendary') && lane !== 1) {
                 playSound(SOUNDS.seDamage);
-                showConfirmModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`, () => { }, null, true);
+                showConfirmModal(`「${newCard.name}」は伝説を持つため、中央のレーンにしか召喚できません。`, () => { }, null, true);
                 return;
             }
 
             if (hasSkill && hasSkill(newCard, 'takeover') && GameState.playerBoard[lane] === null) {
                 playSound(SOUNDS.seDamage);
-                showConfirmModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`, () => { }, null, true);
+                showConfirmModal(`「${newCard.name}」は生贄を持つため、既にカードがあるレーンにしか召喚できません。`, () => { }, null, true);
                 return;
             }
 
             if (hasSkill && hasSkill(newCard, 'challenge') && GameState.enemyBoard[lane] === null) {
                 playSound(SOUNDS.seDamage);
-                showConfirmModal(`「${newCard.name}」は相手のカードが置かれている正面にしか召喚できません。`, () => { }, null, true);
+                showConfirmModal(`「${newCard.name}」は挑戦を持つため、相手のカードの正面のレーンにしか召喚できません。`, () => { }, null, true);
                 return;
             }
 

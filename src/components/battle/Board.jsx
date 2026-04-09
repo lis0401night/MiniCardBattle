@@ -96,30 +96,38 @@ export default function Board({
                         const checkEnv = GameState.placementCheckConstraints !== false; // フラグが明示的にfalseなら制約無視
                         if (GameState.placementSelectedLanes?.includes(lane)) {
                             isHighlight = false;
+                        } else if (GameState.placementRestrictLanes && !GameState.placementRestrictLanes.includes(lane)) {
+                            isHighlight = false;
                         } else if (tCard && checkEnv) {
+                            let valid = true;
                             if (hasSkill && hasSkill(tCard, 'legendary')) {
-                                isHighlight = (lane === 1);
-                            } else if (hasSkill && hasSkill(tCard, 'takeover')) {
-                                isHighlight = (card !== null);
-                            } else {
-                                isHighlight = true;
+                                valid = valid && (lane === 1);
                             }
+                            if (hasSkill && hasSkill(tCard, 'takeover')) {
+                                valid = valid && (card !== null);
+                            }
+                            if (hasSkill && hasSkill(tCard, 'challenge')) {
+                                valid = valid && (enemyBoard[lane] !== null);
+                            }
+                            isHighlight = valid;
                         } else {
                             isHighlight = true;
                         }
                     } else if (selectedCard) {
+                        let valid = true;
                         if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
-                            isHighlight = (lane === 1);
-                        } else if (hasSkill && hasSkill(selectedCard, 'legendary')) {
-                            isHighlight = (lane === 1);
-                        } else if (hasSkill && hasSkill(selectedCard, 'takeover')) {
-                            isHighlight = (card !== null); // 生贄対象がある場所のみ
-                        } else if (hasSkill && hasSkill(selectedCard, 'challenge')) {
-                            isHighlight = (enemyBoard[lane] !== null);
-                        } else {
-                            // それ以外はすべて配置可能だが、既にカードがあると上書き（破棄）確認が出る仕様なので通常は光る
-                            isHighlight = true;
+                            valid = valid && (lane === 1);
                         }
+                        if (hasSkill && hasSkill(selectedCard, 'legendary')) {
+                            valid = valid && (lane === 1);
+                        }
+                        if (hasSkill && hasSkill(selectedCard, 'takeover')) {
+                            valid = valid && (card !== null);
+                        }
+                        if (hasSkill && hasSkill(selectedCard, 'challenge')) {
+                            valid = valid && (enemyBoard[lane] !== null);
+                        }
+                        isHighlight = valid;
                     }
 
                     return (
