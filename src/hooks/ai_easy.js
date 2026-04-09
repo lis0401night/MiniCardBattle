@@ -22,24 +22,25 @@ export function getEasyDecision() {
         if (idx === -1) {
             possibleLanes.push(-1);
         } else {
-            const emptyLanes = [0, 1, 2].filter(l => GameState.enemyBoard[l] === null);
-            const occupiedLanes = [0, 1, 2].filter(l => GameState.enemyBoard[l] !== null);
+            const mySealedLanes = GameState.enemySealedLanes || [0, 0, 0];
+            const emptyLanes = [0, 1, 2].filter(l => GameState.enemyBoard[l] === null && mySealedLanes[l] === 0);
+            const occupiedLanes = [0, 1, 2].filter(l => GameState.enemyBoard[l] !== null && mySealedLanes[l] === 0);
 
             let validSpaces = [];
             if (hasSkill(card, 'legendary')) {
-                validSpaces = [1];
+                validSpaces = [1].filter(l => mySealedLanes[l] === 0);
             } else if (hasSkill(card, 'takeover')) {
                 validSpaces = [...occupiedLanes];
             } else {
                 // 1ターン目の制限 (先攻RED)
                 if (GameState.turnCount === 1 && GameState.firstPlayer === 'red') {
-                    validSpaces = [1];
+                    validSpaces = [1].filter(l => mySealedLanes[l] === 0);
                 } else {
                     // 空きを優先するが、空きがなければ上書きも候補
                     if (emptyLanes.length > 0) {
                         validSpaces = [...emptyLanes];
                     } else {
-                        validSpaces = [0, 1, 2];
+                        validSpaces = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
                     }
                 }
             }

@@ -3,7 +3,7 @@ export default {
         'golem', 'golem', 'golem', 'golem',
         'commander', 'commander',
         'lightpaladin', 'lightpaladin',
-        'ninja', 'ninja',
+        'crenellatedwall', 'crenellatedwall',
         'mercenary', 'mercenary',
         'clone', 'clone', 'clone', 'clone',
         'sniper', 'sniper', 'sniper', 'sniper',

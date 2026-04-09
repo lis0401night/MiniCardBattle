@@ -177,6 +177,12 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             }
         }
         // フォールスルーして共通の playEvents と resolveOnPlaySkill を実行させる
+    } else if (action === 'seal_lanes') {
+        if (!tokenLanes || tokenLanes.length === 0) {
+            const selectedLanes = await waitPlayerEnemyLaneSelection(2, owner, true, '封印する相手のレーンを2つ選んでください', true);
+            if (selectedLanes.length === 0) return;
+            tokenLanes = selectedLanes;
+        }
     } else if (action === 'holy_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes, false);

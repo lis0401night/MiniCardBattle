@@ -691,7 +691,29 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
     const eBoard = isBlue ? state.enemyBoard : state.playerBoard;
     const oppOwner = isBlue ? 'red' : 'blue';
 
-    if (action === 'annihilation') {
+    if (action === 'seal_lanes') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        if (tokenLanes && tokenLanes.length > 0) {
+            for (const lane of tokenLanes) {
+                // Apply Seal
+                if (isBlue) {
+                    if (state.enemySealedLanes) state.enemySealedLanes[lane] = 1;
+                } else {
+                    if (state.playerSealedLanes) state.playerSealedLanes[lane] = 1;
+                }
+                
+                // Damage card if exists
+                if (eBoard[lane] !== null) {
+                    if (!hasSkill(eBoard[lane], 'immune')) {
+                        eBoard[lane].currentPower -= 4;
+                        events.push({ type: 'damage_card', side: oppOwner, lane: lane, amount: 4, source: 'seal_lanes' });
+                    } else {
+                        events.push({ type: 'immune_block', side: oppOwner, lane: lane, source: 'seal_lanes' });
+                    }
+                }
+            }
+        }
+    } else if (action === 'annihilation') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {

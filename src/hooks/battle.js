@@ -327,6 +327,7 @@ export function initBattleState() {
         GameState.playerHand = []; GameState.enemyHand = [];
         GameState.playerDiscard = []; GameState.enemyDiscard = [];
         GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
+        GameState.playerSealedLanes = [0, 0, 0]; GameState.enemySealedLanes = [0, 0, 0];
         GameState.actionQueue = []; GameState.pendingChoices = [];
         GameState.isProcessing = false; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
         GameState.selectedCardIndex = null; GameState.selectedBoardLaneIndex = null; GameState.selectedBoardSide = null;
@@ -714,18 +715,18 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 /**
  * 相手の場のカードを選択させるユーティリティ（破壊スキル用など）
  */
-export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = false, message = null) {
+export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = false, message = null, allowEmpty = false) {
     const isBlue = owner === 'blue';
     const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
     const targetSide = isBlue ? 'enemy' : 'player';
 
-    // ターゲット可能なレーン（配置されている場所）を取得
-    const occupiedLanes = targetBoard.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+    // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む）
+    const validLanes = allowEmpty ? [0, 1, 2] : targetBoard.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
 
-    if (occupiedLanes.length === 0) return [];
+    if (validLanes.length === 0) return [];
 
     // ターゲット数以下の場合は全選択（キャンセル不可の場合のみ）
-    if (!canCancel && occupiedLanes.length <= count) return occupiedLanes;
+    if (!canCancel && validLanes.length <= count) return validLanes;
 
     // Check for Remote Choice Wait
     if (GameState.gameMode === 'online' && owner === 'red') {
@@ -745,8 +746,10 @@ export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = fal
             }
         }
         
-        const sortedLanes = [...occupiedLanes].sort((a, b) => {
-            const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
+        const sortedLanes = [...validLanes].sort((a, b) => {
+            const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
+            const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
+            const diff = pB - pA;
             if (diff !== 0) return diff;
             return a - b; // インデックスが小さい方（左）を優先
         });
@@ -767,7 +770,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = fal
         }
 
         window.handleEnemyLaneClick = (laneIndex) => {
-            if (targetBoard[laneIndex] === null) return;
+            if (!allowEmpty && targetBoard[laneIndex] === null) return;
             playSound(SOUNDS.seClick);
 
             if (!GameState.targetSelectedLanes.includes(laneIndex)) {
@@ -1471,6 +1474,12 @@ export async function endPlayerTurn() {
 
 export async function endTurnLogic(o) {
     if (!GameState.isBattleEnded) {
+        if (o === 'blue') {
+            if (GameState.playerSealedLanes) GameState.playerSealedLanes = GameState.playerSealedLanes.map(v => Math.max(0, v - 1));
+        } else {
+            if (GameState.enemySealedLanes) GameState.enemySealedLanes = GameState.enemySealedLanes.map(v => Math.max(0, v - 1));
+        }
+
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         if (hand.length > 3) {
             const discardCount = hand.length - 3;

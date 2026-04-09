@@ -5,7 +5,7 @@ export default {
         'charity', 'charity',
         'wall', 'wall',
         'pray', 'pray',
-        'scorpion', 'scorpion', 'scorpion', 'scorpion',
+        'leech', 'leech', 'leech', 'leech',
         'cleric', 'cleric', 'cleric', 'cleric',
     ],
     normal: [

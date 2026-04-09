@@ -354,6 +354,38 @@ export const CHARACTERS = {
             ]
         }
     },
+    oni: {
+        id: 'oni', stageId: 'oni', name: '鬼血の陰陽師 カグラ',
+        desc: '鬼の血を引く異端の陰陽師。封印術を用いて敵の行動を完全に封じる。',
+        easeOfUse: 2,
+        filter: 'none', cardType: 'set1', cardBg: 'bg1',
+        image: 'assets/characters/char_oni.png', imageLose: 'assets/characters/char_oni_lose.png', icon: 'assets/icons/icon_oni.png', imageEnding: 'assets/characters/char_oni_ending.png', color: '#9333ea',
+        leaderSkill: { name: '急急如律令', desc: '(SP:5) 相手のレーンを2つまで選択する。そのレーンのカードに4ダメージを与え、レーンを1ターン封印する。', cost: 5, action: 'seal_lanes' },
+        preBattleLine: '我が瞳に映るは、縛るべき邪気。',
+        mirrorIntro: '鏡の中の幻影……いや、貴方こそが私の本当の……？',
+        narratorIntro: '鬼の血を引きし若き陰陽師、カグラ。異端なるその瞳は、世の理を捻じ曲げる封印の力を宿している。',
+        storyIntro: [
+            'この先に渦巻く不浄な気、ただごとではありませんね。',
+            '私の術式ですべての禍根を絶ち切ってみせます。'
+        ],
+        eventSatanIntro: [
+            { speaker: 'narrator', text: '鬼女の影が、再び魔界に落ちる。' }
+        ],
+        interBattleStory: {
+            default: [['悪鬼羅刹の類い、この符で祓ってみせます。'], ['穢れが濃くなっています。気を引き締めて。']]
+        },
+        dialogue: {
+            intro: { default: '我が血の呪縛、とくと味わいなさい。' },
+            win: { default: '急急如律令……哀れな魂に安らぎを。' },
+            lose: { default: 'あぁ……私の中の鬼が、目覚めてしまう……！' },
+            damage: ['くっ！', '甘い！', '霊符が！', 'まだです！'],
+            skill: '急急如律令！ 邪なる者よ、その身を縛れ！',
+            ending: [
+                { speaker: 'player', text: '終わりましたね。私が鬼に呑まれる前に……。' },
+                { speaker: 'player', text: 'もう少しだけ、隣に居させてください。' }
+            ]
+        }
+    },
     satan: {
         id: 'satan', stageId: 'satan', name: '魔王 サタン',
         desc: '魔界を統べる絶対的な恐怖の象徴。すべてを無に帰す圧倒的な力を持つ。',

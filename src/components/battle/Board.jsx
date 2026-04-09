@@ -4,6 +4,7 @@ import { GameState } from '../../hooks/gameState.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playSound, hasSkill } from '../../utils/gameUtils.js';
 import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
+import { showAlertModal } from '../../hooks/uiModals.js';
 
 export default function Board({ 
     playerBoard, 
@@ -37,11 +38,18 @@ export default function Board({
                 {lanes.map(lane => {
                     const card = enemyBoard[lane];
                     const isSelected = selectedBoardLaneIndex === lane && selectedBoardSide === 'enemy';
+                    const isSealed = GameState.enemySealedLanes && GameState.enemySealedLanes[lane] > 0;
                     return (
                         <div 
                             key={`enemy-lane-${lane}`} 
-                            className="cell" 
+                            className={`cell ${isSealed ? 'sealed' : ''}`} 
                             data-lane={lane}
+                            onClick={(e) => {
+                                if (isSealed && window.handleEnemyLaneClick) {
+                                    showAlertModal('封印されています');
+                                    return;
+                                }
+                            }}
                         >
                             {card && (
                                 <Card 
@@ -51,6 +59,10 @@ export default function Board({
                                     className={isSelected ? "selected" : ""}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        if (isSealed && window.handleEnemyLaneClick) {
+                                            showAlertModal('封印されています');
+                                            return;
+                                        }
                                         onCellClick(lane, 'enemy', card);
                                     }}
                                     onLongPress={onCardLongPress}
@@ -66,12 +78,15 @@ export default function Board({
                 {lanes.map(lane => {
                     const card = playerBoard[lane];
                     const isSelected = selectedBoardLaneIndex === lane && selectedBoardSide === 'player';
+                    const isSealed = GameState.playerSealedLanes && GameState.playerSealedLanes[lane] > 0;
                     
                     // ハイライト(配置可能)判定
                     let isHighlight = false;
                     const selectedCard = GameState.selectedCardIndex !== null && GameState.playerHand ? GameState.playerHand[GameState.selectedCardIndex] : null;
                     
-                    if (GameState.isPlacementMode) {
+                    if (isSealed) {
+                        isHighlight = false; // 封印されていたらハイライトしない
+                    } else if (GameState.isPlacementMode) {
                         const tCard = GameState.placementToken;
                         const checkEnv = GameState.placementCheckConstraints !== false; // フラグが明示的にfalseなら制約無視
                         if (GameState.placementSelectedLanes?.includes(lane)) {
@@ -103,10 +118,14 @@ export default function Board({
                     return (
                         <div 
                             key={`player-lane-${lane}`} 
-                            className={`cell${isHighlight ? ' highlight' : ''}`}
+                            className={`cell${isHighlight ? ' highlight' : ''}${isSealed ? ' sealed' : ''}`}
                             data-lane={lane}
                             // 配置モード時などのCellクリックに対応したい場合はここで onCellClick を呼ぶ
                             onClick={(e) => {
+                                if (isSealed && (GameState.isPlacementMode || GameState.selectedCardIndex !== null)) {
+                                    showAlertModal('封印されています');
+                                    return;
+                                }
                                 // 空セルのクリックも親に通知する
                                 if (!card) {
                                     onCellClick(lane, 'player', null);
@@ -121,6 +140,10 @@ export default function Board({
                                     className={isSelected ? "selected" : ""}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        if (isSealed && (GameState.isPlacementMode || GameState.selectedCardIndex !== null)) {
+                                            showAlertModal('封印されています');
+                                            return;
+                                        }
                                         onCellClick(lane, 'player', card);
                                     }}
                                     onLongPress={onCardLongPress}

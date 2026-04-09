@@ -57,17 +57,19 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
         return results;
     };
 
+    const mySealedLanes = GameState.enemySealedLanes || [0, 0, 0];
+
     const testMoves = (useSkill) => {
         let tokenLanePatterns = [null]; // スキルを使わない、またはトークン召喚でない場合
 
         if (useSkill) {
             const action = skill.action;
             if (action === 'holy_march') {
-                const emptyLanes = [0, 1, 2].filter(l => myBoard[l] === null);
+                const emptyLanes = [0, 1, 2].filter(l => myBoard[l] === null && mySealedLanes[l] === 0);
                 tokenLanePatterns = getCombinations(emptyLanes, Math.min(emptyLanes.length, 2));
             } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
                 // 上書きも考慮するため全レーンをシミュレーション対象とする
-                tokenLanePatterns = [[0], [1], [2]];
+                tokenLanePatterns = [[0], [1], [2]].filter(pattern => mySealedLanes[pattern[0]] === 0);
 
                 // dungeon_summon_leaderの場合はカード自体の制約（伝説・生贄）を適用して候補を絞る
                 if (action === 'dungeon_summon_leader' && GameState.enemyConfig && GameState.enemyConfig.leaderCardId) {
@@ -75,7 +77,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                     if (lc) {
                         if (hasSkill(lc, 'legendary')) {
                             // 伝説は中央レーン（[1]）のみ
-                            tokenLanePatterns = [[1]];
+                            tokenLanePatterns = [[1]].filter(pattern => mySealedLanes[pattern[0]] === 0);
                         }
                         if (hasSkill(lc, 'takeover')) {
                             // 生贄はすでにカードが存在するレーンのみ（上書き専用）
@@ -93,6 +95,13 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                 tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
                 // もし候補がなくても前のチェックで弾かれるはずだが、念の為
                 if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
+            } else if (action === 'seal_lanes') {
+                const validTargetLanes = [0, 1, 2];
+                let combinations = [null];
+                for (let l of validTargetLanes) combinations.push([l]);
+                const combs = getCombinations(validTargetLanes, 2);
+                for (let c of combs) combinations.push(c);
+                tokenLanePatterns = combinations;
             }
         }
 
@@ -103,6 +112,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                 // 1. 各カードを各レーンに置くパターン
                 for (let i = 0; i < hand.length; i++) {
                     for (let l = 0; l < 3; l++) {
+                        if (mySealedLanes[l] > 0) continue;
                         const card = hand[i];
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
                         if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
@@ -125,7 +135,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         tempBoard[l] = 'card';
 
                         // 利用可能なトークン配置レーン（自分自身への上書きも自壊として含めた全レーン）
-                        const availableLanesForToken = [0, 1, 2];
+                        const availableLanesForToken = [0, 1, 2].filter(lane => mySealedLanes[lane] === 0);
 
                         let cardTokenLanePatterns = [null];
                         const cardHasSkill = (sk) => hasSkill(card, sk) || (Array.isArray(card.choices) && card.choices.some(s => s.id === sk));
@@ -581,6 +591,7 @@ export function evaluateAIMoves(currentState) {
         }
 
         const mCard = moveCards[depth];
+        const mySealedLanes = GameState.enemySealedLanes || [0, 0, 0];
         // 既に上書きされていたり、位置が変わっている場合はこのカード自身による移動はスキップ
         const currentPos = boardMap.findIndex(c => c && c.id === mCard.card.id);
         if (currentPos === -1 || currentPos !== mCard.lane) {
@@ -589,8 +600,8 @@ export function evaluateAIMoves(currentState) {
         }
 
         const validTargets = [mCard.lane];
-        if (mCard.lane > 0) validTargets.push(mCard.lane - 1);
-        if (mCard.lane < 2) validTargets.push(mCard.lane + 1);
+        if (mCard.lane > 0 && mySealedLanes[mCard.lane - 1] === 0) validTargets.push(mCard.lane - 1);
+        if (mCard.lane < 2 && mySealedLanes[mCard.lane + 1] === 0) validTargets.push(mCard.lane + 1);
 
         for (let target of validTargets) {
             const nextBoard = [...boardMap];

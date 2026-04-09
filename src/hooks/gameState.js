@@ -13,6 +13,7 @@ export const GameState = {
     playerHand: [], enemyHand: [], playerDeck: [], enemyDeck: [],
     playerDiscard: [], enemyDiscard: [],
     playerBoard: [null, null, null], enemyBoard: [null, null, null],
+    playerSealedLanes: [0, 0, 0], enemySealedLanes: [0, 0, 0],
     appState: 'title', gameMode: 'story', aiLevel: 1, storyDifficulty: 1,
     isProcessing: false, selectedCardIndex: null, isBattleEnded: false,
     firstPlayer: 'blue', turnCount: 0,
