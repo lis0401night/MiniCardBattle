@@ -10,6 +10,7 @@ import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScr
 import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multiplayer.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
+import { evaluateAIMoves } from './ai_normal.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
 import { generateDeck } from './deck.js';
 import { applyActiveSkillLogic, calculateCombatPhase, applySingleCombat } from './engine.js';
@@ -555,6 +556,11 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             if (hasTakeover) {
                 selectedLanes = selectedLanes.filter(i => board[i] !== null);
             }
+            const hasChallenge = tokenCard.skill === 'challenge' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'challenge'));
+            if (hasChallenge) {
+                const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+                selectedLanes = selectedLanes.filter(i => oppBoard[i] !== null);
+            }
         }
 
         // それでも足りない場合、空きレーンや重複を許容する
@@ -572,6 +578,12 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                 }
                 if (hasTakeover) {
                     validEmptyLanes = []; // 生贄（takeover）は空きレーン不可
+                }
+                const hasChallenge = tokenCard.skill === 'challenge' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'challenge'));
+                if (hasChallenge) {
+                    const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+                    validEmptyLanes = validEmptyLanes.filter(i => oppBoard[i] !== null);
+                    validOccupiedLanes = validOccupiedLanes.filter(i => oppBoard[i] !== null);
                 }
             }
 
@@ -644,6 +656,14 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                     playSound(SOUNDS.seDamage);
                     showAlertModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`);
                     return;
+                }
+                if (hasSkill(newCard, 'challenge')) {
+                    const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+                    if (oppBoard[laneIndex] === null) {
+                        playSound(SOUNDS.seDamage);
+                        showAlertModal(`「${newCard.name}」は挑戦を持つため、正面に敵がいるレーンにしか召喚できません。`);
+                        return;
+                    }
                 }
             }
 
@@ -1322,6 +1342,55 @@ export function drawCard(owner) {
     if (owner === 'blue') renderHand();
 }
 
+export async function handleMoveSkills(owner) {
+    if (owner !== 'blue') {
+        const b = GameState.enemyBoard;
+        // AIの移動判断
+        const bestMoves = evaluateAIMoves(GameState);
+        if (bestMoves) {
+            for (let move of bestMoves) {
+                b[move.to] = b[move.from];
+                b[move.from] = null;
+                playSound(SOUNDS.seClick);
+                await sleep(300);
+                renderBoard();
+            }
+        }
+        return;
+    }
+
+    const b = GameState.playerBoard;
+    for (let i = 0; i < 3; i++) {
+        const c = b[i];
+        if (c && typeof hasSkill === 'function' && hasSkill(c, 'move') && (c.stunTurns || 0) === 0) {
+            const possibleLanes = [];
+            if (i > 0) possibleLanes.push(i - 1);
+            if (i < 2) possibleLanes.push(i + 1);
+            if (possibleLanes.length === 0) continue;
+
+            // wait for the user to select an adjacent cell
+            GameState.placementMessage = `移動するレーンを選んでください`;
+            if (updateBattleUIHook) updateBattleUIHook();
+            
+            const targetIdx = await waitPlayerLaneSelection(1, 'blue', c, false, possibleLanes, false, true, '移動終了');
+            GameState.placementMessage = null;
+            if (targetIdx && targetIdx.length > 0) {
+                const target = targetIdx[0];
+                if (target !== i) {
+                    if (b[target]) {
+                        if (!(await discardCard('blue', b[target], target, false))) b[target] = null;
+                    }
+                    b[target] = c;
+                    b[i] = null;
+                    playSound(SOUNDS.sePlace);
+                    renderBoard();
+                    await sleep(300);
+                }
+            }
+        }
+    }
+}
+
 export async function startTurn(owner) {
     if (GameState.isBattleEnded) return; GameState.isProcessing = true;
 
@@ -1344,6 +1413,10 @@ export async function startTurn(owner) {
 
     // ターン開始時スキルの発動
     await triggerStartTurnSkills(owner);
+    if (GameState.isBattleEnded) return;
+
+    // 移動スキルの処理
+    await handleMoveSkills(owner);
     if (GameState.isBattleEnded) return;
 
     // SPの増加（先攻の1ターン目や追加ターン中は増えない）
@@ -1494,7 +1567,7 @@ export async function playCard(o, hI, l) {
             for (const sk of equipSkills) {
                 if (ACTIVE_SKILLS.includes(sk.id)) {
                     await sleep(50);
-                    await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value);
+                    await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value, sk);
                 }
             }
 
@@ -1687,7 +1760,7 @@ export async function resolveOnPlaySkill(o, l, c) {
 
     for (const sk of skillsToResolve) {
         if (ACTIVE_SKILLS.includes(sk.id)) {
-            await resolveActiveSkillEffect(o, l, c, sk.id, sk.value);
+            await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
         }
     }
 

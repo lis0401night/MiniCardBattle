@@ -81,6 +81,9 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                             // 生贄はすでにカードが存在するレーンのみ（上書き専用）
                             tokenLanePatterns = tokenLanePatterns.filter(pattern => myBoard[pattern[0]] !== null);
                         }
+                        if (hasSkill(lc, 'challenge')) {
+                            tokenLanePatterns = tokenLanePatterns.filter(pattern => opBoard[pattern[0]] !== null);
+                        }
                     }
                 }
 
@@ -103,6 +106,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         const card = hand[i];
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
                         if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
+                        if (hasSkill(card, 'challenge') && opBoard[l] === null) continue;
                         // 装備カードも空きレーンに召喚可能なので除外しない
 
                         // 1ターン目の制限 (先攻RED)
@@ -549,4 +553,99 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
     }
 
     return results;
+}
+
+/**
+ * AIの「移動(move)」専用シミュレーション
+ * 全移動パターンのうち、直後の戦闘で最も有利になる手順を返す
+ */
+export function evaluateAIMoves(currentState) {
+    const b = currentState.enemyBoard;
+    const moveCards = [];
+    for (let i = 0; i < 3; i++) {
+        if (b[i] && hasSkill(b[i], 'move') && (b[i].stunTurns || 0) === 0) {
+            moveCards.push({ card: b[i], lane: i });
+        }
+    }
+
+    if (moveCards.length === 0) return null;
+
+    let bestScore = -Infinity;
+    let bestMoves = [];
+
+    // 移動後の盤面を再帰的に生成
+    const generateMovePermutations = (boardMap, depth, currentMoves) => {
+        if (depth === moveCards.length) {
+            evaluateBoard(boardMap, currentMoves);
+            return;
+        }
+
+        const mCard = moveCards[depth];
+        // 既に上書きされていたり、位置が変わっている場合はこのカード自身による移動はスキップ
+        const currentPos = boardMap.findIndex(c => c && c.id === mCard.card.id);
+        if (currentPos === -1 || currentPos !== mCard.lane) {
+            generateMovePermutations(boardMap, depth + 1, currentMoves);
+            return;
+        }
+
+        const validTargets = [mCard.lane];
+        if (mCard.lane > 0) validTargets.push(mCard.lane - 1);
+        if (mCard.lane < 2) validTargets.push(mCard.lane + 1);
+
+        for (let target of validTargets) {
+            const nextBoard = [...boardMap];
+            if (target !== mCard.lane) {
+                nextBoard[target] = nextBoard[mCard.lane];
+                nextBoard[mCard.lane] = null;
+            }
+            const nextMoves = [...currentMoves];
+            if (target !== mCard.lane) {
+                nextMoves.push({ from: mCard.lane, to: target });
+            }
+            generateMovePermutations(nextBoard, depth + 1, nextMoves);
+        }
+    };
+
+    const evaluateBoard = (boardMap, moves) => {
+        const simState = {
+            playerBoard: currentState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            enemyBoard: boardMap.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            playerHP: currentState.playerHP,
+            enemyHP: currentState.enemyHP,
+            playerHand: [], enemyHand: [], playerDiscard: [], enemyDiscard: []
+        };
+
+        // Red(enemy) の攻撃フェーズとしてシミュレーション
+        calculateCombatPhase(simState, 'red');
+
+        // スコア評価
+        let score = 0;
+        score += (currentState.playerHP - simState.playerHP) * 5; // 的のHPを削ることを重視
+        score += simState.enemyHP * 2;
+
+        let myPow = 0;
+        let opPow = 0;
+        simState.enemyBoard.forEach(c => { if(c) myPow += (c.currentPower || 0); });
+        simState.playerBoard.forEach(c => { if(c) opPow += (c.currentPower || 0); });
+
+        score += myPow;
+        score -= opPow;
+
+        // 味方を上書きする場合はマイナス評価 (味方カードの減少数)
+        const currentAllyCount = currentState.enemyBoard.filter(c => c !== null).length;
+        const newAllyCount = boardMap.filter(c => c !== null).length;
+        if (currentAllyCount > newAllyCount) score -= (currentAllyCount - newAllyCount) * 10;
+
+        // 無意味な移動を避けるため、移動回数が多いほどわずかにペナルティ
+        score -= moves.length * 0.1;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMoves = moves;
+        }
+    };
+
+    generateMovePermutations([...b], 0, []);
+
+    return bestMoves.length > 0 ? bestMoves : null;
 }

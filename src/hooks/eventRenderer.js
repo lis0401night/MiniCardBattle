@@ -160,6 +160,11 @@ export async function playEvents(events) {
                 if (actualHeal > 0) {
                     const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
                     if (hpFill) createDamagePopup(hpFill, `+${actualHeal}`, '#4ade80');
+                    
+                    if (ev.source === 'absorb' && ev.lane !== undefined) {
+                        const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                        if (cEl) createDamagePopup(cEl, '吸収', '#4ade80');
+                    }
                 }
                 updateHPBar();
                 playSound(SOUNDS.seSkill);

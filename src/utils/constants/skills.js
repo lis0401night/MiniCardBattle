@@ -28,7 +28,7 @@ export const SKILLS = {
     invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` },
     guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' },
     legendary: { name: '伝説', icon: '👑', desc: (val) => '中央のレーンにしか召喚できない。' },
-    takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードの置かれているレーンにしか召喚できない。' },
+    takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードが置かれているレーンにしか召喚できない。' },
     pierce: { name: '貫通', icon: '🏹', desc: (val) => '自分のターンに、敵を攻撃した時、自身のパワーの差分だけ相手リーダーにダメージを与える。' },
     explode: { name: '誘爆', icon: '💣', desc: (val) => `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。` },
     contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、自分リーダーに${val || 3}ダメージ。` },
@@ -54,15 +54,21 @@ export const SKILLS = {
     oblivion: { name: '忘却', icon: '⚪', desc: (val) => '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。' },
     call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚する。` },
     bless: { name: '祝福', icon: '🕯️', desc: (val) => `召喚時、手札のカード1枚を選び、パワーを+${val}する。` },
-    wall_create: { name: '造壁', icon: '🏰', desc: (val) => `召喚時、自分のレーンに、パワー${val}（防御）のトークンを配置する。` }
+    wall_create: { name: '造壁', icon: '🏰', desc: (val) => `召喚時、自分のレーンに、パワー${val}（防御）のトークンを配置する。` },
+    challenge: { name: '挑戦', icon: '🥋', desc: (val) => '正面にカードが置かれているレーンにしか召喚できない。' },
+    move: { name: '移動', icon: '🏃', desc: (val) => '自分のターン開始時に隣のレーンに移動できる。' },
+    freeze: { name: '凍結', icon: '❄️', desc: (val) => `召喚時、正面とその隣のレーンのカードに${val}ターンの間「防御」を持たせる。` },
+    loss: { name: '喪失', icon: '🕳️', desc: (val) => `召喚時、自分のデッキの上から${val}枚墓地に送る。` },
+    brutal: { name: '暴虐', icon: '🌪️', desc: (val) => `攻撃時、自分の場の隣のレーンのカードに${val}ダメージ。` },
+    absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値分リーダーを回復する。' }
 };
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
-    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion'
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb'
 ];

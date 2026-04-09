@@ -244,6 +244,24 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             });
             break;
+        case 'bind':
+            if (eB[l]) eB[l].stunTurns = (val || 1) + 1;
+            break;
+        case 'freeze':
+            [l - 1, l, l + 1].forEach(j => {
+                if (j >= 0 && j < 3 && eB[j]) {
+                    eB[j].stunTurns = (val || 1) + 1;
+                }
+            });
+            break;
+        case 'loss':
+            const lossDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
+            const lossDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            const lossCount = val || 1;
+            for (let i = 0; i < lossCount; i++) {
+                if (lossDeck.length > 0) lossDiscard.push(lossDeck.pop());
+            }
+            break;
         case 'snipe':
             const snVal = val || 4;
             let maxL = -1, maxP = -1;
@@ -877,6 +895,16 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     events.push({ type: 'attack', attackerSide, lane: l, targetLane: dLane });
 
+    if (hasSkill(aC, 'brutal')) {
+        const brutalDmg = getSkillValue(aC, 'brutal') || 1;
+        [l - 1, l + 1].forEach(tj => {
+            if (tj >= 0 && tj <= 2 && atkBoard[tj]) {
+                atkBoard[tj].currentPower -= brutalDmg;
+                events.push({ type: 'damage_card', side: attackerSide, lane: tj, amount: brutalDmg, source: 'brutal' });
+            }
+        });
+    }
+
     if (dC) {
         let dP = originalTarget ? (Number(originalTarget.currentPower ?? originalTarget.power ?? 0) || 0) : 0;
         let dmgToDef = aP;
@@ -935,12 +963,29 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             }
         }
 
+        if (dmgToDef > 0 && hasSkill(aC, 'absorb')) {
+            if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + dmgToDef);
+            else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + dmgToDef);
+            events.push({ type: 'heal_player', side: attackerSide, amount: dmgToDef, source: 'absorb', lane: aLane });
+        }
+        if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
+            if (defSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + dmgToAtk);
+            else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + dmgToAtk);
+            events.push({ type: 'heal_player', side: defSide, amount: dmgToAtk, source: 'absorb', lane: dLane });
+        }
+
         if (hasSkill(aC, 'pierce')) {
             let pDmg = Math.max(0, aP - dP);
             if (pDmg > 0) {
                 defHP -= pDmg;
                 events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
                 applyExtort(aC, defSide, attackerSide, aLane, events, state);
+                
+                if (hasSkill(aC, 'absorb')) {
+                    if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + pDmg);
+                    else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + pDmg);
+                    events.push({ type: 'heal_player', side: attackerSide, amount: pDmg, source: 'absorb', lane: aLane });
+                }
             }
         }
 
@@ -961,6 +1006,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         defHP -= finalDmg;
         events.push({ type: 'damage_player', side: defSide, amount: finalDmg, source: 'direct_attack' });
         applyExtort(aC, defSide, attackerSide, aLane, events, state);
+        
+        if (finalDmg > 0 && hasSkill(aC, 'absorb')) {
+            if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + finalDmg);
+            else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + finalDmg);
+            events.push({ type: 'heal_player', side: attackerSide, amount: finalDmg, source: 'absorb', lane: aLane });
+        }
     }
 
     if (attackerSide === 'blue') state.enemyHP = defHP;

@@ -14,7 +14,7 @@ import { getIsHost } from './multiplayer.js';
  * 分割されたスキル実行ロジック
  */
 
-export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
+export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skObj = null) {
     const cEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`);
     const dS = o === 'blue' ? 'enemy' : 'player';
 
@@ -103,7 +103,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
                     renderBoard(); // UI反映
                 }
                 // 選択されたスキルを順に実行
-                await resolveActiveSkillEffect(o, l, c, choice.id, choice.value);
+                await resolveActiveSkillEffect(o, l, c, choice.id, choice.value, choice);
             }
         }
         return;
@@ -186,19 +186,26 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         await sleep(600);
     } else if (skillId === 'summon') {
         const pValue = skillValue || 1;
+        
+        let tId = skObj?.summonId || c.summonId || (c.skills && c.skills.find(s => s.id === 'summon')?.summonId);
         let tName = 'ドローン';
-        let tId = 'token_drone';
-        const cId = c.baseId || c.id;
-
-        if (cId === 'admiral') {
-            tId = 'token_knight';
-            tName = '騎士';
-        } else if (pValue >= 5) {
-            tName = 'ゴーレム';
-            tId = 'token_golem';
+        
+        if (!tId) {
+            tId = 'token_drone';
+            const cId = c.baseId || c.id;
+            if (cId === 'admiral') {
+                tId = 'token_knight';
+                tName = '騎士';
+            } else if (pValue >= 5) {
+                tName = 'ゴーレム';
+                tId = 'token_golem';
+            }
         }
 
-        const tC = CARD_MASTER.find(m => m.id === tId) || {
+        const baseTC = CARD_MASTER.find(m => m.id === tId);
+        if (baseTC) tName = baseTC.name;
+
+        const tC = baseTC || {
             id: tId, name: tName, power: pValue, skill: 'none', isToken: true, rarity: 1, voiceCategory: pValue >= 5 ? 'monster' : 'machine_new'
         };
 
@@ -449,6 +456,28 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         } else {
             await sleep(500);
         }
+    } else if (skillId === 'freeze') {
+        playSound(SOUNDS.seSkillBind); createDamagePopup(cEl, '凍結', '#93c5fd');
+        const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+        const targets = [l - 1, l, l + 1].filter(idx => idx >= 0 && idx <= 2 && eB[idx]);
+        if (targets.length > 0) {
+            const turns = (skillValue || 1) + 1;
+            for (const tL of targets) {
+                eB[tL].stunTurns = turns;
+                const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${tL}"] .card`);
+                if (tEl) {
+                    tEl.classList.add('anim-shake');
+                    createDamagePopup(tEl, '凍結', '#94a3b8');
+                }
+            }
+            await sleep(500);
+            for (const tL of targets) {
+                const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${tL}"] .card`);
+                if (tEl) tEl.classList.remove('anim-shake');
+            }
+        } else {
+            await sleep(500);
+        }
     } else if (skillId === 'artillery') {
         let dmg = skillValue || 1;
         await sleep(300);
@@ -467,6 +496,22 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
         updateHPBar();
         checkWinCondition();
         await sleep(400);
+    } else if (skillId === 'loss') {
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '喪失', '#991b1b');
+        const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+        const g = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        const count = skillValue || 1;
+        let lostCount = 0;
+        for (let i = 0; i < count; i++) {
+            if (d.length > 0) {
+                g.push(d.pop()); // 上から墓地へ送るためpop
+                lostCount++;
+            }
+        }
+        if (lostCount > 0) {
+            updateDeckDisplay(o);
+        }
+        await sleep(500);
     } else if (skillId === 'bless') {
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         let targetIndices = await waitPlayerHandSelection(1, o, false, '手札のカードを1枚選んでください');
@@ -527,8 +572,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue) {
             const selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, o, '復活させるカードを選択', `パワー${maxPow}以下のカードを1枚場に出します。`);
 
             if (selectedCard) {
-                // 配置先を選ばせる (制約チェックはしない)
-                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, false);
+                // 配置先を選ばせる (召喚ではなく配置扱いのため制約チェックはしない)
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, true);
                 if (tLanes && tLanes.length > 0) {
                     const targetLane = tLanes[0];
                     const dIdx = discard.findIndex(cd => cb => cb.id === selectedCard.id);
