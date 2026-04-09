@@ -129,7 +129,7 @@ export const CARD_MASTER = [
     { id: 'samurai', name: '山道の人斬り', rarity: 2, power: 7, skill: 'challenge', voiceCategory: 'human_male_warrior', flavor: '寂れた峠道に、血の匂いと白刃が閃く。強き者との死合いのみを渇望する修羅は、目の前の標的へと歩み寄り、静かに刀を抜く。' },
     { id: 'shogun', name: '暁の大将軍', rarity: 3, power: 9, skills: [{ id: 'legendary' }, { id: 'challenge' }], voiceCategory: 'human_male_ikemen', flavor: '昇る朝日を背に受け、威風堂々と戦場に立つ姿は軍神そのもの。一切の小細工を良しとせず、敵将の首を狙い真っ向から雌雄を決する。' },
     { id: 'fox', name: '魂喰いの狐', rarity: 3, power: 4, skills: [{ id: 'loss', value: 5 }, { id: 'choice', value: 2 }], choices: [{ id: 'spread', value: 1 }, { id: 'spread', value: 1 }, { id: 'summon', value: 1, summonId: 'token_soul' }, { id: 'summon', value: 1, summonId: 'token_soul' }], voiceCategory: 'beast', flavor: '術者の魂すらも致命的な代償として喰らう、美しくも恐ろしき妖狐。奪った命を呪いの火として撒き散らすか、傀儡として現世に縛り付けるか、すべては彼女の気まぐれ。' },
-    { id: 'kasha', name: '双輪の炎龍', rarity: 3, power: 6, skills: [{ id: 'takeover' }, { id: 'quick' }, { id: 'pierce' }, { id: 'brutal', value: 2 }], voiceCategory: 'dragon', flavor: '業火を纏い、地獄の車輪を軋ませて爆走する双頭の厄災。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変えながら、ただ無残に蹂躙し尽くす。' }
+    { id: 'kasha', name: '双輪の炎龍', rarity: 3, power: 6, skills: [{ id: 'takeover' }, { id: 'quick' }, { id: 'pierce' }, { id: 'brutal', value: 2 }], voiceCategory: 'dragon', flavor: '業火を纏い、地獄の車輪を軋ませて爆走する双頭の厄災。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変えながら、ただ無残に蹂躙し尽くす。' },
 
     // トークンカード
     { id: 'token_knight', name: '騎士', rarity: 1, power: 2, isToken: true, skill: 'none', voiceCategory: 'sword', flavor: '号令で召喚された騎士。' },
