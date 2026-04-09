@@ -138,6 +138,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'witch',
         reward: { type: 'premium', value: 'beginnermagic', name: '初級魔術', isPremiumUnlock: true }
     },
+    {
+        id: 'story_oni',
+        title: '鬼ヶ島の怪火',
+        description: 'カグラのストーリーをクリアする',
+        type: 'story_clear',
+        targetValue: 'oni',
+        reward: { type: 'playmat', value: 'oni', name: 'カグラ' }
+    },
+    {
+        id: 'story_oni_hard',
+        title: '羅生門の鬼',
+        description: 'カグラのストーリー（上級）をクリアする',
+        type: 'story_clear_hard',
+        targetValue: 'oni'
+        // プレミアムカードは未実装のため報酬は記述しない
+    },
     // --- カード収集 ---
     {
         id: 'collect_10',

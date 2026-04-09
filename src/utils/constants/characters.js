@@ -365,8 +365,8 @@ export const CHARACTERS = {
         mirrorIntro: '鏡の中の幻影……いや、貴方こそが私の本当の……？',
         narratorIntro: '鬼の血を引きし若き陰陽師、カグラ。異端なるその瞳は、世の理を捻じ曲げる封印の力を宿している。',
         storyIntro: [
-            'この先に渦巻く不浄な気、ただごとではありませんね。',
-            '私の術式ですべての禍根を絶ち切ってみせます。'
+            'この先に渦巻く不浄な気、ただごとではありませんね。気をつけて。',
+            '貴方は私の後ろに下がっていてください。この術式ですべての禍根を絶ち切ってみせます。'
         ],
         eventSatanIntro: [
             { speaker: 'narrator', text: '鬼女の影が、再び魔界に落ちる。' }
@@ -416,7 +416,8 @@ const SKIN_NAMES = {
     elf: '水辺の流浪者',
     cleric: '背徳のサマーバカンス',
     devilhunter: '渚の悪魔狩り',
-    witch: '真夏の神童'
+    witch: '不機嫌なサマー・グリモワール',
+    oni: '涼み鬼の夏装束'
 };
 
 Object.values(CHARACTERS).forEach(char => {

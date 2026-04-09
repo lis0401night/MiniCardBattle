@@ -268,7 +268,9 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
         enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
         playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+        playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+        enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])]
     };
 
     if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'dungeon_summon_leader') {
@@ -284,6 +286,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (currentState.attackSkipCount) {
             GameState.attackSkipCount = currentState.attackSkipCount;
         }
+        
+        // 封印状態の同期
+        GameState.playerSealedLanes = currentState.playerSealedLanes;
+        GameState.enemySealedLanes = currentState.enemySealedLanes;
     }
 
     // イベントログを再生（再生中にGameStateと描画が逐次更新される）

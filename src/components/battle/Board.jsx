@@ -39,10 +39,15 @@ export default function Board({
                     const card = enemyBoard[lane];
                     const isSelected = selectedBoardLaneIndex === lane && selectedBoardSide === 'enemy';
                     const isSealed = GameState.enemySealedLanes && GameState.enemySealedLanes[lane] > 0;
+                    let isEnemyHighlight = false;
+                    if (GameState.isEnemyTargetMode && !GameState.targetSelectedLanes?.includes(lane)) {
+                        isEnemyHighlight = true;
+                    }
+                    
                     return (
                         <div 
                             key={`enemy-lane-${lane}`} 
-                            className={`cell ${isSealed ? 'sealed' : ''}`} 
+                            className={`cell ${isSealed ? 'sealed' : ''} ${isEnemyHighlight ? 'highlight' : ''}`} 
                             data-lane={lane}
                             onClick={(e) => {
                                 if (isSealed && window.handleEnemyLaneClick) {
@@ -109,6 +114,8 @@ export default function Board({
                             isHighlight = (lane === 1);
                         } else if (hasSkill && hasSkill(selectedCard, 'takeover')) {
                             isHighlight = (card !== null); // 生贄対象がある場所のみ
+                        } else if (hasSkill && hasSkill(selectedCard, 'challenge')) {
+                            isHighlight = (enemyBoard[lane] !== null);
                         } else {
                             // それ以外はすべて配置可能だが、既にカードがあると上書き（破棄）確認が出る仕様なので通常は光る
                             isHighlight = true;

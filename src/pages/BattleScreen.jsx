@@ -105,6 +105,12 @@ export default function BattleScreen() {
                 return;
             }
 
+            if (hasSkill && hasSkill(newCard, 'challenge') && GameState.enemyBoard[lane] === null) {
+                playSound(SOUNDS.seDamage);
+                showConfirmModal(`「${newCard.name}」は相手のカードが置かれている正面にしか召喚できません。`, () => { }, null, true);
+                return;
+            }
+
             if (GameState.playerBoard[lane] !== null) {
                 const existingCard = GameState.playerBoard[lane];
                 let confirmed;
