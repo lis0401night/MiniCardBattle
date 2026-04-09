@@ -614,6 +614,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         GameState.placementSelectedLanes = [];
         GameState.placementCheckConstraints = checkConstraints;
         GameState.placementButtonText = buttonText;
+        GameState.placementRestrictLanes = tokenLanes || null;
         updateCardDetail(null);
 
         const cleanUp = () => {
@@ -622,6 +623,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             GameState.placementToken = null;
             GameState.placementCheckConstraints = true;
             GameState.placementButtonText = '配置終了';
+            GameState.placementRestrictLanes = null;
             const result = [...GameState.placementSelectedLanes];
             GameState.placementSelectedLanes = [];
             window.handlePlacementLaneClick = null;
@@ -644,6 +646,10 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
         window.handlePlacementLaneClick = async (laneIndex) => {
             if (GameState.placementSelectedLanes.includes(laneIndex)) return;
+            if (GameState.placementRestrictLanes && !GameState.placementRestrictLanes.includes(laneIndex)) {
+                playSound(SOUNDS.seDamage);
+                return;
+            }
             playSound(SOUNDS.seClick);
 
             const newCard = GameState.placementToken;
@@ -1363,9 +1369,10 @@ export async function handleMoveSkills(owner) {
     }
 
     const b = GameState.playerBoard;
+    const movedIds = new Set();
     for (let i = 0; i < 3; i++) {
         const c = b[i];
-        if (c && typeof hasSkill === 'function' && hasSkill(c, 'move') && (c.stunTurns || 0) === 0) {
+        if (c && typeof hasSkill === 'function' && hasSkill(c, 'move') && (c.stunTurns || 0) === 0 && !movedIds.has(c.uid || c.id)) {
             const possibleLanes = [];
             if (i > 0) possibleLanes.push(i - 1);
             if (i < 2) possibleLanes.push(i + 1);
@@ -1383,6 +1390,7 @@ export async function handleMoveSkills(owner) {
                     if (b[target]) {
                         if (!(await discardCard('blue', b[target], target, false))) b[target] = null;
                     }
+                    movedIds.add(c.uid || c.id);
                     b[target] = c;
                     b[i] = null;
                     playSound(SOUNDS.sePlace);

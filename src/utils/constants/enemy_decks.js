@@ -8,10 +8,11 @@ import cthulhu from './enemy_decks/cthulhu.js';
 import dragon from './enemy_decks/dragon.js';
 import elf from './enemy_decks/elf.js';
 import knight from './enemy_decks/knight.js';
-import satan from './enemy_decks/satan.js';
-import satan_high from './enemy_decks/satan_high.js';
 import devilhunter from './enemy_decks/devilhunter.js';
 import witch from './enemy_decks/witch.js';
+import oni from './enemy_decks/oni.js';
+import satan from './enemy_decks/satan.js';
+import satan_high from './enemy_decks/satan_high.js';
 
 export const ENEMY_DECKS = {
     android,
@@ -20,8 +21,9 @@ export const ENEMY_DECKS = {
     dragon,
     elf,
     knight,
-    satan,
-    satan_high,
     devilhunter,
-    witch
+    witch,
+    oni,
+    satan,
+    satan_high
 };
