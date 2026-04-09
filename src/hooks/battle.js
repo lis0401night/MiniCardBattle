@@ -1352,7 +1352,7 @@ export function drawCard(owner) {
 }
 
 export async function handleMoveSkills(owner) {
-    if (owner !== 'blue') {
+    if (owner !== 'blue' && GameState.gameMode !== 'online') {
         const b = GameState.enemyBoard;
         // AIの移動判断
         const bestMoves = evaluateAIMoves(GameState);
@@ -1368,7 +1368,7 @@ export async function handleMoveSkills(owner) {
         return;
     }
 
-    const b = GameState.playerBoard;
+    const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     const movedIds = new Set();
     for (let i = 0; i < 3; i++) {
         const c = b[i];
@@ -1378,17 +1378,21 @@ export async function handleMoveSkills(owner) {
             if (i < 2) possibleLanes.push(i + 1);
             if (possibleLanes.length === 0) continue;
 
-            // wait for the user to select an adjacent cell
-            GameState.placementMessage = `移動するレーンを選んでください`;
-            if (updateBattleUIHook) updateBattleUIHook();
+            if (owner === 'blue') {
+                GameState.placementMessage = `移動するレーンを選んでください`;
+                if (updateBattleUIHook) updateBattleUIHook();
+            }
             
-            const targetIdx = await waitPlayerLaneSelection(1, 'blue', c, false, possibleLanes, false, true, '移動終了');
-            GameState.placementMessage = null;
+            const targetIdx = await waitPlayerLaneSelection(1, owner, c, false, possibleLanes, false, true, '移動終了');
+            
+            if (owner === 'blue') {
+                GameState.placementMessage = null;
+            }
             if (targetIdx && targetIdx.length > 0) {
                 const target = targetIdx[0];
                 if (target !== i) {
                     if (b[target]) {
-                        if (!(await discardCard('blue', b[target], target, false))) b[target] = null;
+                        if (!(await discardCard(owner, b[target], target, false))) b[target] = null;
                     }
                     movedIds.add(c.uid || c.id);
                     b[target] = c;
