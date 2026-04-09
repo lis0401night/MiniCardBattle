@@ -135,7 +135,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (selectedLanes.length > 0) {
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl({ ...tokenCard, owner }) || `assets/cards/card_${tokenCard.id}.jpg`;
-            
+
             if (b[l] && hasSkill(tokenCard, 'equip')) {
                 const targetCard = b[l];
                 targetCard.basePower = (targetCard.basePower || 0) + (tokenCard.power || 0);
@@ -158,8 +158,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 events.push({ type: 'leader_skill', skill: action, side: owner });
                 events.push({ type: 'summon_card', side: owner, lane: l, card: targetCard, source: 'equip' });
                 // 召喚扱いではないためアクティブスキルは発動させない
-                targetCard.skillTriggered = true; 
-                
+                targetCard.skillTriggered = true;
+
                 // リーダースキルで生成した装備カードを対象にアタッチ
                 const eqToken = JSON.parse(JSON.stringify(tokenCard));
                 eqToken.uid = `eq_dng_${Math.floor(getSeededRandom() * 1000000000)}`;
@@ -179,7 +179,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         // フォールスルーして共通の playEvents と resolveOnPlaySkill を実行させる
     } else if (action === 'seal_lanes') {
         if (!tokenLanes || tokenLanes.length === 0) {
-            const selectedLanes = await waitPlayerEnemyLaneSelection(2, owner, true, '封印する相手のレーンを2つ選んでください', true);
+            const selectedLanes = await waitPlayerEnemyLaneSelection(2, owner, true, '相手のレーンを2つまで選んでください', true);
             if (selectedLanes.length === 0) return;
             tokenLanes = selectedLanes;
         }
@@ -286,7 +286,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (currentState.attackSkipCount) {
             GameState.attackSkipCount = currentState.attackSkipCount;
         }
-        
+
         // 封印状態の同期
         GameState.playerSealedLanes = currentState.playerSealedLanes;
         GameState.enemySealedLanes = currentState.enemySealedLanes;

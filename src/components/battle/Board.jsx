@@ -54,6 +54,9 @@ export default function Board({
                                     showAlertModal('封印されています');
                                     return;
                                 }
+                                if (!card) {
+                                    onCellClick(lane, 'enemy', null);
+                                }
                             }}
                         >
                             {card && (
