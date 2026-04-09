@@ -44,6 +44,7 @@ import ContinueScreen from './pages/ContinueScreen.jsx';
 import EndingScreen from './pages/EndingScreen.jsx';
 import RewardOverlay from './components/battle/RewardOverlay.jsx';
 import CutinOverlay from './components/battle/CutinOverlay.jsx';
+import VfxOverlay from './components/battle/VfxOverlay.jsx';
 import { handleClaimAchievement, debugUnlockCards, debugUnlockAchievements } from './hooks/uiGallery.js';
 import { closeSyncDataModal, backupDataToXML, importDataFromXML, reloadGame, closePlayerNameModal, closeEnemyDeckModal } from './hooks/uiMainCore.js';
 import { showNextDialogue, executeContinue, executeGameOver } from './hooks/uiDialogue.js';
@@ -140,6 +141,7 @@ export default function App() {
       <DamageOverlay />
       <RewardOverlay />
       <CutinOverlay />
+      <VfxOverlay />
       <div id="fade-overlay" className="fade-overlay"></div>
     </>
   );
