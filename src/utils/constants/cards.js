@@ -27,7 +27,7 @@ export const CARD_MASTER = [
     { id: 'prisoner', name: '鉄面の監獄破り', rarity: 1, power: 6, skill: 'loss', skillValue: 2, voiceCategory: 'human_male_warrior', flavor: '重い枷を断ち切り、自由と引き換えに己の記憶を打ち捨てた。鉄面の下で獣のように吼え、正気をすり減らしながら、ただ破壊の衝動に従い暴れ狂う。' },
     { id: 'necromancer', name: 'ヴィス・ガルドの背教者', rarity: 1, power: 1, skill: 'resurrect', skillValue: 4, voiceCategory: 'human_female_cool', flavor: '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。' },
     { id: 'ninja', name: '忍者', rarity: 1, power: 3, skill: 'stealth', skillValue: 1, voiceCategory: 'human_male_normal', flavor: '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。' },
-    { id: 'omyouji', name: '漆黒の除霊師', rarity: 2, power: 4, skill: 'seal', skillValue: 1, voiceCategory: 'human_female_cool', flavor: '闇を以て闇を制する異端の術士。彼女が札をきる時、悪霊は光ではなく、より深い漆黒の結界へと封じ込められる。' },
+    { id: 'omyouji', name: '漆黒の除霊師', rarity: 1, power: 4, skill: 'seal', skillValue: 1, voiceCategory: 'human_female_cool', flavor: '闇を以て闇を制する異端の術士。彼女が札をきる時、悪霊は光ではなく、より深い漆黒の結界へと封じ込められる。' },
     { id: 'snake', name: '蛇の使い魔', rarity: 1, power: 3, skill: 'toxic', skillValue: 3, voiceCategory: 'insect', flavor: '魔法使いに使役される毒蛇。術者の命令に従い、獲物を毒牙にかける。' },
     { id: 'beginnermagic', name: '初級魔術', rarity: 1, power: 0, skill: 'choice', skillValue: 1, choices: [{ id: 'summon', value: 5 }, { id: 'support', value: 3 }], voiceCategory: 'magic', flavor: '大地に流れる脈動をマナへと変換する基礎的な魔術。' },
     { id: 'zombie', name: '死蠅の大群', rarity: 1, power: 1, skills: [{ id: 'clone', value: 2 }, { id: 'growth', value: -1 }], voiceCategory: 'insect', flavor: '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する' },
