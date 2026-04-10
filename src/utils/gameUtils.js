@@ -1,7 +1,22 @@
 import { CARD_MASTER } from './constants/cards.js';
-import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio } from './sounds.js';
+import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio, bgmGainNodes } from './sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
+import { CHARACTERS } from './constants/characters.js';
+
+// BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
+export let currentBgmAudio = null;
+export const retryPlayBgm = () => {
+    if (currentBgmAudio && currentBgmAudio.paused) {
+        const p = currentBgmAudio.play();
+        if (p !== undefined) {
+            p.then(() => {
+                document.removeEventListener('click', retryPlayBgm, true);
+                document.removeEventListener('touchstart', retryPlayBgm, true);
+            }).catch(() => {});
+        }
+    }
+};
 
 // ==========================================
 // ユーティリティ関数
@@ -98,8 +113,16 @@ export async function playSound(audioOrKey) {
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
                 audio.currentTime = 0;
+                currentBgmAudio = audio;
                 const p = audio.play();
-                if (p !== undefined) p.catch(() => { });
+                if (p !== undefined) {
+                    p.catch((e) => { 
+                        // 再生が弾かれた場合は次の画面タッチ時にリトライ
+                        console.warn("BGM playback blocked, waiting for user interaction...", e);
+                        document.addEventListener('click', retryPlayBgm, { once: true, capture: true });
+                        document.addEventListener('touchstart', retryPlayBgm, { once: true, capture: true });
+                    });
+                }
             } else {
                 // SEとしてAudio要素を鳴らす場合（予備ロジック）
                 if (audio.paused || audio.ended) {
@@ -119,11 +142,13 @@ export async function playSound(audioOrKey) {
     }
 }
 export function stopSound(audio) {
+    if (audio === currentBgmAudio) currentBgmAudio = null;
     if (audio && audio.pause) {
         audio.pause();
     }
 }
 export function stopAllBGM() {
+    currentBgmAudio = null;
     Object.keys(SOUNDS).forEach(key => {
         if (key.startsWith('bgm')) {
             stopSound(SOUNDS[key]);
