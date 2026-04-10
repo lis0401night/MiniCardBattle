@@ -285,15 +285,17 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             }
         }
         c.skillScore = skillScore;
+        c.lanePriority = c.lane === 2 ? 3 : (c.lane === 0 ? 2 : (c.lane === 1 ? 1 : 0));
     });
 
-    // ④、⑤、⑥、⑦の順でソート
+    // ④、⑤、⑥、⑦、⑧の順でソート
     finalCandidates.sort((a, b) => {
         if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff; // ④ 降順
         if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff; // ⑤ 降順
         if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken; // ⑥ 昇順（ダメージが少ない方が良い）
         if (a.skillScore !== b.skillScore) return b.skillScore - a.skillScore; // ⑦ スキル優先度（回復＞入替＞その他） 降順
-        return 0; // ⑧ 同列
+        if (a.lanePriority !== b.lanePriority) return b.lanePriority - a.lanePriority; // ⑧ レーン優先度（右 > 左 > 中央）降順
+        return 0; // ⑨ 同列
     });
 
     const topCandidate = finalCandidates[0];
@@ -301,14 +303,15 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     const topCount = topCandidate.countDiff;
     const topDmg = topCandidate.simState.combatDamageTaken;
     const topSkill = topCandidate.skillScore;
+    const topLanePri = topCandidate.lanePriority;
 
-    // ④～⑦が完全に同等の最善手グループを抽出
-    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg && c.skillScore === topSkill);
+    // ④～⑧が完全に同等の最善手グループを抽出
+    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg && c.skillScore === topSkill && c.lanePriority === topLanePri);
 
-    // ⑧ ⑦も同列ならその中からランダム
+    // ⑨ ⑧も同列（同じレーンかつ同等のカードを出す場合など）ならその中からランダム
     const finalDecision = bestGroup[Math.floor(getSeededRandom() * bestGroup.length)];
 
-    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg, "Best SkillScore:", topSkill);
+    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg, "Best SkillScore:", topSkill, "Best LanePri:", topLanePri);
     return finalDecision;
 }
 
