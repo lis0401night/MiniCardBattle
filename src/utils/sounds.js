@@ -5,9 +5,11 @@ import { GameState } from '../hooks/gameState.js';
 
 
 // Web Audio API Context
-export let audioCtx = null;
+export let audioCtx = (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) ? new (window.AudioContext || window.webkitAudioContext)() : null;
 export const seBuffers = {};
 export const voiceBuffers = {};
+export let isAudioUnlocked = false;
+export const bgmGainNodes = {};
 
 export const SE_PATHS = {
     // 効果音パス (UI用など)
@@ -97,6 +99,26 @@ Object.keys(AUDIO_INSTANCES).forEach(key => {
     audio.load(); // 事前ロード
 });
 
+// Web Audio API の初期化と事前ルーティング（iOS等の致命的なバグ対策）
+// audioCtxがすでにある場合、再生前にcreateMediaElementSourceを通す
+if (audioCtx) {
+    Object.keys(AUDIO_INSTANCES).forEach(key => {
+        if (key.startsWith('bgm')) {
+            try {
+                const audio = AUDIO_INSTANCES[key];
+                const source = audioCtx.createMediaElementSource(audio);
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.value = 0.3;
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                bgmGainNodes[key] = gainNode;
+            } catch (err) {
+                console.warn("Global BGM routing failed", err);
+            }
+        }
+    });
+}
+
 /**
  * 音声ファイルをロードしてデコードし、バッファとして返す
  */
@@ -122,9 +144,6 @@ export async function loadSE(key, url) {
         seBuffers[url] = buffer; // 文字列パスでも引けるようにする
     }
 }
-
-export let isAudioUnlocked = false;
-export const bgmGainNodes = {};
 
 export function updateBgmGainNodes(vol) {
     if (!audioCtx) return;
@@ -152,27 +171,14 @@ export async function unlockAudio() {
         // 全てのSEを非同期でロード開始
         const loadPromises = Object.entries(SE_PATHS).map(([key, url]) => loadSE(key, url));
 
-        // AudioContext のレジューム（これがアンロックの肝）
         if (audioCtx.state === 'suspended') {
             await audioCtx.resume();
         }
 
-        // BGMをWeb Audio APIルーターに通す (iOS等での動的音量制御のため)
-        Object.keys(AUDIO_INSTANCES).forEach(key => {
-            if (key.startsWith('bgm') && !bgmGainNodes[key]) {
-                try {
-                    const audio = AUDIO_INSTANCES[key];
-                    const source = audioCtx.createMediaElementSource(audio);
-                    const gainNode = audioCtx.createGain();
-                    const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
-                    gainNode.gain.value = baseVol;
-                    source.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-                    bgmGainNodes[key] = gainNode;
-                } catch (err) {
-                    console.warn("Failed to route BGM to Web Audio API", err);
-                }
-            }
+        // BGM volume sync with GameState
+        const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
+        Object.values(bgmGainNodes).forEach(gain => {
+            if (gain && gain.gain) gain.gain.value = baseVol;
         });
 
         // ダミー再生（念のため）
