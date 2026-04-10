@@ -151,8 +151,8 @@ export const ACHIEVEMENT_MASTER = [
         title: '羅生門の鬼',
         description: 'カグラのストーリー（上級）をクリアする',
         type: 'story_clear_hard',
-        targetValue: 'oni'
-        // プレミアムカードは未実装のため報酬は記述しない
+        targetValue: 'oni',
+        reward: { type: 'premium', value: 'omyouji', name: '漆黒の除霊師', isPremiumUnlock: true }
     },
     // --- カード収集 ---
     {

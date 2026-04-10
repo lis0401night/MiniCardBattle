@@ -14,6 +14,7 @@ export const EXCHANGE_LINEUP = [
     { id: 'wolf', type: 'premium', cost: 20 },
     { id: 'vampire', type: 'premium', cost: 20 },
     { id: 'djinn', type: 'premium', cost: 20 },
+    { id: 'shogun', type: 'premium', cost: 20 },
     { id: 'dreadnought', type: 'premium', cost: 10 },
     { id: 'hammer', type: 'premium', cost: 10 },
     { id: 'darkpaladin', type: 'premium', cost: 10 },
