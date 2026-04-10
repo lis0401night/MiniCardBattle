@@ -453,7 +453,8 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
 // 以下の関数は getBestSimulatedMove に統合されました
 
 export function evaluateAdhocTokenLanes(tokenCard) {
-    const allLanes = [0, 1, 2];
+    const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
+    const allLanes = [0, 1, 2].filter(l => sealedLanes[l] === 0);
     const candidates = [];
     const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
 

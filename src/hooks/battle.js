@@ -437,7 +437,8 @@ export function showSpeechBubble(target) {
             if (!originalSrc.includes('_damage.png')) {
                 iconEl.src = originalSrc.replace('.png', '_damage.png');
                 setTimeout(() => {
-                    if (iconEl.src.includes('_damage.png')) {
+                    const currentHP = target === 'blue' ? GameState.playerHP : GameState.enemyHP;
+                    if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
                         iconEl.src = originalSrc;
                     }
                 }, 1500);
@@ -533,6 +534,7 @@ export function executeSkillFromConfirm() {
  */
 export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true, canCancel = false, buttonText = '配置終了') {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const sealedLanes = owner === 'blue' ? (GameState.playerSealedLanes || [0, 0, 0]) : (GameState.enemySealedLanes || [0, 0, 0]);
     // Check for Remote Choice Wait
     if (GameState.gameMode === 'online' && owner === 'red') {
         return new Promise(resolve => {
@@ -544,7 +546,8 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
     // AIの場合：
     if (owner === 'red') {
         // aiDecision 内のシミュレーション結果を利用する・または難易度に応じた評価を行う
-        let selectedLanes = evaluateBestLanesForToken([0, 1, 2], 'red', tokenCard, count, isLeaderSkill, canCancel);
+        const availableAI = [0, 1, 2].filter(l => sealedLanes[l] === 0);
+        let selectedLanes = evaluateBestLanesForToken(availableAI, 'red', tokenCard, count, isLeaderSkill, canCancel);
 
         // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
         if (checkConstraints && tokenCard) {
@@ -566,8 +569,8 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
         // それでも足りない場合、空きレーンや重複を許容する
         if (selectedLanes.length < count) {
-            let validEmptyLanes = board.map((c, i) => c === null ? i : -1).filter(i => i !== -1);
-            let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i));
+            let validEmptyLanes = board.map((c, i) => c === null && sealedLanes[i] === 0 ? i : -1).filter(i => i !== -1);
+            let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i) && sealedLanes[i] === 0);
 
             if (checkConstraints && tokenCard) {
                 const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
@@ -602,6 +605,9 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         if (selectedLanes.length < count && canCancel) {
             return [];
         }
+
+        // 不正なレーンが混ざった場合の最終安全装置
+        selectedLanes = selectedLanes.filter(i => sealedLanes[i] === 0);
 
         return selectedLanes.slice(0, count);
     }
@@ -646,6 +652,10 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
         window.handlePlacementLaneClick = async (laneIndex) => {
             if (GameState.placementSelectedLanes.includes(laneIndex)) return;
+            if (sealedLanes[laneIndex] > 0) {
+                playSound(SOUNDS.seDamage);
+                return;
+            }
             if (GameState.placementRestrictLanes && !GameState.placementRestrictLanes.includes(laneIndex)) {
                 playSound(SOUNDS.seDamage);
                 return;
@@ -1147,6 +1157,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             card.skillValue = originalMaster.skillValue || 0;
             card.skills = originalMaster.skills ? JSON.parse(JSON.stringify(originalMaster.skills)) : [];
             card.choices = originalMaster.choices ? JSON.parse(JSON.stringify(originalMaster.choices)) : [];
+            card.choices2 = originalMaster.choices2 ? JSON.parse(JSON.stringify(originalMaster.choices2)) : null;
             card.rarity = originalMaster.rarity;
             card.imgUrl = originalMaster.imgUrl;
             card.flavor = originalMaster.flavor;
@@ -1334,6 +1345,7 @@ export function drawCard(owner) {
             }
             createDamagePopup(document.getElementById(`${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`), `-${damage}`, '#ef4444');
             playSound(SOUNDS.seDamage);
+            showSpeechBubble(owner);
             updateHPBar();
             checkWinCondition();
         }
@@ -1573,8 +1585,23 @@ export async function playCard(o, hI, l) {
             // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
             if (playingCard.choices && playingCard.choices.length > 0) {
                 targetCard.choices = targetCard.choices || [];
-                // 既存の選択肢と重複しないように統合（単純結合でも可）
-                targetCard.choices = targetCard.choices.concat(playingCard.choices);
+                // 既存の選択肢と重複しないように統合
+                playingCard.choices.forEach(pc => {
+                    const isDup = targetCard.choices.some(tc => tc.id === pc.id && tc.value === pc.value && tc.choiceGroup === pc.choiceGroup);
+                    if (!isDup) {
+                        targetCard.choices.push({ ...pc });
+                    }
+                });
+            }
+            if (playingCard.choices2 && playingCard.choices2.length > 0) {
+                targetCard.choices2 = targetCard.choices2 || [];
+                // 既存の選択肢と重複しないように統合
+                playingCard.choices2.forEach(pc => {
+                    const isDup = targetCard.choices2.some(tc => tc.id === pc.id && tc.value === pc.value && tc.choiceGroup === pc.choiceGroup);
+                    if (!isDup) {
+                        targetCard.choices2.push({ ...pc });
+                    }
+                });
             }
 
             // 手札の装備カードを消費して対象カードにアタッチ

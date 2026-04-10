@@ -56,12 +56,12 @@ export function updateCardDetail(c) {
         textColor = '#fff';
         let skillCandidates = [];        // 1. 基本スキル
         if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
-            skillCandidates.push({ id: c.skill, value: c.skillValue });
+            skillCandidates.push({ id: c.skill, value: c.skillValue, choiceGroup: c.choiceGroup });
         }
         // 2. 複数スキル配列
         if (Array.isArray(c.skills)) {
             c.skills.forEach(sk => {
-                skillCandidates.push({ id: sk.id, value: sk.value });
+                skillCandidates.push({ id: sk.id, value: sk.value, choiceGroup: sk.choiceGroup });
             });
         }
         
@@ -75,12 +75,12 @@ export function updateCardDetail(c) {
         }
 
         let grouped = [];
-        skillCandidates.forEach(c => {
-            const existing = grouped.find(g => g.id === c.id && g.value === c.value && g.isBind === c.isBind);
+        skillCandidates.forEach(cand => {
+            const existing = grouped.find(g => g.id === cand.id && g.value === cand.value && g.isBind === cand.isBind && g.choiceGroup === cand.choiceGroup);
             if (existing) {
                 existing.count++;
             } else {
-                grouped.push({ ...c, count: 1 });
+                grouped.push({ ...cand, count: 1 });
             }
         });
 
@@ -96,21 +96,24 @@ export function updateCardDetail(c) {
                     const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
                     const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
                     
-                    if (sk.id === 'choice' && Array.isArray(c.choices)) {
+                    if (sk.id === 'choice' && (Array.isArray(c.choices) || Array.isArray(c.choices2))) {
                         let subDetailsHtml = '';
-                        c.choices.forEach(cho => {
-                            const cs = SKILLS[cho.id];
-                            if (cs) {
-                                const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
-                                const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
-                                subDetailsHtml += `
-                                    <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
-                                        <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${cs.icon} ${cs.name}${cVal}</div>
-                                        <div class="skill-desc" style="font-size: 0.8rem; color: #94a3b8; padding-left: 0;">${cDesc}</div>
-                                    </div>
-                                `;
-                            }
-                        });
+                        const targetChoices = sk.choiceGroup === 2 ? c.choices2 : c.choices;
+                        if (Array.isArray(targetChoices)) {
+                            targetChoices.forEach(cho => {
+                                const cs = SKILLS[cho.id];
+                                if (cs) {
+                                    const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
+                                    const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                                    subDetailsHtml += `
+                                        <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
+                                            <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${cs.icon} ${cs.name}${cVal}</div>
+                                            <div class="skill-desc" style="font-size: 0.8rem; color: #94a3b8; padding-left: 0;">${cDesc}</div>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        }
 
                         html += `
                             <details class="choice-accordion" style="margin-bottom: 4px; width: 100%;">

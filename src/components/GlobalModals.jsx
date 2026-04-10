@@ -288,8 +288,8 @@ export default function GlobalModals() {
     const filter = GameState.playerConfig?.filter || 'none';
 
     let skillCandidates = [];
-    if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue });
-    if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ id: sk.id, value: sk.value }));
+    if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue, choiceGroup: card.choiceGroup });
+    if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ id: sk.id, value: sk.value, choiceGroup: sk.choiceGroup }));
 
     const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
     if (isOblivion) {
@@ -374,7 +374,9 @@ export default function GlobalModals() {
                   const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
                   const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
 
-                  if (sk.id === 'choice' && Array.isArray(card.choices)) {
+                  if (sk.id === 'choice' && (Array.isArray(card.choices) || Array.isArray(card.choices2))) {
+                    const targetChoices = sk.choiceGroup === 2 ? card.choices2 : card.choices;
+                    if (!Array.isArray(targetChoices)) return null;
                     return (
                       <div key={idx} className="preview-skill-item">
                         <details className="choice-accordion" style={{ width: '100%' }}>
@@ -386,7 +388,7 @@ export default function GlobalModals() {
                             <p className="preview-skill-desc" style={{ marginTop: '6px', marginBottom: '8px', color: '#f8fafc', textAlign: 'center' }}>{desc}</p>
                           </summary>
                           <div className="accordion-content" style={{ marginTop: '5px' }}>
-                            {card.choices.map((cho, cIdx) => {
+                            {targetChoices.map((cho, cIdx) => {
                               const cs = SKILLS?.[cho.id];
                               if (!cs) return null;
                               const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;

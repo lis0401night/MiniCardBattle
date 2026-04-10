@@ -443,7 +443,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
@@ -472,7 +473,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
@@ -509,7 +511,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                 targetLaneRes = simulatedTokenLanes.shift();
             } else {
-                const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null);
+                const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                 if (emptyLanesRes.length > 0) targetLaneRes = emptyLanesRes[0];
             }
 
@@ -549,7 +552,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
@@ -736,7 +740,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             if (tokenLanes && tokenLanes.length > 0) {
                 l = tokenLanes[0];
             } else {
-                const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+                const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+                const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0));
                 if (emptyLanes.length > 0) l = emptyLanes[0];
             }
             if (l !== -1) {
@@ -763,7 +768,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         if (tokenLanes && tokenLanes.length > 0) {
             l = tokenLanes[0];
         } else {
-            const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+            const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+            const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0));
             if (emptyLanes.length > 0) l = emptyLanes[0];
         }
 
@@ -804,8 +810,9 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 addKnight(l);
             }
         } else {
+            const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
             for (let i = 0; i < 3 && count < 2; i++) {
-                if (board[i] === null) addKnight(i);
+                if (board[i] === null && (!sealedLanes || sealedLanes[i] === 0)) addKnight(i);
             }
         }
         // 全体バフ+2
@@ -986,14 +993,20 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         if (dmgToDef > 0 && hasSkill(aC, 'absorb')) {
-            if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + dmgToDef);
-            else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + dmgToDef);
-            events.push({ type: 'heal_player', side: attackerSide, amount: dmgToDef, source: 'absorb', lane: aLane });
+            const healAmt = Math.floor(dmgToDef / 2);
+            if (healAmt > 0) {
+                if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
+                else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
+                events.push({ type: 'heal_player', side: attackerSide, amount: healAmt, source: 'absorb', lane: aLane });
+            }
         }
         if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
-            if (defSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + dmgToAtk);
-            else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + dmgToAtk);
-            events.push({ type: 'heal_player', side: defSide, amount: dmgToAtk, source: 'absorb', lane: dLane });
+            const healAmt = Math.floor(dmgToAtk / 2);
+            if (healAmt > 0) {
+                if (defSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
+                else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
+                events.push({ type: 'heal_player', side: defSide, amount: healAmt, source: 'absorb', lane: dLane });
+            }
         }
 
         if (hasSkill(aC, 'pierce')) {
@@ -1004,9 +1017,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                 applyExtort(aC, defSide, attackerSide, aLane, events, state);
                 
                 if (hasSkill(aC, 'absorb')) {
-                    if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + pDmg);
-                    else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + pDmg);
-                    events.push({ type: 'heal_player', side: attackerSide, amount: pDmg, source: 'absorb', lane: aLane });
+                    const healAmt = Math.floor(pDmg / 2);
+                    if (healAmt > 0) {
+                        if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
+                        else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
+                        events.push({ type: 'heal_player', side: attackerSide, amount: healAmt, source: 'absorb', lane: aLane });
+                    }
                 }
             }
         }
@@ -1030,9 +1046,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         applyExtort(aC, defSide, attackerSide, aLane, events, state);
         
         if (finalDmg > 0 && hasSkill(aC, 'absorb')) {
-            if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + finalDmg);
-            else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + finalDmg);
-            events.push({ type: 'heal_player', side: attackerSide, amount: finalDmg, source: 'absorb', lane: aLane });
+            const healAmt = Math.floor(finalDmg / 2);
+            if (healAmt > 0) {
+                if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
+                else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
+                events.push({ type: 'heal_player', side: attackerSide, amount: healAmt, source: 'absorb', lane: aLane });
+            }
         }
     }
 
