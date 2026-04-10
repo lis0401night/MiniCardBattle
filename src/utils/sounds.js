@@ -22,6 +22,7 @@ export const SE_PATHS = {
     seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
     seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
     seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
+    seSkillFreeze: 'assets/audio/se/se_skill_freeze.mp3',
     seClock: 'assets/audio/se/se_clock.mp3'
 };
 
@@ -38,6 +39,7 @@ export const SOUNDS = {
     seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
     seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
     seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
+    seSkillFreeze: 'assets/audio/se/se_skill_freeze.mp3',
     seClock: 'assets/audio/se/se_clock.mp3'
 };
 
@@ -75,7 +77,8 @@ export const AUDIO_INSTANCES = {
     seLegend: new Audio('assets/audio/se/se_legend.mp3'),
     seSkillBind: new Audio('assets/audio/se/se_skill_bind.mp3'),
     seSkillToxic: new Audio('assets/audio/se/se_skill_toxic.mp3'),
-    seSkillCharge: new Audio('assets/audio/se/se_skill_charge.mp3')
+    seSkillCharge: new Audio('assets/audio/se/se_skill_charge.mp3'),
+    seSkillFreeze: new Audio('assets/audio/se/se_skill_freeze.mp3')
 };
 
 // サウンドの初期設定

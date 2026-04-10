@@ -478,7 +478,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             await sleep(500);
         }
     } else if (skillId === 'freeze') {
-        playSound(SOUNDS.seSkillBind); createDamagePopup(cEl, '凍結', '#93c5fd');
+        playSound(SOUNDS.seSkillFreeze); createDamagePopup(cEl, '凍結', '#93c5fd');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
         const targets = [l - 1, l, l + 1].filter(idx => idx >= 0 && idx <= 2 && eB[idx]);
         if (targets.length > 0) {
