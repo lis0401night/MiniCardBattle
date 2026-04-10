@@ -1,5 +1,5 @@
 import { CARD_MASTER } from './constants/cards.js';
-import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio, bgmGainNodes } from './sounds.js';
+import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio } from './sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
 import { CHARACTERS } from './constants/characters.js';
