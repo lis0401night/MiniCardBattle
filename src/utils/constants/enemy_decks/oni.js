@@ -22,7 +22,7 @@ export default {
         'shogun', 'shogun',
         'fox', 'fox', 'fox',
         'kasha', 'kasha', 'kasha',
-        'yukionna', 'yukionna', 'yukionna',
+        'nurikabe', 'nurikabe',
         'ogre', 'ogre', 'ogre',
         'samurai', 'samurai', 'samurai',
         'tengu', 'tengu', 'tengu', 'tengu',
