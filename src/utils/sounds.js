@@ -5,11 +5,10 @@ import { GameState } from '../hooks/gameState.js';
 
 
 // Web Audio API Context
-export let audioCtx = (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+export let audioCtx = null;
 export const seBuffers = {};
 export const voiceBuffers = {};
 export let isAudioUnlocked = false;
-export const bgmGainNodes = {};
 
 export const SE_PATHS = {
     // 効果音パス (UI用など)
@@ -99,25 +98,7 @@ Object.keys(AUDIO_INSTANCES).forEach(key => {
     audio.load(); // 事前ロード
 });
 
-// Web Audio API の初期化と事前ルーティング（iOS等の致命的なバグ対策）
-// audioCtxがすでにある場合、再生前にcreateMediaElementSourceを通す
-if (audioCtx) {
-    Object.keys(AUDIO_INSTANCES).forEach(key => {
-        if (key.startsWith('bgm')) {
-            try {
-                const audio = AUDIO_INSTANCES[key];
-                const source = audioCtx.createMediaElementSource(audio);
-                const gainNode = audioCtx.createGain();
-                gainNode.gain.value = 0.3;
-                source.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                bgmGainNodes[key] = gainNode;
-            } catch (err) {
-                console.warn("Global BGM routing failed", err);
-            }
-        }
-    });
-}
+
 
 /**
  * 音声ファイルをロードしてデコードし、バッファとして返す
@@ -146,11 +127,13 @@ export async function loadSE(key, url) {
 }
 
 export function updateBgmGainNodes(vol) {
-    if (!audioCtx) return;
-    Object.values(bgmGainNodes).forEach(gainNode => {
-        if (gainNode && gainNode.gain) {
-            // Apply volume instantly or with a very short ramp to avoid clicks
-            gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.01);
+    // BGMはHTML5 Audioのvolumeを直接変更
+    Object.keys(AUDIO_INSTANCES).forEach(key => {
+        if (key.startsWith('bgm')) {
+            const audio = AUDIO_INSTANCES[key];
+            if (audio) {
+                audio.volume = vol;
+            }
         }
     });
 }
@@ -175,11 +158,9 @@ export async function unlockAudio() {
             await audioCtx.resume();
         }
 
-        // BGM volume sync with GameState
+        // BGM volume sync
         const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
-        Object.values(bgmGainNodes).forEach(gain => {
-            if (gain && gain.gain) gain.gain.value = baseVol;
-        });
+        updateBgmGainNodes(baseVol);
 
         // ダミー再生（念のため）
         const osc = audioCtx.createOscillator();
