@@ -19,9 +19,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -451,6 +451,25 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 tEl.classList.add('anim-shake');
                 createDamagePopup(tEl, '拘束', '#94a3b8');
             }
+            await sleep(500);
+            if (tEl) tEl.classList.remove('anim-shake');
+        } else {
+            await sleep(500);
+        }
+    } else if (skillId === 'seal') {
+        const targetSide = o === 'blue' ? 'enemy' : 'player';
+        const targetSealedLanes = o === 'blue' ? GameState.enemySealedLanes : GameState.playerSealedLanes;
+        
+        if (targetSealedLanes) {
+            const turns = skillValue || 1;
+            targetSealedLanes[l] = turns;
+            
+            const tEl = document.querySelector(`#${targetSide}-lanes .cell[data-lane="${l}"]`);
+            if (tEl) {
+                tEl.classList.add('anim-shake');
+                createDamagePopup(tEl, '封印', '#94a3b8');
+            }
+            if (window.updateBattleUIHook) window.updateBattleUIHook();
             await sleep(500);
             if (tEl) tEl.classList.remove('anim-shake');
         } else {

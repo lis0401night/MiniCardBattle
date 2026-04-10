@@ -1570,6 +1570,13 @@ export async function playCard(o, hI, l) {
             }
             mergeCardSkills(targetCard, equipSkills);
 
+            // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
+            if (playingCard.choices && playingCard.choices.length > 0) {
+                targetCard.choices = targetCard.choices || [];
+                // 既存の選択肢と重複しないように統合（単純結合でも可）
+                targetCard.choices = targetCard.choices.concat(playingCard.choices);
+            }
+
             // 手札の装備カードを消費して対象カードにアタッチ
             const consumedCard = h.splice(hI, 1)[0];
             targetCard.equippedCards = targetCard.equippedCards || [];
