@@ -60,6 +60,7 @@ export const AUDIO_INSTANCES = {
     bgmStageCleric: new Audio('assets/audio/bgm/bgm_stage_cleric01.mp3'),
     bgmStageDevilHunter: new Audio('assets/audio/bgm/bgm_stage_devilhunter01.mp3'),
     bgmStageWitch: new Audio('assets/audio/bgm/bgm_stage_witch01.mp3'),
+    bgmStageOni: new Audio('assets/audio/bgm/bgm_stage_oni01.mp3'),
     bgmStageSatan: new Audio('assets/audio/bgm/bgm_stage_satan01.mp3'),
     bgmStageDungeon: new Audio('assets/audio/bgm/bgm_stage_dungeon01.mp3'),
     bgmStagePractice: new Audio('assets/audio/bgm/bgm_stage_practice01.mp3'),

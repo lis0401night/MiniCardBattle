@@ -14,7 +14,7 @@ export default {
         'warlock', 'warlock',
         'dealer', 'dealer',
         'devil', 'devil', 'devil', 'devil',
-        'goat', 'goat',
+        'cavalry', 'cavalry',
         'zombie', 'zombie',
     ],
     hard: [
@@ -24,7 +24,7 @@ export default {
         'warlock', 'warlock',
         'dealer', 'dealer',
         'devil', 'devil',
-        'goat', 'goat',
+        'cavalry', 'cavalry',
         'zombie', 'zombie',
     ]
 };

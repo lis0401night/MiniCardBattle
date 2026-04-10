@@ -12,6 +12,6 @@ export default [
     'warlock',
     'dealer',
     'devil',
-    'goat',
-    'zombie',
+    'cavalry',
+    'cavalry',
 ];

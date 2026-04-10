@@ -11,6 +11,7 @@ export const STAGES = {
     cleric: { id: 'cleric', name: '静寂の聖堂', bgm: 'bgmStageCleric' },
     devilhunter: { id: 'devilhunter', name: '旧市街', bgm: 'bgmStageDevilHunter' },
     witch: { id: 'witch', name: '魔女の隠れ家', bgm: 'bgmStageWitch' },
+    oni: { id: 'oni', name: '逢魔が時', bgm: 'bgmStageOni' },
     satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' },
     dungeon: { id: 'dungeon', name: '試練の宮殿', bgm: 'bgmStageDungeon' }
 };

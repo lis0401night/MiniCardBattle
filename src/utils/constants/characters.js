@@ -466,7 +466,7 @@ const SKIN_NAMES = {
     cleric: '背徳のサマーバカンス',
     devilhunter: '渚の悪魔狩り',
     witch: '不機嫌なサマー・グリモワール',
-    oni: '涼み鬼の夏装束'
+    oni: '涼み鬼の波打ち肌'
 };
 
 Object.values(CHARACTERS).forEach(char => {

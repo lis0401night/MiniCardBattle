@@ -70,7 +70,7 @@ export const PLAYMAT_MASTER = [
     { id: 'pm_cleric_summer', name: '背徳のサマーバカンス', image: 'assets/boards/board_cleric_summer.png' },
     { id: 'pm_devilhunter_summer', name: '渚の悪魔狩り', image: 'assets/boards/board_devilhunter_summer.png' },
     { id: 'pm_witch_summer', name: '不機嫌なサマー・グリモワール', image: 'assets/boards/board_witch_summer.png' },
-    { id: 'pm_oni_summer', name: '涼み鬼の夏装束', image: 'assets/boards/board_oni_summer.png' }
+    { id: 'pm_oni_summer', name: '涼み鬼の波打ち肌', image: 'assets/boards/board_oni_summer.png' }
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
 export let ownedPlaymats = []; // ['android', 'dragon', ...]

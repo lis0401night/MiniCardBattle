@@ -272,7 +272,7 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 }
 
 export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn'];
-export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'darkpaladin', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna'];
+export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'darkpaladin', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna', 'cavalry'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {

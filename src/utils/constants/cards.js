@@ -89,6 +89,7 @@ export const CARD_MASTER = [
     { id: 'nurikabe', name: '見下ろす巨顔', rarity: 2, power: 13, skills: [{ id: 'legendary' }, { id: 'defender' }], voiceCategory: 'stone', flavor: '宵闇の道程、突如として立ちはだかる絶対の絶望。どれほど刃を立てようとも揺るがぬその巨岩の貌は、愚かな侵入者をただ冷ややかに見下ろしている。' },
     { id: 'warlock', name: '煉獄の拷問官', rarity: 2, power: 4, skills: [{ id: 'sacrifice', value: 4 }, { id: 'berserk', value: 4 }, { id: 'spread', value: 4 }], voiceCategory: 'undead', flavor: '燃え盛る炎の鞭を振るう魔界の拷問官。その一振りは敵を焼き払い、自らの魂さえも劫火の糧とする。' },
     { id: 'dealer', name: 'デビル・ディーラー', rarity: 2, power: 5, skills: [{ id: 'sacrifice', value: 2 }, { id: 'draw', value: 3 }], flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。' },
+    { id: 'cavalry', name: '煉獄侯爵の先陣', rarity: 2, power: 7, skills: [{ id: 'sacrifice', value: 2 }, { id: 'challenge' }, { id: 'pierce' }, { id: 'guardian' }], voiceCategory: 'horse', flavor: '焦熱の風を切り裂き、気高き悪魔が戦場を駆ける。その立ち振る舞いはどこまでも優雅にして、振るう一撃は残酷そのもの。' },
     { id: 'cyberman', name: 'ライオット・キーパー', rarity: 3, power: 6, skills: [{ id: 'charge', value: -1 }], voiceCategory: 'machine_new', flavor: '「システム始動……これより排除を開始する。」最新型の暴徒鎮圧用ドロイド。' },
     { id: 'booster', name: 'イーグルブースター', rarity: 3, power: 1, skills: [{ id: 'equip' }, { id: 'quick' }], voiceCategory: 'machine_new', flavor: '天空を駆ける鷲が如き加速力をもたらす推進器。対象は瞬く間に敵陣を強襲する。' },
     { id: 'cyberdragon', name: '試作型ドラグーン', rarity: 3, power: 5, skills: [{ id: 'legendary' }, { id: 'spread', value: 3 }, { id: 'charge', value: -3 }], voiceCategory: 'machine_new', flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。' },
