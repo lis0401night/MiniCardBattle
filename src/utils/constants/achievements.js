@@ -220,38 +220,14 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 40,
         reward: { type: 'card', value: 'shuffler', name: 'シャッフラー' }
     },
-    // --- 試練の宮殿到達階層 ---
+    // --- 高難易度クリア ---
     {
-        id: 'dungeon_reach_10',
-        title: '迷宮への入り口',
-        description: '試練の宮殿で10Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 10,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
-    {
-        id: 'dungeon_reach_20',
-        title: '試練の始まり',
-        description: '試練の宮殿で20Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 20,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
-    {
-        id: 'dungeon_reach_30',
-        title: '深淵なる探索者',
-        description: '試練の宮殿で30Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 30,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
-    },
-    {
-        id: 'dungeon_reach_40',
-        title: '宮殿の支配者',
-        description: '試練の宮殿で40Fに到達する',
-        type: 'dungeon_reach',
-        targetValue: 40,
-        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+        id: 'event_satan_clear',
+        title: '復活の魔王',
+        description: '高難易度イベントでサタンを倒す',
+        type: 'event_clear',
+        targetValue: 'satan_high',
+        reward: { type: 'playmat', value: 'satan', name: 'サタン' }
     },
     // --- 防衛戦勝利数 ---
     {
@@ -286,14 +262,71 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 40,
         reward: { type: 'card', value: 'invader', name: '彼方からの侵略者' }
     },
-    // --- イベントクリア ---
+    // --- 試練の宮殿到達階層 ---
     {
-        id: 'event_satan_clear',
-        title: '復活の魔王',
-        description: '高難易度イベントでサタンを倒す',
-        type: 'event_clear',
-        targetValue: 'satan_high',
-        reward: { type: 'playmat', value: 'satan', name: 'サタン' }
+        id: 'dungeon_reach_10',
+        title: '迷宮への入り口',
+        description: '試練の宮殿で10Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 10,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_20',
+        title: '試練の始まり',
+        description: '試練の宮殿で20Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 20,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_30',
+        title: '深淵なる探索者',
+        description: '試練の宮殿で30Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 30,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    {
+        id: 'dungeon_reach_40',
+        title: '宮殿の支配者',
+        description: '試練の宮殿で40Fに到達する',
+        type: 'dungeon_reach',
+        targetValue: 40,
+        reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' }
+    },
+    // --- 実績達成数 ---
+    {
+        id: 'total_unlock_5',
+        title: '踏み出した一歩',
+        description: '実績を累計5個達成する',
+        type: 'total_unlock',
+        targetValue: 5,
+        reward: { type: 'card', value: 'homunculus', name: 'ホムンクルスの実験体' }
+    },
+    {
+        id: 'total_unlock_10',
+        title: '確かなる功績',
+        description: '実績を累計10個達成する',
+        type: 'total_unlock',
+        targetValue: 10,
+        reward: { type: 'card', value: 'homunculus', name: 'ホムンクルスの実験体' }
+    },
+    {
+        id: 'total_unlock_15',
+        title: '語り継がれる偉業',
+        description: '実績を累計15個達成する',
+        type: 'total_unlock',
+        targetValue: 15,
+        reward: { type: 'card', value: 'homunculus', name: 'ホムンクルスの実験体' }
+    },
+    {
+        id: 'total_unlock_20',
+        title: '神話の紡ぎ手',
+        description: '実績を累計20個達成する',
+        type: 'total_unlock',
+        targetValue: 20,
+        reward: { type: 'card', value: 'homunculus', name: 'ホムンクルスの実験体' }
     }
 ];
 
@@ -335,6 +368,7 @@ export function loadAchievements() {
         }
     }
     checkCollectionAchievements(); // カード収集状況はロード時に常に最新化して判定する
+    checkTotalAchievementUnlocks(); // 累計実績もロード時に再計算して反映する
     saveAchievements();
 }
 
@@ -464,9 +498,25 @@ function updateAchievement(id, currentValue, targetValue) {
     if (ach.progress >= targetValue) {
         ach.isUnlocked = true;
         ach.progress = targetValue;
-        // console.log(`Achievement Unlocked: ${id}`);
-        // もしバトル中などでなければ、画面の隅に通知を出すような仕組みを追加することも可能
+
+        if (!id.startsWith('total_unlock_')) {
+            checkTotalAchievementUnlocks();
+        }
     }
+}
+
+// 累計実績達成数のチェック
+function checkTotalAchievementUnlocks() {
+    let unlockedCount = 0;
+    Object.keys(achievementData.achievements).forEach(key => {
+        if (achievementData.achievements[key].isUnlocked && !key.startsWith('total_unlock_')) {
+            unlockedCount++;
+        }
+    });
+
+    ACHIEVEMENT_MASTER.filter(a => a.type === 'total_unlock').forEach(ach => {
+        updateAchievement(ach.id, unlockedCount, ach.targetValue);
+    });
 }
 
 // 報酬の受け取り処理（将来用）
@@ -524,7 +574,7 @@ export function claimAchievementReward(id) {
 
 export function checkAndFixMissingRewards() {
     if (!achievementData || !achievementData.achievements) return;
-    
+
     let needsSave = false;
     const cardClaimedCounts = {};
 
@@ -552,7 +602,7 @@ export function checkAndFixMissingRewards() {
     });
 
     const currentInventory = GameState.playerInventory || {};
-    
+
     Object.keys(cardClaimedCounts).forEach(cardId => {
         const claimedCount = cardClaimedCounts[cardId];
         const actualCount = currentInventory[cardId] || 0;

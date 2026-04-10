@@ -122,6 +122,19 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             });
             break;
+        case 'replicate': {
+            let maxOtherPower = 0;
+            b.forEach((x, idx) => {
+                if (idx !== l && x !== null) {
+                    if (x.currentPower > maxOtherPower) maxOtherPower = x.currentPower;
+                }
+            });
+            if (maxOtherPower > 0) {
+                c.currentPower += maxOtherPower;
+                events.push({ type: 'power_change', side: owner, lane: l, amount: maxOtherPower, source: 'replicate' });
+            }
+            break;
+        }
         case 'hero':
             const occ = b.filter((x, idx) => x !== null && idx !== l).length;
             const hVal = occ * (val || 3);

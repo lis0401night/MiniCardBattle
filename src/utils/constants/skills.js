@@ -48,6 +48,7 @@ export const SKILLS = {
     convert: { name: '対価', icon: '⚖', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空（パワー1）」を加える。` },
     dispel: { name: '解除', icon: '🔓', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択し、そのカードが装備中のカードを全て破壊する。対象が「装備」を持つカードならそのカードを破壊する。` },
     invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
+    replicate: { name: '複製', icon: '👯', desc: (val) => '召喚時、最もパワーが高い自分の他のカード1体のパワー分、自身のパワーを+する。' },
     equip: { name: '装備', icon: '🗡️', desc: (val) => '既にカードのあるレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。' },
     phase: { name: '位相', icon: '🌫️', desc: (val) => '位相を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。ただし「防御」にはブロックされる。' },
     petrify: { name: '石化', icon: '🗿', desc: (val) => '召喚時、正面のカードを「石像（パワー5、防御、頑丈）」に変身させる。（破壊時、元のカードが墓地に置かれる）' },
@@ -66,7 +67,7 @@ export const SKILLS = {
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

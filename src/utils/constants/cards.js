@@ -131,8 +131,9 @@ export const CARD_MASTER = [
     { id: 'palerider', name: '死の使徒', rarity: 4, power: 5, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], voiceCategory: 'horse', flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
     { id: 'baldanders', name: 'バルトアンデルス', rarity: 4, power: 0, skill: 'metamorph', voiceCategory: 'stone', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', rarity: 4, power: 5, skill: 'shuffle', voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
-    { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', voiceCategory: 'human_male_ikemen', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。' },
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
+    { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', voiceCategory: 'human_male_ikemen', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。' },
+    { id: 'homunculus', name: 'ホムンクルスの実験体', power: 0, skill: 'replicate', rarity: 4, voiceCategory: 'stone', flavor: '欠落した半身を埋めるため、未完成のホムンクルスは強者の力を模倣する。鏡に映る己が完全な存在であると信じて。' },
 
     // トークンカード
     { id: 'token_knight', name: '騎士', rarity: 1, power: 2, isToken: true, skill: 'none', voiceCategory: 'sword', flavor: '号令で召喚された騎士。' },
