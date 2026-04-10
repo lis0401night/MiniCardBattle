@@ -9,9 +9,9 @@ export default [
     'bahamut',
     'daemon',
     'daemonarmor',
+    'wendigo',
     'warlock',
     'dealer',
     'devil',
-    'cavalry',
     'cavalry',
 ];
