@@ -118,10 +118,10 @@ export async function playSound(audioOrKey) {
         }
     }
 }
-export function stopSound(audio) { 
-    if (audio && audio.pause) { 
-        audio.pause(); 
-    } 
+export function stopSound(audio) {
+    if (audio && audio.pause) {
+        audio.pause();
+    }
 }
 export function stopAllBGM() {
     Object.keys(SOUNDS).forEach(key => {
@@ -206,7 +206,7 @@ window.addEventListener('click', (e) => {
 // 判定補助: 特定のスキルを所持しているか
 export function hasSkill(c, skillId) {
     if (!c) return false;
-    
+
     const isOblivion = c.skill === 'oblivion' || (Array.isArray(c.skills) && c.skills.some(s => s.id === 'oblivion'));
     if (isOblivion) {
         if (skillId !== 'oblivion' && skillId !== 'equip') {
@@ -272,7 +272,7 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 }
 
 export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn'];
-export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'darkpaladin', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire'];
+export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'darkpaladin', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {

@@ -22,6 +22,7 @@ export const EXCHANGE_LINEUP = [
     { id: 'light', type: 'premium', cost: 10 },
     { id: 'plaguedoctor', type: 'premium', cost: 10 },
     { id: 'dragonfire', type: 'premium', cost: 10 },
+    { id: 'yukionna', type: 'premium', cost: 10 },
     { id: 'badwolf', type: 'card', cost: 5 },
     { id: 'redhood', type: 'card', cost: 5 }
 ];
