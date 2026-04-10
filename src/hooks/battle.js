@@ -1147,6 +1147,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             card.skillValue = originalMaster.skillValue || 0;
             card.skills = originalMaster.skills ? JSON.parse(JSON.stringify(originalMaster.skills)) : [];
             card.choices = originalMaster.choices ? JSON.parse(JSON.stringify(originalMaster.choices)) : [];
+            card.choices2 = originalMaster.choices2 ? JSON.parse(JSON.stringify(originalMaster.choices2)) : null;
             card.rarity = originalMaster.rarity;
             card.imgUrl = originalMaster.imgUrl;
             card.flavor = originalMaster.flavor;
@@ -1575,6 +1576,10 @@ export async function playCard(o, hI, l) {
                 targetCard.choices = targetCard.choices || [];
                 // 既存の選択肢と重複しないように統合（単純結合でも可）
                 targetCard.choices = targetCard.choices.concat(playingCard.choices);
+            }
+            if (playingCard.choices2 && playingCard.choices2.length > 0) {
+                targetCard.choices2 = targetCard.choices2 || [];
+                targetCard.choices2 = targetCard.choices2.concat(playingCard.choices2);
             }
 
             // 手札の装備カードを消費して対象カードにアタッチ

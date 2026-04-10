@@ -274,12 +274,12 @@ export function populateCardPreview(prefix, card) {
 
         // 1. 基本スキル
         if (card.skill && card.skill !== 'none' && card.skill !== undefined) {
-            skillCandidates.push({ id: card.skill, value: card.skillValue });
+            skillCandidates.push({ id: card.skill, value: card.skillValue, choiceGroup: card.choiceGroup });
         }
         // 2. 複数スキル配列
         if (Array.isArray(card.skills)) {
             card.skills.forEach(sk => {
-                skillCandidates.push({ id: sk.id, value: sk.value });
+                skillCandidates.push({ id: sk.id, value: sk.value, choiceGroup: sk.choiceGroup });
             });
         }
 
@@ -297,21 +297,25 @@ export function populateCardPreview(prefix, card) {
                     const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
                     const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
 
-                    if (sk.id === 'choice' && Array.isArray(card.choices)) {
+                    if (sk.id === 'choice' && (Array.isArray(card.choices) || Array.isArray(card.choices2))) {
                         let subDetailsHtml = '';
-                        card.choices.forEach(cho => {
-                            const cs = SKILLS[cho.id];
-                            if (cs) {
-                                const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
-                                const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
-                                subDetailsHtml += `
-                                    <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
-                                        <div class="preview-skill-badge" style="background: rgba(148, 163, 184, 0.2); border-color: #94a3b8; color: #94a3b8; font-size: 0.75rem;">${cs.icon} ${cs.name}${cVal}</div>
-                                        <p class="preview-skill-desc" style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 0 0;">${cDesc}</p>
-                                    </div>
-                                `;
-                            }
-                        });
+                        const targetChoices = sk.choiceGroup === 2 ? card.choices2 : card.choices;
+                        
+                        if (Array.isArray(targetChoices)) {
+                            targetChoices.forEach(cho => {
+                                const cs = SKILLS[cho.id];
+                                if (cs) {
+                                    const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
+                                    const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                                    subDetailsHtml += `
+                                        <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
+                                            <div class="preview-skill-badge" style="background: rgba(148, 163, 184, 0.2); border-color: #94a3b8; color: #94a3b8; font-size: 0.75rem;">${cs.icon} ${cs.name}${cVal}</div>
+                                            <p class="preview-skill-desc" style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 0 0;">${cDesc}</p>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        }
 
                         item.innerHTML = `
                             <details class="choice-accordion" style="width: 100%;">

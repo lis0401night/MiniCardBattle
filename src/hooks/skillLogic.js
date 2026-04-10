@@ -65,6 +65,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         c.skillValue = randomMaster.skillValue || 0;
         c.skills = randomMaster.skills ? JSON.parse(JSON.stringify(randomMaster.skills)) : [];
         c.choices = randomMaster.choices ? JSON.parse(JSON.stringify(randomMaster.choices)) : [];
+        c.choices2 = randomMaster.choices2 ? JSON.parse(JSON.stringify(randomMaster.choices2)) : null;
         c.rarity = randomMaster.rarity;
 
         // イラストの決定（トークン等の特殊なマッピングを考慮）
@@ -92,7 +93,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     }
 
     if (skillId === 'choice') {
-        const choiceArray = await waitSkillChoice(c.choices, o, c, skillValue);
+        const choices = (skObj && skObj.choiceGroup === 2) ? c.choices2 : c.choices;
+        const choiceArray = await waitSkillChoice(choices, o, c, skillValue);
         if (choiceArray) {
             const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];
             for (const choice of arr) {
