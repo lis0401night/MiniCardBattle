@@ -437,7 +437,8 @@ export function showSpeechBubble(target) {
             if (!originalSrc.includes('_damage.png')) {
                 iconEl.src = originalSrc.replace('.png', '_damage.png');
                 setTimeout(() => {
-                    if (iconEl.src.includes('_damage.png')) {
+                    const currentHP = target === 'blue' ? GameState.playerHP : GameState.enemyHP;
+                    if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
                         iconEl.src = originalSrc;
                     }
                 }, 1500);
@@ -1344,6 +1345,7 @@ export function drawCard(owner) {
             }
             createDamagePopup(document.getElementById(`${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`), `-${damage}`, '#ef4444');
             playSound(SOUNDS.seDamage);
+            showSpeechBubble(owner);
             updateHPBar();
             checkWinCondition();
         }

@@ -443,7 +443,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
@@ -472,7 +473,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
@@ -509,7 +511,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                 targetLaneRes = simulatedTokenLanes.shift();
             } else {
-                const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null);
+                const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                 if (emptyLanesRes.length > 0) targetLaneRes = emptyLanesRes[0];
             }
 
@@ -549,7 +552,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
+                    const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
                     if (emptyLanes.length > 0) targetLane = emptyLanes[0];
                 }
 
@@ -736,7 +740,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             if (tokenLanes && tokenLanes.length > 0) {
                 l = tokenLanes[0];
             } else {
-                const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+                const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+                const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0));
                 if (emptyLanes.length > 0) l = emptyLanes[0];
             }
             if (l !== -1) {
@@ -763,7 +768,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         if (tokenLanes && tokenLanes.length > 0) {
             l = tokenLanes[0];
         } else {
-            const emptyLanes = [0, 1, 2].filter(i => board[i] === null);
+            const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+            const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0));
             if (emptyLanes.length > 0) l = emptyLanes[0];
         }
 
@@ -804,8 +810,9 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 addKnight(l);
             }
         } else {
+            const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
             for (let i = 0; i < 3 && count < 2; i++) {
-                if (board[i] === null) addKnight(i);
+                if (board[i] === null && (!sealedLanes || sealedLanes[i] === 0)) addKnight(i);
             }
         }
         // 全体バフ+2
