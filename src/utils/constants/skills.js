@@ -60,7 +60,7 @@ export const SKILLS = {
     freeze: { name: '凍結', icon: '❄️', desc: (val) => `召喚時、正面とその隣のレーンのカードに${val}ターンの間「防御」を持たせる。` },
     loss: { name: '喪失', icon: '🕳️', desc: (val) => `召喚時、自分のデッキの上から${val}枚墓地に送る。` },
     brutal: { name: '暴虐', icon: '🌪️', desc: (val) => `攻撃時、自分の場の隣のレーンのカードに${val}ダメージ。` },
-    absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値分リーダーを回復する。' },
+    absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。' },
     seal: { name: '結界', icon: '🛑', desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。` }
 };
 
