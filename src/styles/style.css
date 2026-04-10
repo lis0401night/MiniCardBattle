@@ -2875,7 +2875,7 @@ h2 {
    ========================================== */
 
 .vfx-overlay {
-    position: fixed;
+    position: absolute; /* fixedからabsoluteに変更し、body(480px制限)を基準にする */
     top: 0;
     left: 0;
     width: 100%;
@@ -2994,21 +2994,23 @@ body.vfx-shake {
 
 /* Sprite Animation System */
 .vfx-sprite-container {
-    position: absolute;
-    width: 320px; /* 初期値、コンポーネント側で調整可能 */
+    position: relative; /* absoluteから変更し、Flexboxでの中央制御を容易にする */
+    width: 320px;
     height: 320px;
+    max-width: 100%; /* 親の幅（480pxまたは画面幅）を超えないようにする */
     background-repeat: no-repeat;
-    mix-blend-mode: screen; /* 黒背景を透過 */
+    mix-blend-mode: screen; 
     z-index: 1001;
     pointer-events: none;
-    transform: translate(-50%, -50%); /* 中心合わせ */
+    /* transform: translate(-50%, -50%);  <- Flexboxで制御するため削除 */
 }
 
 /* 盤面全体を覆うタイプのエフェクト用 */
 .vfx-overlay.fill .vfx-sprite-container {
-    width: 600px;
-    height: 600px;
-    left: 50%;
+    width: 100%; /* 600px固定をやめ、ゲーム画面幅に合わせる */
+    height: auto;
+    aspect-ratio: 1 / 1;
+    max-width: 480px;
 }
 
 /* 位置はコンポーネント側から --vfx-top で制御 */

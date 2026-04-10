@@ -102,7 +102,7 @@ export default function VfxOverlay() {
 
     return (
         <div className={`vfx-overlay ${type} ${side} ${data.position || ''}`} style={{ '--vfx-top': `${finalTop}%` }}>
-            <div className="vfx-position-wrapper" style={{ position: 'absolute', top: 'var(--vfx-top)', left: 0, width: '100%' }}>
+            <div className="vfx-position-wrapper" style={{ position: 'absolute', top: 'var(--vfx-top)', left: 0, width: '100%', transform: 'translateY(-50%)' }}>
                 {data.type === 'css' && data.className === 'beam-container' && (
                     <div className="beam-container">
                         <div className="beam-core"></div>

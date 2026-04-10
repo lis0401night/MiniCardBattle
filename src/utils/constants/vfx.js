@@ -12,7 +12,7 @@ export const VFX_DATA = {
         duration: 1000,      // 再生時間（ミリ秒）
         se: 'seSkillCharge', // 再生する効果音、SOUNDSのキーを指定
         position: 'fill',    // 配置タイプ ('fill' は盤面全体、他は個別設定可)
-        offsetY: 5,         // 中心位置からの上下オフセット（%指定、マイナスで上へ）
+        offsetY: -20,         // 中心位置からの上下オフセット（%指定、マイナスで上へ）
         scale: 1.0,           // サイズ倍率
         shake: true,          // 画面を揺らす
         targetSide: 'enemy'   // ターゲット (enemy: 相手陣地, self: 自分陣地)
@@ -28,7 +28,7 @@ export const VFX_DATA = {
         duration: 700,      // 再生時間（ミリ秒）
         se: 'seClock', // 再生する効果音、SOUNDSのキーを指定
         position: 'fill',    // 配置タイプ ('fill' は盤面全体、他は個別設定可)
-        offsetY: 20,         // 中心位置からの上下オフセット（%指定、マイナスで上へ）
+        offsetY: -20,         // 中心位置からの上下オフセット（%指定、マイナスで上へ）
         scale: 0.7,           // サイズ倍率
         shake: false,          // 画面を揺らす
         targetSide: 'self'    // ターゲット (enemy: 相手陣地, self: 自分陣地)
