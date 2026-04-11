@@ -70,6 +70,11 @@ export const VOICE_CATEGORIES = {
         death: 'assets/audio/voice/voice_lizard_death.wav',
         volume: 1.0
     },
+    'snake': {
+        play: 'assets/audio/voice/voice_snake_play.wav',
+        death: 'assets/audio/voice/voice_snake_death.wav',
+        volume: 1.0
+    },
     // 人間・亜人系
     'human_male_normal': {
         play: 'assets/audio/voice/voice_human_male_normal_play.wav',

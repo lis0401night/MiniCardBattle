@@ -3,92 +3,7 @@
  * ダンジョンモードの敵リーダーとしての会話テキストを管理します。
  */
 import { CHARACTERS } from './characters.js';
-
-
-/**
- * リーダーカードIDからボイスカテゴリ（セリフセットID）へのマッピング
- * カードによって voiceCategory が設定されていない場合はコメントアウト等で補足
- */
-export const DUNGEON_LEADER_VOICE_MAP = {
-    // モンスター・獣系
-    'goat': 'monster',
-    'oldgod': 'monster',
-    'octopus': 'monster',
-    'prince': 'monster',
-    'copy': 'monster',
-    'cheetah': 'beast',
-    'wolf': 'wolf',
-    'badwolf': 'wolf',
-    'dinosaur': 'lizard',
-    'babydragon': 'lizard',
-    'dragon': 'dragon',
-    'bahamut': 'dragon',
-    'scorpion': 'insect',
-    'spider': 'insect',
-    'tortoise': 'insect',
-    'charger': 'bird',
-    'dragonewt': 'horse',
-    'whiterider': 'horse',
-    'redrider': 'horse',
-    'blackrider': 'horse',
-    'palerider': 'horse',
-
-    // 人間系
-    'ninja': 'human_male_normal',
-    'crenellatedwall': 'human_male_normal',
-    'shuffler': 'human_male_normal',
-    'sniper': 'human_male_ikemen',
-    'lightpaladin': 'human_male_ikemen',
-    'drifter': 'human_male_ikemen',
-    'commander': 'human_male_warrior',
-    'monk': 'human_male_warrior',
-    'champion': 'human_male_warrior',
-    'diviner': 'human_female_cool',
-    'dancer': 'human_female_cool',
-    'necromancer': 'human_female_cool',
-    'mage': 'human_female_cool',
-    'barrier': 'human_female_cool',
-    'incinerator': 'human_female_cool',
-    'highelf': 'human_female_cool',
-    'redhood': 'human_female_cool',
-    'cleric': 'human_female_cute',
-    'empress': 'human_female_normal',
-    'hero': 'human_female_normal',
-    'mechanic': 'human_female_normal',
-    'dragonfire': 'magic',
-    'beginnermagic': 'magic',
-    'assassin': 'human_female_assassin',
-
-    // 魔族・不死系
-    'devil': 'devil',
-    'daemon': 'devil',
-    'vampire': 'undead',
-    'shade': 'undead',
-    'zombie': 'undead',
-    'warlock': 'undead',
-    'collector': 'undead',
-
-    // 無機物・機械系
-    'golem': 'stone',
-    'wall': 'stone',
-    'baldanders': 'stone',
-    'titan': 'machine_old',
-    'mantis': 'machine_old',
-    'fire': 'machine_old',
-    'bigai': 'machine_new',
-    'cyberdragon': 'machine_new',
-    'cyberman': 'machine_new',
-
-    // その他・特殊
-    'berserker': 'giant',
-    'franken': 'giant',
-    'clone': 'sword',
-    'darkpaladin': 'sword',
-    'token_knight': 'sword',
-
-    // 未設定・要確認
-    // 'dealer': 'human_male_normal', // voiceCategory未設定のため保留
-};
+import { CARD_MASTER } from './cards.js';
 
 export const DUNGEON_CHARACTER_DIALOGUE = {
     // デフォルトのセリフ
@@ -167,6 +82,17 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
             lose: { default: '脱皮……やり直す必要があるか……。' },
             damage: ['シシュッ！', '硬いな……', 'グヌゥ'],
             skill: '原初の衝動を呼び覚ます！',
+            ending: []
+        }
+    },
+    snake: {
+        preBattleLine: 'シューッ……獲物の匂い……。',
+        dialogue: {
+            intro: { default: '逃げられると思うな。' },
+            win: { default: '……丸呑みにしてやる。' },
+            lose: { default: 'シャーッ！鱗が……！' },
+            damage: ['シャァ！', 'ギチッ', 'シューッ'],
+            skill: '猛毒に苦しむがいい！',
             ending: []
         }
     },
@@ -468,8 +394,9 @@ export function getDungeonCharacterDialogue(id) {
         return DUNGEON_CHARACTER_DIALOGUE[rawId];
     }
 
-    // マッピングリストをチェック
-    const voiceCategoryId = DUNGEON_LEADER_VOICE_MAP[rawId];
+    // cards.js の CARD_MASTER から直接ボイスカテゴリを取得
+    const cardData = CARD_MASTER.find(c => c.id === rawId);
+    const voiceCategoryId = cardData ? cardData.voiceCategory : null;
     if (voiceCategoryId && DUNGEON_CHARACTER_DIALOGUE[voiceCategoryId]) {
         return DUNGEON_CHARACTER_DIALOGUE[voiceCategoryId];
     }
