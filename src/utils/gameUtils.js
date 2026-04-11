@@ -112,7 +112,9 @@ export async function playSound(audioOrKey) {
             audio.volume = baseVol;
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
-                audio.currentTime = 0;
+                if (audio.readyState > 0) {
+                    try { audio.currentTime = 0; } catch(e) {}
+                }
                 currentBgmAudio = audio;
                 const p = audio.play();
                 if (p !== undefined) {

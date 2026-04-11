@@ -12,7 +12,7 @@ export default function TitleScreen() {
     
     try {
       if (typeof unlockAudio === 'function') {
-        await unlockAudio();
+        unlockAudio().catch(e => console.warn(e));
       }
       if (typeof goToModeSelect === 'function') {
         goToModeSelect();
