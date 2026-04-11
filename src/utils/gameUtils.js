@@ -112,15 +112,17 @@ export async function playSound(audioOrKey) {
             audio.volume = baseVol;
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
-                audio.currentTime = 0;
+                if (audio.readyState > 0) {
+                    try { audio.currentTime = 0; } catch(e) {}
+                }
                 currentBgmAudio = audio;
                 const p = audio.play();
                 if (p !== undefined) {
                     p.catch((e) => { 
                         // 再生が弾かれた場合は次の画面タッチ時にリトライ
                         console.warn("BGM playback blocked, waiting for user interaction...", e);
-                        document.addEventListener('click', retryPlayBgm, { once: true, capture: true });
-                        document.addEventListener('touchstart', retryPlayBgm, { once: true, capture: true });
+                        document.addEventListener('click', retryPlayBgm, { capture: true });
+                        document.addEventListener('touchstart', retryPlayBgm, { capture: true });
                     });
                 }
             } else {

@@ -545,9 +545,14 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
     // AIの場合：
     if (owner === 'red') {
-        // aiDecision 内のシミュレーション結果を利用する・または難易度に応じた評価を行う
         const availableAI = [0, 1, 2].filter(l => sealedLanes[l] === 0);
-        let selectedLanes = evaluateBestLanesForToken(availableAI, 'red', tokenCard, count, isLeaderSkill, canCancel);
+        let selectedLanes;
+        
+        if (tokenLanes && tokenLanes.length > 0) {
+            selectedLanes = tokenLanes.slice(0, count);
+        } else {
+            selectedLanes = evaluateBestLanesForToken(availableAI, owner, tokenCard, count, isLeaderSkill, canCancel);
+        }
 
         // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
         if (checkConstraints && tokenCard) {

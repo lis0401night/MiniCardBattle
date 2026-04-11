@@ -6,13 +6,13 @@ import { unlockAudio } from '../utils/sounds.js';
 export default function TitleScreen() {
   const [isStarting, setIsStarting] = useState(false);
 
-  const handleStart = async () => {
+  const handleStart = () => {
     if (isStarting) return;
     setIsStarting(true);
     
     try {
       if (typeof unlockAudio === 'function') {
-        await unlockAudio();
+        unlockAudio().catch(e => console.warn(e));
       }
       if (typeof goToModeSelect === 'function') {
         goToModeSelect();

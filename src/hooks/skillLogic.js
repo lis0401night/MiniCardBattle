@@ -480,17 +480,24 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     } else if (skillId === 'freeze') {
         playSound(SOUNDS.seSkillFreeze); createDamagePopup(cEl, '凍結', '#93c5fd');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-        const targets = [l - 1, l, l + 1].filter(idx => idx >= 0 && idx <= 2 && eB[idx]);
+        let targets = [];
+        for (let idx of [l - 1, l, l + 1]) {
+            if (idx >= 0 && idx <= 2 && eB[idx]) targets.push(idx);
+        }
+        
         if (targets.length > 0) {
             const turns = (skillValue || 1) + 1;
             for (const tL of targets) {
                 eB[tL].stunTurns = turns;
                 const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${tL}"] .card`);
                 if (tEl) {
+                    tEl.classList.remove('anim-shake');
+                    void tEl.offsetWidth; // Force reflow to ensure animation restarts
                     tEl.classList.add('anim-shake');
                     createDamagePopup(tEl, '凍結', '#94a3b8');
                 }
             }
+            if (window.updateBattleUIHook) window.updateBattleUIHook(); // 反映させる
             await sleep(500);
             for (const tL of targets) {
                 const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${tL}"] .card`);
