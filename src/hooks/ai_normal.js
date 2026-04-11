@@ -98,7 +98,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             } else if (action === 'seal_lanes') {
                 const validTargetLanes = [0, 1, 2];
                 let combinations = [null];
-                for (let l of validTargetLanes) combinations.push([l]);
+                // 1つのレーンしか選ばないパターンを除外（必ず最大まで選ばせる）
                 const combs = getCombinations(validTargetLanes, 2);
                 for (let c of combs) combinations.push(c);
                 tokenLanePatterns = combinations;
