@@ -2047,10 +2047,11 @@ export function endBattle() {
                 deckList = ENEMY_DECKS[recipeId]['normal'];
             }
 
+            let availableCards = [];
             if (deckList.length > 0) {
                 const uniqueCards = [...new Set(deckList)];
                 // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
-                const availableCards = uniqueCards.filter(cid => {
+                availableCards = uniqueCards.filter(cid => {
                     const count = GameState.playerInventory[cid] || 0;
                     return count < 4;
                 });
