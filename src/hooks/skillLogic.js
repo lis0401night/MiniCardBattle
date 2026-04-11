@@ -568,7 +568,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             baseId: 'token_wall',
             skills: []
         };
-        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, true);
+        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, false);
         if (tLanes && tLanes.length > 0) {
             const targetLane = tLanes[0];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -601,7 +601,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
             if (selectedCard) {
                 // 配置先を選ばせる (召喚ではなく配置扱いのため制約チェックはしない)
-                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, true);
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, false);
                 if (tLanes && tLanes.length > 0) {
                     const targetLane = tLanes[0];
                     const dIdx = discard.findIndex(cd => cb => cb.id === selectedCard.id);
