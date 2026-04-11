@@ -61,30 +61,53 @@ export default function VfxOverlay() {
 
             // 動的な座標計算
             let dynamicPos = null;
-            const calcLane = data.position === 'fill' ? 1 : targetLane;
+            const containerEl = document.getElementById('app-container') || document.body;
 
-            if ((data.position === 'lane' || data.position === 'fill') && calcLane !== null) {
+            if (data.position === 'hp') {
                 try {
                     const isTargetEnemy = (side === 'blue' && data.targetSide === 'enemy') || (side !== 'blue' && data.targetSide === 'self');
-                    const rowId = isTargetEnemy ? 'enemy-lanes' : 'player-lanes';
-                    const rowEl = document.getElementById(rowId);
-                    if (rowEl) {
-                        const cellEl = rowEl.querySelector(`[data-lane="${calcLane}"]`);
-                        const containerEl = document.getElementById('app-container') || document.body;
-                        if (cellEl && containerEl) {
-                            const rect = cellEl.getBoundingClientRect();
-                            const contRect = containerEl.getBoundingClientRect();
-                            
-                            if (rect.width > 0 && contRect.width > 0) {
-                                dynamicPos = {
-                                    left: ((rect.left + rect.width / 2 - contRect.left) / contRect.width) * 100,
-                                    top: ((rect.top + rect.height / 2 - contRect.top) / contRect.height) * 100
-                                };
-                            }
+                    const targetId = isTargetEnemy ? 'enemy-hp-fill' : 'player-hp-fill';
+                    const targetEl = document.getElementById(targetId);
+                    
+                    if (targetEl && containerEl) {
+                        const barEl = targetEl.closest('.hp-bar-bg') || targetEl;
+                        const rect = barEl.getBoundingClientRect();
+                        const contRect = containerEl.getBoundingClientRect();
+                        
+                        if (rect.width > 0 && contRect.width > 0) {
+                            dynamicPos = {
+                                left: 50, // 左右はセンター
+                                top: ((rect.top + rect.height / 2 - contRect.top) / contRect.height) * 100
+                            };
                         }
                     }
                 } catch (e) {
-                    console.error("Failed to calculate dynamic VFX position:", e);
+                    console.error("Failed to calculate HP-based VFX position:", e);
+                }
+            } else if ((data.position === 'lane' || data.position === 'fill')) {
+                const calcLane = data.position === 'fill' ? 1 : targetLane;
+                if (calcLane !== null) {
+                    try {
+                        const isTargetEnemy = (side === 'blue' && data.targetSide === 'enemy') || (side !== 'blue' && data.targetSide === 'self');
+                        const rowId = isTargetEnemy ? 'enemy-lanes' : 'player-lanes';
+                        const rowEl = document.getElementById(rowId);
+                        if (rowEl) {
+                            const cellEl = rowEl.querySelector(`[data-lane="${calcLane}"]`);
+                            if (cellEl && containerEl) {
+                                const rect = cellEl.getBoundingClientRect();
+                                const contRect = containerEl.getBoundingClientRect();
+                                
+                                if (rect.width > 0 && contRect.width > 0) {
+                                    dynamicPos = {
+                                        left: ((rect.left + rect.width / 2 - contRect.left) / contRect.width) * 100,
+                                        top: ((rect.top + rect.height / 2 - contRect.top) / contRect.height) * 100
+                                    };
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Failed to calculate lane-based VFX position:", e);
+                    }
                 }
             }
 

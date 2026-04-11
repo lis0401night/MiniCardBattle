@@ -24,7 +24,10 @@ export const SE_PATHS = {
     seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
     seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
     seSkillFreeze: 'assets/audio/se/se_skill_freeze.mp3',
-    seClock: 'assets/audio/se/se_clock.mp3'
+    seClock: 'assets/audio/se/se_clock.mp3',
+    seMetalBlast: 'assets/audio/se/se_metalblast.mp3',
+    seFire: 'assets/audio/se/se_fire.mp3',
+    seHyoushigi: 'assets/audio/se/se_hyoushigi.mp3'
 };
 
 export const SOUNDS = {
@@ -41,7 +44,10 @@ export const SOUNDS = {
     seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
     seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
     seSkillFreeze: 'assets/audio/se/se_skill_freeze.mp3',
-    seClock: 'assets/audio/se/se_clock.mp3'
+    seClock: 'assets/audio/se/se_clock.mp3',
+    seMetalBlast: 'assets/audio/se/se_metalblast.mp3',
+    seFire: 'assets/audio/se/se_fire.mp3',
+    seHyoushigi: 'assets/audio/se/se_hyoushigi.mp3'
 };
 
 export const AUDIO_INSTANCES = {

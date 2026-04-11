@@ -73,7 +73,7 @@ export const VFX_DATA = {
         duration: 1000,
         se: 'seSkillCharge',
         position: 'lane',    // ターゲットのレーンに合わせて表示
-        offsetY: -10,
+        offsetY: 0,
         scale: 1.0,
         shake: true,
         targetSide: 'self'   // 自陣に召喚
@@ -86,11 +86,11 @@ export const VFX_DATA = {
         columns: 7,
         rows: 7,
         frameCount: 49,
-        duration: 1000,
-        se: 'seSkillCharge',
+        duration: 500,
+        se: 'seMetalBlast',
         position: 'lane',    // ターゲットのレーンに合わせて表示
         offsetY: 0,
-        scale: 0.8,
+        scale: 0.6,
         shake: false,
         targetSide: 'self'   // 自陣に召喚
     },
@@ -102,13 +102,61 @@ export const VFX_DATA = {
         columns: 10,
         rows: 1,
         frameCount: 10,
-        duration: 1000,
-        se: 'seSkillCharge',
+        duration: 600,
+        se: 'seFire',
         position: 'lane',    // ターゲットのレーンに合わせて表示
         offsetY: -10,
         scale: 1.0,
         shake: false,
         targetSide: 'self'   // 自陣に召喚
+    },
+
+    // エリシアSPスキル「暗黒の儀式」用VFX
+    'anm_dark_ritual': {
+        type: 'sprite',
+        src: 'assets/vfx/hujimiyaeffect_shadowattack.png',
+        columns: 6,
+        rows: 5,
+        frameCount: 30,
+        duration: 1000,
+        se: 'seSkillCharge', // 再生する効果音、SOUNDSのキーを指定
+        position: 'hp',      // HPゲージの高さに合わせて表示
+        offsetY: 0,
+        scale: 1.5,
+        shake: true,
+        targetSide: 'enemy'   // 基本は相手のHPがターゲット
+    },
+
+    // ナイアSPスキル「深淵の儀式」用VFX
+    'anm_abyss_ritual': {
+        type: 'sprite',
+        src: 'assets/vfx/pipo-mapeffect016_640.png',
+        columns: 4,
+        rows: 5,
+        frameCount: 20,
+        duration: 1000,
+        se: 'seSkillCharge',
+        position: 'hp',      // HPゲージの高さに合わせて表示
+        offsetY: 0,
+        scale: 2.0,
+        shake: false,
+        targetSide: 'self'    // 手札入れ替え(自分への効果)のため、自分のHPゲージ位置
+    },
+
+    // カグラSPスキル「封印の儀」用VFX
+    'anm_seal_lanes': {
+        type: 'sprite',
+        src: 'assets/vfx/pipo-btleffect018.png',
+        columns: 8,
+        rows: 1,
+        frameCount: 8,
+        duration: 800,
+        se: 'seHyoushigi',
+        position: 'lane',    // ターゲットのレーンに合わせて表示
+        offsetY: 0,
+        scale: 0.6,
+        shake: true,
+        targetSide: 'enemy'   // 相手のレーンがターゲット
     }
 
     // 今後、新しいエフェクトを追加する際はここに追加するだけでOK

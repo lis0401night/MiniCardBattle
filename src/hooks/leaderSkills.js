@@ -238,6 +238,12 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         let dc = 0;
         if (h.length > 0) {
             const selectedIndices = await waitPlayerHandSelection(2, owner);
+            
+            // 手札選択完了後にVFXを再生
+            if (window.triggerVfx) {
+                await window.triggerVfx('anm_abyss_ritual', owner);
+            }
+
             // キャンセル(選ばずに完了)した場合でも、手札破棄が0枚になるだけで、後続の全体バフは発動させます
             if (selectedIndices && selectedIndices.length > 0) {
                 selectedIndices.sort((a, b) => b - a);
@@ -314,6 +320,13 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         } else if (action === 'devilhunter_resurrect' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_summon_maria', owner, tokenLanes[0]);
+        } else if (action === 'dark_ritual') {
+            await sleep(200);
+            await window.triggerVfx('anm_dark_ritual', owner);
+        } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {
+            await sleep(200);
+            // 選択した全レーンで同時に再生
+            await Promise.all(tokenLanes.map(lane => window.triggerVfx('anm_seal_lanes', owner, lane)));
         }
     }
 
