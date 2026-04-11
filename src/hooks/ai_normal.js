@@ -285,7 +285,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             }
         }
         c.skillScore = skillScore;
-        c.lanePriority = c.lane === 2 ? 3 : (c.lane === 0 ? 2 : (c.lane === 1 ? 1 : 0));
+        c.lanePriority = c.lane === 0 ? 3 : (c.lane === 2 ? 2 : (c.lane === 1 ? 1 : 0));
     });
 
     // ④、⑤、⑥、⑦、⑧の順でソート
@@ -294,7 +294,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
         if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff; // ⑤ 降順
         if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken; // ⑥ 昇順（ダメージが少ない方が良い）
         if (a.skillScore !== b.skillScore) return b.skillScore - a.skillScore; // ⑦ スキル優先度（回復＞入替＞その他） 降順
-        if (a.lanePriority !== b.lanePriority) return b.lanePriority - a.lanePriority; // ⑧ レーン優先度（右 > 左 > 中央）降順
+        if (a.lanePriority !== b.lanePriority) return b.lanePriority - a.lanePriority; // ⑧ レーン優先度（左 > 右 > 中央）降順
         return 0; // ⑨ 同列
     });
 
@@ -550,16 +550,20 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
     // （ランダムなどの思考介入は行わず、手前の空いているレーン順に機械的に詰める）
     const results = [];
 
+    // 優先順位（左 > 右 > 中央）に従って allLanes をソート
+    const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
+    const sortedLanes = [...allLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
+
     // 1. 空きレーンを優先
-    for (let l of allLanes) {
+    for (let l of sortedLanes) {
         if (GameState.enemyBoard[l] === null && results.length < count) {
             results.push(l);
         }
     }
 
-    // 2. 空きが足りなければ上書き可能な若いレーンで妥協
+    // 2. 空きが足りなければ上書き可能なレーンで妥協
     if (results.length < count) {
-        for (let l of allLanes) {
+        for (let l of sortedLanes) {
             if (!results.includes(l) && results.length < count) {
                 results.push(l);
             }

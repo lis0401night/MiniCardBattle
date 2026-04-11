@@ -5,7 +5,7 @@ export default {
         'ogre', 'ogre',
         'ninja', 'ninja',
         'omyouji', 'omyouji',
-        'scopion', 'scopion', 'scopion', 'scopion',
+        'scorpion', 'scorpion', 'scorpion', 'scorpion',
         'leech', 'leech', 'leech', 'leech',
     ],
     normal: [
