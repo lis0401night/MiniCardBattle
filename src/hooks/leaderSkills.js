@@ -215,6 +215,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             if (actualIdx !== -1) discard.splice(actualIdx, 1);
 
             const targetLane = tLanes[0];
+            tokenLanes = tLanes; // VFXセクションで参照できるように代入
             const resurrectedCard = {
                 ...selectedCard,
                 id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
@@ -300,6 +301,19 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         } else if (action === 'time_stop') {
             await sleep(200);
             await window.triggerVfx('anm_witch_arts', owner);
+        } else if (action === 'targeted_destruction' && tokenLanes && tokenLanes.length > 0) {
+            await sleep(200);
+            await window.triggerVfx('anm_elf_arts', owner, tokenLanes[0]);
+        } else if (action === 'dragon_summon' && tokenLanes && tokenLanes.length > 0) {
+            await sleep(200);
+            await window.triggerVfx('anm_summon_ignis', owner, tokenLanes[0]);
+        } else if (action === 'holy_march' && tokenLanes && tokenLanes.length > 0) {
+            await sleep(200);
+            // 2箇所同時に再生
+            await Promise.all(tokenLanes.map(lane => window.triggerVfx('anm_summon_celestia', owner, lane)));
+        } else if (action === 'devilhunter_resurrect' && tokenLanes && tokenLanes.length > 0) {
+            await sleep(200);
+            await window.triggerVfx('anm_summon_maria', owner, tokenLanes[0]);
         }
     }
 
