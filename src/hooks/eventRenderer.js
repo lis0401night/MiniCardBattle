@@ -289,7 +289,9 @@ export async function playEvents(events) {
                             restoredCard.currentPower = restoredCard.power;
                             restoredCard.skills = [];
                         }
-                        discardArr.push(restoredCard);
+                        if (!discardedCard.isToken) {
+                            discardArr.push(restoredCard);
+                        }
                     }
                 }
                 updateDeckDisplay(ev.side);

@@ -1524,24 +1524,24 @@ export async function endTurnLogic(o) {
                 const indices = await waitPlayerHandSelection(discardCount, 'blue', true, '手札が上限を超えています。捨てるカードを選択してください。');
                 const sortedIndices = [...indices].sort((a, b) => b - a);
                 for (const idx of sortedIndices) {
-                    const card = GameState.playerHand.splice(idx, 1)[0];
-                    GameState.playerDiscard.push(card);
+                    const dropped = GameState.playerHand.splice(idx, 1)[0];
+                    await discardCard('blue', dropped, undefined, false);
                 }
             } else {
                 if (GameState.gameMode === 'online') {
                     const indices = await waitPlayerHandSelection(discardCount, 'red', true);
                     const sortedIndices = [...indices].sort((a, b) => b - a);
                     for (const idx of sortedIndices) {
-                        const card = GameState.enemyHand.splice(idx, 1)[0];
-                        GameState.enemyDiscard.push(card);
+                        const dropped = GameState.enemyHand.splice(idx, 1)[0];
+                        await discardCard('red', dropped, undefined, false);
                     }
                 } else {
                     let candidates = GameState.enemyHand.map((c, i) => ({ idx: i, power: c.power || 0 }));
                     candidates.sort((a, b) => b.power - a.power);
                     const sortedIndices = candidates.slice(0, discardCount).map(c => c.idx).sort((a, b) => b - a);
                     for (const idx of sortedIndices) {
-                        const card = GameState.enemyHand.splice(idx, 1)[0];
-                        GameState.enemyDiscard.push(card);
+                        const dropped = GameState.enemyHand.splice(idx, 1)[0];
+                        await discardCard('red', dropped, undefined, false);
                     }
                 }
             }
