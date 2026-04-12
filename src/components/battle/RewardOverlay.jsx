@@ -9,6 +9,7 @@ import { initSelectScreen } from '../../hooks/uiMainCore.js';
 import { handleStoryProgression } from '../../hooks/story.js';
 import { setupDialogueScreen } from '../../hooks/uiDialogue.js';
 import { switchScreen } from '../../utils/gameUtils.js';
+import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
 export default function RewardOverlay() {
     const [isVisible, setIsVisible] = useState(false);
@@ -54,99 +55,15 @@ export default function RewardOverlay() {
         return <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(c, false) }}></div>;
     };
 
-    const renderCardPreviewContent = () => {
-        const imgUrl = getCardImgUrl(card);
-        const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-        const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15', 4: '#fde047' };
-        const nameColor = rarityColors[card.rarity] || '#fff';
-        const filter = GameState.playerConfig?.filter || 'none';
-
-        let skillCandidates = [];
-        if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue });
-        if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ id: sk.id, value: sk.value }));
-
-        const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
-        if (isOblivion) {
-            skillCandidates = skillCandidates.filter(sk => sk.id === 'oblivion' || sk.id === 'equip');
-        }
-
-        return (
-            <div className="preview-content" style={{ position: 'relative' }}>
-                <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div className={`card blue${rarityClass}`} style={{ width: '180px', height: '240px', position: 'relative' }}>
-                        {isRevealed ? (
-                            <>
-                                <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter }}></div>
-                                <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower || card.power}</div>
-                                {renderSkillTagReact(card)}
-                            </>
-                        ) : (
-                            <div className="card-bg" style={{ background: '#334155' }}></div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="preview-details">
-                    <h2 style={{ color: isRevealed ? nameColor : '#fff' }}>
-                        {isRevealed ? card.name : '? ? ?'}
-                    </h2>
-                    
-                    <div className="preview-scroll-area">
-                        <div className="preview-skills-list">
-                            {!isRevealed ? (
-                                <p className="preview-skill-desc">クリックしてカードを公開</p>
-                            ) : skillCandidates.length > 0 ? skillCandidates.map((sk, idx) => {
-                                const s = SKILLS?.[sk.id];
-                                if (!s) return null;
-                                const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
-                                const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
-
-                                if (sk.id === 'choice' && Array.isArray(card.choices)) {
-                                    return (
-                                        <div key={idx} className="preview-skill-item">
-                                            <details className="choice-accordion" style={{ width: '100%' }}>
-                                                <summary style={{ listStyle: 'none', cursor: 'pointer', outline: 'none', width: '100%' }}>
-                                                    <div className="preview-skill-badge" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '110px', position: 'relative', margin: '0 auto' }}>
-                                                        <span>{s.icon} {s.name}{val}</span>
-                                                        <span className="accordion-icon" style={{ fontSize: '0.8rem', transition: 'transform 0.2s', position: 'absolute', right: '8px' }}>▼</span>
-                                                    </div>
-                                                    <p className="preview-skill-desc" style={{ marginTop: '6px', marginBottom: '8px', color: '#f8fafc', textAlign: 'center' }}>{desc}</p>
-                                                </summary>
-                                                <div className="accordion-content" style={{ marginTop: '5px' }}>
-                                                    {card.choices.map((cho, cIdx) => {
-                                                        const cs = SKILLS?.[cho.id];
-                                                        if (!cs) return null;
-                                                        const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
-                                                        const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
-                                                        return (
-                                                            <div key={cIdx} style={{ marginLeft: '10px', borderLeft: '2px solid #475569', paddingLeft: '10px', marginTop: '8px', marginBottom: '8px' }}>
-                                                                <div className="preview-skill-badge" style={{ background: 'rgba(148, 163, 184, 0.2)', borderColor: '#94a3b8', color: '#94a3b8', fontSize: '0.75rem' }}>{cs.icon} {cs.name}{cVal}</div>
-                                                                <p className="preview-skill-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>{cDesc}</p>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </details>
-                                        </div>
-                                    );
-                                }
-
-                                return (
-                                    <div key={idx} className="preview-skill-item">
-                                        <div className="preview-skill-badge">{s.icon} {s.name}{val}</div>
-                                        <p className="preview-skill-desc">{desc}</p>
-                                    </div>
-                                );
-                            }) : (
-                                <p className="preview-skill-desc">能力なし</p>
-                            )}
-                        </div>
-                        {isRevealed && card.flavor && (
-                            <p className="preview-flavor-text" style={{ display: 'block' }}>{card.flavor}</p>
-                        )}
-                    </div>
-
-                    {isRevealed && (
+    return (
+        <div className="screen active" style={{ zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+            <CardPreviewContent 
+                card={card}
+                isRevealed={isRevealed}
+                onRevealAreaClick={handleReveal}
+                renderSkillTagReact={renderSkillTagReact}
+                customActionSlot={
+                    isRevealed && (
                         <button 
                             className="btn" 
                             style={{ marginTop: '15px', width: '100%', flexShrink: 0, background: 'linear-gradient(45deg, #22c55e, #16a34a)' }} 
@@ -154,27 +71,9 @@ export default function RewardOverlay() {
                         >
                             次へ
                         </button>
-                    )}
-                </div>
-
-                {!isRevealed && (
-                    <div 
-                        id="reward-mask" 
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 20, backdropFilter: 'blur(4px)', cursor: 'pointer' }} 
-                        onClick={handleReveal}
-                    >
-                        <h2 className="reward-title" style={{ marginBottom: '20px', color: '#facc15', textShadow: '0 0 10px rgba(250, 204, 21, 0.5)' }}>カードを獲得！</h2>
-                        <div style={{ fontSize: '5rem', color: '#334155' }}>?</div>
-                        <div style={{ fontSize: '1rem', color: '#cbd5e1', marginTop: '15px', animation: 'pulse 1.5s infinite' }}>タップして表を開く</div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    return (
-        <div className="screen active" style={{ zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            {renderCardPreviewContent()}
+                    )
+                }
+            />
         </div>
     );
 }

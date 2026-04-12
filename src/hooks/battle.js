@@ -783,6 +783,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = fal
         GameState.targetMaxCount = count;
         GameState.targetSelectedLanes = [];
         GameState.isTargetCancelable = canCancel;
+        GameState.isEnemyTargetAllowEmpty = allowEmpty;
         
         if (message) {
             updateCardDetail(message);
@@ -812,6 +813,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = fal
             const result = [...GameState.targetSelectedLanes];
             GameState.targetSelectedLanes = [];
             GameState.targetMaxCount = 0;
+            GameState.isEnemyTargetAllowEmpty = false;
             window.handleEnemyLaneClick = null;
             window.finishEnemyTargetSelection = null;
             updateCardDetail(null);

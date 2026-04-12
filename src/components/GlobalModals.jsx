@@ -11,6 +11,7 @@ import { GameState } from '../hooks/gameState.js';
 import { renderCardList, openCardPreview, setShowCardAcquisitionModalHook, setShowPremiumAcquisitionModalHook, setShowPlaymatAcquisitionModalHook, setOpenCardPreviewHook, setCloseCardPreviewHook } from '../hooks/uiGallery.js';
 import { backupDataToXML, importDataFromXML, reloadGame, confirmCharSelect, confirmExchange, setCloseEnemyDeckModalHook } from '../hooks/uiMainCore.js';
 import { showAlertModal, setShowConfirmModalHook, setShowAlertModalHook, setShowErrorModalHook, setShowPointAcquisitionModalHook } from '../hooks/uiModals.js';
+import CardPreviewContent from './common/CardPreviewContent.jsx';
 
 let g_discardLongPressTimer = null;
 let g_discardHasLongPressed = false;
@@ -36,14 +37,12 @@ export default function GlobalModals() {
   const [rulesVisible, setRulesVisible] = useState(false);
   const [skinSelectionVisible, setSkinSelectionVisible] = useState(false);
   const [selectedSkinState, setSelectedSkinState] = useState(null);
-  const [isImageZoomed, setIsImageZoomed] = useState(false);
   const [simpleImagePreview, setSimpleImagePreview] = useState(null);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
     playSound?.(SOUNDS?.seClick);
     setCardPreviewData(null);
-    setIsImageZoomed(false);
   };
 
   useEffect(() => {
@@ -280,205 +279,33 @@ export default function GlobalModals() {
   };
 
   const renderCardPreviewContent = (card, styleProps = {}, showPremiumTag = false) => {
-    const imgUrl = styleProps.imgUrl || (getCardImgUrl ? getCardImgUrl(card) : '');
-    const isSkin = styleProps.isSkin || false;
-    const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-    const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15', 4: '#fde047' };
-    const nameColor = styleProps.titleColor || rarityColors[card.rarity] || '#fff';
-    const filter = GameState.playerConfig?.filter || 'none';
-
-    let skillCandidates = [];
-    if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue, choiceGroup: card.choiceGroup });
-    if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ id: sk.id, value: sk.value, choiceGroup: sk.choiceGroup }));
-
-    const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
-    if (isOblivion) {
-        skillCandidates = skillCandidates.filter(sk => sk.id === 'oblivion' || sk.id === 'equip');
-    }
-
-    let lookupId = card.baseId || card.id;
-    let isPremiumActive = false;
-    let isPremiumUnlocked = false;
-
-    if (card.isPremium !== undefined) {
-      isPremiumActive = card.isPremium;
-    } else if (card.owner === 'red') {
-      isPremiumActive = false;
-    } else {
-      isPremiumActive = GameState.premiumCards?.includes(lookupId);
-      isPremiumUnlocked = GameState.unlockedPremiumCards?.includes(lookupId);
-    }
-
     return (
-      <div className={`preview-content ${styleProps.containerClass || ''}`} style={{ margin: styleProps.margin, cursor: 'default', borderColor: styleProps.borderColor, boxShadow: styleProps.boxShadow }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-          {cardPreviewData?.parentCard && (
-            <button className="btn" style={{ position: 'absolute', top: 0, left: 0, padding: '5px 10px', fontSize: '0.8rem', zIndex: 20 }} onClick={(e) => { e.stopPropagation(); setCardPreviewData({ card: cardPreviewData.parentCard }); playSound?.(SOUNDS?.seClick); }}>
-              ⬅ 戻る
-            </button>
-          )}
-          <div style={{ position: 'relative', width: styleProps.isPlaymat ? '280px' : '180px', height: styleProps.isPlaymat ? '140px' : '240px' }}>
-            <div
-              className={styleProps.isPlaymat ? '' : `card blue${!isSkin ? rarityClass : ''}`}
-              style={styleProps.isPlaymat ? 
-                { width: '280px', height: '140px', position: 'relative', overflow: 'hidden', cursor: 'pointer', border: '2px solid #38bdf8', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.6)', backgroundColor: '#000' } : 
-                { width: '180px', height: '240px', position: 'relative', overflow: 'hidden', cursor: 'pointer', backgroundColor: 'transparent' }
-              }
-              onClick={(e) => { e.stopPropagation(); setIsImageZoomed(true); playSound?.(SOUNDS?.seClick); }}
-            >
-              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: (isSkin || styleProps.isPlaymat) ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : (styleProps.isPlaymat ? 'center' : 'center center'), backgroundColor: styleProps.isPlaymat ? '#000' : '' }}></div>
-              {!isSkin && !styleProps.isPlaymat && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower !== undefined ? card.currentPower : card.power}</div>}
-              {!isSkin && !styleProps.isPlaymat && renderSkillTagReact(card)}
-              {!isSkin && !styleProps.isPlaymat && card.equippedCards && card.equippedCards.length > 0 && (
-                  <div className="card-skill-tag equip-badge" style={{ position: 'absolute', top: '-5px', left: '-5px', background: '#64748b', color: '#fff', borderColor: '#94a3b8', transform: 'scale(0.9)', zIndex: 10 }}>⚔️装備中</div>
-              )}
-            </div>
-            {!isSkin && !styleProps.isPlaymat && card.equippedCards && card.equippedCards.length > 0 && (
-              <div style={{ position: 'absolute', left: '100%', top: '0', marginLeft: '15px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 15 }}>
-                {card.equippedCards.map((eqCard, idx) => {
-                  const eqImgUrl = getCardImgUrl ? getCardImgUrl(eqCard) : '';
-                  return (
-                    <div 
-                      key={idx} 
-                      style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundImage: `url('${eqImgUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'pointer', border: '2px solid #94a3b8', boxShadow: '0 0 5px rgba(0,0,0,0.5)' }}
-                      title={`装備：${eqCard.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        playSound?.(SOUNDS?.seClick);
-                        setCardPreviewData({ card: eqCard, parentCard: card });
-                      }}
-                    ></div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="preview-details">
-          {showPremiumTag && (
-            <div style={{ background: 'linear-gradient(45deg, #d946ef, #9333ea)', color: 'white', padding: '2px 10px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '5px', alignSelf: 'center', display: 'inline-block' }}>
-              PREMIUM UNLOCK
-            </div>
-          )}
-          <h2 className={card.rarity === 4 && !isSkin ? 'rarity-4-text' : ''} style={{ color: nameColor, marginTop: showPremiumTag ? '5px' : '0' }}>
-            {styleProps.titleName || card.name}
-            {styleProps.displayType && <span className="skip-rarity-text" style={{ color: '#3b82f6', marginLeft: '5px', WebkitBackgroundClip: 'border-box', WebkitTextFillColor: 'initial' }}>({styleProps.displayType})</span>}
-          </h2>
-
-          <div className="preview-scroll-area">
-            {!isSkin && !styleProps.isPlaymat && (
-              <div className="preview-skills-list">
-                {skillCandidates.length > 0 ? skillCandidates.map((sk, idx) => {
-                  const s = SKILLS?.[sk.id];
-                  if (!s) return null;
-                  const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
-                  const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
-
-                  if (sk.id === 'choice' && (Array.isArray(card.choices) || Array.isArray(card.choices2))) {
-                    const targetChoices = sk.choiceGroup === 2 ? card.choices2 : card.choices;
-                    if (!Array.isArray(targetChoices)) return null;
-                    return (
-                      <div key={idx} className="preview-skill-item">
-                        <details className="choice-accordion" style={{ width: '100%' }}>
-                          <summary style={{ listStyle: 'none', cursor: 'pointer', outline: 'none', width: '100%' }}>
-                            <div className="preview-skill-badge" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '110px', position: 'relative', margin: '0 auto' }}>
-                              <span>{s.icon} {s.name}{val}</span>
-                              <span className="accordion-icon" style={{ fontSize: '0.8rem', transition: 'transform 0.2s', position: 'absolute', right: '8px' }}>▼</span>
-                            </div>
-                            <p className="preview-skill-desc" style={{ marginTop: '6px', marginBottom: '8px', color: '#f8fafc', textAlign: 'center' }}>{desc}</p>
-                          </summary>
-                          <div className="accordion-content" style={{ marginTop: '5px' }}>
-                            {targetChoices.map((cho, cIdx) => {
-                              const cs = SKILLS?.[cho.id];
-                              if (!cs) return null;
-                              const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
-                              const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
-                              return (
-                                <div key={cIdx} style={{ marginLeft: '10px', borderLeft: '2px solid #475569', paddingLeft: '10px', marginTop: '8px', marginBottom: '8px' }}>
-                                  <div className="preview-skill-badge" style={{ background: 'rgba(148, 163, 184, 0.2)', borderColor: '#94a3b8', color: '#94a3b8', fontSize: '0.75rem' }}>{cs.icon} {cs.name}{cVal}</div>
-                                  <p className="preview-skill-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>{cDesc}</p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </details>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div key={idx} className="preview-skill-item">
-                      <div className="preview-skill-badge">{s.icon} {s.name}{val}</div>
-                      <p className="preview-skill-desc">{desc}</p>
-                    </div>
-                  );
-                }) : (
-                  <p className="preview-skill-desc">能力なし</p>
-                )}
-              </div>
-            )}
-            <p className="preview-flavor-text" style={{ display: 'block' }}>{styleProps.flavorOverride || card.flavor || '...'}</p>
-          </div>
-
-          {/* Preview Modal Actions */}
-          {styleProps.showPreviewActions && isPremiumUnlocked && card.owner !== 'red' && (
-            <button
-              className="btn"
-              style={{ marginTop: '10px', width: '100%', flexShrink: 0, background: isPremiumActive ? 'linear-gradient(45deg, #d946ef, #9333ea)' : '#475569', fontSize: '0.9rem', padding: '10px 5px' }}
-              onClick={(e) => handleTogglePremium(e, card.id)}
-            >
-              {isPremiumActive ? '✨ プレミアムON' : '✨ プレミアムOFF'}
-            </button>
-          )}
-          {styleProps.showPreviewActions && (
-            <button className="btn" style={{ marginTop: '15px', width: '100%', flexShrink: 0 }} onClick={handleCloseCardPreview}>閉じる</button>
-          )}
-
-          {/* Acquisition Action */}
-          {styleProps.showAcquisitionOk && (
-            <button
-              className="btn ok-button"
-              style={{ marginTop: '15px', width: '110px', alignSelf: 'center', background: styleProps.okBg || 'linear-gradient(45deg, #facc15, #eab308)', color: styleProps.okColor || '#000', fontWeight: 'bold', pointerEvents: acquisitionData?.canClose ? 'auto' : 'none', opacity: acquisitionData?.canClose ? 1 : 0.5 }}
-              onClick={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
-            >
-              OK
-            </button>
-          )}
-
-          {/* Exchange Action */}
-          {styleProps.showExchangeActions && styleProps.exchangeData && (
-            <>
-              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '5px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', marginTop: '10px', border: '1px solid #475569', textAlign: 'center' }}>
-                <div style={{ color: '#facc15', fontWeight: 'bold', fontSize: '0.7rem', marginBottom: '2px' }}>必要ポイント</div>
-                <div style={{ fontSize: '1.2rem', color: '#10b981', fontWeight: 'bold' }}>{styleProps.exchangeData.cost} pt</div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '10px', flexShrink: 0 }}>
-                <button className="btn" style={{ flex: 1, minHeight: '40px', padding: '5px', background: '#475569', marginTop: 0, fontSize: '0.9rem' }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeExchangeDetailModal(e); }}>戻る</button>
-                <button
-                  className="btn"
-                  style={{ flex: 1, minHeight: '40px', padding: '5px', background: styleProps.exchangeData.isMaxed || !styleProps.exchangeData.canExchange ? '#475569' : 'linear-gradient(45deg, #f97316, #ea580c)', color: styleProps.exchangeData.isMaxed || !styleProps.exchangeData.canExchange ? '#94a3b8' : '#ffffff', marginTop: 0, fontSize: '0.9rem' }}
-                  onClick={() => {
-                    if (styleProps.exchangeData.isMaxed) {
-                      showAlertModal?.(styleProps.exchangeData.type === 'premium' ? "既にプレミアム化済みです。" : "所持または交換上限に達しています。");
-                    } else if (!styleProps.exchangeData.canExchange) {
-                      showAlertModal?.("ポイントが足りません！");
-                    } else {
-                      if (styleProps.exchangeData.onConfirm) {
-                        styleProps.exchangeData.onConfirm();
-                      } else {
-                        confirmExchange?.();
-                      }
-                    }
-                  }}
-                >
-                  {styleProps.exchangeData.isMaxed ? '交換済み' : (!styleProps.exchangeData.canExchange ? 'ポイント不足' : '交換')}
-                </button>
-              </div>
-            </>
-          )}
-
-        </div>
-      </div>
+      <CardPreviewContent 
+        card={card}
+        styleProps={styleProps}
+        showPremiumTag={showPremiumTag}
+        isRevealed={true}
+        onEquipClick={(eqCard) => { playSound?.(SOUNDS?.seClick); setCardPreviewData({ card: eqCard, parentCard: card }); }}
+        onParentBack={() => { setCardPreviewData({ card: cardPreviewData.parentCard }); playSound?.(SOUNDS?.seClick); }}
+        onTogglePremium={(cardId) => { handleTogglePremium({stopPropagation:()=>{}}, cardId); }}
+        onClosePreview={handleCloseCardPreview}
+        onAcquisitionOk={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
+        onExchangeConfirm={(exchangeData) => {
+            if (exchangeData.isMaxed) {
+                showAlertModal?.(exchangeData.type === 'premium' ? "既にプレミアム化済みです。" : "所持または交換上限に達しています。");
+            } else if (!exchangeData.canExchange) {
+                showAlertModal?.("ポイントが足りません！");
+            } else {
+                if (exchangeData.onConfirm) {
+                    exchangeData.onConfirm();
+                } else {
+                    window.confirmExchange?.();
+                }
+            }
+        }}
+        onExchangeBack={() => { playSound?.(SOUNDS?.seClick); setCardPreviewData(null); }}
+        renderSkillTagReact={renderSkillTagReact}
+      />
     );
   };
 
@@ -607,33 +434,12 @@ export default function GlobalModals() {
         </div>
       )}
 
-      {/* Enlarged Image Overlay */}
-      {isImageZoomed && cardPreviewData && (
-        <div
-          style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.9)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          onClick={(e) => { e.stopPropagation(); setIsImageZoomed(false); playSound?.(SOUNDS?.seClick); }}
-        >
-          <img
-            src={cardPreviewData.styleProps?.imgUrl || (getCardImgUrl ? getCardImgUrl(cardPreviewData.card) : '')}
-            style={{
-              width: 'min(95vw, calc(95vh * 2 / 3))',
-              height: 'min(95vh, calc(95vw * 3 / 2))',
-              objectFit: cardPreviewData.styleProps?.isSkin ? 'contain' : 'contain',
-              borderRadius: '12px',
-              boxShadow: '0 0 40px rgba(0,0,0,0.8)',
-              backgroundColor: cardPreviewData.styleProps?.isSkin ? 'transparent' : '#000'
-            }}
-            alt="Enlarged"
-          />
-        </div>
-      )}
-
       {/* Acquisition Modals (Card, Premium, Playmat) */}
       {acquisitionData && (
         <div className="modal-overlay" style={{ zIndex: 3000, display: 'flex', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.4s' }}>
-          {acquisitionData.type === 'card' && renderCardPreviewContent(acquisitionData.card, { containerClass: 'acquisition-glow', margin: '0 !important', showAcquisitionOk: true })}
+          {acquisitionData.type === 'card' && renderCardPreviewContent(acquisitionData.card, { containerClass: 'acquisition-glow', margin: '0 !important', showAcquisitionOk: true, canClose: acquisitionData.canClose })}
 
-          {acquisitionData.type === 'premium' && renderCardPreviewContent(acquisitionData.card, { containerClass: 'acquisition-glow', margin: '0 !important', borderColor: '#d946ef', boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)', showAcquisitionOk: true, okBg: 'linear-gradient(45deg, #d946ef, #9333ea)', okColor: '#fff' }, true)}
+          {acquisitionData.type === 'premium' && renderCardPreviewContent(acquisitionData.card, { containerClass: 'acquisition-glow', margin: '0 !important', borderColor: '#d946ef', boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)', showAcquisitionOk: true, okBg: 'linear-gradient(45deg, #d946ef, #9333ea)', okColor: '#fff', canClose: acquisitionData.canClose }, true)}
 
           {acquisitionData.type === 'playmat' && (
             <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(242, 201, 76, 0.5)' }} onClick={e => e.stopPropagation()}>

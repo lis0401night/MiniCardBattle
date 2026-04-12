@@ -753,6 +753,24 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
         }
 
+    } else if (action === 'targeted_destruction') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        let targetLane = -1;
+        if (tokenLanes && tokenLanes.length > 0) {
+            targetLane = tokenLanes[0];
+        } else {
+            const occupiedLanes = [0, 1, 2].filter(i => eBoard[i] !== null && !hasSkill(eBoard[i], 'immune'));
+            if (occupiedLanes.length > 0) targetLane = occupiedLanes[0];
+        }
+
+        if (targetLane !== -1 && eBoard[targetLane] !== null) {
+            if (!hasSkill(eBoard[targetLane], 'immune')) {
+                events.push({ type: 'destroy_cards', targets: [{ side: oppOwner, lane: targetLane, card: eBoard[targetLane] }] });
+                eBoard[targetLane] = null;
+            } else {
+                events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
+            }
+        }
     } else if (action === 'devilhunter_resurrect') {
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
         const validCards = discard.filter(card => !card.isToken);

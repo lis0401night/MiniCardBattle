@@ -41,7 +41,9 @@ export default function Board({
                     const isSealed = GameState.enemySealedLanes && GameState.enemySealedLanes[lane] > 0;
                     let isEnemyHighlight = false;
                     if (GameState.isEnemyTargetMode && !GameState.targetSelectedLanes?.includes(lane)) {
-                        isEnemyHighlight = true;
+                        if (GameState.isEnemyTargetAllowEmpty || card !== null) {
+                            isEnemyHighlight = true;
+                        }
                     }
                     
                     return (

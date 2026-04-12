@@ -183,18 +183,18 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
                                 for (let cIdxArr of choiceCombinations) {
                                     let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdxArr, cardTokenLanes);
-                                    candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdxArr, cardTokenLanes, simState });
+                                    if (simState) candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdxArr, cardTokenLanes, simState });
                                 }
                             } else {
                                 let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, undefined, cardTokenLanes);
-                                candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, cardTokenLanes, simState });
+                                if (simState) candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, cardTokenLanes, simState });
                             }
                         }
                     }
                 }
                 // 2. 「パス」という選択肢
                 let passSimState = simulateMove(-1, -1, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order);
-                candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill, tokenLanes, skillOrder: order, simState: passSimState });
+                if (passSimState) candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill, tokenLanes, skillOrder: order, simState: passSimState });
             }
         }
     };
@@ -351,6 +351,14 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // 2. カードをプレイ
     if (handIdx !== -1) {
         const playedCard = cloneCard(simState.enemyHand[handIdx]);
+        
+        // リーダースキル等によって事前の見積もりと盤面状況が変わっている場合の最終制約チェック
+        if (hasSkill(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) {
+            return null; // ルール違反となるためシミュレーション自体を破棄させる
+        }
+        if (hasSkill(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) {
+            return null;
+        }
         
         if (hasSkill(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
             // 装備：既存のカードに追加効果とパワーを付与し、装備カードは消費される。
