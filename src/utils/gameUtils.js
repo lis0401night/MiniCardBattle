@@ -1,11 +1,15 @@
 import { CARD_MASTER } from './constants/cards.js';
-import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio } from './sounds.js';
+import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio, loadAndDecodeAudio } from './sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
 import { CHARACTERS } from './constants/characters.js';
 
 // BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
 export let currentBgmAudio = null;
+export let currentWebAudioBgmSource = null;
+export let currentWebAudioBgmGain = null;
+export const decodedBgms = {};
+
 export const retryPlayBgm = () => {
     if (currentBgmAudio && currentBgmAudio.paused) {
         const p = currentBgmAudio.play();
@@ -13,8 +17,17 @@ export const retryPlayBgm = () => {
             p.then(() => {
                 document.removeEventListener('click', retryPlayBgm, true);
                 document.removeEventListener('touchstart', retryPlayBgm, true);
-            }).catch(() => {});
+            }).catch(() => { });
         }
+    }
+    if (currentWebAudioBgmSource && audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+};
+
+window.updateWebAudioBgmVolume = (vol) => {
+    if (currentWebAudioBgmGain) {
+        currentWebAudioBgmGain.gain.value = vol;
     }
 };
 
@@ -112,18 +125,48 @@ export async function playSound(audioOrKey) {
             audio.volume = baseVol;
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
-                if (audio.readyState > 0) {
-                    try { audio.currentTime = 0; } catch(e) {}
-                }
-                currentBgmAudio = audio;
-                const p = audio.play();
-                if (p !== undefined) {
-                    p.catch((e) => { 
-                        // 再生が弾かれた場合は次の画面タッチ時にリトライ
-                        console.warn("BGM playback blocked, waiting for user interaction...", e);
-                        document.addEventListener('click', retryPlayBgm, { capture: true });
-                        document.addEventListener('touchstart', retryPlayBgm, { capture: true });
-                    });
+                // Web Audio APIによるSafari等対策BGM再生へのルーティング
+                if (audioCtx) {
+                    // 古いBGMを停止
+                    stopSound(audio);
+                    currentBgmAudio = audio; // 互換性維持
+                    
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume().catch(()=>{});
+                    }
+
+                    const bgmUrl = new URL(audio.src).pathname.replace(/^\/+/, '');
+                    let fetchUrl = audio.src;
+                    // ローカルパス変換ロジック
+                    if (fetchUrl.includes('assets/audio/bgm/')) {
+                        fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
+                    }
+
+                    if (!decodedBgms[fetchUrl]) {
+                        // 初回再生時はデコードを待つ（iOS Safariで確実な音量操作を行うための代償）
+                        loadAndDecodeAudio(fetchUrl).then(buffer => {
+                            if (buffer && currentBgmAudio === audio) {
+                                decodedBgms[fetchUrl] = buffer;
+                                startWebAudioBgm(buffer, baseVol);
+                            }
+                        }).catch(e => console.warn("Failed to decode BGM", e));
+                    } else {
+                        startWebAudioBgm(decodedBgms[fetchUrl], baseVol);
+                    }
+                } else {
+                    // HTML5 Audio Fallback (PC or very legacy)
+                    if (audio.readyState > 0) {
+                        try { audio.currentTime = 0; } catch(e) {}
+                    }
+                    currentBgmAudio = audio;
+                    const p = audio.play();
+                    if (p !== undefined) {
+                        p.catch((e) => { 
+                            console.warn("BGM playback blocked, waiting interaction...", e);
+                            document.addEventListener('click', retryPlayBgm, { capture: true });
+                            document.addEventListener('touchstart', retryPlayBgm, { capture: true });
+                        });
+                    }
                 }
             } else {
                 // SEとしてAudio要素を鳴らす場合（予備ロジック）
@@ -143,8 +186,41 @@ export async function playSound(audioOrKey) {
         }
     }
 }
+export function startWebAudioBgm(buffer, baseVol) {
+    if (currentWebAudioBgmSource) {
+        try { currentWebAudioBgmSource.stop(); } catch(e) {}
+        currentWebAudioBgmSource.disconnect();
+    }
+    if (currentWebAudioBgmGain) {
+        currentWebAudioBgmGain.disconnect();
+    }
+    
+    currentWebAudioBgmGain = audioCtx.createGain();
+    currentWebAudioBgmGain.gain.value = baseVol;
+    
+    currentWebAudioBgmSource = audioCtx.createBufferSource();
+    currentWebAudioBgmSource.buffer = buffer;
+    currentWebAudioBgmSource.loop = true;
+    
+    currentWebAudioBgmSource.connect(currentWebAudioBgmGain);
+    currentWebAudioBgmGain.connect(audioCtx.destination);
+    
+    try {
+        currentWebAudioBgmSource.start(0);
+    } catch(e) {
+        console.warn("WebAudio BGM start failed:", e);
+    }
+}
+
 export function stopSound(audio) {
-    if (audio === currentBgmAudio) currentBgmAudio = null;
+    if (audio === currentBgmAudio) {
+        currentBgmAudio = null;
+        if (currentWebAudioBgmSource) {
+            try { currentWebAudioBgmSource.stop(); } catch(e) {}
+            currentWebAudioBgmSource.disconnect();
+            currentWebAudioBgmSource = null;
+        }
+    }
     if (audio && audio.pause) {
         audio.pause();
     }
