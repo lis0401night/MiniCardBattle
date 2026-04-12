@@ -688,6 +688,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (targetOriginal.equippedCards && targetOriginal.equippedCards.length > 0) {
                     statueToken.equippedCards = JSON.parse(JSON.stringify(targetOriginal.equippedCards));
                 }
+                if (targetOriginal.unionMaterials && targetOriginal.unionMaterials.length > 0) {
+                    statueToken.unionMaterials = JSON.parse(JSON.stringify(targetOriginal.unionMaterials));
+                }
                 
                 // 既存のカードを消すわけではなく変身扱いとするため、破壊イベントは積まない（あるいは変身イベントを積む）
                 eB[l] = statueToken;

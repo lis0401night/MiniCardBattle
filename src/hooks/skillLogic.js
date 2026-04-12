@@ -228,6 +228,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
             const newToken = {
                 id: `sm_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                baseId: tId,
                 owner: o,
                 ...tC,
                 isToken: true,

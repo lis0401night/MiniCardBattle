@@ -697,7 +697,18 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                 const existingCard = board[laneIndex];
                 const tokenName = tokenCard ? tokenCard.name : 'トークン';
 
-                if (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) {
+                let canUnion = false;
+                if (tokenCard) {
+                    const unionSkill = tokenCard.skills && tokenCard.skills.find(s => s.id === 'union');
+                    if (unionSkill && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId)) {
+                        canUnion = true;
+                    }
+                }
+
+                if (canUnion) {
+                    // 合体対象の場合は上書き警告（モーダル）を表示せず、既存カードの事前の自動破棄も行わない。
+                    // 呼び出し元(skillLogic等)で結合処理されるため、スルーさせて resolve(cleanUp()) へ流す。
+                } else if (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) {
                     const confirmed = await new Promise(res => {
                         showConfirmModal(
                             `「${existingCard.name}」に「${tokenName}」を装備させますか？`,
@@ -1116,9 +1127,34 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             } else {
                 restoredEq = { ...eqCard };
             }
-            discardPile.push(restoredEq);
+            if (!restoredEq.isToken) {
+                discardPile.push(restoredEq);
+            }
         }
         card.equippedCards = [];
+    }
+
+    if (card.unionMaterials && card.unionMaterials.length > 0) {
+        for (const matCard of card.unionMaterials) {
+            let restoredMat;
+            const matOwner = matCard.owner || owner;
+            const discardPile = matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+            const matMaster = CARD_MASTER.find(m => m.id === (matCard.baseId || matCard.id));
+            if (matMaster) {
+                restoredMat = JSON.parse(JSON.stringify(matMaster));
+                restoredMat.uid = matCard.uid;
+                restoredMat.owner = matOwner;
+                restoredMat.baseId = matCard.baseId || matCard.id;
+                restoredMat.basePower = restoredMat.power;
+                restoredMat.currentPower = restoredMat.power;
+            } else {
+                restoredMat = { ...matCard };
+            }
+            if (!restoredMat.isToken) {
+                discardPile.push(restoredMat);
+            }
+        }
+        card.unionMaterials = [];
     }
 
     if (card.originalRevertTarget) {
@@ -1137,7 +1173,9 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             restoredCard = { ...rvTarget };
             restoredCard.equippedCards = [];
         }
-        (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
+        if (!restoredCard.isToken) {
+            (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
+        }
         updateDeckDisplay(owner);
     }
 

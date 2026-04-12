@@ -423,7 +423,9 @@ export async function playEvents(events) {
                                 } else {
                                     restoredEq = { ...eqCard };
                                 }
-                                discard.push(restoredEq);
+                                if (!restoredEq.isToken) {
+                                    discard.push(restoredEq);
+                                }
                             }
                             deadCard.equippedCards = [];
                             updateDeckDisplay(target.side);
@@ -445,7 +447,9 @@ export async function playEvents(events) {
                                 } else {
                                     restoredMat = { ...matCard };
                                 }
-                                discard.push(restoredMat);
+                                if (!restoredMat.isToken) {
+                                    discard.push(restoredMat);
+                                }
                             }
                             deadCard.unionMaterials = [];
                             updateDeckDisplay(target.side);
@@ -468,7 +472,9 @@ export async function playEvents(events) {
                                 restoredCard = { ...rvTarget };
                                 restoredCard.equippedCards = [];
                             }
-                            discard.push(restoredCard);
+                            if (!restoredCard.isToken) {
+                                discard.push(restoredCard);
+                            }
                             updateDeckDisplay(target.side);
                         } else if (!deadCard.isToken) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
