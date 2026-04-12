@@ -543,41 +543,54 @@ export function evaluateAdhocTokenLanes(tokenCard) {
         c.countDiff = getCountDiff(c.simState);
     });
 
-    candidates.sort((a, b) => {
-        if (a.simState.enemyHP <= 0 && b.simState.enemyHP > 0) return 1;
-        if (b.simState.enemyHP <= 0 && a.simState.enemyHP > 0) return -1;
-        if (a.simState.playerHP <= 0 && b.simState.playerHP > 0) return -1;
-        if (b.simState.playerHP <= 0 && a.simState.playerHP > 0) return 1;
-        
+    let aliveCandidates = candidates.filter(c => c.simState.enemyHP > 0);
+    if (aliveCandidates.length === 0) aliveCandidates = candidates;
+
+    let finalCandidates = [];
+    const winCandidates = aliveCandidates.filter(c => c.simState.playerHP <= 0);
+    if (winCandidates.length > 0) {
+        finalCandidates = winCandidates;
+    } else {
+        const safeCandidates = aliveCandidates.filter(c => c.simState.combatDamageTaken < 4);
+        if (safeCandidates.length > 0) {
+            finalCandidates = safeCandidates;
+        } else {
+            let minDmg = Math.min(...aliveCandidates.map(c => c.simState.combatDamageTaken));
+            finalCandidates = aliveCandidates.filter(c => c.simState.combatDamageTaken === minDmg);
+        }
+    }
+
+    finalCandidates.sort((a, b) => {
         if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff;
         if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff;
         if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken;
         return 0;
     });
 
-    return candidates[0].lane;
+    return finalCandidates[0].lane;
 }
 
 /**
  * トークン配置用の評価
  */
 export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false) {
-    if (canCancel && owner === 'red') {
-        const adhocLanes = evaluateAdhocTokenLanes(tokenCard);
-        return adhocLanes;
-    }
-
     // 意思決定時にすでに最適な配置先（cardTokenLanes / tokenLanes）が計算されていれば、再評価（点数方式）をせずにそのまま使う！
+    // ※キャンセルが最適な場合（[]）や、盤面の空きが足りず指定数未満の配列が返ってきた場合も、シミュレーションの結論として尊重する
     if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
-        if (!isLeaderSkill && GameState.aiDecision.cardTokenLanes && GameState.aiDecision.cardTokenLanes.length > 0) {
+        if (!isLeaderSkill && GameState.aiDecision.cardTokenLanes) {
             const decidedLanes = GameState.aiDecision.cardTokenLanes;
             delete GameState.aiDecision.cardTokenLanes; // 使い切ったら消去
-            return decidedLanes.slice(0, count); // count分を返す
-        } else if (isLeaderSkill && GameState.aiDecision.tokenLanes && GameState.aiDecision.tokenLanes.length > 0) {
+            return decidedLanes.slice(0, count);
+        } else if (isLeaderSkill && GameState.aiDecision.tokenLanes) {
             const decidedLanes = GameState.aiDecision.tokenLanes;
             delete GameState.aiDecision.tokenLanes; // 使い切ったら消去
             return decidedLanes.slice(0, count);
         }
+    }
+
+    if (canCancel && owner === 'red') {
+        const adhocLanes = evaluateAdhocTokenLanes(tokenCard);
+        return adhocLanes;
     }
 
     // 中級以上のAIがシミュレーション結果を持たずに呼ばれた場合（不測の事態）の最低限のフォールバック
