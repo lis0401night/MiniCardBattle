@@ -154,6 +154,6 @@ export const CARD_MASTER = [
     { id: 'token_wall', name: '防壁', rarity: 1, power: 1, isToken: true, skill: 'defender', voiceCategory: 'stone', flavor: '魔法によって創造された防壁。' },
     { id: 'token_phoenix', name: 'フェニックス', rarity: 1, power: 6, isToken: true, skill: 'none', voiceCategory: 'bird', flavor: '蘇った不死鳥。' },
     { id: 'token_soul', name: '人魂', rarity: 1, power: 1, isToken: true, skill: 'none', voiceCategory: 'undead', flavor: '魂喰いの狐が吐き出した人魂。' },
-    { id: 'token_gearC', name: '機神プロメテウス', rarity: 1, power: 10, isToken: true, skills: [{ id: 'pierce' }, { id: 'spread', value: 3 }, { id: 'artillery', value: 3 }, { id: 'immune' }], voiceCategory: 'machine_new', flavor: '天と地が交わり、鋼の機神が目を覚ます。その圧倒的な火力の前では、いかなる装甲も意味を成さない。' },
+    { id: 'token_gearC', name: '機神プロメテウス', rarity: 1, power: 10, isToken: true, skills: [{ id: 'spread', value: 3 }, { id: 'artillery', value: 3 }, { id: 'immune' }], voiceCategory: 'machine_new', flavor: '天と地が交わり、鋼の機神が目を覚ます。その圧倒的な火力の前では、いかなる装甲も意味を成さない。' },
     { id: 'token_reinforceddrone', name: '強化ドローン', rarity: 1, power: 5, isToken: true, skill: 'none', skills: [{ id: 'snipe', value: 5 }], voiceCategory: 'machine_new', flavor: '強化されたドローン。' }
 ];

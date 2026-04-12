@@ -19,7 +19,7 @@ export function initEventAndroidHighMode(charId) {
         name: 'フルアーマー アイギス',
         leaderSkill: {
             name: '一斉射撃',
-            desc: '(SP:4) 敵の場のすべてのカードと敵リーダーに4ダメージを与える。',
+            desc: '(SP:4) 敵の場のすべてのカードに4ダメージ、敵リーダーに2ダメージを与える。',
             cost: 4,
             action: 'android_high_volley'
         }

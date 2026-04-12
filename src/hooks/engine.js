@@ -843,15 +843,15 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 }
             }
         }
-        // 敵リーダーに4ダメージ
+        // 敵リーダーに2ダメージ
         if (isBlue) {
-            state.enemyHP -= 4;
+            state.enemyHP -= 2;
             if (state.enemyHP < 0) state.enemyHP = 0;
         } else {
-            state.playerHP -= 4;
+            state.playerHP -= 2;
             if (state.playerHP < 0) state.playerHP = 0;
         }
-        events.push({ type: 'damage_player', side: oppOwner, amount: 4, source: 'android_high_volley' });
+        events.push({ type: 'damage_player', side: oppOwner, amount: 2, source: 'android_high_volley' });
 
     } else if (action === 'targeted_destruction') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
