@@ -5,7 +5,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { selectRentalDeck, startDungeonBattle, retireDungeon, selectRewardCard, loadDungeonProgress, saveDungeonProgress } from '../hooks/battleDungeon.js';
 import { playSound, getCardImgUrl, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { setupLongPress } from '../hooks/uiGallery.js';
 
 const getRarityColor = (rarity) => {

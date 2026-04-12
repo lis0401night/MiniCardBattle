@@ -8,7 +8,7 @@ import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray, mergeCardSkills } from '../utils/gameUtils.js';
 import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multiplayer.js';
-import { SOUNDS, playSkillSound } from '../utils/sounds.js';
+import { SOUNDS, playSkillSound, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
 import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
