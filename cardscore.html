@@ -230,7 +230,7 @@
                 const skillsModule = await import('./src/utils/constants/skills.js');
                 const skillPointsModule = await import('./src/utils/constants/skill_points.js');
 
-                cardData = (cardsModule.CARD_MASTER || []).filter(c => !c.token);
+                cardData = (cardsModule.CARD_MASTER || []).filter(c => !c.isToken);
                 skillData = skillsModule.SKILLS || {};
                 pointSettings = skillPointsModule.SKILL_POINTS || {};
 
@@ -275,9 +275,10 @@
             if (card.skills) card.skills.forEach(sk => activeSkills.push({ id: sk.id, val: sk.value || 0 }));
 
             activeSkills.forEach(sk => {
-                if (sk.id === 'choice' && Array.isArray(card.choices) && card.choices.length > 0) {
+                const choicesArr = sk.choiceGroup === 2 ? card.choices2 : card.choices;
+                if (sk.id === 'choice' && Array.isArray(choicesArr) && choicesArr.length > 0) {
                     let choiceTotal = 0;
-                    card.choices.forEach(cho => {
+                    choicesArr.forEach(cho => {
                         const p = pointSettings[cho.id] || { base: 0, multiplier: 0 };
                         const choVal = (cho.value === undefined || cho.value === 0) ? 1 : cho.value;
                         choiceTotal += Number(p.base || 0) + (Number(choVal) * Number(p.multiplier || 0));
@@ -286,7 +287,7 @@
                     const choiceBaseSkillP = pointSettings['choice'] || { base: 0, multiplier: 0 };
                     const choiceSelfScore = Number(choiceBaseSkillP.base || 0) + (Number(pickCount) * Number(choiceBaseSkillP.multiplier || 0));
 
-                    score += ((choiceTotal / card.choices.length) * pickCount) + choiceSelfScore;
+                    score += ((choiceTotal / choicesArr.length) * pickCount) + choiceSelfScore;
                 } else {
                     const p = pointSettings[sk.id] || { base: 0, multiplier: 0 };
                     const value = (sk.val === undefined || sk.val === 0) ? 1 : sk.val;
@@ -360,10 +361,11 @@
                                     </div>
                                 </div>`;
 
-                    if ((sk.id === 'choice' || sk === 'choice') && Array.isArray(c.choices)) {
+                    const choicesArr = sk.choiceGroup === 2 ? c.choices2 : c.choices;
+                    if ((sk.id === 'choice' || sk === 'choice') && Array.isArray(choicesArr)) {
                         html += `<div class="flex items-center text-slate-400 font-bold px-1 select-none">⇒</div>`;
                         html += `<div class="flex flex-wrap gap-1 p-1 bg-indigo-50/50 border border-indigo-200 rounded-xl items-center">`;
-                        html += c.choices.map(cho => {
+                        html += choicesArr.map(cho => {
                             const cs = skillData[cho.id] || { name: cho.id, icon: '✨' };
                             return `
                                         <div class="flex items-center gap-1 px-1.5 py-0.5 rounded shadow-sm bg-white border border-slate-200 text-[8px] font-bold text-slate-600">
