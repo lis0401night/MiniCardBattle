@@ -16,10 +16,7 @@ import { showAlertModal } from './uiModals.js';
 
 export function showGallery() {
     playSound(SOUNDS.seClick);
-    if (SOUNDS.bgmGallery.paused) {
-        stopAllBGM();
-        playSound(SOUNDS.bgmGallery);
-    }
+    playSound(SOUNDS.bgmGallery);
     switchScreen('screen-gallery-menu');
 }
 

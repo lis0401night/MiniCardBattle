@@ -2115,10 +2115,7 @@ export function endBattle() {
             if (typeof window.loadDeck === 'function') window.loadDeck();
             if (window.forceUpdateDeckList) window.forceUpdateDeckList();
             switchScreen('screen-deck-list');
-            if (SOUNDS.bgmTitle.paused) {
-                stopAllBGM();
-                playSound(SOUNDS.bgmTitle);
-            }
+            playSound(SOUNDS.bgmTitle);
             return;
         }
 

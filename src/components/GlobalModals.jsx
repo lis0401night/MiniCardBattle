@@ -744,7 +744,7 @@ export default function GlobalModals() {
               {charDetailData && charDetailData.skins && Object.keys(charDetailData.skins).map(skinId => {
                 const skinDef = charDetailData.skins[skinId];
                 const isSelected = selectedSkinState === skinId;
-                const isUnlocked = skinId === 'default' || (GameState.unlockedSkins && GameState.unlockedSkins.includes(`${charDetailData.id}_${skinId}`));
+                const isUnlocked = skinId === 'default' || (GameState.unlockedSkins && (GameState.unlockedSkins.includes(`${charDetailData.id}_${skinId}`) || GameState.unlockedSkins.includes(skinId)));
 
                 return (
                   <div

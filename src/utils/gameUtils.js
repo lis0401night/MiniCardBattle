@@ -125,11 +125,18 @@ export async function playSound(audioOrKey) {
             audio.volume = baseVol;
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
+                // 同じBGMが既に再生中の場合は最初から再生し直さない
+                if (currentBgmAudio === audio) {
+                    if (currentWebAudioBgmGain) currentWebAudioBgmGain.gain.value = baseVol;
+                    return;
+                }
+
                 // Web Audio APIによるSafari等対策BGM再生へのルーティング
                 if (audioCtx) {
                     // 古いBGMを停止
-                    stopSound(audio);
+                    if (currentBgmAudio) stopSound(currentBgmAudio);
                     currentBgmAudio = audio; // 互換性維持
+
                     
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume().catch(()=>{});
