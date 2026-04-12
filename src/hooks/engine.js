@@ -472,6 +472,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     const newToken = {
                         ...sTC,
                         id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                        baseId: tIdEngine,
                         owner,
                         isPremium: c.isPremium,
                         imgUrl: '', // resolved in UI
@@ -650,6 +651,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         const newToken = {
                             ...tC,
                             id: `cl_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                            baseId: c.baseId || c.id,
                             owner,
                             isPremium: c.isPremium,
                             imgUrl: c.imgUrl, // シミュ内では元の情報を保持していればOK (UI表示は後で行われる)

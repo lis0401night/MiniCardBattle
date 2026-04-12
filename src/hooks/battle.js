@@ -706,12 +706,19 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                 }
 
                 if (canUnion) {
-                    // 合体対象の場合は上書き警告（モーダル）を表示せず、既存カードの事前の自動破棄も行わない。
-                    // 呼び出し元(skillLogic等)で結合処理されるため、スルーさせて resolve(cleanUp()) へ流す。
+                    const confirmed = await new Promise(res => {
+                        showConfirmModal(
+                            `「${existingCard.name}」と合体しますか？`,
+                            () => res(true),
+                            () => res(false)
+                        );
+                    });
+                    if (!confirmed) return;
+                    // 合体の場合は既存カードの自動破棄は行わない（呼び出し元で素材にするためスルーする）
                 } else if (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) {
                     const confirmed = await new Promise(res => {
                         showConfirmModal(
-                            `「${existingCard.name}」に「${tokenName}」を装備させますか？`,
+                            `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
                             () => res(true),
                             () => res(false)
                         );
