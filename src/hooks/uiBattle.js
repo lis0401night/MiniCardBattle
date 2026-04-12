@@ -275,6 +275,7 @@ export function showCardReward(enemyId) {
 
     let recipeId = enemyId;
     if (GameState.gameMode === 'event_satan' && enemyId === 'satan') recipeId = 'satan_high';
+    if (GameState.gameMode === 'event_android_high' && enemyId === 'android') recipeId = 'android_high';
 
     let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
     let enemyDeckIds = [];

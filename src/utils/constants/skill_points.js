@@ -15,7 +15,7 @@ export const SKILL_POINTS = {
         "multiplier": 0.5
     },
     "heal": {
-        "base": 0,
+        "base": -1,
         "multiplier": 1
     },
     "snipe": {
@@ -139,7 +139,7 @@ export const SKILL_POINTS = {
         "multiplier": -1
     },
     "artillery": {
-        "base": 0,
+        "base": -1,
         "multiplier": 2
     },
     "shuffle": {

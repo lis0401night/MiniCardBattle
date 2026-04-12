@@ -1,6 +1,8 @@
 /**
  * Mini Card Battle - Skill Definitions
  */
+import { CARD_MASTER } from './cards.js';
+
 export const SKILLS = {
     none: { name: '通常', icon: '', desc: (val) => '' },
     quick: { name: '速攻', icon: '⚡', desc: (val) => '召喚時、ただちに正面に攻撃する。' },
@@ -62,7 +64,23 @@ export const SKILLS = {
     loss: { name: '喪失', icon: '🕳️', desc: (val) => `召喚時、自分のデッキの上から${val}枚墓地に送る。` },
     brutal: { name: '暴虐', icon: '🌪️', desc: (val) => `攻撃時、自分の場の隣のレーンのカードに${val}ダメージ。` },
     absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。' },
-    seal: { name: '結界', icon: '🛑', desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。` }
+    seal: { name: '結界', icon: '🛑', desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。` },
+    union: { name: '合体', icon: '🔗', desc: (val, sk) => {
+        const targetCard = sk && sk.targetId ? CARD_MASTER.find(c => c.id === sk.targetId) : null;
+        const summonCard = sk && sk.summonId ? CARD_MASTER.find(c => c.id === sk.summonId) : null;
+        
+        if (!targetCard && !summonCard) {
+            return '配置時、「対応するカード」の上に重ねた場合に「特別なカード」になる。';
+        }
+
+        return [
+            { type: 'text', value: '配置時、' },
+            { type: 'link', value: `「${targetCard ? targetCard.name : '対応するカード'}」`, targetId: sk.targetId || null },
+            { type: 'text', value: 'の上に重ねた場合に' },
+            { type: 'link', value: `「${summonCard ? summonCard.name : '特別なカード'}」`, targetId: sk.summonId || null },
+            { type: 'text', value: 'になる。' }
+        ];
+    } }
 };
 
 export const ACTIVE_SKILLS = [

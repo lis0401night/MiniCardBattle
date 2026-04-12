@@ -80,6 +80,10 @@ export function handleClaimAchievement(id) {
             showCardAcquisitionModal(result.rewardValue);
         } else if (result.rewardType === 'premium') {
             showPremiumAcquisitionModal(result.rewardValue);
+        } else if (result.rewardType === 'skin') {
+            if (typeof showAlertModal === 'function') {
+                showAlertModal(`スキン「${result.rewardName}」を獲得しました！\nデッキ編成画面で着せ替えが可能です。`);
+            }
         }
     }
     renderAchievementsList();
@@ -109,6 +113,12 @@ let showPlaymatAcquisitionModalHook = null;
 export function setShowPlaymatAcquisitionModalHook(hook) { showPlaymatAcquisitionModalHook = hook; }
 export function showPlaymatAcquisitionModal(name, id) {
     if (showPlaymatAcquisitionModalHook) return showPlaymatAcquisitionModalHook(name, id);
+}
+
+let showSkinAcquisitionModalHook = null;
+export function setShowSkinAcquisitionModalHook(hook) { showSkinAcquisitionModalHook = hook; }
+export function showSkinAcquisitionModal(name, id) {
+    if (showSkinAcquisitionModalHook) return showSkinAcquisitionModalHook(name, id);
 }
 
 export function executePlaymatAcquisitionModal(name, id) {

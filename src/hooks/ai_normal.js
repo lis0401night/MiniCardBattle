@@ -126,6 +126,16 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
 
                         const isOverwrite = myBoard[l] !== null;
+                        if (isOverwrite) {
+                            let canOverwrite = false;
+                            if (hasSkill(card, 'takeover')) canOverwrite = true;
+                            if (hasSkill(card, 'equip')) canOverwrite = true;
+                            const unionSkill = card.skills && card.skills.find(s => s.id === 'union');
+                            if (unionSkill && (myBoard[l].baseId === unionSkill.targetId || myBoard[l].id === unionSkill.targetId)) {
+                                canOverwrite = true;
+                            }
+                            if (!canOverwrite) continue;
+                        }
 
                         // 追加: 空きレーンのパターン抽出
                         let tempBoard = [...myBoard];
@@ -383,34 +393,50 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                 applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForEquip);
             });
         } else {
-            // 通常のプレイ処理
-            if (playedCard.currentPower === undefined || Number.isNaN(playedCard.currentPower) || (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)) {
-                playedCard.currentPower = playedCard.power || 0;
-                playedCard.basePower = playedCard.power || 0;
+            let activeCardForSkills = playedCard;
+            const unionSkill = playedCard.skills && playedCard.skills.find(s => s.id === 'union');
+            if (unionSkill && simState.enemyBoard[laneIdx] && (simState.enemyBoard[laneIdx].baseId === unionSkill.targetId || simState.enemyBoard[laneIdx].id === unionSkill.targetId)) {
+                // 合体処理 (手札からのプレイなので「召喚」扱いとなり、召喚時効果は発動する)
+                const masterData = CARD_MASTER.find(c => c.id === unionSkill.summonId) || CARD_MASTER.find(c => c.id === 'android');
+                let unionCard = JSON.parse(JSON.stringify(masterData));
+                unionCard.uid = `sim_union_${Math.floor(Math.random() * 1000000)}`;
+                unionCard.owner = 'red';
+                unionCard.baseId = unionCard.id;
+                unionCard.basePower = unionCard.power;
+                unionCard.currentPower = unionCard.power;
+                unionCard.stunTurns = 0;
+                simState.enemyBoard[laneIdx] = unionCard;
+                activeCardForSkills = unionCard;
+            } else {
+                // 通常のプレイ処理 (takeover や 空きレーンへの召喚)
+                if (playedCard.currentPower === undefined || Number.isNaN(playedCard.currentPower) || (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)) {
+                    playedCard.currentPower = playedCard.power || 0;
+                    playedCard.basePower = playedCard.power || 0;
+                }
+                simState.enemyBoard[laneIdx] = playedCard;
             }
-            simState.enemyBoard[laneIdx] = playedCard;
 
             let skills = [];
-            if (playedCard.skill && playedCard.skill !== 'none') {
-                if (playedCard.skill === 'choice' && choiceIndex !== undefined && playedCard.choices) {
+            if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
+                if (activeCardForSkills.skill === 'choice' && choiceIndex !== undefined && activeCardForSkills.choices) {
                     const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
                     indices.forEach(idx => {
-                        if (playedCard.choices[idx]) {
-                            const chr = playedCard.choices[idx];
+                        if (activeCardForSkills.choices[idx]) {
+                            const chr = activeCardForSkills.choices[idx];
                             skills.push({ id: chr.id, value: chr.value });
                         }
                     });
                 } else {
-                    skills.push({ id: playedCard.skill, value: playedCard.skillValue });
+                    skills.push({ id: activeCardForSkills.skill, value: activeCardForSkills.skillValue });
                 }
             }
-            if (Array.isArray(playedCard.skills)) {
-                playedCard.skills.forEach(sk => {
-                    if (sk.id === 'choice' && choiceIndex !== undefined && playedCard.choices) {
+            if (Array.isArray(activeCardForSkills.skills)) {
+                activeCardForSkills.skills.forEach(sk => {
+                    if (sk.id === 'choice' && choiceIndex !== undefined && activeCardForSkills.choices) {
                         const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
                         indices.forEach(idx => {
-                            if (playedCard.choices[idx]) {
-                                const chr = playedCard.choices[idx];
+                            if (activeCardForSkills.choices[idx]) {
+                                const chr = activeCardForSkills.choices[idx];
                                 skills.push({ id: chr.id, value: chr.value });
                             }
                         });

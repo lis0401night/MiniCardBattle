@@ -1327,6 +1327,11 @@ h2 {
     box-shadow: 0 0 8px rgba(251, 113, 133, 0.4);
 }
 
+.card.rarity-0 {
+    border-color: #000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
 .card.rarity-1 {
     border-color: #cd7f32;
     

@@ -218,7 +218,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             basePower: pValue,
             skills: []
         };
-        const selectedLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, null, false);
+        const selectedLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, null, false, true);
 
         let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
@@ -240,6 +240,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 voiceCategory: tC.voiceCategory || (pValue >= 5 ? 'monster' : 'machine_new'),
                 skills: []
             };
+            if (board[targetLane]) {
+                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+            }
             board[targetLane] = newToken;
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
@@ -263,7 +266,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             currentPower: c.currentPower,
             skills: inheritedSkills
         };
-        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false);
+        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false, true);
         if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
         let events = [];
@@ -286,6 +289,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 voiceCategory: c.voiceCategory,
                 skills: JSON.parse(JSON.stringify(inheritedSkills)) // スキルを引き継ぐ
             };
+            if (board[targetLane]) {
+                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+            }
             board[targetLane] = newToken;
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
         }
@@ -568,7 +574,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             baseId: 'token_wall',
             skills: []
         };
-        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, false);
+        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, false, true);
         if (tLanes && tLanes.length > 0) {
             const targetLane = tLanes[0];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -601,7 +607,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
             if (selectedCard) {
                 // 配置先を選ばせる (召喚ではなく配置扱いのため制約チェックはしない)
-                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, false);
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, false, true);
                 if (tLanes && tLanes.length > 0) {
                     const targetLane = tLanes[0];
                     const dIdx = discard.findIndex(cd => cb => cb.id === selectedCard.id);
@@ -639,14 +645,34 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         targetCard.equippedCards = targetCard.equippedCards || [];
                         targetCard.equippedCards.push(selectedCard);
                     } else {
-                        if (board[targetLane]) {
-                            if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                        const existingCard = board[targetLane];
+                        const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
+                        const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
+
+                        if (isUnion) {
+                            const combineId = unionSkill.summonId;
+                            const masterData = CARD_MASTER.find(c => c.id === combineId);
+                            let unionCard = JSON.parse(JSON.stringify(masterData));
+                            unionCard.uid = getOrCreateUUID(null);
+                            unionCard.owner = o;
+                            unionCard.baseId = unionCard.id;
+                            unionCard.basePower = unionCard.power;
+                            unionCard.currentPower = unionCard.power;
+                            unionCard.unionMaterials = [existingCard, selectedCard];
+                            unionCard.skillTriggered = true; // 配置（復活）からの合体のため召喚時効果は不発
+                            unionCard.stunTurns = 0;
+                            unionCard.stunAppliedThisTurn = false;
+                            board[targetLane] = unionCard;
+                        } else {
+                            if (existingCard) {
+                                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                            }
+                            board[targetLane] = { ...selectedCard, id: `res_${Math.floor(getSeededRandom() * 1000000000)}` };
+                            board[targetLane].currentPower = board[targetLane].power;
+                            board[targetLane].skillTriggered = true; // 召喚効果は発動しない
+                            board[targetLane].stunTurns = 0;
+                            board[targetLane].stunAppliedThisTurn = false;
                         }
-                        board[targetLane] = { ...selectedCard, id: `res_${Math.floor(getSeededRandom() * 1000000000)}` };
-                        board[targetLane].currentPower = board[targetLane].power;
-                        board[targetLane].skillTriggered = true; // 召喚効果は発動しない
-                        board[targetLane].stunTurns = 0;
-                        board[targetLane].stunAppliedThisTurn = false;
                     }
 
                     playSound(SOUNDS.sePlace);

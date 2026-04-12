@@ -229,6 +229,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'satan_high',
         reward: { type: 'playmat', value: 'satan', name: 'サタン' }
     },
+    {
+        id: 'event_android_high_clear_skin',
+        title: '機巧の極致',
+        description: '高難易度イベントでアイギスを倒す',
+        type: 'event_clear',
+        targetValue: 'android_high',
+        reward: { type: 'skin', value: 'android_high', name: 'フルアーマーアイギス' }
+    },
+    {
+        id: 'event_android_high_clear_pm',
+        title: '鋼鉄の戦場',
+        description: '高難易度イベントでアイギスを倒す',
+        type: 'event_clear',
+        targetValue: 'android_high',
+        reward: { type: 'playmat', value: 'pm_android_high', name: 'フルアーマーアイギス' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',
@@ -565,6 +581,17 @@ export function claimAchievementReward(id) {
         saveAchievements();
         saveDeck();
         return { success: true, rewardType: 'premium', rewardValue: cardId, rewardName: master.reward.name };
+    } else if (master.reward.type === 'skin') {
+        const skinId = master.reward.value;
+        if (!GameState.unlockedSkins.includes(skinId)) {
+            GameState.unlockedSkins.push(skinId);
+        }
+        localStorage.setItem('mini_card_battle_unlocked_skins', JSON.stringify(GameState.unlockedSkins));
+
+        ach.isRewarded = true;
+        saveAchievements();
+        saveDeck();
+        return { success: true, rewardType: 'skin', rewardValue: skinId, rewardName: master.reward.name };
     }
 
     ach.isRewarded = true;
@@ -595,6 +622,12 @@ export function checkAndFixMissingRewards() {
                 data.isRewarded = false;
                 needsSave = true;
                 console.log(`[修正] プレミアムカード ${reward.value} を未受取に戻しました`);
+            }
+        } else if (reward.type === 'skin') {
+            if (!GameState.unlockedSkins.includes(reward.value)) {
+                data.isRewarded = false;
+                needsSave = true;
+                console.log(`[修正] スキン ${reward.value} を未受取に戻しました`);
             }
         } else if (reward.type === 'card') {
             cardClaimedCounts[reward.value] = (cardClaimedCounts[reward.value] || 0) + 1;

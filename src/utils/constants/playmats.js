@@ -62,6 +62,7 @@ export const PLAYMAT_MASTER = [
         image: 'assets/boards/board_satan.png',
         targetCharacter: 'satan'
     },
+    { id: 'pm_android_high', name: 'フルアーマーアイギス', image: 'assets/boards/board_android_high.png' },
     { id: 'pm_android_summer', name: '水陸両用装備', image: 'assets/boards/board_android_summer.png' },
     { id: 'pm_dragon_summer', name: '真夏の焔竜姫', image: 'assets/boards/board_dragon_summer.png' },
     { id: 'pm_knight_summer', name: '波打ち際の騎士', image: 'assets/boards/board_knight_summer.png' },

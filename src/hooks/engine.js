@@ -455,10 +455,17 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 let targetLane = -1;
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
+                } else if (Array.isArray(simulatedTokenLanes)) {
+                    targetLane = -1;
                 } else {
                     const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
                     const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
-                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                    if (emptyLanes.length > 0) {
+                        targetLane = emptyLanes[0];
+                    } else {
+                        const validOccupiedLanes = [0, 1, 2].filter(j => !sealedLanes || sealedLanes[j] === 0);
+                        if (validOccupiedLanes.length > 0) targetLane = validOccupiedLanes[0];
+                    }
                 }
 
                 if (targetLane !== -1) {
@@ -473,6 +480,10 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         currentPower: summonTargetPower,
                         skills: []
                     };
+                    if (b[targetLane] !== null) {
+                        const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+                        simDiscard.push(b[targetLane]);
+                    }
                     b[targetLane] = newToken;
                     events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'summon' });
                 }
@@ -485,13 +496,24 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 let targetLane = -1;
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
+                } else if (Array.isArray(simulatedTokenLanes)) {
+                    targetLane = -1;
                 } else {
                     const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
                     const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
-                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                    if (emptyLanes.length > 0) {
+                        targetLane = emptyLanes[0];
+                    } else {
+                        const validOccupiedLanes = [0, 1, 2].filter(j => !sealedLanes || sealedLanes[j] === 0);
+                        if (validOccupiedLanes.length > 0) targetLane = validOccupiedLanes[0];
+                    }
                 }
 
                 if (targetLane !== -1) {
+                    if (b[targetLane] !== null) {
+                        const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+                        simDiscard.push(b[targetLane]);
+                    }
                     const newToken = {
                         ...wTC,
                         id: `WC_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
@@ -523,22 +545,48 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             let targetLaneRes = -1;
             if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                 targetLaneRes = simulatedTokenLanes.shift();
+            } else if (Array.isArray(simulatedTokenLanes)) {
+                targetLaneRes = -1;
             } else {
                 const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
                 const emptyLanesRes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
-                if (emptyLanesRes.length > 0) targetLaneRes = emptyLanesRes[0];
+                if (emptyLanesRes.length > 0) {
+                    targetLaneRes = emptyLanesRes[0];
+                } else {
+                    const validOccupiedLanes = [0, 1, 2].filter(j => !sealedLanes || sealedLanes[j] === 0);
+                    if (validOccupiedLanes.length > 0) targetLaneRes = validOccupiedLanes[0];
+                }
             }
 
             if (targetLaneRes !== -1) {
-                const newResToken = {
-                    ...simResCard,
-                    id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
-                    owner,
-                    currentPower: simResCard.power,
-                    skills: [] // 蘇生時は通常のOnPlayスキルは発動しない
-                };
-                b[targetLaneRes] = newResToken;
-                events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
+                const existingCard = b[targetLaneRes];
+                const unionSkill = simResCard.skills && simResCard.skills.find(s => s.id === 'union');
+                const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
+
+                if (isUnion) {
+                    const masterData = CARD_MASTER.find(c => c.id === unionSkill.summonId) || CARD_MASTER.find(c => c.id === 'android');
+                    let unionCard = JSON.parse(JSON.stringify(masterData));
+                    unionCard.uid = `rs_sim_un_${Math.floor(getSeededRandom() * 1000000000)}`;
+                    unionCard.owner = owner;
+                    unionCard.baseId = unionCard.id;
+                    unionCard.basePower = unionCard.power;
+                    unionCard.currentPower = unionCard.power;
+                    unionCard.skills = []; // 蘇生からの合体のためスキル効果は不発
+                    unionCard.stunTurns = 0;
+                    b[targetLaneRes] = unionCard;
+                    events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
+                } else {
+                    if (existingCard) simDiscard.push(existingCard);
+                    const newResToken = {
+                        ...simResCard,
+                        id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                        owner,
+                        currentPower: simResCard.power,
+                        skills: [] // 蘇生時は通常のOnPlayスキルは発動しない
+                    };
+                    b[targetLaneRes] = newResToken;
+                    events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
+                }
                 
                 const resIdx = simDiscard.indexOf(simResCard);
                 if (resIdx !== -1) simDiscard.splice(resIdx, 1);
@@ -564,28 +612,57 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 let targetLane = -1;
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
+                } else if (Array.isArray(simulatedTokenLanes)) {
+                    targetLane = -1;
                 } else {
                     const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
                     const emptyLanes = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
-                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
+                    if (emptyLanes.length > 0) {
+                        targetLane = emptyLanes[0];
+                    } else {
+                        const validOccupiedLanes = [0, 1, 2].filter(j => !sealedLanes || sealedLanes[j] === 0);
+                        if (validOccupiedLanes.length > 0) targetLane = validOccupiedLanes[0];
+                    }
                 }
 
                 if (targetLane !== -1) {
-                    const newToken = {
-                        ...tC,
-                        id: `cl_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
-                        owner,
-                        isPremium: c.isPremium,
-                        imgUrl: c.imgUrl, // シミュ内では元の情報を保持していればOK (UI表示は後で行われる)
-                        rarity: c.rarity || 1,
-                        power: c.power || 1,
-                        basePower: c.basePower || c.power || 1,
-                        currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 1),
-                        skills: JSON.parse(JSON.stringify(inheritedSkills)),
-                        voiceCategory: c.voiceCategory || 'sword'
-                    };
-                    b[targetLane] = newToken;
-                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'clone' });
+                    const existingCard = b[targetLane];
+                    const inheritedUnionSkill = inheritedSkills.find(sk => sk.id === 'union');
+                    const isUnion = inheritedUnionSkill && existingCard && (existingCard.baseId === inheritedUnionSkill.targetId || existingCard.id === inheritedUnionSkill.targetId);
+
+                    if (isUnion) {
+                        const masterData = CARD_MASTER.find(md => md.id === inheritedUnionSkill.summonId) || CARD_MASTER.find(md => md.id === 'android');
+                        let unionCard = JSON.parse(JSON.stringify(masterData));
+                        unionCard.uid = `cl_sim_un_${Math.floor(getSeededRandom() * 1000000000)}_${i}`;
+                        unionCard.owner = owner;
+                        unionCard.baseId = unionCard.id;
+                        unionCard.basePower = unionCard.power;
+                        unionCard.currentPower = unionCard.power;
+                        unionCard.skills = []; // 配置からのため不発
+                        unionCard.stunTurns = 0;
+                        b[targetLane] = unionCard;
+                        events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
+                    } else {
+                        if (existingCard) {
+                            const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+                            simDiscard.push(existingCard);
+                        }
+                        const newToken = {
+                            ...tC,
+                            id: `cl_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                            owner,
+                            isPremium: c.isPremium,
+                            imgUrl: c.imgUrl, // シミュ内では元の情報を保持していればOK (UI表示は後で行われる)
+                            rarity: c.rarity || 1,
+                            power: c.power || 1,
+                            basePower: c.basePower || c.power || 1,
+                            currentPower: c.currentPower !== undefined ? c.currentPower : (c.power || 1),
+                            skills: JSON.parse(JSON.stringify(inheritedSkills)),
+                            voiceCategory: c.voiceCategory || 'sword'
+                        };
+                        b[targetLane] = newToken;
+                        events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'clone' });
+                    }
                 }
             }
             break;
@@ -753,6 +830,29 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
         }
 
+    } else if (action === 'android_high_volley') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        // 敵の場のすべてのカードに4ダメージ
+        for (let i = 0; i < 3; i++) {
+            if (eBoard[i]) {
+                if (!hasSkill(eBoard[i], 'immune')) {
+                    eBoard[i].currentPower -= 4;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 4, source: 'android_high_volley' });
+                } else {
+                    events.push({ type: 'immune_block', side: oppOwner, lane: i, source: 'android_high_volley' });
+                }
+            }
+        }
+        // 敵リーダーに4ダメージ
+        if (isBlue) {
+            state.enemyHP -= 4;
+            if (state.enemyHP < 0) state.enemyHP = 0;
+        } else {
+            state.playerHP -= 4;
+            if (state.playerHP < 0) state.playerHP = 0;
+        }
+        events.push({ type: 'damage_player', side: oppOwner, amount: 4, source: 'android_high_volley' });
+
     } else if (action === 'targeted_destruction') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         let targetLane = -1;
@@ -787,16 +887,34 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
             if (l !== -1) {
                 events.push({ type: 'leader_skill', skill: action, side: owner });
-                const resurrectedCard = { ...selectedCard, id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}` };
-                resurrectedCard.currentPower = resurrectedCard.power;
-                resurrectedCard.skillTriggered = true;
-                resurrectedCard.stunTurns = 0;
-                board[l] = resurrectedCard;
+                const existingCard = board[l];
+                const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
+                const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
+
+                if (isUnion) {
+                    const masterData = CARD_MASTER.find(c => c.id === unionSkill.summonId) || CARD_MASTER.find(c => c.id === 'android');
+                    let unionCard = JSON.parse(JSON.stringify(masterData));
+                    unionCard.uid = `ls_un_sim_${Math.floor(getSeededRandom() * 1000000000)}`;
+                    unionCard.owner = owner;
+                    unionCard.baseId = unionCard.id;
+                    unionCard.basePower = unionCard.power;
+                    unionCard.currentPower = unionCard.power;
+                    unionCard.skillTriggered = true; // 配置からの合体のため召喚時効果は不発
+                    unionCard.stunTurns = 0;
+                    board[l] = unionCard;
+                    events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
+                } else {
+                    if (existingCard) discard.push(existingCard);
+                    const resurrectedCard = { ...selectedCard, id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}` };
+                    resurrectedCard.currentPower = resurrectedCard.power;
+                    resurrectedCard.skillTriggered = true;
+                    resurrectedCard.stunTurns = 0;
+                    board[l] = resurrectedCard;
+                    events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'devilhunter_resurrect' });
+                }
 
                 const removeIdx = discard.findIndex(x => x.id === selectedCard.id);
                 if (removeIdx !== -1) discard.splice(removeIdx, 1);
-
-                events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'devilhunter_resurrect' });
             }
         }
     } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dungeon_summon_leader') {

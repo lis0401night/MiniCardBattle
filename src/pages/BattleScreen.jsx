@@ -114,7 +114,14 @@ export default function BattleScreen() {
             if (GameState.playerBoard[lane] !== null) {
                 const existingCard = GameState.playerBoard[lane];
                 let confirmed;
-                if (hasSkill && hasSkill(newCard, 'equip')) {
+                const unionSkill = newCard.skills && newCard.skills.find(s => s.id === 'union');
+                const isUnion = unionSkill && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
+
+                if (isUnion) {
+                    confirmed = await new Promise(resolve => {
+                        showConfirmModal(`「${existingCard.name}」と合体しますか？`, () => resolve(true), () => resolve(false));
+                    });
+                } else if (hasSkill && hasSkill(newCard, 'equip')) {
                     confirmed = await new Promise(resolve => {
                         showConfirmModal(`「${existingCard.name}」に「${newCard.name}」を装備しますか？`, () => resolve(true), () => resolve(false));
                     });

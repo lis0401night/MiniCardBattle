@@ -8,7 +8,7 @@ import { playSound, stopAllBGM, getCardImgUrl, togglePremiumCard } from '../util
 import { SOUNDS } from '../utils/sounds.js';
 import { saveDeck, renderDeckEdit, submitDefenseDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
-import { renderCardList, openCardPreview, setShowCardAcquisitionModalHook, setShowPremiumAcquisitionModalHook, setShowPlaymatAcquisitionModalHook, setOpenCardPreviewHook, setCloseCardPreviewHook } from '../hooks/uiGallery.js';
+import { renderCardList, openCardPreview, setShowCardAcquisitionModalHook, setShowPremiumAcquisitionModalHook, setShowPlaymatAcquisitionModalHook, setShowSkinAcquisitionModalHook, setOpenCardPreviewHook, setCloseCardPreviewHook } from '../hooks/uiGallery.js';
 import { backupDataToXML, importDataFromXML, reloadGame, confirmCharSelect, confirmExchange, setCloseEnemyDeckModalHook } from '../hooks/uiMainCore.js';
 import { showAlertModal, setShowConfirmModalHook, setShowAlertModalHook, setShowErrorModalHook, setShowPointAcquisitionModalHook } from '../hooks/uiModals.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
@@ -106,6 +106,16 @@ export default function GlobalModals() {
       if (playmat) {
         playSound?.(SOUNDS?.seSkill);
         setAcquisitionData({ type: 'playmat', name, playmat, canClose: false });
+        setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
+      }
+    });
+
+    setShowSkinAcquisitionModalHook((name, id) => {
+      const char = Object.values(CHARACTERS || {}).find(c => c.skins && c.skins[id]);
+      const img = char ? getSkinImage(char, id, 'image') : '';
+      if (img) {
+        playSound?.(SOUNDS?.seSkill);
+        setAcquisitionData({ type: 'skin', name, id, image: img, canClose: false });
         setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
       }
     });
@@ -286,6 +296,11 @@ export default function GlobalModals() {
         showPremiumTag={showPremiumTag}
         isRevealed={true}
         onEquipClick={(eqCard) => { playSound?.(SOUNDS?.seClick); setCardPreviewData({ card: eqCard, parentCard: card }); }}
+        onLinkClick={(targetId) => {
+            playSound?.(SOUNDS?.seClick);
+            const tObj = CARD_MASTER.find(c => c.id === targetId);
+            if (tObj) setCardPreviewData({ card: tObj, parentCard: card });
+        }}
         onParentBack={() => { setCardPreviewData({ card: cardPreviewData.parentCard }); playSound?.(SOUNDS?.seClick); }}
         onTogglePremium={(cardId) => { handleTogglePremium({stopPropagation:()=>{}}, cardId); }}
         onClosePreview={handleCloseCardPreview}
@@ -453,6 +468,25 @@ export default function GlobalModals() {
               <button
                 className="btn ok-button"
                 style={{ background: 'linear-gradient(45deg, #facc15, #eab308)', color: '#000', fontWeight: 'bold', width: '110px', alignSelf: 'center', margin: 0, pointerEvents: acquisitionData.canClose ? 'auto' : 'none', opacity: acquisitionData.canClose ? 1 : 0.5 }}
+                onClick={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
+              >
+                OK
+              </button>
+            </div>
+          )}
+
+          {acquisitionData.type === 'skin' && (
+            <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #c084fc', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(192, 132, 252, 0.5)' }} onClick={e => e.stopPropagation()}>
+              <h2 style={{ color: '#c084fc', marginBottom: '20px' }}>スキン獲得！</h2>
+              <div style={{ width: '160px', height: '220px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #c084fc', marginBottom: '20px', boxShadow: '0 0 15px rgba(192, 132, 252, 0.3)' }}>
+                <img src={acquisitionData.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Skin" />
+              </div>
+              <p style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '25px' }}>
+                スキン「{acquisitionData.name}」を入手しました！
+              </p>
+              <button
+                className="btn ok-button"
+                style={{ background: 'linear-gradient(45deg, #c084fc, #9333ea)', color: '#fff', fontWeight: 'bold', width: '110px', alignSelf: 'center', margin: 0, pointerEvents: acquisitionData.canClose ? 'auto' : 'none', opacity: acquisitionData.canClose ? 1 : 0.5 }}
                 onClick={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
               >
                 OK
@@ -764,7 +798,7 @@ export default function GlobalModals() {
                     </div>
                     <div style={{ flex: 1, fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', flexDirection: 'column' }}>
                       <span>{skinDef.name}</span>
-                      {!isUnlocked && <span style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 'normal' }}>未解放 (試練交換所で入手)</span>}
+                      {!isUnlocked && <span style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 'normal' }}>未解放 ({skinDef.unlockCondition || '試練交換所で入手'})</span>}
                     </div>
                   </div>
                 );

@@ -5,7 +5,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, isTransitioning, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { setRenderAchievementsListHook, showCardAcquisitionModal, showPremiumAcquisitionModal, showPlaymatAcquisitionModal, setRenderAchievementsStatsHook } from '../hooks/uiGallery.js';
+import { setRenderAchievementsListHook, showCardAcquisitionModal, showPremiumAcquisitionModal, showPlaymatAcquisitionModal, showSkinAcquisitionModal, setRenderAchievementsStatsHook } from '../hooks/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function AchievementsScreen() {
@@ -63,6 +63,8 @@ export default function AchievementsScreen() {
           showCardAcquisitionModal?.(result.rewardValue);
         } else if (result.rewardType === 'premium') {
           showPremiumAcquisitionModal?.(result.rewardValue);
+        } else if (result.rewardType === 'skin') {
+          showSkinAcquisitionModal?.(result.rewardName, result.rewardValue);
         }
       }
       updateAchievements();
@@ -205,7 +207,7 @@ export default function AchievementsScreen() {
                     {ach.reward ? (
                       <>
                         <span style={{ fontSize: '0.8rem', color: '#facc15' }}>
-                          報酬: {ach.reward.type === 'playmat' ? 'プレイマット' : (ach.reward.type === 'premium' ? 'プレミアム' : 'カード')}
+                          報酬: {ach.reward.type === 'playmat' ? 'プレイマット' : (ach.reward.type === 'premium' ? 'プレミアム' : (ach.reward.type === 'skin' ? 'スキン' : 'カード'))}
                         </span>
                         {savedData.isRewarded ? (
                           <span style={{ color: '#94a3b8' }}>(取得済)</span>

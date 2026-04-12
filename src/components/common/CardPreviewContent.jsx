@@ -17,6 +17,7 @@ export default function CardPreviewContent({
     // Callbacks from GlobalModals
     onImageZoom = null,
     onEquipClick = null,
+    onLinkClick = null,
     onParentBack = null,
     onTogglePremium = null,
     onClosePreview = null,
@@ -33,14 +34,14 @@ export default function CardPreviewContent({
 
     const imgUrl = styleProps.imgUrl || (getCardImgUrl ? getCardImgUrl(card) : '');
     const isSkin = styleProps.isSkin || false;
-    const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-    const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15', 4: '#fde047' };
+    const rarityClass = card.isToken ? ' rarity-0' : (card.rarity !== undefined && card.rarity !== null ? ` rarity-${card.rarity}` : '');
+    const rarityColors = { 0: '#a3a3a3', 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15', 4: '#fde047' };
     const nameColor = styleProps.titleColor || rarityColors[card.rarity] || '#fff';
     const filter = GameState.playerConfig?.filter || 'none';
 
     let skillCandidates = [];
-    if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue, choiceGroup: card.choiceGroup });
-    if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ id: sk.id, value: sk.value, choiceGroup: sk.choiceGroup }));
+    if (card.skill && card.skill !== 'none' && card.skill !== undefined) skillCandidates.push({ id: card.skill, value: card.skillValue, choiceGroup: card.choiceGroup, targetId: card.targetId, summonId: card.summonId });
+    if (Array.isArray(card.skills)) card.skills.forEach(sk => skillCandidates.push({ ...sk }));
 
     const isOblivion = skillCandidates.some(sk => sk.id === 'oblivion');
     if (isOblivion) {
@@ -67,6 +68,29 @@ export default function CardPreviewContent({
         if (renderSkillTagReact) return renderSkillTagReact(c);
         if (window.renderSkillTag) return <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(c, false) }}></div>;
         return null;
+    };
+
+    const renderDescContent = (descContent) => {
+        if (Array.isArray(descContent)) {
+            return descContent.map((seg, i) => {
+                if (seg.type === 'link') {
+                    return (
+                        <span 
+                            key={i} 
+                            style={{ color: '#38bdf8', textDecoration: 'underline', cursor: 'pointer' }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onLinkClick && seg.targetId) onLinkClick(seg.targetId);
+                            }}
+                        >
+                            {seg.value}
+                        </span>
+                    );
+                }
+                return <span key={i}>{seg.value}</span>;
+            });
+        }
+        return descContent;
     };
 
     return (
@@ -152,7 +176,7 @@ export default function CardPreviewContent({
                   const s = SKILLS?.[sk.id];
                   if (!s) return null;
                   const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
-                  const desc = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+                  const desc = typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc;
 
                   if (sk.id === 'choice' && (Array.isArray(card.choices) || Array.isArray(card.choices2))) {
                     const targetChoices = sk.choiceGroup === 2 ? card.choices2 : card.choices;
@@ -165,18 +189,18 @@ export default function CardPreviewContent({
                               <span>{s.icon} {s.name}{val}</span>
                               <span className="accordion-icon" style={{ fontSize: '0.8rem', transition: 'transform 0.2s', position: 'absolute', right: '8px' }}>▼</span>
                             </div>
-                            <p className="preview-skill-desc" style={{ marginTop: '6px', marginBottom: '8px', color: '#f8fafc', textAlign: 'center' }}>{desc}</p>
+                            <p className="preview-skill-desc" style={{ marginTop: '6px', marginBottom: '8px', color: '#f8fafc', textAlign: 'center' }}>{renderDescContent(desc)}</p>
                           </summary>
                           <div className="accordion-content" style={{ marginTop: '5px' }}>
                             {targetChoices.map((cho, cIdx) => {
                               const cs = SKILLS?.[cho.id];
                               if (!cs) return null;
                               const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
-                              const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                              const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value, cho) : cs.desc;
                               return (
                                 <div key={cIdx} style={{ marginLeft: '10px', borderLeft: '2px solid #475569', paddingLeft: '10px', marginTop: '8px', marginBottom: '8px' }}>
                                   <div className="preview-skill-badge" style={{ background: 'rgba(148, 163, 184, 0.2)', borderColor: '#94a3b8', color: '#94a3b8', fontSize: '0.75rem' }}>{cs.icon} {cs.name}{cVal}</div>
-                                  <p className="preview-skill-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>{cDesc}</p>
+                                  <p className="preview-skill-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>{renderDescContent(cDesc)}</p>
                                 </div>
                               );
                             })}
@@ -189,7 +213,7 @@ export default function CardPreviewContent({
                   return (
                     <div key={idx} className="preview-skill-item">
                       <div className="preview-skill-badge">{s.icon} {s.name}{val}</div>
-                      <p className="preview-skill-desc">{desc}</p>
+                      <p className="preview-skill-desc">{renderDescContent(desc)}</p>
                     </div>
                   );
                 }) : (

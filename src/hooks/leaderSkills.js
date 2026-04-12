@@ -216,16 +216,42 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
             const targetLane = tLanes[0];
             tokenLanes = tLanes; // VFXセクションで参照できるように代入
-            const resurrectedCard = {
-                ...selectedCard,
-                id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
-                baseId: selectedCard.baseId || selectedCard.id
-            };
-            resurrectedCard.currentPower = resurrectedCard.power;
-            resurrectedCard.skillTriggered = true; // 召喚時効果は不発
-            resurrectedCard.stunTurns = 0;
-            resurrectedCard.stunAppliedThisTurn = false;
-            board[targetLane] = resurrectedCard;
+            const existingCard = board[targetLane];
+            const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
+            const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
+
+            let resurrectedCard;
+            if (isUnion) {
+                const combineId = unionSkill.summonId;
+                const masterData = CARD_MASTER.find(c => c.id === combineId);
+                resurrectedCard = JSON.parse(JSON.stringify(masterData));
+                resurrectedCard.uid = getOrCreateUUID(null);
+                resurrectedCard.owner = owner;
+                resurrectedCard.baseId = resurrectedCard.id;
+                resurrectedCard.basePower = resurrectedCard.power;
+                resurrectedCard.currentPower = resurrectedCard.power;
+                resurrectedCard.unionMaterials = [existingCard, selectedCard];
+                resurrectedCard.skillTriggered = true; // 配置（復活）からの合体のため召喚時効果は不発
+                resurrectedCard.stunTurns = 0;
+                resurrectedCard.stunAppliedThisTurn = false;
+                board[targetLane] = resurrectedCard;
+            } else {
+                resurrectedCard = {
+                    ...selectedCard,
+                    id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    baseId: selectedCard.baseId || selectedCard.id
+                };
+                resurrectedCard.currentPower = resurrectedCard.power;
+                resurrectedCard.skillTriggered = true; // 召喚時効果は不発
+                resurrectedCard.stunTurns = 0;
+                resurrectedCard.stunAppliedThisTurn = false;
+                
+                // 既存のカードがあれば破棄する（UNIONでない場合）
+                if (existingCard) {
+                    await discardCard(owner, existingCard, targetLane);
+                }
+                board[targetLane] = resurrectedCard;
+            }
 
             events.push({ type: 'leader_skill', skill: action, side: owner });
             events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
@@ -301,7 +327,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
     // 専用のVFX演出を再生
     if (window.triggerVfx) {
-        if (action === 'annihilation') {
+        if (action === 'annihilation' || action === 'android_high_volley') {
             await sleep(200);
             await window.triggerVfx('anm_android_arts', owner);
         } else if (action === 'time_stop') {

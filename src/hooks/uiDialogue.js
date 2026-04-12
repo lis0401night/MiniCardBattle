@@ -2,7 +2,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { setupEventSatanConfrontation } from './events.js';
+import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation } from './events.js';
 import { GameState } from './gameState.js';
 import { handleProgressionNextStep } from './progression.js';
 
@@ -71,12 +71,16 @@ export function setupDialogueScreen() {
     GameState.currentDialogueIndex = 0;
     
     let pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'image') || getCardImgUrl(GameState.playerConfig);
-    let pRightImg = GameState.enemyConfig.image || getCardImgUrl(GameState.enemyConfig);
+    
+    let enemySkinId = GameState.enemySkins ? GameState.enemySkins[GameState.enemyConfig.id] : 'default';
+    let pRightImg = getSkinImage(GameState.enemyConfig, enemySkinId, 'image') || GameState.enemyConfig.image || getCardImgUrl(GameState.enemyConfig);
     
     const isCenter = (GameState.appState === 'story_intro' || GameState.appState === 'inter_battle_story');
 
     if (GameState.appState === 'post_dialogue') {
-        if (GameState.lastBattleResult === 'win') pRightImg = GameState.enemyConfig.imageLose || pRightImg;
+        if (GameState.lastBattleResult === 'win') {
+            pRightImg = getSkinImage(GameState.enemyConfig, enemySkinId, 'imageLose') || GameState.enemyConfig.imageLose || pRightImg;
+        }
         else if (GameState.lastBattleResult === 'lose') {
             const loseImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'imageLose');
             pLeftImg = loseImg || pLeftImg;
@@ -183,6 +187,8 @@ export function executeContinue() {
     setTimeout(() => {
         if (GameState.gameMode === 'event_satan') {
             setupEventSatanConfrontation();
+        } else if (GameState.gameMode === 'event_android_high') {
+            setupEventAndroidHighConfrontation();
         } else {
             GameState.appState = 'pre_dialogue';
             let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro');

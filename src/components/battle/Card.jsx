@@ -18,7 +18,7 @@ export default function Card({
 
     if (!cardObj) return null;
 
-    const rarityClass = cardObj.rarity ? ` rarity-${cardObj.rarity}` : '';
+    const rarityClass = cardObj.isToken ? ' rarity-0' : (cardObj.rarity !== undefined && cardObj.rarity !== null ? ` rarity-${cardObj.rarity}` : '');
     let filter = cardObj.filter;
     // シャドウ化の特殊処理（敵側のみ）は削除
 

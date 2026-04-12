@@ -65,7 +65,7 @@ export const CARD_MASTER = [
     { id: 'ranger', name: 'ルーン辿りのレインジャー', rarity: 2, power: 4, skills: [{ id: 'legendary' }, { id: 'snipe', value: 4 }], voiceCategory: 'human_male_ikemen', flavor: '微かに光るルーンの印だけが、彼に失くした過去を呼び覚ます。深緑の外套を揺らし、記憶の残香を辿る旅。その道を阻む理不尽なる者がいれば、一切の迷いなき必中の矢が静かに急所を射抜く。' },
     { id: 'barrier', name: '聖光の護り手', rarity: 2, power: 4, skills: [{ id: 'guardian' }, { id: 'support', value: 1 }], voiceCategory: 'human_female_cool', flavor: '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。' },
     { id: 'charity', name: '慈愛', rarity: 2, power: 3, skills: [{ id: 'heal', value: 4 }, { id: 'defender' }, { id: 'sturdy' }], voiceCategory: 'stone', flavor: '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。' },
-    { id: 'incinerator', name: 'インシネレーター', rarity: 2, power: 3, skill: 'artillery', skillValue: 1, voiceCategory: 'human_female_cool', flavor: '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。' },
+    { id: 'incinerator', name: 'インシネレーター', rarity: 2, power: 4, skill: 'artillery', skillValue: 1, voiceCategory: 'human_female_cool', flavor: '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。' },
     { id: 'light', name: '無垢の光', rarity: 2, power: 4, skills: [{ id: 'equip' }, { id: 'oblivion' }], voiceCategory: 'human_female_cute', flavor: '優しく降り注ぐ、穢れなき無垢の光。その暖かな輝きに抱かれた時、苦しみも、悪意も、自分が何者であったかさえも安らかに白く溶け落ちていく。' },
     { id: 'doom', name: '破滅', rarity: 2, power: 3, skills: [{ id: 'spread', value: 6 }, { id: 'defender' }, { id: 'sturdy' }, { id: 'takeover' }], voiceCategory: 'stone', flavor: '古より伝わる小さな彫像。周囲に底知れぬ絶望と絶大な破滅をもたらす' },
     { id: 'monk', name: '夜明けの番人', rarity: 2, power: 5, skills: [{ id: 'legendary' }, { id: 'heal', value: 4 },], voiceCategory: 'human_female_cool', flavor: '冷たい鋼の鎖帷子を纏い、闇夜を斬り裂く一条の光。神の教えを胸に刻み、冒涜者たちを容赦なく浄化する、悪魔にとって最も恐るべき裁きの代行者。' },
@@ -129,6 +129,10 @@ export const CARD_MASTER = [
     { id: 'redrider', name: '戦争の使徒', rarity: 4, power: 4, skills: [{ id: 'contract', value: 4 }, { id: 'quick' }], voiceCategory: 'horse', flavor: '第二の封印。火の如き赤き馬に乗れる者、地上から平和を奪い去る。その大剣が振るわれる時、終わりなき争いの火蓋が切って落とされる。' },
     { id: 'blackrider', name: '飢餓の使徒', rarity: 4, power: 5, skills: [{ id: 'contract', value: 4 }, { id: 'morph', value: 2 }, { id: 'deadly' }], voiceCategory: 'horse', flavor: '第三の封印。黒き馬に乗れる者が手にする天秤は、命の価値を量り、世界を等しく飢えと欠乏に陥れる。' },
     { id: 'palerider', name: '死の使徒', rarity: 4, power: 5, skills: [{ id: 'contract', value: 4 }, { id: 'clone', value: 1 }], voiceCategory: 'horse', flavor: '第四の封印。蒼褪めた馬に乗れる者の名は「死」。その後には黄泉が従い、生きとし生けるもの全てを静寂なる無へと誘う。' },
+    { id: 'gearA', name: 'ストライクギア', rarity: 4, power: 2, skills: [{ id: 'union', targetId: 'gearB', summonId: 'token_gearC' }, { id: 'spread', value: 1 }], voiceCategory: 'machine_new', flavor: '空を切り裂く蒼き翼。それは、来るべき覚醒の時を待つ巨神の半身。' },
+    { id: 'gearB', name: 'グランドギア', rarity: 4, power: 8, skills: [{ id: 'union', targetId: 'gearA', summonId: 'token_gearC' }, { id: 'artillery', value: 1 }, { id: 'defender' }], voiceCategory: 'machine_new', flavor: '地を這う無骨な鉄の脚。その真価は、空飛ぶ半身と交わった時にこそ発揮される。' },
+    { id: 'tank', name: '自律戦車', rarity: 4, power: 4, skills: [{ id: 'union', targetId: 'token_drone', summonId: 'token_reinforceddrone' }, { id: 'snipe', value: 1 }], voiceCategory: 'machine_new', flavor: '小型の無人攻撃兵器。' },
+    { id: 'scientist', name: '世紀の天才科学者', rarity: 4, power: 5, skills: [{ id: 'legendary' }, { id: 'summon', value: 1, summonId: 'token_drone' }, { id: 'summon', value: 1, summonId: 'token_drone' }], voiceCategory: 'machine_new', flavor: '彼女の右に出る技術者はいない。その性格の難しさにさえ目を瞑れば、だが。' },
     { id: 'baldanders', name: 'バルトアンデルス', rarity: 4, power: 0, skill: 'metamorph', voiceCategory: 'stone', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', rarity: 4, power: 5, skill: 'shuffle', voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
@@ -149,5 +153,7 @@ export const CARD_MASTER = [
     { id: 'token_golem', name: 'ゴーレム', rarity: 1, power: 5, isToken: true, skill: 'none', voiceCategory: 'monster', flavor: '土と石で構成された自律型の魔法生物。' },
     { id: 'token_wall', name: '防壁', rarity: 1, power: 1, isToken: true, skill: 'defender', voiceCategory: 'stone', flavor: '魔法によって創造された防壁。' },
     { id: 'token_phoenix', name: 'フェニックス', rarity: 1, power: 6, isToken: true, skill: 'none', voiceCategory: 'bird', flavor: '蘇った不死鳥。' },
-    { id: 'token_soul', name: '人魂', rarity: 1, power: 1, isToken: true, skill: 'none', voiceCategory: 'undead', flavor: '魂喰いの狐が吐き出した人魂。' }
+    { id: 'token_soul', name: '人魂', rarity: 1, power: 1, isToken: true, skill: 'none', voiceCategory: 'undead', flavor: '魂喰いの狐が吐き出した人魂。' },
+    { id: 'token_gearC', name: '機神プロメテウス', rarity: 1, power: 10, isToken: true, skills: [{ id: 'pierce' }, { id: 'spread', value: 3 }, { id: 'artillery', value: 3 }, { id: 'immune' }], voiceCategory: 'machine_new', flavor: '天と地が交わり、鋼の機神が目を覚ます。その圧倒的な火力の前では、いかなる装甲も意味を成さない。' },
+    { id: 'token_reinforceddrone', name: '強化ドローン', rarity: 1, power: 5, isToken: true, skill: 'none', skills: [{ id: 'snipe', value: 5 }], voiceCategory: 'machine_new', flavor: '強化されたドローン。' }
 ];

@@ -288,11 +288,14 @@ export function initBattleState() {
         const stageData = STAGES[stageId];
 
         // BGMの再生
-        const bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
+        let bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high') {
+            bgmKey = 'bgmStageHighDifficulty';
+        }
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
-        if (GameState.gameMode === 'event_satan') GameState.aiLevel = 3; // 念のため再セット
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high') GameState.aiLevel = 3; // 念のため再セット
 
         if (GameState.gameMode === 'battle_dungeon') {
             // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
@@ -572,8 +575,8 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             }
         }
 
-        // それでも足りない場合、空きレーンや重複を許容する
-        if (selectedLanes.length < count) {
+        // それでも足りない場合、空きレーンや重複を許容する（キャンセル可能な場合はAIの「配置しない・数を絞る」という判断を尊重して強制補充しない）
+        if (selectedLanes.length < count && !canCancel) {
             let validEmptyLanes = board.map((c, i) => c === null && sealedLanes[i] === 0 ? i : -1).filter(i => i !== -1);
             let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i) && sealedLanes[i] === 0);
 
@@ -1565,6 +1568,41 @@ export async function playCard(o, hI, l) {
     if (!playingCard) return;
 
     if (b[l]) {
+        // 合体（Union）の判定
+        const unionSkill = playingCard.skills && playingCard.skills.find(s => s.id === 'union');
+        if (unionSkill && (b[l].baseId === unionSkill.targetId || b[l].id === unionSkill.targetId)) {
+            const targetCard = b[l];
+            const combineId = unionSkill.summonId;
+
+            // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
+            // 即座に合体を実行する。
+            const consumedCard = h.splice(hI, 1)[0];
+            const masterData = CARD_MASTER.find(c => c.id === combineId);
+                let unionCard = JSON.parse(JSON.stringify(masterData));
+                unionCard.uid = getOrCreateUUID(null);
+                unionCard.owner = o;
+                unionCard.baseId = unionCard.id;
+                unionCard.basePower = unionCard.power;
+                unionCard.currentPower = unionCard.power;
+                unionCard.unionMaterials = [targetCard, consumedCard];
+
+                b[l] = unionCard;
+
+                playSound(SOUNDS.sePlace);
+                if (unionCard.voiceCategory) {
+                    playCardVoice(unionCard.voiceCategory, 'play');
+                }
+
+                if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
+                renderHand(); renderBoard();
+
+                await resolveOnPlaySkill(o, l, unionCard);
+
+                await sleep(100);
+                renderBoard();
+                return;
+        }
+
         if (hasSkill(playingCard, 'equip')) {
             const targetCard = b[l];
 
@@ -2033,10 +2071,14 @@ export function endBattle() {
             if (GameState.gameMode === 'event_satan' && typeof incrementStat === 'function') {
                 incrementStat('eventClear', 'satan_high');
             }
+            if (GameState.gameMode === 'event_android_high' && typeof incrementStat === 'function') {
+                incrementStat('eventClear', 'android_high');
+            }
 
             // --- カードドロップ抽選・表示処理 ---
             let recipeId = GameState.enemyConfig.id;
             if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
+            if (GameState.gameMode === 'event_android_high' && recipeId === 'android') recipeId = 'android_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
 

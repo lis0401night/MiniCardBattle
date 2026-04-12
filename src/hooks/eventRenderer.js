@@ -427,6 +427,28 @@ export async function playEvents(events) {
                             updateDeckDisplay(target.side);
                         }
 
+                        if (deadCard.unionMaterials && deadCard.unionMaterials.length > 0) {
+                            for (const matCard of deadCard.unionMaterials) {
+                                let restoredMat;
+                                const matOwner = matCard.owner || target.side;
+                                const discard = matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                                const matMaster = CARD_MASTER.find(m => m.id === (matCard.baseId || matCard.id));
+                                if (matMaster) {
+                                    restoredMat = JSON.parse(JSON.stringify(matMaster));
+                                    restoredMat.uid = matCard.uid;
+                                    restoredMat.owner = matOwner;
+                                    restoredMat.baseId = matCard.baseId || matCard.id;
+                                    restoredMat.basePower = restoredMat.power;
+                                    restoredMat.currentPower = restoredMat.power;
+                                } else {
+                                    restoredMat = { ...matCard };
+                                }
+                                discard.push(restoredMat);
+                            }
+                            deadCard.unionMaterials = [];
+                            updateDeckDisplay(target.side);
+                        }
+
                         if (deadCard.originalRevertTarget) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                             discard.push(deadCard.originalRevertTarget);

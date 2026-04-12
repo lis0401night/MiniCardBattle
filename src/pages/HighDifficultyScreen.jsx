@@ -1,11 +1,11 @@
 import React from 'react';
 
-import { showEventMenu, showHighDifficultyRules, handleSatanBattle } from '../hooks/uiMainCore.js';
+import { showEventMenu, showHighDifficultyRules, handleSatanBattle, handleAndroidHighBattle } from '../hooks/uiMainCore.js';
 
 export default function HighDifficultyScreen() {
   return (
-    <div 
-      id="screen-high-difficulty" 
+    <div
+      id="screen-high-difficulty"
       className="screen active"
       style={{
         backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`,
@@ -27,6 +27,15 @@ export default function HighDifficultyScreen() {
           <img src="assets/icons/icon_satan.png" className="banner-icon" alt="" />
           <span className="banner-text" style={{ color: '#ef4444' }}>
             復活の魔王 サタン
+          </span>
+        </button>
+      </div>
+
+      <div className="banner-container">
+        <button className="btn-banner legendary" onClick={() => handleAndroidHighBattle?.()}>
+          <img src="assets/icons/icon_android_high.png" className="banner-icon" alt="" />
+          <span className="banner-text" style={{ color: '#ef4444' }}>
+            フルアーマー アイギス
           </span>
         </button>
       </div>
