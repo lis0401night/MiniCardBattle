@@ -101,7 +101,7 @@ Object.keys(AUDIO_INSTANCES).forEach(key => {
         const urlStr = SOUNDS[key];
         if (urlStr) SOUNDS[urlStr] = audio;
     }
-    audio.volume = 0.3;
+    try { audio.volume = 0.3; } catch(e) {}
     audio.load(); // 事前ロード
 });
 
@@ -139,7 +139,9 @@ export function updateBgmGainNodes(vol) {
         if (key.startsWith('bgm')) {
             const audio = AUDIO_INSTANCES[key];
             if (audio) {
-                audio.volume = vol;
+                try {
+                    audio.volume = vol;
+                } catch(e) {}
             }
         }
     });
@@ -263,4 +265,21 @@ export function playSkillSound(skillId) {
     } else {
         if (typeof window.playSound === 'function') window.playSound(backupSound);
     }
+}
+
+// 確実なオーディアンロックのためのネイティブDOMイベント監視 (React合成イベントの外側で処理)
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const unlockHandler = () => {
+        if (!isAudioUnlocked) {
+            unlockAudio();
+        }
+        // audioCtxがすでにある場合、resumeだけは確実に行わせる
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(()=>{});
+        }
+        document.removeEventListener('click', unlockHandler, true);
+        document.removeEventListener('touchstart', unlockHandler, true);
+    };
+    document.addEventListener('click', unlockHandler, { capture: true });
+    document.addEventListener('touchstart', unlockHandler, { capture: true });
 }

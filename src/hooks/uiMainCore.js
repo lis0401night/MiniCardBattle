@@ -44,7 +44,7 @@ console.log("!!! uiMainCore.js Version 1.2 Loaded !!!");
 
 export function goToModeSelect() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmTitle);
     switchScreen('screen-mode-select');
 }
 
@@ -66,7 +66,9 @@ export function updateVolume(val) {
     // すべての Audio インスタンス（BGM/SEのフォールバック等）へ即座に音量を反映 (PC＆非iOS用)
     Object.keys(AUDIO_INSTANCES).forEach(key => {
         if (AUDIO_INSTANCES[key] && typeof AUDIO_INSTANCES[key].volume !== 'undefined') {
-            AUDIO_INSTANCES[key].volume = GameState.gameVolume;
+            try {
+                AUDIO_INSTANCES[key].volume = GameState.gameVolume;
+            } catch(e) {}
         }
     });
     // Web Audio Gain Nodeの更新 (iOSなどモバイル用)
@@ -243,7 +245,7 @@ export function goBackFromSelect() {
         // デッキ選択のフローから抜ける際にページネーションをリセット
         GameState.deckListPage = 0;
         
-        playSound();
+        playSound(AUDIO_INSTANCES.bgmTitle);
         if (GameState.gameMode === 'story' || GameState.gameMode === 'free' || GameState.gameMode === 'practice') {
             switchScreen('screen-solo-menu');
         } else {
@@ -440,13 +442,13 @@ export function closeCharDetail() {
 
 export function showEventMenu() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmTitle);
     switchScreen('screen-event-menu');
 }
 
 export function startHighDifficulty() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmHighDifficulty);
     switchScreen('screen-high-difficulty');
 }
 
@@ -467,7 +469,7 @@ export function handleAndroidHighBattle() {
 
 export async function showDefenseMenu() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmDefense);
     const hasRegistered = localStorage.getItem('mini_card_battle_deck_defense') !== null;
     const startBtn = document.getElementById('btn-start-attack');
     const disabledBtn = document.getElementById('btn-start-attack-disabled');
@@ -527,7 +529,7 @@ export async function showDefenseMenu() {
 
 export function showDungeonMenu() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmChallenge);
     switchScreen('screen-dungeon-menu');
 }
 
@@ -957,22 +959,22 @@ export function updateDifficultyCheckButtons() {
 // --- Online Routing ---
 export function showOnlineMenu() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmOnline);
     switchScreen('screen-online-menu');
 }
 export function showOnlineRules() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmOnline);
     switchScreen('screen-online-rules');
 }
 export function showOnlineSearch() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmOnline);
     switchScreen('screen-online-search');
 }
 export function showOnlineLobby() {
     playSound(SOUNDS.seClick);
-    playSound();
+    playSound(AUDIO_INSTANCES.bgmOnline);
     setPlayerReadyOnly(false); // バトル終了後などにルームへ戻った際は準備完了状態を解除
     switchScreen('screen-online-lobby');
 }

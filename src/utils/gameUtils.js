@@ -134,6 +134,9 @@ export async function playSound(audioOrKey) {
     if (audio instanceof Audio) {
         try {
             audio.volume = baseVol;
+        } catch(e) {}
+        
+        try {
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
                 // 同じBGMが既に再生中の場合は最初から再生し直さない
@@ -196,7 +199,7 @@ export async function playSound(audioOrKey) {
                     if (p !== undefined) p.catch(() => { });
                 } else {
                     const clone = audio.cloneNode();
-                    clone.volume = baseVol;
+                    try { clone.volume = baseVol; } catch(e) {}
                     const p = clone.play();
                     if (p !== undefined) p.catch(() => { });
                 }
