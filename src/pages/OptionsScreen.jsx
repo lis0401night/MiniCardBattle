@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-import { switchScreen } from '../utils/gameUtils.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { updateVolume, resetGameData, showSyncDataModal, reloadGame, handleOptionsTitleClick } from '../hooks/uiMainCore.js';
 
@@ -30,8 +31,8 @@ export default function OptionsScreen() {
   const handleVolumeChangeComplete = (e) => {
     handleVolumeChange(e);
     // スライダー操作終了時にテスト音を鳴らして音量の変化をフィードバックする
-    if (window.playSound && window.SOUNDS) {
-      window.playSound(window.SOUNDS.seClick);
+    if (typeof playSound === 'function') {
+      playSound(SOUNDS.seClick);
     }
   };
 

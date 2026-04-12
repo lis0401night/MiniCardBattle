@@ -230,18 +230,22 @@
                 const skillsModule = await import('./src/utils/constants/skills.js');
                 const skillPointsModule = await import('./src/utils/constants/skill_points.js');
 
-                cardData = cardsModule.CARD_MASTER || [];
+                cardData = (cardsModule.CARD_MASTER || []).filter(c => !c.token);
                 skillData = skillsModule.SKILLS || {};
                 pointSettings = skillPointsModule.SKILL_POINTS || {};
 
                 // 敵デッキをダイナミックインポート
-                const deckFiles = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'satan', 'devilhunter', 'satan_high', 'witch'];
+                const deckFiles = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'devilhunter', 'witch', 'oni', 'satan', 'android_high', 'satan_high'];
                 for (const file of deckFiles) {
                     try {
                         const deckModule = await import(`./src/utils/constants/enemy_decks/${file}.js`);
                         const deck = deckModule.default || deckModule[file] || deckModule.ENEMY_DECKS?.[file];
                         if (deck) {
-                            deckData[file] = deck;
+                            if (Array.isArray(deck)) {
+                                deckData[file] = { 'Extra': deck };
+                            } else {
+                                deckData[file] = deck;
+                            }
                         }
                     } catch (e) {
                         console.warn(`Deck load skipped/failed for: ${file}`, e);

@@ -11,7 +11,8 @@ export let currentWebAudioBgmGain = null;
 export const decodedBgms = {};
 
 export const retryPlayBgm = () => {
-    if (currentBgmAudio && currentBgmAudio.paused) {
+    // WebAudioが使える場合はHTML5 Audioのplay()は実行しない（二重再生防止）
+    if (!audioCtx && currentBgmAudio && currentBgmAudio.paused) {
         const p = currentBgmAudio.play();
         if (p !== undefined) {
             p.then(() => {
