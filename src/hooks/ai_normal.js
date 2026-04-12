@@ -507,26 +507,31 @@ export function evaluateAdhocTokenLanes(tokenCard) {
     simCancel.combatDamageTaken = Math.max(0, GameState.enemyHP - simCancel.enemyHP);
     candidates.push({ lane: [], simState: simCancel });
 
-    // 各空きレーンに配置した場合のシミュレーション
+    // 各レーンに配置した場合のシミュレーション（空きレーン優先だが上書きも評価する）
     for (let l of allLanes) {
-        if (GameState.enemyBoard[l] === null) {
-            let simState = {
-                playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
-                playerHand: GameState.playerHand.map(cloneCard), enemyHand: GameState.enemyHand.map(cloneCard),
-                playerDeck: GameState.playerDeck.map(cloneCard), enemyDeck: GameState.enemyDeck.map(cloneCard),
-                playerDiscard: GameState.playerDiscard.map(cloneCard), enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-                playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
-                playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
-                playerSP: GameState.playerSP, enemySP: GameState.enemySP,
-                extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
-            };
-            simState.enemyBoard[l] = cloneCard(tokenCard);
-            applyPassiveSkillLogic(simState, 'blue');
-            calculateCombatPhase(simState, 'blue');
-            simState.combatDamageTaken = Math.max(0, GameState.enemyHP - simState.enemyHP);
-            candidates.push({ lane: [l], simState });
+        let simState = {
+            playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
+            playerHand: GameState.playerHand.map(cloneCard), enemyHand: GameState.enemyHand.map(cloneCard),
+            playerDeck: GameState.playerDeck.map(cloneCard), enemyDeck: GameState.enemyDeck.map(cloneCard),
+            playerDiscard: GameState.playerDiscard.map(cloneCard), enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+            playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+            playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
+            playerSP: GameState.playerSP, enemySP: GameState.enemySP,
+            extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
+        };
+
+        // 上書きの場合は既存カードを破棄する判定を（簡易的に）シミュレーション
+        if (simState.enemyBoard[l] !== null) {
+            simState.enemyDiscard.push(simState.enemyBoard[l]);
         }
+        simState.enemyBoard[l] = cloneCard(tokenCard);
+        
+        applyPassiveSkillLogic(simState, 'blue');
+        calculateCombatPhase(simState, 'blue');
+        simState.combatDamageTaken = Math.max(0, GameState.enemyHP - simState.enemyHP);
+        candidates.push({ lane: [l], simState });
     }
+
 
     const getAdvantage = (state) => {
         let adv = 0;
