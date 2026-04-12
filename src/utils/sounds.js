@@ -133,6 +133,8 @@ export async function loadSE(key, url) {
     }
 }
 
+export const BGM_GAIN_NODES = {};
+
 export function updateBgmGainNodes(vol) {
     // BGMはHTML5 Audioのvolumeを直接変更
     Object.keys(AUDIO_INSTANCES).forEach(key => {
@@ -141,8 +143,15 @@ export function updateBgmGainNodes(vol) {
             if (audio) {
                 audio.volume = vol;
             }
+            // Safari/iOS等向けにWeb Audio API側のGainNodeが存在すればそちらも更新
+            if (BGM_GAIN_NODES[key]) {
+                BGM_GAIN_NODES[key].gain.value = vol;
+            }
         }
     });
+
+    // Webaudio側の全体ゲインがある場合はここで追従させる等
+    // 現状はplaySoundごとに GameState.gameVolume を参照するため、実質BGMのみの即時対応で十分
 }
 window.updateBgmGainNodes = updateBgmGainNodes; // Fallback exposing
 
@@ -165,8 +174,33 @@ export async function unlockAudio() {
             await audioCtx.resume();
         }
 
-        // BGM volume sync
         const baseVol = (typeof GameState !== 'undefined' && typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
+
+        // BGMをWeb Audio API経由へルーティング（iOS Safari等での音量制御対策）
+        if (!BGM_GAIN_NODES._initialized) {
+            BGM_GAIN_NODES._initialized = true;
+            Object.keys(AUDIO_INSTANCES).forEach(key => {
+                if (key.startsWith('bgm')) {
+                    try {
+                        const audio = AUDIO_INSTANCES[key];
+                        // 既にルーティング済みの場合は再ルーティングしないためのフェイルセーフ
+                        if (!audio._webAudioRouted) {
+                            const source = audioCtx.createMediaElementSource(audio);
+                            const gainNode = audioCtx.createGain();
+                            gainNode.gain.value = baseVol;
+                            source.connect(gainNode);
+                            gainNode.connect(audioCtx.destination);
+                            BGM_GAIN_NODES[key] = gainNode;
+                            audio._webAudioRouted = true;
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to route BGM ${key} to Web Audio API:`, e);
+                    }
+                }
+            });
+        }
+
+        // BGM volume sync
         updateBgmGainNodes(baseVol);
 
         // ダミー再生（念のため）
