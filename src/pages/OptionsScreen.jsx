@@ -27,6 +27,14 @@ export default function OptionsScreen() {
     }
   };
 
+  const handleVolumeChangeComplete = (e) => {
+    handleVolumeChange(e);
+    // スライダー操作終了時にテスト音を鳴らして音量の変化をフィードバックする
+    if (window.playSound && window.SOUNDS) {
+      window.playSound(window.SOUNDS.seClick);
+    }
+  };
+
   return (
     <div id="screen-options" className="screen active">
       <h2
@@ -60,8 +68,8 @@ export default function OptionsScreen() {
               step="0.05"
               value={volume}
               onChange={handleVolumeChange}
-              onPointerUp={handleVolumeChange}
-              onTouchEnd={handleVolumeChange}
+              onPointerUp={handleVolumeChangeComplete}
+              onTouchEnd={handleVolumeChangeComplete}
               style={{ flexGrow: 1, cursor: 'pointer' }}
             />
             <span style={{ fontSize: '1.2rem' }}>🔊</span>
