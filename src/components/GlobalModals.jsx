@@ -314,7 +314,7 @@ export default function GlobalModals() {
                 if (exchangeData.onConfirm) {
                     exchangeData.onConfirm();
                 } else {
-                    window.confirmExchange?.();
+                    confirmExchange();
                 }
             }
         }}
