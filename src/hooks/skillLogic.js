@@ -93,7 +93,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     }
 
     if (skillId === 'choice') {
-        const choices = (skObj && skObj.choiceGroup === 2) ? c.choices2 : c.choices;
+        const baseChoices = (skObj && skObj._sourceChoices) ? skObj._sourceChoices : c.choices;
+        const baseChoices2 = (skObj && skObj._sourceChoices2) ? skObj._sourceChoices2 : c.choices2;
+        const choices = (skObj && skObj.choiceGroup === 2) ? baseChoices2 : baseChoices;
         const choiceArray = await waitSkillChoice(choices, o, c, skillValue);
         if (choiceArray) {
             const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];

@@ -4,7 +4,7 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import { playSound, stopAllBGM, isTransitioning, switchScreen, getCardImgUrl, togglePremiumCard, renderSkillTag } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { loadDeck, saveDeck, renderDeckEdit } from './deck.js';
 import { GameState } from './gameState.js';
 import { incrementRulesClickCount, resetRulesClickCount } from './uiMainCore.js';
@@ -16,7 +16,7 @@ import { showAlertModal } from './uiModals.js';
 
 export function showGallery() {
     playSound(SOUNDS.seClick);
-    playSound(SOUNDS.bgmGallery);
+    playSound(AUDIO_INSTANCES.bgmGallery);
     switchScreen('screen-gallery-menu');
 }
 

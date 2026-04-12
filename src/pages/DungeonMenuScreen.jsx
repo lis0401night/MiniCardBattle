@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { showDungeonRules } from '../hooks/uiMainCore.js';
 import { initBattleDungeon } from '../hooks/battleDungeon.js';
 import { showAlertModal } from '../hooks/uiModals.js';
@@ -79,7 +79,7 @@ export default function DungeonMenuScreen() {
         onClick={() => {
             playSound?.(SOUNDS.seClick);
             stopAllBGM?.();
-            playSound?.(SOUNDS.bgmTitle);
+            playSound?.(AUDIO_INSTANCES.bgmTitle);
             switchScreen?.('screen-event-menu');
         }}
       >

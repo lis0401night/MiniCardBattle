@@ -453,7 +453,22 @@ export async function playEvents(events) {
 
                         if (deadCard.originalRevertTarget) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                            discard.push(deadCard.originalRevertTarget);
+                            const rvTarget = deadCard.originalRevertTarget;
+                            const masterData = CARD_MASTER.find(m => m.id === (rvTarget.baseId || rvTarget.id));
+                            let restoredCard;
+                            if (masterData) {
+                                restoredCard = JSON.parse(JSON.stringify(masterData));
+                                restoredCard.uid = rvTarget.uid;
+                                restoredCard.owner = target.side;
+                                restoredCard.baseId = rvTarget.baseId || rvTarget.id;
+                                if (rvTarget.isPremium !== undefined) restoredCard.isPremium = rvTarget.isPremium;
+                                restoredCard.basePower = restoredCard.power;
+                                restoredCard.currentPower = restoredCard.power;
+                            } else {
+                                restoredCard = { ...rvTarget };
+                                restoredCard.equippedCards = [];
+                            }
+                            discard.push(restoredCard);
                             updateDeckDisplay(target.side);
                         } else if (!deadCard.isToken) {
                             const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;

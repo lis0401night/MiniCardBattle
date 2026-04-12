@@ -1122,7 +1122,22 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     }
 
     if (card.originalRevertTarget) {
-        (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(card.originalRevertTarget);
+        const rvTarget = card.originalRevertTarget;
+        const masterData = CARD_MASTER.find(m => m.id === (rvTarget.baseId || rvTarget.id));
+        let restoredCard;
+        if (masterData) {
+            restoredCard = JSON.parse(JSON.stringify(masterData));
+            restoredCard.uid = rvTarget.uid;
+            restoredCard.owner = owner;
+            restoredCard.baseId = rvTarget.baseId || rvTarget.id;
+            if (rvTarget.isPremium !== undefined) restoredCard.isPremium = rvTarget.isPremium;
+            restoredCard.basePower = restoredCard.power;
+            restoredCard.currentPower = restoredCard.power;
+        } else {
+            restoredCard = { ...rvTarget };
+            restoredCard.equippedCards = [];
+        }
+        (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
         updateDeckDisplay(owner);
     }
 
@@ -1667,7 +1682,9 @@ export async function playCard(o, hI, l) {
             for (const sk of equipSkills) {
                 if (ACTIVE_SKILLS.includes(sk.id)) {
                     await sleep(50);
-                    await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value, sk);
+                    // choiceスキル等で「装備元の選択肢」を誤って対象カードから読まないよう、明示的に持たせる
+                    const enhancedSk = { ...sk, _sourceChoices: playingCard.choices, _sourceChoices2: playingCard.choices2 };
+                    await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value, enhancedSk);
                 }
             }
 
@@ -1947,13 +1964,13 @@ export function endBattle() {
 
     setTimeout(() => {
         if (GameState.gameMode === 'battle_dungeon') {
-            playSound(SOUNDS.bgmChallenge);
+            playSound(AUDIO_INSTANCES.bgmChallenge);
         } else if (GameState.gameMode === 'defense_attack') {
-            playSound(SOUNDS.bgmDefense);
+            playSound(AUDIO_INSTANCES.bgmDefense);
         } else if (GameState.gameMode === 'high_difficulty') {
-            playSound(SOUNDS.bgmHighDifficulty);
+            playSound(AUDIO_INSTANCES.bgmHighDifficulty);
         } else {
-            playSound(SOUNDS.bgmTitle);
+            playSound(AUDIO_INSTANCES.bgmTitle);
         }
 
         GameState.appState = 'post_dialogue'; // 全モード共通の設定
@@ -2115,7 +2132,7 @@ export function endBattle() {
             if (typeof window.loadDeck === 'function') window.loadDeck();
             if (window.forceUpdateDeckList) window.forceUpdateDeckList();
             switchScreen('screen-deck-list');
-            playSound(SOUNDS.bgmTitle);
+            playSound(AUDIO_INSTANCES.bgmTitle);
             return;
         }
 

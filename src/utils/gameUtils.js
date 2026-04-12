@@ -20,8 +20,19 @@ export const retryPlayBgm = () => {
             }).catch(() => { });
         }
     }
-    if (currentWebAudioBgmSource && audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    if (audioCtx) {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                document.removeEventListener('click', retryPlayBgm, true);
+                document.removeEventListener('touchstart', retryPlayBgm, true);
+                if (currentWebAudioBgmGain) {
+                    currentWebAudioBgmGain.gain.value = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
+                }
+            }).catch(() => {});
+        } else if (audioCtx.state === 'running') {
+            document.removeEventListener('click', retryPlayBgm, true);
+            document.removeEventListener('touchstart', retryPlayBgm, true);
+        }
     }
 };
 
@@ -140,6 +151,8 @@ export async function playSound(audioOrKey) {
                     
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume().catch(()=>{});
+                        document.addEventListener('click', retryPlayBgm, { capture: true });
+                        document.addEventListener('touchstart', retryPlayBgm, { capture: true });
                     }
 
                     const bgmUrl = new URL(audio.src).pathname.replace(/^\/+/, '');

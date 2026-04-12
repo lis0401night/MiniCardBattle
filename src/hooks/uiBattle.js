@@ -2,7 +2,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import { playSound, stopAllBGM, switchScreen, hasSkill, getCardImgUrl, renderSkillTag } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { saveDeck } from './deck.js';
 import { GameState } from './gameState.js';
 import { handleStoryProgression } from './story.js';
@@ -256,7 +256,7 @@ export function returnToTitle() {
             stopAllBGM();
             GameState.appState = 'title';
             switchScreen('screen-mode-select');
-            playSound(SOUNDS.bgmTitle);
+            playSound(AUDIO_INSTANCES.bgmTitle);
         }
     );
 }

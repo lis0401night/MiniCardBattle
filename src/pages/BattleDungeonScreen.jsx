@@ -53,7 +53,7 @@ export default function BattleDungeonScreen() {
             playSound(SOUNDS.seClick);
             saveDungeonProgress();
             switchScreen('screen-mode-select');
-            playSound(SOUNDS.bgmTitle);
+            playSound(AUDIO_INSTANCES.bgmTitle);
         });
     };
 

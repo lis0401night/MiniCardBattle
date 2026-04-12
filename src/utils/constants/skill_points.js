@@ -52,7 +52,7 @@ export const SKILL_POINTS = {
     },
     "hero": {
         "base": 0,
-        "multiplier": 2
+        "multiplier": 1
     },
     "charge": {
         "base": 0,
@@ -135,8 +135,8 @@ export const SKILL_POINTS = {
         "multiplier": 1
     },
     "standby": {
-        "base": 0,
-        "multiplier": -1
+        "base": 1,
+        "multiplier": -2
     },
     "artillery": {
         "base": -1,
@@ -183,11 +183,11 @@ export const SKILL_POINTS = {
         "multiplier": 0
     },
     "equip": {
-        "base": 0,
+        "base": 1,
         "multiplier": 0
     },
     "phase": {
-        "base": 0,
+        "base": 1,
         "multiplier": 0
     },
     "petrify": {
@@ -201,5 +201,53 @@ export const SKILL_POINTS = {
     "call": {
         "base": 0,
         "multiplier": 1
+    },
+    "dispel": {
+        "base": 2,
+        "multiplier": 0
+    },
+    "replicate": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "bless": {
+        "base": 2,
+        "multiplier": 0
+    },
+    "wall_create": {
+        "base": 0,
+        "multiplier": 0.5
+    },
+    "challenge": {
+        "base": -2,
+        "multiplier": 0
+    },
+    "move": {
+        "base": 1,
+        "multiplier": 0
+    },
+    "freeze": {
+        "base": 0,
+        "multiplier": 2
+    },
+    "loss": {
+        "base": 0,
+        "multiplier": -0.5
+    },
+    "brutal": {
+        "base": 0,
+        "multiplier": -1
+    },
+    "absorb": {
+        "base": 1,
+        "multiplier": 0
+    },
+    "seal": {
+        "base": 1,
+        "multiplier": 0
+    },
+    "union": {
+        "base": 1,
+        "multiplier": 0
     }
 };

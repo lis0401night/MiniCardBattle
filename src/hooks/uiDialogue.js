@@ -1,7 +1,7 @@
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImgUrl } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation } from './events.js';
 import { GameState } from './gameState.js';
 import { handleProgressionNextStep } from './progression.js';
@@ -46,8 +46,8 @@ export function startNextBattleSequence() {
 
 export function startEndingSequence() {
     GameState.appState = 'ending_dialogue';
-    stopSound(SOUNDS.bgmTitle); stopSound(SOUNDS.bgmBattle); stopSound(SOUNDS.bgmLastBattle); stopSound(SOUNDS.bgmStageAndroid);
-    playSound(SOUNDS.bgmEnding);
+    stopSound(AUDIO_INSTANCES.bgmTitle); stopSound(AUDIO_INSTANCES.bgmBattle); stopSound(AUDIO_INSTANCES.bgmLastBattle); stopSound(AUDIO_INSTANCES.bgmStageAndroid);
+    playSound(AUDIO_INSTANCES.bgmEnding);
     GameState.dialogueQueue = GameState.playerConfig.dialogue.ending;
     GameState.currentDialogueIndex = 0;
 
@@ -178,7 +178,7 @@ export let continueTimer = null;
 export let continueCount = 9;
 
 export function showContinueScreen() {
-    stopSound(SOUNDS.bgmTitle);
+    stopSound(AUDIO_INSTANCES.bgmTitle);
     switchScreen('screen-continue');
 }
 
@@ -210,5 +210,5 @@ export function executeGameOver() {
     GameState.appState = 'title';
     stopAllBGM();
     switchScreen('screen-mode-select');
-    playSound(SOUNDS.bgmTitle);
+    playSound(AUDIO_INSTANCES.bgmTitle);
 }
