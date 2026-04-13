@@ -493,58 +493,55 @@ export function evaluateAdhocTokenLanes(tokenCard) {
     const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
     const allLanes = [0, 1, 2].filter(l => sealedLanes[l] === 0);
     const candidates = [];
-    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
 
-    // キャンセルした場合のシミュレーション
-    let simCancel = {
-        playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
-        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
-        playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
-        extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
-    };
-    applyPassiveSkillLogic(simCancel, 'blue');
-    calculateCombatPhase(simCancel, 'blue');
-    simCancel.combatDamageTaken = Math.max(0, GameState.enemyHP - simCancel.enemyHP);
+    // 1. キャンセルした場合のシミュレーション（手札からプレイしない扱い = simulateMoveの-1）
+    let simCancel = simulateMove(-1, -1, [], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP);
     candidates.push({ lane: [], simState: simCancel });
 
-    // 各レーンに配置した場合のシミュレーション（空きレーン優先だが上書きも評価する）
-    for (let l of allLanes) {
-        let simState = {
-            playerBoard: GameState.playerBoard.map(cloneCard), enemyBoard: GameState.enemyBoard.map(cloneCard),
-            playerHand: GameState.playerHand.map(cloneCard), enemyHand: GameState.enemyHand.map(cloneCard),
-            playerDeck: GameState.playerDeck.map(cloneCard), enemyDeck: GameState.enemyDeck.map(cloneCard),
-            playerDiscard: GameState.playerDiscard.map(cloneCard), enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-            playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
-            playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
-            playerSP: GameState.playerSP, enemySP: GameState.enemySP,
-            extraTurnCount: 0, attackSkipCount: GameState.attackSkipCount
-        };
-
-        // 上書きの場合は既存カードを破棄する判定を（簡易的に）シミュレーション
-        if (simState.enemyBoard[l] !== null) {
-            simState.enemyDiscard.push(simState.enemyBoard[l]);
+    // 2. 選択スキルの抽出（もしあれば全ての選択肢をシミュレーションして最もスコアが高いのを選ぶ）
+    let choiceIndices = [];
+    if (tokenCard.skill === 'choice' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'choice'))) {
+        let chkOpt = tokenCard.choices || [];
+        if (!chkOpt || chkOpt.length === 0) chkOpt = tokenCard.choices2 || [];
+        for (let i = 0; i < chkOpt.length; i++) {
+            choiceIndices.push(i);
         }
-        simState.enemyBoard[l] = cloneCard(tokenCard);
-        
-        applyPassiveSkillLogic(simState, 'blue');
-        calculateCombatPhase(simState, 'blue');
-        simState.combatDamageTaken = Math.max(0, GameState.enemyHP - simState.enemyHP);
-        candidates.push({ lane: [l], simState });
     }
 
+    // 3. 各レーンに配置した場合のシミュレーション
+    for (let l of allLanes) {
+        if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
 
-    const getAdvantage = (state) => {
+        if (choiceIndices.length > 0) {
+            for (let cIdx of choiceIndices) {
+                let simState = simulateMove(0, l, [tokenCard], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP, null, 'before', [cIdx]);
+                if (simState) candidates.push({ lane: [l], simState });
+            }
+        } else {
+            let simState = simulateMove(0, l, [tokenCard], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP);
+            if (simState) candidates.push({ lane: [l], simState });
+        }
+    }
+
+    const getAdvantage = (state, candidateLane) => {
         let adv = 0;
         for (let i = 0; i < 3; i++) {
             if (state.enemyBoard[i]) adv += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
             if (state.playerBoard[i]) adv -= (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
         }
+        // adhocで出たカード自体が号令(call)を持つ場合の期待値調整
+        if (candidateLane !== undefined && candidateLane.length > 0) {
+            if (tokenCard.skill === 'call' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'call'))) {
+                adv += 3;
+            }
+        }
         return adv;
     };
+
     const getCountDiff = (state) => state.enemyBoard.filter(c => c).length - state.playerBoard.filter(c => c).length;
 
     candidates.forEach(c => {
-        c.advDiff = getAdvantage(c.simState);
+        c.advDiff = getAdvantage(c.simState, c.lane);
         c.countDiff = getCountDiff(c.simState);
     });
 
@@ -574,6 +571,8 @@ export function evaluateAdhocTokenLanes(tokenCard) {
 
     return finalCandidates[0].lane;
 }
+
+
 
 /**
  * トークン配置用の評価
