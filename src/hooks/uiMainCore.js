@@ -9,7 +9,7 @@ import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { startBattleFlow, createNewDeck, loadDeck, renderDeckEdit } from './deck.js';
 import { initEventSatanMode, initEventAndroidHighMode, loadPlayerDeck } from './events.js';
 import { GameState } from './gameState.js';
-import { initStoryMode } from './story.js';
+import { initStoryMode, clearStoryProgress, resumeStoryProgress } from './story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { openCardPreview } from './uiGallery.js';
 import { prepareBattle } from './battle.js';
@@ -239,6 +239,7 @@ export function goBackFromSelect() {
         GameState.appState = 'select_deck';
         if (typeof window.loadDeck === 'function') window.loadDeck();
         if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+        switchScreen('screen-deck-list');
     } else if (GameState.gameMode === 'online_deck_edit') {
         showOnlineLobby();
     } else {
@@ -273,9 +274,6 @@ export function goBackFromStage() {
     if (GameState.gameMode === 'defense_register' || GameState.gameMode === 'online_deck_edit') {
         // 防衛・オンラインのステージ選択画面からは、直前のデッキ編集画面へと戻る
         switchScreen('screen-deck-edit');
-    } else if (GameState.gameMode === 'free') {
-        GameState.appState = 'select_deck';
-        switchScreen('screen-deck-list');
     } else if (GameState.gameMode === 'practice') {
         GameState.appState = 'select_enemy_deck';
         if (typeof window.loadDeck === 'function') window.loadDeck();
@@ -368,6 +366,21 @@ export function startGameMode(mode) {
     if (mode === 'battle_dungeon') {
         showDungeonMenu();
         return;
+    }
+
+    if (mode === 'story') {
+        const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
+        if (savedStoryStr) {
+            try {
+                JSON.parse(savedStoryStr);
+                GameState.appState = 'story_resume';
+                switchScreen('screen-story-resume');
+                return;
+            } catch(e) {
+                console.error("Save data parse error", e);
+                clearStoryProgress();
+            }
+        }
     }
 
     GameState.appState = 'select_deck';

@@ -554,7 +554,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         if (tokenLanes && tokenLanes.length > 0) {
             selectedLanes = tokenLanes.slice(0, count);
         } else {
-            selectedLanes = evaluateBestLanesForToken(availableAI, owner, tokenCard, count, isLeaderSkill, canCancel);
+            selectedLanes = evaluateBestLanesForToken(availableAI, owner, tokenCard, count, isLeaderSkill, canCancel, checkConstraints);
         }
 
         // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)

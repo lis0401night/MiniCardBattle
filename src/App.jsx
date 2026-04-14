@@ -13,6 +13,7 @@ import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
 import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
 import HighDifficultyRulesScreen from './pages/HighDifficultyRulesScreen.jsx';
 import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
+import StoryResumeScreen from './pages/StoryResumeScreen.jsx';
 import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
 import CardListScreen from './pages/CardListScreen.jsx';
 import AchievementsScreen from './pages/AchievementsScreen.jsx';
@@ -122,6 +123,7 @@ export default function App() {
       {currentScreen === 'screen-challenge-unlock' && <ChallengeUnlockScreen />}
       {currentScreen === 'screen-defense-battle-list' && <DefenseBattleListScreen />}
       {currentScreen === 'screen-dungeon-menu' && <DungeonMenuScreen />}
+      {currentScreen === 'screen-story-resume' && <StoryResumeScreen />}
       {currentScreen === 'screen-dungeon-rules' && <DungeonRulesScreen />}
       {currentScreen === 'screen-deck-list' && <DeckListScreen />}
       {currentScreen === 'screen-deck-edit' && <DeckEditorScreen />}

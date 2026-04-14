@@ -4,6 +4,7 @@ import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImg
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation } from './events.js';
 import { GameState } from './gameState.js';
+import { saveStoryProgress } from './story.js';
 import { handleProgressionNextStep } from './progression.js';
 
 // ==========================================
@@ -12,6 +13,7 @@ import { handleProgressionNextStep } from './progression.js';
 
 export function startNextBattleSequence() {
     if (GameState.gameMode !== 'story') return;
+    saveStoryProgress();
     if (GameState.battleCount > 7) {
         startEndingSequence();
         return;

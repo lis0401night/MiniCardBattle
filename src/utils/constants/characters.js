@@ -44,7 +44,7 @@ export const CHARACTERS = {
         easeOfUse: 3,
         filter: 'none', cardType: 'set2', cardBg: 'bg2',
         image: 'assets/characters/char_dragon.png', imageLose: 'assets/characters/char_dragon_lose.png', icon: 'assets/icons/icon_dragon.png', imageEnding: 'assets/characters/char_dragon_ending.png', color: '#fb7185',
-        leaderSkill: { name: '竜王の降臨', desc: '(SP:4) 自分のレーンに「イグニス(P:7)」を1体召喚する。', cost: 4, action: 'dragon_summon' },
+        leaderSkill: { name: '竜王の降臨', desc: '(SP:4) 自分のレーンに「イグニス(P:7/伝説)」を1体配置する。', cost: 4, action: 'dragon_summon' },
         preBattleLine: 'アツくさせてあげるわ！ 覚悟しなさい！',
         mirrorIntro: 'なによアイツ、私のマネして！ 私は魔王サタンをぶっ飛ばして、私が世界で一番強いって分からせてやるんだから！ ニセモノはひっこんでなさい！',
         narratorIntro: '火山に君臨する竜族の王女、イグニス。彼女の逆鱗に触れた者に残されるのは、炭塵と絶望のみである。',

@@ -331,7 +331,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
  * 仮想位置でのシミュレーション実行（状態を返す）
  * 順序は常に リーダースキル -> カード配置
  */
-export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined, cardTokenLanes = null) {
+export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined, cardTokenLanes = null, checkConstraints = true) {
     const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
     let simState = {
         playerBoard: currentOpBoard.map(cloneCard),
@@ -363,10 +363,10 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         const playedCard = cloneCard(simState.enemyHand[handIdx]);
         
         // リーダースキル等によって事前の見積もりと盤面状況が変わっている場合の最終制約チェック
-        if (hasSkill(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) {
+        if (checkConstraints && hasSkill(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) {
             return null; // ルール違反となるためシミュレーション自体を破棄させる
         }
-        if (hasSkill(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) {
+        if (checkConstraints && hasSkill(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) {
             return null;
         }
         
@@ -489,7 +489,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
 
 // 以下の関数は getBestSimulatedMove に統合されました
 
-export function evaluateAdhocTokenLanes(tokenCard) {
+export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
     const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
     const allLanes = [0, 1, 2].filter(l => sealedLanes[l] === 0);
     const candidates = [];
@@ -510,15 +510,15 @@ export function evaluateAdhocTokenLanes(tokenCard) {
 
     // 3. 各レーンに配置した場合のシミュレーション
     for (let l of allLanes) {
-        if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
+        if (checkConstraints && hasSkill(tokenCard, 'legendary') && l !== 1) continue;
 
         if (choiceIndices.length > 0) {
             for (let cIdx of choiceIndices) {
-                let simState = simulateMove(0, l, [tokenCard], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP, null, 'before', [cIdx]);
+                let simState = simulateMove(0, l, [tokenCard], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP, null, 'before', [cIdx], null, checkConstraints);
                 if (simState) candidates.push({ lane: [l], simState });
             }
         } else {
-            let simState = simulateMove(0, l, [tokenCard], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP);
+            let simState = simulateMove(0, l, [tokenCard], GameState.enemyBoard, GameState.playerBoard, GameState.enemyHP, false, GameState.enemySP, null, 'before', undefined, null, checkConstraints);
             if (simState) candidates.push({ lane: [l], simState });
         }
     }
@@ -577,7 +577,7 @@ export function evaluateAdhocTokenLanes(tokenCard) {
 /**
  * トークン配置用の評価
  */
-export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false) {
+export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false, checkConstraints = true) {
     // 意思決定時にすでに最適な配置先（cardTokenLanes / tokenLanes）が計算されていれば、再評価（点数方式）をせずにそのまま使う！
     // ※キャンセルが最適な場合（[]）や、盤面の空きが足りず指定数未満の配列が返ってきた場合も、シミュレーションの結論として尊重する
     if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
@@ -593,7 +593,7 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
     }
 
     if (canCancel && owner === 'red') {
-        const adhocLanes = evaluateAdhocTokenLanes(tokenCard);
+        const adhocLanes = evaluateAdhocTokenLanes(tokenCard, checkConstraints);
         return adhocLanes;
     }
 

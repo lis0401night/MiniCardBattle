@@ -1,6 +1,6 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { switchScreen } from '../utils/gameUtils.js';
-import { startBattleFlow } from './deck.js';
+import { startBattleFlow, loadDeck } from './deck.js';
 import { GameState } from './gameState.js';
 import { startNextBattleSequence, setupDialogueScreen, showContinueScreen } from './uiDialogue.js';
 import { performFadeTransition } from './uiMainCore.js';
@@ -103,7 +103,56 @@ export function handleStoryProgression() {
             startNextBattleSequence();
         });
     } else if (GameState.appState === 'ending_dialogue') {
+        clearStoryProgress();
         GameState.appState = 'ending_illust';
         switchScreen('screen-ending-illust');
     }
+}
+
+/**
+ * 現在のストーリー状況をセーブする
+ */
+export function saveStoryProgress() {
+    if (GameState.gameMode !== 'story') return;
+    const saveObj = {
+        pendingCharId: GameState.playerConfig.id,
+        storyQueue: GameState.storyQueue,
+        battleCount: GameState.battleCount,
+        storyDifficulty: GameState.storyDifficulty,
+        currentDeckIndex: GameState.currentDeckIndex
+    };
+    localStorage.setItem('mini_card_battle_story_save', JSON.stringify(saveObj));
+}
+
+/**
+ * ストーリーのセーブデータを破棄する
+ */
+export function clearStoryProgress() {
+    localStorage.removeItem('mini_card_battle_story_save');
+}
+
+/**
+ * 保存されたストーリーデータを復元して再開する
+ */
+export function resumeStoryProgress(savedData) {
+    GameState.pendingCharId = savedData.pendingCharId;
+    GameState.storyQueue = savedData.storyQueue;
+    GameState.battleCount = savedData.battleCount;
+    GameState.storyDifficulty = savedData.storyDifficulty;
+    GameState.aiLevel = savedData.storyDifficulty;
+    GameState.currentDeckIndex = savedData.currentDeckIndex;
+    
+    GameState.playerConfig = CHARACTERS[savedData.pendingCharId];
+    
+    // デッキを再読み込み
+    if (typeof window.loadDeck === 'function') {
+        window.loadDeck();
+    } else {
+        loadDeck();
+    }
+
+    // フェードを経由して次のバトルへジャンプ
+    performFadeTransition(() => {
+        startNextBattleSequence();
+    });
 }

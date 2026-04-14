@@ -123,7 +123,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
-        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes, true);
+        const selectedLanes = await waitPlayerLaneSelection(1, owner, token, true, tokenLanes, false);
         if (selectedLanes.length === 0) return; // キャンセルされた場合
         tokenLanes = selectedLanes;
     } else if (action === 'dungeon_summon_leader') {

@@ -113,15 +113,13 @@ export async function executeEnemyAI() {
 /**
  * トークン配置レーンの選択（難易度別ディスパッチャ）
  */
-export function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false) {
+export function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false, checkConstraints = true) {
     if (owner === 'blue') return shuffleArray([...allLanes]).slice(0, count);
 
     if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
-        // 初級: ランダム
         return shuffleArray([...allLanes]).slice(0, count);
     } else {
-        // 中級以上: シミュレーション (ai_normal.js)
-        return getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill, canCancel);
+        return getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill, canCancel, checkConstraints);
     }
 }
 

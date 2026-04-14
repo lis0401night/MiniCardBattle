@@ -141,7 +141,7 @@ export const CARD_MASTER = [
 
     // トークンカード
     { id: 'token_knight', name: '騎士', rarity: 1, power: 2, isToken: true, skill: 'none', voiceCategory: 'sword', flavor: '号令で召喚された騎士。' },
-    { id: 'token_ignis', name: 'イグニス', rarity: 1, power: 7, isToken: true, skill: 'none', flavor: '降臨した竜族の姫。' },
+    { id: 'token_ignis', name: 'イグニス', rarity: 1, power: 7, isToken: true, skill: 'legendary', flavor: '降臨した竜族の姫。' },
     { id: 'token_satan', name: '魔王の化身', rarity: 1, power: 10, isToken: true, skill: 'none', flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', rarity: 1, power: 1, isToken: true, skill: 'none', flavor: '本体から生み出された分身。' },
     { id: 'token_reinforce', name: '増援', rarity: 1, power: 4, isToken: true, skill: 'none', flavor: '呼び声に応え、現れた仲間。' },

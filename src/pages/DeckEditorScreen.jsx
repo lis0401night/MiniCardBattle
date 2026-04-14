@@ -471,14 +471,29 @@ export default function DeckEditorScreen() {
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <button
             className="btn"
-            style={{ background: '#475569', margin: 0 }}
+            style={{ 
+              background: '#475569', 
+              margin: 0,
+              whiteSpace: 'nowrap',
+              padding: '10px 20px',
+              fontSize: '1rem',
+              width: 'auto',
+              minWidth: '120px'
+            }}
             onClick={() => {
               playSound?.(SOUNDS?.seClick);
-              if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
-              if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(true);
+              if (GameState.gameMode === 'story') {
+                showConfirmModal?.("一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）", () => {
+                  playSound?.(SOUNDS?.seClick);
+                  if (typeof window.switchScreen === 'function') window.switchScreen('screen-solo-menu');
+                });
+              } else {
+                if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
+                if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(true);
+              }
             }}
           >
-            戻る
+            {GameState.gameMode === 'story' ? '一時中断して戻る' : '戻る'}
           </button>
         </div>
 
