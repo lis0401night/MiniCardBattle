@@ -249,5 +249,15 @@ export const SKILL_POINTS = {
     "union": {
         "base": 1,
         "multiplier": 0
+    },
+    // 新スキル
+    "apex": {
+        "base": -2,
+        "multiplier": 0
+    },
+    "retaliate": {
+        "base": 0,
+        "multiplier": 1.5
     }
 };
+

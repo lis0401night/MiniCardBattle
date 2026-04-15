@@ -14,6 +14,7 @@ import oni from './enemy_decks/oni.js';
 import satan from './enemy_decks/satan.js';
 import satan_high from './enemy_decks/satan_high.js';
 import android_high from './enemy_decks/android_high.js';
+import dragon_high from './enemy_decks/dragon_high.js';
 
 export const ENEMY_DECKS = {
     android,
@@ -27,5 +28,6 @@ export const ENEMY_DECKS = {
     oni,
     satan,
     satan_high,
-    android_high
+    android_high,
+    dragon_high
 };

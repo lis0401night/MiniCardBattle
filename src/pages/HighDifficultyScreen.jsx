@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { showEventMenu, showHighDifficultyRules, handleSatanBattle, handleAndroidHighBattle } from '../hooks/uiMainCore.js';
+import { showEventMenu, showHighDifficultyRules, handleSatanBattle, handleAndroidHighBattle, handleDragonHighBattle } from '../hooks/uiMainCore.js';
 
 export default function HighDifficultyScreen() {
   return (
@@ -36,6 +36,15 @@ export default function HighDifficultyScreen() {
           <img src="assets/icons/icon_android_high.png" className="banner-icon" alt="" />
           <span className="banner-text" style={{ color: '#ef4444' }}>
             フルアーマー アイギス
+          </span>
+        </button>
+      </div>
+
+      <div className="banner-container">
+        <button className="btn-banner legendary" onClick={() => handleDragonHighBattle?.()}>
+          <img src="assets/icons/icon_dragon_high.png" className="banner-icon" alt="" />
+          <span className="banner-text" style={{ color: '#fb7185' }}>
+            熱砂の客人 イグニス
           </span>
         </button>
       </div>

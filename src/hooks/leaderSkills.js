@@ -357,7 +357,29 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     }
 
     // イベントログを再生（再生中にGameStateと描画が逐次更新される）
+    // dragon_summon: イグニストークンのimgUrlを現在設定中のスキンに合わせて書き換える
+    // （engine.jsは純粋関数のためGameStateにアクセスできないため、ここでパッチする）
+    if (action === 'dragon_summon') {
+        const skinId = isBlue
+            ? (GameState.playerSkins?.[config.id] || 'default')
+            : (GameState.enemySkins?.[config.id] || 'default');
+        const skinImg = getSkinImage(config, skinId, 'image');
+        events.forEach(ev => {
+            if ((ev.type === 'summon_token') && ev.card && ev.card.id && ev.card.id.startsWith('tk_')) {
+                ev.card.imgUrl = skinImg || ev.card.imgUrl;
+            }
+        });
+        // GameState.playerBoard / enemyBoard 上の実態も同期する
+        const targetBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        targetBoard.forEach(c => {
+            if (c && c.id && c.id.startsWith('tk_') && (c.baseId === 'token_ignis' || c.name === 'イグニス')) {
+                c.imgUrl = skinImg || c.imgUrl;
+            }
+        });
+    }
+
     await playEvents(events);
+
 
     // 再描画
     renderBoard();

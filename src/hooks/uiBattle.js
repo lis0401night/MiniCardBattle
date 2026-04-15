@@ -58,10 +58,10 @@ export function updateCardDetail(c) {
         if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
             skillCandidates.push({ id: c.skill, value: c.skillValue, choiceGroup: c.choiceGroup });
         }
-        // 2. 複数スキル配列
+        // 2. 複数スキル配列（union等が必要とするtargetId/summonIdなど全プロパティを引き継ぐ）
         if (Array.isArray(c.skills)) {
             c.skills.forEach(sk => {
-                skillCandidates.push({ id: sk.id, value: sk.value, choiceGroup: sk.choiceGroup });
+                skillCandidates.push({ ...sk });
             });
         }
         
@@ -93,7 +93,8 @@ export function updateCardDetail(c) {
                     const isBind = sk.isBind;
                     const skillName = isBind ? '拘束' : s.name;
                     const val = isBind ? '' : (sk.value ?? '');
-                    const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value) : s.desc;
+                    // 合体(union)など、第2引数にスキルオブジェクト自体（targetId/summonId等）を必要とするdescに対応
+                    const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc;
                     const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
                     
                     if (sk.id === 'choice' && (Array.isArray(c.choices) || Array.isArray(c.choices2))) {

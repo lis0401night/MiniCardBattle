@@ -133,6 +133,10 @@ export const CARD_MASTER = [
     { id: 'gearB', name: 'グランドギア', rarity: 4, power: 8, skills: [{ id: 'union', targetId: 'gearA', summonId: 'token_gearC' }, { id: 'artillery', value: 1 }, { id: 'defender' }], voiceCategory: 'machine_new', flavor: '地を這う無骨な鉄の脚。その真価は、空飛ぶ半身と交わった時にこそ発揮される。' },
     { id: 'tank', name: '自律戦車', rarity: 4, power: 4, skills: [{ id: 'union', targetId: 'token_drone', summonId: 'token_reinforceddrone' }, { id: 'snipe', value: 1 }], voiceCategory: 'machine_new', flavor: '小型の無人攻撃兵器。' },
     { id: 'scientist', name: '世紀の天才科学者', rarity: 4, power: 5, skills: [{ id: 'legendary' }, { id: 'summon', value: 1, summonId: 'token_drone' }, { id: 'summon', value: 1, summonId: 'token_drone' }], voiceCategory: 'machine_new', flavor: '彼女の右に出る技術者はいない。その性格の難しさにさえ目を瞑れば、だが。' },
+    { id: 'hellkite', name: '黒き竜', rarity: 4, power: 7, skills: [{ id: 'legendary' }, { id: 'apex' }, { id: 'berserk', value: 4 }, { id: 'spread', value: 4 }], voiceCategory: 'dragon', flavor: '「黒き影が空を覆う時、古き王国は灰となる」――親が子に語り継ぐ、ただの古き御伽話。だがある日、空は真に黒く染まり、伝説は業火と共に舞い降りた。' },
+    { id: 'avenger', name: '竜人族の復讐者', rarity: 4, power: 4, skills: [{ id: 'retaliate', value: 2 }], voiceCategory: 'sword', flavor: '喪われた同胞の痛哭が、刃をより深く、より凄惨な紅に染め上げる。残されたのは、血の代償を求める果てなき渇望のみ。' },
+    { id: 'wurm', name: '文明喰らい', rarity: 4, power: 8, skills: [{ id: 'takeover' }, { id: 'berserk', value: 4 }, { id: 'retaliate', value: 3 }], voiceCategory: 'monster', flavor: '砂海に栄華を誇った黄金の都は、一夜にして地図から消え去った。豊穣のオアシスも、天を突く尖塔も、今はすべてこの大蠕虫の腹の中。底なしの流砂だけが、かつての繁栄を静かに弔っている。' },
+    { id: 'egg', name: 'ドラゴンの卵', rarity: 4, power: 3, skills: [{ id: 'standby', value: 3 }, { id: 'growth', value: -1 }, { id: 'split', value: 7 }], voiceCategory: 'stone', flavor: '表面を覆う紅い鱗状の殻が、内側から微かな熱を帯びている。いつか訪れる孵化の刻まで、秘めたる命は静かに力を蓄え続ける。' },
     { id: 'baldanders', name: 'バルトアンデルス', rarity: 4, power: 0, skill: 'metamorph', voiceCategory: 'stone', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', rarity: 4, power: 5, skill: 'shuffle', voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
@@ -155,5 +159,7 @@ export const CARD_MASTER = [
     { id: 'token_phoenix', name: 'フェニックス', rarity: 1, power: 6, isToken: true, skill: 'none', voiceCategory: 'bird', flavor: '蘇った不死鳥。' },
     { id: 'token_soul', name: '人魂', rarity: 1, power: 1, isToken: true, skill: 'none', voiceCategory: 'undead', flavor: '魂喰いの狐が吐き出した人魂。' },
     { id: 'token_gearC', name: '機神プロメテウス', rarity: 1, power: 10, isToken: true, skills: [{ id: 'spread', value: 3 }, { id: 'artillery', value: 2 }, { id: 'immune' }], voiceCategory: 'machine_new', flavor: '天と地が交わり、鋼の機神が目を覚ます。その圧倒的な火力の前では、いかなる装甲も意味を成さない。' },
-    { id: 'token_reinforceddrone', name: '強化ドローン', rarity: 1, power: 5, isToken: true, skill: 'none', skills: [{ id: 'snipe', value: 5 }], voiceCategory: 'machine_new', flavor: '強化されたドローン。' }
+    { id: 'token_reinforceddrone', name: '強化ドローン', rarity: 1, power: 5, isToken: true, skill: 'none', skills: [{ id: 'snipe', value: 5 }], voiceCategory: 'machine_new', flavor: '強化されたドローン。' },
+    // ドラゴンの卵（egg）の分裂で生成されるトークン
+    { id: 'token_dragon', name: 'ドラゴン', rarity: 1, power: 7, isToken: true, skill: 'none', voiceCategory: 'dragon', flavor: '孵化したばかりのドラゴン。' }
 ];

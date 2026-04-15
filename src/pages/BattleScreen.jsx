@@ -111,6 +111,15 @@ export default function BattleScreen() {
                 return;
             }
 
+            // 頂点（apex）制約チェック：自分の場の同レーンに伝説カードがいることが必要
+            if (hasSkill && hasSkill(newCard, 'apex')) {
+                if (!GameState.playerBoard[lane] || !hasSkill(GameState.playerBoard[lane], 'legendary')) {
+                    playSound(SOUNDS.seDamage);
+                    showConfirmModal(`「${newCard.name}」は頂点を持つため、自分の場に伝説カードが置かれているレーンにしか召喚できません。`, () => { }, null, true);
+                    return;
+                }
+            }
+
             if (GameState.playerBoard[lane] !== null) {
                 const existingCard = GameState.playerBoard[lane];
                 let confirmed;

@@ -408,7 +408,18 @@ export function getCardImgUrl(card) {
 
     // 特定のトークンの例外処理（旧imgUrl設定の復元）
     if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
-    if (card.id === 'token_ignis' || card.baseId === 'token_ignis') return 'assets/cards/card_token_dragon.jpg';
+    if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
+        // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
+        // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照
+        const ownerSkins = card.owner === 'red'
+            ? (GameState.enemySkins || {})
+            : (GameState.playerSkins || {});
+        const dragonSkin = ownerSkins['dragon'];
+        if (dragonSkin && dragonSkin !== 'default') {
+            return `assets/characters/char_${dragonSkin}.png`;
+        }
+        return 'assets/characters/char_dragon.png';
+    }
     if (card.id === 'token_satan' || card.baseId === 'token_satan') return 'assets/cards/card_token_satan.jpg';
 
     let lookupId = card.baseId || card.id;

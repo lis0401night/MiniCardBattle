@@ -32,7 +32,7 @@ export const CHARACTERS = {
             lose: { dragon: '装甲溶解……システムダウン……', knight: '計算外の攻撃力……機能停止します……', cthulhu: '精神侵染……マスター、逃げ……て……', elf: '光学センサー破損……視界が……', cleric: '聖なる力による回路短絡……修復不能……', satan: 'マスター……ごめんなさい……', devilhunter: '目標の火力……計算を大きく上回って……', witch: 'タイムパラドックス発生……システムエラー……', oni: '呪符によるシステム干渉……！ 動作不良、機能停止……。', default: '致命的なエラー……再起動します……' },
             damage: ['シールド損傷！', 'ダメージ軽微。', 'エラー発生！', '出力低下。'],
             skill: 'リミッター解除、対象を殲滅します！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: '全対象の排除を完了しました。マスター、私の性能はいかがでしたか？' },
                 { speaker: 'player', text: 'これからも、あなたの剣として、盾として。ずっとおそばにいます。' }
             ]
@@ -68,7 +68,7 @@ export const CHARACTERS = {
             lose: { android: '冷たいのやだー！', knight: '痛いっ！ 鱗が……きゅ〜。', cthulhu: '触手でベタベタにしないでぇ……！', elf: 'あだだっ！ どこから矢が来たのよぉ！？', cleric: '体が動かない……変な術かけないでよぉ……！', satan: 'うそ……私の炎が、負けるなんて……。', devilhunter: '痛いっ！ その変な筒から出たやつ、何なのよぉ！', witch: 'あれれ……？ 私の炎が止まってる……！？', oni: '何この札！？ 炎が、出ない……！ 拘束しないでよぉ！', default: 'きゅ〜……お腹が空いただけなんだからねっ！' },
             damage: ['あだっ！', '熱くないもん！', 'やりやがったわね！', '痛いじゃない！'],
             skill: '私が直接焼き尽くしてあげるわ！！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'ぜーんぶやっつけてやったわ！ 私が一番強いって証明できたわね！' },
                 { speaker: 'player', text: 'あんた、マスターにしてはなかなかやるじゃない。これからも背中は任せてあげる！' }
             ]
@@ -104,7 +104,7 @@ export const CHARACTERS = {
             lose: { android: '動きが読めない……。', dragon: '竜の力、圧倒的すぎる……。', cthulhu: '正気が……奪われる……！', elf: '見えない矢……。いつ射られたというのだ……。', cleric: 'これが……聖職者の振るう力だというのか……！？', satan: '世界が……闇に……飲まれる……。', devilhunter: 'なんという銃弾……この装甲すら貫くとは……！', witch: '時を止められては……我が剣も届かないのか……。', oni: '霊符の力……体が、動かない……！ これが鬼の陰陽師……！', default: 'くっ……私の采配ミスだ。敗北を認めよう。' },
             damage: ['くっ！', 'まだだ！', '浅い！', 'なんの！'],
             skill: '全軍突撃！ 光よ、我らに勝利の加護を！！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'すべての戦いを終えたか。私の剣も、少しは君の役に立てたかな？' },
                 { speaker: 'player', text: '君という名将に出会えたこと、誇りに思う。これからも共に歩ませてくれ！' }
             ]
@@ -140,7 +140,7 @@ export const CHARACTERS = {
             lose: { android: '理性が……論理が……私を浸食する……！', dragon: 'あつい、私の海が蒸発してしまう……！', knight: 'その眩しい光、目障りですわ……！', elf: '矢が……深淵を射抜くというのですか……！？', cleric: 'その呪詛……まさか、私よりも深く！？', satan: '深淵が……塗り潰されていく……。', devilhunter: '激しい発砲音……うるさくて、頭が割れそうですわ……！', witch: '私の深淵が……時間に……巻き戻される……！？', oni: 'この呪符……深淵を縛るというの……！？ いあ、いあ……！', default: 'いあ！ いあ！ ……まさか、退けられるとは……' },
             damage: ['あぁんっ！', '痛いですわ！', '無礼な！', 'フフフ…'],
             skill: 'フフフ…深淵の力で、すべてを狂わせてあげますわ。',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'あらあら、みーんな狂ってしまいましたわ。貴方のおかげですわね。' },
                 { speaker: 'player', text: '私を満たしてくれたご褒美に、貴方だけは最後まで正気を残して差し上げますわ。フフフ……。' }
             ]
@@ -176,7 +176,7 @@ export const CHARACTERS = {
             lose: { android: '命令に従うだけの存在に……私は……？', dragon: '熱い……森が燃えてしまう……。', knight: 'あなたの剣には、守るべきものがあるのね。', cthulhu: '暗い……何も思い出せないまま、沈んでいく……。', cleric: 'これが……神の裁きだというの……？ 痛い……。', satan: 'また、暗闇に閉ざされるのね……。', devilhunter: '見えない……どこから撃たれたの……？ まさかこんな遠くから……。', witch: '時間が……巻き戻っていく……。また私は何も……！', oni: '矢が……霊符に弾かれた……。体が、縫い止められて……！', default: '視界が霞む……。私はまた、何も知らずに消えていくの……？' },
             damage: ['っ！', '避けれなかった……', 'まだ、動けるわ。', '矢が……'],
             skill: '貫け、星墜ちの矢！ 私の道を切り拓いて！！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'サタンが消えて……私の記憶の断片が繋がっていく……。' },
                 { speaker: 'player', text: '私はかつて、この地を守っていたのね。あなたが導いてくれなければ、私は自分を取り戻せなかった。ありがとう。' }
             ]
@@ -212,7 +212,7 @@ export const CHARACTERS = {
             lose: { android: '計算通りにいかないなんて……！', dragon: 'この私が、トカゲごときに……ぐぬぬ……！', knight: 'その光……不愉快だわ、消えなさい！', cthulhu: '頭が……割れる……！ 闇に飲まれるのは……イヤァァ！', elf: 'ただのエルフに……この矢は……まさか選ばれし者の……！？', satan: 'おのれ……まだ、力が足りないというの……！？', devilhunter: '野蛮な鉄の塊に、神の代行者であるこの私が……！？', witch: '神罰が……時間に阻まれるなんて……！？', oni: '異端の呪術が、私の聖なる力（暗黒）を封じるなんて……！？ あり得ないわ！', default: 'バカな……神に見放されたというの……！？ おのれぇー！' },
             damage: ['汚らわしいわね！', 'この私に……！', 'チッ……！', '不敬よ！'],
             skill: '背徳の悦びを教えてあげるわ……死に絶えなさい！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'ついに、魔王の力はすべて私のものになったわ……。' },
                 { speaker: 'player', text: '貴方、最後までよく仕えてくれたわね。私の「一番の下僕」として、これからも側に置かせてあげる。フフ、フフフ……。' }
             ]
@@ -248,7 +248,7 @@ export const CHARACTERS = {
             lose: { android: '鉄の塊だからって……理不尽すぎる……！', dragon: '熱い……！ こんなの聞いてないわよ……！', knight: 'これが騎士の剣撃……見くびっていたわ……！', cthulhu: 'なによこれ……精神が、蝕まれて……！', elf: 'あの矢……どこから……早すぎる……！', cleric: 'いんちきじゃなかったの……！？ 嘘でしょ……！', satan: 'これが魔王の力……弾丸が、全く効かない……', witch: '弾丸が……止まってる！？ どういうことよ……！', oni: '銃が……封印されて……！ チッ、厄介な術を……！', default: "弾切れ……！？ しまった……！" },
             damage: ['ちっ…！', '浅い！', 'ふんっ', 'やるわね'],
             skill: '目覚めなさい……！ 私のために働きな！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'これも仕事の内だけど……いい稼ぎになったわね、雇い主さん。' },
                 { speaker: 'player', text: 'さぁ、一旦帰ろうか。次の獲物が見つかるまでね。' }
             ]
@@ -317,7 +317,7 @@ export const CHARACTERS = {
             },
             damage: ['痛いですね……。', 'うっ…', '鬱陶しいですね。', '本気で怒りますよ？'],
             skill: 'はあ……。因果を弄るのも疲れるんですよね……。',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: 'やれやれ、これでようやく魔界の調査も終わりですね、先輩。' },
                 { speaker: 'player', text: '帰ったら三日は寝ますからね。絶対に起こさないでくださいよ。' }
             ]
@@ -386,7 +386,7 @@ export const CHARACTERS = {
             },
             damage: ['くっ！', '甘い！', '霊符が！', 'まだです！'],
             skill: '急急如律令！ 邪なる者よ、その身を縛れ！',
-            ending: [
+            storyEnding: [
                 { speaker: 'player', text: '終わりましたね。私が鬼に呑まれる前に……。' },
                 { speaker: 'player', text: 'もう少しだけ、隣に居させてください。' }
             ]
@@ -405,7 +405,7 @@ export const CHARACTERS = {
             lose: { android: '機械ごときに……この我が計算を誤っただと……！？', dragon: 'なんという炎……我が肉体が……焼かれる……！', knight: '聖なる光……目が……眩む……！', cthulhu: '精神が……崩壊する……！ この私が……！', elf: '見えざる矢に、この魔王が……！', cleric: '神など居らぬはず……なのに何故だ……！', devilhunter: '小賢しい人間め……！ この我が、ちっぽけな弾丸一発に……！？', witch: '我が絶望が……時間を遡って消滅していくとでも言うのか……！', oni: 'この我が、人間が編み出した術に……！？ 霊符ごときに縛られるとは……！', default: "バカな……この我が……貴様らごときに……グアアアッ！" },
             damage: ['ヌゥッ！', '小賢しい！', '効かぬわ！', 'おのれ…！'],
             skill: '絶望を教えてやろう。出でよ、我が化身！！',
-            ending: []
+            storyEnding: []
         }
     },
 };
@@ -451,6 +451,16 @@ CHARACTERS.android.skins['android_high'] = {
     imageLose: 'assets/characters/char_android_high_lose.png',
     icon: 'assets/icons/icon_android_high.png',
     iconDamage: 'assets/icons/icon_android_high_damage.png',
+    unlockCondition: '実績達成で入手'
+};
+
+CHARACTERS.dragon.skins['dragon_high'] = {
+    id: 'dragon_high',
+    name: '熱砂の客人 イグニス',
+    image: 'assets/characters/char_dragon_high.png',
+    imageLose: 'assets/characters/char_dragon_high_lose.png',
+    icon: 'assets/icons/icon_dragon_high.png',
+    iconDamage: 'assets/icons/icon_dragon_high_damage.png',
     unlockCondition: '実績達成で入手'
 };
 

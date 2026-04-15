@@ -33,7 +33,7 @@ export function processDestructionTriggers(state, events) {
 
                     // 分裂(split)
                     if (hasSkill(deadCard, 'split')) {
-                        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix' };
+                        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix', 'egg': 'token_dragon' };
                         let baseId = deadCard.baseId || deadCard.id;
                         if (baseId && baseId.includes('_') && !baseId.startsWith('token_')) {
                             const master = CARD_MASTER.find(c => c.name === deadCard.name);
@@ -42,7 +42,7 @@ export function processDestructionTriggers(state, events) {
                         const tokenId = tokenMap[baseId] || 'legs';
                         const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
                         const val = getSkillValue(deadCard, 'split') || tL.power || 2;
-                        
+
                         tokensToSummonThisLoop.push({
                             side,
                             lane: i,
@@ -165,7 +165,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
             if (eHandRef && eHandRef.length > 0) {
                 const count = Number(val) || 1;
-                
+
                 // 対象となるカードを抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
                 const validTargets = eHandRef
                     .map((card, idx) => ({ card, idx }))
@@ -298,7 +298,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'dispel':
             const dpVal = val || 1;
             const dispelTargetsEngine = [];
-            
+
             if (simulatedTokenLanes) {
                 for (let i = 0; i < Math.min(dpVal, simulatedTokenLanes.length); i++) {
                     const lIdx = simulatedTokenLanes[i];
@@ -331,7 +331,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             for (let i = 0; i < dispelTargetsEngine.length; i++) {
                 const maxL = dispelTargetsEngine[i].lane;
                 const tgt = dispelTargetsEngine[i].targetCard;
-                
+
                 if (dispelTargetsEngine[i].isHost) {
                     let totalLoss = tgt.equippedCards.reduce((sum, eq) => sum + (eq.power || 0), 0);
                     for (const eqC of tgt.equippedCards) {
@@ -352,11 +352,11 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     tgt.equippedCards = [];
                     events.push({ type: 'dispel_equip', side: oppOwner, lane: maxL, amount: totalLoss, source: 'dispel' });
                 }
-                
+
                 if (dispelTargetsEngine[i].isSelf) {
                     tgt.currentPower = 0;
                 }
-                
+
                 if (tgt.currentPower <= 0) {
                     events.push({ type: 'destroy_card', side: oppOwner, lane: maxL, source: 'dispel_kill' });
                     eB[maxL] = null;
@@ -538,7 +538,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
             const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
             if (simDiscard.length === 0) break;
-            
+
             // パワーが高い順にソートして一番強いのを取得し、シミュ内で墓地から取り除く
             const sortedDiscard = [...simDiscard].sort((a, b) => b.power - a.power);
             const simResCard = sortedDiscard[0];
@@ -588,7 +588,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     b[targetLaneRes] = newResToken;
                     events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
                 }
-                
+
                 const resIdx = simDiscard.indexOf(simResCard);
                 if (resIdx !== -1) simDiscard.splice(resIdx, 1);
             }
@@ -693,7 +693,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (targetOriginal.unionMaterials && targetOriginal.unionMaterials.length > 0) {
                     statueToken.unionMaterials = JSON.parse(JSON.stringify(targetOriginal.unionMaterials));
                 }
-                
+
                 // 既存のカードを消すわけではなく変身扱いとするため、破壊イベントは積まない（あるいは変身イベントを積む）
                 eB[l] = statueToken;
                 events.push({ type: 'petrify', side: oppOwner, lane: l, card: JSON.parse(JSON.stringify(statueToken)), source: 'petrify' });
@@ -720,9 +720,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             };
 
             for (let i = 0; i < actualReinforceCount; i++) {
-                h.push({ 
-                    ...rTC, 
-                    id: `rf_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`, 
+                h.push({
+                    ...rTC,
+                    id: `rf_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
                     owner,
                     imgUrl: c.imgUrl,
                     isPremium: c.isPremium
@@ -740,7 +740,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             if (validCards.length > 0) {
                 const sorted = [...validCards].sort((a, b) => b.power - a.power);
                 const selectedCard = sorted[0];
-                
+
                 let targetLane = -1;
                 if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes[0];
@@ -750,8 +750,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
 
                 if (targetLane !== -1 && b[targetLane] === null) {
-                    const resurrectedCard = { 
-                        ...selectedCard, 
+                    const resurrectedCard = {
+                        ...selectedCard,
                         id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
                         baseId: selectedCard.baseId || selectedCard.id
                     };
@@ -803,7 +803,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 }
             }
         }
-        
+
         for (const lane of targets) {
             // Apply Seal
             if (isBlue) {
@@ -811,7 +811,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             } else {
                 if (state.playerSealedLanes) state.playerSealedLanes[lane] = 1;
             }
-            
+
             // Damage card if exists
             if (eBoard[lane] !== null) {
                 if (!hasSkill(eBoard[lane], 'immune')) {
@@ -857,6 +857,61 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             if (state.playerHP < 0) state.playerHP = 0;
         }
         events.push({ type: 'damage_player', side: oppOwner, amount: 2, source: 'android_high_volley' });
+
+    } else if (action === 'dragon_high_ritual') {
+        // ===== 龍神演義 =====
+        // 効果①：場のすべてのカード（両陣営）に2ダメージ（免疫は無効）
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        for (let i = 0; i < 3; i++) {
+            // 自分の場のカードにも2ダメージ
+            if (board[i]) {
+                if (!hasSkill(board[i], 'immune')) {
+                    board[i].currentPower -= 2;
+                    events.push({ type: 'damage_card', side: owner, lane: i, amount: 2, source: 'dragon_high_ritual' });
+                } else {
+                    events.push({ type: 'immune_block', side: owner, lane: i, source: 'dragon_high_ritual' });
+                }
+            }
+            // 相手の場のカードにも2ダメージ
+            if (eBoard[i]) {
+                if (!hasSkill(eBoard[i], 'immune')) {
+                    eBoard[i].currentPower -= 2;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 2, source: 'dragon_high_ritual' });
+                } else {
+                    events.push({ type: 'immune_block', side: oppOwner, lane: i, source: 'dragon_high_ritual' });
+                }
+            }
+        }
+        processDestructionTriggers(state, events);
+
+        // 効果②：自分のレーンにイグニストークン(P:7/伝説)を「配置」（制約チェックなし）
+        let dragonRitualLane = -1;
+        if (tokenLanes && tokenLanes.length > 0) {
+            dragonRitualLane = tokenLanes[0];
+        } else {
+            const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+            const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0));
+            if (emptyLanes.length > 0) dragonRitualLane = emptyLanes[0];
+        }
+        if (dragonRitualLane !== -1) {
+            const tM = CARD_MASTER.find(m => m.id === 'token_ignis');
+            if (tM) {
+                const newToken = {
+                    id: `tk_dr_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    owner,
+                    ...tM,
+                    currentPower: 7,
+                    rarity: tM.rarity || 1
+                    // imgUrl は getCardImgUrl がスキンを参照して解決する
+                };
+                if (board[dragonRitualLane] !== null) {
+                    events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: dragonRitualLane, card: board[dragonRitualLane] }] });
+                    board[dragonRitualLane] = null;
+                }
+                board[dragonRitualLane] = newToken;
+                events.push({ type: 'summon_token', side: owner, lane: dragonRitualLane, card: JSON.parse(JSON.stringify(newToken)), source: 'dragon_high_ritual' });
+            }
+        }
 
     } else if (action === 'targeted_destruction') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
@@ -941,8 +996,8 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             events.push({ type: 'leader_skill', skill: action, side: owner });
             const tM = CARD_MASTER.find(m => m.id === (action === 'satan_avatar' ? 'token_satan' : 'token_ignis'));
             const newToken = { id: `tk_${Math.floor(getSeededRandom() * 1000000000)}`, owner, ...tM, currentPower: power, rarity: tM.rarity || 1 };
+            // satan_avatarのみimgUrlを固定設定；dragon系はgetCardImgUrlがスキンを参照して解決する
             if (action === 'satan_avatar') newToken.imgUrl = 'assets/cards/card_token_satan.jpg';
-            else newToken.imgUrl = 'assets/cards/card_token_dragon.jpg';
 
             if (board[l] !== null) {
                 events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
@@ -1082,7 +1137,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     }
     const originalTarget = (defBoard[l] && (hasSkill(defBoard[l], 'phase') === aHasPhase || hasSkill(defBoard[l], 'defender') || defBoard[l].stunTurns > 0)) ? defBoard[l] : null;
     let aP = Number(aC.currentPower ?? aC.power ?? 0) || 0;
-    
+
     // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）
     const aC_defend = atkBoard[aLane];
 
@@ -1179,7 +1234,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                 defHP -= pDmg;
                 events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
                 applyExtort(aC, defSide, attackerSide, aLane, events, state);
-                
+
                 if (hasSkill(aC, 'absorb')) {
                     const healAmt = Math.floor(pDmg / 2);
                     if (healAmt > 0) {
@@ -1208,7 +1263,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         defHP -= finalDmg;
         events.push({ type: 'damage_player', side: defSide, amount: finalDmg, source: 'direct_attack' });
         applyExtort(aC, defSide, attackerSide, aLane, events, state);
-        
+
         if (finalDmg > 0 && hasSkill(aC, 'absorb')) {
             const healAmt = Math.floor(finalDmg / 2);
             if (healAmt > 0) {
@@ -1269,7 +1324,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
         const newTokens = [];
         for (let i = 0; i < val; i++) {
             if (oppHand.length === 0) break;
-            
+
             if (!activated) {
                 events.push({ type: 'skill_popup', side: attackerSide, lane: aLane, skillName: '簒奪' });
                 activated = true;

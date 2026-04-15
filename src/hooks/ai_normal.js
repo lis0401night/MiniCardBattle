@@ -67,7 +67,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             if (action === 'holy_march') {
                 const emptyLanes = [0, 1, 2].filter(l => myBoard[l] === null && mySealedLanes[l] === 0);
                 tokenLanePatterns = getCombinations(emptyLanes, Math.min(emptyLanes.length, 2));
-            } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
+            } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dragon_high_ritual' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
                 // 上書きも考慮するため全レーンをシミュレーション対象とする
                 tokenLanePatterns = [[0], [1], [2]].filter(pattern => mySealedLanes[pattern[0]] === 0);
 
@@ -117,6 +117,8 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
                         if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
                         if (hasSkill(card, 'challenge') && opBoard[l] === null) continue;
+                        // 頂点（apex）: 自分の場の同レーンに伝説カードがいることが必要
+                        if (hasSkill(card, 'apex') && !(myBoard[l] && hasSkill(myBoard[l], 'legendary'))) continue;
                         // 装備カードも空きレーンに召喚可能なので除外しない
 
                         // 1ターン目の制限 (先攻RED)
@@ -369,6 +371,10 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         if (checkConstraints && hasSkill(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) {
             return null;
         }
+        // 頂点（apex）: 自分の場の同レーンに伝説カードがいることが必要
+        if (checkConstraints && hasSkill(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkill(simState.enemyBoard[laneIdx], 'legendary'))) {
+            return null;
+        }
         
         if (hasSkill(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
             // 装備：既存のカードに追加効果とパワーを付与し、装備カードは消費される。
@@ -511,6 +517,8 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
     // 3. 各レーンに配置した場合のシミュレーション
     for (let l of allLanes) {
         if (checkConstraints && hasSkill(tokenCard, 'legendary') && l !== 1) continue;
+        // 頂点（apex）: 自分の場の同レーンに伝説カードがいることが必要
+        if (checkConstraints && hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
 
         if (choiceIndices.length > 0) {
             for (let cIdx of choiceIndices) {

@@ -74,6 +74,7 @@ export function generateDeck(owner, config, sessionId) {
             let recipeId = config.id;
             if (GameState.gameMode === 'event_satan') recipeId = 'satan_high';
             if (GameState.gameMode === 'event_android_high') recipeId = 'android_high';
+            if (GameState.gameMode === 'event_dragon_high') recipeId = 'dragon_high';
             if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
             let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
 

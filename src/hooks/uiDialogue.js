@@ -50,7 +50,7 @@ export function startEndingSequence() {
     GameState.appState = 'ending_dialogue';
     stopSound(AUDIO_INSTANCES.bgmTitle); stopSound(AUDIO_INSTANCES.bgmBattle); stopSound(AUDIO_INSTANCES.bgmLastBattle); stopSound(AUDIO_INSTANCES.bgmStageAndroid);
     playSound(AUDIO_INSTANCES.bgmEnding);
-    GameState.dialogueQueue = GameState.playerConfig.dialogue.ending;
+    GameState.dialogueQueue = GameState.playerConfig.dialogue.storyEnding;
     GameState.currentDialogueIndex = 0;
 
     // 実績: ストーリークリア (完遂時にプレイヤーキャラクターのIDで記録)

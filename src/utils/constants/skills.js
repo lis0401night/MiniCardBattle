@@ -65,22 +65,26 @@ export const SKILLS = {
     brutal: { name: '暴虐', icon: '🌪️', desc: (val) => `攻撃時、自分の場の隣のレーンのカードに${val}ダメージ。` },
     absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。' },
     seal: { name: '結界', icon: '🛑', desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。` },
-    union: { name: '合体', icon: '🔗', desc: (val, sk) => {
-        const targetCard = sk && sk.targetId ? CARD_MASTER.find(c => c.id === sk.targetId) : null;
-        const summonCard = sk && sk.summonId ? CARD_MASTER.find(c => c.id === sk.summonId) : null;
-        
-        if (!targetCard && !summonCard) {
-            return '配置時、「対応するカード」の上に重ねた場合に「特別なカード」になる。';
-        }
+    apex: { name: '頂点', icon: '☀️', desc: (val) => '自分の場に伝説を持つカードが置かれているレーンにしか召喚できない。' },
+    retaliate: { name: '報復', icon: '🔥', desc: (val) => `自分の場の他のカードが破壊された時、パワーを+${val || 2}する。` },
+    union: {
+        name: '合体', icon: '🔗', desc: (val, sk) => {
+            const targetCard = sk && sk.targetId ? CARD_MASTER.find(c => c.id === sk.targetId) : null;
+            const summonCard = sk && sk.summonId ? CARD_MASTER.find(c => c.id === sk.summonId) : null;
 
-        return [
-            { type: 'text', value: '配置時、' },
-            { type: 'link', value: `「${targetCard ? targetCard.name : '対応するカード'}」`, targetId: sk.targetId || null },
-            { type: 'text', value: 'の上に重ねた場合に' },
-            { type: 'link', value: `「${summonCard ? summonCard.name : '特別なカード'}」`, targetId: sk.summonId || null },
-            { type: 'text', value: 'になる。' }
-        ];
-    } }
+            if (!targetCard && !summonCard) {
+                return '配置時、「対応するカード」の上に重ねた場合に「特別なカード」になる。';
+            }
+
+            return [
+                { type: 'text', value: '配置時、' },
+                { type: 'link', value: `「${targetCard ? targetCard.name : '対応するカード'}」`, targetId: sk.targetId || null },
+                { type: 'text', value: 'の上に重ねた場合に' },
+                { type: 'link', value: `「${summonCard ? summonCard.name : '特別なカード'}」`, targetId: sk.summonId || null },
+                { type: 'text', value: 'になる。' }
+            ];
+        }
+    }
 };
 
 export const ACTIVE_SKILLS = [
@@ -90,5 +94,6 @@ export const ACTIVE_SKILLS = [
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
-    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb'
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
+    'apex', 'retaliate'
 ];

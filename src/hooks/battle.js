@@ -135,7 +135,7 @@ function generateSyncState() {
 
 function applySyncState(state) {
     if (!state) return;
-    
+
     // ホスト自身がエコーを受信した場合は無視
     if (getIsHost()) return;
 
@@ -145,7 +145,7 @@ function applySyncState(state) {
     GameState.enemyHP = state.playerHP || 0;
     GameState.playerSP = state.enemySP || 0;
     GameState.enemySP = state.playerSP || 0;
-    
+
     // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
     const restoreArr = (arr, len = null) => {
         if (!arr) return len !== null ? Array(len).fill(null) : [];
@@ -162,12 +162,12 @@ function applySyncState(state) {
     GameState.enemyDiscard = restoreArr(state.playerDiscard);
     GameState.playerDeck = restoreArr(state.enemyDeck);
     GameState.enemyDeck = restoreArr(state.playerDeck);
-    
+
     // ターン表記（player / enemy）もホストから見た主観なので逆転させる
     if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
     else if (state.currentTurn === 'enemy') GameState.currentTurn = 'player';
     else GameState.currentTurn = state.currentTurn;
-    
+
     GameState.turnCount = state.turnCount;
 
     // 全てのUIを新しいステートに合わせて強制更新
@@ -289,13 +289,13 @@ export function initBattleState() {
 
         // BGMの再生
         let bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high') {
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high') {
             bgmKey = 'bgmStageHighDifficulty';
         }
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high') GameState.aiLevel = 3; // 念のため再セット
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high') GameState.aiLevel = 3; // 念のため再セット
 
         if (GameState.gameMode === 'battle_dungeon') {
             // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
@@ -397,7 +397,7 @@ export function updateSPOrbs(owner) {
 
 export function checkWinCondition() {
     if (GameState.isBattleEnded) return true;
-    
+
     if (GameState.playerHP <= 0 || GameState.enemyHP <= 0) {
         GameState.isBattleEnded = true;
         triggerFinishVisuals();
@@ -550,7 +550,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
     if (owner === 'red') {
         const availableAI = [0, 1, 2].filter(l => sealedLanes[l] === 0);
         let selectedLanes;
-        
+
         if (tokenLanes && tokenLanes.length > 0) {
             selectedLanes = tokenLanes.slice(0, count);
         } else {
@@ -583,7 +583,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             if (checkConstraints && tokenCard) {
                 const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
                 const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
-                
+
                 if (hasLegendary) {
                     validEmptyLanes = validEmptyLanes.filter(i => i === 1);
                     validOccupiedLanes = validOccupiedLanes.filter(i => i === 1);
@@ -787,7 +787,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = fal
                 return decidedLanes.slice(0, count);
             }
         }
-        
+
         const sortedLanes = [...validLanes].sort((a, b) => {
             const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
             const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
@@ -805,7 +805,7 @@ export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = fal
         GameState.targetSelectedLanes = [];
         GameState.isTargetCancelable = canCancel;
         GameState.isEnemyTargetAllowEmpty = allowEmpty;
-        
+
         if (message) {
             updateCardDetail(message);
         } else {
@@ -958,13 +958,13 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false, 
         GameState.isDiscardingMode = true;
         GameState.isDiscardingExact = forceExact;
         GameState.discardMaxCount = count;
-        
+
         if (message) {
             updateCardDetail(message);
         } else {
             updateCardDetail(null);
         }
-        
+
         renderHand(); // 描画更新
 
         const cleanUp = () => {
@@ -1401,12 +1401,12 @@ export function drawCard(owner) {
         ds.length = 0;
         playSound(SOUNDS.seSkill);
         showDeckRefreshEffect(owner);
-        
+
         // 山札補充時のペナルティ（体力が半分（切り上げ）になるようにダメージ）
         const currentHP = owner === 'blue' ? GameState.playerHP : GameState.enemyHP;
         const newHP = Math.ceil(currentHP / 2);
         const damage = currentHP - newHP;
-        
+
         if (damage > 0) {
             if (owner === 'blue') {
                 GameState.playerHP = newHP;
@@ -1464,9 +1464,9 @@ export async function handleMoveSkills(owner) {
                 GameState.placementMessage = `移動するレーンを選んでください`;
                 if (updateBattleUIHook) updateBattleUIHook();
             }
-            
+
             const targetIdx = await waitPlayerLaneSelection(1, owner, c, false, possibleLanes, false, true, '移動終了');
-            
+
             if (owner === 'blue') {
                 GameState.placementMessage = null;
             }
@@ -1638,29 +1638,29 @@ export async function playCard(o, hI, l) {
             // 即座に合体を実行する。
             const consumedCard = h.splice(hI, 1)[0];
             const masterData = CARD_MASTER.find(c => c.id === combineId);
-                let unionCard = JSON.parse(JSON.stringify(masterData));
-                unionCard.uid = getOrCreateUUID(null);
-                unionCard.owner = o;
-                unionCard.baseId = unionCard.id;
-                unionCard.basePower = unionCard.power;
-                unionCard.currentPower = unionCard.power;
-                unionCard.unionMaterials = [targetCard, consumedCard];
+            let unionCard = JSON.parse(JSON.stringify(masterData));
+            unionCard.uid = getOrCreateUUID(null);
+            unionCard.owner = o;
+            unionCard.baseId = unionCard.id;
+            unionCard.basePower = unionCard.power;
+            unionCard.currentPower = unionCard.power;
+            unionCard.unionMaterials = [targetCard, consumedCard];
 
-                b[l] = unionCard;
+            b[l] = unionCard;
 
-                playSound(SOUNDS.sePlace);
-                if (unionCard.voiceCategory) {
-                    playCardVoice(unionCard.voiceCategory, 'play');
-                }
+            playSound(SOUNDS.sePlace);
+            if (unionCard.voiceCategory) {
+                playCardVoice(unionCard.voiceCategory, 'play');
+            }
 
-                if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
-                renderHand(); renderBoard();
+            if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
+            renderHand(); renderBoard();
 
-                await resolveOnPlaySkill(o, l, unionCard);
+            await resolveOnPlaySkill(o, l, unionCard);
 
-                await sleep(100);
-                renderBoard();
-                return;
+            await sleep(100);
+            renderBoard();
+            return;
         }
 
         if (hasSkill(playingCard, 'equip')) {
@@ -2136,11 +2136,15 @@ export function endBattle() {
             if (GameState.gameMode === 'event_android_high' && typeof incrementStat === 'function') {
                 incrementStat('eventClear', 'android_high');
             }
+            if (GameState.gameMode === 'event_dragon_high' && typeof incrementStat === 'function') {
+                incrementStat('eventClear', 'dragon_high');
+            }
 
             // --- カードドロップ抽選・表示処理 ---
             let recipeId = GameState.enemyConfig.id;
             if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
             if (GameState.gameMode === 'event_android_high' && recipeId === 'android') recipeId = 'android_high';
+            if (GameState.gameMode === 'event_dragon_high' && recipeId === 'dragon') recipeId = 'dragon_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
 

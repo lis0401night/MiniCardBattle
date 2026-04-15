@@ -59,6 +59,56 @@ export function initEventAndroidHighMode(charId) {
     });
 }
 
+/**
+ * 高難易度イベント：熱砂の客人 イグニス の初期化
+ * ストーリー：砂漠の宴に招待された主人公が、退屈していた竜姫イグニスに戦いを申し込まれる
+ */
+export function initEventDragonHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['dragon'],
+        hp: 40,
+        name: '熱砂の客人 イグニス',
+        leaderSkill: {
+            name: '龍神演義',
+            desc: '(SP:4) 場のすべてのカードに2ダメージ、自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
+            cost: 4,
+            action: 'dragon_high_ritual'
+        }
+    };
+    GameState.gameMode = 'event_dragon_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'dragon'; // 竜の領域ステージ固定
+
+    // イグニスに「熱砂の客人」スキンを適用
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['dragon'] = 'dragon_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'dragon_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'dragon_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'dragon_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    // イベント導入ダイアログ（キャラ別・1〜2行目）
+    const introDialogues = EVENT_DIALOGUES.event_dragon_high[charId] || [];
+    if (introDialogues.length >= 2) {
+        GameState.dialogueQueue = [introDialogues[0], introDialogues[1]];
+    } else {
+        GameState.dialogueQueue = [
+            { speaker: 'narrator', text: '砂漠の都市国家から招待状が届いた。豪奢な宴の片隅で、退屈そうにしている竜姫の姿があった。' },
+            { speaker: 'player', text: 'あの人、どこかで見たような……。' }
+        ];
+    }
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
 export function initEventSatanMode(charId) {
     GameState.playerConfig = { ...CHARACTERS[charId] };
     GameState.enemyConfig = { ...CHARACTERS['satan'], hp: 100 };
@@ -87,7 +137,7 @@ export function initEventSatanMode(charId) {
 }
 
 /**
- * イベントモード（サタン戦）の進行管理
+ * イベントモード（サタン戦・アイギス高難易度戦・イグニス高難易度戦）の進行管理
  */
 export function handleEventProgression() {
     if (GameState.appState === 'story_intro') {
@@ -96,6 +146,10 @@ export function handleEventProgression() {
         if (GameState.gameMode === 'event_android_high') {
             performFadeTransition(() => {
                 setupEventAndroidHighConfrontation();
+            });
+        } else if (GameState.gameMode === 'event_dragon_high') {
+            performFadeTransition(() => {
+                setupEventDragonHighConfrontation();
             });
         } else {
             let confrontationLines = [];
@@ -190,6 +244,53 @@ export function setupEventAndroidHighConfrontation() {
         speaker: 'player', 
         text: GameState.playerConfig.preBattleLine || "行くよ、アイギス！" 
     });
+
+    GameState.dialogueQueue = confrontationLines;
+    setupDialogueScreen();
+}
+
+/**
+ * 熱砂の客人イグニス戦の対峙ダイアログ（コンテニュー時などにも使用）
+ */
+export function setupEventDragonHighConfrontation() {
+    GameState.appState = 'pre_dialogue';
+
+    let confrontationLines = [];
+    const charId = GameState.playerConfig.id;
+    const introDialogues = EVENT_DIALOGUES.event_dragon_high[charId] || [];
+
+    // 3行目（宴の場面描写）をフォールバック付きで設定
+    if (introDialogues.length >= 3) {
+        confrontationLines.push(introDialogues[2]);
+    } else {
+        confrontationLines.push({
+            speaker: 'narrator',
+            text: '宴の一角、黒いドレスを纏った竜姫が退屈そうに座っていた。周囲の人間は近づけず、その席だけが静寂に包まれていた。'
+        });
+    }
+
+    // イグニスの台詞（プレイヤーがイグニス本人かどうかで分岐）
+    if (charId === 'dragon') {
+        // ミラーマッチ：もう一人のイグニスが話しかけてくる
+        confrontationLines.push({
+            speaker: 'enemy',
+            text: 'あら、私と同じ顔ね。面白い……ちょうど退屈してたの。ねぇ、あなたも私と同じなら、戦うのも好きでしょ？ 付き合ってくれない？'
+        });
+        confrontationLines.push({
+            speaker: 'player',
+            text: 'なんで私が私と戦わなきゃいけないのよ！ ……でも、まぁ、退屈してたのは私も同じだからいいわ。やってやるんだから！'
+        });
+    } else {
+        // 通常：退屈したイグニスが戦いを申し込む
+        confrontationLines.push({
+            speaker: 'enemy',
+            text: 'はぁ……退屈。踊りも料理も、全っ然楽しくないんだから。ねぇ、ちょうど良かった。あなた、私と戦ってくれない？ 久々に身体を動かしたくって。'
+        });
+        confrontationLines.push({
+            speaker: 'player',
+            text: GameState.playerConfig.preBattleLine || 'こちらも暇を持て余していたところだよ。受けて立とう！'
+        });
+    }
 
     GameState.dialogueQueue = confrontationLines;
     setupDialogueScreen();

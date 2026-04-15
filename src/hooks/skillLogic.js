@@ -1,5 +1,6 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
@@ -72,7 +73,22 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         let imgUrl = randomMaster.imgUrl;
         if (!imgUrl) {
             if (randomMaster.id === 'token_knight') imgUrl = 'assets/cards/card_token_knight.jpg';
-            else if (randomMaster.id === 'token_ignis') imgUrl = 'assets/characters/char_dragon.png';
+            else if (randomMaster.id === 'token_ignis') {
+                // オーナーがイグニス（dragon）をリーダーとして使用している場合のみスキン画像を参照する
+                // イグニス以外のリーダー使用時はスキン情報が存在しないため、デフォルト画像にフォールバック
+                const isPlayingAsDragon = o === 'blue'
+                    ? GameState.playerConfig?.id === 'dragon'
+                    : GameState.enemyConfig?.id === 'dragon';
+                if (isPlayingAsDragon) {
+                    const dragonConfig = CHARACTERS['dragon'];
+                    const skinId = o === 'blue'
+                        ? (GameState.playerSkins?.['dragon'] || 'default')
+                        : (GameState.enemySkins?.['dragon'] || 'default');
+                    imgUrl = getSkinImage(dragonConfig, skinId, 'image') || 'assets/characters/char_dragon.png';
+                } else {
+                    imgUrl = 'assets/characters/char_dragon.png';
+                }
+            }
             else if (randomMaster.id === 'token_satan') imgUrl = 'assets/characters/char_satan.png';
             else imgUrl = `assets/cards/card_${randomMaster.id}.jpg`;
         }
