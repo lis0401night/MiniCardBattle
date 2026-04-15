@@ -128,16 +128,6 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
 
                         const isOverwrite = myBoard[l] !== null;
-                        if (isOverwrite) {
-                            let canOverwrite = false;
-                            if (hasSkill(card, 'takeover')) canOverwrite = true;
-                            if (hasSkill(card, 'equip')) canOverwrite = true;
-                            const unionSkill = card.skills && card.skills.find(s => s.id === 'union');
-                            if (unionSkill && (myBoard[l].baseId === unionSkill.targetId || myBoard[l].id === unionSkill.targetId)) {
-                                canOverwrite = true;
-                            }
-                            if (!canOverwrite) continue;
-                        }
 
                         // 追加: 空きレーンのパターン抽出
                         let tempBoard = [...myBoard];
