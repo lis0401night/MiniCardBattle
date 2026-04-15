@@ -2,7 +2,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation } from './events.js';
+import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation, setupEventDragonHighConfrontation } from './events.js';
 import { GameState } from './gameState.js';
 import { saveStoryProgress } from './story.js';
 import { handleProgressionNextStep } from './progression.js';
@@ -191,6 +191,8 @@ export function executeContinue() {
             setupEventSatanConfrontation();
         } else if (GameState.gameMode === 'event_android_high') {
             setupEventAndroidHighConfrontation();
+        } else if (GameState.gameMode === 'event_dragon_high') {
+            setupEventDragonHighConfrontation();
         } else {
             GameState.appState = 'pre_dialogue';
             let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro');
