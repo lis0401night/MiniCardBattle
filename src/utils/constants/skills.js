@@ -91,7 +91,7 @@ export const SKILLS = {
     absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。' },
     seal: { name: '結界', icon: '🛑', desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。` },
     apex: { name: '頂点', icon: '☀️', desc: (val) => '自分の場に伝説を持つカードが置かれているレーンにしか召喚できない。' },
-    retaliate: { name: '報復', icon: '🔥', desc: (val) => `自分の場の他のカードが破壊された時、パワーを+${val || 2}する。` },
+    retaliate: { name: '報復', icon: '🔥', desc: (val) => `自分の場のカードが破壊された時、パワーを+${val || 2}する。` },
     union: {
         name: '合体', icon: '🔗', desc: (val, sk) => {
             const targetCard = sk && sk.targetId ? CARD_MASTER.find(c => c.id === sk.targetId) : null;
