@@ -20,7 +20,19 @@ export const SKILLS = {
     soul_bind: { name: '魂縛', icon: '⛓️', desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。` },
     sturdy: { name: '頑丈', icon: '⛰', desc: (val) => '戦闘時、受けるダメージを半減する（端数切り捨て）。' },
     berserk: { name: '狂乱', icon: '💢', desc: (val) => `召喚時、自分の場の隣のレーンのカードに${val}ダメージ。` },
-    split: { name: '分裂', icon: '🐙', desc: (val) => `破壊時、同じレーンにパワー${val}のトークンを出す。` },
+    split: {
+        name: '分裂', icon: '🐙', desc: (val, sk) => {
+            const summonCard = sk?.summonId ? CARD_MASTER.find(c => c.id === sk.summonId) : null;
+            if (summonCard) {
+                return [
+                    { type: 'text', value: '破壊時、同じレーンに' },
+                    { type: 'link', value: `${summonCard.name}（パワー${val}）`, targetId: sk.summonId },
+                    { type: 'text', value: 'を出す。' }
+                ];
+            }
+            return `破壊時、同じレーンにパワー${val}のトークンを出す。`;
+        }
+    },
     sacrifice: { name: '代償', icon: '🩸', desc: (val) => `召喚時、自分リーダーに${val || 3}ダメージ` },
     bind: { name: '拘束', icon: '🕸️', desc: (val) => `召喚時、正面のカードに${val}ターンの間「防御」を持たせる。` },
     growth: { name: '成長', icon: '🌱', desc: (val) => `自分のターン開始時、パワーを${val >= 0 ? '+' : ''}${val}する。` },
@@ -40,7 +52,20 @@ export const SKILLS = {
     standby: { name: '待機', icon: '⏳', desc: (val) => `召喚時、自身に${val}ターン防御を付与する。` },
     artillery: { name: '砲撃', icon: '💥', desc: (val) => `召喚時、相手リーダーに${val}ダメージ` },
     shuffle: { name: '攪乱', icon: '🃏', desc: (val) => '召喚時、お互いの手札を全て捨て、墓地をリセットする。その後、お互いにカードを3枚引く。' },
-    summon: { name: '召喚', icon: '✨', desc: (val) => `召喚時、自分のレーンに、パワー${val}のトークンを配置する。` },
+    summon: {
+        name: '召喚', icon: '✨', desc: (val, sk) => {
+            const summonId = sk?.summonId || sk?.skills?.find(s => s.id === 'summon')?.summonId;
+            const summonCard = summonId ? CARD_MASTER.find(c => c.id === summonId) : null;
+            if (summonCard) {
+                return [
+                    { type: 'text', value: '召喚時、自分のレーンに、' },
+                    { type: 'link', value: `${summonCard.name}（パワー${val}）`, targetId: summonId },
+                    { type: 'text', value: 'を配置する。' }
+                ];
+            }
+            return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。`;
+        }
+    },
     immune: { name: '無効', icon: '🚫', desc: (val) => '能力による破壊やダメージを受けない。' },
     fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
     salvage: { name: '回収', icon: '🧲', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自分の墓地からカードを手札に加える。` },

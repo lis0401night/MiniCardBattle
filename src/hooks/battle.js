@@ -1262,13 +1262,16 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
 export async function triggerSplitSkill(owner, lane, card) {
     const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix', 'egg': 'token_dragon' };
-    let testId = card.baseId || card.id;
-    if (testId && testId.includes('_') && !testId.startsWith('token_')) {
-        const master = CARD_MASTER.find(c => c.name === card.name);
-        if (master) testId = master.id;
+    let tokenId = card.summonId || card.skills?.find(s => s.id === 'split')?.summonId;
+    if (!tokenId) {
+        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix', 'egg': 'token_dragon' };
+        let testId = card.baseId || card.id;
+        if (testId && testId.includes('_') && !testId.startsWith('token_')) {
+            const master = CARD_MASTER.find(c => c.name === card.name);
+            if (master) testId = master.id;
+        }
+        tokenId = tokenMap[testId] || 'legs';
     }
-    const tokenId = tokenMap[testId] || 'legs';
     const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
 
     // skills配列・skillプロパティの両方に対応したスキル値の取得

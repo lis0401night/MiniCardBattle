@@ -70,7 +70,7 @@ export function initEventDragonHighMode(charId) {
         hp: 40,
         name: '熱砂の客人 イグニス',
         leaderSkill: {
-            name: '龍神演義',
+            name: '焦熱のプレリュード',
             desc: '(SP:4) 場のすべてのカードに2ダメージ、自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
             cost: 4,
             action: 'dragon_high_ritual'
