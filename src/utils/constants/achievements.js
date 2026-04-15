@@ -245,6 +245,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'android_high',
         reward: { type: 'playmat', value: 'pm_android_high', name: 'フルアーマーアイギス' }
     },
+    {
+        id: 'event_dragon_high_clear_skin',
+        title: '砂漠の宴の覇者',
+        description: '高難易度イベントでイグニスを倒す',
+        type: 'event_clear',
+        targetValue: 'dragon_high',
+        reward: { type: 'skin', value: 'dragon_high', name: '熱砂の客人イグニス' }
+    },
+    {
+        id: 'event_dragon_high_clear_pm',
+        title: '熱砂の闘技場',
+        description: '高難易度イベントでイグニスを倒す',
+        type: 'event_clear',
+        targetValue: 'dragon_high',
+        reward: { type: 'playmat', value: 'pm_dragon_high', name: '熱砂の客人' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',
