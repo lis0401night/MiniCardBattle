@@ -934,14 +934,19 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         if (tokenLanes && tokenLanes.length > 0) {
             targetLane = tokenLanes[0];
         } else {
-            const occupiedLanes = [0, 1, 2].filter(i => eBoard[i] !== null && !hasSkill(eBoard[i], 'immune'));
-            if (occupiedLanes.length > 0) targetLane = occupiedLanes[0];
+            let maxP = -1;
+            for (let i = 0; i < 3; i++) {
+                if (eBoard[i] && eBoard[i].currentPower > maxP) {
+                    maxP = eBoard[i].currentPower;
+                    targetLane = i;
+                }
+            }
         }
 
         if (targetLane !== -1 && eBoard[targetLane] !== null) {
             if (!hasSkill(eBoard[targetLane], 'immune')) {
-                events.push({ type: 'destroy_cards', targets: [{ side: oppOwner, lane: targetLane, card: eBoard[targetLane] }] });
-                eBoard[targetLane] = null;
+                eBoard[targetLane].currentPower = 0;
+                events.push({ type: 'deadly', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
             } else {
                 events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
             }
@@ -1069,27 +1074,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
         events.push({ type: 'damage_player', side: oppOwner, amount: d, source: 'dark_ritual' });
         events.push({ type: 'heal_player', side: owner, amount: d, source: 'dark_ritual' });
-    } else if (action === 'targeted_destruction') {
-        events.push({ type: 'leader_skill', skill: action, side: owner });
-        let targetLane = (tokenLanes && tokenLanes.length > 0) ? tokenLanes[0] : -1;
-        // フォールバック（未指定の場合）
-        if (targetLane === -1) {
-            let maxP = -1;
-            for (let i = 0; i < 3; i++) {
-                if (eBoard[i] && eBoard[i].currentPower > maxP) {
-                    maxP = eBoard[i].currentPower;
-                    targetLane = i;
-                }
-            }
-        }
-        if (targetLane !== -1 && eBoard[targetLane]) {
-            if (!hasSkill(eBoard[targetLane], 'immune')) {
-                eBoard[targetLane].currentPower = 0;
-                events.push({ type: 'deadly', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
-            } else {
-                events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
-            }
-        }
+
     } else if (action === 'time_stop') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         state.extraTurnCount = (state.extraTurnCount || 0) + 2;

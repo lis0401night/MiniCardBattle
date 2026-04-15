@@ -106,6 +106,10 @@ export async function playEvents(events) {
 
                 const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
                 if (cEl) {
+                    cEl.classList.remove('anim-shake');
+                    void cEl.offsetWidth;
+                    cEl.classList.add('anim-shake');
+
                     createDamagePopup(cEl, '破壊', '#991b1b');
                 }
                 updateCardPowerOnly(ev.lane, sidePrefix);
