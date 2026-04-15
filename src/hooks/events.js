@@ -13,9 +13,9 @@ import { performFadeTransition } from './uiMainCore.js';
 
 export function initEventAndroidHighMode(charId) {
     GameState.playerConfig = { ...CHARACTERS[charId] };
-    GameState.enemyConfig = { 
-        ...CHARACTERS['android'], 
-        hp: 40, 
+    GameState.enemyConfig = {
+        ...CHARACTERS['android'],
+        hp: 40,
         name: 'フルアーマー アイギス',
         leaderSkill: {
             name: '一斉射撃',
@@ -39,7 +39,7 @@ export function initEventAndroidHighMode(charId) {
     }
 
     GameState.appState = 'story_intro';
-    
+
     const introDialogues = EVENT_DIALOGUES.event_android_high[charId] || [];
     if (introDialogues.length >= 2) {
         GameState.dialogueQueue = [
@@ -227,7 +227,7 @@ export function setupEventSatanConfrontation() {
 
 export function setupEventAndroidHighConfrontation() {
     GameState.appState = 'pre_dialogue';
-    
+
     let confrontationLines = [];
     const charId = GameState.playerConfig.id;
     const introDialogues = EVENT_DIALOGUES.event_android_high[charId] || [];
@@ -238,11 +238,11 @@ export function setupEventAndroidHighConfrontation() {
     }
 
     confrontationLines.push({ speaker: 'enemy', text: "フルアーマーユニット、出力安定。テスト対象、確認。……手加減は不要です。いつでもどうぞ。" });
-    
+
     // プレイヤーの決意（あれば設定、なければ固定テキスト）
-    confrontationLines.push({ 
-        speaker: 'player', 
-        text: GameState.playerConfig.preBattleLine || "行くよ、アイギス！" 
+    confrontationLines.push({
+        speaker: 'player',
+        text: GameState.playerConfig.preBattleLine || "行くよ、アイギス！"
     });
 
     GameState.dialogueQueue = confrontationLines;
@@ -284,7 +284,7 @@ export function setupEventDragonHighConfrontation() {
         // 通常：退屈したイグニスが戦いを申し込む
         confrontationLines.push({
             speaker: 'enemy',
-            text: 'はぁ……退屈。踊りも料理も、全っ然楽しくないんだから。ねぇ、ちょうど良かった。あなた、私と戦ってくれない？ 久々に身体を動かしたくって。'
+            text: 'はぁ……退屈。踊りも料理も、全っ然楽しくないんだから。ねぇ、ちょうど良かった。私と戦いなさい！'
         });
         confrontationLines.push({
             speaker: 'player',
@@ -315,7 +315,7 @@ export async function loadPlayerDeck(uuid) {
                 };
                 // ENEMY_DECKSに一時的に登録
                 ENEMY_DECKS['player_defense'] = data.deck;
-                
+
                 if (script.parentNode) script.parentNode.removeChild(script);
                 resolve(enemyDeckData);
             } else {
