@@ -84,6 +84,12 @@ export function updateCardDetail(c) {
             }
         });
 
+        // descが配列（union等のリッチテキスト形式）の場合、各要素のvalueを連結してプレーンテキスト化する
+        const resolveDesc = (raw) => {
+            if (Array.isArray(raw)) return raw.map(seg => seg.value || '').join('');
+            return raw || '';
+        };
+
         const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
         html = '<div class="card-detail-content">';
         if (grouped.length > 0) {
@@ -94,7 +100,7 @@ export function updateCardDetail(c) {
                     const skillName = isBind ? '拘束' : s.name;
                     const val = isBind ? '' : (sk.value ?? '');
                     // 合体(union)など、第2引数にスキルオブジェクト自体（targetId/summonId等）を必要とするdescに対応
-                    const skillEffect = typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc;
+                    const skillEffect = resolveDesc(typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc);
                     const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
                     
                     if (sk.id === 'choice' && (Array.isArray(c.choices) || Array.isArray(c.choices2))) {
@@ -105,7 +111,7 @@ export function updateCardDetail(c) {
                                 const cs = SKILLS[cho.id];
                                 if (cs) {
                                     const cVal = (cho.value === null || cho.value === undefined) ? '' : cho.value;
-                                    const cDesc = typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc;
+                                    const cDesc = resolveDesc(typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc);
                                     subDetailsHtml += `
                                         <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
                                             <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${cs.icon} ${cs.name}${cVal}</div>

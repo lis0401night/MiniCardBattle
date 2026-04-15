@@ -79,6 +79,18 @@ export function processDestructionTriggers(state, events) {
 
         if (destroyedThisLoop.length > 0) {
             events.push({ type: 'destroy_cards', targets: destroyedThisLoop });
+
+            // 報復（retaliate）スキル: 味方カードが破壊された時、同陣営の生存カードのパワーを上昇させる
+            destroyedThisLoop.forEach(({ side }) => {
+                const alliedBoard = side === 'blue' ? state.playerBoard : state.enemyBoard;
+                alliedBoard.forEach((allyCard, j) => {
+                    if (allyCard && hasSkill(allyCard, 'retaliate')) {
+                        const buffVal = getSkillValue(allyCard, 'retaliate') || 2;
+                        allyCard.currentPower += buffVal;
+                        events.push({ type: 'power_change', side, lane: j, amount: buffVal, source: 'retaliate' });
+                    }
+                });
+            });
         }
         tokensToSummonThisLoop.forEach(t => {
             const tgtBoard = t.side === 'blue' ? state.playerBoard : state.enemyBoard;
