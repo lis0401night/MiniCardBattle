@@ -8,5 +8,6 @@ export default [
     'egg', 'egg', 'egg',
     'dragon', 'dragon', 'dragon', 'dragon',
     'phoenix', 'phoenix',
-    'berserker', 'berserker', 'berserker', 'berserker',
+    'berserker', 'berserker',
+    'dragonewt', 'dragonewt'
 ];

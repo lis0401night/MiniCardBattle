@@ -41,10 +41,11 @@ export function initEventAndroidHighMode(charId) {
     GameState.appState = 'story_intro';
 
     const introDialogues = EVENT_DIALOGUES.event_android_high[charId] || [];
-    if (introDialogues.length >= 2) {
+    if (introDialogues.length >= 3) {
         GameState.dialogueQueue = [
             introDialogues[0],
-            introDialogues[1]
+            introDialogues[1],
+            introDialogues[2]
         ];
     } else {
         GameState.dialogueQueue = [
@@ -93,10 +94,10 @@ export function initEventDragonHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    // イベント導入ダイアログ（キャラ別・1〜2行目）
+    // イベント導入ダイアログ（キャラ別・1〜3行目）
     const introDialogues = EVENT_DIALOGUES.event_dragon_high[charId] || [];
-    if (introDialogues.length >= 2) {
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1]];
+    if (introDialogues.length >= 3) {
+        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
     } else {
         GameState.dialogueQueue = [
             { speaker: 'narrator', text: '砂漠の都市国家から招待状が届いた。豪奢な宴の片隅で、退屈そうにしている竜姫の姿があった。' },
@@ -121,9 +122,9 @@ export function initEventSatanMode(charId) {
 
     // フェーズ1: 噂と道中 (ナレーターとプレイヤーの独白)
     const introDialogues = EVENT_DIALOGUES.event_satan[charId] || [];
-    if (introDialogues.length >= 2) {
-        // 最初の2行（噂と反応）を導入に使用
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1]];
+    if (introDialogues.length >= 3) {
+        // 最初の3行を導入に使用
+        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
     } else {
         GameState.dialogueQueue = [
             { speaker: 'narrator', text: "一度倒したはずの魔王サタンが復活したという噂。不吉な予感と共に、再び魔界の最深部へ足を踏み入れる。" },
@@ -155,9 +156,9 @@ export function handleEventProgression() {
             let confrontationLines = [];
             const charId = GameState.playerConfig.id;
             const introDialogues = EVENT_DIALOGUES.event_satan[charId] || [];
-            if (introDialogues.length >= 3) {
-                // 3行目（到着の描写）
-                confrontationLines.push(introDialogues[2]);
+            if (introDialogues.length >= 4) {
+                // 4行目（到着の描写）
+                confrontationLines.push(introDialogues[3]);
             }
 
             // サタンの共通台詞
@@ -204,9 +205,9 @@ export function setupEventSatanConfrontation() {
     let confrontationLines = [];
     const charId = GameState.playerConfig.id;
     const introDialogues = EVENT_DIALOGUES.event_satan[charId] || [];
-    if (introDialogues.length >= 3) {
-        // 3行目（到着の描写）
-        confrontationLines.push(introDialogues[2]);
+    if (introDialogues.length >= 4) {
+        // 4行目（到着の描写）
+        confrontationLines.push(introDialogues[3]);
     }
 
     // サタンの共通台詞
@@ -231,8 +232,8 @@ export function setupEventAndroidHighConfrontation() {
     let confrontationLines = [];
     const charId = GameState.playerConfig.id;
     const introDialogues = EVENT_DIALOGUES.event_android_high[charId] || [];
-    if (introDialogues.length >= 3) {
-        confrontationLines.push(introDialogues[2]);
+    if (introDialogues.length >= 4) {
+        confrontationLines.push(introDialogues[3]);
     } else {
         confrontationLines.push({ speaker: 'narrator', text: "広大な演習場。アイギスは新装備「フルアーマーユニット」を纏い、静かにこちらを見つめている。" });
     }
@@ -259,9 +260,9 @@ export function setupEventDragonHighConfrontation() {
     const charId = GameState.playerConfig.id;
     const introDialogues = EVENT_DIALOGUES.event_dragon_high[charId] || [];
 
-    // 3行目（宴の場面描写）をフォールバック付きで設定
-    if (introDialogues.length >= 3) {
-        confrontationLines.push(introDialogues[2]);
+    // 4行目（宴の場面描写）をフォールバック付きで設定
+    if (introDialogues.length >= 4) {
+        confrontationLines.push(introDialogues[3]);
     } else {
         confrontationLines.push({
             speaker: 'narrator',

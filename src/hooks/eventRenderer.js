@@ -375,8 +375,7 @@ export async function playEvents(events) {
                 // フェーズ1: 一斉にアニメーションと音を再生
                 for (const target of ev.targets) {
                     const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
-                    const board = target.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                    const deadCard = board[target.lane];
+                    const deadCard = target.card; // engine.jsによって既にboardから消えnullになっているため、event内のキャッシュを使う
 
                     if (deadCard) {
                         const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
@@ -405,9 +404,10 @@ export async function playEvents(events) {
                 for (const target of ev.targets) {
                     const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
                     const board = target.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                    const deadCard = board[target.lane];
+                    const deadCard = target.card;
 
                     if (deadCard) {
+                        board[target.lane] = null; // 安全のため再度null化
                         if (deadCard.equippedCards && deadCard.equippedCards.length > 0) {
                             for (const eqCard of deadCard.equippedCards) {
                                 let restoredEq;
