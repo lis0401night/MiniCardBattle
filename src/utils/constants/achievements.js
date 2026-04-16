@@ -261,6 +261,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'dragon_high',
         reward: { type: 'playmat', value: 'pm_dragon_high', name: '熱砂の客人' }
     },
+    {
+        id: 'event_knight_high_clear_skin',
+        title: '闇堕ちの聖騎士',
+        description: '高難易度イベントでセレスティアを倒す',
+        type: 'event_clear',
+        targetValue: 'knight_high',
+        reward: { type: 'skin', value: 'knight_high', name: '暗黒騎士セレスティア' }
+    },
+    {
+        id: 'event_knight_high_clear_pm',
+        title: '暗黒騎士 セレスティア',
+        description: '高難易度イベントでセレスティアを倒す',
+        type: 'event_clear',
+        targetValue: 'knight_high',
+        reward: { type: 'playmat', value: 'pm_knight_high', name: '暗黒騎士 セレスティア' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',

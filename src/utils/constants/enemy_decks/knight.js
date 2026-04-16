@@ -12,7 +12,7 @@ export default {
         'admiral', 'admiral',
         'assassin', 'assassin',
         'lion', 'lion',
-        'darkpaladin', 'darkpaladin',
+        'crusher', 'crusher',
         'commander', 'commander',
         'hero', 'hero',
         'mercenary', 'mercenary', 'mercenary', 'mercenary',

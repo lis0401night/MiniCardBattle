@@ -7,7 +7,7 @@ import { STAGES } from '../utils/constants/stages.js';
 import { getDialogue, playSound, stopAllBGM, sleep, isTransitioning, switchScreen, getCardImgUrl, getOrCreateUUID, renderSkillTag } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { startBattleFlow, createNewDeck, loadDeck, renderDeckEdit } from './deck.js';
-import { initEventSatanMode, initEventAndroidHighMode, initEventDragonHighMode, loadPlayerDeck } from './events.js';
+import { initEventSatanMode, initEventAndroidHighMode, initEventDragonHighMode, initEventKnightHighMode, loadPlayerDeck } from './events.js';
 import { GameState } from './gameState.js';
 import { initStoryMode, clearStoryProgress, resumeStoryProgress } from './story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
@@ -224,7 +224,7 @@ export function goBackFromSelect() {
         switchScreen('screen-defense-menu');
     } else if (GameState.gameMode === 'defense_attack') {
         switchScreen('screen-defense-battle-list');
-    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high') {
+    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high') {
         switchScreen('screen-high-difficulty');
     } else if (GameState.appState === 'create_deck_select_char') {
         if (typeof window.loadDeck === 'function') window.loadDeck();
@@ -318,7 +318,7 @@ export function goBackFromDeckEdit(isCancel = false) {
         // 難易度選択に戻る
         GameState.appState = 'select_difficulty';
         switchScreen('screen-difficulty');
-    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high') {
+    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high') {
         // 高難易度画面に戻る
         switchScreen('screen-high-difficulty');
     } else if (GameState.gameMode === 'battle_dungeon') {
@@ -483,6 +483,11 @@ export function handleAndroidHighBattle() {
 export function handleDragonHighBattle() {
     playSound(SOUNDS.seClick);
     startGameMode('event_dragon_high');
+}
+
+export function handleKnightHighBattle() {
+    playSound(SOUNDS.seClick);
+    startGameMode('event_knight_high');
 }
 
 export async function showDefenseMenu() {
@@ -682,6 +687,8 @@ export function confirmCharSelect() {
             initEventAndroidHighMode(GameState.pendingCharId);
         } else if (GameState.gameMode === 'event_dragon_high') {
             initEventDragonHighMode(GameState.pendingCharId);
+        } else if (GameState.gameMode === 'event_knight_high') {
+            initEventKnightHighMode(GameState.pendingCharId);
         } else if (GameState.gameMode === 'free_deck_edit') {
             // マイデッキ編集時はそのままデッキ編成画面へ移行
             switchScreen('screen-deck-edit');
@@ -810,8 +817,8 @@ export function confirmStageSelect(stageId) {
             GameState.battleCount = 1;
             GameState.appState = 'pre_dialogue';
             GameState.dialogueQueue = [
-                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro') || "・・・・" },
-                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro') || "・・・・" }
+                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro', 'enemy') || "・・・・" },
+                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro', 'player') || "・・・・" }
             ];
             setupDialogueScreen();
         });

@@ -109,16 +109,19 @@ export const SKILLS = {
                 { type: 'text', value: 'になる。' }
             ];
         }
-    }
+    },
+    crush: { name: '粉砕', icon: '🔨', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択する。対象が「防御」を持つカードならそのカードを破壊する。` },
+    substitute: { name: '身替', icon: '🎭', desc: (val) => '隣のレーンの味方に戦闘で受けるダメージを肩代わりさせる。' },
+    adversity: { name: '逆境', icon: '🥀', desc: (val) => `召喚時、相手の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` }
 };
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
     'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
-    'apex', 'retaliate'
+    'apex', 'retaliate', 'substitute'
 ];

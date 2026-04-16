@@ -289,13 +289,13 @@ export function initBattleState() {
 
         // BGMの再生
         let bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high') {
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high') {
             bgmKey = 'bgmStageHighDifficulty';
         }
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high') GameState.aiLevel = 3; // 念のため再セット
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high') GameState.aiLevel = 3; // 念のため再セット
 
         if (GameState.gameMode === 'battle_dungeon') {
             // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
@@ -420,18 +420,18 @@ export function triggerFinishVisuals() {
 
 export function showSpeechBubble(target) {
     const config = target === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
-    let phrases = config.dialogue.damage;
+    let msg = getDialogue(config, null, 'damage', target === 'blue' ? 'player' : 'enemy');
 
     // シャドウ（ドッペルゲンガー）は無言
     if (target === 'red' && GameState.enemyConfig.isShadow) {
-        phrases = ['・・・・'];
+        msg = '・・・・';
     }
 
     const bubble = document.getElementById(target === 'blue' ? 'player-speech' : 'enemy-speech');
     const iconEl = document.getElementById(target === 'blue' ? 'player-icon' : 'enemy-icon');
 
     if (bubble) {
-        bubble.innerText = phrases[Math.floor(getSeededRandom() * phrases.length)];
+        bubble.innerText = msg;
         bubble.classList.add('active');
 
         // アイコンをダメージ画像に変更
@@ -2026,13 +2026,13 @@ export function endBattle() {
         // 勝敗に応じたダイアログのセット (全モード共通)
         if (GameState.lastBattleResult === 'win') {
             GameState.dialogueQueue = [
-                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose') },
-                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win') }
+                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose', 'enemy') },
+                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win', 'player') }
             ];
         } else {
             GameState.dialogueQueue = [
-                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose') },
-                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win') }
+                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose', 'player') },
+                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win', 'enemy') }
             ];
         }
 
@@ -2142,12 +2142,16 @@ export function endBattle() {
             if (GameState.gameMode === 'event_dragon_high' && typeof incrementStat === 'function') {
                 incrementStat('eventClear', 'dragon_high');
             }
+            if (GameState.gameMode === 'event_knight_high' && typeof incrementStat === 'function') {
+                incrementStat('eventClear', 'knight_high');
+            }
 
             // --- カードドロップ抽選・表示処理 ---
             let recipeId = GameState.enemyConfig.id;
             if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
             if (GameState.gameMode === 'event_android_high' && recipeId === 'android') recipeId = 'android_high';
             if (GameState.gameMode === 'event_dragon_high' && recipeId === 'dragon') recipeId = 'dragon_high';
+            if (GameState.gameMode === 'event_knight_high' && recipeId === 'knight') recipeId = 'knight_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
 

@@ -158,6 +158,14 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 events.push({ type: 'power_change', side: owner, lane: l, amount: hVal, source: 'hero' });
             }
             break;
+        case 'adversity':
+            const opOcc = eB.filter(x => x !== null).length;
+            const advVal = opOcc * (val || 1);
+            if (advVal !== 0) {
+                c.currentPower += advVal;
+                events.push({ type: 'power_change', side: owner, lane: l, amount: advVal, source: 'adversity' });
+            }
+            break;
         case 'lone_wolf':
             const empty = b.filter(x => x === null).length;
             const wVal = empty * (val || 3);
@@ -308,6 +316,21 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 } else {
                     events.push({ type: 'immune_block', side: oppOwner, lane: maxL, source: 'snipe' });
                 }
+            }
+            break;
+        case 'crush':
+            const crCount = val || 1;
+            const crushTargetsEngine = [];
+            for (let j = 0; j < 3; j++) {
+                if (eB[j] && (hasSkill(eB[j], 'defender') || eB[j].stunTurns > 0)) {
+                    crushTargetsEngine.push({ lane: j, targetCard: eB[j] });
+                }
+            }
+            for (let i = 0; i < Math.min(crCount, crushTargetsEngine.length); i++) {
+                const tr = crushTargetsEngine[i];
+                tr.targetCard.currentPower = 0;
+                events.push({ type: 'destroy_card', side: oppOwner, lane: tr.lane, source: 'crush' });
+                eB[tr.lane] = null;
             }
             break;
         case 'dispel':
@@ -928,6 +951,80 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
         }
 
+    } else if (action === 'evil_march') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        
+        // 1. 騎士(P:2)を最大2体「配置」
+        let summonCount = 0;
+        const availableLanes = [];
+        const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+        for (let i = 0; i < 3; i++) {
+            if (!sealedLanes || sealedLanes[i] === 0) {
+                availableLanes.push(i);
+            }
+        }
+        
+        // 指定レーンがあれば優先し、なければ空いている且つ封印されていないレーンへ
+        let targetLanes = [];
+        if (tokenLanes && tokenLanes.length > 0) {
+            targetLanes = tokenLanes.slice(0, 2);
+        } else {
+            const emptyValidLanes = availableLanes.filter(i => board[i] === null);
+            targetLanes = emptyValidLanes.slice(0, 2);
+            // Capped at 2. If 0 or 1 empty, it just returns that amount.
+            // If less than 2 empty lanes, we don't force overwrite for '配置' unless requested, but here we place directly.
+        }
+
+        const tM = CARD_MASTER.find(m => m.id === 'token_knight') || { name: '騎士', power: 2 };
+        const spawnedTokens = [];
+        
+        for (let idx = 0; idx < targetLanes.length; idx++) {
+            const lane = targetLanes[idx];
+            const newToken = {
+                id: `tk_km_${Math.floor(getSeededRandom() * 1000000000)}_${idx}`,
+                uid: `${owner}_tk_km_${Math.floor(getSeededRandom() * 1000000000)}_${idx}`, // for resolution logic
+                owner,
+                baseId: 'token_knight',
+                name: tM.name,
+                isToken: true,
+                rarity: tM.rarity || 1,
+                power: 2,
+                basePower: 2,
+                currentPower: 2,
+                skills: [{ id: 'deadly' }, { id: 'defender' }]
+            };
+            
+            if (board[lane] !== null) {
+                events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: lane, card: board[lane] }] });
+                board[lane] = null;
+            }
+            board[lane] = newToken;
+            spawnedTokens.push({ lane, token: newToken });
+            summonCount++;
+        }
+
+        // 2. 自分の場のすべてのカードのパワーを+2する
+        for (let i = 0; i < 3; i++) {
+            if (board[i] !== null) {
+                // パワーアップ
+                board[i].power += 2;
+                board[i].currentPower += 2;
+                board[i].basePower += 2;
+            }
+        }
+
+        // バフが適用された状態のスナップショットで summon_token イベントを発行する
+        spawnedTokens.forEach(st => {
+            events.push({ type: 'summon_token', side: owner, lane: st.lane, card: JSON.parse(JSON.stringify(st.token)), source: 'evil_march' });
+        });
+
+        // 既存のカード含め、表示更新用のイベントを発行
+        for (let i = 0; i < 3; i++) {
+            if (board[i] !== null) {
+                events.push({ type: 'buff', side: owner, lane: i, amount: 2, source: 'evil_march' });
+            }
+        }
+
     } else if (action === 'targeted_destruction') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         let targetLane = -1;
@@ -1121,12 +1218,25 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
         let dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
         if (dg !== null) dLane = dg;
+
+        // 身替の対応: ダメージを受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
+        if (hasSkill(defBoard[dLane], 'substitute')) {
+            const checkSubstituteTarget = (c) => c && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
+            let sub = (dLane === 1) ? (checkSubstituteTarget(defBoard[0]) ? 0 : (checkSubstituteTarget(defBoard[2]) ? 2 : null)) : (dLane === 0 ? (checkSubstituteTarget(defBoard[1]) ? 1 : null) : (checkSubstituteTarget(defBoard[1]) ? 1 : null));
+            if (sub !== null) dLane = sub;
+        }
     }
 
     let aLane = l;
     if (atkBoard[l]) {
         let ag = (l === 1) ? (hasSkill(atkBoard[0], 'guardian') ? 0 : (hasSkill(atkBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(atkBoard[1], 'guardian') ? 1 : null) : (hasSkill(atkBoard[1], 'guardian') ? 1 : null));
         if (ag !== null) aLane = ag;
+
+        // 身替の対応: 反撃を受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
+        if (hasSkill(atkBoard[aLane], 'substitute')) {
+            let sub = (aLane === 1) ? (atkBoard[0] ? 0 : (atkBoard[2] ? 2 : null)) : (aLane === 0 ? (atkBoard[1] ? 1 : null) : (atkBoard[1] ? 1 : null));
+            if (sub !== null) aLane = sub;
+        }
     }
 
     let dC = defBoard[dLane];

@@ -64,9 +64,16 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
         if (useSkill) {
             const action = skill.action;
-            if (action === 'holy_march') {
-                const emptyLanes = [0, 1, 2].filter(l => myBoard[l] === null && mySealedLanes[l] === 0);
-                tokenLanePatterns = getCombinations(emptyLanes, Math.min(emptyLanes.length, 2));
+            if (action === 'holy_march' || action === 'evil_march') {
+                // 上書きも考慮するため全空きレーン＋自陣レーンをシミュレーション対象とする
+                const availableLanes = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
+                let combs = [];
+                for (let l of availableLanes) combs.push([l]);
+                if (availableLanes.length >= 2) {
+                    let pairs = getCombinations(availableLanes, 2);
+                    for (let p of pairs) combs.push(p);
+                }
+                tokenLanePatterns = combs.length > 0 ? combs : [null];
             } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dragon_high_ritual' || action === 'devilhunter_resurrect' || action === 'dungeon_summon_leader') {
                 // 上書きも考慮するため全レーンをシミュレーション対象とする
                 tokenLanePatterns = [[0], [1], [2]].filter(pattern => mySealedLanes[pattern[0]] === 0);

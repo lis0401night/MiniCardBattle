@@ -20,9 +20,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -466,6 +466,59 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
                 if (tgtEl) tgtEl.classList.remove('anim-shake');
             }
+        }
+    } else if (skillId === 'crush') {
+        const tgtSide = o === 'blue' ? 'red' : 'blue';
+        const eB = tgtSide === 'red' ? GameState.enemyBoard : GameState.playerBoard;
+        const eD = tgtSide === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
+        const tCount = skillValue || 1;
+
+        let tLanes = await waitPlayerEnemyLaneSelection(tCount, o, true, `相手のカードを${tCount}枚選んでください`);
+        if (tLanes && tLanes.length > 0) {
+            for (let targetLane of tLanes) {
+                const targetCard = eB[targetLane];
+                if (!targetCard) continue;
+
+                // 防御を持っているかチェック
+                const hasDefender = hasSkill(targetCard, 'defender') || targetCard.stunTurns > 0;
+                const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                
+                if (hasDefender) {
+                    if (tgtEl) {
+                        tgtEl.classList.add('anim-shake');
+                        createDamagePopup(tgtEl, '破壊', '#ef4444');
+                    }
+                    if (!(await discardCard(tgtSide, targetCard, targetLane, true))) eB[targetLane] = null;
+                } else {
+                    if (tgtEl) {
+                        createDamagePopup(tgtEl, 'NO TARGET', '#94a3b8');
+                    }
+                }
+            }
+            renderBoard();
+        }
+        await sleep(500);
+        if (tLanes && tLanes.length > 0) {
+            for (let targetLane of tLanes) {
+                const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
+                if (tgtEl) tgtEl.classList.remove('anim-shake');
+            }
+        }
+    } else if (skillId === 'adversity') {
+        const opB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+        const occ = opB.filter(x => x !== null).length;
+        const advVal = occ * (skillValue || 1);
+        if (advVal !== 0) {
+            c.power = (c.power || 0) + advVal;
+            c.basePower = (c.basePower || 0) + advVal;
+            c.currentPower = (c.currentPower || 0) + advVal;
+            if (cEl) {
+                createDamagePopup(cEl, `+${advVal}`, '#10b981');
+                if (window.updateCardVisualsReact) window.updateCardVisualsReact(l, o);
+                else if (window.updateBattleUIHook) window.updateBattleUIHook();
+            }
+            renderBoard();
+            await sleep(400);
         }
     } else if (skillId === 'bind') {
         playSound(SOUNDS.seSkillBind); createDamagePopup(cEl, '拘束', '#facc15');

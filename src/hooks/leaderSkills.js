@@ -1,7 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills, getDialogue } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
@@ -63,9 +63,12 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
         window.showCutinReact(config, isBlue);
         const bId = owner === 'blue' ? 'player-speech' : 'enemy-speech';
         const b = document.getElementById(bId);
-        if (b && config.dialogue.skill) {
-            b.innerText = config.dialogue.skill;
-            b.classList.add('active');
+        if (b) {
+            const skillMsg = getDialogue(config, null, 'skill', owner === 'blue' ? 'player' : 'enemy');
+            if (skillMsg && skillMsg !== '...') {
+                b.innerText = skillMsg;
+                b.classList.add('active');
+            }
         }
         await sleep(2500);
         if (b) b.classList.remove('active');
@@ -105,9 +108,12 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
 
     const bId = owner === 'blue' ? 'player-speech' : 'enemy-speech';
     const b = document.getElementById(bId);
-    if (b && config.dialogue.skill) {
-        b.innerText = config.dialogue.skill;
-        b.classList.add('active');
+    if (b) {
+        const skillMsg = getDialogue(config, null, 'skill', owner === 'blue' ? 'player' : 'enemy');
+        if (skillMsg && skillMsg !== '...') {
+            b.innerText = skillMsg;
+            b.classList.add('active');
+        }
     }
 
     await sleep(2500);
@@ -183,7 +189,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             if (selectedLanes.length === 0) return;
             tokenLanes = selectedLanes;
         }
-    } else if (action === 'holy_march') {
+    } else if (action === 'holy_march' || action === 'evil_march') {
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes, false);
         tokenLanes = selectedLanes;

@@ -110,6 +110,54 @@ export function initEventDragonHighMode(charId) {
     });
 }
 
+/**
+ * 高難易度イベント：暗黒騎士 セレスティア の初期化
+ */
+export function initEventKnightHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['knight'],
+        hp: 40,
+        name: '暗黒騎士 セレスティア',
+        leaderSkill: {
+            name: '暗黒の軍勢',
+            desc: '(SP:4) 自分のレーンに「騎士(P:2/必殺/守護)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。',
+            cost: 4,
+            action: 'evil_march'
+        }
+    };
+    GameState.gameMode = 'event_knight_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'knight'; // 騎士の領域固定
+
+    // セレスティアに「暗黒騎士 セレスティア」スキンを適用
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['knight'] = 'knight_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'knight_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'knight_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'knight_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const introDialogues = EVENT_DIALOGUES.event_knight_high[charId] || [];
+    if (introDialogues.length >= 3) {
+        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
+    } else {
+        GameState.dialogueQueue = [
+            { speaker: 'narrator', text: '「死の谷」の調査に向かったセレスティアが消息を絶った。' },
+            { speaker: 'player', text: 'まさか彼女があの禍々しい気配の中心だというのか？' }
+        ];
+    }
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
 export function initEventSatanMode(charId) {
     GameState.playerConfig = { ...CHARACTERS[charId] };
     GameState.enemyConfig = { ...CHARACTERS['satan'], hp: 100 };
@@ -128,7 +176,7 @@ export function initEventSatanMode(charId) {
     } else {
         GameState.dialogueQueue = [
             { speaker: 'narrator', text: "一度倒したはずの魔王サタンが復活したという噂。不吉な予感と共に、再び魔界の最深部へ足を踏み入れる。" },
-            { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro') }
+            { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro', 'player') }
         ];
     }
 
@@ -151,6 +199,10 @@ export function handleEventProgression() {
         } else if (GameState.gameMode === 'event_dragon_high') {
             performFadeTransition(() => {
                 setupEventDragonHighConfrontation();
+            });
+        } else if (GameState.gameMode === 'event_knight_high') {
+            performFadeTransition(() => {
+                setupEventKnightHighConfrontation();
             });
         } else {
             let confrontationLines = [];
@@ -290,6 +342,49 @@ export function setupEventDragonHighConfrontation() {
         confrontationLines.push({
             speaker: 'player',
             text: GameState.playerConfig.preBattleLine || 'こちらも暇を持て余していたところだよ。受けて立とう！'
+        });
+    }
+
+    GameState.dialogueQueue = confrontationLines;
+    setupDialogueScreen();
+}
+
+/**
+ * 暗黒騎士セレスティア戦の対峙ダイアログ
+ */
+export function setupEventKnightHighConfrontation() {
+    GameState.appState = 'pre_dialogue';
+
+    let confrontationLines = [];
+    const charId = GameState.playerConfig.id;
+    const introDialogues = EVENT_DIALOGUES.event_knight_high[charId] || [];
+
+    if (introDialogues.length >= 4) {
+        confrontationLines.push(introDialogues[3]);
+    } else {
+        confrontationLines.push({
+            speaker: 'narrator',
+            text: '死の谷の最深層。そこには狂気に堕ち、不吉な魔剣を構えたセレスティアの姿があった。'
+        });
+    }
+
+    if (charId === 'knight') {
+        confrontationLines.push({
+            speaker: 'enemy',
+            text: 'フフ、来たか……光に縛られた哀れな私よ。私のこの力こそが真実、貴様の偽善をここで断ち切ってやろう。'
+        });
+        confrontationLines.push({
+            speaker: 'player',
+            text: '私自身の心の闇……幻影だとしても、この手で完全に浄化してみせる！'
+        });
+    } else {
+        confrontationLines.push({
+            speaker: 'enemy',
+            text: '……邪魔だな。光も、希望も、すべて切り裂く。私に力以外のものは必要ない。'
+        });
+        confrontationLines.push({
+            speaker: 'player',
+            text: GameState.playerConfig.preBattleLine || '目を覚まさせるには、力尽くでも止めるしかないようだね！'
         });
     }
 

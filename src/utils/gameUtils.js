@@ -29,7 +29,7 @@ export const retryPlayBgm = () => {
                 if (currentWebAudioBgmGain) {
                     currentWebAudioBgmGain.gain.value = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
                 }
-            }).catch(() => {});
+            }).catch(() => { });
         } else if (audioCtx.state === 'running') {
             document.removeEventListener('click', retryPlayBgm, true);
             document.removeEventListener('touchstart', retryPlayBgm, true);
@@ -77,15 +77,42 @@ export function createDamagePopup(targetEl, text, color = '#ef4444') {
     setTimeout(() => popup.remove(), 1000);
 }
 
-export function getDialogue(speakerConfig, targetConfig, type) {
+export function getDialogue(speakerConfig, targetConfig, type, forceSide = null) {
+    if (!speakerConfig) return "...";
+
+    // スキンによる台詞のオーバーライドをチェック
+    let skinId = 'default';
+    if (forceSide === 'player' && GameState.playerSkins) {
+        skinId = GameState.playerSkins[speakerConfig.id] || 'default';
+    } else if (forceSide === 'enemy' && GameState.enemySkins) {
+        skinId = GameState.enemySkins[speakerConfig.id] || 'default';
+    } else {
+        // forceSideがない場合は、GameState上のconfigと一致するかで推測する
+        if (GameState.playerConfig && GameState.playerConfig.id === speakerConfig.id) {
+            skinId = (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) || 'default';
+        } else if (GameState.enemyConfig && GameState.enemyConfig.id === speakerConfig.id) {
+            skinId = (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) || 'default';
+        }
+    }
+
+    if (skinId !== 'default' && speakerConfig.skins && speakerConfig.skins[skinId] && speakerConfig.skins[skinId].dialogue) {
+        const sd = speakerConfig.skins[skinId].dialogue[type];
+        if (sd !== undefined) {
+            if (typeof sd === 'string') return sd;
+            if (Array.isArray(sd)) return sd[Math.floor(getSeededRandom() * sd.length)];
+            
+            if (targetConfig && sd[targetConfig.id]) return sd[targetConfig.id];
+            if (sd.default) return sd.default;
+        }
+    }
+
     if (!speakerConfig.dialogue) return "...";
     const dict = speakerConfig.dialogue[type];
-    if (!dict) return "...";
+    if (dict === undefined) return "...";
 
-    // 以前のバージョンなど、辞書ではなく直接文字列が格納されている場合への対応
     if (typeof dict === 'string') return dict;
+    if (Array.isArray(dict)) return dict[Math.floor(getSeededRandom() * dict.length)];
 
-    // 通常のオブジェクト形式
     if (targetConfig && dict[targetConfig.id]) return dict[targetConfig.id];
     return dict.default || "...";
 }
@@ -135,8 +162,8 @@ export async function playSound(audioOrKey) {
     if (audio instanceof Audio) {
         try {
             audio.volume = baseVol;
-        } catch(e) {}
-        
+        } catch (e) { }
+
         try {
             // BGM (ループ音) の処理
             if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
@@ -152,9 +179,9 @@ export async function playSound(audioOrKey) {
                     if (currentBgmAudio) stopSound(currentBgmAudio);
                     currentBgmAudio = audio; // 互換性維持
 
-                    
+
                     if (audioCtx.state === 'suspended') {
-                        audioCtx.resume().catch(()=>{});
+                        audioCtx.resume().catch(() => { });
                         document.addEventListener('click', retryPlayBgm, { capture: true });
                         document.addEventListener('touchstart', retryPlayBgm, { capture: true });
                     }
@@ -180,12 +207,12 @@ export async function playSound(audioOrKey) {
                 } else {
                     // HTML5 Audio Fallback (PC or very legacy)
                     if (audio.readyState > 0) {
-                        try { audio.currentTime = 0; } catch(e) {}
+                        try { audio.currentTime = 0; } catch (e) { }
                     }
                     currentBgmAudio = audio;
                     const p = audio.play();
                     if (p !== undefined) {
-                        p.catch((e) => { 
+                        p.catch((e) => {
                             console.warn("BGM playback blocked, waiting interaction...", e);
                             document.addEventListener('click', retryPlayBgm, { capture: true });
                             document.addEventListener('touchstart', retryPlayBgm, { capture: true });
@@ -200,7 +227,7 @@ export async function playSound(audioOrKey) {
                     if (p !== undefined) p.catch(() => { });
                 } else {
                     const clone = audio.cloneNode();
-                    try { clone.volume = baseVol; } catch(e) {}
+                    try { clone.volume = baseVol; } catch (e) { }
                     const p = clone.play();
                     if (p !== undefined) p.catch(() => { });
                 }
@@ -212,26 +239,26 @@ export async function playSound(audioOrKey) {
 }
 export function startWebAudioBgm(buffer, baseVol) {
     if (currentWebAudioBgmSource) {
-        try { currentWebAudioBgmSource.stop(); } catch(e) {}
+        try { currentWebAudioBgmSource.stop(); } catch (e) { }
         currentWebAudioBgmSource.disconnect();
     }
     if (currentWebAudioBgmGain) {
         currentWebAudioBgmGain.disconnect();
     }
-    
+
     currentWebAudioBgmGain = audioCtx.createGain();
     currentWebAudioBgmGain.gain.value = baseVol;
-    
+
     currentWebAudioBgmSource = audioCtx.createBufferSource();
     currentWebAudioBgmSource.buffer = buffer;
     currentWebAudioBgmSource.loop = true;
-    
+
     currentWebAudioBgmSource.connect(currentWebAudioBgmGain);
     currentWebAudioBgmGain.connect(audioCtx.destination);
-    
+
     try {
         currentWebAudioBgmSource.start(0);
-    } catch(e) {
+    } catch (e) {
         console.warn("WebAudio BGM start failed:", e);
     }
 }
@@ -240,7 +267,7 @@ export function stopSound(audio) {
     if (audio === currentBgmAudio) {
         currentBgmAudio = null;
         if (currentWebAudioBgmSource) {
-            try { currentWebAudioBgmSource.stop(); } catch(e) {}
+            try { currentWebAudioBgmSource.stop(); } catch (e) { }
             currentWebAudioBgmSource.disconnect();
             currentWebAudioBgmSource = null;
         }
@@ -399,7 +426,7 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 }
 
 export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn', 'shogun', 'omyouji'];
-export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'darkpaladin', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna', 'cavalry'];
+export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'crusher', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna', 'cavalry'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {

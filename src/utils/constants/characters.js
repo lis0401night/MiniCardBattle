@@ -33,7 +33,7 @@ export const CHARACTERS = {
             damage: ['シールド損傷！', 'ダメージ軽微。', 'エラー発生！', '出力低下。'],
             skill: 'リミッター解除、対象を殲滅します！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: '全対象の排除を完了しました。マスター、私の性能はいかがでしたか？' },
             { speaker: 'player', text: 'これからも、あなたの剣として、盾として。ずっとおそばにいます。' }
@@ -70,7 +70,7 @@ export const CHARACTERS = {
             damage: ['あだっ！', '熱くないもん！', 'やりやがったわね！', '痛いじゃない！'],
             skill: '私が直接焼き尽くしてあげるわ！！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'ぜーんぶやっつけてやったわ！ 私が一番強いって証明できたわね！' },
             { speaker: 'player', text: 'あんた、マスターにしてはなかなかやるじゃない。これからも背中は任せてあげる！' }
@@ -107,7 +107,7 @@ export const CHARACTERS = {
             damage: ['くっ！', 'まだだ！', '浅い！', 'なんの！'],
             skill: '全軍突撃！ 光よ、我らに勝利の加護を！！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'すべての戦いを終えたか。私の剣も、少しは君の役に立てたかな？' },
             { speaker: 'player', text: '君という名将に出会えたこと、誇りに思う。これからも共に歩ませてくれ！' }
@@ -144,7 +144,7 @@ export const CHARACTERS = {
             damage: ['あぁんっ！', '痛いですわ！', '無礼な！', 'フフフ…'],
             skill: 'フフフ…深淵の力で、すべてを狂わせてあげますわ。'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'あらあら、みーんな狂ってしまいましたわ。貴方のおかげですわね。' },
             { speaker: 'player', text: '私を満たしてくれたご褒美に、貴方だけは最後まで正気を残して差し上げますわ。フフフ……。' }
@@ -181,7 +181,7 @@ export const CHARACTERS = {
             damage: ['っ！', '避けれなかった……', 'まだ、動けるわ。', '矢が……'],
             skill: '貫け、星墜ちの矢！ 私の道を切り拓いて！！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'サタンが消えて……私の記憶の断片が繋がっていく……。' },
             { speaker: 'player', text: '私はかつて、この地を守っていたのね。あなたが導いてくれなければ、私は自分を取り戻せなかった。ありがとう。' }
@@ -218,7 +218,7 @@ export const CHARACTERS = {
             damage: ['汚らわしいわね！', 'この私に……！', 'チッ……！', '不敬よ！'],
             skill: '背徳の悦びを教えてあげるわ……死に絶えなさい！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'ついに、魔王の力はすべて私のものになったわ……。' },
             { speaker: 'player', text: '貴方、最後までよく仕えてくれたわね。私の「一番の下僕」として、これからも側に置かせてあげる。フフ、フフフ……。' }
@@ -255,7 +255,7 @@ export const CHARACTERS = {
             damage: ['ちっ…！', '浅い！', 'ふんっ', 'やるわね'],
             skill: '目覚めなさい……！ 私のために働きな！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'これも仕事の内だけど……いい稼ぎになったわね、雇い主さん。' },
             { speaker: 'player', text: 'さぁ、一旦帰ろうか。次の獲物が見つかるまでね。' }
@@ -325,7 +325,7 @@ export const CHARACTERS = {
             damage: ['痛いですね……。', 'うっ…', '鬱陶しいですね。', '本気で怒りますよ？'],
             skill: 'はあ……。因果を弄るのも疲れるんですよね……。'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: 'やれやれ、これでようやく魔界の調査も終わりですね、先輩。' },
             { speaker: 'player', text: '帰ったら三日は寝ますからね。絶対に起こさないでくださいよ。' }
@@ -395,7 +395,7 @@ export const CHARACTERS = {
             damage: ['くっ！', '甘い！', '霊符が！', 'まだです！'],
             skill: '急急如律令！ 邪なる者よ、その身を縛れ！'
         },
-        
+
         storyEnding: [
             { speaker: 'player', text: '終わりましたね。私が鬼に呑まれる前に……。' },
             { speaker: 'player', text: 'もう少しだけ、隣に居させてください。' }
@@ -415,7 +415,7 @@ export const CHARACTERS = {
             damage: ['ヌゥッ！', '小賢しい！', '効かぬわ！', 'おのれ…！'],
             skill: '絶望を教えてやろう。出でよ、我が化身！！'
         },
-        
+
         storyEnding: []
     },
 };
@@ -474,6 +474,112 @@ CHARACTERS.dragon.skins['dragon_high'] = {
     unlockCondition: '実績達成で入手'
 };
 
+CHARACTERS.knight.skins['knight_high'] = {
+    id: 'knight_high',
+    name: '暗黒騎士 セレスティア',
+    image: 'assets/characters/char_knight_high.png',
+    imageLose: 'assets/characters/char_knight_high_lose.png',
+    icon: 'assets/icons/icon_knight_high.png',
+    iconDamage: 'assets/icons/icon_knight_high_damage.png',
+    unlockCondition: '実績達成で入手'
+};
+
+// スキン専用台詞の定義
+CHARACTERS.android.skins.summer.dialogue = {
+    intro: '水中地形における戦闘行動の最適化を完了しました。水陸両用装備アイギス、迎撃を開始します。',
+    win: '対象の撃沈を確認。水上戦闘モードを終了します。',
+    lose: '装甲防水機能の低下を確認……浸水率、限界値を超えました……。',
+    damage: ['装甲被弾！', '防水システム機能低下！', 'うっ！', '出力低下！'],
+    skill: '水流制御機構解放！全弾発射、目標を完全に制圧します！'
+};
+
+CHARACTERS.android.skins.android_high.dialogue = {
+    intro: 'フルアーマー・アイギス、起動。圧倒的火力にて、対象を完全に殲滅します。',
+    win: '敵対勢力の完全消滅を確認。ミッションコンプリート。',
+    lose: 'メインフレーム損壊……火器管制システム……ダウン……。',
+    damage: ['外部装甲損傷！', 'シールド耐久値低下！', '重兵装が！', '戦闘継続可能！'],
+    skill: '制限解除……全火器リミッター解除！一斉掃射、開始します！'
+};
+
+CHARACTERS.dragon.skins.summer.dialogue = {
+    intro: 'たまには海で遊ぶのも悪くないわね！ さあ、アンタも水鉄砲で黒焦げにしてあげるわ！',
+    win: 'はっはー！ 海水も全部蒸発させてやったわ！',
+    lose: 'あちちっ！ 海水が熱湯になって私の水着が……！',
+    damage: ['熱いわよ！', 'なによ！', '水着が！', 'ぬるいわね！'],
+    skill: '波打つ炎よ！ 海水ごと全部蒸発しなさい！！'
+};
+
+CHARACTERS.dragon.skins.dragon_high.dialogue = {
+    intro: 'アンタもこの退屈な宴の参加者？ それとも……私を楽しませてくれる獲物かしら！',
+    win: 'あははは！ 灰すら残らないくらいの熱気だったわね！',
+    lose: 'げほっ……砂漠の砂が、目に入っただけよ……！',
+    damage: ['退屈しのぎにはなるわ！', 'その程度？', 'やってみなさい！', 'ふんっ！'],
+    skill: 'この退屈砂漠ごと、黒焦げにしてあげるわ！！'
+};
+
+CHARACTERS.knight.skins.summer.dialogue = {
+    intro: '水辺の任務と聞いて動きやすい格好で来たが、これも立派な訓練だ。いざ尋常に勝負！',
+    win: '波の音を聞きながらの勝利も、悪くないものだな！',
+    lose: 'くっ……波うち際の足場の悪さに、足を取られたか……！',
+    damage: ['体勢を整えねば！', '足場が悪い！', 'なんの！', 'まだやれる！'],
+    skill: '輝く太陽の光よ、我が剣となれ！ 砕け散れ！！'
+};
+
+CHARACTERS.knight.skins.knight_high.dialogue = {
+    intro: '光などとうの昔に捨てた……。この魔剣の闇で、全てを黒く塗りつぶしてくれる！',
+    win: '絶望に染まり、消え去るが良い……フフフ……。',
+    lose: 'この私が……己の放つ闇の力に呑まれるというのか……！',
+    damage: ['痛まない……！', '光など……！', 'もっと絶望を！', 'チィッ！'],
+    skill: '魔剣よ、全てを侵食せよ！ 我軍勢となりて我に続け！'
+};
+
+CHARACTERS.cthulhu.skins.summer.dialogue = {
+    intro: 'うふふ 太陽の光もいいけれど、深海の暗闇こそ私のお似合いよ。一緒に深くまで泳がない？',
+    win: '残念。あなたは深海の水圧には耐えられなかったみたいね',
+    lose: 'あら……太陽の光が強すぎて、深海に沈む前に蒸発しちゃいそう……。',
+    damage: ['沈みそう……！', 'いやっ', 'もっと深くまで！', 'ふふふ……'],
+    skill: '海の底から湧き上がる狂気……一緒に溺れましょう？'
+};
+
+CHARACTERS.elf.skins.summer.dialogue = {
+    intro: '水辺は静かでいいわ。私の記憶の欠片も、この波に流されてきたのかしら。',
+    win: '水のせせらぎが、私の心を少しだけ穏やかにしてくれる。',
+    lose: '流される……記憶も、この戦いも……。',
+    damage: ['波紋が……！', '水飛沫が！', 'まだよ！', 'くっ！'],
+    skill: '清らかな水流よ！ 私の前に立ちはだかる全てを打ち抜いて！'
+};
+
+CHARACTERS.cleric.skins.summer.dialogue = {
+    intro: 'あら、こんな南国でも異端者はいるのね。バカンスのついでに、神の裁きを下してあげるわ！',
+    win: '最高のバカンスになったわ！ 異端者の悲鳴というBGM付きでね！ アハハ！',
+    lose: 'せっかくのバカンスが……私の肌が焼けてしまうじゃないの！！',
+    damage: ['日焼けしちゃう！', '水着が汚れるわ！', '神罰よ！', '無礼な！'],
+    skill: '太陽の光よりも眩しい、背徳の裁きを受けなさい！！'
+};
+
+CHARACTERS.devilhunter.skins.summer.dialogue = {
+    intro: '海辺のリゾートでも悪魔は湧くのね。まぁいいわ、バカンス代くらいは稼がせてもらうわよ。',
+    win: '潮風も悪くないわね。さて、報酬でカクテルでも飲もうかしら。',
+    lose: 'あーあ、高かった水着が台無しよ。今日の仕事は大赤字ね。',
+    damage: ['砂が銃に！', '最悪な仕事ね！', '潮風が目に！', '痛いわね！'],
+    skill: '潮騒に紛れて、地獄へ送ってあげるわ！'
+};
+
+CHARACTERS.witch.skins.summer.dialogue = {
+    intro: 'はぁ……暑いのは嫌いだって言ったのに、なんで水着なんて着なきゃいけないんですか。さっさと帰らせてくださいよ。',
+    win: '終わりました？ じゃあ、早くクーラーの効いた部屋に帰らせてください。',
+    lose: '暑いし、疲れたし、もう最悪です。私、帰ります！',
+    damage: ['暑いんですよ！', '汗かいちゃった！', '帰りたい！', 'ムカつきます！'],
+    skill: '太陽の時間を止めてやりたいですね！ ええい、吹き飛んでください！！'
+};
+
+CHARACTERS.oni.skins.summer.dialogue = {
+    intro: '水の気配は、私の中の荒ぶる鬼の血を少しだけ鎮めてくれます。……ですが、手加減はしませんよ！',
+    win: '水鏡に映る私の姿……少しは、人間らしく見えますか？',
+    lose: 'あぁ……冷やされたはずの血が、再び滾り始めて……！',
+    damage: ['波打ち際に！', '水着が！', '血が騒ぐ！', 'まだです！'],
+    skill: '清涼なる水霊よ！ 我が鬼の力を浄化しつつ、敵を討ち払え！'
+};
 /**
  * 指定したキャラクター・スキン・タイプに応じた画像パスを取得する
  * @param {string|Object} charIdOrObj - キャラクターIDまたはキャラクターオブジェクト

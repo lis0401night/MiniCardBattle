@@ -2,7 +2,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation, setupEventDragonHighConfrontation } from './events.js';
+import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation, setupEventDragonHighConfrontation, setupEventKnightHighConfrontation } from './events.js';
 import { GameState } from './gameState.js';
 import { saveStoryProgress } from './story.js';
 import { handleProgressionNextStep } from './progression.js';
@@ -33,14 +33,14 @@ export function startNextBattleSequence() {
         console.log(`Story Mode Battle: ${GameState.battleCount}, GameState.aiLevel set to: ${GameState.aiLevel}`);
     }
     GameState.appState = 'pre_dialogue';
-    let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro');
+    let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro', 'enemy');
     if (GameState.enemyConfig.isShadow) introText = "・・・・";
     GameState.dialogueQueue = [
         { speaker: 'enemy', text: introText },
-        { speaker: 'player', text: GameState.enemyConfig.isShadow ? (GameState.playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro') }
+        { speaker: 'player', text: GameState.enemyConfig.isShadow ? (GameState.playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro', 'player') }
     ];
     if (GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow) {
-        introText = "……よくぞここまで辿り着いたな。" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro');
+        introText = "……よくぞここまで辿り着いたな。" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro', 'enemy');
         GameState.dialogueQueue[0].text = introText;
     }
     setupDialogueScreen();
@@ -193,16 +193,18 @@ export function executeContinue() {
             setupEventAndroidHighConfrontation();
         } else if (GameState.gameMode === 'event_dragon_high') {
             setupEventDragonHighConfrontation();
+        } else if (GameState.gameMode === 'event_knight_high') {
+            setupEventKnightHighConfrontation();
         } else {
             GameState.appState = 'pre_dialogue';
-            let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro');
+            let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro', 'enemy');
             if (GameState.enemyConfig.isShadow) introText = "・・・・";
             GameState.dialogueQueue = [
                 { speaker: 'enemy', text: introText },
-                { speaker: 'player', text: GameState.enemyConfig.isShadow ? (GameState.playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro') }
+                { speaker: 'player', text: GameState.enemyConfig.isShadow ? (GameState.playerConfig.mirrorIntro || "なっ、自分自身だと……！？") : getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro', 'player') }
             ];
             if (GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow) {
-                introText = "……よくぞここまで辿り着いたな。" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro');
+                introText = "……よくぞここまで辿り着いたな。" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro', 'enemy');
                 GameState.dialogueQueue[0].text = introText;
             }
             setupDialogueScreen();

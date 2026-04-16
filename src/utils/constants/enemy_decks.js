@@ -15,6 +15,7 @@ import satan from './enemy_decks/satan.js';
 import satan_high from './enemy_decks/satan_high.js';
 import android_high from './enemy_decks/android_high.js';
 import dragon_high from './enemy_decks/dragon_high.js';
+import knight_high from './enemy_decks/knight_high.js';
 
 export const ENEMY_DECKS = {
     android,
@@ -29,5 +30,6 @@ export const ENEMY_DECKS = {
     satan,
     satan_high,
     android_high,
-    dragon_high
+    dragon_high,
+    knight_high
 };
