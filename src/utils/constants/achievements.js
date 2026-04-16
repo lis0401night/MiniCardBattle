@@ -263,7 +263,7 @@ export const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'event_knight_high_clear_skin',
-        title: '闇堕ちの聖騎士',
+        title: '魔剣の呪い',
         description: '高難易度イベントでセレスティアを倒す',
         type: 'event_clear',
         targetValue: 'knight_high',
@@ -271,7 +271,7 @@ export const ACHIEVEMENT_MASTER = [
     },
     {
         id: 'event_knight_high_clear_pm',
-        title: '暗黒騎士 セレスティア',
+        title: '死の谷',
         description: '高難易度イベントでセレスティアを倒す',
         type: 'event_clear',
         targetValue: 'knight_high',
