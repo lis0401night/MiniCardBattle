@@ -121,18 +121,33 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                     for (let l = 0; l < 3; l++) {
                         if (mySealedLanes[l] > 0) continue;
                         const card = hand[i];
+                        let simulateTokenIsHere = false;
+                        let simulateTokenIsLegendary = false;
+                        if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) {
+                            simulateTokenIsHere = true;
+                            if (skill.action === 'dragon_high_ritual') simulateTokenIsLegendary = true;
+                        }
+                        
+                        const hasCardInSim = myBoard[l] !== null || simulateTokenIsHere;
+                        const hasLegendInSim = (myBoard[l] && hasSkill(myBoard[l], 'legendary')) || simulateTokenIsLegendary;
+
                         if (hasSkill(card, 'legendary') && l !== 1) continue;
-                        if (hasSkill(card, 'takeover') && myBoard[l] === null) continue;
+                        if (hasSkill(card, 'takeover') && !hasCardInSim) continue;
                         if (hasSkill(card, 'challenge') && opBoard[l] === null) continue;
                         // 頂点（apex）: 自分の場の同レーンに伝説カードがいることが必要
-                        if (hasSkill(card, 'apex') && !(myBoard[l] && hasSkill(myBoard[l], 'legendary'))) continue;
+                        if (hasSkill(card, 'apex') && !hasLegendInSim) continue;
                         // 装備カードも空きレーンに召喚可能なので除外しない
 
                         // 1ターン目の制限 (先攻RED)
                         if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && l !== 1) continue;
 
-                        // 「スキル先出し」かつ、その場所にトークンが置かれる場合は上書き不可
-                        if (useSkill && order === 'before' && tokenLanes && tokenLanes.includes(l)) continue;
+                        // 「スキル先出し」かつ、その場所にトークンが置かれる場合は、基本的には上書き不可（無駄な自己破壊を防ぐため）
+                        // ただし、手札から出すカードが生贄(takeover)や頂点(apex)などのコンボ前提の場合は上書きを特別に許可する
+                        if (simulateTokenIsHere) {
+                            if (!hasSkill(card, 'takeover') && !hasSkill(card, 'apex')) {
+                                continue;
+                            }
+                        }
 
                         const isOverwrite = myBoard[l] !== null;
 
