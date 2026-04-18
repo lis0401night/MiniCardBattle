@@ -882,7 +882,7 @@ h2 {
 
 .cutin-text-img {
     position: absolute;
-    font-size: 2.8rem;
+    font-size: min(2.8rem, 8vw);
     font-weight: 900;
     color: #fff;
     text-shadow: 0 0 20px #ef4444, 3px 3px 0 #000;
@@ -893,6 +893,7 @@ h2 {
     transform-origin: right center;
     text-align: right;
     line-height: 1.1;
+    white-space: nowrap;
 }
 
 @keyframes slideIn {
@@ -1107,7 +1108,9 @@ h2 {
     opacity: 0;
     transition: opacity 0.1s, transform 0.1s;
     transform: translateY(10px);
-    white-space: nowrap;
+    white-space: normal;
+    word-break: auto-phrase;
+    max-width: calc(100vw - 130px);
 }
 
 .speech-bubble.active {
