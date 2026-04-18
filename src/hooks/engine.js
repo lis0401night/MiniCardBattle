@@ -8,6 +8,58 @@ import { hasSkill, getSkillValue, unmergeCardSkills } from '../utils/gameUtils.j
  */
 
 /**
+ * 盤面のカードを静かに除外し、必要に応じてリセットして墓地へ送る
+ * （上書き配置などのため、破壊演出の発動や死亡時効果を起こさない）
+ */
+export function quietDiscardFromBoard(state, owner, lane) {
+    const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+    const discardPile = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+    const targetCard = b[lane];
+    
+    if (!targetCard) return;
+
+    // Helper to send a card to grave
+    const sendToGrave = (cardToSend, fallBackOwner) => {
+        if (cardToSend.isToken) return;
+        let restoredCard;
+        const cOwner = cardToSend.owner || fallBackOwner;
+        const cDiscardPile = cOwner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+        const masterData = CARD_MASTER.find(m => m.id === (cardToSend.baseId || cardToSend.id));
+        if (masterData) {
+            restoredCard = JSON.parse(JSON.stringify(masterData));
+            restoredCard.uid = cardToSend.uid;
+            restoredCard.owner = cOwner;
+            restoredCard.baseId = cardToSend.baseId || cardToSend.id;
+            if (cardToSend.isPremium !== undefined) restoredCard.isPremium = cardToSend.isPremium;
+            restoredCard.basePower = restoredCard.power;
+            restoredCard.currentPower = restoredCard.power;
+        } else {
+            restoredCard = { ...cardToSend };
+            if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
+            restoredCard.currentPower = restoredCard.power;
+            restoredCard.skills = [];
+            restoredCard.equippedCards = [];
+            restoredCard.unionMaterials = [];
+        }
+        cDiscardPile.push(restoredCard);
+    };
+
+    if (targetCard.equippedCards && targetCard.equippedCards.length > 0) {
+        targetCard.equippedCards.forEach(eq => sendToGrave(eq, owner));
+    }
+    if (targetCard.unionMaterials && targetCard.unionMaterials.length > 0) {
+        targetCard.unionMaterials.forEach(mat => sendToGrave(mat, owner));
+    }
+    if (targetCard.originalRevertTarget) {
+        sendToGrave(targetCard.originalRevertTarget, owner);
+    }
+    
+    sendToGrave(targetCard, owner);
+
+    b[lane] = null;
+}
+
+/**
  * 破壊されたカードのクリーンアップと、破壊時スキルの処理を行う共通関数
  */
 export function processDestructionTriggers(state, events) {
@@ -520,8 +572,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         skills: []
                     };
                     if (b[targetLane] !== null) {
-                        const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-                        simDiscard.push(b[targetLane]);
+                        quietDiscardFromBoard(state, owner, targetLane);
                     }
                     b[targetLane] = newToken;
                     events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'summon' });
@@ -550,8 +601,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
 
                 if (targetLane !== -1) {
                     if (b[targetLane] !== null) {
-                        const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-                        simDiscard.push(b[targetLane]);
+                        quietDiscardFromBoard(state, owner, targetLane);
                     }
                     const newToken = {
                         ...wTC,
@@ -615,7 +665,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     b[targetLaneRes] = unionCard;
                     events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
                 } else {
-                    if (existingCard) simDiscard.push(existingCard);
+                    if (existingCard) quietDiscardFromBoard(state, owner, targetLaneRes);
                     const newResToken = {
                         ...simResCard,
                         id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
@@ -995,33 +1045,21 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             };
 
             if (board[lane] !== null) {
-                events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: lane, card: board[lane] }] });
-                board[lane] = null;
+                quietDiscardFromBoard(state, owner, lane);
             }
+            
+            // バフ適用前の状態で召喚イベントを発行
+            events.push({ type: 'summon_token', side: owner, lane: lane, card: JSON.parse(JSON.stringify(newToken)), source: 'evil_march' });
+            
             board[lane] = newToken;
-            spawnedTokens.push({ lane, token: newToken });
-            summonCount++;
         }
 
         // 2. 自分の場のすべてのカードのパワーを+2する
         for (let i = 0; i < 3; i++) {
             if (board[i] !== null) {
                 // パワーアップ
-                board[i].power += 2;
                 board[i].currentPower += 2;
-                board[i].basePower += 2;
-            }
-        }
-
-        // バフが適用された状態のスナップショットで summon_token イベントを発行する
-        spawnedTokens.forEach(st => {
-            events.push({ type: 'summon_token', side: owner, lane: st.lane, card: JSON.parse(JSON.stringify(st.token)), source: 'evil_march' });
-        });
-
-        // 既存のカード含め、表示更新用のイベントを発行
-        for (let i = 0; i < 3; i++) {
-            if (board[i] !== null) {
-                events.push({ type: 'buff', side: owner, lane: i, amount: 2, source: 'evil_march' });
+                events.push({ type: 'power_change', side: owner, lane: i, amount: 2, source: 'evil_march' });
             }
         }
 
