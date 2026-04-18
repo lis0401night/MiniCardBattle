@@ -235,7 +235,7 @@ export const ACHIEVEMENT_MASTER = [
         description: '高難易度イベントでアイギスを倒す',
         type: 'event_clear',
         targetValue: 'android_high',
-        reward: { type: 'skin', value: 'android_high', name: 'フルアーマーアイギス' }
+        reward: { type: 'skin', value: 'android_high', name: 'フルアーマーユニット' }
     },
     {
         id: 'event_android_high_clear_pm',
@@ -243,7 +243,7 @@ export const ACHIEVEMENT_MASTER = [
         description: '高難易度イベントでアイギスを倒す',
         type: 'event_clear',
         targetValue: 'android_high',
-        reward: { type: 'playmat', value: 'pm_android_high', name: 'フルアーマーアイギス' }
+        reward: { type: 'playmat', value: 'pm_android_high', name: 'フルアーマーユニット' }
     },
     {
         id: 'event_dragon_high_clear_skin',
@@ -251,7 +251,7 @@ export const ACHIEVEMENT_MASTER = [
         description: '高難易度イベントでイグニスを倒す',
         type: 'event_clear',
         targetValue: 'dragon_high',
-        reward: { type: 'skin', value: 'dragon_high', name: '熱砂の客人イグニス' }
+        reward: { type: 'skin', value: 'dragon_high', name: '熱砂の客人' }
     },
     {
         id: 'event_dragon_high_clear_pm',
@@ -267,7 +267,7 @@ export const ACHIEVEMENT_MASTER = [
         description: '高難易度イベントでセレスティアを倒す',
         type: 'event_clear',
         targetValue: 'knight_high',
-        reward: { type: 'skin', value: 'knight_high', name: '暗黒騎士セレスティア' }
+        reward: { type: 'skin', value: 'knight_high', name: '暗黒騎士' }
     },
     {
         id: 'event_knight_high_clear_pm',
@@ -275,7 +275,7 @@ export const ACHIEVEMENT_MASTER = [
         description: '高難易度イベントでセレスティアを倒す',
         type: 'event_clear',
         targetValue: 'knight_high',
-        reward: { type: 'playmat', value: 'pm_knight_high', name: '暗黒騎士 セレスティア' }
+        reward: { type: 'playmat', value: 'pm_knight_high', name: '暗黒騎士' }
     },
     // --- 防衛戦勝利数 ---
     {

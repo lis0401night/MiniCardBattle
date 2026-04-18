@@ -456,7 +456,7 @@ Object.values(CHARACTERS).forEach(char => {
 
 CHARACTERS.android.skins['android_high'] = {
     id: 'android_high',
-    name: 'フルアーマー アイギス',
+    name: 'フルアーマーユニット',
     image: 'assets/characters/char_android_high.png',
     imageLose: 'assets/characters/char_android_high_lose.png',
     icon: 'assets/icons/icon_android_high.png',
@@ -466,7 +466,7 @@ CHARACTERS.android.skins['android_high'] = {
 
 CHARACTERS.dragon.skins['dragon_high'] = {
     id: 'dragon_high',
-    name: '熱砂の客人 イグニス',
+    name: '熱砂の客人',
     image: 'assets/characters/char_dragon_high.png',
     imageLose: 'assets/characters/char_dragon_high_lose.png',
     icon: 'assets/icons/icon_dragon_high.png',
@@ -476,7 +476,7 @@ CHARACTERS.dragon.skins['dragon_high'] = {
 
 CHARACTERS.knight.skins['knight_high'] = {
     id: 'knight_high',
-    name: '暗黒騎士 セレスティア',
+    name: '暗黒騎士',
     image: 'assets/characters/char_knight_high.png',
     imageLose: 'assets/characters/char_knight_high_lose.png',
     icon: 'assets/icons/icon_knight_high.png',
