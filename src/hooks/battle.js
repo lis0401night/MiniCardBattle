@@ -1052,7 +1052,14 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
         const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
 
         // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後）
-        if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndex !== undefined) {
+        if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndexQueue !== undefined) {
+            const idx = GameState.aiDecision.choiceIndexQueue.shift();
+            if (idx !== undefined) {
+                const indices = Array.isArray(idx) ? idx : [idx];
+                return indices.map(i => choices[i]);
+            }
+        } else if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndex !== undefined) {
+            // 互換性フェーズ
             const idx = GameState.aiDecision.choiceIndex;
             delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
             const indices = Array.isArray(idx) ? idx : [idx];

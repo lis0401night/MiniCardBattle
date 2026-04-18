@@ -195,22 +195,42 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
 
                         for (let cardTokenLanes of cardTokenLanePatterns) {
                             // 「選択」スキルの場合は、それぞれの選択肢でシミュレーションを行う
-                            if (hasSkill(card, 'choice') && Array.isArray(card.choices)) {
-                                let choiceCount = 1;
-                                if (card.skill === 'choice') choiceCount = card.skillValue || 1;
-                                else if (card.skills) {
-                                    const csk = card.skills.find(s => s.id === 'choice');
-                                    if (csk) choiceCount = csk.value || 1;
-                                }
-                                const choiceIndices = card.choices.map((_, idx) => idx);
-                                const choiceCombinations = getCombinations(choiceIndices, Math.min(choiceIndices.length, choiceCount));
+                            let choiceCombinations = [undefined];
+                            let choice2Combinations = [undefined];
 
+                            if (hasSkill(card, 'choice')) {
+                                if (Array.isArray(card.choices)) {
+                                    let choiceCount = 1;
+                                    if (card.skill === 'choice') choiceCount = card.skillValue || 1;
+                                    else if (card.skills) {
+                                        const csk = card.skills.find(s => s.id === 'choice');
+                                        if (csk) choiceCount = csk.value || 1;
+                                    }
+                                    const choiceIndices = card.choices.map((_, idx) => idx);
+                                    choiceCombinations = getCombinations(choiceIndices, Math.min(choiceIndices.length, choiceCount));
+                                }
+                                if (Array.isArray(card.choices2)) {
+                                    let choiceCount2 = 1;
+                                    const csk2 = card.skills ? card.skills.find(s => s.id === 'choice' && s.choiceGroup === 2) : null;
+                                    if (csk2) choiceCount2 = csk2.value || 1;
+                                    const choiceIndices2 = card.choices2.map((_, idx) => idx);
+                                    choice2Combinations = getCombinations(choiceIndices2, Math.min(choiceIndices2.length, choiceCount2));
+                                }
+                            }
+
+                            if (choiceCombinations.length > 1 || choice2Combinations.length > 1 || (choiceCombinations[0] !== undefined)) {
                                 for (let cIdxArr of choiceCombinations) {
-                                    let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdxArr, cardTokenLanes);
-                                    if (simState) candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndex: cIdxArr, cardTokenLanes, simState });
+                                    for (let cIdxArr2 of choice2Combinations) {
+                                        let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, cIdxArr, cardTokenLanes, true, cIdxArr2);
+                                        let finalChoiceQueue = [];
+                                        if (cIdxArr !== undefined) finalChoiceQueue.push(cIdxArr);
+                                        if (cIdxArr2 !== undefined) finalChoiceQueue.push(cIdxArr2);
+                                        
+                                        if (simState) candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndexQueue: finalChoiceQueue.length > 0 ? finalChoiceQueue : undefined, cardTokenLanes, simState });
+                                    }
                                 }
                             } else {
-                                let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, undefined, cardTokenLanes);
+                                let simState = simulateMove(i, l, hand, myBoard, opBoard, myHP, useSkill, mySP, tokenLanes, order, undefined, cardTokenLanes, true, undefined);
                                 if (simState) candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, cardTokenLanes, simState });
                             }
                         }
@@ -345,7 +365,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
  * 仮想位置でのシミュレーション実行（状態を返す）
  * 順序は常に リーダースキル -> カード配置
  */
-export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined, cardTokenLanes = null, checkConstraints = true) {
+export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBoard, currentMyHP, useSkill = false, currentMySP, tokenLanes = null, skillOrder = 'before', choiceIndex = undefined, cardTokenLanes = null, checkConstraints = true, choiceIndex2 = undefined) {
     const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
     let simState = {
         playerBoard: currentOpBoard.map(cloneCard),
@@ -450,14 +470,24 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
             }
             if (Array.isArray(activeCardForSkills.skills)) {
                 activeCardForSkills.skills.forEach(sk => {
-                    if (sk.id === 'choice' && choiceIndex !== undefined && activeCardForSkills.choices) {
-                        const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
-                        indices.forEach(idx => {
-                            if (activeCardForSkills.choices[idx]) {
-                                const chr = activeCardForSkills.choices[idx];
-                                skills.push({ id: chr.id, value: chr.value });
-                            }
-                        });
+                    if (sk.id === 'choice') {
+                        if (sk.choiceGroup === 2 && choiceIndex2 !== undefined && activeCardForSkills.choices2) {
+                            const indices = Array.isArray(choiceIndex2) ? choiceIndex2 : [choiceIndex2];
+                            indices.forEach(idx => {
+                                if (activeCardForSkills.choices2[idx]) {
+                                    const chr = activeCardForSkills.choices2[idx];
+                                    skills.push({ id: chr.id, value: chr.value });
+                                }
+                            });
+                        } else if (choiceIndex !== undefined && activeCardForSkills.choices) {
+                            const indices = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
+                            indices.forEach(idx => {
+                                if (activeCardForSkills.choices[idx]) {
+                                    const chr = activeCardForSkills.choices[idx];
+                                    skills.push({ id: chr.id, value: chr.value });
+                                }
+                            });
+                        }
                     } else {
                         skills.push(sk);
                     }

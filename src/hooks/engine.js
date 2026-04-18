@@ -953,7 +953,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
     } else if (action === 'evil_march') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
-        
+
         // 1. 騎士(P:2)を最大2体「配置」
         let summonCount = 0;
         const availableLanes = [];
@@ -963,7 +963,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 availableLanes.push(i);
             }
         }
-        
+
         // 指定レーンがあれば優先し、なければ空いている且つ封印されていないレーンへ
         let targetLanes = [];
         if (tokenLanes && tokenLanes.length > 0) {
@@ -977,7 +977,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
         const tM = CARD_MASTER.find(m => m.id === 'token_knight') || { name: '騎士', power: 2 };
         const spawnedTokens = [];
-        
+
         for (let idx = 0; idx < targetLanes.length; idx++) {
             const lane = targetLanes[idx];
             const newToken = {
@@ -991,9 +991,9 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 power: 2,
                 basePower: 2,
                 currentPower: 2,
-                skills: [{ id: 'deadly' }, { id: 'defender' }]
+                skills: [{ id: 'deadly' }, { id: 'guardian' }]
             };
-            
+
             if (board[lane] !== null) {
                 events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: lane, card: board[lane] }] });
                 board[lane] = null;
