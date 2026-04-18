@@ -11,7 +11,13 @@ export const SKILLS = {
     heal: { name: '回復', icon: '💚', desc: (val) => `召喚時、リーダーのHPを${val || 3}回復する。` },
     snipe: { name: '狙撃', icon: '🎯', desc: (val) => `召喚時、相手の場で最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）` },
     spread: { name: '拡散', icon: '☄️', desc: (val) => `召喚時、正面とその隣のレーンのカードに${val || 2}ダメージ。` },
-    morph: { name: '変化', icon: '🌀', desc: (val) => `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数「虚空（パワー1）」を加える。（同値の場合は左優先）` },
+    morph: {
+        name: '変化', icon: '🌀', desc: (val) => [
+            { type: 'text', value: `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数` },
+            { type: 'link', value: `「虚空（パワー1）」`, targetId: 'token_void' },
+            { type: 'text', value: 'を加える。（同値の場合は左優先）' }
+        ]
+    },
     double_strike: { name: '連撃', icon: '⚔️', desc: () => '戦闘時、敵カードに与えるダメージが2倍になる。' },
     support: { name: '援護', icon: '🚩', desc: (val) => `召喚時、自分の場の隣のレーンのカードのパワーを+${val || 2}する。` },
     defender: { name: '防御', icon: '🧱', desc: (val) => '攻撃せず、敵カードやリーダーにダメージを与えられない。' },
@@ -70,9 +76,21 @@ export const SKILLS = {
     fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
     salvage: { name: '回収', icon: '🧲', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自分の墓地からカードを手札に加える。` },
     reinforce: { name: '増援', icon: '📣', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。` },
-    extort: { name: '簒奪', icon: '💰', desc: (val) => `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数「虚空（パワー1）」を加える。` },
+    extort: {
+        name: '簒奪', icon: '💰', desc: (val) => [
+            { type: 'text', value: `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数` },
+            { type: 'link', value: `「虚空（パワー1）」`, targetId: 'token_void' },
+            { type: 'text', value: 'を加える。' }
+        ]
+    },
     toxic: { name: '有毒', icon: '🧪', desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。` },
-    convert: { name: '対価', icon: '⚖', desc: (val) => `召喚時、手札を${val || 1}枚捨て、同数「虚空（パワー1）」を加える。` },
+    convert: {
+        name: '対価', icon: '⚖', desc: (val) => [
+            { type: 'text', value: `召喚時、手札を${val || 1}枚捨て、同数` },
+            { type: 'link', value: `「虚空（パワー1）」`, targetId: 'token_void' },
+            { type: 'text', value: 'を加える。' }
+        ]
+    },
     dispel: { name: '解除', icon: '🔓', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択し、そのカードが装備中のカードを全て破壊する。対象が「装備」を持つカードならそのカードを破壊する。` },
     invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
     replicate: { name: '複製', icon: '👯', desc: (val) => '召喚時、最もパワーが高い自分の他のカード1体のパワー分、自身のパワーを+する。' },

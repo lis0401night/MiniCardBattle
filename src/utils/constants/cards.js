@@ -153,7 +153,7 @@ export const CARD_MASTER = [
     { id: 'token_satan', name: '魔王の化身', rarity: 1, power: 10, isToken: true, skill: 'none', flavor: '魔王サタンの強大な化身。' },
     { id: 'token_clone', name: '分身', rarity: 1, power: 1, isToken: true, skill: 'none', flavor: '本体から生み出された分身。' },
     { id: 'token_reinforce', name: '増援', rarity: 1, power: 4, isToken: true, skill: 'none', flavor: '呼び声に応え、現れた仲間。' },
-    { id: 'legs', name: '蛸足', rarity: 1, power: 1, isToken: true, skill: 'none', flavor: '切り離されてもなお蠢き続ける蛸の足。' },
+    { id: 'legs', name: '蛸足', rarity: 1, power: 2, isToken: true, skill: 'none', flavor: '切り離されてもなお蠢き続ける蛸の足。' },
     { id: 'token_void', name: '虚空', rarity: 1, power: 1, isToken: true, skill: 'none', voiceCategory: 'stone', flavor: '形なき虚無の欠片。それは何も生み出さず、ただそこにあるだけの空虚。' },
     { id: 'token_ent', name: 'エント', rarity: 1, power: 5, isToken: true, skill: 'none', voiceCategory: 'stone', flavor: '永き眠りから目覚めた大樹の精霊。森を脅かす者には、容赦のない鉄槌が下される。' },
     { id: 'token_statue', name: '石像', rarity: 1, power: 5, isToken: true, skills: [{ id: 'defender' }, { id: 'sturdy' }], voiceCategory: 'stone', flavor: '石化させられた哀れな姿。' },
