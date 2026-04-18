@@ -95,7 +95,7 @@ export function getDialogue(speakerConfig, targetConfig, type, forceSide = null)
         }
     }
 
-    if (skinId !== 'default' && speakerConfig.skins && speakerConfig.skins[skinId] && speakerConfig.skins[skinId].dialogue) {
+    if (type !== 'damage' && skinId !== 'default' && speakerConfig.skins && speakerConfig.skins[skinId] && speakerConfig.skins[skinId].dialogue) {
         const sd = speakerConfig.skins[skinId].dialogue[type];
         if (sd !== undefined) {
             if (typeof sd === 'string') return sd;

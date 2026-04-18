@@ -121,8 +121,8 @@ export function initEventKnightHighMode(charId) {
         name: '暗黒騎士 セレスティア',
         leaderSkill: {
             name: '暗黒の軍勢',
-            desc: '(SP:4) 自分のレーンに「騎士(P:2/必殺/守護)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。',
-            cost: 4,
+            desc: '(SP:3) 自分のレーンに「騎士(P:2/必殺/守護)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。',
+            cost: 3,
             action: 'evil_march'
         }
     };
