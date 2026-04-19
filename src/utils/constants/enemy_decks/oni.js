@@ -1,8 +1,8 @@
 export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'muramasa', 'muramasa',
         'ogre', 'ogre',
+        'muramasa', 'muramasa',
         'ninja', 'ninja',
         'omyouji', 'omyouji',
         'scorpion', 'scorpion', 'scorpion', 'scorpion',
@@ -13,7 +13,7 @@ export default {
         'kasha', 'kasha',
         'nurikabe', 'nurikabe',
         'yukionna', 'yukionna',
-        'ogre', 'ogre',
+        'muramasa', 'muramasa',
         'samurai', 'samurai',
         'omyouji', 'omyouji', 'omyouji', 'omyouji',
         'leech', 'leech', 'leech', 'leech',
@@ -23,7 +23,7 @@ export default {
         'fox', 'fox', 'fox',
         'kasha', 'kasha', 'kasha',
         'nurikabe', 'nurikabe',
-        'ogre', 'ogre', 'ogre',
+        'muramasa', 'muramasa', 'muramasa',
         'samurai', 'samurai', 'samurai',
         'tengu', 'tengu', 'tengu', 'tengu',
     ]

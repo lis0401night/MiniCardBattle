@@ -104,7 +104,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
             if (selectedIdx !== -1) {
                 await playCard(o, selectedIdx, l);
-                
+
                 const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
                 const voidToken = {
                     ...voidTpl,
@@ -292,10 +292,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         await sleep(600);
     } else if (skillId === 'summon') {
         const pValue = skillValue || 1;
-        
+
         let tId = skObj?.summonId || c.summonId || (c.skills && c.skills.find(s => s.id === 'summon')?.summonId);
         let tName = 'ドローン';
-        
+
         if (!tId) {
             tId = 'token_drone';
             const cId = c.baseId || c.id;
@@ -568,7 +568,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 // 防御を持っているかチェック
                 const hasDefender = hasSkill(targetCard, 'defender') || targetCard.stunTurns > 0;
                 const tgtEl = document.querySelector(`#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`);
-                
+
                 if (hasDefender) {
                     if (tgtEl) {
                         tgtEl.classList.add('anim-shake');
@@ -625,11 +625,11 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     } else if (skillId === 'seal') {
         const targetSide = o === 'blue' ? 'enemy' : 'player';
         const targetSealedLanes = o === 'blue' ? GameState.enemySealedLanes : GameState.playerSealedLanes;
-        
+
         if (targetSealedLanes) {
             const turns = skillValue || 1;
             targetSealedLanes[l] = turns;
-            
+
             const tEl = document.querySelector(`#${targetSide}-lanes .cell[data-lane="${l}"]`);
             if (tEl) {
                 tEl.classList.add('anim-shake');
@@ -648,7 +648,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         for (let idx of [l - 1, l, l + 1]) {
             if (idx >= 0 && idx <= 2 && eB[idx]) targets.push(idx);
         }
-        
+
         if (targets.length > 0) {
             const turns = (skillValue || 1) + 1;
             for (const tL of targets) {
@@ -880,6 +880,49 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             }
         }
         await sleep(400);
+    } else if (skillId === 'explore') {
+        const deck = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+        const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        const maxPow = skillValue || 3;
+        const validCards = deck.filter(card => (card.power || 0) <= maxPow);
+
+        if (validCards.length > 0) {
+            const selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, o, '探索するカードを選択', `デッキからパワー${maxPow}以下のカードを1枚選び、手札に加えます。`, true);
+
+            if (selectedCard) {
+                // デッキから対象カードを取り除く
+                const idx = deck.findIndex(card => card.id === selectedCard.id || card.baseId === selectedCard.baseId);
+                if (idx !== -1) deck.splice(idx, 1);
+
+                // カードのステータスを初期状態にリセット
+                const masterData = CARD_MASTER.find(m => m.id === (selectedCard.baseId || selectedCard.id));
+                const restoredCard = masterData ? JSON.parse(JSON.stringify(masterData)) : { ...selectedCard };
+                restoredCard.baseId = selectedCard.baseId || selectedCard.id;
+                restoredCard.basePower = restoredCard.power;
+                restoredCard.currentPower = restoredCard.power;
+
+                hand.push({ ...restoredCard, uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}` });
+                playSound(SOUNDS.seDraw);
+                updateDeckDisplay(o);
+                renderHand();
+
+                // その後、手札を1枚捨てる
+                if (hand.length > 0) {
+                    let discardIndices = await waitPlayerHandSelection(1, o, false, '捨てるカードを1枚選んでください');
+                    if (discardIndices && discardIndices.length > 0) {
+                        const discardIdx = discardIndices[0];
+                        const cardToDiscard = hand.splice(discardIdx, 1)[0];
+                        await discardCard(o, cardToDiscard, undefined, false);
+                        renderHand();
+                    }
+                }
+
+                // デッキをシャッフルする
+                shuffleArray(deck);
+                updateDeckDisplay(o);
+                await sleep(300);
+            }
+        }
     } else if (skillId === 'reinforce') {
         const count = skillValue || 1;
         playSkillSound('summon'); // 汎用の音

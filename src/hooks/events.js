@@ -158,6 +158,105 @@ export function initEventKnightHighMode(charId) {
     });
 }
 
+/**
+ * 高難易度イベント：魔界の征服者 ナイア の初期化
+ */
+export function initEventCthulhuHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['cthulhu'],
+        hp: 40,
+        name: '魔界の征服者 ナイア',
+        leaderSkill: {
+            name: '異界の扉',
+            desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
+            cost: 3,
+            action: 'otherworld_gate'
+        }
+    };
+    GameState.gameMode = 'event_cthulhu_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'cthulhu';
+
+    // ナイアに「魔界の征服者 ナイア」スキンを適用
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['cthulhu'] = 'cthulhu_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'cthulhu_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'cthulhu_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'cthulhu_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const introDialogues = EVENT_DIALOGUES.event_cthulhu_high[charId] || [];
+    if (introDialogues.length >= 3) {
+        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
+    } else {
+        GameState.dialogueQueue = [
+            { speaker: 'narrator', text: '玉座の間には、狂気に満ちた歪な魔法陣が描かれていた。' },
+            { speaker: 'player', text: 'あんな出来損ないの狂気、私に対する冒涜です。' }
+        ];
+    }
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
+export function initEventElfHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['elf'],
+        hp: 40,
+        name: charId === 'elf' ? 'リナの幻影' : 'リナ&ヴォイテク',
+        leaderSkill: {
+            name: '連携攻撃',
+            desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:3/伝説/貫通)」を1体配置する。',
+            cost: 2,
+            action: 'elf_polarbear_combo'
+        }
+    };
+    GameState.gameMode = 'event_elf_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'elf'; // ロストレイルの森
+
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['elf'] = charId === 'elf' ? 'default' : 'elf_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, GameState.enemySkins['elf'], 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, GameState.enemySkins['elf'], 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, GameState.enemySkins['elf'], 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const introDialogues = EVENT_DIALOGUES.event_elf_high ? EVENT_DIALOGUES.event_elf_high[charId] : [];
+    if (introDialogues && introDialogues.length >= 3) {
+        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
+    } else {
+        if (charId === 'elf') {
+            GameState.dialogueQueue = [
+                { speaker: 'narrator', text: 'ロストレイルの森の奥深くに足を踏み入れたリナ。' },
+                { speaker: 'player', text: 'あの白熊……ヴォイテクはいないわ。今、立ちはだかるのはかつての私自身。' }
+            ];
+        } else {
+            GameState.dialogueQueue = [
+                { speaker: 'narrator', text: 'リナから「一人前の戦士になるための試練」に協力してほしいと手紙が届いた。' },
+                { speaker: 'player', text: 'ロストレイルの森……。新たな相棒と共に待っているようね。' }
+            ];
+        }
+    }
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
 export function initEventSatanMode(charId) {
     GameState.playerConfig = { ...CHARACTERS[charId] };
     GameState.enemyConfig = { ...CHARACTERS['satan'], hp: 100 };
@@ -200,9 +299,17 @@ export function handleEventProgression() {
             performFadeTransition(() => {
                 setupEventDragonHighConfrontation();
             });
+        } else if (GameState.gameMode === 'event_elf_high') {
+            performFadeTransition(() => {
+                setupEventElfHighConfrontation();
+            });
         } else if (GameState.gameMode === 'event_knight_high') {
             performFadeTransition(() => {
                 setupEventKnightHighConfrontation();
+            });
+        } else if (GameState.gameMode === 'event_cthulhu_high') {
+            performFadeTransition(() => {
+                setupEventCthulhuHighConfrontation();
             });
         } else {
             let confrontationLines = [];
@@ -296,6 +403,61 @@ export function setupEventAndroidHighConfrontation() {
     confrontationLines.push({
         speaker: 'player',
         text: GameState.playerConfig.preBattleLine || "行くよ、アイギス！"
+    });
+
+    GameState.dialogueQueue = confrontationLines;
+    setupDialogueScreen();
+}
+
+export function setupEventCthulhuHighConfrontation() {
+    GameState.appState = 'pre_dialogue';
+
+    let confrontationLines = [];
+    const charId = GameState.playerConfig.id;
+    const introDialogues = EVENT_DIALOGUES.event_cthulhu_high[charId] || [];
+    if (introDialogues.length >= 4) {
+        confrontationLines.push(introDialogues[3]);
+    } else {
+        confrontationLines.push({ speaker: 'narrator', text: "深淵の気配にまみれた魔王城の最深部。そこには嘲笑うナイアの姿があった。" });
+    }
+
+    confrontationLines.push({ speaker: 'enemy', text: "クスクス……よく来ましたわね。この世界を極上の混沌で満たすため、まずは貴方達から絶望の底に沈めて差し上げますわ！" });
+
+    // プレイヤーの決意（あれば設定、なければ固定テキスト）
+    confrontationLines.push({
+        speaker: 'player',
+        text: GameState.playerConfig.preBattleLine || "ふざけないで、ナイア！"
+    });
+
+    GameState.dialogueQueue = confrontationLines;
+    setupDialogueScreen();
+}
+
+export function setupEventElfHighConfrontation() {
+    GameState.appState = 'pre_dialogue';
+
+    let confrontationLines = [];
+    const charId = GameState.playerConfig.id;
+    const introDialogues = EVENT_DIALOGUES.event_elf_high ? EVENT_DIALOGUES.event_elf_high[charId] : [];
+    if (introDialogues && introDialogues.length >= 4) {
+        confrontationLines.push(introDialogues[3]);
+    } else {
+        if (charId === 'elf') {
+            confrontationLines.push({ speaker: 'narrator', text: "深い森の奥、自身と同じ姿をした幻影が静かに弓を構える。" });
+        } else {
+            confrontationLines.push({ speaker: 'narrator', text: "ロストレイルの森の中央。力強い白熊を傍らに連れたリナが静かに微笑んだ。" });
+        }
+    }
+
+    if (charId === 'elf') {
+        confrontationLines.push({ speaker: 'enemy', text: "思い出の中で迷い続けるつもり……？" });
+    } else {
+        confrontationLines.push({ speaker: 'enemy', text: "試練に付き合ってくれてありがとう。私とヴォイテクの連携、見切れるかしら！" });
+    }
+
+    confrontationLines.push({
+        speaker: 'player',
+        text: GameState.playerConfig.preBattleLine || "行くわね！"
     });
 
     GameState.dialogueQueue = confrontationLines;

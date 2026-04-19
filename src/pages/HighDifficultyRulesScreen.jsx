@@ -25,7 +25,7 @@ export default function HighDifficultyRulesScreen() {
         style={{ background: '#475569' }}
         onClick={() => {
           playSound?.(SOUNDS?.seClick);
-          switchScreen?.('screen-high-difficulty');
+          switchScreen?.('screen-high-difficulty-menu');
         }}
       >
         戻る

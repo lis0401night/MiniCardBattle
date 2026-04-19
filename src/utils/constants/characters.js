@@ -534,11 +534,75 @@ CHARACTERS.cthulhu.skins.summer.dialogue = {
     skill: '海の底から湧き上がる狂気……一緒に溺れましょう？'
 };
 
+CHARACTERS.cthulhu.skins['cthulhu_high'] = {
+    id: 'cthulhu_high',
+    name: '魔界の征服者',
+    image: 'assets/characters/char_cthulhu_high.png',
+    imageLose: 'assets/characters/char_cthulhu_high_lose.png',
+    icon: 'assets/icons/icon_cthulhu_high.png',
+    iconDamage: 'assets/icons/icon_cthulhu_high_damage.png'
+};
+
+CHARACTERS.cthulhu.skins.cthulhu_high.dialogue = {
+    intro: '魔王城の玉座……案外、座り心地が良いですわ。貴方も深淵の礎になりにいらしたの？ フフフ……',
+    win: 'アハハハ！ 深淵の力には誰も敵いませんわ！ 全てを飲み込んで差し上げます！',
+    lose: 'この私が……玉座から引きずり降ろされるというの……！？ バカな……！',
+    skill: '異界の扉よ、開け！ 全ての絶望と狂気を此の地に！'
+};
+
+CHARACTERS.cthulhu.challenges = {
+    cthulhu_high: {
+        id: 'cthulhu_high',
+        title: '【高難易度】魔界の征服者',
+        description: 'サタン城の最深部で怪しげな儀式を行っているナイア。強大な力を見せつける。',
+        bgm: 'high_boss',
+        bossSetting: {
+            useSkin: 'cthulhu_high',
+            maxHP: 30, // または強さ調整
+            initSP: 0,
+            deck: () => import('./enemy_decks/cthulhu_high.js').then(m => m.cthulhuHighDeckDef).catch(e => { console.error('Failed to load cthulhu high deck', e); return null; }),
+            leaderSkill: { name: '異界の扉', desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー1）」を加える。', action: 'otherworld_gate', cost: 3 }
+        }
+    }
+};
+
 CHARACTERS.elf.skins.summer.dialogue = {
     intro: '水辺は静かでいいわ。私の記憶の欠片も、この波に流されてきたのかしら。',
     win: '穏やかな潮騒が、私の心を少しだけ癒やしてくれるわ。',
     lose: '流される……記憶も、この戦いも……。',
     skill: '清らかな水流よ！ 私の前に立ちはだかる全てを打ち抜いて！'
+};
+
+CHARACTERS.elf.skins['elf_high'] = {
+    id: 'elf_high',
+    name: 'リナ&ヴォイテク',
+    image: 'assets/characters/char_elf_high.png',
+    imageLose: 'assets/characters/char_elf_high_lose.png',
+    icon: 'assets/icons/icon_elf_high.png',
+    iconDamage: 'assets/icons/icon_elf_high_damage.png'
+};
+
+CHARACTERS.elf.skins.elf_high.dialogue = {
+    intro: '記憶の赴くままに……。共に行こう、ヴォイテク！ 私達の力を見せる時よ！',
+    win: 'これが私の新しい力……！ ヴォイテク、あなたのおかげね。',
+    lose: 'ヴォイテク、ごめんなさい……。まだ私には……。',
+    skill: '私とヴォイテクの連携……見切れるかしら！ 貫け！'
+};
+
+CHARACTERS.elf.challenges = {
+    elf_high: {
+        id: 'elf_high',
+        title: '【高難易度】リナ&ヴォイテク',
+        description: '一人前の戦士になる試練として、新たな相棒「白熊のヴォイテク」と共にリナが戦いを挑んでくる。',
+        bgm: 'high_boss',
+        bossSetting: {
+            useSkin: 'elf_high',
+            maxHP: 40,
+            initSP: 0,
+            deck: () => import('./enemy_decks/elf_high.js').then(m => m.default).catch(e => { console.error('Failed to load elf high deck', e); return null; }),
+            leaderSkill: { name: '連携攻撃', desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:3/伝説/貫通)」を1体配置する。', cost: 2, action: 'elf_polarbear_combo' }
+        }
+    }
 };
 
 CHARACTERS.cleric.skins.summer.dialogue = {

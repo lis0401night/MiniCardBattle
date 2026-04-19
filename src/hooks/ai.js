@@ -43,8 +43,12 @@ export async function executeEnemyAI() {
         let shouldForceSkill = false;
         if (canUseSkill) {
             // ナイア、エリシア、クロエは難易度によらず優先使用（デッキ圧縮、回復、ターンスキップ）
-            if (skill.action === 'abyss_ritual' || skill.action === 'dark_ritual' || skill.action === 'time_stop') {
+            if (skill.action === 'abyss_ritual' || skill.action === 'dark_ritual' || skill.action === 'time_stop' || skill.action === 'otherworld_gate') {
                 shouldForceSkill = true;
+            } else if (skill.action === 'elf_polarbear_combo') {
+                if (GameState.playerBoard.some(c => c !== null) && GameState.enemyBoard.some(c => c === null)) {
+                    shouldForceSkill = true;
+                }
             }
             // 初級難易度の場合、アイギス・リナの「空撃ち」を除き100%使用
             else if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {

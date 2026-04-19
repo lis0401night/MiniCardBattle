@@ -27,7 +27,7 @@ export function handleProgressionNextStep() {
         } else {
             switchScreen('screen-mode-select');
         }
-    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high') {
+    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high') {
         if (typeof handleEventProgression === 'function') {
             handleEventProgression();
         } else {

@@ -11,6 +11,7 @@ import EventMenuScreen from './pages/EventMenuScreen.jsx';
 import DefenseMenuScreen from './pages/DefenseMenuScreen.jsx';
 import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
 import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
+import HighDifficultyMenuScreen from './pages/HighDifficultyMenuScreen.jsx';
 import HighDifficultyRulesScreen from './pages/HighDifficultyRulesScreen.jsx';
 import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
 import StoryResumeScreen from './pages/StoryResumeScreen.jsx';
@@ -114,6 +115,7 @@ export default function App() {
       {currentScreen === 'screen-event-menu' && <EventMenuScreen />}
       {currentScreen === 'screen-defense-menu' && <DefenseMenuScreen />}
       {currentScreen === 'screen-defense-rules' && <DefenseRulesScreen />}
+      {currentScreen === 'screen-high-difficulty-menu' && <HighDifficultyMenuScreen />}
       {currentScreen === 'screen-high-difficulty' && <HighDifficultyScreen />}
       {currentScreen === 'screen-high-difficulty-rules' && <HighDifficultyRulesScreen />}
       {currentScreen === 'screen-card-list' && <CardListScreen />}

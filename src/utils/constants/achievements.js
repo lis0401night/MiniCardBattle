@@ -277,6 +277,38 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'knight_high',
         reward: { type: 'playmat', value: 'pm_knight_high', name: '暗黒騎士' }
     },
+    {
+        id: 'event_cthulhu_high_clear_skin',
+        title: '魔界の征服者',
+        description: '高難易度イベントでナイアを倒す',
+        type: 'event_clear',
+        targetValue: 'cthulhu_high',
+        reward: { type: 'skin', value: 'cthulhu_high', name: '魔界の征服者' }
+    },
+    {
+        id: 'event_cthulhu_high_clear_pm',
+        title: '深淵の玉座',
+        description: '高難易度イベントでナイアを倒す',
+        type: 'event_clear',
+        targetValue: 'cthulhu_high',
+        reward: { type: 'playmat', value: 'pm_cthulhu_high', name: '魔界の征服者' }
+    },
+    {
+        id: 'event_elf_high_clear_skin',
+        title: 'リナ&ヴォイテク',
+        description: '高難易度イベントでリナを倒す',
+        type: 'event_clear',
+        targetValue: 'elf_high',
+        reward: { type: 'skin', value: 'elf_high', name: 'リナ&ヴォイテク' }
+    },
+    {
+        id: 'event_elf_high_clear_pm',
+        title: 'ロストレイルの森',
+        description: '高難易度イベントでリナを倒す',
+        type: 'event_clear',
+        targetValue: 'elf_high',
+        reward: { type: 'playmat', value: 'pm_elf_high', name: 'リナ&ヴォイテク' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',

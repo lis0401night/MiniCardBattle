@@ -283,6 +283,9 @@ export function showCardReward(enemyId) {
     let recipeId = enemyId;
     if (GameState.gameMode === 'event_satan' && enemyId === 'satan') recipeId = 'satan_high';
     if (GameState.gameMode === 'event_android_high' && enemyId === 'android') recipeId = 'android_high';
+    if (GameState.gameMode === 'event_dragon_high' && enemyId === 'dragon') recipeId = 'dragon_high';
+    if (GameState.gameMode === 'event_knight_high' && enemyId === 'knight') recipeId = 'knight_high';
+    if (GameState.gameMode === 'event_cthulhu_high' && enemyId === 'cthulhu') recipeId = 'cthulhu_high';
 
     let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
     let enemyDeckIds = [];

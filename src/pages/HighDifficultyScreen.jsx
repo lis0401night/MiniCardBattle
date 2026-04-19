@@ -1,6 +1,8 @@
 import React from 'react';
 
-import { showEventMenu, showHighDifficultyRules, handleSatanBattle, handleAndroidHighBattle, handleDragonHighBattle, handleKnightHighBattle } from '../hooks/uiMainCore.js';
+import { handleSatanBattle, handleAndroidHighBattle, handleDragonHighBattle, handleKnightHighBattle, handleCthulhuHighBattle, handleElfHighBattle } from '../hooks/uiMainCore.js';
+import { playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function HighDifficultyScreen() {
   return (
@@ -13,55 +15,67 @@ export default function HighDifficultyScreen() {
         backgroundPosition: 'center'
       }}
     >
-      <h2 style={{ color: '#ef4444', marginBottom: '20px', textShadow: '0 0 15px rgba(239, 68, 68, 0.6)' }}>高難易度</h2>
-      <button
-        className="btn btn-yellow"
-        style={{ width: '250px', marginBottom: '20px' }}
-        onClick={() => showHighDifficultyRules?.()}
-      >
-        ルール
-      </button>
+      <h2 style={{ color: '#ef4444', marginBottom: '15px', textShadow: '0 0 15px rgba(239, 68, 68, 0.6)', flexShrink: 0 }}>高難易度</h2>
 
-      <div className="banner-container">
-        <button className="btn-banner legendary" onClick={() => handleSatanBattle?.()}>
+      <div
+        className="deck-edit-container"
+        style={{
+          justifyContent: 'flex-start',
+          paddingTop: '10px',
+          gap: '10px',
+          overflowY: 'auto'
+        }}
+      >
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleSatanBattle?.()}>
           <img src="assets/icons/icon_satan.png" className="banner-icon" alt="" />
           <span className="banner-text" style={{ color: '#ef4444' }}>
             復活の魔王 サタン
           </span>
         </button>
-      </div>
 
-      <div className="banner-container">
-        <button className="btn-banner legendary" onClick={() => handleAndroidHighBattle?.()}>
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleAndroidHighBattle?.()}>
           <img src="assets/icons/icon_android_high.png" className="banner-icon" alt="" />
-          <span className="banner-text" style={{ color: '#ef4444' }}>
+          <span className="banner-text" style={{ color: '#38bdf8' }}>
             フルアーマー アイギス
           </span>
         </button>
-      </div>
 
-      <div className="banner-container">
-        <button className="btn-banner legendary" onClick={() => handleDragonHighBattle?.()}>
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleDragonHighBattle?.()}>
           <img src="assets/icons/icon_dragon_high.png" className="banner-icon" alt="" />
           <span className="banner-text" style={{ color: '#fb7185' }}>
             熱砂の客人 イグニス
           </span>
         </button>
-      </div>
 
-      <div className="banner-container">
-        <button className="btn-banner legendary" onClick={() => handleKnightHighBattle?.()}>
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleKnightHighBattle?.()}>
           <img src="assets/icons/icon_knight_high.png" className="banner-icon" alt="" />
           <span className="banner-text" style={{ color: '#facc15' }}>
             暗黒騎士 セレスティア
+          </span>
+        </button>
+
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleCthulhuHighBattle?.()}>
+          <img src="assets/icons/icon_cthulhu_high.png" className="banner-icon" alt="" />
+          <span className="banner-text" style={{ color: '#c084fc' }}>
+            魔界の征服者 ナイア
+          </span>
+        </button>
+
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleElfHighBattle?.()}>
+          <img src="assets/icons/icon_elf_high.png" className="banner-icon" alt="" />
+          <span className="banner-text" style={{ color: '#4ade80' }}>
+            リナ&amp;ヴォイテク
           </span>
         </button>
       </div>
 
       <button
         className="btn"
-        style={{ marginTop: '30px', background: '#475569' }}
-        onClick={() => showEventMenu?.()}
+        style={{ marginTop: '30px', background: '#475569', flexShrink: 0 }}
+        onClick={() => {
+          playSound?.(SOUNDS?.seClick);
+          if (window.switchScreen) window.switchScreen('screen-high-difficulty-menu');
+        }}
       >
         戻る
       </button>

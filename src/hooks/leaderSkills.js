@@ -199,6 +199,26 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             if (selectedLanes.length === 0) return;
             tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
         }
+    } else if (action === 'elf_polarbear_combo') {
+        if (!tokenLanes || tokenLanes.length === 0) {
+            // パート1: 破壊する相手カードを1枚選択
+            const oppBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
+            let enemyTargetLane = -1;
+            const hasEnemyCard = oppBoard.some(c => c !== null);
+            if (hasEnemyCard) {
+                const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner, true, '破壊する相手のカードを1枚選んでください');
+                if (selectedLanes.length === 0) return;
+                enemyTargetLane = selectedLanes[0];
+            }
+
+            // パート2: ヴォイテクを配置する自分のレーンを選択
+            const token = CARD_MASTER.find(m => m.id === 'token_polarbear');
+            const myLanes = await waitPlayerLaneSelection(1, owner, token, false, null, false);
+            if (!myLanes || myLanes.length === 0) return;
+
+            // tokenLanesには [敵レーン番号, 自分のレーン番号] を格納してengineに渡す
+            tokenLanes = [enemyTargetLane, myLanes[0]];
+        }
     } else if (action === 'devilhunter_resurrect') {
         const maxPow = 999;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -295,6 +315,60 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         });
         if (isBlue) renderHand();
         // フォールスルーして共通の playEvents と resolveOnPlaySkill を実行させる
+    } else if (action === 'otherworld_gate') {
+        const h = isBlue ? GameState.playerHand : GameState.enemyHand;
+        const opH = isBlue ? GameState.enemyHand : GameState.playerHand;
+        const opId = isBlue ? 'red' : 'blue';
+        let dc = 0;
+        
+        if (h.length > 0) {
+            const selectedIndices = await waitPlayerHandSelection(2, owner, false, '捨てるカードを最大2枚選んでください');
+            
+            if (window.triggerVfx) {
+                await window.triggerVfx('anm_abyss_ritual', owner);
+            }
+
+            if (selectedIndices && selectedIndices.length > 0) {
+                selectedIndices.sort((a, b) => b - a);
+                for (let i of selectedIndices) {
+                    await discardCard(owner, h.splice(i, 1)[0]);
+                    dc++;
+                }
+            }
+
+            for (let i = 0; i < dc; i++) drawCard(owner);
+        }
+
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        h.forEach(c => {
+            if (c.currentPower !== undefined) c.currentPower += 2;
+            else c.power += 2;
+        });
+
+        let opDc = 0;
+        for (let i = 0; i < 2; i++) {
+            if (opH.length > 0) {
+                const randIdx = Math.floor(getSeededRandom() * opH.length);
+                const discarded = opH.splice(randIdx, 1)[0];
+                await discardCard(opId, discarded, undefined, false);
+                opDc++;
+            }
+        }
+        
+        if (opDc > 0) {
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { id: 'token_void', name: '虚空', power: 1 };
+            for (let i = 0; i < opDc; i++) {
+                opH.push({
+                    ...voidTpl,
+                    uid: `${opId}_void_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+                    owner: opId,
+                    baseId: 'token_void',
+                    isToken: true,
+                    currentPower: voidTpl.power || 1
+                });
+            }
+        }
+        renderHand();
     }
 
     // Engineの共通ロジック呼び出し
@@ -312,7 +386,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])]
     };
 
-    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'dungeon_summon_leader') {
+    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'otherworld_gate' && action !== 'dungeon_summon_leader') {
         // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
         // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
         applyLeaderSkillLogic(currentState, owner, action, tokenLanes, events);
@@ -345,6 +419,14 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         } else if (action === 'dragon_summon' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_summon_ignis', owner, tokenLanes[0]);
+        } else if (action === 'elf_polarbear_combo') {
+            await sleep(200);
+            if (tokenLanes && tokenLanes[0] >= 0) {
+                // 破壊エフェクト
+                await window.triggerVfx('anm_elf_arts', owner, tokenLanes[0]);
+            }
+            await sleep(200);
+            // 召喚エフェクト
         } else if (action === 'holy_march' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             // 2箇所同時に再生

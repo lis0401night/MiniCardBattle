@@ -244,6 +244,30 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
             break;
         }
+        case 'explore': {
+            const myDeckSim = owner === 'blue' ? state.playerDeck : state.enemyDeck;
+            const myHandSim = owner === 'blue' ? state.playerHand : state.enemyHand;
+            const maxPow = val || 3;
+            if (myDeckSim && myDeckSim.length > 0) {
+                // シミュレーション：デッキから指定パワー以下の最も強いカードを引き、手札の最も弱いカードと入れ替える
+                const validCards = myDeckSim.filter(card => (card.power || 0) <= maxPow);
+                if (validCards.length > 0) {
+                    validCards.sort((a, b) => (b.power || 0) - (a.power || 0));
+                    const bestCard = validCards[0];
+                    const idx = myDeckSim.findIndex(card => card.id === bestCard.id || card.baseId === bestCard.baseId);
+                    if (idx !== -1) myDeckSim.splice(idx, 1);
+                    
+                    myHandSim.push({ ...bestCard, uid: `${owner}_sim_${Math.random()}` });
+                    events.push({ type: 'draw', side: owner, source: 'explore' });
+
+                    if (myHandSim.length > 0) {
+                        myHandSim.sort((a, b) => (a.power || 0) - (b.power || 0));
+                        myHandSim.shift(); // 最も弱いカードを捨てる
+                    }
+                }
+            }
+            break;
+        }
         case 'morph':
             const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
             if (eHandRef && eHandRef.length > 0) {
@@ -1071,6 +1095,57 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
         }
 
+    } else if (action === 'otherworld_gate') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        const h = isBlue ? state.playerHand : state.enemyHand;
+        const opH = isBlue ? state.enemyHand : state.playerHand;
+        
+        // 1. 最大2枚捨てる（AIシミュレーションではなるべくパワーの低いものを捨てる）
+        let dc = 0;
+        if (h.length > 0) {
+            let sortedHand = h.map((c, idx) => ({ card: c, idx })).sort((a, b) => (a.card.currentPower || a.card.power) - (b.card.currentPower || b.card.power));
+            const dropCount = Math.min(2, h.length);
+            const dropIndices = sortedHand.slice(0, dropCount).map(item => item.idx).sort((a, b) => b - a);
+            for (let i of dropIndices) {
+                h.splice(i, 1);
+                dc++;
+            }
+        }
+        
+        // 2枚引く（シミュレーションでは仮のカードを引いた体にするか、評価値には直接影響させずとも手札数は補充）
+        // ただし引いたカードはシミュレータからは予測不能なため仮カードを入れるか省略する。とりあえず手札数は維持する
+        const dummyDraw = { name: 'Unknown', power: 3, currentPower: 3 }; // AIの平均的なパワー期待値
+        for (let i = 0; i < dc; i++) {
+            h.push(JSON.parse(JSON.stringify(dummyDraw)));
+        }
+
+        // 2. 自陣の手札バフ
+        h.forEach(c => {
+            if (c.currentPower !== undefined) c.currentPower += 2;
+            else c.power += 2;
+        });
+
+        // 3. 相手の手札破壊＆虚空（AIからはランダムドロップするだけ）
+        let opDc = 0;
+        for (let i = 0; i < 2; i++) {
+            if (opH.length > 0) {
+                const randIdx = Math.floor(getSeededRandom() * opH.length);
+                opH.splice(randIdx, 1);
+                opDc++;
+            }
+        }
+
+        if (opDc > 0) {
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { id: 'token_void', name: '虚空', power: 1 };
+            for (let i = 0; i < opDc; i++) {
+                opH.push({
+                    ...voidTpl,
+                    owner: oppOwner,
+                    isToken: true,
+                    currentPower: voidTpl.power || 1
+                });
+            }
+        }
     } else if (action === 'targeted_destruction') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
         let targetLane = -1;
@@ -1093,6 +1168,62 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             } else {
                 events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
             }
+        }
+    } else if (action === 'elf_polarbear_combo') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        let targetLane = -1;
+        let myLane = -1;
+        if (tokenLanes && tokenLanes.length === 2) {
+            targetLane = tokenLanes[0];
+            myLane = tokenLanes[1];
+        } else if (tokenLanes && tokenLanes.length > 0) {
+            // （フォールバックなどのため）
+            targetLane = tokenLanes[0];
+            myLane = (tokenLanes.length > 1) ? tokenLanes[1] : 0; // fallback
+        } else {
+            // AI用決定ロジック
+            let maxP = -1;
+            for (let i = 0; i < 3; i++) {
+                if (eBoard[i] && eBoard[i].currentPower > maxP) {
+                    maxP = eBoard[i].currentPower;
+                    targetLane = i;
+                }
+            }
+            // 空きレーンを探す
+            const mySealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+            for (let i = 0; i < 3; i++) {
+                if (!board[i] && (!mySealedLanes || mySealedLanes[i] === 0)) {
+                    myLane = i;
+                    break;
+                }
+            }
+        }
+
+        // パート1: 相手のカードの破壊（選ばれた場合のみ）
+        if (targetLane !== -1 && eBoard[targetLane] !== null) {
+            if (!hasSkill(eBoard[targetLane], 'immune')) {
+                eBoard[targetLane].currentPower = 0;
+                events.push({ type: 'deadly', side: oppOwner, lane: targetLane, source: 'elf_polarbear_combo' });
+            } else {
+                events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'elf_polarbear_combo' });
+            }
+        }
+
+        // パート2: ヴォイテクの配置
+        const mySealedLanesFinal = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+        if (myLane !== -1 && !board[myLane] && (!mySealedLanesFinal || mySealedLanesFinal[myLane] === 0)) {
+            const tokenMaster = { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 3, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' };
+            const bearCard = {
+                ...tokenMaster,
+                uid: 'dng_tk_' + Math.floor(getSeededRandom() * 1000000000),
+                owner: owner,
+                currentPower: tokenMaster.power,
+                skillTriggered: true, // 配置のため召喚時効果（もしあれば）は発動しない
+                stunTurns: 0,
+                stunAppliedThisTurn: false
+            };
+            board[myLane] = bearCard;
+            events.push({ type: 'summon_card', side: owner, lane: myLane, card: bearCard, source: 'elf_polarbear_combo' });
         }
     } else if (action === 'devilhunter_resurrect') {
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;

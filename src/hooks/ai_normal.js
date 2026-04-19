@@ -21,7 +21,7 @@ export function getNormalDecision() {
 export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
     let candidates = [];
     const skill = GameState.enemyConfig.leaderSkill;
-    let canUseSkill = skill && mySP >= skill.cost && (skill.action !== 'abyss_ritual' && skill.action !== 'dark_ritual' && skill.action !== 'time_stop');
+    let canUseSkill = skill && mySP >= skill.cost && (skill.action !== 'abyss_ritual' && skill.action !== 'dark_ritual' && skill.action !== 'time_stop' && skill.action !== 'otherworld_gate');
     // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
     if (canUseSkill && skill.action === 'devilhunter_resurrect') {
         const discard = GameState.enemyDiscard || [];
@@ -102,6 +102,18 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                 tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
                 // もし候補がなくても前のチェックで弾かれるはずだが、念の為
                 if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
+            } else if (action === 'elf_polarbear_combo') {
+                const enemyOccupied = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'));
+                const myAvailable = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
+                let combs = [];
+                if (enemyOccupied.length > 0 && myAvailable.length > 0) {
+                    for (let e of enemyOccupied) {
+                        for (let m of myAvailable) {
+                            combs.push([e, m]);
+                        }
+                    }
+                }
+                tokenLanePatterns = combs.length > 0 ? combs : [null];
             } else if (action === 'seal_lanes') {
                 const validTargetLanes = [0, 1, 2];
                 let combinations = [null];
@@ -127,7 +139,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                             simulateTokenIsHere = true;
                             if (skill.action === 'dragon_high_ritual') simulateTokenIsLegendary = true;
                         }
-                        
+
                         const hasCardInSim = myBoard[l] !== null || simulateTokenIsHere;
                         const hasLegendInSim = (myBoard[l] && hasSkill(myBoard[l], 'legendary')) || simulateTokenIsLegendary;
 
@@ -180,14 +192,14 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                         if (totalTokenCount > 0) {
                             const maxCount = Math.min(availableLanesForToken.length, totalTokenCount);
                             let tokenCombinations = [[]]; // キャンセルパターン (0枚)
-                            for(let k = 1; k <= maxCount; k++) {
+                            for (let k = 1; k <= maxCount; k++) {
                                 tokenCombinations.push(...getCombinations(availableLanesForToken, k));
                             }
                             cardTokenLanePatterns = tokenCombinations;
                         } else if (enemyTargetCount > 0) {
                             const enemyOccupied = opBoard.map((c, idx) => c ? idx : -1).filter(idx => idx !== -1);
                             let enemyCombinations = [[]]; // キャンセルパターン
-                            for(let k = 1; k <= Math.min(enemyTargetCount, enemyOccupied.length); k++) {
+                            for (let k = 1; k <= Math.min(enemyTargetCount, enemyOccupied.length); k++) {
                                 enemyCombinations.push(...getCombinations(enemyOccupied, k));
                             }
                             cardTokenLanePatterns = enemyCombinations;
@@ -225,7 +237,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                                         let finalChoiceQueue = [];
                                         if (cIdxArr !== undefined) finalChoiceQueue.push(cIdxArr);
                                         if (cIdxArr2 !== undefined) finalChoiceQueue.push(cIdxArr2);
-                                        
+
                                         if (simState) candidates.push({ index: i, lane: l, isOverwrite, useSkill, tokenLanes, skillOrder: order, choiceIndexQueue: finalChoiceQueue.length > 0 ? finalChoiceQueue : undefined, cardTokenLanes, simState });
                                     }
                                 }
@@ -254,7 +266,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
             if (state.enemyBoard[i]) myPower += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
             if (state.playerBoard[i]) opPower += (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
         }
-        
+
         // 号令（call）は期待値としてパワー+3として評価
         if (candidate && candidate.index !== -1) {
             const playedCard = hand[candidate.index];
@@ -262,7 +274,7 @@ export function getBestSimulatedMove(hand, myBoard, opBoard, myHP, mySP) {
                 myPower += 3;
             }
         }
-        
+
         return myPower - opPower;
     };
 
@@ -395,7 +407,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
     // 2. カードをプレイ
     if (handIdx !== -1) {
         const playedCard = cloneCard(simState.enemyHand[handIdx]);
-        
+
         // リーダースキル等によって事前の見積もりと盤面状況が変わっている場合の最終制約チェック
         if (checkConstraints && hasSkill(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) {
             return null; // ルール違反となるためシミュレーション自体を破棄させる
@@ -407,7 +419,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         if (checkConstraints && hasSkill(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkill(simState.enemyBoard[laneIdx], 'legendary'))) {
             return null;
         }
-        
+
         if (hasSkill(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
             // 装備：既存のカードに追加効果とパワーを付与し、装備カードは消費される。
             const targetCard = simState.enemyBoard[laneIdx];
@@ -579,9 +591,12 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
             if (state.enemyBoard[i]) adv += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
             if (state.playerBoard[i]) adv -= (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
         }
-        // adhocで出たカード自体が号令(call)を持つ場合の期待値調整
+        // adhocで出たカード自体が強力な特殊スキルを持つ場合の期待値調整
         if (candidateLane !== undefined && candidateLane.length > 0) {
             if (tokenCard.skill === 'call' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'call'))) {
+                adv += 3;
+            }
+            if (tokenCard.skill === 'metamorph' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'metamorph'))) {
                 adv += 3;
             }
         }
@@ -745,8 +760,8 @@ export function evaluateAIMoves(currentState) {
 
         let myPow = 0;
         let opPow = 0;
-        simState.enemyBoard.forEach(c => { if(c) myPow += (c.currentPower || 0); });
-        simState.playerBoard.forEach(c => { if(c) opPow += (c.currentPower || 0); });
+        simState.enemyBoard.forEach(c => { if (c) myPow += (c.currentPower || 0); });
+        simState.playerBoard.forEach(c => { if (c) opPow += (c.currentPower || 0); });
 
         score += myPow;
         score -= opPow;

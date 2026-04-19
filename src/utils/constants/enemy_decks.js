@@ -13,9 +13,11 @@ import witch from './enemy_decks/witch.js';
 import oni from './enemy_decks/oni.js';
 import satan from './enemy_decks/satan.js';
 import satan_high from './enemy_decks/satan_high.js';
+import cthulhu_high from './enemy_decks/cthulhu_high.js';
 import android_high from './enemy_decks/android_high.js';
 import dragon_high from './enemy_decks/dragon_high.js';
 import knight_high from './enemy_decks/knight_high.js';
+import elf_high from './enemy_decks/elf_high.js';
 
 export const ENEMY_DECKS = {
     android,
@@ -29,7 +31,9 @@ export const ENEMY_DECKS = {
     oni,
     satan,
     satan_high,
+    cthulhu_high,
     android_high,
     dragon_high,
-    knight_high
+    knight_high,
+    elf_high
 };
