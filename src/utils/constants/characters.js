@@ -1,6 +1,9 @@
 /**
  * Mini Card Battle - Character Data
  */
+import cthulhuHighDeck from './enemy_decks/cthulhu_high.js';
+import elfHighDeck from './enemy_decks/elf_high.js';
+
 export const CHARACTERS = {
     android: {
         id: 'android', stageId: 'android', name: '機動戦姫 アイギス',
@@ -560,7 +563,7 @@ CHARACTERS.cthulhu.challenges = {
             useSkin: 'cthulhu_high',
             maxHP: 30, // または強さ調整
             initSP: 0,
-            deck: () => import('./enemy_decks/cthulhu_high.js').then(m => m.cthulhuHighDeckDef).catch(e => { console.error('Failed to load cthulhu high deck', e); return null; }),
+            deck: () => Promise.resolve(cthulhuHighDeck),
             leaderSkill: { name: '異界の扉', desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー1）」を加える。', action: 'otherworld_gate', cost: 3 }
         }
     }
@@ -599,7 +602,7 @@ CHARACTERS.elf.challenges = {
             useSkin: 'elf_high',
             maxHP: 40,
             initSP: 0,
-            deck: () => import('./enemy_decks/elf_high.js').then(m => m.default).catch(e => { console.error('Failed to load elf high deck', e); return null; }),
+            deck: () => Promise.resolve(elfHighDeck),
             leaderSkill: { name: '連携攻撃', desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:3/伝説/貫通)」を1体配置する。', cost: 2, action: 'elf_polarbear_combo' }
         }
     }
