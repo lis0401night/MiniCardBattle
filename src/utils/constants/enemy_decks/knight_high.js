@@ -4,7 +4,8 @@
 export default [
     'darkpaladin', 'darkpaladin', 'darkpaladin', 'darkpaladin',
     'elite', 'elite', 'elite', 'elite',
-    'duelist', 'duelist', 'duelist', 'duelist',
-    'guildmaster', 'guildmaster', 'guildmaster', 'guildmaster',
+    'duelist', 'duelist', 'duelist',
+    'guildmaster', 'guildmaster', 'guildmaster',
     'assassin', 'assassin', 'assassin', 'assassin',
+    'horse', 'horse',
 ];
