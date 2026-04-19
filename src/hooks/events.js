@@ -169,8 +169,8 @@ export function initEventCthulhuHighMode(charId) {
         name: '魔界の征服者 ナイア',
         leaderSkill: {
             name: '異界の扉',
-            desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
-            cost: 3,
+            desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
+            cost: 2,
             action: 'otherworld_gate'
         }
     };
