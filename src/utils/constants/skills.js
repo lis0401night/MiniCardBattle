@@ -130,12 +130,14 @@ export const SKILLS = {
     },
     crush: { name: '粉砕', icon: '🔨', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択する。対象が「防御」を持つカードならそのカードを破壊する。` },
     substitute: { name: '身替', icon: '🎭', desc: (val) => '隣のレーンの味方に戦闘で受けるダメージを肩代わりさせる。' },
-    adversity: { name: '逆境', icon: '🥀', desc: (val) => `召喚時、相手の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` }
+    adversity: { name: '逆境', icon: '🥀', desc: (val) => `召喚時、相手の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
+    invite: { name: '招来', icon: '🌌', desc: (val) => '召喚時、同じレーンに手札から1枚カードを召喚できる。そうした場合、手札に「虚空（パワー1）」を加える。' },
+    double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' }
 };
 
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

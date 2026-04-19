@@ -904,8 +904,24 @@ export default function GlobalModals() {
                     <div className="preview-skill-badge" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: '0 auto 10px auto', width: 'fit-content', minWidth: '120px' }}>
                       {skillDef.icon} {skillDef.name} {val}
                     </div>
-                    <p className="preview-skill-desc" style={{ textAlign: 'center', margin: 0 }}>
-                      {typeof skillDef.desc === 'function' ? skillDef.desc(sk.value) : skillDef.desc}
+                    <p className="preview-skill-desc" style={{ textAlign: 'center', margin: 0, fontSize: '0.85rem' }}>
+                      {(() => {
+                        const rawDesc = typeof skillDef.desc === 'function' ? skillDef.desc(sk.value, sk) : skillDef.desc;
+                        if (Array.isArray(rawDesc)) {
+                          return rawDesc.map((part, i) => {
+                            if (part.type === 'link') {
+                              return <span key={i} style={{ color: '#60a5fa', textDecoration: 'underline' }} onClick={(e) => {
+                                  e.stopPropagation();
+                                  playSound?.(SOUNDS?.seClick);
+                                  const tObj = CARD_MASTER.find(c => c.id === part.targetId);
+                                  if (tObj) setCardPreviewData({ card: tObj });
+                              }}>{part.value}</span>;
+                            }
+                            return <span key={i}>{part.value}</span>;
+                          });
+                        }
+                        return rawDesc;
+                      })()}
                     </p>
                   </div>
                 );

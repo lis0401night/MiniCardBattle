@@ -3,7 +3,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -20,9 +20,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -42,6 +42,92 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     };
 
     // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
+    if (skillId === 'invite') {
+        let success = false;
+        let selectedIdx = -1;
+        const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        const b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+        const isPlaceable = (card, laneIdx) => {
+            const hasLegendary = card.skill === 'legendary' || (card.skills && card.skills.some(s => s.id === 'legendary'));
+            const hasTakeover = card.skill === 'takeover' || (card.skills && card.skills.some(s => s.id === 'takeover'));
+            const hasChallenge = card.skill === 'challenge' || (card.skills && card.skills.some(s => s.id === 'challenge'));
+            const hasApex = card.skill === 'apex' || (card.skills && card.skills.some(s => s.id === 'apex'));
+
+            if (hasLegendary && laneIdx !== 1) return false;
+            // 上書きなのでb[laneIdx] === null のことはないが念のため
+            if (hasTakeover && b[laneIdx] === null && !b[laneIdx]) return false;
+            if (hasChallenge) {
+                const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+                if (oppBoard[laneIdx] === null) return false;
+            }
+            if (hasApex) {
+                const hasLegendOnBoard = b.some(bc => bc && (bc.skill === 'legendary' || (bc.skills && bc.skills.some(s => s.id === 'legendary'))));
+                if (!hasLegendOnBoard) return false;
+            }
+            return true;
+        };
+
+        const playableIndices = [];
+        for (let i = 0; i < h.length; i++) {
+            if (isPlaceable(h[i], l)) playableIndices.push(i);
+        }
+
+        if (playableIndices.length > 0) {
+            if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+                let maxEval = -9999;
+                for (let idx of playableIndices) {
+                    const evalVal = h[idx].power + (h[idx].skillValue || 0);
+                    if (evalVal > maxEval) {
+                        maxEval = evalVal;
+                        selectedIdx = idx;
+                    }
+                }
+            } else {
+                while (!success) {
+                    let arr = await waitPlayerHandSelection(1, o, false, '召喚するカードを1枚まで選んでください');
+                    if (!arr || arr.length === 0) {
+                        break; // キャンセル
+                    }
+                    const sIdx = arr[0];
+                    if (playableIndices.includes(sIdx)) {
+                        selectedIdx = sIdx;
+                        success = true;
+                    } else {
+                        if (typeof window.showAlertModal === 'function') {
+                            window.showAlertModal('そのカードは現在のレーンに召喚できません。（伝説や挑戦などの条件を満たしていません）');
+                        }
+                        await sleep(500);
+                    }
+                }
+            }
+
+            if (selectedIdx !== -1) {
+                await playCard(o, selectedIdx, l);
+                
+                const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+                const voidToken = {
+                    ...voidTpl,
+                    id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_invite`,
+                    uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidinvite`,
+                    filter: voidTpl.filter,
+                    power: voidTpl.power,
+                    currentPower: voidTpl.power,
+                    basePower: voidTpl.power,
+                    skill: voidTpl.skill || 'none',
+                    voiceCategory: voidTpl.voiceCategory || 'stone',
+                    isToken: true,
+                    isMorphToken: true
+                };
+                const currentHand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+                currentHand.push(voidToken);
+                renderHand();
+                await sleep(300);
+            }
+        }
+        return;
+    }
+
     if (skillId === 'metamorph') {
         // 全マスタカード（トークン含む）からランダムに1枚選択
         const randomMaster = CARD_MASTER[Math.floor(getSeededRandom() * CARD_MASTER.length)];
@@ -1060,6 +1146,7 @@ export async function triggerStartTurnPassive(owner, lane) {
             }
             triggered = true;
         }
+
 
         if (sk.id === 'contract') {
             const val = sk.value || 3;

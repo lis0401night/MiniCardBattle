@@ -146,6 +146,10 @@ export const CARD_MASTER = [
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
     { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', voiceCategory: 'human_male_ikemen', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。' },
     { id: 'homunculus', name: 'ホムンクルスの実験体', power: 0, skill: 'replicate', rarity: 4, voiceCategory: 'stone', flavor: '欠落した半身を埋めるため、未完成のホムンクルスは強者の力を模倣する。鏡に映る己が完全な存在であると信じて。' },
+    { id: 'seaslug', name: 'ブルー・ドラゴン', rarity: 4, power: 1, skills: [{ id: 'bless', value: 2 }], voiceCategory: 'insect', flavor: '青き海を漂う幻獣。その姿を見た者には、ささやかな海の恵みがもたらされるという。' },
+    { id: 'trapezohedron', name: 'トラペゾヘドロン', rarity: 4, power: 1, skill: 'invite', voiceCategory: 'book', flavor: '異なる次元への扉を開く多面体。深淵を覗き込むとき、そこから恐るべきものが呼び出される。' },
+    { id: 'shoggoth', name: '蠢く泥塊', rarity: 4, power: 2, skill: 'double_power', voiceCategory: 'monster', flavor: '黒き粘液で構成された不定形の怪物。増殖と分裂を繰り返し、際限なく膨張していく。' },
+    { id: 'cthulhu', name: '大いなる支配者', rarity: 4, power: 2, skills: [{ id: 'legendary' }, { id: 'takeover' }, { id: 'choice', value: 2 }], choices: [{ id: 'double_power' }, { id: 'double_power' }, { id: 'morph', value: 1 }, { id: 'morph', value: 1 }], voiceCategory: 'monster', flavor: 'その姿を視認した瞬間、あらゆる物理法則は崩壊を始める。ただ空に浮かぶだけで周囲の空間を歪め、無限の絶望を増殖させていく絶対の主。' },
 
     // トークンカード
     { id: 'token_knight', name: '騎士', rarity: 1, power: 2, isToken: true, skill: 'none', voiceCategory: 'sword', flavor: '号令で召喚された騎士。' },

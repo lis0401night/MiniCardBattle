@@ -236,6 +236,14 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
             break;
         }
+        case 'double_power': {
+            const dpVal = c.currentPower || 0;
+            if (dpVal > 0) {
+                c.currentPower += dpVal;
+                events.push({ type: 'power_change', side: owner, lane: l, amount: dpVal, source: 'double_power' });
+            }
+            break;
+        }
         case 'morph':
             const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
             if (eHandRef && eHandRef.length > 0) {
