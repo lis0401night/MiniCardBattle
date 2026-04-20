@@ -175,6 +175,7 @@ export function getBestSimulatedMove() {
             if (mySealedLanes[lIdx] === 1) return null;
 
             let checkConstraints = false;
+            let triggerSkills = true;
             
             if (action.type === 'play' || action.type === 'invite') {
                 playedCard = cloneCard(simState.enemyHand[tIdx]);
@@ -183,6 +184,8 @@ export function getBestSimulatedMove() {
             } else if (action.type === 'resurrect') {
                 playedCard = cloneCard(simState.enemyDiscard[tIdx]);
                 checkConstraints = false;
+                triggerSkills = false;
+                if (playedCard) playedCard.skillTriggered = true;
                 if (simState.enemyDiscard[tIdx]) simState.enemyDiscard[tIdx] = null;
             }
 
@@ -251,9 +254,11 @@ export function getBestSimulatedMove() {
                 }
 
                 let cLanesForPass = action.cardTokenLanes ? [...action.cardTokenLanes] : null;
-                skills.forEach(sk => {
-                     applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], cLanesForPass);
-                });
+                if (triggerSkills && !activeCardForSkills.skillTriggered) {
+                    skills.forEach(sk => {
+                         applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], cLanesForPass);
+                    });
+                }
 
                 if (simState.enemyBoard[lIdx] && simState.enemyBoard[lIdx].currentPower <= 0) {
                     simState.enemyBoard[lIdx] = null;
@@ -634,7 +639,9 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                             } else skills.push(sk);
                         });
                     }
-                    skills.forEach(sk => applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass));
+                    if (!activeCard.skillTriggered) {
+                        skills.forEach(sk => applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass));
+                    }
                     if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) simState.enemyBoard[laneIdx] = null;
                 }
             }
