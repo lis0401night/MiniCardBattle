@@ -44,6 +44,8 @@ export function getBestSimulatedMove() {
         if (forcedLane !== undefined) {
             if (mySealedLanes[forcedLane] === 1) return [[]];
             availableLanes = [forcedLane];
+        } else if (depth > 0) {
+            availableLanes.push(-1);
         }
 
         if (availableLanes.length === 0) return [[]];
@@ -112,7 +114,7 @@ export function getBestSimulatedMove() {
                                     addedInvite = true;
                                 }
                             }
-                            if (!addedInvite) branches.push([node]);
+                            branches.push([node]);
                         } else if (depth < 2 && hasSkillObj(card, 'resurrect')) {
                             let maxPow = card.skillValue || 1;
                             let addedRes = false;
@@ -125,7 +127,7 @@ export function getBestSimulatedMove() {
                                     addedRes = true;
                                 }
                             }
-                            if (!addedRes) branches.push([node]);
+                            branches.push([node]);
                         } else {
                             branches.push([node]);
                         }
@@ -575,64 +577,66 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
         
         let cLanesForPass = cardTokenLanes ? [...cardTokenLanes] : null;
 
-        if (checkConstraints && playedCard) {
-            if (hasSkillObj(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) return null;
-            if (hasSkillObj(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) return null;
-            if (hasSkillObj(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkillObj(simState.enemyBoard[laneIdx], 'legendary'))) return null;
-            if (hasSkillObj(playedCard, 'legendary') && laneIdx !== 1) return null;
-            if (!hasSkillObj(playedCard, 'takeover') && !hasSkillObj(playedCard, 'equip') && !hasSkillObj(playedCard, 'apex') && simState.enemyBoard[laneIdx] !== null) {
-                if (!(playedCard.skills && playedCard.skills.find(s=>s.id==='union') && (simState.enemyBoard[laneIdx].baseId === playedCard.skills.find(s=>s.id==='union').targetId || simState.enemyBoard[laneIdx].id === playedCard.skills.find(s=>s.id==='union').targetId))) {
-                    return null;
+        if (laneIdx !== -1) {
+            if (checkConstraints && playedCard) {
+                if (hasSkillObj(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) return null;
+                if (hasSkillObj(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) return null;
+                if (hasSkillObj(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkillObj(simState.enemyBoard[laneIdx], 'legendary'))) return null;
+                if (hasSkillObj(playedCard, 'legendary') && laneIdx !== 1) return null;
+                if (!hasSkillObj(playedCard, 'takeover') && !hasSkillObj(playedCard, 'equip') && !hasSkillObj(playedCard, 'apex') && simState.enemyBoard[laneIdx] !== null) {
+                    if (!(playedCard.skills && playedCard.skills.find(s=>s.id==='union') && (simState.enemyBoard[laneIdx].baseId === playedCard.skills.find(s=>s.id==='union').targetId || simState.enemyBoard[laneIdx].id === playedCard.skills.find(s=>s.id==='union').targetId))) {
+                        return null;
+                    }
                 }
             }
-        }
 
-        if (playedCard) {
-            if (hasSkillObj(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
-                const targetCard = simState.enemyBoard[laneIdx];
-                targetCard.basePower = (targetCard.basePower||0) + (playedCard.power||0);
-                targetCard.currentPower = (targetCard.currentPower||0) + (playedCard.power||0);
-                let addedSkills = [];
-                if (playedCard.skill && playedCard.skill!=='none' && playedCard.skill!=='equip') addedSkills.push({id:playedCard.skill, value:playedCard.skillValue});
-                if (playedCard.skills) playedCard.skills.forEach(s=>{if(s.id!=='equip') addedSkills.push({id:s.id,value:s.value});});
-                mergeCardSkills(targetCard, addedSkills);
-                addedSkills.forEach(sk => applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass));
-            } else {
-                let activeCard = playedCard;
-                const unionSkill = playedCard.skills && playedCard.skills.find(s=>s.id==='union');
-                if (unionSkill && simState.enemyBoard[laneIdx] && (simState.enemyBoard[laneIdx].baseId === unionSkill.targetId || simState.enemyBoard[laneIdx].id === unionSkill.targetId)) {
-                    const masterData = CARD_MASTER.find(c=>c.id===unionSkill.summonId) || CARD_MASTER.find(c=>c.id==='android');
-                    let uc = JSON.parse(JSON.stringify(masterData));
-                    uc.owner='red'; uc.baseId=uc.id; uc.currentPower=uc.power; uc.basePower=uc.power; uc.stunTurns=0;
-                    simState.enemyBoard[laneIdx] = uc;
-                    activeCard = uc;
+            if (playedCard) {
+                if (hasSkillObj(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
+                    const targetCard = simState.enemyBoard[laneIdx];
+                    targetCard.basePower = (targetCard.basePower||0) + (playedCard.power||0);
+                    targetCard.currentPower = (targetCard.currentPower||0) + (playedCard.power||0);
+                    let addedSkills = [];
+                    if (playedCard.skill && playedCard.skill!=='none' && playedCard.skill!=='equip') addedSkills.push({id:playedCard.skill, value:playedCard.skillValue});
+                    if (playedCard.skills) playedCard.skills.forEach(s=>{if(s.id!=='equip') addedSkills.push({id:s.id,value:s.value});});
+                    mergeCardSkills(targetCard, addedSkills);
+                    addedSkills.forEach(sk => applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass));
                 } else {
-                    if (playedCard.currentPower===undefined || Number.isNaN(playedCard.currentPower)) {
-                        playedCard.currentPower=playedCard.power||0; playedCard.basePower=playedCard.power||0;
+                    let activeCard = playedCard;
+                    const unionSkill = playedCard.skills && playedCard.skills.find(s=>s.id==='union');
+                    if (unionSkill && simState.enemyBoard[laneIdx] && (simState.enemyBoard[laneIdx].baseId === unionSkill.targetId || simState.enemyBoard[laneIdx].id === unionSkill.targetId)) {
+                        const masterData = CARD_MASTER.find(c=>c.id===unionSkill.summonId) || CARD_MASTER.find(c=>c.id==='android');
+                        let uc = JSON.parse(JSON.stringify(masterData));
+                        uc.owner='red'; uc.baseId=uc.id; uc.currentPower=uc.power; uc.basePower=uc.power; uc.stunTurns=0;
+                        simState.enemyBoard[laneIdx] = uc;
+                        activeCard = uc;
+                    } else {
+                        if (playedCard.currentPower===undefined || Number.isNaN(playedCard.currentPower)) {
+                            playedCard.currentPower=playedCard.power||0; playedCard.basePower=playedCard.power||0;
+                        }
+                        simState.enemyBoard[laneIdx] = playedCard;
                     }
-                    simState.enemyBoard[laneIdx] = playedCard;
+                    let skills = [];
+                    if (activeCard.skill && activeCard.skill !== 'none') {
+                        if (activeCard.skill === 'choice' && choiceIndex !== undefined && activeCard.choices) {
+                            let idxs = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
+                            idxs.forEach(idx => { if(activeCard.choices[idx]) skills.push({id:activeCard.choices[idx].id, value:activeCard.choices[idx].value}); });
+                        } else skills.push({id:activeCard.skill, value:activeCard.skillValue});
+                    }
+                    if (Array.isArray(activeCard.skills)) {
+                        activeCard.skills.forEach(sk => {
+                            if (sk.id === 'choice') {
+                                let cIdx = sk.choiceGroup === 2 ? choiceIndex2 : choiceIndex;
+                                let cArr = sk.choiceGroup === 2 ? activeCard.choices2 : activeCard.choices;
+                                if (cIdx !== undefined && cArr) {
+                                    let idxs = Array.isArray(cIdx) ? cIdx : [cIdx];
+                                    idxs.forEach(i => { if(cArr[i]) skills.push({id:cArr[i].id, value:cArr[i].value}); });
+                                }
+                            } else skills.push(sk);
+                        });
+                    }
+                    skills.forEach(sk => applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass));
+                    if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) simState.enemyBoard[laneIdx] = null;
                 }
-                let skills = [];
-                if (activeCard.skill && activeCard.skill !== 'none') {
-                    if (activeCard.skill === 'choice' && choiceIndex !== undefined && activeCard.choices) {
-                        let idxs = Array.isArray(choiceIndex) ? choiceIndex : [choiceIndex];
-                        idxs.forEach(idx => { if(activeCard.choices[idx]) skills.push({id:activeCard.choices[idx].id, value:activeCard.choices[idx].value}); });
-                    } else skills.push({id:activeCard.skill, value:activeCard.skillValue});
-                }
-                if (Array.isArray(activeCard.skills)) {
-                    activeCard.skills.forEach(sk => {
-                        if (sk.id === 'choice') {
-                            let cIdx = sk.choiceGroup === 2 ? choiceIndex2 : choiceIndex;
-                            let cArr = sk.choiceGroup === 2 ? activeCard.choices2 : activeCard.choices;
-                            if (cIdx !== undefined && cArr) {
-                                let idxs = Array.isArray(cIdx) ? cIdx : [cIdx];
-                                idxs.forEach(i => { if(cArr[i]) skills.push({id:cArr[i].id, value:cArr[i].value}); });
-                            }
-                        } else skills.push(sk);
-                    });
-                }
-                skills.forEach(sk => applyActiveSkillLogic(simState, 'red', laneIdx, sk.id, sk.value, [], cLanesForPass));
-                if (simState.enemyBoard[laneIdx] && simState.enemyBoard[laneIdx].currentPower <= 0) simState.enemyBoard[laneIdx] = null;
             }
         }
     }
