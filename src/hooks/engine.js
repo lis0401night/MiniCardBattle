@@ -276,6 +276,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 // 対象となるカードを抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
                 const validTargets = eHandRef
                     .map((card, idx) => ({ card, idx }))
+                    .filter(item => item.card !== null)
                     .sort((a, b) => {
                         const pA = a.card.currentPower ?? a.card.power ?? 0;
                         const pB = b.card.currentPower ?? b.card.power ?? 0;
@@ -528,14 +529,17 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 const blessVal = val || 1;
                 let bestCard = null;
                 for (let hc of blessHand) {
+                    if (hc === null) continue;
                     if (!hc.isToken && (!bestCard || (hc.power || 0) > (bestCard.power || 0))) {
                         bestCard = hc;
                     }
                 }
-                if (!bestCard) bestCard = blessHand[0];
-                bestCard.power = (bestCard.power || 0) + blessVal;
-                bestCard.currentPower = (bestCard.currentPower || 0) + blessVal;
-                bestCard.basePower = (bestCard.basePower || 0) + blessVal;
+                if (!bestCard) bestCard = blessHand.find(c => c !== null);
+                if (bestCard) {
+                    bestCard.power = (bestCard.power || 0) + blessVal;
+                    bestCard.currentPower = (bestCard.currentPower || 0) + blessVal;
+                    bestCard.basePower = (bestCard.basePower || 0) + blessVal;
+                }
             }
             break;
         case 'convert':
@@ -657,10 +661,11 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'resurrect':
             // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
             const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-            if (simDiscard.length === 0) break;
+            const validDiscard = simDiscard.filter(c => c !== null);
+            if (validDiscard.length === 0) break;
 
             // パワーが高い順にソートして一番強いのを取得し、シミュ内で墓地から取り除く
-            const sortedDiscard = [...simDiscard].sort((a, b) => b.power - a.power);
+            const sortedDiscard = [...validDiscard].sort((a, b) => (b.power || 0) - (a.power || 0));
             const simResCard = sortedDiscard[0];
 
             let targetLaneRes = -1;

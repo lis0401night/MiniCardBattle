@@ -75,13 +75,23 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
         if (playableIndices.length > 0) {
             if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-                let maxEval = -9999;
-                for (let idx of playableIndices) {
-                    const evalVal = h[idx].power + (h[idx].skillValue || 0);
-                    if (evalVal > maxEval) {
-                        maxEval = evalVal;
-                        selectedIdx = idx;
+                let actionIdx = -1;
+                if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                    actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'invite');
+                }
+                if (actionIdx !== -1) {
+                    const action = GameState.aiDecision.actionQueue[actionIdx];
+                    selectedIdx = action.targetIdx;
+                    GameState.aiDecision.actionQueue.splice(actionIdx, 1);
+                    GameState.aiDecision.cardTokenLanes = action.cardTokenLanes ? [...action.cardTokenLanes] : undefined;
+                    
+                    if (action.choices !== undefined || action.choices2 !== undefined) {
+                        if (!GameState.aiDecision.choiceIndexQueue) GameState.aiDecision.choiceIndexQueue = [];
+                        if (action.choices !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices);
+                        if (action.choices2 !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices2);
                     }
+                } else {
+                    selectedIdx = -1; // シミュレーションで不要と判断された（または見つからなかった）場合はキャンセル
                 }
             } else {
                 while (!success) {
@@ -761,7 +771,28 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
 
         if (validCards.length > 0) {
-            const selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, o, '復活させるカードを選択', `パワー${maxPow}以下のカードを1枚場に出します。`);
+            let selectedCard = null;
+            if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+                let actionIdx = -1;
+                if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                    actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'resurrect');
+                }
+                if (actionIdx !== -1) {
+                    const action = GameState.aiDecision.actionQueue[actionIdx];
+                    selectedCard = discard[action.targetIdx];
+                    GameState.aiDecision.actionQueue.splice(actionIdx, 1);
+                    // 次の waitPlayerLaneSelection のため
+                    GameState.aiDecision.cardTokenLanes = [action.laneIdx];
+                    
+                    if (action.choices !== undefined || action.choices2 !== undefined) {
+                        if (!GameState.aiDecision.choiceIndexQueue) GameState.aiDecision.choiceIndexQueue = [];
+                        if (action.choices !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices);
+                        if (action.choices2 !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices2);
+                    }
+                }
+            } else {
+                selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, o, '復活させるカードを選択', `パワー${maxPow}以下のカードを1枚場に出します。`);
+            }
 
             if (selectedCard) {
                 // 配置先を選ばせる (召喚ではなく配置扱いのため制約チェックはしない)

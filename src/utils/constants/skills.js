@@ -131,7 +131,13 @@ export const SKILLS = {
     crush: { name: '粉砕', icon: '🔨', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択する。対象が「防御」を持つカードならそのカードを破壊する。` },
     substitute: { name: '身替', icon: '🎭', desc: (val) => '隣のレーンの味方に戦闘で受けるダメージを肩代わりさせる。' },
     adversity: { name: '逆境', icon: '🥀', desc: (val) => `召喚時、相手の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する` },
-    invite: { name: '招来', icon: '🌌', desc: (val) => '召喚時、同じレーンに手札から1枚カードを召喚できる。そうした場合、手札に「虚空（パワー1）」を加える。' },
+    invite: {
+        name: '招来', icon: '🌌', desc: (val) => [
+            { type: 'text', value: '召喚時、同じレーンに手札から1枚カードを召喚できる。そうした場合、手札に' },
+            { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+            { type: 'text', value: 'を加える。' }
+        ]
+    },
     double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' },
     explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` }
 };

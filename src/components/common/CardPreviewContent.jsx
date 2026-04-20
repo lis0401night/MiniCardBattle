@@ -124,7 +124,7 @@ export default function CardPreviewContent({
             >
               {isRevealed ? (
                   <>
-                      <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: (isSkin || styleProps.isPlaymat) ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'center bottom' : (styleProps.isPlaymat ? 'center' : 'center center'), backgroundColor: styleProps.isPlaymat ? '#000' : '' }}></div>
+                      <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter: filter, backgroundSize: isSkin ? 'contain' : 'cover', backgroundRepeat: (isSkin || styleProps.isPlaymat) ? 'no-repeat' : 'inherit', backgroundPosition: isSkin ? 'top center' : (styleProps.isPlaymat ? 'center' : 'center center'), backgroundColor: styleProps.isPlaymat ? '#000' : '' }}></div>
                       {!isSkin && !styleProps.isPlaymat && <div className="card-power" style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}>{card.currentPower !== undefined ? card.currentPower : card.power}</div>}
                       {!isSkin && !styleProps.isPlaymat && safeRenderSkillTag(card)}
                       {!isSkin && !styleProps.isPlaymat && card.equippedCards && card.equippedCards.length > 0 && (
