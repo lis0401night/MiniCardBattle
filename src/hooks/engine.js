@@ -261,7 +261,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     events.push({ type: 'draw', side: owner, source: 'explore' });
 
                     if (myHandSim.length > 0) {
-                        myHandSim.sort((a, b) => (a.power || 0) - (b.power || 0));
+                        myHandSim.sort((a, b) => ((a||{}).power || 0) - ((b||{}).power || 0));
                         myHandSim.shift(); // 最も弱いカードを捨てる
                     }
                 }
@@ -1108,7 +1108,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         // 1. 最大2枚捨てる（AIシミュレーションではなるべくパワーの低いものを捨てる）
         let dc = 0;
         if (h.length > 0) {
-            let sortedHand = h.map((c, idx) => ({ card: c, idx })).sort((a, b) => (a.card.currentPower || a.card.power) - (b.card.currentPower || b.card.power));
+            let sortedHand = h.map((c, idx) => ({ card: c, idx })).filter(x => x.card !== null).sort((a, b) => (a.card.currentPower || a.card.power || 0) - (b.card.currentPower || b.card.power || 0));
             const dropCount = Math.min(2, h.length);
             const dropIndices = sortedHand.slice(0, dropCount).map(item => item.idx).sort((a, b) => b - a);
             for (let i of dropIndices) {

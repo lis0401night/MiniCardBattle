@@ -40,20 +40,8 @@ export function initEventAndroidHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    const introDialogues = EVENT_DIALOGUES.event_android_high[charId] || [];
-    if (introDialogues.length >= 3) {
-        GameState.dialogueQueue = [
-            introDialogues[0],
-            introDialogues[1],
-            introDialogues[2]
-        ];
-    } else {
-        GameState.dialogueQueue = [
-            { speaker: 'narrator', text: "今日はアイギスの新装備のテスト運用日。広大な演習場に、重装備に身を包んだ彼女の姿があった。" },
-            { speaker: 'enemy', text: "テスト対象、確認……これより新装備の戦闘テストを開始します。" },
-            { speaker: 'player', text: "わかった、アイギス。手加減はしないよ！" }
-        ];
-    }
+    const dialogues = EVENT_DIALOGUES.event_android_high[charId] || EVENT_DIALOGUES.event_android_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
@@ -94,16 +82,8 @@ export function initEventDragonHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    // イベント導入ダイアログ（キャラ別・1〜3行目）
-    const introDialogues = EVENT_DIALOGUES.event_dragon_high[charId] || [];
-    if (introDialogues.length >= 3) {
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
-    } else {
-        GameState.dialogueQueue = [
-            { speaker: 'narrator', text: '砂漠の都市国家から招待状が届いた。豪奢な宴の片隅で、退屈そうにしている竜姫の姿があった。' },
-            { speaker: 'player', text: 'あの人、どこかで見たような……。' }
-        ];
-    }
+    const dialogues = EVENT_DIALOGUES.event_dragon_high[charId] || EVENT_DIALOGUES.event_dragon_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
@@ -143,15 +123,8 @@ export function initEventKnightHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    const introDialogues = EVENT_DIALOGUES.event_knight_high[charId] || [];
-    if (introDialogues.length >= 3) {
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
-    } else {
-        GameState.dialogueQueue = [
-            { speaker: 'narrator', text: '「死の谷」の調査に向かったセレスティアが消息を絶った。' },
-            { speaker: 'player', text: 'まさか彼女があの禍々しい気配の中心だというのか？' }
-        ];
-    }
+    const dialogues = EVENT_DIALOGUES.event_knight_high[charId] || EVENT_DIALOGUES.event_knight_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
@@ -191,15 +164,8 @@ export function initEventCthulhuHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    const introDialogues = EVENT_DIALOGUES.event_cthulhu_high[charId] || [];
-    if (introDialogues.length >= 3) {
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
-    } else {
-        GameState.dialogueQueue = [
-            { speaker: 'narrator', text: '玉座の間には、狂気に満ちた歪な魔法陣が描かれていた。' },
-            { speaker: 'player', text: 'あんな出来損ないの狂気、私に対する冒涜です。' }
-        ];
-    }
+    const dialogues = EVENT_DIALOGUES.event_cthulhu_high[charId] || EVENT_DIALOGUES.event_cthulhu_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
@@ -211,7 +177,7 @@ export function initEventElfHighMode(charId) {
     GameState.enemyConfig = {
         ...CHARACTERS['elf'],
         hp: 40,
-        name: charId === 'elf' ? 'リナの幻影' : 'リナ&ヴォイテク',
+        name: 'リナ&ヴォイテク',
         leaderSkill: {
             name: '連携攻撃',
             desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:3/伝説/貫通)」を1体配置する。',
@@ -225,7 +191,7 @@ export function initEventElfHighMode(charId) {
     GameState.selectedStageId = 'elf'; // ロストレイルの森
 
     if (!GameState.enemySkins) GameState.enemySkins = {};
-    GameState.enemySkins['elf'] = charId === 'elf' ? 'default' : 'elf_high';
+    GameState.enemySkins['elf'] = 'elf_high';
 
     if (typeof getSkinImage === 'function') {
         GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, GameState.enemySkins['elf'], 'image');
@@ -235,22 +201,8 @@ export function initEventElfHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    const introDialogues = EVENT_DIALOGUES.event_elf_high ? EVENT_DIALOGUES.event_elf_high[charId] : [];
-    if (introDialogues && introDialogues.length >= 3) {
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
-    } else {
-        if (charId === 'elf') {
-            GameState.dialogueQueue = [
-                { speaker: 'narrator', text: 'ロストレイルの森の奥深くに足を踏み入れたリナ。' },
-                { speaker: 'player', text: 'あの白熊……ヴォイテクはいないわ。今、立ちはだかるのはかつての私自身。' }
-            ];
-        } else {
-            GameState.dialogueQueue = [
-                { speaker: 'narrator', text: 'リナから「一人前の戦士になるための試練」に協力してほしいと手紙が届いた。' },
-                { speaker: 'player', text: 'ロストレイルの森……。新たな相棒と共に待っているようね。' }
-            ];
-        }
-    }
+    const dialogues = EVENT_DIALOGUES.event_elf_high[charId] || EVENT_DIALOGUES.event_elf_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
@@ -267,17 +219,8 @@ export function initEventSatanMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    // フェーズ1: 噂と道中 (ナレーターとプレイヤーの独白)
-    const introDialogues = EVENT_DIALOGUES.event_satan[charId] || [];
-    if (introDialogues.length >= 3) {
-        // 最初の3行を導入に使用
-        GameState.dialogueQueue = [introDialogues[0], introDialogues[1], introDialogues[2]];
-    } else {
-        GameState.dialogueQueue = [
-            { speaker: 'narrator', text: "一度倒したはずの魔王サタンが復活したという噂。不吉な予感と共に、再び魔界の最深部へ足を踏み入れる。" },
-            { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'intro', 'player') }
-        ];
-    }
+    const dialogues = EVENT_DIALOGUES.event_satan[charId] || EVENT_DIALOGUES.event_satan['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
@@ -285,57 +228,15 @@ export function initEventSatanMode(charId) {
 }
 
 /**
- * イベントモード（サタン戦・アイギス高難易度戦・イグニス高難易度戦）の進行管理
+ * イベントモード進行管理
  */
 export function handleEventProgression() {
     if (GameState.appState === 'story_intro') {
         GameState.appState = 'pre_dialogue';
-
-        if (GameState.gameMode === 'event_android_high') {
+        
+        if (GameState.gameMode.startsWith('event_')) {
             performFadeTransition(() => {
-                setupEventAndroidHighConfrontation();
-            });
-        } else if (GameState.gameMode === 'event_dragon_high') {
-            performFadeTransition(() => {
-                setupEventDragonHighConfrontation();
-            });
-        } else if (GameState.gameMode === 'event_elf_high') {
-            performFadeTransition(() => {
-                setupEventElfHighConfrontation();
-            });
-        } else if (GameState.gameMode === 'event_knight_high') {
-            performFadeTransition(() => {
-                setupEventKnightHighConfrontation();
-            });
-        } else if (GameState.gameMode === 'event_cthulhu_high') {
-            performFadeTransition(() => {
-                setupEventCthulhuHighConfrontation();
-            });
-        } else {
-            let confrontationLines = [];
-            const charId = GameState.playerConfig.id;
-            const introDialogues = EVENT_DIALOGUES.event_satan[charId] || [];
-            if (introDialogues.length >= 4) {
-                // 4行目（到着の描写）
-                confrontationLines.push(introDialogues[3]);
-            }
-
-            // サタンの共通台詞
-            confrontationLines.push({
-                speaker: 'enemy',
-                text: "ククク……よくぞ戻った、人間ども。一度の死で我が絶望はより深く、より強固となった。貴様らの希望という名の光、今度こそ完全に塗り潰してやろう。"
-            });
-
-            // プレイヤーの決意
-            confrontationLines.push({
-                speaker: 'player',
-                text: GameState.playerConfig.preBattleLine || "覚悟しなさい、サタン！"
-            });
-
-            GameState.dialogueQueue = confrontationLines;
-
-            performFadeTransition(() => {
-                setupEventSatanConfrontation();
+                setupEventConfrontation();
             });
         }
     } else if (GameState.appState === 'pre_dialogue') {
@@ -357,196 +258,28 @@ export function handleEventProgression() {
 }
 
 /**
- * サタン戦の対峙ダイアログ（コンテニュー時などにも使用）を設定
+ * すべてのイベント共通の対峙ダイアログ（コンテニュー時などにも使用）を設定
  */
-export function setupEventSatanConfrontation() {
+export function setupEventConfrontation() {
     GameState.appState = 'pre_dialogue';
-    let confrontationLines = [];
     const charId = GameState.playerConfig.id;
-    const introDialogues = EVENT_DIALOGUES.event_satan[charId] || [];
-    if (introDialogues.length >= 4) {
-        // 4行目（到着の描写）
-        confrontationLines.push(introDialogues[3]);
-    }
-
-    // サタンの共通台詞
-    confrontationLines.push({
-        speaker: 'enemy',
-        text: "ククク……よくぞ戻った、人間ども。一度の死で我が絶望はより深く、より強固となった。貴様らの希望という名の光、今度こそ完全に塗り潰してやろう。"
-    });
-
-    // プレイヤーの決意
-    confrontationLines.push({
-        speaker: 'player',
-        text: GameState.playerConfig.preBattleLine || "覚悟しなさい、サタン！"
-    });
-
-    GameState.dialogueQueue = confrontationLines;
-    setupDialogueScreen();
-}
-
-export function setupEventAndroidHighConfrontation() {
-    GameState.appState = 'pre_dialogue';
+    const modeDialogues = EVENT_DIALOGUES[GameState.gameMode] || {};
+    const dialogs = modeDialogues[charId] || modeDialogues['default'] || [];
 
     let confrontationLines = [];
-    const charId = GameState.playerConfig.id;
-    const introDialogues = EVENT_DIALOGUES.event_android_high[charId] || [];
-    if (introDialogues.length >= 4) {
-        confrontationLines.push(introDialogues[3]);
-    } else {
-        confrontationLines.push({ speaker: 'narrator', text: "広大な演習場。アイギスは新装備「フルアーマーユニット」を纏い、静かにこちらを見つめている。" });
-    }
-
-    confrontationLines.push({ speaker: 'enemy', text: "フルアーマーユニット、出力安定。テスト対象、確認。……手加減は不要です。いつでもどうぞ。" });
-
-    // プレイヤーの決意（あれば設定、なければ固定テキスト）
-    confrontationLines.push({
-        speaker: 'player',
-        text: GameState.playerConfig.preBattleLine || "行くよ、アイギス！"
-    });
-
-    GameState.dialogueQueue = confrontationLines;
-    setupDialogueScreen();
-}
-
-export function setupEventCthulhuHighConfrontation() {
-    GameState.appState = 'pre_dialogue';
-
-    let confrontationLines = [];
-    const charId = GameState.playerConfig.id;
-    const introDialogues = EVENT_DIALOGUES.event_cthulhu_high[charId] || [];
-    if (introDialogues.length >= 4) {
-        confrontationLines.push(introDialogues[3]);
-    } else {
-        confrontationLines.push({ speaker: 'narrator', text: "深淵の気配にまみれた魔王城の最深部。そこには嘲笑うナイアの姿があった。" });
-    }
-
-    confrontationLines.push({ speaker: 'enemy', text: "クスクス……よく来ましたわね。この世界を極上の混沌で満たすため、まずは貴方達から絶望の底に沈めて差し上げますわ！" });
-
-    // プレイヤーの決意（あれば設定、なければ固定テキスト）
-    confrontationLines.push({
-        speaker: 'player',
-        text: GameState.playerConfig.preBattleLine || "ふざけないで、ナイア！"
-    });
-
-    GameState.dialogueQueue = confrontationLines;
-    setupDialogueScreen();
-}
-
-export function setupEventElfHighConfrontation() {
-    GameState.appState = 'pre_dialogue';
-
-    let confrontationLines = [];
-    const charId = GameState.playerConfig.id;
-    const introDialogues = EVENT_DIALOGUES.event_elf_high ? EVENT_DIALOGUES.event_elf_high[charId] : [];
-    if (introDialogues && introDialogues.length >= 4) {
-        confrontationLines.push(introDialogues[3]);
-    } else {
-        if (charId === 'elf') {
-            confrontationLines.push({ speaker: 'narrator', text: "深い森の奥、自身と同じ姿をした幻影が静かに弓を構える。" });
-        } else {
-            confrontationLines.push({ speaker: 'narrator', text: "ロストレイルの森の中央。力強い白熊を傍らに連れたリナが静かに微笑んだ。" });
-        }
-    }
-
-    if (charId === 'elf') {
-        confrontationLines.push({ speaker: 'enemy', text: "思い出の中で迷い続けるつもり……？" });
-    } else {
-        confrontationLines.push({ speaker: 'enemy', text: "試練に付き合ってくれてありがとう。私とヴォイテクの連携、見切れるかしら！" });
-    }
-
-    confrontationLines.push({
-        speaker: 'player',
-        text: GameState.playerConfig.preBattleLine || "行くわね！"
-    });
-
-    GameState.dialogueQueue = confrontationLines;
-    setupDialogueScreen();
-}
-
-/**
- * 熱砂の客人イグニス戦の対峙ダイアログ（コンテニュー時などにも使用）
- */
-export function setupEventDragonHighConfrontation() {
-    GameState.appState = 'pre_dialogue';
-
-    let confrontationLines = [];
-    const charId = GameState.playerConfig.id;
-    const introDialogues = EVENT_DIALOGUES.event_dragon_high[charId] || [];
-
-    // 4行目（宴の場面描写）をフォールバック付きで設定
-    if (introDialogues.length >= 4) {
-        confrontationLines.push(introDialogues[3]);
-    } else {
-        confrontationLines.push({
-            speaker: 'narrator',
-            text: '宴の一角、黒いドレスを纏った竜姫が退屈そうに座っていた。周囲の人間は近づけず、その席だけが静寂に包まれていた。'
-        });
-    }
-
-    // イグニスの台詞（プレイヤーがイグニス本人かどうかで分岐）
-    if (charId === 'dragon') {
-        // ミラーマッチ：もう一人のイグニスが話しかけてくる
-        confrontationLines.push({
-            speaker: 'enemy',
-            text: 'あら、私と同じ顔ね。面白い……ちょうど退屈してたの。ねぇ、あなたも私と同じなら、戦うのも好きでしょ？ 付き合ってくれない？'
-        });
+    // 3:対峙描写, 4:敵ボス台詞
+    if (dialogs[3]) confrontationLines.push({...dialogs[3]});
+    if (dialogs[4]) confrontationLines.push({...dialogs[4]});
+    
+    // 5:プレイヤーの返し台詞
+    // ミラーマッチ等で [5] に専用台詞が手動設定されている場合はそれを使う。
+    // 無い場合でも、キャラクターの preBattleLine があれば動的にそれを第三の台詞として表示する。
+    if (dialogs[5]) {
+        confrontationLines.push({...dialogs[5]});
+    } else if (GameState.playerConfig.preBattleLine) {
         confrontationLines.push({
             speaker: 'player',
-            text: 'なんで私が私と戦わなきゃいけないのよ！ ……でも、まぁ、退屈してたのは私も同じだからいいわ。やってやるんだから！'
-        });
-    } else {
-        // 通常：退屈したイグニスが戦いを申し込む
-        confrontationLines.push({
-            speaker: 'enemy',
-            text: 'はぁ……退屈。踊りも料理も、全っ然楽しくないんだから。ねぇ、ちょうど良かった。私と戦いなさい！'
-        });
-        confrontationLines.push({
-            speaker: 'player',
-            text: GameState.playerConfig.preBattleLine || 'こちらも暇を持て余していたところだよ。受けて立とう！'
-        });
-    }
-
-    GameState.dialogueQueue = confrontationLines;
-    setupDialogueScreen();
-}
-
-/**
- * 暗黒騎士セレスティア戦の対峙ダイアログ
- */
-export function setupEventKnightHighConfrontation() {
-    GameState.appState = 'pre_dialogue';
-
-    let confrontationLines = [];
-    const charId = GameState.playerConfig.id;
-    const introDialogues = EVENT_DIALOGUES.event_knight_high[charId] || [];
-
-    if (introDialogues.length >= 4) {
-        confrontationLines.push(introDialogues[3]);
-    } else {
-        confrontationLines.push({
-            speaker: 'narrator',
-            text: '死の谷の最深層。そこには狂気に堕ち、不吉な魔剣を構えたセレスティアの姿があった。'
-        });
-    }
-
-    if (charId === 'knight') {
-        confrontationLines.push({
-            speaker: 'enemy',
-            text: 'フフ、来たか……光に縛られた哀れな私よ。私のこの力こそが真実、貴様の偽善をここで断ち切ってやろう。'
-        });
-        confrontationLines.push({
-            speaker: 'player',
-            text: '私自身の心の闇……幻影だとしても、この手で完全に浄化してみせる！'
-        });
-    } else {
-        confrontationLines.push({
-            speaker: 'enemy',
-            text: '……邪魔だな。光も、希望も、すべて切り裂く。私に力以外のものは必要ない。'
-        });
-        confrontationLines.push({
-            speaker: 'player',
-            text: GameState.playerConfig.preBattleLine || '目を覚まさせるには、力尽くでも止めるしかないようだね！'
+            text: GameState.playerConfig.preBattleLine
         });
     }
 

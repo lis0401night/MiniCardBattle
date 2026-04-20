@@ -2,7 +2,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDialogue, playSound, stopSound, stopAllBGM, switchScreen, getCardImgUrl } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { setupEventSatanConfrontation, setupEventAndroidHighConfrontation, setupEventDragonHighConfrontation, setupEventKnightHighConfrontation, setupEventCthulhuHighConfrontation, setupEventElfHighConfrontation } from './events.js';
+import { setupEventConfrontation } from './events.js';
 import { GameState } from './gameState.js';
 import { saveStoryProgress } from './story.js';
 import { handleProgressionNextStep } from './progression.js';
@@ -187,18 +187,8 @@ export function showContinueScreen() {
 export function executeContinue() {
     playSound(SOUNDS.seContinue);
     setTimeout(() => {
-        if (GameState.gameMode === 'event_satan') {
-            setupEventSatanConfrontation();
-        } else if (GameState.gameMode === 'event_android_high') {
-            setupEventAndroidHighConfrontation();
-        } else if (GameState.gameMode === 'event_dragon_high') {
-            setupEventDragonHighConfrontation();
-        } else if (GameState.gameMode === 'event_knight_high') {
-            setupEventKnightHighConfrontation();
-        } else if (GameState.gameMode === 'event_cthulhu_high') {
-            setupEventCthulhuHighConfrontation();
-        } else if (GameState.gameMode === 'event_elf_high') {
-            setupEventElfHighConfrontation();
+        if (GameState.gameMode.startsWith('event_')) {
+            setupEventConfrontation();
         } else {
             GameState.appState = 'pre_dialogue';
             let introText = (GameState.enemyConfig.preBattleLine || "次は私がお相手よ。") + "\n" + getDialogue(GameState.enemyConfig, GameState.playerConfig, 'intro', 'enemy');
