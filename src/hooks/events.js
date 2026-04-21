@@ -201,6 +201,9 @@ export function initEventElfHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
+    const dialogues = EVENT_DIALOGUES.event_elf_high[charId] || EVENT_DIALOGUES.event_elf_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
+
     performFadeTransition(() => {
         setupDialogueScreen();
     });
