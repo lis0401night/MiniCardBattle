@@ -154,7 +154,7 @@ export function getBestSimulatedMove() {
             playerDiscard: GameState.playerDiscard.map(cloneCard),
             enemyDiscard: discard.map(cloneCard),
             playerDeck: GameState.playerDeck.map(cloneCard),
-            enemyDeck: GameState.enemyDeck.map(cloneCard),
+            enemyDeck: [], // 思考フェーズでは未来のドロー（号令等含む）を予知させない
             extraTurnCount: GameState.extraTurnCount,
             attackSkipCount: GameState.attackSkipCount
         };
@@ -404,142 +404,188 @@ export function getBestSimulatedMove() {
         }
     }
 
-    const getAdvantage = (state, lane) => {
-        let myPower = 0; let opPower = 0;
-        for (let i = 0; i < 3; i++) {
-            if (state.enemyBoard[i]) {
-                myPower += (Number(state.enemyBoard[i].currentPower) || Number(state.enemyBoard[i].power) || 0);
-                if (state.enemyBoard[i].skill === 'call') myPower += (Number(state.enemyBoard[i].skillValue) || 3);
-                if (state.enemyBoard[i].skill === 'metamorph') myPower += 5;
-                if (Array.isArray(state.enemyBoard[i].skills)) {
-                    state.enemyBoard[i].skills.forEach(sk => {
-                        if (sk.id === 'call') myPower += (Number(sk.value) || 3);
-                        if (sk.id === 'metamorph') myPower += 5;
-                    });
-                }
-            }
-            if (state.playerBoard[i]) opPower += (Number(state.playerBoard[i].currentPower) || Number(state.playerBoard[i].power) || 0);
-        }
-        return myPower - opPower;
-    };
-    const getCountDiff = (state) => state.enemyBoard.filter(c => c).length - state.playerBoard.filter(c => c).length;
-    const getSkillScore = (state) => {
-        let score = 0;
-        state.enemyBoard.forEach(c => {
-            if (c) {
-                if (c.skill === 'draw') score += 1;
-                if (c.skill === 'heal') score += 2;
-
-                if (Array.isArray(c.skills)) {
-                    c.skills.forEach(sk => {
-                        if (sk.id === 'draw') score += 1;
-                        if (sk.id === 'heal') score += 2;
-                    });
-                }
-            }
-        });
-        return score;
-    };
-
     candidates.forEach(c => {
-        c.advDiff = getAdvantage(c.simState, c.lane);
-        c.countDiff = getCountDiff(c.simState);
-        c.skillScore = getSkillScore(c.simState);
-
+        c.score = evaluateSimState(c.simState);
+        // レーン優先順位を加味 (左 0=3点, 右 2=2点, 中央 1=1点)
         let pri = 0;
         if (c.lane === 0) pri = 3;
         else if (c.lane === 2) pri = 2;
         else if (c.lane === 1) pri = 1;
         c.lanePriority = pri;
+        // スコアに僅かな優先度ボーナスを乗せ、同点時に「左→右→中央」を選びやすくする
+        c.score += (pri * 0.01);
     });
 
-    let aliveCandidates = candidates.filter(c => c.simState.enemyHP > 0);
-    if (aliveCandidates.length === 0) aliveCandidates = candidates;
-
-    let finalCandidates = [];
-    const winCandidates = aliveCandidates.filter(c => c.simState.playerHP <= 0);
-    if (winCandidates.length > 0) finalCandidates = winCandidates;
-    else {
-        const safeCandidates = aliveCandidates.filter(c => c.simState.combatDamageTaken < 4);
-        if (safeCandidates.length > 0) finalCandidates = safeCandidates;
-        else {
-            let minDmg = Math.min(...aliveCandidates.map(c => c.simState.combatDamageTaken));
-            finalCandidates = aliveCandidates.filter(c => c.simState.combatDamageTaken === minDmg);
-        }
-    }
-
-    finalCandidates.sort((a, b) => {
-        if (a.advDiff !== b.advDiff) return b.advDiff - a.advDiff;
-        if (a.countDiff !== b.countDiff) return b.countDiff - a.countDiff;
-        if (a.simState.combatDamageTaken !== b.simState.combatDamageTaken) return a.simState.combatDamageTaken - b.simState.combatDamageTaken;
-        if (a.skillScore !== b.skillScore) return b.skillScore - a.skillScore;
-        if (a.lanePriority !== b.lanePriority) return b.lanePriority - a.lanePriority;
-        return 0;
+    // スコア順、次いでアクションの長さ順でソート
+    candidates.sort((a, b) => {
+        if (Math.abs(a.score - b.score) > 0.001) return b.score - a.score;
+        const aLen = a.actionQueue ? a.actionQueue.length : 0;
+        const bLen = b.actionQueue ? b.actionQueue.length : 0;
+        return bLen - aLen;
     });
 
-    const topCandidate = finalCandidates[0];
-    const topAdv = topCandidate.advDiff;
-    const topCount = topCandidate.countDiff;
-    const topDmg = topCandidate.simState.combatDamageTaken;
-    const topSkill = topCandidate.skillScore;
-    const topLanePri = topCandidate.lanePriority;
-    const topQueueLen = topCandidate.actionQueue ? topCandidate.actionQueue.length : 0;
-
-    const bestGroup = finalCandidates.filter(c => c.advDiff === topAdv && c.countDiff === topCount && c.simState.combatDamageTaken === topDmg && c.skillScore === topSkill && c.lanePriority === topLanePri && (c.actionQueue ? c.actionQueue.length : 0) === topQueueLen);
+    const bestScore = candidates[0].score;
+    const bestGroup = candidates.filter(c => Math.abs(c.score - bestScore) < 0.001);
 
     const finalDecision = bestGroup[Math.floor(Math.random() * bestGroup.length)];
 
-    console.log("AI Best Group Size:", bestGroup.length, "Best Adv:", topAdv, "Best Count Diff:", topCount, "Best Dmg:", topDmg, "Best LanePri:", topLanePri);
+    console.log("AI Best Group Size:", bestGroup.length, "Best Score:", bestScore, "Lane:", finalDecision.lane);
     GameState.aiDecision = finalDecision;
     return finalDecision;
+}
+
+/**
+ * 盤面の状態を評価し、スコアを返す (AI用)
+ */
+export function evaluateSimState(state) {
+    let myPower = 0; 
+    let opPower = 0;
+    for (let i = 0; i < 3; i++) {
+        if (state.enemyBoard[i]) {
+            const c = state.enemyBoard[i];
+            // 0パワーを正しく0として評価（||演算子だと0がfallbackされるため明示的にチェック）
+            myPower += (c.currentPower !== undefined ? Number(c.currentPower) : (Number(c.power) || 0));
+            
+            // 召喚時スキルの期待値加算 (まだ発動していない場合のみ)
+            if (!c.skillTriggered) {
+                if (c.skill === 'call') myPower += (Number(c.skillValue) || 3);
+                if (c.skill === 'metamorph') myPower += 5;
+                if (Array.isArray(c.skills)) {
+                    c.skills.forEach(sk => {
+                        if (sk.id === 'call') myPower += (Number(sk.value) || 3);
+                        if (sk.id === 'metamorph') myPower += 5;
+                    });
+                }
+            }
+        }
+        if (state.playerBoard[i]) {
+            const opC = state.playerBoard[i];
+            opPower += (opC.currentPower !== undefined ? Number(opC.currentPower) : (Number(opC.power) || 0));
+        }
+    }
+
+    let score = (myPower - opPower) * 10; // パワー差を基本スコアとする
+    
+    // HPと被ダメージの評価
+    score -= (state.combatDamageTaken || 0) * 20; 
+    if (state.playerHP <= 0) score += 1000; // 勝利
+    if (state.enemyHP <= 0) score -= 1000; // 敗北
+
+    // カード枚数差
+    const myCount = state.enemyBoard.filter(c => c).length;
+    const opCount = state.playerBoard.filter(c => c).length;
+    score += (myCount - opCount) * 5;
+
+    // ユーティリティスキルの評価
+    state.enemyBoard.forEach(c => {
+        if (c) {
+            if (c.skill === 'draw') score += 10;
+            if (c.skill === 'heal') score += 15;
+            if (Array.isArray(c.skills)) {
+                c.skills.forEach(sk => {
+                    if (sk.id === 'draw') score += 10;
+                    if (sk.id === 'heal') score += 15;
+                });
+            }
+        }
+    });
+
+    return score;
 }
 
 export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
     const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
     const allLanes = [0, 1, 2].filter(l => sealedLanes[l] === 0);
-    const results = [];
-    const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
-    const sortedLanes = [...allLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
-
-    for (let l of sortedLanes) {
+    const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 }; // 左 -> 右 -> 中央
+    
+    // 配置可能なレーンを抽出
+    let validLanes = allLanes.filter(l => {
         if (checkConstraints && tokenCard) {
-            if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
-            if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
-            if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) continue;
-            if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
+            if (hasSkill(tokenCard, 'legendary') && l !== 1) return false;
+            if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) return false;
+            if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) return false;
+            if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) return false;
         }
-        if (GameState.enemyBoard[l] === null) results.push(l);
+        return true;
+    });
+
+    // 「装備」や「生贄」でなければ、空きレーンがある場合は空きレーンを絶対優先する
+    const isSpecialSummon = tokenCard && (hasSkill(tokenCard, 'equip') || hasSkill(tokenCard, 'takeover') || hasSkill(tokenCard, 'union'));
+    if (!isSpecialSummon) {
+        const emptyLanes = validLanes.filter(l => GameState.enemyBoard[l] === null);
+        if (emptyLanes.length > 0) {
+            validLanes = emptyLanes;
+        }
     }
-    if (results.length === 0) {
-        for (let l of sortedLanes) {
-            if (checkConstraints && tokenCard) {
-                if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
-                if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
-                if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) continue;
-                if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
+
+    if (validLanes.length === 0) return [];
+
+    // tokenCardがある場合はシミュレーションを行う
+    if (tokenCard) {
+        const scores = validLanes.map(l => {
+            // 仮想的な盤面作成
+            const simState = {
+                playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                playerHP: GameState.playerHP,
+                enemyHP: GameState.enemyHP,
+                playerMaxHP: GameState.playerMaxHP,
+                enemyMaxHP: GameState.enemyMaxHP,
+                playerSP: GameState.playerSP,
+                enemySP: GameState.enemySP || 0,
+                playerHand: GameState.playerHand.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                enemyHand: GameState.enemyHand.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                playerDiscard: GameState.playerDiscard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                enemyDiscard: GameState.enemyDiscard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                playerDeck: GameState.playerDeck.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                enemyDeck: GameState.enemyDeck.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                extraTurnCount: GameState.extraTurnCount,
+                attackSkipCount: GameState.attackSkipCount
+            };
+
+            // 仮配置
+            const played = JSON.parse(JSON.stringify(tokenCard));
+            simState.enemyBoard[l] = played;
+
+            // 戦闘シミュレーション (配置直後の戦闘を想定)
+            const hpBefore = simState.enemyHP;
+            calculateCombatPhase(simState, 'blue'); // 相手の攻撃を想定して耐えられるか確認
+            simState.combatDamageTaken = Math.max(0, hpBefore - simState.enemyHP);
+
+            let score = evaluateSimState(simState);
+            
+            // 上書きを行う場合は大きなスコア減点を与える（よほどのメリットがない限り避ける）
+            if (GameState.enemyBoard[l] !== null && !isSpecialSummon) {
+                score -= 100;
             }
-            results.push(l);
-        }
+
+            // 本来の優先順位（左→右→中央）を微小なボーナスとして加味
+            score += (1.0 / lanePriorityOrder[l]);
+
+            return { lane: l, score };
+        });
+
+        // 最高スコアのレーンを返す
+        scores.sort((a, b) => b.score - a.score);
+        const topScore = scores[0].score;
+        return scores.filter(s => s.score === topScore).map(s => s.lane);
     }
-    return results;
+
+    // カードがない場合は従来の優先順位
+    return [...validLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
 }
 
 export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false, checkConstraints = true) {
-    if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
-        if (!isLeaderSkill && GameState.aiDecision.cardTokenLanes) {
-            const decidedLanes = GameState.aiDecision.cardTokenLanes;
-            delete GameState.aiDecision.cardTokenLanes;
-            return decidedLanes.slice(0, count);
-        } else if (isLeaderSkill && GameState.aiDecision.tokenLanes) {
-            const decidedLanes = GameState.aiDecision.tokenLanes;
-            delete GameState.aiDecision.tokenLanes;
-            return decidedLanes.slice(0, count);
-        }
+    if (owner === 'red') {
+        // 常に最新の盤面状況と判明したカード情報に基づき、アドホックにシミュレーションして決定する
+        const results = evaluateAdhocTokenLanes(tokenCard, checkConstraints);
+        if (results.length > 0) return results.slice(0, count);
     }
-    if (canCancel && owner === 'red') return evaluateAdhocTokenLanes(tokenCard, checkConstraints);
-    const results = [];
+
+    // プレイヤー用または最終フォールバック
     const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
     const sortedLanes = [...allLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
+    const results = [];
     for (let l of sortedLanes) {
         if (checkConstraints && tokenCard) {
             if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;

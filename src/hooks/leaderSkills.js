@@ -22,6 +22,8 @@ export async function activateLeaderSkill(owner, tokenLanes = null) {
 
     const prevProc = GameState.isProcessing;
     GameState.isProcessing = true;
+    GameState.selectedCardIndex = null;
+
 
     // SP消費
     if (isBlue) GameState.playerSP -= config.leaderSkill.cost;
@@ -279,8 +281,14 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 board[targetLane] = resurrectedCard;
             }
 
+            // 出現時スキルを持つ場合は即座に保護フラグを立てる
+            if (hasActiveSkill(resurrectedCard)) {
+                resurrectedCard.isSkillResolving = true;
+            }
+
             events.push({ type: 'leader_skill', skill: action, side: owner });
             events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
+
         } else {
             return; // 復活対象や空きがない
         }
@@ -467,7 +475,12 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     }
 
     await playEvents(events);
-
+    // リーダースキルによる演出が完了したので、配置したカードの保護フラグを解除
+    events.forEach(ev => {
+        if ((ev.type === 'summon_token' || ev.type === 'summon_card') && ev.card) {
+            ev.card.isSkillResolving = false;
+        }
+    });
 
     // 再描画
     renderBoard();
@@ -484,4 +497,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             }
         }
     }
+
+    // 最終的にパワー0のカード（復活させたパワー0カード等）を掃除する
+    await cleanupDestroyedCards();
 }

@@ -179,6 +179,7 @@ export function renderHand() {
 
 export function highlightLanes() {
     document.querySelectorAll('#player-lanes .cell').forEach((c, i) => {
+        if (GameState.isPlacementMode || GameState.isEnemyTargetMode || GameState.isAlliedTargetMode) return;
         if (GameState.selectedCardIndex === null) {
             c.classList.remove('highlight');
         } else {

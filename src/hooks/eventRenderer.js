@@ -192,6 +192,10 @@ export async function playEvents(events) {
             case 'petrify': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 board[ev.lane] = ev.card;
+                
+                // 保護フラグを即座に適用（描画ラグ中の破壊を防ぐ）
+                if (ev.card) ev.card.isSkillResolving = true;
+
                 renderBoard();
                 playSound(SOUNDS.seSkill);
 
@@ -204,12 +208,18 @@ export async function playEvents(events) {
                 }, 50);
 
                 await sleep(300);
+                // 石化の場合は召喚時スキルがないため、ここで解除してよい
+                if (ev.card) ev.card.isSkillResolving = false;
                 break;
             }
             case 'summon_token':
             case 'summon_card': {
                 const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 board[ev.lane] = ev.card;
+
+                // 保護フラグを即座に適用
+                if (ev.card) ev.card.isSkillResolving = true;
+
                 renderBoard();
                 playSound(SOUNDS.sePlace);
 
@@ -237,8 +247,10 @@ export async function playEvents(events) {
                 }, 50);
 
                 await sleep(300);
+                // ここではまだ解除しない（この後の resolveOnPlaySkill が解除を担当する）
                 break;
             }
+
             case 'add_hand': {
                 const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
                 if (hand.length < 5) {

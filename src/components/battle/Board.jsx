@@ -105,6 +105,10 @@ export default function Board({
                             isHighlight = false;
                         } else if (tCard && checkEnv) {
                             let valid = true;
+                            // 1ターン目の制限 (制約チェックが有効な召喚の場合のみ)
+                            if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
+                                valid = valid && (lane === 1);
+                            }
                             if (hasSkill && hasSkill(tCard, 'legendary')) {
                                 valid = valid && (lane === 1);
                             }

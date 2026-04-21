@@ -121,7 +121,14 @@ export function evaluateBestLanesForToken(allLanes, owner, tokenCard, count, isL
     if (owner === 'blue') return shuffleArray([...allLanes]).slice(0, count);
 
     if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
-        return shuffleArray([...allLanes]).slice(0, count);
+        const emptyLanes = allLanes.filter(l => GameState.enemyBoard[l] === null);
+        if (emptyLanes.length >= count) {
+            return shuffleArray(emptyLanes).slice(0, count);
+        } else {
+            // 空きレーンをすべて使い、残りを埋まっているレーンからランダムに選ぶ
+            const occupiedLanes = allLanes.filter(l => GameState.enemyBoard[l] !== null);
+            return [...shuffleArray(emptyLanes), ...shuffleArray(occupiedLanes)].slice(0, count);
+        }
     } else {
         return getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill, canCancel, checkConstraints);
     }

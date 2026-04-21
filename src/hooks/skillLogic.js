@@ -363,6 +363,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
         await playEvents(events);
+        // 配置演出が完了したので保護フラグを解除
+        for (const ev of events) {
+            if (ev.card) ev.card.isSkillResolving = false;
+        }
         await cleanupDestroyedCards(c);
 
     } else if (skillId === 'clone') {
@@ -413,6 +417,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
         }
         await playEvents(events);
+        // 配置演出が完了したので保護フラグを解除
+        for (const ev of events) {
+            if (ev.card) ev.card.isSkillResolving = false;
+        }
         await cleanupDestroyedCards(c);
 
     } else if (skillId === 'fate') {
@@ -753,9 +761,17 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
             }
             board[targetLane] = sTC;
+
+            // 出現時スキルを持つ場合は即座に保護フラグを立てる
+            if (hasActiveSkill(sTC)) {
+                sTC.isSkillResolving = true;
+            }
+
             playSound(SOUNDS.sePlace);
             renderBoard();
+
             await sleep(400);
+            sTC.isSkillResolving = false; // 演出が終わったので保護フラグを解除
             await cleanupDestroyedCards(c);
         }
     } else if (skillId === 'standby') {
@@ -850,7 +866,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                                 if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
                             }
                             board[targetLane] = { ...selectedCard, id: `res_${Math.floor(getSeededRandom() * 1000000000)}` };
+
+                            // 出現時スキルを持つ場合は即座に保護フラグを立てる
+                            if (hasActiveSkill(board[targetLane])) {
+                                board[targetLane].isSkillResolving = true;
+                            }
+
                             board[targetLane].currentPower = board[targetLane].power;
+
                             board[targetLane].skillTriggered = true; // 召喚効果は発動しない
                             board[targetLane].stunTurns = 0;
                             board[targetLane].stunAppliedThisTurn = false;
@@ -860,6 +883,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     playSound(SOUNDS.sePlace);
                     renderBoard();
                     await sleep(400);
+                    // 配置演出が完了したので保護フラグを解除（復活したカード自身）
+                    if (board[targetLane]) board[targetLane].isSkillResolving = false;
                     await cleanupDestroyedCards(c);
                 }
             }
@@ -1063,6 +1088,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 rarity: c.rarity || 1
             };
             board[targetLane] = newToken;
+
+            // 出現時スキルを持つ場合は即座に保護フラグを立てる
+            if (hasActiveSkill(newToken)) {
+                newToken.isSkillResolving = true;
+            }
+
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
 
@@ -1083,8 +1114,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
                 // キャンセル可能なレーン選択
                 GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
-                const selectedLanes = await waitPlayerLaneSelection(1, o, topCard, false, null, true, true, '召喚終了');
+                const selectedLanes = await waitPlayerLaneSelection(1, o, topCard, true, null, true, true, '召喚終了');
                 GameState.placementMessage = null;
+
                 if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
                 if (selectedLanes && selectedLanes.length > 0) {
@@ -1135,12 +1167,20 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         if (board[targetLane]) { await discardCard(o, board[targetLane], targetLane); }
                         board[targetLane] = topCard;
 
+                        // 出現時スキルを持つ場合は即座に保護フラグを立てる
+                        if (hasActiveSkill(topCard)) {
+                            topCard.isSkillResolving = true;
+                        }
+
                         let callEvents = [];
+
                         callEvents.push({ type: 'summon_card', side: o, lane: targetLane, card: topCard, source: 'call' });
                         await playEvents(callEvents);
 
                         if (hasActiveSkill(topCard)) {
                             await resolveOnPlaySkill(o, targetLane, topCard);
+                        } else {
+                            topCard.isSkillResolving = false;
                         }
                         await cleanupDestroyedCards(c);
 

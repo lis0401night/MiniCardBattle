@@ -647,6 +647,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         GameState.placementCheckConstraints = checkConstraints;
         GameState.placementButtonText = buttonText;
         GameState.placementRestrictLanes = tokenLanes || null;
+        GameState.selectedCardIndex = null; // 配置モード開始時に手札の選択解除
         updateCardDetail(null);
 
         const cleanUp = () => {
@@ -1349,10 +1350,11 @@ export async function cleanupDestroyedCards(excludeCard = null) {
         [GameState.playerBoard, GameState.enemyBoard].forEach((board, bIdx) => {
             const side = bIdx === 0 ? 'player' : 'enemy';
             for (let i = 0; i < 3; i++) {
-                if (board[i] && board[i].currentPower <= 0 && board[i] !== excludeCard) {
+                if (board[i] && board[i].currentPower <= 0 && board[i] !== excludeCard && !board[i].isSkillResolving) {
                     const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
                     destroyedItems.push({ board, index: i, el, owner: bIdx === 0 ? 'blue' : 'red', card: board[i] });
                 }
+
             }
         });
 
@@ -1809,6 +1811,7 @@ export async function playCard(o, hI, l) {
             renderBoard();
             if (targetCard.currentPower <= 0) await cleanupDestroyedCards();
             return; // 装備完了
+
         } else {
             // 通常の上書き配置時の破棄処理（破壊効果は発動させない）
             if (!(await discardCard(o, b[l], l, false))) b[l] = null;
@@ -1817,6 +1820,11 @@ export async function playCard(o, hI, l) {
 
     b[l] = h.splice(hI, 1)[0];
     const c = b[l];
+
+    // 出現時スキルを持つ場合は即座に保護フラグを立てる（描画待ちの破壊を防ぐ）
+    if (hasActiveSkill(c)) {
+        c.isSkillResolving = true;
+    }
 
     // 旧環境データ由来等のパワー欠落・異常(手札なのに0やNaN)を自動修復
     if (c.currentPower === undefined || Number.isNaN(c.currentPower) || (c.currentPower <= 0 && (c.power || 0) > 0)) {
@@ -1838,6 +1846,7 @@ export async function playCard(o, hI, l) {
         await sleep(50); // React DOMコミット待機
         await resolveOnPlaySkill(o, l, c);
     }
+
 
     // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
     await cleanupDestroyedCards();
@@ -1975,32 +1984,41 @@ export async function resolveOnPlaySkill(o, l, c) {
     const cEl = document.querySelector(`#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`);
     if (!cEl) return;
 
-    // 発動対象スキルのリストを作成
-    let skillsToResolve = [];
-    if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
-    if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
+    // スキル実行中フラグを立てて、パワー0による即時破壊を防ぐ
+    c.isSkillResolving = true;
 
-    // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
-    skillsToResolve.sort((a, b) => {
-        const order = { 'quick': 100, 'choice': 90 }; // 数値が大きいほど後回し
-        const orderA = order[a.id] || 0;
-        const orderB = order[b.id] || 0;
-        return orderA - orderB;
-    });
+    try {
+        // 発動対象スキルのリストを作成
+        let skillsToResolve = [];
+        if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
+        if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
 
-    for (const sk of skillsToResolve) {
-        if (ACTIVE_SKILLS.includes(sk.id)) {
-            await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
+        // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
+        skillsToResolve.sort((a, b) => {
+            const order = { 'quick': 100, 'choice': 90 }; // 数値が大きいほど後回し
+            const orderA = order[a.id] || 0;
+            const orderB = order[b.id] || 0;
+            return orderA - orderB;
+        });
+
+        for (const sk of skillsToResolve) {
+            if (ACTIVE_SKILLS.includes(sk.id)) {
+                await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
+            }
         }
+
+        // バッジが消える前に一呼吸置く（プレイヤーが効果を確認できるようにするため）
+        await sleep(500);
+
+        // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
+        c.skillTriggered = true;
+        renderBoard();
+    } finally {
+        // 処理が完了したらフラグを解除する
+        c.isSkillResolving = false;
     }
-
-    // バッジが消える前に一呼吸置く（プレイヤーが効果を確認できるようにするため）
-    await sleep(500);
-
-    // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
-    c.skillTriggered = true;
-    renderBoard();
 }
+
 
 export async function executeSingleCombat(atk, l) {
     // quick スキル等での単発攻撃に対応するための簡易ラッパー

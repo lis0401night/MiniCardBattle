@@ -76,9 +76,11 @@ export function processDestructionTriggers(state, events) {
 
         targets.forEach(({ board, side, oppSide }) => {
             for (let i = 0; i < 3; i++) {
-                if (board[i] && board[i].currentPower <= 0) {
+                // パワー0以下のカードを破壊対象にするが、スキル解決中のカードは除外する
+                if (board[i] && board[i].currentPower <= 0 && !board[i].isSkillResolving) {
                     const deadCard = board[i];
                     destroyedThisLoop.push({ side, lane: i, card: deadCard });
+
                     board[i] = null;
                     anyDestroyed = true;
                     anyDestroyedAtAll = true;
