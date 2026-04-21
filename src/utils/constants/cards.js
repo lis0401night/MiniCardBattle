@@ -149,6 +149,10 @@ export const CARD_MASTER = [
     { id: 'centaur', name: 'ケンタウロスの父', rarity: 4, power: 1, skills: [{ id: 'equip' }, { id: 'snipe', value: 5 }], voiceCategory: 'sword', flavor: '弓の引き方も、剣の握り方も、全てはこの背中が教えた。種族の壁を超えて彼を育て上げたその姿は、間違いなく一人の「父親」のそれであった。' },
     { id: 'thief', name: 'ギルドの錠前破り', rarity: 4, power: 3, skill: 'choice', skillValue: 1, choices: [{ id: 'dispel', value: 1 }, { id: 'crush', value: 1 }, { id: 'salvage', value: 1 }], voiceCategory: 'human_female_cool', flavor: '複雑な魔法陣の解除から力任せの破壊工作、そして遺物の回収まで。彼女の淀みない手口の前では、いかなる障害も意味を成さない。' },
     { id: 'cuchulainn', name: '追憶の魔槍使い', rarity: 4, power: 3, skills: [{ id: 'legendary' }, { id: 'loss', value: 4 }, { id: 'snipe', value: 10 }, { id: 'pierce' }], voiceCategory: 'human_male_ikemen', flavor: '色褪せた記憶の中にあっても、呪われし槍の切っ先は恐ろしいほどに冴え渡る。因果を捻じ曲げ、ただ死のみを約束する魔の刃。' },
+    { id: 'goddess', name: '勝利の女神', rarity: 4, power: 6, skills: [{ id: 'legendary' }, { id: 'possession' }, { id: 'absorb' }], voiceCategory: 'human_female_cool', flavor: '戦場を舞う美しき女神。彼女が微笑む時、勝利の天秤は静かに傾き、受けるべき傷は運命の導きによって癒やしへと変わる。' },
+    { id: 'spirit', name: 'ブラザー・オブ・オース', rarity: 4, power: 5, skills: [{ id: 'possession' }], voiceCategory: 'human_male_warrior', flavor: 'かつて背中を預け合った戦友との誓いが、彼を不屈の精霊へと変えた。その魂は今もなお、忠義という名の炎で燃え続けている。' },
+    { id: 'father', name: '銀弾の神父', rarity: 4, power: 2, skills: [{ id: 'choice', value: 2 }], choices: [{ id: 'snipe', value: 2 }, { id: 'snipe', value: 2 }, { id: 'artillery', value: 1 }, { id: 'artillery', value: 1 }], voiceCategory: 'human_male_old', flavor: '聖なる銀弾を込めた銃を携える神父。彼の祈りは邪悪を穿ち、その弾丸は罪人を浄化する。' },
+    { id: 'punishment', name: '神罰', rarity: 4, power: 0, skills: [{ id: 'sacrifice', value: 2 }, { id: 'choice', value: 1 }], choices: [{ id: 'artillery', value: 4 }, { id: 'spread', value: 4 }], voiceCategory: 'magic', flavor: '天より降り注ぐ理不尽なる裁き。神の砲撃は敵陣を焼き尽くす。' },
     { id: 'baldanders', name: 'バルトアンデルス', rarity: 4, power: 0, skill: 'metamorph', voiceCategory: 'stone', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', rarity: 4, power: 5, skill: 'shuffle', voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
@@ -172,5 +176,5 @@ export const CARD_MASTER = [
     { id: 'token_soul', name: '人魂', rarity: 1, power: 1, isToken: true, skill: 'none', voiceCategory: 'undead', flavor: '魂喰いの狐が吐き出した人魂。' },
     { id: 'token_gearC', name: '機神プロメテウス', rarity: 1, power: 10, isToken: true, skills: [{ id: 'spread', value: 3 }, { id: 'artillery', value: 2 }, { id: 'immune' }], voiceCategory: 'machine_new', flavor: '天と地が交わり、鋼の機神が目を覚ます。その圧倒的な火力の前では、いかなる装甲も意味を成さない。' },
     { id: 'token_reinforceddrone', name: '強化ドローン', rarity: 1, power: 5, isToken: true, skill: 'none', skills: [{ id: 'snipe', value: 5 }], voiceCategory: 'machine_new', flavor: '強化されたドローン。' },
-    { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 3, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' }
+    { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 4, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' }
 ];

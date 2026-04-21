@@ -139,7 +139,8 @@ export const SKILLS = {
         ]
     },
     double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' },
-    explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` }
+    explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` },
+    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。' }
 };
 
 export const ACTIVE_SKILLS = [
@@ -150,5 +151,5 @@ export const ACTIVE_SKILLS = [
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
     'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
-    'apex', 'retaliate', 'substitute'
+    'apex', 'retaliate', 'substitute', 'possession'
 ];

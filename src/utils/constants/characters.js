@@ -3,6 +3,8 @@
  */
 import cthulhuHighDeck from './enemy_decks/cthulhu_high.js';
 import elfHighDeck from './enemy_decks/elf_high.js';
+import clericHighDeck from './enemy_decks/cleric_high.js';
+
 
 export const CHARACTERS = {
     android: {
@@ -487,6 +489,17 @@ CHARACTERS.knight.skins['knight_high'] = {
     unlockCondition: '実績達成で入手'
 };
 
+CHARACTERS.cleric.skins['cleric_high'] = {
+    id: 'cleric_high',
+    name: '断罪の執行者',
+    image: 'assets/characters/char_cleric_high.png',
+    imageLose: 'assets/characters/char_cleric_high_lose.png',
+    icon: 'assets/icons/icon_cleric_high.png',
+    iconDamage: 'assets/icons/icon_cleric_high_damage.png',
+    unlockCondition: '実績達成で入手'
+};
+
+
 // スキン専用台詞の定義
 CHARACTERS.android.skins.summer.dialogue = {
     intro: '水中地形における戦闘行動の最適化を完了しました。水陸両用装備アイギス、迎撃を開始します。',
@@ -603,12 +616,36 @@ CHARACTERS.elf.challenges = {
             maxHP: 40,
             initSP: 0,
             deck: () => Promise.resolve(elfHighDeck),
-            leaderSkill: { name: '連携攻撃', desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:3/伝説/貫通)」を1体配置する。', cost: 2, action: 'elf_polarbear_combo' }
+            leaderSkill: { name: '連携攻撃', desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。', cost: 2, action: 'elf_polarbear_combo' }
+        }
+    }
+};
+
+CHARACTERS.cleric.skins.cleric_high.dialogue = {
+    intro: '異端者どもめ、まとめてこの私が断罪してあげるわ！ 逃げようなんて無駄よ、神罰からは逃れられないんだから！',
+    win: 'アハハハ！ これが神に背いた報いよ！ 最高の気分だわ、真の神へと至る道が開かれたわ！',
+    lose: 'バカな……この私が、断罪される側だなんて……あり得ないわ、認めない……認めないわよぉ！！',
+    skill: '神の裁きは理不尽にして絶対！ その身で、断罪の悦びを味わいなさい！！'
+};
+
+CHARACTERS.cleric.challenges = {
+    cleric_high: {
+        id: 'cleric_high',
+        title: '【高難易度】断罪の執行者 エリシア',
+        description: '神の代行者を自称し、本性を現したエリシア。その強大な神聖（暗黒）魔力は、対峙する者に逃れ得ぬ断罪を突きつける。',
+        bgm: 'high_boss',
+        bossSetting: {
+            useSkin: 'cleric_high',
+            maxHP: 40,
+            initSP: 0,
+            deck: () => Promise.resolve(clericHighDeck),
+            leaderSkill: { name: '断罪の執行', desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。', cost: 3, action: 'condemnation' }
         }
     }
 };
 
 CHARACTERS.cleric.skins.summer.dialogue = {
+
     intro: 'あら、こんな南国でも異端者はいるのね。バカンスのついでに、神の裁きを下してあげるわ！',
     win: '最高のバカンスになったわ！ 異端者の悲鳴というBGM付きでね！ アハハ！',
     lose: 'せっかくのバカンスが……私の肌が焼けてしまうじゃないの！！',

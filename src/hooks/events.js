@@ -180,7 +180,7 @@ export function initEventElfHighMode(charId) {
         name: 'リナ&ヴォイテク',
         leaderSkill: {
             name: '連携攻撃',
-            desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:3/伝説/貫通)」を1体配置する。',
+            desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。',
             cost: 2,
             action: 'elf_polarbear_combo'
         }
@@ -201,13 +201,51 @@ export function initEventElfHighMode(charId) {
 
     GameState.appState = 'story_intro';
 
-    const dialogues = EVENT_DIALOGUES.event_elf_high[charId] || EVENT_DIALOGUES.event_elf_high['default'];
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
+/**
+ * 高難易度イベント：断罪の執行者 エリシア の初期化
+ */
+export function initEventClericHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['cleric'],
+        hp: 40,
+        name: '断罪の執行者 エリシア',
+        leaderSkill: {
+            name: 'ディヴァイン・エグゼキューション',
+            desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。',
+            cost: 3,
+            action: 'condemnation'
+        }
+    };
+    GameState.gameMode = 'event_cleric_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'cleric';
+
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['cleric'] = 'cleric_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'cleric_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'cleric_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'cleric_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const dialogues = EVENT_DIALOGUES.event_cleric_high[charId] || EVENT_DIALOGUES.event_cleric_high['default'];
     GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
         setupDialogueScreen();
     });
 }
+
 
 export function initEventSatanMode(charId) {
     GameState.playerConfig = { ...CHARACTERS[charId] };
@@ -233,7 +271,7 @@ export function initEventSatanMode(charId) {
 export function handleEventProgression() {
     if (GameState.appState === 'story_intro') {
         GameState.appState = 'pre_dialogue';
-        
+
         if (GameState.gameMode.startsWith('event_')) {
             performFadeTransition(() => {
                 setupEventConfrontation();
@@ -268,14 +306,14 @@ export function setupEventConfrontation() {
 
     let confrontationLines = [];
     // 3:対峙描写, 4:敵ボス台詞
-    if (dialogs[3]) confrontationLines.push({...dialogs[3]});
-    if (dialogs[4]) confrontationLines.push({...dialogs[4]});
-    
+    if (dialogs[3]) confrontationLines.push({ ...dialogs[3] });
+    if (dialogs[4]) confrontationLines.push({ ...dialogs[4] });
+
     // 5:プレイヤーの返し台詞
     // ミラーマッチ等で [5] に専用台詞が手動設定されている場合はそれを使う。
     // 無い場合でも、キャラクターの preBattleLine があれば動的にそれを第三の台詞として表示する。
     if (dialogs[5]) {
-        confrontationLines.push({...dialogs[5]});
+        confrontationLines.push({ ...dialogs[5] });
     } else if (GameState.playerConfig.preBattleLine) {
         confrontationLines.push({
             speaker: 'player',

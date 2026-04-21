@@ -7,7 +7,8 @@ import { STAGES } from '../utils/constants/stages.js';
 import { getDialogue, playSound, stopAllBGM, sleep, isTransitioning, switchScreen, getCardImgUrl, getOrCreateUUID, renderSkillTag } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { startBattleFlow, createNewDeck, loadDeck, renderDeckEdit } from './deck.js';
-import { initEventSatanMode, initEventAndroidHighMode, initEventDragonHighMode, initEventKnightHighMode, initEventCthulhuHighMode, initEventElfHighMode, loadPlayerDeck } from './events.js';
+import { initEventSatanMode, initEventAndroidHighMode, initEventDragonHighMode, initEventKnightHighMode, initEventCthulhuHighMode, initEventElfHighMode, initEventClericHighMode, loadPlayerDeck } from './events.js';
+
 import { GameState } from './gameState.js';
 import { initStoryMode, clearStoryProgress, resumeStoryProgress } from './story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
@@ -224,8 +225,9 @@ export function goBackFromSelect() {
         switchScreen('screen-defense-menu');
     } else if (GameState.gameMode === 'defense_attack') {
         switchScreen('screen-defense-battle-list');
-    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high') {
+    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high') {
         switchScreen('screen-high-difficulty');
+
     } else if (GameState.appState === 'create_deck_select_char') {
         if (typeof window.loadDeck === 'function') window.loadDeck();
         if (window.forceUpdateDeckList) window.forceUpdateDeckList();
@@ -318,9 +320,10 @@ export function goBackFromDeckEdit(isCancel = false) {
         // 難易度選択に戻る
         GameState.appState = 'select_difficulty';
         switchScreen('screen-difficulty');
-    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high') {
+    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high') {
         // 高難易度画面に戻る
         switchScreen('screen-high-difficulty');
+
     } else if (GameState.gameMode === 'battle_dungeon') {
         GameState.dungeonState = 'select_opponent';
         switchScreen('screen-battle-dungeon');
@@ -498,9 +501,14 @@ export function handleElfHighBattle() {
     playSound(SOUNDS.seClick);
     startGameMode('event_elf_high');
 }
-window.startEventElfHighHook = () => {
-    startGameMode('event_elf_high');
+export function handleClericHighBattle() {
+    playSound(SOUNDS.seClick);
+    startGameMode('event_cleric_high');
+}
+window.startEventClericHighHook = () => {
+    startGameMode('event_cleric_high');
 };
+
 
 export async function showDefenseMenu() {
     playSound(SOUNDS.seClick);
@@ -705,6 +713,8 @@ export function confirmCharSelect() {
             initEventCthulhuHighMode(GameState.pendingCharId);
         } else if (GameState.gameMode === 'event_elf_high') {
             initEventElfHighMode(GameState.pendingCharId);
+        } else if (GameState.gameMode === 'event_cleric_high') {
+            initEventClericHighMode(GameState.pendingCharId);
         } else if (GameState.gameMode === 'free_deck_edit') {
             // マイデッキ編集時はそのままデッキ編成画面へ移行
             switchScreen('screen-deck-edit');

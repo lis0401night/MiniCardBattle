@@ -18,6 +18,8 @@ import android_high from './enemy_decks/android_high.js';
 import dragon_high from './enemy_decks/dragon_high.js';
 import knight_high from './enemy_decks/knight_high.js';
 import elf_high from './enemy_decks/elf_high.js';
+import cleric_high from './enemy_decks/cleric_high.js';
+
 
 export const ENEMY_DECKS = {
     android,
@@ -35,5 +37,6 @@ export const ENEMY_DECKS = {
     android_high,
     dragon_high,
     knight_high,
-    elf_high
+    elf_high,
+    cleric_high
 };

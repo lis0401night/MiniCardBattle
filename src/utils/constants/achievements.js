@@ -309,6 +309,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'elf_high',
         reward: { type: 'playmat', value: 'pm_elf_high', name: 'リナ&ヴォイテク' }
     },
+    {
+        id: 'event_cleric_high_clear_skin',
+        title: '断罪の執行者',
+        description: '高難易度イベントでエリシアを倒す',
+        type: 'event_clear',
+        targetValue: 'cleric_high',
+        reward: { type: 'skin', value: 'cleric_high', name: '断罪の執行者' }
+    },
+    {
+        id: 'event_cleric_high_clear_pm',
+        title: '断罪の祭壇',
+        description: '高難易度イベントでエリシアを倒す',
+        type: 'event_clear',
+        targetValue: 'cleric_high',
+        reward: { type: 'playmat', value: 'pm_cleric_high', name: '断罪の執行者' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',

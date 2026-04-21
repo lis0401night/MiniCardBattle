@@ -78,6 +78,7 @@ export function generateDeck(owner, config, sessionId) {
             if (GameState.gameMode === 'event_knight_high') recipeId = 'knight_high';
             if (GameState.gameMode === 'event_cthulhu_high') recipeId = 'cthulhu_high';
             if (GameState.gameMode === 'event_elf_high') recipeId = 'elf_high';
+            if (GameState.gameMode === 'event_cleric_high') recipeId = 'cleric_high';
             if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
             let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
 

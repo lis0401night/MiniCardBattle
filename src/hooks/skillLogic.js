@@ -3,7 +3,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard, consumeAIAction } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -201,6 +201,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         if (hasActiveSkill(c)) {
             await resolveOnPlaySkill(o, l, c);
         }
+        await cleanupDestroyedCards();
         return;
     }
 
@@ -362,6 +363,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
         await playEvents(events);
+        await cleanupDestroyedCards();
 
     } else if (skillId === 'clone') {
         // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
@@ -411,6 +413,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
         }
         await playEvents(events);
+        await cleanupDestroyedCards();
 
     } else if (skillId === 'fate') {
         const roll = Math.floor(getSeededRandom() * 6) + 1;
@@ -753,6 +756,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(400);
+            await cleanupDestroyedCards();
         }
     } else if (skillId === 'standby') {
         const turns = (skillValue || 1);
@@ -769,26 +773,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         const maxPow = skillValue || 1;
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
+        let tokenLanes = null;
 
         if (validCards.length > 0) {
             let selectedCard = null;
             if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-                let actionIdx = -1;
-                if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
-                    actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'resurrect');
-                }
-                if (actionIdx !== -1) {
-                    const action = GameState.aiDecision.actionQueue[actionIdx];
-                    selectedCard = discard[action.targetIdx];
-                    GameState.aiDecision.actionQueue.splice(actionIdx, 1);
-                    // 次の waitPlayerLaneSelection のため
-                    GameState.aiDecision.cardTokenLanes = [action.laneIdx];
-                    
-                    if (action.choices !== undefined || action.choices2 !== undefined) {
-                        if (!GameState.aiDecision.choiceIndexQueue) GameState.aiDecision.choiceIndexQueue = [];
-                        if (action.choices !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices);
-                        if (action.choices2 !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices2);
-                    }
+                const aiAction = consumeAIAction('resurrect');
+                if (aiAction) {
+                    if (aiAction.targetIdx !== undefined) selectedCard = discard[aiAction.targetIdx];
+                    if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
                 }
             } else {
                 selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, o, '復活させるカードを選択', `パワー${maxPow}以下のカードを1枚場に出します。`);
@@ -796,10 +789,10 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
             if (selectedCard) {
                 // 配置先を選ばせる (召喚ではなく配置扱いのため制約チェックはしない)
-                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, null, false, true);
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, tokenLanes, false, true);
                 if (tLanes && tLanes.length > 0) {
                     const targetLane = tLanes[0];
-                    const dIdx = discard.findIndex(cd => cb => cb.id === selectedCard.id);
+                    const dIdx = discard.findIndex(cd => cd.id === selectedCard.id);
                     // 完全一致するオブジェクトを手動で削除
                     const actualIdx = discard.indexOf(selectedCard);
                     if (actualIdx !== -1) discard.splice(actualIdx, 1);
@@ -867,6 +860,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     playSound(SOUNDS.sePlace);
                     renderBoard();
                     await sleep(400);
+                    await cleanupDestroyedCards();
                 }
             }
         }
@@ -1074,6 +1068,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
         if (events.length > 0) {
             await playEvents(events);
+            await cleanupDestroyedCards();
         }
     } else if (skillId === 'call') {
         const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
@@ -1132,6 +1127,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                                 await resolveActiveSkillEffect(o, targetLane, targetCard, sk.id, sk.value);
                             }
                         }
+                        await cleanupDestroyedCards();
                     } else {
                         topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                         topCard.owner = o;
@@ -1146,6 +1142,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         if (hasActiveSkill(topCard)) {
                             await resolveOnPlaySkill(o, targetLane, topCard);
                         }
+                        await cleanupDestroyedCards();
 
                         // 使い捨てスペル等のパワー0以下のカードは、召喚効果解決後に消去する
                         const finalCard = board[targetLane];

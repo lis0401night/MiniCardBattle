@@ -289,13 +289,13 @@ export function initBattleState() {
 
         // BGMの再生
         let bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high') {
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high') {
             bgmKey = 'bgmStageHighDifficulty';
         }
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high') GameState.aiLevel = 3; // 念のため再セット
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high') GameState.aiLevel = 3; // 念のため再セット
 
         if (GameState.gameMode === 'battle_dungeon') {
             // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
@@ -554,19 +554,32 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         if (tokenLanes && tokenLanes.length > 0) {
             selectedLanes = tokenLanes.slice(0, count);
         } else {
-            selectedLanes = evaluateBestLanesForToken(availableAI, owner, tokenCard, count, isLeaderSkill, canCancel, checkConstraints);
+            const aiAction = consumeAIAction(['resurrect', 'summon', 'call', 'leader_skill', 'clone', 'wall_create', 'move', 'elf_polarbear_combo']);
+            if (aiAction) {
+                const lane = aiAction.laneIdx !== undefined ? aiAction.laneIdx : (aiAction.myLane !== undefined ? aiAction.myLane : aiAction.targetLane);
+                if (lane !== undefined && lane !== -1) {
+                    selectedLanes = [lane];
+                }
+            }
+            if (!selectedLanes) {
+                selectedLanes = evaluateBestLanesForToken(availableAI, owner, tokenCard, count, isLeaderSkill, canCancel, checkConstraints);
+            }
         }
 
         // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
         if (checkConstraints && tokenCard) {
             const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
             const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
+            const hasApex = tokenCard.skill === 'apex' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'apex'));
 
             if (hasLegendary) {
                 selectedLanes = selectedLanes.filter(i => i === 1);
             }
             if (hasTakeover) {
                 selectedLanes = selectedLanes.filter(i => board[i] !== null);
+            }
+            if (hasApex) {
+                selectedLanes = selectedLanes.filter(i => board[i] && (board[i].skill === 'legendary' || (board[i].skills && board[i].skills.some(s => s.id === 'legendary'))));
             }
             const hasChallenge = tokenCard.skill === 'challenge' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'challenge'));
             if (hasChallenge) {
@@ -583,6 +596,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
             if (checkConstraints && tokenCard) {
                 const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
                 const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
+                const hasApex = tokenCard.skill === 'apex' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'apex'));
 
                 if (hasLegendary) {
                     validEmptyLanes = validEmptyLanes.filter(i => i === 1);
@@ -590,6 +604,10 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                 }
                 if (hasTakeover) {
                     validEmptyLanes = []; // 生贄（takeover）は空きレーン不可
+                }
+                if (hasApex) {
+                    validEmptyLanes = validEmptyLanes.filter(i => board[i] && (board[i].skill === 'legendary' || (board[i].skills && board[i].skills.some(s => s.id === 'legendary'))));
+                    validOccupiedLanes = validOccupiedLanes.filter(i => board[i] && (board[i].skill === 'legendary' || (board[i].skills && board[i].skills.some(s => s.id === 'legendary'))));
                 }
                 const hasChallenge = tokenCard.skill === 'challenge' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'challenge'));
                 if (hasChallenge) {
@@ -681,6 +699,14 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                     playSound(SOUNDS.seDamage);
                     showAlertModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`);
                     return;
+                }
+                if (hasSkill(newCard, 'apex')) {
+                    const targetCard = board[laneIndex];
+                    if (!targetCard || !(targetCard.skill === 'legendary' || (targetCard.skills && targetCard.skills.some(s => s.id === 'legendary')))) {
+                        playSound(SOUNDS.seDamage);
+                        showAlertModal(`「${newCard.name}」は頂点のカードのため、自分の場の伝説カードの上にしか召喚できません。`);
+                        return;
+                    }
                 }
                 if (hasSkill(newCard, 'challenge')) {
                     const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
@@ -1012,7 +1038,12 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
     }
 
     // AIの場合
-    if (owner === 'red') {
+    if (owner === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+        const aiAction = consumeAIAction(['resurrect', 'devilhunter_resurrect', 'call']);
+        if (aiAction && aiAction.targetIdx !== undefined && validCards[aiAction.targetIdx]) {
+            return validCards[aiAction.targetIdx];
+        }
+        // フォールバック
         const sorted = [...validCards].sort((a, b) => b.power - a.power);
         return sorted[0];
     }
@@ -1351,6 +1382,24 @@ export async function cleanupDestroyedCards() {
             if (item.board[item.index] !== item.card) continue;
             item.board[item.index] = null;
             await discardCard(item.owner, item.card, item.index);
+            
+            // 報復（retaliate）スキルの誘発
+            const ownerSide = item.owner; // 'blue' or 'red'
+            const alliedBoard = ownerSide === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+            const sideLabel = ownerSide === 'blue' ? 'player' : 'enemy';
+            
+            for (let j = 0; j < 3; j++) {
+                const ally = alliedBoard[j];
+                if (ally && hasSkill(ally, 'retaliate')) {
+                    const buffVal = getSkillValue(ally, 'retaliate') || 2;
+                    ally.currentPower += buffVal;
+                    
+                    const allyEl = document.querySelector(`#${sideLabel}-lanes .cell[data-lane="${j}"] .card`);
+                    if (allyEl) {
+                        createDamagePopup(allyEl, `報復 +${buffVal}`, '#f87171');
+                    }
+                }
+            }
         }
 
         playSound(SOUNDS.seDestroy);
@@ -1396,6 +1445,17 @@ export async function triggerExplodeSkill(owner, lane, card) {
         await sleep(500);
         await cleanupDestroyedCards();
     }
+}
+
+// AI用: アクションキューから指定された型のアクションを1つ取り出して削除する
+export function consumeAIAction(types) {
+    if (!GameState.aiDecision || !GameState.aiDecision.actionQueue) return null;
+    const typeList = Array.isArray(types) ? types : [types];
+    const idx = GameState.aiDecision.actionQueue.findIndex(a => typeList.includes(a.type));
+    if (idx !== -1) {
+        return GameState.aiDecision.actionQueue.splice(idx, 1)[0];
+    }
+    return null;
 }
 export function drawCard(owner) {
     let d = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck, h = owner === 'blue' ? GameState.playerHand : GameState.enemyHand, ds = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -1667,6 +1727,7 @@ export async function playCard(o, hI, l) {
             renderHand(); renderBoard();
 
             await resolveOnPlaySkill(o, l, unionCard);
+            if (unionCard.currentPower <= 0) await cleanupDestroyedCards();
 
             await sleep(100);
             renderBoard();
@@ -1745,6 +1806,7 @@ export async function playCard(o, hI, l) {
 
             await sleep(100);
             renderBoard();
+            if (targetCard.currentPower <= 0) await cleanupDestroyedCards();
             return; // 装備完了
         } else {
             // 通常の上書き配置時の破棄処理（破壊効果は発動させない）
@@ -1776,13 +1838,8 @@ export async function playCard(o, hI, l) {
         await resolveOnPlaySkill(o, l, c);
     }
 
-    // 使い捨てスペル等のパワー0以下のカードは効果解決後に消去する
-    const finalCard = b[l];
-    if (finalCard && finalCard.currentPower <= 0) {
-        const events = [{ type: 'destroy_cards', targets: [{ side: o, lane: l, card: finalCard }] }];
-        // 破壊アニメーションと墓地送りを実行
-        await playEvents(events);
-    }
+    // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
+    await cleanupDestroyedCards();
 }
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか
@@ -2158,6 +2215,9 @@ export function endBattle() {
             if (GameState.gameMode === 'event_elf_high' && typeof incrementStat === 'function') {
                 incrementStat('eventClear', 'elf_high');
             }
+            if (GameState.gameMode === 'event_cleric_high' && typeof incrementStat === 'function') {
+                incrementStat('eventClear', 'cleric_high');
+            }
 
             // --- カードドロップ抽選・表示処理 ---
             let recipeId = GameState.enemyConfig.id;
@@ -2167,6 +2227,7 @@ export function endBattle() {
             if (GameState.gameMode === 'event_knight_high' && recipeId === 'knight') recipeId = 'knight_high';
             if (GameState.gameMode === 'event_cthulhu_high' && recipeId === 'cthulhu') recipeId = 'cthulhu_high';
             if (GameState.gameMode === 'event_elf_high' && recipeId === 'elf') recipeId = 'elf_high';
+            if (GameState.gameMode === 'event_cleric_high' && recipeId === 'cleric') recipeId = 'cleric_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
 

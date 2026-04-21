@@ -33,13 +33,12 @@ export function getBestSimulatedMove() {
         return results;
     };
 
-    let hasSkillObj = (c, sid) => c.skill === sid || (c.skills && c.skills.some(s => s.id === sid));
 
     function buildCardPlayTree(card, sourceIdx, sourceType, originalHand, originalDiscard, usedHand, usedDiscard, depth, forcedLane = undefined) {
         if (depth >= 2) return [[]];
 
         let availableLanes = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
-        if (GameState.turnCount === 1 && GameState.firstPlayer === 'red') availableLanes = availableLanes.filter(l => l === 1);
+        if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && depth === 0) availableLanes = availableLanes.filter(l => l === 1);
 
         if (forcedLane !== undefined) {
             if (mySealedLanes[forcedLane] === 1) return [[]];
@@ -52,7 +51,7 @@ export function getBestSimulatedMove() {
 
         let choiceCombinations = [undefined];
         let choice2Combinations = [undefined];
-        if (hasSkillObj(card, 'choice')) {
+        if (hasSkill(card, 'choice')) {
             if (Array.isArray(card.choices)) {
                 let cc = 1;
                 if (card.skill === 'choice') cc = card.skillValue || 1;
@@ -71,12 +70,12 @@ export function getBestSimulatedMove() {
 
         let tokenLanePatterns = [null];
         let tokenTargetCount = 0;
-        if (hasSkillObj(card, 'crush') || hasSkillObj(card, 'dispel') || hasSkillObj(card, 'snipe') || hasSkillObj(card, 'artillery') || hasSkillObj(card, 'seal')) tokenTargetCount = card.skillValue || 1;
-        if (hasSkillObj(card, 'salvage') || hasSkillObj(card, 'resurrect') || hasSkillObj(card, 'summon')) tokenTargetCount = 1;
+        if (hasSkill(card, 'crush') || hasSkill(card, 'dispel') || hasSkill(card, 'snipe') || hasSkill(card, 'artillery') || hasSkill(card, 'seal')) tokenTargetCount = card.skillValue || 1;
+        if (hasSkill(card, 'salvage') || hasSkill(card, 'resurrect') || hasSkill(card, 'summon')) tokenTargetCount = 1;
 
         let tc = 0;
-        if (hasSkillObj(card, 'clone') || hasSkillObj(card, 'summon')) tc = card.skillValue || 1;
-        if (hasSkillObj(card, 'call') || hasSkillObj(card, 'metamorph')) tc = 1;
+        if (hasSkill(card, 'clone') || hasSkill(card, 'summon')) tc = card.skillValue || 1;
+        if (hasSkill(card, 'call') || hasSkill(card, 'metamorph')) tc = 1;
 
         if (tc > 0) {
             let possibleLanes = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
@@ -104,7 +103,7 @@ export function getBestSimulatedMove() {
                             cardTokenLanes: tLanes && tLanes.length > 0 ? [...tLanes] : undefined
                         };
 
-                        if (depth < 2 && hasSkillObj(card, 'invite')) {
+                        if (depth < 2 && hasSkill(card, 'invite')) {
                             let addedInvite = false;
                             for (let i = 0; i < originalHand.length; i++) {
                                 if (usedHand.includes(i)) continue;
@@ -115,7 +114,7 @@ export function getBestSimulatedMove() {
                                 }
                             }
                             branches.push([node]);
-                        } else if (depth < 2 && hasSkillObj(card, 'resurrect')) {
+                        } else if (depth < 2 && hasSkill(card, 'resurrect')) {
                             let maxPow = card.skillValue || 1;
                             let addedRes = false;
                             for (let i = 0; i < originalDiscard.length; i++) {
@@ -163,6 +162,10 @@ export function getBestSimulatedMove() {
         if (isLeaderSkillPlay && skillOrderTiming === 'before' && leaderSkillActionStr) {
             simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
             applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes);
+            if (simState._actionQueue && simState._actionQueue.length > 0) {
+                actionQueue.unshift(...simState._actionQueue);
+                delete simState._actionQueue;
+            }
         }
 
         for (let action of actionQueue) {
@@ -192,14 +195,14 @@ export function getBestSimulatedMove() {
             if (!playedCard) return null;
 
             if (checkConstraints) {
-                if (hasSkillObj(playedCard, 'challenge') && simState.playerBoard[lIdx] === null) return null;
-                if (hasSkillObj(playedCard, 'takeover') && simState.enemyBoard[lIdx] === null) return null;
-                if (hasSkillObj(playedCard, 'apex') && !(simState.enemyBoard[lIdx] && hasSkillObj(simState.enemyBoard[lIdx], 'legendary'))) return null;
-                if (hasSkillObj(playedCard, 'legendary') && lIdx !== 1) return null;
+                if (hasSkill(playedCard, 'challenge') && simState.playerBoard[lIdx] === null) return null;
+                if (hasSkill(playedCard, 'takeover') && simState.enemyBoard[lIdx] === null) return null;
+                if (hasSkill(playedCard, 'legendary') && lIdx !== 1) return null;
+                if (hasSkill(playedCard, 'apex') && !(simState.enemyBoard[lIdx] && hasSkill(simState.enemyBoard[lIdx], 'legendary'))) return null;
 
             }
 
-            if (hasSkillObj(playedCard, 'equip') && simState.enemyBoard[lIdx]) {
+            if (hasSkill(playedCard, 'equip') && simState.enemyBoard[lIdx]) {
                 const targetCard = simState.enemyBoard[lIdx];
                 targetCard.basePower = (targetCard.basePower || 0) + (playedCard.power || 0);
                 targetCard.currentPower = (targetCard.currentPower || 0) + (playedCard.power || 0);
@@ -208,7 +211,11 @@ export function getBestSimulatedMove() {
                 if (playedCard.skills) playedCard.skills.forEach(s => { if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value }); });
                 mergeCardSkills(targetCard, addedSkills);
                 let cLanesForEquip = action.cardTokenLanes ? [...action.cardTokenLanes] : null;
-                addedSkills.forEach(sk => applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], cLanesForEquip));
+                applyActiveSkillLogic(simState, 'red', lIdx, 'equip', 0, [], cLanesForEquip); // 装備によるバフと付随スキルのシミュレート
+                if (simState._actionQueue && simState._actionQueue.length > 0) {
+                    actionQueue.push(...simState._actionQueue);
+                    delete simState._actionQueue;
+                }
             } else {
                 let activeCardForSkills = playedCard;
                 const unionSkill = playedCard.skills && playedCard.skills.find(s => s.id === 'union');
@@ -258,6 +265,10 @@ export function getBestSimulatedMove() {
                     skills.forEach(sk => {
                         applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], cLanesForPass);
                     });
+                    if (simState._actionQueue && simState._actionQueue.length > 0) {
+                        actionQueue.push(...simState._actionQueue);
+                        delete simState._actionQueue;
+                    }
                 }
 
                 if (simState.enemyBoard[lIdx] && simState.enemyBoard[lIdx].currentPower <= 0) {
@@ -269,6 +280,10 @@ export function getBestSimulatedMove() {
         if (isLeaderSkillPlay && skillOrderTiming === 'after' && leaderSkillActionStr) {
             simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
             applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes);
+            if (simState._actionQueue && simState._actionQueue.length > 0) {
+                actionQueue.push(...simState._actionQueue);
+                delete simState._actionQueue;
+            }
         }
 
         const hpBeforeCombat = simState.enemyHP;
@@ -334,16 +349,16 @@ export function getBestSimulatedMove() {
             tokenLanePatterns = [[0], [1], [2]].filter(pattern => mySealedLanes[pattern[0]] === 0);
             if (action === 'dungeon_summon_leader' && GameState.enemyConfig && GameState.enemyConfig.leaderCardId) {
                 const lc = CARD_MASTER.find(c => c.id === GameState.enemyConfig.leaderCardId);
-                if (lc && hasSkillObj(lc, 'legendary')) tokenLanePatterns = [[1]].filter(pattern => mySealedLanes[pattern[0]] === 0);
-                if (lc && hasSkillObj(lc, 'takeover')) tokenLanePatterns = tokenLanePatterns.filter(pattern => myBoard[pattern[0]] !== null);
-                if (lc && hasSkillObj(lc, 'challenge')) tokenLanePatterns = tokenLanePatterns.filter(pattern => opBoard[pattern[0]] !== null);
+                if (lc && hasSkill(lc, 'legendary')) tokenLanePatterns = [[1]].filter(pattern => mySealedLanes[pattern[0]] === 0);
+                if (lc && hasSkill(lc, 'takeover')) tokenLanePatterns = tokenLanePatterns.filter(pattern => myBoard[pattern[0]] !== null);
+                if (lc && hasSkill(lc, 'challenge')) tokenLanePatterns = tokenLanePatterns.filter(pattern => opBoard[pattern[0]] !== null);
             }
             if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
         } else if (action === 'targeted_destruction') {
-            tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkillObj(opBoard[l], 'immune')).map(l => [l]);
+            tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
             if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
         } else if (action === 'elf_polarbear_combo') {
-            const enemyOcc = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkillObj(opBoard[l], 'immune'));
+            const enemyOcc = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'));
             const myAvail = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
             let combs = [];
             if (enemyOcc.length > 0 && myAvail.length > 0) {
@@ -487,9 +502,25 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
     const sortedLanes = [...allLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
 
     for (let l of sortedLanes) {
+        if (checkConstraints && tokenCard) {
+            if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
+            if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
+            if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) continue;
+            if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
+        }
         if (GameState.enemyBoard[l] === null) results.push(l);
     }
-    if (results.length === 0) for (let l of sortedLanes) results.push(l);
+    if (results.length === 0) {
+        for (let l of sortedLanes) {
+            if (checkConstraints && tokenCard) {
+                if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
+                if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
+                if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) continue;
+                if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
+            }
+            results.push(l);
+        }
+    }
     return results;
 }
 
@@ -510,10 +541,22 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
     const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
     const sortedLanes = [...allLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
     for (let l of sortedLanes) {
+        if (checkConstraints && tokenCard) {
+            if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
+            if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
+            if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) continue;
+            if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
+        }
         if (GameState.enemyBoard[l] === null && results.length < count) results.push(l);
     }
     if (results.length < count) {
         for (let l of sortedLanes) {
+            if (checkConstraints && tokenCard) {
+                if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
+                if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
+                if (hasSkill(tokenCard, 'challenge') && GameState.playerBoard[l] === null) continue;
+                if (hasSkill(tokenCard, 'apex') && !(GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))) continue;
+            }
             if (!results.includes(l) && results.length < count) results.push(l);
         }
     }
@@ -606,11 +649,11 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
 
         if (laneIdx !== -1) {
             if (checkConstraints && playedCard) {
-                if (hasSkillObj(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) return null;
-                if (hasSkillObj(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) return null;
-                if (hasSkillObj(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkillObj(simState.enemyBoard[laneIdx], 'legendary'))) return null;
-                if (hasSkillObj(playedCard, 'legendary') && laneIdx !== 1) return null;
-                if (!hasSkillObj(playedCard, 'takeover') && !hasSkillObj(playedCard, 'equip') && !hasSkillObj(playedCard, 'apex') && simState.enemyBoard[laneIdx] !== null) {
+                if (hasSkill(playedCard, 'challenge') && simState.playerBoard[laneIdx] === null) return null;
+                if (hasSkill(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) return null;
+                if (hasSkill(playedCard, 'legendary') && laneIdx !== 1) return null;
+                if (hasSkill(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkill(simState.enemyBoard[laneIdx], 'legendary'))) return null;
+                if (!hasSkill(playedCard, 'takeover') && !hasSkill(playedCard, 'equip') && !hasSkill(playedCard, 'apex') && simState.enemyBoard[laneIdx] !== null) {
                     if (!(playedCard.skills && playedCard.skills.find(s => s.id === 'union') && (simState.enemyBoard[laneIdx].baseId === playedCard.skills.find(s => s.id === 'union').targetId || simState.enemyBoard[laneIdx].id === playedCard.skills.find(s => s.id === 'union').targetId))) {
                         return null;
                     }
@@ -618,7 +661,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
             }
 
             if (playedCard) {
-                if (hasSkillObj(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
+                if (hasSkill(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
                     const targetCard = simState.enemyBoard[laneIdx];
                     targetCard.basePower = (targetCard.basePower || 0) + (playedCard.power || 0);
                     targetCard.currentPower = (targetCard.currentPower || 0) + (playedCard.power || 0);

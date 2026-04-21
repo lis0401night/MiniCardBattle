@@ -111,6 +111,9 @@ export default function Board({
                             if (hasSkill && hasSkill(tCard, 'takeover')) {
                                 valid = valid && (card !== null);
                             }
+                            if (hasSkill && hasSkill(tCard, 'apex')) {
+                                valid = valid && (card && (card.skill === 'legendary' || (card.skills && card.skills.some(s => s.id === 'legendary'))));
+                            }
                             if (hasSkill && hasSkill(tCard, 'challenge')) {
                                 valid = valid && (enemyBoard[lane] !== null);
                             }
@@ -128,6 +131,9 @@ export default function Board({
                         }
                         if (hasSkill && hasSkill(selectedCard, 'takeover')) {
                             valid = valid && (card !== null);
+                        }
+                        if (hasSkill && hasSkill(selectedCard, 'apex')) {
+                            valid = valid && (card && (card.skill === 'legendary' || (card.skills && card.skills.some(s => s.id === 'legendary'))));
                         }
                         if (hasSkill && hasSkill(selectedCard, 'challenge')) {
                             valid = valid && (enemyBoard[lane] !== null);

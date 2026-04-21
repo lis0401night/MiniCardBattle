@@ -1167,6 +1167,10 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
 
         if (targetLane !== -1 && eBoard[targetLane] !== null) {
+            const decision = { type: 'targeted_destruction', laneIdx: targetLane };
+            if (!state._actionQueue) state._actionQueue = [];
+            state._actionQueue.push(decision);
+
             if (!hasSkill(eBoard[targetLane], 'immune')) {
                 eBoard[targetLane].currentPower = 0;
                 events.push({ type: 'deadly', side: oppOwner, lane: targetLane, source: 'targeted_destruction' });
@@ -1203,6 +1207,12 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 }
             }
         }
+        
+        if (targetLane !== -1 || myLane !== -1) {
+            const decision = { type: 'elf_polarbear_combo', targetLane, myLane };
+            if (!state._actionQueue) state._actionQueue = [];
+            state._actionQueue.push(decision);
+        }
 
         // パート1: 相手のカードの破壊（選ばれた場合のみ）
         if (targetLane !== -1 && eBoard[targetLane] !== null) {
@@ -1217,7 +1227,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         // パート2: ヴォイテクの配置
         const mySealedLanesFinal = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
         if (myLane !== -1 && !board[myLane] && (!mySealedLanesFinal || mySealedLanesFinal[myLane] === 0)) {
-            const tokenMaster = { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 3, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' };
+            const tokenMaster = { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 4, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' };
             const bearCard = {
                 ...tokenMaster,
                 uid: 'dng_tk_' + Math.floor(getSeededRandom() * 1000000000),
@@ -1245,6 +1255,10 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 if (emptyLanes.length > 0) l = emptyLanes[0];
             }
             if (l !== -1) {
+                const decision = { type: 'devilhunter_resurrect', targetIdx: discard.indexOf(selectedCard), laneIdx: l };
+                if (!state._actionQueue) state._actionQueue = [];
+                state._actionQueue.push(decision);
+
                 events.push({ type: 'leader_skill', skill: action, side: owner });
                 const existingCard = board[l];
                 const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
@@ -1353,6 +1367,19 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
         events.push({ type: 'damage_player', side: oppOwner, amount: d, source: 'dark_ritual' });
         events.push({ type: 'heal_player', side: owner, amount: d, source: 'dark_ritual' });
+
+    } else if (action === 'condemnation') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        const d = 5;
+        if (isBlue) {
+            state.enemyHP -= d;
+            state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
+        } else {
+            state.playerHP -= d;
+            state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + d);
+        }
+        events.push({ type: 'damage_player', side: oppOwner, amount: d, source: 'condemnation' });
+        events.push({ type: 'heal_player', side: owner, amount: d, source: 'condemnation' });
 
     } else if (action === 'time_stop') {
         events.push({ type: 'leader_skill', skill: action, side: owner });
@@ -1477,6 +1504,23 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             dmgToAtk *= 2;
         }
 
+        // 憑依: 戦闘ダメージをリーダーに肩代わりさせる
+        if (hasSkill(dC, 'possession')) {
+            if (dmgToDef > 0) {
+                defHP -= dmgToDef;
+                events.push({ type: 'damage_player', side: defSide, amount: dmgToDef, source: 'possession', lane: dLane });
+                dmgToDef = 0;
+            }
+        }
+        if (hasSkill(aC_defend, 'possession')) {
+            if (dmgToAtk > 0) {
+                if (attackerSide === 'blue') state.playerHP -= dmgToAtk;
+                else state.enemyHP -= dmgToAtk;
+                events.push({ type: 'damage_player', side: attackerSide, amount: dmgToAtk, source: 'possession', lane: aLane });
+                dmgToAtk = 0;
+            }
+        }
+
         const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
         if (isOriginalTargetDefender) dmgToAtk = 0; // 防御は反撃ダメージを与えない
 
@@ -1597,7 +1641,7 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
             events.push({ type: 'damage_player', side, amount: v, source: 'contract' });
         }
     }
-
+    processDestructionTriggers(state, events);
     return events;
 }
 
