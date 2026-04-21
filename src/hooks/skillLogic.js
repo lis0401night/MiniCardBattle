@@ -201,7 +201,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         if (hasActiveSkill(c)) {
             await resolveOnPlaySkill(o, l, c);
         }
-        await cleanupDestroyedCards();
+        await cleanupDestroyedCards(c);
         return;
     }
 
@@ -363,7 +363,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
         await playEvents(events);
-        await cleanupDestroyedCards();
+        await cleanupDestroyedCards(c);
 
     } else if (skillId === 'clone') {
         // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
@@ -413,7 +413,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
         }
         await playEvents(events);
-        await cleanupDestroyedCards();
+        await cleanupDestroyedCards(c);
 
     } else if (skillId === 'fate') {
         const roll = Math.floor(getSeededRandom() * 6) + 1;
@@ -756,7 +756,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(400);
-            await cleanupDestroyedCards();
+            await cleanupDestroyedCards(c);
         }
     } else if (skillId === 'standby') {
         const turns = (skillValue || 1);
@@ -860,7 +860,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     playSound(SOUNDS.sePlace);
                     renderBoard();
                     await sleep(400);
-                    await cleanupDestroyedCards();
+                    await cleanupDestroyedCards(c);
                 }
             }
         }
@@ -1068,7 +1068,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
         if (events.length > 0) {
             await playEvents(events);
-            await cleanupDestroyedCards();
+            await cleanupDestroyedCards(c);
         }
     } else if (skillId === 'call') {
         const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
@@ -1127,7 +1127,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                                 await resolveActiveSkillEffect(o, targetLane, targetCard, sk.id, sk.value);
                             }
                         }
-                        await cleanupDestroyedCards();
+                        await cleanupDestroyedCards(c);
                     } else {
                         topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                         topCard.owner = o;
@@ -1142,7 +1142,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         if (hasActiveSkill(topCard)) {
                             await resolveOnPlaySkill(o, targetLane, topCard);
                         }
-                        await cleanupDestroyedCards();
+                        await cleanupDestroyedCards(c);
 
                         // 使い捨てスペル等のパワー0以下のカードは、召喚効果解決後に消去する
                         const finalCard = board[targetLane];

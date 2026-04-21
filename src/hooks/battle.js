@@ -1342,19 +1342,20 @@ export function updateDeckDisplay(owner) {
     if (updateBattleUIHook) updateBattleUIHook();
 }
 
-export async function cleanupDestroyedCards() {
+export async function cleanupDestroyedCards(excludeCard = null) {
     let anyDestroyedAtAll = false;
     while (true) {
         let destroyedItems = [];
         [GameState.playerBoard, GameState.enemyBoard].forEach((board, bIdx) => {
             const side = bIdx === 0 ? 'player' : 'enemy';
             for (let i = 0; i < 3; i++) {
-                if (board[i] && board[i].currentPower <= 0) {
+                if (board[i] && board[i].currentPower <= 0 && board[i] !== excludeCard) {
                     const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
                     destroyedItems.push({ board, index: i, el, owner: bIdx === 0 ? 'blue' : 'red', card: board[i] });
                 }
             }
         });
+
 
         if (destroyedItems.length === 0) break;
         anyDestroyedAtAll = true;

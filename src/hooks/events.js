@@ -216,7 +216,7 @@ export function initEventClericHighMode(charId) {
         hp: 40,
         name: '断罪の執行者 エリシア',
         leaderSkill: {
-            name: 'ディヴァイン・エグゼキューション',
+            name: 'ギロチンクロス',
             desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。',
             cost: 3,
             action: 'condemnation'
