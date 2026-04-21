@@ -1504,6 +1504,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             dmgToAtk *= 2;
         }
 
+        const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
+        if (isOriginalTargetDefender) dmgToAtk = 0; // 防御は反撃ダメージを与えない
+
         // 憑依: 戦闘ダメージをリーダーに肩代わりさせる
         if (hasSkill(dC, 'possession')) {
             if (dmgToDef > 0) {
@@ -1520,9 +1523,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                 dmgToAtk = 0;
             }
         }
-
-        const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
-        if (isOriginalTargetDefender) dmgToAtk = 0; // 防御は反撃ダメージを与えない
 
         if (dmgToDef > 0) events.push({ type: 'damage_card', side: defSide, lane: dLane, amount: dmgToDef });
         if (dmgToAtk > 0) events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
