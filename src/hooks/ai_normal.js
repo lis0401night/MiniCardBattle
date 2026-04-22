@@ -103,30 +103,49 @@ export function getBestSimulatedMove() {
                             cardTokenLanes: tLanes && tLanes.length > 0 ? [...tLanes] : undefined
                         };
 
-                        if (depth < 2 && hasSkill(card, 'invite')) {
-                            let addedInvite = false;
-                            for (let i = 0; i < originalHand.length; i++) {
-                                if (usedHand.includes(i)) continue;
-                                let childQueues = buildCardPlayTree(originalHand[i], i, 'invite', originalHand, originalDiscard, [...usedHand, i], usedDiscard, depth + 1, lane);
-                                for (let cq of childQueues) {
-                                    if (cq.length === 0) branches.push([node]); else branches.push([node, ...cq]);
-                                    addedInvite = true;
+                        // 発動するスキル群を特定（トップレベル + 選択されたchoice）
+                        let effectiveSkills = [];
+                        if (hasSkill(card, 'invite')) effectiveSkills.push({ id: 'invite', value: card.skillValue || 1 });
+                        if (hasSkill(card, 'resurrect')) effectiveSkills.push({ id: 'resurrect', value: card.skillValue || 1 });
+                        if (card.skills) {
+                            card.skills.forEach(s => {
+                                if (s.id === 'invite' || s.id === 'resurrect') effectiveSkills.push(s);
+                            });
+                        }
+                        if (c1) c1.forEach(idx => { if (card.choices && card.choices[idx]) effectiveSkills.push(card.choices[idx]); });
+                        if (c2) c2.forEach(idx => { if (card.choices2 && card.choices2[idx]) effectiveSkills.push(card.choices2[idx]); });
+
+                        // ターゲット選択を伴うスキルを抽出（複数ある場合は最初の1つを優先）
+                        let targetSkill = effectiveSkills.find(s => s.id === 'invite' || s.id === 'resurrect');
+
+                        if (depth < 2 && targetSkill) {
+                            if (targetSkill.id === 'invite') {
+                                let addedInvite = false;
+                                for (let i = 0; i < originalHand.length; i++) {
+                                    if (usedHand.includes(i)) continue;
+                                    let childHandCard = originalHand[i];
+                                    let childQueues = buildCardPlayTree(childHandCard, i, 'invite', originalHand, originalDiscard, [...usedHand, i], usedDiscard, depth + 1, lane);
+                                    for (let cq of childQueues) {
+                                        if (cq.length === 0) branches.push([node]); else branches.push([node, ...cq]);
+                                        addedInvite = true;
+                                    }
                                 }
-                            }
-                            branches.push([node]);
-                        } else if (depth < 2 && hasSkill(card, 'resurrect')) {
-                            let maxPow = card.skillValue || 1;
-                            let addedRes = false;
-                            for (let i = 0; i < originalDiscard.length; i++) {
-                                if (usedDiscard.includes(i)) continue;
-                                if ((originalDiscard[i].power || 0) > maxPow || originalDiscard[i].isToken) continue;
-                                let childQueues = buildCardPlayTree(originalDiscard[i], i, 'resurrect', originalHand, originalDiscard, usedHand, [...usedDiscard, i], depth + 1);
-                                for (let cq of childQueues) {
-                                    if (cq.length === 0) branches.push([node]); else branches.push([node, ...cq]);
-                                    addedRes = true;
+                                if (!addedInvite) branches.push([node]);
+                            } else if (targetSkill.id === 'resurrect') {
+                                let maxPow = targetSkill.value || 1;
+                                let addedRes = false;
+                                for (let i = 0; i < originalDiscard.length; i++) {
+                                    if (usedDiscard.includes(i)) continue;
+                                    let resCard = originalDiscard[i];
+                                    if ((resCard.power || 0) > maxPow || resCard.isToken) continue;
+                                    let childQueues = buildCardPlayTree(resCard, i, 'resurrect', originalHand, originalDiscard, usedHand, [...usedDiscard, i], depth + 1);
+                                    for (let cq of childQueues) {
+                                        if (cq.length === 0) branches.push([node]); else branches.push([node, ...cq]);
+                                        addedRes = true;
+                                    }
                                 }
+                                if (!addedRes) branches.push([node]);
                             }
-                            branches.push([node]);
                         } else {
                             branches.push([node]);
                         }
