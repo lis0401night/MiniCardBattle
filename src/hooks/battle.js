@@ -1730,7 +1730,7 @@ export async function playCard(o, hI, l) {
             renderHand(); renderBoard();
 
             await resolveOnPlaySkill(o, l, unionCard);
-            if (unionCard.currentPower <= 0) await cleanupDestroyedCards();
+            await cleanupDestroyedCards();
 
             await sleep(100);
             renderBoard();
@@ -1809,7 +1809,7 @@ export async function playCard(o, hI, l) {
 
             await sleep(100);
             renderBoard();
-            if (targetCard.currentPower <= 0) await cleanupDestroyedCards();
+            await cleanupDestroyedCards();
             return; // 装備完了
 
         } else {
@@ -1846,6 +1846,9 @@ export async function playCard(o, hI, l) {
         await sleep(50); // React DOMコミット待機
         await resolveOnPlaySkill(o, l, c);
     }
+    
+    // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認
+    await cleanupDestroyedCards();
 
 
     // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
@@ -2013,6 +2016,9 @@ export async function resolveOnPlaySkill(o, l, c) {
         // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
         c.skillTriggered = true;
         renderBoard();
+
+        // スキル解決によって破壊されたカード（自分自身含む）を除去
+        await cleanupDestroyedCards();
     } finally {
         // 処理が完了したらフラグを解除する
         c.isSkillResolving = false;
@@ -2068,6 +2074,9 @@ export async function executeCombatPhase(atk) {
 
     // 整合性を取るために最終的な盤面状態を描画
     renderBoard();
+    
+    // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
+    await cleanupDestroyedCards();
 
     // 勝敗判定
     checkWinCondition();

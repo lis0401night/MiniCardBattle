@@ -1200,13 +1200,22 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     targetLane = i;
                 }
             }
-            // 空きレーンを探す
+            // 配置レーンの決定
             const mySealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+            let emptyLanes = [];
+            let possibleLanes = [];
             for (let i = 0; i < 3; i++) {
-                if (!board[i] && (!mySealedLanes || mySealedLanes[i] === 0)) {
-                    myLane = i;
-                    break;
+                if (!mySealedLanes || mySealedLanes[i] === 0) {
+                    possibleLanes.push(i);
+                    if (!board[i]) emptyLanes.push(i);
                 }
+            }
+            if (emptyLanes.length > 0) {
+                myLane = emptyLanes[0];
+            } else if (possibleLanes.length > 0) {
+                // 上書き：もっともパワーの低いレーンを選択
+                possibleLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
+                myLane = possibleLanes[0];
             }
         }
         
@@ -1228,7 +1237,11 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
         // パート2: ヴォイテクの配置
         const mySealedLanesFinal = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
-        if (myLane !== -1 && !board[myLane] && (!mySealedLanesFinal || mySealedLanesFinal[myLane] === 0)) {
+        if (myLane !== -1 && (!mySealedLanesFinal || mySealedLanesFinal[myLane] === 0)) {
+            // 既存のカードがあれば墓地へ送る（上書き許可）
+            if (board[myLane] !== null) {
+                quietDiscardFromBoard(state, owner, myLane);
+            }
             const tokenMaster = { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 4, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' };
             const bearCard = {
                 ...tokenMaster,

@@ -559,6 +559,22 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
             // 配置シミュレーション
             const played = JSON.parse(JSON.stringify(tokenCard));
             simState.enemyBoard[l] = played;
+
+            // リナのスキル（ヴォイテク配置）の場合、破壊効果も同時にシミュレートしてトータルのアドバンテージを評価させる
+            if (tokenCard.id === 'token_polarbear') {
+                let maxOppP = -1;
+                let targetL = -1;
+                for (let i = 0; i < 3; i++) {
+                    if (simState.playerBoard[i] && simState.playerBoard[i].currentPower > maxOppP) {
+                        maxOppP = simState.playerBoard[i].currentPower;
+                        targetL = i;
+                    }
+                }
+                if (targetL !== -1) {
+                    simState.playerBoard[targetL].currentPower = 0;
+                }
+            }
+
             let skills = [];
             if (played.skill && played.skill !== 'none') skills.push({ id: played.skill, value: played.skillValue });
             if (Array.isArray(played.skills)) skills = skills.concat(played.skills);

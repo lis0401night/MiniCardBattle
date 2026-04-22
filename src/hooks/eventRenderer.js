@@ -2,7 +2,7 @@ import { createDamagePopup, playSound, sleep, getSeededRandom } from '../utils/g
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { updateHPBar, updateSPOrbs, updateDeckDisplay, cleanupDestroyedCards, showSpeechBubble } from './battle.js';
+import { updateHPBar, updateSPOrbs, updateDeckDisplay, cleanupDestroyedCards, showSpeechBubble, hasActiveSkill } from './battle.js';
 import { updateCardPowerOnly, renderBoard, renderHand } from './uiBattle.js';
 import { GameState } from './gameState.js';
 
@@ -247,7 +247,11 @@ export async function playEvents(events) {
                 }, 50);
 
                 await sleep(300);
-                // ここではまだ解除しない（この後の resolveOnPlaySkill が解除を担当する）
+                // 召喚時スキルを持つ場合は resolveOnPlaySkill が責任を持って解除するが、
+                // スキルを持たないカード（トークン等）はここで解除しないと破壊耐性が残ってしまう
+                if (ev.card && !hasActiveSkill(ev.card)) {
+                    ev.card.isSkillResolving = false;
+                }
                 break;
             }
 
