@@ -9,6 +9,7 @@ import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
 import { PASSIVE_SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { getIsHost } from './multiplayer.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -556,6 +557,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
                     if (targetCard.currentPower <= 0) {
                         // パワーが0以下になった場合や即死処理が入った場合は破壊
+                        if (tgtEl) {
+                            tgtEl.classList.add('anim-shake');
+                            tgtEl.classList.add('anim-card-destroy');
+                        }
+                        if (targetCard.voiceCategory) {
+                            playCardVoice(targetCard.voiceCategory, 'death');
+                        }
+                        playSound(SOUNDS.seDestroy);
+                        await sleep(400); // 破壊演出待ち
                         if (!(await discardCard(tgtSide, targetCard, targetLane, true))) eB[targetLane] = null;
                     }
                 } else {
@@ -593,8 +603,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 if (hasDefender) {
                     if (tgtEl) {
                         tgtEl.classList.add('anim-shake');
+                        tgtEl.classList.add('anim-card-destroy');
                         createDamagePopup(tgtEl, '破壊', '#ef4444');
                     }
+                    if (targetCard.voiceCategory) {
+                        playCardVoice(targetCard.voiceCategory, 'death');
+                    }
+                    playSound(SOUNDS.seDestroy);
+                    
+                    await sleep(400); // 破壊演出待ち
                     if (!(await discardCard(tgtSide, targetCard, targetLane, true))) eB[targetLane] = null;
                 } else {
                     if (tgtEl) {
