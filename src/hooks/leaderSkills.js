@@ -268,6 +268,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             } else if (isEquip) {
                 // 装備（既存カードの上へ）
                 const targetCard = board[targetLane];
+                targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
                 targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
                 targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
                 
@@ -285,6 +286,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 targetCard.equippedCards = targetCard.equippedCards || [];
                 targetCard.equippedCards.push(selectedCard);
                 
+                renderBoard(); // 反映を確実にする
                 events.push({ type: 'power_change', side: owner, lane: targetLane, amount: selectedCard.power, source: 'equip' });
                 resurrectedCard = targetCard; // 後のスキル解決フラグ用
             } else {
@@ -459,7 +461,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         } else if (action === 'devilhunter_resurrect' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_summon_maria', owner, tokenLanes[0]);
-        } else if (action === 'dark_ritual') {
+        } else if (action === 'dark_ritual' || action === 'condemnation') {
             await sleep(200);
             await window.triggerVfx('anm_dark_ritual', owner);
         } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {

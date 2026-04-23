@@ -1,6 +1,6 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getSeededRandom } from '../utils/gameUtils.js';
-import { hasSkill, getSkillValue, unmergeCardSkills } from '../utils/gameUtils.js';
+import { hasSkill, getSkillValue, unmergeCardSkills, mergeCardSkills } from '../utils/gameUtils.js';
 
 /**
  * Mini Card Battle - Core Game Engine
@@ -1293,6 +1293,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
                 } else if (isEquip && existingCard) {
                     // 装備（既存カードの上へ）
+                    existingCard.power = (existingCard.power || 0) + (selectedCard.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (selectedCard.power || 0);
                     existingCard.currentPower = (existingCard.currentPower || 0) + (selectedCard.power || 0);
                     
