@@ -68,31 +68,55 @@ export function getBestSimulatedMove() {
             }
         }
 
-        let tokenLanePatterns = [null];
-        let tokenTargetCount = 0;
-        if (hasSkill(card, 'crush') || hasSkill(card, 'dispel') || hasSkill(card, 'snipe') || hasSkill(card, 'artillery') || hasSkill(card, 'seal')) tokenTargetCount = card.skillValue || 1;
-        if (hasSkill(card, 'salvage') || hasSkill(card, 'resurrect') || hasSkill(card, 'summon')) tokenTargetCount = 1;
-
-        let tc = 0;
-        if (hasSkill(card, 'clone') || hasSkill(card, 'summon')) tc = card.skillValue || 1;
-        if (hasSkill(card, 'call') || hasSkill(card, 'metamorph')) tc = 1;
-
-        if (tc > 0) {
-            let possibleLanes = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
-            let combs = [[]];
-            for (let k = 1; k <= Math.min(possibleLanes.length, tc); k++) combs.push(...getCombinations(possibleLanes, k));
-            tokenLanePatterns = combs;
-        } else if (tokenTargetCount > 0) {
-            let occupied = opBoard.map((c, i) => c ? i : -1).filter(i => i !== -1);
-            let combs = [[]];
-            for (let k = 1; k <= Math.min(occupied.length, tokenTargetCount); k++) combs.push(...getCombinations(occupied, k));
-            tokenLanePatterns = combs;
-        }
+        // --- ループの外での静的な事前計算を削除し、内部で動的に計算するように変更 ---
 
         let branches = [];
         for (let lane of availableLanes) {
             for (let c1 of choiceCombinations) {
                 for (let c2 of choice2Combinations) {
+                    // --- 動的な配置/ターゲットパターンの生成 ---
+                    let tc = 0;
+                    let tokenTargetCount = 0;
+
+                    // 基本性能からの集計
+                    if (hasSkill(card, 'crush') || hasSkill(card, 'dispel') || hasSkill(card, 'snipe') || hasSkill(card, 'artillery') || hasSkill(card, 'seal')) tokenTargetCount += (card.skillValue || 1);
+                    if (hasSkill(card, 'salvage') || hasSkill(card, 'resurrect')) tokenTargetCount += 1;
+                    if (hasSkill(card, 'summon')) tc += (card.skillValue || 1);
+                    if (hasSkill(card, 'clone')) tc += (card.skillValue || 1);
+                    if (hasSkill(card, 'call') || hasSkill(card, 'metamorph')) tc += 1;
+
+                    // 選択されたスキル（c1, c2）からの合算
+                    const countInChoices = (arr, group) => {
+                        if (!group) return;
+                        arr.forEach(idx => {
+                            const sk = group[idx];
+                            if (!sk) return;
+                            if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
+                            if (['salvage', 'resurrect'].includes(sk.id)) tokenTargetCount += 1;
+                            if (sk.id === 'summon' || sk.id === 'clone') tc += (sk.value || 1);
+                            if (sk.id === 'call' || sk.id === 'metamorph') tc += 1;
+                        });
+                    };
+                    countInChoices(c1, card.choices);
+                    countInChoices(c2, card.choices2);
+
+                    let tokenLanePatterns = [null];
+                    if (tc > 0) {
+                        let possibleLanes = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
+                        let combs = []; // 配置は0件不可（最低限tc分、あるいは全埋め）
+                        for (let k = Math.min(possibleLanes.length, tc); k <= Math.min(possibleLanes.length, tc); k++) {
+                            combs.push(...getCombinations(possibleLanes, k));
+                        }
+                        if (combs.length > 0) tokenLanePatterns = combs;
+                    } else if (tokenTargetCount > 0) {
+                        let occupied = opBoard.map((c, i) => c ? i : -1).filter(i => i !== -1);
+                        let combs = [];
+                        for (let k = 1; k <= Math.min(occupied.length, tokenTargetCount); k++) {
+                            combs.push(...getCombinations(occupied, k));
+                        }
+                        if (combs.length > 0) tokenLanePatterns = combs;
+                    }
+
                     for (let tLanes of tokenLanePatterns) {
                         let node = {
                             type: sourceType,
@@ -119,6 +143,7 @@ export function getBestSimulatedMove() {
                         let targetSkill = effectiveSkills.find(s => s.id === 'invite' || s.id === 'resurrect');
 
                         if (depth < 2 && targetSkill) {
+                            // ... (以下既存の再帰処理 ...
                             if (targetSkill.id === 'invite') {
                                 let addedInvite = false;
                                 for (let i = 0; i < originalHand.length; i++) {

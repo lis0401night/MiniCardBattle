@@ -252,7 +252,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const maxPow = val || 3;
             if (myDeckSim && myDeckSim.length > 0) {
                 // シミュレーション：デッキから指定パワー以下の最も強いカードを引き、手札の最も弱いカードと入れ替える
-                const validCards = myDeckSim.filter(card => (card.power || 0) <= maxPow);
+                const validCards = myDeckSim.filter(card => card && (card.power || 0) <= maxPow);
                 if (validCards.length > 0) {
                     validCards.sort((a, b) => (b.power || 0) - (a.power || 0));
                     const bestCard = validCards[0];
@@ -863,7 +863,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'resurrect':
             const maxPow = val || 1;
             const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-            const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
+            const validCards = discard.filter(card => card && (card.power || 0) <= maxPow && !card.isToken);
             if (validCards.length > 0) {
                 const sorted = [...validCards].sort((a, b) => b.power - a.power);
                 const selectedCard = sorted[0];
@@ -1257,7 +1257,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         }
     } else if (action === 'devilhunter_resurrect') {
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
-        const validCards = discard.filter(card => !card.isToken);
+        const validCards = discard.filter(card => card && !card.isToken);
         if (validCards.length > 0) {
             const sorted = [...validCards].sort((a, b) => b.power - a.power);
             const selectedCard = sorted[0];
@@ -1278,7 +1278,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 const existingCard = board[l];
                 const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
                 const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
-
+                const isEquip = hasSkill(selectedCard, 'equip');
                 if (isUnion) {
                     const masterData = CARD_MASTER.find(c => c.id === unionSkill.summonId) || CARD_MASTER.find(c => c.id === 'android');
                     let unionCard = JSON.parse(JSON.stringify(masterData));
@@ -1291,8 +1291,31 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     unionCard.stunTurns = 0;
                     board[l] = unionCard;
                     events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
+                } else if (isEquip && existingCard) {
+                    // 装備（既存カードの上へ）
+                    existingCard.basePower = (existingCard.basePower || 0) + (selectedCard.power || 0);
+                    existingCard.currentPower = (existingCard.currentPower || 0) + (selectedCard.power || 0);
+                    
+                    const equipSkills = [];
+                    if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+                        equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+                    }
+                    if (selectedCard.skills) {
+                        selectedCard.skills.forEach(s => {
+                            if (s.id !== 'equip') equipSkills.push(s);
+                        });
+                    }
+                    mergeCardSkills(existingCard, equipSkills);
+                    
+                    existingCard.equippedCards = existingCard.equippedCards || [];
+                    existingCard.equippedCards.push(selectedCard);
+                    
+                    events.push({ type: 'power_change', side: owner, lane: l, amount: selectedCard.power, source: 'equip' });
                 } else {
-                    if (existingCard) discard.push(existingCard);
+                    if (existingCard) {
+                        const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+                        simDiscard.push(existingCard);
+                    }
                     const resurrectedCard = { ...selectedCard, id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}` };
                     resurrectedCard.currentPower = resurrectedCard.power;
                     resurrectedCard.skillTriggered = true;

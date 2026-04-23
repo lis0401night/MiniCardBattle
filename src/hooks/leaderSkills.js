@@ -1,7 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills, getDialogue } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills, getDialogue, hasSkill } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
@@ -248,12 +248,13 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
             const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
 
+            const isEquip = hasSkill(selectedCard, 'equip') && existingCard;
             let resurrectedCard;
             if (isUnion) {
                 const combineId = unionSkill.summonId;
                 const masterData = CARD_MASTER.find(c => c.id === combineId);
                 resurrectedCard = JSON.parse(JSON.stringify(masterData));
-                resurrectedCard.uid = getOrCreateUUID(null);
+                resurrectedCard.uid = `ls_un_${Math.floor(getSeededRandom() * 1000000000)}`;
                 resurrectedCard.owner = owner;
                 resurrectedCard.baseId = resurrectedCard.id;
                 resurrectedCard.basePower = resurrectedCard.power;
@@ -263,6 +264,29 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 resurrectedCard.stunTurns = 0;
                 resurrectedCard.stunAppliedThisTurn = false;
                 board[targetLane] = resurrectedCard;
+                events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'union' });
+            } else if (isEquip) {
+                // 装備（既存カードの上へ）
+                const targetCard = board[targetLane];
+                targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+                targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+                
+                const equipSkills = [];
+                if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+                    equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+                }
+                if (selectedCard.skills) {
+                    selectedCard.skills.forEach(s => {
+                        if (s.id !== 'equip') equipSkills.push(s);
+                    });
+                }
+                mergeCardSkills(targetCard, equipSkills);
+                
+                targetCard.equippedCards = targetCard.equippedCards || [];
+                targetCard.equippedCards.push(selectedCard);
+                
+                events.push({ type: 'power_change', side: owner, lane: targetLane, amount: selectedCard.power, source: 'equip' });
+                resurrectedCard = targetCard; // 後のスキル解決フラグ用
             } else {
                 resurrectedCard = {
                     ...selectedCard,
@@ -274,20 +298,13 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 resurrectedCard.stunTurns = 0;
                 resurrectedCard.stunAppliedThisTurn = false;
                 
-                // 既存のカードがあれば破棄する（UNIONでない場合）
+                // 既存のカードがあれば破棄する（UNION/EQUIPでない場合）
                 if (existingCard) {
                     await discardCard(owner, existingCard, targetLane);
                 }
                 board[targetLane] = resurrectedCard;
+                events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
             }
-
-            // 出現時スキルを持つ場合は即座に保護フラグを立てる
-            if (hasActiveSkill(resurrectedCard)) {
-                resurrectedCard.isSkillResolving = true;
-            }
-
-            events.push({ type: 'leader_skill', skill: action, side: owner });
-            events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
 
         } else {
             return; // 復活対象や空きがない
