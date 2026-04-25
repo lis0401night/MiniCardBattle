@@ -564,17 +564,27 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             break;
         case 'summon':
             const summonTargetPower = val || 1;
-            let tNameEngine = 'ドローン';
-            let tIdEngine = 'token_drone';
-            const engineCId = c.baseId || c.id;
-            if (engineCId === 'admiral') {
-                tIdEngine = 'token_knight';
-                tNameEngine = '騎士';
-            } else if (summonTargetPower >= 5) {
-                tNameEngine = 'ゴーレム';
-                tIdEngine = 'token_golem';
+            let tIdEngine = null;
+            let tNameEngine = null;
+            
+            // カード本体またはスキルから召喚IDを取得
+            const skillForSummonId = c.skills?.find(s => (s.id === 'summon' || s.id === 'awake' || s.id === 'wall_create' || s.id === 'split') && s.summonId);
+            tIdEngine = c.summonId || skillForSummonId?.summonId;
+            
+            if (!tIdEngine) {
+                const engineCId = c.baseId || c.id;
+                if (engineCId === 'admiral') {
+                    tIdEngine = 'token_knight';
+                } else if (summonTargetPower >= 5) {
+                    tIdEngine = 'token_golem';
+                } else {
+                    tIdEngine = 'token_drone';
+                }
             }
+            
             const baseTC = CARD_MASTER.find(m => m.id === tIdEngine);
+            tNameEngine = baseTC?.name || 'トークン';
+
             const sTC = {
                 id: tIdEngine,
                 name: tNameEngine,
@@ -608,7 +618,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         baseId: tIdEngine,
                         owner,
                         isPremium: c.isPremium,
-                        imgUrl: '', // resolved in UI
+                        imgUrl: `assets/cards/card_${tIdEngine}.jpg`,
                         power: summonTargetPower,
                         basePower: summonTargetPower,
                         currentPower: summonTargetPower,
@@ -621,6 +631,38 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'summon' });
                 }
             }
+            break;
+        case 'awake':
+            // 覚醒: 同レーンにトークンを配置し、元のカードを墓地へ送る（変身/置換）
+            const awakeVal = val || 1;
+            let awakeTid = null;
+            const awakeSkill = c.skills?.find(s => s.id === 'awake') || (c.skill === 'awake' ? { id: 'awake', value: c.skillValue, summonId: c.summonId } : null);
+            awakeTid = awakeSkill?.summonId || 'token_dragon';
+            
+            const awakeTpl = CARD_MASTER.find(m => m.id === awakeTid);
+            if (!awakeTpl) break;
+            
+            const awakeToken = {
+                ...JSON.parse(JSON.stringify(awakeTpl)),
+                id: `awake_sim_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+                uid: `${owner}_awake_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+                owner,
+                isPremium: c.isPremium,
+                power: awakeVal,
+                basePower: awakeVal,
+                currentPower: awakeVal,
+                isToken: true,
+                baseId: awakeTid,
+                imgUrl: `assets/cards/card_${awakeTid}.jpg`,
+                skills: [] // トークンは能力を持たない
+            };
+            
+            // 旧カードを盤面から除外（墓地へ送る）
+            quietDiscardFromBoard(state, owner, l);
+            
+            // 新トークンを配置
+            b[l] = awakeToken;
+            events.push({ type: 'summon_token', side: owner, lane: l, card: JSON.parse(JSON.stringify(awakeToken)), source: 'awake' });
             break;
         case 'wall_create':
             const wallPower = val || 10;
@@ -1493,8 +1535,16 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             dC = null; // 位相が合わないため完全すり抜け（直接攻撃扱い）
         }
     }
-    const originalTarget = (defBoard[l] && (hasSkill(defBoard[l], 'phase') === aHasPhase || hasSkill(defBoard[l], 'defender') || defBoard[l].stunTurns > 0)) ? defBoard[l] : null;
+    // 正面のカードを特定
+    const frontCard = defBoard[l];
+    // 位相が一致するか、または防御/拘束などの理由でブロック可能か
+    const originalTarget = (frontCard && (hasSkill(frontCard, 'phase') === aHasPhase || hasSkill(frontCard, 'defender') || (frontCard.stunTurns > 0))) ? frontCard : null;
     let aP = Number(aC.currentPower ?? aC.power ?? 0) || 0;
+
+    // 反撃ダメージを与えるカードは、守護や身代わりに関わらず「常に正面の相手」
+    let dC_counter = originalTarget;
+    // 防御（および拘束・待機）状態でなく、位相が一致している場合のみ反撃が発生
+    let dP = (dC_counter && !hasSkill(dC_counter, 'defender') && !(dC_counter.stunTurns > 0)) ? (Number(dC_counter.currentPower ?? dC_counter.power ?? 0) || 0) : 0;
 
     // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）
     const aC_defend = atkBoard[aLane];
@@ -1515,24 +1565,111 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         });
     }
 
-    if (dC) {
-        let dP = Number(dC.currentPower ?? dC.power ?? 0) || 0;
+    if (hasSkill(aC, 'cleave')) {
+        let targets = [l - 1, l, l + 1].filter(j => j >= 0 && j <= 2);
+        targets.sort((a, b) => a - b);
+        
+        let N = targets.length;
+        let base = Math.floor(aP / N);
+        let rem = aP % N;
+        
+        // [1] 与ダメージ分配
+        let totalActualDmgToDef = 0;
+        for (let targetLane of targets) {
+            let currentDmg = base + (rem > 0 ? 1 : 0);
+            if (rem > 0) rem--;
+            if (currentDmg <= 0) continue;
+
+            let targetCard = defBoard[targetLane];
+            if (targetCard) {
+                let effectiveDmg = currentDmg;
+                if (hasSkill(targetCard, 'sturdy')) {
+                     events.push({ type: 'sturdy_block', side: defSide, lane: targetLane });
+                     effectiveDmg = Math.floor(effectiveDmg / 2);
+                }
+                if (hasSkill(targetCard, 'invincible')) {
+                     events.push({ type: 'invincible_block', side: defSide, lane: targetLane });
+                     effectiveDmg = 0;
+                }
+
+                if (effectiveDmg > 0) {
+                    targetCard.currentPower -= effectiveDmg;
+                    events.push({ type: 'damage_card', side: defSide, lane: targetLane, amount: effectiveDmg, source: 'cleave' });
+                    totalActualDmgToDef += effectiveDmg;
+                    
+                    if (hasSkill(aC, 'deadly')) {
+                        if (!hasSkill(targetCard, 'immune')) {
+                            targetCard.currentPower = 0;
+                            events.push({ type: 'deadly', side: defSide, lane: targetLane });
+                        } else {
+                            events.push({ type: 'immune_block', side: defSide, lane: targetLane, source: 'deadly' });
+                        }
+                    }
+                }
+            } else {
+                defHP -= currentDmg;
+                events.push({ type: 'damage_player', side: defSide, amount: currentDmg, source: 'cleave' });
+                totalActualDmgToDef += currentDmg;
+            }
+        }
+
+        // [2] 反撃処理 (一掃でも正面からのみ受ける)
+        let dmgToAtk = dP;
+        if (dmgToAtk > 0 && hasSkill(aC_defend, 'sturdy')) {
+            events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
+            dmgToAtk = Math.floor(dmgToAtk / 2);
+        }
+        if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
+            events.push({ type: 'invincible_block', side: attackerSide, lane: aLane });
+            dmgToAtk = 0;
+        }
+        if (originalTarget && hasSkill(originalTarget, 'double_strike')) {
+            if (dmgToAtk > 0) events.push({ type: 'double_strike_proc', side: defSide, lane: l });
+            dmgToAtk *= 2;
+        }
+        const isOriginalTargetDefender = originalTarget && (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
+        if (isOriginalTargetDefender) dmgToAtk = 0;
+
+        if (dmgToAtk > 0) {
+            events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
+            aC_defend.currentPower -= dmgToAtk;
+            if (originalTarget && hasSkill(originalTarget, 'deadly')) {
+                if (!hasSkill(aC_defend, 'immune')) {
+                    aC_defend.currentPower = 0;
+                    events.push({ type: 'deadly', side: attackerSide, lane: aLane });
+                } else {
+                    events.push({ type: 'immune_block', side: attackerSide, lane: aLane, source: 'deadly' });
+                }
+            }
+        }
+
+        // [3] 吸収/簒奪 (リーダーダメージも含む実際の与ダメージに基づく)
+        if (totalActualDmgToDef > 0 && hasSkill(aC, 'absorb')) {
+            const healAmt = Math.floor(totalActualDmgToDef / 2);
+            if (healAmt > 0) {
+                if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
+                else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
+                events.push({ type: 'heal_player', side: attackerSide, amount: healAmt, source: 'absorb', lane: aLane });
+            }
+        }
+
+    } else if (dC) {
         let dmgToDef = aP;
         let dmgToAtk = dP;
 
-        if (hasSkill(dC, 'sturdy')) {
+        if (dmgToDef > 0 && hasSkill(dC, 'sturdy')) {
             if (dmgToDef > 0) events.push({ type: 'sturdy_block', side: defSide, lane: dLane });
             dmgToDef = Math.floor(dmgToDef / 2);
         }
-        if (hasSkill(aC_defend, 'sturdy')) {
+        if (dmgToAtk > 0 && hasSkill(aC_defend, 'sturdy')) {
             if (dmgToAtk > 0) events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
             dmgToAtk = Math.floor(dmgToAtk / 2);
         }
-        if (hasSkill(dC, 'invincible')) {
+        if (dmgToDef > 0 && hasSkill(dC, 'invincible')) {
             if (dmgToDef > 0) events.push({ type: 'invincible_block', side: defSide, lane: dLane });
             dmgToDef = 0;
         }
-        if (hasSkill(aC_defend, 'invincible')) {
+        if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
             if (dmgToAtk > 0) events.push({ type: 'invincible_block', side: attackerSide, lane: aLane });
             dmgToAtk = 0;
         }
@@ -1550,15 +1687,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         const isOriginalTargetDefender = originalTarget && (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
         if (isOriginalTargetDefender) dmgToAtk = 0; // 防御（および待機・拘束）は反撃ダメージを与えない
 
-        // 憑依: 戦闘ダメージをリーダーに肩代わりさせる
-        if (hasSkill(dC, 'possession')) {
+        if (dmgToDef > 0 && hasSkill(dC, 'possession')) {
             if (dmgToDef > 0) {
                 defHP -= dmgToDef;
                 events.push({ type: 'damage_player', side: defSide, amount: dmgToDef, source: 'possession', lane: dLane });
                 dmgToDef = 0;
             }
         }
-        if (hasSkill(aC_defend, 'possession')) {
+        if (dmgToAtk > 0 && hasSkill(aC_defend, 'possession')) {
             if (dmgToAtk > 0) {
                 if (attackerSide === 'blue') state.playerHP -= dmgToAtk;
                 else state.enemyHP -= dmgToAtk;
@@ -1567,26 +1703,30 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             }
         }
 
-        if (dmgToDef > 0) events.push({ type: 'damage_card', side: defSide, lane: dLane, amount: dmgToDef });
-        if (dmgToAtk > 0) events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
+        if (dmgToDef > 0) {
+            events.push({ type: 'damage_card', side: defSide, lane: dLane, amount: dmgToDef });
+            dC.currentPower -= dmgToDef;
 
-        dC.currentPower -= dmgToDef;
-        aC_defend.currentPower -= dmgToAtk;
-
-        if (dmgToDef > 0 && hasSkill(aC, 'deadly')) {
-            if (!hasSkill(dC, 'immune')) {
-                dC.currentPower = 0;
-                events.push({ type: 'deadly', side: defSide, lane: dLane });
-            } else {
-                events.push({ type: 'immune_block', side: defSide, lane: dLane, source: 'deadly' });
+            if (hasSkill(aC, 'deadly')) {
+                if (!hasSkill(dC, 'immune')) {
+                    dC.currentPower = 0;
+                    events.push({ type: 'deadly', side: defSide, lane: dLane });
+                } else {
+                    events.push({ type: 'immune_block', side: defSide, lane: dLane, source: 'deadly' });
+                }
             }
         }
-        if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'deadly')) {
-            if (!hasSkill(aC_defend, 'immune')) {
-                aC_defend.currentPower = 0;
-                events.push({ type: 'deadly', side: attackerSide, lane: aLane });
-            } else {
-                events.push({ type: 'immune_block', side: attackerSide, lane: aLane, source: 'deadly' });
+        
+        if (dmgToAtk > 0) {
+            events.push({ type: 'damage_card', side: attackerSide, lane: aLane, amount: dmgToAtk });
+            aC_defend.currentPower -= dmgToAtk;
+            if (originalTarget && hasSkill(originalTarget, 'deadly')) {
+                if (!hasSkill(aC_defend, 'immune')) {
+                    aC_defend.currentPower = 0;
+                    events.push({ type: 'deadly', side: attackerSide, lane: aLane });
+                } else {
+                    events.push({ type: 'immune_block', side: attackerSide, lane: aLane, source: 'deadly' });
+                }
             }
         }
 
@@ -1682,6 +1822,16 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
             if (side === 'blue') state.playerHP -= v;
             else state.enemyHP -= v;
             events.push({ type: 'damage_player', side, amount: v, source: 'contract' });
+        }
+        if (hasSkill(c, 'awake')) {
+            const v = getSkillValue(c, 'awake') || 1;
+            const awakeSkill = c.skills?.find(s => s.id === 'awake') || (c.skill === 'awake' ? { id: 'awake', value: c.skillValue, summonId: c.summonId } : null);
+            const summonId = awakeSkill?.summonId || 'token_dragon';
+            
+            // 同レーンにトークンを配置（Place）
+            // 配置処理はapplyActiveSkillLogicの'awake'を呼び出す
+            events.push({ type: 'awake_trigger', side, lane: i, card: c, summonId, value: v });
+            applyActiveSkillLogic(state, side, i, 'awake', v, events, [], i);
         }
     }
     processDestructionTriggers(state, events);

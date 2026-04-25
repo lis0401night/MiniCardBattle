@@ -15,8 +15,9 @@ export default {
         'dragonfire', 'dragonfire',
         'battlemage', 'battlemage',
         'mage', 'mage',
-        'beginnermagic', 'beginnermagic', 'beginnermagic', 'beginnermagic',
-        'scorpion', 'scorpion', 'scorpion', 'scorpion',
+        'shapeshifter', 'shapeshifter', 'shapeshifter',
+        'beginnermagic', 'beginnermagic',
+        'scorpion', 'scorpion', 'scorpion',
     ],
     hard: [
         'djinn', 'djinn',

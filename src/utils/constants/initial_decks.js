@@ -4,11 +4,11 @@
 export const INITIAL_PLAYER_DECK = [
     'golem', 'golem', 'golem', 'golem',
     'clone', 'clone',
-    'airship', 'airship',
-    'dinosaur', 'dinosaur',
     'sniper', 'sniper',
+    'cleric', 'cleric',
     'diviner', 'diviner',
+    'dinosaur', 'dinosaur',
     'cheetah', 'cheetah',
     'scorpion', 'scorpion',
-    'cleric', 'cleric',
+    'airship', 'airship',
 ];

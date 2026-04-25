@@ -1,30 +1,31 @@
 export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'commander', 'commander',
         'lightpaladin', 'lightpaladin',
+        'minotaur', 'minotaur',
         'crenellatedwall', 'crenellatedwall',
         'mercenary', 'mercenary',
-        'clone', 'clone', 'clone', 'clone',
         'sniper', 'sniper', 'sniper', 'sniper',
+        'clone', 'clone', 'clone', 'clone',
     ],
     normal: [
         'admiral', 'admiral',
         'assassin', 'assassin',
         'lion', 'lion',
         'crusher', 'crusher',
-        'commander', 'commander',
         'hero', 'hero',
-        'mercenary', 'mercenary', 'mercenary', 'mercenary',
-        'clone', 'clone', 'clone', 'clone',
+        'minotaur', 'minotaur',
+        'commander', 'commander', 'commander',
+        'mercenary', 'mercenary',
+        'clone', 'clone', 'clone',
     ],
     hard: [
         'champion', 'champion',
         'admiral', 'admiral', 'admiral',
         'assassin', 'assassin', 'assassin',
         'lion', 'lion',
-        'commander', 'commander', 'commander',
         'hero', 'hero', 'hero',
+        'minotaur', 'minotaur', 'minotaur',
         'horse', 'horse', 'horse', 'horse',
     ]
 };

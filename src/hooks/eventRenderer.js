@@ -243,6 +243,9 @@ export async function playEvents(events) {
                         if (ev.source === 'split') {
                             createDamagePopup(cEl, '分裂', '#facc15');
                         }
+                        if (ev.source === 'awake') {
+                            createDamagePopup(cEl, '覚醒', '#facc15');
+                        }
                     }
                 }, 50);
 

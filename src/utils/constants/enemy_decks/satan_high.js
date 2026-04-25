@@ -12,6 +12,6 @@ export default [
     'wendigo',
     'warlock',
     'dealer',
-    'devil',
     'cavalry',
+    'minion',
 ];

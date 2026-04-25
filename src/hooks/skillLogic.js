@@ -1287,6 +1287,41 @@ export async function triggerStartTurnPassive(owner, lane) {
             events.push({ type: 'damage_player', side: owner, amount: val, source: 'contract' });
             triggered = true;
         }
+
+        if (sk.id === 'awake') {
+            const val = sk.value || 1;
+            // エンジンのロジックを流用してイベントを生成
+            const currentState = {
+                playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+                playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+                playerDiscard: GameState.playerDiscard, enemyDiscard: GameState.enemyDiscard,
+                playerHand: GameState.playerHand, enemyHand: GameState.enemyHand,
+                playerSealedLanes: GameState.playerSealedLanes, enemySealedLanes: GameState.enemySealedLanes
+            };
+            
+            // 演出用のポップアップ
+            const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
+            if (cEl) {
+                createDamagePopup(cEl, '覚醒', '#facc15');
+                playSkillSound('summon');
+                await sleep(300);
+            }
+
+            let awakeEvents = [];
+            applyActiveSkillLogic(currentState, owner, lane, 'awake', val, awakeEvents);
+            
+            // 盤面の状態を同期
+            if (owner === 'blue') {
+                GameState.playerBoard = currentState.playerBoard;
+            } else {
+                GameState.enemyBoard = currentState.enemyBoard;
+            }
+            
+            events.push(...awakeEvents);
+            triggered = true;
+            break; // カードが置換されたので、他のパッシブ処理を中断
+        }
     }
 
     if (events.length > 0) {

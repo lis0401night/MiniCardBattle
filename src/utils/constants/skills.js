@@ -8,7 +8,7 @@ export const SKILLS = {
     quick: { name: '速攻', icon: '⚡', desc: (val) => '召喚時、ただちに正面に攻撃する。' },
     deadly: { name: '必殺', icon: '☠️', desc: (val) => '戦闘した時、相手を破壊する。' },
     draw: { name: '入替', icon: '🃏', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数引く。` },
-    heal: { name: '回復', icon: '💚', desc: (val) => `召喚時、リーダーのHPを${val || 3}回復する。` },
+    heal: { name: '回復', icon: '💚', desc: (val) => `召喚時、自分リーダーのHPを${val || 3}回復する。` },
     snipe: { name: '狙撃', icon: '🎯', desc: (val) => `召喚時、相手の場で最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）` },
     spread: { name: '拡散', icon: '☄️', desc: (val) => `召喚時、正面とその隣のレーンのカードに${val || 2}ダメージ。` },
     morph: {
@@ -20,7 +20,7 @@ export const SKILLS = {
     },
     double_strike: { name: '連撃', icon: '⚔️', desc: () => '戦闘時、敵カードに与えるダメージが2倍になる。' },
     support: { name: '援護', icon: '🚩', desc: (val) => `召喚時、自分の場の隣のレーンのカードのパワーを+${val || 2}する。` },
-    defender: { name: '防御', icon: '🧱', desc: (val) => '攻撃せず、敵カードやリーダーにダメージを与えられない。' },
+    defender: { name: '防御', icon: '🧱', desc: (val) => '攻撃せず、敵カードや敵リーダーにダメージを与えられない。' },
     clone: { name: '分身', icon: '👥', desc: (val) => `召喚時、自分のレーンに、自身と同じパワーと能力のトークンを${val || 1}体まで配置する。` },
     lone_wolf: { name: '単騎', icon: '🐺', desc: (val) => `召喚時、自分の空いているレーンの数×${val || 3}だけパワーを上げる。` },
     soul_bind: { name: '魂縛', icon: '⛓️', desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。` },
@@ -49,7 +49,7 @@ export const SKILLS = {
     guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' },
     legendary: { name: '伝説', icon: '👑', desc: (val) => '中央のレーンにしか召喚できない。' },
     takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードが置かれているレーンにしか召喚できない。' },
-    pierce: { name: '貫通', icon: '🏹', desc: (val) => '自分のターンに、敵を攻撃した時、自身のパワーの差分だけ相手リーダーにダメージを与える。' },
+    pierce: { name: '貫通', icon: '🏹', desc: (val) => '攻撃時、自身のパワーの差分だけ相手リーダーにダメージを与える。' },
     explode: { name: '誘爆', icon: '💣', desc: (val) => `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。` },
     contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、自分リーダーに${val || 3}ダメージ。` },
     choice: { name: '選択', icon: '🌓', desc: (val) => `召喚時、以下のスキルから${val}つを選んで発動する。` },
@@ -98,7 +98,7 @@ export const SKILLS = {
     phase: { name: '位相', icon: '🌫️', desc: (val) => '位相を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。ただし「防御」にはブロックされる。' },
     petrify: { name: '石化', icon: '🗿', desc: (val) => '召喚時、正面のカードを「石像（パワー5、防御、頑丈）」に変身させる。（破壊時、元のカードが墓地に置かれる）' },
     oblivion: { name: '忘却', icon: '⚪', desc: (val) => '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。' },
-    call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚する。` },
+    call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚できる。` },
     bless: { name: '祝福', icon: '🕯️', desc: (val) => `召喚時、手札のカード1枚を選び、パワーを+${val}する。` },
     wall_create: { name: '造壁', icon: '🏰', desc: (val) => `召喚時、自分のレーンに、パワー${val}（防御）のトークンを配置する。` },
     challenge: { name: '挑戦', icon: '🥋', desc: (val) => '正面にカードが置かれているレーンにしか召喚できない。' },
@@ -140,9 +140,25 @@ export const SKILLS = {
     },
     double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' },
     explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` },
-    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。' }
+    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。' },
+    awake: {
+        name: '覚醒', icon: '💎', desc: (val, sk) => {
+            const summonId = sk?.summonId || (Array.isArray(sk?.skills) ? sk.skills.find(s => s.id === 'awake')?.summonId : null);
+            const summonCard = summonId ? CARD_MASTER.find(c => c.id === summonId) : null;
+            if (summonCard) {
+                return [
+                    { type: 'text', value: '自分のターン開始時、同じレーンに' },
+                    { type: 'link', value: `${summonCard.name}（パワー${val}）`, targetId: summonId },
+                    { type: 'text', value: 'を配置する。' }
+                ];
+            }
+            return `自分のターン開始時、同じレーンにパワー${val}のトークンを配置する。`;
+        }
+    },
+    cleave: { name: '一掃', icon: '🧹', desc: (val) => '攻撃時、正面とその隣のレーンに均等にダメージを与える。（左>中央>右優先）' }
 };
 
+// 召喚時に発動するスキル（配置時は発動しない）
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
     'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore'
@@ -151,5 +167,5 @@ export const ACTIVE_SKILLS = [
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
     'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
-    'apex', 'retaliate', 'substitute', 'possession'
+    'apex', 'retaliate', 'substitute', 'possession', 'cleave'
 ];

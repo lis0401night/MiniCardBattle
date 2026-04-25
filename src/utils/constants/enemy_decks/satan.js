@@ -1,6 +1,7 @@
 export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
+        'dealer', 'dealer',
         'warlock', 'warlock',
         'dealer', 'dealer',
         'devil', 'devil', 'devil', 'devil',
@@ -24,6 +25,6 @@ export default {
         'wendigo', 'wendigo',
         'warlock', 'warlock', 'warlock',
         'dealer', 'dealer', 'dealer',
-        'cavalry', 'cavalry', 'cavalry', 'cavalry',
+        'minion', 'minion', 'minion', 'minion',
     ]
 };

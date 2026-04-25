@@ -1,22 +1,24 @@
 export default {
     easy: [
         'golem', 'golem', 'golem', 'golem',
-        'shade', 'shade',
         'specter', 'specter',
+        'bat', 'bat',
         'prisoner', 'prisoner',
+        'shade', 'shade',
         'necromancer', 'necromancer',
-        'dinosaur', 'dinosaur', 'dinosaur', 'dinosaur',
         'diviner', 'diviner', 'diviner', 'diviner',
+        'dinosaur', 'dinosaur', 'dinosaur', 'dinosaur',
     ],
     normal: [
         'graverobber', 'graverobber',
         'vampire', 'vampire',
         'undeadking', 'undeadking',
         'plaguedoctor', 'plaguedoctor',
-        'shade', 'shade',
         'franken', 'franken',
-        'necromancer', 'necromancer', 'necromancer', 'necromancer',
-        'dinosaur', 'dinosaur', 'dinosaur', 'dinosaur',
+        'bat', 'bat',
+        'shade', 'shade', 'shade',
+        'necromancer', 'necromancer',
+        'dinosaur', 'dinosaur', 'dinosaur',
     ],
     hard: [
         'collector', 'collector',
@@ -24,7 +26,7 @@ export default {
         'graverobber', 'graverobber', 'graverobber',
         'undeadking', 'undeadking',
         'franken', 'franken', 'franken',
-        'shade', 'shade', 'shade',
+        'bat', 'bat', 'bat',
         'servant', 'servant', 'servant', 'servant',
     ]
 };
