@@ -21,12 +21,16 @@ export async function executeEnemyAI() {
     try {
         await sleep(800);
 
+        const dmp = (b) => b.map(c => c ? `${c.name}(${c.currentPower ?? c.power})` : "EMPTY").join(" | ");
+        console.log(`[AI RAW DATA] AI Board: ${dmp(GameState.enemyBoard)}`);
+        console.log(`[AI RAW DATA] Player Board: ${dmp(GameState.playerBoard)}`);
+
         // --- リーダースキルの活用 ---
         const skill = GameState.enemyConfig.leaderSkill;
         let canUseSkill = skill && GameState.enemySP >= skill.cost;
         // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
         if (canUseSkill && skill.action === 'devilhunter_resurrect') {
-            canUseSkill = GameState.enemyDiscard.some(c => (c.power || 0) <= 10 && !c.isToken);
+            canUseSkill = GameState.enemyDiscard.some(c => !c.isToken);
         }
         
         // ダンジョン用召喚スキルで、生贄（takeover）の場合、自分の場にカードが1枚もなければ空撃ちしない
@@ -85,8 +89,8 @@ export async function executeEnemyAI() {
 
             // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
             if (decision.useSkill) {
-                // シミュレーションで決定した tokenLanes を渡す
-                await activateLeaderSkill('red', decision.tokenLanes);
+                // シミュレーションで決定した tokenLanes, leaderSkillTargetIdx を渡す
+                await activateLeaderSkill('red', decision.tokenLanes, decision.leaderSkillTargetIdx);
                 if (GameState.isBattleEnded) return;
                 await sleep(500);
             }

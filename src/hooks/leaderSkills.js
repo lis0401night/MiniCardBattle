@@ -3,7 +3,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills, getDialogue, hasSkill } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
 import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
@@ -13,7 +13,7 @@ import { playEvents } from './eventRenderer.js';
 // リーダースキルの実行ロジック
 // ==========================================
 
-export async function activateLeaderSkill(owner, tokenLanes = null) {
+export async function activateLeaderSkill(owner, tokenLanes = null, forcedTargetIdx = null) {
     if (GameState.isBattleEnded) return;
     const isBlue = owner === 'blue';
     const sp = isBlue ? GameState.playerSP : GameState.enemySP;
@@ -36,7 +36,7 @@ export async function activateLeaderSkill(owner, tokenLanes = null) {
 
     // スキル効果の実行
     const action = config.leaderSkill.action;
-    await executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes);
+    await executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes, forcedTargetIdx);
 
     if (checkWinCondition()) return;
 
@@ -123,7 +123,7 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
     if (b) b.classList.remove('active');
 }
 
-export async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null) {
+export async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null, forcedTargetIdx = null) {
     let events = [];
 
     // UIの介入（対象の選択等）が必要なスキルは事前に処理
@@ -228,7 +228,12 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
         if (validCards.length > 0) {
-            const selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, owner, '復活させるカードを選択', 'カードを1枚場に出します。');
+            let selectedCard;
+            if (forcedTargetIdx !== null && discard[forcedTargetIdx] && !discard[forcedTargetIdx].isToken) {
+                selectedCard = discard[forcedTargetIdx];
+            } else {
+                selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, owner, '復活させるカードを選択', 'カードを1枚場に出します。');
+            }
             if (!selectedCard) return;
 
             // 復活させる対象を engine に伝えるために無理くり渡しちゃうか、UI介入でここまで決まったら
@@ -241,6 +246,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             // 状態への手動反映
             const actualIdx = discard.indexOf(selectedCard);
             if (actualIdx !== -1) discard.splice(actualIdx, 1);
+            updateDeckDisplay(owner);
 
             const targetLane = tLanes[0];
             tokenLanes = tLanes; // VFXセクションで参照できるように代入
@@ -293,6 +299,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 resurrectedCard = {
                     ...selectedCard,
                     id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    uid: `ls_res_uid_${Math.floor(getSeededRandom() * 1000000000)}`,
                     baseId: selectedCard.baseId || selectedCard.id
                 };
                 resurrectedCard.currentPower = resurrectedCard.power;
@@ -306,6 +313,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 }
                 board[targetLane] = resurrectedCard;
                 events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
+                renderBoard(); // 反映を確実にする
             }
 
         } else {

@@ -554,7 +554,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         if (tokenLanes && tokenLanes.length > 0) {
             selectedLanes = tokenLanes.slice(0, count);
         } else {
-            const aiAction = consumeAIAction(['resurrect', 'summon', 'call', 'leader_skill', 'clone', 'wall_create', 'move', 'elf_polarbear_combo']);
+            const aiAction = consumeAIAction(['resurrect', 'devilhunter_resurrect', 'summon', 'call', 'leader_skill', 'clone', 'wall_create', 'move', 'elf_polarbear_combo']);
             if (aiAction) {
                 const lane = aiAction.laneIdx !== undefined ? aiAction.laneIdx : (aiAction.myLane !== undefined ? aiAction.myLane : aiAction.targetLane);
                 if (lane !== undefined && lane !== -1) {
@@ -1616,7 +1616,8 @@ export async function startTurn(owner) {
         GameState.isProcessing = false;
         GameState.battlePhase = 'MAIN_ACTION';
     } else {
-        GameState.isProcessing = false; // ★ロックを解除してからキューに積む
+        renderBoard(); // 重要: 敵ターン開始前の状態（戦闘結果等）を画面に反映
+        GameState.isProcessing = false;
         dispatchBattleAction({ type: 'enemyTurn' });
     }
 }

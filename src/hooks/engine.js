@@ -170,7 +170,7 @@ export function processDestructionTriggers(state, events) {
  * @param {Array} events - オプションのイベントログ配列
  * @returns {Array} 発生したイベントログ
  */
-export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], simulatedTokenLanes = null) {
+export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], simulatedTokenLanes = null, simulatedLane = undefined) {
     const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
     const eB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
     const oppOwner = owner === 'blue' ? 'red' : 'blue';
@@ -369,6 +369,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             break;
         case 'bind':
             if (eB[l]) eB[l].stunTurns = (val || 1) + 1;
+            break;
+        case 'standby':
+            c.stunTurns = (val || 1) + 1;
             break;
         case 'freeze':
             [l - 1, l, l + 1].forEach(j => {
@@ -581,7 +584,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             };
             for (let i = 0; i < 1; i++) {
                 let targetLane = -1;
-                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                if (simulatedLane !== undefined && simulatedLane !== -1) {
+                    targetLane = simulatedLane;
+                } else if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else if (Array.isArray(simulatedTokenLanes)) {
                     targetLane = -1;
@@ -662,8 +667,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             break;
         case 'resurrect':
             // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
+            const maxPowSim = val || 1;
             const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-            const validDiscard = simDiscard.filter(c => c !== null);
+            const validDiscard = simDiscard.filter(c => c && (c.power || 0) <= maxPowSim && !c.isToken);
             if (validDiscard.length === 0) break;
 
             // パワーが高い順にソートして一番強いのを取得し、シミュ内で墓地から取り除く
@@ -671,7 +677,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const simResCard = sortedDiscard[0];
 
             let targetLaneRes = -1;
-            if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+            if (simulatedLane !== undefined && simulatedLane !== -1) {
+                targetLaneRes = simulatedLane;
+            } else if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                 targetLaneRes = simulatedTokenLanes.shift();
             } else if (Array.isArray(simulatedTokenLanes)) {
                 targetLaneRes = -1;
@@ -704,16 +712,36 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     b[targetLaneRes] = unionCard;
                     events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
                 } else {
-                    if (existingCard) quietDiscardFromBoard(state, owner, targetLaneRes);
-                    const newResToken = {
-                        ...simResCard,
-                        id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
-                        owner,
-                        currentPower: simResCard.power,
-                        skills: [] // 蘇生時は通常のOnPlayスキルは発動しない
-                    };
-                    b[targetLaneRes] = newResToken;
-                    events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
+                    const isEquip = hasSkill(simResCard, 'equip');
+                    if (isEquip && existingCard) {
+                        // 装備（既存カードの上へ）
+                        existingCard.power = (existingCard.power || 0) + (simResCard.power || 0);
+                        existingCard.basePower = (existingCard.basePower || 0) + (simResCard.power || 0);
+                        existingCard.currentPower = (existingCard.currentPower || 0) + (simResCard.power || 0);
+                        
+                        const equipSkills = [];
+                        if (simResCard.skill && simResCard.skill !== 'none' && simResCard.skill !== 'equip') {
+                            equipSkills.push({ id: simResCard.skill, value: simResCard.skillValue });
+                        }
+                        if (Array.isArray(simResCard.skills)) {
+                            simResCard.skills.forEach(s => {
+                                if (s.id !== 'equip') equipSkills.push(s);
+                            });
+                        }
+                        mergeCardSkills(existingCard, equipSkills);
+                        events.push({ type: 'power_change', side: owner, lane: targetLaneRes, amount: simResCard.power, source: 'equip' });
+                    } else {
+                        if (existingCard) quietDiscardFromBoard(state, owner, targetLaneRes);
+                        const newResToken = {
+                            ...JSON.parse(JSON.stringify(simResCard)),
+                            id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                            owner,
+                            currentPower: simResCard.power,
+                            skillTriggered: true // ルール: 配置(Place)では召喚時スキルは発動しない
+                        };
+                        b[targetLaneRes] = newResToken;
+                        events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
+                    }
                 }
 
                 const resIdx = simDiscard.indexOf(simResCard);
@@ -738,7 +766,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
 
             for (let i = 0; i < cloneCount; i++) {
                 let targetLane = -1;
-                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                if (simulatedLane !== undefined && simulatedLane !== -1) {
+                    targetLane = simulatedLane;
+                } else if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
                     targetLane = simulatedTokenLanes.shift();
                 } else if (Array.isArray(simulatedTokenLanes)) {
                     targetLane = -1;
@@ -860,41 +890,6 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             // 号令は純粋ロジックでの完全なシミュレーションが不可能なため（ユーザー選択や期待値ベース評価を行うため）
             // engine.jsでは盤面に干渉しない（ai_normal等で独自に+3として期待値評価する）
             break;
-        case 'resurrect':
-            const maxPow = val || 1;
-            const discard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-            const validCards = discard.filter(card => card && (card.power || 0) <= maxPow && !card.isToken);
-            if (validCards.length > 0) {
-                const sorted = [...validCards].sort((a, b) => b.power - a.power);
-                const selectedCard = sorted[0];
-
-                let targetLane = -1;
-                if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
-                    targetLane = simulatedTokenLanes[0];
-                } else {
-                    const emptyLanes = [0, 1, 2].filter(j => b[j] === null);
-                    if (emptyLanes.length > 0) targetLane = emptyLanes[0];
-                }
-
-                if (targetLane !== -1 && b[targetLane] === null) {
-                    const resurrectedCard = {
-                        ...selectedCard,
-                        id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
-                        baseId: selectedCard.baseId || selectedCard.id
-                    };
-                    resurrectedCard.currentPower = resurrectedCard.power;
-                    resurrectedCard.skillTriggered = true; // 召喚効果は連鎖しない想定
-                    resurrectedCard.stunTurns = 0;
-                    b[targetLane] = resurrectedCard;
-
-                    const eD = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-                    const removeIdx = eD.findIndex(x => x.id === selectedCard.id);
-                    if (removeIdx !== -1) eD.splice(removeIdx, 1);
-
-                    events.push({ type: 'summon_card', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'resurrect' });
-                }
-            }
-            break;
         case 'stealth':
         case 'invincible':
             if (!Array.isArray(c.skills)) c.skills = [{ id: 'invincible', value: val || 1 }];
@@ -911,7 +906,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
  * リーダースキルの効果を適用する (純粋関数)
  * @returns {Array} events
  */
-export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, events = []) {
+export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, events = [], forcedTargetIdx = null) {
     const isBlue = owner === 'blue';
     const board = isBlue ? state.playerBoard : state.enemyBoard;
     const eBoard = isBlue ? state.enemyBoard : state.playerBoard;
@@ -1259,8 +1254,13 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
         const validCards = discard.filter(card => card && !card.isToken);
         if (validCards.length > 0) {
-            const sorted = [...validCards].sort((a, b) => b.power - a.power);
-            const selectedCard = sorted[0];
+            let selectedCard = null;
+            if (forcedTargetIdx !== null && discard[forcedTargetIdx] && !discard[forcedTargetIdx].isToken) {
+                selectedCard = discard[forcedTargetIdx];
+            } else {
+                const sorted = [...validCards].sort((a, b) => b.power - a.power);
+                selectedCard = sorted[0];
+            }
             let l = -1;
             if (tokenLanes && tokenLanes.length > 0) {
                 l = tokenLanes[0];
@@ -1325,8 +1325,10 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'devilhunter_resurrect' });
                 }
 
-                const removeIdx = discard.findIndex(x => x.id === selectedCard.id);
-                if (removeIdx !== -1) discard.splice(removeIdx, 1);
+                if (selectedCard) {
+                    const removeIdx = discard.findIndex(x => x && x.id === selectedCard.id);
+                    if (removeIdx !== -1) discard.splice(removeIdx, 1);
+                }
             }
         }
     } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dungeon_summon_leader') {
@@ -1461,18 +1463,16 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     const aHasPhase = hasSkill(aC, 'phase');
 
     let dLane = l;
-    if (defBoard[l]) {
-        // 守護側も位相が一致しないとかばうことができないが、防御を持っていればブロック可能
-        const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
-        let dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
-        if (dg !== null) dLane = dg;
+    // 守護側も位相が一致しないとかばうことができないが、防御を持っていればブロック可能
+    const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
+    let dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
+    if (dg !== null && (!defBoard[l] || !hasSkill(defBoard[l], 'guardian'))) dLane = dg;
 
-        // 身替の対応: ダメージを受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
-        if (hasSkill(defBoard[dLane], 'substitute')) {
-            const checkSubstituteTarget = (c) => c && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
-            let sub = (dLane === 1) ? (checkSubstituteTarget(defBoard[0]) ? 0 : (checkSubstituteTarget(defBoard[2]) ? 2 : null)) : (dLane === 0 ? (checkSubstituteTarget(defBoard[1]) ? 1 : null) : (checkSubstituteTarget(defBoard[1]) ? 1 : null));
-            if (sub !== null) dLane = sub;
-        }
+    // 身替の対応: ダメージを受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
+    if (defBoard[dLane] && hasSkill(defBoard[dLane], 'substitute')) {
+        const checkSubstituteTarget = (c) => c && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
+        let sub = (dLane === 1) ? (checkSubstituteTarget(defBoard[0]) ? 0 : (checkSubstituteTarget(defBoard[2]) ? 2 : null)) : (dLane === 0 ? (checkSubstituteTarget(defBoard[1]) ? 1 : null) : (checkSubstituteTarget(defBoard[1]) ? 1 : null));
+        if (sub !== null) dLane = sub;
     }
 
     let aLane = l;
@@ -1505,14 +1505,18 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         const brutalDmg = getSkillValue(aC, 'brutal') || 1;
         [l - 1, l + 1].forEach(tj => {
             if (tj >= 0 && tj <= 2 && atkBoard[tj]) {
-                atkBoard[tj].currentPower -= brutalDmg;
-                events.push({ type: 'damage_card', side: attackerSide, lane: tj, amount: brutalDmg, source: 'brutal' });
+                if (!hasSkill(atkBoard[tj], 'immune')) {
+                    atkBoard[tj].currentPower -= brutalDmg;
+                    events.push({ type: 'damage_card', side: attackerSide, lane: tj, amount: brutalDmg, source: 'brutal' });
+                } else {
+                    events.push({ type: 'immune_block', side: attackerSide, lane: tj, source: 'brutal' });
+                }
             }
         });
     }
 
     if (dC) {
-        let dP = originalTarget ? (Number(originalTarget.currentPower ?? originalTarget.power ?? 0) || 0) : 0;
+        let dP = Number(dC.currentPower ?? dC.power ?? 0) || 0;
         let dmgToDef = aP;
         let dmgToAtk = dP;
 
@@ -1543,8 +1547,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             dmgToAtk *= 2;
         }
 
-        const isOriginalTargetDefender = originalTarget && hasSkill(originalTarget, 'defender');
-        if (isOriginalTargetDefender) dmgToAtk = 0; // 防御は反撃ダメージを与えない
+        const isOriginalTargetDefender = originalTarget && (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
+        if (isOriginalTargetDefender) dmgToAtk = 0; // 防御（および待機・拘束）は反撃ダメージを与えない
 
         // 憑依: 戦闘ダメージをリーダーに肩代わりさせる
         if (hasSkill(dC, 'possession')) {

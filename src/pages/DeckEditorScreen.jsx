@@ -240,7 +240,7 @@ export default function DeckEditorScreen() {
       if (c.skills) c.skills.forEach(sk => cardSkills.push(sk.id));
       if (c.choices) c.choices.forEach(ch => cardSkills.push(ch.id));
       if (c.choices2) c.choices2.forEach(ch => cardSkills.push(ch.id));
-      if (!filters.skills.some(sk => cardSkills.includes(sk))) return false;
+      if (!filters.skills.every(sk => cardSkills.includes(sk))) return false;
     }
     return true;
   });

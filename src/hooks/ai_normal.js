@@ -4,10 +4,11 @@ import { GameState } from './gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 
 export function getBestSimulatedMove() {
-    const hand = GameState.enemyHand;
-    const discard = GameState.enemyDiscard;
-    let myBoard = GameState.enemyBoard;
-    let opBoard = GameState.playerBoard;
+    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
+    const hand = GameState.enemyHand.map(cloneCard);
+    const discard = GameState.enemyDiscard.map(cloneCard);
+    let myBoard = GameState.enemyBoard.map(cloneCard);
+    let opBoard = GameState.playerBoard.map(cloneCard);
 
     let myHP = GameState.enemyHP;
     let opHP = GameState.playerHP;
@@ -20,7 +21,7 @@ export function getBestSimulatedMove() {
         !GameState.enemyConfig.leaderSkillUsed;
     const skill = GameState.enemyConfig.leaderSkill;
 
-    const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
+
 
     const getCombinations = (arr, k) => {
         if (k === 0) return [[]];
@@ -79,11 +80,19 @@ export function getBestSimulatedMove() {
                     let tokenTargetCount = 0;
 
                     // 基本性能からの集計
-                    if (hasSkill(card, 'crush') || hasSkill(card, 'dispel') || hasSkill(card, 'snipe') || hasSkill(card, 'artillery') || hasSkill(card, 'seal')) tokenTargetCount += (card.skillValue || 1);
-                    if (hasSkill(card, 'salvage') || hasSkill(card, 'resurrect')) tokenTargetCount += 1;
-                    if (hasSkill(card, 'summon')) tc += (card.skillValue || 1);
-                    if (hasSkill(card, 'clone')) tc += (card.skillValue || 1);
-                    if (hasSkill(card, 'call') || hasSkill(card, 'metamorph')) tc += 1;
+                    const gatherCounts = (c) => {
+                        const skillsToGather = [];
+                        if (c.skill && c.skill !== 'none') skillsToGather.push({ id: c.skill, value: c.skillValue || 1 });
+                        if (Array.isArray(c.skills)) c.skills.forEach(s => skillsToGather.push(s));
+                        
+                        skillsToGather.forEach(sk => {
+                            if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
+                            if (sk.id === 'salvage') tokenTargetCount += 1;
+                            if (sk.id === 'summon' || sk.id === 'clone' || sk.id === 'resurrect') tc += (sk.value || 1);
+                            if (['call', 'metamorph'].includes(sk.id)) tc += 1;
+                        });
+                    };
+                    gatherCounts(card);
 
                     // 選択されたスキル（c1, c2）からの合算
                     const countInChoices = (arr, group) => {
@@ -92,8 +101,8 @@ export function getBestSimulatedMove() {
                             const sk = group[idx];
                             if (!sk) return;
                             if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
-                            if (['salvage', 'resurrect'].includes(sk.id)) tokenTargetCount += 1;
-                            if (sk.id === 'summon' || sk.id === 'clone') tc += (sk.value || 1);
+                            if (sk.id === 'salvage') tokenTargetCount += 1;
+                            if (sk.id === 'summon' || sk.id === 'clone' || sk.id === 'resurrect') tc += (sk.value || 1);
                             if (sk.id === 'call' || sk.id === 'metamorph') tc += 1;
                         });
                     };
@@ -127,49 +136,111 @@ export function getBestSimulatedMove() {
                             cardTokenLanes: tLanes && tLanes.length > 0 ? [...tLanes] : undefined
                         };
 
-                        // 発動するスキル群を特定（トップレベル + 選択されたchoice）
+                        // 発動するスキル群を特定（召喚系アクションの場合のみ）
                         let effectiveSkills = [];
-                        if (hasSkill(card, 'invite')) effectiveSkills.push({ id: 'invite', value: card.skillValue || 1 });
-                        if (hasSkill(card, 'resurrect')) effectiveSkills.push({ id: 'resurrect', value: card.skillValue || 1 });
-                        if (card.skills) {
-                            card.skills.forEach(s => {
-                                if (s.id === 'invite' || s.id === 'resurrect') effectiveSkills.push(s);
-                            });
+                        let targetSkill = null;
+                        
+                        const isSummonAction = ['play', 'call', 'invite'].includes(sourceType);
+                        if (isSummonAction) {
+                            if (card.skill === 'invite' || card.skill === 'resurrect' || card.skill === 'convert' || card.skill === 'draw' || card.skill === 'salvage' || card.skill === 'reinforce') {
+                                effectiveSkills.push({ id: card.skill, value: card.skillValue || 1 });
+                            }
+                            if (Array.isArray(card.skills)) {
+                                card.skills.forEach(s => {
+                                    if (['invite', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce'].includes(s.id)) effectiveSkills.push(s);
+                                });
+                            }
+                            if (c1) c1.forEach(idx => { if (card.choices && card.choices[idx]) effectiveSkills.push(card.choices[idx]); });
+                            if (c2) c2.forEach(idx => { if (card.choices2 && card.choices2[idx]) effectiveSkills.push(card.choices2[idx]); });
+
+                            // ターゲット選択を伴うスキルを抽出
+                            targetSkill = effectiveSkills.find(s => ['invite', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce'].includes(s.id));
                         }
-                        if (c1) c1.forEach(idx => { if (card.choices && card.choices[idx]) effectiveSkills.push(card.choices[idx]); });
-                        if (c2) c2.forEach(idx => { if (card.choices2 && card.choices2[idx]) effectiveSkills.push(card.choices2[idx]); });
 
-                        // ターゲット選択を伴うスキルを抽出（複数ある場合は最初の1つを優先）
-                        let targetSkill = effectiveSkills.find(s => s.id === 'invite' || s.id === 'resurrect');
+                        const buildSkillBranch = (currentSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand = []) => {
+                            if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
 
-                        if (depth < 2 && targetSkill) {
-                            // ... (以下既存の再帰処理 ...
-                            if (targetSkill.id === 'invite') {
-                                let addedInvite = false;
+                            let sk = currentSkills[0];
+                            let remainingSkills = currentSkills.slice(1);
+                            let results = [];
+
+                            // 【共通】常に「このスキルをキャンセル/スキップする」という選択肢を考慮に含める
+                            results.push(...buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand));
+
+                            if (sk.id === 'invite') {
                                 for (let i = 0; i < originalHand.length; i++) {
-                                    if (usedHand.includes(i)) continue;
-                                    let childHandCard = originalHand[i];
-                                    let childQueues = buildCardPlayTree(childHandCard, i, 'invite', originalHand, originalDiscard, [...usedHand, i], usedDiscard, depth + 1, lane);
-                                    for (let cq of childQueues) {
-                                        if (cq.length === 0) branches.push([node]); else branches.push([node, ...cq]);
-                                        addedInvite = true;
+                                    if (currentUsedHand.includes(i)) continue;
+                                    let childCard = originalHand[i];
+                                    let children = buildCardPlayTree(childCard, i, 'invite', originalHand, originalDiscard, [...currentUsedHand, i], currentUsedDiscard, currentDepth + 1, undefined);
+                                    for (let cNode of children) {
+                                        let nextBranches = buildSkillBranch(remainingSkills, [...currentUsedHand, i], currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                                        for (let nb of nextBranches) {
+                                            results.push([...cNode, ...nb]);
+                                        }
                                     }
                                 }
-                                if (!addedInvite) branches.push([node]);
-                            } else if (targetSkill.id === 'resurrect') {
-                                let maxPow = targetSkill.value || 1;
-                                let addedRes = false;
-                                for (let i = 0; i < originalDiscard.length; i++) {
-                                    if (usedDiscard.includes(i)) continue;
-                                    let resCard = originalDiscard[i];
-                                    if ((resCard.power || 0) > maxPow || resCard.isToken) continue;
-                                    let childQueues = buildCardPlayTree(resCard, i, 'resurrect', originalHand, originalDiscard, usedHand, [...usedDiscard, i], depth + 1);
-                                    for (let cq of childQueues) {
-                                        if (cq.length === 0) branches.push([node]); else branches.push([node, ...cq]);
-                                        addedRes = true;
+                            } else if (sk.id === 'resurrect') {
+                                const maxP = sk.value || 1;
+                                const candidates = [...originalDiscard, ...currentDiscardedFromHand];
+
+                                for (let i = 0; i < candidates.length; i++) {
+                                    if (currentUsedDiscard.includes(i)) continue;
+                                    let resCard = candidates[i];
+                                    
+                                    const master = CARD_MASTER.find(m => m.id === resCard.id || m.id === resCard.baseId);
+                                    const baseP = master ? master.power : (resCard.power || 0);
+                                    if (baseP > maxP || resCard.isToken) continue;
+
+                                    for (let j = 0; j < 3; j++) {
+                                        if (mySealedLanes[j] === 1) continue;
+                                        let resNode = { type: 'resurrect', targetIdx: i, laneIdx: j, maxP: maxP };
+                                        let nextBranches = buildSkillBranch(remainingSkills, currentUsedHand, [...currentUsedDiscard, i], currentDepth, currentDiscardedFromHand);
+                                        for (let nb of nextBranches) {
+                                            results.push([resNode, ...nb]);
+                                        }
                                     }
                                 }
-                                if (!addedRes) branches.push([node]);
+                            } else if (sk.id === 'convert' || sk.id === 'draw' || sk.id === 'salvage' || sk.id === 'reinforce') {
+                                const count = sk.value || 1;
+                                let handIndices = [];
+                                for (let i = 0; i < originalHand.length; i++) {
+                                    if (!currentUsedHand.includes(i)) handIndices.push(i);
+                                }
+
+                                if (handIndices.length >= count) {
+                                    const selectedIndices = handIndices.slice(0, count);
+                                    let discardNodes = selectedIndices.map(idx => ({ type: 'discard', targetIdx: idx }));
+                                    let newlyDiscarded = selectedIndices.map(idx => originalHand[idx]);
+                                    
+                                    let nextBranches = buildSkillBranch(remainingSkills, [...currentUsedHand, ...selectedIndices], currentUsedDiscard, currentDepth, [...currentDiscardedFromHand, ...newlyDiscarded]);
+                                    for (let nb of nextBranches) {
+                                        results.push([...discardNodes, ...nb]);
+                                    }
+
+                                    if (count > 1) {
+                                        for (let i of handIndices) {
+                                            if (selectedIndices.includes(i)) continue;
+                                            const otherIndices = handIndices.filter(idx => idx !== i).slice(0, count - 1);
+                                            const set = [i, ...otherIndices];
+                                            let dns = set.map(idx => ({ type: 'discard', targetIdx: idx }));
+                                            let nds = set.map(idx => originalHand[idx]);
+                                            let nbs = buildSkillBranch(remainingSkills, [...currentUsedHand, ...set], currentUsedDiscard, currentDepth, [...currentDiscardedFromHand, ...nds]);
+                                            for (let nb of nbs) {
+                                                results.push([...dns, ...nb]);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                return buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                            }
+                            return results;
+                        };
+
+                        if (depth < 2 && effectiveSkills.length > 0) {
+                            let skillChains = buildSkillBranch(effectiveSkills, usedHand, usedDiscard, depth);
+                            for (let chain of skillChains) {
+                                branches.push([node, ...chain]);
                             }
                         } else {
                             branches.push([node]);
@@ -180,32 +251,47 @@ export function getBestSimulatedMove() {
         }
 
         if (branches.length === 0) return [[]];
-        return branches;
+        // 空のアクション配列（何も起きないブランチ）を除去し、重複を避ける
+        return branches.filter(b => b.length > 0);
     }
 
-    function processActionSequence(actionQueue, isLeaderSkillPlay = false, leaderSkillActionStr = null, leaderSkillTokenLanes = null, skillOrderTiming = 'before') {
+    function processActionSequence(actionQueue, isLeaderSkillPlay = false, leaderSkillActionStr = null, leaderSkillTokenLanes = null, skillOrderTiming = 'before', leaderSkillTargetIdx = null) {
         let simState = {
             playerBoard: opBoard.map(cloneCard),
             enemyBoard: myBoard.map(cloneCard),
+            playerDiscard: GameState.playerDiscard ? GameState.playerDiscard.map(cloneCard) : [],
+            enemyDiscard: discard ? discard.map(cloneCard) : [],
+            playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+            enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
             playerHP: opHP,
             enemyHP: myHP,
-            playerMaxHP: GameState.playerMaxHP,
-            enemyMaxHP: GameState.enemyMaxHP,
-            playerSP: GameState.playerSP,
-            enemySP: mySP,
-            playerHand: GameState.playerHand.map(cloneCard),
-            enemyHand: hand.map(cloneCard),
-            playerDiscard: GameState.playerDiscard.map(cloneCard),
-            enemyDiscard: discard.map(cloneCard),
-            playerDeck: GameState.playerDeck.map(cloneCard),
-            enemyDeck: [], // 思考フェーズでは未来のドロー（号令等含む）を予知させない
-            extraTurnCount: GameState.extraTurnCount,
-            attackSkipCount: GameState.attackSkipCount
+            playerMaxHP: GameState.playerMaxHP || 25,
+            enemyMaxHP: GameState.enemyMaxHP || 25,
+            playerSP: GameState.playerSP || 0,
+            enemySP: mySP || 0,
+            playerHand: GameState.playerHand ? GameState.playerHand.map(cloneCard) : [],
+            enemyHand: hand ? hand.map(cloneCard) : [],
+            playerDeck: GameState.playerDeck ? GameState.playerDeck.map(cloneCard) : [],
+            enemyDeck: [],
+            extraTurnCount: GameState.extraTurnCount || 0,
+            attackSkipCount: GameState.attackSkipCount || 0,
+            combatDamageTaken: 0,
+            lastCardPlayed: null,
+            _actionQueue: []
         };
+
+        // 全カードのcurrentPowerを確実に初期化
+        [simState.playerBoard, simState.enemyBoard].forEach(b => {
+            b.forEach(c => {
+                if (c && (c.currentPower === undefined || c.currentPower === null)) {
+                    c.currentPower = c.power || 0;
+                }
+            });
+        });
 
         if (isLeaderSkillPlay && skillOrderTiming === 'before' && leaderSkillActionStr) {
             simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
-            applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes);
+            applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes, [], leaderSkillTargetIdx);
             if (simState._actionQueue && simState._actionQueue.length > 0) {
                 actionQueue.unshift(...simState._actionQueue);
                 delete simState._actionQueue;
@@ -214,6 +300,14 @@ export function getBestSimulatedMove() {
 
         for (let action of actionQueue) {
             if (action.type === 'pass') continue;
+
+            if (action.type === 'discard') {
+                if (simState.enemyHand[action.targetIdx]) {
+                    simState.enemyDiscard.push(simState.enemyHand[action.targetIdx]);
+                    simState.enemyHand[action.targetIdx] = null;
+                }
+                continue;
+            }
 
             const tIdx = action.targetIdx;
             const lIdx = action.laneIdx;
@@ -229,11 +323,21 @@ export function getBestSimulatedMove() {
                 checkConstraints = true;
                 if (simState.enemyHand[tIdx]) simState.enemyHand[tIdx] = null;
             } else if (action.type === 'resurrect') {
-                playedCard = cloneCard(simState.enemyDiscard[tIdx]);
+                playedCard = cloneCard(simState.enemyDiscard[action.targetIdx]);
+                if (playedCard && action.maxP !== undefined) {
+                    const master = CARD_MASTER.find(m => m.id === playedCard.id || m.id === playedCard.baseId);
+                    const baseP = master ? master.power : (playedCard.power || 0);
+                    if (baseP > action.maxP) return null; // 制限オーバーは不正として棄却
+                }
                 checkConstraints = false;
                 triggerSkills = false;
                 if (playedCard) playedCard.skillTriggered = true;
-                if (simState.enemyDiscard[tIdx]) simState.enemyDiscard[tIdx] = null;
+                if (simState.enemyDiscard[action.targetIdx]) simState.enemyDiscard[action.targetIdx] = null;
+            } else if (action.type === 'devilhunter_resurrect') {
+                // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
+                // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
+                // 次のアクションのシミュレートへ移るためにcontinueする。
+                continue;
             }
 
             if (!playedCard) return null;
@@ -246,7 +350,9 @@ export function getBestSimulatedMove() {
 
             }
 
+            let skillWasHandledByEquip = false;
             if (hasSkill(playedCard, 'equip') && simState.enemyBoard[lIdx]) {
+                skillWasHandledByEquip = true;
                 const targetCard = simState.enemyBoard[lIdx];
                 targetCard.basePower = (targetCard.basePower || 0) + (playedCard.power || 0);
                 targetCard.currentPower = (targetCard.currentPower || 0) + (playedCard.power || 0);
@@ -255,12 +361,14 @@ export function getBestSimulatedMove() {
                 if (playedCard.skills) playedCard.skills.forEach(s => { if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value }); });
                 mergeCardSkills(targetCard, addedSkills);
                 let cLanesForEquip = action.cardTokenLanes ? [...action.cardTokenLanes] : null;
-                applyActiveSkillLogic(simState, 'red', lIdx, 'equip', 0, [], cLanesForEquip); // 装備によるバフと付随スキルのシミュレート
+                applyActiveSkillLogic(simState, 'red', lIdx, 'equip', 0, [], cLanesForEquip, lIdx); // 装備によるバフと付随スキルのシミュレート
                 if (simState._actionQueue && simState._actionQueue.length > 0) {
                     actionQueue.push(...simState._actionQueue);
                     delete simState._actionQueue;
                 }
-            } else {
+            } 
+
+            if (!skillWasHandledByEquip) {
                 let activeCardForSkills = playedCard;
                 const unionSkill = playedCard.skills && playedCard.skills.find(s => s.id === 'union');
                 if (unionSkill && simState.enemyBoard[lIdx] && (simState.enemyBoard[lIdx].baseId === unionSkill.targetId || simState.enemyBoard[lIdx].id === unionSkill.targetId)) {
@@ -307,7 +415,11 @@ export function getBestSimulatedMove() {
                 let cLanesForPass = action.cardTokenLanes ? [...action.cardTokenLanes] : null;
                 if (triggerSkills && !activeCardForSkills.skillTriggered) {
                     skills.forEach(sk => {
-                        applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], cLanesForPass);
+                        // 【重要】アクションキューで個別に処理されるターゲット選択系スキルはここでは実行しない。
+                        // そうしないと、召喚したレーンの自分自身を上書きしてしまう（墓荒らし3 + デスロード2 = 5 等）バグが起きる。
+                        if (!['invite', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'call'].includes(sk.id)) {
+                           applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], action.cardTokenLanes, lIdx);
+                        }
                     });
                     if (simState._actionQueue && simState._actionQueue.length > 0) {
                         actionQueue.push(...simState._actionQueue);
@@ -323,7 +435,7 @@ export function getBestSimulatedMove() {
 
         if (isLeaderSkillPlay && skillOrderTiming === 'after' && leaderSkillActionStr) {
             simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
-            applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes);
+            applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes, [], leaderSkillTargetIdx);
             if (simState._actionQueue && simState._actionQueue.length > 0) {
                 actionQueue.push(...simState._actionQueue);
                 delete simState._actionQueue;
@@ -419,32 +531,73 @@ export function getBestSimulatedMove() {
                     let qs = buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
                     for (let actionQ of qs) {
                         if (actionQ.length === 0) continue;
-                        let simState = processActionSequence(actionQ, true, action, tokenLanes, order);
-                        if (simState) {
-                            let fA = actionQ[0];
-                            let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
-                            candidates.push({
-                                index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
-                                useSkill: true, tokenLanes, skillOrder: order,
-                                choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                                cardTokenLanes: fA.cardTokenLanes,
-                                actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
-                                    let adjusted = { ...act };
-                                    if ((adjusted.type === 'invite' || adjusted.type === 'play') && fA.type === 'play') {
-                                        if (adjusted.targetIdx > fA.targetIdx) adjusted.targetIdx -= 1;
-                                    }
-                                    return adjusted;
-                                }) : undefined,
-                                simState
-                            });
+                        const fA = actionQ[0];
+                        
+                        // 配置レーンが重複している場合は避ける（他に空きがある場合）
+                        const isOverlap = tokenLanes && tokenLanes.includes(fA.laneIdx);
+                        const emptyLanesCount = myBoard.filter(l => l === null).length;
+                        if (isOverlap && emptyLanesCount >= 2) continue;
+
+                        if (action === 'devilhunter_resurrect') {
+                            // マリアのスキルの場合のみ、墓地の全カード（トークン以外）を試行する
+                            for (let dIdx = 0; dIdx < discard.length; dIdx++) {
+                                if (discard[dIdx].isToken) continue;
+                                let simState = processActionSequence(actionQ, true, action, tokenLanes, order, dIdx);
+                                if (simState) {
+                                    let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
+                                    candidates.push({
+                                        index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
+                                        useSkill: true, tokenLanes, skillOrder: order,
+                                        leaderSkillTargetIdx: dIdx,
+                                        choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                                        cardTokenLanes: fA.cardTokenLanes,
+                                        actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
+                                            let adjusted = { ...act };
+                                            if ((adjusted.type === 'invite' || adjusted.type === 'play') && fA.type === 'play') {
+                                                if (adjusted.targetIdx > fA.targetIdx) adjusted.targetIdx -= 1;
+                                            }
+                                            return adjusted;
+                                        }) : undefined,
+                                        simState
+                                    });
+                                }
+                            }
+                        } else {
+                            // その他（聖戦・邪戦・サタン・龍神等）
+                            let simState = processActionSequence(actionQ, true, action, tokenLanes, order);
+                            if (simState) {
+                                let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
+                                candidates.push({
+                                    index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
+                                    useSkill: true, tokenLanes, skillOrder: order,
+                                    choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                                    cardTokenLanes: fA.cardTokenLanes,
+                                    actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
+                                        let adjusted = { ...act };
+                                        if ((adjusted.type === 'invite' || adjusted.type === 'play') && fA.type === 'play') {
+                                            if (adjusted.targetIdx > fA.targetIdx) adjusted.targetIdx -= 1;
+                                        }
+                                        return adjusted;
+                                    }) : undefined,
+                                    simState
+                                });
+                            }
                         }
                     }
                 }
             }
         }
         for (let tokenLanes of tokenLanePatterns) {
-            let simState = processActionSequence([{ type: 'pass' }], true, action, tokenLanes, 'before');
-            if (simState) candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill: true, tokenLanes, skillOrder: 'before', simState });
+            if (action === 'devilhunter_resurrect') {
+                for (let dIdx = 0; dIdx < discard.length; dIdx++) {
+                    if (discard[dIdx].isToken) continue;
+                    let simState = processActionSequence([{ type: 'pass' }], true, action, tokenLanes, 'before', dIdx);
+                    if (simState) candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill: true, tokenLanes, skillOrder: 'before', leaderSkillTargetIdx: dIdx, simState });
+                }
+            } else {
+                let simState = processActionSequence([{ type: 'pass' }], true, action, tokenLanes, 'before');
+                if (simState) candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill: true, tokenLanes, skillOrder: 'before', simState });
+            }
         }
     }
 
@@ -468,19 +621,53 @@ export function getBestSimulatedMove() {
         return bLen - aLen;
     });
 
+    if (candidates.length === 0) return { index: -1, lane: -1, useSkill: false };
     const bestScore = candidates[0].score;
     const bestGroup = candidates.filter(c => Math.abs(c.score - bestScore) < 0.001);
 
     const finalDecision = bestGroup[Math.floor(Math.random() * bestGroup.length)];
 
-    console.log("AI Best Group Size:", bestGroup.length, "Best Score:", bestScore, "Lane:", finalDecision.lane);
+    const cardName = finalDecision.index !== -1 ? hand[finalDecision.index].name : "PASS";
+    
+    // 現在のパワー計算
+    const initialMyP = myBoard.reduce((sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0), 0);
+    const initialOpP = opBoard.reduce((sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0), 0);
+    const initialDiff = initialMyP - initialOpP;
+
+    // シミュレート後のパワー計算
+    const finalMyP = finalDecision.simState.enemyBoard.reduce((sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0), 0);
+    const finalOpP = finalDecision.simState.playerBoard.reduce((sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0), 0);
+    const finalDiff = finalMyP - finalOpP;
+    const diffGain = finalDiff - initialDiff;
+
+    let resInfo = "";
+    if (finalDecision.useSkill && skill.action === 'devilhunter_resurrect' && finalDecision.leaderSkillTargetIdx !== undefined) {
+        const resCard = discard[finalDecision.leaderSkillTargetIdx];
+        if (resCard) resInfo = ` (Resurrect: ${resCard.name})`;
+    }
+
+    // ダメージ計算
+    const hpDmg = Math.max(0, GameState.enemyHP - finalDecision.simState.enemyHP);
+    let summonedP = (finalDecision.index !== -1) ? (hand[finalDecision.index].currentPower || hand[finalDecision.index].power || 0) : 0;
+    if (finalDecision.useSkill && skill.action === 'devilhunter_resurrect' && finalDecision.leaderSkillTargetIdx !== undefined) {
+        const resCard = discard[finalDecision.leaderSkillTargetIdx];
+        if (resCard) summonedP += (resCard.power || 0);
+    }
+    const boardDmg = Math.max(0, (initialMyP + summonedP) - finalMyP);
+
+    console.log(`[AI Decision] ${cardName} -> Lane: ${finalDecision.lane}${resInfo} (Skill: ${finalDecision.useSkill ? "YES" : "NO"})`);
+    console.log(`[AI Reasoning] Power Diff: ${initialDiff} -> ${finalDiff} (Gain: ${diffGain > 0 ? "+" : ""}${diffGain})`);
+    console.log(`[AI Stats] Final Board: My ${finalMyP} vs Op ${finalOpP} (Damage: HP -${hpDmg}, Card -${boardDmg}), Candidates: ${bestGroup.length}`);
+    
+    // 詳細な盤面ログ出力
+    const dumpB = (b) => b.map((c, i) => c ? `${c.name}(${c.currentPower !== undefined ? c.currentPower : c.power})` : "EMPTY").join(" | ");
+    console.log(`[AI DEBUG] Before: [AI] ${dumpB(myBoard)} vs [Player] ${dumpB(opBoard)}`);
+    console.log(`[AI DEBUG] After:  [AI] ${dumpB(finalDecision.simState.enemyBoard)} vs [Player] ${dumpB(finalDecision.simState.playerBoard)}`);
+
     GameState.aiDecision = finalDecision;
     return finalDecision;
 }
 
-/**
- * 盤面の状態を評価し、スコアを返す (AI用)
- */
 /**
  * 【AI思考の核】盤面の状態をティア（生存階層）とスコアで厳密に評価する
  * 
@@ -499,14 +686,13 @@ export function evaluateSimState(state) {
     let opPower = 0;
     let utilityScore = 0;
 
-    // 1. 盤面のパワー合計とスキルの期待値を算出
+    // 1. 各種数値の集計
     for (let i = 0; i < 3; i++) {
         if (state.enemyBoard[i]) {
             const c = state.enemyBoard[i];
-            // 戦闘後の生存パワーを加算（currentPowerが0なら死体なので加算しない）
-            myPower += (c.currentPower !== undefined ? Number(c.currentPower) : (Number(c.power) || 0));
+            myPower += Number(c.currentPower ?? c.power ?? 0);
             
-            // ユーティリティスキルの加点（手札やHPの維持を補助的に評価）
+            // 4. ユーティリティ価値の算出
             if (!c.skillTriggered) {
                 if (c.skill === 'draw') utilityScore += 10;
                 if (c.skill === 'heal') utilityScore += 15;
@@ -520,42 +706,40 @@ export function evaluateSimState(state) {
         }
         if (state.playerBoard[i]) {
             const opC = state.playerBoard[i];
-            opPower += (opC.currentPower !== undefined ? Number(opC.currentPower) : (Number(opC.power) || 0));
+            opPower += Number(opC.currentPower ?? opC.power ?? 0);
         }
     }
 
-    // 2. ティア（生存階層）の判定
-    // 自分のHPが0以下なら最悪の「Tier 3」
+    // 2. 生存ティアの判定 (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
     let tier = 1;
     if (state.enemyHP <= 0) {
         tier = 3;
-    } 
-    // 相手からの「戦闘ダメージ」が4以上なら警戒すべき「Tier 2」
-    // ここで state.combatDamageTaken を参照することで、代償ダメージを含まない純粋な脅威を判定する
-    else if ((state.combatDamageTaken || 0) >= 4) {
+    } else if ((state.combatDamageTaken || 0) >= 4) {
         tier = 2;
     }
 
-    // 3. 最終スコアの組み立て
-    // ティアが最優先、その中でパワー差、スキル価値、枚数差を考慮する
-    // ティアごとに大きなベース値（10000点刻み）を持たせることで上位ルールを死守する
-    let score = (3 - tier) * 10000;
+    // 3. 【AI思考の核】に基づいた絶対優先順位スコアの構築
+    // スロットごとに桁を分けることで、下位の項目が上位を逆転できないようにする
+    
+    // スロット1: 生存ティア (Tier1=2, Tier2=1, Tier3=0)
+    let s1 = (3 - tier) * 10000000;
+    
+    // スロット2: 勝利判定 (1か0)
+    let s2 = (state.playerHP <= 0 ? 1 : 0) * 1000000;
+    
+    // スロット3: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
+    // -150〜150の範囲を想定し+200して正の値にする
+    let s3 = (myPower - opPower + 200) * 1000;
+    
+    // スロット4: ユーティリティ価値
+    let s4 = utilityScore * 10;
+    
+    // スロット5: タイブレーク (生存枚数差)
+    const myCount = state.enemyBoard.filter(c => c && (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)).length;
+    const opCount = state.playerBoard.filter(c => c && (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)).length;
+    let s5 = (myCount - opCount + 5);
 
-    // 勝利判定：ティア内での最優先（1000点の特大ボーナス）
-    if (state.playerHP <= 0) score += 5000;
-
-    // パワー合計差（メイン評価軸）
-    score += (myPower - opPower) * 10;
-
-    // スキル価値
-    score += utilityScore;
-
-    // 生存枚数（タイブレーク用：1枚につき5点）
-    const myCount = state.enemyBoard.filter(c => c && (c.currentPower === undefined || c.currentPower > 0)).length;
-    const opCount = state.playerBoard.filter(c => c && (c.currentPower === undefined || c.currentPower > 0)).length;
-    score += (myCount - opCount) * 5;
-
-    return score;
+    return s1 + s2 + s3 + s4 + s5;
 }
 
 export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {

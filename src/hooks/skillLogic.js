@@ -882,7 +882,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                             if (existingCard) {
                                 if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
                             }
-                            board[targetLane] = { ...selectedCard, id: `res_${Math.floor(getSeededRandom() * 1000000000)}` };
+                            const newUID = `res_uid_${Math.floor(getSeededRandom() * 1000000000)}`;
+                            board[targetLane] = { 
+                                ...selectedCard, 
+                                id: `res_${Math.floor(getSeededRandom() * 1000000000)}`,
+                                uid: newUID
+                            };
 
                             // 出現時スキルを持つ場合は即座に保護フラグを立てる
                             if (hasActiveSkill(board[targetLane])) {
