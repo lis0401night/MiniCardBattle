@@ -78,7 +78,7 @@ export default function HighDifficultyScreen() {
 
         <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleDevilhunterHighBattle?.()}>
           <img src="assets/icons/icon_devilhunter_high.png" className="banner-icon" alt="" />
-          <span className="banner-text" style={{ color: '#f97316' }}>
+          <span className="banner-text" style={{ color: '#64748b' }}>
             ゴーストライダー マリア
           </span>
         </button>

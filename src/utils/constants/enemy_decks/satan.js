@@ -10,7 +10,7 @@ export default {
     ],
     normal: [
         'daemon', 'daemon',
-        'daemonarmor', 'daemonarmor',
+        'succubus', 'succubus',
         'wendigo', 'wendigo',
         'warlock', 'warlock',
         'cavalry', 'cavalry',
@@ -22,10 +22,10 @@ export default {
     hard: [
         'bahamut', 'bahamut',
         'daemon', 'daemon', 'daemon',
-        'daemonarmor', 'daemonarmor', 'daemonarmor',
+        'succubus', 'succubus', 'succubus',
         'wendigo', 'wendigo',
         'warlock', 'warlock', 'warlock',
         'minion', 'minion', 'minion',
-        'succubus', 'succubus', 'succubus', 'succubus',
+        'daemonarmor', 'daemonarmor', 'daemonarmor', 'daemonarmor',
     ]
 };

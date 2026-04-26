@@ -2,6 +2,7 @@ import { hasSkill, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.j
 import { applyActiveSkillLogic, applyLeaderSkillLogic, calculateCombatPhase, applyPassiveSkillLogic } from './engine.js';
 import { GameState } from './gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { AI_SKILL_UTILITY } from '../utils/constants/aiSkillValues.js';
 
 /**
  * 【号令（call）・変身（metamorph）のAIシミュレーション仕様】
@@ -659,6 +660,7 @@ export function getBestSimulatedMove() {
         if (action === 'holy_march' || action === 'evil_march') {
             const avail = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
             let combs = [];
+            combs.push([]); // 0体パターン（騎士を出さずバフのみ）
             for (let l of avail) combs.push([l]);
             if (avail.length >= 2) combs.push(...getCombinations(avail, 2));
             tokenLanePatterns = combs.length > 0 ? combs : [null];
@@ -709,9 +711,22 @@ export function getBestSimulatedMove() {
                         const fA = actionQ[0];
                         
                         // 配置レーンが重複している場合は避ける（他に空きがある場合）
-                        const isOverlap = tokenLanes && tokenLanes.includes(fA.laneIdx);
-                        const emptyLanesCount = myBoard.filter(l => l === null).length;
-                        if (isOverlap && emptyLanesCount >= 2) continue;
+                        const isOverlap = tokenLanes && tokenLanes.length > 0 && tokenLanes.includes(fA.laneIdx);
+                        if (isOverlap) {
+                            // スキル先打ち(before)の場合、トークン配置後の盤面で空きレーンを判定する
+                            // スキル後打ち(after)の場合、カード配置前の盤面で空きレーンを判定する
+                            let effectiveEmptyCount;
+                            if (order === 'before') {
+                                // トークン配置後の空きレーン = 現在の空き - (トークンが空きレーンに入る数)
+                                const currentEmpty = myBoard.filter(l => l === null).length;
+                                const tokensFillingEmpty = tokenLanes.filter(l => myBoard[l] === null).length;
+                                effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
+                            } else {
+                                effectiveEmptyCount = myBoard.filter(l => l === null).length;
+                            }
+                            // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
+                            if (effectiveEmptyCount >= 1) continue;
+                        }
 
                         if (action === 'devilhunter_resurrect' || action === 'overdrive') {
                             // マリアのスキルの場合のみ、墓地の全カード（トークン以外）を試行する
@@ -867,16 +882,24 @@ export function evaluateSimState(state) {
             const c = state.enemyBoard[i];
             myPower += Number(c.currentPower ?? c.power ?? 0);
             
-            // 4. ユーティリティ価値の算出
-            if (!c.skillTriggered) {
-                if (c.skill === 'draw') utilityScore += 10;
-                if (c.skill === 'heal') utilityScore += 15;
-                if (Array.isArray(c.skills)) {
-                    c.skills.forEach(sk => {
-                        if (sk.id === 'draw') utilityScore += 10;
-                        if (sk.id === 'heal') utilityScore += 15;
-                    });
+            // 4. ユーティリティ価値の算出（AI_SKILL_UTILITYテーブル参照）
+            // skillTriggered = true の場合、アクティブスキルは発動済みなので
+            // パッシブスキルのみ評価する
+            const addUtility = (skillId) => {
+                if (AI_SKILL_UTILITY[skillId]) utilityScore += AI_SKILL_UTILITY[skillId];
+            };
+            if (c.skill && c.skill !== 'none') {
+                // アクティブスキル（draw, heal等）は未発動時のみ加算
+                if (!c.skillTriggered || !['draw', 'heal', 'bless', 'morph', 'seal', 'shuffle'].includes(c.skill)) {
+                    addUtility(c.skill);
                 }
+            }
+            if (Array.isArray(c.skills)) {
+                c.skills.forEach(sk => {
+                    if (!c.skillTriggered || !['draw', 'heal', 'bless', 'morph', 'seal', 'shuffle'].includes(sk.id)) {
+                        addUtility(sk.id);
+                    }
+                });
             }
         }
         if (state.playerBoard[i]) {
@@ -909,10 +932,12 @@ export function evaluateSimState(state) {
     // スロット4: ユーティリティ価値
     let s4 = utilityScore * 10;
     
-    // スロット5: タイブレーク (生存枚数差)
+    // スロット5: タイブレーク (生存枚数)
+    // 自分の枚数が少ないほど高評価（装備一点集中・生贄の高打点を評価）
+    // 相手の枚数が少ないほど高評価（盤面制圧を評価）
     const myCount = state.enemyBoard.filter(c => c && (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)).length;
     const opCount = state.playerBoard.filter(c => c && (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)).length;
-    let s5 = (myCount - opCount + 5);
+    let s5 = (8 - myCount - opCount);
 
     return s1 + s2 + s3 + s4 + s5;
 }

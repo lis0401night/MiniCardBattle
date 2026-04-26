@@ -11,7 +11,7 @@ import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
 export default function DeckListScreen() {
     const [renderVersion, setRenderVersion] = useState(0);
     const [currentPage, setCurrentPage] = useState(GameState.deckListPage || 0);
-    
+
     // ページ位置のグローバル保存
     useEffect(() => {
         GameState.deckListPage = currentPage;
@@ -27,13 +27,13 @@ export default function DeckListScreen() {
     const pointerStartX = React.useRef(0);
     const pointerStartY = React.useRef(0);
     const isSwipingRef = React.useRef(false);
-    
+
     const longPressTimer = React.useRef(null);
     const isDraggingRef = React.useRef(false);
-    const dragOffset = React.useRef({ x: 0, y: 0 }); 
+    const dragOffset = React.useRef({ x: 0, y: 0 });
     const autoScrollTimer = React.useRef(null);
     const draggedDeckRef = React.useRef(null); // dragIndexの同期用
-    
+
     const decks = GameState.decks || [];
     const items = [...decks];
     if (decks.length < 20) {
@@ -61,7 +61,7 @@ export default function DeckListScreen() {
         }
 
         window.forceUpdateDeckList = () => setRenderVersion(v => v + 1);
-        
+
         // メニュー等から画面遷移してきた際、常に現在のgameModeに合わせたデッキ情報を再ロードする
         loadDeck?.();
 
@@ -70,7 +70,7 @@ export default function DeckListScreen() {
 
     const handleSelectDeck = (index) => {
         playSound?.(SOUNDS?.seClick);
-        
+
         if (GameState.appState === 'select_enemy_deck') {
             GameState.pendingCharId = GameState.decks[index].leaderId;
             GameState.practiceEnemyDeckIndex = index;
@@ -79,8 +79,8 @@ export default function DeckListScreen() {
         }
 
         GameState.currentDeckIndex = index;
-        loadDeck(); 
-        
+        loadDeck();
+
         if (GameState.appState === 'select_deck') {
             if (GameState.gameMode === 'practice') {
                 GameState.practicePlayerDeckIndex = index;
@@ -111,10 +111,10 @@ export default function DeckListScreen() {
     const handleCreateNew = () => {
         playSound?.(SOUNDS?.seClick);
         if (decks.length >= 20) return;
-        
+
         GameState.prevGameModeForCreate = GameState.gameMode;
         GameState.prevAppStateForCreate = GameState.appState;
-        
+
         if (typeof window.switchScreen === 'function') {
             GameState.gameMode = 'create_deck';
             GameState.appState = 'create_deck_select_char';
@@ -141,15 +141,15 @@ export default function DeckListScreen() {
 
     const handleBannerPointerDown = (e, index, itemType) => {
         if (itemType === 'create') return;
-        
+
         const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
         const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
-        
+
         const rect = e.currentTarget.getBoundingClientRect();
         dragOffset.current = { x: clientX - rect.left, y: clientY - rect.top };
-        
+
         if (longPressTimer.current) clearTimeout(longPressTimer.current);
-        
+
         longPressTimer.current = setTimeout(() => {
             if (!isSwipingRef.current) {
                 isDraggingRef.current = true;
@@ -165,7 +165,7 @@ export default function DeckListScreen() {
         const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
         const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
         if (clientX === undefined || clientY === undefined) return;
-        
+
         const diffX = Math.abs(pointerStartX.current - clientX);
         const diffY = Math.abs(pointerStartY.current - clientY);
         if (diffX > 10 || diffY > 10) {
@@ -179,7 +179,7 @@ export default function DeckListScreen() {
         if (isDraggingRef.current) {
             // Drag rendering
             setDragPos({ x: clientX - dragOffset.current.x, y: clientY - dragOffset.current.y });
-            
+
             // Trash check
             const trashEl = document.getElementById('trash-can-zone');
             if (trashEl) {
@@ -242,12 +242,12 @@ export default function DeckListScreen() {
         }
 
         const endX = e.clientX ?? (e.changedTouches && e.changedTouches[0]?.clientX);
-        
+
         if (isDraggingRef.current) {
             isDraggingRef.current = false;
             const currentDragIdx = draggedDeckRef.current;
             draggedDeckRef.current = null;
-            
+
             if (isHoveringTrash) {
                 handleDeleteDeck(currentDragIdx);
             } else if (hoverIndex !== null && currentDragIdx !== null) {
@@ -256,7 +256,7 @@ export default function DeckListScreen() {
                 const newDecks = [...GameState.decks];
                 const [movedDeck] = newDecks.splice(currentDragIdx, 1);
                 newDecks.splice(hoverIndex, 0, movedDeck);
-                
+
                 if (GameState.currentDeckIndex === currentDragIdx) {
                     GameState.currentDeckIndex = hoverIndex;
                 } else if (currentDragIdx < GameState.currentDeckIndex && hoverIndex >= GameState.currentDeckIndex) {
@@ -264,16 +264,16 @@ export default function DeckListScreen() {
                 } else if (currentDragIdx > GameState.currentDeckIndex && hoverIndex <= GameState.currentDeckIndex) {
                     GameState.currentDeckIndex++;
                 }
-                
+
                 GameState.decks = newDecks;
                 localStorage.setItem('mini_card_battle_decks', JSON.stringify(GameState.decks));
                 setRenderVersion(v => v + 1);
             }
-            
+
             setDragIndex(null);
             setHoverIndex(null);
             setIsHoveringTrash(false);
-            
+
             setTimeout(() => { isSwipingRef.current = false; }, 50);
             return;
         }
@@ -289,7 +289,7 @@ export default function DeckListScreen() {
             setCurrentPage(p => p - 1);
             pointerStartX.current = endX; // 連続発火防止
         }
-        
+
         setTimeout(() => {
             isSwipingRef.current = false;
         }, 50);
@@ -303,10 +303,10 @@ export default function DeckListScreen() {
             position: 'relative',
             touchAction: 'none' // DnD操作のためにブラウザデフォルトスクロールを切る
         }}
-        onPointerDown={handleGlobalPointerDown}
-        onPointerMove={handleGlobalPointerMove}
-        onPointerUp={handleGlobalPointerUp}
-        onPointerCancel={handleGlobalPointerUp}
+            onPointerDown={handleGlobalPointerDown}
+            onPointerMove={handleGlobalPointerMove}
+            onPointerUp={handleGlobalPointerUp}
+            onPointerCancel={handleGlobalPointerUp}
         >
             <h2 style={{ color: '#facc15', marginBottom: '15px' }}>
                 {GameState.appState === 'select_enemy_deck' ? '相手のデッキ' : 'デッキ一覧'}
@@ -315,14 +315,14 @@ export default function DeckListScreen() {
             <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                 {/* 左矢印 */}
                 {totalPages > 1 && currentPage > 0 && (
-                    <div 
+                    <div
                         style={{ position: 'absolute', left: '-5px', zIndex: 10, fontSize: '3rem', fontWeight: 'bold', color: '#facc15', cursor: 'pointer', opacity: 0.5, transform: 'scaleX(0.5)', textShadow: '0 0 5px rgba(0,0,0,0.5)' }}
                         onClick={(e) => { e.stopPropagation(); playSound?.(SOUNDS?.seClick); setCurrentPage(p => p - 1); }}
                     >
                         ❮
                     </div>
                 )}
-                
+
                 <div id="player-deck-list" style={{ flex: 'none', height: '490px', width: '100%', overflow: 'hidden', padding: 0, position: 'relative', background: 'transparent', border: 'none' }}>
                     <div style={{
                         display: 'flex',
@@ -332,18 +332,18 @@ export default function DeckListScreen() {
                         transition: dragIndex !== null ? 'none' : 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
                     }}>
                         {pages.map((pageItems, pageIndex) => (
-                            <div key={`page-${pageIndex}`} style={{ 
-                                width: `${100 / totalPages}%`, 
-                                flex: 'none', 
-                                display: 'flex', 
-                                flexDirection: 'column', 
+                            <div key={`page-${pageIndex}`} style={{
+                                width: `${100 / totalPages}%`,
+                                flex: 'none',
+                                display: 'flex',
+                                flexDirection: 'column',
                                 justifyContent: 'flex-start',
-                                padding: '10px 15px', 
-                                gap: '15px' 
+                                padding: '10px 15px',
+                                gap: '15px'
                             }}>
                                 {pageItems.map((item, localIdx) => {
                                     const idx = pageIndex * itemsPerPage + localIdx;
-                                    
+
                                     if (item === 'create') {
                                         return (
                                             <button
@@ -365,13 +365,13 @@ export default function DeckListScreen() {
                                     const char = CHARACTERS[deck.leaderId] || CHARACTERS.android;
                                     const isDraggingThis = dragIndex === idx;
                                     const isHoveringThis = hoverIndex === idx;
-                                    
+
                                     return (
-                                        <div 
-                                            key={deck.id || `deck-${idx}`} 
+                                        <div
+                                            key={deck.id || `deck-${idx}`}
                                             className="deck-drop-zone"
                                             data-idx={idx}
-                                            style={{ 
+                                            style={{
                                                 position: 'relative', width: '100%', borderRadius: '8px', flexShrink: 0,
                                                 opacity: isDraggingThis ? 0.3 : 1,
                                                 transform: isHoveringThis ? 'scale(1.02)' : 'none',
@@ -395,11 +395,11 @@ export default function DeckListScreen() {
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: '100%', paddingLeft: '10px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                        <img 
-                                                            src={getSkinImage ? getSkinImage(char, deck.playerSkins?.[char.id], 'icon') : char.icon} 
-                                                            className="banner-icon" 
-                                                            alt="" 
-                                                            draggable="false" 
+                                                        <img
+                                                            src={getSkinImage ? getSkinImage(char, deck.playerSkins?.[char.id], 'icon') : char.icon}
+                                                            className="banner-icon"
+                                                            alt=""
+                                                            draggable="false"
                                                             style={{ cursor: 'pointer', position: 'relative', zIndex: 2 }}
                                                             onClick={(e) => {
                                                                 if (isSwipingRef.current || isDraggingRef.current) return;
@@ -430,7 +430,7 @@ export default function DeckListScreen() {
 
                 {/* 右矢印 */}
                 {totalPages > 1 && currentPage < totalPages - 1 && (
-                    <div 
+                    <div
                         style={{ position: 'absolute', right: '-5px', zIndex: 10, fontSize: '3rem', fontWeight: 'bold', color: '#facc15', cursor: 'pointer', opacity: 0.5, transform: 'scaleX(0.5)', textShadow: '0 0 5px rgba(0,0,0,0.5)' }}
                         onClick={(e) => { e.stopPropagation(); playSound?.(SOUNDS?.seClick); setCurrentPage(p => p + 1); }}
                     >
@@ -441,34 +441,39 @@ export default function DeckListScreen() {
 
             {/* 下部ボタンとゴミ箱エリア */}
             <div style={{ position: 'relative', marginTop: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', minHeight: '50px', padding: '0 15px', boxSizing: 'border-box' }}>
-                <button 
-                    className="btn" 
-                    style={{ background: '#475569', margin: 0 }} 
+                <button
+                    className="btn"
+                    style={{ background: '#475569', margin: 0 }}
                     onClick={handleBack}
                 >
                     戻る
                 </button>
 
-                {/* ゴミ箱 (DnD削除ゾーン) */}
-                <div 
+                {/* ゴミ箱 (DnD削除ゾーン / 常時表示) */}
+                <div
                     id="trash-can-zone"
-                    style={{ 
-                        position: 'absolute', 
-                        right: '15px', 
-                        width: '50px', 
-                        height: '50px', 
+                    style={{
+                        position: 'absolute',
+                        right: '15px',
+                        width: '50px',
+                        height: '50px',
                         borderRadius: '50%',
                         background: isHoveringTrash ? '#ef4444' : '#334155',
                         border: `2px solid ${isHoveringTrash ? '#fff' : '#475569'}`,
-                        display: 'flex', 
-                        alignItems: 'center', 
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '1.8rem',
                         boxShadow: isHoveringTrash ? '0 0 20px #ef4444' : '0 5px 10px rgba(0,0,0,0.5)',
-                        opacity: dragIndex !== null ? 1 : 0,
-                        pointerEvents: dragIndex !== null ? 'auto' : 'none',
-                        transform: isHoveringTrash ? 'scale(1.2)' : (dragIndex !== null ? 'scale(1)' : 'translateY(10px) scale(0.8)'),
+                        cursor: dragIndex !== null ? 'default' : 'pointer',
+                        transform: isHoveringTrash ? 'scale(1.2)' : 'scale(1)',
                         transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    }}
+                    onClick={() => {
+                        if (dragIndex === null) {
+                            playSound?.(SOUNDS?.seClick);
+                            showAlertModal?.('デッキを長押ししてドラッグし、\nここに重ねると削除できます。');
+                        }
                     }}
                 >
                     🗑️
@@ -481,7 +486,7 @@ export default function DeckListScreen() {
                 if (!deck) return null;
                 const char = CHARACTERS[deck.leaderId] || CHARACTERS.android;
                 return (
-                    <div 
+                    <div
                         style={{
                             position: 'fixed',
                             left: dragPos.x,

@@ -551,8 +551,11 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
         const availableAI = [0, 1, 2].filter(l => sealedLanes[l] === 0);
         let selectedLanes;
 
-        if (tokenLanes && tokenLanes.length > 0) {
+        if (tokenLanes !== null && Array.isArray(tokenLanes) && tokenLanes.length > 0) {
             selectedLanes = tokenLanes.splice(0, count);
+        } else if (tokenLanes !== null && Array.isArray(tokenLanes) && tokenLanes.length === 0) {
+            // AIが意図的に空配列を渡した場合（例: holy_marchの0体バフのみ）、配置なしとして返す
+            selectedLanes = [];
         } else {
             // まず現在のアクション自体に紐づく指示があるか確認
             // 【重要】deleteではなくspliceで消費する。summonスキルを複数持つカード（例：慈悲なき提督）では
@@ -1205,7 +1208,8 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     if (card.equippedCards && card.equippedCards.length > 0) {
         for (const eqCard of card.equippedCards) {
             let restoredEq;
-            const eqOwner = eqCard.owner || owner;
+            // 【傀儡対応】装備カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+            const eqOwner = eqCard.puppetOriginalOwner || eqCard.owner || owner;
             const discardPile = eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
             if (eqMaster) {
@@ -1218,6 +1222,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             } else {
                 restoredEq = { ...eqCard };
             }
+            if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
             if (!restoredEq.isToken) {
                 discardPile.push(restoredEq);
             }
@@ -1228,7 +1233,8 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     if (card.unionMaterials && card.unionMaterials.length > 0) {
         for (const matCard of card.unionMaterials) {
             let restoredMat;
-            const matOwner = matCard.owner || owner;
+            // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+            const matOwner = matCard.puppetOriginalOwner || matCard.owner || owner;
             const discardPile = matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
             const matMaster = CARD_MASTER.find(m => m.id === (matCard.baseId || matCard.id));
             if (matMaster) {
@@ -1241,6 +1247,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             } else {
                 restoredMat = { ...matCard };
             }
+            if (restoredMat.puppetOriginalOwner) delete restoredMat.puppetOriginalOwner;
             if (!restoredMat.isToken) {
                 discardPile.push(restoredMat);
             }
@@ -1250,12 +1257,14 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
     if (card.originalRevertTarget) {
         const rvTarget = card.originalRevertTarget;
+        // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+        const rvOwner = rvTarget.puppetOriginalOwner || owner;
         const masterData = CARD_MASTER.find(m => m.id === (rvTarget.baseId || rvTarget.id));
         let restoredCard;
         if (masterData) {
             restoredCard = JSON.parse(JSON.stringify(masterData));
             restoredCard.uid = rvTarget.uid;
-            restoredCard.owner = owner;
+            restoredCard.owner = rvOwner;
             restoredCard.baseId = rvTarget.baseId || rvTarget.id;
             if (rvTarget.isPremium !== undefined) restoredCard.isPremium = rvTarget.isPremium;
             restoredCard.basePower = restoredCard.power;
@@ -1264,10 +1273,11 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
             restoredCard = { ...rvTarget };
             restoredCard.equippedCards = [];
         }
+        if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
         if (!restoredCard.isToken) {
-            (owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
+            (rvOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
         }
-        updateDeckDisplay(owner);
+        updateDeckDisplay(rvOwner);
     }
 
     if (card.isToken) return false;

@@ -461,7 +461,8 @@ export async function playEvents(events) {
                         if (deadCard.unionMaterials && deadCard.unionMaterials.length > 0) {
                             for (const matCard of deadCard.unionMaterials) {
                                 let restoredMat;
-                                const matOwner = matCard.owner || target.side;
+                                // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+                                const matOwner = matCard.puppetOriginalOwner || matCard.owner || target.side;
                                 const discard = matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                                 const matMaster = CARD_MASTER.find(m => m.id === (matCard.baseId || matCard.id));
                                 if (matMaster) {
@@ -474,6 +475,7 @@ export async function playEvents(events) {
                                 } else {
                                     restoredMat = { ...matCard };
                                 }
+                                if (restoredMat.puppetOriginalOwner) delete restoredMat.puppetOriginalOwner;
                                 if (!restoredMat.isToken) {
                                     discard.push(restoredMat);
                                 }
@@ -483,14 +485,16 @@ export async function playEvents(events) {
                         }
 
                         if (deadCard.originalRevertTarget) {
-                            const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                             const rvTarget = deadCard.originalRevertTarget;
+                            // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+                            const rvOwner = rvTarget.puppetOriginalOwner || target.side;
+                            const discard = rvOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                             const masterData = CARD_MASTER.find(m => m.id === (rvTarget.baseId || rvTarget.id));
                             let restoredCard;
                             if (masterData) {
                                 restoredCard = JSON.parse(JSON.stringify(masterData));
                                 restoredCard.uid = rvTarget.uid;
-                                restoredCard.owner = target.side;
+                                restoredCard.owner = rvOwner;
                                 restoredCard.baseId = rvTarget.baseId || rvTarget.id;
                                 if (rvTarget.isPremium !== undefined) restoredCard.isPremium = rvTarget.isPremium;
                                 restoredCard.basePower = restoredCard.power;
@@ -499,10 +503,11 @@ export async function playEvents(events) {
                                 restoredCard = { ...rvTarget };
                                 restoredCard.equippedCards = [];
                             }
+                            if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
                             if (!restoredCard.isToken) {
                                 discard.push(restoredCard);
                             }
-                            updateDeckDisplay(target.side);
+                            updateDeckDisplay(rvOwner);
                         } else if (!deadCard.isToken) {
                             // 【傀儡】傀儡スキルで奪ったカードは元の持ち主の墓地へ返す
                             const deadOwner = deadCard.puppetOriginalOwner || target.side;

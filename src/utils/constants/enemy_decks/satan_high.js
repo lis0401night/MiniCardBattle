@@ -8,5 +8,5 @@ export default [
     'palerider', 'palerider', 'palerider',
     'bahamut', 'bahamut', 'bahamut',
     'daemon', 'daemon', 'daemon',
-    'daemonarmor', 'daemonarmor',
+    'succubus', 'succubus',
 ];
