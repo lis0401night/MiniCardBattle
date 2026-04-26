@@ -1695,8 +1695,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         let base = Math.floor(aP / N);
         let rem = aP % N;
         
-        // [1] 与ダメージ分配
+        // [1] 与ダメージ分配（肩代わり無効: 守護・身替・憑依のリダイレクトを無視し、各レーンに直接ダメージ）
         let totalActualDmgToDef = 0;
+        const preDmgPowers = {}; // 貫通計算用: 各レーンのダメージ前パワーを記録
         for (let targetLane of targets) {
             let currentDmg = base + (rem > 0 ? 1 : 0);
             if (rem > 0) rem--;
@@ -1704,6 +1705,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
             let targetCard = defBoard[targetLane];
             if (targetCard) {
+                preDmgPowers[targetLane] = Number(targetCard.currentPower ?? targetCard.power ?? 0) || 0;
                 let effectiveDmg = currentDmg;
                 if (hasSkill(targetCard, 'sturdy')) {
                      events.push({ type: 'sturdy_block', side: defSide, lane: targetLane });
@@ -1729,9 +1731,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                     }
                 }
             } else {
+                // 空レーン: ダメージはリーダーへ
                 defHP -= currentDmg;
                 events.push({ type: 'damage_player', side: defSide, amount: currentDmg, source: 'cleave' });
                 totalActualDmgToDef += currentDmg;
+                // 簒奪: リーダーにダメージを与えた際に発動
+                applyExtort(aC, defSide, attackerSide, aLane, events, state);
             }
         }
 
@@ -1765,13 +1770,59 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             }
         }
 
-        // [3] 吸収/簒奪 (リーダーダメージも含む実際の与ダメージに基づく)
+        // [3] 吸収 (リーダーダメージも含む実際の与ダメージに基づく)
         if (totalActualDmgToDef > 0 && hasSkill(aC, 'absorb')) {
             const healAmt = Math.floor(totalActualDmgToDef / 2);
             if (healAmt > 0) {
                 if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
                 else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
                 events.push({ type: 'heal_player', side: attackerSide, amount: healAmt, source: 'absorb', lane: aLane });
+            }
+        }
+
+        // [4] 貫通: 通常攻撃と同様に「分配ダメージ - 防御者パワー」の差分をリーダーに与える
+        //     各レーンでの余剰分を合算する（ダメージ前のパワーを基準にするため deadly でも正しく発動）
+        if (hasSkill(aC, 'pierce')) {
+            let totalPierceDmg = 0;
+            // ダメージ分配を再計算（[1]と同じ配分ロジック）
+            let pBase = Math.floor(aP / N);
+            let pRem = aP % N;
+            for (let targetLane of targets) {
+                const laneDmg = pBase + (pRem > 0 ? 1 : 0);
+                if (pRem > 0) pRem--;
+                // カードが存在するレーンのみ（空レーンは既にリーダーダメージ処理済み）
+                if (preDmgPowers[targetLane] !== undefined) {
+                    const pierceDmg = Math.max(0, laneDmg - preDmgPowers[targetLane]);
+                    totalPierceDmg += pierceDmg;
+                }
+            }
+            if (totalPierceDmg > 0) {
+                defHP -= totalPierceDmg;
+                events.push({ type: 'damage_player', side: defSide, amount: totalPierceDmg, source: 'pierce' });
+                applyExtort(aC, defSide, attackerSide, aLane, events, state);
+                if (hasSkill(aC, 'absorb')) {
+                    const healAmt = Math.floor(totalPierceDmg / 2);
+                    if (healAmt > 0) {
+                        if (attackerSide === 'blue') state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + healAmt);
+                        else state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + healAmt);
+                        events.push({ type: 'heal_player', side: attackerSide, amount: healAmt, source: 'absorb', lane: aLane });
+                    }
+                }
+            }
+        }
+
+        // [5] 魂縛: 一掃で破壊した敵カードの数だけ発動（攻撃者自身が生存している場合のみ）
+        if (hasSkill(aC, 'soul_bind') && aC.currentPower > 0) {
+            let destroyedCount = 0;
+            for (let targetLane of targets) {
+                const targetCard = defBoard[targetLane];
+                if (targetCard && targetCard.currentPower <= 0) destroyedCount++;
+            }
+            if (destroyedCount > 0) {
+                const val = getSkillValue(aC, 'soul_bind') || 2;
+                const totalGain = val * destroyedCount;
+                aC.currentPower += totalGain;
+                events.push({ type: 'power_change', side: attackerSide, lane: l, amount: totalGain, source: 'soul_bind' });
             }
         }
 
