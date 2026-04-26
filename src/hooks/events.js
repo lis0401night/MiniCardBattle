@@ -250,7 +250,53 @@ export function initEventClericHighMode(charId) {
 }
 
 
+/**
+ * 高難易度イベント：レーサー マリア の初期化
+ * ストーリー：廃都オールドヘイヴンで開催された無法者の賞金レース。
+ * プレイヤーキャラはそれぞれの手段でレースに参加し、同じ参加者のマリアと一位をかけて対決する。
+ * マリア本人は自身の幻影と戦う。
+ */
+export function initEventDevilhunterHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['devilhunter'],
+        hp: 40,
+        name: 'ゴーストライダー マリア',
+        // 【オーバードライブ】自分の墓地と相手の墓地それぞれからカードを1枚選び配置する
+        leaderSkill: {
+            name: 'オーバードライブ',
+            desc: '(SP:3) 自分の墓地からカードを1枚選び、自分のレーンに配置する。相手の墓地からカードを1枚選び、自分のレーンに配置する。',
+            cost: 3,
+            action: 'overdrive'
+        }
+    };
+    GameState.gameMode = 'event_devilhunter_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'devilhunter'; // 廃都レーストラック
+
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['devilhunter'] = 'devilhunter_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'devilhunter_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'devilhunter_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'devilhunter_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const dialogues = EVENT_DIALOGUES.event_devilhunter_high[charId] || EVENT_DIALOGUES.event_devilhunter_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
+
 export function initEventSatanMode(charId) {
+
     GameState.playerConfig = { ...CHARACTERS[charId] };
     GameState.enemyConfig = { ...CHARACTERS['satan'], hp: 100 };
     GameState.gameMode = 'event_satan';

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { GameState } from '../hooks/gameState.js';
 import { goBackFromSelect, showCharDetail } from '../hooks/uiMainCore.js';
+import { achievementData } from '../utils/constants/achievements.js';
 
 export default function CharacterSelectScreen() {
   const [characters, setCharacters] = useState([]);
@@ -12,7 +13,17 @@ export default function CharacterSelectScreen() {
   useEffect(() => {
     // CHARACTERSはオブジェクト形式
     const charsObj = CHARACTERS || {};
-    const charsList = Object.values(charsObj).filter(c => c.id !== 'satan'); // サタンは除外
+
+    // 【サタン解放条件】フリーバトルの対戦相手選択画面でのみ、
+    // 一度でもストーリーをクリアしていればサタンを対戦相手として表示する。
+    // 実績データの storyClears にいずれかのキャラクターの記録があれば解放。
+    // プレイヤーキャラクター選択ではサタンは常に非表示。
+    const isEnemySelect = GameState.appState === 'select_enemy';
+    const hasStoryClear = Object.values(achievementData.stats?.storyClears || {}).some(v => v >= 1);
+    const charsList = Object.values(charsObj).filter(c => {
+      if (c.id === 'satan') return isEnemySelect && hasStoryClear;
+      return true;
+    });
     setCharacters(charsList);
 
     const updateTitle = () => {
@@ -32,6 +43,14 @@ export default function CharacterSelectScreen() {
     const originalInit = window.initSelectScreenReact;
     window.initSelectScreenReact = () => {
        updateTitle();
+       // 画面切り替え時にサタンの表示状態を再評価する
+       const newIsEnemySelect = GameState.appState === 'select_enemy';
+       const newHasStoryClear = Object.values(achievementData.stats?.storyClears || {}).some(v => v >= 1);
+       const newList = Object.values(charsObj).filter(c => {
+         if (c.id === 'satan') return newIsEnemySelect && newHasStoryClear;
+         return true;
+       });
+       setCharacters(newList);
        setRenderVersion(v => v + 1);
     };
     window.forceUpdateSelectScreen = () => setRenderVersion(v => v + 1);

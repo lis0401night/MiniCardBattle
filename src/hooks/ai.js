@@ -22,8 +22,7 @@ export async function executeEnemyAI() {
         await sleep(800);
 
         const dmp = (b) => b.map(c => c ? `${c.name}(${c.currentPower ?? c.power})` : "EMPTY").join(" | ");
-        console.log(`[AI RAW DATA] AI Board: ${dmp(GameState.enemyBoard)}`);
-        console.log(`[AI RAW DATA] Player Board: ${dmp(GameState.playerBoard)}`);
+        console.log(`[AI RAW DATA] Board: [Player] ${dmp(GameState.playerBoard)} vs [AI] ${dmp(GameState.enemyBoard)}`);
 
         // --- リーダースキルの活用 ---
         const skill = GameState.enemyConfig.leaderSkill;
@@ -31,6 +30,12 @@ export async function executeEnemyAI() {
         // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
         if (canUseSkill && skill.action === 'devilhunter_resurrect') {
             canUseSkill = GameState.enemyDiscard.some(c => !c.isToken);
+        }
+        // オーバードライブの場合、自分か相手の墓地にカードがある場合のみ使用
+        if (canUseSkill && skill.action === 'overdrive') {
+            const myHasCards = GameState.enemyDiscard.some(c => !c.isToken);
+            const oppHasCards = GameState.playerDiscard.some(c => !c.isToken);
+            canUseSkill = myHasCards || oppHasCards;
         }
         
         // ダンジョン用召喚スキルで、生贄（takeover）の場合、自分の場にカードが1枚もなければ空撃ちしない
@@ -97,15 +102,18 @@ export async function executeEnemyAI() {
 
             // カードを出す
             if (decision.index !== -1 && decision.lane !== -1) {
+                // AIの意思決定オブジェクトを確実に保持し、多段階スキルがアクションキューを辿れるようにする
+                GameState.aiDecision = decision;
+                
                 if (decision.isOverwrite && GameState.enemyBoard[decision.lane] !== null) {
                     const oldCard = GameState.enemyBoard[decision.lane];
-                    // 強いカードを置くために既存のカードを破棄（上書きなので破壊効果は発動しない）
+                    // 強いカードを置くために既存のカードを破棄
                     await discardCard('red', oldCard, decision.lane, false);
                 }
                 await playCard('red', decision.index, decision.lane);
                 await sleep(600);
             } else {
-                if (!decision.useSkill) console.log("AI decided to PASS.");
+                if (!decision.useSkill) console.log("[AI] Pass turn.");
             }
         }
     } catch (e) {

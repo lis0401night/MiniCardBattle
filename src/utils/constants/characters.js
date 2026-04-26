@@ -672,6 +672,28 @@ CHARACTERS.oni.skins.summer.dialogue = {
     lose: 'あぁ……冷やされたはずの血が、再び滾り始めて……！',
     skill: '清涼なる水霊よ！ 我が鬼の力を浄化しつつ、敵を討ち払え！'
 };
+
+/**
+ * 【高難易度イベント】ゴーストライダー マリア スキン定義
+ * イベント「廃都オールドヘイヴンのレース」専用スキン
+ */
+CHARACTERS.devilhunter.skins['devilhunter_high'] = {
+    id: 'devilhunter_high',
+    name: 'ゴーストライダー',
+    image: 'assets/characters/char_devilhunter_high.png',
+    imageLose: 'assets/characters/char_devilhunter_high_lose.png',
+    icon: 'assets/icons/icon_devilhunter_high.png',
+    iconDamage: 'assets/icons/icon_devilhunter_high_damage.png',
+    unlockCondition: '実績達成で入手'
+};
+
+CHARACTERS.devilhunter.skins.devilhunter_high.dialogue = {
+    intro: '廃都のレースで私の幻影に出会うなんてね。ま、どっちが本物か白黒つけてあげるわ。',
+    win: 'ゴールはもう見えてるわ。あとはアクセルを踏むだけよ。',
+    lose: 'クッ……幻影の方が速いなんて……こんな結末、認めないわよ……！',
+    skill: '死者も生者も、全員棺桶行きよ！ オーバードライブ！！'
+};
+
 /**
  * 指定したキャラクター・スキン・タイプに応じた画像パスを取得する
  * @param {string|Object} charIdOrObj - キャラクターIDまたはキャラクターオブジェクト

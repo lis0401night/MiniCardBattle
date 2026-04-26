@@ -21,9 +21,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite', 'decay'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来', 'decay': '減衰' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -303,13 +303,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         renderHand();
         await sleep(600);
     } else if (skillId === 'summon') {
+        // 【重要仕様】「召喚 X」において X (pValue) はトークンのパワーを指す。
+        // 個数は常に 1体 であるため、レーン選択数には 1 を指定する。
         const pValue = skillValue || 1;
 
-        let tId = skObj?.summonId || c.summonId || (c.skills && c.skills.find(s => s.id === 'summon')?.summonId);
+        // 特定のスキルオブジェクト(skObj)があればそのsummonIdを優先、なければカード定義から、それもなければデフォルト
+        let tId = skObj?.summonId || c.summonId || 'token_drone';
         let tName = 'ドローン';
 
-        if (!tId) {
-            tId = 'token_drone';
+        if (tId === 'token_drone' || !tId) {
             const cId = c.baseId || c.id;
             if (cId === 'admiral') {
                 tId = 'token_knight';
@@ -334,7 +336,21 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             basePower: pValue,
             skills: []
         };
-        const selectedLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, null, false, true);
+        // AIの場合：actionQueueのtoken_placementからsummon用のレーン指定を取り出す（cloneと同パターン）
+        let summonPredefinedLanes = null;
+        if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+            if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'summon');
+                if (tpIdx !== -1) {
+                    const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
+                    if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                        summonPredefinedLanes = [...tpAction.lanes];
+                    }
+                }
+            }
+        }
+        // 個数(count)には 1 を指定（召喚はパワー指定スキルのため）
+        const selectedLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, summonPredefinedLanes, false, true);
 
         let events = [];
         for (let i = 0; i < selectedLanes.length; i++) {
@@ -388,7 +404,18 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             currentPower: c.currentPower,
             skills: inheritedSkills
         };
-        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, null, false, true);
+        // AIの場合：actionQueueのtoken_placementからclone用のレーン指定を取り出す
+        let clonePredefinedLanes = null;
+        if (o === 'red' && GameState.aiDecision && GameState.aiDecision.actionQueue) {
+            const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'clone');
+            if (tpIdx !== -1) {
+                const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
+                if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                    clonePredefinedLanes = [...tpAction.lanes];
+                }
+            }
+        }
+        const selectedLanes = await waitPlayerLaneSelection(count, o, simulatedToken, false, clonePredefinedLanes, false, true);
         if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
         let events = [];
@@ -648,6 +675,8 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         playSound(SOUNDS.seSkillBind); createDamagePopup(cEl, '拘束', '#facc15');
         const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
         if (eB[l]) {
+            // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正。
+            // val=1 で「このターンは動けない」→ターン終了時に1減って stunTurns=1 → 次ターン防御 → 終了時に0、で計1ターン拘束。
             const turns = (skillValue || 1) + 1;
             eB[l].stunTurns = turns;
             const tEl = document.querySelector(`#${dS}-lanes .cell[data-lane="${l}"] .card`);
@@ -688,6 +717,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         }
 
         if (targets.length > 0) {
+            // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正（bindと同じロジック）。
             const turns = (skillValue || 1) + 1;
             for (const tL of targets) {
                 eB[tL].stunTurns = turns;
@@ -770,7 +800,20 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             baseId: 'token_wall',
             skills: []
         };
-        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, null, false, true);
+        // AI の場合：actionQueue の token_placement(wall_create) からレーン指定を取り出す（clone と同パターン）
+        let wallPredefinedLanes = null;
+        if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+            if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'wall_create');
+                if (tpIdx !== -1) {
+                    const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
+                    if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                        wallPredefinedLanes = [...tpAction.lanes];
+                    }
+                }
+            }
+        }
+        const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, wallPredefinedLanes, false, true);
         if (tLanes && tLanes.length > 0) {
             const targetLane = tLanes[0];
             const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -792,16 +835,30 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             await cleanupDestroyedCards(c);
         }
     } else if (skillId === 'standby') {
+        // 【仕様】自分のカードに適用するため、+1 補正は不要。
+        // bind/freeze は相手カードに適用し、「発動したターンも防御状態にする」ため +1 しているが、
+        // standby は自分が召喚したこのターンから待機するため、val そのままで正しい挙動になる。
         const turns = (skillValue || 1);
         c.stunTurns = turns;
         if (cEl) {
-            cEl.classList.remove('anim-shake');
-            void cEl.offsetWidth; // リフロー
-            cEl.classList.add('anim-shake');
+            createDamagePopup(cEl, '待機', '#94a3b8');
         }
-        await sleep(500);
-        await sleep(500);
-        if (cEl) cEl.classList.remove('anim-shake');
+        renderBoard();
+        await sleep(400);
+    } else if (skillId === 'decay') {
+        // パワーを半分にする
+        const currentP = c.currentPower !== undefined ? c.currentPower : (c.power || 1);
+        const halfP = Math.floor(currentP / 2);
+        
+        c.power = halfP;
+        c.currentPower = halfP;
+        c.basePower = halfP;
+
+        if (cEl) {
+            createDamagePopup(cEl, '減衰', '#94a3b8');
+        }
+        renderBoard();
+        await sleep(400);
     } else if (skillId === 'resurrect') {
         const maxPow = skillValue || 1;
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -813,7 +870,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
                 const aiAction = consumeAIAction('resurrect');
                 if (aiAction) {
-                    if (aiAction.targetIdx !== undefined) selectedCard = discard[aiAction.targetIdx];
+                    // targetUid が存在する場合はUID優先で照合（validCardsとのインデックスずれを防ぐ）
+                    if (aiAction.targetUid) {
+                        selectedCard = validCards.find(c => c.uid === aiAction.targetUid || c.id === aiAction.targetUid || c.baseId === aiAction.targetUid) || null;
+                    }
+                    // フォールバック: targetIdx で直接参照（validCards が discard と一致している場合）
+                    if (!selectedCard && aiAction.targetIdx !== undefined) {
+                        selectedCard = validCards[aiAction.targetIdx] || discard[aiAction.targetIdx] || null;
+                    }
                     if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
                 }
             } else {
@@ -902,12 +966,150 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         }
                     }
 
+                    if (board[targetLane]?.voiceCategory) playCardVoice(board[targetLane].voiceCategory, 'play');
                     playSound(SOUNDS.sePlace);
                     renderBoard();
                     await sleep(400);
                     // 配置演出が完了したので保護フラグを解除（復活したカード自身）
                     if (board[targetLane]) board[targetLane].isSkillResolving = false;
                     await cleanupDestroyedCards(c);
+                }
+            }
+        }
+        await sleep(300);
+    } else if (skillId === 'puppet') {
+        // 【傘儀】相手の墓地からカードを展開し、自分の場に配置する（復活の逆版）
+        const maxPow = skillValue || 1;
+        const oppOwner = o === 'blue' ? 'red' : 'blue';
+        const oppDiscard = o === 'blue' ? GameState.enemyDiscard : GameState.playerDiscard;
+        const validCards = oppDiscard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
+        let tokenLanes = null;
+
+        if (validCards.length > 0) {
+            let selectedCard = null;
+
+            if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+                // AIの場合：actionQueueのtoken_placement(puppet)からレーン指定を取り出す（cloneと同パターン）
+                if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                    const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'puppet');
+                    if (tpIdx !== -1) {
+                        const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
+                        if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                            tokenLanes = [...tpAction.lanes];
+                        }
+                    }
+                }
+                // 対象カードはシミュレーションと同様にパワー降順ソートの最強カードを選択
+                if (!selectedCard) {
+                    const sortedPuppet = [...validCards].sort((a, b) => (b.power || 0) - (a.power || 0));
+                    selectedCard = sortedPuppet[0] || null;
+                }
+            } else {
+                // プレイヤー: 復活と同じ選択モーダルを使用
+                selectedCard = await waitPlayerDiscardSelection(
+                    validCards, maxPow, o,
+                    '傀儡: 配置するカードを選択',
+                    `相手の墓地からパワー${maxPow}以下のカードを1枚自分の場に配置します。`
+                );
+            }
+
+            if (selectedCard) {
+                // 配置先レーンを選択（復活と同様、制約チェックなし）
+                const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, tokenLanes, false, true);
+                if (tLanes && tLanes.length > 0) {
+                    const targetLane = tLanes[0];
+
+                    // 相手の墓地から取り除く
+                    const actualIdx = oppDiscard.indexOf(selectedCard);
+                    if (actualIdx !== -1) oppDiscard.splice(actualIdx, 1);
+                    updateDeckDisplay(oppOwner);
+
+                    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+                    const existingCard = board[targetLane];
+
+                    if (existingCard && hasSkill(selectedCard, 'equip')) {
+                        // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
+                        const targetCard = existingCard;
+
+                        targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+                        targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+
+                        if (!targetCard.skills) {
+                            targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                            targetCard.skill = 'none';
+                        }
+                        const equipSkills = [];
+                        if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+                            equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+                        }
+                        if (selectedCard.skills) {
+                            selectedCard.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+                        }
+                        mergeCardSkills(targetCard, equipSkills);
+
+                        // 装備カードをアタッチ（元の持ち主フラグも引き継ぐ）
+                        targetCard.equippedCards = targetCard.equippedCards || [];
+                        selectedCard.puppetOriginalOwner = oppOwner; // 元の持ち主を記録
+                        targetCard.equippedCards.push(selectedCard);
+
+                        if (board[targetLane]?.voiceCategory) playCardVoice(board[targetLane].voiceCategory, 'play');
+                        playSound(SOUNDS.sePlace);
+                        renderBoard();
+                        await sleep(400);
+                        await cleanupDestroyedCards(c);
+                    } else {
+                        // 通常配置（装備なし・または既存カードなし）
+                        const existingCard2 = board[targetLane];
+                        const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
+                        const isUnion = unionSkill && existingCard2 && (existingCard2.baseId === unionSkill.targetId || existingCard2.id === unionSkill.targetId);
+
+                        if (isUnion) {
+                            // 【傀儡＋合体】復活と同じロジックで合体処理を行う（召喚時効果は不発）
+                            const combineId = unionSkill.summonId;
+                            const masterData = CARD_MASTER.find(cd => cd.id === combineId);
+                            let unionCard = JSON.parse(JSON.stringify(masterData));
+                            unionCard.uid = getOrCreateUUID(null);
+                            unionCard.owner = o;
+                            unionCard.baseId = unionCard.id;
+                            unionCard.basePower = unionCard.power;
+                            unionCard.currentPower = unionCard.power;
+                            unionCard.unionMaterials = [existingCard2, selectedCard];
+                            unionCard.skillTriggered = true; // 配置（傀儡）からの合体のため召喚時効果は不発
+                            unionCard.stunTurns = 0;
+                            unionCard.stunAppliedThisTurn = false;
+                            board[targetLane] = unionCard;
+                        } else {
+                            if (existingCard2) {
+                                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                            }
+                            const newUID = `puppet_uid_${Math.floor(getSeededRandom() * 1000000000)}`;
+                            board[targetLane] = {
+                                ...selectedCard,
+                                id: `puppet_${Math.floor(getSeededRandom() * 1000000000)}`,
+                                uid: newUID,
+                                owner: o,
+                                // 【傀儡】元の持ち主を記録しておく。破壊・張り替え時に元の墓地へ戻すために使用する
+                                puppetOriginalOwner: oppOwner,
+                                skillTriggered: true, // 配置扱いのため召喚時スキルは発動しない
+                                stunTurns: 0,
+                                stunAppliedThisTurn: false,
+                            };
+
+                            // 出現時スキルを持つ場合は即座に保護フラグを立てる
+                            if (hasActiveSkill(board[targetLane])) {
+                                board[targetLane].isSkillResolving = true;
+                            }
+
+                            board[targetLane].currentPower = board[targetLane].power; // resurrect と同様に代入後に明示設定
+                        }
+
+                        if (board[targetLane]?.voiceCategory) playCardVoice(board[targetLane].voiceCategory, 'play');
+                        playSound(SOUNDS.sePlace);
+                        renderBoard();
+                        await sleep(400);
+                        if (board[targetLane]) board[targetLane].isSkillResolving = false;
+                        await cleanupDestroyedCards(c);
+                    }
                 }
             }
         }

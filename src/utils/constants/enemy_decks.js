@@ -19,6 +19,7 @@ import dragon_high from './enemy_decks/dragon_high.js';
 import knight_high from './enemy_decks/knight_high.js';
 import elf_high from './enemy_decks/elf_high.js';
 import cleric_high from './enemy_decks/cleric_high.js';
+import devilhunter_high from './enemy_decks/devilhunter_high.js';
 
 
 export const ENEMY_DECKS = {
@@ -38,5 +39,6 @@ export const ENEMY_DECKS = {
     dragon_high,
     knight_high,
     elf_high,
-    cleric_high
+    cleric_high,
+    devilhunter_high
 };

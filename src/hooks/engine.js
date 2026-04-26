@@ -22,7 +22,8 @@ export function quietDiscardFromBoard(state, owner, lane) {
     const sendToGrave = (cardToSend, fallBackOwner) => {
         if (cardToSend.isToken) return;
         let restoredCard;
-        const cOwner = cardToSend.owner || fallBackOwner;
+        // 【傀儡】傀儡スキルで奪ったカードは元の持ち主の墓地へ返す
+        const cOwner = cardToSend.puppetOriginalOwner || cardToSend.owner || fallBackOwner;
         const cDiscardPile = cOwner === 'blue' ? state.playerDiscard : state.enemyDiscard;
         const masterData = CARD_MASTER.find(m => m.id === (cardToSend.baseId || cardToSend.id));
         if (masterData) {
@@ -40,6 +41,7 @@ export function quietDiscardFromBoard(state, owner, lane) {
             restoredCard.skills = [];
             restoredCard.equippedCards = [];
             restoredCard.unionMaterials = [];
+            if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
         }
         cDiscardPile.push(restoredCard);
     };
@@ -563,6 +565,8 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
             break;
         case 'summon':
+            // 【重要仕様】「召喚 X」において X (val) はトークンのパワーを指す。
+            // 個数は常に 1体 であるため、ループは 1回 固定。
             const summonTargetPower = val || 1;
             let tIdEngine = null;
             let tNameEngine = null;
@@ -755,7 +759,9 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
                 } else {
                     const isEquip = hasSkill(simResCard, 'equip');
-                    if (isEquip && existingCard) {
+                    // 【憑依】：憑依を持つカードには装備できない
+                    const targetBlocksEquip = existingCard && hasSkill(existingCard, 'possession');
+                    if (isEquip && existingCard && !targetBlocksEquip) {
                         // 装備（既存カードの上へ）
                         existingCard.power = (existingCard.power || 0) + (simResCard.power || 0);
                         existingCard.basePower = (existingCard.basePower || 0) + (simResCard.power || 0);
@@ -777,12 +783,14 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         const newResToken = {
                             ...JSON.parse(JSON.stringify(simResCard)),
                             id: `rs_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                            baseId: simResCard.baseId || simResCard.id,
+                            voiceCategory: simResCard.voiceCategory || (CARD_MASTER.find(m => m.id === (simResCard.baseId || simResCard.id))?.voiceCategory),
                             owner,
                             currentPower: simResCard.power,
                             skillTriggered: true // ルール: 配置(Place)では召喚時スキルは発動しない
                         };
                         b[targetLaneRes] = newResToken;
-                        events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
+                        events.push({ type: 'summon_card', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(newResToken)), source: 'resurrect' });
                     }
                 }
 
@@ -790,7 +798,58 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 if (resIdx !== -1) simDiscard.splice(resIdx, 1);
             }
             break;
+        case 'puppet':
+            // 【傀儡】相手の墓地からパワー以下のカードを1枚選んで自分の場に配置する（復活の逆版）
+            // AIシミュレーション: 相手墓地の中で最もパワーが高いカードを優先的に選択する
+            const puppetMaxPow = val || 1;
+            const oppPuppetDiscard = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
+            const validPuppetCards = oppPuppetDiscard.filter(c => c && (c.power || 0) <= puppetMaxPow && !c.isToken);
+            if (validPuppetCards.length === 0) break;
+
+            // パワーが高い順にソートして最強カードを選択
+            const sortedPuppetDiscard = [...validPuppetCards].sort((a, b) => (b.power || 0) - (a.power || 0));
+            const simPuppetCard = sortedPuppetDiscard[0];
+
+            let targetLanePuppet = -1;
+            if (simulatedLane !== undefined && simulatedLane !== -1) {
+                targetLanePuppet = simulatedLane;
+            } else if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
+                targetLanePuppet = simulatedTokenLanes.shift();
+            } else if (Array.isArray(simulatedTokenLanes)) {
+                targetLanePuppet = -1;
+            } else {
+                const sealedLanes = owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+                const emptyLanesPuppet = [0, 1, 2].filter(j => b[j] === null && (!sealedLanes || sealedLanes[j] === 0));
+                if (emptyLanesPuppet.length > 0) {
+                    targetLanePuppet = emptyLanesPuppet[0];
+                } else {
+                    const validOccupied = [0, 1, 2].filter(j => !sealedLanes || sealedLanes[j] === 0);
+                    if (validOccupied.length > 0) targetLanePuppet = validOccupied[0];
+                }
+            }
+
+            if (targetLanePuppet !== -1) {
+                // 既存カードを墓地に送る
+                if (b[targetLanePuppet]) quietDiscardFromBoard(state, owner, targetLanePuppet);
+
+                const newPuppetCard = {
+                    ...JSON.parse(JSON.stringify(simPuppetCard)),
+                    id: `puppet_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    baseId: simPuppetCard.baseId || simPuppetCard.id,
+                    owner,
+                    currentPower: simPuppetCard.power,
+                    skillTriggered: true // 配置（Place）扱いのため召喚時スキルは発動しない
+                };
+                b[targetLanePuppet] = newPuppetCard;
+                events.push({ type: 'summon_card', side: owner, lane: targetLanePuppet, card: JSON.parse(JSON.stringify(newPuppetCard)), source: 'puppet' });
+
+                // 相手の墓地から取り除く
+                const puppetIdx = oppPuppetDiscard.indexOf(simPuppetCard);
+                if (puppetIdx !== -1) oppPuppetDiscard.splice(puppetIdx, 1);
+            }
+            break;
         case 'clone':
+            // 【重要仕様】「分身 X」において X (val) は召喚される個数を指す。
             const cloneCount = val || 1;
             const tC = {
                 id: 'token_clone',
@@ -937,6 +996,13 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             if (!Array.isArray(c.skills)) c.skills = [{ id: 'invincible', value: val || 1 }];
             else c.skills.push({ id: 'invincible', value: val || 1 });
             events.push({ type: 'add_skill', side: owner, lane: l, skillId: 'invincible', value: val || 1, source: sid });
+            break;
+        case 'decay':
+            const decayAmt = Math.floor((c.currentPower || c.power || 0) / 2);
+            c.power = decayAmt;
+            c.currentPower = decayAmt;
+            c.basePower = decayAmt;
+            events.push({ type: 'power_change', side: owner, lane: l, amount: -decayAmt, source: 'decay' });
             break;
     }
 
@@ -1333,7 +1399,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     unionCard.stunTurns = 0;
                     board[l] = unionCard;
                     events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
-                } else if (isEquip && existingCard) {
+                } else if (isEquip && existingCard && !hasSkill(existingCard, 'possession')) {
                     // 装備（既存カードの上へ）
                     existingCard.power = (existingCard.power || 0) + (selectedCard.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (selectedCard.power || 0);
@@ -1373,6 +1439,61 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 }
             }
         }
+    } else if (action === 'overdrive') {
+        // 【オーバードライブ】自分の墓地 → tokenLanes[0] に配置、相手の墓地 → tokenLanes[1] に配置
+        const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
+        const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+        const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+
+        const placeFromDiscard = (discard, laneIdx) => {
+            const validCards = discard.filter(c => c && !c.isToken);
+            if (validCards.length === 0 || laneIdx === -1) return;
+            const sorted = [...validCards].sort((a, b) => (b.power || 0) - (a.power || 0));
+            const selectedCard = sorted[0];
+            const existingCard = board[laneIdx];
+            if (existingCard) {
+                // 上書き: 既存カードを墓地へ
+                myDiscard.push(existingCard);
+            }
+            const resurrectedCard = { ...selectedCard, id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}` };
+            resurrectedCard.currentPower = resurrectedCard.power;
+            resurrectedCard.skillTriggered = true;
+            resurrectedCard.stunTurns = 0;
+            board[laneIdx] = resurrectedCard;
+            events.push({ type: 'summon_card', side: owner, lane: laneIdx, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'overdrive' });
+            const removeIdx = discard.findIndex(x => x && x.id === selectedCard.id);
+            if (removeIdx !== -1) discard.splice(removeIdx, 1);
+        };
+
+        // 自分の墓地 → tokenLanes[0] (forcedTargetIdx が指定されている場合はその優先)
+        let lane1 = tokenLanes && tokenLanes.length > 0 ? tokenLanes[0] : -1;
+        if (lane1 === -1) {
+            const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0));
+            lane1 = emptyLanes.length > 0 ? emptyLanes[0] : 0;
+        }
+        if (forcedTargetIdx !== null && myDiscard[forcedTargetIdx] && !myDiscard[forcedTargetIdx].isToken) {
+            const forcedCard = myDiscard[forcedTargetIdx];
+            const existingCard = board[lane1];
+            if (existingCard) myDiscard.push(existingCard);
+            const resurrectedCard = { ...forcedCard, id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}` };
+            resurrectedCard.currentPower = resurrectedCard.power;
+            resurrectedCard.skillTriggered = true;
+            resurrectedCard.stunTurns = 0;
+            board[lane1] = resurrectedCard;
+            events.push({ type: 'summon_card', side: owner, lane: lane1, card: JSON.parse(JSON.stringify(resurrectedCard)), source: 'overdrive' });
+            myDiscard.splice(forcedTargetIdx, 1);
+        } else {
+            placeFromDiscard(myDiscard, lane1);
+        }
+
+        // 相手の墓地 → tokenLanes[1]
+        let lane2 = tokenLanes && tokenLanes.length > 1 ? tokenLanes[1] : -1;
+        if (lane2 === -1) {
+            const emptyLanes = [0, 1, 2].filter(i => board[i] === null && (!sealedLanes || sealedLanes[i] === 0) && i !== lane1);
+            lane2 = emptyLanes.length > 0 ? emptyLanes[0] : (lane1 !== 0 ? 0 : 1);
+        }
+        placeFromDiscard(oppDiscard, lane2);
+
     } else if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dungeon_summon_leader') {
         let power = 5;
         if (action === 'satan_avatar') power = 10;
@@ -1486,6 +1607,7 @@ export function calculateCombatPhase(state, attackerSide, events = []) {
         if (state.playerHP <= 0 || state.enemyHP <= 0) break;
         applySingleCombat(state, attackerSide, l, events);
     }
+    processDestructionTriggers(state, events);
     return events;
 }
 

@@ -325,6 +325,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'cleric_high',
         reward: { type: 'playmat', value: 'pm_cleric_high', name: '断罪の執行者' }
     },
+    {
+        id: 'event_devilhunter_high_clear_skin',
+        title: 'ゴーストライダー マリア',
+        description: '高難易度イベントでマリアを倒す',
+        type: 'event_clear',
+        targetValue: 'devilhunter_high',
+        reward: { type: 'skin', value: 'devilhunter_high', name: 'ゴーストライダー' }
+    },
+    {
+        id: 'event_devilhunter_high_clear_pm',
+        title: '廃都のレーストラック',
+        description: '高難易度イベントでマリアを倒す',
+        type: 'event_clear',
+        targetValue: 'devilhunter_high',
+        reward: { type: 'playmat', value: 'pm_devilhunter_high', name: 'ゴーストライダー' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',

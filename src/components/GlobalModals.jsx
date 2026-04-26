@@ -931,9 +931,9 @@ export default function GlobalModals() {
               className="btn ok-button"
               style={{
                 marginTop: '20px', width: '100%',
-                background: skillChoiceData.selectedIndices.length > 0 ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
-                color: skillChoiceData.selectedIndices.length > 0 ? '#fff' : '#94a3b8',
-                pointerEvents: skillChoiceData.selectedIndices.length > 0 ? 'auto' : 'none',
+                background: skillChoiceData.selectedIndices.length === Math.min(skillChoiceData.maxChoices, skillChoiceData.choices.length) ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
+                color: skillChoiceData.selectedIndices.length === Math.min(skillChoiceData.maxChoices, skillChoiceData.choices.length) ? '#fff' : '#94a3b8',
+                pointerEvents: skillChoiceData.selectedIndices.length === Math.min(skillChoiceData.maxChoices, skillChoiceData.choices.length) ? 'auto' : 'none',
                 flexShrink: 0
               }}
               onClick={() => {

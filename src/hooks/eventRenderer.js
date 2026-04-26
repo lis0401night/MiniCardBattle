@@ -250,9 +250,10 @@ export async function playEvents(events) {
                 }, 50);
 
                 await sleep(300);
-                // 召喚時スキルを持つ場合は resolveOnPlaySkill が責任を持って解除するが、
-                // スキルを持たないカード（トークン等）はここで解除しないと破壊耐性が残ってしまう
-                if (ev.card && !hasActiveSkill(ev.card)) {
+                // 召喚時演出終了のためフラグを解除。
+                // 召喚時スキルを持つ場合は、別途 resolveOnPlaySkill 等の中で
+                // 再度フラグが立てられ、適切に管理されることを前提とする。
+                if (ev.card) {
                     ev.card.isSkillResolving = false;
                 }
                 break;
@@ -434,7 +435,8 @@ export async function playEvents(events) {
                         if (deadCard.equippedCards && deadCard.equippedCards.length > 0) {
                             for (const eqCard of deadCard.equippedCards) {
                                 let restoredEq;
-                                const eqOwner = eqCard.owner || target.side;
+                                // 【傀儡】装備カードが傀儡で奪ったものの場合、元の持ち主の墓地へ返す
+                                const eqOwner = eqCard.puppetOriginalOwner || eqCard.owner || target.side;
                                 const discard = eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
                                 const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
                                 if (eqMaster) {
@@ -446,6 +448,7 @@ export async function playEvents(events) {
                                     restoredEq.currentPower = restoredEq.power;
                                 } else {
                                     restoredEq = { ...eqCard };
+                                    if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
                                 }
                                 if (!restoredEq.isToken) {
                                     discard.push(restoredEq);
@@ -501,14 +504,16 @@ export async function playEvents(events) {
                             }
                             updateDeckDisplay(target.side);
                         } else if (!deadCard.isToken) {
-                            const discard = target.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                            // 【傀儡】傀儡スキルで奪ったカードは元の持ち主の墓地へ返す
+                            const deadOwner = deadCard.puppetOriginalOwner || target.side;
+                            const discard = deadOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
 
                             const masterData = CARD_MASTER.find(m => m.id === (deadCard.baseId || deadCard.id));
                             let restoredCard;
                             if (masterData) {
                                 restoredCard = JSON.parse(JSON.stringify(masterData));
                                 restoredCard.uid = deadCard.uid;
-                                restoredCard.owner = target.side;
+                                restoredCard.owner = deadOwner;
                                 restoredCard.baseId = deadCard.baseId || deadCard.id;
                                 if (deadCard.isPremium !== undefined) restoredCard.isPremium = deadCard.isPremium;
                                 restoredCard.basePower = restoredCard.power;
@@ -518,10 +523,11 @@ export async function playEvents(events) {
                                 if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
                                 restoredCard.currentPower = restoredCard.power;
                                 restoredCard.skills = [];
+                                if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
                             }
 
                             discard.push(restoredCard);
-                            updateDeckDisplay(target.side);
+                            updateDeckDisplay(deadOwner);
                         }
                         board[target.lane] = null;
 

@@ -221,6 +221,108 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             // tokenLanesには [敵レーン番号, 自分のレーン番号] を格納してengineに渡す
             tokenLanes = [enemyTargetLane, myLanes[0]];
         }
+    } else if (action === 'overdrive') {
+        // 【オーバードライブ】自分の墓地・相手の墓地それぞれから1枚ずつ自分のレーンに配置する
+        // 処理はデvilhunter_resurrect を2回実行する形と等価。
+        // パート1: 自分の墓地から選ぶ
+        const myDiscard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
+        const oppDiscard = isBlue ? GameState.enemyDiscard : GameState.playerDiscard;
+        const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+
+        // isOppDiscard: 相手の墓地から取得する場合はtrue（破壊時の墓地返却先を制御するため）
+        const performResurrect = async (discard, srcLabel, isOppDiscard = false) => {
+            const validCards = discard.filter(c => !c.isToken);
+            if (validCards.length === 0) return;
+
+            const selectedCard = await waitPlayerDiscardSelection(
+                validCards, 999, owner,
+                `${srcLabel}からカードを選択`, 'カードを1枚自分のレーンに出します。'
+            );
+            if (!selectedCard) return;
+
+            // AI の場合: aiDecision.tokenLanes から配置先を取得（フリーズ防止）
+            // tokenLanes は配列なので shift で1つずつ消費する
+            let predefinedLanes = null;
+            if (owner === 'red' && GameState.aiDecision && Array.isArray(GameState.aiDecision.tokenLanes) && GameState.aiDecision.tokenLanes.length > 0) {
+                predefinedLanes = [GameState.aiDecision.tokenLanes.shift()];
+            }
+            const tLanes = await waitPlayerLaneSelection(1, owner, selectedCard, false, predefinedLanes, false);
+            if (!tLanes || tLanes.length === 0) return;
+
+            const actualIdx = discard.indexOf(selectedCard);
+            if (actualIdx !== -1) discard.splice(actualIdx, 1);
+            updateDeckDisplay(owner);
+
+            const targetLane = tLanes[0];
+            tokenLanes = tLanes; // VFX用
+            const existingCard = board[targetLane];
+            const isEquip = hasSkill(selectedCard, 'equip') && existingCard;
+            const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
+            const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
+
+            if (isUnion) {
+                const combineId = unionSkill.summonId;
+                const masterData = CARD_MASTER.find(c => c.id === combineId);
+                const resurrectedCard = JSON.parse(JSON.stringify(masterData));
+                resurrectedCard.uid = `ls_od_un_${Math.floor(getSeededRandom() * 1000000000)}`;
+                resurrectedCard.owner = owner;
+                resurrectedCard.baseId = resurrectedCard.id;
+                resurrectedCard.basePower = resurrectedCard.power;
+                resurrectedCard.currentPower = resurrectedCard.power;
+                resurrectedCard.unionMaterials = [existingCard, selectedCard];
+                resurrectedCard.skillTriggered = true;
+                resurrectedCard.stunTurns = 0;
+                resurrectedCard.stunAppliedThisTurn = false;
+                board[targetLane] = resurrectedCard;
+                events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'union' });
+            } else if (isEquip) {
+                const targetCard = board[targetLane];
+                targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
+                targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+                targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+                const equipSkills = [];
+                if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+                    equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+                }
+                if (selectedCard.skills) selectedCard.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+                mergeCardSkills(targetCard, equipSkills);
+                targetCard.equippedCards = targetCard.equippedCards || [];
+                targetCard.equippedCards.push(selectedCard);
+                renderBoard();
+                events.push({ type: 'power_change', side: owner, lane: targetLane, amount: selectedCard.power, source: 'equip' });
+            } else {
+                const resurrectedCard = {
+                    ...selectedCard,
+                    id: `od_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    uid: `ls_od_uid_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    baseId: selectedCard.baseId || selectedCard.id
+                };
+                resurrectedCard.currentPower = resurrectedCard.power;
+                resurrectedCard.skillTriggered = true; // 配置のため召喚時効果は不発
+                resurrectedCard.stunTurns = 0;
+                resurrectedCard.stunAppliedThisTurn = false;
+                // 【傀儡と同じ処理】相手墓地から取ったカードは、破壊時に元の持ち主（相手）の墓地へ返却する
+                const oppOwner = owner === 'blue' ? 'red' : 'blue';
+                if (isOppDiscard) resurrectedCard.puppetOriginalOwner = oppOwner;
+                if (existingCard) await discardCard(owner, existingCard, targetLane);
+                board[targetLane] = resurrectedCard;
+                events.push({ type: 'summon_card', side: owner, lane: targetLane, card: resurrectedCard, source: 'devilhunter_resurrect' });
+                renderBoard();
+            }
+
+            // VFX
+            if (window.triggerVfx && tLanes.length > 0) {
+                await sleep(200);
+                await window.triggerVfx('anm_summon_maria', owner, tLanes[0]);
+            }
+        };
+
+        // パート1: 自分の墓地から（isOppDiscard=false）
+        await performResurrect(myDiscard, '自分の墓地', false);
+        // パート2: 相手の墓地から（isOppDiscard=true → 破壊時に自分の墓地へ戻す）
+        await performResurrect(oppDiscard, '相手の墓地', true);
+        // overdrive は手動でイベント処理済みのため、Engine呼び出しをスキップする
+
     } else if (action === 'devilhunter_resurrect') {
         const maxPow = 999;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -407,7 +509,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     }
 
     // Engineの共通ロジック呼び出し
-    // 上のif文でeventsを手動構築したもの (abyss_ritual, devilhunter_resurrect, dungeon_summon_leader) 以外を実行
+    // 上のif文でeventsを手動構築したもの (abyss_ritual, devilhunter_resurrect, overdrive, dungeon_summon_leader) 以外を実行
     const currentState = {
         playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
@@ -421,7 +523,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])]
     };
 
-    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'otherworld_gate' && action !== 'dungeon_summon_leader') {
+    if (action !== 'devilhunter_resurrect' && action !== 'abyss_ritual' && action !== 'otherworld_gate' && action !== 'overdrive' && action !== 'dungeon_summon_leader') {
         // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
         // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
         applyLeaderSkillLogic(currentState, owner, action, tokenLanes, events);

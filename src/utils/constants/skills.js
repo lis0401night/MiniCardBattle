@@ -107,9 +107,11 @@ export const SKILLS = {
     loss: { name: '喪失', icon: '🕳️', desc: (val) => `召喚時、自分のデッキの上から${val}枚墓地に送る。` },
     brutal: { name: '暴虐', icon: '🌪️', desc: (val) => `攻撃時、自分の場の隣のレーンのカードに${val}ダメージ。` },
     absorb: { name: '吸収', icon: '💖', desc: (val) => '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。' },
+    decay: { name: '減衰', icon: '⏬', desc: (val) => '召喚時、パワーが半分になる。（端数切り捨て）' },
     seal: { name: '結界', icon: '🛑', desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。` },
     apex: { name: '頂点', icon: '☀️', desc: (val) => '自分の場に伝説を持つカードが置かれているレーンにしか召喚できない。' },
     retaliate: { name: '報復', icon: '🔥', desc: (val) => `自分の場のカードが破壊された時、パワーを+${val || 2}する。` },
+    puppet: { name: '傀儡', icon: '🧵', desc: (val) => `召喚時、相手の墓地からパワー${val}以下のカード1枚を選択して配置する。` },
     union: {
         name: '合体', icon: '🔗', desc: (val, sk) => {
             const targetCard = sk && sk.targetId ? CARD_MASTER.find(c => c.id === sk.targetId) : null;
@@ -140,7 +142,7 @@ export const SKILLS = {
     },
     double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' },
     explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` },
-    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。' },
+    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できない。' },
     awake: {
         name: '覚醒', icon: '💎', desc: (val, sk) => {
             const summonId = sk?.summonId || (Array.isArray(sk?.skills) ? sk.skills.find(s => s.id === 'awake')?.summonId : null);
@@ -155,13 +157,13 @@ export const SKILLS = {
             return `自分のターン開始時、同じレーンにパワー${val}のトークンを配置する。`;
         }
     },
-    cleave: { name: '一掃', icon: '🧹', desc: (val) => '攻撃時、正面とその隣のレーンに均等にダメージを与える。（左>中央>右優先）' }
+    cleave: { name: '一掃', icon: '🧹', desc: (val) => '攻撃時、肩代わりを無視して正面とその隣のレーンにダメージを分散して与える。（左>中央>右優先）' }
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
