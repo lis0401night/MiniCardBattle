@@ -19,6 +19,7 @@ export default function BattleScreen() {
     const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
     const [isInitializing, setIsInitializing] = useState(true);
     const [startTurnOrderAnim, setStartTurnOrderAnim] = useState(false);
+    const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
 
     // 強制再描画フックの登録
     useEffect(() => {
@@ -27,6 +28,8 @@ export default function BattleScreen() {
         setUpdateCardDetailHook((html, color) => {
             setCardDetailHtml(html);
             setCardDetailColor(color);
+            // 新しいカード情報が来たら自動で展開する
+            if (html) setIsDetailCollapsed(false);
         });
 
         return () => {
@@ -279,12 +282,25 @@ export default function BattleScreen() {
             />
 
             <div className="card-detail-wrapper">
-                <div
-                    id="card-detail-view"
-                    className="card-detail-box"
-                    style={{ color: cardDetailColor }}
-                    dangerouslySetInnerHTML={{ __html: cardDetailHtml }}
-                ></div>
+                {cardDetailHtml && (
+                    <div
+                        className={`card-detail-box ${isDetailCollapsed ? 'collapsed' : ''}`}
+                        style={{ color: cardDetailColor }}
+                    >
+                        <div
+                            className="card-detail-toggle"
+                            onClick={(e) => { e.stopPropagation(); setIsDetailCollapsed(prev => !prev); }}
+                        >
+                            <span className="card-detail-toggle-icon">{isDetailCollapsed ? '▲' : '▼'}</span>
+                        </div>
+                        {!isDetailCollapsed && (
+                            <div
+                                id="card-detail-view"
+                                dangerouslySetInnerHTML={{ __html: cardDetailHtml }}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="controls">
