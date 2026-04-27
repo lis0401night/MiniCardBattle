@@ -874,8 +874,7 @@ h2 {
     position: absolute;
     height: 110%;
     bottom: -5%;
-    left: 50%;
-    transform: translateX(-150%);
+    left: -50%;
     filter: drop-shadow(0 0 20px #facc15);
     animation: slideIn 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
     object-fit: contain;
@@ -899,20 +898,20 @@ h2 {
 
 @keyframes slideIn {
     0% {
-        transform: translateX(-150%);
+        left: -50%;
     }
 
     15% {
-        transform: translateX(-50%);
+        left: -5%;
     }
 
     85% {
-        transform: translateX(-45%);
+        left: 0%;
         opacity: 1;
     }
 
     100% {
-        transform: translateX(100%);
+        left: 100%;
         opacity: 0;
     }
 }
