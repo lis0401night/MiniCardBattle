@@ -1,4 +1,4 @@
-import { createDamagePopup, playSound, sleep, getSeededRandom } from '../utils/gameUtils.js';
+import { createDamagePopup, addDamagePopupHook, playSound, sleep, getSeededRandom } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -127,7 +127,25 @@ export async function playEvents(events) {
                 if (hpFill) {
                     let label = `-${ev.amount}`;
                     if (ev.source === 'contract') label = `契約 ${label}`;
-                    createDamagePopup(hpFill, label, '#ef4444');
+
+                    // 連続するリーダーダメージのポップアップが重ならないようYオフセットを計算
+                    let yOffset = 0;
+                    for (let j = i - 1; j >= 0; j--) {
+                        if (events[j].type === 'damage_player' && events[j].side === ev.side) {
+                            yOffset += 24; // 1つ前のポップアップ分だけ下にずらす
+                        } else {
+                            break;
+                        }
+                    }
+
+                    const rect = hpFill.getBoundingClientRect();
+                    const x = rect.left + rect.width / 2 - 10;
+                    const y = rect.top + yOffset;
+                    if (addDamagePopupHook) {
+                        addDamagePopupHook(x, y, label, '#ef4444');
+                    } else {
+                        createDamagePopup(hpFill, label, '#ef4444');
+                    }
                 }
 
                 // プレイヤー側の画面揺らし

@@ -152,10 +152,8 @@ export function getBestSimulatedMove() {
                             if (sk.id === 'salvage') tokenTargetCount += 1;
                             
                             // 【重要仕様】スキルの値(value)の解釈：
-                            if (sk.id === 'clone') {
-                                // 分身: 値(value) = 召喚する個数
-                                tc += (sk.value || 1);
-                            } else if (sk.id === 'summon' || sk.id === 'resurrect' || sk.id === 'call' || sk.id === 'metamorph') {
+                            // ※ clone は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
+                            if (sk.id === 'summon' || sk.id === 'resurrect' || sk.id === 'call' || sk.id === 'metamorph') {
                                 // 召喚・復活・招来・変身: 値(value) = トークンのパワー / 個数は常に「1体」
                                 tc += 1;
                             }
@@ -171,8 +169,8 @@ export function getBestSimulatedMove() {
                             if (!sk) return;
                             if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
                             if (sk.id === 'salvage') tokenTargetCount += 1;
-                            if (sk.id === 'clone') tc += (sk.value || 1);
-                            else if (sk.id === 'summon' || sk.id === 'resurrect' || sk.id === 'call' || sk.id === 'metamorph') tc += 1;
+                            // ※ clone は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
+                            if (sk.id === 'summon' || sk.id === 'resurrect' || sk.id === 'call' || sk.id === 'metamorph') tc += 1;
                         });
                     };
                     countInChoices(c1, card.choices);
@@ -579,7 +577,7 @@ export function getBestSimulatedMove() {
                                 boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
                                 boardCard.basePower = METAMORPH_ESTIMATED_POWER;
                             }
-                        } else if (!['invite', 'convert', 'draw', 'salvage', 'reinforce', 'puppet', 'summon', 'resurrect', 'awake'].includes(sk.id)) {
+                        } else if (!['invite', 'convert', 'draw', 'salvage', 'reinforce', 'puppet', 'summon', 'resurrect', 'awake', 'clone'].includes(sk.id)) {
                            applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], action.cardTokenLanes ? [...action.cardTokenLanes] : null, undefined);
                         }
                     });
