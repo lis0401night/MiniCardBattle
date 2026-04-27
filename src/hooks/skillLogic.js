@@ -1012,12 +1012,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
                             tokenLanes = [...tpAction.lanes];
                         }
-                        // 対象カードはシミュレーションと同様にパワー降順ソートの最強カードを選択
-                        const sortedPuppet = [...validCards].sort((a, b) => (b.power || 0) - (a.power || 0));
-                        selectedCard = sortedPuppet[0] || null;
                     }
-                    // actionQueueにpuppetがない場合 → キャンセル扱い（selectedCard = null のまま何もしない）
                 }
+                // actionQueueに情報がなくてもフォールバックとして最強カードを選択
+                // （シミュレーションと同じロジック：パワー降順ソートの最強カード）
+                const sortedPuppet = [...validCards].sort((a, b) => (b.power || 0) - (a.power || 0));
+                selectedCard = sortedPuppet[0] || null;
             } else {
                 // プレイヤー: 復活と同じ選択モーダルを使用
                 selectedCard = await waitPlayerDiscardSelection(

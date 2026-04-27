@@ -2322,6 +2322,7 @@ export function endBattle() {
             if (GameState.gameMode === 'event_cthulhu_high' && recipeId === 'cthulhu') recipeId = 'cthulhu_high';
             if (GameState.gameMode === 'event_elf_high' && recipeId === 'elf') recipeId = 'elf_high';
             if (GameState.gameMode === 'event_cleric_high' && recipeId === 'cleric') recipeId = 'cleric_high';
+            if (GameState.gameMode === 'event_devilhunter_high' && recipeId === 'devilhunter') recipeId = 'devilhunter_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
 
