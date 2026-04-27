@@ -35,6 +35,18 @@ $deck = $data['deck'];
 $skin = isset($data['skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['skin']) : 'default';
 $playmat = isset($data['playmat']) ? preg_replace('/[^a-z0-9_]/', '', $data['playmat']) : null;
 
+// スキン情報全体の取得とサニタイズ（トークン画像の正しい表示に必要）
+$skins = [];
+if (isset($data['skins']) && is_array($data['skins'])) {
+    foreach ($data['skins'] as $key => $val) {
+        $safeKey = preg_replace('/[^a-z0-9_]/', '', $key);
+        $safeVal = preg_replace('/[^a-z0-9_]/', '', $val);
+        if ($safeKey && $safeVal) {
+            $skins[$safeKey] = $safeVal;
+        }
+    }
+}
+
 if (strlen($uuid) < 10 || count($deck) !== 20) {
     echo json_encode(['success' => false, 'error' => 'Invalid data format']);
     exit;
@@ -73,6 +85,7 @@ $player_data = [
     'playmat' => $playmat,
     'stage' => $stage,
     'deck' => $deck,
+    'skins' => $skins,
     'points' => $existing_points,
     'total_points' => $existing_total_points,
     'defense_wins' => $existing_defense_wins,

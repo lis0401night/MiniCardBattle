@@ -1629,10 +1629,15 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     let dLane = l;
     // 守護側も位相が一致しないとかばうことができないが、防御を持っていればブロック可能
     const checkGuardian = (c) => c && hasSkill(c, 'guardian') && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
-    let dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
-    if (dg !== null && (!defBoard[l] || !hasSkill(defBoard[l], 'guardian'))) dLane = dg;
+    // 【重要】守護は隣のレーンに味方カードがいる場合のみ発動する（空きレーンはかばわない）
+    let dg = null;
+    if (defBoard[l]) {
+        dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
+    }
+    if (dg !== null && !hasSkill(defBoard[l], 'guardian')) dLane = dg;
 
     // 身替の対応: ダメージを受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
+    // 【重要】身替も隣のレーンに味方カードがいる場合のみ発動する
     if (defBoard[dLane] && hasSkill(defBoard[dLane], 'substitute')) {
         const checkSubstituteTarget = (c) => c && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
         let sub = (dLane === 1) ? (checkSubstituteTarget(defBoard[0]) ? 0 : (checkSubstituteTarget(defBoard[2]) ? 2 : null)) : (dLane === 0 ? (checkSubstituteTarget(defBoard[1]) ? 1 : null) : (checkSubstituteTarget(defBoard[1]) ? 1 : null));
@@ -1641,7 +1646,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     let aLane = l;
     if (atkBoard[l]) {
-        let ag = (l === 1) ? (hasSkill(atkBoard[0], 'guardian') ? 0 : (hasSkill(atkBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(atkBoard[1], 'guardian') ? 1 : null) : (hasSkill(atkBoard[1], 'guardian') ? 1 : null));
+        // 【重要】攻撃側の守護も、隣のレーンに味方カードがいる場合のみ発動する
+        let ag = null;
+        if (atkBoard[l]) {
+            ag = (l === 1) ? (hasSkill(atkBoard[0], 'guardian') ? 0 : (hasSkill(atkBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(atkBoard[1], 'guardian') ? 1 : null) : (hasSkill(atkBoard[1], 'guardian') ? 1 : null));
+        }
         if (ag !== null) aLane = ag;
 
         // 身替の対応: 反撃を受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
@@ -1824,6 +1833,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
                 aC.currentPower += totalGain;
                 events.push({ type: 'power_change', side: attackerSide, lane: l, amount: totalGain, source: 'soul_bind' });
             }
+        }
+        // 防御側の魂縛: 反撃で攻撃者（またはその守護）を倒した場合に発動
+        if (originalTarget && hasSkill(originalTarget, 'soul_bind') && originalTarget.currentPower > 0 && aC_defend.currentPower <= 0) {
+            const val = getSkillValue(originalTarget, 'soul_bind') || 2;
+            originalTarget.currentPower += val;
+            events.push({ type: 'power_change', side: defSide, lane: l, amount: val, source: 'soul_bind' });
         }
 
     } else if (dC) {

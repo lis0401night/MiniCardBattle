@@ -1022,6 +1022,8 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false, 
         }
 
         renderHand(); // 描画更新
+        // カード説明の表示を確実にReact描画に反映させる
+        if (updateBattleUIHook) updateBattleUIHook();
 
         const cleanUp = () => {
             GameState.isDiscardingMode = false;
@@ -1873,11 +1875,10 @@ export async function playCard(o, hI, l) {
                 renderBoard();
                 await cleanupDestroyedCards();
                 return; // 装備完了
-            } else {
-                // 通常の上書き配置時の破棄処理（破壊効果は発動させない）
-                if (!(await discardCard(o, b[l], l, false))) b[l] = null;
             }
         }
+        // 通常の上書き配置時の破棄処理（装備でも合体でもない場合、破壊効果は発動させない）
+        if (!(await discardCard(o, b[l], l, false))) b[l] = null;
     } // if (b[l]) end
 
     b[l] = h.splice(hI, 1)[0];
@@ -1974,7 +1975,7 @@ export async function determineTurnOrder() {
 
 export async function startMulliganPhase() {
     GameState.battlePhase = 'MULLIGAN';
-    GameState.placementMessage = null; // 中央のテキストはMULLIGANにするため除去するかBattleScreen.jsx側で制御
+    GameState.placementMessage = null;
     if (updateBattleUIHook) updateBattleUIHook();
 
     let playerPromise = waitPlayerHandSelection(3, 'blue', false, '引き直すカードを3枚まで選んでください');

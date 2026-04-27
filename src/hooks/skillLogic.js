@@ -357,6 +357,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         if (!aiSummonCancelled) {
             // 個数(count)には 1 を指定（召喚はパワー指定スキルのため）
             const selectedLanes = await waitPlayerLaneSelection(1, o, simulatedToken, false, summonPredefinedLanes, false, true);
+            if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
             let events = [];
             for (let i = 0; i < selectedLanes.length; i++) {
@@ -826,6 +827,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         }
         if (!aiWallCancelled) {
             const tLanes = await waitPlayerLaneSelection(1, o, sTC, false, wallPredefinedLanes, false, true);
+            if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
             if (tLanes && tLanes.length > 0) {
                 const targetLane = tLanes[0];
                 const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -1028,6 +1030,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             if (selectedCard) {
                 // 配置先レーンを選択（復活と同様、制約チェックなし）
                 const tLanes = await waitPlayerLaneSelection(1, o, selectedCard, false, tokenLanes, false, true);
+                if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
                 if (tLanes && tLanes.length > 0) {
                     const targetLane = tLanes[0];
 

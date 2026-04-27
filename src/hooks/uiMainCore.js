@@ -621,6 +621,10 @@ export async function startAttackBattle(enemyPlayerData) {
 
         if (!GameState.enemySkins) GameState.enemySkins = {};
         GameState.enemySkins[GameState.enemyConfig.id] = skinIdToUse;
+        // トークン画像等の正しい表示のため、敵のスキン設定全体をマージする
+        if (enemyPlayerData.skins && typeof enemyPlayerData.skins === 'object') {
+            Object.assign(GameState.enemySkins, enemyPlayerData.skins);
+        }
 
         GameState.selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 

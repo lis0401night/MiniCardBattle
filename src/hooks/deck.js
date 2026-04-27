@@ -552,6 +552,8 @@ export async function submitDefenseDeck(providedName = null) {
                 })),
                 playmat: GameState.selectedPlaymatId,
                 skin: GameState.playerSkins ? GameState.playerSkins[GameState.playerConfig.id] : null,
+                // トークン画像等の正しい表示のため、デッキ固有のスキン設定全体も送信
+                skins: GameState.playerSkins || {},
                 points: parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
                 total_points: parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0
             })

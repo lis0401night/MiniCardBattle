@@ -19,7 +19,6 @@ export default function BattleScreen() {
     const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
     const [isInitializing, setIsInitializing] = useState(true);
     const [startTurnOrderAnim, setStartTurnOrderAnim] = useState(false);
-    const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
 
     // 強制再描画フックの登録
     useEffect(() => {
@@ -28,8 +27,6 @@ export default function BattleScreen() {
         setUpdateCardDetailHook((html, color) => {
             setCardDetailHtml(html);
             setCardDetailColor(color);
-            // 新しいカード情報が来たら自動で展開する
-            if (html) setIsDetailCollapsed(false);
         });
 
         return () => {
@@ -282,25 +279,16 @@ export default function BattleScreen() {
             />
 
             <div className="card-detail-wrapper">
-                {cardDetailHtml && (
-                    <div
-                        className={`card-detail-box ${isDetailCollapsed ? 'collapsed' : ''}`}
-                        style={{ color: cardDetailColor }}
-                    >
-                        <div
-                            className="card-detail-toggle"
-                            onClick={(e) => { e.stopPropagation(); setIsDetailCollapsed(prev => !prev); }}
-                        >
-                            <span className="card-detail-toggle-icon">{isDetailCollapsed ? '▲' : '▼'}</span>
-                        </div>
-                        {!isDetailCollapsed && (
-                            <div
-                                id="card-detail-view"
-                                dangerouslySetInnerHTML={{ __html: cardDetailHtml }}
-                            />
-                        )}
-                    </div>
-                )}
+                <div
+                    id="card-detail-view"
+                    className="card-detail-box"
+                    style={{ color: cardDetailColor }}
+                    dangerouslySetInnerHTML={{ __html: cardDetailHtml || (
+                        GameState.isDiscardingMode
+                            ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === 'MULLIGAN' ? '引き直すカードを' : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
+                            : ''
+                    ) }}
+                ></div>
             </div>
 
             <div className="controls">

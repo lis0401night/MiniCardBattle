@@ -166,7 +166,7 @@ export const CARD_MASTER = [
     { id: 'spirit', name: 'ブラザー・オブ・オース', rarity: 4, power: 5, skills: [{ id: 'possession' }], voiceCategory: 'human_male_warrior', flavor: 'かつて背中を預け合った戦友との誓いが、彼を不屈の精霊へと変えた。その魂は今もなお、忠義という名の炎で燃え続けている。' },
     { id: 'goddess', name: '勝利の女神', rarity: 4, power: 5, skills: [{ id: 'legendary' }, { id: 'possession' }, { id: 'absorb' }], voiceCategory: 'human_female_cool', flavor: '戦場を舞う美しき女神。彼女が微笑む時、勝利の天秤は静かに傾き、受けるべき傷は運命の導きによって癒やしへと変わる。' },
     { id: 'dragonzombie', name: '継ぎ接ぎの擬竜', rarity: 4, power: 8, skill: 'decay', voiceCategory: 'undead', flavor: '竜の威容を模して、数多の獣の屍を縫い合わせた歪な肉塊。その巨大な体躯は維持するだけで崩壊を始め、本来の力を削ぎ落としていく。' },
-    { id: 'grimreaper', name: '冥府の案内人', rarity: 4, power: 6, skills: [{ id: 'takeover' }, { id: 'cleave' }, { id: 'deadly' }], voiceCategory: 'undead', flavor: '音もなく現れ、音もなく命を刈り取る。その大鎌が一閃する時、生きとし生ける者は等しく無へと還る。' },
+    { id: 'grimreaper', name: '死神', rarity: 4, power: 6, skills: [{ id: 'takeover' }, { id: 'cleave' }, { id: 'deadly' }], voiceCategory: 'undead', flavor: '音もなく現れ、音もなく命を刈り取る。その大鎌が一閃する時、生きとし生ける者は等しく無へと還る。' },
     { id: 'puppeteer', name: '放浪傀儡師', rarity: 4, power: 2, skill: 'puppet', skillValue: 5, voiceCategory: 'human_male_normal', flavor: '煙渦巻く戦場を渡り歩く、異色の傭兵。戦死者の無念を糸に宿して戦力として再利用するその手腕は、極めて非情で効率的である。' },
     { id: 'doll', name: '人形館の主', rarity: 4, power: 2, skills: [{ id: 'legendary' }, { id: 'loss', value: 5 }, { id: 'bind', value: 2 }, { id: 'puppet', value: 9 }], voiceCategory: 'human_female_cute', flavor: '洋館の奥深くに座す、精巧極まる少女の人形。自らの遊び場に足を踏み入れた客人を、彼女は温かくもてなし、そして二度と外の世界へ帰ることのない調度品へと変えていく。' },
     { id: 'baldanders', name: 'バルトアンデルス', rarity: 4, power: 0, skill: 'metamorph', voiceCategory: 'stone', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
