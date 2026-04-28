@@ -95,7 +95,7 @@ export async function executeEnemyAI() {
             // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
             if (decision.useSkill) {
                 // シミュレーションで決定した tokenLanes, leaderSkillTargetIdx を渡す
-                await activateLeaderSkill('red', decision.tokenLanes, decision.leaderSkillTargetIdx);
+                await activateLeaderSkill('red', decision.tokenLanes, decision.leaderSkillTargetIdx, decision.leaderSkillTargetUid);
                 if (GameState.isBattleEnded) return;
                 await sleep(500);
             }

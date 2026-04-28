@@ -13,7 +13,7 @@ import { playEvents } from './eventRenderer.js';
 // リーダースキルの実行ロジック
 // ==========================================
 
-export async function activateLeaderSkill(owner, tokenLanes = null, forcedTargetIdx = null) {
+export async function activateLeaderSkill(owner, tokenLanes = null, forcedTargetIdx = null, forcedTargetUid = null) {
     if (GameState.isBattleEnded) return;
     const isBlue = owner === 'blue';
     const sp = isBlue ? GameState.playerSP : GameState.enemySP;
@@ -36,7 +36,7 @@ export async function activateLeaderSkill(owner, tokenLanes = null, forcedTarget
 
     // スキル効果の実行
     const action = config.leaderSkill.action;
-    await executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes, forcedTargetIdx);
+    await executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes, forcedTargetIdx, forcedTargetUid);
 
     if (checkWinCondition()) return;
 
@@ -123,7 +123,7 @@ export async function showLeaderSkillCutin(config, isBlue, owner) {
     if (b) b.classList.remove('active');
 }
 
-export async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null, forcedTargetIdx = null) {
+export async function executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes = null, forcedTargetIdx = null, forcedTargetUid = null) {
     let events = [];
 
     // UIの介入（対象の選択等）が必要なスキルは事前に処理
@@ -331,9 +331,17 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
 
         if (validCards.length > 0) {
             let selectedCard;
-            if (forcedTargetIdx !== null && discard[forcedTargetIdx] && !discard[forcedTargetIdx].isToken) {
+            // 【重要】UID優先照合（復活スキルと同じ形式）
+            // シミュレーション中に墓地構成が変わりインデックスがずれても、UIDで正しいカードを特定する
+            if (forcedTargetUid) {
+                selectedCard = discard.find(c => c && !c.isToken && (c.baseId === forcedTargetUid || c.id === forcedTargetUid));
+            }
+            // フォールバック: インデックス指定
+            if (!selectedCard && forcedTargetIdx !== null && discard[forcedTargetIdx] && !discard[forcedTargetIdx].isToken) {
                 selectedCard = discard[forcedTargetIdx];
-            } else {
+            }
+            // プレイヤーの場合: 手動選択
+            if (!selectedCard) {
                 selectedCard = await waitPlayerDiscardSelection(validCards, maxPow, owner, '復活させるカードを選択', 'カードを1枚場に出します。');
             }
             if (!selectedCard) return;
@@ -379,7 +387,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
                 targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
                 targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
-                
+
                 const equipSkills = [];
                 if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
                     equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
@@ -390,10 +398,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                     });
                 }
                 mergeCardSkills(targetCard, equipSkills);
-                
+
                 targetCard.equippedCards = targetCard.equippedCards || [];
                 targetCard.equippedCards.push(selectedCard);
-                
+
                 renderBoard(); // 反映を確実にする
                 events.push({ type: 'power_change', side: owner, lane: targetLane, amount: selectedCard.power, source: 'equip' });
                 resurrectedCard = targetCard; // 後のスキル解決フラグ用
@@ -408,7 +416,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 resurrectedCard.skillTriggered = true; // 召喚時効果は不発
                 resurrectedCard.stunTurns = 0;
                 resurrectedCard.stunAppliedThisTurn = false;
-                
+
                 // 既存のカードがあれば破棄する（UNION/EQUIPでない場合）
                 if (existingCard) {
                     await discardCard(owner, existingCard, targetLane);
@@ -427,7 +435,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         let dc = 0;
         if (h.length > 0) {
             const selectedIndices = await waitPlayerHandSelection(2, owner);
-            
+
             // 手札選択完了後にVFXを再生
             if (window.triggerVfx) {
                 await window.triggerVfx('anm_abyss_ritual', owner);
@@ -457,10 +465,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const opH = isBlue ? GameState.enemyHand : GameState.playerHand;
         const opId = isBlue ? 'red' : 'blue';
         let dc = 0;
-        
+
         if (h.length > 0) {
             const selectedIndices = await waitPlayerHandSelection(2, owner, false, '捨てるカードを最大2枚選んでください');
-            
+
             if (window.triggerVfx) {
                 await window.triggerVfx('anm_abyss_ritual', owner);
             }
@@ -491,7 +499,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 opDc++;
             }
         }
-        
+
         if (opDc > 0) {
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { id: 'token_void', name: '虚空', power: 1 };
             for (let i = 0; i < opDc; i++) {

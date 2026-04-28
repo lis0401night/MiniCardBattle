@@ -456,7 +456,16 @@ export function getBestSimulatedMove() {
                 applyActiveSkillLogic(simState, 'red', sourceL, action.skillId, action.skillValue || 0, [], [...(action.lanes || [])], undefined);
                 continue;
             } else if (action.type === 'resurrect') {
-                playedCard = cloneCard(simState.enemyDiscard[action.targetIdx]);
+                // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
+                let resIdx = -1;
+                if (action.targetUid) {
+                    resIdx = simState.enemyDiscard.findIndex(c => c && (c.baseId === action.targetUid || c.id === action.targetUid));
+                }
+                if (resIdx === -1 && action.targetIdx !== undefined) {
+                    resIdx = action.targetIdx;
+                }
+                if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
+                playedCard = cloneCard(simState.enemyDiscard[resIdx]);
                 simState.lastPlayedLane = lIdx;
                 if (playedCard && action.maxP !== undefined) {
                     const master = CARD_MASTER.find(m => m.id === playedCard.id || m.id === playedCard.baseId);
@@ -466,7 +475,7 @@ export function getBestSimulatedMove() {
                 checkConstraints = false;
                 triggerSkills = false;
                 if (playedCard) playedCard.skillTriggered = true;
-                if (simState.enemyDiscard[action.targetIdx]) simState.enemyDiscard[action.targetIdx] = null;
+                simState.enemyDiscard[resIdx] = null;
             } else if (action.type === 'devilhunter_resurrect') {
                 // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
                 // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
@@ -733,10 +742,15 @@ export function getBestSimulatedMove() {
                                 let simState = processActionSequence(actionQ, true, action, tokenLanes, order, dIdx);
                                 if (simState) {
                                     let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
+                                    // 【重要】インデックスだけでなくUID(baseId)も保存する。
+                                    // シミュレーション中に墓地構成が変わりインデックスがずれても、
+                                    // 実行時にUID照合で正しいカードを特定できるようにする。
+                                    const resTargetCard = discard[dIdx];
                                     candidates.push({
                                         index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
                                         useSkill: true, tokenLanes, skillOrder: order,
                                         leaderSkillTargetIdx: dIdx,
+                                        leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
                                         choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
                                         cardTokenLanes: fA.cardTokenLanes,
                                             actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
@@ -780,7 +794,10 @@ export function getBestSimulatedMove() {
                 for (let dIdx = 0; dIdx < discard.length; dIdx++) {
                     if (discard[dIdx].isToken) continue;
                     let simState = processActionSequence([{ type: 'pass' }], true, action, tokenLanes, 'before', dIdx);
-                    if (simState) candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill: true, tokenLanes, skillOrder: 'before', leaderSkillTargetIdx: dIdx, simState });
+                    if (simState) {
+                        const resTargetCard = discard[dIdx];
+                        candidates.push({ index: -1, lane: -1, isOverwrite: false, useSkill: true, tokenLanes, skillOrder: 'before', leaderSkillTargetIdx: dIdx, leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id, simState });
+                    }
                 }
             } else {
                 let simState = processActionSequence([{ type: 'pass' }], true, action, tokenLanes, 'before');
@@ -830,7 +847,9 @@ export function getBestSimulatedMove() {
 
     let resInfo = "";
     if (finalDecision.useSkill && (skill.action === 'devilhunter_resurrect' || skill.action === 'overdrive') && finalDecision.leaderSkillTargetIdx !== undefined) {
-        const resCard = discard[finalDecision.leaderSkillTargetIdx];
+        const resCard = finalDecision.leaderSkillTargetUid
+            ? discard.find(c => c && (c.baseId === finalDecision.leaderSkillTargetUid || c.id === finalDecision.leaderSkillTargetUid))
+            : discard[finalDecision.leaderSkillTargetIdx];
         if (resCard) resInfo = ` (Resurrect: ${resCard.name})`;
     }
 

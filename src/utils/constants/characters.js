@@ -688,9 +688,9 @@ CHARACTERS.devilhunter.skins['devilhunter_high'] = {
 };
 
 CHARACTERS.devilhunter.skins.devilhunter_high.dialogue = {
-    intro: '廃都のレースで私の幻影に出会うなんてね。ま、どっちが本物か白黒つけてあげるわ。',
+    intro: 'エンジン全開……廃都を駆け抜けるわよ。邪魔する奴は轢き殺してあげる。',
     win: 'ゴールはもう見えてるわ。あとはアクセルを踏むだけよ。',
-    lose: 'クッ……幻影の方が速いなんて……こんな結末、認めないわよ……！',
+    lose: 'クッ……エンジンが焼き付くなんて……こんな結末、認めないわよ……！',
     skill: '死者も生者も、全員棺桶行きよ！ オーバードライブ！！'
 };
 
