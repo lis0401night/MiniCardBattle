@@ -99,13 +99,17 @@ export function getBestSimulatedMove() {
             if (hasSkill(card, 'legendary')) {
                 availableLanes = availableLanes.filter(l => l === -1 || l === 1);
             }
-            // 生贄: 既にカードが置かれているレーンのみ
-            if (hasSkill(card, 'takeover')) {
-                availableLanes = availableLanes.filter(l => l === -1 || myBoard[l] !== null);
-            }
-            // 頂点: 自分の場に「伝説」を持つカードがいるレーンのみ
-            if (hasSkill(card, 'apex')) {
-                availableLanes = availableLanes.filter(l => l === -1 || (myBoard[l] && hasSkill(myBoard[l], 'legendary')));
+            // 生贄・頂点: invite時は親カードが同レーンに配置済みだがmyBoardには未反映のため、
+            // プリフィルタをスキップしprocessActionSequenceの正確なsimStateチェックに委ねる
+            if (sourceType !== 'invite') {
+                // 生贄: 既にカードが置かれているレーンのみ
+                if (hasSkill(card, 'takeover')) {
+                    availableLanes = availableLanes.filter(l => l === -1 || myBoard[l] !== null);
+                }
+                // 頂点: 自分の場に「伝説」を持つカードがいるレーンのみ
+                if (hasSkill(card, 'apex')) {
+                    availableLanes = availableLanes.filter(l => l === -1 || (myBoard[l] && hasSkill(myBoard[l], 'legendary')));
+                }
             }
         }
 
@@ -241,7 +245,8 @@ export function getBestSimulatedMove() {
                                 for (let i = 0; i < originalHand.length; i++) {
                                     if (currentUsedHand.includes(i)) continue;
                                     let childCard = originalHand[i];
-                                    let children = buildCardPlayTree(childCard, i, 'invite', originalHand, originalDiscard, [...currentUsedHand, i], currentUsedDiscard, currentDepth + 1, undefined);
+                                    // 【招来】同じレーンに召喚する仕様のため、forcedLane = lane（親カードのレーン）を渡す
+                                    let children = buildCardPlayTree(childCard, i, 'invite', originalHand, originalDiscard, [...currentUsedHand, i], currentUsedDiscard, currentDepth + 1, lane);
                                     for (let cNode of children) {
                                         let nextBranches = buildSkillBranch(remainingSkills, [...currentUsedHand, i], currentUsedDiscard, currentDepth, currentDiscardedFromHand);
                                         for (let nb of nextBranches) {
@@ -818,19 +823,23 @@ export function getBestSimulatedMove() {
         c.score += (pri * 0.01);
     });
 
-    // スコア順、次いでアクションの長さ順でソート
+    // スコア順、次いでアクションの短さ順でソート（同スコアなら不要なスキル消費を避ける）
     candidates.sort((a, b) => {
         if (Math.abs(a.score - b.score) > 0.001) return b.score - a.score;
         const aLen = a.actionQueue ? a.actionQueue.length : 0;
         const bLen = b.actionQueue ? b.actionQueue.length : 0;
-        return bLen - aLen;
+        return aLen - bLen;
     });
 
     if (candidates.length === 0) return { index: -1, lane: -1, useSkill: false };
     const bestScore = candidates[0].score;
     const bestGroup = candidates.filter(c => Math.abs(c.score - bestScore) < 0.001);
 
-    const finalDecision = bestGroup[Math.floor(Math.random() * bestGroup.length)];
+    // 同スコア候補の中で最短のアクション数のものだけを残す（不要なスキル消費を避ける）
+    const minActionLen = Math.min(...bestGroup.map(c => c.actionQueue ? c.actionQueue.length : 0));
+    const finalGroup = bestGroup.filter(c => (c.actionQueue ? c.actionQueue.length : 0) === minActionLen);
+
+    const finalDecision = finalGroup[Math.floor(Math.random() * finalGroup.length)];
 
     const cardName = finalDecision.index !== -1 ? hand[finalDecision.index].name : "PASS";
     

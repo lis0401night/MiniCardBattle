@@ -49,6 +49,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         const b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
+        // 招来先レーン（AIの場合はactionQueueから取得、プレイヤーの場合は発動元レーン）
+        let inviteLane = l;
+
         const isPlaceable = (card, laneIdx) => {
             const hasLegendary = card.skill === 'legendary' || (card.skills && card.skills.some(s => s.id === 'legendary'));
             const hasTakeover = card.skill === 'takeover' || (card.skills && card.skills.some(s => s.id === 'takeover'));
@@ -69,32 +72,33 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             return true;
         };
 
-        const playableIndices = [];
-        for (let i = 0; i < h.length; i++) {
-            if (isPlaceable(h[i], l)) playableIndices.push(i);
-        }
+        if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+            // 【AIの場合】actionQueueから招来アクションを消費し、配置先レーンも取得する
+            let actionIdx = -1;
+            if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'invite');
+            }
+            if (actionIdx !== -1) {
+                const action = GameState.aiDecision.actionQueue[actionIdx];
+                selectedIdx = action.targetIdx;
+                GameState.aiDecision.actionQueue.splice(actionIdx, 1);
+                GameState.aiDecision.cardTokenLanes = action.cardTokenLanes ? [...action.cardTokenLanes] : undefined;
 
-        if (playableIndices.length > 0) {
-            if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-                let actionIdx = -1;
-                if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
-                    actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'invite');
-                }
-                if (actionIdx !== -1) {
-                    const action = GameState.aiDecision.actionQueue[actionIdx];
-                    selectedIdx = action.targetIdx;
-                    GameState.aiDecision.actionQueue.splice(actionIdx, 1);
-                    GameState.aiDecision.cardTokenLanes = action.cardTokenLanes ? [...action.cardTokenLanes] : undefined;
-                    
-                    if (action.choices !== undefined || action.choices2 !== undefined) {
-                        if (!GameState.aiDecision.choiceIndexQueue) GameState.aiDecision.choiceIndexQueue = [];
-                        if (action.choices !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices);
-                        if (action.choices2 !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices2);
-                    }
-                } else {
-                    selectedIdx = -1; // シミュレーションで不要と判断された（または見つからなかった）場合はキャンセル
+                if (action.choices !== undefined || action.choices2 !== undefined) {
+                    if (!GameState.aiDecision.choiceIndexQueue) GameState.aiDecision.choiceIndexQueue = [];
+                    if (action.choices !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices);
+                    if (action.choices2 !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices2);
                 }
             } else {
+                selectedIdx = -1; // シミュレーションで不要と判断された（または見つからなかった）場合はキャンセル
+            }
+        } else {
+            // 【プレイヤーの場合】招来先レーンでの制約チェック付き手札選択
+            const playableIndices = [];
+            for (let i = 0; i < h.length; i++) {
+                if (isPlaceable(h[i], inviteLane)) playableIndices.push(i);
+            }
+            if (playableIndices.length > 0) {
                 while (!success) {
                     let arr = await waitPlayerHandSelection(1, o, false, '召喚するカードを1枚まで選んでください');
                     if (!arr || arr.length === 0) {
@@ -112,29 +116,29 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     }
                 }
             }
+        }
 
-            if (selectedIdx !== -1) {
-                await playCard(o, selectedIdx, l);
+        if (selectedIdx !== -1) {
+            await playCard(o, selectedIdx, inviteLane);
 
-                const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
-                const voidToken = {
-                    ...voidTpl,
-                    id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_invite`,
-                    uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidinvite`,
-                    filter: voidTpl.filter,
-                    power: voidTpl.power,
-                    currentPower: voidTpl.power,
-                    basePower: voidTpl.power,
-                    skill: voidTpl.skill || 'none',
-                    voiceCategory: voidTpl.voiceCategory || 'stone',
-                    isToken: true,
-                    isMorphToken: true
-                };
-                const currentHand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-                currentHand.push(voidToken);
-                renderHand();
-                await sleep(300);
-            }
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+            const voidToken = {
+                ...voidTpl,
+                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_invite`,
+                uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidinvite`,
+                filter: voidTpl.filter,
+                power: voidTpl.power,
+                currentPower: voidTpl.power,
+                basePower: voidTpl.power,
+                skill: voidTpl.skill || 'none',
+                voiceCategory: voidTpl.voiceCategory || 'stone',
+                isToken: true,
+                isMorphToken: true
+            };
+            const currentHand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+            currentHand.push(voidToken);
+            renderHand();
+            await sleep(300);
         }
         return;
     }
