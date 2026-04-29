@@ -21,9 +21,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite', 'decay', 'puppet'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite', 'decay', 'puppet', 'leap', 'chant'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来', 'decay': '減衰', 'puppet': '傀儡' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来', 'decay': '減衰', 'puppet': '傀儡', 'leap': '跳躍', 'chant': '詠唱' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -43,44 +43,33 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     };
 
     // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
-    if (skillId === 'invite') {
-        let success = false;
+    if (skillId === 'invite' || skillId === 'chant') {
         let selectedIdx = -1;
+        let selectedLane = -1;
         const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         const b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
-        // 招来先レーン（AIの場合はactionQueueから取得、プレイヤーの場合は発動元レーン）
-        let inviteLane = l;
+        // 【詠唱】パワー制限値（招来は制限なし）
+        const maxPower = skillId === 'chant' ? (skillValue ?? 3) : Infinity;
+        // 【招来】同じレーンのみ、【詠唱】全レーン候補
+        const isInvite = skillId === 'invite';
 
-        const isPlaceable = (card, laneIdx) => {
-            const hasLegendary = card.skill === 'legendary' || (card.skills && card.skills.some(s => s.id === 'legendary'));
-            const hasTakeover = card.skill === 'takeover' || (card.skills && card.skills.some(s => s.id === 'takeover'));
-            const hasChallenge = card.skill === 'challenge' || (card.skills && card.skills.some(s => s.id === 'challenge'));
-            const hasApex = card.skill === 'apex' || (card.skills && card.skills.some(s => s.id === 'apex'));
-
-            if (hasLegendary && laneIdx !== 1) return false;
-            // 上書きなのでb[laneIdx] === null のことはないが念のため
-            if (hasTakeover && b[laneIdx] === null && !b[laneIdx]) return false;
-            if (hasChallenge) {
-                const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-                if (oppBoard[laneIdx] === null) return false;
-            }
-            if (hasApex) {
-                const hasLegendOnBoard = b.some(bc => bc && (bc.skill === 'legendary' || (bc.skills && bc.skills.some(s => s.id === 'legendary'))));
-                if (!hasLegendOnBoard) return false;
-            }
-            return true;
+        // パワー制限チェック
+        const meetsMaxPower = (card) => {
+            if (maxPower === Infinity) return true;
+            return (card.power || 0) <= maxPower;
         };
 
         if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-            // 【AIの場合】actionQueueから招来アクションを消費し、配置先レーンも取得する
+            // 【AIの場合】actionQueueからアクションを消費
             let actionIdx = -1;
             if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
-                actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'invite');
+                actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === skillId);
             }
             if (actionIdx !== -1) {
                 const action = GameState.aiDecision.actionQueue[actionIdx];
                 selectedIdx = action.targetIdx;
+                selectedLane = isInvite ? l : (action.laneIdx ?? l);
                 GameState.aiDecision.actionQueue.splice(actionIdx, 1);
                 GameState.aiDecision.cardTokenLanes = action.cardTokenLanes ? [...action.cardTokenLanes] : undefined;
 
@@ -90,42 +79,66 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     if (action.choices2 !== undefined) GameState.aiDecision.choiceIndexQueue.push(action.choices2);
                 }
             } else {
-                selectedIdx = -1; // シミュレーションで不要と判断された（または見つからなかった）場合はキャンセル
+                selectedIdx = -1;
             }
         } else {
-            // 【プレイヤーの場合】招来先レーンでの制約チェック付き手札選択
-            const playableIndices = [];
-            for (let i = 0; i < h.length; i++) {
-                if (isPlaceable(h[i], inviteLane)) playableIndices.push(i);
-            }
-            if (playableIndices.length > 0) {
+            // 【プレイヤーの場合】
+            // 1) パワー制限を満たすカードが手札にあるか確認
+            const hasPlayableCard = h.some(card => meetsMaxPower(card));
+            if (hasPlayableCard) {
+                let success = false;
                 while (!success) {
-                    let arr = await waitPlayerHandSelection(1, o, false, '召喚するカードを1枚まで選んでください');
+                    // 手札からカードを選択
+                    const promptMsg = skillId === 'chant'
+                        ? `パワー${maxPower}以下のカードを1枚まで選んでください`
+                        : '召喚するカードを1枚まで選んでください';
+                    let arr = await waitPlayerHandSelection(1, o, false, promptMsg);
                     if (!arr || arr.length === 0) {
                         break; // キャンセル
                     }
                     const sIdx = arr[0];
-                    if (playableIndices.includes(sIdx)) {
-                        selectedIdx = sIdx;
-                        success = true;
-                    } else {
+                    const pickedCard = h[sIdx];
+
+                    // パワー制限チェック
+                    if (!meetsMaxPower(pickedCard)) {
                         if (typeof window.showAlertModal === 'function') {
-                            window.showAlertModal('そのカードは現在のレーンに召喚できません。（伝説や挑戦などの条件を満たしていません）');
+                            window.showAlertModal(`パワー${maxPower}以下のカードのみ召喚できます。`);
                         }
                         await sleep(500);
+                        continue;
+                    }
+
+                    // 2) レーン選択（ハイライト表示付き）
+                    //    招来: 同じレーンのみ候補 / 詠唱: 全レーン候補
+                    const restrictLanes = isInvite ? [l] : null;
+                    const lanes = await waitPlayerLaneSelection(
+                        1, o, pickedCard,
+                        false,           // isLeaderSkill
+                        restrictLanes,   // tokenLanes（招来: 同じレーンのみ）
+                        true,            // checkConstraints（制約チェック有効）
+                        true,            // canCancel（キャンセル可能）
+                        'キャンセル'
+                    );
+
+                    if (lanes && lanes.length > 0) {
+                        selectedIdx = sIdx;
+                        selectedLane = lanes[0];
+                        success = true;
+                    } else {
+                        // レーン選択キャンセル → 手札選択からやり直し
+                        continue;
                     }
                 }
             }
         }
 
-        if (selectedIdx !== -1) {
-            await playCard(o, selectedIdx, inviteLane);
-
+        if (selectedIdx !== -1 && selectedLane !== -1) {
+            // 虚空トークンを手札に追加（playCardの前に追加し、召喚時スキル発動前に手札にある状態にする）
             const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
             const voidToken = {
                 ...voidTpl,
-                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_invite`,
-                uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidinvite`,
+                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_${skillId}`,
+                uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void${skillId}`,
                 filter: voidTpl.filter,
                 power: voidTpl.power,
                 currentPower: voidTpl.power,
@@ -139,7 +152,16 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             currentHand.push(voidToken);
             renderHand();
             await sleep(300);
+
+            await playCard(o, selectedIdx, selectedLane);
         }
+        return;
+    }
+
+    // 【跳躍】追加ターンを1回付与（SPなし・攻撃なし）
+    if (skillId === 'leap') {
+        GameState.extraTurnCount = (GameState.extraTurnCount || 0) + 1;
+        GameState.attackSkipCount = (GameState.attackSkipCount || 0) + 1;
         return;
     }
 
@@ -221,7 +243,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 // もしパッシブスキル（機能が場に留まるスキル）を選んだ場合はカード自身に永続付与する
                 if (PASSIVE_SKILLS.includes(choice.id)) {
                     if (!Array.isArray(c.skills)) c.skills = [];
-                    c.skills.push({ id: choice.id, value: choice.value || 0 });
+                    c.skills.push({ id: choice.id, value: choice.value });
                     renderBoard(); // UI反映
                 }
                 // 選択されたスキルを順に実行

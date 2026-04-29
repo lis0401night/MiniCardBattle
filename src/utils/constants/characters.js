@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Mini Card Battle - Character Data
  */
 import cthulhuHighDeck from './enemy_decks/cthulhu_high.js';
@@ -500,55 +500,9 @@ CHARACTERS.cleric.skins['cleric_high'] = {
 };
 
 
-// スキン専用台詞の定義
-CHARACTERS.android.skins.summer.dialogue = {
-    intro: '水中地形における戦闘行動の最適化を完了しました。水陸両用装備アイギス、迎撃を開始します。',
-    win: '対象の撃沈を確認。水上戦闘モードを終了します。',
-    lose: '装甲防水機能の低下を確認……浸水率、限界値を超えました……。',
-    skill: '水流制御機構解放！全弾発射、目標を完全に制圧します！'
-};
-
-CHARACTERS.android.skins.android_high.dialogue = {
-    intro: 'フルアーマー・アイギス、起動。圧倒的火力にて、対象を完全に殲滅します。',
-    win: '敵対勢力の完全消滅を確認。ミッションコンプリート。',
-    lose: 'メインフレーム損壊……火器管制システム……ダウン……。',
-    skill: '制限解除……全火器リミッター解除！一斉掃射、開始します！'
-};
-
-CHARACTERS.dragon.skins.summer.dialogue = {
-    intro: 'たまには海で遊ぶのも悪くないわね！ さあ、アンタも水鉄砲で黒焦げにしてあげるわ！',
-    win: 'はっはー！ 海水も全部蒸発させてやったわ！',
-    lose: 'あちちっ！ 海水が熱湯になって私の水着が……！',
-    skill: '波打つ炎よ！ 海水ごとすべて蒸発しなさい！！'
-};
-
-CHARACTERS.dragon.skins.dragon_high.dialogue = {
-    intro: 'アンタもこの退屈な宴の参加者？ それとも……私を楽しませてくれる獲物かしら！',
-    win: 'あははは！ 灰すら残らないくらいの熱気だったわね！',
-    lose: 'げほっ……砂漠の砂が、目に入っただけよ……！',
-    skill: 'この退屈な砂漠ごと、黒焦げにしてあげるわ！！'
-};
-
-CHARACTERS.knight.skins.summer.dialogue = {
-    intro: '水辺の任務と聞いて動きやすい格好で来たが、これも立派な訓練だ。いざ尋常に勝負！',
-    win: '波の音を聞きながらの勝利も、悪くないものだな！',
-    lose: 'くっ……波打ち際の足場の悪さに、足を取られたか……！',
-    skill: '輝く太陽の光よ、我が剣となれ！ 砕け散れ！！'
-};
-
-CHARACTERS.knight.skins.knight_high.dialogue = {
-    intro: '光などとうの昔に捨てた……。この魔剣の闇で、全てを黒く塗りつぶしてくれる！',
-    win: '絶望に染まり、消え去るが良い……フフフ……。',
-    lose: 'この私が……魔剣の闇の力に呑まれたというのか……！',
-    skill: '魔剣よ、全てを侵食せよ！ 闇の軍勢となりて我に続け！'
-};
-
-CHARACTERS.cthulhu.skins.summer.dialogue = {
-    intro: 'うふふ 太陽の光もいいけれど、深海の暗闇こそ私にふさわしいわ。一緒に深くまで泳がない？',
-    win: '残念。あなたは深海の水圧には耐えられなかったみたいね。',
-    lose: 'あら……太陽の光が強すぎて、深海に沈む前に蒸発しちゃいそう……。',
-    skill: '海の底から湧き上がる狂気……一緒に溺れましょう？'
-};
+// ============================================================
+// 高難易度スキン定義
+// ============================================================
 
 CHARACTERS.cthulhu.skins['cthulhu_high'] = {
     id: 'cthulhu_high',
@@ -557,36 +511,6 @@ CHARACTERS.cthulhu.skins['cthulhu_high'] = {
     imageLose: 'assets/characters/char_cthulhu_high_lose.png',
     icon: 'assets/icons/icon_cthulhu_high.png',
     iconDamage: 'assets/icons/icon_cthulhu_high_damage.png'
-};
-
-CHARACTERS.cthulhu.skins.cthulhu_high.dialogue = {
-    intro: '魔王城の玉座……案外、座り心地が良いですわ。貴方も深淵の礎になりにいらしたの？ フフフ……',
-    win: 'アハハハ！ 深淵の力には誰も敵いませんわ！ 全てを飲み込んで差し上げます！',
-    lose: 'この私が……玉座から引きずり降ろされるというの……！？ バカな……！',
-    skill: '異界の扉よ、開け！ 全ての絶望と狂気を此の地に！'
-};
-
-CHARACTERS.cthulhu.challenges = {
-    cthulhu_high: {
-        id: 'cthulhu_high',
-        title: '【高難易度】魔界の征服者',
-        description: 'サタン城の最深部で怪しげな儀式を行っているナイア。強大な力を見せつける。',
-        bgm: 'high_boss',
-        bossSetting: {
-            useSkin: 'cthulhu_high',
-            maxHP: 30, // または強さ調整
-            initSP: 0,
-            deck: () => Promise.resolve(cthulhuHighDeck),
-            leaderSkill: { name: '異界の扉', desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー1）」を加える。', action: 'otherworld_gate', cost: 2 }
-        }
-    }
-};
-
-CHARACTERS.elf.skins.summer.dialogue = {
-    intro: '水辺は静かでいいわ。私の記憶の欠片も、この波に流されてきたのかしら。',
-    win: '穏やかな潮騒が、私の心を少しだけ癒やしてくれるわ。',
-    lose: '流される……記憶も、この戦いも……。',
-    skill: '清らかな水流よ！ 私の前に立ちはだかる全てを打ち抜いて！'
 };
 
 CHARACTERS.elf.skins['elf_high'] = {
@@ -598,54 +522,66 @@ CHARACTERS.elf.skins['elf_high'] = {
     iconDamage: 'assets/icons/icon_elf_high_damage.png'
 };
 
-CHARACTERS.elf.skins.elf_high.dialogue = {
-    intro: '記憶の赴くままに……。共に行こう、ヴォイテク！ 私達の力を見せる時よ！',
-    win: 'これが私の新しい力……！ ヴォイテク、あなたのおかげね。',
-    lose: 'ヴォイテク、ごめんなさい……。まだ私には……。',
-    skill: '私とヴォイテクの連携……見切れるかしら！ 貫け！'
+CHARACTERS.devilhunter.skins['devilhunter_high'] = {
+    id: 'devilhunter_high',
+    name: 'ゴーストライダー',
+    image: 'assets/characters/char_devilhunter_high.png',
+    imageLose: 'assets/characters/char_devilhunter_high_lose.png',
+    icon: 'assets/icons/icon_devilhunter_high.png',
+    iconDamage: 'assets/icons/icon_devilhunter_high_damage.png',
+    unlockCondition: '実績達成で入手'
 };
 
-CHARACTERS.elf.challenges = {
-    elf_high: {
-        id: 'elf_high',
-        title: '【高難易度】リナ&ヴォイテク',
-        description: '一人前の戦士になる試練として、新たな相棒「白熊のヴォイテク」と共にリナが戦いを挑んでくる。',
-        bgm: 'high_boss',
-        bossSetting: {
-            useSkin: 'elf_high',
-            maxHP: 40,
-            initSP: 0,
-            deck: () => Promise.resolve(elfHighDeck),
-            leaderSkill: { name: '連携攻撃', desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。', cost: 2, action: 'elf_polarbear_combo' }
-        }
-    }
+CHARACTERS.witch.skins['witch_high'] = {
+    id: 'witch_high',
+    name: '時空の探索者',
+    image: 'assets/characters/char_witch_high.png',
+    imageLose: 'assets/characters/char_witch_high_lose.png',
+    icon: 'assets/icons/icon_witch_high.png',
+    iconDamage: 'assets/icons/icon_witch_high_damage.png',
+    unlockCondition: '実績達成で入手'
 };
 
-CHARACTERS.cleric.skins.cleric_high.dialogue = {
-    intro: '異端者どもめ、まとめてこの私が断罪してあげるわ！ 逃げようなんて無駄よ、神罰からは逃れられないんだから！',
-    win: 'アハハハ！ これが神に背いた報いよ！ 最高の気分だわ、真の神へと至る道が開かれたわ！',
-    lose: 'バカな……この私が、断罪される側だなんて……あり得ないわ、認めない……認めないわよぉ！！',
-    skill: '神の裁きは理不尽にして絶対！ その身で、断罪の悦びを味わいなさい！！'
+// ============================================================
+// 夏スキン台詞
+// ============================================================
+
+CHARACTERS.android.skins.summer.dialogue = {
+    intro: '水中地形における戦闘行動の最適化を完了しました。水陸両用装備アイギス、迎撃を開始します。',
+    win: '対象の撃沈を確認。水上戦闘モードを終了します。',
+    lose: '装甲防水機能の低下を確認……浸水率、限界値を超えました……。',
+    skill: '水流制御機構解放！全弾発射、目標を完全に制圧します！'
 };
 
-CHARACTERS.cleric.challenges = {
-    cleric_high: {
-        id: 'cleric_high',
-        title: '【高難易度】断罪の執行者 エリシア',
-        description: '神の代行者を自称し、本性を現したエリシア。その強大な神聖（暗黒）魔力は、対峙する者に逃れ得ぬ断罪を突きつける。',
-        bgm: 'high_boss',
-        bossSetting: {
-            useSkin: 'cleric_high',
-            maxHP: 40,
-            initSP: 0,
-            deck: () => Promise.resolve(clericHighDeck),
-            leaderSkill: { name: '断罪の執行', desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。', cost: 3, action: 'condemnation' }
-        }
-    }
+CHARACTERS.dragon.skins.summer.dialogue = {
+    intro: 'たまには海で遊ぶのも悪くないわね！ さあ、アンタも水鉄砲で黒焦げにしてあげるわ！',
+    win: 'はっはー！ 海水も全部蒸発させてやったわ！',
+    lose: 'あちちっ！ 海水が熱湯になって私の水着が……！',
+    skill: '波打つ炎よ！ 海水ごとすべて蒸発しなさい！！'
+};
+
+CHARACTERS.knight.skins.summer.dialogue = {
+    intro: '水辺の任務と聞いて動きやすい格好で来たが、これも立派な訓練だ。いざ尋常に勝負！',
+    win: '波の音を聞きながらの勝利も、悪くないものだな！',
+    lose: 'くっ……波打ち際の足場の悪さに、足を取られたか……！',
+    skill: '輝く太陽の光よ、我が剣となれ！ 砕け散れ！！'
+};
+
+CHARACTERS.cthulhu.skins.summer.dialogue = {
+    intro: 'うふふ 太陽の光もいいけれど、深海の暗闇こそ私にふさわしいわ。一緒に深くまで泳がない？',
+    win: '残念。あなたは深海の水圧には耐えられなかったみたいね。',
+    lose: 'あら……太陽の光が強すぎて、深海に沈む前に蒸発しちゃいそう……。',
+    skill: '海の底から湧き上がる狂気……一緒に溺れましょう？'
+};
+
+CHARACTERS.elf.skins.summer.dialogue = {
+    intro: '水辺は静かでいいわ。私の記憶の欠片も、この波に流されてきたのかしら。',
+    win: '穏やかな潮騒が、私の心を少しだけ癒やしてくれるわ。',
+    lose: '流される……記憶も、この戦いも……。',
+    skill: '清らかな水流よ！ 私の前に立ちはだかる全てを打ち抜いて！'
 };
 
 CHARACTERS.cleric.skins.summer.dialogue = {
-
     intro: 'あら、こんな南国でも異端者はいるのね。バカンスのついでに、神の裁きを下してあげるわ！',
     win: '最高のバカンスになったわ！ 異端者の悲鳴というBGM付きでね！ アハハ！',
     lose: 'せっかくのバカンスが……私の肌が焼けてしまうじゃないの！！',
@@ -673,18 +609,50 @@ CHARACTERS.oni.skins.summer.dialogue = {
     skill: '清涼なる水霊よ！ 我が鬼の力を浄化しつつ、敵を討ち払え！'
 };
 
-/**
- * 【高難易度イベント】ゴーストライダー マリア スキン定義
- * イベント「廃都オールドヘイヴンのレース」専用スキン
- */
-CHARACTERS.devilhunter.skins['devilhunter_high'] = {
-    id: 'devilhunter_high',
-    name: 'ゴーストライダー',
-    image: 'assets/characters/char_devilhunter_high.png',
-    imageLose: 'assets/characters/char_devilhunter_high_lose.png',
-    icon: 'assets/icons/icon_devilhunter_high.png',
-    iconDamage: 'assets/icons/icon_devilhunter_high_damage.png',
-    unlockCondition: '実績達成で入手'
+// ============================================================
+// 高難易度スキン台詞
+// ============================================================
+
+CHARACTERS.android.skins.android_high.dialogue = {
+    intro: 'フルアーマー・アイギス、起動。圧倒的火力にて、対象を完全に殲滅します。',
+    win: '敵対勢力の完全消滅を確認。ミッションコンプリート。',
+    lose: 'メインフレーム損壊……火器管制システム……ダウン……。',
+    skill: '制限解除……全火器リミッター解除！一斉掃射、開始します！'
+};
+
+CHARACTERS.dragon.skins.dragon_high.dialogue = {
+    intro: 'アンタもこの退屈な宴の参加者？ それとも……私を楽しませてくれる獲物かしら！',
+    win: 'あははは！ 灰すら残らないくらいの熱気だったわね！',
+    lose: 'げほっ……砂漠の砂が、目に入っただけよ……！',
+    skill: 'この退屈な砂漠ごと、黒焦げにしてあげるわ！！'
+};
+
+CHARACTERS.knight.skins.knight_high.dialogue = {
+    intro: '光などとうの昔に捨てた……。この魔剣の闇で、全てを黒く塗りつぶしてくれる！',
+    win: '絶望に染まり、消え去るが良い……フフフ……。',
+    lose: 'この私が……魔剣の闇の力に呑まれたというのか……！',
+    skill: '魔剣よ、全てを侵食せよ！ 闇の軍勢となりて我に続け！'
+};
+
+CHARACTERS.cthulhu.skins.cthulhu_high.dialogue = {
+    intro: '魔王城の玉座……案外、座り心地が良いですわ。貴方も深淵の礎になりにいらしたの？ フフフ……',
+    win: 'アハハハ！ 深淵の力には誰も敵いませんわ！ 全てを飲み込んで差し上げます！',
+    lose: 'この私が……玉座から引きずり降ろされるというの……！？ バカな……！',
+    skill: '異界の扉よ、開け！ 全ての絶望と狂気を此の地に！'
+};
+
+CHARACTERS.elf.skins.elf_high.dialogue = {
+    intro: '記憶の赴くままに……。共に行こう、ヴォイテク！ 私達の力を見せる時よ！',
+    win: 'これが私の新しい力……！ ヴォイテク、あなたのおかげね。',
+    lose: 'ヴォイテク、ごめんなさい……。まだ私には……。',
+    skill: '私とヴォイテクの連携……見切れるかしら！ 貫け！'
+};
+
+CHARACTERS.cleric.skins.cleric_high.dialogue = {
+    intro: '異端者どもめ、まとめてこの私が断罪してあげるわ！ 逃げようなんて無駄よ、神罰からは逃れられないんだから！',
+    win: 'アハハハ！ これが神に背いた報いよ！ 最高の気分だわ、真の神へと至る道が開かれたわ！',
+    lose: 'バカな……この私が、断罪される側だなんて……あり得ないわ、認めない……認めないわよぉ！！',
+    skill: '神の裁きは理不尽にして絶対！ その身で、断罪の悦びを味わいなさい！！'
 };
 
 CHARACTERS.devilhunter.skins.devilhunter_high.dialogue = {
@@ -692,6 +660,65 @@ CHARACTERS.devilhunter.skins.devilhunter_high.dialogue = {
     win: 'ゴールはもう見えてるわ。あとはアクセルを踏むだけよ。',
     lose: 'クッ……エンジンが焼き付くなんて……こんな結末、認めないわよ……！',
     skill: '死者も生者も、全員棺桶行きよ！ オーバードライブ！！'
+};
+
+CHARACTERS.witch.skins.witch_high.dialogue = {
+    intro: '時間の流れは私の手の中にあります。……さて、少し遊んであげますよ。',
+    win: 'ふふ、未来の魔法を甘く見ないでくださいね。',
+    lose: 'まさか……ここまでやるとは。もう少し本気を出すべきでしたね。',
+    skill: '世界を再構築します。全部、やり直しですよ。'
+};
+
+// ============================================================
+// 高難易度チャレンジ定義
+// ============================================================
+
+CHARACTERS.cthulhu.challenges = {
+    cthulhu_high: {
+        id: 'cthulhu_high',
+        title: '【高難易度】魔界の征服者',
+        description: 'サタン城の最深部で怪しげな儀式を行っているナイア。強大な力を見せつける。',
+        bgm: 'high_boss',
+        bossSetting: {
+            useSkin: 'cthulhu_high',
+            maxHP: 30,
+            initSP: 0,
+            deck: () => Promise.resolve(cthulhuHighDeck),
+            leaderSkill: { name: '異界の扉', desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー1）」を加える。', action: 'otherworld_gate', cost: 2 }
+        }
+    }
+};
+
+CHARACTERS.elf.challenges = {
+    elf_high: {
+        id: 'elf_high',
+        title: '【高難易度】リナ&ヴォイテク',
+        description: '一人前の戦士になる試練として、新たな相棒「白熊のヴォイテク」と共にリナが戦いを挑んでくる。',
+        bgm: 'high_boss',
+        bossSetting: {
+            useSkin: 'elf_high',
+            maxHP: 40,
+            initSP: 0,
+            deck: () => Promise.resolve(elfHighDeck),
+            leaderSkill: { name: '連携攻撃', desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。', cost: 2, action: 'elf_polarbear_combo' }
+        }
+    }
+};
+
+CHARACTERS.cleric.challenges = {
+    cleric_high: {
+        id: 'cleric_high',
+        title: '【高難易度】断罪の執行者 エリシア',
+        description: '神の代行者を自称し、本性を現したエリシア。その強大な神聖（暗黒）魔力は、対峙する者に逃れ得ぬ断罪を突きつける。',
+        bgm: 'high_boss',
+        bossSetting: {
+            useSkin: 'cleric_high',
+            maxHP: 40,
+            initSP: 0,
+            deck: () => Promise.resolve(clericHighDeck),
+            leaderSkill: { name: '断罪の執行', desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。', cost: 3, action: 'condemnation' }
+        }
+    }
 };
 
 /**

@@ -341,6 +341,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'devilhunter_high',
         reward: { type: 'playmat', value: 'pm_devilhunter_high', name: 'ゴーストライダー' }
     },
+    {
+        id: 'event_witch_high_clear_skin',
+        title: '時空の探索者 クロエ',
+        description: '高難易度イベントでクロエを倒す',
+        type: 'event_clear',
+        targetValue: 'witch_high',
+        reward: { type: 'skin', value: 'witch_high', name: '時空の探索者' }
+    },
+    {
+        id: 'event_witch_high_clear_pm',
+        title: '時空の裂け目',
+        description: '高難易度イベントでクロエを倒す',
+        type: 'event_clear',
+        targetValue: 'witch_high',
+        reward: { type: 'playmat', value: 'pm_witch_high', name: '時空の探索者' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',

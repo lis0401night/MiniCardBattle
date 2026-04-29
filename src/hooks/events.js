@@ -294,6 +294,48 @@ export function initEventDevilhunterHighMode(charId) {
     });
 }
 
+/**
+ * 高難易度イベント：時空の探索者 クロエ の初期化
+ * ストーリー：未来からやってきた大人のクロエが、先輩の顔を見に来て、
+ * 隣にいるのが自分でないことが気に食わないと戦いを仕掛けてくる。
+ */
+export function initEventWitchHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['witch'],
+        hp: 40,
+        name: '時空の探索者 クロエ',
+        leaderSkill: {
+            name: '世界の再構築',
+            desc: '(SP:3) お互いの手札を全て捨て、墓地をリセットする。その後、自分は4枚、相手は3枚引く。追加のターンを1回行う。\n(ただし、追加ターン中はSPは溜まらず攻撃もできない)',
+            cost: 3,
+            action: 'world_reconstruct'
+        }
+    };
+    GameState.gameMode = 'event_witch_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'witch'; // 時計塔ステージ
+
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['witch'] = 'witch_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'witch_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'witch_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'witch_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const dialogues = EVENT_DIALOGUES.event_witch_high[charId] || EVENT_DIALOGUES.event_witch_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
 
 export function initEventSatanMode(charId) {
 

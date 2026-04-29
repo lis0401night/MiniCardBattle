@@ -522,11 +522,14 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
         playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
+        playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
         playerSP: GameState.playerSP, enemySP: GameState.enemySP,
         playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
         enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+        playerDeck: JSON.parse(JSON.stringify(GameState.playerDeck || [])),
+        enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck || [])),
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard || [])),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard || [])),
         playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
         enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])]
     };
@@ -548,6 +551,16 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         // 封印状態の同期
         GameState.playerSealedLanes = currentState.playerSealedLanes;
         GameState.enemySealedLanes = currentState.enemySealedLanes;
+
+        // world_reconstruct: 手札・デッキ・墓地がengine側で変更されるためGameStateに書き戻す
+        if (action === 'world_reconstruct') {
+            GameState.playerHand = currentState.playerHand;
+            GameState.enemyHand = currentState.enemyHand;
+            GameState.playerDeck = currentState.playerDeck;
+            GameState.enemyDeck = currentState.enemyDeck;
+            GameState.playerDiscard = currentState.playerDiscard;
+            GameState.enemyDiscard = currentState.enemyDiscard;
+        }
     }
 
     // 専用のVFX演出を再生
@@ -555,7 +568,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         if (action === 'annihilation' || action === 'android_high_volley') {
             await sleep(200);
             await window.triggerVfx('anm_android_arts', owner);
-        } else if (action === 'time_stop') {
+        } else if (action === 'time_stop' || action === 'world_reconstruct') {
             await sleep(200);
             await window.triggerVfx('anm_witch_arts', owner);
         } else if (action === 'targeted_destruction' && tokenLanes && tokenLanes.length > 0) {

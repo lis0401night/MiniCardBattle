@@ -90,7 +90,7 @@ export function getBestSimulatedMove() {
         // ・リーダースキルで相手カードが消えた後の「挑戦」違反ノードの生成を防ぐ
         // ・無効な候補によるシミュレーション負荷を削減する
         // 注意: depth > 0 で push(-1) された「スキップレーン（-1）」は制約対象外とする
-        if (sourceType === 'play' || sourceType === 'invite') {
+        if (sourceType === 'play' || sourceType === 'invite' || sourceType === 'chant') {
             // 挑戦: 正面に相手カードがあるレーンのみ
             if (hasSkill(card, 'challenge')) {
                 availableLanes = availableLanes.filter(l => l === -1 || opBoard[l] !== null);
@@ -101,7 +101,7 @@ export function getBestSimulatedMove() {
             }
             // 生贄・頂点: invite時は親カードが同レーンに配置済みだがmyBoardには未反映のため、
             // プリフィルタをスキップしprocessActionSequenceの正確なsimStateチェックに委ねる
-            if (sourceType !== 'invite') {
+            if (sourceType !== 'invite' && sourceType !== 'chant') {
                 // 生贄: 既にカードが置かれているレーンのみ
                 if (hasSkill(card, 'takeover')) {
                     availableLanes = availableLanes.filter(l => l === -1 || myBoard[l] !== null);
@@ -212,23 +212,23 @@ export function getBestSimulatedMove() {
                         let effectiveSkills = [];
                         let targetSkill = null;
                         
-                        const isSummonAction = ['play', 'call', 'invite'].includes(sourceType);
+                        const isSummonAction = ['play', 'call', 'invite', 'chant'].includes(sourceType);
                         if (isSummonAction) {
                             // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時発動）のため、ここには含めない
-                            if (['invite', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet'].includes(card.skill)) {
+                            if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'leap'].includes(card.skill)) {
                                 effectiveSkills.push({ id: card.skill, value: card.skillValue || 1 });
                             }
                             if (Array.isArray(card.skills)) {
                                 card.skills.forEach(s => {
                                     // ※ awake（覚醒）はパッシブスキルのため除外
-                                    if (['invite', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'choice'].includes(s.id)) effectiveSkills.push(s);
+                                    if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'choice', 'leap'].includes(s.id)) effectiveSkills.push(s);
                                 });
                             }
                             if (c1) c1.forEach(idx => { if (card.choices && card.choices[idx]) effectiveSkills.push(card.choices[idx]); });
                             if (c2) c2.forEach(idx => { if (card.choices2 && card.choices2[idx]) effectiveSkills.push(card.choices2[idx]); });
 
                             // ターゲット選択を伴うスキルを抽出
-                            targetSkill = effectiveSkills.find(s => ['invite', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet'].includes(s.id));
+                            targetSkill = effectiveSkills.find(s => ['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet'].includes(s.id));
                         }
 
                         const buildSkillBranch = (currentSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand = []) => {
@@ -253,6 +253,30 @@ export function getBestSimulatedMove() {
                                             results.push([...cNode, ...nb]);
                                         }
                                     }
+                                }
+                            } else if (sk.id === 'chant') {
+                                // 【詠唱】招来と違い全レーンが配置候補（forcedLaneなし）
+                                const maxP = sk.value ?? 3;
+                                for (let i = 0; i < originalHand.length; i++) {
+                                    if (currentUsedHand.includes(i)) continue;
+                                    let childCard = originalHand[i];
+                                    // パワー制限チェック
+                                    if ((childCard.power || 0) > maxP) continue;
+                                    // 【詠唱】全レーンが候補のためforcedLaneは渡さない
+                                    let children = buildCardPlayTree(childCard, i, 'chant', originalHand, originalDiscard, [...currentUsedHand, i], currentUsedDiscard, currentDepth + 1);
+                                    for (let cNode of children) {
+                                        let nextBranches = buildSkillBranch(remainingSkills, [...currentUsedHand, i], currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                                        for (let nb of nextBranches) {
+                                            results.push([...cNode, ...nb]);
+                                        }
+                                    }
+                                }
+                            } else if (sk.id === 'leap') {
+                                // 【跳躍】スキップせずに使用する分岐（追加ターン付与）
+                                // leapノードをアクションキューに追加
+                                let leapBranch = buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                                for (let nb of leapBranch) {
+                                    results.push([{ type: 'leap' }, ...nb]);
                                 }
                             } else if (sk.id === 'resurrect') {
                                 const maxP = sk.value || 1;
@@ -426,6 +450,12 @@ export function getBestSimulatedMove() {
                 actionQueue.unshift(...simState._actionQueue);
                 delete simState._actionQueue;
             }
+            // リーダースキル適用後、パワー0以下のカードを破壊済みとしてnullにする
+            // （targeted_destruction等はcurrentPowerを0にするだけなので、制約チェックが正しく機能するよう反映）
+            for (let i = 0; i < 3; i++) {
+                if (simState.playerBoard[i] && simState.playerBoard[i].currentPower <= 0) simState.playerBoard[i] = null;
+                if (simState.enemyBoard[i] && simState.enemyBoard[i].currentPower <= 0) simState.enemyBoard[i] = null;
+            }
         }
 
         for (let action of actionQueue) {
@@ -448,7 +478,7 @@ export function getBestSimulatedMove() {
             let checkConstraints = false;
             let triggerSkills = true;
 
-            if (action.type === 'play' || action.type === 'invite') {
+            if (action.type === 'play' || action.type === 'invite' || action.type === 'chant') {
                 playedCard = cloneCard(simState.enemyHand[tIdx]);
                 checkConstraints = true;
                 if (simState.enemyHand[tIdx]) simState.enemyHand[tIdx] = null;
@@ -485,6 +515,11 @@ export function getBestSimulatedMove() {
                 // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
                 // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
                 // 次のアクションのシミュレートへ移るためにcontinueする。
+                continue;
+            } else if (action.type === 'leap') {
+                // 【跳躍】追加ターンを1回付与（SP増加なし・攻撃なし）
+                simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
+                simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
                 continue;
             }
 
@@ -591,7 +626,7 @@ export function getBestSimulatedMove() {
                                 boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
                                 boardCard.basePower = METAMORPH_ESTIMATED_POWER;
                             }
-                        } else if (!['invite', 'convert', 'draw', 'salvage', 'reinforce', 'puppet', 'summon', 'resurrect', 'awake', 'clone', 'wall_create'].includes(sk.id)) {
+                        } else if (!['invite', 'chant', 'convert', 'draw', 'salvage', 'reinforce', 'puppet', 'summon', 'resurrect', 'awake', 'clone', 'wall_create', 'leap'].includes(sk.id)) {
                            applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], action.cardTokenLanes ? [...action.cardTokenLanes] : null, undefined);
                         }
                     });
@@ -607,14 +642,6 @@ export function getBestSimulatedMove() {
             }
         }
 
-        if (isLeaderSkillPlay && skillOrderTiming === 'after' && leaderSkillActionStr) {
-            simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
-            applyLeaderSkillLogic(simState, 'red', leaderSkillActionStr, leaderSkillTokenLanes, [], leaderSkillTargetIdx);
-            if (simState._actionQueue && simState._actionQueue.length > 0) {
-                actionQueue.push(...simState._actionQueue);
-                delete simState._actionQueue;
-            }
-        }
 
         const hpBeforeCombat = simState.enemyHP;
 
@@ -647,7 +674,7 @@ export function getBestSimulatedMove() {
                 let fChcs = [firstAction.choices, firstAction.choices2].filter(x => x !== undefined);
                 let followUp = actionQ.slice(1).map(act => {
                     let adjusted = { ...act };
-                    if ((adjusted.type === 'invite' || adjusted.type === 'play' || adjusted.type === 'discard') && firstAction.type === 'play') {
+                    if ((adjusted.type === 'invite' || adjusted.type === 'chant' || adjusted.type === 'play' || adjusted.type === 'discard') && firstAction.type === 'play') {
                         if (adjusted.targetIdx > firstAction.targetIdx) adjusted.targetIdx -= 1;
                     }
                     return adjusted;
@@ -712,71 +739,37 @@ export function getBestSimulatedMove() {
             } else tokenLanePatterns = [null];
         }
 
-        const skillTimings = action === 'dungeon_summon_leader' || action === 'elf_polarbear_combo' ? ['before'] : ['before', 'after'];
         for (let i = 0; i < hand.length; i++) {
             let card = hand[i];
-            for (let order of skillTimings) {
-                for (let tokenLanes of tokenLanePatterns) {
-                    let qs = buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
-                    for (let actionQ of qs) {
-                        if (actionQ.length === 0) continue;
-                        const fA = actionQ[0];
-                        
-                        // 配置レーンが重複している場合は避ける（他に空きがある場合）
-                        const isOverlap = tokenLanes && tokenLanes.length > 0 && tokenLanes.includes(fA.laneIdx);
-                        if (isOverlap) {
-                            // スキル先打ち(before)の場合、トークン配置後の盤面で空きレーンを判定する
-                            // スキル後打ち(after)の場合、カード配置前の盤面で空きレーンを判定する
-                            let effectiveEmptyCount;
-                            if (order === 'before') {
-                                // トークン配置後の空きレーン = 現在の空き - (トークンが空きレーンに入る数)
-                                const currentEmpty = myBoard.filter(l => l === null).length;
-                                const tokensFillingEmpty = tokenLanes.filter(l => myBoard[l] === null).length;
-                                effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
-                            } else {
-                                effectiveEmptyCount = myBoard.filter(l => l === null).length;
-                            }
-                            // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
-                            if (effectiveEmptyCount >= 1) continue;
-                        }
+            for (let tokenLanes of tokenLanePatterns) {
+                let qs = buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
+                for (let actionQ of qs) {
+                    if (actionQ.length === 0) continue;
+                    const fA = actionQ[0];
+                    
+                    // 配置レーンが重複している場合は避ける（他に空きがある場合）
+                    const isOverlap = tokenLanes && tokenLanes.length > 0 && tokenLanes.includes(fA.laneIdx);
+                    if (isOverlap) {
+                        // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
+                        const currentEmpty = myBoard.filter(l => l === null).length;
+                        const tokensFillingEmpty = tokenLanes.filter(l => myBoard[l] === null).length;
+                        const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
+                        // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
+                        if (effectiveEmptyCount >= 1) continue;
+                    }
 
-                        if (action === 'devilhunter_resurrect' || action === 'overdrive') {
-                            // マリアのスキルの場合のみ、墓地の全カード（トークン以外）を試行する
-                            for (let dIdx = 0; dIdx < discard.length; dIdx++) {
-                                if (discard[dIdx].isToken) continue;
-                                let simState = processActionSequence(actionQ, true, action, tokenLanes, order, dIdx);
-                                if (simState) {
-                                    let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
-                                    // 【重要】インデックスだけでなくUID(baseId)も保存する。
-                                    // シミュレーション中に墓地構成が変わりインデックスがずれても、
-                                    // 実行時にUID照合で正しいカードを特定できるようにする。
-                                    const resTargetCard = discard[dIdx];
-                                    candidates.push({
-                                        index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
-                                        useSkill: true, tokenLanes, skillOrder: order,
-                                        leaderSkillTargetIdx: dIdx,
-                                        leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
-                                        choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                                        cardTokenLanes: fA.cardTokenLanes,
-                                            actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
-                                                let adjusted = { ...act };
-                                                if ((adjusted.type === 'invite' || adjusted.type === 'play' || adjusted.type === 'discard') && fA.type === 'play') {
-                                                    if (adjusted.targetIdx > fA.targetIdx) adjusted.targetIdx -= 1;
-                                                }
-                                                return adjusted;
-                                            }) : undefined,
-                                        simState
-                                    });
-                                }
-                            }
-                        } else {
-                            // その他（聖戦・邪戦・サタン・龍神等）
-                            let simState = processActionSequence(actionQ, true, action, tokenLanes, order);
+                    if (action === 'devilhunter_resurrect' || action === 'overdrive') {
+                        for (let dIdx = 0; dIdx < discard.length; dIdx++) {
+                            if (discard[dIdx].isToken) continue;
+                            let simState = processActionSequence(actionQ, true, action, tokenLanes, 'before', dIdx);
                             if (simState) {
                                 let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
+                                const resTargetCard = discard[dIdx];
                                 candidates.push({
                                     index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
-                                    useSkill: true, tokenLanes, skillOrder: order,
+                                    useSkill: true, tokenLanes, skillOrder: 'before',
+                                    leaderSkillTargetIdx: dIdx,
+                                    leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
                                     choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
                                     cardTokenLanes: fA.cardTokenLanes,
                                     actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
@@ -789,6 +782,26 @@ export function getBestSimulatedMove() {
                                     simState
                                 });
                             }
+                        }
+                    } else {
+                        // その他（聖戦・邪戦・サタン・龍神等）
+                        let simState = processActionSequence(actionQ, true, action, tokenLanes, 'before');
+                        if (simState) {
+                            let fChcs = [fA.choices, fA.choices2].filter(x => x !== undefined);
+                            candidates.push({
+                                index: i, lane: fA.laneIdx, isOverwrite: myBoard[fA.laneIdx] !== null,
+                                useSkill: true, tokenLanes, skillOrder: 'before',
+                                choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                                cardTokenLanes: fA.cardTokenLanes,
+                                actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
+                                    let adjusted = { ...act };
+                                    if ((adjusted.type === 'invite' || adjusted.type === 'chant' || adjusted.type === 'play' || adjusted.type === 'discard') && fA.type === 'play') {
+                                        if (adjusted.targetIdx > fA.targetIdx) adjusted.targetIdx -= 1;
+                                    }
+                                    return adjusted;
+                                }) : undefined,
+                                simState
+                            });
                         }
                     }
                 }
@@ -811,6 +824,9 @@ export function getBestSimulatedMove() {
         }
     }
 
+    // simStateがnullの候補を安全に除外（processActionSequenceが想定外にnullを返した場合の防御）
+    candidates = candidates.filter(c => c.simState !== null && c.simState !== undefined);
+
     candidates.forEach(c => {
         c.score = evaluateSimState(c.simState);
         // レーン優先順位を加味 (左 0=3点, 右 2=2点, 中央 1=1点)
@@ -832,6 +848,9 @@ export function getBestSimulatedMove() {
     });
 
     if (candidates.length === 0) return { index: -1, lane: -1, useSkill: false };
+
+
+
     const bestScore = candidates[0].score;
     const bestGroup = candidates.filter(c => Math.abs(c.score - bestScore) < 0.001);
 

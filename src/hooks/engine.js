@@ -1026,10 +1026,21 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         if (targets.length === 0) {
             const sealedLanes = isBlue ? state.enemySealedLanes : state.playerSealedLanes;
             const priority = [1, 0, 2]; // 中央 > 左 > 右
+            // 1. まず敵カードが居るレーンを優先選択
             for (let l of priority) {
-                if (!sealedLanes || sealedLanes[l] === 0) {
+                if ((!sealedLanes || sealedLanes[l] === 0) && eBoard[l] !== null) {
                     targets.push(l);
                     if (targets.length >= 2) break;
+                }
+            }
+            // 2. まだ選択肢が残っていれば中央→左→右の優先度で埋める
+            if (targets.length < 2) {
+                for (let l of priority) {
+                    if (targets.includes(l)) continue;
+                    if (!sealedLanes || sealedLanes[l] === 0) {
+                        targets.push(l);
+                        if (targets.length >= 2) break;
+                    }
                 }
             }
         }
@@ -1589,6 +1600,52 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         events.push({ type: 'leader_skill', skill: action, side: owner });
         state.extraTurnCount = (state.extraTurnCount || 0) + 2;
         state.attackSkipCount = (state.attackSkipCount || 0) + 2;
+
+    } else if (action === 'world_reconstruct') {
+        // 【世界の再構築】お互いの手札を全て捨て、墓地をリセットし、自分4枚/相手3枚引く＋追加1ターン
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        const MY_DRAW_COUNT = 4;
+        const OP_DRAW_COUNT = 3;
+
+        const myHand = isBlue ? state.playerHand : state.enemyHand;
+        const opHand = isBlue ? state.enemyHand : state.playerHand;
+        const myDeck = isBlue ? state.playerDeck : state.enemyDeck;
+        const opDeck = isBlue ? state.enemyDeck : state.playerDeck;
+        // 墓地配列が存在しない場合（AIシミュレーション等）は初期化する
+        if (!state.playerDiscard) state.playerDiscard = [];
+        if (!state.enemyDiscard) state.enemyDiscard = [];
+        const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
+        const opDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+
+        // 1. 互いの手札を全て墓地に送る
+        while (myHand.length > 0) { myDiscard.push(myHand.pop()); }
+        while (opHand.length > 0) { opDiscard.push(opHand.pop()); }
+
+        // 2. 墓地をリセット（墓地のカードをデッキに戻してシャッフル）
+        while (myDiscard.length > 0) { myDeck.push(myDiscard.pop()); }
+        while (opDiscard.length > 0) { opDeck.push(opDiscard.pop()); }
+        // シャッフル（シード付き乱数でデッキをシャッフル）
+        for (let i = myDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(getSeededRandom() * (i + 1));
+            [myDeck[i], myDeck[j]] = [myDeck[j], myDeck[i]];
+        }
+        for (let i = opDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(getSeededRandom() * (i + 1));
+            [opDeck[i], opDeck[j]] = [opDeck[j], opDeck[i]];
+        }
+
+        // 3. 自分4枚ドロー
+        for (let i = 0; i < MY_DRAW_COUNT && myDeck.length > 0; i++) {
+            myHand.push(myDeck.pop());
+        }
+        // 相手3枚ドロー
+        for (let i = 0; i < OP_DRAW_COUNT && opDeck.length > 0; i++) {
+            opHand.push(opDeck.pop());
+        }
+
+        // 4. 追加ターン1回（SP増加なし・攻撃なし）
+        state.extraTurnCount = (state.extraTurnCount || 0) + 1;
+        state.attackSkipCount = (state.attackSkipCount || 0) + 1;
     }
 
     processDestructionTriggers(state, events);

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { handleSatanBattle, handleAndroidHighBattle, handleDragonHighBattle, handleKnightHighBattle, handleCthulhuHighBattle, handleElfHighBattle, handleClericHighBattle, handleDevilhunterHighBattle } from '../hooks/uiMainCore.js';
+import { handleSatanBattle, handleAndroidHighBattle, handleDragonHighBattle, handleKnightHighBattle, handleCthulhuHighBattle, handleElfHighBattle, handleClericHighBattle, handleDevilhunterHighBattle, handleWitchHighBattle } from '../hooks/uiMainCore.js';
 
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -80,6 +80,13 @@ export default function HighDifficultyScreen() {
           <img src="assets/icons/icon_devilhunter_high.png" className="banner-icon" alt="" />
           <span className="banner-text" style={{ color: '#64748b' }}>
             ゴーストライダー マリア
+          </span>
+        </button>
+
+        <button className="btn-banner legendary" style={{ flexShrink: 0 }} onClick={() => handleWitchHighBattle?.()}>
+          <img src="assets/icons/icon_witch_high.png" className="banner-icon" alt="" />
+          <span className="banner-text" style={{ color: '#db2777' }}>
+            時空の探索者 クロエ
           </span>
         </button>
 

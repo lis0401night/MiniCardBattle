@@ -157,13 +157,21 @@ export const SKILLS = {
             return `自分のターン開始時、同じレーンにパワー${val}のトークンを配置する。`;
         }
     },
-    cleave: { name: '一掃', icon: '🧹', desc: (val) => '攻撃時、肩代わりを無視して正面とその隣のレーンにダメージを分散して与える。（左>中央>右優先）' }
+    cleave: { name: '一掃', icon: '🧹', desc: (val) => '攻撃時、肩代わりを無視して正面とその隣のレーンにダメージを分散して与える。（左>中央>右優先）' },
+    leap: { name: '跳躍', icon: '⏭️', desc: (val) => '召喚時、追加のターンを1回行う。（ただし、追加ターン中はSPは溜まらず攻撃もできない）' },
+    chant: {
+        name: '詠唱', icon: '🔮', desc: (val) => [
+            { type: 'text', value: `召喚時、手札からパワー${val}以下のカードを1枚召喚できる。そうした場合、手札に` },
+            { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+            { type: 'text', value: 'を加える。' }
+        ]
+    }
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
 export const ACTIVE_SKILLS = [
     'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet', 'leap', 'chant'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

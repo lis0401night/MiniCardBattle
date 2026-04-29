@@ -48,20 +48,20 @@ export async function executeEnemyAI() {
             }
         }
 
-        // リーダースキルの先行使用（強制使用）
+        // 【強制使用スキル】エリシア・ナイア・クロエはシミュレーション前に必ず発動し、
+        // スキル使用後の手札・盤面でカード選択をシミュレーションする
         let shouldForceSkill = false;
         if (canUseSkill) {
-            // ナイア、エリシア、クロエは難易度によらず優先使用（デッキ圧縮、回復、ターンスキップ）
-            if (skill.action === 'abyss_ritual' || skill.action === 'dark_ritual' || skill.action === 'time_stop' || skill.action === 'otherworld_gate') {
+            if ([
+                'dark_ritual', 'condemnation',                // エリシア（通常・高難易度）：ダメージ+回復
+                'abyss_ritual', 'otherworld_gate',            // ナイア（通常・高難易度）：手札入替系
+                'time_stop', 'world_reconstruct'              // クロエ（通常・高難易度）：追加ターン系
+            ].includes(skill.action)) {
                 shouldForceSkill = true;
-            } else if (skill.action === 'elf_polarbear_combo') {
-                if (GameState.playerBoard.some(c => c !== null) && GameState.enemyBoard.some(c => c === null)) {
-                    shouldForceSkill = true;
-                }
             }
-            // 初級難易度の場合、アイギス・リナの「空撃ち」を除き100%使用
+            // 初級難易度の場合、空撃ち以外は100%使用
             else if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
-                if (skill.action === 'hero' || skill.action === 'targeted_destruction') {
+                if (skill.action === 'annihilation' || skill.action === 'targeted_destruction') {
                     // 相手の場にカードがある場合のみ使用（空撃ち防止）
                     if (GameState.playerBoard.some(c => c !== null)) {
                         shouldForceSkill = true;

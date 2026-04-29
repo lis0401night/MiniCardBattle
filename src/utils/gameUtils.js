@@ -520,7 +520,7 @@ export function renderSkillTag(card, isBoard = false) {
         if (s && id !== 'none' && s.name !== '通常') {
             const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(id);
             if (showBadge) {
-                skillCandidates.push({ id, name: s.name, icon: s.icon, value: val || '' });
+                skillCandidates.push({ id, name: s.name, icon: s.icon, value: val ?? '' });
             }
         }
     };

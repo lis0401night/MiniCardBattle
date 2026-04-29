@@ -80,6 +80,7 @@ export function generateDeck(owner, config, sessionId) {
             if (GameState.gameMode === 'event_elf_high') recipeId = 'elf_high';
             if (GameState.gameMode === 'event_cleric_high') recipeId = 'cleric_high';
             if (GameState.gameMode === 'event_devilhunter_high') recipeId = 'devilhunter_high'; // マリア高難易度
+            if (GameState.gameMode === 'event_witch_high') recipeId = 'witch_high'; // クロエ高難易度
             if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
             let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
 
