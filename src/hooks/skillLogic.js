@@ -66,6 +66,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
                 actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === skillId);
             }
+            console.log(`[AI Chant/Invite] skillId=${skillId}, hasQueue=${!!GameState.aiDecision?.actionQueue}, queueLen=${GameState.aiDecision?.actionQueue?.length ?? 0}, foundAt=${actionIdx}`);
             if (actionIdx !== -1) {
                 const action = GameState.aiDecision.actionQueue[actionIdx];
                 selectedLane = isInvite ? l : (action.laneIdx ?? l);
@@ -78,6 +79,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 if (selectedIdx === -1 && action.targetIdx !== undefined && action.targetIdx < h.length) {
                     selectedIdx = action.targetIdx;
                 }
+                console.log(`[AI Chant/Invite] targetUid=${action.targetUid}, targetIdx=${action.targetIdx}, resolved=${selectedIdx}, lane=${selectedLane}, hand=[${h.map((c,i) => `${i}:${c?.name}(uid:${c?.uid})`).join(', ')}]`);
 
                 // 実行時のパワー制限チェック（シミュレーション時と手札が変わっている可能性がある）
                 if (selectedIdx >= 0 && selectedIdx < h.length && !meetsMaxPower(h[selectedIdx])) {
@@ -95,6 +97,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 }
             } else {
                 selectedIdx = -1;
+                console.log(`[AI Chant/Invite] No action found. queue=`, JSON.stringify(GameState.aiDecision?.actionQueue));
             }
         } else {
             // 【プレイヤーの場合】
@@ -795,12 +798,15 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
             const eh = document.getElementById('playmat-enemy');
             if (eh) eh.classList.add('anim-shake');
+            showSpeechBubble('red');
         } else {
             GameState.playerHP -= dmg;
             createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
             document.body.classList.add('anim-shake');
             setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+            showSpeechBubble('blue');
         }
+        playSound(SOUNDS.seDamage);
         await triggerExtortInAction(c, o);
         updateHPBar();
         checkWinCondition();

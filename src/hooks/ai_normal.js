@@ -479,7 +479,13 @@ export function getBestSimulatedMove() {
             let checkConstraints = false;
             let triggerSkills = true;
 
+
             if (action.type === 'play' || action.type === 'invite' || action.type === 'chant') {
+                // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（chant/invite用）
+                // 実行時と同様に手札を消費せずスキップする
+                if (lIdx === -1 && (action.type === 'invite' || action.type === 'chant')) {
+                    continue;
+                }
                 playedCard = cloneCard(simState.enemyHand[tIdx]);
                 checkConstraints = true;
                 if (simState.enemyHand[tIdx]) simState.enemyHand[tIdx] = null;
@@ -515,7 +521,9 @@ export function getBestSimulatedMove() {
                             skills: []
                         };
                         if (simState.enemyBoard[tLane] !== null) {
-                            quietDiscardFromBoard(simState, 'red', tLane);
+                            // シミュレーション内の簡易処理: 既存カードを墓地に移動
+                            simState.enemyDiscard.push(simState.enemyBoard[tLane]);
+                            simState.enemyBoard[tLane] = null;
                         }
                         simState.enemyBoard[tLane] = newToken;
                     }
@@ -662,7 +670,11 @@ export function getBestSimulatedMove() {
                                 boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
                                 boardCard.basePower = METAMORPH_ESTIMATED_POWER;
                             }
-                        } else if (!['invite', 'chant', 'convert', 'draw', 'salvage', 'reinforce', 'puppet', 'summon', 'resurrect', 'awake', 'clone', 'wall_create', 'leap'].includes(sk.id)) {
+                        } else if (sk.id === 'leap') {
+                            // 【跳躍】追加ターンを1回付与（敵の攻撃フェーズをスキップ）
+                            simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
+                            simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
+                        } else if (!['invite', 'chant', 'convert', 'draw', 'salvage', 'reinforce', 'puppet', 'summon', 'resurrect', 'awake', 'clone', 'wall_create'].includes(sk.id)) {
                            applyActiveSkillLogic(simState, 'red', lIdx, sk.id, sk.value, [], action.cardTokenLanes ? [...action.cardTokenLanes] : null, undefined);
                         }
                     });
@@ -946,6 +958,7 @@ export function getBestSimulatedMove() {
  * 優先順位（上にあるほど絶対的）:
  * 1. 生存ティア (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
  * 2. 勝利判定 (相手HPを0以下にできるなら最優先)
+ * 2.5. 追加ターンボーナス (次ターンにカードを追加で出せる + 敵の攻撃を受けない)
  * 3. 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
  * 4. ユーティリティ価値 (ドローや回復スキルの期待値)
  * 5. タイブレーク (生存枚数、およびレーン優先順位)
@@ -1002,10 +1015,17 @@ export function evaluateSimState(state) {
     // スロットごとに桁を分けることで、下位の項目が上位を逆転できないようにする
     
     // スロット1: 生存ティア (Tier1=2, Tier2=1, Tier3=0)
-    let s1 = (3 - tier) * 10000000;
+    let s1 = (3 - tier) * 100000000;
     
     // スロット2: 勝利判定 (1か0)
-    let s2 = (state.playerHP <= 0 ? 1 : 0) * 1000000;
+    let s2 = (state.playerHP <= 0 ? 1 : 0) * 10000000;
+
+    // スロット2.5: 追加ターンボーナス
+    // 追加ターンは「次ターンにカードを追加で出せる + 敵の攻撃を受けない」ため非常に強力。
+    // 戦闘フェーズスキップの恩恵はsimStateのcombatDamageTakenに既に反映されているが、
+    // 「次ターンにカードを1枚追加で出せる」アドバンテージは評価されていないため加算する。
+    const extraTurnBonus = (state.extraTurnCount || 0) > 0 ? 1 : 0;
+    let s25 = extraTurnBonus * 1000000;
     
     // スロット3: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
     // -150〜150の範囲を想定し+200して正の値にする
@@ -1021,7 +1041,7 @@ export function evaluateSimState(state) {
     const opCount = state.playerBoard.filter(c => c && (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)).length;
     let s5 = (8 - myCount - opCount);
 
-    return s1 + s2 + s3 + s4 + s5;
+    return s1 + s2 + s25 + s3 + s4 + s5;
 }
 
 export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
