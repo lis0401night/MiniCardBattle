@@ -148,7 +148,7 @@ export function getBestSimulatedMove() {
                     // 基本性能からの集計
                     const gatherCounts = (c) => {
                         const skillsToGather = [];
-                        if (c.skill && c.skill !== 'none') skillsToGather.push({ id: c.skill, value: c.skillValue || 1 });
+                        if (c.skill && c.skill !== 'none') skillsToGather.push({ id: c.skill, value: c.skillValue ?? 1 });
                         if (Array.isArray(c.skills)) c.skills.forEach(s => skillsToGather.push(s));
                         
                         skillsToGather.forEach(sk => {
@@ -202,6 +202,7 @@ export function getBestSimulatedMove() {
                         let node = {
                             type: sourceType,
                             targetIdx: sourceIdx,
+                            targetUid: card.uid || card.id,
                             laneIdx: lane,
                             choices: c1 !== undefined ? [...c1] : undefined,
                             choices2: c2 !== undefined ? [...c2] : undefined,
@@ -216,7 +217,7 @@ export function getBestSimulatedMove() {
                         if (isSummonAction) {
                             // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時発動）のため、ここには含めない
                             if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'leap'].includes(card.skill)) {
-                                effectiveSkills.push({ id: card.skill, value: card.skillValue || 1 });
+                                effectiveSkills.push({ id: card.skill, value: card.skillValue ?? 1 });
                             }
                             if (Array.isArray(card.skills)) {
                                 card.skills.forEach(s => {
@@ -359,7 +360,7 @@ export function getBestSimulatedMove() {
 
                                 let allCombos = generateLaneCombos(count);
                                 for (let combo of allCombos) {
-                                    let tokenNode = { type: 'token_placement', skillId: sk.id, skillValue: sk.value, lanes: combo };
+                                    let tokenNode = { type: 'token_placement', skillId: sk.id, skillValue: sk.value, summonId: sk.summonId, lanes: combo };
                                     let nextBranches = buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand);
                                     for (let nb of nextBranches) {
                                         results.push([tokenNode, ...nb]);
@@ -485,10 +486,45 @@ export function getBestSimulatedMove() {
                 simState.lastPlayedLane = lIdx;
             } else if (action.type === 'token_placement') {
                 const sourceL = simState.lastPlayedLane !== -1 ? simState.lastPlayedLane : 0;
-                // 【重要】action.lanes のコピーを渡す。applyActiveSkillLogic 内部で shift() により
-                // 配列が消費されるため、元配列をそのまま渡すと actionQueue に空配列が残り、
-                // 実行時の skillLogic.js でレーン指定が取得できなくなる。
-                applyActiveSkillLogic(simState, 'red', sourceL, action.skillId, action.skillValue || 0, [], [...(action.lanes || [])], undefined);
+                const sourceCard = simState.enemyBoard[sourceL];
+                // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
+                // summonId が分かっているなら直接トークンを生成する
+                if (!sourceCard && ['summon', 'wall_create', 'clone', 'split'].includes(action.skillId)) {
+                    const tokenPower = action.skillValue || 1;
+                    let tokenId = action.summonId;
+                    if (!tokenId) {
+                        tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
+                    }
+                    const baseMaster = CARD_MASTER.find(m => m.id === tokenId);
+                    const lanes = [...(action.lanes || [])];
+                    for (const tLane of lanes) {
+                        const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
+                        if (sealedLanes[tLane] === 1) continue;
+                        const newToken = {
+                            id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                            baseId: tokenId,
+                            name: baseMaster?.name || 'トークン',
+                            isToken: true,
+                            rarity: 1,
+                            owner: 'red',
+                            imgUrl: `assets/cards/card_${tokenId}.jpg`,
+                            power: tokenPower,
+                            basePower: tokenPower,
+                            currentPower: tokenPower,
+                            voiceCategory: baseMaster?.voiceCategory || 'monster',
+                            skills: []
+                        };
+                        if (simState.enemyBoard[tLane] !== null) {
+                            quietDiscardFromBoard(simState, 'red', tLane);
+                        }
+                        simState.enemyBoard[tLane] = newToken;
+                    }
+                } else {
+                    // 【重要】action.lanes のコピーを渡す。applyActiveSkillLogic 内部で shift() により
+                    // 配列が消費されるため、元配列をそのまま渡すと actionQueue に空配列が残り、
+                    // 実行時の skillLogic.js でレーン指定が取得できなくなる。
+                    applyActiveSkillLogic(simState, 'red', sourceL, action.skillId, action.skillValue || 0, [], [...(action.lanes || [])], undefined);
+                }
                 continue;
             } else if (action.type === 'resurrect') {
                 // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
@@ -675,6 +711,7 @@ export function getBestSimulatedMove() {
                 let followUp = actionQ.slice(1).map(act => {
                     let adjusted = { ...act };
                     if ((adjusted.type === 'invite' || adjusted.type === 'chant' || adjusted.type === 'play' || adjusted.type === 'discard') && firstAction.type === 'play') {
+                        // targetUidがあればuid照合で確実に特定できるが、processActionSequence用にtargetIdxも調整
                         if (adjusted.targetIdx > firstAction.targetIdx) adjusted.targetIdx -= 1;
                     }
                     return adjusted;
@@ -774,7 +811,7 @@ export function getBestSimulatedMove() {
                                     cardTokenLanes: fA.cardTokenLanes,
                                     actionQueue: actionQ.slice(1).length > 0 ? actionQ.slice(1).map(act => {
                                         let adjusted = { ...act };
-                                        if ((adjusted.type === 'invite' || adjusted.type === 'play' || adjusted.type === 'discard') && fA.type === 'play') {
+                                        if ((adjusted.type === 'invite' || adjusted.type === 'chant' || adjusted.type === 'play' || adjusted.type === 'discard') && fA.type === 'play') {
                                             if (adjusted.targetIdx > fA.targetIdx) adjusted.targetIdx -= 1;
                                         }
                                         return adjusted;

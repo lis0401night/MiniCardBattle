@@ -68,8 +68,23 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             }
             if (actionIdx !== -1) {
                 const action = GameState.aiDecision.actionQueue[actionIdx];
-                selectedIdx = action.targetIdx;
                 selectedLane = isInvite ? l : (action.laneIdx ?? l);
+
+                // uid優先で手札からカードを検索（インデックスズレを防止）
+                if (action.targetUid) {
+                    selectedIdx = h.findIndex(card => card && (card.uid === action.targetUid || card.id === action.targetUid));
+                }
+                // uidで見つからない場合はインデックスにフォールバック
+                if (selectedIdx === -1 && action.targetIdx !== undefined && action.targetIdx < h.length) {
+                    selectedIdx = action.targetIdx;
+                }
+
+                // 実行時のパワー制限チェック（シミュレーション時と手札が変わっている可能性がある）
+                if (selectedIdx >= 0 && selectedIdx < h.length && !meetsMaxPower(h[selectedIdx])) {
+                    console.log(`[AI Chant/Invite] Power check failed: ${h[selectedIdx].name}(P:${h[selectedIdx].power}) > maxPower(${maxPower}). Skipping.`);
+                    selectedIdx = -1;
+                }
+
                 GameState.aiDecision.actionQueue.splice(actionIdx, 1);
                 GameState.aiDecision.cardTokenLanes = action.cardTokenLanes ? [...action.cardTokenLanes] : undefined;
 
