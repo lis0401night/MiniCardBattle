@@ -603,8 +603,10 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             await window.triggerVfx('anm_dark_ritual', owner);
         } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
-            // 選択した全レーンで同時に再生
             await Promise.all(tokenLanes.map(lane => window.triggerVfx('anm_seal_lanes', owner, lane)));
+        } else if (action === 'night_parade' && tokenLanes && tokenLanes.enemy) {
+            await sleep(200);
+            await Promise.all(tokenLanes.enemy.map(lane => window.triggerVfx('anm_seal_lanes', owner, lane)));
         }
     }
 

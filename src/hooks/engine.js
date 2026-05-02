@@ -1142,7 +1142,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         const mySealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
 
         if (tokenLanes && tokenLanes.allied) {
-            allyTargets = [...tokenLanes.allied];
+            allyTargets = [...tokenLanes.allied].slice(0, 2);
         } else {
             // AI Selection Logic for Allied
             let availableLanes = [0, 1, 2].filter(i => (!mySealedLanes || mySealedLanes[i] === 0));

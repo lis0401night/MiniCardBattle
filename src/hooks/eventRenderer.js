@@ -1,4 +1,4 @@
-import { createDamagePopup, addDamagePopupHook, playSound, sleep, getSeededRandom } from '../utils/gameUtils.js';
+import { createDamagePopup, addDamagePopupHook, playSound, sleep, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -228,6 +228,28 @@ export async function playEvents(events) {
                 await sleep(300);
                 // 石化の場合は召喚時スキルがないため、ここで解除してよい
                 if (ev.card) ev.card.isSkillResolving = false;
+                break;
+            }
+            case 'equip_card': {
+                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+                const boardCard = board[ev.lane];
+                if (boardCard) {
+                    boardCard.basePower = (boardCard.basePower || 0) + (ev.card.currentPower || 0);
+                    boardCard.currentPower = (boardCard.currentPower || 0) + (ev.card.currentPower || 0);
+                    let addedSkills = [];
+                    if (ev.card.skill && ev.card.skill !== 'none' && ev.card.skill !== 'equip') addedSkills.push({ id: ev.card.skill, value: ev.card.skillValue });
+                    if (ev.card.skills) ev.card.skills.forEach(s => { if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value }); });
+                    mergeCardSkills(boardCard, addedSkills);
+                    
+                    renderBoard();
+                    playSound(SOUNDS.sePlace);
+                    
+                    const laneEl = document.getElementById(`${ev.side}-lane-${ev.lane}`);
+                    if (laneEl) {
+                        laneEl.classList.add('flash-effect');
+                        setTimeout(() => laneEl.classList.remove('flash-effect'), 500);
+                    }
+                }
                 break;
             }
             case 'summon_token':

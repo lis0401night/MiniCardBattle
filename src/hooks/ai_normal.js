@@ -801,9 +801,6 @@ export function getBestSimulatedMove() {
                 alliedPatterns.push([l1]);
                 for (let l2 of availAllied) {
                     if (l1 <= l2) alliedPatterns.push([l1, l2]);
-                    for (let l3 of availAllied) {
-                        if (l2 <= l3) alliedPatterns.push([l1, l2, l3]);
-                    }
                 }
             }
 
@@ -1081,7 +1078,16 @@ export function evaluateSimState(state) {
     const opCount = state.playerBoard.filter(c => c && (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)).length;
     let s5 = (8 - myCount - opCount);
 
-    return s1 + s2 + s25 + s3 + s4 + s5;
+    // スロット6: 封印ボーナス (空のレーンを封印した際の優先度：中央 > 左 > 右)
+    // パワー差等で同点になった場合のタイブレークとして微小なスコアを加算
+    let s6 = 0;
+    if (state.playerSealedLanes) {
+        if (state.playerSealedLanes[1] === 1) s6 += 0.03; // 中央
+        if (state.playerSealedLanes[0] === 1) s6 += 0.02; // 左
+        if (state.playerSealedLanes[2] === 1) s6 += 0.01; // 右
+    }
+
+    return s1 + s2 + s25 + s3 + s4 + s5 + s6;
 }
 
 export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
