@@ -165,7 +165,8 @@ export const SKILLS = {
             { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
             { type: 'text', value: 'を加える。' }
         ]
-    }
+    },
+    arm_self: { name: '武装', icon: '🦾', desc: (val) => '自身の上にカードを配置するとき、自身にそのカードと同じパワーと能力を付与する。' }
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -177,5 +178,5 @@ export const ACTIVE_SKILLS = [
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
     'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
-    'apex', 'retaliate', 'substitute', 'possession', 'cleave'
+    'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self'
 ];

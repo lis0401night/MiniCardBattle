@@ -76,7 +76,6 @@ export function getBestSimulatedMove() {
         if (depth >= 2) return [[]];
 
         let availableLanes = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
-        if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && depth === 0) availableLanes = availableLanes.filter(l => l === 1);
 
         if (forcedLane !== undefined) {
             if (mySealedLanes[forcedLane] === 1) return [[]];
@@ -91,6 +90,11 @@ export function getBestSimulatedMove() {
         // ・無効な候補によるシミュレーション負荷を削減する
         // 注意: depth > 0 で push(-1) された「スキップレーン（-1）」は制約対象外とする
         if (sourceType === 'play' || sourceType === 'invite' || sourceType === 'chant') {
+            // 1ターン目の「召喚」アクションは中央のみ（親・子カード共通）
+            if (GameState.turnCount === 1 && GameState.firstPlayer === 'red') {
+                availableLanes = availableLanes.filter(l => l === -1 || l === 1);
+            }
+
             // 挑戦: 正面に相手カードがあるレーンのみ
             if (hasSkill(card, 'challenge')) {
                 availableLanes = availableLanes.filter(l => l === -1 || opBoard[l] !== null);
@@ -157,8 +161,8 @@ export function getBestSimulatedMove() {
                             
                             // 【重要仕様】スキルの値(value)の解釈：
                             // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
-                            if (sk.id === 'resurrect' || sk.id === 'call' || sk.id === 'metamorph') {
-                                // 復活・招来・変身: 値(value) = トークンのパワー / 個数は常に「1体」
+                            if (sk.id === 'resurrect') {
+                                // 復活: 値(value) = トークンのパワー / 個数は常に「1体」
                                 tc += 1;
                             }
                         });
@@ -174,7 +178,8 @@ export function getBestSimulatedMove() {
                             if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
                             if (sk.id === 'salvage') tokenTargetCount += 1;
                             // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
-                            if (sk.id === 'resurrect' || sk.id === 'call' || sk.id === 'metamorph') tc += 1;
+                            // ※ call, metamorph は実行時の動的判断（アドホック）や自身への適用となるため、事前のレーン確保は不要
+                            if (sk.id === 'resurrect') tc += 1;
                         });
                     };
                     countInChoices(c1, card.choices);
@@ -555,7 +560,7 @@ export function getBestSimulatedMove() {
                 triggerSkills = false;
                 if (playedCard) playedCard.skillTriggered = true;
                 simState.enemyDiscard[resIdx] = null;
-            } else if (action.type === 'devilhunter_resurrect') {
+            } else if (action.type === 'devilhunter_resurrect' || action.type === 'targeted_destruction' || action.type === 'elf_polarbear_combo') {
                 // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
                 // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
                 // 次のアクションのシミュレートへ移るためにcontinueする。
@@ -578,7 +583,7 @@ export function getBestSimulatedMove() {
             }
 
             let skillWasHandledByEquip = false;
-            if (hasSkill(playedCard, 'equip') && simState.enemyBoard[lIdx]) {
+            if ((hasSkill(playedCard, 'equip') || hasSkill(simState.enemyBoard[lIdx], 'arm_self')) && simState.enemyBoard[lIdx]) {
                 skillWasHandledByEquip = true;
                 const targetCard = simState.enemyBoard[lIdx];
                 targetCard.basePower = (targetCard.basePower || 0) + (playedCard.power || 0);
@@ -778,6 +783,37 @@ export function getBestSimulatedMove() {
         } else if (action === 'targeted_destruction') {
             tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
             if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
+        } else if (action === 'seal_lanes') {
+            const avail = [0, 1, 2].filter(l => !GameState.playerSealedLanes || GameState.playerSealedLanes[l] === 0);
+            let combs = [];
+            for (let l of avail) combs.push([l]);
+            if (avail.length >= 2) combs.push(...getCombinations(avail, 2));
+            tokenLanePatterns = combs.length > 0 ? combs : [null];
+        } else if (action === 'night_parade') {
+            const availEnemy = [0, 1, 2].filter(l => !GameState.playerSealedLanes || GameState.playerSealedLanes[l] === 0);
+            let enemyPatterns = [[]];
+            for (let l of availEnemy) enemyPatterns.push([l]);
+            if (availEnemy.length >= 2) enemyPatterns.push(...getCombinations(availEnemy, 2));
+
+            const availAllied = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
+            let alliedPatterns = [[]];
+            for (let l1 of availAllied) {
+                alliedPatterns.push([l1]);
+                for (let l2 of availAllied) {
+                    if (l1 <= l2) alliedPatterns.push([l1, l2]);
+                    for (let l3 of availAllied) {
+                        if (l2 <= l3) alliedPatterns.push([l1, l2, l3]);
+                    }
+                }
+            }
+
+            let combs = [];
+            for (let e of enemyPatterns) {
+                for (let a of alliedPatterns) {
+                    combs.push({ enemy: e, allied: a });
+                }
+            }
+            tokenLanePatterns = combs.length > 0 ? combs : [null];
         } else if (action === 'elf_polarbear_combo') {
             const enemyOcc = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'));
             const myAvail = [0, 1, 2].filter(l => mySealedLanes[l] === 0);
@@ -797,11 +833,15 @@ export function getBestSimulatedMove() {
                     const fA = actionQ[0];
                     
                     // 配置レーンが重複している場合は避ける（他に空きがある場合）
-                    const isOverlap = tokenLanes && tokenLanes.length > 0 && tokenLanes.includes(fA.laneIdx);
+                    let overlapLanes = [];
+                    if (Array.isArray(tokenLanes)) overlapLanes = tokenLanes;
+                    else if (tokenLanes && tokenLanes.allied) overlapLanes = tokenLanes.allied;
+
+                    const isOverlap = overlapLanes && overlapLanes.length > 0 && overlapLanes.includes(fA.laneIdx);
                     if (isOverlap) {
                         // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
                         const currentEmpty = myBoard.filter(l => l === null).length;
-                        const tokensFillingEmpty = tokenLanes.filter(l => myBoard[l] === null).length;
+                        const tokensFillingEmpty = overlapLanes.filter(l => myBoard[l] === null).length;
                         const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
                         // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
                         if (effectiveEmptyCount >= 1) continue;
@@ -1049,6 +1089,10 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
     const allLanes = [0, 1, 2].filter(l => sealedLanes[l] === 0);
     // 配置可能なレーンを抽出
     let validLanes = allLanes.filter(l => {
+        if (checkConstraints) {
+            // 1ターン目の「召喚」は中央のみ
+            if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && l !== 1) return false;
+        }
         if (checkConstraints && tokenCard) {
             if (hasSkill(tokenCard, 'legendary') && l !== 1) return false;
             if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) return false;
@@ -1186,6 +1230,9 @@ export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderS
     const sortedLanes = [...allLanes].sort((a, b) => lanePriorityOrder[a] - lanePriorityOrder[b]);
     const results = [];
     for (let l of sortedLanes) {
+        if (checkConstraints) {
+            if (GameState.turnCount === 1 && GameState.firstPlayer === 'red' && l !== 1) continue;
+        }
         if (checkConstraints && tokenCard) {
             if (hasSkill(tokenCard, 'legendary') && l !== 1) continue;
             if (hasSkill(tokenCard, 'takeover') && GameState.enemyBoard[l] === null) continue;
@@ -1298,7 +1345,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                 if (hasSkill(playedCard, 'takeover') && simState.enemyBoard[laneIdx] === null) return null;
                 if (hasSkill(playedCard, 'legendary') && laneIdx !== 1) return null;
                 if (hasSkill(playedCard, 'apex') && !(simState.enemyBoard[laneIdx] && hasSkill(simState.enemyBoard[laneIdx], 'legendary'))) return null;
-                if (!hasSkill(playedCard, 'takeover') && !hasSkill(playedCard, 'equip') && !hasSkill(playedCard, 'apex') && simState.enemyBoard[laneIdx] !== null) {
+                if (!hasSkill(playedCard, 'takeover') && !hasSkill(playedCard, 'equip') && !hasSkill(playedCard, 'apex') && simState.enemyBoard[laneIdx] !== null && !hasSkill(simState.enemyBoard[laneIdx], 'arm_self')) {
                     if (!(playedCard.skills && playedCard.skills.find(s => s.id === 'union') && (simState.enemyBoard[laneIdx].baseId === playedCard.skills.find(s => s.id === 'union').targetId || simState.enemyBoard[laneIdx].id === playedCard.skills.find(s => s.id === 'union').targetId))) {
                         return null;
                     }
@@ -1306,7 +1353,7 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
             }
 
             if (playedCard) {
-                if (hasSkill(playedCard, 'equip') && simState.enemyBoard[laneIdx]) {
+                if ((hasSkill(playedCard, 'equip') || hasSkill(simState.enemyBoard[laneIdx], 'arm_self')) && simState.enemyBoard[laneIdx]) {
                     const targetCard = simState.enemyBoard[laneIdx];
                     targetCard.basePower = (targetCard.basePower || 0) + (playedCard.power || 0);
                     targetCard.currentPower = (targetCard.currentPower || 0) + (playedCard.power || 0);

@@ -3,7 +3,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard, consumeAIAction } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard, consumeAIAction, showSpeechBubble } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -424,11 +424,26 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     voiceCategory: tC.voiceCategory || (pValue >= 5 ? 'monster' : 'machine_new'),
                     skills: []
                 };
-                if (board[targetLane]) {
-                    if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                const existingCard = board[targetLane];
+                if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+                    existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
+                    existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
+                    
+                    const equipSkills = [];
+                    if (newToken.skill && newToken.skill !== 'none' && newToken.skill !== 'equip') equipSkills.push({ id: newToken.skill, value: newToken.skillValue });
+                    if (newToken.skills) newToken.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+                    mergeCardSkills(existingCard, equipSkills);
+                    
+                    existingCard.equippedCards = existingCard.equippedCards || [];
+                    existingCard.equippedCards.push(newToken);
+                    events.push({ type: 'power_change', side: o, lane: targetLane, amount: newToken.power, source: 'equip' });
+                } else {
+                    if (board[targetLane]) {
+                        if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                    }
+                    board[targetLane] = newToken;
+                    events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
                 }
-                board[targetLane] = newToken;
-                events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
             }
             await playEvents(events);
             // 配置演出が完了したので保護フラグを解除
@@ -490,11 +505,26 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 voiceCategory: c.voiceCategory,
                 skills: JSON.parse(JSON.stringify(inheritedSkills)) // スキルを引き継ぐ
             };
-            if (board[targetLane]) {
-                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+            const existingCard = board[targetLane];
+            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+                existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
+                existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
+                
+                const equipSkills = [];
+                if (newToken.skill && newToken.skill !== 'none' && newToken.skill !== 'equip') equipSkills.push({ id: newToken.skill, value: newToken.skillValue });
+                if (newToken.skills) newToken.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+                mergeCardSkills(existingCard, equipSkills);
+                
+                existingCard.equippedCards = existingCard.equippedCards || [];
+                existingCard.equippedCards.push(newToken);
+                events.push({ type: 'power_change', side: o, lane: targetLane, amount: newToken.power, source: 'equip' });
+            } else {
+                if (board[targetLane]) {
+                    if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                }
+                board[targetLane] = newToken;
+                events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
             }
-            board[targetLane] = newToken;
-            events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
         }
         await playEvents(events);
         // 配置演出が完了したので保護フラグを解除
@@ -878,10 +908,27 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             if (tLanes && tLanes.length > 0) {
                 const targetLane = tLanes[0];
                 const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                if (board[targetLane]) {
-                    if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                const existingCard = board[targetLane];
+                if (existingCard && (hasSkill(sTC, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+                    existingCard.power = (existingCard.power || 0) + (sTC.power || 0);
+                    existingCard.basePower = (existingCard.basePower || 0) + (sTC.power || 0);
+                    existingCard.currentPower = (existingCard.currentPower || 0) + (sTC.power || 0);
+                    
+                    const equipSkills = [];
+                    if (sTC.skill && sTC.skill !== 'none' && sTC.skill !== 'equip') equipSkills.push({ id: sTC.skill, value: sTC.skillValue });
+                    if (sTC.skills) sTC.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+                    mergeCardSkills(existingCard, equipSkills);
+                    
+                    existingCard.equippedCards = existingCard.equippedCards || [];
+                    existingCard.equippedCards.push(sTC);
+                    // wall_create では events.push していないため、ここでは直接表示を更新する
+                    if (window.updateCardVisualsReact) window.updateCardVisualsReact(targetLane, o);
+                } else {
+                    if (board[targetLane]) {
+                        if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                    }
+                    board[targetLane] = sTC;
                 }
-                board[targetLane] = sTC;
 
                 // 出現時スキルを持つ場合は即座に保護フラグを立てる
                 if (hasActiveSkill(sTC)) {
@@ -958,7 +1005,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     updateDeckDisplay(o);
 
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                    if (board[targetLane] && hasSkill(selectedCard, 'equip')) {
+                    if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
                         const targetCard = board[targetLane];
                         // 装備によるパワー加算
                         targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
@@ -1089,7 +1136,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                     const existingCard = board[targetLane];
 
-                    if (existingCard && hasSkill(selectedCard, 'equip')) {
+                    if (existingCard && (hasSkill(selectedCard, 'equip') || hasSkill(existingCard, 'arm_self'))) {
                         // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
                         const targetCard = existingCard;
 
@@ -1373,14 +1420,30 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 basePower: val,
                 rarity: c.rarity || 1
             };
-            board[targetLane] = newToken;
-
-            // 出現時スキルを持つ場合は即座に保護フラグを立てる
-            if (hasActiveSkill(newToken)) {
-                newToken.isSkillResolving = true;
+            const existingCard = board[targetLane];
+            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+                existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
+                existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
+                
+                const equipSkills = [];
+                if (newToken.skill && newToken.skill !== 'none' && newToken.skill !== 'equip') equipSkills.push({ id: newToken.skill, value: newToken.skillValue });
+                if (newToken.skills) newToken.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+                mergeCardSkills(existingCard, equipSkills);
+                
+                existingCard.equippedCards = existingCard.equippedCards || [];
+                existingCard.equippedCards.push(newToken);
+                events.push({ type: 'power_change', side: o, lane: targetLane, amount: newToken.power, source: 'equip' });
+            } else {
+                if (board[targetLane]) {
+                    if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                }
+                board[targetLane] = newToken;
+                // 出現時スキルを持つ場合は即座に保護フラグを立てる
+                if (hasActiveSkill(newToken)) {
+                    newToken.isSkillResolving = true;
+                }
+                events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
             }
-
-            events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
         }
 
         if (events.length > 0) {
@@ -1409,7 +1472,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     const targetLane = selectedLanes[0];
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
-                    if (board[targetLane] && hasSkill(topCard, 'equip')) {
+                    if (board[targetLane] && (hasSkill(topCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
                         const targetCard = board[targetLane];
 
                         targetCard.basePower = (targetCard.basePower || 0) + (topCard.power || 0);

@@ -6,9 +6,9 @@
 export default [
     'philosopher', 'philosopher', 'philosopher',
     'student', 'student', 'student',
-    'archmage', 'archmage', 'archmage', 'archmage',
+    'archmage', 'archmage', 'archmage',
     'gorgon', 'gorgon', 'gorgon',
-    'djinn', 'djinn',
+    'djinn', 'djinn', 'djinn',
     'dragonfire', 'dragonfire', 'dragonfire',
     'beginnermagic', 'beginnermagic',
 ];

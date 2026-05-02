@@ -173,6 +173,10 @@ export const CARD_MASTER = [
     { id: 'archmage', name: '異端のアークメイジ', rarity: 4, power: 4, skills: [{ id: 'sacrifice', value: 3 }, { id: 'chant', value: 3 }], voiceCategory: 'human_male_warrior', flavor: '歴戦の戦士のごとき風格を漂わせる、規格外の魔導士。星を砕くほどの極大魔法を紡ぎ出すためならば、己の血肉すらも代償として捧げる覚悟を持っている。' },
     { id: 'philosopher', name: '賢者の石', rarity: 4, power: 0, skills: [{ id: 'convert', value: 1 }, { id: 'leap' }], voiceCategory: 'magic', flavor: '真理を探求する者たちが生涯を捧げ、ついに到達した至高の結晶。その深紅の輝きは、自らの存在を代償とすることで次元すら越える奇跡を顕現させる。' },
     { id: 'gorgon', name: '魔眼の勇者', rarity: 4, power: 6, skills: [{ id: 'legendary' }, { id: 'petrify' }, { id: 'double_strike' }], voiceCategory: 'human_female_cool', flavor: '蛇の髪を持つ美しき戦乙女。その一瞥を受けた者は石と化し、剣の一閃は必殺の一撃となる。' },
+    { id: 'kunoichi', name: '双牙衆の刺客', rarity: 4, power: 3, skills: [{ id: 'convert', value: 1 }, { id: 'sacrifice', value: 1 }, { id: 'arm_self' }, { id: 'summon', value: 3, summonId: 'token_whitewolf' }], voiceCategory: 'human_female_normal', flavor: '己の血と痛みを代償に、獣を喚び出す双牙衆の忍者。静寂を裂く刃と鋭い牙が、連携して標的を確実に仕留める。' },
+    { id: 'benkei', name: '刀狩りの豪傑', rarity: 4, power: 4, skills: [{ id: 'arm_self' }, { id: 'pierce' }], voiceCategory: 'human_male_warrior', flavor: '敗者の武具を奪い、己の力へと変える。その桁外れの剛腕から繰り出される一撃は、いかなる盾をも容易く貫く。' },
+    { id: 'orochi', name: '八岐大蛇', rarity: 4, power: 9, skills: [{ id: 'takeover' }, { id: 'double_strike' }, { id: 'cleave' }, { id: 'brutal', value: 3 }], voiceCategory: 'snake', flavor: '贄の血の匂いに惹かれ、古の厄災が目を覚ます。八つの顎がもたらすのは、すべてを無に帰す純粋な破壊のみ。' },
+    { id: 'seimei', name: '天眼の陰陽師', rarity: 4, power: 6, skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }], choices: [{ id: 'seal', value: 1 }, { id: 'bind', value: 1 }], voiceCategory: 'human_male_ikemen', flavor: '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。' },
     { id: 'baldanders', name: 'バルトアンデルス', rarity: 4, power: 0, skill: 'metamorph', voiceCategory: 'stone', flavor: '変幻自在の魔力を持つ怪人。その姿を捉えることはできず、あらゆる存在へと形を変える。' },
     { id: 'shuffler', name: 'シャッフラー', rarity: 4, power: 5, skill: 'shuffle', voiceCategory: 'human_male_normal', flavor: 'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。' },
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
@@ -198,5 +202,6 @@ export const CARD_MASTER = [
     { id: 'token_gearC', name: '機神プロメテウス', rarity: 1, power: 10, isToken: true, skills: [{ id: 'spread', value: 3 }, { id: 'artillery', value: 2 }, { id: 'immune' }], voiceCategory: 'machine_new', flavor: '天と地が交わり、鋼の機神が目を覚ます。その圧倒的な火力の前では、いかなる装甲も意味を成さない。' },
     { id: 'token_reinforceddrone', name: '強化ドローン', rarity: 1, power: 5, isToken: true, skill: 'none', skills: [{ id: 'snipe', value: 5 }], voiceCategory: 'machine_new', flavor: '強化されたドローン。' },
     { id: 'token_polarbear', name: 'ヴォイテク', rarity: 1, power: 4, isToken: true, skills: [{ id: 'legendary' }, { id: 'pierce' }], voiceCategory: 'beast', flavor: 'リナと共に戦う白熊' },
-    { id: 'token_daemon', name: 'デーモン', rarity: 1, power: 7, isToken: true, skill: 'none', voiceCategory: 'devil', flavor: '契約により姿を現した悪魔。' }
+    { id: 'token_daemon', name: 'デーモン', rarity: 1, power: 7, isToken: true, skill: 'none', voiceCategory: 'devil', flavor: '契約により姿を現した悪魔。' },
+    { id: 'token_whitewolf', name: '白狼', power: 3, isToken: true, skill: 'none', voiceCategory: 'wolf', flavor: '忍びの相棒' },
 ];

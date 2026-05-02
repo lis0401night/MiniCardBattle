@@ -357,6 +357,22 @@ export const ACHIEVEMENT_MASTER = [
         targetValue: 'witch_high',
         reward: { type: 'playmat', value: 'pm_witch_high', name: '時空の探索者' }
     },
+    {
+        id: 'event_oni_high_clear_skin',
+        title: '紅月ノ狂鬼',
+        description: '高難易度イベントでカグラを倒す',
+        type: 'event_clear',
+        targetValue: 'oni_high',
+        reward: { type: 'skin', value: 'oni_high', name: '紅月ノ狂鬼' }
+    },
+    {
+        id: 'event_oni_high_clear_pm',
+        title: '鬼ヶ島',
+        description: '高難易度イベントでカグラを倒す',
+        type: 'event_clear',
+        targetValue: 'oni_high',
+        reward: { type: 'playmat', value: 'pm_oni_high', name: '紅月ノ狂鬼' }
+    },
     // --- 防衛戦勝利数 ---
     {
         id: 'defense_win_10',

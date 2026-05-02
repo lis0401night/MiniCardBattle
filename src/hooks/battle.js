@@ -24,6 +24,7 @@ import { showDefenseBattleList } from './uiMainCore.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
 import { winDungeonBattle, loseDungeonBattle, retireDungeon } from './battleDungeon.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
+import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 
 export let pendingChoiceResolver = null;
 
@@ -289,13 +290,13 @@ export function initBattleState() {
 
         // BGMの再生
         let bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high') {
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high' || GameState.gameMode === 'event_oni_high') {
             bgmKey = 'bgmStageHighDifficulty';
         }
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high') GameState.aiLevel = 3; // 念のため再セット
+        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high' || GameState.gameMode === 'event_oni_high') GameState.aiLevel = 3; // 念のため再セット
 
         if (GameState.gameMode === 'battle_dungeon') {
             // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
@@ -709,6 +710,11 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
 
             const newCard = GameState.placementToken;
             if (newCard && checkConstraints) {
+                if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue' && laneIndex !== 1) {
+                    playSound(SOUNDS.seDamage);
+                    showAlertModal(`1ターン目は中央のレーンにしか召喚できません。`);
+                    return;
+                }
                 if (hasSkill(newCard, 'legendary') && laneIndex !== 1) {
                     playSound(SOUNDS.seDamage);
                     showAlertModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`);
@@ -760,7 +766,7 @@ export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderS
                     });
                     if (!confirmed) return;
                     // 合体の場合は既存カードの自動破棄は行わない（呼び出し元で素材にするためスルーする）
-                } else if (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) {
+                } else if ((tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) || (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))) {
                     const confirmed = await new Promise(res => {
                         showConfirmModal(
                             `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
@@ -1001,9 +1007,8 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false, 
         }
         if (results.length > 0) return results;
 
-        const indices = shuffleArray(hand.map((_, i) => i));
-        const selectedCount = Math.min(count, hand.length);
-        return indices.slice(0, selectedCount);
+        // フォールバック: 共通のAI破棄選択ロジックを利用する
+        return getAIDiscardIndices(hand, count);
     }
 
     // プレイヤーの場合：手動選択
@@ -1806,7 +1811,7 @@ export async function playCard(o, hI, l) {
             return;
         }
 
-        if (hasSkill(playingCard, 'equip')) {
+        if (hasSkill(playingCard, 'equip') || (b[l] && hasSkill(b[l], 'arm_self'))) {
             const targetCard = b[l];
 
             // 【憑依】：「憑依」を持つカードには装備できない。通常の上書き配置として続行する。
@@ -2316,6 +2321,10 @@ export function endBattle() {
             if (GameState.gameMode === 'event_witch_high' && typeof incrementStat === 'function') {
                 incrementStat('eventClear', 'witch_high');
             }
+            // カグラ高難易度イベントクリア
+            if (GameState.gameMode === 'event_oni_high' && typeof incrementStat === 'function') {
+                incrementStat('eventClear', 'oni_high');
+            }
 
             // --- カードドロップ抽選・表示処理 ---
             let recipeId = GameState.enemyConfig.id;
@@ -2328,6 +2337,7 @@ export function endBattle() {
             if (GameState.gameMode === 'event_cleric_high' && recipeId === 'cleric') recipeId = 'cleric_high';
             if (GameState.gameMode === 'event_devilhunter_high' && recipeId === 'devilhunter') recipeId = 'devilhunter_high';
             if (GameState.gameMode === 'event_witch_high' && recipeId === 'witch') recipeId = 'witch_high';
+            if (GameState.gameMode === 'event_oni_high' && recipeId === 'oni') recipeId = 'oni_high';
 
             const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
 

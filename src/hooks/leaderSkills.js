@@ -184,7 +184,15 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 events.push({ type: 'summon_card', side: owner, lane: l, card: b[l], source: 'dungeon_summon_leader' });
             }
         }
-        // フォールスルーして共通の playEvents と resolveOnPlaySkill を実行させる
+    } else if (action === 'night_parade') {
+        if (!tokenLanes || tokenLanes.length === 0) {
+            const selectedEnemyLanes = await waitPlayerEnemyLaneSelection(2, owner, true, '封印する相手のレーンを2つまで選んでください', true);
+            if (selectedEnemyLanes === null) return;
+            const tSoul = CARD_MASTER.find(m => m.id === 'token_soul');
+            const selectedAlliedLanes = await waitPlayerLaneSelection(2, owner, tSoul, false, null, false, '配置終了');
+            if (selectedAlliedLanes === null) return;
+            tokenLanes = { enemy: selectedEnemyLanes, allied: selectedAlliedLanes };
+        }
     } else if (action === 'seal_lanes') {
         if (!tokenLanes || tokenLanes.length === 0) {
             const selectedLanes = await waitPlayerEnemyLaneSelection(2, owner, true, '相手のレーンを2つまで選んでください', true);
@@ -279,7 +287,6 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 const targetCard = board[targetLane];
                 targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
                 targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
-                targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
                 const equipSkills = [];
                 if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
                     equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
@@ -386,7 +393,6 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 const targetCard = board[targetLane];
                 targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
                 targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
-                targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
                 const equipSkills = [];
                 if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {

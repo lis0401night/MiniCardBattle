@@ -1,6 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getSeededRandom } from '../utils/gameUtils.js';
 import { hasSkill, getSkillValue, unmergeCardSkills, mergeCardSkills } from '../utils/gameUtils.js';
+import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 
 /**
  * Mini Card Battle - Core Game Engine
@@ -59,6 +60,33 @@ export function quietDiscardFromBoard(state, owner, lane) {
     sendToGrave(targetCard, owner);
 
     b[lane] = null;
+}
+
+export function processPlacementOrEquip(state, owner, lane, newCard, sourceAction, events) {
+    const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+    const existingCard = b[lane];
+    const isEquip = hasSkill(newCard, 'equip') || (existingCard && hasSkill(existingCard, 'arm_self'));
+    const targetBlocksEquip = existingCard && hasSkill(existingCard, 'possession');
+
+    if (isEquip && existingCard && !targetBlocksEquip) {
+        existingCard.power = (existingCard.power || 0) + (newCard.power || 0);
+        existingCard.basePower = (existingCard.basePower || 0) + (newCard.power || 0);
+        existingCard.currentPower = (existingCard.currentPower || 0) + (newCard.power || 0);
+        
+        let equipSkills = [];
+        if (newCard.skill && newCard.skill !== 'none' && newCard.skill !== 'equip') equipSkills.push({ id: newCard.skill, value: newCard.skillValue });
+        if (newCard.skills) newCard.skills.forEach(s => { if (s.id !== 'equip') equipSkills.push(s); });
+        mergeCardSkills(existingCard, equipSkills);
+        
+        existingCard.equippedCards = existingCard.equippedCards || [];
+        existingCard.equippedCards.push(newCard);
+        
+        events.push({ type: 'power_change', side: owner, lane: lane, amount: newCard.power, source: 'equip' });
+    } else {
+        if (existingCard) quietDiscardFromBoard(state, owner, lane);
+        b[lane] = newCard;
+        events.push({ type: 'summon_token', side: owner, lane: lane, card: JSON.parse(JSON.stringify(newCard)), source: sourceAction });
+    }
 }
 
 /**
@@ -628,11 +656,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         currentPower: summonTargetPower,
                         skills: []
                     };
-                    if (b[targetLane] !== null) {
-                        quietDiscardFromBoard(state, owner, targetLane);
-                    }
-                    b[targetLane] = newToken;
-                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'summon' });
+                    processPlacementOrEquip(state, owner, targetLane, newToken, 'summon', events);
                 }
             }
             break;
@@ -706,8 +730,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                         skills: [],
                         isToken: true
                     };
-                    b[targetLane] = newToken;
-                    events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'wall_create' });
+                    processPlacementOrEquip(state, owner, targetLane, newToken, 'wall_create', events);
                 }
             }
             break;
@@ -758,7 +781,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                     b[targetLaneRes] = unionCard;
                     events.push({ type: 'summon_token', side: owner, lane: targetLaneRes, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
                 } else {
-                    const isEquip = hasSkill(simResCard, 'equip');
+                    const isEquip = hasSkill(simResCard, 'equip') || (existingCard && hasSkill(existingCard, 'arm_self'));
                     // 【憑依】：憑依を持つカードには装備できない
                     const targetBlocksEquip = existingCard && hasSkill(existingCard, 'possession');
                     if (isEquip && existingCard && !targetBlocksEquip) {
@@ -829,19 +852,15 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
 
             if (targetLanePuppet !== -1) {
-                // 既存カードを墓地に送る
-                if (b[targetLanePuppet]) quietDiscardFromBoard(state, owner, targetLanePuppet);
-
                 const newPuppetCard = {
                     ...JSON.parse(JSON.stringify(simPuppetCard)),
                     id: `puppet_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
                     baseId: simPuppetCard.baseId || simPuppetCard.id,
                     owner,
                     currentPower: simPuppetCard.power,
-                    skillTriggered: true // 配置（Place）扱いのため召喚時スキルは発動しない
+                    skillTriggered: true
                 };
-                b[targetLanePuppet] = newPuppetCard;
-                events.push({ type: 'summon_card', side: owner, lane: targetLanePuppet, card: JSON.parse(JSON.stringify(newPuppetCard)), source: 'puppet' });
+                processPlacementOrEquip(state, owner, targetLanePuppet, newPuppetCard, 'puppet', events);
 
                 // 相手の墓地から取り除く
                 const puppetIdx = oppPuppetDiscard.indexOf(simPuppetCard);
@@ -920,8 +939,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                             skills: JSON.parse(JSON.stringify(inheritedSkills)),
                             voiceCategory: c.voiceCategory || 'sword'
                         };
-                        b[targetLane] = newToken;
-                        events.push({ type: 'summon_token', side: owner, lane: targetLane, card: JSON.parse(JSON.stringify(newToken)), source: 'clone' });
+                        processPlacementOrEquip(state, owner, targetLane, newToken, 'clone', events);
                     }
                 }
             }
@@ -1014,6 +1032,26 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
  * リーダースキルの効果を適用する (純粋関数)
  * @returns {Array} events
  */
+/**
+ * 盤面への装備（武装）を試み、成功した場合はtrueを返すヘルパー
+ */
+function tryEquipToken(board, lane, newToken, owner, events) {
+    let boardCard = board[lane];
+    if ((hasSkill(newToken, 'equip') || (boardCard && hasSkill(boardCard, 'arm_self'))) && boardCard) {
+        if (!hasSkill(boardCard, 'possession')) {
+            boardCard.basePower = (boardCard.basePower || 0) + (newToken.currentPower || 0);
+            boardCard.currentPower = (boardCard.currentPower || 0) + (newToken.currentPower || 0);
+            let addedSkills = [];
+            if (newToken.skill && newToken.skill !== 'none' && newToken.skill !== 'equip') addedSkills.push({ id: newToken.skill, value: newToken.skillValue });
+            if (newToken.skills) newToken.skills.forEach(s => { if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value }); });
+            mergeCardSkills(boardCard, addedSkills);
+            events.push({ type: 'equip_card', side: owner, lane: lane, card: JSON.parse(JSON.stringify(newToken)) });
+            return true;
+        }
+    }
+    return false;
+}
+
 export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, events = [], forcedTargetIdx = null) {
     const isBlue = owner === 'blue';
     const board = isBlue ? state.playerBoard : state.enemyBoard;
@@ -1061,6 +1099,82 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 } else {
                     events.push({ type: 'immune_block', side: oppOwner, lane: lane, source: 'seal_lanes' });
                 }
+            }
+        }
+    } else if (action === 'night_parade') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        const sealedLanes = isBlue ? state.enemySealedLanes : state.playerSealedLanes;
+        
+        let enemyTargets = [];
+        if (tokenLanes && tokenLanes.enemy) {
+            enemyTargets = [...tokenLanes.enemy];
+        } else if (Array.isArray(tokenLanes) && tokenLanes.length > 0) {
+            enemyTargets = [...tokenLanes];
+        } else {
+            // AI Selection Logic
+            const priorityLanes = [0, 1, 2].filter(i => (!sealedLanes || sealedLanes[i] === 0));
+            priorityLanes.sort((a, b) => (eBoard[b]?.currentPower || 0) - (eBoard[a]?.currentPower || 0));
+            enemyTargets = priorityLanes.slice(0, 2);
+        }
+
+        for (const lane of enemyTargets) {
+            // Apply Seal
+            if (isBlue) {
+                if (state.enemySealedLanes) state.enemySealedLanes[lane] = 1;
+            } else {
+                if (state.playerSealedLanes) state.playerSealedLanes[lane] = 1;
+            }
+
+            // Damage card if exists
+            if (eBoard[lane] !== null) {
+                if (!hasSkill(eBoard[lane], 'immune')) {
+                    eBoard[lane].currentPower -= 4;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: lane, amount: 4, source: 'night_parade' });
+                } else {
+                    events.push({ type: 'immune_block', side: oppOwner, lane: lane, source: 'night_parade' });
+                }
+            }
+        }
+        processDestructionTriggers(state, events);
+
+        // Summon Hitodamas
+        let allyTargets = [];
+        const mySealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+
+        if (tokenLanes && tokenLanes.allied) {
+            allyTargets = [...tokenLanes.allied];
+        } else {
+            // AI Selection Logic for Allied
+            let availableLanes = [0, 1, 2].filter(i => (!mySealedLanes || mySealedLanes[i] === 0));
+            let emptyLanes = availableLanes.filter(i => board[i] === null);
+            let occupiedLanes = availableLanes.filter(i => board[i] !== null).sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
+            
+            allyTargets = [...emptyLanes];
+            if (allyTargets.length < 2) {
+                allyTargets = allyTargets.concat(occupiedLanes.slice(0, 2 - allyTargets.length));
+            }
+            allyTargets = allyTargets.slice(0, 2);
+        }
+
+        const tM = CARD_MASTER.find(m => m.id === 'token_soul') || { name: '人魂', power: 1 };
+        for (let idx = 0; idx < allyTargets.length; idx++) {
+            const lane = allyTargets[idx];
+            const newToken = {
+                id: `tk_np_${Math.floor(getSeededRandom() * 1000000000)}_${idx}`,
+                owner,
+                ...tM,
+                currentPower: tM.power || 1,
+                rarity: tM.rarity || 1,
+                isToken: true,
+                skillTriggered: true // 配置なので召喚時スキルは発動させない
+            };
+
+            if (!tryEquipToken(board, lane, newToken, owner, events)) {
+                if (board[lane] !== null) {
+                    quietDiscardFromBoard(state, owner, lane);
+                }
+                board[lane] = newToken;
+                events.push({ type: 'summon_token', side: owner, lane: lane, card: JSON.parse(JSON.stringify(newToken)), source: 'night_parade' });
             }
         }
     } else if (action === 'annihilation') {
@@ -1145,12 +1259,14 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     rarity: tM.rarity || 1
                     // imgUrl は getCardImgUrl がスキンを参照して解決する
                 };
-                if (board[dragonRitualLane] !== null) {
-                    events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: dragonRitualLane, card: board[dragonRitualLane] }] });
-                    board[dragonRitualLane] = null;
+                if (!tryEquipToken(board, dragonRitualLane, newToken, owner, events)) {
+                    if (board[dragonRitualLane] !== null) {
+                        events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: dragonRitualLane, card: board[dragonRitualLane] }] });
+                        board[dragonRitualLane] = null;
+                    }
+                    board[dragonRitualLane] = newToken;
+                    events.push({ type: 'summon_token', side: owner, lane: dragonRitualLane, card: JSON.parse(JSON.stringify(newToken)), source: 'dragon_high_ritual' });
                 }
-                board[dragonRitualLane] = newToken;
-                events.push({ type: 'summon_token', side: owner, lane: dragonRitualLane, card: JSON.parse(JSON.stringify(newToken)), source: 'dragon_high_ritual' });
             }
         }
 
@@ -1197,14 +1313,16 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 skills: [{ id: 'deadly' }, { id: 'guardian' }]
             };
 
-            if (board[lane] !== null) {
-                quietDiscardFromBoard(state, owner, lane);
+            if (!tryEquipToken(board, lane, newToken, owner, events)) {
+                if (board[lane] !== null) {
+                    quietDiscardFromBoard(state, owner, lane);
+                }
+                
+                // バフ適用前の状態で召喚イベントを発行
+                events.push({ type: 'summon_token', side: owner, lane: lane, card: JSON.parse(JSON.stringify(newToken)), source: 'evil_march' });
+                
+                board[lane] = newToken;
             }
-            
-            // バフ適用前の状態で召喚イベントを発行
-            events.push({ type: 'summon_token', side: owner, lane: lane, card: JSON.parse(JSON.stringify(newToken)), source: 'evil_march' });
-            
-            board[lane] = newToken;
         }
 
         // 2. 自分の場のすべてのカードのパワーを+2する
@@ -1221,13 +1339,13 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         const h = isBlue ? state.playerHand : state.enemyHand;
         const opH = isBlue ? state.enemyHand : state.playerHand;
         
-        // 1. 最大2枚捨てる（AIシミュレーションではなるべくパワーの低いものを捨てる）
+        // 1. 最大2枚捨てる（共通のAI手札選択ロジックを使用）
         let dc = 0;
         if (h.length > 0) {
-            let sortedHand = h.map((c, idx) => ({ card: c, idx })).filter(x => x.card !== null).sort((a, b) => (a.card.currentPower || a.card.power || 0) - (b.card.currentPower || b.card.power || 0));
-            const dropCount = Math.min(2, h.length);
-            const dropIndices = sortedHand.slice(0, dropCount).map(item => item.idx).sort((a, b) => b - a);
-            for (let i of dropIndices) {
+            const dropIndices = getAIDiscardIndices(h, 2);
+            // Splice from the end to avoid index shifting
+            const sortedDropIndices = [...dropIndices].sort((a, b) => b - a);
+            for (let i of sortedDropIndices) {
                 h.splice(i, 1);
                 dc++;
             }
@@ -1397,7 +1515,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                 const existingCard = board[l];
                 const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
                 const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
-                const isEquip = hasSkill(selectedCard, 'equip');
+                const isEquip = hasSkill(selectedCard, 'equip') || (existingCard && hasSkill(existingCard, 'arm_self'));
                 if (isUnion) {
                     const masterData = CARD_MASTER.find(c => c.id === unionSkill.summonId) || CARD_MASTER.find(c => c.id === 'android');
                     let unionCard = JSON.parse(JSON.stringify(masterData));
@@ -1527,13 +1645,15 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             // satan_avatarのみimgUrlを固定設定；dragon系はgetCardImgUrlがスキンを参照して解決する
             if (action === 'satan_avatar') newToken.imgUrl = 'assets/cards/card_token_satan.jpg';
 
-            if (board[l] !== null) {
-                events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
-                board[l] = null;
-            }
+            if (!tryEquipToken(board, l, newToken, owner, events)) {
+                if (board[l] !== null) {
+                    events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
+                    board[l] = null;
+                }
 
-            board[l] = newToken;
-            events.push({ type: 'summon_token', side: owner, lane: l, card: JSON.parse(JSON.stringify(newToken)), source: action });
+                board[l] = newToken;
+                events.push({ type: 'summon_token', side: owner, lane: l, card: JSON.parse(JSON.stringify(newToken)), source: action });
+            }
         }
     } else if (action === 'holy_march') {
         // 騎士召喚（最大2体）
@@ -1550,11 +1670,18 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
         if (tokenLanes !== null) {
             for (let l of tokenLanes) {
-                if (board[l] !== null) {
-                    events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
-                    board[l] = null;
+                const tK = CARD_MASTER.find(m => m.id === 'token_knight');
+                const tk = { id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${l}`, owner, ...tK, currentPower: tK.power, rarity: tK.rarity || 1, imgUrl: 'assets/cards/card_token_knight.jpg', isToken: true };
+
+                if (!tryEquipToken(board, l, tk, owner, events)) {
+                    if (board[l] !== null) {
+                        events.push({ type: 'destroy_cards', targets: [{ side: owner, lane: l, card: board[l] }] });
+                        board[l] = null;
+                    }
+                    board[l] = tk;
+                    events.push({ type: 'summon_token', side: owner, lane: l, card: JSON.parse(JSON.stringify(tk)), source: 'holy_march' });
                 }
-                addKnight(l);
+                count++;
             }
         } else {
             const sealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
@@ -1760,6 +1887,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         let N = targets.length;
         let base = Math.floor(aP / N);
         let rem = aP % N;
+        let hasDoubleStrike = hasSkill(aC, 'double_strike');
+        if (hasDoubleStrike && aP > 0) {
+            events.push({ type: 'double_strike_proc', side: attackerSide, lane: aLane });
+        }
         
         // [1] 与ダメージ分配（肩代わり無効: 守護・身替・憑依のリダイレクトを無視し、各レーンに直接ダメージ）
         let totalActualDmgToDef = 0;
@@ -1767,6 +1898,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         for (let targetLane of targets) {
             let currentDmg = base + (rem > 0 ? 1 : 0);
             if (rem > 0) rem--;
+            
+            if (hasDoubleStrike) currentDmg *= 2;
+            
             if (currentDmg <= 0) continue;
 
             let targetCard = defBoard[targetLane];
@@ -1853,9 +1987,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             // ダメージ分配を再計算（[1]と同じ配分ロジック）
             let pBase = Math.floor(aP / N);
             let pRem = aP % N;
+            let hasDoubleStrike = hasSkill(aC, 'double_strike');
             for (let targetLane of targets) {
-                const laneDmg = pBase + (pRem > 0 ? 1 : 0);
+                let laneDmg = pBase + (pRem > 0 ? 1 : 0);
                 if (pRem > 0) pRem--;
+                if (hasDoubleStrike) laneDmg *= 2;
+                
                 // カードが存在するレーンのみ（空レーンは既にリーダーダメージ処理済み）
                 if (preDmgPowers[targetLane] !== undefined) {
                     const pierceDmg = Math.max(0, laneDmg - preDmgPowers[targetLane]);
@@ -1993,7 +2130,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         if (hasSkill(aC, 'pierce')) {
-            let pDmg = Math.max(0, aP - dP);
+            let effectiveAP = hasSkill(aC, 'double_strike') ? aP * 2 : aP;
+            let pDmg = Math.max(0, effectiveAP - dP);
             if (pDmg > 0) {
                 defHP -= pDmg;
                 events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });

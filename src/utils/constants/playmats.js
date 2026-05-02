@@ -78,7 +78,8 @@ export const PLAYMAT_MASTER = [
     { id: 'pm_elf_high', name: 'リナ&ヴォイテク', image: 'assets/boards/board_elf_high.png' },
     { id: 'pm_cleric_high', name: '断罪の執行者', image: 'assets/boards/board_cleric_high.png' },
     { id: 'pm_devilhunter_high', name: 'ゴーストライダー', image: 'assets/boards/board_devilhunter_high.png' },
-    { id: 'pm_witch_high', name: '時空の探索者', image: 'assets/boards/board_witch_high.png' }
+    { id: 'pm_witch_high', name: '時空の探索者', image: 'assets/boards/board_witch_high.png' },
+    { id: 'pm_oni_high', name: '紅月ノ狂鬼', image: 'assets/boards/board_oni_high.png' }
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
 export let ownedPlaymats = []; // ['android', 'dragon', ...]

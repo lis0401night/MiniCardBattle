@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Mini Card Battle - Character Data
  */
 import cthulhuHighDeck from './enemy_decks/cthulhu_high.js';
@@ -542,6 +542,16 @@ CHARACTERS.witch.skins['witch_high'] = {
     unlockCondition: '実績達成で入手'
 };
 
+CHARACTERS.oni.skins['oni_high'] = {
+    id: 'oni_high',
+    name: '紅月ノ狂鬼',
+    image: 'assets/characters/char_oni_high.png',
+    imageLose: 'assets/characters/char_oni_high_lose.png',
+    icon: 'assets/icons/icon_oni_high.png',
+    iconDamage: 'assets/icons/icon_oni_high_damage.png',
+    unlockCondition: '実績達成で入手'
+};
+
 // ============================================================
 // 夏スキン台詞
 // ============================================================
@@ -667,6 +677,13 @@ CHARACTERS.witch.skins.witch_high.dialogue = {
     win: 'ふふ、未来の魔法を甘く見ないでくださいね。',
     lose: 'まさか……ここまでやるとは。もう少し本気を出すべきでしたね。',
     skill: '世界を再構築します。全部、やり直しですよ。'
+};
+
+CHARACTERS.oni.skins.oni_high.dialogue = {
+    intro: '血が……抑えきれない……！ アハハハ！ すべて壊して、喰らってあげる……！',
+    win: '足りない……まだ足りない……！ もっと血を……！',
+    lose: 'あぁ……鬼の力が……抜けていく……。私、なにを……',
+    skill: '百鬼夜行……！ 忌まわしき血の宴の始まりよ！ アハハハ！'
 };
 
 // ============================================================

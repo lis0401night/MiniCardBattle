@@ -142,8 +142,8 @@ export function initEventCthulhuHighMode(charId) {
         name: '魔界の征服者 ナイア',
         leaderSkill: {
             name: '異界の扉',
-            desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
-            cost: 2,
+            desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
+            cost: 3,
             action: 'otherworld_gate'
         }
     };
@@ -329,6 +329,46 @@ export function initEventWitchHighMode(charId) {
     GameState.appState = 'story_intro';
 
     const dialogues = EVENT_DIALOGUES.event_witch_high[charId] || EVENT_DIALOGUES.event_witch_high['default'];
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
+
+    performFadeTransition(() => {
+        setupDialogueScreen();
+    });
+}
+
+/**
+ * 高難易度イベント：紅月ノ狂鬼 カグラ の初期化
+ */
+export function initEventOniHighMode(charId) {
+    GameState.playerConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig = {
+        ...CHARACTERS['oni'],
+        hp: 40,
+        name: '紅月ノ狂鬼 カグラ',
+        leaderSkill: {
+            name: '百鬼夜行',
+            desc: '(SP:3) 相手のレーンを2つまで選択する。そのレーンのカードに4ダメージを与え、レーンを1ターン封印する。自分の場に「人魂（パワー1）」を2体まで配置する。',
+            cost: 3,
+            action: 'night_parade'
+        }
+    };
+    GameState.gameMode = 'event_oni_high';
+    GameState.aiLevel = 3;
+    GameState.battleCount = 7;
+    GameState.selectedStageId = 'oni';
+
+    if (!GameState.enemySkins) GameState.enemySkins = {};
+    GameState.enemySkins['oni'] = 'oni_high';
+
+    if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image = getSkinImage(GameState.enemyConfig, 'oni_high', 'image');
+        GameState.enemyConfig.imageLose = getSkinImage(GameState.enemyConfig, 'oni_high', 'imageLose');
+        GameState.enemyConfig.icon = getSkinImage(GameState.enemyConfig, 'oni_high', 'icon');
+    }
+
+    GameState.appState = 'story_intro';
+
+    const dialogues = EVENT_DIALOGUES.event_oni_high[charId] || EVENT_DIALOGUES.event_oni_high['default'];
     GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
     performFadeTransition(() => {
