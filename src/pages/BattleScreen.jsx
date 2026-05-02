@@ -36,7 +36,7 @@ export default function BattleScreen() {
                 setTimeout(() => {
                     setSummonAnim({ active: false, card: null, owner: 'blue' });
                     resolve();
-                }, 1300); // 1.3秒間アニメーションを表示
+                }, 1100); // 1.1秒間アニメーションを表示
             });
         });
 
