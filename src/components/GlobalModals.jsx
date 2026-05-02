@@ -441,7 +441,7 @@ export default function GlobalModals() {
 
       {/* Card Preview Modal */}
       {cardPreviewData && (
-        <div className="modal-overlay" style={{ zIndex: 3500, display: 'flex' }} onClick={handleCloseCardPreview}>
+        <div className="modal-overlay" style={{ zIndex: 4000, display: 'flex' }} onClick={handleCloseCardPreview}>
           {renderCardPreviewContent(
             cardPreviewData.card,
             cardPreviewData.styleProps || { showPreviewActions: true }

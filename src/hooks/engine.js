@@ -879,7 +879,12 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             };
             // スキルの引き継ぎ（分身以外）
             let inheritedSkills = [];
-            if (c.skill && c.skill !== 'clone') inheritedSkills.push({ id: c.skill, value: c.skillValue });
+            if (c.skill && c.skill !== 'clone') {
+                const inherited = { id: c.skill, value: c.skillValue };
+                if (c.summonId) inherited.summonId = c.summonId;
+                if (c.targetId) inherited.targetId = c.targetId;
+                inheritedSkills.push(inherited);
+            }
             if (Array.isArray(c.skills)) {
                 inheritedSkills = inheritedSkills.concat(c.skills.filter(sk => sk.id !== 'clone'));
             }

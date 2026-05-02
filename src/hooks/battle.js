@@ -11,7 +11,7 @@ import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multipl
 import { SOUNDS, playSkillSound, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
-import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook } from './uiBattle.js';
+import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook, playSummonAnimation } from './uiBattle.js';
 import { generateDeck } from './deck.js';
 import { applyActiveSkillLogic, calculateCombatPhase, applySingleCombat } from './engine.js';
 import { getIsHost, cachedRoomData, sendOnlineAction, listenToRoomActions, stopListeningToRoomActions } from './multiplayer.js';
@@ -1774,6 +1774,9 @@ export async function playCard(o, hI, l) {
     const playingCard = h[hI];
     if (!playingCard) return;
 
+    // 手札からのプレイ（召喚・合体・装備含む）時にアニメーションを再生
+    await playSummonAnimation(playingCard, o);
+
     if (b[l]) {
         // 合体（Union）の判定
         const unionSkill = playingCard.skills && playingCard.skills.find(s => s.id === 'union');
@@ -1825,6 +1828,12 @@ export async function playCard(o, hI, l) {
                 // スキルの統合
                 if (!targetCard.skills) {
                     targetCard.skills = targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+                    if (targetCard.skill !== 'none' && targetCard.summonId) {
+                        targetCard.skills[0].summonId = targetCard.summonId;
+                    }
+                    if (targetCard.skill !== 'none' && targetCard.targetId) {
+                        targetCard.skills[0].targetId = targetCard.targetId;
+                    }
                     targetCard.skill = 'none';
                 }
 

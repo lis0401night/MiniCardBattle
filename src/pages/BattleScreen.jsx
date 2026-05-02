@@ -3,8 +3,8 @@ import { GameState } from '../hooks/gameState.js';
 import { checkWinCondition, discardCard, endTurnLogic, playCard, returnToTitle, showEnemySkillConfirm, showSkillConfirm, endPlayerTurn, drawCard, startTurn, dispatchBattleAction } from '../hooks/battle.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { setUpdateCardDetailHook, setUpdateBattleUIHook } from '../hooks/uiBattle.js';
-import { playSound, sleep, isTransitioning, hasSkill } from '../utils/gameUtils.js';
+import { setUpdateCardDetailHook, setUpdateBattleUIHook, setSummonAnimationHook } from '../hooks/uiBattle.js';
+import { playSound, sleep, isTransitioning, hasSkill, getCardImgUrl } from '../utils/gameUtils.js';
 
 import EnemyArea from '../components/battle/EnemyArea.jsx';
 import PlayerArea from '../components/battle/PlayerArea.jsx';
@@ -19,6 +19,7 @@ export default function BattleScreen() {
     const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
     const [isInitializing, setIsInitializing] = useState(true);
     const [startTurnOrderAnim, setStartTurnOrderAnim] = useState(false);
+    const [summonAnim, setSummonAnim] = useState({ active: false, card: null, owner: 'blue' });
 
     // 強制再描画フックの登録
     useEffect(() => {
@@ -29,9 +30,20 @@ export default function BattleScreen() {
             setCardDetailColor(color);
         });
 
+        setSummonAnimationHook((card, owner) => {
+            return new Promise(resolve => {
+                setSummonAnim({ active: true, card, owner });
+                setTimeout(() => {
+                    setSummonAnim({ active: false, card: null, owner: 'blue' });
+                    resolve();
+                }, 1300); // 1.3秒間アニメーションを表示
+            });
+        });
+
         return () => {
             setUpdateBattleUIHook(null);
             setUpdateCardDetailHook(null);
+            setSummonAnimationHook(null);
         };
     }, []);
 
@@ -283,11 +295,13 @@ export default function BattleScreen() {
                     id="card-detail-view"
                     className="card-detail-box"
                     style={{ color: cardDetailColor }}
-                    dangerouslySetInnerHTML={{ __html: cardDetailHtml || (
-                        GameState.isDiscardingMode
-                            ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === 'MULLIGAN' ? '引き直すカードを' : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
-                            : ''
-                    ) }}
+                    dangerouslySetInnerHTML={{
+                        __html: cardDetailHtml || (
+                            GameState.isDiscardingMode
+                                ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === 'MULLIGAN' ? '引き直すカードを' : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
+                                : ''
+                        )
+                    }}
                 ></div>
             </div>
 
@@ -343,6 +357,16 @@ export default function BattleScreen() {
                 startAnim={startTurnOrderAnim}
                 onComplete={handleTurnOrderComplete}
             />
+
+            {/* 召喚アニメーション用DOM */}
+            {summonAnim.active && summonAnim.card && (
+                <div className="summon-anim-overlay">
+                    <div className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${summonAnim.owner === 'blue' ? 'from-bottom' : 'from-top'}`}>
+                        <div className="card-bg" style={{ backgroundImage: `url('${getCardImgUrl(summonAnim.card)}')`, filter: summonAnim.card.filter || 'none' }}></div>
+                        <div className="card-power" style={{ fontSize: '3.5rem', right: '10px', bottom: '5px' }}>{summonAnim.card.power}</div>
+                    </div>
+                </div>
+            )}
 
             {/* リーダースキルカットイン用DOM（レガシー互換） */}
             <div id="screen-cutin" style={{ display: 'none' }}>

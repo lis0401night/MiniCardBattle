@@ -3023,3 +3023,11 @@ body.vfx-shake {
 
 /* 位置はコンポーネント側から --vfx-top で制御 */
 
+/* 召喚アニメーション用 */
+.summon-anim-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+.summon-anim-card { position: relative; width: 240px; height: 336px; border-width: 4px !important; border-radius: 12px !important; box-shadow: 0 0 20px rgba(250, 204, 21, 0.8), 0 0 40px rgba(250, 204, 21, 0.4); }
+.summon-anim-card img { width: 100%; height: 100%; object-fit: contain; }
+.summon-anim-card.from-bottom { animation: summonSlideFromBottom 1.3s cubic-bezier(0.34, 1.1, 0.64, 1) forwards; }
+.summon-anim-card.from-top { animation: summonSlideFromTop 1.3s cubic-bezier(0.34, 1.1, 0.64, 1) forwards; }
+@keyframes summonSlideFromBottom { 0% { transform: translateY(120%) scale(0.6); opacity: 0; } 25% { transform: translateY(-5%) scale(1.05); opacity: 1; } 45% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); } 75% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1.2); } 100% { transform: translateY(0) scale(1.1); opacity: 0; filter: brightness(2); } }
+@keyframes summonSlideFromTop { 0% { transform: translateY(-120%) scale(0.6); opacity: 0; } 25% { transform: translateY(5%) scale(1.05); opacity: 1; } 45% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); } 75% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1.2); } 100% { transform: translateY(0) scale(1.1); opacity: 0; filter: brightness(2); } }

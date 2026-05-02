@@ -392,6 +392,10 @@ export function getSkillValue(c, skillId) {
 export function mergeCardSkills(targetCard, equipSkills) {
     if (!targetCard.skills) {
         targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
+        if (targetCard.skill && targetCard.skill !== 'none') {
+            if (targetCard.summonId) targetCard.skills[0].summonId = targetCard.summonId;
+            if (targetCard.targetId) targetCard.skills[0].targetId = targetCard.targetId;
+        }
         targetCard.skill = 'none';
     }
 

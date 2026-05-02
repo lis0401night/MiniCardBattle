@@ -5,7 +5,7 @@ import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSk
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard, consumeAIAction, showSpeechBubble } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
-import { renderHand, renderBoard, updateCardPowerOnly } from './uiBattle.js';
+import { renderHand, renderBoard, updateCardPowerOnly, playSummonAnimation } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
 import { PASSIVE_SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { getIsHost } from './multiplayer.js';
@@ -460,7 +460,12 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
 
         // スキルの引き継ぎ（分身以外）
         let inheritedSkills = [];
-        if (c.skill && c.skill !== 'clone') inheritedSkills.push({ id: c.skill, value: c.skillValue });
+        if (c.skill && c.skill !== 'clone') {
+            const inherited = { id: c.skill, value: c.skillValue };
+            if (c.summonId) inherited.summonId = c.summonId;
+            if (c.targetId) inherited.targetId = c.targetId;
+            inheritedSkills.push(inherited);
+        }
         if (Array.isArray(c.skills)) {
             inheritedSkills = inheritedSkills.concat(c.skills.filter(sk => sk.id !== 'clone'));
         }
@@ -492,6 +497,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             const newToken = {
                 id: `cl_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
                 owner: o,
+                baseId: c.baseId || c.id,
                 ...tC,
                 isToken: true,
                 name: '分身',
@@ -1471,6 +1477,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 if (selectedLanes && selectedLanes.length > 0) {
                     const targetLane = selectedLanes[0];
                     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+                    // 演出：号令による召喚の場合もアニメーションを再生
+                    await playSummonAnimation(topCard, o);
 
                     if (board[targetLane] && (hasSkill(topCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
                         const targetCard = board[targetLane];

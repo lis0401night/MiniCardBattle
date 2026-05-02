@@ -20,6 +20,18 @@ export function setUpdateBattleUIHook(hook) {
     updateBattleUIHook = hook;
 }
 
+export let summonAnimationHook = null;
+export function setSummonAnimationHook(hook) {
+    summonAnimationHook = hook;
+}
+
+export function playSummonAnimation(card, owner) {
+    if (summonAnimationHook) {
+        return summonAnimationHook(card, owner);
+    }
+    return Promise.resolve();
+}
+
 const triggerReactUpdate = () => {
     if (updateBattleUIHook) updateBattleUIHook();
 };
