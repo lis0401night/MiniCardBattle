@@ -1402,6 +1402,11 @@ export function simulateMove(handIdx, laneIdx, hand, currentMyBoard, currentOpBo
                             } else skills.push(sk);
                         });
                     }
+
+                    // 選択されたスキルでカードのスキルを上書きし、パッシブスキルの評価に反映させる
+                    activeCard.skills = [...skills];
+                    activeCard.skill = 'none';
+
                     if (!activeCard.skillTriggered) {
                         skills.forEach(sk => {
                             if (sk.id === 'call') {
