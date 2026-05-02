@@ -1899,12 +1899,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             let currentDmg = base + (rem > 0 ? 1 : 0);
             if (rem > 0) rem--;
             
-            if (hasDoubleStrike) currentDmg *= 2;
-            
             if (currentDmg <= 0) continue;
 
             let targetCard = defBoard[targetLane];
             if (targetCard) {
+                if (hasDoubleStrike) currentDmg *= 2;
+                
                 preDmgPowers[targetLane] = Number(targetCard.currentPower ?? targetCard.power ?? 0) || 0;
                 let effectiveDmg = currentDmg;
                 if (hasSkill(targetCard, 'sturdy')) {
