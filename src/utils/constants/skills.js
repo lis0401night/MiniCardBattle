@@ -32,7 +32,7 @@ export const SKILLS = {
             if (summonCard) {
                 return [
                     { type: 'text', value: '破壊時、同じレーンに' },
-                    { type: 'link', value: `${summonCard.name}（パワー${val}）`, targetId: sk.summonId },
+                    { type: 'link', value: `「${summonCard.name}（パワー${val}）」`, targetId: sk.summonId },
                     { type: 'text', value: 'を出す。' }
                 ];
             }
@@ -67,7 +67,7 @@ export const SKILLS = {
             if (summonCard) {
                 return [
                     { type: 'text', value: '召喚時、自分のレーンに、' },
-                    { type: 'link', value: `${summonCard.name}（パワー${val}）`, targetId: summonId },
+                    { type: 'link', value: `「${summonCard.name}（パワー${val}）」`, targetId: summonId },
                     { type: 'text', value: 'を配置する。' }
                 ];
             }
@@ -98,14 +98,20 @@ export const SKILLS = {
     replicate: { name: '複製', icon: '👯', desc: (val) => '召喚時、最もパワーが高い自分の他のカード1体のパワー分、自身のパワーを+する。' },
     equip: { name: '装備', icon: '🗡️', desc: (val) => '既にカードのあるレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。' },
     phase: { name: '位相', icon: '🌫️', desc: (val) => '位相を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。ただし「防御」にはブロックされる。' },
-    petrify: { name: '石化', icon: '🗿', desc: (val) => '召喚時、正面のカードを「石像（パワー5、防御、頑丈）」に変身させる。（破壊時、元のカードが墓地に置かれる）' },
+    petrify: {
+        name: '石化', icon: '🗿', desc: (val) => [
+            { type: 'text', value: '召喚時、正面のカードを' },
+            { type: 'link', value: '「石像（パワー5、防御、頑丈）」', targetId: 'token_statue' },
+            { type: 'text', value: 'に変身させる。（破壊時、元のカードが墓地に置かれる）' }
+        ]
+    },
     oblivion: { name: '忘却', icon: '⚪', desc: (val) => '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。' },
     call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚できる。` },
     bless: { name: '祝福', icon: '🕯️', desc: (val) => `召喚時、手札のカード1枚を選び、パワーを+${val}する。` },
     wall_create: {
         name: '造壁', icon: '🏰', desc: (val) => [
             { type: 'text', value: '召喚時、自分のレーンに、' },
-            { type: 'link', value: `防壁（パワー${val}）`, targetId: 'token_wall' },
+            { type: 'link', value: `「防壁（パワー${val}）」`, targetId: 'token_wall' },
             { type: 'text', value: 'を配置する。' }
         ]
     },
@@ -129,11 +135,14 @@ export const SKILLS = {
                 return '配置時、「対応するカード」の上に重ねた場合に「特別なカード」になる。';
             }
 
+            const targetStr = targetCard ? `「${targetCard.name}」` : '「対応するカード」';
+            const summonStr = summonCard ? `「${summonCard.name}」` : '「特別なカード」';
+
             return [
                 { type: 'text', value: '配置時、' },
-                { type: 'link', value: `「${targetCard ? targetCard.name : '対応するカード'}」`, targetId: sk.targetId || null },
+                { type: 'link', value: targetStr, targetId: sk.targetId || null },
                 { type: 'text', value: 'の上に重ねた場合に' },
-                { type: 'link', value: `「${summonCard ? summonCard.name : '特別なカード'}」`, targetId: sk.summonId || null },
+                { type: 'link', value: summonStr, targetId: sk.summonId || null },
                 { type: 'text', value: 'になる。' }
             ];
         }
@@ -158,7 +167,7 @@ export const SKILLS = {
             if (summonCard) {
                 return [
                     { type: 'text', value: '自分のターン開始時、同じレーンに' },
-                    { type: 'link', value: `${summonCard.name}（パワー${val}）`, targetId: summonId },
+                    { type: 'link', value: `「${summonCard.name}（パワー${val}）」`, targetId: summonId },
                     { type: 'text', value: 'を配置する。' }
                 ];
             }
