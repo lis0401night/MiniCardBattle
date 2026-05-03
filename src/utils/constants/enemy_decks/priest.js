@@ -11,7 +11,7 @@ export default {
     normal: [
         'jackalpriest', 'jackalpriest',
         'goldship', 'goldship',
-        'colossus', 'colossus',
+        'sentinel', 'sentinel',
         'kitepriest', 'kitepriest',
         'crocodile', 'crocodile',
         'griffin', 'griffin',
@@ -23,7 +23,7 @@ export default {
         'pharaoh', 'pharaoh',
         'jackalpriest', 'jackalpriest', 'jackalpriest',
         'goldship', 'goldship', 'goldship',
-        'colossus', 'colossus',
+        'sentinel', 'sentinel',
         'crocodile', 'crocodile', 'crocodile',
         'griffin', 'griffin', 'griffin',
         'manticore', 'manticore', 'manticore', 'manticore',

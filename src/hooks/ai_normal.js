@@ -504,7 +504,11 @@ export function getBestSimulatedMove() {
                     const tokenPower = action.skillValue || 1;
                     let tokenId = action.summonId;
                     if (!tokenId) {
-                        tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
+                        if (action.skillId === 'wall_create') {
+                            tokenId = 'token_wall';
+                        } else {
+                            tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
+                        }
                     }
                     const baseMaster = CARD_MASTER.find(m => m.id === tokenId);
                     const lanes = [...(action.lanes || [])];
