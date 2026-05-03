@@ -1913,6 +1913,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     let dC_counter = originalTarget;
     // 防御（および拘束・待機）状態でなく、位相が一致している場合のみ反撃が発生
     let dP = (dC_counter && !hasSkill(dC_counter, 'defender') && !(dC_counter.stunTurns > 0)) ? (Number(dC_counter.currentPower ?? dC_counter.power ?? 0) || 0) : 0;
+    
+    // 貫通計算用に防御側の元パワーを保持しておく（防御の有無に関わらずその時点のパワーを参照）
+    let originalTargetPower = originalTarget ? (Number(originalTarget.currentPower ?? originalTarget.power ?? 0) || 0) : 0;
 
     // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）
     const aC_defend = atkBoard[aLane];
@@ -2184,7 +2187,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
         if (hasSkill(aC, 'pierce')) {
             let effectiveAP = hasSkill(aC, 'double_strike') ? aP * 2 : aP;
-            let pDmg = Math.max(0, effectiveAP - dP);
+            let pDmg = Math.max(0, effectiveAP - originalTargetPower);
             if (pDmg > 0) {
                 defHP -= pDmg;
                 events.push({ type: 'damage_player', side: defSide, amount: pDmg, source: 'pierce' });
