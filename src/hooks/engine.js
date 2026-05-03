@@ -2309,7 +2309,6 @@ export function applyPassiveSkillLogic(state, side, skipContract = false, events
             const summonId = awakeSkill?.summonId || 'token_dragon';
             
             // 同レーンにトークンを配置（Place）
-            // 配置処理はapplyActiveSkillLogicの'awake'を呼び出す
             events.push({ type: 'awake_trigger', side, lane: i, card: c, summonId, value: v });
             applyActiveSkillLogic(state, side, i, 'awake', v, events, [], i);
         }

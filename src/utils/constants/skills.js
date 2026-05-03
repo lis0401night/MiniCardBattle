@@ -189,12 +189,12 @@ export const SKILLS = {
 
 // 召喚時に発動するスキル（配置時は発動しない）
 export const ACTIVE_SKILLS = [
-    'snipe', 'spread', 'heal', 'draw', 'support', 'clone', 'split', 'awake',
+    'snipe', 'spread', 'heal', 'draw', 'support', 'clone',
     'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'force', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet', 'leap', 'chant', 'burial', 'recurse'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
     'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'reflect', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
-    'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self', 'maintain', 'grave_keeper'
+    'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self', 'maintain', 'grave_keeper', 'awake'
 ];
