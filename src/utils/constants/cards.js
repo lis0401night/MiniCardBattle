@@ -105,7 +105,7 @@ export const CARD_MASTER = [
     { id: 'griffin', name: 'グリフィン', rarity: 2, power: 7, skills: [{ id: 'takeover' }, { id: 'move' }, { id: 'pierce' }], voiceCategory: 'bird', flavor: '鷲の頭と獅子の胴体を持つ神聖なる獣。その翼は天空を制し、その爪は大地を切り裂く。' },
     { id: 'kitepriest', name: '鳶の神官', rarity: 2, power: 4, skill: 'recurse', skillValue: 4, voiceCategory: 'human_female_cool', flavor: '空高く舞う鳶の目を持ち、過去と未来を見通す冷徹なる巫女。彼女が紡ぐ神秘の呪文は、途切れた運命の糸を再び繋ぎ合わせ、何度でも奇跡を呼び起こす。' },
     { id: 'manticore', name: '鋼のマンティコア', rarity: 2, power: 4, skills: [{ id: 'maintain' }, { id: 'sturdy' }, { id: 'snipe', value: 2 }], voiceCategory: 'machine_old', flavor: '忘れ去られた古代文明の遺物であり、侵入者を排除するためだけに稼働し続ける機械魔獣。' },
-    { id: 'sentinel', name: '黄金の歩哨', rarity: 2, power: 5, skills: [{ id: 'legendary' }, { id: 'guardian' }, { id: 'sturdy' }], voiceCategory: 'machine_old', flavor: '遺跡の深部で王の眠りを守護する黄金の機械兵士。暗い石室に、古く軋んだ駆動音が響き渡る。' },
+    { id: 'sentinel', name: '黄金の歩哨', rarity: 2, power: 5, skills: [{ id: 'legendary' }, { id: 'guardian' }, { id: 'sturdy' }], voiceCategory: 'stone', flavor: '遺跡の深部で王の眠りを守護する黄金の機械兵士。暗い石室に、古く軋んだ駆動音が響き渡る。' },
     { id: 'warlock', name: '煉獄の拷問官', rarity: 2, power: 4, skills: [{ id: 'sacrifice', value: 4 }, { id: 'berserk', value: 4 }, { id: 'spread', value: 4 }], voiceCategory: 'undead', flavor: '燃え盛る炎の鞭を振るう魔界の拷問官。その一振りは敵を焼き払い、自らの魂さえも劫火の糧とする。' },
     { id: 'dealer', name: 'デビル・ディーラー', rarity: 2, power: 5, skills: [{ id: 'sacrifice', value: 2 }, { id: 'draw', value: 3 }], flavor: '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。' },
     { id: 'daemonarmor', name: '悪魔の鎧', rarity: 2, power: 5, skills: [{ id: 'equip' }, { id: 'sacrifice', value: 2 }], voiceCategory: 'sword', flavor: '真紅の血肉を喰らい、絶大なる力を対象に宿す呪われた甲冑。身に着けた者は代償として自らの生命を削り続ける。' },

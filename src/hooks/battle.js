@@ -1089,9 +1089,9 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
                 return validCards[aiAction.targetIdx];
             }
         }
-        // フォールバック: 最もパワーの高いカードを選択
-        const sorted = [...validCards].sort((a, b) => b.power - a.power);
-        return sorted[0];
+        // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
+        const randomIndex = Math.floor(Math.random() * validCards.length);
+        return validCards[randomIndex];
     }
 
     // プレイヤーの場合
@@ -1129,9 +1129,9 @@ export async function waitPlayerDualDiscardSelection(blueCards, redCards, maxCho
 
     // AIの場合
     if (owner === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-        // 現在は完全ランダムで maxChoices 枚選択
-        const allCards = [...blueCards, ...redCards].sort(() => Math.random() - 0.5);
-        return allCards.slice(0, maxChoices);
+        // 回帰など: デッキ切れを防ぐため、相手の墓地からは選ばず自分の墓地（redCards）からのみランダムに選ぶ
+        const ownCards = [...redCards].sort(() => Math.random() - 0.5);
+        return ownCards.slice(0, maxChoices);
     }
 
     // プレイヤーの場合

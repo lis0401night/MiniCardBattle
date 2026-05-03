@@ -157,7 +157,6 @@ export function getBestSimulatedMove() {
                         
                         skillsToGather.forEach(sk => {
                             if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
-                            if (sk.id === 'salvage') tokenTargetCount += 1;
                             
                             // 【重要仕様】スキルの値(value)の解釈：
                             // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
@@ -176,7 +175,6 @@ export function getBestSimulatedMove() {
                             const sk = group[idx];
                             if (!sk) return;
                             if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
-                            if (sk.id === 'salvage') tokenTargetCount += 1;
                             // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
                             // ※ call, metamorph は実行時の動的判断（アドホック）や自身への適用となるため、事前のレーン確保は不要
                             if (sk.id === 'resurrect') tc += 1;
@@ -221,20 +219,20 @@ export function getBestSimulatedMove() {
                         const isSummonAction = ['play', 'call', 'invite', 'chant'].includes(sourceType);
                         if (isSummonAction) {
                             // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時発動）のため、ここには含めない
-                            if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'leap'].includes(card.skill)) {
+                            if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'leap'].includes(card.skill)) {
                                 effectiveSkills.push({ id: card.skill, value: card.skillValue ?? 1 });
                             }
                             if (Array.isArray(card.skills)) {
                                 card.skills.forEach(s => {
                                     // ※ awake（覚醒）はパッシブスキルのため除外
-                                    if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'choice', 'leap'].includes(s.id)) effectiveSkills.push(s);
+                                    if (['invite', 'chant', 'resurrect', 'convert', 'draw', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet', 'choice', 'leap'].includes(s.id)) effectiveSkills.push(s);
                                 });
                             }
                             if (c1) c1.forEach(idx => { if (card.choices && card.choices[idx]) effectiveSkills.push(card.choices[idx]); });
                             if (c2) c2.forEach(idx => { if (card.choices2 && card.choices2[idx]) effectiveSkills.push(card.choices2[idx]); });
 
                             // ターゲット選択を伴うスキルを抽出
-                            targetSkill = effectiveSkills.find(s => ['invite', 'chant', 'resurrect', 'convert', 'draw', 'salvage', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet'].includes(s.id));
+                            targetSkill = effectiveSkills.find(s => ['invite', 'chant', 'resurrect', 'convert', 'draw', 'reinforce', 'clone', 'summon', 'wall_create', 'split', 'puppet'].includes(s.id));
                         }
 
                         const buildSkillBranch = (currentSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand = []) => {
@@ -304,25 +302,6 @@ export function getBestSimulatedMove() {
                                         let nextBranches = buildSkillBranch(remainingSkills, currentUsedHand, [...currentUsedDiscard, i], currentDepth, currentDiscardedFromHand);
                                         for (let nb of nextBranches) {
                                             results.push([resNode, ...nb]);
-                                        }
-                                    }
-                                }
-                            } else if (sk.id === 'salvage') {
-                                const count = sk.value || 1;
-                                const candidates = [...originalDiscard, ...currentDiscardedFromHand];
-                                let candIdxs = [];
-                                for (let i = 0; i < candidates.length; i++) {
-                                    if (!currentUsedDiscard.includes(i) && !candidates[i].isToken) candIdxs.push(i);
-                                }
-
-                                if (candIdxs.length > 0) {
-                                    let combinations = getCombinations(candIdxs, Math.min(candIdxs.length, count));
-                                    for (let combo of combinations) {
-                                        // targetUid: discardCard はマスターデータで再構成するため baseId（マスターID）を優先使用する。
-                                        let salvageNodes = combo.map(idx => ({ type: 'salvage', targetIdx: idx, targetUid: candidates[idx]?.baseId || candidates[idx]?.id }));
-                                        let nextBranches = buildSkillBranch(remainingSkills, currentUsedHand, [...currentUsedDiscard, ...combo], currentDepth, currentDiscardedFromHand);
-                                        for (let nb of nextBranches) {
-                                            results.push([...salvageNodes, ...nb]);
                                         }
                                     }
                                 }
