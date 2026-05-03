@@ -1868,14 +1868,20 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     if (defBoard[l]) {
         dg = (l === 1) ? (checkGuardian(defBoard[0]) ? 0 : (checkGuardian(defBoard[2]) ? 2 : null)) : (l === 0 ? (checkGuardian(defBoard[1]) ? 1 : null) : (checkGuardian(defBoard[1]) ? 1 : null));
     }
-    if (dg !== null && !hasSkill(defBoard[l], 'guardian')) dLane = dg;
+    if (dg !== null && !hasSkill(defBoard[l], 'guardian')) {
+        dLane = dg;
+        events.push({ type: 'skill_popup', side: oppSide, lane: dg, skillName: '守護' });
+    }
 
     // 身替の対応: ダメージを受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
     // 【重要】身替も隣のレーンに味方カードがいる場合のみ発動する
     if (defBoard[dLane] && hasSkill(defBoard[dLane], 'substitute')) {
         const checkSubstituteTarget = (c) => c && (hasSkill(c, 'phase') === aHasPhase || hasSkill(c, 'defender') || c.stunTurns > 0);
         let sub = (dLane === 1) ? (checkSubstituteTarget(defBoard[0]) ? 0 : (checkSubstituteTarget(defBoard[2]) ? 2 : null)) : (dLane === 0 ? (checkSubstituteTarget(defBoard[1]) ? 1 : null) : (checkSubstituteTarget(defBoard[1]) ? 1 : null));
-        if (sub !== null) dLane = sub;
+        if (sub !== null) {
+            dLane = sub;
+            events.push({ type: 'skill_popup', side: oppSide, lane: dLane, skillName: '身替' });
+        }
     }
 
     let aLane = l;
@@ -1885,12 +1891,18 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         if (atkBoard[l]) {
             ag = (l === 1) ? (hasSkill(atkBoard[0], 'guardian') ? 0 : (hasSkill(atkBoard[2], 'guardian') ? 2 : null)) : (l === 0 ? (hasSkill(atkBoard[1], 'guardian') ? 1 : null) : (hasSkill(atkBoard[1], 'guardian') ? 1 : null));
         }
-        if (ag !== null) aLane = ag;
+        if (ag !== null) {
+            aLane = ag;
+            events.push({ type: 'skill_popup', side: attackerSide, lane: aLane, skillName: '守護' });
+        }
 
         // 身替の対応: 反撃を受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
         if (hasSkill(atkBoard[aLane], 'substitute')) {
             let sub = (aLane === 1) ? (atkBoard[0] ? 0 : (atkBoard[2] ? 2 : null)) : (aLane === 0 ? (atkBoard[1] ? 1 : null) : (atkBoard[1] ? 1 : null));
-            if (sub !== null) aLane = sub;
+            if (sub !== null) {
+                aLane = sub;
+                events.push({ type: 'skill_popup', side: attackerSide, lane: aLane, skillName: '身替' });
+            }
         }
     }
 
@@ -2169,6 +2181,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         if (dmgToDef > 0 && hasSkill(dC, 'possession')) {
             if (dmgToDef > 0) {
                 defHP -= dmgToDef;
+                events.push({ type: 'skill_popup', side: defSide, lane: dLane, skillName: '憑依' });
                 events.push({ type: 'damage_player', side: defSide, amount: dmgToDef, source: 'possession', lane: dLane });
                 dmgToDef = 0;
             }
@@ -2177,6 +2190,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             if (dmgToAtk > 0) {
                 if (attackerSide === 'blue') state.playerHP -= dmgToAtk;
                 else state.enemyHP -= dmgToAtk;
+                events.push({ type: 'skill_popup', side: attackerSide, lane: aLane, skillName: '憑依' });
                 events.push({ type: 'damage_player', side: attackerSide, amount: dmgToAtk, source: 'possession', lane: aLane });
                 dmgToAtk = 0;
             }
