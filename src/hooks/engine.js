@@ -66,7 +66,7 @@ export function processPlacementOrEquip(state, owner, lane, newCard, sourceActio
     const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
     const existingCard = b[lane];
     const isEquip = hasSkill(newCard, 'equip') || (existingCard && hasSkill(existingCard, 'arm_self'));
-    const targetBlocksEquip = existingCard && hasSkill(existingCard, 'possession');
+    const targetBlocksEquip = (existingCard && hasSkill(existingCard, 'possession')) || hasSkill(newCard, 'possession');
 
     if (isEquip && existingCard && !targetBlocksEquip) {
         existingCard.power = (existingCard.power || 0) + (newCard.power || 0);
@@ -801,7 +801,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 } else {
                     const isEquip = hasSkill(simResCard, 'equip') || (existingCard && hasSkill(existingCard, 'arm_self'));
                     // 【憑依】：憑依を持つカードには装備できない
-                    const targetBlocksEquip = existingCard && hasSkill(existingCard, 'possession');
+                    const targetBlocksEquip = (existingCard && hasSkill(existingCard, 'possession')) || hasSkill(simResCard, 'possession');
                     if (isEquip && existingCard && !targetBlocksEquip) {
                         // 装備（既存カードの上へ）
                         existingCard.power = (existingCard.power || 0) + (simResCard.power || 0);
@@ -1062,7 +1062,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
 function tryEquipToken(board, lane, newToken, owner, events) {
     let boardCard = board[lane];
     if ((hasSkill(newToken, 'equip') || (boardCard && hasSkill(boardCard, 'arm_self'))) && boardCard) {
-        if (!hasSkill(boardCard, 'possession')) {
+        if (!hasSkill(boardCard, 'possession') && !hasSkill(newToken, 'possession')) {
             boardCard.basePower = (boardCard.basePower || 0) + (newToken.currentPower || 0);
             boardCard.currentPower = (boardCard.currentPower || 0) + (newToken.currentPower || 0);
             let addedSkills = [];
@@ -1580,7 +1580,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
                     unionCard.stunTurns = 0;
                     board[l] = unionCard;
                     events.push({ type: 'summon_card', side: owner, lane: l, card: JSON.parse(JSON.stringify(unionCard)), source: 'union' });
-                } else if (isEquip && existingCard && !hasSkill(existingCard, 'possession')) {
+                } else if (isEquip && existingCard && !hasSkill(existingCard, 'possession') && !hasSkill(selectedCard, 'possession')) {
                     // 装備（既存カードの上へ）
                     existingCard.power = (existingCard.power || 0) + (selectedCard.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (selectedCard.power || 0);

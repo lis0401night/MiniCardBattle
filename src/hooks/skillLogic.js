@@ -432,7 +432,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     skills: []
                 };
                 const existingCard = board[targetLane];
-                if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+                if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession')) {
                     existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
                     
@@ -519,7 +519,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 skills: JSON.parse(JSON.stringify(inheritedSkills)) // スキルを引き継ぐ
             };
             const existingCard = board[targetLane];
-            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession')) {
                 existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
                 existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
                 
@@ -979,7 +979,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 const targetLane = tLanes[0];
                 const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 const existingCard = board[targetLane];
-                if (existingCard && (hasSkill(sTC, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+                if (existingCard && (hasSkill(sTC, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(sTC, 'possession')) {
                     existingCard.power = (existingCard.power || 0) + (sTC.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (sTC.power || 0);
                     existingCard.currentPower = (existingCard.currentPower || 0) + (sTC.power || 0);
@@ -1494,7 +1494,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 rarity: c.rarity || 1
             };
             const existingCard = board[targetLane];
-            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession')) {
+            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession')) {
                 existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
                 existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
                 

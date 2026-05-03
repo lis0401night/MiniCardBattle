@@ -149,7 +149,7 @@ export const SKILLS = {
     },
     double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' },
     explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` },
-    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できない。' },
+    possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できず、装備になれない。' },
     awake: {
         name: '覚醒', icon: '💎', desc: (val, sk) => {
             const summonId = sk?.summonId || (Array.isArray(sk?.skills) ? sk.skills.find(s => s.id === 'awake')?.summonId : null);
