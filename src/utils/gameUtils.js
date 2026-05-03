@@ -100,7 +100,7 @@ export function getDialogue(speakerConfig, targetConfig, type, forceSide = null)
         if (sd !== undefined) {
             if (typeof sd === 'string') return sd;
             if (Array.isArray(sd)) return sd[Math.floor(getSeededRandom() * sd.length)];
-            
+
             if (targetConfig && sd[targetConfig.id]) return sd[targetConfig.id];
             if (sd.default) return sd.default;
         }
@@ -374,7 +374,7 @@ export async function triggerGraveKeeperEffect() {
     };
     triggerEffect(GameState.playerBoard, 'player');
     triggerEffect(GameState.enemyBoard, 'enemy');
-    
+
     if (activated) {
         await sleep(500);
     }
@@ -454,7 +454,7 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 }
 
 export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn', 'shogun', 'omyouji'];
-export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'crusher', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna', 'cavalry'];
+export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'crusher', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna', 'kitepriest', 'cavalry'];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
