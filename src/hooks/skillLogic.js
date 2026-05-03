@@ -1706,14 +1706,6 @@ export async function triggerStartTurnPassive(owner, lane) {
                 playerHand: GameState.playerHand, enemyHand: GameState.enemyHand,
                 playerSealedLanes: GameState.playerSealedLanes, enemySealedLanes: GameState.enemySealedLanes
             };
-            
-            // 演出用のポップアップ
-            const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${lane}"] .card`);
-            if (cEl) {
-                createDamagePopup(cEl, '覚醒', '#facc15');
-                playSkillSound('summon');
-                await sleep(300);
-            }
 
             let awakeEvents = [];
             applyActiveSkillLogic(currentState, owner, lane, 'awake', val, awakeEvents);
