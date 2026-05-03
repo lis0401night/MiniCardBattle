@@ -1893,7 +1893,7 @@ export async function playCard(o, hI, l) {
             const targetCard = b[l];
 
             // 【憑依】：「憑依」を持つカードには装備できない。また「憑依」を持つカード自身も装備になれない。
-            if (targetCard && (hasSkill(targetCard, 'possession') || hasSkill(playingCard, 'possession'))) {
+            if (targetCard && (hasSkill(targetCard, 'possession') || hasSkill(playingCard, 'possession') || hasSkill(targetCard, 'reflect') || hasSkill(playingCard, 'reflect'))) {
                 // possession チェック: equip 処理をスキップし、下の通常上書き配置へ進む
             } else if (targetCard) {
                 // 装備によるパワー加算

@@ -65,7 +65,7 @@ export const CARD_MASTER = [
     { id: 'crusher', name: '豪腕の破壊者', rarity: 2, power: 4, skill: 'crush', skillValue: 1, voiceCategory: 'human_male_ikemen', flavor: '巨大な武器を力任せに振るい、立ち塞がる障害物や罠を淡々と壊して回る頼れる力仕事の専門家。' },
     { id: 'horse', name: 'セレスタリアン・チャージャー', rarity: 2, power: 4, skills: [{ id: 'equip' }, { id: 'pierce' }], voiceCategory: 'horse', flavor: '誇り高きセレスタリアの紋章を背負う戦馬。その力強い蹄の音は、王国の勝利を告げるファンファーレである。' },
     { id: 'lion', name: '王家のライオン', rarity: 2, power: 4, skills: [{ id: 'legendary' }, { id: 'quick' }], voiceCategory: 'beast', flavor: '黄金に輝く鬣は王家の威信を象徴し、その雄叫びは迫り来る邪悪を打ち払う誇り高き守護者。' },
-    { id: 'prince', name: '星の王子', rarity: 2, power: 1, skill: 'stealth', skillValue: 3, voiceCategory: 'monster', flavor: '黒き触手に抱かれた幼き王は、遥か宇宙の深淵から、我らの空へと帰還しつつある。' },
+    { id: 'prince', name: '星の王子', rarity: 2, power: 2, skill: 'stealth', skillValue: 2, voiceCategory: 'monster', flavor: '黒き触手に抱かれた幼き王は、遥か宇宙の深淵から、我らの空へと帰還しつつある。' },
     { id: 'slime', name: '這い寄るスライム', rarity: 2, power: 4, skills: [{ id: 'takeover' }, { id: 'clone', value: 1 }], voiceCategory: 'undead', flavor: '死骸に一滴でも取り付かれれば最後。剣を振り下ろす頃には、すでに二匹に増殖して君の喉元へ飛びかかっているだろう。' },
     { id: 'shark', name: 'メガロドン', rarity: 2, power: 6, skills: [{ id: 'stealth', value: 1 }, { id: 'standby', value: 1 }], voiceCategory: 'insect', flavor: '深き蒼から突如として現れる規格外の巨体。その顎が海面を割る時、逃げる術は既に残されていない。' },
     { id: 'seaslug', name: 'ブルー・ドラゴン', rarity: 2, power: 1, skills: [{ id: 'bless', value: 2 }], voiceCategory: 'insect', flavor: '青き海を漂う幻獣。その姿を見た者には、ささやかな海の恵みがもたらされるという。' },
@@ -73,7 +73,7 @@ export const CARD_MASTER = [
     { id: 'ghostship', name: 'ファントムポートの幽霊船', rarity: 2, power: 5, skills: [{ id: 'legendary' }, { id: 'stealth', value: 1 }], voiceCategory: 'stone', flavor: '星の光すら届かぬ静寂の海、濃霧の奥底より音もなく現れる呪われた艦。朽ち果てた帆に亡者たちの嘆きを孕み、目撃した者を永遠の深淵へと引きずり込む。' },
     { id: 'bard', name: '森の歌うたい', rarity: 2, power: 1, skills: [{ id: 'support', value: 2 }, { id: 'heal', value: 2 }], voiceCategory: 'human_female_cool', flavor: 'ウクレレを奏でる彼を、森の動物たちは親しみを持って「先生」と呼ぶ。その歌声は傷ついた心も体も癒やす。' },
     { id: 'bear', name: '森の恐怖', rarity: 2, power: 3, skills: [{ id: 'pierce' }, { id: 'lone_wolf', value: 2 }], voiceCategory: 'beast', flavor: '禁域に迷い込んだ愚か者に与えられるのは、警告ではない。ただ前触れなき蹂躙のみである。' },
-    { id: 'centaur', name: 'ケンタウロスの父', rarity: 2, power: 1, skills: [{ id: 'equip' }, { id: 'snipe', value: 5 }], voiceCategory: 'sword', flavor: '弓の引き方も、剣の握り方も、全てはこの背中が教えた。種族の壁を超えて彼を育て上げたその姿は、間違いなく一人の「父親」のそれであった。' },
+    { id: 'centaur', name: 'ケンタウロスの父', rarity: 2, power: 1, skills: [{ id: 'equip' }, { id: 'snipe', value: 5 }], voiceCategory: 'human_male_warrior', flavor: '弓の引き方も、剣の握り方も、全てはこの背中が教えた。種族の壁を超えて彼を育て上げたその姿は、間違いなく一人の「父親」のそれであった。' },
     { id: 'shaman', name: '樫族のシャーマン', rarity: 2, power: 4, skill: 'dispel', skillValue: 1, voiceCategory: 'human_male_warrior', flavor: '彼の呪術は敵の武装を縛り、そして砕く。千年の時を生きる老エルフの瞳には、人の造りし武具など児戯に等しい。' },
     { id: 'bird', name: '新緑の導き鳥', rarity: 2, power: 1, skill: 'split', skillValue: 5, summonId: 'token_ent', voiceCategory: 'bird', flavor: 'その小さなさえずりが途絶えたとき、森の静寂は怒号へと変わる。' },
     { id: 'ranger', name: 'ルーン辿りのレインジャー', rarity: 2, power: 4, skills: [{ id: 'legendary' }, { id: 'snipe', value: 4 }], voiceCategory: 'human_male_ikemen', flavor: '微かに光るルーンの印だけが、彼に失くした過去を呼び覚ます。深緑の外套を揺らし、記憶の残香を辿る旅。その道を阻む理不尽なる者がいれば、一切の迷いなき必中の矢が静かに急所を射抜く。' },
@@ -196,6 +196,7 @@ export const CARD_MASTER = [
     { id: 'invader', name: '彼方からの侵略者', rarity: 4, power: 0, skill: 'invade', voiceCategory: 'beast', flavor: '星の海を渡り、あらゆる次元を喰らい尽くす。彼らにとって、この世界もただの餌場に過ぎない。' },
     { id: 'dicejuggler', name: 'ダイスジャグラー', rarity: 4, power: 2, skill: 'fate', voiceCategory: 'human_male_ikemen', flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。' },
     { id: 'homunculus', name: 'ホムンクルスの実験体', power: 0, skill: 'replicate', rarity: 4, voiceCategory: 'stone', flavor: '欠落した半身を埋めるため、未完成のホムンクルスは強者の力を模倣する。鏡に映る己が完全な存在であると信じて。' },
+    { id: 'scarecrow', name: '呪いの案山子', power: 1, skills: [{ id: 'convert', value: 1 }, { id: 'reflect' }], rarity: 4, voiceCategory: 'undead', flavor: '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。' },
 
     // トークンカード
     { id: 'token_knight', name: '騎士', rarity: 1, power: 2, isToken: true, skill: 'none', voiceCategory: 'sword', flavor: '号令で召喚された騎士。' },

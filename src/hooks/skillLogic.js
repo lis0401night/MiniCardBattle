@@ -432,7 +432,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     skills: []
                 };
                 const existingCard = board[targetLane];
-                if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession')) {
+                if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession') && !hasSkill(existingCard, 'reflect') && !hasSkill(newToken, 'reflect')) {
                     existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
                     
@@ -446,7 +446,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     events.push({ type: 'power_change', side: o, lane: targetLane, amount: newToken.power, source: 'equip' });
                 } else {
                     if (board[targetLane]) {
-                        if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                        if (!(await discardCard(o, board[targetLane], targetLane, false))) board[targetLane] = null;
                     }
                     board[targetLane] = newToken;
                     events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'summon' });
@@ -519,7 +519,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 skills: JSON.parse(JSON.stringify(inheritedSkills)) // スキルを引き継ぐ
             };
             const existingCard = board[targetLane];
-            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession')) {
+            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession') && !hasSkill(existingCard, 'reflect') && !hasSkill(newToken, 'reflect')) {
                 existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
                 existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
                 
@@ -533,7 +533,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 events.push({ type: 'power_change', side: o, lane: targetLane, amount: newToken.power, source: 'equip' });
             } else {
                 if (board[targetLane]) {
-                    if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                    if (!(await discardCard(o, board[targetLane], targetLane, false))) board[targetLane] = null;
                 }
                 board[targetLane] = newToken;
                 events.push({ type: 'summon_token', side: o, lane: targetLane, card: newToken, source: 'clone' });
@@ -979,7 +979,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 const targetLane = tLanes[0];
                 const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
                 const existingCard = board[targetLane];
-                if (existingCard && (hasSkill(sTC, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(sTC, 'possession')) {
+                if (existingCard && (hasSkill(sTC, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(sTC, 'possession') && !hasSkill(existingCard, 'reflect') && !hasSkill(sTC, 'reflect')) {
                     existingCard.power = (existingCard.power || 0) + (sTC.power || 0);
                     existingCard.basePower = (existingCard.basePower || 0) + (sTC.power || 0);
                     existingCard.currentPower = (existingCard.currentPower || 0) + (sTC.power || 0);
@@ -995,7 +995,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     if (window.updateCardVisualsReact) window.updateCardVisualsReact(targetLane, o);
                 } else {
                     if (board[targetLane]) {
-                        if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                        if (!(await discardCard(o, board[targetLane], targetLane, false))) board[targetLane] = null;
                     }
                     board[targetLane] = sTC;
                 }
@@ -1124,7 +1124,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                             board[targetLane] = unionCard;
                         } else {
                             if (existingCard) {
-                                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                                if (!(await discardCard(o, board[targetLane], targetLane, false))) board[targetLane] = null;
                             }
                             const newUID = `res_uid_${Math.floor(getSeededRandom() * 1000000000)}`;
                             board[targetLane] = { 
@@ -1261,7 +1261,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                             board[targetLane] = unionCard;
                         } else {
                             if (existingCard2) {
-                                if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                                if (!(await discardCard(o, board[targetLane], targetLane, false))) board[targetLane] = null;
                             }
                             const newUID = `puppet_uid_${Math.floor(getSeededRandom() * 1000000000)}`;
                             board[targetLane] = {
@@ -1494,7 +1494,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 rarity: c.rarity || 1
             };
             const existingCard = board[targetLane];
-            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession')) {
+            if (existingCard && (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) && !hasSkill(existingCard, 'possession') && !hasSkill(newToken, 'possession') && !hasSkill(existingCard, 'reflect') && !hasSkill(newToken, 'reflect')) {
                 existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
                 existingCard.basePower = (existingCard.basePower || 0) + (newToken.power || 0);
                 
@@ -1508,7 +1508,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 events.push({ type: 'power_change', side: o, lane: targetLane, amount: newToken.power, source: 'equip' });
             } else {
                 if (board[targetLane]) {
-                    if (!(await discardCard(o, board[targetLane], targetLane))) board[targetLane] = null;
+                    if (!(await discardCard(o, board[targetLane], targetLane, false))) board[targetLane] = null;
                 }
                 board[targetLane] = newToken;
                 // 出現時スキルを持つ場合は即座に保護フラグを立てる
@@ -1589,7 +1589,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
                         topCard.owner = o;
 
-                        if (board[targetLane]) { await discardCard(o, board[targetLane], targetLane); }
+                        if (board[targetLane]) { await discardCard(o, board[targetLane], targetLane, false); }
                         board[targetLane] = topCard;
 
                         // 出現時スキルを持つ場合は即座に保護フラグを立てる

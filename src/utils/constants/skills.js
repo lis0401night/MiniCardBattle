@@ -46,6 +46,7 @@ export const SKILLS = {
     charge: { name: '充填', icon: '🔋', desc: (val) => `召喚時、自分リーダーのSPを${val >= 0 ? '+' : ''}${val}する` },
     stealth: { name: '潜伏', icon: '👣', desc: (val) => `召喚時、自身に無敵${val || 1}を付与する。` },
     invincible: { name: '無敵', icon: '✨', desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。` },
+    reflect: { name: '反射', icon: '↩️', desc: (val) => '戦闘で受けるダメージを正面のカードに肩代わりさせる。また、カードを装備できず、装備になれない。' },
     guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' },
     legendary: { name: '伝説', icon: '👑', desc: (val) => '中央のレーンにしか召喚できない。' },
     takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードが置かれているレーンにしか召喚できない。' },
@@ -194,6 +195,6 @@ export const ACTIVE_SKILLS = [
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
-    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'reflect', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
     'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self', 'maintain', 'grave_keeper'
 ];

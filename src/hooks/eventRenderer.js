@@ -388,6 +388,15 @@ export async function playEvents(events) {
                 await sleep(300);
                 break;
             }
+            case 'reflect_block': {
+                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
+                if (cEl) {
+                    createDamagePopup(cEl, '反射', '#a78bfa'); // purple
+                    playSound(SOUNDS.seSkill);
+                }
+                await sleep(300);
+                break;
+            }
             case 'skill_popup': {
                 const atkPfx = ev.side === 'blue' ? 'player' : 'enemy';
                 const cEl = document.querySelector(`#${atkPfx}-lanes .cell[data-lane="${ev.lane}"] .card`);
