@@ -12,6 +12,7 @@ export const STAGES = {
     devilhunter: { id: 'devilhunter', name: '旧市街', bgm: 'bgmStageDevilHunter' },
     witch: { id: 'witch', name: '魔女の隠れ家', bgm: 'bgmStageWitch' },
     oni: { id: 'oni', name: '逢魔が時', bgm: 'bgmStageOni' },
+    priest: { id: 'priest', name: '千年の王墓', bgm: 'bgmStagePriest' },
     satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' },
     dungeon: { id: 'dungeon', name: '試練の宮殿', bgm: 'bgmStageDungeon' }
 };
