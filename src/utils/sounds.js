@@ -72,6 +72,7 @@ export const AUDIO_INSTANCES = {
     bgmStageDevilHunter: new Audio('assets/audio/bgm/bgm_stage_devilhunter01.mp3'),
     bgmStageWitch: new Audio('assets/audio/bgm/bgm_stage_witch01.mp3'),
     bgmStageOni: new Audio('assets/audio/bgm/bgm_stage_oni01.mp3'),
+    bgmStagePriest: new Audio('assets/audio/bgm/bgm_stage_priest01.mp3'),
     bgmStageSatan: new Audio('assets/audio/bgm/bgm_stage_satan01.mp3'),
     bgmStageDungeon: new Audio('assets/audio/bgm/bgm_stage_dungeon01.mp3'),
     bgmStagePractice: new Audio('assets/audio/bgm/bgm_stage_practice01.mp3'),
@@ -104,7 +105,7 @@ Object.keys(AUDIO_INSTANCES).forEach(key => {
         const urlStr = SOUNDS[key];
         if (urlStr) SOUNDS[urlStr] = audio;
     }
-    try { audio.volume = 0.3; } catch(e) {}
+    try { audio.volume = 0.3; } catch (e) { }
     audio.load(); // 事前ロード
 });
 
@@ -144,7 +145,7 @@ export function updateBgmGainNodes(vol) {
             if (audio) {
                 try {
                     audio.volume = vol;
-                } catch(e) {}
+                } catch (e) { }
             }
         }
     });
@@ -278,7 +279,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         }
         // audioCtxがすでにある場合、resumeだけは確実に行わせる
         if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().catch(()=>{});
+            audioCtx.resume().catch(() => { });
         }
         document.removeEventListener('click', unlockHandler, true);
         document.removeEventListener('touchstart', unlockHandler, true);
