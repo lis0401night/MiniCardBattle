@@ -101,7 +101,13 @@ export const SKILLS = {
     oblivion: { name: '忘却', icon: '⚪', desc: (val) => '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。' },
     call: { name: '号令', icon: '📯', desc: (val) => `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚できる。` },
     bless: { name: '祝福', icon: '🕯️', desc: (val) => `召喚時、手札のカード1枚を選び、パワーを+${val}する。` },
-    wall_create: { name: '造壁', icon: '🏰', desc: (val) => `召喚時、自分のレーンに、パワー${val}（防御）のトークンを配置する。` },
+    wall_create: {
+        name: '造壁', icon: '🏰', desc: (val) => [
+            { type: 'text', value: '召喚時、自分のレーンに、' },
+            { type: 'link', value: `防壁（パワー${val}）`, targetId: 'token_wall' },
+            { type: 'text', value: 'を配置する。' }
+        ]
+    },
     challenge: { name: '挑戦', icon: '🥋', desc: (val) => '正面にカードが置かれているレーンにしか召喚できない。' },
     move: { name: '移動', icon: '🏃', desc: (val) => '自分のターン開始時に隣のレーンに移動できる。' },
     freeze: { name: '凍結', icon: '❄️', desc: (val) => `召喚時、正面とその隣のレーンのカードに${val}ターンの間「防御」を持たせる。` },

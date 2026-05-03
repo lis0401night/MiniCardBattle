@@ -1,0 +1,17 @@
+/**
+ * Mini Card Battle - Initial Player Card Data
+ */
+export const INITIAL_PLAYER_CARD = [
+    'golem', 'golem', 'golem', 'golem',
+    'clone', 'clone',
+    'sniper', 'sniper',
+    'cleric', 'cleric',
+    'diviner', 'diviner',
+    'dinosaur', 'dinosaur',
+    'cheetah', 'cheetah',
+    'scorpion', 'scorpion',
+    'airship', 'airship',
+    'leech', 'leech',
+    'fighter', 'fighter',
+    'skeleton', 'skeleton',
+];

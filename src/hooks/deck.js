@@ -3,6 +3,7 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
+import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { ownedPlaymats, setOwnedPlaymats } from '../utils/constants/playmats.js';
 import { playSound, switchScreen, getCardImgUrl, togglePremiumCard, getOrCreateUUID, getSeededRandom, shuffleArray, VALID_PREMIUM_GIFS, VALID_PREMIUM_JPGS } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -176,7 +177,7 @@ export function loadDeck() {
 
     // 初期デッキのカードは必ず最低限持っているように補填する（アップデート時の後方互換用）
     const initialCounts = {};
-    INITIAL_PLAYER_DECK.forEach(id => {
+    INITIAL_PLAYER_CARD.forEach(id => {
         initialCounts[id] = (initialCounts[id] || 0) + 1;
     });
     for (const id in initialCounts) {

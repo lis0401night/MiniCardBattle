@@ -5,7 +5,7 @@ export default {
         'warlock', 'warlock',
         'goat', 'goat',
         'zombie', 'zombie',
-        'scorpion', 'scorpion', 'scorpion', 'scorpion',
+        'skeleton', 'skeleton', 'skeleton', 'skeleton',
         'leech', 'leech', 'leech', 'leech',
     ],
     normal: [
@@ -17,7 +17,7 @@ export default {
         'minion', 'minion',
         'devil', 'devil', 'devil',
         'goat', 'goat',
-        'scorpion', 'scorpion', 'scorpion',
+        'skeleton', 'skeleton', 'skeleton',
     ],
     hard: [
         'bahamut', 'bahamut',
