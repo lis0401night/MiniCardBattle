@@ -410,7 +410,7 @@ export const CHARACTERS = {
         id: 'priest', stageId: 'priest', name: '王墓の守護者 ネフティ',
         desc: '王家の墓を守る寡黙な少女。冷たい表情の裏に、侵入者を絶対に許さないという冷酷な意思を秘めている。',
         filter: 'none', cardType: 'set2', cardBg: 'bg2',
-        image: 'assets/characters/char_priest.png', imageLose: 'assets/characters/char_priest_lose.png', icon: 'assets/icons/icon_priest.png', color: '#f59e0b',
+        image: 'assets/characters/char_priest.png', imageLose: 'assets/characters/char_priest_lose.png', icon: 'assets/icons/icon_priest.png', imageEnding: 'assets/characters/char_priest_ending.png', color: '#f59e0b',
         leaderSkill: { name: '王墓の呪縛', desc: '(SP:3) 相手のデッキの上からカードを4枚墓地に送る。相手の場のカード1枚を選び、4ダメージを与える。', cost: 3, action: 'tomb_guard' },
         preBattleLine: '……ここから先は、通さない。',
         mirrorIntro: '……鏡の幻影……？ それとも、私の呪いが具現化したもの……？',
