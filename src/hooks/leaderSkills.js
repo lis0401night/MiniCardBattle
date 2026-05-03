@@ -1,7 +1,7 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { MAX_HP } from '../utils/constants/config.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills, getDialogue, hasSkill } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, getSeededRandom, mergeCardSkills, getDialogue, hasSkill, triggerGraveKeeperEffect } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, endTurnLogic, hasActiveSkill, resolveOnPlaySkill } from './battle.js';
 import { GameState } from './gameState.js';
@@ -25,6 +25,8 @@ export async function activateLeaderSkill(owner, tokenLanes = null, forcedTarget
     GameState.selectedCardIndex = null;
 
 
+    const action = config.leaderSkill.action;
+
     // SP消費
     if (isBlue) GameState.playerSP -= config.leaderSkill.cost;
     else GameState.enemySP -= config.leaderSkill.cost;
@@ -35,7 +37,6 @@ export async function activateLeaderSkill(owner, tokenLanes = null, forcedTarget
     await showLeaderSkillCutin(config, isBlue, owner);
 
     // スキル効果の実行
-    const action = config.leaderSkill.action;
     await executeLeaderSkillAction(owner, action, isBlue, config, tokenLanes, forcedTargetIdx, forcedTargetUid);
 
     if (checkWinCondition()) return;
@@ -203,11 +204,22 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         const tK = CARD_MASTER.find(m => m.id === 'token_knight');
         const selectedLanes = await waitPlayerLaneSelection(2, owner, tK, true, tokenLanes, false);
         tokenLanes = selectedLanes;
-    } else if (action === 'targeted_destruction') {
+    } else if (action === 'targeted_destruction' || action === 'tomb_guard') {
         if (!tokenLanes || tokenLanes.length === 0) {
-            const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner, true, '破壊する相手のカードを1枚選んでください');
-            if (selectedLanes.length === 0) return;
-            tokenLanes = selectedLanes; // target_destruction においては tokenLanes に破壊対象レーン番号を入れることにする
+            const oppBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
+            const hasEnemyCard = oppBoard.some(c => c !== null);
+            
+            if (hasEnemyCard) {
+                const message = action === 'tomb_guard' ? 'ダメージを与える相手のカードを1枚選んでください' : '破壊する相手のカードを1枚選んでください';
+                const selectedLanes = await waitPlayerEnemyLaneSelection(1, owner, true, message);
+                if (selectedLanes.length === 0) return;
+                tokenLanes = selectedLanes;
+            } else if (action === 'tomb_guard') {
+                // tomb_guard は相手のカードがいなくてもデッキ破壊効果だけ発動できる
+                tokenLanes = [];
+            } else {
+                return; // targeted_destruction は対象がいないと発動不可
+            }
         }
     } else if (action === 'elf_polarbear_combo') {
         if (!tokenLanes || tokenLanes.length === 0) {
@@ -230,6 +242,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             tokenLanes = [enemyTargetLane, myLanes[0]];
         }
     } else if (action === 'overdrive') {
+        if (await triggerGraveKeeperEffect()) return;
         // 【オーバードライブ】自分の墓地・相手の墓地それぞれから1枚ずつ自分のレーンに配置する
         // 処理はデvilhunter_resurrect を2回実行する形と等価。
         // パート1: 自分の墓地から選ぶ
@@ -331,6 +344,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         // overdrive は手動でイベント処理済みのため、Engine呼び出しをスキップする
 
     } else if (action === 'devilhunter_resurrect') {
+        if (await triggerGraveKeeperEffect()) return;
         const maxPow = 999;
         const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
         const validCards = discard.filter(c => !c.isToken);
@@ -580,6 +594,9 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         } else if (action === 'targeted_destruction' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_elf_arts', owner, tokenLanes[0]);
+        } else if (action === 'tomb_guard' && tokenLanes && tokenLanes.length > 0) {
+            await sleep(200);
+            await window.triggerVfx('anm_dark_magic', owner, tokenLanes[0]);
         } else if (action === 'dragon_summon' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_summon_ignis', owner, tokenLanes[0]);

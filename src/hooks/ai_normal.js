@@ -1,5 +1,5 @@
 import { hasSkill, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
-import { applyActiveSkillLogic, applyLeaderSkillLogic, calculateCombatPhase, applyPassiveSkillLogic } from './engine.js';
+import { applyActiveSkillLogic, applyLeaderSkillLogic, calculateCombatPhase, applyPassiveSkillLogic, isGraveKeeperActive } from './engine.js';
 import { GameState } from './gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { AI_SKILL_UTILITY } from '../utils/constants/aiSkillValues.js';
@@ -540,6 +540,7 @@ export function getBestSimulatedMove() {
                 }
                 continue;
             } else if (action.type === 'resurrect') {
+                if (isGraveKeeperActive(simState)) return null;
                 // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
                 let resIdx = -1;
                 if (action.targetUid) {
@@ -560,7 +561,18 @@ export function getBestSimulatedMove() {
                 triggerSkills = false;
                 if (playedCard) playedCard.skillTriggered = true;
                 simState.enemyDiscard[resIdx] = null;
-            } else if (action.type === 'devilhunter_resurrect' || action.type === 'targeted_destruction' || action.type === 'elf_polarbear_combo') {
+            } else if (action.type === 'salvage') {
+                if (isGraveKeeperActive(simState)) return null;
+                let resIdx = -1;
+                if (action.targetUid) resIdx = simState.enemyDiscard.findIndex(c => c && (c.baseId === action.targetUid || c.id === action.targetUid));
+                if (resIdx === -1 && action.targetIdx !== undefined) resIdx = action.targetIdx;
+                if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
+                
+                let salvagedCard = cloneCard(simState.enemyDiscard[resIdx]);
+                simState.enemyDiscard[resIdx] = null;
+                simState.enemyHand.push(salvagedCard);
+                continue; // 盤面には出さない
+            } else if (action.type === 'devilhunter_resurrect' || action.type === 'targeted_destruction' || action.type === 'tomb_guard' || action.type === 'elf_polarbear_combo') {
                 // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
                 // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
                 // 次のアクションのシミュレートへ移るためにcontinueする。
@@ -780,7 +792,7 @@ export function getBestSimulatedMove() {
                 pairs = avail.map(l => [l, l]);
             }
             tokenLanePatterns = pairs.length > 0 ? pairs : [null];
-        } else if (action === 'targeted_destruction') {
+        } else if (action === 'targeted_destruction' || action === 'tomb_guard') {
             tokenLanePatterns = [0, 1, 2].filter(l => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')).map(l => [l]);
             if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
         } else if (action === 'seal_lanes') {

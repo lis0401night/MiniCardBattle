@@ -403,6 +403,18 @@ export async function playEvents(events) {
                 await sleep(400);
                 break;
             }
+            case 'deck_mill': {
+                const targetDeck = ev.side === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+                const targetDiscard = ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+                if (targetDeck && targetDeck.length > 0) {
+                    const milledCards = targetDeck.splice(0, ev.count);
+                    targetDiscard.push(...milledCards);
+                }
+                updateDeckDisplay(ev.side);
+                playSound(SOUNDS.seDraw);
+                await sleep(200);
+                break;
+            }
             case 'attack': {
                 const atkPfx = ev.attackerSide === 'blue' ? 'player' : 'enemy';
                 const atkEl = document.querySelector(`#${atkPfx}-lanes .cell[data-lane="${ev.lane}"]`);

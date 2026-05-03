@@ -261,7 +261,7 @@ export default function BattleScreen() {
                                 GameState.lastBattleResult === 'lose' ? 'YOU LOSE...' :
                                     GameState.lastBattleResult === 'draw' ? 'DRAW' :
                                         GameState.currentTurn === 'player' ? 'YOUR TURN' :
-                                            GameState.currentTurn === 'enemy' ? 'ENEMY TURN' :
+                                            GameState.currentTurn === 'enemy' ? (!GameState.isProcessing ? '思考中・・・' : 'ENEMY TURN') :
                                                 ''}
                 </div>
                 <button className="action-btn enemy-skill-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); showEnemySkillConfirm(); }}>敵スキル</button>

@@ -406,6 +406,22 @@ export const CHARACTERS = {
             { speaker: 'player', text: 'もう少しだけ、隣に居させてください。' }
         ]
     },
+    priest: {
+        id: 'priest', stageId: 'priest', name: '王墓の守護者 ネフティ',
+        desc: '王家の墓を守る寡黙な少女。冷たい表情の裏に、侵入者を絶対に許さないという冷酷な意思を秘めている。',
+        filter: 'none', cardType: 'set2', cardBg: 'bg2',
+        image: 'assets/characters/char_priest.png', imageLose: 'assets/characters/char_priest_lose.png', icon: 'assets/icons/icon_priest.png', color: '#f59e0b',
+        leaderSkill: { name: '王墓の呪縛', desc: '(SP:3) 相手のデッキの上からカードを4枚墓地に送る。相手の場のカード1枚を選び、4ダメージを与える。', cost: 3, action: 'tomb_guard' },
+        preBattleLine: '……ここから先は、通さない。',
+        dialogue: {
+            intro: { default: '……王家の眠りを妨げる者は、私が排除する。' },
+            win: { default: '……これで、また静かな時間が戻る。' },
+            lose: { default: '……嘘、私が……負けるなんて……。' },
+            damage: ['……っ！', '甘い。', '痛く……ない。', '……無駄よ。'],
+            skill: '……王家の呪い、その身に刻みなさい。'
+        },
+        storyEnding: []
+    },
     satan: {
         id: 'satan', stageId: 'satan', name: '魔王 サタン',
         desc: '魔界を統べる絶対的な恐怖の象徴。すべてを無に帰す圧倒的な力を持つ。',

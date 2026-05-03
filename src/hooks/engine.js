@@ -191,6 +191,15 @@ export function processDestructionTriggers(state, events) {
 }
 
 /**
+ * @param {Object} state - 状態オブジェクト
+ * @returns {boolean} 墓守が発動しているか
+ */
+export const isGraveKeeperActive = (state) => {
+    return state.playerBoard.some(c => c && hasSkill(c, 'grave_keeper')) ||
+           state.enemyBoard.some(c => c && hasSkill(c, 'grave_keeper'));
+};
+
+/**
  * 配置時スキルの効果を適用する (純粋関数)
  * @param {Object} state { b, eB, pHP, eHP, pSP, eSP, ... }
  * @param {string} owner 'blue' or 'red'
@@ -416,6 +425,14 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const lossCount = val || 1;
             for (let i = 0; i < lossCount; i++) {
                 if (lossDeck.length > 0) lossDiscard.push(lossDeck.pop());
+            }
+            break;
+        case 'burial':
+            const burialDeck = owner === 'blue' ? state.enemyDeck : state.playerDeck;
+            const burialDiscard = owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
+            const burialCount = val || 1;
+            for (let i = 0; i < burialCount; i++) {
+                if (burialDeck.length > 0) burialDiscard.push(burialDeck.pop());
             }
             break;
         case 'snipe':
@@ -735,6 +752,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
             break;
         case 'resurrect':
+            if (isGraveKeeperActive(state)) break;
             // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
             const maxPowSim = val || 1;
             const simDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
@@ -822,6 +840,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             }
             break;
         case 'puppet':
+            if (isGraveKeeperActive(state)) break;
             // 【傀儡】相手の墓地からパワー以下のカードを1枚選んで自分の場に配置する（復活の逆版）
             // AIシミュレーション: 相手墓地の中で最もパワーが高いカードを優先的に選択する
             const puppetMaxPow = val || 1;
@@ -1492,7 +1511,35 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             board[myLane] = bearCard;
             events.push({ type: 'summon_card', side: owner, lane: myLane, card: bearCard, source: 'elf_polarbear_combo' });
         }
+    } else if (action === 'tomb_guard') {
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        const oppDeck = isBlue ? state.enemyDeck : state.playerDeck;
+        const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+        
+        // 相手のデッキの上から最大4枚を墓地へ送る
+        const millCount = Math.min(4, oppDeck.length);
+        if (millCount > 0) {
+            const milledCards = oppDeck.splice(0, millCount);
+            oppDiscard.push(...milledCards);
+            events.push({ type: 'deck_mill', side: oppOwner, count: millCount, source: 'tomb_guard' });
+        }
+
+        // 相手の場のカード1枚に4ダメージ
+        if (tokenLanes && tokenLanes.length > 0) {
+            const targetLane = tokenLanes[0];
+            const targetCard = eBoard[targetLane];
+            if (targetCard) {
+                if (hasSkill(targetCard, 'immune')) {
+                    events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'tomb_guard' });
+                } else {
+                    targetCard.currentPower -= 4;
+                    events.push({ type: 'damage_card', side: oppOwner, lane: targetLane, amount: 4, source: 'tomb_guard' });
+                    // ここではHPが0以下になってもそのままにしておく（呼び出し元の cleanupDestroyedCards 等で処理される）
+                }
+            }
+        }
     } else if (action === 'devilhunter_resurrect') {
+        if (isGraveKeeperActive(state)) return events;
         const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
         const validCards = discard.filter(card => card && !card.isToken);
         if (validCards.length > 0) {
@@ -1574,6 +1621,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
         }
     } else if (action === 'overdrive') {
+        if (isGraveKeeperActive(state)) return events;
         // 【オーバードライブ】自分の墓地 → tokenLanes[0] に配置、相手の墓地 → tokenLanes[1] に配置
         const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
         const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;

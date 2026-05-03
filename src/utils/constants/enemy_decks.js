@@ -11,6 +11,7 @@ import knight from './enemy_decks/knight.js';
 import devilhunter from './enemy_decks/devilhunter.js';
 import witch from './enemy_decks/witch.js';
 import oni from './enemy_decks/oni.js';
+import priest from './enemy_decks/priest.js';
 import satan from './enemy_decks/satan.js';
 import satan_high from './enemy_decks/satan_high.js';
 import cthulhu_high from './enemy_decks/cthulhu_high.js';
@@ -34,6 +35,7 @@ export const ENEMY_DECKS = {
     devilhunter,
     witch,
     oni,
+    priest,
     satan,
     satan_high,
     cthulhu_high,

@@ -5,7 +5,7 @@ export default {
         'cat', 'cat',
         'snake', 'snake',
         'beginnermagic', 'beginnermagic',
-        'scorpion', 'scorpion', 'scorpion', 'scorpion',
+        'cheetah', 'cheetah', 'cheetah', 'cheetah',
         'airship', 'airship', 'airship', 'airship',
     ],
     normal: [
@@ -17,7 +17,7 @@ export default {
         'mage', 'mage',
         'shapeshifter', 'shapeshifter', 'shapeshifter',
         'beginnermagic', 'beginnermagic',
-        'scorpion', 'scorpion', 'scorpion',
+        'cheetah', 'cheetah', 'cheetah',
     ],
     hard: [
         'djinn', 'djinn',

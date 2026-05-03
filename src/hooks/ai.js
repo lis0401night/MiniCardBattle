@@ -6,6 +6,7 @@ import { GameState } from './gameState.js';
 import { getSeededRandom, shuffleArray } from '../utils/gameUtils.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { isGraveKeeperActive } from './engine.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（シミュレーション・オーバーホール版）
@@ -30,12 +31,14 @@ export async function executeEnemyAI() {
         // マリア（悪魔狩り）の場合、墓地に復活対象がいなければ空撃ちしない
         if (canUseSkill && skill.action === 'devilhunter_resurrect') {
             canUseSkill = GameState.enemyDiscard.some(c => !c.isToken);
+            if (isGraveKeeperActive(GameState)) canUseSkill = false;
         }
         // オーバードライブの場合、自分か相手の墓地にカードがある場合のみ使用
         if (canUseSkill && skill.action === 'overdrive') {
             const myHasCards = GameState.enemyDiscard.some(c => !c.isToken);
             const oppHasCards = GameState.playerDiscard.some(c => !c.isToken);
             canUseSkill = myHasCards || oppHasCards;
+            if (isGraveKeeperActive(GameState)) canUseSkill = false;
         }
         
         // ダンジョン用召喚スキルで、生贄（takeover）の場合、自分の場にカードが1枚もなければ空撃ちしない
@@ -64,6 +67,11 @@ export async function executeEnemyAI() {
                 if (skill.action === 'annihilation' || skill.action === 'targeted_destruction') {
                     // 相手の場にカードがある場合のみ使用（空撃ち防止）
                     if (GameState.playerBoard.some(c => c !== null)) {
+                        shouldForceSkill = true;
+                    }
+                } else if (skill.action === 'tomb_guard') {
+                    // 相手の場にカードがあるか、デッキにカードがある場合に使用
+                    if (GameState.playerBoard.some(c => c !== null) || GameState.playerDeck.length > 0) {
                         shouldForceSkill = true;
                     }
                 } else {

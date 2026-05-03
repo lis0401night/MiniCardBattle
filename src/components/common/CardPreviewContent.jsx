@@ -178,7 +178,7 @@ export default function CardPreviewContent({
                   const val = (sk.value === null || sk.value === undefined) ? '' : sk.value;
                   const desc = typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc;
 
-                  if (sk.id === 'choice' && (Array.isArray(card.choices) || Array.isArray(card.choices2))) {
+                  if ((sk.id === 'choice' || sk.id === 'force') && (Array.isArray(card.choices) || Array.isArray(card.choices2))) {
                     const targetChoices = sk.choiceGroup === 2 ? card.choices2 : card.choices;
                     if (!Array.isArray(targetChoices)) return null;
                     return (

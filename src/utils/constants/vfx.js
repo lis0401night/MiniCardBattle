@@ -63,6 +63,23 @@ export const VFX_DATA = {
         targetSide: 'enemy'   // 相手のレーンがターゲット
     },
 
+    // ネフティSPスキル「王墓の呪縛」用VFX
+    'anm_dark_magic': {
+        type: 'sprite',
+        src: 'assets/vfx/hujimiyaeffect_shadowattack.png', // 暗黒魔法エフェクト
+        columns: 6,
+        rows: 5,
+        frameCount: 30,
+        duration: 800,
+        se: 'seSkillCharge', // 再生する効果音、SOUNDSのキーを指定
+        position: 'lane',    // ターゲットのレーンに合わせて表示
+        offsetY: 0,
+        scale: 1,
+        shake: true,
+        flipOnEnemy: false,
+        targetSide: 'enemy'   // 相手のレーンがターゲット
+    },
+
     // イグニス召喚用VFX
     'anm_summon_ignis': {
         type: 'sprite',

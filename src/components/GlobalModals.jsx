@@ -210,8 +210,8 @@ export default function GlobalModals() {
       setSkillConfirmData(null);
     };
 
-    window.showSkillChoiceModalReact = (choices, onSelect, maxChoices = 1) => {
-      setSkillChoiceData({ choices, onSelect, maxChoices, selectedIndices: [] });
+    window.showSkillChoiceModalReact = (choices, onSelect, maxChoices = 1, isForce = false) => {
+      setSkillChoiceData({ choices, onSelect, maxChoices, selectedIndices: [], isForce });
     };
 
     window.closeSkillChoiceModalReact = () => {
@@ -221,7 +221,15 @@ export default function GlobalModals() {
     window.showDiscardSelectionModalReact = (cards, maxPow, onSelect, options = {}) => {
       playSound?.(SOUNDS?.seClick);
       const optArgs = typeof options === 'boolean' ? { isViewOnly: options } : options;
-      setDiscardSelectionData({ cards, maxPow, onSelect, selectedIndex: null, ...optArgs });
+      setDiscardSelectionData({ 
+        cards, 
+        maxPow, 
+        onSelect, 
+        selectedIndex: null, 
+        selectedItems: [],
+        currentTab: 'blue',
+        ...optArgs 
+      });
     };
 
     window.showRulesModal = () => {
@@ -851,7 +859,7 @@ export default function GlobalModals() {
       {skillChoiceData && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
           <div className="skill-modal-box modal-pop-animation" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center', flexShrink: 0 }}>スキルを選択 {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
+            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center', flexShrink: 0 }}>{skillChoiceData.isForce ? '相手のスキルを選択' : 'スキルを選択'} {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', overflowY: skillChoiceData.choices.length > 3 ? 'auto' : 'visible', paddingRight: skillChoiceData.choices.length > 3 ? '5px' : '0' }}>
               {skillChoiceData.choices.map((sk, idx) => {
                 const skillDef = SKILLS[sk.id] || { name: '不明', icon: '❓', desc: () => '' };
@@ -962,82 +970,143 @@ export default function GlobalModals() {
                 {discardSelectionData.desc || `パワー${discardSelectionData.maxPow}以下のカードを1枚場に出します。`}
               </p>
             )}
+            {discardSelectionData.isDual && (
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <button 
+                  className="btn" 
+                  style={{ flex: 1, margin: 0, padding: '8px', background: discardSelectionData.currentTab === 'blue' ? 'linear-gradient(45deg, #38bdf8, #0284c7)' : '#475569' }}
+                  onClick={() => { playSound?.(SOUNDS?.seClick); setDiscardSelectionData(prev => ({...prev, currentTab: 'blue'})); }}
+                >
+                  自分の墓地
+                </button>
+                <button 
+                  className="btn" 
+                  style={{ flex: 1, margin: 0, padding: '8px', background: discardSelectionData.currentTab === 'red' ? 'linear-gradient(45deg, #ef4444, #b91c1c)' : '#475569' }}
+                  onClick={() => { playSound?.(SOUNDS?.seClick); setDiscardSelectionData(prev => ({...prev, currentTab: 'red'})); }}
+                >
+                  相手の墓地
+                </button>
+              </div>
+            )}
             <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
               <div id="gallery-card-grid" className="card-list-grid-3col">
-                {discardSelectionData.cards.map((cardItem, idx) => {
-                  const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
-                  const rarityClass = cardItem.rarity ? ` rarity-${cardItem.rarity}` : '';
-                  const isSelected = discardSelectionData.selectedIndex === idx;
+                {(() => {
+                  const currentCards = (discardSelectionData.isDual && discardSelectionData.currentTab === 'red') ? discardSelectionData.redCards : discardSelectionData.cards;
+                  const isMulti = discardSelectionData.maxChoices > 1;
+
                   return (
-                    <div
-                      key={idx}
-                      className="deck-card-item gallery-card-wrapper"
-                      onPointerDown={(e) => {
-                        if (e.pointerType === 'mouse' && e.button !== 0) return;
-                        g_discardHasLongPressed = false;
-                        g_discardLongPressTimer = setTimeout(() => {
-                          g_discardHasLongPressed = true;
-                          setCardPreviewData({ card: cardItem });
-                        }, 600);
-                      }}
-                      onPointerUp={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
-                      onPointerLeave={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
-                      onPointerCancel={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
-                      onContextMenu={(e) => e.preventDefault()}
-                      onClick={() => {
-                        if (g_discardHasLongPressed) return;
-                        playSound?.(SOUNDS?.seClick);
-                        if (discardSelectionData.isViewOnly) {
-                          setCardPreviewData({ card: cardItem });
-                          return;
+                    <>
+                      {currentCards.map((cardItem, idx) => {
+                        const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
+                        const rarityClass = cardItem.rarity ? ` rarity-${cardItem.rarity}` : '';
+                        
+                        let isSelected = false;
+                        if (isMulti) {
+                          const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
+                          isSelected = discardSelectionData.selectedItems.some(item => item.key === itemKey);
+                        } else {
+                          isSelected = discardSelectionData.selectedIndex === idx && (!discardSelectionData.isDual || discardSelectionData.currentTab === 'blue');
                         }
-                        // 選択状態をセットする
-                        setDiscardSelectionData(prev => ({ ...prev, selectedIndex: idx }));
-                      }}
-                      style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0, minWidth: '90px' }}
-                      onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                      onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                      <div className={`card blue${rarityClass}`} style={{ 
-                        transition: 'box-shadow 0.2s',
-                        boxShadow: isSelected ? '0 0 15px 5px #facc15' : (cardItem.rarity >= 3 ? '0 0 10px rgba(255, 215, 0, 0.5)' : 'none')
-                      }}>
-                        <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
-                        <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{cardItem.power}</div>
-                        {renderSkillTagReact(cardItem)}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: '#fff', textAlign: 'center', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {cardItem.name}
-                      </div>
-                    </div>
+
+                        return (
+                          <div
+                            key={idx}
+                            className="deck-card-item gallery-card-wrapper"
+                            onPointerDown={(e) => {
+                              if (e.pointerType === 'mouse' && e.button !== 0) return;
+                              g_discardHasLongPressed = false;
+                              g_discardLongPressTimer = setTimeout(() => {
+                                g_discardHasLongPressed = true;
+                                setCardPreviewData({ card: cardItem });
+                              }, 600);
+                            }}
+                            onPointerUp={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                            onPointerLeave={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                            onPointerCancel={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                            onContextMenu={(e) => e.preventDefault()}
+                            onClick={() => {
+                              if (g_discardHasLongPressed) return;
+                              playSound?.(SOUNDS?.seClick);
+                              if (discardSelectionData.isViewOnly) {
+                                setCardPreviewData({ card: cardItem });
+                                return;
+                              }
+                              // 選択状態をセットする
+                              if (isMulti) {
+                                const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
+                                setDiscardSelectionData(prev => {
+                                  let newSelected = [...prev.selectedItems];
+                                  const existingIdx = newSelected.findIndex(item => item.key === itemKey);
+                                  if (existingIdx >= 0) {
+                                    newSelected.splice(existingIdx, 1);
+                                  } else if (newSelected.length < prev.maxChoices) {
+                                    newSelected.push({ key: itemKey, tab: prev.currentTab, card: cardItem, idx });
+                                  }
+                                  return { ...prev, selectedItems: newSelected };
+                                });
+                              } else {
+                                setDiscardSelectionData(prev => ({ ...prev, selectedIndex: idx }));
+                              }
+                            }}
+                            style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0, minWidth: '90px' }}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          >
+                            <div className={`card ${discardSelectionData.isDual && discardSelectionData.currentTab === 'red' ? 'red' : 'blue'}${rarityClass}`} style={{ 
+                              transition: 'box-shadow 0.2s',
+                              boxShadow: isSelected ? '0 0 15px 5px #facc15' : (cardItem.rarity >= 3 ? '0 0 10px rgba(255, 215, 0, 0.5)' : 'none')
+                            }}>
+                              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+                              <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{cardItem.power}</div>
+                              {renderSkillTagReact(cardItem)}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#fff', textAlign: 'center', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {cardItem.name}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {currentCards.length === 0 && (
+                        <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>墓地にはカードがありません</div>
+                      )}
+                    </>
                   );
-                })}
-                {discardSelectionData.cards.length === 0 && (
-                  <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>墓地にはカードがありません</div>
-                )}
+                })()}
               </div>
             </div>
             {/* 閲覧モーダルでない場合は決定ボタンを表示 */}
-            {!discardSelectionData.isViewOnly && (
-              <button 
-                className="btn ok-button" 
-                style={{ 
-                  marginTop: '15px', width: '100%', 
-                  background: discardSelectionData.selectedIndex != null ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
-                  color: discardSelectionData.selectedIndex != null ? '#fff' : '#94a3b8',
-                  pointerEvents: discardSelectionData.selectedIndex != null ? 'auto' : 'none'
-                }} 
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  const cb = discardSelectionData.onSelect;
-                  const item = discardSelectionData.cards[discardSelectionData.selectedIndex];
-                  setDiscardSelectionData(null);
-                  if (cb) cb(item);
-                }}
-              >
-                決定
-              </button>
-            )}
+            {!discardSelectionData.isViewOnly && (() => {
+              const isMulti = discardSelectionData.maxChoices > 1;
+              const canSubmit = isMulti ? true : discardSelectionData.selectedIndex != null;
+              const btnColor = canSubmit ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569';
+              const btnTextColor = canSubmit ? '#fff' : '#94a3b8';
+
+              return (
+                <button 
+                  className="btn ok-button" 
+                  style={{ 
+                    marginTop: '15px', width: '100%', 
+                    background: btnColor,
+                    color: btnTextColor,
+                    pointerEvents: canSubmit ? 'auto' : 'none'
+                  }} 
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    const cb = discardSelectionData.onSelect;
+                    let result = null;
+                    if (isMulti) {
+                      result = discardSelectionData.selectedItems.map(item => ({ ...item.card, fromTab: item.tab }));
+                    } else {
+                      result = discardSelectionData.cards[discardSelectionData.selectedIndex];
+                    }
+                    setDiscardSelectionData(null);
+                    if (cb) cb(result);
+                  }}
+                >
+                  {isMulti ? `決定 (${discardSelectionData.selectedItems.length}/${discardSelectionData.maxChoices})` : '決定'}
+                </button>
+              );
+            })()}
             {(!discardSelectionData.isViewOnly && discardSelectionData.canCancel !== false) && (
               <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
                 const cb = discardSelectionData.onSelect;

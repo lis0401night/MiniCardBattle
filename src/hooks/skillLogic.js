@@ -1,9 +1,9 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills, getOrCreateUUID } from '../utils/gameUtils.js';
+import { createDamagePopup, playSound, sleep, getCardImgUrl, shuffleArray, hasSkill, getSkillValue, getSeededRandom, mergeCardSkills, unmergeCardSkills, getOrCreateUUID, triggerGraveKeeperEffect } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
-import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard, consumeAIAction, showSpeechBubble } from './battle.js';
+import { updateHPBar, updateSPOrbs, checkWinCondition, waitPlayerLaneSelection, waitPlayerEnemyLaneSelection, waitPlayerAlliedLaneSelection, waitPlayerHandSelection, waitPlayerDiscardSelection, waitPlayerDualDiscardSelection, waitSkillChoice, discardCard, updateDeckDisplay, cleanupDestroyedCards, drawCard, hasActiveSkill, resolveOnPlaySkill, executeSingleCombat, playCard, consumeAIAction, showSpeechBubble } from './battle.js';
 import { applyActiveSkillLogic, applyPassiveSkillLogic } from './engine.js';
 import { renderHand, renderBoard, updateCardPowerOnly, playSummonAnimation } from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
@@ -250,11 +250,18 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         return;
     }
 
-    if (skillId === 'choice') {
+    if (skillId === 'choice' || skillId === 'force') {
         const baseChoices = (skObj && skObj._sourceChoices) ? skObj._sourceChoices : c.choices;
         const baseChoices2 = (skObj && skObj._sourceChoices2) ? skObj._sourceChoices2 : c.choices2;
         const choices = (skObj && skObj.choiceGroup === 2) ? baseChoices2 : baseChoices;
-        const choiceArray = await waitSkillChoice(choices, o, c, skillValue);
+        
+        let choiceArray;
+        if (skillId === 'force') {
+            const oppOwner = o === 'blue' ? 'red' : 'blue';
+            choiceArray = await waitSkillChoice(choices, oppOwner, c, skillValue, true);
+        } else {
+            choiceArray = await waitSkillChoice(choices, o, c, skillValue, false);
+        }
         if (choiceArray) {
             const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];
             for (const choice of arr) {
@@ -863,6 +870,63 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             updateDeckDisplay(o);
         }
         await sleep(500);
+    } else if (skillId === 'burial') {
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '埋葬', '#8b5cf6');
+        const d = o === 'blue' ? GameState.enemyDeck : GameState.playerDeck;
+        const g = o === 'blue' ? GameState.enemyDiscard : GameState.playerDiscard;
+        const targetSide = o === 'blue' ? 'red' : 'blue';
+        const count = skillValue || 1;
+        let lostCount = 0;
+        for (let i = 0; i < count; i++) {
+            if (d.length > 0) {
+                g.push(d.pop()); // 上から墓地へ送るためpop
+                lostCount++;
+            }
+        }
+        if (lostCount > 0) {
+            updateDeckDisplay(targetSide);
+        }
+        await sleep(500);
+    } else if (skillId === 'recurse') {
+        playSound(SOUNDS.seSkill); createDamagePopup(cEl, '再帰', '#10b981');
+        if (await triggerGraveKeeperEffect()) return;
+        const maxChoices = skillValue || 1;
+        const selectedCards = await waitPlayerDualDiscardSelection(
+            GameState.playerDiscard,
+            GameState.enemyDiscard,
+            maxChoices,
+            o,
+            'デッキに戻すカードを選択',
+            `お互いの墓地から合計${maxChoices}枚まで選びます。`
+        );
+        
+        if (selectedCards && selectedCards.length > 0) {
+            let blueCount = 0;
+            let redCount = 0;
+            selectedCards.forEach(card => {
+                const isBlue = card.fromTab === 'blue';
+                const sourceDiscard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
+                const targetDeck = isBlue ? GameState.playerDeck : GameState.enemyDeck;
+                
+                const idx = sourceDiscard.findIndex(c => (c.uid && c.uid === card.uid) || (!c.uid && c.id === card.id));
+                if (idx >= 0) {
+                    const removed = sourceDiscard.splice(idx, 1)[0];
+                    targetDeck.push(removed);
+                    if (isBlue) blueCount++;
+                    else redCount++;
+                }
+            });
+            
+            if (blueCount > 0) {
+                shuffleArray(GameState.playerDeck);
+                updateDeckDisplay('blue');
+            }
+            if (redCount > 0) {
+                shuffleArray(GameState.enemyDeck);
+                updateDeckDisplay('red');
+            }
+            await sleep(500);
+        }
     } else if (skillId === 'bless') {
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
         let targetIndices = await waitPlayerHandSelection(1, o, false, '手札のカードを1枚選んでください');
@@ -975,6 +1039,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         renderBoard();
         await sleep(400);
     } else if (skillId === 'resurrect') {
+        if (await triggerGraveKeeperEffect()) return;
         const maxPow = skillValue || 1;
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const validCards = discard.filter(card => (card.power || 0) <= maxPow && !card.isToken);
@@ -1093,6 +1158,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         }
         await sleep(300);
     } else if (skillId === 'puppet') {
+        if (await triggerGraveKeeperEffect()) return;
         // 【傘儀】相手の墓地からカードを展開し、自分の場に配置する（復活の逆版）
         const maxPow = skillValue || 1;
         const oppOwner = o === 'blue' ? 'red' : 'blue';
@@ -1230,6 +1296,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         }
         await sleep(300);
     } else if (skillId === 'salvage') {
+        if (await triggerGraveKeeperEffect()) return;
         const discard = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
 

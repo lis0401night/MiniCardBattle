@@ -53,6 +53,7 @@ export const SKILLS = {
     explode: { name: '誘爆', icon: '💣', desc: (val) => `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。` },
     contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、自分リーダーに${val || 3}ダメージ。` },
     choice: { name: '選択', icon: '🌓', desc: (val) => `召喚時、以下のスキルから${val}つを選んで発動する。` },
+    force: { name: '強制', icon: '⚖️', desc: (val) => `召喚時、以下のスキルから相手が${val}つを選んで発動する。` },
     metamorph: { name: '変身', icon: '❓', desc: (val) => '召喚時、全カードの中からランダムに1枚に変身し、その能力を発動する。' },
     resurrect: { name: '復活', icon: '⚰️', desc: (val) => `召喚時、自分の墓地からパワー${val}以下のカード1枚を選択して配置する。` },
     standby: { name: '待機', icon: '⏳', desc: (val) => `召喚時、自身に${val}ターン防御を付与する。` },
@@ -166,17 +167,27 @@ export const SKILLS = {
             { type: 'text', value: 'を加える。' }
         ]
     },
-    arm_self: { name: '武装', icon: '🦾', desc: (val) => '自身の上にカードを配置するとき、自身にそのカードと同じパワーと能力を付与する。' }
+    arm_self: { name: '武装', icon: '🦾', desc: (val) => '自身の上にカードを配置するとき、自身にそのカードと同じパワーと能力を付与する。' },
+    burial: { name: '埋葬', icon: '💀', desc: (val) => `召喚時、相手のデッキの上から${val}枚墓地に送る。` },
+    maintain: {
+        name: '維持', icon: '⚙️', desc: (val) => [
+            { type: 'text', value: '自分のターン開始時、通常のドローの代わりに' },
+            { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+            { type: 'text', value: 'を加える。' }
+        ]
+    },
+    recurse: { name: '再帰', icon: '♻️', desc: (val) => `召喚時、お互いの墓地のカードを${val}枚まで選択してデッキに戻し、お互いのデッキをシャッフルする。` },
+    grave_keeper: { name: '墓守', icon: '🗝️', desc: '場に居る限り、お互いに墓地のカードを選択できない。' }
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
 export const ACTIVE_SKILLS = [
-    'draw', 'heal', 'snipe', 'spread', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet', 'leap', 'chant'
+    'snipe', 'spread', 'heal', 'draw', 'support', 'clone', 'split', 'awake',
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'force', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet', 'leap', 'chant', 'burial', 'recurse'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
     'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
-    'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self'
+    'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self', 'maintain', 'grave_keeper'
 ];

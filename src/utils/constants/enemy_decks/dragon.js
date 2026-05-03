@@ -6,7 +6,7 @@ export default {
         'lizardman', 'lizardman',
         'dancer', 'dancer',
         'dinosaur', 'dinosaur', 'dinosaur', 'dinosaur',
-        'cheetah', 'cheetah', 'cheetah', 'cheetah',
+        'fighter', 'fighter', 'fighter', 'fighter',
     ],
     normal: [
         'dragoon', 'dragoon',
@@ -17,7 +17,7 @@ export default {
         'dragonewt', 'dragonewt',
         'drifter', 'drifter', 'drifter',
         'dancer', 'dancer',
-        'cheetah', 'cheetah', 'cheetah',
+        'fighter', 'fighter', 'fighter',
     ],
     hard: [
         'dragon', 'dragon',

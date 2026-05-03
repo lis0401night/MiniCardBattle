@@ -6,7 +6,7 @@ import { incrementStat } from '../utils/constants/achievements.js';
 import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
-import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray, mergeCardSkills } from '../utils/gameUtils.js';
+import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray, mergeCardSkills, triggerGraveKeeperEffect } from '../utils/gameUtils.js';
 import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multiplayer.js';
 import { SOUNDS, playSkillSound, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
@@ -1060,6 +1060,7 @@ export async function waitPlayerHandSelection(count, owner, forceExact = false, 
  * 墓地から選択する共有ユーティリティ（復活、回収等）
  */
 export async function waitPlayerDiscardSelection(validCards, maxPow, owner, title, desc, canCancel = true) {
+    if (await triggerGraveKeeperEffect()) return null;
     if (!validCards || validCards.length === 0) return null;
 
     // Check for Remote Choice Wait
@@ -1110,9 +1111,51 @@ export async function waitPlayerDiscardSelection(validCards, maxPow, owner, titl
 }
 
 /**
+ * 複数タブ（自分/相手の墓地）の選択を待機する
+ */
+export async function waitPlayerDualDiscardSelection(blueCards, redCards, maxChoices, owner, title, desc, canCancel = true) {
+    if (await triggerGraveKeeperEffect()) return [];
+    // Check for Remote Choice Wait
+    if (GameState.gameMode === 'online' && owner === 'red') {
+        const choiceStr = await new Promise(resolve => {
+            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
+            else pendingChoiceResolver = resolve;
+        });
+        if (!choiceStr || choiceStr === -1) return [];
+        const uids = choiceStr.split(',');
+        const allCards = [...blueCards, ...redCards];
+        return allCards.filter(c => uids.includes(c.uid) || uids.includes(c.id));
+    }
+
+    // AIの場合
+    if (owner === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+        // 現在は完全ランダムで maxChoices 枚選択
+        const allCards = [...blueCards, ...redCards].sort(() => Math.random() - 0.5);
+        return allCards.slice(0, maxChoices);
+    }
+
+    // プレイヤーの場合
+    if (window.showDiscardSelectionModalReact) {
+        const selectedCards = await new Promise(resolve => {
+            window.showDiscardSelectionModalReact(blueCards, Infinity, (cards) => resolve(cards), {
+                title, desc, canCancel, isDual: true, redCards, maxChoices
+            });
+        });
+
+        if (GameState.gameMode === 'online') {
+            const choiceStr = (selectedCards && selectedCards.length > 0) ? selectedCards.map(c => c.uid || c.id).join(',') : null;
+            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: choiceStr });
+        }
+        return selectedCards || [];
+    } else {
+        return [];
+    }
+}
+
+/**
  * 召喚時スキル「選択」の選択を待機する
  */
-export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
+export async function waitSkillChoice(choices, owner, card, maxChoices = 1, isForce = false) {
     if (!choices || choices.length === 0) return null;
 
     // Check for Remote Choice Wait
@@ -1125,6 +1168,13 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
 
     // AIの場合
     if (owner === 'red') {
+        // AIが強制選択する場合は、テストのため完全ランダムとする
+        if (isForce) {
+            await sleep(800);
+            const shuffled = shuffleArray([...choices]);
+            return shuffled.slice(0, Math.min(maxChoices, choices.length));
+        }
+
         // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoiceノード）
         const aiAction = consumeAIAction('choice');
         if (aiAction && aiAction.choices !== undefined) {
@@ -1198,7 +1248,7 @@ export async function waitSkillChoice(choices, owner, card, maxChoices = 1) {
                     sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: selectedSkill });
                 }
                 resolve(selectedSkill); // App returns Array here automatically handled in UI
-            }, maxChoices);
+            }, maxChoices, isForce);
         } else {
             // フォールバック（通常は発生しない）
             const shuffled = shuffleArray([...choices]);
@@ -1683,7 +1733,32 @@ export async function startTurn(owner) {
         console.log(`[Player Turn End] Board: [Player] ${dumpBoard(GameState.playerBoard)} vs [AI] ${dumpBoard(GameState.enemyBoard)}`);
     }
 
-    drawCard(owner);
+    const currentBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const hasMaintain = currentBoard.some(c => c && hasSkill(c, 'maintain'));
+    if (hasMaintain) {
+        const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        if (hand.length < 4) {
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+            const voidToken = {
+                ...voidTpl,
+                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_maintain`,
+                uid: `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidmaintain`,
+                filter: voidTpl.filter,
+                power: voidTpl.power,
+                currentPower: voidTpl.power,
+                basePower: voidTpl.power,
+                skill: voidTpl.skill || 'none',
+                voiceCategory: voidTpl.voiceCategory || 'stone',
+                isToken: true,
+                isMorphToken: true
+            };
+            hand.push(voidToken);
+            playSound(SOUNDS.seDraw);
+            if (owner === 'blue') renderHand();
+        }
+    } else {
+        drawCard(owner);
+    }
     if (owner === 'blue') {
         GameState.selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
         GameState.isProcessing = false;

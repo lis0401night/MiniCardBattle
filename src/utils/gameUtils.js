@@ -357,6 +357,30 @@ window.addEventListener('click', (e) => {
     }
 }, true); // キャプチャフェーズで阻止
 
+// 墓守スキルの発動チェックとエフェクト表示
+export async function triggerGraveKeeperEffect() {
+    let activated = false;
+    const triggerEffect = (board, side) => {
+        board.forEach((c, i) => {
+            if (c && hasSkill(c, 'grave_keeper')) {
+                activated = true;
+                const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
+                if (el) {
+                    playSound(SOUNDS.seSkill);
+                    createDamagePopup(el, '墓守', '#a8a29e');
+                }
+            }
+        });
+    };
+    triggerEffect(GameState.playerBoard, 'player');
+    triggerEffect(GameState.enemyBoard, 'enemy');
+    
+    if (activated) {
+        await sleep(500);
+    }
+    return activated;
+}
+
 // 判定補助: 特定のスキルを所持しているか
 export function hasSkill(c, skillId) {
     if (!c) return false;
