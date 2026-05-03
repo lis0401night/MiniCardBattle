@@ -558,12 +558,14 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
                 const eh = document.getElementById('playmat-enemy');
                 if (eh) eh.classList.add('anim-shake');
+                showSpeechBubble('red');
                 await triggerExtortInAction(c, o);
             } else {
                 GameState.playerHP -= dmg;
                 createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
                 document.body.classList.add('anim-shake');
                 setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+                showSpeechBubble('blue');
                 await triggerExtortInAction(c, o);
             }
         } else {
@@ -573,11 +575,13 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 createDamagePopup(document.getElementById('player-hp-fill'), `-${dmg}`, '#ef4444');
                 document.body.classList.add('anim-shake');
                 setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+                showSpeechBubble('blue');
             } else {
                 GameState.enemyHP -= dmg;
                 createDamagePopup(document.getElementById('enemy-hp-fill'), `-${dmg}`, '#ef4444');
                 const eh = document.getElementById('playmat-enemy');
                 if (eh) eh.classList.add('anim-shake');
+                showSpeechBubble('red');
             }
         }
         updateHPBar();
