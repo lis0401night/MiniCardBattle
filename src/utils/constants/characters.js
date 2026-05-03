@@ -506,7 +506,8 @@ const SKIN_NAMES = {
     cleric: '背徳のサマーバカンス',
     devilhunter: '渚の悪魔狩り',
     witch: '不機嫌なサマー・グリモワール',
-    oni: '涼み鬼の波打ち肌'
+    oni: '涼み鬼の波打ち肌',
+    priest: '墓守の休息'
 };
 
 Object.values(CHARACTERS).forEach(char => {
@@ -688,6 +689,13 @@ CHARACTERS.oni.skins.summer.dialogue = {
     win: '水鏡に映る私の姿……少しは、人間らしく見えますか？',
     lose: 'あぁ……冷やされたはずの血が、再び滾り始めて……！',
     skill: '清涼なる水霊よ！ 我が鬼の力を浄化しつつ、敵を討ち払え！'
+};
+
+CHARACTERS.priest.skins.summer.dialogue = {
+    intro: '……海。砂漠とは違う、どこまでも続く青い水……。侵入者も、泳ぐのか……。',
+    win: '……冷たい水に流されたな……。静かに沈むといい……。',
+    lose: '……水を含んだ砂は……重い……。',
+    skill: '……水底の静寂。波に飲まれろ……！'
 };
 
 // ============================================================

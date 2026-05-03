@@ -71,6 +71,7 @@ export const PLAYMAT_MASTER = [
     { id: 'pm_devilhunter_summer', name: '渚の悪魔狩り', image: 'assets/boards/board_devilhunter_summer.png' },
     { id: 'pm_witch_summer', name: '不機嫌なサマー・グリモワール', image: 'assets/boards/board_witch_summer.png' },
     { id: 'pm_oni_summer', name: '涼み鬼の波打ち肌', image: 'assets/boards/board_oni_summer.png' },
+    { id: 'pm_priest_summer', name: '墓守の休息', image: 'assets/boards/board_priest_summer.png' },
     { id: 'pm_android_high', name: 'フルアーマーユニット', image: 'assets/boards/board_android_high.png' },
     { id: 'pm_dragon_high', name: '熱砂の客人', image: 'assets/boards/board_dragon_high.png' },
     { id: 'pm_knight_high', name: '暗黒騎士', image: 'assets/boards/board_knight_high.png' },

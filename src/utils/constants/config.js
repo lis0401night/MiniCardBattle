@@ -41,6 +41,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
     { id: 'devilhunter_summer', type: 'skin', charId: 'devilhunter', name: '渚の悪魔狩り', description: '悪魔を狩るのも夏休みが必要だ。ただし、銃の手入れだけは怠らない。', cost: 20 },
     { id: 'witch_summer', type: 'skin', charId: 'witch', name: '不機嫌なサマー・グリモワール', description: '無理矢理取らされた夏休み。慣れない水着と照りつける太陽のせいで、全く読書に集中できていないようだ。', cost: 20 },
     { id: 'oni_summer', type: 'skin', charId: 'oni', name: '涼み鬼の波打ち肌', description: '普段は和装の鬼娘も、たまには羽を伸ばして海辺で遊ぶ。しかしその圧倒的な力は健在である。', cost: 20 },
+    { id: 'priest_summer', type: 'skin', charId: 'priest', name: '墓守の休息', description: '千年の眠りから覚め、海辺で静かに涼む墓守。水面に映る太陽の光を静かに見つめている。', cost: 20 },
     { id: 'pm_android_summer', type: 'playmat', name: '水陸両用装備', description: '研究所より支給された耐熱・耐水処理を施した特殊換装とのこと。', cost: 10 },
     { id: 'pm_dragon_summer', type: 'playmat', name: '真夏の焔竜姫', description: '太陽の熱よりも熱い竜の息吹。水辺でも彼女の炎が消えることは決してない。', cost: 10 },
     { id: 'pm_knight_summer', type: 'playmat', name: '波打ち際の騎士', description: '鎧を脱ぎ捨て、ひとときの休息を楽しむ騎士。その剣腕は水着姿でも少しも鈍らない。', cost: 10 },
@@ -50,6 +51,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
     { id: 'pm_devilhunter_summer', type: 'playmat', name: '渚の悪魔狩り', description: '悪魔を狩るのも夏休みが必要だ。ただし、銃の手入れだけは怠らない。', cost: 10 },
     { id: 'pm_witch_summer', type: 'playmat', name: '不機嫌なサマー・グリモワール', description: '無理矢理取らされた夏休み。慣れない水着と照りつける太陽のせいで、全く読書に集中できていないようだ。', cost: 10 },
     { id: 'pm_oni_summer', type: 'playmat', name: '涼み鬼の波打ち肌', description: '普段は和装の鬼娘も、たまには羽を伸ばして海辺で遊ぶ。しかしその圧倒的な力は健在である。', cost: 10 },
+    { id: 'pm_priest_summer', type: 'playmat', name: '墓守の休息', description: '千年の眠りから覚め、海辺で静かに涼む墓守。水面に映る太陽の光を静かに見つめている。', cost: 10 },
     { id: 'queen', type: 'card', cost: 5 },
     { id: 'snowwhite', type: 'card', cost: 5 }
 ];
