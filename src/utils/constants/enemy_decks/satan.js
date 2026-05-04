@@ -6,7 +6,7 @@ export default {
         'goat', 'goat',
         'zombie', 'zombie',
         'skeleton', 'skeleton', 'skeleton', 'skeleton',
-        'leech', 'leech', 'leech', 'leech',
+        'warden', 'warden', 'warden', 'warden',
     ],
     normal: [
         'daemon', 'daemon',
