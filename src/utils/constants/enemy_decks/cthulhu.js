@@ -15,17 +15,18 @@ export default {
         'shark', 'shark',
         'seaslug', 'seaslug',
         'slime', 'slime',
-        'copy', 'copy', 'copy',
+        'copy', 'copy', 'copy', 'copy',
         'jellyfish', 'jellyfish',
-        'diviner', 'diviner', 'diviner',
+        'diviner', 'diviner',
     ],
     hard: [
         'oldgod', 'oldgod',
         'hound', 'hound', 'hound',
         'octopus', 'octopus', 'octopus',
         'ghostship', 'ghostship',
-        'seaslug', 'seaslug', 'seaslug',
-        'slime', 'slime', 'slime',
+        'seaslug', 'seaslug',
+        'slime', 'slime',
         'parasite', 'parasite', 'parasite', 'parasite',
+        'jellyfish', 'jellyfish',
     ]
 };

@@ -15,17 +15,18 @@ export default {
         'hammer', 'hammer',
         'wyvern', 'wyvern',
         'dragonewt', 'dragonewt',
-        'drifter', 'drifter', 'drifter',
+        'drifter', 'drifter', 'drifter', 'drifter',
         'dancer', 'dancer',
-        'fighter', 'fighter', 'fighter',
+        'fighter', 'fighter',
     ],
     hard: [
         'dragon', 'dragon',
         'phoenix', 'phoenix', 'phoenix',
         'dragoon', 'dragoon', 'dragoon',
         'drake', 'drake',
-        'dragonewt', 'dragonewt', 'dragonewt',
-        'wyvern', 'wyvern', 'wyvern',
+        'dragonewt', 'dragonewt',
+        'wyvern', 'wyvern',
         'berserker', 'berserker', 'berserker', 'berserker',
+        'dancer', 'dancer',
     ]
 };

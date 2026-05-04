@@ -15,17 +15,18 @@ export default {
         'shaman', 'shaman',
         'bear', 'bear',
         'centaur', 'centaur',
-        'chameleon', 'chameleon', 'chameleon',
+        'chameleon', 'chameleon', 'chameleon', 'chameleon',
         'charger', 'charger',
-        'sniper', 'sniper', 'sniper',
+        'sniper', 'sniper',
     ],
     hard: [
         'wolf', 'wolf',
         'caller', 'caller', 'caller',
         'highelf', 'highelf', 'highelf',
         'ranger', 'ranger',
-        'centaur', 'centaur', 'centaur',
-        'bear', 'bear', 'bear',
+        'centaur', 'centaur',
+        'bear', 'bear',
         'bird', 'bird', 'bird', 'bird',
+        'charger', 'charger',
     ]
 };

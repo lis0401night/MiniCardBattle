@@ -15,17 +15,18 @@ export default {
         'kitepriest', 'kitepriest',
         'stormpriest', 'stormpriest',
         'griffin', 'griffin',
-        'treasurehunter', 'treasurehunter', 'treasurehunter',
+        'treasurehunter', 'treasurehunter', 'treasurehunter', 'treasurehunter',
         'mummy', 'mummy',
-        'scorpion', 'scorpion', 'scorpion',
+        'scorpion', 'scorpion',
     ],
     hard: [
         'pharaoh', 'pharaoh',
         'jackalpriest', 'jackalpriest', 'jackalpriest',
         'goldship', 'goldship', 'goldship',
         'sentinel', 'sentinel',
-        'stormpriest', 'stormpriest', 'stormpriest',
-        'griffin', 'griffin', 'griffin',
+        'stormpriest', 'stormpriest',
+        'griffin', 'griffin',
         'manticore', 'manticore', 'manticore', 'manticore',
+        'mummy', 'mummy',
     ]
 };

@@ -5,8 +5,8 @@ export default {
         'mech', 'mech',
         'mantis', 'mantis',
         'titan', 'titan',
-        'cleric', 'cleric', 'cleric',
-        'airship', 'airship', 'airship',
+        'cleric', 'cleric', 'cleric', 'cleric',
+        'airship', 'airship', 'airship', 'airship',
     ],
     normal: [
         'cyborgninja', 'cyborgninja',
@@ -15,17 +15,18 @@ export default {
         'dreadnought', 'dreadnought',
         'bigai', 'bigai',
         'mech', 'mech',
-        'armsuits', 'armsuits', 'armsuits',
+        'armsuits', 'armsuits', 'armsuits', 'armsuits',
         'titan', 'titan',
-        'airship', 'airship', 'airship',
+        'airship', 'airship',
     ],
     hard: [
         'cyberdragon', 'cyberdragon',
         'cyborgninja', 'cyborgninja', 'cyborgninja',
         'booster', 'booster', 'booster',
         'gladiator', 'gladiator',
-        'bigai', 'bigai', 'bigai',
-        'mech', 'mech', 'mech',
+        'bigai', 'bigai',
+        'mech', 'mech',
         'mechanic', 'mechanic', 'mechanic', 'mechanic',
+        'titan', 'titan',
     ]
 };

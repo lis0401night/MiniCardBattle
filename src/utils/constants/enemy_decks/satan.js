@@ -15,17 +15,18 @@ export default {
         'warlock', 'warlock',
         'cavalry', 'cavalry',
         'minion', 'minion',
-        'devil', 'devil', 'devil',
-        'goat', 'goat',
-        'skeleton', 'skeleton', 'skeleton',
+        'goat', 'goat', 'goat', 'goat',
+        'devil', 'devil',
+        'skeleton', 'skeleton',
     ],
     hard: [
         'bahamut', 'bahamut',
         'daemon', 'daemon', 'daemon',
         'succubus', 'succubus', 'succubus',
         'wendigo', 'wendigo',
-        'warlock', 'warlock', 'warlock',
-        'minion', 'minion', 'minion',
+        'warlock', 'warlock',
+        'minion', 'minion',
         'daemonarmor', 'daemonarmor', 'daemonarmor', 'daemonarmor',
+        'devil', 'devil',
     ]
 };

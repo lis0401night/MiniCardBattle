@@ -15,17 +15,18 @@ export default {
         'dragonfire', 'dragonfire',
         'battlemage', 'battlemage',
         'mage', 'mage',
-        'shapeshifter', 'shapeshifter', 'shapeshifter',
+        'shapeshifter', 'shapeshifter', 'shapeshifter', 'shapeshifter',
         'beginnermagic', 'beginnermagic',
-        'cheetah', 'cheetah', 'cheetah',
+        'cheetah', 'cheetah',
     ],
     hard: [
         'djinn', 'djinn',
         'basilisk', 'basilisk', 'basilisk',
         'book', 'book', 'book',
         'ring', 'ring',
-        'battlemage', 'battlemage', 'battlemage',
-        'mage', 'mage', 'mage',
+        'battlemage', 'battlemage',
+        'mage', 'mage',
         'gargoyle', 'gargoyle', 'gargoyle', 'gargoyle',
+        'beginnermagic', 'beginnermagic',
     ]
 };

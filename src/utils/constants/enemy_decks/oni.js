@@ -15,17 +15,18 @@ export default {
         'yukionna', 'yukionna',
         'muramasa', 'muramasa',
         'samurai', 'samurai',
-        'ninja', 'ninja', 'ninja',
+        'ninja', 'ninja', 'ninja', 'ninja',
         'omyouji', 'omyouji',
-        'leech', 'leech', 'leech',
+        'leech', 'leech',
     ],
     hard: [
         'shogun', 'shogun',
         'fox', 'fox', 'fox',
         'kasha', 'kasha', 'kasha',
         'nurikabe', 'nurikabe',
-        'muramasa', 'muramasa', 'muramasa',
-        'samurai', 'samurai', 'samurai',
+        'muramasa', 'muramasa',
+        'samurai', 'samurai',
         'tengu', 'tengu', 'tengu', 'tengu',
+        'omyouji', 'omyouji',
     ]
 };

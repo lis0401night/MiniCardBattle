@@ -15,17 +15,18 @@ export default {
         'light', 'light',
         'charity', 'charity',
         'pray', 'pray',
-        'incinerator', 'incinerator', 'incinerator',
+        'incinerator', 'incinerator', 'incinerator', 'incinerator',
         'carpenter', 'carpenter',
-        'cleric', 'cleric', 'cleric',
+        'cleric', 'cleric',
     ],
     hard: [
         'empress', 'empress',
         'fire', 'fire', 'fire',
         'punisher', 'punisher', 'punisher',
         'monk', 'monk',
-        'pray', 'pray', 'pray',
-        'charity', 'charity', 'charity',
+        'pray', 'pray',
+        'charity', 'charity',
         'doom', 'doom', 'doom', 'doom',
+        'carpenter', 'carpenter',
     ]
 };

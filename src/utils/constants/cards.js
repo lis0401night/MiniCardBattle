@@ -14,6 +14,7 @@ export const CARD_MASTER = [
     { id: 'leech', name: '巨大ヒル', rarity: 1, power: 4, skill: 'absorb', voiceCategory: 'snake', flavor: '湿った泥濘に潜む貪欲なる顎。犠牲者の血肉をすする不快な音だけが響き渡る。' },
     { id: 'fighter', name: 'アリーナの新入り', rarity: 1, power: 4, skills: [{ id: 'growth', value: 1 }], voiceCategory: 'human_male_ikemen', flavor: '観衆の喧騒に胸を高鳴らせる、未完の闘士。無骨なセスタスには、頂点を目指す熱意と、己の拳のみで道を切り拓く覚悟が宿っている。' },
     { id: 'skeleton', name: 'スケルトン', rarity: 1, power: 2, skill: 'split', skillValue: 3, summonId: 'token_skeleton', voiceCategory: 'undead', flavor: '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。' },
+    { id: 'warden', name: '監獄長', rarity: 1, power: 6, skills: [{ id: 'takeover' }, { id: 'bind', value: 1 }], voiceCategory: 'human_male_warrior', flavor: '罪人を決して逃さぬ鉄壁の番人。' },
     { id: 'titan', name: '旧式タイタン', rarity: 1, power: 8, skill: 'growth', skillValue: -2, voiceCategory: 'machine_old', flavor: '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。' },
     { id: 'mantis', name: '旧式マンティス', rarity: 1, power: 3, skills: [{ id: 'quick' }, { id: 'growth', value: -2 }], voiceCategory: 'machine_old', flavor: '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。' },
     { id: 'armsuits', name: '強化外骨格', rarity: 1, power: 2, skills: [{ id: 'equip' }, { id: 'sturdy' }], voiceCategory: 'machine_new', flavor: '強固な鋼鉄の装甲を纏った者は、戦場において難攻不落の城塞と化す。例え操縦者が倒れようとも、内蔵されたAIが稼働を続け、その任務を全うするだろう。' },
