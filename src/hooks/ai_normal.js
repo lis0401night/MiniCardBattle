@@ -242,8 +242,11 @@ export function getBestSimulatedMove() {
                             let remainingSkills = currentSkills.slice(1);
                             let results = [];
 
-                            // 【共通】常に「このスキルをキャンセル/スキップする」という選択肢を考慮に含める
-                            results.push(...buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand));
+                            // 【共通】配置系スキル以外は常に「このスキルをキャンセル/スキップする」選択肢を考慮する
+                            const isPlacementSkill = ['clone', 'summon', 'wall_create', 'split', 'puppet', 'resurrect'].includes(sk.id);
+                            if (!isPlacementSkill) {
+                                results.push(...buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand));
+                            }
 
                             if (sk.id === 'invite') {
                                 for (let i = 0; i < originalHand.length; i++) {
@@ -305,6 +308,13 @@ export function getBestSimulatedMove() {
                                         }
                                     }
                                 }
+                                
+                                // 復活の明示的なキャンセル分岐
+                                let cancelNode = { type: 'resurrect', targetIdx: -1, laneIdx: -1 };
+                                let cancelBranches = buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                                for (let nb of cancelBranches) {
+                                    results.push([cancelNode, ...nb]);
+                                }
                             } else if (sk.id === 'convert' || sk.id === 'draw' || sk.id === 'reinforce') {
                                 const count = sk.value || 1;
                                 let handIndices = [];
@@ -342,7 +352,11 @@ export function getBestSimulatedMove() {
                                     return combos;
                                 };
 
-                                let allCombos = generateLaneCombos(count);
+                                let allCombos = [[]]; // 配置しない（空配列）という明示的な意思
+                                // 部分的な配置キャンセル（1体だけ置くなど）をシミュレーションするため、1〜count までの全パターンを生成
+                                for (let c = 1; c <= count; c++) {
+                                    allCombos.push(...generateLaneCombos(c));
+                                }
                                 for (let combo of allCombos) {
                                     let tokenNode = { type: 'token_placement', skillId: sk.id, skillValue: sk.value, summonId: sk.summonId, lanes: combo };
                                     let nextBranches = buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand);
@@ -524,6 +538,7 @@ export function getBestSimulatedMove() {
                 continue;
             } else if (action.type === 'resurrect') {
                 if (isGraveKeeperActive(simState)) return null;
+                if (lIdx === -1) continue; // 明示的キャンセル
                 // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
                 let resIdx = -1;
                 if (action.targetUid) {
@@ -920,9 +935,10 @@ export function getBestSimulatedMove() {
         c.score += (pri * 0.01);
     });
 
-    // スコア順、次いでアクションの短さ順でソート（同スコアなら不要なスキル消費を避ける）
+    // スコア順、次いでリーダースキル不使用優先、最後にアクションの短さ順でソート（不要なスキル消費を避ける）
     candidates.sort((a, b) => {
         if (Math.abs(a.score - b.score) > 0.001) return b.score - a.score;
+        if (a.useSkill !== b.useSkill) return a.useSkill ? 1 : -1;
         const aLen = a.actionQueue ? a.actionQueue.length : 0;
         const bLen = b.actionQueue ? b.actionQueue.length : 0;
         return aLen - bLen;
@@ -933,7 +949,13 @@ export function getBestSimulatedMove() {
 
 
     const bestScore = candidates[0].score;
-    const bestGroup = candidates.filter(c => Math.abs(c.score - bestScore) < 0.001);
+    let bestGroup = candidates.filter(c => Math.abs(c.score - bestScore) < 0.001);
+
+    // 同スコア候補の中で、リーダースキルを使用しない選択肢があればそれを優先する
+    const hasNoSkill = bestGroup.some(c => !c.useSkill);
+    if (hasNoSkill) {
+        bestGroup = bestGroup.filter(c => !c.useSkill);
+    }
 
     // 同スコア候補の中で最短のアクション数のものだけを残す（不要なスキル消費を避ける）
     const minActionLen = Math.min(...bestGroup.map(c => c.actionQueue ? c.actionQueue.length : 0));
@@ -1085,7 +1107,7 @@ export function evaluateSimState(state) {
     return s1 + s2 + s25 + s3 + s4 + s5 + s6;
 }
 
-export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
+export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true, canCancel = false) {
     const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
     const allLanes = [0, 1, 2].filter(l => sealedLanes[l] === 0);
     // 配置可能なレーンを抽出
@@ -1205,8 +1227,44 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
         return { lane: l, score };
     });
 
+    if (canCancel) {
+        // キャンセル（配置しない）場合のシミュレーション評価
+        const simState = {
+            playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            playerHP: GameState.playerHP,
+            enemyHP: GameState.enemyHP,
+            playerMaxHP: GameState.playerMaxHP,
+            enemyMaxHP: GameState.enemyMaxHP,
+            playerSP: GameState.playerSP,
+            enemySP: GameState.enemySP || 0,
+            playerHand: GameState.playerHand.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            enemyHand: GameState.enemyHand.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            playerDiscard: GameState.playerDiscard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            enemyDiscard: GameState.enemyDiscard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            playerDeck: GameState.playerDeck.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            enemyDeck: GameState.enemyDeck.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
+            extraTurnCount: GameState.extraTurnCount,
+            attackSkipCount: GameState.attackSkipCount
+        };
+        const hpBeforeCombat = simState.enemyHP;
+        applyPassiveSkillLogic(simState, 'blue');
+        calculateCombatPhase(simState, 'blue'); 
+        simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+        let score = evaluateSimState(simState);
+        // キャンセルを優先するための微小ボーナス
+        scores.push({ lane: -1, score: score + 0.05 });
+    }
+
     // 最高スコアのレーンを抽出
     scores.sort((a, b) => b.score - a.score);
+    if (scores.length === 0) return [];
+    
+    if (scores[0].lane === -1) {
+        console.log(`[AI Token] Cancelled placement (Score: ${scores[0].score.toFixed(1)})`);
+        return null;
+    }
+
     const topScore = scores[0].score;
     const bestLanes = scores.filter(s => Math.abs(s.score - topScore) < 0.001).map(s => s.lane);
 
@@ -1222,7 +1280,8 @@ export function evaluateAdhocTokenLanes(tokenCard, checkConstraints = true) {
 export function getNormalTokenLanes(allLanes, owner, tokenCard, count, isLeaderSkill = false, canCancel = false, checkConstraints = true) {
     if (owner === 'red') {
         // 常に最新の盤面状況と判明したカード情報に基づき、アドホックにシミュレーションして決定する
-        const results = evaluateAdhocTokenLanes(tokenCard, checkConstraints);
+        const results = evaluateAdhocTokenLanes(tokenCard, checkConstraints, canCancel);
+        if (results === null) return []; // キャンセル判定
         if (results.length > 0) return results.slice(0, count);
     }
 

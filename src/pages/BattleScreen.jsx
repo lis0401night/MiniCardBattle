@@ -264,7 +264,9 @@ export default function BattleScreen() {
                                             GameState.currentTurn === 'enemy' ? (!GameState.isProcessing ? '思考中・・・' : 'ENEMY TURN') :
                                                 ''}
                 </div>
-                <button className="action-btn enemy-skill-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); showEnemySkillConfirm(); }}>敵スキル</button>
+                {GameState.enemyConfig?.leaderSkill && (
+                    <button className="action-btn enemy-skill-btn" onClick={(e) => { e.stopPropagation(); playSound(SOUNDS.seClick); showEnemySkillConfirm(); }}>敵スキル</button>
+                )}
             </div>
 
             <Board
@@ -283,7 +285,7 @@ export default function BattleScreen() {
                 deckCount={GameState.playerDeck.length}
                 dropCount={GameState.playerDiscard.length}
                 spCount={GameState.playerSP}
-                maxSpCount={GameState.playerConfig?.leaderSkill?.cost || 5}
+                maxSpCount={GameState.playerConfig?.leaderSkill ? GameState.playerConfig.leaderSkill.cost : 0}
                 onLeaderSkillClick={() => {
                     playSound(SOUNDS.seClick);
                     showSkillConfirm();
@@ -309,7 +311,7 @@ export default function BattleScreen() {
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                         id="btn-leader-skill"
-                        className={`action-btn leader-skill-btn ${GameState.playerSP >= (GameState.playerConfig?.leaderSkill?.cost || 5) && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode ? 'ready glow active' : ''}`}
+                        className={`action-btn leader-skill-btn ${GameState.playerConfig?.leaderSkill && GameState.playerSP >= GameState.playerConfig.leaderSkill.cost && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode ? 'ready glow active' : ''}`}
                         onClick={(e) => {
                             e.stopPropagation();
                             playSound(SOUNDS.seClick);

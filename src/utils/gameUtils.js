@@ -2,7 +2,7 @@ import { CARD_MASTER } from './constants/cards.js';
 import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio, loadAndDecodeAudio } from './sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
-import { CHARACTERS } from './constants/characters.js';
+import { CHARACTERS, getSkinImage } from './constants/characters.js';
 
 // BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
 export let currentBgmAudio = null;
@@ -82,10 +82,10 @@ export function getDialogue(speakerConfig, targetConfig, type, forceSide = null)
 
     // スキンによる台詞のオーバーライドをチェック
     let skinId = 'default';
-    if (forceSide === 'player' && GameState.playerSkins) {
-        skinId = GameState.playerSkins[speakerConfig.id] || 'default';
-    } else if (forceSide === 'enemy' && GameState.enemySkins) {
-        skinId = GameState.enemySkins[speakerConfig.id] || 'default';
+    if (forceSide === 'player') {
+        skinId = (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) || 'default';
+    } else if (forceSide === 'enemy') {
+        skinId = (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) || 'default';
     } else {
         // forceSideがない場合は、GameState上のconfigと一致するかで推測する
         if (GameState.playerConfig && GameState.playerConfig.id === speakerConfig.id) {
@@ -469,11 +469,8 @@ export function getCardImgUrl(card) {
         const ownerSkins = card.owner === 'red'
             ? (GameState.enemySkins || {})
             : (GameState.playerSkins || {});
-        const dragonSkin = ownerSkins['dragon'];
-        if (dragonSkin && dragonSkin !== 'default') {
-            return `assets/characters/char_${dragonSkin}.png`;
-        }
-        return 'assets/characters/char_dragon.png';
+        const dragonSkin = ownerSkins['dragon'] || 'default';
+        return getSkinImage('dragon', dragonSkin, 'image');
     }
     if (card.id === 'token_satan' || card.baseId === 'token_satan') return 'assets/cards/card_token_satan.jpg';
 

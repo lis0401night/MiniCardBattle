@@ -701,7 +701,7 @@ h2 {
 }
 
 .portrait-container.center #portrait-right {
-    display: none !important;
+    display: none;
 }
 
 .fade-overlay {

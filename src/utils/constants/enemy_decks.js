@@ -24,7 +24,6 @@ import devilhunter_high from './enemy_decks/devilhunter_high.js';
 import witch_high from './enemy_decks/witch_high.js';
 import oni_high from './enemy_decks/oni_high.js';
 
-
 export const ENEMY_DECKS = {
     android,
     cleric,

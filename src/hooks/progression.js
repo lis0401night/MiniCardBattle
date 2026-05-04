@@ -18,6 +18,10 @@ import { handleBattleDungeonProgression } from './battleDungeon.js';
 export function handleProgressionNextStep() {
     if (GameState.gameMode === 'free') {
         handleFreeBattleProgression();
+    } else if (GameState.gameMode === 'campaign') {
+        import('./campaign.js').then(({ onCampaignDialogueEnd }) => {
+            onCampaignDialogueEnd();
+        });
     } else if (GameState.gameMode === 'battle_dungeon') {
         handleBattleDungeonProgression();
         return;

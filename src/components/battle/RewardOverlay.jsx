@@ -37,8 +37,10 @@ export default function RewardOverlay() {
         if (isRevealed) return;
         playSound(SOUNDS.seClick);
         setIsRevealed(true);
-        GameState.playerInventory[card.id] = (GameState.playerInventory[card.id] || 0) + 1;
-        saveDeck();
+        if (GameState.gameMode !== 'campaign') {
+            GameState.playerInventory[card.id] = (GameState.playerInventory[card.id] || 0) + 1;
+            saveDeck();
+        }
     };
 
     const handleNext = (e) => {

@@ -296,6 +296,9 @@ export function initBattleState() {
         playSound(SOUNDS[bgmKey]);
         GameState.playerMaxHP = MAX_HP;
         GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
+        if (GameState.gameMode === 'campaign') {
+            GameState.enemyMaxHP = 10;
+        }
         if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high' || GameState.gameMode === 'event_oni_high') GameState.aiLevel = 3; // 念のため再セット
 
         if (GameState.gameMode === 'battle_dungeon') {
@@ -454,7 +457,11 @@ export function showSpeechBubble(target) {
 }
 
 export function showSkillConfirm() {
-    const s = GameState.playerConfig.leaderSkill; if (!s) return;
+    const s = GameState.playerConfig.leaderSkill;
+    if (!s) {
+        showAlertModal('リーダースキルはありません');
+        return;
+    }
     playSound(SOUNDS.seClick);
 
     let statusText = "";
@@ -495,6 +502,7 @@ export function showSkillConfirm() {
 export function showEnemySkillConfirm() {
     playSound(SOUNDS.seClick);
     const s = GameState.enemyConfig.leaderSkill;
+    if (!s) return;
 
     let statusText = "";
     let color = "";
@@ -1708,7 +1716,7 @@ export async function startTurn(owner) {
 
     // SPの増加（先攻の1ターン目や追加ターン中は増えない）
     if (GameState.turnCount > 1 && GameState.attackSkipCount === 0) {
-        if (c.leaderSkill.cost) {
+        if (c.leaderSkill && c.leaderSkill.cost) {
             if (owner === 'blue') GameState.playerSP = Math.min(c.leaderSkill.cost, GameState.playerSP + 1);
             else GameState.enemySP = Math.min(c.leaderSkill.cost, GameState.enemySP + 1);
         }
@@ -2278,6 +2286,10 @@ export function endBattle() {
                 { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win', 'enemy') }
             ];
         }
+        
+        if (GameState.gameMode === 'campaign') {
+            GameState.dialogueQueue = GameState.dialogueQueue.filter(d => d.speaker !== 'player');
+        }
 
         if (GameState.gameMode === 'battle_dungeon') {
             const dialogueData = getDungeonCharacterDialogue(GameState.enemyConfig.id);
@@ -2411,7 +2423,18 @@ export function endBattle() {
             }
 
             // --- カードドロップ抽選・表示処理 ---
-            let recipeId = GameState.enemyConfig.id;
+            if (GameState.gameMode === 'campaign') {
+                let rewardCardId = null;
+                if (GameState.campaignNode === '1-1') rewardCardId = 'skeleton';
+                else if (GameState.campaignNode === '1-2') rewardCardId = 'shade';
+                else if (GameState.campaignNode === '1-3') rewardCardId = 'warden';
+
+                if (rewardCardId && window.showCardRewardReact) {
+                    window.showCardRewardReact(rewardCardId);
+                    return;
+                }
+            } else {
+                let recipeId = GameState.enemyConfig.id;
             if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
             if (GameState.gameMode === 'event_android_high' && recipeId === 'android') recipeId = 'android_high';
             if (GameState.gameMode === 'event_dragon_high' && recipeId === 'dragon') recipeId = 'dragon_high';
@@ -2452,8 +2475,9 @@ export function endBattle() {
                 }
             }
         }
+    }
 
-        if (GameState.gameMode === 'practice') {
+    if (GameState.gameMode === 'practice') {
             GameState.appState = 'select_deck';
             if (typeof window.loadDeck === 'function') window.loadDeck();
             if (window.forceUpdateDeckList) window.forceUpdateDeckList();

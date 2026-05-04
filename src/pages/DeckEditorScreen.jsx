@@ -13,6 +13,7 @@ import { openCardPreview } from '../hooks/uiGallery.js';
 import { goBackFromDeckEdit, showOnlineLobby } from '../hooks/uiMainCore.js';
 import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
 import { showPlaymatModal } from '../hooks/uiPlaymat.js';
+import { setupDialogueScreen } from '../hooks/uiDialogue.js';
 
 export default function DeckEditorScreen() {
   const [deckSelection, setDeckSelection] = useState([]);
@@ -40,7 +41,11 @@ export default function DeckEditorScreen() {
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
 
     const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
-    setDeckName(currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`);
+    if (GameState.gameMode === 'campaign') {
+      setDeckName('キャンペーンデッキ');
+    } else {
+      setDeckName(currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`);
+    }
 
     setUnlockedPremium(GameState.unlockedPremiumCards || []);
 
@@ -50,6 +55,10 @@ export default function DeckEditorScreen() {
       setInventory(dInv);
       const validIds = Object.keys(dInv);
       setMasterCards((CARD_MASTER || []).filter(c => validIds.includes(c.id)));
+    } else if (GameState.gameMode === 'campaign') {
+      setInventory(GameState.playerInventory || {});
+      const validIds = Object.keys(GameState.playerInventory || {});
+      setMasterCards((CARD_MASTER || []).filter(c => validIds.includes(c.id) && !c.isToken));
     } else {
       setInventory(GameState.playerInventory || {});
       setMasterCards((CARD_MASTER || []).filter(c => !c.isToken));
@@ -256,9 +265,9 @@ export default function DeckEditorScreen() {
 
         {/* 中央揃えのタイトル・デッキ名 */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 40px' }}>
-          {(isDefenseConfig || GameState.gameMode === 'battle_dungeon') ? (
+          {(isDefenseConfig || GameState.gameMode === 'battle_dungeon' || GameState.gameMode === 'campaign') ? (
             <h2 style={{ color: '#facc15', margin: 0, fontSize: '1.3rem', textAlign: 'center' }}>
-              {isDefenseConfig ? '防衛デッキ構築' : 'デッキ構築'}
+              {isDefenseConfig ? '防衛デッキ構築' : (GameState.gameMode === 'campaign' ? 'キャンペーンデッキ' : 'デッキ構築')}
             </h2>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
@@ -322,7 +331,7 @@ export default function DeckEditorScreen() {
               }
             }}>
               <img
-                src={getSkinImage && CHARACTERS[leaderId] ? getSkinImage(CHARACTERS[leaderId], deck?.playerSkins?.[leaderId] || 'default', 'icon') : ''}
+                src={(getSkinImage && CHARACTERS[leaderId] ? getSkinImage(CHARACTERS[leaderId], deck?.playerSkins?.[leaderId] || 'default', 'icon') : undefined) || undefined}
                 alt="Leader"
                 style={{ width: '38px', height: '38px', borderRadius: '50%', border: '2px solid #facc15', objectFit: 'cover' }}
               />
@@ -457,7 +466,7 @@ export default function DeckEditorScreen() {
           style={{ marginTop: '10px', width: '100%', opacity: deckSelection.length === DECK_SIZE ? 1 : 0.5 }}
           onClick={handleFinish}
         >
-          {isDefenseConfig || GameState.gameMode === 'create_deck' || GameState.gameMode === 'free_deck_edit' || GameState.gameMode === 'online_deck_edit' ? '編成完了' : 'バトル開始！'}
+          {GameState.gameMode === 'campaign' ? '次へ進む' : (isDefenseConfig || GameState.gameMode === 'create_deck' || GameState.gameMode === 'free_deck_edit' || GameState.gameMode === 'online_deck_edit' ? '編成完了' : 'バトル開始！')}
         </button>
       </div>
 
@@ -482,7 +491,7 @@ export default function DeckEditorScreen() {
             }}
             onClick={() => {
               playSound?.(SOUNDS?.seClick);
-              if (GameState.gameMode === 'story') {
+              if (GameState.gameMode === 'story' || GameState.gameMode === 'campaign') {
                 showConfirmModal?.("一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）", () => {
                   playSound?.(SOUNDS?.seClick);
                   if (typeof window.switchScreen === 'function') window.switchScreen('screen-solo-menu');
@@ -493,7 +502,7 @@ export default function DeckEditorScreen() {
               }
             }}
           >
-            {GameState.gameMode === 'story' ? '一時中断して戻る' : '戻る'}
+            {GameState.gameMode === 'story' || GameState.gameMode === 'campaign' ? '一時中断して戻る' : '戻る'}
           </button>
         </div>
 

@@ -15,7 +15,7 @@ export default function EnemyArea({
         <div className="hp-area">
             <div className="status-container">
                 <div className="icon-wrapper" id="enemy-icon-wrap">
-                    <img id="enemy-icon" className="char-icon red" src={getSkinImage(enemyConfig, GameState.enemySkins?.[enemyConfig.id], 'icon')} alt="enemy icon" />
+                    <img id="enemy-icon" className="char-icon red" src={getSkinImage(enemyConfig, GameState.enemySkins?.[enemyConfig.id], 'icon') || enemyConfig.icon || enemyConfig.image} alt="enemy icon" />
                     {enemyConfig?.leaderSkill?.cost && enemyConfig.leaderSkill.cost > 0 && (
                         <div id="enemy-sp-orbs" className="sp-orbs">
                             {Array.from({ length: enemyConfig.leaderSkill.cost }).map((_, i) => (

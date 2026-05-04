@@ -21,6 +21,7 @@ export default function DialogueScreen() {
     }, []);
 
     const handleBoxClick = () => {
+        if (d.choices) return;
         if (showNextDialogue) {
             showNextDialogue();
         }
@@ -56,22 +57,61 @@ export default function DialogueScreen() {
                     pointerEvents: 'none'
                 }} 
             />
-            <div className={`portrait-container ${d.centerMode ? 'center' : ''}`}>
+            
+            {d.choices && d.choices.length > 0 && (
+                <div className="dialogue-choices-container" style={{
+                    position: 'absolute',
+                    top: '40%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    width: '90%',
+                    maxWidth: '500px',
+                    zIndex: 100
+                }}>
+                    {d.choices.map((choice, idx) => (
+                        <button 
+                            key={idx} 
+                            className="action-btn"
+                            style={{ 
+                                padding: '16px', 
+                                fontSize: '1.2rem', 
+                                whiteSpace: 'normal', 
+                                height: 'auto', 
+                                backgroundColor: 'rgba(30, 41, 59, 0.95)', 
+                                border: '2px solid #cbd5e1',
+                                textAlign: 'center',
+                                borderRadius: '8px'
+                            }}
+                            onClick={(e) => { e.stopPropagation(); if (window.handleDialogueChoice) window.handleDialogueChoice(idx); }}
+                        >
+                            {choice.text}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            <div className={`portrait-container ${d.centerMode || GameState.gameMode === 'campaign' ? 'center' : ''}`}>
                 <img 
                     id="portrait-left" 
                     className={`char-portrait ${d.leftActive ? 'active' : ''}`} 
-                    src={d.leftImage || null} 
+                    src={d.leftImage || undefined} 
                     alt="Player" 
-                    style={{ visibility: d.leftImage ? 'visible' : 'hidden' }}
+                    style={{ 
+                        visibility: d.leftImage ? 'visible' : 'hidden',
+                        display: GameState.gameMode === 'campaign' ? 'none' : 'block'
+                    }}
                 />
                 <img 
                     id="portrait-right" 
                     className={`char-portrait ${d.rightActive ? 'active' : ''}`} 
-                    src={d.rightImage || null} 
+                    src={d.rightImage || undefined} 
                     alt="Enemy" 
                     style={{ 
                         filter: d.rightFilter || 'none', 
-                        display: d.rightDisplay || 'block',
+                        display: (d.centerMode && GameState.gameMode !== 'campaign') ? 'none' : (d.rightDisplay || 'block'),
                         visibility: d.rightImage ? 'visible' : 'hidden'
                     }}
                 />

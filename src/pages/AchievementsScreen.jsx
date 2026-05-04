@@ -36,7 +36,7 @@ export default function AchievementsScreen() {
     const totalUsage = Object.values(usageObj).reduce((sum, count) => sum + count, 0);
 
     const sortedChars = Object.values(CHARACTERS || {})
-      .filter(c => c.id !== 'satan')
+      .filter(c => c.id !== 'satan' && !c.id.startsWith('campaign_'))
       .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
       .map(char => {
         const count = usageObj[char.id] || 0;

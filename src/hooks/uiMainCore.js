@@ -386,6 +386,26 @@ export function startGameMode(mode) {
         }
     }
 
+    if (mode === 'campaign') {
+        const savedCampaignStr = localStorage.getItem('mini_card_battle_campaign_save');
+        if (savedCampaignStr) {
+            try {
+                JSON.parse(savedCampaignStr);
+                GameState.appState = 'story_resume'; // Reusing story resume screen
+                switchScreen('screen-story-resume');
+                return;
+            } catch(e) {
+                console.error("Campaign save data parse error", e);
+            }
+        }
+        
+        // No valid save found, start new campaign
+        import('./campaign.js').then(({ initCampaignMode }) => {
+            initCampaignMode();
+        });
+        return;
+    }
+
     GameState.appState = 'select_deck';
     // デッキ選択画面遷移前に最新状態のデッキをリロードし、強制再描画を要求する
     if (typeof window.loadDeck === 'function') window.loadDeck();

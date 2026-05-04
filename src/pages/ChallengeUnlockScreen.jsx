@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
-export const UNLOCK_ITEMS = [
+const UNLOCK_ITEMS = [
     { id: 'deck_easy', name: 'イージーのデッキを追加', cost: 3 },
     { id: 'char_silver', name: 'シルバーのリーダーを追加', cost: 10 },
     { id: 'deck_normal', name: 'ノーマルのデッキを追加', cost: 20 },

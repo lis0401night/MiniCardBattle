@@ -21,27 +21,45 @@ export default function StoryResumeScreen() {
     const [pConf, setPConf] = useState(null);
     const [battleCount, setBattleCount] = useState(1);
 
+    const isCampaign = GameState.gameMode === 'campaign';
+
     useEffect(() => {
         try {
-            const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
+            const saveKey = isCampaign ? 'mini_card_battle_campaign_save' : 'mini_card_battle_story_save';
+            const savedStoryStr = localStorage.getItem(saveKey);
             if (savedStoryStr) {
                 const savedData = JSON.parse(savedStoryStr);
-                const charId = savedData.pendingCharId;
-                const char = CHARACTERS[charId];
-                if (char) {
-                    setPConf(char);
-                }
-                if (savedData.battleCount) {
-                    setBattleCount(savedData.battleCount);
+                if (isCampaign) {
+                    setPConf(CHARACTERS['campaign_player']);
+                    setBattleCount(savedData.currentNode || 1);
+                } else {
+                    const charId = savedData.pendingCharId;
+                    const char = CHARACTERS[charId];
+                    if (char) {
+                        setPConf(char);
+                    }
+                    if (savedData.battleCount) {
+                        setBattleCount(savedData.battleCount);
+                    }
                 }
             }
         } catch (e) {
-            console.error("Story save parse error:", e);
+            console.error("Save parse error:", e);
         }
-    }, []);
+    }, [isCampaign]);
 
     const handleResume = () => {
         playSound?.(SOUNDS?.seClick);
+        if (isCampaign) {
+            import('../hooks/campaign').then(({ resumeCampaignProgress }) => {
+                const savedStr = localStorage.getItem('mini_card_battle_campaign_save');
+                if (savedStr) {
+                    resumeCampaignProgress(JSON.parse(savedStr));
+                }
+            });
+            return;
+        }
+
         const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
         if (savedStoryStr) {
             try {
@@ -70,13 +88,13 @@ export default function StoryResumeScreen() {
             color: '#fff'
         }}>
             <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center', flexShrink: 0 }}>
-                ストーリー 再開
+                {isCampaign ? "キャンペーン 再開" : "ストーリー 再開"}
             </h2>
 
             <div className="dungeon-content" style={{ flex: 1, width: '100%', overflowY: 'auto', boxSizing: 'border-box', padding: '10px 0', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ textAlign: 'center', color: '#fff', padding: '20px' }}>
                     <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '20px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '30px' }}>
-                        <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>現在: <span style={{ color: '#facc15', fontWeight: 'bold' }}>第 {battleCount} 戦</span></div>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>現在: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{isCampaign ? `チャプター${String(battleCount).replace('_pre', '').replace('_post', '')}` : `第 ${battleCount} 戦`}</span></div>
                         
                         {pConf && (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '10px' }}>
@@ -97,9 +115,11 @@ export default function StoryResumeScreen() {
                         <button className="btn" style={{ width: '220px', background: 'linear-gradient(45deg, #10b981, #059669)', padding: '12px' }} onClick={handleResume}>
                             再開する
                         </button>
-                        <button className="btn" style={{ width: '220px', background: '#334155', color: '#fff' }} onClick={handleRetire}>
-                            リタイア
-                        </button>
+                        {!isCampaign && (
+                            <button className="btn" style={{ width: '220px', background: '#334155', color: '#fff' }} onClick={handleRetire}>
+                                リタイア
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

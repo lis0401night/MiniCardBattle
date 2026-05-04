@@ -1870,7 +1870,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     }
     if (dg !== null && !hasSkill(defBoard[l], 'guardian')) {
         dLane = dg;
-        events.push({ type: 'skill_popup', side: oppSide, lane: dg, skillName: '守護' });
+        events.push({ type: 'skill_popup', side: defSide, lane: dg, skillName: '守護' });
     }
 
     // 身替の対応: ダメージを受ける自身が substitute を持つなら、隣の味方に肩代わりさせる
@@ -1880,7 +1880,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         let sub = (dLane === 1) ? (checkSubstituteTarget(defBoard[0]) ? 0 : (checkSubstituteTarget(defBoard[2]) ? 2 : null)) : (dLane === 0 ? (checkSubstituteTarget(defBoard[1]) ? 1 : null) : (checkSubstituteTarget(defBoard[1]) ? 1 : null));
         if (sub !== null) {
             dLane = sub;
-            events.push({ type: 'skill_popup', side: oppSide, lane: dLane, skillName: '身替' });
+            events.push({ type: 'skill_popup', side: defSide, lane: dLane, skillName: '身替' });
         }
     }
 

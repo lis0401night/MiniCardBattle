@@ -395,7 +395,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'summon');
                 if (tpIdx !== -1) {
                     const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-                    if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                    if (Array.isArray(tpAction.lanes)) {
                         summonPredefinedLanes = [...tpAction.lanes];
                     }
                 } else {
@@ -489,7 +489,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'clone');
             if (tpIdx !== -1) {
                 const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-                if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                if (Array.isArray(tpAction.lanes)) {
                     clonePredefinedLanes = [...tpAction.lanes];
                 }
             }
@@ -967,7 +967,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                 const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'wall_create');
                 if (tpIdx !== -1) {
                     const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-                    if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                    if (Array.isArray(tpAction.lanes)) {
                         wallPredefinedLanes = [...tpAction.lanes];
                     }
                 } else {
@@ -1179,7 +1179,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                     const tpIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === 'token_placement' && a.skillId === 'puppet');
                     if (tpIdx !== -1) {
                         const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-                        if (Array.isArray(tpAction.lanes) && tpAction.lanes.length > 0) {
+                        if (Array.isArray(tpAction.lanes)) {
                             tokenLanes = [...tpAction.lanes];
                         }
                     }

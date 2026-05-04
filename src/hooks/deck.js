@@ -2,6 +2,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { ownedPlaymats, setOwnedPlaymats } from '../utils/constants/playmats.js';
@@ -12,6 +13,7 @@ import { GameState } from './gameState.js';
 import { setupLongPress } from './uiGallery.js';
 import { showDefenseMenu, closePlayerNameModal, showOnlineLobby } from './uiMainCore.js';
 import { showConfirmModal, showAlertModal } from './uiModals.js';
+import { setupDialogueScreen } from './uiDialogue.js';
 
 // ==========================================
 // デッキ生成・編集・セーブ・ロードロジック
@@ -84,7 +86,13 @@ export function generateDeck(owner, config, sessionId) {
             if (GameState.gameMode === 'event_witch_high') recipeId = 'witch_high'; // クロエ高難易度
             if (GameState.gameMode === 'event_oni_high') recipeId = 'oni_high'; // カグラ高難易度
             if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
-            let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
+            
+            let recipe;
+            if (GameState.gameMode === 'campaign') {
+                recipe = CAMPAIGN_DECKS[recipeId];
+            } else {
+                recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
+            }
 
             if (recipe.easy && recipe.normal && recipe.hard) {
                 if (typeof GameState.aiLevel !== 'undefined') {
@@ -150,6 +158,21 @@ export function loadDeck() {
                 const template = CARD_MASTER.find(c => c.id === id);
                 return template ? { ...template } : null;
             }).filter(Boolean);
+        }
+        return;
+    }
+
+    if (GameState.gameMode === 'campaign') {
+        GameState.playerDeckSelection = (GameState.campaignDeck || []).map(id => {
+            const template = CARD_MASTER.find(c => c.id === id);
+            return template ? { ...template } : null;
+        }).filter(Boolean);
+        
+        GameState.playerInventory = {};
+        if (GameState.campaignCards) {
+            GameState.campaignCards.forEach(id => {
+                GameState.playerInventory[id] = (GameState.playerInventory[id] || 0) + 1;
+            });
         }
         return;
     }
@@ -375,6 +398,14 @@ export function createNewDeck(leaderId) {
 }
 
 export function saveCurrentEditDeck() {
+    if (GameState.gameMode === 'campaign') {
+        import('./campaign.js').then(({ saveCampaignProgress }) => {
+            GameState.campaignDeck = GameState.playerDeckSelection.map(c => typeof c === 'string' ? c : (c.baseId || c.id));
+            saveCampaignProgress();
+        });
+        return;
+    }
+
     if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
         const activeDeck = GameState.decks[GameState.currentDeckIndex];
         activeDeck.playmatId = GameState.selectedPlaymatId;
@@ -508,6 +539,9 @@ export function finishDeckEdit() {
         GameState.appState = 'online';
         if (window.reloadOnlineLobbyConfig) window.reloadOnlineLobbyConfig();
         showOnlineLobby();
+    } else if (GameState.gameMode === 'campaign') {
+        GameState.appState = 'battle';
+        prepareBattle();
     } else {
         GameState.appState = 'battle';
         prepareBattle();

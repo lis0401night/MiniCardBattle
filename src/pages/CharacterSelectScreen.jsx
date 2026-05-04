@@ -22,6 +22,7 @@ export default function CharacterSelectScreen() {
     const hasStoryClear = Object.values(achievementData.stats?.storyClears || {}).some(v => v >= 1);
     const charsList = Object.values(charsObj).filter(c => {
       if (c.id === 'satan') return isEnemySelect && hasStoryClear;
+      if (c.id.startsWith('campaign_')) return false;
       return true;
     });
     setCharacters(charsList);
@@ -48,6 +49,7 @@ export default function CharacterSelectScreen() {
        const newHasStoryClear = Object.values(achievementData.stats?.storyClears || {}).some(v => v >= 1);
        const newList = Object.values(charsObj).filter(c => {
          if (c.id === 'satan') return newIsEnemySelect && newHasStoryClear;
+         if (c.id.startsWith('campaign_')) return false;
          return true;
        });
        setCharacters(newList);

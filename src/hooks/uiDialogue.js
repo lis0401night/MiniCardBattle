@@ -11,6 +11,24 @@ import { handleProgressionNextStep } from './progression.js';
 // UI Dialogue Logic (Dialogue & Sequences)
 // ==========================================
 
+export function handleDialogueChoice(choiceIndex) {
+    playSound(SOUNDS.seClick);
+    const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
+    if (!cur || !cur.choices) return;
+    const choice = cur.choices[choiceIndex];
+    
+    // 現在の選択肢ノードを削除し、選択結果のノードを挿入する
+    GameState.dialogueQueue.splice(GameState.currentDialogueIndex, 1, ...(choice.next || []));
+    
+    // ui側の選択肢状態をクリアし、挿入した新しい先頭の会話を表示する
+    window.currentDialogueData = window.currentDialogueData || {};
+    window.currentDialogueData.choices = null;
+    showNextDialogue(true);
+}
+
+// Reactから呼び出せるようにグローバルにも登録
+window.handleDialogueChoice = handleDialogueChoice;
+
 export function startNextBattleSequence() {
     if (GameState.gameMode !== 'story') return;
     saveStoryProgress();
@@ -73,6 +91,9 @@ export function setupDialogueScreen() {
     GameState.currentDialogueIndex = 0;
     
     let pLeftImg = getSkinImage(GameState.playerConfig, GameState.playerSkins[GameState.playerConfig.id], 'image') || getCardImgUrl(GameState.playerConfig);
+    if (GameState.gameMode === 'campaign') {
+        pLeftImg = null; // キャンペーンモードでは主人公画像を表示しない
+    }
     
     let enemySkinId = GameState.enemySkins ? GameState.enemySkins[GameState.enemyConfig.id] : 'default';
     let pRightImg = getSkinImage(GameState.enemyConfig, enemySkinId, 'image') || GameState.enemyConfig.image || getCardImgUrl(GameState.enemyConfig);
@@ -113,6 +134,18 @@ export async function showNextDialogue(force = false) {
     const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
     window.currentDialogueData = window.currentDialogueData || {};
 
+    if (cur.choices) {
+        window.currentDialogueData.choices = cur.choices;
+        window.currentDialogueData.speakerName = '';
+        window.currentDialogueData.dialogueText = cur.text || '……';
+        window.currentDialogueData.leftActive = false;
+        window.currentDialogueData.rightActive = false;
+        if (window._reactUpdateDialogueUI) window._reactUpdateDialogueUI(window.currentDialogueData);
+        return;
+    } else {
+        window.currentDialogueData.choices = null;
+    }
+
     // 1人（モノローグ）状態から対戦相手が登場した時の暗転演出
     let didFade = false;
     if (window.currentDialogueData.centerMode && (cur.speaker === 'enemy' || cur.speaker !== 'player') && GameState.appState !== 'ending_dialogue') {
@@ -146,11 +179,17 @@ export async function showNextDialogue(force = false) {
         window.currentDialogueData.rightActive = false;
         window.currentDialogueData.boxBorderColor = "#475569";
     } else {
-        window.currentDialogueData.speakerName = GameState.enemyConfig.name;
-        window.currentDialogueData.nameColor = GameState.enemyConfig.color;
+        const charConfig = cur.charData || (cur.charId ? (CHARACTERS[cur.charId] || GameState.enemyConfig) : GameState.enemyConfig);
+        window.currentDialogueData.speakerName = charConfig.name;
+        window.currentDialogueData.nameColor = charConfig.color;
         window.currentDialogueData.rightActive = true;
         window.currentDialogueData.leftActive = false;
-        window.currentDialogueData.boxBorderColor = GameState.enemyConfig.color;
+        window.currentDialogueData.boxBorderColor = charConfig.color;
+        
+        // 話者が変わる場合は画像も更新
+        if (cur.charData || cur.charId) {
+            window.currentDialogueData.rightImage = getSkinImage(charConfig, 'default', 'image') || charConfig.image || getCardImgUrl(charConfig);
+        }
     }
     
     let text = cur.text;
