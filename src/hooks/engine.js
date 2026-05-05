@@ -220,6 +220,16 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'choice':
             // 選択スキル自体は純粋ロジックでは解決できない（上位のシミュレーション層で展開済みのため）
             break;
+        case 'seal':
+            // 召喚時、正面のレーンをvalターン封印する
+            const sealTurns = val || 1;
+            if (owner === 'blue') {
+                if (state.enemySealedLanes) state.enemySealedLanes[l] = sealTurns;
+            } else {
+                if (state.playerSealedLanes) state.playerSealedLanes[l] = sealTurns;
+            }
+            events.push({ type: 'leader_skill', skill: 'seal', side: owner, targetLane: l, amount: sealTurns }); // Use generic event or leader_skill format
+            break;
         case 'support':
             const sAdj = l === 1 ? [0, 2] : [1];
             sAdj.forEach(j => {

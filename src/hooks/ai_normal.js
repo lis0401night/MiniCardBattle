@@ -633,25 +633,51 @@ export function getBestSimulatedMove() {
                 }
 
                 let skills = [];
+                let modifiedSkillsForCard = [];
                 if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
                     if (activeCardForSkills.skill === 'choice' && action.choices && activeCardForSkills.choices) {
-                        action.choices.forEach(idx => { if (activeCardForSkills.choices[idx]) skills.push({ id: activeCardForSkills.choices[idx].id, value: activeCardForSkills.choices[idx].value }); });
+                        action.choices.forEach(idx => { 
+                            if (activeCardForSkills.choices[idx]) {
+                                let sk = { id: activeCardForSkills.choices[idx].id, value: activeCardForSkills.choices[idx].value };
+                                skills.push(sk); 
+                                modifiedSkillsForCard.push(sk);
+                            }
+                        });
+                        activeCardForSkills.skill = 'none';
                     } else {
                         skills.push({ id: activeCardForSkills.skill, value: activeCardForSkills.skillValue });
                     }
                 }
+                
+                let newSkillsArr = [];
                 if (Array.isArray(activeCardForSkills.skills)) {
                     activeCardForSkills.skills.forEach(sk => {
                         if (sk.id === 'choice') {
                             if (sk.choiceGroup === 2 && action.choices2 && activeCardForSkills.choices2) {
-                                action.choices2.forEach(idx => { if (activeCardForSkills.choices2[idx]) skills.push({ id: activeCardForSkills.choices2[idx].id, value: activeCardForSkills.choices2[idx].value }); });
+                                action.choices2.forEach(idx => { 
+                                    if (activeCardForSkills.choices2[idx]) {
+                                        let chosenSk = { id: activeCardForSkills.choices2[idx].id, value: activeCardForSkills.choices2[idx].value };
+                                        skills.push(chosenSk); 
+                                        newSkillsArr.push(chosenSk);
+                                    }
+                                });
                             } else if (action.choices && activeCardForSkills.choices) {
-                                action.choices.forEach(idx => { if (activeCardForSkills.choices[idx]) skills.push({ id: activeCardForSkills.choices[idx].id, value: activeCardForSkills.choices[idx].value }); });
+                                action.choices.forEach(idx => { 
+                                    if (activeCardForSkills.choices[idx]) {
+                                        let chosenSk = { id: activeCardForSkills.choices[idx].id, value: activeCardForSkills.choices[idx].value };
+                                        skills.push(chosenSk); 
+                                        newSkillsArr.push(chosenSk);
+                                    }
+                                });
                             }
                         } else {
                             skills.push(sk);
+                            newSkillsArr.push(sk);
                         }
                     });
+                    activeCardForSkills.skills = [...newSkillsArr, ...modifiedSkillsForCard];
+                } else if (modifiedSkillsForCard.length > 0) {
+                    activeCardForSkills.skills = [...modifiedSkillsForCard];
                 }
 
                 let cLanesForPass = action.cardTokenLanes ? [...action.cardTokenLanes] : null;
@@ -1039,13 +1065,13 @@ export function evaluateSimState(state) {
             };
             if (c.skill && c.skill !== 'none') {
                 // アクティブスキル（draw, heal等）は未発動時のみ加算
-                if (!c.skillTriggered || !['draw', 'heal', 'bless', 'morph', 'seal', 'shuffle'].includes(c.skill)) {
+                if (!c.skillTriggered || !['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(c.skill)) {
                     addUtility(c.skill);
                 }
             }
             if (Array.isArray(c.skills)) {
                 c.skills.forEach(sk => {
-                    if (!c.skillTriggered || !['draw', 'heal', 'bless', 'morph', 'seal', 'shuffle'].includes(sk.id)) {
+                    if (!c.skillTriggered || !['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
                         addUtility(sk.id);
                     }
                 });
