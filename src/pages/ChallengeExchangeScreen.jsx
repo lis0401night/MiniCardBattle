@@ -175,7 +175,7 @@ export default function ChallengeExchangeScreen() {
             </h2>
 
             <div id="exchange-points-display" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
-                試練ポイント: {challengePoints.current} / 総試練ポイント: {challengePoints.total}
+                所持ポイント: {challengePoints.current} / 総ポイント: {challengePoints.total}
             </div>
 
             <div className="card-list-container">

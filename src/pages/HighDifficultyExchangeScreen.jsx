@@ -175,7 +175,7 @@ export default function HighDifficultyExchangeScreen() {
             </h2>
 
             <div id="exchange-points-display" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
-                高難易度ポイント: {highDifficultyPoints.current} / 総高難易度ポイント: {highDifficultyPoints.total}
+                所持ポイント: {highDifficultyPoints.current} / 総ポイント: {highDifficultyPoints.total}
             </div>
 
             <div className="card-list-container">

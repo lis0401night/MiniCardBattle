@@ -68,7 +68,7 @@ export default function ExchangeScreen() {
         交換所
       </h2>
       <div id="exchange-points-display" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
-        防衛ポイント: {points.current} / 総防衛ポイント: {points.total}
+        所持ポイント: {points.current} / 総ポイント: {points.total}
       </div>
 
       <div className="card-list-container">

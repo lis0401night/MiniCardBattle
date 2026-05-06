@@ -21,7 +21,7 @@ export default function CardListScreen() {
     setClickCount(newCount);
     if (newCount >= 10) {
       setClickCount(0);
-      
+
       if (showConfirmModal) {
         showConfirmModal("デバッグモードを起動して全カード・全スキンを解放しますか？", () => {
           if (CARD_MASTER && GameState.playerInventory) {
@@ -54,9 +54,9 @@ export default function CardListScreen() {
     // 常にグローバルなプレミアム設定を優先ロードする（デッキ固有設定に汚染されないため）
     const globalPremiumSrc = localStorage.getItem('mini_card_battle_premium_cards');
     if (globalPremiumSrc) {
-        try { GameState.premiumCards = JSON.parse(globalPremiumSrc); } catch(e) {}
+      try { GameState.premiumCards = JSON.parse(globalPremiumSrc); } catch (e) { }
     } else {
-        GameState.premiumCards = [];
+      GameState.premiumCards = [];
     }
 
     const _masterCards = (CARD_MASTER || []).filter((c) => !c.isToken);
@@ -64,7 +64,7 @@ export default function CardListScreen() {
 
     const _inventory = GameState.playerInventory || {};
     setInventory(_inventory);
-    
+
     setUnlockedPremium(GameState.unlockedPremiumCards || []);
     setActivePremium(GameState.premiumCards || []);
 
@@ -98,7 +98,7 @@ export default function CardListScreen() {
     <div id="screen-card-list" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto' }}>
       <h2 onClick={handleTitleClick} style={{ color: '#facc15', marginBottom: '5px', fontSize: '1.2rem', cursor: 'pointer', userSelect: 'none' }}>カード一覧</h2>
       <div id="card-list-count" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
-        カード枚数: {ownedKindCount} / {masterCards.length}
+        カード種類: {ownedKindCount} / {masterCards.length}
       </div>
 
       <div className="card-list-container">
@@ -124,7 +124,7 @@ export default function CardListScreen() {
               >
                 <div className={`card blue${rarityClass}`} style={{ opacity }}>
                   <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter }}></div>
-                  
+
                   {hasPremiumUnlocked && (
                     <div
                       className="premium-toggle-icon"
