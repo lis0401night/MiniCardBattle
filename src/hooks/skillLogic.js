@@ -307,8 +307,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     }
 
     if (skillId === 'metamorph') {
-        // 全マスタカード（トークン含む）からランダムに1枚選択
-        const randomMaster = CARD_MASTER[Math.floor(getSeededRandom() * CARD_MASTER.length)];
+        // 全マスタカード（トークン除く）からランダムに1枚選択
+        const validMasters = CARD_MASTER.filter(c => !c.isToken);
+        const randomMaster = validMasters[Math.floor(getSeededRandom() * validMasters.length)];
 
         // 演出
         playSkillSound(skillId);
