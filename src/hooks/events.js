@@ -7,7 +7,7 @@ import { GameState } from './gameState.js';
 import { setupDialogueScreen, showContinueScreen } from './uiDialogue.js';
 import { performFadeTransition } from './uiMainCore.js';
 import { showCardAcquisitionModal } from './uiGallery.js';
-import { showPointAcquisitionModal } from './uiModals.js';
+import { showAlertModal } from './uiModals.js';
 
 /**
  * Mini Card Battle - イベントモード管理 (events.js)
@@ -453,19 +453,17 @@ export function handleEventProgression() {
                         }).catch(() => {});
                     } catch (e) { console.error(e); }
 
-                    showPointAcquisitionModal({
-                        title: '高難易度クリア！',
-                        message: `バトルに勝利しました！\n高難易度ポイントを ${earnedPoints} Pt 獲得しました！`,
-                        points: earnedPoints,
-                        totalPoints: totalPts,
-                        color: '#ef4444',
-                        darkColor: '#b91c1c',
-                        onClose: () => {
+                    if (typeof showAlertModal === 'function') {
+                        showAlertModal(`イベントをクリアしました！\n高難易度ポイントを ${earnedPoints} Pt 獲得しました！`, () => {
                             performFadeTransition(() => {
                                 switchScreen('screen-event-menu');
                             });
-                        }
-                    });
+                        });
+                    } else {
+                        performFadeTransition(() => {
+                            switchScreen('screen-event-menu');
+                        });
+                    }
                 });
             } else {
                 performFadeTransition(() => {
