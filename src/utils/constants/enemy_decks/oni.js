@@ -25,9 +25,9 @@ export default {
         'fox', 'fox',
         'kasha', 'kasha',
         'nurikabe', 'nurikabe',
-        'muramasa', 'muramasa',
-        'samurai', 'samurai',
         'tengu', 'tengu', 'tengu', 'tengu',
+        'samurai', 'samurai',
+        'muramasa', 'muramasa',
         'omyouji', 'omyouji',
     ]
 };

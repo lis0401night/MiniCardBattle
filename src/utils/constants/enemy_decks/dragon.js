@@ -25,9 +25,9 @@ export default {
         'egg', 'egg',
         'phoenix', 'phoenix',
         'drake', 'drake',
-        'dragonewt', 'dragonewt',
-        'wyvern', 'wyvern',
         'berserker', 'berserker', 'berserker', 'berserker',
+        'wyvern', 'wyvern',
+        'dragonewt', 'dragonewt',
         'dancer', 'dancer',
     ]
 };

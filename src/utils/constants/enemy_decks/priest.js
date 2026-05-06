@@ -13,8 +13,8 @@ export default {
         'goldship', 'goldship',
         'sentinel', 'sentinel',
         'kitepriest', 'kitepriest',
-        'manticore', 'manticore',
         'griffin', 'griffin',
+        'manticore', 'manticore',
         'treasurehunter', 'treasurehunter', 'treasurehunter', 'treasurehunter',
         'mummy', 'mummy',
         'scorpion', 'scorpion',
@@ -25,9 +25,9 @@ export default {
         'stormpriest', 'stormpriest',
         'goldship', 'goldship',
         'sentinel', 'sentinel',
-        'manticore', 'manticore',
-        'griffin', 'griffin',
         'snakepriest', 'snakepriest', 'snakepriest', 'snakepriest',
+        'griffin', 'griffin',
+        'manticore', 'manticore',
         'mummy', 'mummy',
     ]
 };

@@ -83,11 +83,11 @@ export default function GlobalModals() {
 
     setCloseCardPreviewHook(handleCloseCardPreview);
 
-    setShowCardAcquisitionModalHook((cardId) => {
+    setShowCardAcquisitionModalHook((cardId, onClose) => {
       const card = CARD_MASTER?.find(c => c.id === cardId);
       if (card) {
         playSound?.(SOUNDS?.seSkill);
-        setAcquisitionData({ type: 'card', card, canClose: false });
+        setAcquisitionData({ type: 'card', card, canClose: false, onClose });
         setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
       }
     });
@@ -312,7 +312,12 @@ export default function GlobalModals() {
         onParentBack={() => { setCardPreviewData({ card: cardPreviewData.parentCard }); playSound?.(SOUNDS?.seClick); }}
         onTogglePremium={(cardId) => { handleTogglePremium({stopPropagation:()=>{}}, cardId); }}
         onClosePreview={handleCloseCardPreview}
-        onAcquisitionOk={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
+        onAcquisitionOk={() => { 
+            playSound?.(SOUNDS?.seClick); 
+            const cb = acquisitionData?.onClose;
+            setAcquisitionData(null); 
+            if (cb) cb();
+        }}
         onExchangeConfirm={(exchangeData) => {
             if (exchangeData.isMaxed) {
                 showAlertModal?.(exchangeData.type === 'premium' ? "既にプレミアム化済みです。" : "所持または交換上限に達しています。");

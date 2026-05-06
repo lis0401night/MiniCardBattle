@@ -12,8 +12,8 @@ export default {
         'daemon', 'daemon',
         'hand', 'hand',
         'wendigo', 'wendigo',
-        'warlock', 'warlock',
         'cavalry', 'cavalry',
+        'warlock', 'warlock',
         'minion', 'minion',
         'goat', 'goat', 'goat', 'goat',
         'devil', 'devil',
@@ -25,9 +25,9 @@ export default {
         'daemon', 'daemon',
         'succubus', 'succubus',
         'wendigo', 'wendigo',
-        'warlock', 'warlock',
-        'minion', 'minion',
         'daemonarmor', 'daemonarmor', 'daemonarmor', 'daemonarmor',
+        'minion', 'minion',
+        'warlock', 'warlock',
         'devil', 'devil',
     ]
 };

@@ -25,9 +25,9 @@ export default {
         'admiral', 'admiral',
         'elephant', 'elephant',
         'lion', 'lion',
+        'horse', 'horse', 'horse', 'horse',
         'hero', 'hero',
         'minotaur', 'minotaur',
-        'horse', 'horse', 'horse', 'horse',
         'commander', 'commander',
     ]
 };

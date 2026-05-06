@@ -25,9 +25,9 @@ export default {
         'cyborgninja', 'cyborgninja',
         'booster', 'booster',
         'gladiator', 'gladiator',
+        'mechanic', 'mechanic', 'mechanic', 'mechanic',
         'bigai', 'bigai',
         'mech', 'mech',
-        'mechanic', 'mechanic', 'mechanic', 'mechanic',
         'titan', 'titan',
     ]
 };

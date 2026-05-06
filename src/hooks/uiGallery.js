@@ -88,8 +88,8 @@ export function handleClaimAchievement(id) {
 
 let showCardAcquisitionModalHook = null;
 export function setShowCardAcquisitionModalHook(hook) { showCardAcquisitionModalHook = hook; }
-export function showCardAcquisitionModal(cardId) {
-    if (showCardAcquisitionModalHook) return showCardAcquisitionModalHook(cardId);
+export function showCardAcquisitionModal(cardId, onClose) {
+    if (showCardAcquisitionModalHook) return showCardAcquisitionModalHook(cardId, onClose);
     executeCardAcquisitionModal(cardId);
 }
 export function executeCardAcquisitionModal(cardId) {

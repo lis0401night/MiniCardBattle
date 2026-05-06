@@ -25,9 +25,9 @@ export default {
         'octopus', 'octopus',
         'horseshoecrab', 'horseshoecrab',
         'ghostship', 'ghostship',
+        'parasite', 'parasite', 'parasite', 'parasite',
         'seaslug', 'seaslug',
         'slime', 'slime',
-        'parasite', 'parasite', 'parasite', 'parasite',
         'jellyfish', 'jellyfish',
     ]
 };

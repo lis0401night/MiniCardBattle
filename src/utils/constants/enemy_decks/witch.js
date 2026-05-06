@@ -25,9 +25,9 @@ export default {
         'basilisk', 'basilisk',
         'book', 'book',
         'ring', 'ring',
+        'gargoyle', 'gargoyle', 'gargoyle', 'gargoyle',
         'battlemage', 'battlemage',
         'mage', 'mage',
-        'gargoyle', 'gargoyle', 'gargoyle', 'gargoyle',
         'beginnermagic', 'beginnermagic',
     ]
 };

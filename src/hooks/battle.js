@@ -2377,36 +2377,6 @@ export function endBattle() {
                 showDefenseBattleList();
             }
             return;
-        } else if (GameState.gameMode && GameState.gameMode.startsWith('event_')) {
-            if (GameState.lastBattleResult === 'win') {
-                const myCurrentPoints = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_points')) || 0;
-                const myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_total_points')) || myCurrentPoints;
-                
-                const winPoints = 1;
-                const newCurrentPoints = myCurrentPoints + winPoints;
-                const newTotalPoints = myTotalPoints + winPoints;
-
-                localStorage.setItem('mini_card_battle_high_difficulty_points', newCurrentPoints);
-                localStorage.setItem('mini_card_battle_high_difficulty_total_points', newTotalPoints);
-
-                const uuid = getOrCreateUUID();
-                fetch('api/update_high_difficulty_points.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        uuid: uuid,
-                        points: newCurrentPoints,
-                        total_points: newTotalPoints
-                    })
-                }).catch(() => {});
-
-                playSound(SOUNDS.seSkill);
-                showAlertModal(`イベントをクリアしました！\n高難易度ポイントを ${winPoints} Pt 獲得しました！`, () => {
-                    setupDialogueScreen();
-                });
-                return;
-            }
-        }
 
         // --- 防衛戦以外（フリー、ストーリー、高難易度など）の処理 ---
         if (GameState.lastBattleResult === 'win' && GameState.gameMode !== 'online' && GameState.gameMode !== 'practice') {

@@ -21,13 +21,13 @@ export default {
     ],
     hard: [
         'empress', 'empress',
-        'fire', 'fire', 'fire',
+        'fire', 'fire',
         'punisher', 'punisher',
         'carousel', 'carousel',
         'monk', 'monk',
+        'doom', 'doom', 'doom', 'doom',
         'pray', 'pray',
         'charity', 'charity',
-        'doom', 'doom', 'doom', 'doom',
         'carpenter', 'carpenter',
     ]
 };

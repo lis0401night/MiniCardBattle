@@ -129,7 +129,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
     let events = [];
 
     // UIの介入（対象の選択等）が必要なスキルは事前に処理
-    if (action === 'satan_avatar' || action === 'dragon_summon') {
+    if (action === 'satan_avatar' || action === 'dragon_summon' || action === 'dragon_high_ritual') {
         const tS = CARD_MASTER.find(m => m.id === 'token_satan');
         const tI = CARD_MASTER.find(m => m.id === 'token_ignis');
         const token = action === 'satan_avatar' ? tS : tI;
@@ -602,7 +602,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
         } else if (action === 'tomb_guard' && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_dark_magic', owner, tokenLanes[0]);
-        } else if (action === 'dragon_summon' && tokenLanes && tokenLanes.length > 0) {
+        } else if ((action === 'dragon_summon' || action === 'dragon_high_ritual') && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             await window.triggerVfx('anm_summon_ignis', owner, tokenLanes[0]);
         } else if (action === 'elf_polarbear_combo') {
@@ -613,7 +613,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             }
             await sleep(200);
             // 召喚エフェクト
-        } else if (action === 'holy_march' && tokenLanes && tokenLanes.length > 0) {
+        } else if ((action === 'holy_march' || action === 'evil_march') && tokenLanes && tokenLanes.length > 0) {
             await sleep(200);
             // 2箇所同時に再生
             await Promise.all(tokenLanes.map(lane => window.triggerVfx('anm_summon_celestia', owner, lane)));

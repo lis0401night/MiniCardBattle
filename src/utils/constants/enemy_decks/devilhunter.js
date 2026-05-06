@@ -25,9 +25,9 @@ export default {
         'vampire', 'vampire',
         'graverobber', 'graverobber',
         'undeadking', 'undeadking',
+        'servant', 'servant', 'servant', 'servant',
         'franken', 'franken',
         'bat', 'bat',
-        'servant', 'servant', 'servant', 'servant',
         'necromancer', 'necromancer',
     ]
 };

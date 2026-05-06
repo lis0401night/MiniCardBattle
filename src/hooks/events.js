@@ -1,11 +1,13 @@
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { getDialogue, switchScreen } from '../utils/gameUtils.js';
+import { getDialogue, switchScreen, getOrCreateUUID } from '../utils/gameUtils.js';
 import { startBattleFlow } from './deck.js';
 import { GameState } from './gameState.js';
 import { setupDialogueScreen, showContinueScreen } from './uiDialogue.js';
 import { performFadeTransition } from './uiMainCore.js';
+import { showCardAcquisitionModal } from './uiGallery.js';
+import { showPointAcquisitionModal } from './uiModals.js';
 
 /**
  * Mini Card Battle - イベントモード管理 (events.js)
@@ -418,10 +420,58 @@ export function handleEventProgression() {
             // 敗北時はコンテニュー画面へ
             showContinueScreen();
         } else {
-            // 戦闘終了後のダイアログが終わったらイベントメニューへ戻る（勝利時）
-            performFadeTransition(() => {
-                switchScreen('screen-event-menu');
-            });
+            // 勝利時の処理：カード獲得 → 高難易度ポイント獲得 → メニューへ
+            const rewardCardId = GameState.enemyConfig.id; // ボスのカードID
+
+            // インベントリにカードを追加
+            try {
+                const inventory = JSON.parse(localStorage.getItem('mini_card_battle_inventory')) || {};
+                inventory[rewardCardId] = (inventory[rewardCardId] || 0) + 1;
+                localStorage.setItem('mini_card_battle_inventory', JSON.stringify(inventory));
+            } catch (e) { console.error(e); }
+
+            if (typeof showCardAcquisitionModal === 'function') {
+                showCardAcquisitionModal(rewardCardId, () => {
+                    const earnedPoints = 1;
+                    let currentPts = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_points')) || 0;
+                    let totalPts = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_total_points')) || 0;
+                    currentPts += earnedPoints;
+                    totalPts += earnedPoints;
+                    localStorage.setItem('mini_card_battle_high_difficulty_points', currentPts);
+                    localStorage.setItem('mini_card_battle_high_difficulty_total_points', totalPts);
+
+                    try {
+                        const uuid = getOrCreateUUID();
+                        fetch('api/update_high_difficulty_points.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                uuid: uuid,
+                                points: currentPts,
+                                total_points: totalPts
+                            })
+                        }).catch(() => {});
+                    } catch (e) { console.error(e); }
+
+                    showPointAcquisitionModal({
+                        title: '高難易度クリア！',
+                        message: `バトルに勝利しました！\n高難易度ポイントを ${earnedPoints} Pt 獲得しました！`,
+                        points: earnedPoints,
+                        totalPoints: totalPts,
+                        color: '#ef4444',
+                        darkColor: '#b91c1c',
+                        onClose: () => {
+                            performFadeTransition(() => {
+                                switchScreen('screen-event-menu');
+                            });
+                        }
+                    });
+                });
+            } else {
+                performFadeTransition(() => {
+                    switchScreen('screen-event-menu');
+                });
+            }
         }
     }
 }

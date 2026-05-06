@@ -25,9 +25,9 @@ export default {
         'thief', 'thief',
         'highelf', 'highelf',
         'ranger', 'ranger',
-        'centaur', 'centaur',
-        'bear', 'bear',
         'bird', 'bird', 'bird', 'bird',
+        'bear', 'bear',
+        'centaur', 'centaur',
         'charger', 'charger',
     ]
 };
