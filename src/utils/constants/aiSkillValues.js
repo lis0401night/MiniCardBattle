@@ -37,4 +37,13 @@ export const AI_SKILL_UTILITY = {
 
     // === 低価値: 特殊な状況で有効 ===
     shuffle:         5,  // 攪乱: 互いの手札リセット、ランダム性が高い
+    
+    // === 動的評価スキル ===
+    hack: (state, GameState) => {
+        // 結果的に相手(AI)の方がSPが増えるなら+21、減る（または変わらない）なら0
+        if ((state.enemySP || 0) > (GameState.enemySP || 0)) {
+            return 21;
+        }
+        return 0;
+    }
 };

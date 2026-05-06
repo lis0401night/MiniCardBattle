@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'cyberdragon', 'cyberdragon',
-        'cyborgninja', 'cyborgninja', 'cyborgninja',
-        'booster', 'booster', 'booster',
+        'hacker', 'hacker',
+        'cyborgninja', 'cyborgninja',
+        'booster', 'booster',
         'gladiator', 'gladiator',
         'bigai', 'bigai',
         'mech', 'mech',

@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'oldgod', 'oldgod',
-        'hound', 'hound', 'hound',
-        'octopus', 'octopus', 'octopus',
+        'hound', 'hound',
+        'octopus', 'octopus',
+        'horseshoecrab', 'horseshoecrab',
         'ghostship', 'ghostship',
         'seaslug', 'seaslug',
         'slime', 'slime',

@@ -1676,7 +1676,7 @@ h2 {
     margin-bottom: 0;
     position: relative;
     z-index: 50;
-    
+    pointer-events: none;
 }
 
 .card-detail-box {
@@ -2578,6 +2578,7 @@ h2 {
 
 .choice-accordion {
     width: 100%;
+    pointer-events: auto;
 }
 
 .choice-accordion summary {

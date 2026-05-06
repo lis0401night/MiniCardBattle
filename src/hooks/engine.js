@@ -220,6 +220,34 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
         case 'choice':
             // 選択スキル自体は純粋ロジックでは解決できない（上位のシミュレーション層で展開済みのため）
             break;
+        case 'hack': {
+            const myOldSP = owner === 'blue' ? state.playerSP : state.enemySP;
+            const oppOldSP = owner === 'blue' ? state.enemySP : state.playerSP;
+            const totalSP = (myOldSP || 0) + (oppOldSP || 0);
+            
+            // 端数切り捨て（両者ともfloor）
+            const myNewSP = Math.floor(totalSP / 2);
+            const oppNewSP = Math.floor(totalSP / 2);
+
+            if (owner === 'blue') {
+                state.playerSP = myNewSP;
+                state.enemySP = oppNewSP;
+            } else {
+                state.enemySP = myNewSP;
+                state.playerSP = oppNewSP;
+            }
+
+            if (myNewSP !== myOldSP) events.push({ type: 'charge_sp', side: owner, amount: myNewSP - myOldSP, lane: l, source: 'hack' });
+            if (oppNewSP !== oppOldSP) events.push({ type: 'charge_sp', side: oppOwner, amount: oppNewSP - oppOldSP, lane: l, source: 'hack' });
+            break;
+        }
+        case 'destroy':
+            if (simulatedLane !== undefined && eB[simulatedLane]) {
+                const targetCard = eB[simulatedLane];
+                targetCard.currentPower = 0;
+                events.push({ type: 'deadly', side: oppOwner, lane: simulatedLane, source: 'destroy' });
+            }
+            break;
         case 'seal':
             // 召喚時、正面のレーンをvalターン封印する
             const sealTurns = val || 1;

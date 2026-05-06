@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'shogun', 'shogun',
-        'fox', 'fox', 'fox',
-        'kasha', 'kasha', 'kasha',
+        'orochi', 'orochi',
+        'fox', 'fox',
+        'kasha', 'kasha',
         'nurikabe', 'nurikabe',
         'muramasa', 'muramasa',
         'samurai', 'samurai',

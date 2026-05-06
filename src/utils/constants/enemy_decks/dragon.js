@@ -9,7 +9,7 @@ export default {
         'fighter', 'fighter', 'fighter', 'fighter',
     ],
     normal: [
-        'dragoon', 'dragoon',
+        'egg', 'egg',
         'phoenix', 'phoenix',
         'drake', 'drake',
         'hammer', 'hammer',
@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'dragon', 'dragon',
-        'phoenix', 'phoenix', 'phoenix',
-        'dragoon', 'dragoon', 'dragoon',
+        'dragoon', 'dragoon',
+        'egg', 'egg',
+        'phoenix', 'phoenix',
         'drake', 'drake',
         'dragonewt', 'dragonewt',
         'wyvern', 'wyvern',

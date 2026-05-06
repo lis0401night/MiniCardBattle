@@ -164,10 +164,16 @@ export default function AchievementsScreen() {
               target = CARD_MASTER.filter(c => !c.isToken && !c.id.includes('token')).length;
             }
 
-            const displayProgress = isStory ? (progress > 0 ? 1 : 0) : progress;
+            let displayProgress = isStory ? (progress > 0 ? 1 : 0) : progress;
             const displayTarget = isStory ? 1 : target;
 
             const isUnlocked = savedData.isUnlocked;
+
+            // 既存プレイヤー影響防止策：すでにロック解除されている場合は表示上のプログレスをターゲット値に合わせる
+            if (isUnlocked && displayProgress < displayTarget) {
+                displayProgress = displayTarget;
+            }
+
             const percentage = Math.min(100, Math.floor((displayProgress / displayTarget) * 100));
 
             const bgColor = isUnlocked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(0, 0, 0, 0.5)';

@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'collector', 'collector',
-        'vampire', 'vampire', 'vampire',
-        'graverobber', 'graverobber', 'graverobber',
+        'beast', 'beast',
+        'vampire', 'vampire',
+        'graverobber', 'graverobber',
         'undeadking', 'undeadking',
         'franken', 'franken',
         'bat', 'bat',

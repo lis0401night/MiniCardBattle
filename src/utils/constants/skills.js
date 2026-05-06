@@ -49,7 +49,7 @@ export const SKILLS = {
     reflect: { name: '反射', icon: '↩️', desc: (val) => '戦闘で受けるダメージを正面のカードに肩代わりさせる。また、カードを装備できず、装備になれない。' },
     guardian: { name: '守護', icon: '🛡️', desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。' },
     legendary: { name: '伝説', icon: '👑', desc: (val) => '中央のレーンにしか召喚できない。' },
-    takeover: { name: '生贄', icon: '🦖', desc: (val) => '既にカードが置かれているレーンにしか召喚できない。' },
+    takeover: { name: '生贄', icon: '🦖', desc: (val) => 'カードが配置されているレーンにしか召喚できない。' },
     pierce: { name: '貫通', icon: '🏹', desc: (val) => '攻撃時、自身のパワーの差分だけ相手リーダーにダメージを与える。' },
     explode: { name: '誘爆', icon: '💣', desc: (val) => `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。` },
     contract: { name: '契約', icon: '📜', desc: (val) => `自分のターン開始時、自分リーダーに${val || 3}ダメージ。` },
@@ -96,7 +96,7 @@ export const SKILLS = {
     dispel: { name: '解除', icon: '🔓', desc: (val) => `召喚時、相手のカード${val || 1}枚を選択し、そのカードが装備中のカードを全て破壊する。対象が「装備」を持つカードならそのカードを破壊する。` },
     invade: { name: '侵略', icon: '🛸', desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。' },
     replicate: { name: '複製', icon: '👯', desc: (val) => '召喚時、最もパワーが高い自分の他のカード1体のパワー分、自身のパワーを+する。' },
-    equip: { name: '装備', icon: '🗡️', desc: (val) => '既にカードのあるレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。' },
+    equip: { name: '装備', icon: '🗡️', desc: (val) => 'カードが配置されているレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。' },
     phase: { name: '位相', icon: '🌫️', desc: (val) => '位相を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。ただし「防御」にはブロックされる。' },
     petrify: {
         name: '石化', icon: '🗿', desc: (val) => [
@@ -157,6 +157,15 @@ export const SKILLS = {
             { type: 'text', value: 'を加える。' }
         ]
     },
+    forge: {
+        name: '鍛造', icon: '⚒️', desc: (val) => [
+            { type: 'text', value: '召喚時、カードが配置されているレーンに手札から1枚「装備」を持つカードを召喚できる。または、「武装」を持つカードが配置されているレーンに手札から1枚カードを召喚できる。そうした場合、手札に' },
+            { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+            { type: 'text', value: 'を加える。' }
+        ]
+    },
+    destroy: { name: '破壊', icon: '🚪', desc: (val) => '召喚時、相手の場のカード1枚を選び、破壊する。' },
+    hack: { name: '改竄', icon: '👾', desc: (val) => '召喚時、お互いのSPを合計し均等に振り分ける（端数切り捨て）' },
     double_power: { name: '倍化', icon: '⏫', desc: (val) => '召喚時、パワーが2倍になる。' },
     explore: { name: '探索', icon: '🗺', desc: (val) => `召喚時、デッキからパワー${val}以下のカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。` },
     possession: { name: '憑依', icon: '💞', desc: (val) => '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できず、装備になれない。' },
@@ -199,7 +208,7 @@ export const SKILLS = {
 // 召喚時に発動するスキル（配置時は発動しない）
 export const ACTIVE_SKILLS = [
     'snipe', 'spread', 'heal', 'draw', 'support', 'clone',
-    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'force', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet', 'leap', 'chant', 'burial', 'recurse'
+    'lone_wolf', 'berserk', 'sacrifice', 'bind', 'quick', 'hero', 'charge', 'stealth', 'morph', 'choice', 'force', 'metamorph', 'resurrect', 'standby', 'artillery', 'shuffle', 'summon', 'fate', 'salvage', 'reinforce', 'toxic', 'convert', 'invade', 'petrify', 'call', 'bless', 'wall_create', 'dispel', 'freeze', 'loss', 'seal', 'replicate', 'crush', 'adversity', 'invite', 'double_power', 'explore', 'decay', 'puppet', 'leap', 'chant', 'burial', 'recurse', 'forge', 'destroy', 'hack'
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

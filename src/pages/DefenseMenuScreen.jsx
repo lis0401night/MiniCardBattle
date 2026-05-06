@@ -49,9 +49,22 @@ export default function DefenseMenuScreen() {
                       onClose: () => {}
                   });
               }
-              localStorage.setItem('mini_card_battle_defense_points', finalPts);
-              localStorage.setItem('mini_card_battle_defense_total_points', finalTotalPts);
-              localStorage.setItem('mini_card_battle_defense_wins', wins);
+                localStorage.setItem('mini_card_battle_defense_points', finalPts);
+                localStorage.setItem('mini_card_battle_defense_total_points', finalTotalPts);
+                localStorage.setItem('mini_card_battle_defense_wins', wins);
+
+                // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
+                if (pts === 0 && localPts > 0) {
+                    fetch('api/update_points.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            uuid: myUuid,
+                            points: finalPts,
+                            total_points: finalTotalPts
+                        })
+                    }).catch(() => {});
+                }
             }
           }
         } catch (e) {

@@ -1,10 +1,10 @@
 export default [
     'seimei', 'seimei', 'seimei',
-    'orochi', 'orochi',
+    'ippondatara', 'ippondatara', 'ippondatara',
     'kunoichi', 'kunoichi', 'kunoichi',
     'benkei', 'benkei', 'benkei',
     'fox', 'fox', 'fox',
-    'samurai', 'samurai', 'samurai',
+    'muramasa', 'muramasa',
     'shogun', 'shogun',
     'kasha',
 ];

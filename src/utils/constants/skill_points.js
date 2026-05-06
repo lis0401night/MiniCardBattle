@@ -56,7 +56,7 @@ export const SKILL_POINTS = {
     },
     "charge": {
         "base": 0,
-        "multiplier": 1
+        "multiplier": 2
     },
     "stealth": {
         "base": 0,
@@ -84,7 +84,7 @@ export const SKILL_POINTS = {
     },
     "soul_bind": {
         "base": 0,
-        "multiplier": 1
+        "multiplier": 0.5
     },
     "sturdy": {
         "base": 2,
@@ -211,8 +211,8 @@ export const SKILL_POINTS = {
         "multiplier": 0
     },
     "bless": {
-        "base": 2,
-        "multiplier": 0
+        "base": 0,
+        "multiplier": 2
     },
     "wall_create": {
         "base": 0,
@@ -231,7 +231,7 @@ export const SKILL_POINTS = {
         "multiplier": 2
     },
     "loss": {
-        "base": 0,
+        "base": -1,
         "multiplier": -0.5
     },
     "brutal": {
@@ -250,14 +250,92 @@ export const SKILL_POINTS = {
         "base": 1,
         "multiplier": 0
     },
-    // 新スキル
     "apex": {
-        "base": -2,
+        "base": -3,
         "multiplier": 0
     },
     "retaliate": {
         "base": 0,
-        "multiplier": 1.5
+        "multiplier": 0.5
+    },
+    "reflect": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "force": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "decay": {
+        "base": -3,
+        "multiplier": 0
+    },
+    "puppet": {
+        "base": -1,
+        "multiplier": 1
+    },
+    "crush": {
+        "base": 1,
+        "multiplier": 0
+    },
+    "substitute": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "adversity": {
+        "base": 0,
+        "multiplier": 1
+    },
+    "invite": {
+        "base": 4,
+        "multiplier": 0
+    },
+    "double_power": {
+        "base": 1,
+        "multiplier": 0
+    },
+    "explore": {
+        "base": 0,
+        "multiplier": 0.5
+    },
+    "possession": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "awake": {
+        "base": -5,
+        "multiplier": 1
+    },
+    "cleave": {
+        "base": 0,
+        "multiplier": 0
+    },
+    "leap": {
+        "base": 5,
+        "multiplier": 0
+    },
+    "chant": {
+        "base": 2,
+        "multiplier": 1
+    },
+    "arm_self": {
+        "base": 1,
+        "multiplier": 0
+    },
+    "burial": {
+        "base": 0,
+        "multiplier": 0.33
+    },
+    "maintain": {
+        "base": -3,
+        "multiplier": 0
+    },
+    "recurse": {
+        "base": 0,
+        "multiplier": 0.25
+    },
+    "grave_keeper": {
+        "base": 0,
+        "multiplier": 0
     }
 };
-

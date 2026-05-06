@@ -8,6 +8,7 @@ import { GameState } from './gameState.js';
 import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -145,7 +146,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const l = selectedLanes[0];
             const imgUrl = getCardImgUrl({ ...tokenCard, owner }) || `assets/cards/card_${tokenCard.id}.jpg`;
 
-            if (b[l] && hasSkill(tokenCard, 'equip')) {
+            if (b[l] && (hasSkill(tokenCard, 'equip') || hasSkill(b[l], 'arm_self'))) {
                 const targetCard = b[l];
                 targetCard.basePower = (targetCard.basePower || 0) + (tokenCard.power || 0);
                 targetCard.currentPower = (targetCard.currentPower || 0) + (tokenCard.power || 0);
@@ -175,6 +176,8 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 eqToken.owner = owner;
                 targetCard.equippedCards = targetCard.equippedCards || [];
                 targetCard.equippedCards.push(eqToken);
+                
+                if (tokenCard?.voiceCategory) playCardVoice(tokenCard.voiceCategory, 'play');
             } else {
                 if (b[l]) { await discardCard(owner, b[l], l); }
                 b[l] = { id: `dng_tk_${Math.floor(getSeededRandom() * 1000000000)}`, owner, ...tokenCard, imgUrl, filter: 'none', currentPower: tokenCard.power, rarity: tokenCard.rarity || 1 };
@@ -277,7 +280,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const targetLane = tLanes[0];
             tokenLanes = tLanes; // VFX用
             const existingCard = board[targetLane];
-            const isEquip = hasSkill(selectedCard, 'equip') && existingCard;
+            const isEquip = existingCard && (hasSkill(selectedCard, 'equip') || hasSkill(existingCard, 'arm_self'));
             const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
             const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
 
@@ -308,6 +311,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 mergeCardSkills(targetCard, equipSkills);
                 targetCard.equippedCards = targetCard.equippedCards || [];
                 targetCard.equippedCards.push(selectedCard);
+                if (selectedCard?.voiceCategory) playCardVoice(selectedCard.voiceCategory, 'play');
                 renderBoard();
                 events.push({ type: 'power_change', side: owner, lane: targetLane, amount: selectedCard.power, source: 'equip' });
             } else {
@@ -385,7 +389,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
             const unionSkill = selectedCard.skills && selectedCard.skills.find(s => s.id === 'union');
             const isUnion = unionSkill && existingCard && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId);
 
-            const isEquip = hasSkill(selectedCard, 'equip') && existingCard;
+            const isEquip = existingCard && (hasSkill(selectedCard, 'equip') || hasSkill(existingCard, 'arm_self'));
             let resurrectedCard;
             if (isUnion) {
                 const combineId = unionSkill.summonId;
@@ -422,6 +426,7 @@ export async function executeLeaderSkillAction(owner, action, isBlue, config, to
                 targetCard.equippedCards = targetCard.equippedCards || [];
                 targetCard.equippedCards.push(selectedCard);
 
+                if (selectedCard?.voiceCategory) playCardVoice(selectedCard.voiceCategory, 'play');
                 renderBoard(); // 反映を確実にする
                 events.push({ type: 'power_change', side: owner, lane: targetLane, amount: selectedCard.power, source: 'equip' });
                 resurrectedCard = targetCard; // 後のスキル解決フラグ用

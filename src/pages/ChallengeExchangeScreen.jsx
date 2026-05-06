@@ -37,7 +37,7 @@ export default function ChallengeExchangeScreen() {
         // API Fetch to sync points
         const fetchPoints = async () => {
             try {
-                const response = await fetch(`api/challenge/players?t=${Date.now()}`);
+                const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`);
                 if (!response.ok) return;
                 
                 const text = await response.text();
@@ -48,12 +48,29 @@ export default function ChallengeExchangeScreen() {
                     const myUuid = getOrCreateUUID();
                     const myData = result.players.find(p => p.uuid === myUuid);
                     if (myData) {
-                        const pts = myData.points || 0;
-                        const tPts = myData.total_points || myData.points || 0;
-                        if (pts > 0 || currentPts === 0) {
-                            setChallengePoints({ current: pts, total: tPts });
-                            localStorage.setItem('mini_card_battle_challenge_points', pts);
-                            localStorage.setItem('mini_card_battle_challenge_total_points', tPts);
+                        const pts = myData.challenge_points || 0;
+                        const tPts = myData.challenge_total_points || pts || 0;
+                        
+                        const finalPts = (pts === 0 && currentPts > 0) ? currentPts : pts;
+                        const finalTotalPts = (tPts === 0 && totalPts > 0) ? totalPts : tPts;
+
+                        if (finalPts > 0 || currentPts === 0) {
+                            setChallengePoints({ current: finalPts, total: finalTotalPts });
+                            localStorage.setItem('mini_card_battle_challenge_points', finalPts);
+                            localStorage.setItem('mini_card_battle_challenge_total_points', finalTotalPts);
+                            
+                            // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
+                            if (pts === 0 && currentPts > 0) {
+                                fetch('api/update_challenge_points.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        uuid: myUuid,
+                                        points: finalPts,
+                                        total_points: finalTotalPts
+                                    })
+                                }).catch(() => {});
+                            }
                         }
                     }
                 }
@@ -67,7 +84,7 @@ export default function ChallengeExchangeScreen() {
     const savePointsToServer = (newPts, newTotal) => {
         const uuid = getOrCreateUUID();
         const playerName = localStorage.getItem('mini_card_battle_player_name') || 'Player';
-        fetch('api/challenge/players', {
+        fetch('api/update_challenge_points.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -21,9 +21,9 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
     const dS = o === 'blue' ? 'enemy' : 'player';
 
     // 演出用のポップアップと音（一括した基本演出）
-    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite', 'decay', 'puppet', 'leap', 'chant'].includes(skillId)) {
+    if (['support', 'hero', 'lone_wolf', 'morph', 'spread', 'snipe', 'berserk', 'heal', 'charge', 'sacrifice', 'quick', 'choice', 'artillery', 'standby', 'resurrect', 'summon', 'salvage', 'dispel', 'seal', 'crush', 'adversity', 'double_power', 'invite', 'decay', 'puppet', 'leap', 'chant', 'forge', 'destroy'].includes(skillId)) {
         playSkillSound(skillId);
-        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来', 'decay': '減衰', 'puppet': '傀儡', 'leap': '跳躍', 'chant': '詠唱' };
+        const labels = { 'support': '援護', 'hero': '英雄', 'lone_wolf': '単騎', 'morph': '変化', 'spread': '拡散', 'snipe': '狙撃', 'berserk': '狂乱', 'heal': '回復', 'charge': '充填', 'sacrifice': '代償', 'quick': '速攻', 'choice': '選択', 'artillery': '砲撃', 'standby': '待機', 'resurrect': '復活', 'summon': '召喚', 'salvage': '回収', 'dispel': '解除', 'seal': '結界', 'crush': '粉砕', 'adversity': '逆境', 'double_power': '倍化', 'invite': '招来', 'decay': '減衰', 'puppet': '傀儡', 'leap': '跳躍', 'chant': '詠唱', 'forge': '鍛造', 'destroy': '破壊' };
         if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
         await sleep(200); // Popupを見せる間
     }
@@ -168,6 +168,129 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
             };
             const currentHand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
             currentHand.push(voidToken);
+            renderHand();
+            await sleep(300);
+
+            await playCard(o, selectedIdx, selectedLane);
+        }
+        return;
+    }
+
+    if (skillId === 'destroy') {
+        const board = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+        const oppOwner = o === 'blue' ? 'red' : 'blue';
+        const validLanes = [];
+        board.forEach((card, idx) => {
+            if (card) validLanes.push(idx);
+        });
+
+        if (validLanes.length > 0) {
+            let targetLane = -1;
+            if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+                const aiAction = consumeAIAction('destroy');
+                if (aiAction && aiAction.laneIdx !== undefined) targetLane = aiAction.laneIdx;
+            } else {
+                const tLanes = await waitPlayerEnemyLaneSelection(1, o, true, '破壊する相手のカードを1枚選んでください');
+                if (tLanes && tLanes.length > 0) targetLane = tLanes[0];
+            }
+
+            if (targetLane !== -1) {
+                let events = [];
+                applyActiveSkillLogic(currentState, o, l, 'destroy', 1, events, null, targetLane);
+                if (events.length > 0) {
+                    await playEvents(events);
+                }
+            }
+        }
+        return;
+    }
+    if (skillId === 'forge') {
+        let selectedIdx = -1;
+        let selectedLane = -1;
+        const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        const b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+        const isArmSelfLanes = [];
+        const isOccupiedLanes = [];
+        b.forEach((c, idx) => {
+            if (c) {
+                isOccupiedLanes.push(idx);
+                if (hasSkill(c, 'arm_self')) isArmSelfLanes.push(idx);
+            }
+        });
+
+        const isValidHandCard = (card) => {
+            if (hasSkill(card, 'equip')) return isOccupiedLanes.length > 0;
+            return isArmSelfLanes.length > 0;
+        };
+
+        if (o === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
+            let actionIdx = -1;
+            if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+                actionIdx = GameState.aiDecision.actionQueue.findIndex(a => a.type === skillId);
+            }
+            if (actionIdx !== -1) {
+                const aiAction = GameState.aiDecision.actionQueue[actionIdx];
+                selectedLane = aiAction.laneIdx;
+                if (aiAction.targetUid) {
+                    selectedIdx = h.findIndex(card => card && (card.uid === aiAction.targetUid || card.id === aiAction.targetUid));
+                }
+                if (selectedIdx === -1 && aiAction.targetIdx !== undefined && aiAction.targetIdx < h.length) {
+                    selectedIdx = aiAction.targetIdx;
+                }
+                if (selectedIdx >= 0 && !isValidHandCard(h[selectedIdx])) selectedIdx = -1;
+                GameState.aiDecision.actionQueue.splice(actionIdx, 1);
+            }
+        } else {
+            const hasPlayableCard = h.some(card => isValidHandCard(card));
+            if (hasPlayableCard) {
+                let success = false;
+                while (!success) {
+                    const arr = await waitPlayerHandSelection(1, o, false, '召喚するカードを1枚まで選んでください');
+                    if (!arr || arr.length === 0) break;
+                    
+                    const sIdx = arr[0];
+                    const pickedCard = h[sIdx];
+
+                    if (!isValidHandCard(pickedCard)) {
+                        if (typeof window.showAlertModal === 'function') {
+                            window.showAlertModal(hasSkill(pickedCard, 'equip') ? '装備できるレーンがありません。' : '「武装」を持つカードのレーンにのみ召喚できます。');
+                        }
+                        await sleep(500);
+                        continue;
+                    }
+
+                    const restrictLanes = hasSkill(pickedCard, 'equip') ? isOccupiedLanes : isArmSelfLanes;
+                    const lanes = await waitPlayerLaneSelection(
+                        1, o, pickedCard,
+                        false, restrictLanes, true, true, 'キャンセル'
+                    );
+
+                    if (lanes && lanes.length > 0) {
+                        selectedIdx = sIdx;
+                        selectedLane = lanes[0];
+                        success = true;
+                    }
+                }
+            }
+        }
+
+        if (selectedIdx !== -1 && selectedLane !== -1) {
+            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+            const voidToken = {
+                ...voidTpl,
+                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_${skillId}`,
+                uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void${skillId}`,
+                filter: voidTpl.filter,
+                power: voidTpl.power,
+                currentPower: voidTpl.power,
+                basePower: voidTpl.power,
+                skill: voidTpl.skill || 'none',
+                voiceCategory: voidTpl.voiceCategory || 'stone',
+                isToken: true,
+                isMorphToken: true
+            };
+            h.push(voidToken);
             renderHand();
             await sleep(300);
 
@@ -1023,9 +1146,6 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         // standby は自分が召喚したこのターンから待機するため、val そのままで正しい挙動になる。
         const turns = (skillValue || 1);
         c.stunTurns = turns;
-        if (cEl) {
-            createDamagePopup(cEl, '待機', '#94a3b8');
-        }
         renderBoard();
         await sleep(400);
     } else if (skillId === 'decay') {
@@ -1037,9 +1157,6 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
         c.currentPower = halfP;
         c.basePower = halfP;
 
-        if (cEl) {
-            createDamagePopup(cEl, '減衰', '#94a3b8');
-        }
         renderBoard();
         await sleep(400);
     } else if (skillId === 'resurrect') {
@@ -1150,7 +1267,11 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         }
                     }
 
-                    if (board[targetLane]?.voiceCategory) playCardVoice(board[targetLane].voiceCategory, 'play');
+                    let voiceCard = board[targetLane];
+                    if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
+                        voiceCard = selectedCard;
+                    }
+                    if (voiceCard?.voiceCategory) playCardVoice(voiceCard.voiceCategory, 'play');
                     playSound(SOUNDS.sePlace);
                     renderBoard();
                     await sleep(400);
@@ -1237,7 +1358,7 @@ export async function resolveActiveSkillEffect(o, l, c, skillId, skillValue, skO
                         selectedCard.puppetOriginalOwner = oppOwner; // 元の持ち主を記録
                         targetCard.equippedCards.push(selectedCard);
 
-                        if (board[targetLane]?.voiceCategory) playCardVoice(board[targetLane].voiceCategory, 'play');
+                        if (selectedCard?.voiceCategory) playCardVoice(selectedCard.voiceCategory, 'play');
                         playSound(SOUNDS.sePlace);
                         renderBoard();
                         await sleep(400);

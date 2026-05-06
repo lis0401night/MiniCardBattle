@@ -316,7 +316,7 @@ export function loadDeck() {
             if (GameState.gameMode === 'battle_dungeon') GameState.decks[0].name = '試練の宮殿デッキ';
         } else {
             // 新規プレイヤー向けの初期設定：全キャラクター（リーダー）分の初期デッキを生成
-            const leaderIds = Object.keys(CHARACTERS).filter(id => id !== 'player' && id !== 'unknown' && id !== 'npc' && id !== 'satan');
+            const leaderIds = Object.keys(CHARACTERS).filter(id => id !== 'player' && id !== 'campaign_player' && id !== 'unknown' && id !== 'npc' && id !== 'satan');
             leaderIds.forEach(id => {
                 const char = CHARACTERS[id];
                 if (char && (!GameState.decks || GameState.decks.length < 20)) {

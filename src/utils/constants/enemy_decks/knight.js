@@ -10,7 +10,7 @@ export default {
     ],
     normal: [
         'admiral', 'admiral',
-        'assassin', 'assassin',
+        'elephant', 'elephant',
         'lion', 'lion',
         'crusher', 'crusher',
         'hero', 'hero',
@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'champion', 'champion',
-        'admiral', 'admiral', 'admiral',
-        'assassin', 'assassin', 'assassin',
+        'assassin', 'assassin',
+        'admiral', 'admiral',
+        'elephant', 'elephant',
         'lion', 'lion',
         'hero', 'hero',
         'minotaur', 'minotaur',

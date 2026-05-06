@@ -22,7 +22,8 @@ export default {
     hard: [
         'empress', 'empress',
         'fire', 'fire', 'fire',
-        'punisher', 'punisher', 'punisher',
+        'punisher', 'punisher',
+        'carousel', 'carousel',
         'monk', 'monk',
         'pray', 'pray',
         'charity', 'charity',

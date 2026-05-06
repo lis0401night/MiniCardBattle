@@ -229,7 +229,7 @@ export function retireDungeon() {
         const uuid = getOrCreateUUID();
         const playerName = localStorage.getItem('mini_card_battle_player_name') || 'Player';
         const maxStreak = GameState.dungeonMaxWinStreak || currentStreak;
-        fetch('api/challenge/players', {
+        fetch('api/update_challenge_points.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -237,7 +237,7 @@ export function retireDungeon() {
                 name: playerName,
                 points: currentPts,
                 total_points: totalPts,
-                maxWinStreak: maxStreak
+                max_streak: maxStreak
             })
         }).catch(err => console.error('Failed to save challenge points:', err));
 

@@ -156,7 +156,7 @@ export function getBestSimulatedMove() {
                         if (Array.isArray(c.skills)) c.skills.forEach(s => skillsToGather.push(s));
                         
                         skillsToGather.forEach(sk => {
-                            if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
+                            if (['crush', 'dispel', 'snipe', 'artillery', 'seal', 'destroy'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
                             
                             // 【重要仕様】スキルの値(value)の解釈：
                             // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
@@ -174,7 +174,7 @@ export function getBestSimulatedMove() {
                         arr.forEach(idx => {
                             const sk = group[idx];
                             if (!sk) return;
-                            if (['crush', 'dispel', 'snipe', 'artillery', 'seal'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
+                            if (['crush', 'dispel', 'snipe', 'artillery', 'seal', 'destroy'].includes(sk.id)) tokenTargetCount += (sk.value || 1);
                             // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
                             // ※ call, metamorph は実行時の動的判断（アドホック）や自身への適用となるため、事前のレーン確保は不要
                             if (sk.id === 'resurrect') tc += 1;
@@ -277,6 +277,37 @@ export function getBestSimulatedMove() {
                                             results.push([...cNode, ...nb]);
                                         }
                                     }
+                                }
+                            } else if (sk.id === 'forge') {
+                                for (let i = 0; i < originalHand.length; i++) {
+                                    if (currentUsedHand.includes(i)) continue;
+                                    let childCard = originalHand[i];
+                                    
+                                    const isEquip = hasSkill(childCard, 'equip');
+                                    let validLanes = [];
+                                    for (let j = 0; j < 3; j++) {
+                                        if (myBoard[j] !== null) { 
+                                            if (isEquip || hasSkill(myBoard[j], 'arm_self')) {
+                                                validLanes.push(j);
+                                            }
+                                        }
+                                    }
+                                    
+                                    for (let vLane of validLanes) {
+                                        let children = buildCardPlayTree(childCard, i, 'forge', originalHand, originalDiscard, [...currentUsedHand, i], currentUsedDiscard, currentDepth + 1, vLane);
+                                        for (let cNode of children) {
+                                            let nextBranches = buildSkillBranch(remainingSkills, [...currentUsedHand, i], currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                                            for (let nb of nextBranches) {
+                                                results.push([...cNode, ...nb]);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // スキップのブランチも作る
+                                let nextBranches = buildSkillBranch(remainingSkills, currentUsedHand, currentUsedDiscard, currentDepth, currentDiscardedFromHand);
+                                for (let nb of nextBranches) {
+                                    results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
                                 }
                             } else if (sk.id === 'leap') {
                                 // 【跳躍】スキップせずに使用する分岐（追加ターン付与）
@@ -478,13 +509,17 @@ export function getBestSimulatedMove() {
             let triggerSkills = true;
 
 
-            if (action.type === 'play' || action.type === 'invite' || action.type === 'chant') {
-                // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（chant/invite用）
+            if (action.type === 'play' || action.type === 'invite' || action.type === 'chant' || action.type === 'forge') {
+                // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（chant/invite/forge用）
                 // 実行時と同様に手札を消費せずスキップする
-                if (lIdx === -1 && (action.type === 'invite' || action.type === 'chant')) {
+                if (lIdx === -1 && (action.type === 'invite' || action.type === 'chant' || action.type === 'forge')) {
                     continue;
                 }
                 playedCard = cloneCard(simState.enemyHand[tIdx]);
+                if (action.type === 'forge') {
+                    const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
+                    simState.enemyHand.push(cloneCard(voidTpl));
+                }
                 checkConstraints = true;
                 if (simState.enemyHand[tIdx]) simState.enemyHand[tIdx] = null;
                 simState.lastPlayedLane = lIdx;

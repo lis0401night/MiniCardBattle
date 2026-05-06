@@ -1,8 +1,8 @@
 export const elfHighDeckDef = [
     'elfking', 'elfking', 'elfking',
     'cuchulainn', 'cuchulainn', 'cuchulainn',
-    'piper', 'piper', 'piper',
-    'thief', 'thief',
+    'piper', 'piper',
+    'wish', 'wish', 'wish',
     'wolf', 'wolf', 'wolf',
     'caller', 'caller', 'caller', 'caller',
     'highelf', 'highelf',

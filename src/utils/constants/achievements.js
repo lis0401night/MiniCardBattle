@@ -190,33 +190,33 @@ export const ACHIEVEMENT_MASTER = [
     {
         id: 'collect_10',
         title: '見習い収集家',
-        description: '異なるカードを10種類集める',
-        type: 'collection',
-        targetValue: 10,
-        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
-    },
-    {
-        id: 'collect_20',
-        title: 'Mr.コレクター',
         description: '異なるカードを20種類集める',
         type: 'collection',
         targetValue: 20,
         reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
     },
     {
+        id: 'collect_20',
+        title: 'Mr.コレクター',
+        description: '異なるカードを40種類集める',
+        type: 'collection',
+        targetValue: 40,
+        reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
+    },
+    {
         id: 'collect_30',
         title: '真理の探究者',
-        description: '異なるカードを30種類集める',
+        description: '異なるカードを60種類集める',
         type: 'collection',
-        targetValue: 30,
+        targetValue: 60,
         reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
     },
     {
         id: 'collect_40',
         title: '魂の目録',
-        description: '異なるカードを40種類集める',
+        description: '異なるカードを80種類集める',
         type: 'collection',
-        targetValue: 40,
+        targetValue: 80,
         reward: { type: 'card', value: 'baldanders', name: 'バルトアンデルス' }
     },
     // --- フリーバトル勝利数 ---

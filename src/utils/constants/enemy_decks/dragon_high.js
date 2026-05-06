@@ -5,7 +5,7 @@ export default [
     'hellkite', 'hellkite',
     'wurm', 'wurm',
     'avenger', 'avenger', 'avenger',
-    'egg', 'egg', 'egg',
+    'valkyrie', 'valkyrie', 'valkyrie',
     'dragon', 'dragon', 'dragon', 'dragon',
     'phoenix', 'phoenix',
     'berserker', 'berserker',

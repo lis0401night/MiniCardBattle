@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'djinn', 'djinn',
-        'basilisk', 'basilisk', 'basilisk',
-        'book', 'book', 'book',
+        'witch', 'witch',
+        'basilisk', 'basilisk',
+        'book', 'book',
         'ring', 'ring',
         'battlemage', 'battlemage',
         'mage', 'mage',

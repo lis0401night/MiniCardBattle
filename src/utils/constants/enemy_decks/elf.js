@@ -9,8 +9,8 @@ export default {
         'sniper', 'sniper', 'sniper', 'sniper',
     ],
     normal: [
+        'thief', 'thief',
         'highelf', 'highelf',
-        'caller', 'caller',
         'ranger', 'ranger',
         'shaman', 'shaman',
         'bear', 'bear',
@@ -21,8 +21,9 @@ export default {
     ],
     hard: [
         'wolf', 'wolf',
-        'caller', 'caller', 'caller',
-        'highelf', 'highelf', 'highelf',
+        'caller', 'caller',
+        'thief', 'thief',
+        'highelf', 'highelf',
         'ranger', 'ranger',
         'centaur', 'centaur',
         'bear', 'bear',

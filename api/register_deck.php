@@ -62,6 +62,9 @@ if (!is_dir($dir)) {
 $existing_points = $initial_points;
 $existing_total_points = $initial_total_points;
 $existing_defense_wins = 0;
+$existing_challenge_points = 0;
+$existing_challenge_total_points = 0;
+$existing_challenge_max_streak = 0;
 $filename = "{$dir}/{$uuid}.js";
 if (file_exists($filename)) {
     $content = file_get_contents($filename);
@@ -71,6 +74,9 @@ if (file_exists($filename)) {
             $existing_points = isset($existing_data['points']) ? intval($existing_data['points']) : $initial_points;
             $existing_total_points = isset($existing_data['total_points']) ? intval($existing_data['total_points']) : (isset($existing_data['points']) ? intval($existing_data['points']) : $initial_total_points);
             $existing_defense_wins = $existing_data['defense_wins'] ?? 0;
+            $existing_challenge_points = $existing_data['challenge_points'] ?? 0;
+            $existing_challenge_total_points = $existing_data['challenge_total_points'] ?? 0;
+            $existing_challenge_max_streak = $existing_data['challenge_max_streak'] ?? 0;
         }
     }
 }
@@ -89,6 +95,9 @@ $player_data = [
     'points' => $existing_points,
     'total_points' => $existing_total_points,
     'defense_wins' => $existing_defense_wins,
+    'challenge_points' => $existing_challenge_points,
+    'challenge_total_points' => $existing_challenge_total_points,
+    'challenge_max_streak' => $existing_challenge_max_streak,
     'timestamp' => $timestamp
 ];
 $data_json = json_encode($player_data);
