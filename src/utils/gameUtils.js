@@ -1,8 +1,14 @@
-import { CARD_MASTER } from './constants/cards.js';
-import { audioCtx, seBuffers, SOUNDS, isAudioUnlocked, unlockAudio, loadAndDecodeAudio } from './sounds.js';
+import {
+  audioCtx,
+  seBuffers,
+  SOUNDS,
+  isAudioUnlocked,
+  unlockAudio,
+  loadAndDecodeAudio,
+} from './sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
-import { CHARACTERS, getSkinImage } from './constants/characters.js';
+import { getSkinImage } from './constants/characters.js';
 
 // BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
 export let currentBgmAudio = null;
@@ -11,36 +17,42 @@ export let currentWebAudioBgmGain = null;
 export const decodedBgms = {};
 
 export const retryPlayBgm = () => {
-    // WebAudioが使える場合はHTML5 Audioのplay()は実行しない（二重再生防止）
-    if (!audioCtx && currentBgmAudio && currentBgmAudio.paused) {
-        const p = currentBgmAudio.play();
-        if (p !== undefined) {
-            p.then(() => {
-                document.removeEventListener('click', retryPlayBgm, true);
-                document.removeEventListener('touchstart', retryPlayBgm, true);
-            }).catch(() => { });
-        }
+  // WebAudioが使える場合はHTML5 Audioのplay()は実行しない（二重再生防止）
+  if (!audioCtx && currentBgmAudio && currentBgmAudio.paused) {
+    const p = currentBgmAudio.play();
+    if (p !== undefined) {
+      p.then(() => {
+        document.removeEventListener('click', retryPlayBgm, true);
+        document.removeEventListener('touchstart', retryPlayBgm, true);
+      }).catch(() => {});
     }
-    if (audioCtx) {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => {
-                document.removeEventListener('click', retryPlayBgm, true);
-                document.removeEventListener('touchstart', retryPlayBgm, true);
-                if (currentWebAudioBgmGain) {
-                    currentWebAudioBgmGain.gain.value = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
-                }
-            }).catch(() => { });
-        } else if (audioCtx.state === 'running') {
-            document.removeEventListener('click', retryPlayBgm, true);
-            document.removeEventListener('touchstart', retryPlayBgm, true);
-        }
+  }
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') {
+      audioCtx
+        .resume()
+        .then(() => {
+          document.removeEventListener('click', retryPlayBgm, true);
+          document.removeEventListener('touchstart', retryPlayBgm, true);
+          if (currentWebAudioBgmGain) {
+            currentWebAudioBgmGain.gain.value =
+              typeof GameState.gameVolume !== 'undefined'
+                ? GameState.gameVolume
+                : 0.3;
+          }
+        })
+        .catch(() => {});
+    } else if (audioCtx.state === 'running') {
+      document.removeEventListener('click', retryPlayBgm, true);
+      document.removeEventListener('touchstart', retryPlayBgm, true);
     }
+  }
 };
 
 window.updateWebAudioBgmVolume = (vol) => {
-    if (currentWebAudioBgmGain) {
-        currentWebAudioBgmGain.gain.value = vol;
-    }
+  if (currentWebAudioBgmGain) {
+    currentWebAudioBgmGain.gain.value = vol;
+  }
 };
 
 // ==========================================
@@ -48,543 +60,682 @@ window.updateWebAudioBgmVolume = (vol) => {
 // ==========================================
 
 export function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(getSeededRandom() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(getSeededRandom() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
 export let addDamagePopupHook = null;
-export function setAddDamagePopupHook(h) { addDamagePopupHook = h; }
-
-export function createDamagePopup(targetEl, text, color = '#ef4444') {
-    if (!targetEl) return;
-    const rect = targetEl.getBoundingClientRect();
-    const x = rect.left + rect.width / 2 - 10;
-    const y = rect.top;
-
-    if (addDamagePopupHook) {
-        addDamagePopupHook(x, y, text, color);
-        return;
-    }
-
-    // React非マウント時のフォールバック
-    const popup = document.createElement('div');
-    popup.className = 'damage-popup'; popup.innerText = text; popup.style.color = color;
-    popup.style.left = `${x}px`; popup.style.top = `${y}px`;
-    document.body.appendChild(popup);
-    setTimeout(() => popup.remove(), 1000);
+export function setAddDamagePopupHook(h) {
+  addDamagePopupHook = h;
 }
 
-export function getDialogue(speakerConfig, targetConfig, type, forceSide = null) {
-    if (!speakerConfig) return "...";
+export function createDamagePopup(targetEl, text, color = '#ef4444') {
+  if (!targetEl) return;
+  const rect = targetEl.getBoundingClientRect();
+  const x = rect.left + rect.width / 2 - 10;
+  const y = rect.top;
 
-    // スキンによる台詞のオーバーライドをチェック
-    let skinId = 'default';
-    if (forceSide === 'player') {
-        skinId = (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) || 'default';
-    } else if (forceSide === 'enemy') {
-        skinId = (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) || 'default';
-    } else {
-        // forceSideがない場合は、GameState上のconfigと一致するかで推測する
-        if (GameState.playerConfig && GameState.playerConfig.id === speakerConfig.id) {
-            skinId = (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) || 'default';
-        } else if (GameState.enemyConfig && GameState.enemyConfig.id === speakerConfig.id) {
-            skinId = (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) || 'default';
-        }
+  if (addDamagePopupHook) {
+    addDamagePopupHook(x, y, text, color);
+    return;
+  }
+
+  // React非マウント時のフォールバック
+  const popup = document.createElement('div');
+  popup.className = 'damage-popup';
+  popup.innerText = text;
+  popup.style.color = color;
+  popup.style.left = `${x}px`;
+  popup.style.top = `${y}px`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+
+export function getDialogue(
+  speakerConfig,
+  targetConfig,
+  type,
+  forceSide = null
+) {
+  if (!speakerConfig) return '...';
+
+  // スキンによる台詞のオーバーライドをチェック
+  let skinId = 'default';
+  if (forceSide === 'player') {
+    skinId =
+      (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) ||
+      'default';
+  } else if (forceSide === 'enemy') {
+    skinId =
+      (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) ||
+      'default';
+  } else {
+    // forceSideがない場合は、GameState上のconfigと一致するかで推測する
+    if (
+      GameState.playerConfig &&
+      GameState.playerConfig.id === speakerConfig.id
+    ) {
+      skinId =
+        (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) ||
+        'default';
+    } else if (
+      GameState.enemyConfig &&
+      GameState.enemyConfig.id === speakerConfig.id
+    ) {
+      skinId =
+        (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) ||
+        'default';
     }
+  }
 
-    if (type !== 'damage' && skinId !== 'default' && speakerConfig.skins && speakerConfig.skins[skinId] && speakerConfig.skins[skinId].dialogue) {
-        const sd = speakerConfig.skins[skinId].dialogue[type];
-        if (sd !== undefined) {
-            if (typeof sd === 'string') return sd;
-            if (Array.isArray(sd)) return sd[Math.floor(getSeededRandom() * sd.length)];
+  if (
+    type !== 'damage' &&
+    skinId !== 'default' &&
+    speakerConfig.skins &&
+    speakerConfig.skins[skinId] &&
+    speakerConfig.skins[skinId].dialogue
+  ) {
+    const sd = speakerConfig.skins[skinId].dialogue[type];
+    if (sd !== undefined) {
+      if (typeof sd === 'string') return sd;
+      if (Array.isArray(sd))
+        return sd[Math.floor(getSeededRandom() * sd.length)];
 
-            if (targetConfig && sd[targetConfig.id]) return sd[targetConfig.id];
-            if (sd.default) return sd.default;
-        }
+      if (targetConfig && sd[targetConfig.id]) return sd[targetConfig.id];
+      if (sd.default) return sd.default;
     }
+  }
 
-    if (!speakerConfig.dialogue) return "...";
-    const dict = speakerConfig.dialogue[type];
-    if (dict === undefined) return "...";
+  if (!speakerConfig.dialogue) return '...';
+  const dict = speakerConfig.dialogue[type];
+  if (dict === undefined) return '...';
 
-    if (typeof dict === 'string') return dict;
-    if (Array.isArray(dict)) return dict[Math.floor(getSeededRandom() * dict.length)];
+  if (typeof dict === 'string') return dict;
+  if (Array.isArray(dict))
+    return dict[Math.floor(getSeededRandom() * dict.length)];
 
-    if (targetConfig && dict[targetConfig.id]) return dict[targetConfig.id];
-    return dict.default || "...";
+  if (targetConfig && dict[targetConfig.id]) return dict[targetConfig.id];
+  return dict.default || '...';
 }
 
 export async function playSound(audioOrKey) {
-    if (!audioOrKey) return;
+  if (!audioOrKey) return;
 
-    // 初回再生時に音声をアンロック（モバイル Safari 対策）
-    if (typeof unlockAudio === 'function' && !isAudioUnlocked) {
-        unlockAudio();
+  // 初回再生時に音声をアンロック（モバイル Safari 対策）
+  if (typeof unlockAudio === 'function' && !isAudioUnlocked) {
+    unlockAudio();
+  }
+
+  // バックグラウンド復帰後などに AudioContext が一時停止されたままの場合のフェイルセーフ
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx
+      .resume()
+      .catch((e) => console.warn('Failed to resume audioCtx', e));
+  }
+
+  const baseVol =
+    typeof GameState.gameVolume !== 'undefined' ? GameState.gameVolume : 0.3;
+
+  // 1. Web Audio (SE) の処理
+  let seKey = null;
+  if (typeof audioOrKey === 'string') {
+    seKey = audioOrKey;
+  } else if (audioOrKey instanceof Audio) {
+    for (const [key, val] of Object.entries(SOUNDS)) {
+      if (val === audioOrKey) {
+        seKey = key;
+        break;
+      }
     }
+  }
 
-    // バックグラウンド復帰後などに AudioContext が一時停止されたままの場合のフェイルセーフ
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(e => console.warn("Failed to resume audioCtx", e));
-    }
+  if (seKey && !seKey.startsWith('bgm') && audioCtx && seBuffers[seKey]) {
+    const buffer = seBuffers[seKey];
+    const source = audioCtx.createBufferSource();
+    const gainNode = audioCtx.createGain();
+    source.buffer = buffer;
+    gainNode.gain.value = baseVol;
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    source.start(0);
+    return;
+  }
 
-    const baseVol = (typeof GameState.gameVolume !== 'undefined') ? GameState.gameVolume : 0.3;
-
-    // 1. Web Audio (SE) の処理
-    let seKey = null;
-    if (typeof audioOrKey === 'string') {
-        seKey = audioOrKey;
-    } else if (audioOrKey instanceof Audio) {
-        for (const [key, val] of Object.entries(SOUNDS)) {
-            if (val === audioOrKey) {
-                seKey = key;
-                break;
-            }
-        }
-    }
-
-    if (seKey && !seKey.startsWith('bgm') && audioCtx && seBuffers[seKey]) {
-        const buffer = seBuffers[seKey];
-        const source = audioCtx.createBufferSource();
-        const gainNode = audioCtx.createGain();
-        source.buffer = buffer;
-        gainNode.gain.value = baseVol;
-        source.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        source.start(0);
-        return;
-    }
-
-    // 2. HTML5 Audio (BGM または Web Audio失敗時のフォールバック)
-    const audio = (typeof audioOrKey === 'string') ? SOUNDS[audioOrKey] : audioOrKey;
-    if (audio instanceof Audio) {
-        try {
-            audio.volume = baseVol;
-        } catch (e) { }
-
-        try {
-            // BGM (ループ音) の処理
-            if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
-                // 同じBGMが既に再生中の場合は最初から再生し直さない
-                if (currentBgmAudio === audio) {
-                    if (currentWebAudioBgmGain) currentWebAudioBgmGain.gain.value = baseVol;
-                    return;
-                }
-
-                // Web Audio APIによるSafari等対策BGM再生へのルーティング
-                if (audioCtx) {
-                    // 古いBGMを停止
-                    if (currentBgmAudio) stopSound(currentBgmAudio);
-                    currentBgmAudio = audio; // 互換性維持
-
-
-                    if (audioCtx.state === 'suspended') {
-                        audioCtx.resume().catch(() => { });
-                        document.addEventListener('click', retryPlayBgm, { capture: true });
-                        document.addEventListener('touchstart', retryPlayBgm, { capture: true });
-                    }
-
-                    const bgmUrl = new URL(audio.src).pathname.replace(/^\/+/, '');
-                    let fetchUrl = audio.src;
-                    // ローカルパス変換ロジック
-                    if (fetchUrl.includes('assets/audio/bgm/')) {
-                        fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
-                    }
-
-                    if (!decodedBgms[fetchUrl]) {
-                        // 初回再生時はデコードを待つ（iOS Safariで確実な音量操作を行うための代償）
-                        loadAndDecodeAudio(fetchUrl).then(buffer => {
-                            if (buffer && currentBgmAudio === audio) {
-                                decodedBgms[fetchUrl] = buffer;
-                                startWebAudioBgm(buffer, baseVol);
-                            }
-                        }).catch(e => console.warn("Failed to decode BGM", e));
-                    } else {
-                        startWebAudioBgm(decodedBgms[fetchUrl], baseVol);
-                    }
-                } else {
-                    // HTML5 Audio Fallback (PC or very legacy)
-                    if (audio.readyState > 0) {
-                        try { audio.currentTime = 0; } catch (e) { }
-                    }
-                    currentBgmAudio = audio;
-                    const p = audio.play();
-                    if (p !== undefined) {
-                        p.catch((e) => {
-                            console.warn("BGM playback blocked, waiting interaction...", e);
-                            document.addEventListener('click', retryPlayBgm, { capture: true });
-                            document.addEventListener('touchstart', retryPlayBgm, { capture: true });
-                        });
-                    }
-                }
-            } else {
-                // SEとしてAudio要素を鳴らす場合（予備ロジック）
-                if (audio.paused || audio.ended) {
-                    audio.currentTime = 0;
-                    const p = audio.play();
-                    if (p !== undefined) p.catch(() => { });
-                } else {
-                    const clone = audio.cloneNode();
-                    try { clone.volume = baseVol; } catch (e) { }
-                    const p = clone.play();
-                    if (p !== undefined) p.catch(() => { });
-                }
-            }
-        } catch (e) {
-            console.warn("HTML5 Audio playback failed:", e);
-        }
-    }
-}
-export function startWebAudioBgm(buffer, baseVol) {
-    if (currentWebAudioBgmSource) {
-        try { currentWebAudioBgmSource.stop(); } catch (e) { }
-        currentWebAudioBgmSource.disconnect();
-    }
-    if (currentWebAudioBgmGain) {
-        currentWebAudioBgmGain.disconnect();
-    }
-
-    currentWebAudioBgmGain = audioCtx.createGain();
-    currentWebAudioBgmGain.gain.value = baseVol;
-
-    currentWebAudioBgmSource = audioCtx.createBufferSource();
-    currentWebAudioBgmSource.buffer = buffer;
-    currentWebAudioBgmSource.loop = true;
-
-    currentWebAudioBgmSource.connect(currentWebAudioBgmGain);
-    currentWebAudioBgmGain.connect(audioCtx.destination);
+  // 2. HTML5 Audio (BGM または Web Audio失敗時のフォールバック)
+  const audio =
+    typeof audioOrKey === 'string' ? SOUNDS[audioOrKey] : audioOrKey;
+  if (audio instanceof Audio) {
+    try {
+      audio.volume = baseVol;
+    } catch (e) {}
 
     try {
-        currentWebAudioBgmSource.start(0);
+      // BGM (ループ音) の処理
+      if (audio.loop || (audio.src && audio.src.includes('bgm'))) {
+        // 同じBGMが既に再生中の場合は最初から再生し直さない
+        if (currentBgmAudio === audio) {
+          if (currentWebAudioBgmGain)
+            currentWebAudioBgmGain.gain.value = baseVol;
+          return;
+        }
+
+        // Web Audio APIによるSafari等対策BGM再生へのルーティング
+        if (audioCtx) {
+          // 古いBGMを停止
+          if (currentBgmAudio) stopSound(currentBgmAudio);
+          currentBgmAudio = audio; // 互換性維持
+
+          if (audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+            document.addEventListener('click', retryPlayBgm, { capture: true });
+            document.addEventListener('touchstart', retryPlayBgm, {
+              capture: true,
+            });
+          }
+
+          const bgmUrl = new URL(audio.src).pathname.replace(/^\/+/, '');
+          let fetchUrl = audio.src;
+          // ローカルパス変換ロジック
+          if (fetchUrl.includes('assets/audio/bgm/')) {
+            fetchUrl = fetchUrl.substring(
+              fetchUrl.indexOf('assets/audio/bgm/')
+            );
+          }
+
+          if (!decodedBgms[fetchUrl]) {
+            // 初回再生時はデコードを待つ（iOS Safariで確実な音量操作を行うための代償）
+            loadAndDecodeAudio(fetchUrl)
+              .then((buffer) => {
+                if (buffer && currentBgmAudio === audio) {
+                  decodedBgms[fetchUrl] = buffer;
+                  startWebAudioBgm(buffer, baseVol);
+                }
+              })
+              .catch((e) => console.warn('Failed to decode BGM', e));
+          } else {
+            startWebAudioBgm(decodedBgms[fetchUrl], baseVol);
+          }
+        } else {
+          // HTML5 Audio Fallback (PC or very legacy)
+          if (audio.readyState > 0) {
+            try {
+              audio.currentTime = 0;
+            } catch (e) {}
+          }
+          currentBgmAudio = audio;
+          const p = audio.play();
+          if (p !== undefined) {
+            p.catch((e) => {
+              console.warn('BGM playback blocked, waiting interaction...', e);
+              document.addEventListener('click', retryPlayBgm, {
+                capture: true,
+              });
+              document.addEventListener('touchstart', retryPlayBgm, {
+                capture: true,
+              });
+            });
+          }
+        }
+      } else {
+        // SEとしてAudio要素を鳴らす場合（予備ロジック）
+        if (audio.paused || audio.ended) {
+          audio.currentTime = 0;
+          const p = audio.play();
+          if (p !== undefined) p.catch(() => {});
+        } else {
+          const clone = audio.cloneNode();
+          try {
+            clone.volume = baseVol;
+          } catch (e) {}
+          const p = clone.play();
+          if (p !== undefined) p.catch(() => {});
+        }
+      }
     } catch (e) {
-        console.warn("WebAudio BGM start failed:", e);
+      console.warn('HTML5 Audio playback failed:', e);
     }
+  }
+}
+export function startWebAudioBgm(buffer, baseVol) {
+  if (currentWebAudioBgmSource) {
+    try {
+      currentWebAudioBgmSource.stop();
+    } catch (e) {}
+    currentWebAudioBgmSource.disconnect();
+  }
+  if (currentWebAudioBgmGain) {
+    currentWebAudioBgmGain.disconnect();
+  }
+
+  currentWebAudioBgmGain = audioCtx.createGain();
+  currentWebAudioBgmGain.gain.value = baseVol;
+
+  currentWebAudioBgmSource = audioCtx.createBufferSource();
+  currentWebAudioBgmSource.buffer = buffer;
+  currentWebAudioBgmSource.loop = true;
+
+  currentWebAudioBgmSource.connect(currentWebAudioBgmGain);
+  currentWebAudioBgmGain.connect(audioCtx.destination);
+
+  try {
+    currentWebAudioBgmSource.start(0);
+  } catch (e) {
+    console.warn('WebAudio BGM start failed:', e);
+  }
 }
 
 export function stopSound(audio) {
-    if (audio === currentBgmAudio) {
-        currentBgmAudio = null;
-        if (currentWebAudioBgmSource) {
-            try { currentWebAudioBgmSource.stop(); } catch (e) { }
-            currentWebAudioBgmSource.disconnect();
-            currentWebAudioBgmSource = null;
-        }
+  if (audio === currentBgmAudio) {
+    currentBgmAudio = null;
+    if (currentWebAudioBgmSource) {
+      try {
+        currentWebAudioBgmSource.stop();
+      } catch (e) {}
+      currentWebAudioBgmSource.disconnect();
+      currentWebAudioBgmSource = null;
     }
-    if (audio && audio.pause) {
-        audio.pause();
-    }
+  }
+  if (audio && audio.pause) {
+    audio.pause();
+  }
 }
 export function stopAllBGM() {
-    currentBgmAudio = null;
-    Object.keys(SOUNDS).forEach(key => {
-        if (key.startsWith('bgm')) {
-            stopSound(SOUNDS[key]);
-        }
-    });
+  currentBgmAudio = null;
+  Object.keys(SOUNDS).forEach((key) => {
+    if (key.startsWith('bgm')) {
+      stopSound(SOUNDS[key]);
+    }
+  });
 }
-export const sleep = ms => new Promise(res => setTimeout(res, ms));
+export const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // PRNG (Pseudo-Random Number Generator) for Multiplayer Sync
 let currentRNG = Math.random;
 
 export function setRNGSeed(seed) {
-    let a = 0;
-    if (typeof seed === 'string') {
-        for (let i = 0; i < seed.length; i++) {
-            a = Math.imul(31, a) + seed.charCodeAt(i) | 0;
-        }
-    } else {
-        a = seed;
+  let a = 0;
+  if (typeof seed === 'string') {
+    for (let i = 0; i < seed.length; i++) {
+      a = (Math.imul(31, a) + seed.charCodeAt(i)) | 0;
     }
-    currentRNG = function () {
-        var t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    }
+  } else {
+    a = seed;
+  }
+  currentRNG = function () {
+    var t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 export function resetRNG() {
-    currentRNG = Math.random;
+  currentRNG = Math.random;
 }
 
 export function getSeededRandom() {
-    return currentRNG();
+  return currentRNG();
 }
 
 // 画面遷移
 export let isTransitioning = false;
 let switchScreenHook = null;
-export function setSwitchScreenHook(hook) { switchScreenHook = hook; }
+export function setSwitchScreenHook(hook) {
+  switchScreenHook = hook;
+}
 
 export function switchScreen(id) {
-    if (isTransitioning) return;
+  if (isTransitioning) return;
 
-    if (switchScreenHook) {
-        switchScreenHook(id);
-    } else {
-        executeSwitchScreen(id);
-    }
+  if (switchScreenHook) {
+    switchScreenHook(id);
+  } else {
+    executeSwitchScreen(id);
+  }
 }
 
 export function executeSwitchScreen(id) {
-    if (isTransitioning) return;
-    isTransitioning = true;
+  if (isTransitioning) return;
+  isTransitioning = true;
 
-    // モバイル等でのボタン選択状態（Sticky Focus）を解除
-    if (document.activeElement && document.activeElement.tagName !== 'BODY') {
-        document.activeElement.blur();
-    }
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const targetScreen = document.getElementById(id);
-    if (targetScreen) {
-        targetScreen.classList.add('active');
-    }
+  // モバイル等でのボタン選択状態（Sticky Focus）を解除
+  if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+    document.activeElement.blur();
+  }
+  document
+    .querySelectorAll('.screen')
+    .forEach((s) => s.classList.remove('active'));
+  const targetScreen = document.getElementById(id);
+  if (targetScreen) {
+    targetScreen.classList.add('active');
+  }
 
-    // 300ms間は次の入力を受け付けない（ゴーストクリック対策）
-    setTimeout(() => {
-        isTransitioning = false;
-    }, 150);
+  // 300ms間は次の入力を受け付けない（ゴーストクリック対策）
+  setTimeout(() => {
+    isTransitioning = false;
+  }, 150);
 }
 
 // ゴーストクリック（pointerdown後の遅延clickイベント）をグローバルで無効化
-window.addEventListener('click', (e) => {
+window.addEventListener(
+  'click',
+  (e) => {
     if (isTransitioning) {
-        e.preventDefault();
-        e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
     }
-}, true); // キャプチャフェーズで阻止
+  },
+  true
+); // キャプチャフェーズで阻止
 
 // 墓守スキルの発動チェックとエフェクト表示
 export async function triggerGraveKeeperEffect() {
-    let activated = false;
-    const triggerEffect = (board, side) => {
-        board.forEach((c, i) => {
-            if (c && hasSkill(c, 'grave_keeper')) {
-                activated = true;
-                const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
-                if (el) {
-                    playSound(SOUNDS.seSkill);
-                    createDamagePopup(el, '墓守', '#a8a29e');
-                }
-            }
-        });
-    };
-    triggerEffect(GameState.playerBoard, 'player');
-    triggerEffect(GameState.enemyBoard, 'enemy');
+  let activated = false;
+  const triggerEffect = (board, side) => {
+    board.forEach((c, i) => {
+      if (c && hasSkill(c, 'grave_keeper')) {
+        activated = true;
+        const el = document.querySelector(
+          `#${side}-lanes .cell[data-lane="${i}"] .card`
+        );
+        if (el) {
+          playSound(SOUNDS.seSkill);
+          createDamagePopup(el, '墓守', '#a8a29e');
+        }
+      }
+    });
+  };
+  triggerEffect(GameState.playerBoard, 'player');
+  triggerEffect(GameState.enemyBoard, 'enemy');
 
-    if (activated) {
-        await sleep(500);
-    }
-    return activated;
+  if (activated) {
+    await sleep(500);
+  }
+  return activated;
 }
 
 // 判定補助: 特定のスキルを所持しているか
 export function hasSkill(c, skillId) {
-    if (!c) return false;
+  if (!c) return false;
 
-    const isOblivion = c.skill === 'oblivion' || (Array.isArray(c.skills) && c.skills.some(s => s.id === 'oblivion'));
-    if (isOblivion) {
-        if (skillId !== 'oblivion' && skillId !== 'equip') {
-            return false;
-        }
+  const isOblivion =
+    c.skill === 'oblivion' ||
+    (Array.isArray(c.skills) && c.skills.some((s) => s.id === 'oblivion'));
+  if (isOblivion) {
+    if (skillId !== 'oblivion' && skillId !== 'equip') {
+      return false;
     }
+  }
 
-    // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
-    if (skillId === 'defender' && c.stunTurns > 0) return true;
-    if (c.skill === skillId) return true;
-    if (Array.isArray(c.skills)) {
-        return c.skills.some(s => s.id === skillId);
-    }
-    return false;
+  // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
+  if (skillId === 'defender' && c.stunTurns > 0) return true;
+  if (c.skill === skillId) return true;
+  if (Array.isArray(c.skills)) {
+    return c.skills.some((s) => s.id === skillId);
+  }
+  return false;
 }
 
 // 判定補助: スキルの数値を取得
 export function getSkillValue(c, skillId) {
-    if (!c) return 0;
-    if (c.skill === skillId) return c.skillValue || 0;
-    if (Array.isArray(c.skills)) {
-        const s = c.skills.find(s => s.id === skillId);
-        return s ? s.value || 0 : 0;
-    }
-    return 0;
+  if (!c) return 0;
+  if (c.skill === skillId) return c.skillValue || 0;
+  if (Array.isArray(c.skills)) {
+    const s = c.skills.find((s) => s.id === skillId);
+    return s ? s.value || 0 : 0;
+  }
+  return 0;
 }
 
 // 装備時などのスキル統合ロジック
 export function mergeCardSkills(targetCard, equipSkills) {
-    if (!targetCard.skills) {
-        targetCard.skills = targetCard.skill && targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
-        if (targetCard.skill && targetCard.skill !== 'none') {
-            if (targetCard.summonId) targetCard.skills[0].summonId = targetCard.summonId;
-            if (targetCard.targetId) targetCard.skills[0].targetId = targetCard.targetId;
-        }
-        targetCard.skill = 'none';
+  if (!targetCard.skills) {
+    targetCard.skills =
+      targetCard.skill && targetCard.skill !== 'none'
+        ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+        : [];
+    if (targetCard.skill && targetCard.skill !== 'none') {
+      if (targetCard.summonId)
+        targetCard.skills[0].summonId = targetCard.summonId;
+      if (targetCard.targetId)
+        targetCard.skills[0].targetId = targetCard.targetId;
     }
+    targetCard.skill = 'none';
+  }
 
-    for (const newS of equipSkills) {
-        const existingInfo = targetCard.skills.find(s => s.id === newS.id);
-        if (existingInfo) {
-            if (newS.value !== undefined && newS.value !== null) {
-                existingInfo.value = (existingInfo.value || 0) + newS.value;
-            }
-        } else {
-            targetCard.skills.push({ ...newS });
-        }
+  for (const newS of equipSkills) {
+    const existingInfo = targetCard.skills.find((s) => s.id === newS.id);
+    if (existingInfo) {
+      if (newS.value !== undefined && newS.value !== null) {
+        existingInfo.value = (existingInfo.value || 0) + newS.value;
+      }
+    } else {
+      targetCard.skills.push({ ...newS });
     }
+  }
 }
 
 export function unmergeCardSkills(targetCard, equipSkills) {
-    if (!targetCard.skills) return;
+  if (!targetCard.skills) return;
 
-    for (const eqS of equipSkills) {
-        const existingInfo = targetCard.skills.find(s => s.id === eqS.id);
-        if (existingInfo) {
-            if (eqS.value !== undefined && eqS.value !== null && existingInfo.value !== undefined && existingInfo.value !== null) {
-                existingInfo.value -= eqS.value;
-                if (existingInfo.value <= 0) {
-                    targetCard.skills = targetCard.skills.filter(s => s !== existingInfo);
-                }
-            } else {
-                targetCard.skills = targetCard.skills.filter(s => s !== existingInfo);
-            }
+  for (const eqS of equipSkills) {
+    const existingInfo = targetCard.skills.find((s) => s.id === eqS.id);
+    if (existingInfo) {
+      if (
+        eqS.value !== undefined &&
+        eqS.value !== null &&
+        existingInfo.value !== undefined &&
+        existingInfo.value !== null
+      ) {
+        existingInfo.value -= eqS.value;
+        if (existingInfo.value <= 0) {
+          targetCard.skills = targetCard.skills.filter(
+            (s) => s !== existingInfo
+          );
         }
+      } else {
+        targetCard.skills = targetCard.skills.filter((s) => s !== existingInfo);
+      }
     }
+  }
 }
 
-export const VALID_PREMIUM_GIFS = ['assassin', 'cleric', 'clone', 'cyberdragon', 'diviner', 'dragon', 'empress', 'golem', 'dancer', 'oldgod', 'sniper', 'wolf', 'necromancer', 'vampire', 'beginnermagic', 'djinn', 'shogun', 'omyouji'];
-export const VALID_PREMIUM_JPGS = ['dreadnought', 'hammer', 'crusher', 'shark', 'shaman', 'light', 'plaguedoctor', 'dragonfire', 'yukionna', 'kitepriest', 'cavalry'];
+export const VALID_PREMIUM_GIFS = [
+  'assassin',
+  'cleric',
+  'clone',
+  'cyberdragon',
+  'diviner',
+  'dragon',
+  'empress',
+  'golem',
+  'dancer',
+  'oldgod',
+  'sniper',
+  'wolf',
+  'necromancer',
+  'vampire',
+  'beginnermagic',
+  'djinn',
+  'shogun',
+  'omyouji',
+];
+export const VALID_PREMIUM_JPGS = [
+  'dreadnought',
+  'hammer',
+  'crusher',
+  'shark',
+  'shaman',
+  'light',
+  'plaguedoctor',
+  'dragonfire',
+  'yukionna',
+  'kitepriest',
+  'cavalry',
+];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
-    if (!card) return 'assets/cards/card_default.jpg';
-    if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
+  if (!card) return 'assets/cards/card_default.jpg';
+  if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
 
-    // 特定のトークンの例外処理（旧imgUrl設定の復元）
-    if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
-    if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
-        // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
-        // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照
-        const ownerSkins = card.owner === 'red'
-            ? (GameState.enemySkins || {})
-            : (GameState.playerSkins || {});
-        const dragonSkin = ownerSkins['dragon'] || 'default';
-        return getSkinImage('dragon', dragonSkin, 'image');
-    }
-    if (card.id === 'token_satan' || card.baseId === 'token_satan') return 'assets/cards/card_token_satan.jpg';
+  // 特定のトークンの例外処理（旧imgUrl設定の復元）
+  if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
+  if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
+    // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
+    // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照
+    const ownerSkins =
+      card.owner === 'red'
+        ? GameState.enemySkins || {}
+        : GameState.playerSkins || {};
+    const dragonSkin = ownerSkins['dragon'] || 'default';
+    return getSkinImage('dragon', dragonSkin, 'image');
+  }
+  if (card.id === 'token_satan' || card.baseId === 'token_satan')
+    return 'assets/cards/card_token_satan.jpg';
 
-    let lookupId = card.baseId || card.id;
-    if (!lookupId) return 'assets/cards/card_default.jpg';
+  let lookupId = card.baseId || card.id;
+  if (!lookupId) return 'assets/cards/card_default.jpg';
 
-    // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
-    if (lookupId.includes('_') && !lookupId.startsWith('token_') && !lookupId.startsWith('cl_')) {
-        lookupId = lookupId.split('_')[0];
-    } else if (lookupId.startsWith('token_')) {
-        // token_xxx_123 などの場合はベースの token_xxx を使用
-        const parts = lookupId.split('_');
-        if (parts.length >= 3) lookupId = parts[0] + '_' + parts[1];
-    } else if (lookupId.startsWith('cl_')) {
-        lookupId = 'token_clone';
-    }
+  // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
+  if (
+    lookupId.includes('_') &&
+    !lookupId.startsWith('token_') &&
+    !lookupId.startsWith('cl_')
+  ) {
+    lookupId = lookupId.split('_')[0];
+  } else if (lookupId.startsWith('token_')) {
+    // token_xxx_123 などの場合はベースの token_xxx を使用
+    const parts = lookupId.split('_');
+    if (parts.length >= 3) lookupId = parts[0] + '_' + parts[1];
+  } else if (lookupId.startsWith('cl_')) {
+    lookupId = 'token_clone';
+  }
 
-    // isPremiumフラグが明示的に設定されている場合はそれを優先
-    if (card.isPremium === true) {
-        if (VALID_PREMIUM_GIFS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.gif`;
-        if (VALID_PREMIUM_JPGS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.jpg`;
-    } else if (card.isPremium === false) {
-        return `assets/cards/card_${lookupId}.jpg`;
-    }
-
-    // フラグがない場合は従来のグローバル設定を参照（ただし敵のカードと明示されている場合は除く）
-    if (card.owner !== 'red' && (GameState.premiumCards && GameState.premiumCards.includes(lookupId))) {
-        if (VALID_PREMIUM_GIFS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.gif`;
-        if (VALID_PREMIUM_JPGS.includes(lookupId)) return `assets/cards/card_${lookupId}_premium.jpg`;
-    }
+  // isPremiumフラグが明示的に設定されている場合はそれを優先
+  if (card.isPremium === true) {
+    if (VALID_PREMIUM_GIFS.includes(lookupId))
+      return `assets/cards/card_${lookupId}_premium.gif`;
+    if (VALID_PREMIUM_JPGS.includes(lookupId))
+      return `assets/cards/card_${lookupId}_premium.jpg`;
+  } else if (card.isPremium === false) {
     return `assets/cards/card_${lookupId}.jpg`;
+  }
+
+  // フラグがない場合は従来のグローバル設定を参照（ただし敵のカードと明示されている場合は除く）
+  if (
+    card.owner !== 'red' &&
+    GameState.premiumCards &&
+    GameState.premiumCards.includes(lookupId)
+  ) {
+    if (VALID_PREMIUM_GIFS.includes(lookupId))
+      return `assets/cards/card_${lookupId}_premium.gif`;
+    if (VALID_PREMIUM_JPGS.includes(lookupId))
+      return `assets/cards/card_${lookupId}_premium.jpg`;
+  }
+  return `assets/cards/card_${lookupId}.jpg`;
 }
 
 // プレミアムカード設定の切り替え
 export function togglePremiumCard(cardId, saveToGlobal = true) {
-    const index = GameState.premiumCards.indexOf(cardId);
-    if (index === -1) {
-        GameState.premiumCards.push(cardId);
-    } else {
-        GameState.premiumCards.splice(index, 1);
-    }
-    if (saveToGlobal) {
-        localStorage.setItem('mini_card_battle_premium_cards', JSON.stringify(GameState.premiumCards));
-    }
+  const index = GameState.premiumCards.indexOf(cardId);
+  if (index === -1) {
+    GameState.premiumCards.push(cardId);
+  } else {
+    GameState.premiumCards.splice(index, 1);
+  }
+  if (saveToGlobal) {
+    localStorage.setItem(
+      'mini_card_battle_premium_cards',
+      JSON.stringify(GameState.premiumCards)
+    );
+  }
 }
 
 // プレイヤーの一意なIDを取得または生成
 export function getOrCreateUUID() {
-    let uuid = localStorage.getItem('mini_card_battle_uuid');
-    if (!uuid) {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            uuid = crypto.randomUUID();
-        } else {
-            // 代替の簡易UUID生成
-            uuid = 'xxxx-xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function (c) {
-                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        localStorage.setItem('mini_card_battle_uuid', uuid);
+  let uuid = localStorage.getItem('mini_card_battle_uuid');
+  if (!uuid) {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      uuid = crypto.randomUUID();
+    } else {
+      // 代替の簡易UUID生成
+      uuid = 'xxxx-xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0,
+          v = c == 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
     }
-    return uuid;
+    localStorage.setItem('mini_card_battle_uuid', uuid);
+  }
+  return uuid;
 }
 
 export function renderSkillTag(card, isBoard = false) {
-    if (!card) return '';
-    let skillCandidates = [];
+  if (!card) return '';
+  let skillCandidates = [];
 
-    // 1. 表示対象のスキルを全てリストアップ
-    const addCandidate = (id, val) => {
-        const s = SKILLS[id];
-        if (s && id !== 'none' && s.name !== '通常') {
-            const showBadge = !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(id);
-            if (showBadge) {
-                skillCandidates.push({ id, name: s.name, icon: s.icon, value: val ?? '' });
-            }
-        }
-    };
-
-    if (card.skill) addCandidate(card.skill, card.skillValue);
-    if (Array.isArray(card.skills)) {
-        card.skills.forEach(sk => addCandidate(sk.id, sk.value));
+  // 1. 表示対象のスキルを全てリストアップ
+  const addCandidate = (id, val) => {
+    const s = SKILLS[id];
+    if (s && id !== 'none' && s.name !== '通常') {
+      const showBadge =
+        !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(id);
+      if (showBadge) {
+        skillCandidates.push({
+          id,
+          name: s.name,
+          icon: s.icon,
+          value: val ?? '',
+        });
+      }
     }
+  };
 
-    const isOblivion = skillCandidates.some(c => c.id === 'oblivion');
-    if (isOblivion) {
-        skillCandidates = skillCandidates.filter(c => c.id === 'oblivion' || c.id === 'equip');
+  if (card.skill) addCandidate(card.skill, card.skillValue);
+  if (Array.isArray(card.skills)) {
+    card.skills.forEach((sk) => addCandidate(sk.id, sk.value));
+  }
+
+  const isOblivion = skillCandidates.some((c) => c.id === 'oblivion');
+  if (isOblivion) {
+    skillCandidates = skillCandidates.filter(
+      (c) => c.id === 'oblivion' || c.id === 'equip'
+    );
+  }
+
+  // 2. IDと値が一致するものを集計
+  let grouped = [];
+  skillCandidates.forEach((c) => {
+    const existing = grouped.find((g) => g.id === c.id && g.value === c.value);
+    if (existing) {
+      existing.count++;
+    } else {
+      grouped.push({ ...c, count: 1 });
     }
+  });
 
-    // 2. IDと値が一致するものを集計
-    let grouped = [];
-    skillCandidates.forEach(c => {
-        const existing = grouped.find(g => g.id === c.id && g.value === c.value);
-        if (existing) {
-            existing.count++;
-        } else {
-            grouped.push({ ...c, count: 1 });
-        }
-    });
+  // 3. バッジの生成
+  let badges = [];
+  grouped.forEach((g) => {
+    const countSuffix = g.count > 1 ? ` * ${g.count}` : '';
+    badges.push(
+      `<div class="card-skill">${g.icon} ${g.name}${g.value}${countSuffix}</div>`
+    );
+  });
 
-    // 3. バッジの生成
-    let badges = [];
-    grouped.forEach(g => {
-        const countSuffix = g.count > 1 ? ` * ${g.count}` : '';
-        badges.push(`<div class="card-skill">${g.icon} ${g.name}${g.value}${countSuffix}</div>`);
-    });
+  // 拘束（スタン）状態による「防御」バッジ（集約対象外）
+  if (card.stunTurns > 0) {
+    const def = SKILLS['defender'];
+    badges.push(
+      `<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防御${card.stunTurns}</div>`
+    );
+  }
 
-    // 拘束（スタン）状態による「防御」バッジ（集約対象外）
-    if (card.stunTurns > 0) {
-        const def = SKILLS['defender'];
-        badges.push(`<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防御${card.stunTurns}</div>`);
-    }
-
-    if (badges.length === 0) return '';
-    return `<div class="card-skill-container">${badges.join('')}</div>`;
+  if (badges.length === 0) return '';
+  return `<div class="card-skill-container">${badges.join('')}</div>`;
 }
 window.renderSkillTag = renderSkillTag;

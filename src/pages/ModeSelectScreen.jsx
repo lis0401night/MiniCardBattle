@@ -1,8 +1,14 @@
-import React from 'react';
 
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../hooks/uiGallery.js';
-import { showRules, showOptions, showSoloMenu, showDeckEditMenu, showEventMenu, showOnlineMenu } from '../hooks/uiMainCore.js';
+import {
+  showRules,
+  showOptions,
+  showSoloMenu,
+  showDeckEditMenu,
+  showEventMenu,
+  showOnlineMenu,
+} from '../hooks/uiMainCore.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -34,7 +40,9 @@ export default function ModeSelectScreen() {
         <div className="menu-img-btn" onClick={() => showSoloMenu?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_SOLO || images.MENU_STORY || ''}')` }}
+            style={{
+              backgroundImage: `url('${images.MENU_SOLO || images.MENU_STORY || ''}')`,
+            }}
           ></div>
           <div className="menu-btn-label">ソロモード</div>
         </div>
@@ -47,7 +55,13 @@ export default function ModeSelectScreen() {
           <div className="menu-btn-label">イベント</div>
         </div>
 
-        <div className="menu-img-btn" onClick={() => { playSound(SOUNDS?.seClick); showOnlineMenu?.(); }}>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound(SOUNDS?.seClick);
+            showOnlineMenu?.();
+          }}
+        >
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_ONLINE || ''}')` }}

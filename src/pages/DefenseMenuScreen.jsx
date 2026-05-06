@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-import { playSound, stopAllBGM, getOrCreateUUID } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
-import { showEventMenu, showDefenseMenu, showDefenseBattleList, showDefenseRules, startDefenseRegistration, showExchangeScreen } from '../hooks/uiMainCore.js';
+import { getOrCreateUUID } from '../utils/gameUtils.js';
+import {
+  showEventMenu,
+  showDefenseBattleList,
+  showDefenseRules,
+  startDefenseRegistration,
+  showExchangeScreen,
+} from '../hooks/uiMainCore.js';
 import { showPointAcquisitionModal } from '../hooks/uiModals.js';
 
 export default function DefenseMenuScreen() {
@@ -10,68 +15,84 @@ export default function DefenseMenuScreen() {
 
   useEffect(() => {
     // 登録状態の確認
-    const isReg = localStorage.getItem('mini_card_battle_deck_defense') !== null;
+    const isReg =
+      localStorage.getItem('mini_card_battle_deck_defense') !== null;
     setHasRegistered(isReg);
 
     if (isReg) {
       // APIからデータを取得してポイントなどを更新するロジック（そのまま移植）
       const fetchPoints = async () => {
         try {
-          const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`);
+          const response = await fetch(
+            `api/get_player_decks.php?t=${Date.now()}`
+          );
           const result = await response.json();
           if (result.success && getOrCreateUUID) {
             const myUuid = getOrCreateUUID();
-            const myData = result.players.find(p => p.uuid === myUuid);
+            const myData = result.players.find((p) => p.uuid === myUuid);
             if (myData) {
               const wins = myData.defense_wins || 0;
               const pts = myData.points || 0;
               const totalPts = myData.total_points || pts;
 
-              const localPts = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
-              const localTotalPts = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+              const localPts =
+                parseInt(
+                  localStorage.getItem('mini_card_battle_defense_points')
+                ) || 0;
+              const localTotalPts =
+                parseInt(
+                  localStorage.getItem('mini_card_battle_defense_total_points')
+                ) || 0;
 
               // サーバーの値が0でローカルに値がある場合は、サーバーの初期化ミスと判断して上書きを避ける
-              const finalPts = (pts === 0 && localPts > 0) ? localPts : pts;
-              const finalTotalPts = (totalPts === 0 && localTotalPts > 0) ? localTotalPts : totalPts;
+              const finalPts = pts === 0 && localPts > 0 ? localPts : pts;
+              const finalTotalPts =
+                totalPts === 0 && localTotalPts > 0 ? localTotalPts : totalPts;
 
-              const lastWins = parseInt(localStorage.getItem('mini_card_battle_defense_wins')) || 0;
+              const lastWins =
+                parseInt(
+                  localStorage.getItem('mini_card_battle_defense_wins')
+                ) || 0;
               const newWinsCount = wins - lastWins;
               const newPoints = finalPts - localPts; // 今回増えたポイント
 
               if (newWinsCount > 0 && showPointAcquisitionModal) {
-                  showPointAcquisitionModal({
-                      title: '防衛成功！',
-                      message: `防衛に ${newWinsCount}回 新しく成功しました！\n防衛ポイントを ${newPoints > 0 ? newPoints : 0} Pt 獲得しました！`,
-                      points: newPoints > 0 ? newPoints : 0,
-                      totalPoints: finalPts,
-                      color: '#10b981',      // エメラルドグリーン系
-                      darkColor: '#059669',
-                      onClose: () => {}
-                  });
+                showPointAcquisitionModal({
+                  title: '防衛成功！',
+                  message: `防衛に ${newWinsCount}回 新しく成功しました！\n防衛ポイントを ${newPoints > 0 ? newPoints : 0} Pt 獲得しました！`,
+                  points: newPoints > 0 ? newPoints : 0,
+                  totalPoints: finalPts,
+                  color: '#10b981', // エメラルドグリーン系
+                  darkColor: '#059669',
+                  onClose: () => {},
+                });
               }
-                localStorage.setItem('mini_card_battle_defense_points', finalPts);
-                localStorage.setItem('mini_card_battle_defense_total_points', finalTotalPts);
-                localStorage.setItem('mini_card_battle_defense_wins', wins);
+              localStorage.setItem('mini_card_battle_defense_points', finalPts);
+              localStorage.setItem(
+                'mini_card_battle_defense_total_points',
+                finalTotalPts
+              );
+              localStorage.setItem('mini_card_battle_defense_wins', wins);
 
-                // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
-                if (pts === 0 && localPts > 0) {
-                    fetch('api/update_points.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            uuid: myUuid,
-                            points: finalPts,
-                            total_points: finalTotalPts
-                        })
-                    }).catch(() => {});
-                }
+              // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
+              if (pts === 0 && localPts > 0) {
+                fetch('api/update_points.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    uuid: myUuid,
+                    points: finalPts,
+                    total_points: finalTotalPts,
+                  }),
+                }).catch(() => {});
+              }
             }
           }
         } catch (e) {
           console.error(e);
         }
       };
-      
+
       fetchPoints();
     }
   }, []);
@@ -79,46 +100,59 @@ export default function DefenseMenuScreen() {
   return (
     <div id="screen-defense-menu" className="screen active">
       <h2 style={{ color: '#10b981', marginBottom: '30px' }}>防衛戦</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '250px' }}>
-        <button className="btn btn-yellow" onClick={() => showDefenseRules?.()}>ルール</button>
-        <button 
-          className="btn" 
-          style={{ background: 'linear-gradient(45deg, #10b981, #059669)' }} 
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '15px',
+          width: '250px',
+        }}
+      >
+        <button className="btn btn-yellow" onClick={() => showDefenseRules?.()}>
+          ルール
+        </button>
+        <button
+          className="btn"
+          style={{ background: 'linear-gradient(45deg, #10b981, #059669)' }}
           onClick={() => startDefenseRegistration?.()}
         >
           防衛デッキ登録
         </button>
-        
+
         {hasRegistered ? (
-            <button 
-              id="btn-start-attack" 
-              className="btn" 
-              style={{ background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' }} 
-              onClick={() => showDefenseBattleList?.()}
-            >
-              攻撃開始
-            </button>
+          <button
+            id="btn-start-attack"
+            className="btn"
+            style={{ background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' }}
+            onClick={() => showDefenseBattleList?.()}
+          >
+            攻撃開始
+          </button>
         ) : (
-            <div 
-              id="btn-start-attack-disabled" 
-              className="btn" 
-              style={{ background: '#475569', opacity: 0.5, cursor: 'not-allowed' }}
-            >
-              攻撃開始（未登録）
-            </div>
+          <div
+            id="btn-start-attack-disabled"
+            className="btn"
+            style={{
+              background: '#475569',
+              opacity: 0.5,
+              cursor: 'not-allowed',
+            }}
+          >
+            攻撃開始（未登録）
+          </div>
         )}
 
-        <button 
-          className="btn" 
-          style={{ background: 'linear-gradient(45deg, #f97316, #ea580c)' }} 
+        <button
+          className="btn"
+          style={{ background: 'linear-gradient(45deg, #f97316, #ea580c)' }}
           onClick={() => showExchangeScreen?.()}
         >
           交換所
         </button>
       </div>
-      <button 
-        className="btn" 
-        style={{ marginTop: '40px', background: '#475569' }} 
+      <button
+        className="btn"
+        style={{ marginTop: '40px', background: '#475569' }}
         onClick={() => showEventMenu?.()}
       >
         戻る

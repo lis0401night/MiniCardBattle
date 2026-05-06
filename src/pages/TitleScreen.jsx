@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { goToModeSelect } from '../hooks/uiMainCore.js';
 import { unlockAudio } from '../utils/sounds.js';
@@ -16,16 +16,18 @@ export default function TitleScreen() {
     }).then(() => {
       if (!unmounted) setIsLoading(false);
     });
-    return () => { unmounted = true; };
+    return () => {
+      unmounted = true;
+    };
   }, []);
 
   const handleStart = () => {
     if (isLoading || isStarting) return;
     setIsStarting(true);
-    
+
     try {
       if (typeof unlockAudio === 'function') {
-        unlockAudio().catch(e => console.warn(e));
+        unlockAudio().catch((e) => console.warn(e));
       }
       if (typeof goToModeSelect === 'function') {
         goToModeSelect();
@@ -49,14 +51,35 @@ export default function TitleScreen() {
         }}
       />
       <h1 className="game-title" style={{ display: 'none' }}>
-        LANE<br />DEFENDERS
+        LANE
+        <br />
+        DEFENDERS
       </h1>
-      
+
       {isLoading ? (
-        <div className="start-text" style={{ fontSize: '1rem', color: '#ccc', animation: 'none' }}>
+        <div
+          className="start-text"
+          style={{ fontSize: '1rem', color: '#ccc', animation: 'none' }}
+        >
           Now Loading... {progress}%
-          <div style={{ width: '200px', height: '4px', background: '#334155', marginTop: '10px', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: '#38bdf8', transition: 'width 0.2s' }}></div>
+          <div
+            style={{
+              width: '200px',
+              height: '4px',
+              background: '#334155',
+              marginTop: '10px',
+              borderRadius: '2px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: '100%',
+                background: '#38bdf8',
+                transition: 'width 0.2s',
+              }}
+            ></div>
           </div>
         </div>
       ) : (

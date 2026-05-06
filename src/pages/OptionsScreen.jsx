@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../hooks/gameState.js';
-import { updateVolume, resetGameData, showSyncDataModal, reloadGame, handleOptionsTitleClick } from '../hooks/uiMainCore.js';
+import {
+  updateVolume,
+  resetGameData,
+  showSyncDataModal,
+  reloadGame,
+  handleOptionsTitleClick,
+} from '../hooks/uiMainCore.js';
 
 export default function OptionsScreen() {
   const [volume, setVolume] = useState(0.5);
@@ -14,7 +20,7 @@ export default function OptionsScreen() {
         setVolume(GameState.gameVolume);
       }
     };
-    
+
     syncVolume(); // 初回マウント時同期
     window.addEventListener('optionsOpened', syncVolume); // オプションが開かれる度に再同期
     return () => window.removeEventListener('optionsOpened', syncVolume);
@@ -52,11 +58,18 @@ export default function OptionsScreen() {
           padding: '20px',
           borderRadius: '12px',
           border: '1px solid #334155',
-          marginBottom: '30px'
+          marginBottom: '30px',
         }}
       >
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', color: '#cbd5e1', fontSize: '0.9rem' }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: '10px',
+              color: '#cbd5e1',
+              fontSize: '0.9rem',
+            }}
+          >
             音量調整
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -78,37 +91,81 @@ export default function OptionsScreen() {
         </div>
 
         <div style={{ borderTop: '1px solid #334155', paddingTop: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', color: '#cbd5e1', fontSize: '0.9rem' }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: '10px',
+              color: '#cbd5e1',
+              fontSize: '0.9rem',
+            }}
+          >
             データ管理
           </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
+          >
             <button
               className="btn"
-              style={{ background: '#475569', width: '100%', marginTop: '0', fontSize: '0.9rem' }}
+              style={{
+                background: '#475569',
+                width: '100%',
+                marginTop: '0',
+                fontSize: '0.9rem',
+              }}
               onClick={() => showSyncDataModal?.()}
             >
               データ連携
             </button>
             <button
               className="btn"
-              style={{ background: '#7f1d1d', width: '100%', marginTop: '0', fontSize: '0.9rem' }}
+              style={{
+                background: '#7f1d1d',
+                width: '100%',
+                marginTop: '0',
+                fontSize: '0.9rem',
+              }}
               onClick={() => resetGameData?.()}
             >
               データ削除
             </button>
           </div>
-          <p style={{ color: '#64748b', fontSize: '0.7rem', marginTop: '8px', textAlign: 'center' }}>
+          <p
+            style={{
+              color: '#64748b',
+              fontSize: '0.7rem',
+              marginTop: '8px',
+              textAlign: 'center',
+            }}
+          >
             ※デッキと所持カードが初期化されます
           </p>
         </div>
 
-        <div style={{ borderTop: '1px solid #334155', paddingTop: '20px', marginTop: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', color: '#cbd5e1', fontSize: '0.9rem' }}>
+        <div
+          style={{
+            borderTop: '1px solid #334155',
+            paddingTop: '20px',
+            marginTop: '20px',
+          }}
+        >
+          <label
+            style={{
+              display: 'block',
+              marginBottom: '10px',
+              color: '#cbd5e1',
+              fontSize: '0.9rem',
+            }}
+          >
             更新
           </label>
           <button
             className="btn"
-            style={{ background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', width: '100%', marginTop: '0', fontSize: '0.9rem' }}
+            style={{
+              background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)',
+              width: '100%',
+              marginTop: '0',
+              fontSize: '0.9rem',
+            }}
             onClick={() => reloadGame?.()}
           >
             更新してタイトルへ
@@ -119,7 +176,10 @@ export default function OptionsScreen() {
       <button
         className="btn"
         style={{ background: '#475569' }}
-        onClick={() => { window.playSound?.(window.SOUNDS?.seClick); switchScreen('screen-mode-select'); }}
+        onClick={() => {
+          window.playSound?.(window.SOUNDS?.seClick);
+          switchScreen('screen-mode-select');
+        }}
       >
         戻る
       </button>

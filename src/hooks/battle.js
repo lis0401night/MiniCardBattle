@@ -1,30 +1,65 @@
+import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
+import { incrementStat } from '../utils/constants/achievements.js';
+import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
-import { incrementStat } from '../utils/constants/achievements.js';
-import { SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
-import { createDamagePopup, getDialogue, playSound, stopAllBGM, sleep, switchScreen, hasSkill, getSkillValue, getOrCreateUUID, getSeededRandom, setRNGSeed, shuffleArray, mergeCardSkills, triggerGraveKeeperEffect } from '../utils/gameUtils.js';
-import { setPlayerReadyOnly, clearActionQueueAndRegenerateSeed } from './multiplayer.js';
-import { SOUNDS, playSkillSound, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { executeEnemyAI, evaluateBestLanesForToken } from './ai.js';
+import {
+  createDamagePopup,
+  getDialogue,
+  getOrCreateUUID,
+  getSeededRandom,
+  getSkillValue,
+  hasSkill,
+  mergeCardSkills,
+  playSound,
+  setRNGSeed,
+  shuffleArray,
+  sleep,
+  stopAllBGM,
+  switchScreen,
+  triggerGraveKeeperEffect,
+} from '../utils/gameUtils.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
+import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
-import { updateCardDetail, renderHand, updateCardVisuals, removeCardFromBoard, renderBoard, updateCardPowerOnly, showDeckRefreshEffect, showCardReward, updateBattleUIHook, playSummonAnimation } from './uiBattle.js';
 import { generateDeck } from './deck.js';
-import { applyActiveSkillLogic, calculateCombatPhase, applySingleCombat } from './engine.js';
-import { getIsHost, cachedRoomData, sendOnlineAction, listenToRoomActions, stopListeningToRoomActions } from './multiplayer.js';
+import {
+  applyActiveSkillLogic,
+  applySingleCombat,
+  calculateCombatPhase,
+} from './engine.js';
+import { playEvents } from './eventRenderer.js';
+import { grantHighDifficultyPoints } from './events.js';
 import { GameState } from './gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
-import { resolveActiveSkillEffect, triggerStartTurnPassive } from './skillLogic.js';
-import { playEvents } from './eventRenderer.js';
+import {
+  cachedRoomData,
+  clearActionQueueAndRegenerateSeed,
+  getIsHost,
+  listenToRoomActions,
+  sendOnlineAction,
+  setPlayerReadyOnly,
+} from './multiplayer.js';
+import {
+  resolveActiveSkillEffect,
+  triggerStartTurnPassive,
+} from './skillLogic.js';
+import {
+  playSummonAnimation,
+  renderBoard,
+  renderHand,
+  showDeckRefreshEffect,
+  updateBattleUIHook,
+  updateCardDetail,
+  updateCardPowerOnly,
+} from './uiBattle.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showDefenseBattleList } from './uiMainCore.js';
-import { showConfirmModal, showAlertModal } from './uiModals.js';
-import { winDungeonBattle, loseDungeonBattle, retireDungeon } from './battleDungeon.js';
-import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
-import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
+import { showAlertModal, showConfirmModal } from './uiModals.js';
 
 export let pendingChoiceResolver = null;
 
@@ -33,152 +68,164 @@ export let pendingChoiceResolver = null;
 // ==========================================
 
 export async function dispatchBattleAction(action, isRemote = false) {
-    if (GameState.gameMode === 'online' && !isRemote) {
-        // ローカルのアクションは直接キューに入れず、Firebaseのルームへ送信
-        await sendOnlineAction(action);
-        return;
+  if (GameState.gameMode === 'online' && !isRemote) {
+    // ローカルのアクションは直接キューに入れず、Firebaseのルームへ送信
+    await sendOnlineAction(action);
+    return;
+  }
+
+  if (action.type === 'submitChoice') {
+    // 自分が送信した選択結果の反響(echo)は完全に無視する（自分のローカルはUIのPromiseで既に勝手に解決されているため）
+    if (action.owner === 'blue') return;
+
+    // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空配列とみなす
+    const choiceData = action.choiceData !== undefined ? action.choiceData : [];
+
+    if (pendingChoiceResolver) {
+      pendingChoiceResolver(choiceData);
+      pendingChoiceResolver = null;
+    } else {
+      if (!GameState.pendingChoices) GameState.pendingChoices = [];
+      GameState.pendingChoices.push(choiceData);
     }
+    return; // Do not process via queue, evaluate synchronously
+  }
 
-    if (action.type === 'submitChoice') {
-        // 自分が送信した選択結果の反響(echo)は完全に無視する（自分のローカルはUIのPromiseで既に勝手に解決されているため）
-        if (action.owner === 'blue') return;
-
-        // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空配列とみなす
-        const choiceData = action.choiceData !== undefined ? action.choiceData : [];
-
-        if (pendingChoiceResolver) {
-            pendingChoiceResolver(choiceData);
-            pendingChoiceResolver = null;
-        } else {
-            if (!GameState.pendingChoices) GameState.pendingChoices = [];
-            GameState.pendingChoices.push(choiceData);
-        }
-        return; // Do not process via queue, evaluate synchronously
+  if (action.type === 'retire') {
+    if (action.owner === 'blue') {
+      GameState.playerConfig.hp = 0;
+      GameState.playerHP = 0;
+    } else {
+      GameState.enemyConfig.hp = 0;
+      GameState.enemyHP = 0;
     }
+    playSound(SOUNDS.seDamage);
+    if (updateBattleUIHook) updateBattleUIHook();
+    checkWinCondition();
+    return;
+  }
 
-    if (action.type === 'retire') {
-        if (action.owner === 'blue') {
-            GameState.playerConfig.hp = 0;
-            GameState.playerHP = 0;
-        } else {
-            GameState.enemyConfig.hp = 0;
-            GameState.enemyHP = 0;
-        }
-        playSound(SOUNDS.seDamage);
-        if (updateBattleUIHook) updateBattleUIHook();
-        checkWinCondition();
-        return;
-    }
-
-    GameState.actionQueue.push(action);
-    if (!GameState.isProcessing) {
-        await processActionQueue();
-    }
+  GameState.actionQueue.push(action);
+  if (!GameState.isProcessing) {
+    await processActionQueue();
+  }
 }
 
 export async function processActionQueue() {
-    if (GameState.isProcessing) return;
-    GameState.isProcessing = true;
+  if (GameState.isProcessing) return;
+  GameState.isProcessing = true;
 
-    while (GameState.actionQueue.length > 0) {
-        const action = GameState.actionQueue.shift();
+  while (GameState.actionQueue.length > 0) {
+    const action = GameState.actionQueue.shift();
 
-        if (action.type === 'playCard') {
-            await playCard(action.owner, action.handIndex, action.lane);
-            if (checkWinCondition()) break;
-            GameState.selectedCardIndex = null;
-            if (window.updateCardDetail) window.updateCardDetail(null);
-            await sleep(500);
-            await endTurnLogic(action.owner);
-        } else if (action.type === 'endTurn') {
-            await endTurnLogic(action.owner);
-        } else if (action.type === 'leaderSkill') {
-            await activateLeaderSkill(action.owner);
-        } else if (action.type === 'enemyTurn') {
-            if (GameState.gameMode !== 'online') {
-                await sleep(500);
-                await executeEnemyAI();
-            }
-        } else if (action.type === 'syncState') {
-            applySyncState(action.state);
-        }
-
-        if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
-
-        // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
-        if (GameState.gameMode === 'online' && getIsHost() && action.type !== 'syncState' && action.type !== 'enemyTurn' && action.type !== 'submitChoice') {
-            sendOnlineAction({ type: 'syncState', state: generateSyncState() });
-        }
+    if (action.type === 'playCard') {
+      await playCard(action.owner, action.handIndex, action.lane);
+      if (checkWinCondition()) break;
+      GameState.selectedCardIndex = null;
+      if (window.updateCardDetail) window.updateCardDetail(null);
+      await sleep(500);
+      await endTurnLogic(action.owner);
+    } else if (action.type === 'endTurn') {
+      await endTurnLogic(action.owner);
+    } else if (action.type === 'leaderSkill') {
+      await activateLeaderSkill(action.owner);
+    } else if (action.type === 'enemyTurn') {
+      if (GameState.gameMode !== 'online') {
+        await sleep(500);
+        await executeEnemyAI();
+      }
+    } else if (action.type === 'syncState') {
+      applySyncState(action.state);
     }
 
-    GameState.isProcessing = false;
-    if (updateBattleUIHook) updateBattleUIHook();
+    if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
+
+    // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
+    if (
+      GameState.gameMode === 'online' &&
+      getIsHost() &&
+      action.type !== 'syncState' &&
+      action.type !== 'enemyTurn' &&
+      action.type !== 'submitChoice'
+    ) {
+      sendOnlineAction({ type: 'syncState', state: generateSyncState() });
+    }
+  }
+
+  GameState.isProcessing = false;
+  if (updateBattleUIHook) updateBattleUIHook();
 }
 
 function generateSyncState() {
-    return {
-        playerHP: GameState.playerHP,
-        enemyHP: GameState.enemyHP,
-        playerSP: GameState.playerSP,
-        enemySP: GameState.enemySP,
-        playerBoard: JSON.parse(JSON.stringify(GameState.playerBoard)),
-        enemyBoard: JSON.parse(JSON.stringify(GameState.enemyBoard)),
-        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-        playerDeck: JSON.parse(JSON.stringify(GameState.playerDeck)),
-        enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck)),
-        currentTurn: GameState.currentTurn,
-        turnCount: GameState.turnCount
-    };
+  return {
+    playerHP: GameState.playerHP,
+    enemyHP: GameState.enemyHP,
+    playerSP: GameState.playerSP,
+    enemySP: GameState.enemySP,
+    playerBoard: JSON.parse(JSON.stringify(GameState.playerBoard)),
+    enemyBoard: JSON.parse(JSON.stringify(GameState.enemyBoard)),
+    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+    playerDeck: JSON.parse(JSON.stringify(GameState.playerDeck)),
+    enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck)),
+    currentTurn: GameState.currentTurn,
+    turnCount: GameState.turnCount,
+  };
 }
 
 function applySyncState(state) {
-    if (!state) return;
+  if (!state) return;
 
-    // ホスト自身がエコーを受信した場合は無視
-    if (getIsHost()) return;
+  // ホスト自身がエコーを受信した場合は無視
+  if (getIsHost()) return;
 
-    // クライアント（受信側）はホストから見て「敵（enemy）」なので、
-    // 送られてきた状態の player と enemy を反転させてローカルに適用しなければならない。
-    GameState.playerHP = state.enemyHP || 0;
-    GameState.enemyHP = state.playerHP || 0;
-    GameState.playerSP = state.enemySP || 0;
-    GameState.enemySP = state.playerSP || 0;
+  // クライアント（受信側）はホストから見て「敵（enemy）」なので、
+  // 送られてきた状態の player と enemy を反転させてローカルに適用しなければならない。
+  GameState.playerHP = state.enemyHP || 0;
+  GameState.enemyHP = state.playerHP || 0;
+  GameState.playerSP = state.enemySP || 0;
+  GameState.enemySP = state.playerSP || 0;
 
-    // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
-    const restoreArr = (arr, len = null) => {
-        if (!arr) return len !== null ? Array(len).fill(null) : [];
-        if (Array.isArray(arr)) return len !== null ? Array.from({ length: len }, (_, i) => arr[i] || null) : arr;
-        if (typeof arr === 'object') return len !== null ? Array.from({ length: len }, (_, i) => arr[i] || null) : Object.values(arr);
-        return len !== null ? Array(len).fill(null) : [];
-    };
+  // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
+  const restoreArr = (arr, len = null) => {
+    if (!arr) return len !== null ? Array(len).fill(null) : [];
+    if (Array.isArray(arr))
+      return len !== null
+        ? Array.from({ length: len }, (_, i) => arr[i] || null)
+        : arr;
+    if (typeof arr === 'object')
+      return len !== null
+        ? Array.from({ length: len }, (_, i) => arr[i] || null)
+        : Object.values(arr);
+    return len !== null ? Array(len).fill(null) : [];
+  };
 
-    GameState.playerBoard = restoreArr(state.enemyBoard, 3);
-    GameState.enemyBoard = restoreArr(state.playerBoard, 3);
-    GameState.playerHand = restoreArr(state.enemyHand);
-    GameState.enemyHand = restoreArr(state.playerHand);
-    GameState.playerDiscard = restoreArr(state.enemyDiscard);
-    GameState.enemyDiscard = restoreArr(state.playerDiscard);
-    GameState.playerDeck = restoreArr(state.enemyDeck);
-    GameState.enemyDeck = restoreArr(state.playerDeck);
+  GameState.playerBoard = restoreArr(state.enemyBoard, 3);
+  GameState.enemyBoard = restoreArr(state.playerBoard, 3);
+  GameState.playerHand = restoreArr(state.enemyHand);
+  GameState.enemyHand = restoreArr(state.playerHand);
+  GameState.playerDiscard = restoreArr(state.enemyDiscard);
+  GameState.enemyDiscard = restoreArr(state.playerDiscard);
+  GameState.playerDeck = restoreArr(state.enemyDeck);
+  GameState.enemyDeck = restoreArr(state.playerDeck);
 
-    // ターン表記（player / enemy）もホストから見た主観なので逆転させる
-    if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
-    else if (state.currentTurn === 'enemy') GameState.currentTurn = 'player';
-    else GameState.currentTurn = state.currentTurn;
+  // ターン表記（player / enemy）もホストから見た主観なので逆転させる
+  if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
+  else if (state.currentTurn === 'enemy') GameState.currentTurn = 'player';
+  else GameState.currentTurn = state.currentTurn;
 
-    GameState.turnCount = state.turnCount;
+  GameState.turnCount = state.turnCount;
 
-    // 全てのUIを新しいステートに合わせて強制更新
-    updateHPBar('blue', GameState.playerHP);
-    updateHPBar('red', GameState.enemyHP);
-    updateSPOrbs('blue');
-    updateSPOrbs('red');
-    renderBoard();
-    renderHand();
-    if (updateBattleUIHook) updateBattleUIHook();
+  // 全てのUIを新しいステートに合わせて強制更新
+  updateHPBar('blue', GameState.playerHP);
+  updateHPBar('red', GameState.enemyHP);
+  updateSPOrbs('blue');
+  updateSPOrbs('red');
+  renderBoard();
+  renderHand();
+  if (updateBattleUIHook) updateBattleUIHook();
 }
 
 // ==========================================
@@ -186,2312 +233,3101 @@ function applySyncState(state) {
 // ==========================================
 
 export function prepareBattle() {
-    switchScreen('screen-loading');
-    const isOnline = GameState.gameMode === 'online';
-    const sessionId = isOnline ? (GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()) : Date.now();
-    let isFinished = false;
+  switchScreen('screen-loading');
+  const isOnline = GameState.gameMode === 'online';
+  const sessionId = isOnline
+    ? GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()
+    : Date.now();
+  let isFinished = false;
 
-    // プレイマット設定の引き継ぎロード
-    if (GameState.playerConfig && GameState.playerConfig.id) {
-        let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig.id}`;
-        if (GameState.gameMode === 'defense_attack') {
-            playmatSelectKey = 'mini_card_battle_playmat_defense';
-        }
-        GameState.selectedPlaymatId = localStorage.getItem(playmatSelectKey) || null;
+  // プレイマット設定の引き継ぎロード
+  if (GameState.playerConfig && GameState.playerConfig.id) {
+    let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig.id}`;
+    if (GameState.gameMode === 'defense_attack') {
+      playmatSelectKey = 'mini_card_battle_playmat_defense';
     }
+    GameState.selectedPlaymatId =
+      localStorage.getItem(playmatSelectKey) || null;
+  }
 
-    try {
-        setRNGSeed(sessionId); // シードを完全に固定して初期化
+  try {
+    setRNGSeed(sessionId); // シードを完全に固定して初期化
 
-        if (isOnline) {
-            const isHost = getIsHost();
-            const hostConfig = isHost ? GameState.playerConfig : GameState.enemyConfig;
-            const clientConfig = isHost ? GameState.enemyConfig : GameState.playerConfig;
+    if (isOnline) {
+      const isHost = getIsHost();
+      const hostConfig = isHost
+        ? GameState.playerConfig
+        : GameState.enemyConfig;
+      const clientConfig = isHost
+        ? GameState.enemyConfig
+        : GameState.playerConfig;
 
-            // オンライン時はホスト -> クライアントの順でデッキを生成し、乱数消費順を世界共通に固定する
-            const hostDeck = generateDeck(isHost ? 'blue' : 'red', hostConfig, sessionId);
-            const clientDeck = generateDeck(isHost ? 'red' : 'blue', clientConfig, sessionId);
+      // オンライン時はホスト -> クライアントの順でデッキを生成し、乱数消費順を世界共通に固定する
+      const hostDeck = generateDeck(
+        isHost ? 'blue' : 'red',
+        hostConfig,
+        sessionId
+      );
+      const clientDeck = generateDeck(
+        isHost ? 'red' : 'blue',
+        clientConfig,
+        sessionId
+      );
 
-            GameState.playerDeck = isHost ? hostDeck : clientDeck;
-            GameState.enemyDeck = isHost ? clientDeck : hostDeck;
+      GameState.playerDeck = isHost ? hostDeck : clientDeck;
+      GameState.enemyDeck = isHost ? clientDeck : hostDeck;
 
-            // アクション受信リスナー起動
-            listenToRoomActions((snapshotVal) => {
-                const { action, actor } = snapshotVal;
-                // 自分自身が出したアクションか判定
-                const isMe = (actor === (getIsHost() ? 'host' : 'client'));
-                // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
-                action.owner = isMe ? 'blue' : 'red';
+      // アクション受信リスナー起動
+      listenToRoomActions((snapshotVal) => {
+        const { action, actor } = snapshotVal;
+        // 自分自身が出したアクションか判定
+        const isMe = actor === (getIsHost() ? 'host' : 'client');
+        // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
+        action.owner = isMe ? 'blue' : 'red';
 
-                dispatchBattleAction(action, true);
-            });
-        } else {
-            GameState.playerDeck = generateDeck('blue', GameState.playerConfig, sessionId);
-            GameState.enemyDeck = generateDeck('red', GameState.enemyConfig, sessionId);
-        }
-    } catch (e) {
-        console.error("Deck generation error:", e);
-        // エラー時も空のデッキで続行を試みる（フリーズ回避）
-        GameState.playerDeck = GameState.playerDeck || [];
-        GameState.enemyDeck = GameState.enemyDeck || [];
+        dispatchBattleAction(action, true);
+      });
+    } else {
+      GameState.playerDeck = generateDeck(
+        'blue',
+        GameState.playerConfig,
+        sessionId
+      );
+      GameState.enemyDeck = generateDeck(
+        'red',
+        GameState.enemyConfig,
+        sessionId
+      );
     }
+  } catch (e) {
+    console.error('Deck generation error:', e);
+    // エラー時も空のデッキで続行を試みる（フリーズ回避）
+    GameState.playerDeck = GameState.playerDeck || [];
+    GameState.enemyDeck = GameState.enemyDeck || [];
+  }
 
-    const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
-    let loaded = 0;
+  const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
+  let loaded = 0;
 
-    const finishLoading = () => {
-        if (isFinished) return;
-        isFinished = true;
-        setTimeout(initBattleState, 500);
-    };
+  const finishLoading = () => {
+    if (isFinished) return;
+    isFinished = true;
+    setTimeout(initBattleState, 500);
+  };
 
-    // セーフティタイムアウト: 5秒経過したら強制的に開始
-    setTimeout(() => {
-        if (!isFinished) {
-            console.warn("Battle loading timed out. Forcing start...");
-            finishLoading();
-        }
-    }, 5000);
-
-    const updateProgress = () => {
-        if (isFinished) return;
-        loaded++;
-        const loadingText = document.getElementById('loading-text');
-        if (loadingText) {
-            loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
-        }
-        if (loaded >= allCards.length) finishLoading();
-    };
-
-    if (allCards.length === 0) {
-        finishLoading();
-        return;
+  // セーフティタイムアウト: 5秒経過したら強制的に開始
+  setTimeout(() => {
+    if (!isFinished) {
+      console.warn('Battle loading timed out. Forcing start...');
+      finishLoading();
     }
+  }, 5000);
 
-    allCards.forEach(card => {
-        const img = new Image();
-        img.onload = updateProgress;
-        img.onerror = updateProgress;
-        img.src = card.imgUrl;
-    });
+  const updateProgress = () => {
+    if (isFinished) return;
+    loaded++;
+    const loadingText = document.getElementById('loading-text');
+    if (loadingText) {
+      loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+    }
+    if (loaded >= allCards.length) finishLoading();
+  };
+
+  if (allCards.length === 0) {
+    finishLoading();
+    return;
+  }
+
+  allCards.forEach((card) => {
+    const img = new Image();
+    img.onload = updateProgress;
+    img.onerror = updateProgress;
+    img.src = card.imgUrl;
+  });
 }
 
 export function initBattleState() {
-    try {
-        // 全てのBGMを停止
-        stopAllBGM();
+  try {
+    // 全てのBGMを停止
+    stopAllBGM();
 
-        // ステージ情報の取得
-        let stageId = (GameState.gameMode === 'story') ? (GameState.enemyConfig.stageId || 'android') : (GameState.selectedStageId || 'android');
-        if (GameState.gameMode === 'battle_dungeon') {
-            stageId = 'dungeon';
-        }
-        const stageData = STAGES[stageId];
-
-        // BGMの再生
-        let bgmKey = (stageData && stageData.bgm) ? stageData.bgm : 'bgmBattle';
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high' || GameState.gameMode === 'event_oni_high') {
-            bgmKey = 'bgmStageHighDifficulty';
-        }
-        playSound(SOUNDS[bgmKey]);
-        GameState.playerMaxHP = MAX_HP;
-        GameState.enemyMaxHP = (GameState.gameMode === 'event_satan') ? 100 : (GameState.enemyConfig.hp || (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP));
-        if (GameState.gameMode === 'campaign') {
-            GameState.enemyMaxHP = 10;
-        }
-        if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high' || GameState.gameMode === 'event_oni_high') GameState.aiLevel = 3; // 念のため再セット
-
-        if (GameState.gameMode === 'battle_dungeon') {
-            // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
-            if (GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader') {
-                const eRarity = GameState.enemyConfig.rarity || 4;
-                GameState.enemyMaxHP = eRarity === 1 ? 10 : (eRarity === 2 ? 15 : 20);
-            } else {
-                GameState.enemyMaxHP = GameState.enemyConfig.hp || 20;
-            }
-
-            // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定
-            if (GameState.playerConfig && GameState.playerConfig.leaderSkill && GameState.playerConfig.leaderSkill.action === 'dungeon_summon_leader') {
-                const pRarity = GameState.playerConfig.rarity || 4;
-                GameState.playerConfig = { ...GameState.playerConfig, leaderSkill: { ...GameState.playerConfig.leaderSkill } };
-                GameState.playerConfig.leaderSkill.cost = pRarity === 1 ? 3 : (pRarity === 2 ? 4 : 5);
-            }
-            if (GameState.enemyConfig && GameState.enemyConfig.leaderSkill && GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader') {
-                const eRarity = GameState.enemyConfig.rarity || 4;
-                GameState.enemyConfig = { ...GameState.enemyConfig, leaderSkill: { ...GameState.enemyConfig.leaderSkill } };
-                GameState.enemyConfig.leaderSkill.cost = eRarity === 1 ? 3 : (eRarity === 2 ? 4 : 5);
-            }
-
-            GameState.playerHP = (typeof GameState.dungeonPlayerHP !== 'undefined') ? GameState.dungeonPlayerHP : GameState.playerMaxHP;
-        } else {
-            GameState.playerHP = GameState.playerMaxHP;
-        }
-
-        GameState.enemyHP = GameState.enemyMaxHP;
-        GameState.playerSP = 0; GameState.enemySP = 0;
-        GameState.turnCount = 0; GameState.firstPlayer = 'blue';
-        GameState.battlePhase = 'INIT'; GameState.combatStep = 0;
-        GameState.playerHand = []; GameState.enemyHand = [];
-        GameState.playerDiscard = []; GameState.enemyDiscard = [];
-        GameState.playerBoard = [null, null, null]; GameState.enemyBoard = [null, null, null];
-        GameState.playerSealedLanes = [0, 0, 0]; GameState.enemySealedLanes = [0, 0, 0];
-        GameState.actionQueue = []; GameState.pendingChoices = [];
-        GameState.isProcessing = false; GameState.isBattleEnded = false; GameState.lastBattleResult = null;
-        GameState.selectedCardIndex = null; GameState.selectedBoardLaneIndex = null; GameState.selectedBoardSide = null;
-        GameState.aiDecision = null; GameState.extraTurnCount = 0; GameState.attackSkipCount = 0;
-
-        // --- モード系フラグの完全リセット ---
-        GameState.isPlacementMode = false; GameState.placementCount = 0; GameState.placementToken = null; GameState.placementSelectedLanes = [];
-        GameState.isEnemyTargetMode = false; GameState.isAlliedTargetMode = false; GameState.enemyTargetSkillId = null; GameState.targetSelectResolve = null;
-        GameState.isDiscardingMode = false; GameState.discardSelectedIndices = []; GameState.discardMaxCount = 0; GameState.isDiscardingExact = false;
-
-        // --- グローバルコールバック・リゾルバの確実なリセット ---
-        pendingChoiceResolver = null;
-        window.finishHandSelection = null;
-        window.handlePlacementLaneClick = null; window.finishPlacement = null;
-        window.handleEnemyLaneClick = null; window.finishEnemyTargetSelection = null;
-        window.handleAlliedLaneClick = null; window.finishAlliedSelection = null;
-        updateCardDetail(null);
-        if (updateBattleUIHook) updateBattleUIHook();
-
-        // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
-        if (typeof incrementStat === 'function' && GameState.playerConfig && GameState.playerConfig.id && GameState.gameMode !== 'practice') {
-            incrementStat('leaderUsage', GameState.playerConfig.id, 1);
-        }
-
-        // バトル画面への遷移シグナル。ここから先は BattleScreen.jsx に委ねる
-        switchScreen('screen-battle');
-
-        // 画面切り替えとDOM構成を待機してから戦闘開始処理へ
-        setTimeout(() => {
-            determineTurnOrder();
-        }, 1000);
-    } catch (e) {
-        console.error("Critical error in initBattleState:", e);
-        showAlertModal("バトルの初期化中にエラーが発生しました。タイトルに戻ります。", () => {
-            location.reload();
-        });
+    // ステージ情報の取得
+    let stageId =
+      GameState.gameMode === 'story'
+        ? GameState.enemyConfig.stageId || 'android'
+        : GameState.selectedStageId || 'android';
+    if (GameState.gameMode === 'battle_dungeon') {
+      stageId = 'dungeon';
     }
+    const stageData = STAGES[stageId];
+
+    // BGMの再生
+    let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
+    if (
+      GameState.gameMode === 'event_satan' ||
+      GameState.gameMode === 'event_android_high' ||
+      GameState.gameMode === 'event_dragon_high' ||
+      GameState.gameMode === 'event_knight_high' ||
+      GameState.gameMode === 'event_cthulhu_high' ||
+      GameState.gameMode === 'event_elf_high' ||
+      GameState.gameMode === 'event_cleric_high' ||
+      GameState.gameMode === 'event_devilhunter_high' ||
+      GameState.gameMode === 'event_witch_high' ||
+      GameState.gameMode === 'event_oni_high'
+    ) {
+      bgmKey = 'bgmStageHighDifficulty';
+    }
+    playSound(SOUNDS[bgmKey]);
+    GameState.playerMaxHP = MAX_HP;
+    GameState.enemyMaxHP =
+      GameState.gameMode === 'event_satan'
+        ? 100
+        : GameState.enemyConfig.hp ||
+          (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP);
+    if (GameState.gameMode === 'campaign') {
+      GameState.enemyMaxHP = 10;
+    }
+    if (
+      GameState.gameMode === 'event_satan' ||
+      GameState.gameMode === 'event_android_high' ||
+      GameState.gameMode === 'event_dragon_high' ||
+      GameState.gameMode === 'event_knight_high' ||
+      GameState.gameMode === 'event_cthulhu_high' ||
+      GameState.gameMode === 'event_elf_high' ||
+      GameState.gameMode === 'event_cleric_high' ||
+      GameState.gameMode === 'event_devilhunter_high' ||
+      GameState.gameMode === 'event_witch_high' ||
+      GameState.gameMode === 'event_oni_high'
+    )
+      GameState.aiLevel = 3; // 念のため再セット
+
+    if (GameState.gameMode === 'battle_dungeon') {
+      // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先
+      if (
+        GameState.enemyConfig.leaderSkill &&
+        GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader'
+      ) {
+        const eRarity = GameState.enemyConfig.rarity || 4;
+        GameState.enemyMaxHP = eRarity === 1 ? 10 : eRarity === 2 ? 15 : 20;
+      } else {
+        GameState.enemyMaxHP = GameState.enemyConfig.hp || 20;
+      }
+
+      // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定
+      if (
+        GameState.playerConfig &&
+        GameState.playerConfig.leaderSkill &&
+        GameState.playerConfig.leaderSkill.action === 'dungeon_summon_leader'
+      ) {
+        const pRarity = GameState.playerConfig.rarity || 4;
+        GameState.playerConfig = {
+          ...GameState.playerConfig,
+          leaderSkill: { ...GameState.playerConfig.leaderSkill },
+        };
+        GameState.playerConfig.leaderSkill.cost =
+          pRarity === 1 ? 3 : pRarity === 2 ? 4 : 5;
+      }
+      if (
+        GameState.enemyConfig &&
+        GameState.enemyConfig.leaderSkill &&
+        GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader'
+      ) {
+        const eRarity = GameState.enemyConfig.rarity || 4;
+        GameState.enemyConfig = {
+          ...GameState.enemyConfig,
+          leaderSkill: { ...GameState.enemyConfig.leaderSkill },
+        };
+        GameState.enemyConfig.leaderSkill.cost =
+          eRarity === 1 ? 3 : eRarity === 2 ? 4 : 5;
+      }
+
+      GameState.playerHP =
+        typeof GameState.dungeonPlayerHP !== 'undefined'
+          ? GameState.dungeonPlayerHP
+          : GameState.playerMaxHP;
+    } else {
+      GameState.playerHP = GameState.playerMaxHP;
+    }
+
+    GameState.enemyHP = GameState.enemyMaxHP;
+    GameState.playerSP = 0;
+    GameState.enemySP = 0;
+    GameState.turnCount = 0;
+    GameState.firstPlayer = 'blue';
+    GameState.battlePhase = 'INIT';
+    GameState.combatStep = 0;
+    GameState.playerHand = [];
+    GameState.enemyHand = [];
+    GameState.playerDiscard = [];
+    GameState.enemyDiscard = [];
+    GameState.playerBoard = [null, null, null];
+    GameState.enemyBoard = [null, null, null];
+    GameState.playerSealedLanes = [0, 0, 0];
+    GameState.enemySealedLanes = [0, 0, 0];
+    GameState.actionQueue = [];
+    GameState.pendingChoices = [];
+    GameState.isProcessing = false;
+    GameState.isBattleEnded = false;
+    GameState.lastBattleResult = null;
+    GameState.selectedCardIndex = null;
+    GameState.selectedBoardLaneIndex = null;
+    GameState.selectedBoardSide = null;
+    GameState.aiDecision = null;
+    GameState.extraTurnCount = 0;
+    GameState.attackSkipCount = 0;
+
+    // --- モード系フラグの完全リセット ---
+    GameState.isPlacementMode = false;
+    GameState.placementCount = 0;
+    GameState.placementToken = null;
+    GameState.placementSelectedLanes = [];
+    GameState.isEnemyTargetMode = false;
+    GameState.isAlliedTargetMode = false;
+    GameState.enemyTargetSkillId = null;
+    GameState.targetSelectResolve = null;
+    GameState.isDiscardingMode = false;
+    GameState.discardSelectedIndices = [];
+    GameState.discardMaxCount = 0;
+    GameState.isDiscardingExact = false;
+
+    // --- グローバルコールバック・リゾルバの確実なリセット ---
+    pendingChoiceResolver = null;
+    window.finishHandSelection = null;
+    window.handlePlacementLaneClick = null;
+    window.finishPlacement = null;
+    window.handleEnemyLaneClick = null;
+    window.finishEnemyTargetSelection = null;
+    window.handleAlliedLaneClick = null;
+    window.finishAlliedSelection = null;
+    updateCardDetail(null);
+    if (updateBattleUIHook) updateBattleUIHook();
+
+    // 実績: リーダー使用率のカウント (プレイヤーが選択したキャラ)
+    if (
+      typeof incrementStat === 'function' &&
+      GameState.playerConfig &&
+      GameState.playerConfig.id &&
+      GameState.gameMode !== 'practice'
+    ) {
+      incrementStat('leaderUsage', GameState.playerConfig.id, 1);
+    }
+
+    // バトル画面への遷移シグナル。ここから先は BattleScreen.jsx に委ねる
+    switchScreen('screen-battle');
+
+    // 画面切り替えとDOM構成を待機してから戦闘開始処理へ
+    setTimeout(() => {
+      determineTurnOrder();
+    }, 1000);
+  } catch (e) {
+    console.error('Critical error in initBattleState:', e);
+    showAlertModal(
+      'バトルの初期化中にエラーが発生しました。タイトルに戻ります。',
+      () => {
+        location.reload();
+      }
+    );
+  }
 }
 
 export function updateHPBar() {
-    // DOMから直接更新しつつ、Reactにも同期させる
-    const pFill = document.getElementById('player-hp-fill');
-    if (pFill) pFill.style.width = `${Math.max(0, (GameState.playerHP / GameState.playerMaxHP) * 100)}%`;
-    const pText = document.getElementById('player-hp-text');
-    if (pText) pText.innerText = `${Math.max(0, GameState.playerHP)} / ${GameState.playerMaxHP}`;
-    const eFill = document.getElementById('enemy-hp-fill');
-    if (eFill) eFill.style.width = `${Math.max(0, (GameState.enemyHP / GameState.enemyMaxHP) * 100)}%`;
-    const eText = document.getElementById('enemy-hp-text');
-    if (eText) eText.innerText = `${Math.max(0, GameState.enemyHP)} / ${GameState.enemyMaxHP}`;
+  // DOMから直接更新しつつ、Reactにも同期させる
+  const pFill = document.getElementById('player-hp-fill');
+  if (pFill)
+    pFill.style.width = `${Math.max(0, (GameState.playerHP / GameState.playerMaxHP) * 100)}%`;
+  const pText = document.getElementById('player-hp-text');
+  if (pText)
+    pText.innerText = `${Math.max(0, GameState.playerHP)} / ${GameState.playerMaxHP}`;
+  const eFill = document.getElementById('enemy-hp-fill');
+  if (eFill)
+    eFill.style.width = `${Math.max(0, (GameState.enemyHP / GameState.enemyMaxHP) * 100)}%`;
+  const eText = document.getElementById('enemy-hp-text');
+  if (eText)
+    eText.innerText = `${Math.max(0, GameState.enemyHP)} / ${GameState.enemyMaxHP}`;
 
-    // HP0時のアイコン死亡演出（スタイル反映用）
-    const pIcon = document.getElementById('player-icon');
-    if (pIcon) pIcon.classList.toggle('dead', GameState.playerHP <= 0);
-    const eIcon = document.getElementById('enemy-icon');
-    if (eIcon) eIcon.classList.toggle('dead', GameState.enemyHP <= 0);
+  // HP0時のアイコン死亡演出（スタイル反映用）
+  const pIcon = document.getElementById('player-icon');
+  if (pIcon) pIcon.classList.toggle('dead', GameState.playerHP <= 0);
+  const eIcon = document.getElementById('enemy-icon');
+  if (eIcon) eIcon.classList.toggle('dead', GameState.enemyHP <= 0);
 
-    if (updateBattleUIHook) updateBattleUIHook();
+  if (updateBattleUIHook) updateBattleUIHook();
 }
 
 export function updateSPOrbs(owner) {
-    // innerHTML操作はReactのDOMツリーを破壊するため削除し、Reactフックを発火
-    if (updateBattleUIHook) updateBattleUIHook();
+  // innerHTML操作はReactのDOMツリーを破壊するため削除し、Reactフックを発火
+  if (updateBattleUIHook) updateBattleUIHook();
 }
 
 export function checkWinCondition() {
-    if (GameState.isBattleEnded) return true;
+  if (GameState.isBattleEnded) return true;
 
-    if (GameState.playerHP <= 0 || GameState.enemyHP <= 0) {
-        GameState.isBattleEnded = true;
-        triggerFinishVisuals();
-        setTimeout(endBattle, 2000);
-        return true;
-    }
-    return false;
+  if (GameState.playerHP <= 0 || GameState.enemyHP <= 0) {
+    GameState.isBattleEnded = true;
+    triggerFinishVisuals();
+    setTimeout(endBattle, 2000);
+    return true;
+  }
+  return false;
 }
 
 export function triggerFinishVisuals() {
-    // 画面全体のスローモーションと揺れ
-    document.body.classList.add('slow-motion');
-    document.body.classList.add('anim-mega-shake');
-    // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
+  // 画面全体のスローモーションと揺れ
+  document.body.classList.add('slow-motion');
+  document.body.classList.add('anim-mega-shake');
+  // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
 
-    setTimeout(() => {
-        document.body.classList.remove('anim-mega-shake');
-    }, 1000);
+  setTimeout(() => {
+    document.body.classList.remove('anim-mega-shake');
+  }, 1000);
 }
 
 export function showSpeechBubble(target) {
-    const config = target === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
-    let msg = getDialogue(config, null, 'damage', target === 'blue' ? 'player' : 'enemy');
+  const config =
+    target === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
+  let msg = getDialogue(
+    config,
+    null,
+    'damage',
+    target === 'blue' ? 'player' : 'enemy'
+  );
 
-    // シャドウ（ドッペルゲンガー）は無言
-    if (target === 'red' && GameState.enemyConfig.isShadow) {
-        msg = '・・・・';
+  // シャドウ（ドッペルゲンガー）は無言
+  if (target === 'red' && GameState.enemyConfig.isShadow) {
+    msg = '・・・・';
+  }
+
+  const bubble = document.getElementById(
+    target === 'blue' ? 'player-speech' : 'enemy-speech'
+  );
+  const iconEl = document.getElementById(
+    target === 'blue' ? 'player-icon' : 'enemy-icon'
+  );
+
+  if (bubble) {
+    bubble.innerText = msg;
+    bubble.classList.add('active');
+
+    // アイコンをダメージ画像に変更
+    if (iconEl && iconEl.src) {
+      const originalSrc = iconEl.src;
+      if (!originalSrc.includes('_damage.png')) {
+        iconEl.src = originalSrc.replace('.png', '_damage.png');
+        setTimeout(() => {
+          const currentHP =
+            target === 'blue' ? GameState.playerHP : GameState.enemyHP;
+          if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
+            iconEl.src = originalSrc;
+          }
+        }, 1500);
+      }
     }
 
-    const bubble = document.getElementById(target === 'blue' ? 'player-speech' : 'enemy-speech');
-    const iconEl = document.getElementById(target === 'blue' ? 'player-icon' : 'enemy-icon');
-
-    if (bubble) {
-        bubble.innerText = msg;
-        bubble.classList.add('active');
-
-        // アイコンをダメージ画像に変更
-        if (iconEl && iconEl.src) {
-            const originalSrc = iconEl.src;
-            if (!originalSrc.includes('_damage.png')) {
-                iconEl.src = originalSrc.replace('.png', '_damage.png');
-                setTimeout(() => {
-                    const currentHP = target === 'blue' ? GameState.playerHP : GameState.enemyHP;
-                    if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
-                        iconEl.src = originalSrc;
-                    }
-                }, 1500);
-            }
-        }
-
-        setTimeout(() => bubble.classList.remove('active'), 1500);
-    }
+    setTimeout(() => bubble.classList.remove('active'), 1500);
+  }
 }
 
 export function showSkillConfirm() {
-    const s = GameState.playerConfig.leaderSkill;
-    if (!s) {
-        showAlertModal('リーダースキルはありません');
-        return;
-    }
-    playSound(SOUNDS.seClick);
+  const s = GameState.playerConfig.leaderSkill;
+  if (!s) {
+    showAlertModal('リーダースキルはありません');
+    return;
+  }
+  playSound(SOUNDS.seClick);
 
-    let statusText = "";
-    let color = "";
-    let canExecute = false;
+  let statusText = '';
+  let color = '';
+  let canExecute = false;
 
-    if (!s.cost) {
-        statusText = "パッシブスキル（常に発動）";
-        color = "#4ade80";
-        canExecute = false;
-    } else if (GameState.playerSP >= s.cost) {
-        if (!GameState.isProcessing && !GameState.isBattleEnded && GameState.currentTurn === 'player' && !GameState.isPlacementMode) {
-            statusText = "発動可能です！";
-            color = "#4ade80";
-            canExecute = true;
-        } else {
-            statusText = "現在発動できません（自分のターン待機中のみ）";
-            color = "#facc15";
-            canExecute = false;
-        }
+  if (!s.cost) {
+    statusText = 'パッシブスキル（常に発動）';
+    color = '#4ade80';
+    canExecute = false;
+  } else if (GameState.playerSP >= s.cost) {
+    if (
+      !GameState.isProcessing &&
+      !GameState.isBattleEnded &&
+      GameState.currentTurn === 'player' &&
+      !GameState.isPlacementMode
+    ) {
+      statusText = '発動可能です！';
+      color = '#4ade80';
+      canExecute = true;
     } else {
-        statusText = `発動まであと ${s.cost - GameState.playerSP} SP`;
-        color = "#f87171";
-        canExecute = false;
+      statusText = '現在発動できません（自分のターン待機中のみ）';
+      color = '#facc15';
+      canExecute = false;
     }
+  } else {
+    statusText = `発動まであと ${s.cost - GameState.playerSP} SP`;
+    color = '#f87171';
+    canExecute = false;
+  }
 
-    if (window.showSkillConfirmModalReact) {
-        window.showSkillConfirmModalReact({
-            skill: s,
-            statusText,
-            color,
-            canExecute,
-            onExecute: () => executeSkillFromConfirm()
-        });
-    }
+  if (window.showSkillConfirmModalReact) {
+    window.showSkillConfirmModalReact({
+      skill: s,
+      statusText,
+      color,
+      canExecute,
+      onExecute: () => executeSkillFromConfirm(),
+    });
+  }
 }
 
 export function showEnemySkillConfirm() {
-    playSound(SOUNDS.seClick);
-    const s = GameState.enemyConfig.leaderSkill;
-    if (!s) return;
+  playSound(SOUNDS.seClick);
+  const s = GameState.enemyConfig.leaderSkill;
+  if (!s) return;
 
-    let statusText = "";
-    let color = "";
+  let statusText = '';
+  let color = '';
 
-    if (!s.cost) {
-        statusText = "パッシブスキル（常に発動）";
-        color = "#4ade80";
+  if (!s.cost) {
+    statusText = 'パッシブスキル（常に発動）';
+    color = '#4ade80';
+  } else {
+    const r = Math.max(0, s.cost - GameState.enemySP);
+    if (r === 0) {
+      statusText = '発動可能状態です！注意！';
+      color = '#ef4444';
     } else {
-        const r = Math.max(0, s.cost - GameState.enemySP);
-        if (r === 0) {
-            statusText = "発動可能状態です！注意！";
-            color = "#ef4444";
-        } else {
-            statusText = `発動まであと ${r} SP`;
-            color = "#f87171";
-        }
+      statusText = `発動まであと ${r} SP`;
+      color = '#f87171';
     }
+  }
 
-    if (window.showSkillConfirmModalReact) {
-        window.showSkillConfirmModalReact({
-            skill: s,
-            statusText,
-            color,
-            canExecute: false // 敵のスキルはプレイヤーが実行ボタンを押せない
-        });
-    }
+  if (window.showSkillConfirmModalReact) {
+    window.showSkillConfirmModalReact({
+      skill: s,
+      statusText,
+      color,
+      canExecute: false, // 敵のスキルはプレイヤーが実行ボタンを押せない
+    });
+  }
 }
 
-export function closeSkillConfirm() { playSound(SOUNDS.seClick); if (window.closeSkillConfirmModalReact) window.closeSkillConfirmModalReact(); }
+export function closeSkillConfirm() {
+  playSound(SOUNDS.seClick);
+  if (window.closeSkillConfirmModalReact) window.closeSkillConfirmModalReact();
+}
 export function executeSkillFromConfirm() {
-    // 実行直前にもう一度チェック
-    if (GameState.isProcessing || GameState.isBattleEnded || GameState.currentTurn !== 'player') {
-        return;
-    }
-    closeSkillConfirm();
-    dispatchBattleAction({ type: 'leaderSkill', owner: 'blue' });
+  // 実行直前にもう一度チェック
+  if (
+    GameState.isProcessing ||
+    GameState.isBattleEnded ||
+    GameState.currentTurn !== 'player'
+  ) {
+    return;
+  }
+  closeSkillConfirm();
+  dispatchBattleAction({ type: 'leaderSkill', owner: 'blue' });
 }
 
 /**
  * プレイヤーまたはAIに配置レーンを選択させるユーティリティ
  */
-export async function waitPlayerLaneSelection(count, owner, tokenCard, isLeaderSkill = false, tokenLanes = null, checkConstraints = true, canCancel = false, buttonText = '配置終了') {
-    const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const sealedLanes = owner === 'blue' ? (GameState.playerSealedLanes || [0, 0, 0]) : (GameState.enemySealedLanes || [0, 0, 0]);
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        return new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-    }
-
-    // AIの場合：
-    if (owner === 'red') {
-        const availableAI = [0, 1, 2].filter(l => sealedLanes[l] === 0);
-        let selectedLanes;
-
-        if (tokenLanes !== null && Array.isArray(tokenLanes) && tokenLanes.length > 0) {
-            selectedLanes = tokenLanes.splice(0, count);
-        } else if (tokenLanes !== null && Array.isArray(tokenLanes) && tokenLanes.length === 0) {
-            // AIが意図的に空配列を渡した場合（例: holy_marchの0体バフのみ）、配置なしとして返す
-            selectedLanes = [];
-        } else {
-            // まず現在のアクション自体に紐づく指示があるか確認
-            // 【重要】deleteではなくspliceで消費する。summonスキルを複数持つカード（例：慈悲なき提督）では
-            // waitPlayerLaneSelectionが複数回呼ばれるため、全部消してしまうと2回目以降がランダムになる。
-            if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.cardTokenLanes && GameState.aiDecision.cardTokenLanes.length > 0) {
-                selectedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
-                if (GameState.aiDecision.cardTokenLanes.length === 0) {
-                    delete GameState.aiDecision.cardTokenLanes;
-                }
-            } else {
-                // なければ後続のアクションキューから取得
-                const aiAction = consumeAIAction(['devilhunter_resurrect', 'summon', 'call', 'leader_skill', 'clone', 'wall_create', 'move', 'elf_polarbear_combo', 'token_placement', 'puppet']);
-                if (aiAction) {
-                    if (Array.isArray(aiAction.lanes)) {
-                        selectedLanes = [...aiAction.lanes];
-                    } else if (aiAction.laneIdx !== undefined || aiAction.myLane !== undefined || aiAction.targetLane !== undefined) {
-                        const lane = aiAction.laneIdx !== undefined ? aiAction.laneIdx : (aiAction.myLane !== undefined ? aiAction.myLane : aiAction.targetLane);
-                        if (lane !== undefined && lane !== -1) {
-                            selectedLanes = [lane];
-                        }
-                    }
-                }
-            }
-            if (!selectedLanes) {
-                selectedLanes = evaluateBestLanesForToken(availableAI, owner, tokenCard, count, isLeaderSkill, canCancel, checkConstraints);
-            }
-        }
-
-        // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
-        if (checkConstraints && tokenCard) {
-            const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
-            const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
-            const hasApex = tokenCard.skill === 'apex' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'apex'));
-
-            if (hasLegendary) {
-                selectedLanes = selectedLanes.filter(i => i === 1);
-            }
-            if (hasTakeover) {
-                selectedLanes = selectedLanes.filter(i => board[i] !== null);
-            }
-            if (hasApex) {
-                selectedLanes = selectedLanes.filter(i => board[i] && (board[i].skill === 'legendary' || (board[i].skills && board[i].skills.some(s => s.id === 'legendary'))));
-            }
-            const hasChallenge = tokenCard.skill === 'challenge' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'challenge'));
-            if (hasChallenge) {
-                const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-                selectedLanes = selectedLanes.filter(i => oppBoard[i] !== null);
-            }
-        }
-
-        // それでも足りない場合、空きレーンや重複を許容する（キャンセル可能な場合はAIの「配置しない・数を絞る」という判断を尊重して強制補充しない）
-        if (selectedLanes.length < count && !canCancel) {
-            let validEmptyLanes = board.map((c, i) => c === null && sealedLanes[i] === 0 ? i : -1).filter(i => i !== -1);
-            let validOccupiedLanes = [0, 1, 2].filter(i => !validEmptyLanes.includes(i) && !selectedLanes.includes(i) && sealedLanes[i] === 0);
-
-            if (checkConstraints && tokenCard) {
-                const hasLegendary = tokenCard.skill === 'legendary' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'legendary'));
-                const hasTakeover = tokenCard.skill === 'takeover' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'takeover'));
-                const hasApex = tokenCard.skill === 'apex' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'apex'));
-
-                if (hasLegendary) {
-                    validEmptyLanes = validEmptyLanes.filter(i => i === 1);
-                    validOccupiedLanes = validOccupiedLanes.filter(i => i === 1);
-                }
-                if (hasTakeover) {
-                    validEmptyLanes = []; // 生贄（takeover）は空きレーン不可
-                }
-                if (hasApex) {
-                    validEmptyLanes = validEmptyLanes.filter(i => board[i] && (board[i].skill === 'legendary' || (board[i].skills && board[i].skills.some(s => s.id === 'legendary'))));
-                    validOccupiedLanes = validOccupiedLanes.filter(i => board[i] && (board[i].skill === 'legendary' || (board[i].skills && board[i].skills.some(s => s.id === 'legendary'))));
-                }
-                const hasChallenge = tokenCard.skill === 'challenge' || (tokenCard.skills && tokenCard.skills.some(s => s.id === 'challenge'));
-                if (hasChallenge) {
-                    const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-                    validEmptyLanes = validEmptyLanes.filter(i => oppBoard[i] !== null);
-                    validOccupiedLanes = validOccupiedLanes.filter(i => oppBoard[i] !== null);
-                }
-            }
-
-            while (selectedLanes.length < count && validEmptyLanes.length > 0) {
-                selectedLanes.push(validEmptyLanes.shift());
-            }
-            // 上書き対象を決める簡易評価（パワーが低い順）
-            validOccupiedLanes.sort((a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0));
-            while (selectedLanes.length < count && validOccupiedLanes.length > 0) {
-                selectedLanes.push(validOccupiedLanes.shift());
-            }
-        }
-
-        // 最終的に十分なレーンが確保できず、キャンセル可能なら中止する
-        if (selectedLanes.length < count && canCancel) {
-            return [];
-        }
-
-        // 不正なレーンが混ざった場合の最終安全装置
-        selectedLanes = selectedLanes.filter(i => sealedLanes[i] === 0);
-
-        return selectedLanes.slice(0, count);
-    }
-
-    // プレイヤーの場合：手動選択
+export async function waitPlayerLaneSelection(
+  count,
+  owner,
+  tokenCard,
+  isLeaderSkill = false,
+  tokenLanes = null,
+  checkConstraints = true,
+  canCancel = false,
+  buttonText = '配置終了'
+) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const sealedLanes =
+    owner === 'blue'
+      ? GameState.playerSealedLanes || [0, 0, 0]
+      : GameState.enemySealedLanes || [0, 0, 0];
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
     return new Promise((resolve) => {
-        GameState.isPlacementMode = true;
-        GameState.placementCount = count;
-        GameState.placementToken = tokenCard || null;
-        GameState.placementSelectedLanes = [];
-        GameState.placementCheckConstraints = checkConstraints;
-        GameState.placementButtonText = buttonText;
-        GameState.placementRestrictLanes = tokenLanes || null;
-        GameState.selectedCardIndex = null; // 配置モード開始時に手札の選択解除
-        updateCardDetail(null);
-
-        const cleanUp = () => {
-            GameState.isPlacementMode = false;
-            GameState.placementCount = 0;
-            GameState.placementToken = null;
-            GameState.placementCheckConstraints = true;
-            GameState.placementButtonText = '配置終了';
-            GameState.placementRestrictLanes = null;
-            const result = [...GameState.placementSelectedLanes];
-            GameState.placementSelectedLanes = [];
-            window.handlePlacementLaneClick = null;
-            window.finishPlacement = null;
-            updateCardDetail(null);
-
-            if (GameState.gameMode === 'online') {
-                // 送信先を同期
-                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: result });
-            }
-
-            if (updateBattleUIHook) updateBattleUIHook();
-            return result;
-        };
-
-        window.finishPlacement = () => {
-            playSound(SOUNDS.seClick);
-            resolve(cleanUp());
-        };
-
-        window.handlePlacementLaneClick = async (laneIndex) => {
-            if (GameState.placementSelectedLanes.includes(laneIndex)) return;
-            if (sealedLanes[laneIndex] > 0) {
-                playSound(SOUNDS.seDamage);
-                return;
-            }
-            if (GameState.placementRestrictLanes && !GameState.placementRestrictLanes.includes(laneIndex)) {
-                playSound(SOUNDS.seDamage);
-                return;
-            }
-            playSound(SOUNDS.seClick);
-
-            const newCard = GameState.placementToken;
-            if (newCard && checkConstraints) {
-                if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue' && laneIndex !== 1) {
-                    playSound(SOUNDS.seDamage);
-                    showAlertModal(`1ターン目は中央のレーンにしか召喚できません。`);
-                    return;
-                }
-                if (hasSkill(newCard, 'legendary') && laneIndex !== 1) {
-                    playSound(SOUNDS.seDamage);
-                    showAlertModal(`「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`);
-                    return;
-                }
-                if (hasSkill(newCard, 'takeover') && board[laneIndex] === null) {
-                    playSound(SOUNDS.seDamage);
-                    showAlertModal(`「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`);
-                    return;
-                }
-                if (hasSkill(newCard, 'apex')) {
-                    const targetCard = board[laneIndex];
-                    if (!targetCard || !(targetCard.skill === 'legendary' || (targetCard.skills && targetCard.skills.some(s => s.id === 'legendary')))) {
-                        playSound(SOUNDS.seDamage);
-                        showAlertModal(`「${newCard.name}」は頂点のカードのため、自分の場の伝説カードの上にしか召喚できません。`);
-                        return;
-                    }
-                }
-                if (hasSkill(newCard, 'challenge')) {
-                    const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-                    if (oppBoard[laneIndex] === null) {
-                        playSound(SOUNDS.seDamage);
-                        showAlertModal(`「${newCard.name}」は挑戦を持つため、正面に敵がいるレーンにしか召喚できません。`);
-                        return;
-                    }
-                }
-            }
-
-            // 既にカードがあるレーンの場合は確認
-            if (board[laneIndex] !== null) {
-                const existingCard = board[laneIndex];
-                const tokenName = tokenCard ? tokenCard.name : 'トークン';
-
-                let canUnion = false;
-                if (tokenCard) {
-                    const unionSkill = tokenCard.skills && tokenCard.skills.find(s => s.id === 'union');
-                    if (unionSkill && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId)) {
-                        canUnion = true;
-                    }
-                }
-
-                if (canUnion) {
-                    const confirmed = await new Promise(res => {
-                        showConfirmModal(
-                            `「${existingCard.name}」と合体しますか？`,
-                            () => res(true),
-                            () => res(false)
-                        );
-                    });
-                    if (!confirmed) return;
-                    // 合体の場合は既存カードの自動破棄は行わない（呼び出し元で素材にするためスルーする）
-                } else if ((tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) || (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))) {
-                    const confirmed = await new Promise(res => {
-                        showConfirmModal(
-                            `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
-                            () => res(true),
-                            () => res(false)
-                        );
-                    });
-                    if (!confirmed) return;
-                } else {
-                    const confirmed = await new Promise(res => {
-                        showConfirmModal(
-                            `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
-                            () => res(true),
-                            () => res(false)
-                        );
-                    });
-                    if (!confirmed) return;
-
-                    // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
-                    if (!(await discardCard(owner, board[laneIndex], laneIndex, false))) board[laneIndex] = null;
-                    if (updateBattleUIHook) updateBattleUIHook();
-                }
-            }
-
-            GameState.placementSelectedLanes.push(laneIndex);
-            if (updateBattleUIHook) updateBattleUIHook();
-
-            if (GameState.placementSelectedLanes.length >= count) {
-                setTimeout(() => {
-                    resolve(cleanUp());
-                }, 300);
-            }
-        };
-
-        if (updateBattleUIHook) updateBattleUIHook();
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
     });
+  }
+
+  // AIの場合：
+  if (owner === 'red') {
+    const availableAI = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
+    let selectedLanes;
+
+    if (
+      tokenLanes !== null &&
+      Array.isArray(tokenLanes) &&
+      tokenLanes.length > 0
+    ) {
+      selectedLanes = tokenLanes.splice(0, count);
+    } else if (
+      tokenLanes !== null &&
+      Array.isArray(tokenLanes) &&
+      tokenLanes.length === 0
+    ) {
+      // AIが意図的に空配列を渡した場合（例: holy_marchの0体バフのみ）、配置なしとして返す
+      selectedLanes = [];
+    } else {
+      // まず現在のアクション自体に紐づく指示があるか確認
+      // 【重要】deleteではなくspliceで消費する。summonスキルを複数持つカード（例：慈悲なき提督）では
+      // waitPlayerLaneSelectionが複数回呼ばれるため、全部消してしまうと2回目以降がランダムになる。
+      if (
+        typeof GameState.aiDecision !== 'undefined' &&
+        GameState.aiDecision &&
+        GameState.aiDecision.cardTokenLanes &&
+        GameState.aiDecision.cardTokenLanes.length > 0
+      ) {
+        selectedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
+        if (GameState.aiDecision.cardTokenLanes.length === 0) {
+          delete GameState.aiDecision.cardTokenLanes;
+        }
+      } else {
+        // なければ後続のアクションキューから取得
+        const aiAction = consumeAIAction([
+          'devilhunter_resurrect',
+          'summon',
+          'call',
+          'leader_skill',
+          'clone',
+          'wall_create',
+          'move',
+          'elf_polarbear_combo',
+          'token_placement',
+          'puppet',
+        ]);
+        if (aiAction) {
+          if (Array.isArray(aiAction.lanes)) {
+            selectedLanes = [...aiAction.lanes];
+          } else if (
+            aiAction.laneIdx !== undefined ||
+            aiAction.myLane !== undefined ||
+            aiAction.targetLane !== undefined
+          ) {
+            const lane =
+              aiAction.laneIdx !== undefined
+                ? aiAction.laneIdx
+                : aiAction.myLane !== undefined
+                  ? aiAction.myLane
+                  : aiAction.targetLane;
+            if (lane !== undefined && lane !== -1) {
+              selectedLanes = [lane];
+            }
+          }
+        }
+      }
+      if (!selectedLanes) {
+        selectedLanes = evaluateBestLanesForToken(
+          availableAI,
+          owner,
+          tokenCard,
+          count,
+          isLeaderSkill,
+          canCancel,
+          checkConstraints
+        );
+      }
+    }
+
+    // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
+    if (checkConstraints && tokenCard) {
+      const hasLegendary =
+        tokenCard.skill === 'legendary' ||
+        (tokenCard.skills &&
+          tokenCard.skills.some((s) => s.id === 'legendary'));
+      const hasTakeover =
+        tokenCard.skill === 'takeover' ||
+        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'takeover'));
+      const hasApex =
+        tokenCard.skill === 'apex' ||
+        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'apex'));
+
+      if (hasLegendary) {
+        selectedLanes = selectedLanes.filter((i) => i === 1);
+      }
+      if (hasTakeover) {
+        selectedLanes = selectedLanes.filter((i) => board[i] !== null);
+      }
+      if (hasApex) {
+        selectedLanes = selectedLanes.filter(
+          (i) =>
+            board[i] &&
+            (board[i].skill === 'legendary' ||
+              (board[i].skills &&
+                board[i].skills.some((s) => s.id === 'legendary')))
+        );
+      }
+      const hasChallenge =
+        tokenCard.skill === 'challenge' ||
+        (tokenCard.skills &&
+          tokenCard.skills.some((s) => s.id === 'challenge'));
+      if (hasChallenge) {
+        const oppBoard =
+          owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+        selectedLanes = selectedLanes.filter((i) => oppBoard[i] !== null);
+      }
+    }
+
+    // それでも足りない場合、空きレーンや重複を許容する（キャンセル可能な場合はAIの「配置しない・数を絞る」という判断を尊重して強制補充しない）
+    if (selectedLanes.length < count && !canCancel) {
+      let validEmptyLanes = board
+        .map((c, i) => (c === null && sealedLanes[i] === 0 ? i : -1))
+        .filter((i) => i !== -1);
+      let validOccupiedLanes = [0, 1, 2].filter(
+        (i) =>
+          !validEmptyLanes.includes(i) &&
+          !selectedLanes.includes(i) &&
+          sealedLanes[i] === 0
+      );
+
+      if (checkConstraints && tokenCard) {
+        const hasLegendary =
+          tokenCard.skill === 'legendary' ||
+          (tokenCard.skills &&
+            tokenCard.skills.some((s) => s.id === 'legendary'));
+        const hasTakeover =
+          tokenCard.skill === 'takeover' ||
+          (tokenCard.skills &&
+            tokenCard.skills.some((s) => s.id === 'takeover'));
+        const hasApex =
+          tokenCard.skill === 'apex' ||
+          (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'apex'));
+
+        if (hasLegendary) {
+          validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
+          validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
+        }
+        if (hasTakeover) {
+          validEmptyLanes = []; // 生贄（takeover）は空きレーン不可
+        }
+        if (hasApex) {
+          validEmptyLanes = validEmptyLanes.filter(
+            (i) =>
+              board[i] &&
+              (board[i].skill === 'legendary' ||
+                (board[i].skills &&
+                  board[i].skills.some((s) => s.id === 'legendary')))
+          );
+          validOccupiedLanes = validOccupiedLanes.filter(
+            (i) =>
+              board[i] &&
+              (board[i].skill === 'legendary' ||
+                (board[i].skills &&
+                  board[i].skills.some((s) => s.id === 'legendary')))
+          );
+        }
+        const hasChallenge =
+          tokenCard.skill === 'challenge' ||
+          (tokenCard.skills &&
+            tokenCard.skills.some((s) => s.id === 'challenge'));
+        if (hasChallenge) {
+          const oppBoard =
+            owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+          validEmptyLanes = validEmptyLanes.filter((i) => oppBoard[i] !== null);
+          validOccupiedLanes = validOccupiedLanes.filter(
+            (i) => oppBoard[i] !== null
+          );
+        }
+      }
+
+      while (selectedLanes.length < count && validEmptyLanes.length > 0) {
+        selectedLanes.push(validEmptyLanes.shift());
+      }
+      // 上書き対象を決める簡易評価（パワーが低い順）
+      validOccupiedLanes.sort(
+        (a, b) => (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0)
+      );
+      while (selectedLanes.length < count && validOccupiedLanes.length > 0) {
+        selectedLanes.push(validOccupiedLanes.shift());
+      }
+    }
+
+    // 最終的に十分なレーンが確保できず、キャンセル可能なら中止する
+    if (selectedLanes.length < count && canCancel) {
+      return [];
+    }
+
+    // 不正なレーンが混ざった場合の最終安全装置
+    selectedLanes = selectedLanes.filter((i) => sealedLanes[i] === 0);
+
+    return selectedLanes.slice(0, count);
+  }
+
+  // プレイヤーの場合：手動選択
+  return new Promise((resolve) => {
+    GameState.isPlacementMode = true;
+    GameState.placementCount = count;
+    GameState.placementToken = tokenCard || null;
+    GameState.placementSelectedLanes = [];
+    GameState.placementCheckConstraints = checkConstraints;
+    GameState.placementButtonText = buttonText;
+    GameState.placementRestrictLanes = tokenLanes || null;
+    GameState.selectedCardIndex = null; // 配置モード開始時に手札の選択解除
+    updateCardDetail(null);
+
+    const cleanUp = () => {
+      GameState.isPlacementMode = false;
+      GameState.placementCount = 0;
+      GameState.placementToken = null;
+      GameState.placementCheckConstraints = true;
+      GameState.placementButtonText = '配置終了';
+      GameState.placementRestrictLanes = null;
+      const result = [...GameState.placementSelectedLanes];
+      GameState.placementSelectedLanes = [];
+      window.handlePlacementLaneClick = null;
+      window.finishPlacement = null;
+      updateCardDetail(null);
+
+      if (GameState.gameMode === 'online') {
+        // 送信先を同期
+        sendOnlineAction({
+          type: 'submitChoice',
+          owner: 'blue',
+          choiceData: result,
+        });
+      }
+
+      if (updateBattleUIHook) updateBattleUIHook();
+      return result;
+    };
+
+    window.finishPlacement = () => {
+      playSound(SOUNDS.seClick);
+      resolve(cleanUp());
+    };
+
+    window.handlePlacementLaneClick = async (laneIndex) => {
+      if (GameState.placementSelectedLanes.includes(laneIndex)) return;
+      if (sealedLanes[laneIndex] > 0) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
+      if (
+        GameState.placementRestrictLanes &&
+        !GameState.placementRestrictLanes.includes(laneIndex)
+      ) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
+      playSound(SOUNDS.seClick);
+
+      const newCard = GameState.placementToken;
+      if (newCard && checkConstraints) {
+        if (
+          GameState.turnCount === 1 &&
+          GameState.firstPlayer === 'blue' &&
+          laneIndex !== 1
+        ) {
+          playSound(SOUNDS.seDamage);
+          showAlertModal(`1ターン目は中央のレーンにしか召喚できません。`);
+          return;
+        }
+        if (hasSkill(newCard, 'legendary') && laneIndex !== 1) {
+          playSound(SOUNDS.seDamage);
+          showAlertModal(
+            `「${newCard.name}」は伝説のカードのため、中央のレーンにしか召喚できません。`
+          );
+          return;
+        }
+        if (hasSkill(newCard, 'takeover') && board[laneIndex] === null) {
+          playSound(SOUNDS.seDamage);
+          showAlertModal(
+            `「${newCard.name}」は生贄のカードのため、既にカードがあるレーンにしか召喚できません。`
+          );
+          return;
+        }
+        if (hasSkill(newCard, 'apex')) {
+          const targetCard = board[laneIndex];
+          if (
+            !targetCard ||
+            !(
+              targetCard.skill === 'legendary' ||
+              (targetCard.skills &&
+                targetCard.skills.some((s) => s.id === 'legendary'))
+            )
+          ) {
+            playSound(SOUNDS.seDamage);
+            showAlertModal(
+              `「${newCard.name}」は頂点のカードのため、自分の場の伝説カードの上にしか召喚できません。`
+            );
+            return;
+          }
+        }
+        if (hasSkill(newCard, 'challenge')) {
+          const oppBoard =
+            owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+          if (oppBoard[laneIndex] === null) {
+            playSound(SOUNDS.seDamage);
+            showAlertModal(
+              `「${newCard.name}」は挑戦を持つため、正面に敵がいるレーンにしか召喚できません。`
+            );
+            return;
+          }
+        }
+      }
+
+      // 既にカードがあるレーンの場合は確認
+      if (board[laneIndex] !== null) {
+        const existingCard = board[laneIndex];
+        const tokenName = tokenCard ? tokenCard.name : 'トークン';
+
+        let canUnion = false;
+        if (tokenCard) {
+          const unionSkill =
+            tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
+          if (
+            unionSkill &&
+            (existingCard.baseId === unionSkill.targetId ||
+              existingCard.id === unionSkill.targetId)
+          ) {
+            canUnion = true;
+          }
+        }
+
+        if (canUnion) {
+          const confirmed = await new Promise((res) => {
+            showConfirmModal(
+              `「${existingCard.name}」と合体しますか？`,
+              () => res(true),
+              () => res(false)
+            );
+          });
+          if (!confirmed) return;
+          // 合体の場合は既存カードの自動破棄は行わない（呼び出し元で素材にするためスルーする）
+        } else if (
+          (tokenCard &&
+            typeof hasSkill === 'function' &&
+            hasSkill(tokenCard, 'equip')) ||
+          (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))
+        ) {
+          const confirmed = await new Promise((res) => {
+            showConfirmModal(
+              `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
+              () => res(true),
+              () => res(false)
+            );
+          });
+          if (!confirmed) return;
+        } else {
+          const confirmed = await new Promise((res) => {
+            showConfirmModal(
+              `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
+              () => res(true),
+              () => res(false)
+            );
+          });
+          if (!confirmed) return;
+
+          // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
+          if (!(await discardCard(owner, board[laneIndex], laneIndex, false)))
+            board[laneIndex] = null;
+          if (updateBattleUIHook) updateBattleUIHook();
+        }
+      }
+
+      GameState.placementSelectedLanes.push(laneIndex);
+      if (updateBattleUIHook) updateBattleUIHook();
+
+      if (GameState.placementSelectedLanes.length >= count) {
+        setTimeout(() => {
+          resolve(cleanUp());
+        }, 300);
+      }
+    };
+
+    if (updateBattleUIHook) updateBattleUIHook();
+  });
 }
 
 /**
  * 相手の場のカードを選択させるユーティリティ（破壊スキル用など）
  */
-export async function waitPlayerEnemyLaneSelection(count, owner, canCancel = false, message = null, allowEmpty = false) {
-    const isBlue = owner === 'blue';
-    const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
-    const targetSide = isBlue ? 'enemy' : 'player';
+export async function waitPlayerEnemyLaneSelection(
+  count,
+  owner,
+  canCancel = false,
+  message = null,
+  allowEmpty = false
+) {
+  const isBlue = owner === 'blue';
+  const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
+  const targetSide = isBlue ? 'enemy' : 'player';
 
-    // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む）
-    const validLanes = allowEmpty ? [0, 1, 2] : targetBoard.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+  // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む）
+  const validLanes = allowEmpty
+    ? [0, 1, 2]
+    : targetBoard.map((c, i) => (c !== null ? i : -1)).filter((i) => i !== -1);
 
-    if (validLanes.length === 0) return [];
+  if (validLanes.length === 0) return [];
 
-    // ターゲット数以下の場合は全選択（キャンセル不可の場合のみ）
-    if (!canCancel && validLanes.length <= count) return validLanes;
+  // ターゲット数以下の場合は全選択（キャンセル不可の場合のみ）
+  if (!canCancel && validLanes.length <= count) return validLanes;
 
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        return new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-    }
-
-    // AIの場合：判定済みのシミュレーション結果があれば優先
-    if (owner === 'red' || owner === 'blue') {
-        if (owner === 'red' && typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision) {
-            if (GameState.aiDecision.cardTokenLanes) {
-                const decidedLanes = GameState.aiDecision.cardTokenLanes;
-                delete GameState.aiDecision.cardTokenLanes;
-                return decidedLanes.slice(0, count);
-            }
-        }
-
-        const sortedLanes = [...validLanes].sort((a, b) => {
-            const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
-            const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
-            const diff = pB - pA;
-            if (diff !== 0) return diff;
-            return a - b; // インデックスが小さい方（左）を優先
-        });
-        if (owner === 'red') return sortedLanes.slice(0, count);
-        // プレイヤー側で自動選択が必要な場合（現状は手動だが、一貫性のため）
-    }
-
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
     return new Promise((resolve) => {
-        GameState.isEnemyTargetMode = true;
-        GameState.targetMaxCount = count;
-        GameState.targetSelectedLanes = [];
-        GameState.isTargetCancelable = canCancel;
-        GameState.isEnemyTargetAllowEmpty = allowEmpty;
-
-        if (message) {
-            updateCardDetail(message);
-        } else {
-            updateCardDetail(null);
-        }
-
-        window.handleEnemyLaneClick = (laneIndex) => {
-            if (!allowEmpty && targetBoard[laneIndex] === null) return;
-            playSound(SOUNDS.seClick);
-
-            if (!GameState.targetSelectedLanes.includes(laneIndex)) {
-                GameState.targetSelectedLanes.push(laneIndex);
-                if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
-
-                if (GameState.targetSelectedLanes.length >= count) {
-                    setTimeout(() => {
-                        if (window.finishEnemyTargetSelection) window.finishEnemyTargetSelection();
-                    }, 300);
-                }
-            }
-        };
-
-        window.finishEnemyTargetSelection = () => {
-            playSound(SOUNDS.seClick);
-            GameState.isEnemyTargetMode = false;
-            const result = [...GameState.targetSelectedLanes];
-            GameState.targetSelectedLanes = [];
-            GameState.targetMaxCount = 0;
-            GameState.isEnemyTargetAllowEmpty = false;
-            window.handleEnemyLaneClick = null;
-            window.finishEnemyTargetSelection = null;
-            updateCardDetail(null);
-
-            if (GameState.gameMode === 'online') {
-                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: result });
-            }
-
-            if (updateBattleUIHook) updateBattleUIHook();
-            resolve(result);
-        };
-
-        if (updateBattleUIHook) updateBattleUIHook();
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
     });
+  }
+
+  // AIの場合：判定済みのシミュレーション結果があれば優先
+  if (owner === 'red' || owner === 'blue') {
+    if (
+      owner === 'red' &&
+      typeof GameState.aiDecision !== 'undefined' &&
+      GameState.aiDecision
+    ) {
+      if (GameState.aiDecision.cardTokenLanes) {
+        const decidedLanes = GameState.aiDecision.cardTokenLanes;
+        delete GameState.aiDecision.cardTokenLanes;
+        return decidedLanes.slice(0, count);
+      }
+    }
+
+    const sortedLanes = [...validLanes].sort((a, b) => {
+      const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
+      const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
+      const diff = pB - pA;
+      if (diff !== 0) return diff;
+      return a - b; // インデックスが小さい方（左）を優先
+    });
+    if (owner === 'red') return sortedLanes.slice(0, count);
+    // プレイヤー側で自動選択が必要な場合（現状は手動だが、一貫性のため）
+  }
+
+  return new Promise((resolve) => {
+    GameState.isEnemyTargetMode = true;
+    GameState.targetMaxCount = count;
+    GameState.targetSelectedLanes = [];
+    GameState.isTargetCancelable = canCancel;
+    GameState.isEnemyTargetAllowEmpty = allowEmpty;
+
+    if (message) {
+      updateCardDetail(message);
+    } else {
+      updateCardDetail(null);
+    }
+
+    window.handleEnemyLaneClick = (laneIndex) => {
+      if (!allowEmpty && targetBoard[laneIndex] === null) return;
+      playSound(SOUNDS.seClick);
+
+      if (!GameState.targetSelectedLanes.includes(laneIndex)) {
+        GameState.targetSelectedLanes.push(laneIndex);
+        if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
+
+        if (GameState.targetSelectedLanes.length >= count) {
+          setTimeout(() => {
+            if (window.finishEnemyTargetSelection)
+              window.finishEnemyTargetSelection();
+          }, 300);
+        }
+      }
+    };
+
+    window.finishEnemyTargetSelection = () => {
+      playSound(SOUNDS.seClick);
+      GameState.isEnemyTargetMode = false;
+      const result = [...GameState.targetSelectedLanes];
+      GameState.targetSelectedLanes = [];
+      GameState.targetMaxCount = 0;
+      GameState.isEnemyTargetAllowEmpty = false;
+      window.handleEnemyLaneClick = null;
+      window.finishEnemyTargetSelection = null;
+      updateCardDetail(null);
+
+      if (GameState.gameMode === 'online') {
+        sendOnlineAction({
+          type: 'submitChoice',
+          owner: 'blue',
+          choiceData: result,
+        });
+      }
+
+      if (updateBattleUIHook) updateBattleUIHook();
+      resolve(result);
+    };
+
+    if (updateBattleUIHook) updateBattleUIHook();
+  });
 }
 
 /**
  * 自分の場のカードを選択させるユーティリティ（強化スキル用など）
  */
 export async function waitPlayerAlliedLaneSelection(count, owner) {
-    const isBlue = owner === 'blue';
-    const targetBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+  const isBlue = owner === 'blue';
+  const targetBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
-    // ターゲット可能なレーン（配置されている場所）を取得
-    const occupiedLanes = targetBoard.map((c, i) => c !== null ? i : -1).filter(i => i !== -1);
+  // ターゲット可能なレーン（配置されている場所）を取得
+  const occupiedLanes = targetBoard
+    .map((c, i) => (c !== null ? i : -1))
+    .filter((i) => i !== -1);
 
-    if (occupiedLanes.length === 0) return [];
+  if (occupiedLanes.length === 0) return [];
 
-    // ターゲット数以下の場合は全選択
-    if (occupiedLanes.length <= count) return occupiedLanes;
+  // ターゲット数以下の場合は全選択
+  if (occupiedLanes.length <= count) return occupiedLanes;
 
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        return new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-    }
-
-    // AIの場合：パワーが最も高いカード優先
-    if (owner === 'red') {
-        const sortedLanes = [...occupiedLanes].sort((a, b) => {
-            const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
-            if (diff !== 0) return diff;
-            return a - b;
-        });
-        return sortedLanes.slice(0, count);
-    }
-
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
     return new Promise((resolve) => {
-        GameState.isAlliedTargetMode = true;
-        GameState.targetMaxCount = count;
-        GameState.targetSelectedLanes = [];
-        updateCardDetail(null);
-
-        window.handleAlliedLaneClick = (laneIndex) => {
-            if (targetBoard[laneIndex] === null) return;
-            playSound(SOUNDS.seClick);
-
-            if (!GameState.targetSelectedLanes.includes(laneIndex)) {
-                GameState.targetSelectedLanes.push(laneIndex);
-                if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
-
-                if (GameState.targetSelectedLanes.length >= count) {
-                    setTimeout(() => {
-                        window.finishAlliedSelection();
-                    }, 300);
-                }
-            }
-        };
-
-        window.finishAlliedSelection = () => {
-            playSound(SOUNDS.seClick);
-            GameState.isAlliedTargetMode = false;
-            const result = [...GameState.targetSelectedLanes];
-            GameState.targetSelectedLanes = [];
-            GameState.targetMaxCount = 0;
-            window.handleAlliedLaneClick = null;
-            window.finishAlliedSelection = null;
-            updateCardDetail(null);
-
-            if (GameState.gameMode === 'online') {
-                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: result });
-            }
-
-            if (updateBattleUIHook) updateBattleUIHook();
-            resolve(result);
-        };
-
-        if (updateBattleUIHook) updateBattleUIHook();
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
     });
+  }
+
+  // AIの場合：パワーが最も高いカード優先
+  if (owner === 'red') {
+    const sortedLanes = [...occupiedLanes].sort((a, b) => {
+      const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
+      if (diff !== 0) return diff;
+      return a - b;
+    });
+    return sortedLanes.slice(0, count);
+  }
+
+  return new Promise((resolve) => {
+    GameState.isAlliedTargetMode = true;
+    GameState.targetMaxCount = count;
+    GameState.targetSelectedLanes = [];
+    updateCardDetail(null);
+
+    window.handleAlliedLaneClick = (laneIndex) => {
+      if (targetBoard[laneIndex] === null) return;
+      playSound(SOUNDS.seClick);
+
+      if (!GameState.targetSelectedLanes.includes(laneIndex)) {
+        GameState.targetSelectedLanes.push(laneIndex);
+        if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
+
+        if (GameState.targetSelectedLanes.length >= count) {
+          setTimeout(() => {
+            window.finishAlliedSelection();
+          }, 300);
+        }
+      }
+    };
+
+    window.finishAlliedSelection = () => {
+      playSound(SOUNDS.seClick);
+      GameState.isAlliedTargetMode = false;
+      const result = [...GameState.targetSelectedLanes];
+      GameState.targetSelectedLanes = [];
+      GameState.targetMaxCount = 0;
+      window.handleAlliedLaneClick = null;
+      window.finishAlliedSelection = null;
+      updateCardDetail(null);
+
+      if (GameState.gameMode === 'online') {
+        sendOnlineAction({
+          type: 'submitChoice',
+          owner: 'blue',
+          choiceData: result,
+        });
+      }
+
+      if (updateBattleUIHook) updateBattleUIHook();
+      resolve(result);
+    };
+
+    if (updateBattleUIHook) updateBattleUIHook();
+  });
 }
 
 /**
  * プレイヤーまたはAIに手札からカードを選択させるユーティリティ（入替スキル用）
  */
-export async function waitPlayerHandSelection(count, owner, forceExact = false, message = null) {
-    const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
-    if (hand.length === 0) return [];
+export async function waitPlayerHandSelection(
+  count,
+  owner,
+  forceExact = false,
+  message = null
+) {
+  const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+  if (hand.length === 0) return [];
 
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        return new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-    }
-
-    // AIの場合：判定済みのシミュレーション結果があれば優先
-    if (owner === 'red') {
-        const results = [];
-        for (let i = 0; i < count; i++) {
-            const aiAction = consumeAIAction('discard');
-            if (aiAction && aiAction.targetIdx !== undefined) {
-                results.push(aiAction.targetIdx);
-            } else {
-                break;
-            }
-        }
-        if (results.length > 0) return results;
-
-        // フォールバック: 共通のAI破棄選択ロジックを利用する
-        return getAIDiscardIndices(hand, count);
-    }
-
-    // プレイヤーの場合：手動選択
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
     return new Promise((resolve) => {
-        GameState.discardSelectedIndices = [];
-
-        // 手札入れ替え用のプロンプトを表示
-        GameState.isDiscardingMode = true;
-        GameState.isDiscardingExact = forceExact;
-        GameState.discardMaxCount = count;
-
-        if (message) {
-            updateCardDetail(message);
-        } else {
-            updateCardDetail(null);
-        }
-
-        renderHand(); // 描画更新
-        // カード説明の表示を確実にReact描画に反映させる
-        if (updateBattleUIHook) updateBattleUIHook();
-
-        const cleanUp = () => {
-            GameState.isDiscardingMode = false;
-            GameState.isDiscardingExact = false;
-            const result = [...GameState.discardSelectedIndices];
-            GameState.discardSelectedIndices = [];
-            GameState.discardMaxCount = 0;
-            window.finishHandSelection = null;
-            updateCardDetail(null);
-            renderHand(); // 通常の状態に戻す
-            if (updateBattleUIHook) updateBattleUIHook();
-            return result;
-        };
-
-        window.finishHandSelection = () => {
-            playSound(SOUNDS.seClick);
-            const indices = cleanUp();
-
-            if (GameState.gameMode === 'online') {
-                sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: indices });
-            }
-
-            resolve(indices);
-        };
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
     });
+  }
+
+  // AIの場合：判定済みのシミュレーション結果があれば優先
+  if (owner === 'red') {
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      const aiAction = consumeAIAction('discard');
+      if (aiAction && aiAction.targetIdx !== undefined) {
+        results.push(aiAction.targetIdx);
+      } else {
+        break;
+      }
+    }
+    if (results.length > 0) return results;
+
+    // フォールバック: 共通のAI破棄選択ロジックを利用する
+    return getAIDiscardIndices(hand, count);
+  }
+
+  // プレイヤーの場合：手動選択
+  return new Promise((resolve) => {
+    GameState.discardSelectedIndices = [];
+
+    // 手札入れ替え用のプロンプトを表示
+    GameState.isDiscardingMode = true;
+    GameState.isDiscardingExact = forceExact;
+    GameState.discardMaxCount = count;
+
+    if (message) {
+      updateCardDetail(message);
+    } else {
+      updateCardDetail(null);
+    }
+
+    renderHand(); // 描画更新
+    // カード説明の表示を確実にReact描画に反映させる
+    if (updateBattleUIHook) updateBattleUIHook();
+
+    const cleanUp = () => {
+      GameState.isDiscardingMode = false;
+      GameState.isDiscardingExact = false;
+      const result = [...GameState.discardSelectedIndices];
+      GameState.discardSelectedIndices = [];
+      GameState.discardMaxCount = 0;
+      window.finishHandSelection = null;
+      updateCardDetail(null);
+      renderHand(); // 通常の状態に戻す
+      if (updateBattleUIHook) updateBattleUIHook();
+      return result;
+    };
+
+    window.finishHandSelection = () => {
+      playSound(SOUNDS.seClick);
+      const indices = cleanUp();
+
+      if (GameState.gameMode === 'online') {
+        sendOnlineAction({
+          type: 'submitChoice',
+          owner: 'blue',
+          choiceData: indices,
+        });
+      }
+
+      resolve(indices);
+    };
+  });
 }
 
 /**
  * 墓地から選択する共有ユーティリティ（復活、回収等）
  */
-export async function waitPlayerDiscardSelection(validCards, maxPow, owner, title, desc, canCancel = true) {
-    if (await triggerGraveKeeperEffect()) return null;
-    if (!validCards || validCards.length === 0) return null;
+export async function waitPlayerDiscardSelection(
+  validCards,
+  maxPow,
+  owner,
+  title,
+  desc,
+  canCancel = true
+) {
+  if (await triggerGraveKeeperEffect()) return null;
+  if (!validCards || validCards.length === 0) return null;
 
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        const choiceStr = await new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-        if (!choiceStr || choiceStr === -1) return null;
-        // UID優先、なければidで検索して同期ズレを防ぐ
-        const matchingCard = validCards.find(c => c.uid === choiceStr || c.id === choiceStr);
-        return matchingCard || validCards[0];
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
+    const choiceStr = await new Promise((resolve) => {
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
+    });
+    if (!choiceStr || choiceStr === -1) return null;
+    // UID優先、なければidで検索して同期ズレを防ぐ
+    const matchingCard = validCards.find(
+      (c) => c.uid === choiceStr || c.id === choiceStr
+    );
+    return matchingCard || validCards[0];
+  }
+
+  // AIの場合
+  if (
+    owner === 'red' &&
+    GameState.gameMode !== 'online' &&
+    GameState.gameMode !== 'pvp'
+  ) {
+    const aiAction = consumeAIAction([
+      'resurrect',
+      'devilhunter_resurrect',
+      'overdrive',
+      'call',
+      'salvage',
+      'choice',
+    ]);
+    if (aiAction) {
+      // targetUid が存在する場合はUID優先で照合（フィルタ済みvalidCardsとのインデックスずれを防ぐ）
+      if (aiAction.targetUid) {
+        const byUid = validCards.find(
+          (c) => c.uid === aiAction.targetUid || c.id === aiAction.targetUid
+        );
+        if (byUid) return byUid;
+      }
+      // フォールバック: targetIdx がそのまま使える場合
+      if (aiAction.targetIdx !== undefined && validCards[aiAction.targetIdx]) {
+        return validCards[aiAction.targetIdx];
+      }
     }
+    // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
+    const randomIndex = Math.floor(Math.random() * validCards.length);
+    return validCards[randomIndex];
+  }
 
-    // AIの場合
-    if (owner === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-        const aiAction = consumeAIAction(['resurrect', 'devilhunter_resurrect', 'overdrive', 'call', 'salvage', 'choice']);
-        if (aiAction) {
-            // targetUid が存在する場合はUID優先で照合（フィルタ済みvalidCardsとのインデックスずれを防ぐ）
-            if (aiAction.targetUid) {
-                const byUid = validCards.find(c => c.uid === aiAction.targetUid || c.id === aiAction.targetUid);
-                if (byUid) return byUid;
-            }
-            // フォールバック: targetIdx がそのまま使える場合
-            if (aiAction.targetIdx !== undefined && validCards[aiAction.targetIdx]) {
-                return validCards[aiAction.targetIdx];
-            }
-        }
-        // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
-        const randomIndex = Math.floor(Math.random() * validCards.length);
-        return validCards[randomIndex];
+  // プレイヤーの場合
+  if (window.showDiscardSelectionModalReact) {
+    const card = await new Promise((resolve) => {
+      window.showDiscardSelectionModalReact(
+        validCards,
+        maxPow,
+        (c) => resolve(c),
+        { title, desc, canCancel }
+      );
+    });
+
+    if (GameState.gameMode === 'online') {
+      const choiceStr = card ? card.uid || card.id : null;
+      sendOnlineAction({
+        type: 'submitChoice',
+        owner: 'blue',
+        choiceData: choiceStr,
+      });
     }
-
-    // プレイヤーの場合
-    if (window.showDiscardSelectionModalReact) {
-        const card = await new Promise(resolve => {
-            window.showDiscardSelectionModalReact(validCards, maxPow, (c) => resolve(c), { title, desc, canCancel });
-        });
-
-        if (GameState.gameMode === 'online') {
-            const choiceStr = card ? (card.uid || card.id) : null;
-            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: choiceStr });
-        }
-        return card;
-    } else {
-        return validCards[0];
-    }
+    return card;
+  } else {
+    return validCards[0];
+  }
 }
 
 /**
  * 複数タブ（自分/相手の墓地）の選択を待機する
  */
-export async function waitPlayerDualDiscardSelection(blueCards, redCards, maxChoices, owner, title, desc, canCancel = true) {
-    if (await triggerGraveKeeperEffect()) return [];
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        const choiceStr = await new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-        if (!choiceStr || choiceStr === -1) return [];
-        const uids = choiceStr.split(',');
-        const allCards = [...blueCards, ...redCards];
-        return allCards.filter(c => uids.includes(c.uid) || uids.includes(c.id));
-    }
+export async function waitPlayerDualDiscardSelection(
+  blueCards,
+  redCards,
+  maxChoices,
+  owner,
+  title,
+  desc,
+  canCancel = true
+) {
+  if (await triggerGraveKeeperEffect()) return [];
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
+    const choiceStr = await new Promise((resolve) => {
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
+    });
+    if (!choiceStr || choiceStr === -1) return [];
+    const uids = choiceStr.split(',');
+    const allCards = [...blueCards, ...redCards];
+    return allCards.filter((c) => uids.includes(c.uid) || uids.includes(c.id));
+  }
 
-    // AIの場合
-    if (owner === 'red' && GameState.gameMode !== 'online' && GameState.gameMode !== 'pvp') {
-        // 回帰など: デッキ切れを防ぐため、相手の墓地からは選ばず自分の墓地（redCards）からのみランダムに選ぶ
-        const ownCards = [...redCards].sort(() => Math.random() - 0.5);
-        return ownCards.slice(0, maxChoices);
-    }
+  // AIの場合
+  if (
+    owner === 'red' &&
+    GameState.gameMode !== 'online' &&
+    GameState.gameMode !== 'pvp'
+  ) {
+    // 回帰など: デッキ切れを防ぐため、相手の墓地からは選ばず自分の墓地（redCards）からのみランダムに選ぶ
+    const ownCards = [...redCards].sort(() => Math.random() - 0.5);
+    return ownCards.slice(0, maxChoices);
+  }
 
-    // プレイヤーの場合
-    if (window.showDiscardSelectionModalReact) {
-        const selectedCards = await new Promise(resolve => {
-            window.showDiscardSelectionModalReact(blueCards, Infinity, (cards) => resolve(cards), {
-                title, desc, canCancel, isDual: true, redCards, maxChoices
-            });
-        });
-
-        if (GameState.gameMode === 'online') {
-            const choiceStr = (selectedCards && selectedCards.length > 0) ? selectedCards.map(c => c.uid || c.id).join(',') : null;
-            sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: choiceStr });
+  // プレイヤーの場合
+  if (window.showDiscardSelectionModalReact) {
+    const selectedCards = await new Promise((resolve) => {
+      window.showDiscardSelectionModalReact(
+        blueCards,
+        Infinity,
+        (cards) => resolve(cards),
+        {
+          title,
+          desc,
+          canCancel,
+          isDual: true,
+          redCards,
+          maxChoices,
         }
-        return selectedCards || [];
-    } else {
-        return [];
+      );
+    });
+
+    if (GameState.gameMode === 'online') {
+      const choiceStr =
+        selectedCards && selectedCards.length > 0
+          ? selectedCards.map((c) => c.uid || c.id).join(',')
+          : null;
+      sendOnlineAction({
+        type: 'submitChoice',
+        owner: 'blue',
+        choiceData: choiceStr,
+      });
     }
+    return selectedCards || [];
+  } else {
+    return [];
+  }
 }
 
 /**
  * 召喚時スキル「選択」の選択を待機する
  */
-export async function waitSkillChoice(choices, owner, card, maxChoices = 1, isForce = false) {
-    if (!choices || choices.length === 0) return null;
+export async function waitSkillChoice(
+  choices,
+  owner,
+  card,
+  maxChoices = 1,
+  isForce = false
+) {
+  if (!choices || choices.length === 0) return null;
 
-    // Check for Remote Choice Wait
-    if (GameState.gameMode === 'online' && owner === 'red') {
-        return new Promise(resolve => {
-            if (GameState.pendingChoices && GameState.pendingChoices.length > 0) resolve(GameState.pendingChoices.shift());
-            else pendingChoiceResolver = resolve;
-        });
-    }
-
-    // AIの場合
-    if (owner === 'red') {
-        // AIが強制選択する場合は、テストのため完全ランダムとする
-        if (isForce) {
-            await sleep(800);
-            const shuffled = shuffleArray([...choices]);
-            return shuffled.slice(0, Math.min(maxChoices, choices.length));
-        }
-
-        // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoiceノード）
-        const aiAction = consumeAIAction('choice');
-        if (aiAction && aiAction.choices !== undefined) {
-            return aiAction.choices.map(i => choices[i]);
-        }
-
-        const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
-
-        // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
-        if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndexQueue !== undefined) {
-            const idx = GameState.aiDecision.choiceIndexQueue.shift();
-            if (idx !== undefined) {
-                const indices = Array.isArray(idx) ? idx : [idx];
-                return indices.map(i => choices[i]);
-            }
-        } else if (typeof GameState.aiDecision !== 'undefined' && GameState.aiDecision && GameState.aiDecision.choiceIndex !== undefined) {
-            // 互換性フェーズ
-            const idx = GameState.aiDecision.choiceIndex;
-            delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
-            const indices = Array.isArray(idx) ? idx : [idx];
-            return indices.map(i => choices[i]);
-        }
-
-        // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
-        if (localAiLevel <= 1) {
-            // Easy: ランダム
-            const shuffled = shuffleArray([...choices]);
-            return shuffled.slice(0, Math.min(maxChoices, choices.length));
-        } else {
-            // Normal/Hard: ここで簡易的にシミュレーション
-            // 本来は意思決定時に行われるべきだが、フォールバックとして実装
-            console.log("AI performing on-the-fly skill choice simulation");
-            const scoredChoices = [];
-            const originalBoard = GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
-            const originalPlayerBoard = GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null);
-
-            for (let i = 0; i < choices.length; i++) {
-                const cloneCard = c => c ? JSON.parse(JSON.stringify(c)) : null;
-                const simState = {
-                    playerBoard: originalPlayerBoard.map(cloneCard),
-                    enemyBoard: originalBoard.map(cloneCard),
-                    playerHand: GameState.playerHand.map(cloneCard), enemyHand: GameState.enemyHand.map(cloneCard),
-                    playerDeck: GameState.playerDeck.map(cloneCard), enemyDeck: GameState.enemyDeck.map(cloneCard),
-                    playerDiscard: GameState.playerDiscard.map(cloneCard), enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-                    playerHP: GameState.playerHP, enemyHP: GameState.enemyHP, playerSP: GameState.playerSP, enemySP: GameState.enemySP,
-                    playerMaxHP: GameState.playerMaxHP, enemyMaxHP: GameState.enemyMaxHP,
-                    extraTurnCount: GameState.extraTurnCount, attackSkipCount: GameState.attackSkipCount
-                };
-                // 簡易シミュレーション
-                const lane = GameState.enemyBoard.indexOf(card);
-                let score = -Infinity;
-                if (lane !== -1) {
-                    applyActiveSkillLogic(simState, 'red', lane, choices[i].id, choices[i].value);
-                    calculateCombatPhase(simState, 'blue');
-                    // スコア計算
-                    score = simState.enemyHP - simState.playerHP;
-                    for (let b of simState.enemyBoard) if (b) score += b.currentPower;
-                }
-                scoredChoices.push({ choice: choices[i], score });
-            }
-            scoredChoices.sort((a, b) => b.score - a.score);
-            return scoredChoices.slice(0, Math.min(maxChoices, choices.length)).map(x => x.choice);
-        }
-    }
-
-    // プレイヤーの場合
+  // Check for Remote Choice Wait
+  if (GameState.gameMode === 'online' && owner === 'red') {
     return new Promise((resolve) => {
-        if (window.showSkillChoiceModalReact) {
-            window.showSkillChoiceModalReact(choices, (selectedSkill) => {
-                if (GameState.gameMode === 'online') {
-                    sendOnlineAction({ type: 'submitChoice', owner: 'blue', choiceData: selectedSkill });
-                }
-                resolve(selectedSkill); // App returns Array here automatically handled in UI
-            }, maxChoices, isForce);
-        } else {
-            // フォールバック（通常は発生しない）
-            const shuffled = shuffleArray([...choices]);
-            resolve(shuffled.slice(0, Math.min(maxChoices, choices.length)));
-        }
+      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
+        resolve(GameState.pendingChoices.shift());
+      else pendingChoiceResolver = resolve;
     });
+  }
+
+  // AIの場合
+  if (owner === 'red') {
+    // AIが強制選択する場合は、テストのため完全ランダムとする
+    if (isForce) {
+      await sleep(800);
+      const shuffled = shuffleArray([...choices]);
+      return shuffled.slice(0, Math.min(maxChoices, choices.length));
+    }
+
+    // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoiceノード）
+    const aiAction = consumeAIAction('choice');
+    if (aiAction && aiAction.choices !== undefined) {
+      return aiAction.choices.map((i) => choices[i]);
+    }
+
+    const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
+
+    // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
+    if (
+      typeof GameState.aiDecision !== 'undefined' &&
+      GameState.aiDecision &&
+      GameState.aiDecision.choiceIndexQueue !== undefined
+    ) {
+      const idx = GameState.aiDecision.choiceIndexQueue.shift();
+      if (idx !== undefined) {
+        const indices = Array.isArray(idx) ? idx : [idx];
+        return indices.map((i) => choices[i]);
+      }
+    } else if (
+      typeof GameState.aiDecision !== 'undefined' &&
+      GameState.aiDecision &&
+      GameState.aiDecision.choiceIndex !== undefined
+    ) {
+      // 互換性フェーズ
+      const idx = GameState.aiDecision.choiceIndex;
+      delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
+      const indices = Array.isArray(idx) ? idx : [idx];
+      return indices.map((i) => choices[i]);
+    }
+
+    // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
+    if (localAiLevel <= 1) {
+      // Easy: ランダム
+      const shuffled = shuffleArray([...choices]);
+      return shuffled.slice(0, Math.min(maxChoices, choices.length));
+    } else {
+      // Normal/Hard: ここで簡易的にシミュレーション
+      // 本来は意思決定時に行われるべきだが、フォールバックとして実装
+      console.log('AI performing on-the-fly skill choice simulation');
+      const scoredChoices = [];
+      const originalBoard = GameState.enemyBoard.map((c) =>
+        c ? JSON.parse(JSON.stringify(c)) : null
+      );
+      const originalPlayerBoard = GameState.playerBoard.map((c) =>
+        c ? JSON.parse(JSON.stringify(c)) : null
+      );
+
+      for (let i = 0; i < choices.length; i++) {
+        const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+        const simState = {
+          playerBoard: originalPlayerBoard.map(cloneCard),
+          enemyBoard: originalBoard.map(cloneCard),
+          playerHand: GameState.playerHand.map(cloneCard),
+          enemyHand: GameState.enemyHand.map(cloneCard),
+          playerDeck: GameState.playerDeck.map(cloneCard),
+          enemyDeck: GameState.enemyDeck.map(cloneCard),
+          playerDiscard: GameState.playerDiscard.map(cloneCard),
+          enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+          playerHP: GameState.playerHP,
+          enemyHP: GameState.enemyHP,
+          playerSP: GameState.playerSP,
+          enemySP: GameState.enemySP,
+          playerMaxHP: GameState.playerMaxHP,
+          enemyMaxHP: GameState.enemyMaxHP,
+          extraTurnCount: GameState.extraTurnCount,
+          attackSkipCount: GameState.attackSkipCount,
+        };
+        // 簡易シミュレーション
+        const lane = GameState.enemyBoard.indexOf(card);
+        let score = -Infinity;
+        if (lane !== -1) {
+          applyActiveSkillLogic(
+            simState,
+            'red',
+            lane,
+            choices[i].id,
+            choices[i].value
+          );
+          calculateCombatPhase(simState, 'blue');
+          // スコア計算
+          score = simState.enemyHP - simState.playerHP;
+          for (let b of simState.enemyBoard) if (b) score += b.currentPower;
+        }
+        scoredChoices.push({ choice: choices[i], score });
+      }
+      scoredChoices.sort((a, b) => b.score - a.score);
+      return scoredChoices
+        .slice(0, Math.min(maxChoices, choices.length))
+        .map((x) => x.choice);
+    }
+  }
+
+  // プレイヤーの場合
+  return new Promise((resolve) => {
+    if (window.showSkillChoiceModalReact) {
+      window.showSkillChoiceModalReact(
+        choices,
+        (selectedSkill) => {
+          if (GameState.gameMode === 'online') {
+            sendOnlineAction({
+              type: 'submitChoice',
+              owner: 'blue',
+              choiceData: selectedSkill,
+            });
+          }
+          resolve(selectedSkill); // App returns Array here automatically handled in UI
+        },
+        maxChoices,
+        isForce
+      );
+    } else {
+      // フォールバック（通常は発生しない）
+      const shuffled = shuffleArray([...choices]);
+      resolve(shuffled.slice(0, Math.min(maxChoices, choices.length)));
+    }
+  });
 }
 export async function discardCard(owner, card, lane, isDestroyed = true) {
-    // 防御: card が undefined/null の場合はエラーにならないようガード
-    if (!card) {
-        console.warn('[discardCard] card は undefined/null です。スキップします。', { owner, lane });
-        return;
+  // 防御: card が undefined/null の場合はエラーにならないようガード
+  if (!card) {
+    console.warn(
+      '[discardCard] card は undefined/null です。スキップします。',
+      { owner, lane }
+    );
+    return;
+  }
+  if (card.equippedCards && card.equippedCards.length > 0) {
+    for (const eqCard of card.equippedCards) {
+      let restoredEq;
+      // 【傀儡対応】装備カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+      const eqOwner = eqCard.puppetOriginalOwner || eqCard.owner || owner;
+      const discardPile =
+        eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+      const eqMaster = CARD_MASTER.find(
+        (m) => m.id === (eqCard.baseId || eqCard.id)
+      );
+      if (eqMaster) {
+        restoredEq = JSON.parse(JSON.stringify(eqMaster));
+        restoredEq.uid = eqCard.uid;
+        restoredEq.owner = eqOwner;
+        restoredEq.baseId = eqCard.baseId || eqCard.id;
+        restoredEq.basePower = restoredEq.power;
+        restoredEq.currentPower = restoredEq.power;
+      } else {
+        restoredEq = { ...eqCard };
+      }
+      if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
+      if (!restoredEq.isToken) {
+        discardPile.push(restoredEq);
+      }
     }
-    if (card.equippedCards && card.equippedCards.length > 0) {
-        for (const eqCard of card.equippedCards) {
-            let restoredEq;
-            // 【傀儡対応】装備カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-            const eqOwner = eqCard.puppetOriginalOwner || eqCard.owner || owner;
-            const discardPile = eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-            const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
-            if (eqMaster) {
-                restoredEq = JSON.parse(JSON.stringify(eqMaster));
-                restoredEq.uid = eqCard.uid;
-                restoredEq.owner = eqOwner;
-                restoredEq.baseId = eqCard.baseId || eqCard.id;
-                restoredEq.basePower = restoredEq.power;
-                restoredEq.currentPower = restoredEq.power;
-            } else {
-                restoredEq = { ...eqCard };
-            }
-            if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
-            if (!restoredEq.isToken) {
-                discardPile.push(restoredEq);
-            }
-        }
-        card.equippedCards = [];
+    card.equippedCards = [];
+  }
+
+  if (card.unionMaterials && card.unionMaterials.length > 0) {
+    for (const matCard of card.unionMaterials) {
+      let restoredMat;
+      // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+      const matOwner = matCard.puppetOriginalOwner || matCard.owner || owner;
+      const discardPile =
+        matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+      const matMaster = CARD_MASTER.find(
+        (m) => m.id === (matCard.baseId || matCard.id)
+      );
+      if (matMaster) {
+        restoredMat = JSON.parse(JSON.stringify(matMaster));
+        restoredMat.uid = matCard.uid;
+        restoredMat.owner = matOwner;
+        restoredMat.baseId = matCard.baseId || matCard.id;
+        restoredMat.basePower = restoredMat.power;
+        restoredMat.currentPower = restoredMat.power;
+      } else {
+        restoredMat = { ...matCard };
+      }
+      if (restoredMat.puppetOriginalOwner)
+        delete restoredMat.puppetOriginalOwner;
+      if (!restoredMat.isToken) {
+        discardPile.push(restoredMat);
+      }
     }
+    card.unionMaterials = [];
+  }
 
-    if (card.unionMaterials && card.unionMaterials.length > 0) {
-        for (const matCard of card.unionMaterials) {
-            let restoredMat;
-            // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-            const matOwner = matCard.puppetOriginalOwner || matCard.owner || owner;
-            const discardPile = matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-            const matMaster = CARD_MASTER.find(m => m.id === (matCard.baseId || matCard.id));
-            if (matMaster) {
-                restoredMat = JSON.parse(JSON.stringify(matMaster));
-                restoredMat.uid = matCard.uid;
-                restoredMat.owner = matOwner;
-                restoredMat.baseId = matCard.baseId || matCard.id;
-                restoredMat.basePower = restoredMat.power;
-                restoredMat.currentPower = restoredMat.power;
-            } else {
-                restoredMat = { ...matCard };
-            }
-            if (restoredMat.puppetOriginalOwner) delete restoredMat.puppetOriginalOwner;
-            if (!restoredMat.isToken) {
-                discardPile.push(restoredMat);
-            }
-        }
-        card.unionMaterials = [];
-    }
-
-    if (card.originalRevertTarget) {
-        const rvTarget = card.originalRevertTarget;
-        // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-        const rvOwner = rvTarget.puppetOriginalOwner || owner;
-        const masterData = CARD_MASTER.find(m => m.id === (rvTarget.baseId || rvTarget.id));
-        let restoredCard;
-        if (masterData) {
-            restoredCard = JSON.parse(JSON.stringify(masterData));
-            restoredCard.uid = rvTarget.uid;
-            restoredCard.owner = rvOwner;
-            restoredCard.baseId = rvTarget.baseId || rvTarget.id;
-            if (rvTarget.isPremium !== undefined) restoredCard.isPremium = rvTarget.isPremium;
-            restoredCard.basePower = restoredCard.power;
-            restoredCard.currentPower = restoredCard.power;
-        } else {
-            restoredCard = { ...rvTarget };
-            restoredCard.equippedCards = [];
-        }
-        if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
-        if (!restoredCard.isToken) {
-            (rvOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
-        }
-        updateDeckDisplay(rvOwner);
-    }
-
-    if (card.isToken) return false;
-    let skillsToResolve = [];
-    if (card.skill && card.skill !== 'none') skillsToResolve.push({ id: card.skill, value: card.skillValue });
-    if (Array.isArray(card.skills)) skillsToResolve = skillsToResolve.concat(card.skills);
-
-    for (const sk of skillsToResolve) {
-        if (isDestroyed) {
-            // 分裂(split)
-            if (sk.id === 'split' && lane !== undefined) {
-                await triggerSplitSkill(owner, lane, card);
-                return true; // 分裂した場合は墓地に行かず場に残る
-            }
-            // 誘爆(explode)
-            if (sk.id === 'explode' && lane !== undefined) {
-                await triggerExplodeSkill(owner, lane, card);
-            }
-        }
-    }
-
-    // スキル発動フラグをリセット
-    card.skillTriggered = false;
-    card.stunTurns = 0;
-    card.stunAppliedThisTurn = false;
-
-    // 一時的なスキルの除去（無敵など）
-    if (Array.isArray(card.skills)) {
-        card.skills = card.skills.filter(sk => sk.id !== 'invincible');
-    }
-
-    // 変相の復帰処理
-    if (card.originalCardId) {
-        const originalMaster = CARD_MASTER.find(m => m.id === card.originalCardId);
-        if (originalMaster) {
-            card.name = originalMaster.name;
-            card.power = originalMaster.power || 0;
-            card.basePower = originalMaster.power || 0;
-            card.currentPower = originalMaster.power || 0;
-            card.skill = originalMaster.skill || 'none';
-            card.skillValue = originalMaster.skillValue || 0;
-            card.skills = originalMaster.skills ? JSON.parse(JSON.stringify(originalMaster.skills)) : [];
-            card.choices = originalMaster.choices ? JSON.parse(JSON.stringify(originalMaster.choices)) : [];
-            card.choices2 = originalMaster.choices2 ? JSON.parse(JSON.stringify(originalMaster.choices2)) : null;
-            card.rarity = originalMaster.rarity;
-            card.imgUrl = originalMaster.imgUrl;
-            card.flavor = originalMaster.flavor;
-            card.voiceCategory = originalMaster.voiceCategory;
-            delete card.originalCardId;
-        }
-    }
-
-    // マスターデータから完全な初期状態を再構成して墓地へ
+  if (card.originalRevertTarget) {
+    const rvTarget = card.originalRevertTarget;
+    // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+    const rvOwner = rvTarget.puppetOriginalOwner || owner;
+    const masterData = CARD_MASTER.find(
+      (m) => m.id === (rvTarget.baseId || rvTarget.id)
+    );
     let restoredCard;
-    const masterData = CARD_MASTER.find(m => m.id === (card.baseId || card.id));
     if (masterData) {
-        restoredCard = JSON.parse(JSON.stringify(masterData));
-        restoredCard.uid = card.uid; // IDなどの一意のプロパティは引き継ぐ
-        restoredCard.owner = owner;
-        restoredCard.baseId = card.baseId || card.id; // 画像URL等の解決に必須
-        if (card.isPremium !== undefined) restoredCard.isPremium = card.isPremium;
-        restoredCard.basePower = restoredCard.power;
-        restoredCard.currentPower = restoredCard.power;
+      restoredCard = JSON.parse(JSON.stringify(masterData));
+      restoredCard.uid = rvTarget.uid;
+      restoredCard.owner = rvOwner;
+      restoredCard.baseId = rvTarget.baseId || rvTarget.id;
+      if (rvTarget.isPremium !== undefined)
+        restoredCard.isPremium = rvTarget.isPremium;
+      restoredCard.basePower = restoredCard.power;
+      restoredCard.currentPower = restoredCard.power;
     } else {
-        // マスターデータが見つからない場合（特殊トークン等）のフォールバック
-        restoredCard = { ...card };
-        if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
-        restoredCard.currentPower = restoredCard.power;
-        restoredCard.skills = []; // 付与されたスキルなどをクリア
+      restoredCard = { ...rvTarget };
+      restoredCard.equippedCards = [];
     }
+    if (restoredCard.puppetOriginalOwner)
+      delete restoredCard.puppetOriginalOwner;
+    if (!restoredCard.isToken) {
+      (rvOwner === 'blue'
+        ? GameState.playerDiscard
+        : GameState.enemyDiscard
+      ).push(restoredCard);
+    }
+    updateDeckDisplay(rvOwner);
+  }
 
-    // 【傀儡】傀儡スキルで奪ったカードは、元の持ち主の墓地に返却する
-    const discardOwner = card.puppetOriginalOwner || owner;
-    if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
-    restoredCard.owner = discardOwner;
+  if (card.isToken) return false;
+  let skillsToResolve = [];
+  if (card.skill && card.skill !== 'none')
+    skillsToResolve.push({ id: card.skill, value: card.skillValue });
+  if (Array.isArray(card.skills))
+    skillsToResolve = skillsToResolve.concat(card.skills);
 
-    (discardOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard).push(restoredCard);
-    updateDeckDisplay(discardOwner);
-    return false;
+  for (const sk of skillsToResolve) {
+    if (isDestroyed) {
+      // 分裂(split)
+      if (sk.id === 'split' && lane !== undefined) {
+        await triggerSplitSkill(owner, lane, card);
+        return true; // 分裂した場合は墓地に行かず場に残る
+      }
+      // 誘爆(explode)
+      if (sk.id === 'explode' && lane !== undefined) {
+        await triggerExplodeSkill(owner, lane, card);
+      }
+    }
+  }
+
+  // スキル発動フラグをリセット
+  card.skillTriggered = false;
+  card.stunTurns = 0;
+  card.stunAppliedThisTurn = false;
+
+  // 一時的なスキルの除去（無敵など）
+  if (Array.isArray(card.skills)) {
+    card.skills = card.skills.filter((sk) => sk.id !== 'invincible');
+  }
+
+  // 変相の復帰処理
+  if (card.originalCardId) {
+    const originalMaster = CARD_MASTER.find(
+      (m) => m.id === card.originalCardId
+    );
+    if (originalMaster) {
+      card.name = originalMaster.name;
+      card.power = originalMaster.power || 0;
+      card.basePower = originalMaster.power || 0;
+      card.currentPower = originalMaster.power || 0;
+      card.skill = originalMaster.skill || 'none';
+      card.skillValue = originalMaster.skillValue || 0;
+      card.skills = originalMaster.skills
+        ? JSON.parse(JSON.stringify(originalMaster.skills))
+        : [];
+      card.choices = originalMaster.choices
+        ? JSON.parse(JSON.stringify(originalMaster.choices))
+        : [];
+      card.choices2 = originalMaster.choices2
+        ? JSON.parse(JSON.stringify(originalMaster.choices2))
+        : null;
+      card.rarity = originalMaster.rarity;
+      card.imgUrl = originalMaster.imgUrl;
+      card.flavor = originalMaster.flavor;
+      card.voiceCategory = originalMaster.voiceCategory;
+      delete card.originalCardId;
+    }
+  }
+
+  // マスターデータから完全な初期状態を再構成して墓地へ
+  let restoredCard;
+  const masterData = CARD_MASTER.find((m) => m.id === (card.baseId || card.id));
+  if (masterData) {
+    restoredCard = JSON.parse(JSON.stringify(masterData));
+    restoredCard.uid = card.uid; // IDなどの一意のプロパティは引き継ぐ
+    restoredCard.owner = owner;
+    restoredCard.baseId = card.baseId || card.id; // 画像URL等の解決に必須
+    if (card.isPremium !== undefined) restoredCard.isPremium = card.isPremium;
+    restoredCard.basePower = restoredCard.power;
+    restoredCard.currentPower = restoredCard.power;
+  } else {
+    // マスターデータが見つからない場合（特殊トークン等）のフォールバック
+    restoredCard = { ...card };
+    if ('basePower' in restoredCard)
+      restoredCard.power = restoredCard.basePower;
+    restoredCard.currentPower = restoredCard.power;
+    restoredCard.skills = []; // 付与されたスキルなどをクリア
+  }
+
+  // 【傀儡】傀儡スキルで奪ったカードは、元の持ち主の墓地に返却する
+  const discardOwner = card.puppetOriginalOwner || owner;
+  if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
+  restoredCard.owner = discardOwner;
+
+  (discardOwner === 'blue'
+    ? GameState.playerDiscard
+    : GameState.enemyDiscard
+  ).push(restoredCard);
+  updateDeckDisplay(discardOwner);
+  return false;
 }
 
 export async function triggerSplitSkill(owner, lane, card) {
-    const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    let tokenId = card.summonId || card.skills?.find(s => s.id === 'split')?.summonId;
-    if (!tokenId) {
-        const tokenMap = { 'bird': 'token_ent', 'octopus': 'legs', 'phoenix': 'token_phoenix', 'egg': 'token_dragon' };
-        let testId = card.baseId || card.id;
-        if (testId && testId.includes('_') && !testId.startsWith('token_')) {
-            const master = CARD_MASTER.find(c => c.name === card.name);
-            if (master) testId = master.id;
-        }
-        tokenId = tokenMap[testId] || 'legs';
-    }
-    const tL = CARD_MASTER.find(m => m.id === tokenId) || { name: 'トークン', power: 1 };
-
-    // skills配列・skillプロパティの両方に対応したスキル値の取得
-    let val = getSkillValue(card, 'split');
-    if (val === undefined || val === null || isNaN(val)) {
-        val = tL.power || 2;
-    }
-
-    board[lane] = {
-        id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
-        owner,
-        ...tL,
-        imgUrl: `assets/cards/card_${tokenId}.jpg`,
-        power: val,
-        currentPower: val,
-        basePower: val,
-        rarity: tL.rarity || 1
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  let tokenId =
+    card.summonId || card.skills?.find((s) => s.id === 'split')?.summonId;
+  if (!tokenId) {
+    const tokenMap = {
+      bird: 'token_ent',
+      octopus: 'legs',
+      phoenix: 'token_phoenix',
+      egg: 'token_dragon',
     };
+    let testId = card.baseId || card.id;
+    if (testId && testId.includes('_') && !testId.startsWith('token_')) {
+      const master = CARD_MASTER.find((c) => c.name === card.name);
+      if (master) testId = master.id;
+    }
+    tokenId = tokenMap[testId] || 'legs';
+  }
+  const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
+    name: 'トークン',
+    power: 1,
+  };
 
-    playSound(SOUNDS.sePlace);
-    renderBoard();
-    const cEl = document.querySelector(`#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`);
-    if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
-    await sleep(300);
+  // skills配列・skillプロパティの両方に対応したスキル値の取得
+  let val = getSkillValue(card, 'split');
+  if (val === undefined || val === null || isNaN(val)) {
+    val = tL.power || 2;
+  }
+
+  board[lane] = {
+    id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
+    owner,
+    ...tL,
+    imgUrl: `assets/cards/card_${tokenId}.jpg`,
+    power: val,
+    currentPower: val,
+    basePower: val,
+    rarity: tL.rarity || 1,
+  };
+
+  playSound(SOUNDS.sePlace);
+  renderBoard();
+  const cEl = document.querySelector(
+    `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`
+  );
+  if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
+  await sleep(300);
 }
 
 export function updateDeckDisplay(owner) {
-    // DOMによる deck-info の innerText 上書きは React のツリーを破壊するため削除。
-    // 代わりに React 側の再描画フックを呼び出します（PlayerArea / EnemyArea に反映される）
-    if (updateBattleUIHook) updateBattleUIHook();
+  // DOMによる deck-info の innerText 上書きは React のツリーを破壊するため削除。
+  // 代わりに React 側の再描画フックを呼び出します（PlayerArea / EnemyArea に反映される）
+  if (updateBattleUIHook) updateBattleUIHook();
 }
 
 export async function cleanupDestroyedCards(excludeCard = null) {
-    let anyDestroyedAtAll = false;
-    while (true) {
-        let destroyedItems = [];
-        [GameState.playerBoard, GameState.enemyBoard].forEach((board, bIdx) => {
-            const side = bIdx === 0 ? 'player' : 'enemy';
-            for (let i = 0; i < 3; i++) {
-                if (board[i] && board[i].currentPower <= 0 && board[i] !== excludeCard && !board[i].isSkillResolving) {
-                    const el = document.querySelector(`#${side}-lanes .cell[data-lane="${i}"] .card`);
-                    destroyedItems.push({ board, index: i, el, owner: bIdx === 0 ? 'blue' : 'red', card: board[i] });
-                }
-
-            }
-        });
-
-
-        if (destroyedItems.length === 0) break;
-        anyDestroyedAtAll = true;
-
-        // 演出: 死亡ボイス再生（揺れよりも先に開始）
-        destroyedItems.forEach(item => {
-            if (item.card && item.card.voiceCategory) {
-                playCardVoice(item.card.voiceCategory, 'death');
-            }
-        });
-        // その後に揺らす
-        destroyedItems.forEach(item => {
-            if (item.el) {
-                // アニメーションを再トリガーするために一度クラスを外してリフロー
-                item.el.classList.remove('anim-shake');
-                void item.el.offsetWidth;
-                item.el.classList.add('anim-shake');
-            }
-        });
-        playSound(SOUNDS.seDamage);
-        await sleep(400);
-
-        // 実際の除去処理
-        for (const item of destroyedItems) {
-            if (item.board[item.index] !== item.card) continue;
-            item.board[item.index] = null;
-            await discardCard(item.owner, item.card, item.index);
-            
-            // 報復（retaliate）スキルの誘発
-            const ownerSide = item.owner; // 'blue' or 'red'
-            const alliedBoard = ownerSide === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-            const sideLabel = ownerSide === 'blue' ? 'player' : 'enemy';
-            
-            for (let j = 0; j < 3; j++) {
-                const ally = alliedBoard[j];
-                if (ally && hasSkill(ally, 'retaliate')) {
-                    const buffVal = getSkillValue(ally, 'retaliate') || 2;
-                    ally.currentPower += buffVal;
-                    
-                    const allyEl = document.querySelector(`#${sideLabel}-lanes .cell[data-lane="${j}"] .card`);
-                    if (allyEl) {
-                        createDamagePopup(allyEl, `報復 +${buffVal}`, '#f87171');
-                    }
-                }
-            }
+  let anyDestroyedAtAll = false;
+  while (true) {
+    let destroyedItems = [];
+    [GameState.playerBoard, GameState.enemyBoard].forEach((board, bIdx) => {
+      const side = bIdx === 0 ? 'player' : 'enemy';
+      for (let i = 0; i < 3; i++) {
+        if (
+          board[i] &&
+          board[i].currentPower <= 0 &&
+          board[i] !== excludeCard &&
+          !board[i].isSkillResolving
+        ) {
+          const el = document.querySelector(
+            `#${side}-lanes .cell[data-lane="${i}"] .card`
+          );
+          destroyedItems.push({
+            board,
+            index: i,
+            el,
+            owner: bIdx === 0 ? 'blue' : 'red',
+            card: board[i],
+          });
         }
+      }
+    });
 
-        playSound(SOUNDS.seDestroy);
-        renderBoard();
-        await sleep(400); // 連続破壊の際の間隔
+    if (destroyedItems.length === 0) break;
+    anyDestroyedAtAll = true;
+
+    // 演出: 死亡ボイス再生（揺れよりも先に開始）
+    destroyedItems.forEach((item) => {
+      if (item.card && item.card.voiceCategory) {
+        playCardVoice(item.card.voiceCategory, 'death');
+      }
+    });
+    // その後に揺らす
+    destroyedItems.forEach((item) => {
+      if (item.el) {
+        // アニメーションを再トリガーするために一度クラスを外してリフロー
+        item.el.classList.remove('anim-shake');
+        void item.el.offsetWidth;
+        item.el.classList.add('anim-shake');
+      }
+    });
+    playSound(SOUNDS.seDamage);
+    await sleep(400);
+
+    // 実際の除去処理
+    for (const item of destroyedItems) {
+      if (item.board[item.index] !== item.card) continue;
+      item.board[item.index] = null;
+      await discardCard(item.owner, item.card, item.index);
+
+      // 報復（retaliate）スキルの誘発
+      const ownerSide = item.owner; // 'blue' or 'red'
+      const alliedBoard =
+        ownerSide === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+      const sideLabel = ownerSide === 'blue' ? 'player' : 'enemy';
+
+      for (let j = 0; j < 3; j++) {
+        const ally = alliedBoard[j];
+        if (ally && hasSkill(ally, 'retaliate')) {
+          const buffVal = getSkillValue(ally, 'retaliate') || 2;
+          ally.currentPower += buffVal;
+
+          const allyEl = document.querySelector(
+            `#${sideLabel}-lanes .cell[data-lane="${j}"] .card`
+          );
+          if (allyEl) {
+            createDamagePopup(allyEl, `報復 +${buffVal}`, '#f87171');
+          }
+        }
+      }
     }
-    return anyDestroyedAtAll;
+
+    playSound(SOUNDS.seDestroy);
+    renderBoard();
+    await sleep(400); // 連続破壊の際の間隔
+  }
+  return anyDestroyedAtAll;
 }
 
 // 以前の定義を削除
 export async function triggerExplodeSkill(owner, lane, card) {
-    const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const side = owner === 'blue' ? 'player' : 'enemy';
-    const val = getSkillValue(card, 'explode') || 3;
-    const adj = lane === 1 ? [0, 2] : [1];
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const side = owner === 'blue' ? 'player' : 'enemy';
+  const val = getSkillValue(card, 'explode') || 3;
+  const adj = lane === 1 ? [0, 2] : [1];
 
-    console.log(`Exploding at ${lane} with value ${val}`);
+  console.log(`Exploding at ${lane} with value ${val}`);
 
-    let targetsFound = false;
-    adj.forEach(j => {
-        if (board[j]) {
-            board[j].currentPower -= val;
-            targetsFound = true;
-        }
+  let targetsFound = false;
+  adj.forEach((j) => {
+    if (board[j]) {
+      board[j].currentPower -= val;
+      targetsFound = true;
+    }
+  });
+
+  if (targetsFound) {
+    playSound(SOUNDS.seDamage);
+    // renderBoard(); // アニメーションを壊すため避ける
+    adj.forEach((j) => updateCardPowerOnly(j, side));
+
+    // 描画更新後の新しいDOM要素に対して演出をかける
+    adj.forEach((j) => {
+      const cEl = document.querySelector(
+        `#${side}-lanes .cell[data-lane="${j}"] .card`
+      );
+      if (cEl) {
+        requestAnimationFrame(() => {
+          cEl.classList.add('anim-shake');
+        });
+        createDamagePopup(cEl, `誘爆 -${val}`, '#ef4444');
+      }
     });
 
-    if (targetsFound) {
-        playSound(SOUNDS.seDamage);
-        // renderBoard(); // アニメーションを壊すため避ける
-        adj.forEach(j => updateCardPowerOnly(j, side));
-
-        // 描画更新後の新しいDOM要素に対して演出をかける
-        adj.forEach(j => {
-            const cEl = document.querySelector(`#${side}-lanes .cell[data-lane="${j}"] .card`);
-            if (cEl) {
-                requestAnimationFrame(() => {
-                    cEl.classList.add('anim-shake');
-                });
-                createDamagePopup(cEl, `誘爆 -${val}`, '#ef4444');
-            }
-        });
-
-        await sleep(500);
-        await cleanupDestroyedCards();
-    }
+    await sleep(500);
+    await cleanupDestroyedCards();
+  }
 }
 
 // AI用: アクションキューから指定された型のアクションを1つ取り出して削除する
 export function consumeAIAction(types) {
-    if (!GameState.aiDecision || !GameState.aiDecision.actionQueue) return null;
-    const typeList = Array.isArray(types) ? types : [types];
-    const idx = GameState.aiDecision.actionQueue.findIndex(a => typeList.includes(a.type));
-    if (idx !== -1) {
-        return GameState.aiDecision.actionQueue.splice(idx, 1)[0];
-    }
-    return null;
+  if (!GameState.aiDecision || !GameState.aiDecision.actionQueue) return null;
+  const typeList = Array.isArray(types) ? types : [types];
+  const idx = GameState.aiDecision.actionQueue.findIndex((a) =>
+    typeList.includes(a.type)
+  );
+  if (idx !== -1) {
+    return GameState.aiDecision.actionQueue.splice(idx, 1)[0];
+  }
+  return null;
 }
 export function drawCard(owner) {
-    let d = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck, h = owner === 'blue' ? GameState.playerHand : GameState.enemyHand, ds = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+  let d = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck,
+    h = owner === 'blue' ? GameState.playerHand : GameState.enemyHand,
+    ds = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
 
-    // 手札がいっぱいの場合は何もしない
-    if (h.length >= 4) {
-        updateDeckDisplay(owner);
-        return;
-    }
-
-    if (d.length === 0 && ds.length > 0) {
-        d.push(...shuffleArray(ds));
-        ds.length = 0;
-        playSound(SOUNDS.seSkill);
-        showDeckRefreshEffect(owner);
-
-        // 山札補充時のペナルティ（体力が半分（切り上げ）になるようにダメージ）
-        const currentHP = owner === 'blue' ? GameState.playerHP : GameState.enemyHP;
-        const newHP = Math.ceil(currentHP / 2);
-        const damage = currentHP - newHP;
-
-        if (damage > 0) {
-            if (owner === 'blue') {
-                GameState.playerHP = newHP;
-            } else {
-                GameState.enemyHP = newHP;
-            }
-            createDamagePopup(document.getElementById(`${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`), `-${damage}`, '#ef4444');
-            playSound(SOUNDS.seDamage);
-            showSpeechBubble(owner);
-            updateHPBar();
-            checkWinCondition();
-        }
-    }
-
-    if (d.length > 0) {
-        const drawn = d.pop();
-        if (drawn.currentPower === undefined || Number.isNaN(drawn.currentPower) || (drawn.currentPower <= 0 && (drawn.power || 0) > 0)) {
-            drawn.currentPower = drawn.power || 0;
-        }
-        h.push(drawn);
-    }
-
+  // 手札がいっぱいの場合は何もしない
+  if (h.length >= 4) {
     updateDeckDisplay(owner);
-    if (owner === 'blue') renderHand();
+    return;
+  }
+
+  if (d.length === 0 && ds.length > 0) {
+    d.push(...shuffleArray(ds));
+    ds.length = 0;
+    playSound(SOUNDS.seSkill);
+    showDeckRefreshEffect(owner);
+
+    // 山札補充時のペナルティ（体力が半分（切り上げ）になるようにダメージ）
+    const currentHP = owner === 'blue' ? GameState.playerHP : GameState.enemyHP;
+    const newHP = Math.ceil(currentHP / 2);
+    const damage = currentHP - newHP;
+
+    if (damage > 0) {
+      if (owner === 'blue') {
+        GameState.playerHP = newHP;
+      } else {
+        GameState.enemyHP = newHP;
+      }
+      createDamagePopup(
+        document.getElementById(
+          `${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`
+        ),
+        `-${damage}`,
+        '#ef4444'
+      );
+      playSound(SOUNDS.seDamage);
+      showSpeechBubble(owner);
+      updateHPBar();
+      checkWinCondition();
+    }
+  }
+
+  if (d.length > 0) {
+    const drawn = d.pop();
+    if (
+      drawn.currentPower === undefined ||
+      Number.isNaN(drawn.currentPower) ||
+      (drawn.currentPower <= 0 && (drawn.power || 0) > 0)
+    ) {
+      drawn.currentPower = drawn.power || 0;
+    }
+    h.push(drawn);
+  }
+
+  updateDeckDisplay(owner);
+  if (owner === 'blue') renderHand();
 }
 
 export async function handleMoveSkills(owner) {
-    if (owner !== 'blue' && GameState.gameMode !== 'online') {
-        const b = GameState.enemyBoard;
-        // AIの移動判断
-        const bestMoves = evaluateAIMoves(GameState);
-        if (bestMoves) {
-            for (let move of bestMoves) {
-                b[move.to] = b[move.from];
-                b[move.from] = null;
-                playSound(SOUNDS.seClick);
-                await sleep(300);
-                renderBoard();
-            }
-        }
-        return;
+  if (owner !== 'blue' && GameState.gameMode !== 'online') {
+    const b = GameState.enemyBoard;
+    // AIの移動判断
+    const bestMoves = evaluateAIMoves(GameState);
+    if (bestMoves) {
+      for (let move of bestMoves) {
+        b[move.to] = b[move.from];
+        b[move.from] = null;
+        playSound(SOUNDS.seClick);
+        await sleep(300);
+        renderBoard();
+      }
     }
+    return;
+  }
 
-    const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const movedIds = new Set();
-    for (let i = 0; i < 3; i++) {
-        const c = b[i];
-        if (c && typeof hasSkill === 'function' && hasSkill(c, 'move') && (c.stunTurns || 0) === 0 && !movedIds.has(c.uid || c.id)) {
-            const possibleLanes = [];
-            if (i > 0) possibleLanes.push(i - 1);
-            if (i < 2) possibleLanes.push(i + 1);
-            if (possibleLanes.length === 0) continue;
+  const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const movedIds = new Set();
+  for (let i = 0; i < 3; i++) {
+    const c = b[i];
+    if (
+      c &&
+      typeof hasSkill === 'function' &&
+      hasSkill(c, 'move') &&
+      (c.stunTurns || 0) === 0 &&
+      !movedIds.has(c.uid || c.id)
+    ) {
+      const possibleLanes = [];
+      if (i > 0) possibleLanes.push(i - 1);
+      if (i < 2) possibleLanes.push(i + 1);
+      if (possibleLanes.length === 0) continue;
 
-            if (owner === 'blue') {
-                GameState.placementMessage = `移動するレーンを選んでください`;
-                if (updateBattleUIHook) updateBattleUIHook();
-            }
+      if (owner === 'blue') {
+        GameState.placementMessage = `移動するレーンを選んでください`;
+        if (updateBattleUIHook) updateBattleUIHook();
+      }
 
-            const targetIdx = await waitPlayerLaneSelection(1, owner, c, false, possibleLanes, false, true, '移動終了');
+      const targetIdx = await waitPlayerLaneSelection(
+        1,
+        owner,
+        c,
+        false,
+        possibleLanes,
+        false,
+        true,
+        '移動終了'
+      );
 
-            if (owner === 'blue') {
-                GameState.placementMessage = null;
-            }
-            if (targetIdx && targetIdx.length > 0) {
-                const target = targetIdx[0];
-                if (target !== i) {
-                    if (b[target]) {
-                        if (!(await discardCard(owner, b[target], target, false))) b[target] = null;
-                    }
-                    movedIds.add(c.uid || c.id);
-                    b[target] = c;
-                    b[i] = null;
-                    playSound(SOUNDS.sePlace);
-                    renderBoard();
-                    await sleep(300);
-                }
-            }
+      if (owner === 'blue') {
+        GameState.placementMessage = null;
+      }
+      if (targetIdx && targetIdx.length > 0) {
+        const target = targetIdx[0];
+        if (target !== i) {
+          if (b[target]) {
+            if (!(await discardCard(owner, b[target], target, false)))
+              b[target] = null;
+          }
+          movedIds.add(c.uid || c.id);
+          b[target] = c;
+          b[i] = null;
+          playSound(SOUNDS.sePlace);
+          renderBoard();
+          await sleep(300);
         }
+      }
     }
+  }
 }
 
 export async function startTurn(owner) {
-    if (GameState.isBattleEnded) return; GameState.isProcessing = true;
+  if (GameState.isBattleEnded) return;
+  GameState.isProcessing = true;
 
-    // スタン（拘束/待機）状態の更新（そのプレイヤーのターン開始時に減算）
-    const myBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    myBoard.forEach(c => {
-        if (c && c.stunTurns > 0) {
-            c.stunTurns--;
-        }
-    });
-
-    GameState.currentTurn = owner === 'blue' ? 'player' : 'enemy';
-    if (updateBattleUIHook) updateBattleUIHook();
-    renderBoard(); // スタン状態の見た目更新のため描画
-    await sleep(50); // Reactの再描画(DOM更新)を確実に行わせるための待機時間
-
-    const c = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
-    // ターン数のカウント
-    GameState.turnCount++;
-
-    // ターン開始時スキルの発動
-    await triggerStartTurnSkills(owner);
-    if (GameState.isBattleEnded) return;
-
-    // 移動スキルの処理
-    await handleMoveSkills(owner);
-    if (GameState.isBattleEnded) return;
-
-    // SPの増加（先攻の1ターン目や追加ターン中は増えない）
-    if (GameState.turnCount > 1 && GameState.attackSkipCount === 0) {
-        if (c.leaderSkill && c.leaderSkill.cost) {
-            if (owner === 'blue') GameState.playerSP = Math.min(c.leaderSkill.cost, GameState.playerSP + 1);
-            else GameState.enemySP = Math.min(c.leaderSkill.cost, GameState.enemySP + 1);
-        }
-        updateSPOrbs(owner);
+  // スタン（拘束/待機）状態の更新（そのプレイヤーのターン開始時に減算）
+  const myBoard =
+    owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  myBoard.forEach((c) => {
+    if (c && c.stunTurns > 0) {
+      c.stunTurns--;
     }
+  });
 
-    let skipAttack = false;
-    if (GameState.attackSkipCount > 0) {
-        skipAttack = true;
-        GameState.attackSkipCount--;
-    }
+  GameState.currentTurn = owner === 'blue' ? 'player' : 'enemy';
+  if (updateBattleUIHook) updateBattleUIHook();
+  renderBoard(); // スタン状態の見た目更新のため描画
+  await sleep(50); // Reactの再描画(DOM更新)を確実に行わせるための待機時間
 
-    if (skipAttack) {
-        // 何もせず攻撃フェーズをスキップ
-    } else {
-        if ((owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(x => x !== null)) { await executeCombatPhase(owner); if (checkWinCondition()) return; }
-    }
+  const c = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
+  // ターン数のカウント
+  GameState.turnCount++;
 
-    // 【デバッグ】プレイヤー攻撃終了後の実際の盤面状態をAIデバッグと同形式で出力
-    if (owner === 'blue') {
-        const dumpBoard = (b) => b.map(c => c ? `${c.name}(${c.currentPower !== undefined ? c.currentPower : c.power})` : 'EMPTY').join(' | ');
-        console.log(`[Player Turn End] Board: [Player] ${dumpBoard(GameState.playerBoard)} vs [AI] ${dumpBoard(GameState.enemyBoard)}`);
-    }
+  // ターン開始時スキルの発動
+  await triggerStartTurnSkills(owner);
+  if (GameState.isBattleEnded) return;
 
-    const currentBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const hasMaintain = currentBoard.some(c => c && hasSkill(c, 'maintain'));
-    if (hasMaintain) {
-        const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        if (hand.length < 4) {
-            const voidTpl = CARD_MASTER.find(m => m.id === 'token_void') || { name: '虚空', power: 1 };
-            const voidToken = {
-                ...voidTpl,
-                id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_maintain`,
-                uid: `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidmaintain`,
-                filter: voidTpl.filter,
-                power: voidTpl.power,
-                currentPower: voidTpl.power,
-                basePower: voidTpl.power,
-                skill: voidTpl.skill || 'none',
-                voiceCategory: voidTpl.voiceCategory || 'stone',
-                isToken: true,
-                isMorphToken: true
-            };
-            hand.push(voidToken);
-            playSound(SOUNDS.seDraw);
-            if (owner === 'blue') renderHand();
-        }
-    } else {
-        drawCard(owner);
+  // 移動スキルの処理
+  await handleMoveSkills(owner);
+  if (GameState.isBattleEnded) return;
+
+  // SPの増加（先攻の1ターン目や追加ターン中は増えない）
+  if (GameState.turnCount > 1 && GameState.attackSkipCount === 0) {
+    if (c.leaderSkill && c.leaderSkill.cost) {
+      if (owner === 'blue')
+        GameState.playerSP = Math.min(
+          c.leaderSkill.cost,
+          GameState.playerSP + 1
+        );
+      else
+        GameState.enemySP = Math.min(c.leaderSkill.cost, GameState.enemySP + 1);
     }
-    if (owner === 'blue') {
-        GameState.selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
-        GameState.isProcessing = false;
-        GameState.battlePhase = 'MAIN_ACTION';
-    } else {
-        renderBoard(); // 重要: 敵ターン開始前の状態（戦闘結果等）を画面に反映
-        GameState.isProcessing = false;
-        dispatchBattleAction({ type: 'enemyTurn' });
+    updateSPOrbs(owner);
+  }
+
+  let skipAttack = false;
+  if (GameState.attackSkipCount > 0) {
+    skipAttack = true;
+    GameState.attackSkipCount--;
+  }
+
+  if (skipAttack) {
+    // 何もせず攻撃フェーズをスキップ
+  } else {
+    if (
+      (owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(
+        (x) => x !== null
+      )
+    ) {
+      await executeCombatPhase(owner);
+      if (checkWinCondition()) return;
     }
+  }
+
+  // 【デバッグ】プレイヤー攻撃終了後の実際の盤面状態をAIデバッグと同形式で出力
+  if (owner === 'blue') {
+    const dumpBoard = (b) =>
+      b
+        .map((c) =>
+          c
+            ? `${c.name}(${c.currentPower !== undefined ? c.currentPower : c.power})`
+            : 'EMPTY'
+        )
+        .join(' | ');
+    console.log(
+      `[Player Turn End] Board: [Player] ${dumpBoard(GameState.playerBoard)} vs [AI] ${dumpBoard(GameState.enemyBoard)}`
+    );
+  }
+
+  const currentBoard =
+    owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const hasMaintain = currentBoard.some((c) => c && hasSkill(c, 'maintain'));
+  if (hasMaintain) {
+    const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+    if (hand.length < 4) {
+      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+        name: '虚空',
+        power: 1,
+      };
+      const voidToken = {
+        ...voidTpl,
+        id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_maintain`,
+        uid: `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidmaintain`,
+        filter: voidTpl.filter,
+        power: voidTpl.power,
+        currentPower: voidTpl.power,
+        basePower: voidTpl.power,
+        skill: voidTpl.skill || 'none',
+        voiceCategory: voidTpl.voiceCategory || 'stone',
+        isToken: true,
+        isMorphToken: true,
+      };
+      hand.push(voidToken);
+      playSound(SOUNDS.seDraw);
+      if (owner === 'blue') renderHand();
+    }
+  } else {
+    drawCard(owner);
+  }
+  if (owner === 'blue') {
+    GameState.selectedCardIndex = null;
+    updateCardDetail(null);
+    renderHand();
+    renderBoard();
+    GameState.isProcessing = false;
+    GameState.battlePhase = 'MAIN_ACTION';
+  } else {
+    renderBoard(); // 重要: 敵ターン開始前の状態（戦闘結果等）を画面に反映
+    GameState.isProcessing = false;
+    dispatchBattleAction({ type: 'enemyTurn' });
+  }
 }
 
 export async function endPlayerTurn() {
-    if (GameState.isProcessing) return;
-    // 確認モーダルを表示
-    const confirmed = await new Promise(resolve => {
-        showConfirmModal(
-            'ターンを終了しますか？\nまだカードを使用できます。',
-            () => resolve(true),
-            () => resolve(false)
-        );
-    });
-    if (!confirmed) return;
-    document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
-    GameState.selectedCardIndex = null; updateCardDetail(null); renderHand(); renderBoard();
-    // processActionQueue内でロックするため、ここは解除しておく（または最初からセットしない）
-    GameState.isProcessing = false;
-    dispatchBattleAction({ type: 'endTurn', owner: 'blue' });
+  if (GameState.isProcessing) return;
+  // 確認モーダルを表示
+  const confirmed = await new Promise((resolve) => {
+    showConfirmModal(
+      'ターンを終了しますか？\nまだカードを使用できます。',
+      () => resolve(true),
+      () => resolve(false)
+    );
+  });
+  if (!confirmed) return;
+  document
+    .querySelectorAll('.cell')
+    .forEach((c) => c.classList.remove('highlight'));
+  GameState.selectedCardIndex = null;
+  updateCardDetail(null);
+  renderHand();
+  renderBoard();
+  // processActionQueue内でロックするため、ここは解除しておく（または最初からセットしない）
+  GameState.isProcessing = false;
+  dispatchBattleAction({ type: 'endTurn', owner: 'blue' });
 }
 
 export async function endTurnLogic(o) {
-    if (!GameState.isBattleEnded) {
-        if (o === 'blue') {
-            if (GameState.playerSealedLanes) GameState.playerSealedLanes = GameState.playerSealedLanes.map(v => Math.max(0, v - 1));
-        } else {
-            if (GameState.enemySealedLanes) GameState.enemySealedLanes = GameState.enemySealedLanes.map(v => Math.max(0, v - 1));
-        }
-
-        const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        if (hand.length > 3) {
-            const discardCount = hand.length - 3;
-            GameState.placementMessage = null;
-            if (updateBattleUIHook) updateBattleUIHook();
-
-            if (o === 'blue') {
-                const indices = await waitPlayerHandSelection(discardCount, 'blue', true, '手札が上限を超えています。捨てるカードを選択してください。');
-                const sortedIndices = [...indices].sort((a, b) => b - a);
-                for (const idx of sortedIndices) {
-                    const dropped = GameState.playerHand.splice(idx, 1)[0];
-                    await discardCard('blue', dropped, undefined, false);
-                }
-            } else {
-                if (GameState.gameMode === 'online') {
-                    const indices = await waitPlayerHandSelection(discardCount, 'red', true);
-                    const sortedIndices = [...indices].sort((a, b) => b - a);
-                    for (const idx of sortedIndices) {
-                        const dropped = GameState.enemyHand.splice(idx, 1)[0];
-                        await discardCard('red', dropped, undefined, false);
-                    }
-                } else {
-                    let candidates = GameState.enemyHand.map((c, i) => ({ idx: i, power: c.power || 0 }));
-                    candidates.sort((a, b) => b.power - a.power);
-                    const sortedIndices = candidates.slice(0, discardCount).map(c => c.idx).sort((a, b) => b - a);
-                    for (const idx of sortedIndices) {
-                        const dropped = GameState.enemyHand.splice(idx, 1)[0];
-                        await discardCard('red', dropped, undefined, false);
-                    }
-                }
-            }
-
-            GameState.placementMessage = null;
-            renderHand();
-        }
-
-        renderBoard();
-        let nextOwner = o === 'blue' ? 'red' : 'blue';
-        if (GameState.extraTurnCount > 0) {
-            GameState.extraTurnCount--;
-            nextOwner = o;
-        }
-        await startTurn(nextOwner);
+  if (!GameState.isBattleEnded) {
+    if (o === 'blue') {
+      if (GameState.playerSealedLanes)
+        GameState.playerSealedLanes = GameState.playerSealedLanes.map((v) =>
+          Math.max(0, v - 1)
+        );
+    } else {
+      if (GameState.enemySealedLanes)
+        GameState.enemySealedLanes = GameState.enemySealedLanes.map((v) =>
+          Math.max(0, v - 1)
+        );
     }
+
+    const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+    if (hand.length > 3) {
+      const discardCount = hand.length - 3;
+      GameState.placementMessage = null;
+      if (updateBattleUIHook) updateBattleUIHook();
+
+      if (o === 'blue') {
+        const indices = await waitPlayerHandSelection(
+          discardCount,
+          'blue',
+          true,
+          '手札が上限を超えています。捨てるカードを選択してください。'
+        );
+        const sortedIndices = [...indices].sort((a, b) => b - a);
+        for (const idx of sortedIndices) {
+          const dropped = GameState.playerHand.splice(idx, 1)[0];
+          await discardCard('blue', dropped, undefined, false);
+        }
+      } else {
+        if (GameState.gameMode === 'online') {
+          const indices = await waitPlayerHandSelection(
+            discardCount,
+            'red',
+            true
+          );
+          const sortedIndices = [...indices].sort((a, b) => b - a);
+          for (const idx of sortedIndices) {
+            const dropped = GameState.enemyHand.splice(idx, 1)[0];
+            await discardCard('red', dropped, undefined, false);
+          }
+        } else {
+          let candidates = GameState.enemyHand.map((c, i) => ({
+            idx: i,
+            power: c.power || 0,
+          }));
+          candidates.sort((a, b) => b.power - a.power);
+          const sortedIndices = candidates
+            .slice(0, discardCount)
+            .map((c) => c.idx)
+            .sort((a, b) => b - a);
+          for (const idx of sortedIndices) {
+            const dropped = GameState.enemyHand.splice(idx, 1)[0];
+            await discardCard('red', dropped, undefined, false);
+          }
+        }
+      }
+
+      GameState.placementMessage = null;
+      renderHand();
+    }
+
+    renderBoard();
+    let nextOwner = o === 'blue' ? 'red' : 'blue';
+    if (GameState.extraTurnCount > 0) {
+      GameState.extraTurnCount--;
+      nextOwner = o;
+    }
+    await startTurn(nextOwner);
+  }
 }
 
-
-
 export async function playCard(o, hI, l) {
-    const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand, b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const playingCard = h[hI];
-    if (!playingCard) return;
+  const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand,
+    b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const playingCard = h[hI];
+  if (!playingCard) return;
 
-    // 手札からのプレイ（召喚・合体・装備含む）時にアニメーションを再生
-    await playSummonAnimation(playingCard, o);
+  // 手札からのプレイ（召喚・合体・装備含む）時にアニメーションを再生
+  await playSummonAnimation(playingCard, o);
 
-    if (b[l]) {
-        // 合体（Union）の判定
-        const unionSkill = playingCard.skills && playingCard.skills.find(s => s.id === 'union');
-        if (unionSkill && (b[l].baseId === unionSkill.targetId || b[l].id === unionSkill.targetId)) {
-            const targetCard = b[l];
-            const combineId = unionSkill.summonId;
+  if (b[l]) {
+    // 合体（Union）の判定
+    const unionSkill =
+      playingCard.skills && playingCard.skills.find((s) => s.id === 'union');
+    if (
+      unionSkill &&
+      (b[l].baseId === unionSkill.targetId || b[l].id === unionSkill.targetId)
+    ) {
+      const targetCard = b[l];
+      const combineId = unionSkill.summonId;
 
-            // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
-            // 即座に合体を実行する。
-            const consumedCard = h.splice(hI, 1)[0];
-            const masterData = CARD_MASTER.find(c => c.id === combineId);
-            let unionCard = JSON.parse(JSON.stringify(masterData));
-            unionCard.uid = getOrCreateUUID(null);
-            unionCard.owner = o;
-            unionCard.baseId = unionCard.id;
-            unionCard.basePower = unionCard.power;
-            unionCard.currentPower = unionCard.power;
-            unionCard.unionMaterials = [targetCard, consumedCard];
+      // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
+      // 即座に合体を実行する。
+      const consumedCard = h.splice(hI, 1)[0];
+      const masterData = CARD_MASTER.find((c) => c.id === combineId);
+      let unionCard = JSON.parse(JSON.stringify(masterData));
+      unionCard.uid = getOrCreateUUID(null);
+      unionCard.owner = o;
+      unionCard.baseId = unionCard.id;
+      unionCard.basePower = unionCard.power;
+      unionCard.currentPower = unionCard.power;
+      unionCard.unionMaterials = [targetCard, consumedCard];
 
-            b[l] = unionCard;
+      b[l] = unionCard;
 
-            playSound(SOUNDS.sePlace);
-            if (unionCard.voiceCategory) {
-                playCardVoice(unionCard.voiceCategory, 'play');
-            }
+      playSound(SOUNDS.sePlace);
+      if (unionCard.voiceCategory) {
+        playCardVoice(unionCard.voiceCategory, 'play');
+      }
 
-            if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
-            renderHand(); renderBoard();
+      if (o === 'blue') {
+        GameState.selectedCardIndex = null;
+        updateCardDetail(null);
+      }
+      renderHand();
+      renderBoard();
 
-            await resolveOnPlaySkill(o, l, unionCard);
-            await cleanupDestroyedCards();
+      await resolveOnPlaySkill(o, l, unionCard);
+      await cleanupDestroyedCards();
 
-            await sleep(100);
-            renderBoard();
-            return;
+      await sleep(100);
+      renderBoard();
+      return;
+    }
+
+    if (
+      hasSkill(playingCard, 'equip') ||
+      (b[l] && hasSkill(b[l], 'arm_self'))
+    ) {
+      const targetCard = b[l];
+
+      // 【憑依】：「憑依」を持つカードには装備できない。また「憑依」を持つカード自身も装備になれない。
+      if (
+        targetCard &&
+        (hasSkill(targetCard, 'possession') ||
+          hasSkill(playingCard, 'possession') ||
+          hasSkill(targetCard, 'reflect') ||
+          hasSkill(playingCard, 'reflect'))
+      ) {
+        // possession チェック: equip 処理をスキップし、下の通常上書き配置へ進む
+      } else if (targetCard) {
+        // 装備によるパワー加算
+        targetCard.basePower =
+          (targetCard.basePower || 0) + (playingCard.power || 0);
+        targetCard.currentPower =
+          (targetCard.currentPower || 0) + (playingCard.power || 0);
+
+        // スキルの統合
+        if (!targetCard.skills) {
+          targetCard.skills =
+            targetCard.skill !== 'none'
+              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+              : [];
+          if (targetCard.skill !== 'none' && targetCard.summonId) {
+            targetCard.skills[0].summonId = targetCard.summonId;
+          }
+          if (targetCard.skill !== 'none' && targetCard.targetId) {
+            targetCard.skills[0].targetId = targetCard.targetId;
+          }
+          targetCard.skill = 'none';
         }
 
-        if (hasSkill(playingCard, 'equip') || (b[l] && hasSkill(b[l], 'arm_self'))) {
-            const targetCard = b[l];
-
-            // 【憑依】：「憑依」を持つカードには装備できない。また「憑依」を持つカード自身も装備になれない。
-            if (targetCard && (hasSkill(targetCard, 'possession') || hasSkill(playingCard, 'possession') || hasSkill(targetCard, 'reflect') || hasSkill(playingCard, 'reflect'))) {
-                // possession チェック: equip 処理をスキップし、下の通常上書き配置へ進む
-            } else if (targetCard) {
-                // 装備によるパワー加算
-                targetCard.basePower = (targetCard.basePower || 0) + (playingCard.power || 0);
-                targetCard.currentPower = (targetCard.currentPower || 0) + (playingCard.power || 0);
-
-                // スキルの統合
-                if (!targetCard.skills) {
-                    targetCard.skills = targetCard.skill !== 'none' ? [{ id: targetCard.skill, value: targetCard.skillValue }] : [];
-                    if (targetCard.skill !== 'none' && targetCard.summonId) {
-                        targetCard.skills[0].summonId = targetCard.summonId;
-                    }
-                    if (targetCard.skill !== 'none' && targetCard.targetId) {
-                        targetCard.skills[0].targetId = targetCard.targetId;
-                    }
-                    targetCard.skill = 'none';
-                }
-
-                const equipSkills = [];
-                if (playingCard.skill && playingCard.skill !== 'none' && playingCard.skill !== 'equip') {
-                    equipSkills.push({ id: playingCard.skill, value: playingCard.skillValue });
-                }
-                if (playingCard.skills) {
-                    playingCard.skills.forEach(s => {
-                        if (s.id !== 'equip') equipSkills.push(s);
-                    });
-                }
-                mergeCardSkills(targetCard, equipSkills);
-
-                // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
-                if (playingCard.choices && playingCard.choices.length > 0) {
-                    targetCard.choices = targetCard.choices || [];
-                    playingCard.choices.forEach(pc => {
-                        const isDup = targetCard.choices.some(tc => tc.id === pc.id && tc.value === pc.value && tc.choiceGroup === pc.choiceGroup);
-                        if (!isDup) targetCard.choices.push({ ...pc });
-                    });
-                }
-                if (playingCard.choices2 && playingCard.choices2.length > 0) {
-                    targetCard.choices2 = targetCard.choices2 || [];
-                    playingCard.choices2.forEach(pc => {
-                        const isDup = targetCard.choices2.some(tc => tc.id === pc.id && tc.value === pc.value && tc.choiceGroup === pc.choiceGroup);
-                        if (!isDup) targetCard.choices2.push({ ...pc });
-                    });
-                }
-
-                // 手札の装備カードを消費して対象カードにアタッチ
-                const consumedCard = h.splice(hI, 1)[0];
-                targetCard.equippedCards = targetCard.equippedCards || [];
-                targetCard.equippedCards.push(consumedCard);
-
-                // 配置音・ボイス
-                playSound(SOUNDS.sePlace);
-                if (playingCard.voiceCategory) playCardVoice(playingCard.voiceCategory, 'play');
-
-                if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
-                renderHand(); renderBoard();
-
-                // 装備カードが持っていたアクティブスキルを即時発動させる
-                for (const sk of equipSkills) {
-                    if (ACTIVE_SKILLS.includes(sk.id)) {
-                        await sleep(50);
-                        const enhancedSk = { ...sk, _sourceChoices: playingCard.choices, _sourceChoices2: playingCard.choices2 };
-                        await resolveActiveSkillEffect(o, l, targetCard, sk.id, sk.value, enhancedSk);
-                    }
-                }
-
-                await sleep(100);
-                renderBoard();
-                await cleanupDestroyedCards();
-                return; // 装備完了
-            }
+        const equipSkills = [];
+        if (
+          playingCard.skill &&
+          playingCard.skill !== 'none' &&
+          playingCard.skill !== 'equip'
+        ) {
+          equipSkills.push({
+            id: playingCard.skill,
+            value: playingCard.skillValue,
+          });
         }
-        // 通常の上書き配置時の破棄処理（装備でも合体でもない場合、破壊効果は発動させない）
-        if (!(await discardCard(o, b[l], l, false))) b[l] = null;
-    } // if (b[l]) end
+        if (playingCard.skills) {
+          playingCard.skills.forEach((s) => {
+            if (s.id !== 'equip') equipSkills.push(s);
+          });
+        }
+        mergeCardSkills(targetCard, equipSkills);
 
-    b[l] = h.splice(hI, 1)[0];
-    const c = b[l];
+        // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
+        if (playingCard.choices && playingCard.choices.length > 0) {
+          targetCard.choices = targetCard.choices || [];
+          playingCard.choices.forEach((pc) => {
+            const isDup = targetCard.choices.some(
+              (tc) =>
+                tc.id === pc.id &&
+                tc.value === pc.value &&
+                tc.choiceGroup === pc.choiceGroup
+            );
+            if (!isDup) targetCard.choices.push({ ...pc });
+          });
+        }
+        if (playingCard.choices2 && playingCard.choices2.length > 0) {
+          targetCard.choices2 = targetCard.choices2 || [];
+          playingCard.choices2.forEach((pc) => {
+            const isDup = targetCard.choices2.some(
+              (tc) =>
+                tc.id === pc.id &&
+                tc.value === pc.value &&
+                tc.choiceGroup === pc.choiceGroup
+            );
+            if (!isDup) targetCard.choices2.push({ ...pc });
+          });
+        }
 
+        // 手札の装備カードを消費して対象カードにアタッチ
+        const consumedCard = h.splice(hI, 1)[0];
+        targetCard.equippedCards = targetCard.equippedCards || [];
+        targetCard.equippedCards.push(consumedCard);
 
-    // 出現時スキルを持つ場合は即座に保護フラグを立てる（描画待ちの破壊を防ぐ）
-    if (hasActiveSkill(c)) {
-        c.isSkillResolving = true;
+        // 配置音・ボイス
+        playSound(SOUNDS.sePlace);
+        if (playingCard.voiceCategory)
+          playCardVoice(playingCard.voiceCategory, 'play');
+
+        if (o === 'blue') {
+          GameState.selectedCardIndex = null;
+          updateCardDetail(null);
+        }
+        renderHand();
+        renderBoard();
+
+        // 装備カードが持っていたアクティブスキルを即時発動させる
+        for (const sk of equipSkills) {
+          if (ACTIVE_SKILLS.includes(sk.id)) {
+            await sleep(50);
+            const enhancedSk = {
+              ...sk,
+              _sourceChoices: playingCard.choices,
+              _sourceChoices2: playingCard.choices2,
+            };
+            await resolveActiveSkillEffect(
+              o,
+              l,
+              targetCard,
+              sk.id,
+              sk.value,
+              enhancedSk
+            );
+          }
+        }
+
+        await sleep(100);
+        renderBoard();
+        await cleanupDestroyedCards();
+        return; // 装備完了
+      }
     }
+    // 通常の上書き配置時の破棄処理（装備でも合体でもない場合、破壊効果は発動させない）
+    if (!(await discardCard(o, b[l], l, false))) b[l] = null;
+  } // if (b[l]) end
 
-    // 旧環境データ由来等のパワー欠落・異常(手札なのに0やNaN)を自動修復
-    if (c.currentPower === undefined || Number.isNaN(c.currentPower) || (c.currentPower <= 0 && (c.power || 0) > 0)) {
-        c.currentPower = c.power || 0;
-        c.basePower = c.power || 0;
-    }
+  b[l] = h.splice(hI, 1)[0];
+  const c = b[l];
 
-    // 配置音とボイスの再生
-    playSound(SOUNDS.sePlace);
-    if (c.voiceCategory) {
-        playCardVoice(c.voiceCategory, 'play');
-    }
+  // 出現時スキルを持つ場合は即座に保護フラグを立てる（描画待ちの破壊を防ぐ）
+  if (hasActiveSkill(c)) {
+    c.isSkillResolving = true;
+  }
 
-    if (o === 'blue') { GameState.selectedCardIndex = null; updateCardDetail(null); }
-    renderHand(); renderBoard();
+  // 旧環境データ由来等のパワー欠落・異常(手札なのに0やNaN)を自動修復
+  if (
+    c.currentPower === undefined ||
+    Number.isNaN(c.currentPower) ||
+    (c.currentPower <= 0 && (c.power || 0) > 0)
+  ) {
+    c.currentPower = c.power || 0;
+    c.basePower = c.power || 0;
+  }
 
-    // 出現時スキルの発動（単一または複数）
-    if (hasActiveSkill(c)) {
-        await sleep(50); // React DOMコミット待機
-        await resolveOnPlaySkill(o, l, c);
-    }
-    
-    // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認
-    await cleanupDestroyedCards();
+  // 配置音とボイスの再生
+  playSound(SOUNDS.sePlace);
+  if (c.voiceCategory) {
+    playCardVoice(c.voiceCategory, 'play');
+  }
 
+  if (o === 'blue') {
+    GameState.selectedCardIndex = null;
+    updateCardDetail(null);
+  }
+  renderHand();
+  renderBoard();
 
-    // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
-    await cleanupDestroyedCards();
+  // 出現時スキルの発動（単一または複数）
+  if (hasActiveSkill(c)) {
+    await sleep(50); // React DOMコミット待機
+    await resolveOnPlaySkill(o, l, c);
+  }
+
+  // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認
+  await cleanupDestroyedCards();
+
+  // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
+  await cleanupDestroyedCards();
 }
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか
 export function hasActiveSkill(c) {
-    if (!c) return false;
-    return ACTIVE_SKILLS.some(s => hasSkill(c, s));
+  if (!c) return false;
+  return ACTIVE_SKILLS.some((s) => hasSkill(c, s));
 }
 
 export async function triggerStartTurnSkills(owner) {
-    const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    let triggered = false;
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  let triggered = false;
 
-    for (let i = 0; i < 3; i++) {
-        const tr = await triggerStartTurnPassive(owner, i);
-        if (tr) {
-            triggered = true;
-            if (checkWinCondition()) return;
-            updateHPBar();
-            await sleep(300);
-        }
+  for (let i = 0; i < 3; i++) {
+    const tr = await triggerStartTurnPassive(owner, i);
+    if (tr) {
+      triggered = true;
+      if (checkWinCondition()) return;
+      updateHPBar();
+      await sleep(300);
     }
-    if (triggered) {
-        renderBoard();
-        await sleep(200);
-    }
+  }
+  if (triggered) {
+    renderBoard();
+    await sleep(200);
+  }
 }
 
 /**
  * 先攻・後攻を決定する演出
  */
 export async function determineTurnOrder() {
-    GameState.isProcessing = true;
-    GameState.turnCount = 0;
+  GameState.isProcessing = true;
+  GameState.turnCount = 0;
 
-    // ゲーム開始時の初期ドロー（両者3枚ずつ）
-    if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
-        for (let i = 0; i < 3; i++) {
-            drawCard('blue');
-            drawCard('red');
-        }
+  // ゲーム開始時の初期ドロー（両者3枚ずつ）
+  if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
+    for (let i = 0; i < 3; i++) {
+      drawCard('blue');
+      drawCard('red');
     }
+  }
 
-    if (window.startTurnOrderReact) {
-        window.startTurnOrderReact((firstPlayer) => {
-            GameState.firstPlayer = firstPlayer;
-            GameState.isProcessing = false;
-            startMulliganPhase();
-        });
-    } else {
-        // フォールバック
-        GameState.firstPlayer = getSeededRandom() < 0.5 ? 'blue' : 'red';
-        GameState.isProcessing = false;
-        startMulliganPhase();
-    }
+  if (window.startTurnOrderReact) {
+    window.startTurnOrderReact((firstPlayer) => {
+      GameState.firstPlayer = firstPlayer;
+      GameState.isProcessing = false;
+      startMulliganPhase();
+    });
+  } else {
+    // フォールバック
+    GameState.firstPlayer = getSeededRandom() < 0.5 ? 'blue' : 'red';
+    GameState.isProcessing = false;
+    startMulliganPhase();
+  }
 }
 
 export async function startMulliganPhase() {
-    GameState.battlePhase = 'MULLIGAN';
-    GameState.placementMessage = null;
-    if (updateBattleUIHook) updateBattleUIHook();
+  GameState.battlePhase = 'MULLIGAN';
+  GameState.placementMessage = null;
+  if (updateBattleUIHook) updateBattleUIHook();
 
-    let playerPromise = waitPlayerHandSelection(3, 'blue', false, '引き直すカードを3枚まで選んでください');
-    let enemyPromise;
+  let playerPromise = waitPlayerHandSelection(
+    3,
+    'blue',
+    false,
+    '引き直すカードを3枚まで選んでください'
+  );
+  let enemyPromise;
 
-    if (GameState.gameMode === 'online') {
-        enemyPromise = waitPlayerHandSelection(3, 'red', false);
-    } else {
-        enemyPromise = new Promise(resolve => {
-            let aiIndices = [];
-            const aiHand = GameState.enemyHand;
-            const allTakeover = aiHand.length > 0 && aiHand.every(card => hasSkill(card, 'takeover'));
-            if (allTakeover) {
-                aiIndices = aiHand.map((_, i) => i);
-            }
-            resolve(aiIndices);
-        });
+  if (GameState.gameMode === 'online') {
+    enemyPromise = waitPlayerHandSelection(3, 'red', false);
+  } else {
+    enemyPromise = new Promise((resolve) => {
+      let aiIndices = [];
+      const aiHand = GameState.enemyHand;
+      const allTakeover =
+        aiHand.length > 0 && aiHand.every((card) => hasSkill(card, 'takeover'));
+      if (allTakeover) {
+        aiIndices = aiHand.map((_, i) => i);
+      }
+      resolve(aiIndices);
+    });
+  }
+
+  const [playerMulliganIndices, enemyMulliganIndices] = await Promise.all([
+    playerPromise,
+    enemyPromise,
+  ]);
+
+  const processMulligan = (owner, indices) => {
+    if (!indices || indices.length === 0) return;
+    const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+    const deck = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+
+    // 降順にソートして削除
+    const sortedIndices = [...indices].sort((a, b) => b - a);
+    for (const idx of sortedIndices) {
+      const card = hand.splice(idx, 1)[0];
+      deck.push(card);
     }
 
-    const [playerMulliganIndices, enemyMulliganIndices] = await Promise.all([playerPromise, enemyPromise]);
-
-    const processMulligan = (owner, indices) => {
-        if (!indices || indices.length === 0) return;
-        const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        const deck = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-
-        // 降順にソートして削除
-        const sortedIndices = [...indices].sort((a, b) => b - a);
-        for (const idx of sortedIndices) {
-            const card = hand.splice(idx, 1)[0];
-            deck.push(card);
-        }
-
-        // デッキをシャッフル
-        if (owner === 'blue') {
-            GameState.playerDeck = shuffleArray(deck);
-        } else {
-            GameState.enemyDeck = shuffleArray(deck);
-        }
-
-        // 戻した枚数だけドロー
-        for (let i = 0; i < indices.length; i++) {
-            drawCard(owner);
-        }
-    };
-
-    if (getIsHost()) {
-        if (playerMulliganIndices && playerMulliganIndices.length > 0) {
-            processMulligan('blue', playerMulliganIndices);
-        }
-        if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
-            processMulligan('red', enemyMulliganIndices);
-        }
+    // デッキをシャッフル
+    if (owner === 'blue') {
+      GameState.playerDeck = shuffleArray(deck);
     } else {
-        // 乱数消費順序をホストと完全に一致させるため、クライアント側はホスト(red)から先に処理する
-        if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
-            processMulligan('red', enemyMulliganIndices);
-        }
-        if (playerMulliganIndices && playerMulliganIndices.length > 0) {
-            processMulligan('blue', playerMulliganIndices);
-        }
+      GameState.enemyDeck = shuffleArray(deck);
     }
 
-    GameState.placementMessage = null;
-    GameState.battlePhase = 'BATTLE';
+    // 戻した枚数だけドロー
+    for (let i = 0; i < indices.length; i++) {
+      drawCard(owner);
+    }
+  };
 
-    await sleep(800); // マリガン終了後に少し間をあける
+  if (getIsHost()) {
+    if (playerMulliganIndices && playerMulliganIndices.length > 0) {
+      processMulligan('blue', playerMulliganIndices);
+    }
+    if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
+      processMulligan('red', enemyMulliganIndices);
+    }
+  } else {
+    // 乱数消費順序をホストと完全に一致させるため、クライアント側はホスト(red)から先に処理する
+    if (enemyMulliganIndices && enemyMulliganIndices.length > 0) {
+      processMulligan('red', enemyMulliganIndices);
+    }
+    if (playerMulliganIndices && playerMulliganIndices.length > 0) {
+      processMulligan('blue', playerMulliganIndices);
+    }
+  }
 
-    await startTurn(GameState.firstPlayer);
+  GameState.placementMessage = null;
+  GameState.battlePhase = 'BATTLE';
+
+  await sleep(800); // マリガン終了後に少し間をあける
+
+  await startTurn(GameState.firstPlayer);
 }
 
 export async function resolveOnPlaySkill(o, l, c) {
-    // スキル実行中フラグを立てて、パワー0による即時破壊を防ぐ
-    c.isSkillResolving = true;
+  // スキル実行中フラグを立てて、パワー0による即時破壊を防ぐ
+  c.isSkillResolving = true;
 
-    try {
-        // 発動対象スキルのリストを作成
-        let skillsToResolve = [];
-        if (c.skill && c.skill !== 'none') skillsToResolve.push({ id: c.skill, value: c.skillValue });
-        if (Array.isArray(c.skills)) skillsToResolve = skillsToResolve.concat(c.skills);
+  try {
+    // 発動対象スキルのリストを作成
+    let skillsToResolve = [];
+    if (c.skill && c.skill !== 'none')
+      skillsToResolve.push({ id: c.skill, value: c.skillValue });
+    if (Array.isArray(c.skills))
+      skillsToResolve = skillsToResolve.concat(c.skills);
 
-        // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
-        skillsToResolve.sort((a, b) => {
-            const order = { 'quick': 100, 'choice': 90 }; // 数値が大きいほど後回し
-            const orderA = order[a.id] || 0;
-            const orderB = order[b.id] || 0;
-            return orderA - orderB;
-        });
+    // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
+    skillsToResolve.sort((a, b) => {
+      const order = { quick: 100, choice: 90 }; // 数値が大きいほど後回し
+      const orderA = order[a.id] || 0;
+      const orderB = order[b.id] || 0;
+      return orderA - orderB;
+    });
 
-        for (const sk of skillsToResolve) {
-            if (ACTIVE_SKILLS.includes(sk.id)) {
-                await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
-            }
-        }
-
-        // バッジが消える前に一呼吸置く（プレイヤーが効果を確認できるようにするため）
-        await sleep(500);
-
-        // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
-        c.skillTriggered = true;
-        renderBoard();
-
-        // スキル解決によって破壊されたカード（自分自身含む）を除去
-        await cleanupDestroyedCards();
-    } finally {
-        // 処理が完了したらフラグを解除する
-        c.isSkillResolving = false;
+    for (const sk of skillsToResolve) {
+      if (ACTIVE_SKILLS.includes(sk.id)) {
+        await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
+      }
     }
+
+    // バッジが消える前に一呼吸置く（プレイヤーが効果を確認できるようにするため）
+    await sleep(500);
+
+    // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
+    c.skillTriggered = true;
+    renderBoard();
+
+    // スキル解決によって破壊されたカード（自分自身含む）を除去
+    await cleanupDestroyedCards();
+  } finally {
+    // 処理が完了したらフラグを解除する
+    c.isSkillResolving = false;
+  }
 }
 
-
 export async function executeSingleCombat(atk, l) {
-    // quick スキル等での単発攻撃に対応するための簡易ラッパー
-    const state = {
-        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
-        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
-    };
+  // quick スキル等での単発攻撃に対応するための簡易ラッパー
+  const state = {
+    playerBoard: GameState.playerBoard.map((c) =>
+      c ? JSON.parse(JSON.stringify(c)) : null
+    ),
+    enemyBoard: GameState.enemyBoard.map((c) =>
+      c ? JSON.parse(JSON.stringify(c)) : null
+    ),
+    playerHP: GameState.playerHP,
+    enemyHP: GameState.enemyHP,
+    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+  };
 
-    // 特定のレーンだけ発火させるための個別処理
-    const events = [];
-    applySingleCombat(state, atk, l, events);
+  // 特定のレーンだけ発火させるための個別処理
+  const events = [];
+  applySingleCombat(state, atk, l, events);
 
-
-    // UI/演出の実行（イベントログ内で状態も同期更新される）
-    await playEvents(events);
-    await cleanupDestroyedCards();
-    checkWinCondition();
+  // UI/演出の実行（イベントログ内で状態も同期更新される）
+  await playEvents(events);
+  await cleanupDestroyedCards();
+  checkWinCondition();
 }
 
 export async function executeCombatPhase(atk) {
-    // 盤面に攻撃可能なカードが1枚もなければ何もしない
-    const b = atk === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    if (!b.some(x => x !== null)) return;
+  // 盤面に攻撃可能なカードが1枚もなければ何もしない
+  const b = atk === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  if (!b.some((x) => x !== null)) return;
 
-    // --- ロジックの実行 (Engineの呼び出し) ---
-    const currentState = {
-        playerBoard: GameState.playerBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        enemyBoard: GameState.enemyBoard.map(c => c ? JSON.parse(JSON.stringify(c)) : null),
-        playerHP: GameState.playerHP, enemyHP: GameState.enemyHP,
-        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard))
-    };
+  // --- ロジックの実行 (Engineの呼び出し) ---
+  const currentState = {
+    playerBoard: GameState.playerBoard.map((c) =>
+      c ? JSON.parse(JSON.stringify(c)) : null
+    ),
+    enemyBoard: GameState.enemyBoard.map((c) =>
+      c ? JSON.parse(JSON.stringify(c)) : null
+    ),
+    playerHP: GameState.playerHP,
+    enemyHP: GameState.enemyHP,
+    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+  };
 
-    // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
-    const events = calculateCombatPhase(currentState, atk, []);
+  // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
+  const events = calculateCombatPhase(currentState, atk, []);
 
-    // --- UI/演出の実行 (Rendererの呼び出し) ---
-    // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）
-    // イベント再生中にGameStateも連動して更新される
-    await playEvents(events);
+  // --- UI/演出の実行 (Rendererの呼び出し) ---
+  // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）
+  // イベント再生中にGameStateも連動して更新される
+  await playEvents(events);
 
-    // 整合性を取るために最終的な盤面状態を描画
-    renderBoard();
-    
-    // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
-    await cleanupDestroyedCards();
+  // 整合性を取るために最終的な盤面状態を描画
+  renderBoard();
 
-    // 勝敗判定
-    checkWinCondition();
+  // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
+  await cleanupDestroyedCards();
+
+  // 勝敗判定
+  checkWinCondition();
 }
 
 export function endBattle() {
-    document.body.classList.remove('slow-motion');
-    stopAllBGM();
-    GameState.lastBattleResult = GameState.playerHP > 0 ? (GameState.enemyHP <= 0 ? 'win' : 'draw') : (GameState.enemyHP > 0 ? 'lose' : 'draw');
-    GameState.currentTurn = null;
-    if (updateBattleUIHook) updateBattleUIHook();
-    GameState.isProcessing = false; // バトル結果表示と同時にフラグをリセット
+  document.body.classList.remove('slow-motion');
+  stopAllBGM();
+  GameState.lastBattleResult =
+    GameState.playerHP > 0
+      ? GameState.enemyHP <= 0
+        ? 'win'
+        : 'draw'
+      : GameState.enemyHP > 0
+        ? 'lose'
+        : 'draw';
+  GameState.currentTurn = null;
+  if (updateBattleUIHook) updateBattleUIHook();
+  GameState.isProcessing = false; // バトル結果表示と同時にフラグをリセット
 
-    if (GameState.gameMode === 'online') {
-        setPlayerReadyOnly(false);
-        if (getIsHost()) {
-            clearActionQueueAndRegenerateSeed();
-        }
+  if (GameState.gameMode === 'online') {
+    setPlayerReadyOnly(false);
+    if (getIsHost()) {
+      clearActionQueueAndRegenerateSeed();
+    }
+  }
+
+  // 全モード共通：実績用の勝利カウントアップ
+  if (
+    GameState.lastBattleResult === 'win' &&
+    typeof incrementStat === 'function' &&
+    GameState.gameMode !== 'practice'
+  ) {
+    incrementStat('freeBattleWins');
+  }
+
+  setTimeout(() => {
+    if (GameState.gameMode === 'battle_dungeon') {
+      playSound(AUDIO_INSTANCES.bgmChallenge);
+    } else if (GameState.gameMode === 'defense_attack') {
+      playSound(AUDIO_INSTANCES.bgmDefense);
+    } else if (GameState.gameMode === 'high_difficulty') {
+      playSound(AUDIO_INSTANCES.bgmHighDifficulty);
+    } else {
+      playSound(AUDIO_INSTANCES.bgmTitle);
     }
 
-    // 全モード共通：実績用の勝利カウントアップ
-    if (GameState.lastBattleResult === 'win' && typeof incrementStat === 'function' && GameState.gameMode !== 'practice') {
-        incrementStat('freeBattleWins');
+    GameState.appState = 'post_dialogue'; // 全モード共通の設定
+
+    // 勝敗に応じたダイアログのセット (全モード共通)
+    if (GameState.lastBattleResult === 'win') {
+      GameState.dialogueQueue = [
+        {
+          speaker: 'enemy',
+          text: getDialogue(
+            GameState.enemyConfig,
+            GameState.playerConfig,
+            'lose',
+            'enemy'
+          ),
+        },
+        {
+          speaker: 'player',
+          text: getDialogue(
+            GameState.playerConfig,
+            GameState.enemyConfig,
+            'win',
+            'player'
+          ),
+        },
+      ];
+    } else {
+      GameState.dialogueQueue = [
+        {
+          speaker: 'player',
+          text: getDialogue(
+            GameState.playerConfig,
+            GameState.enemyConfig,
+            'lose',
+            'player'
+          ),
+        },
+        {
+          speaker: 'enemy',
+          text: getDialogue(
+            GameState.enemyConfig,
+            GameState.playerConfig,
+            'win',
+            'enemy'
+          ),
+        },
+      ];
     }
 
-    setTimeout(() => {
-        if (GameState.gameMode === 'battle_dungeon') {
-            playSound(AUDIO_INSTANCES.bgmChallenge);
-        } else if (GameState.gameMode === 'defense_attack') {
-            playSound(AUDIO_INSTANCES.bgmDefense);
-        } else if (GameState.gameMode === 'high_difficulty') {
-            playSound(AUDIO_INSTANCES.bgmHighDifficulty);
-        } else {
-            playSound(AUDIO_INSTANCES.bgmTitle);
+    if (GameState.gameMode === 'campaign') {
+      GameState.dialogueQueue = GameState.dialogueQueue.filter(
+        (d) => d.speaker !== 'player'
+      );
+    }
+
+    if (GameState.gameMode === 'battle_dungeon') {
+      const dialogueData = getDungeonCharacterDialogue(
+        GameState.enemyConfig.id
+      );
+      let endText =
+        GameState.lastBattleResult === 'win'
+          ? dialogueData.dialogue?.lose?.default || ''
+          : dialogueData.dialogue?.win?.default || '';
+
+      GameState.dialogueQueue = [{ speaker: 'enemy', text: endText }];
+      setupDialogueScreen();
+      return;
+    }
+
+    if (GameState.gameMode === 'defense_attack') {
+      if (GameState.lastBattleResult === 'win') {
+        // ポイント計算（総ポイント基準）
+        const myCurrentPoints =
+          parseInt(localStorage.getItem('mini_card_battle_defense_points')) ||
+          0;
+        const myTotalPoints =
+          parseInt(
+            localStorage.getItem('mini_card_battle_defense_total_points')
+          ) || myCurrentPoints;
+        const enemyTotalPoints =
+          GameState.enemyConfig.total_points ||
+          GameState.enemyConfig.points ||
+          0;
+
+        let winPoints = 1;
+        if (enemyTotalPoints > myTotalPoints) {
+          if (enemyTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
+            winPoints = 5;
+          } else {
+            winPoints = 3;
+          }
         }
 
-        GameState.appState = 'post_dialogue'; // 全モード共通の設定
-
-        // 勝敗に応じたダイアログのセット (全モード共通)
-        if (GameState.lastBattleResult === 'win') {
-            GameState.dialogueQueue = [
-                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'lose', 'enemy') },
-                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'win', 'player') }
-            ];
-        } else {
-            GameState.dialogueQueue = [
-                { speaker: 'player', text: getDialogue(GameState.playerConfig, GameState.enemyConfig, 'lose', 'player') },
-                { speaker: 'enemy', text: getDialogue(GameState.enemyConfig, GameState.playerConfig, 'win', 'enemy') }
-            ];
-        }
-        
-        if (GameState.gameMode === 'campaign') {
-            GameState.dialogueQueue = GameState.dialogueQueue.filter(d => d.speaker !== 'player');
+        // UI表示の整合性を優先する場合（もし敵設定に保持されていたらそちらを信頼）
+        if (GameState.enemyConfig.calculatedWinPoints) {
+          winPoints = GameState.enemyConfig.calculatedWinPoints;
         }
 
-        if (GameState.gameMode === 'battle_dungeon') {
-            const dialogueData = getDungeonCharacterDialogue(GameState.enemyConfig.id);
-            let endText = GameState.lastBattleResult === 'win' ?
-                (dialogueData.dialogue?.lose?.default || '') :
-                (dialogueData.dialogue?.win?.default || '');
+        const newCurrentPoints = myCurrentPoints + winPoints;
+        const newTotalPoints = myTotalPoints + winPoints;
 
-            GameState.dialogueQueue = [
-                { speaker: 'enemy', text: endText }
-            ];
+        // ローカルの保存
+        localStorage.setItem(
+          'mini_card_battle_defense_points',
+          newCurrentPoints
+        );
+        localStorage.setItem(
+          'mini_card_battle_defense_total_points',
+          newTotalPoints
+        );
+
+        // サーバーへの送信
+        const uuid = getOrCreateUUID();
+        fetch('api/update_points.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uuid: uuid,
+            points: newCurrentPoints,
+            total_points: newTotalPoints,
+          }),
+        }).catch((err) => console.error('Failed to update points:', err));
+
+        // 自身が攻撃して勝利した場合も実績「防衛戦勝利数」としてカウントする
+        if (typeof incrementStat === 'function') {
+          incrementStat('defenseAttackWins');
+        }
+
+        // ポイント獲得のアラートを出してから、会話へ進む
+        playSound(SOUNDS.seSkill);
+        showAlertModal(
+          `防衛戦に勝利しました！\n防衛ポイントを ${winPoints} Pt 獲得しました！`,
+          () => {
             setupDialogueScreen();
-            return;
+          }
+        );
+        return;
+      } else if (GameState.lastBattleResult === 'lose') {
+        // 負けた場合は敵に3ポイントと防衛回数を付与する
+        const enemyUuid = GameState.enemyConfig.uuid;
+        if (enemyUuid) {
+          fetch('api/update_points.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              uuid: enemyUuid,
+              points: 3,
+              total_points: 3, // 総ポイントも加算
+              increment: true,
+              defense_wins: 1,
+            }),
+          }).catch((err) =>
+            console.error('Failed to update enemy points:', err)
+          );
         }
 
-        if (GameState.gameMode === 'defense_attack') {
-            if (GameState.lastBattleResult === 'win') {
-                // ポイント計算（総ポイント基準）
-                const myCurrentPoints = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
-                const myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || myCurrentPoints;
-                const enemyTotalPoints = GameState.enemyConfig.total_points || GameState.enemyConfig.points || 0;
+        showDefenseBattleList();
+      } else {
+        showDefenseBattleList();
+      }
+      return;
+    }
 
-                let winPoints = 1;
-                if (enemyTotalPoints > myTotalPoints) {
-                    if (enemyTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
-                        winPoints = 5;
-                    } else {
-                        winPoints = 3;
-                    }
-                }
-
-                // UI表示の整合性を優先する場合（もし敵設定に保持されていたらそちらを信頼）
-                if (GameState.enemyConfig.calculatedWinPoints) {
-                    winPoints = GameState.enemyConfig.calculatedWinPoints;
-                }
-
-                const newCurrentPoints = myCurrentPoints + winPoints;
-                const newTotalPoints = myTotalPoints + winPoints;
-
-                // ローカルの保存
-                localStorage.setItem('mini_card_battle_defense_points', newCurrentPoints);
-                localStorage.setItem('mini_card_battle_defense_total_points', newTotalPoints);
-
-                // サーバーへの送信
-                const uuid = getOrCreateUUID();
-                fetch('api/update_points.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        uuid: uuid,
-                        points: newCurrentPoints,
-                        total_points: newTotalPoints
-                    })
-                }).catch(err => console.error("Failed to update points:", err));
-
-                // 自身が攻撃して勝利した場合も実績「防衛戦勝利数」としてカウントする
-                if (typeof incrementStat === 'function') {
-                    incrementStat('defenseAttackWins');
-                }
-
-                // ポイント獲得のアラートを出してから、会話へ進む
-                playSound(SOUNDS.seSkill);
-                showAlertModal(`防衛戦に勝利しました！\n防衛ポイントを ${winPoints} Pt 獲得しました！`, () => {
-                    setupDialogueScreen();
-                });
-                return;
-            } else if (GameState.lastBattleResult === 'lose') {
-                // 負けた場合は敵に3ポイントと防衛回数を付与する
-                const enemyUuid = GameState.enemyConfig.uuid;
-                if (enemyUuid) {
-                    fetch('api/update_points.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            uuid: enemyUuid,
-                            points: 3,
-                            total_points: 3, // 総ポイントも加算
-                            increment: true,
-                            defense_wins: 1
-                        })
-                    }).catch(err => console.error("Failed to update enemy points:", err));
-                }
-
-                showDefenseBattleList();
-            } else {
-                showDefenseBattleList();
-            }
-            return;
-
-        // --- 防衛戦以外（フリー、ストーリー、高難易度など）の処理 ---
-        if (GameState.lastBattleResult === 'win' && GameState.gameMode !== 'online' && GameState.gameMode !== 'practice') {
-            // 実績の加算処理
-            if (GameState.gameMode === 'story' && GameState.enemyConfig && GameState.enemyConfig.id === 'satan' && typeof incrementStat === 'function') {
-                incrementStat('storyClears', GameState.playerConfig.id);
-                if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 3) {
-                    incrementStat('storyClearsHard', GameState.playerConfig.id);
-                }
-            }
-            if (GameState.gameMode === 'event_satan' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'satan_high');
-            }
-            if (GameState.gameMode === 'event_android_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'android_high');
-            }
-            if (GameState.gameMode === 'event_dragon_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'dragon_high');
-            }
-            if (GameState.gameMode === 'event_knight_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'knight_high');
-            }
-            if (GameState.gameMode === 'event_cthulhu_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'cthulhu_high');
-            }
-            if (GameState.gameMode === 'event_elf_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'elf_high');
-            }
-            if (GameState.gameMode === 'event_cleric_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'cleric_high');
-            }
-            // マリア高難易度イベントクリア実績
-            if (GameState.gameMode === 'event_devilhunter_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'devilhunter_high');
-            }
-            // クロエ高難易度イベントクリア実績
-            if (GameState.gameMode === 'event_witch_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'witch_high');
-            }
-            // カグラ高難易度イベントクリア
-            if (GameState.gameMode === 'event_oni_high' && typeof incrementStat === 'function') {
-                incrementStat('eventClear', 'oni_high');
-            }
-
-            // --- カードドロップ抽選・表示処理 ---
-            if (GameState.gameMode === 'campaign') {
-                let rewardCardId = null;
-                if (GameState.campaignNode === '1-1') rewardCardId = 'skeleton';
-                else if (GameState.campaignNode === '1-2') rewardCardId = 'shade';
-                else if (GameState.campaignNode === '1-3') rewardCardId = 'warden';
-
-                if (rewardCardId && window.showCardRewardReact) {
-                    window.showCardRewardReact(rewardCardId);
-                    return;
-                }
-            } else {
-                let recipeId = GameState.enemyConfig.id;
-            if (GameState.gameMode === 'event_satan' && recipeId === 'satan') recipeId = 'satan_high';
-            if (GameState.gameMode === 'event_android_high' && recipeId === 'android') recipeId = 'android_high';
-            if (GameState.gameMode === 'event_dragon_high' && recipeId === 'dragon') recipeId = 'dragon_high';
-            if (GameState.gameMode === 'event_knight_high' && recipeId === 'knight') recipeId = 'knight_high';
-            if (GameState.gameMode === 'event_cthulhu_high' && recipeId === 'cthulhu') recipeId = 'cthulhu_high';
-            if (GameState.gameMode === 'event_elf_high' && recipeId === 'elf') recipeId = 'elf_high';
-            if (GameState.gameMode === 'event_cleric_high' && recipeId === 'cleric') recipeId = 'cleric_high';
-            if (GameState.gameMode === 'event_devilhunter_high' && recipeId === 'devilhunter') recipeId = 'devilhunter_high';
-            if (GameState.gameMode === 'event_witch_high' && recipeId === 'witch') recipeId = 'witch_high';
-            if (GameState.gameMode === 'event_oni_high' && recipeId === 'oni') recipeId = 'oni_high';
-
-            const diffKey = GameState.aiLevel === 1 ? 'easy' : (GameState.aiLevel === 3 ? 'hard' : 'normal');
-
-            let deckList = [];
-            if (Array.isArray(ENEMY_DECKS[recipeId])) {
-                deckList = ENEMY_DECKS[recipeId];
-            } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
-                deckList = ENEMY_DECKS[recipeId][diffKey];
-            } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
-                deckList = ENEMY_DECKS[recipeId]['normal'];
-            }
-
-            let availableCards = [];
-            if (deckList.length > 0) {
-                const uniqueCards = [...new Set(deckList)];
-                // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
-                availableCards = uniqueCards.filter(cid => {
-                    const count = GameState.playerInventory[cid] || 0;
-                    return count < 4;
-                });
-
-                if (availableCards.length > 0) {
-                    const rewardCardId = availableCards[Math.floor(getSeededRandom() * availableCards.length)];
-                    if (window.showCardRewardReact) {
-                        window.showCardRewardReact(rewardCardId);
-                    }
-                    return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
-                }
-            }
+    // --- 防衛戦以外（フリー、ストーリー、高難易度など）の処理 ---
+    if (
+      GameState.lastBattleResult === 'win' &&
+      GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'practice'
+    ) {
+      // 実績の加算処理
+      if (
+        GameState.gameMode === 'story' &&
+        GameState.enemyConfig &&
+        GameState.enemyConfig.id === 'satan' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('storyClears', GameState.playerConfig.id);
+        if (
+          typeof GameState.aiLevel !== 'undefined' &&
+          GameState.aiLevel === 3
+        ) {
+          incrementStat('storyClearsHard', GameState.playerConfig.id);
         }
+      }
+      if (
+        GameState.gameMode === 'event_satan' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'satan_high');
+      }
+      if (
+        GameState.gameMode === 'event_android_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'android_high');
+      }
+      if (
+        GameState.gameMode === 'event_dragon_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'dragon_high');
+      }
+      if (
+        GameState.gameMode === 'event_knight_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'knight_high');
+      }
+      if (
+        GameState.gameMode === 'event_cthulhu_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'cthulhu_high');
+      }
+      if (
+        GameState.gameMode === 'event_elf_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'elf_high');
+      }
+      if (
+        GameState.gameMode === 'event_cleric_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'cleric_high');
+      }
+      // マリア高難易度イベントクリア実績
+      if (
+        GameState.gameMode === 'event_devilhunter_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'devilhunter_high');
+      }
+      // クロエ高難易度イベントクリア実績
+      if (
+        GameState.gameMode === 'event_witch_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'witch_high');
+      }
+      // カグラ高難易度イベントクリア
+      if (
+        GameState.gameMode === 'event_oni_high' &&
+        typeof incrementStat === 'function'
+      ) {
+        incrementStat('eventClear', 'oni_high');
+      }
+
+      // --- カードドロップ抽選・表示処理 ---
+      if (GameState.gameMode === 'campaign') {
+        let rewardCardId = null;
+        if (GameState.campaignNode === '1-1') rewardCardId = 'skeleton';
+        else if (GameState.campaignNode === '1-2') rewardCardId = 'shade';
+        else if (GameState.campaignNode === '1-3') rewardCardId = 'warden';
+
+        if (rewardCardId && window.showCardRewardReact) {
+          window.showCardRewardReact(rewardCardId);
+          return;
+        }
+      } else {
+        let recipeId = GameState.enemyConfig.id;
+        if (GameState.gameMode === 'event_satan' && recipeId === 'satan')
+          recipeId = 'satan_high';
+        if (
+          GameState.gameMode === 'event_android_high' &&
+          recipeId === 'android'
+        )
+          recipeId = 'android_high';
+        if (GameState.gameMode === 'event_dragon_high' && recipeId === 'dragon')
+          recipeId = 'dragon_high';
+        if (GameState.gameMode === 'event_knight_high' && recipeId === 'knight')
+          recipeId = 'knight_high';
+        if (
+          GameState.gameMode === 'event_cthulhu_high' &&
+          recipeId === 'cthulhu'
+        )
+          recipeId = 'cthulhu_high';
+        if (GameState.gameMode === 'event_elf_high' && recipeId === 'elf')
+          recipeId = 'elf_high';
+        if (GameState.gameMode === 'event_cleric_high' && recipeId === 'cleric')
+          recipeId = 'cleric_high';
+        if (
+          GameState.gameMode === 'event_devilhunter_high' &&
+          recipeId === 'devilhunter'
+        )
+          recipeId = 'devilhunter_high';
+        if (GameState.gameMode === 'event_witch_high' && recipeId === 'witch')
+          recipeId = 'witch_high';
+        if (GameState.gameMode === 'event_oni_high' && recipeId === 'oni')
+          recipeId = 'oni_high';
+
+        const diffKey =
+          GameState.aiLevel === 1
+            ? 'easy'
+            : GameState.aiLevel === 3
+              ? 'hard'
+              : 'normal';
+
+        let deckList = [];
+        if (Array.isArray(ENEMY_DECKS[recipeId])) {
+          deckList = ENEMY_DECKS[recipeId];
+        } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
+          deckList = ENEMY_DECKS[recipeId][diffKey];
+        } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
+          deckList = ENEMY_DECKS[recipeId]['normal'];
+        }
+
+        let availableCards = [];
+        if (deckList.length > 0) {
+          const uniqueCards = [...new Set(deckList)];
+          // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
+          availableCards = uniqueCards.filter((cid) => {
+            const count = GameState.playerInventory[cid] || 0;
+            return count < 4;
+          });
+
+          if (availableCards.length > 0) {
+            const rewardCardId =
+              availableCards[
+                Math.floor(getSeededRandom() * availableCards.length)
+              ];
+            if (window.showCardRewardReact) {
+              window.showCardRewardReact(rewardCardId);
+            }
+            return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
+          }
+        }
+      }
     }
 
     if (GameState.gameMode === 'practice') {
-            GameState.appState = 'select_deck';
-            if (typeof window.loadDeck === 'function') window.loadDeck();
-            if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-            switchScreen('screen-deck-list');
-            playSound(AUDIO_INSTANCES.bgmTitle);
-            return;
-        }
+      GameState.appState = 'select_deck';
+      if (typeof window.loadDeck === 'function') window.loadDeck();
+      if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+      switchScreen('screen-deck-list');
+      playSound(AUDIO_INSTANCES.bgmTitle);
+      return;
+    }
 
-        // ドロップがない、全所持、または敗北/引き分けの場合はそのまま会話画面へ
+    // ドロップがない、全所持、または敗北/引き分けの場合
+    if (
+      GameState.gameMode &&
+      GameState.gameMode.startsWith('event_') &&
+      GameState.lastBattleResult === 'win'
+    ) {
+      grantHighDifficultyPoints(() => {
         setupDialogueScreen();
-    }, 1500);
+      });
+    } else {
+      setupDialogueScreen();
+    }
+  }, 1500);
 }
 
 export function returnToTitle() {
-    showConfirmModal('バトルを諦めますか？', () => {
-        dispatchBattleAction({ type: 'retire', owner: 'blue' });
-    });
+  showConfirmModal('バトルを諦めますか？', () => {
+    dispatchBattleAction({ type: 'retire', owner: 'blue' });
+  });
 }

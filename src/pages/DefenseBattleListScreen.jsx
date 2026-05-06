@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { playSound, switchScreen, getOrCreateUUID } from '../utils/gameUtils.js';
+import {
+  playSound,
+  switchScreen,
+  getOrCreateUUID,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { startAttackBattle } from '../hooks/uiMainCore.js';
 
@@ -21,7 +25,10 @@ export default function DefenseBattleListScreen() {
           let activePlayers = result.players;
 
           // 自分のポイントを取得
-          const myTotalPoints = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+          const myTotalPoints =
+            parseInt(
+              localStorage.getItem('mini_card_battle_defense_total_points')
+            ) || 0;
 
           if (activePlayers.length === 0) {
             setStatus('empty');
@@ -29,7 +36,11 @@ export default function DefenseBattleListScreen() {
           }
 
           // ランキングソート
-          activePlayers.sort((a, b) => (b.total_points || b.points || 0) - (a.total_points || a.points || 0));
+          activePlayers.sort(
+            (a, b) =>
+              (b.total_points || b.points || 0) -
+              (a.total_points || a.points || 0)
+          );
 
           // 各プレイヤーに対する計算を追加
           activePlayers = activePlayers.map((p, index) => {
@@ -47,7 +58,7 @@ export default function DefenseBattleListScreen() {
               rankIndex: index,
               calculatedWinPoints: winPoints,
               displayTotalPoints: pTotalPoints,
-              isMe: p.uuid === myUuid
+              isMe: p.uuid === myUuid,
             };
           });
 
@@ -70,23 +81,58 @@ export default function DefenseBattleListScreen() {
       // 既存のグローバルロジックを呼び出す
       startAttackBattle({
         ...p,
-        calculatedWinPoints: p.calculatedWinPoints
+        calculatedWinPoints: p.calculatedWinPoints,
       });
     }
   };
 
   return (
     <div id="screen-defense-battle-list" className="screen active">
-      <h2 style={{ color: '#10b981', marginBottom: '5px', fontSize: '1.2rem' }}>防衛戦（攻撃側）</h2>
-      <div style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>挑む相手を選択してください</div>
+      <h2 style={{ color: '#10b981', marginBottom: '5px', fontSize: '1.2rem' }}>
+        防衛戦（攻撃側）
+      </h2>
+      <div
+        style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
+      >
+        挑む相手を選択してください
+      </div>
 
-      <div className="deck-edit-container" id="defense-player-list" style={{ justifyContent: 'flex-start', paddingTop: '10px', gap: '10px', overflowY: 'auto' }}>
-          {status === 'loading' && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}>読み込み中...</div>}
-          {status === 'error' && <div style={{ color: '#ef4444', textAlign: 'center', padding: '20px' }}>読み込みに失敗しました</div>}
-          {status === 'empty' && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}>対戦相手がいません</div>}
+      <div
+        className="deck-edit-container"
+        id="defense-player-list"
+        style={{
+          justifyContent: 'flex-start',
+          paddingTop: '10px',
+          gap: '10px',
+          overflowY: 'auto',
+        }}
+      >
+        {status === 'loading' && (
+          <div
+            style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}
+          >
+            読み込み中...
+          </div>
+        )}
+        {status === 'error' && (
+          <div
+            style={{ color: '#ef4444', textAlign: 'center', padding: '20px' }}
+          >
+            読み込みに失敗しました
+          </div>
+        )}
+        {status === 'empty' && (
+          <div
+            style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}
+          >
+            対戦相手がいません
+          </div>
+        )}
 
-          {status === 'success' && players.map((p) => {
-            const char = (CHARACTERS && CHARACTERS[p.character]) || (CHARACTERS?.android);
+        {status === 'success' &&
+          players.map((p) => {
+            const char =
+              (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
             if (!char) return null;
 
             let borderColor = '#cd7f32';
@@ -104,10 +150,10 @@ export default function DefenseBattleListScreen() {
               <button
                 key={p.uuid}
                 className={`btn-banner ${extraClass}`}
-                style={{ 
-                  borderColor, 
+                style={{
+                  borderColor,
                   flexShrink: 0,
-                  ...(p.isMe ? { cursor: 'default', opacity: 0.9 } : {}) 
+                  ...(p.isMe ? { cursor: 'default', opacity: 0.9 } : {}),
                 }}
                 onClick={() => {
                   if (!p.isMe) {
@@ -115,18 +161,55 @@ export default function DefenseBattleListScreen() {
                   }
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <img src={getSkinImage ? getSkinImage(char, p.skin || 'default', 'icon') : char.icon} className="banner-icon" alt="" />
-                    <span className="banner-text" style={{ color: char.color, marginRight: '10px' }}>
+                    <img
+                      src={
+                        getSkinImage
+                          ? getSkinImage(char, p.skin || 'default', 'icon')
+                          : char.icon
+                      }
+                      className="banner-icon"
+                      alt=""
+                    />
+                    <span
+                      className="banner-text"
+                      style={{ color: char.color, marginRight: '10px' }}
+                    >
                       {p.name}
                     </span>
-                    <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>(Pt: {p.displayTotalPoints})</span>
+                    <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
+                      (Pt: {p.displayTotalPoints})
+                    </span>
                   </div>
                   {p.isMe ? (
-                    <div style={{ color: 'var(--color-blue)', fontWeight: 'bold', fontSize: '1rem', textShadow: '0 0 10px rgba(56, 189, 248, 0.8)' }}>YOU</div>
+                    <div
+                      style={{
+                        color: 'var(--color-blue)',
+                        fontWeight: 'bold',
+                        fontSize: '1rem',
+                        textShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
+                      }}
+                    >
+                      YOU
+                    </div>
                   ) : (
-                    <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem' }}>Win +{p.calculatedWinPoints}</div>
+                    <div
+                      style={{
+                        color: '#10b981',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      Win +{p.calculatedWinPoints}
+                    </div>
                   )}
                 </div>
               </button>

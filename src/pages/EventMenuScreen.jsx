@@ -1,9 +1,12 @@
-import React from 'react';
 
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { startHighDifficulty, showDefenseMenu, startGameMode } from '../hooks/uiMainCore.js';
+import {
+  startHighDifficulty,
+  showDefenseMenu,
+  startGameMode,
+} from '../hooks/uiMainCore.js';
 
 export default function EventMenuScreen() {
   const images = UI_IMAGES || {};
@@ -15,7 +18,9 @@ export default function EventMenuScreen() {
         <div className="menu-img-btn" onClick={() => startHighDifficulty?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.EVENT_HIGH_DIFF || ''}')` }}
+            style={{
+              backgroundImage: `url('${images.EVENT_HIGH_DIFF || ''}')`,
+            }}
           ></div>
           <div className="menu-btn-label">高難易度</div>
         </div>
@@ -26,10 +31,16 @@ export default function EventMenuScreen() {
           ></div>
           <div className="menu-btn-label">防衛戦</div>
         </div>
-        <div className="menu-img-btn" onClick={() => startGameMode?.('battle_dungeon')}>
+        <div
+          className="menu-img-btn"
+          onClick={() => startGameMode?.('battle_dungeon')}
+        >
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_DUNGEON || ''}')`, backgroundColor: '#475569' }}
+            style={{
+              backgroundImage: `url('${images.MENU_DUNGEON || ''}')`,
+              backgroundColor: '#475569',
+            }}
           ></div>
           <div className="menu-btn-label">試練の宮殿</div>
         </div>
@@ -41,7 +52,7 @@ export default function EventMenuScreen() {
           paddingTop: '20px',
           width: '100%',
           display: 'flex',
-          justifyContent: 'center'
+          justifyContent: 'center',
         }}
       >
         <button

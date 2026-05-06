@@ -3,8 +3,12 @@ import { startBattleFlow } from './deck.js';
 import { handleEventProgression } from './events.js';
 import { GameState } from './gameState.js';
 import { handleStoryProgression } from './story.js';
-import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { performFadeTransition, initSelectScreen, showDefenseBattleList, showOnlineLobby } from './uiMainCore.js';
+import {
+  performFadeTransition,
+  initSelectScreen,
+  showDefenseBattleList,
+  showOnlineLobby,
+} from './uiMainCore.js';
 import { handleBattleDungeonProgression } from './battleDungeon.js';
 
 /**
@@ -16,58 +20,69 @@ import { handleBattleDungeonProgression } from './battleDungeon.js';
  * ダイアログ終了後などの「次のステップ」を判定して実行する
  */
 export function handleProgressionNextStep() {
-    if (GameState.gameMode === 'free') {
-        handleFreeBattleProgression();
-    } else if (GameState.gameMode === 'campaign') {
-        import('./campaign.js').then(({ onCampaignDialogueEnd }) => {
-            onCampaignDialogueEnd();
-        });
-    } else if (GameState.gameMode === 'battle_dungeon') {
-        handleBattleDungeonProgression();
-        return;
-    } else if (GameState.gameMode === 'defense_attack') {
-        if (typeof showDefenseBattleList === 'function') {
-            showDefenseBattleList();
-        } else {
-            switchScreen('screen-mode-select');
-        }
-    } else if (GameState.gameMode === 'event_satan' || GameState.gameMode === 'event_android_high' || GameState.gameMode === 'event_dragon_high' || GameState.gameMode === 'event_knight_high' || GameState.gameMode === 'event_cthulhu_high' || GameState.gameMode === 'event_elf_high' || GameState.gameMode === 'event_cleric_high' || GameState.gameMode === 'event_devilhunter_high' || GameState.gameMode === 'event_witch_high' || GameState.gameMode === 'event_oni_high') {
-        if (typeof handleEventProgression === 'function') {
-            handleEventProgression();
-        } else {
-            console.error("handleEventProgression is not defined");
-            switchScreen('screen-mode-select');
-        }
-    } else if (GameState.gameMode === 'online') {
-        if (typeof showOnlineLobby === 'function') {
-            showOnlineLobby();
-        } else {
-            switchScreen('screen-online-lobby');
-        }
+  if (GameState.gameMode === 'free') {
+    handleFreeBattleProgression();
+  } else if (GameState.gameMode === 'campaign') {
+    import('./campaign.js').then(({ onCampaignDialogueEnd }) => {
+      onCampaignDialogueEnd();
+    });
+  } else if (GameState.gameMode === 'battle_dungeon') {
+    handleBattleDungeonProgression();
+    return;
+  } else if (GameState.gameMode === 'defense_attack') {
+    if (typeof showDefenseBattleList === 'function') {
+      showDefenseBattleList();
     } else {
-        // デフォルトはストーリーモード
-        if (typeof handleStoryProgression === 'function') {
-            handleStoryProgression();
-        } else {
-            console.error("handleStoryProgression is not defined");
-            switchScreen('screen-mode-select');
-        }
+      switchScreen('screen-mode-select');
     }
+  } else if (
+    GameState.gameMode === 'event_satan' ||
+    GameState.gameMode === 'event_android_high' ||
+    GameState.gameMode === 'event_dragon_high' ||
+    GameState.gameMode === 'event_knight_high' ||
+    GameState.gameMode === 'event_cthulhu_high' ||
+    GameState.gameMode === 'event_elf_high' ||
+    GameState.gameMode === 'event_cleric_high' ||
+    GameState.gameMode === 'event_devilhunter_high' ||
+    GameState.gameMode === 'event_witch_high' ||
+    GameState.gameMode === 'event_oni_high'
+  ) {
+    if (typeof handleEventProgression === 'function') {
+      handleEventProgression();
+    } else {
+      console.error('handleEventProgression is not defined');
+      switchScreen('screen-mode-select');
+    }
+  } else if (GameState.gameMode === 'online') {
+    if (typeof showOnlineLobby === 'function') {
+      showOnlineLobby();
+    } else {
+      switchScreen('screen-online-lobby');
+    }
+  } else {
+    // デフォルトはストーリーモード
+    if (typeof handleStoryProgression === 'function') {
+      handleStoryProgression();
+    } else {
+      console.error('handleStoryProgression is not defined');
+      switchScreen('screen-mode-select');
+    }
+  }
 }
 
 /**
  * フリーバトルの進行管理
  */
 export function handleFreeBattleProgression() {
-    if (GameState.appState === 'post_dialogue') {
-        performFadeTransition(() => {
-            GameState.appState = 'select_enemy';
-            initSelectScreen(false);
-            switchScreen('screen-select');
-        });
-    } else if (GameState.appState === 'pre_dialogue') {
-        startBattleFlow();
-    } else {
-        switchScreen('screen-mode-select');
-    }
+  if (GameState.appState === 'post_dialogue') {
+    performFadeTransition(() => {
+      GameState.appState = 'select_enemy';
+      initSelectScreen(false);
+      switchScreen('screen-select');
+    });
+  } else if (GameState.appState === 'pre_dialogue') {
+    startBattleFlow();
+  } else {
+    switchScreen('screen-mode-select');
+  }
 }

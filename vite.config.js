@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,10 +11,10 @@ export default defineConfig({
       targets: [
         {
           src: 'api',
-          dest: '.'
-        }
-      ]
-    })
+          dest: '.',
+        },
+      ],
+    }),
   ],
   build: {
     outDir: 'dist',
@@ -24,7 +24,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.html',
-        cardscore: './cardscore.html'
+        cardscore: './cardscore.html',
       },
       output: {
         manualChunks: {
@@ -36,10 +36,10 @@ export default defineConfig({
             './src/hooks/battle.js',
             './src/hooks/battleDungeon.js',
             './src/utils/constants/battleDungeon.js',
-            './src/utils/constants/battleDungeonCharacter.js'
-          ]
-        }
-      }
-    }
-  }
-})
+            './src/utils/constants/battleDungeonCharacter.js',
+          ],
+        },
+      },
+    },
+  },
+});

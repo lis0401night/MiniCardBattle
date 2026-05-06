@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { playSound, isTransitioning, switchScreen, getCardImgUrl, togglePremiumCard } from '../utils/gameUtils.js';
+import {
+  playSound,
+  isTransitioning,
+  switchScreen,
+  getCardImgUrl,
+  togglePremiumCard,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { loadDeck, saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
@@ -23,38 +29,61 @@ export default function CardListScreen() {
       setClickCount(0);
 
       if (showConfirmModal) {
-        showConfirmModal("デバッグモードを起動して全カード・全スキンを解放しますか？", () => {
-          if (CARD_MASTER && GameState.playerInventory) {
-            CARD_MASTER.forEach(card => {
-              if (!card.isToken) {
-                GameState.playerInventory[card.id] = 4;
-              }
-            });
-          }
+        showConfirmModal(
+          'デバッグモードを起動して全カード・全スキンを解放しますか？',
+          () => {
+            if (CARD_MASTER && GameState.playerInventory) {
+              CARD_MASTER.forEach((card) => {
+                if (!card.isToken) {
+                  GameState.playerInventory[card.id] = 4;
+                }
+              });
+            }
 
-          const premiumTargets = ['empress', 'assassin', 'cyberdragon', 'dragon', 'oldgod', 'wolf', 'cleric', 'nectromancer', 'vampire', 'beginnermagic', 'djinn'];
-          if (GameState.unlockedPremiumCards) {
-            premiumTargets.forEach(id => {
-              if (!GameState.unlockedPremiumCards.includes(id)) {
-                GameState.unlockedPremiumCards.push(id);
-              }
-            });
-          }
+            const premiumTargets = [
+              'empress',
+              'assassin',
+              'cyberdragon',
+              'dragon',
+              'oldgod',
+              'wolf',
+              'cleric',
+              'nectromancer',
+              'vampire',
+              'beginnermagic',
+              'djinn',
+            ];
+            if (GameState.unlockedPremiumCards) {
+              premiumTargets.forEach((id) => {
+                if (!GameState.unlockedPremiumCards.includes(id)) {
+                  GameState.unlockedPremiumCards.push(id);
+                }
+              });
+            }
 
-          if (typeof saveDeck === 'function') saveDeck();
-          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-          if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：全カードを4枚所持状態にしました！");
-          updateList();
-        });
+            if (typeof saveDeck === 'function') saveDeck();
+            if (typeof playSound === 'function' && SOUNDS)
+              playSound(SOUNDS.seSkill);
+            if (typeof showAlertModal === 'function')
+              showAlertModal(
+                'デバッグモード：全カードを4枚所持状態にしました！'
+              );
+            updateList();
+          }
+        );
       }
     }
   };
 
   const updateList = () => {
     // 常にグローバルなプレミアム設定を優先ロードする（デッキ固有設定に汚染されないため）
-    const globalPremiumSrc = localStorage.getItem('mini_card_battle_premium_cards');
+    const globalPremiumSrc = localStorage.getItem(
+      'mini_card_battle_premium_cards'
+    );
     if (globalPremiumSrc) {
-      try { GameState.premiumCards = JSON.parse(globalPremiumSrc); } catch (e) { }
+      try {
+        GameState.premiumCards = JSON.parse(globalPremiumSrc);
+      } catch (e) {}
     } else {
       GameState.premiumCards = [];
     }
@@ -95,9 +124,33 @@ export default function CardListScreen() {
   };
 
   return (
-    <div id="screen-card-list" className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto' }}>
-      <h2 onClick={handleTitleClick} style={{ color: '#facc15', marginBottom: '5px', fontSize: '1.2rem', cursor: 'pointer', userSelect: 'none' }}>カード一覧</h2>
-      <div id="card-list-count" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
+    <div
+      id="screen-card-list"
+      className="screen active"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px 0',
+        overflowY: 'auto',
+      }}
+    >
+      <h2
+        onClick={handleTitleClick}
+        style={{
+          color: '#facc15',
+          marginBottom: '5px',
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+      >
+        カード一覧
+      </h2>
+      <div
+        id="card-list-count"
+        style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
+      >
         カード種類: {ownedKindCount} / {masterCards.length}
       </div>
 
@@ -107,7 +160,9 @@ export default function CardListScreen() {
             const ownedCount = inventory[template.id] || 0;
             const isOwned = ownedCount > 0;
             const opacity = isOwned ? '1' : '0.4';
-            const rarityClass = template.rarity ? ` rarity-${template.rarity}` : '';
+            const rarityClass = template.rarity
+              ? ` rarity-${template.rarity}`
+              : '';
             const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
             const filter = template.filter || 'none';
 
@@ -123,7 +178,10 @@ export default function CardListScreen() {
                 }}
               >
                 <div className={`card blue${rarityClass}`} style={{ opacity }}>
-                  <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')`, filter }}></div>
+                  <div
+                    className="card-bg"
+                    style={{ backgroundImage: `url('${imgUrl}')`, filter }}
+                  ></div>
 
                   {hasPremiumUnlocked && (
                     <div
@@ -140,20 +198,27 @@ export default function CardListScreen() {
                         fontSize: '0.8rem',
                         zIndex: 7,
                         border: `1px solid ${isPremiumActive ? '#d946ef' : '#475569'}`,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                       }}
                     >
                       ✨
                     </div>
                   )}
 
-                  <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>
+                  <div
+                    className="card-power"
+                    style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
+                  >
                     {template.power}
                   </div>
 
                   {/* 既存のスキルバッジ描画ロジックをdangerouslySetInnerHTMLで流用 */}
                   {window.renderSkillTag && (
-                    <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(template) }}></div>
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: window.renderSkillTag(template),
+                      }}
+                    ></div>
                   )}
 
                   <div
@@ -168,7 +233,7 @@ export default function CardListScreen() {
                       fontWeight: 'bold',
                       fontSize: '0.75rem',
                       zIndex: 6,
-                      border: '1px solid #facc15'
+                      border: '1px solid #facc15',
                     }}
                   >
                     {ownedCount}/4
@@ -184,7 +249,8 @@ export default function CardListScreen() {
         className="btn"
         style={{ marginTop: '15px', background: '#475569' }}
         onClick={() => {
-          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seClick);
+          if (typeof playSound === 'function' && SOUNDS)
+            playSound(SOUNDS.seClick);
           switchScreen?.('screen-gallery-menu');
         }}
       >

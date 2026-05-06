@@ -1,11 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-import { ACHIEVEMENT_MASTER, achievementData, claimAchievementReward, saveAchievements, checkCollectionAchievements, checkAndFixMissingRewards } from '../utils/constants/achievements.js';
+import {
+  ACHIEVEMENT_MASTER,
+  achievementData,
+  claimAchievementReward,
+  saveAchievements,
+  checkCollectionAchievements,
+  checkAndFixMissingRewards,
+} from '../utils/constants/achievements.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { playSound, isTransitioning, switchScreen } from '../utils/gameUtils.js';
+import {
+  playSound,
+  switchScreen,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { setRenderAchievementsListHook, showCardAcquisitionModal, showPremiumAcquisitionModal, showPlaymatAcquisitionModal, showSkinAcquisitionModal, setRenderAchievementsStatsHook } from '../hooks/uiGallery.js';
+import {
+  setRenderAchievementsListHook,
+  showCardAcquisitionModal,
+  showPremiumAcquisitionModal,
+  showPlaymatAcquisitionModal,
+  showSkinAcquisitionModal,
+  setRenderAchievementsStatsHook,
+} from '../hooks/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function AchievementsScreen() {
@@ -19,7 +36,7 @@ export default function AchievementsScreen() {
     if (typeof checkAndFixMissingRewards === 'function') {
       checkAndFixMissingRewards();
     }
-    
+
     if (typeof checkCollectionAchievements === 'function') {
       checkCollectionAchievements();
       if (typeof saveAchievements === 'function') saveAchievements();
@@ -33,14 +50,18 @@ export default function AchievementsScreen() {
 
     // リーダー使用率の計算
     const usageObj = _data.stats?.leaderUsage || {};
-    const totalUsage = Object.values(usageObj).reduce((sum, count) => sum + count, 0);
+    const totalUsage = Object.values(usageObj).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
     const sortedChars = Object.values(CHARACTERS || {})
-      .filter(c => c.id !== 'satan' && !c.id.startsWith('campaign_'))
+      .filter((c) => c.id !== 'satan' && !c.id.startsWith('campaign_'))
       .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
-      .map(char => {
+      .map((char) => {
         const count = usageObj[char.id] || 0;
-        const percentage = totalUsage > 0 ? Math.floor((count / totalUsage) * 100) : 0;
+        const percentage =
+          totalUsage > 0 ? Math.floor((count / totalUsage) * 100) : 0;
         return { ...char, count, percentage };
       });
 
@@ -55,7 +76,10 @@ export default function AchievementsScreen() {
 
   const handleClaim = (id) => {
     try {
-      const result = typeof claimAchievementReward === 'function' ? claimAchievementReward(id) : null;
+      const result =
+        typeof claimAchievementReward === 'function'
+          ? claimAchievementReward(id)
+          : null;
       if (result && result.success) {
         if (result.rewardType === 'playmat') {
           showPlaymatAcquisitionModal?.(result.rewardName, result.rewardValue);
@@ -69,9 +93,9 @@ export default function AchievementsScreen() {
       }
       updateAchievements();
     } catch (e) {
-      console.error("Claim Error:", e);
+      console.error('Claim Error:', e);
       if (typeof showAlertModal === 'function') {
-        showAlertModal("実績獲得中にエラーが発生しました: " + e.message);
+        showAlertModal('実績獲得中にエラーが発生しました: ' + e.message);
       }
     }
   };
@@ -83,25 +107,36 @@ export default function AchievementsScreen() {
       setClickCount(0);
 
       if (showConfirmModal) {
-        showConfirmModal("デバッグモードを起動して全ての実績を解除しますか？", () => {
-          if (ACHIEVEMENT_MASTER && achievementData) {
-            ACHIEVEMENT_MASTER.forEach(ach => {
-              const data = achievementData.achievements[ach.id] || { progress: 0, isUnlocked: false };
-              data.isUnlocked = true;
-              if (ach.type === 'story_clear' || ach.type === 'story_clear_hard') {
-                data.progress = 1;
-              } else {
-                data.progress = ach.targetValue || 100;
-              }
-              achievementData.achievements[ach.id] = data;
-            });
-          }
+        showConfirmModal(
+          'デバッグモードを起動して全ての実績を解除しますか？',
+          () => {
+            if (ACHIEVEMENT_MASTER && achievementData) {
+              ACHIEVEMENT_MASTER.forEach((ach) => {
+                const data = achievementData.achievements[ach.id] || {
+                  progress: 0,
+                  isUnlocked: false,
+                };
+                data.isUnlocked = true;
+                if (
+                  ach.type === 'story_clear' ||
+                  ach.type === 'story_clear_hard'
+                ) {
+                  data.progress = 1;
+                } else {
+                  data.progress = ach.targetValue || 100;
+                }
+                achievementData.achievements[ach.id] = data;
+              });
+            }
 
-          if (typeof saveAchievements === 'function') saveAchievements();
-          updateAchievements(); // リアクティブに再描画
-          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-          if (typeof showAlertModal === 'function') showAlertModal("デバッグモード：すべての実績を解除しました！");
-        });
+            if (typeof saveAchievements === 'function') saveAchievements();
+            updateAchievements(); // リアクティブに再描画
+            if (typeof playSound === 'function' && SOUNDS)
+              playSound(SOUNDS.seSkill);
+            if (typeof showAlertModal === 'function')
+              showAlertModal('デバッグモード：すべての実績を解除しました！');
+          }
+        );
       }
     }
   };
@@ -109,40 +144,131 @@ export default function AchievementsScreen() {
   return (
     <div id="screen-achievements" className="screen active">
       <h2
-        style={{ color: '#facc15', marginBottom: '5px', fontSize: '1.2rem', cursor: 'pointer', userSelect: 'none' }}
+        style={{
+          color: '#facc15',
+          marginBottom: '5px',
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
         onClick={handleTitleClick}
       >
         実績
       </h2>
 
-      <div className="accordion-container" style={{ width: '100%', maxWidth: '400px', marginBottom: '15px' }}>
+      <div
+        className="accordion-container"
+        style={{ width: '100%', maxWidth: '400px', marginBottom: '15px' }}
+      >
         <div
           className="accordion-header"
-          onClick={() => { playSound?.(SOUNDS?.seClick); setStatsOpen(!statsOpen); }}
-          style={{ background: '#334155', padding: '10px', borderRadius: '8px', cursor: 'pointer', color: '#fff', fontWeight: 'bold' }}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            setStatsOpen(!statsOpen);
+          }}
+          style={{
+            background: '#334155',
+            padding: '10px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            color: '#fff',
+            fontWeight: 'bold',
+          }}
         >
           {statsOpen ? '▼' : '▶'} プレイ統計（リーダー使用率など）
         </div>
 
         {statsOpen && (
-          <div className="accordion-content" style={{ display: 'block', padding: '10px', background: '#1e293b', borderRadius: '0 0 8px 8px' }}>
-            <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '15px', borderBottom: '1px solid #334155', paddingBottom: '5px' }}>
-              <div>バトル勝利数: <span style={{ color: '#facc15', fontWeight: 'bold' }}>{stats.freeBattleWins || 0}</span> 回</div>
+          <div
+            className="accordion-content"
+            style={{
+              display: 'block',
+              padding: '10px',
+              background: '#1e293b',
+              borderRadius: '0 0 8px 8px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.9rem',
+                color: '#cbd5e1',
+                marginBottom: '15px',
+                borderBottom: '1px solid #334155',
+                paddingBottom: '5px',
+              }}
+            >
+              <div>
+                バトル勝利数:{' '}
+                <span style={{ color: '#facc15', fontWeight: 'bold' }}>
+                  {stats.freeBattleWins || 0}
+                </span>{' '}
+                回
+              </div>
             </div>
-            <div style={{ fontWeight: 'bold', color: '#f8fafc', marginBottom: '10px', fontSize: '0.95rem' }}>
+            <div
+              style={{
+                fontWeight: 'bold',
+                color: '#f8fafc',
+                marginBottom: '10px',
+                fontSize: '0.95rem',
+              }}
+            >
               各リーダー利用率 (合計: {leaderUsage.totalUsage || 0}回)
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {leaderUsage.chars?.map(char => (
-                <div key={char.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-                  <img src={char.icon} style={{ width: '32px', height: '32px', borderRadius: '4px', border: `1px solid ${char.color}` }} alt={char.name} />
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
+              {leaderUsage.chars?.map((char) => (
+                <div
+                  key={char.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                  }}
+                >
+                  <img
+                    src={char.icon}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '4px',
+                      border: `1px solid ${char.color}`,
+                    }}
+                    alt={char.name}
+                  />
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '2px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: '0.8rem',
+                        marginBottom: '2px',
+                      }}
+                    >
                       <span style={{ color: char.color }}>{char.name}</span>
-                      <span style={{ color: '#cbd5e1' }}>{char.count} 回 ({char.percentage}%)</span>
+                      <span style={{ color: '#cbd5e1' }}>
+                        {char.count} 回 ({char.percentage}%)
+                      </span>
                     </div>
-                    <div style={{ width: '100%', height: '8px', background: '#0f172a', borderRadius: '4px', overflow: 'hidden', border: '1px solid #334155' }}>
-                      <div style={{ width: `${char.percentage}%`, height: '100%', background: char.color }}></div>
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '8px',
+                        background: '#0f172a',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        border: '1px solid #334155',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${char.percentage}%`,
+                          height: '100%',
+                          background: char.color,
+                        }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -153,15 +279,31 @@ export default function AchievementsScreen() {
       </div>
 
       <div className="card-list-container" style={{ flex: 1, minHeight: 0 }}>
-        <div id="achievements-list-container" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+        <div
+          id="achievements-list-container"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            width: '100%',
+          }}
+        >
           {achievements.map((ach) => {
-            const savedData = achievementData?.achievements?.[ach.id] || { progress: 0, isUnlocked: false };
+            const savedData = achievementData?.achievements?.[ach.id] || {
+              progress: 0,
+              isUnlocked: false,
+            };
             const progress = savedData.progress;
-            const isStory = ach.type === 'story_clear' || ach.type === 'story_clear_hard' || ach.type === 'event_clear';
+            const isStory =
+              ach.type === 'story_clear' ||
+              ach.type === 'story_clear_hard' ||
+              ach.type === 'event_clear';
 
             let target = ach.targetValue;
             if (target === -1 && CARD_MASTER) {
-              target = CARD_MASTER.filter(c => !c.isToken && !c.id.includes('token')).length;
+              target = CARD_MASTER.filter(
+                (c) => !c.isToken && !c.id.includes('token')
+              ).length;
             }
 
             let displayProgress = isStory ? (progress > 0 ? 1 : 0) : progress;
@@ -171,16 +313,22 @@ export default function AchievementsScreen() {
 
             // 既存プレイヤー影響防止策：すでにロック解除されている場合は表示上のプログレスをターゲット値に合わせる
             if (isUnlocked && displayProgress < displayTarget) {
-                displayProgress = displayTarget;
+              displayProgress = displayTarget;
             }
 
-            const percentage = Math.min(100, Math.floor((displayProgress / displayTarget) * 100));
+            const percentage = Math.min(
+              100,
+              Math.floor((displayProgress / displayTarget) * 100)
+            );
 
-            const bgColor = isUnlocked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(0, 0, 0, 0.5)';
+            const bgColor = isUnlocked
+              ? 'rgba(16, 185, 129, 0.2)'
+              : 'rgba(0, 0, 0, 0.5)';
             const borderColor = isUnlocked ? '#10b981' : '#475569';
             const titleColor = isUnlocked ? '#34d399' : '#f8fafc';
 
-            const isClaimable = ach.reward && isUnlocked && !savedData.isRewarded;
+            const isClaimable =
+              ach.reward && isUnlocked && !savedData.isRewarded;
 
             return (
               <div
@@ -198,37 +346,114 @@ export default function AchievementsScreen() {
                   cursor: isClaimable ? 'pointer' : 'default',
                   /* Reactではanimationもstyleオブジェクトやcssで可能 */
                   boxShadow: isClaimable ? '0 0 15px #facc15' : 'none',
-                  borderColor: isClaimable ? '#facc15' : borderColor
+                  borderColor: isClaimable ? '#facc15' : borderColor,
                 }}
               >
-                <div style={{ fontWeight: 'bold', color: titleColor, marginBottom: '5px', fontSize: '1rem' }}>{ach.title}</div>
-                <div style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '8px' }}>{ach.description}</div>
-                <div style={{ width: '100%', background: '#0f172a', borderRadius: '4px', height: '12px', marginBottom: '4px', overflow: 'hidden', border: '1px solid #334155' }}>
-                  <div style={{ width: `${percentage}%`, height: '100%', background: isUnlocked ? '#10b981' : '#3b82f6', transition: 'width 0.3s ease' }}></div>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    color: titleColor,
+                    marginBottom: '5px',
+                    fontSize: '1rem',
+                  }}
+                >
+                  {ach.title}
+                </div>
+                <div
+                  style={{
+                    color: '#cbd5e1',
+                    fontSize: '0.85rem',
+                    marginBottom: '8px',
+                  }}
+                >
+                  {ach.description}
+                </div>
+                <div
+                  style={{
+                    width: '100%',
+                    background: '#0f172a',
+                    borderRadius: '4px',
+                    height: '12px',
+                    marginBottom: '4px',
+                    overflow: 'hidden',
+                    border: '1px solid #334155',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${percentage}%`,
+                      height: '100%',
+                      background: isUnlocked ? '#10b981' : '#3b82f6',
+                      transition: 'width 0.3s ease',
+                    }}
+                  ></div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{displayProgress} / {displayTarget}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '5px',
+                  }}
+                >
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                    {displayProgress} / {displayTarget}
+                  </span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
                     {ach.reward ? (
                       <>
                         <span style={{ fontSize: '0.8rem', color: '#facc15' }}>
-                          報酬: {ach.reward.type === 'playmat' ? 'プレイマット' : (ach.reward.type === 'premium' ? 'プレミアム' : (ach.reward.type === 'skin' ? 'スキン' : 'カード'))}
+                          報酬:{' '}
+                          {ach.reward.type === 'playmat'
+                            ? 'プレイマット'
+                            : ach.reward.type === 'premium'
+                              ? 'プレミアム'
+                              : ach.reward.type === 'skin'
+                                ? 'スキン'
+                                : 'カード'}
                         </span>
                         {savedData.isRewarded ? (
                           <span style={{ color: '#94a3b8' }}>(取得済)</span>
                         ) : (
                           <button
                             className="btn"
-                            style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: '20px', margin: 0, background: isUnlocked ? '' : '#475569', opacity: isUnlocked ? '1' : '0.6' }}
-                            onClick={(e) => { e.stopPropagation(); if (isUnlocked) handleClaim(ach.id); }}
+                            style={{
+                              padding: '2px 8px',
+                              fontSize: '0.7rem',
+                              minHeight: '20px',
+                              margin: 0,
+                              background: isUnlocked ? '' : '#475569',
+                              opacity: isUnlocked ? '1' : '0.6',
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isUnlocked) handleClaim(ach.id);
+                            }}
                           >
                             受け取る
                           </button>
                         )}
                       </>
                     ) : (
-                      isUnlocked && <div style={{ fontSize: '0.8rem', marginTop: '5px', fontWeight: 'bold', color: '#facc15' }}>✨ 達成！ ✨</div>
+                      isUnlocked && (
+                        <div
+                          style={{
+                            fontSize: '0.8rem',
+                            marginTop: '5px',
+                            fontWeight: 'bold',
+                            color: '#facc15',
+                          }}
+                        >
+                          ✨ 達成！ ✨
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
@@ -242,7 +467,8 @@ export default function AchievementsScreen() {
         className="btn"
         style={{ marginTop: '15px', background: '#475569' }}
         onClick={() => {
-          if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seClick);
+          if (typeof playSound === 'function' && SOUNDS)
+            playSound(SOUNDS.seClick);
           switchScreen?.('screen-gallery-menu');
         }}
       >

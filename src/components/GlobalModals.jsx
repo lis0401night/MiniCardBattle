@@ -1,16 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { PLAYMAT_MASTER, ownedPlaymats } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
-import { playSound, stopAllBGM, getCardImgUrl, togglePremiumCard } from '../utils/gameUtils.js';
+import {
+  playSound,
+  stopAllBGM,
+  getCardImgUrl,
+  togglePremiumCard,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { saveDeck, renderDeckEdit, submitDefenseDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
-import { renderCardList, openCardPreview, setShowCardAcquisitionModalHook, setShowPremiumAcquisitionModalHook, setShowPlaymatAcquisitionModalHook, setShowSkinAcquisitionModalHook, setOpenCardPreviewHook, setCloseCardPreviewHook } from '../hooks/uiGallery.js';
-import { backupDataToXML, importDataFromXML, reloadGame, confirmCharSelect, confirmExchange, setCloseEnemyDeckModalHook } from '../hooks/uiMainCore.js';
-import { showAlertModal, setShowConfirmModalHook, setShowAlertModalHook, setShowErrorModalHook, setShowPointAcquisitionModalHook } from '../hooks/uiModals.js';
+import {
+  renderCardList,
+  openCardPreview,
+  setShowCardAcquisitionModalHook,
+  setShowPremiumAcquisitionModalHook,
+  setShowPlaymatAcquisitionModalHook,
+  setShowSkinAcquisitionModalHook,
+  setOpenCardPreviewHook,
+  setCloseCardPreviewHook,
+} from '../hooks/uiGallery.js';
+import {
+  backupDataToXML,
+  importDataFromXML,
+  confirmCharSelect,
+  confirmExchange,
+  setCloseEnemyDeckModalHook,
+} from '../hooks/uiMainCore.js';
+import {
+  showAlertModal,
+  setShowConfirmModalHook,
+  setShowAlertModalHook,
+  setShowErrorModalHook,
+  setShowPointAcquisitionModalHook,
+} from '../hooks/uiModals.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
 let g_discardLongPressTimer = null;
@@ -53,7 +79,12 @@ export default function GlobalModals() {
 
     setShowAlertModalHook((message, onClose) => {
       playSound?.(SOUNDS?.seClick);
-      setConfirmData({ message, onConfirm: onClose, onCancel: null, isAlert: true });
+      setConfirmData({
+        message,
+        onConfirm: onClose,
+        onCancel: null,
+        isAlert: true,
+      });
     });
 
     setShowErrorModalHook((message) => {
@@ -84,39 +115,71 @@ export default function GlobalModals() {
     setCloseCardPreviewHook(handleCloseCardPreview);
 
     setShowCardAcquisitionModalHook((cardId, onClose) => {
-      const card = CARD_MASTER?.find(c => c.id === cardId);
+      const card = CARD_MASTER?.find((c) => c.id === cardId);
       if (card) {
         playSound?.(SOUNDS?.seSkill);
         setAcquisitionData({ type: 'card', card, canClose: false, onClose });
-        setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
+        setTimeout(
+          () =>
+            setAcquisitionData((prev) =>
+              prev ? { ...prev, canClose: true } : null
+            ),
+          500
+        );
       }
     });
 
     setShowPremiumAcquisitionModalHook((cardId) => {
-      const card = CARD_MASTER?.find(c => c.id === cardId);
+      const card = CARD_MASTER?.find((c) => c.id === cardId);
       if (card) {
         playSound?.(SOUNDS?.seSkill);
         setAcquisitionData({ type: 'premium', card, canClose: false });
-        setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
+        setTimeout(
+          () =>
+            setAcquisitionData((prev) =>
+              prev ? { ...prev, canClose: true } : null
+            ),
+          500
+        );
       }
     });
 
     setShowPlaymatAcquisitionModalHook((name, id) => {
-      const playmat = PLAYMAT_MASTER?.find(p => p.id === id);
+      const playmat = PLAYMAT_MASTER?.find((p) => p.id === id);
       if (playmat) {
         playSound?.(SOUNDS?.seSkill);
         setAcquisitionData({ type: 'playmat', name, playmat, canClose: false });
-        setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
+        setTimeout(
+          () =>
+            setAcquisitionData((prev) =>
+              prev ? { ...prev, canClose: true } : null
+            ),
+          500
+        );
       }
     });
 
     setShowSkinAcquisitionModalHook((name, id) => {
-      const char = Object.values(CHARACTERS || {}).find(c => c.skins && c.skins[id]);
+      const char = Object.values(CHARACTERS || {}).find(
+        (c) => c.skins && c.skins[id]
+      );
       const img = char ? getSkinImage(char, id, 'image') : '';
       if (img) {
         playSound?.(SOUNDS?.seSkill);
-        setAcquisitionData({ type: 'skin', name, id, image: img, canClose: false });
-        setTimeout(() => setAcquisitionData(prev => prev ? { ...prev, canClose: true } : null), 500);
+        setAcquisitionData({
+          type: 'skin',
+          name,
+          id,
+          image: img,
+          canClose: false,
+        });
+        setTimeout(
+          () =>
+            setAcquisitionData((prev) =>
+              prev ? { ...prev, canClose: true } : null
+            ),
+          500
+        );
       }
     });
 
@@ -133,17 +196,37 @@ export default function GlobalModals() {
     window.showExchangeDetailModal = (data) => {
       playSound?.(SOUNDS?.seClick);
       let autoImgUrl = data.imgUrl;
-      const validItemObj = (data.itemObj && Object.keys(data.itemObj).length > 0) ? data.itemObj : null;
+      const validItemObj =
+        data.itemObj && Object.keys(data.itemObj).length > 0
+          ? data.itemObj
+          : null;
 
       if (!autoImgUrl && validItemObj && typeof getCardImgUrl === 'function') {
-        autoImgUrl = getCardImgUrl(data.type === 'premium' ? { ...validItemObj, isPremium: true } : validItemObj);
+        autoImgUrl = getCardImgUrl(
+          data.type === 'premium'
+            ? { ...validItemObj, isPremium: true }
+            : validItemObj
+        );
       }
 
       setCardPreviewData({
-        card: validItemObj || { id: data.id, name: data.titleName, flavor: data.displayFlavor, skills: [] },
+        card: validItemObj || {
+          id: data.id,
+          name: data.titleName,
+          flavor: data.displayFlavor,
+          skills: [],
+        },
         styleProps: {
-          titleName: data.titleName || (data.itemObj?.name || data.id),
-          displayType: data.displayType || (data.type === 'playmat' ? 'プレイマット' : data.type === 'premium' ? 'プレミアム' : data.type === 'skin' ? 'スキン' : 'カード'),
+          titleName: data.titleName || data.itemObj?.name || data.id,
+          displayType:
+            data.displayType ||
+            (data.type === 'playmat'
+              ? 'プレイマット'
+              : data.type === 'premium'
+                ? 'プレミアム'
+                : data.type === 'skin'
+                  ? 'スキン'
+                  : 'カード'),
           imgUrl: autoImgUrl,
           isSkin: data.type === 'skin',
           isPlaymat: data.type === 'playmat',
@@ -155,9 +238,9 @@ export default function GlobalModals() {
             isMaxed: data.isMaxed,
             canExchange: data.canExchange,
             type: data.type,
-            onConfirm: data.onConfirm
-          }
-        }
+            onConfirm: data.onConfirm,
+          },
+        },
       });
     };
 
@@ -210,25 +293,42 @@ export default function GlobalModals() {
       setSkillConfirmData(null);
     };
 
-    window.showSkillChoiceModalReact = (choices, onSelect, maxChoices = 1, isForce = false) => {
-      setSkillChoiceData({ choices, onSelect, maxChoices, selectedIndices: [], isForce });
+    window.showSkillChoiceModalReact = (
+      choices,
+      onSelect,
+      maxChoices = 1,
+      isForce = false
+    ) => {
+      setSkillChoiceData({
+        choices,
+        onSelect,
+        maxChoices,
+        selectedIndices: [],
+        isForce,
+      });
     };
 
     window.closeSkillChoiceModalReact = () => {
       setSkillChoiceData(null);
     };
 
-    window.showDiscardSelectionModalReact = (cards, maxPow, onSelect, options = {}) => {
+    window.showDiscardSelectionModalReact = (
+      cards,
+      maxPow,
+      onSelect,
+      options = {}
+    ) => {
       playSound?.(SOUNDS?.seClick);
-      const optArgs = typeof options === 'boolean' ? { isViewOnly: options } : options;
-      setDiscardSelectionData({ 
-        cards, 
-        maxPow, 
-        onSelect, 
-        selectedIndex: null, 
+      const optArgs =
+        typeof options === 'boolean' ? { isViewOnly: options } : options;
+      setDiscardSelectionData({
+        cards,
+        maxPow,
+        onSelect,
+        selectedIndex: null,
         selectedItems: [],
         currentTab: 'blue',
-        ...optArgs 
+        ...optArgs,
       });
     };
 
@@ -274,64 +374,92 @@ export default function GlobalModals() {
   const handleTogglePremium = (e, cardId) => {
     e.stopPropagation();
     playSound?.(SOUNDS?.seClick);
-    
-    const isCardListScreen = !!document.getElementById('screen-card-list')?.classList.contains('active');
+
+    const isCardListScreen = !!document
+      .getElementById('screen-card-list')
+      ?.classList.contains('active');
     togglePremiumCard?.(cardId, isCardListScreen);
 
     if (!isCardListScreen && window.saveCurrentEditDeck) {
-        window.saveCurrentEditDeck();
+      window.saveCurrentEditDeck();
     }
 
     if (typeof renderCardList === 'function' && isCardListScreen) {
       renderCardList();
     }
-    if (typeof renderDeckEdit === 'function' && document.getElementById('screen-deck-edit')?.classList.contains('active')) {
+    if (
+      typeof renderDeckEdit === 'function' &&
+      document.getElementById('screen-deck-edit')?.classList.contains('active')
+    ) {
       renderDeckEdit();
     }
-    setCardPreviewData(prev => ({ ...prev }));
+    setCardPreviewData((prev) => ({ ...prev }));
   };
 
   const renderSkillTagReact = (card) => {
     if (!window.renderSkillTag) return null;
-    return <div dangerouslySetInnerHTML={{ __html: window.renderSkillTag(card, false) }}></div>;
+    return (
+      <div
+        dangerouslySetInnerHTML={{ __html: window.renderSkillTag(card, false) }}
+      ></div>
+    );
   };
 
-  const renderCardPreviewContent = (card, styleProps = {}, showPremiumTag = false) => {
+  const renderCardPreviewContent = (
+    card,
+    styleProps = {},
+    showPremiumTag = false
+  ) => {
     return (
-      <CardPreviewContent 
+      <CardPreviewContent
         card={card}
         styleProps={styleProps}
         showPremiumTag={showPremiumTag}
         isRevealed={true}
-        onEquipClick={(eqCard) => { playSound?.(SOUNDS?.seClick); setCardPreviewData({ card: eqCard, parentCard: card }); }}
-        onLinkClick={(targetId) => {
-            playSound?.(SOUNDS?.seClick);
-            const tObj = CARD_MASTER.find(c => c.id === targetId);
-            if (tObj) setCardPreviewData({ card: tObj, parentCard: card });
+        onEquipClick={(eqCard) => {
+          playSound?.(SOUNDS?.seClick);
+          setCardPreviewData({ card: eqCard, parentCard: card });
         }}
-        onParentBack={() => { setCardPreviewData({ card: cardPreviewData.parentCard }); playSound?.(SOUNDS?.seClick); }}
-        onTogglePremium={(cardId) => { handleTogglePremium({stopPropagation:()=>{}}, cardId); }}
+        onLinkClick={(targetId) => {
+          playSound?.(SOUNDS?.seClick);
+          const tObj = CARD_MASTER.find((c) => c.id === targetId);
+          if (tObj) setCardPreviewData({ card: tObj, parentCard: card });
+        }}
+        onParentBack={() => {
+          setCardPreviewData({ card: cardPreviewData.parentCard });
+          playSound?.(SOUNDS?.seClick);
+        }}
+        onTogglePremium={(cardId) => {
+          handleTogglePremium({ stopPropagation: () => {} }, cardId);
+        }}
         onClosePreview={handleCloseCardPreview}
-        onAcquisitionOk={() => { 
-            playSound?.(SOUNDS?.seClick); 
-            const cb = acquisitionData?.onClose;
-            setAcquisitionData(null); 
-            if (cb) cb();
+        onAcquisitionOk={() => {
+          playSound?.(SOUNDS?.seClick);
+          const cb = acquisitionData?.onClose;
+          setAcquisitionData(null);
+          if (cb) cb();
         }}
         onExchangeConfirm={(exchangeData) => {
-            if (exchangeData.isMaxed) {
-                showAlertModal?.(exchangeData.type === 'premium' ? "既にプレミアム化済みです。" : "所持または交換上限に達しています。");
-            } else if (!exchangeData.canExchange) {
-                showAlertModal?.("ポイントが足りません！");
+          if (exchangeData.isMaxed) {
+            showAlertModal?.(
+              exchangeData.type === 'premium'
+                ? '既にプレミアム化済みです。'
+                : '所持または交換上限に達しています。'
+            );
+          } else if (!exchangeData.canExchange) {
+            showAlertModal?.('ポイントが足りません！');
+          } else {
+            if (exchangeData.onConfirm) {
+              exchangeData.onConfirm();
             } else {
-                if (exchangeData.onConfirm) {
-                    exchangeData.onConfirm();
-                } else {
-                    confirmExchange();
-                }
+              confirmExchange();
             }
+          }
         }}
-        onExchangeBack={() => { playSound?.(SOUNDS?.seClick); setCardPreviewData(null); }}
+        onExchangeBack={() => {
+          playSound?.(SOUNDS?.seClick);
+          setCardPreviewData(null);
+        }}
         renderSkillTagReact={renderSkillTagReact}
       />
     );
@@ -341,15 +469,60 @@ export default function GlobalModals() {
     <>
       {/* Confirm Modal */}
       {confirmData && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 3000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+        >
           <div className="skill-modal-box modal-pop-animation">
-            <h2 style={{ color: '#facc15', marginBottom: '10px' }}>{confirmData.isAlert ? "お知らせ" : "確認"}</h2>
-            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', textAlign: 'center', marginBottom: '15px', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{confirmData.message}</p>
+            <h2 style={{ color: '#facc15', marginBottom: '10px' }}>
+              {confirmData.isAlert ? 'お知らせ' : '確認'}
+            </h2>
+            <p
+              style={{
+                color: '#cbd5e1',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                marginBottom: '15px',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-line',
+              }}
+            >
+              {confirmData.message}
+            </p>
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
               {!confirmData.isAlert && (
-                <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={handleConfirmCancel}>キャンセル</button>
+                <button
+                  className="btn"
+                  style={{ flex: 1, background: '#475569', margin: 0 }}
+                  onClick={handleConfirmCancel}
+                >
+                  キャンセル
+                </button>
               )}
-              <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #0ea5e9, #0284c7)', margin: 0 }} onClick={handleConfirmOk}>{confirmData.isAlert ? "閉じる" : "OK"}</button>
+              <button
+                className="btn"
+                style={{
+                  flex: 1,
+                  background: 'linear-gradient(45deg, #0ea5e9, #0284c7)',
+                  margin: 0,
+                }}
+                onClick={handleConfirmOk}
+              >
+                {confirmData.isAlert ? '閉じる' : 'OK'}
+              </button>
             </div>
           </div>
         </div>
@@ -357,53 +530,160 @@ export default function GlobalModals() {
 
       {/* Error Modal */}
       {errorData && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
-          <div className="skill-modal-box modal-pop-animation" style={{ borderColor: '#ef4444', maxWidth: '400px' }}>
-            <h2 style={{ color: '#ef4444', marginBottom: '15px' }}>エラーが発生しました</h2>
-            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', textAlign: 'left', marginBottom: '25px', lineHeight: 1.6, width: '100%', maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px' }}>
-              {errorData.message || "予期しないエラーが発生しました。"}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{ borderColor: '#ef4444', maxWidth: '400px' }}
+          >
+            <h2 style={{ color: '#ef4444', marginBottom: '15px' }}>
+              エラーが発生しました
+            </h2>
+            <p
+              style={{
+                color: '#cbd5e1',
+                fontSize: '0.9rem',
+                textAlign: 'left',
+                marginBottom: '25px',
+                lineHeight: 1.6,
+                width: '100%',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                background: 'rgba(0,0,0,0.3)',
+                padding: '10px',
+                borderRadius: '8px',
+              }}
+            >
+              {errorData.message || '予期しないエラーが発生しました。'}
             </p>
-            <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '20px', textAlign: 'center' }}>
-              ブラウザのキャッシュにより問題が継続する場合があります。<br />下のボタンから最新状態で再読み込みしてください。
+            <p
+              style={{
+                color: '#94a3b8',
+                fontSize: '0.75rem',
+                marginBottom: '20px',
+                textAlign: 'center',
+              }}
+            >
+              ブラウザのキャッシュにより問題が継続する場合があります。
+              <br />
+              下のボタンから最新状態で再読み込みしてください。
             </p>
-            <button className="btn" style={{ width: '100%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }} onClick={reloadGame}>更新してタイトルへ</button>
+            <button
+              className="btn"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              }}
+              onClick={reloadGame}
+            >
+              更新してタイトルへ
+            </button>
           </div>
         </div>
       )}
 
       {/* Enemy Deck Modal */}
       {enemyDeckData && (
-        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex' }} onClick={closeEnemyDeckModal}>
-          <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: '#facc15', marginBottom: '15px' }}>{enemyDeckData.title}</h2>
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 2000, display: 'flex' }}
+          onClick={closeEnemyDeckModal}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{ width: '95%', maxWidth: '440px', padding: '20px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ color: '#facc15', marginBottom: '15px' }}>
+              {enemyDeckData.title}
+            </h2>
             <div className="card-list-container">
               <div className="card-list-grid-3col" style={{ padding: '10px' }}>
                 {(() => {
                   const grouped = {};
-                  enemyDeckData.deck.forEach(cardItem => {
-                    let cardId = typeof cardItem === 'object' ? cardItem.id : cardItem;
+                  enemyDeckData.deck.forEach((cardItem) => {
+                    let cardId =
+                      typeof cardItem === 'object' ? cardItem.id : cardItem;
                     if (!grouped[cardId]) grouped[cardId] = 0;
                     grouped[cardId]++;
                   });
 
                   return Object.keys(grouped).map((cardId) => {
                     const count = grouped[cardId];
-                    const template = CARD_MASTER?.find(m => m.id === cardId);
+                    const template = CARD_MASTER?.find((m) => m.id === cardId);
                     if (!template) return null;
 
-                    const originalItem = enemyDeckData.deck.find(c => (typeof c === 'object' ? c.id === cardId : c === cardId));
-                    const isPremium = typeof originalItem === 'object' ? !!originalItem.isPremium : false;
-                    const displayCard = { ...template, owner: 'red', isPremium };
+                    const originalItem = enemyDeckData.deck.find((c) =>
+                      typeof c === 'object' ? c.id === cardId : c === cardId
+                    );
+                    const isPremium =
+                      typeof originalItem === 'object'
+                        ? !!originalItem.isPremium
+                        : false;
+                    const displayCard = {
+                      ...template,
+                      owner: 'red',
+                      isPremium,
+                    };
 
-                    const imgUrl = getCardImgUrl ? getCardImgUrl(displayCard) : '';
-                    const rarityClass = displayCard.rarity ? ` rarity-${displayCard.rarity}` : '';
+                    const imgUrl = getCardImgUrl
+                      ? getCardImgUrl(displayCard)
+                      : '';
+                    const rarityClass = displayCard.rarity
+                      ? ` rarity-${displayCard.rarity}`
+                      : '';
                     return (
-                      <div key={cardId} className="deck-card-item gallery-card-wrapper" onClick={() => openCardPreview?.(displayCard)}>
+                      <div
+                        key={cardId}
+                        className="deck-card-item gallery-card-wrapper"
+                        onClick={() => openCardPreview?.(displayCard)}
+                      >
                         <div className={`card red${rarityClass}`}>
-                          <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
-                          <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{displayCard.power}</div>
+                          <div
+                            className="card-bg"
+                            style={{ backgroundImage: `url('${imgUrl}')` }}
+                          ></div>
+                          <div
+                            className="card-power"
+                            style={{
+                              fontSize: '1.4rem',
+                              bottom: 0,
+                              right: '4px',
+                            }}
+                          >
+                            {displayCard.power}
+                          </div>
                           {renderSkillTagReact(displayCard)}
-                          <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.85)', color: '#facc15', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 6, border: '1px solid #facc15' }}>
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              background: 'rgba(0,0,0,0.85)',
+                              color: '#facc15',
+                              padding: '1px 6px',
+                              borderRadius: '10px',
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              zIndex: 6,
+                              border: '1px solid #facc15',
+                            }}
+                          >
                             x{count}
                           </div>
                         </div>
@@ -413,48 +693,84 @@ export default function GlobalModals() {
                 })()}
               </div>
             </div>
-            {(enemyDeckData.title === 'デッキ確認' || enemyDeckData.title === '所持カード確認') && GameState.playerConfig && GameState.playerConfig.leaderSkill && (
-              <button
-                className="btn"
-                style={{ marginTop: '20px', width: '100%', background: '#475569', fontSize: '1rem', padding: '8px', marginBottom: '0' }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  if (window.showSkillConfirmModalReact) {
-                    window.showSkillConfirmModalReact({
-                      skill: GameState.playerConfig.leaderSkill,
-                      statusText: '',
-                      color: '#94a3b8',
-                      canExecute: false
-                    });
-                  }
-                }}
-              >リーダースキル</button>
-            )}
-            {!(enemyDeckData.title === 'デッキ確認' || enemyDeckData.title === '所持カード確認') && GameState.enemyConfig && GameState.enemyConfig.leaderSkill && (
-              <button
-                className="btn"
-                style={{ marginTop: '20px', width: '100%', background: '#475569', fontSize: '1rem', padding: '8px', marginBottom: '0' }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  if (window.showSkillConfirmModalReact) {
-                    window.showSkillConfirmModalReact({
-                      skill: GameState.enemyConfig.leaderSkill,
-                      statusText: '',
-                      color: '#94a3b8',
-                      canExecute: false
-                    });
-                  }
-                }}
-              >リーダースキル</button>
-            )}
-            <button className="btn" style={{ marginTop: '10px', width: '100%' }} onClick={closeEnemyDeckModal}>閉じる</button>
+            {(enemyDeckData.title === 'デッキ確認' ||
+              enemyDeckData.title === '所持カード確認') &&
+              GameState.playerConfig &&
+              GameState.playerConfig.leaderSkill && (
+                <button
+                  className="btn"
+                  style={{
+                    marginTop: '20px',
+                    width: '100%',
+                    background: '#475569',
+                    fontSize: '1rem',
+                    padding: '8px',
+                    marginBottom: '0',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    if (window.showSkillConfirmModalReact) {
+                      window.showSkillConfirmModalReact({
+                        skill: GameState.playerConfig.leaderSkill,
+                        statusText: '',
+                        color: '#94a3b8',
+                        canExecute: false,
+                      });
+                    }
+                  }}
+                >
+                  リーダースキル
+                </button>
+              )}
+            {!(
+              enemyDeckData.title === 'デッキ確認' ||
+              enemyDeckData.title === '所持カード確認'
+            ) &&
+              GameState.enemyConfig &&
+              GameState.enemyConfig.leaderSkill && (
+                <button
+                  className="btn"
+                  style={{
+                    marginTop: '20px',
+                    width: '100%',
+                    background: '#475569',
+                    fontSize: '1rem',
+                    padding: '8px',
+                    marginBottom: '0',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    if (window.showSkillConfirmModalReact) {
+                      window.showSkillConfirmModalReact({
+                        skill: GameState.enemyConfig.leaderSkill,
+                        statusText: '',
+                        color: '#94a3b8',
+                        canExecute: false,
+                      });
+                    }
+                  }}
+                >
+                  リーダースキル
+                </button>
+              )}
+            <button
+              className="btn"
+              style={{ marginTop: '10px', width: '100%' }}
+              onClick={closeEnemyDeckModal}
+            >
+              閉じる
+            </button>
           </div>
         </div>
       )}
 
       {/* Card Preview Modal */}
       {cardPreviewData && (
-        <div className="modal-overlay" style={{ zIndex: 4000, display: 'flex' }} onClick={handleCloseCardPreview}>
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 4000, display: 'flex' }}
+          onClick={handleCloseCardPreview}
+        >
           {renderCardPreviewContent(
             cardPreviewData.card,
             cardPreviewData.styleProps || { showPreviewActions: true }
@@ -464,24 +780,103 @@ export default function GlobalModals() {
 
       {/* Acquisition Modals (Card, Premium, Playmat) */}
       {acquisitionData && (
-        <div className="modal-overlay" style={{ zIndex: 3000, display: 'flex', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.4s' }}>
-          {acquisitionData.type === 'card' && renderCardPreviewContent(acquisitionData.card, { containerClass: 'acquisition-glow', margin: '0 !important', showAcquisitionOk: true, canClose: acquisitionData.canClose })}
+        <div
+          className="modal-overlay"
+          style={{
+            zIndex: 3000,
+            display: 'flex',
+            background: 'rgba(0,0,0,0.9)',
+            backdropFilter: 'blur(8px)',
+            animation: 'fadeIn 0.4s',
+          }}
+        >
+          {acquisitionData.type === 'card' &&
+            renderCardPreviewContent(acquisitionData.card, {
+              containerClass: 'acquisition-glow',
+              margin: '0 !important',
+              showAcquisitionOk: true,
+              canClose: acquisitionData.canClose,
+            })}
 
-          {acquisitionData.type === 'premium' && renderCardPreviewContent(acquisitionData.card, { containerClass: 'acquisition-glow', margin: '0 !important', borderColor: '#d946ef', boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)', showAcquisitionOk: true, okBg: 'linear-gradient(45deg, #d946ef, #9333ea)', okColor: '#fff', canClose: acquisitionData.canClose }, true)}
+          {acquisitionData.type === 'premium' &&
+            renderCardPreviewContent(
+              acquisitionData.card,
+              {
+                containerClass: 'acquisition-glow',
+                margin: '0 !important',
+                borderColor: '#d946ef',
+                boxShadow: '0 0 30px rgba(217, 70, 239, 0.5)',
+                showAcquisitionOk: true,
+                okBg: 'linear-gradient(45deg, #d946ef, #9333ea)',
+                okColor: '#fff',
+                canClose: acquisitionData.canClose,
+              },
+              true
+            )}
 
           {acquisitionData.type === 'playmat' && (
-            <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(242, 201, 76, 0.5)' }} onClick={e => e.stopPropagation()}>
-              <h2 style={{ color: '#facc15', marginBottom: '20px' }}>プレイマット獲得！</h2>
-              <div style={{ width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #facc15', marginBottom: '20px', boxShadow: '0 0 15px rgba(242, 201, 76, 0.3)' }}>
-                <img src={acquisitionData.playmat.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Playmat" />
+            <div
+              style={{
+                background: 'var(--panel-bg, #1e293b)',
+                border: '2px solid #facc15',
+                borderRadius: '12px',
+                padding: '20px',
+                width: '90%',
+                maxWidth: '400px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                boxShadow: '0 0 30px rgba(242, 201, 76, 0.5)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 style={{ color: '#facc15', marginBottom: '20px' }}>
+                プレイマット獲得！
+              </h2>
+              <div
+                style={{
+                  width: '100%',
+                  height: '160px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: '2px solid #facc15',
+                  marginBottom: '20px',
+                  boxShadow: '0 0 15px rgba(242, 201, 76, 0.3)',
+                }}
+              >
+                <img
+                  src={acquisitionData.playmat.image}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  alt="Playmat"
+                />
               </div>
-              <p style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '25px' }}>
+              <p
+                style={{
+                  color: '#fff',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginBottom: '25px',
+                }}
+              >
                 プレイマット「{acquisitionData.name}」を入手しました！
               </p>
               <button
                 className="btn ok-button"
-                style={{ background: 'linear-gradient(45deg, #facc15, #eab308)', color: '#000', fontWeight: 'bold', width: '110px', alignSelf: 'center', margin: 0, pointerEvents: acquisitionData.canClose ? 'auto' : 'none', opacity: acquisitionData.canClose ? 1 : 0.5 }}
-                onClick={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
+                style={{
+                  background: 'linear-gradient(45deg, #facc15, #eab308)',
+                  color: '#000',
+                  fontWeight: 'bold',
+                  width: '110px',
+                  alignSelf: 'center',
+                  margin: 0,
+                  pointerEvents: acquisitionData.canClose ? 'auto' : 'none',
+                  opacity: acquisitionData.canClose ? 1 : 0.5,
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setAcquisitionData(null);
+                }}
               >
                 OK
               </button>
@@ -489,18 +884,68 @@ export default function GlobalModals() {
           )}
 
           {acquisitionData.type === 'skin' && (
-            <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #c084fc', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(192, 132, 252, 0.5)' }} onClick={e => e.stopPropagation()}>
-              <h2 style={{ color: '#c084fc', marginBottom: '20px' }}>スキン獲得！</h2>
-              <div style={{ width: '160px', height: '220px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #c084fc', marginBottom: '20px', boxShadow: '0 0 15px rgba(192, 132, 252, 0.3)' }}>
-                <img src={acquisitionData.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Skin" />
+            <div
+              style={{
+                background: 'var(--panel-bg, #1e293b)',
+                border: '2px solid #c084fc',
+                borderRadius: '12px',
+                padding: '20px',
+                width: '90%',
+                maxWidth: '400px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                boxShadow: '0 0 30px rgba(192, 132, 252, 0.5)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 style={{ color: '#c084fc', marginBottom: '20px' }}>
+                スキン獲得！
+              </h2>
+              <div
+                style={{
+                  width: '160px',
+                  height: '220px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: '2px solid #c084fc',
+                  marginBottom: '20px',
+                  boxShadow: '0 0 15px rgba(192, 132, 252, 0.3)',
+                }}
+              >
+                <img
+                  src={acquisitionData.image}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  alt="Skin"
+                />
               </div>
-              <p style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '25px' }}>
+              <p
+                style={{
+                  color: '#fff',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginBottom: '25px',
+                }}
+              >
                 スキン「{acquisitionData.name}」を入手しました！
               </p>
               <button
                 className="btn ok-button"
-                style={{ background: 'linear-gradient(45deg, #c084fc, #9333ea)', color: '#fff', fontWeight: 'bold', width: '110px', alignSelf: 'center', margin: 0, pointerEvents: acquisitionData.canClose ? 'auto' : 'none', opacity: acquisitionData.canClose ? 1 : 0.5 }}
-                onClick={() => { playSound?.(SOUNDS?.seClick); setAcquisitionData(null); }}
+                style={{
+                  background: 'linear-gradient(45deg, #c084fc, #9333ea)',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  width: '110px',
+                  alignSelf: 'center',
+                  margin: 0,
+                  pointerEvents: acquisitionData.canClose ? 'auto' : 'none',
+                  opacity: acquisitionData.canClose ? 1 : 0.5,
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setAcquisitionData(null);
+                }}
               >
                 OK
               </button>
@@ -511,26 +956,95 @@ export default function GlobalModals() {
 
       {/* Point Acquisition Modal */}
       {pointAcquisitionData && (
-        <div className="modal-overlay" style={{ zIndex: 3200, display: 'flex', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', animation: 'fadeIn 0.3s' }} onClick={() => pointAcquisitionData.onClose && pointAcquisitionData.onClose()}>
-          <div className="skill-modal-box modal-pop-animation" style={{ border: `2px solid ${pointAcquisitionData.color || '#facc15'}`, textAlign: 'center', maxWidth: '400px', width: '90%', padding: '30px 20px', boxShadow: `0 0 40px ${pointAcquisitionData.color || '#facc15'}66` }} onClick={e => e.stopPropagation()}>
-            <h2 style={{ color: pointAcquisitionData.color || '#facc15', marginBottom: '20px', fontSize: '1.4rem', textShadow: '1px 1px 2px #000' }}>{pointAcquisitionData.title}</h2>
+        <div
+          className="modal-overlay"
+          style={{
+            zIndex: 3200,
+            display: 'flex',
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(5px)',
+            animation: 'fadeIn 0.3s',
+          }}
+          onClick={() =>
+            pointAcquisitionData.onClose && pointAcquisitionData.onClose()
+          }
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{
+              border: `2px solid ${pointAcquisitionData.color || '#facc15'}`,
+              textAlign: 'center',
+              maxWidth: '400px',
+              width: '90%',
+              padding: '30px 20px',
+              boxShadow: `0 0 40px ${pointAcquisitionData.color || '#facc15'}66`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{
+                color: pointAcquisitionData.color || '#facc15',
+                marginBottom: '20px',
+                fontSize: '1.4rem',
+                textShadow: '1px 1px 2px #000',
+              }}
+            >
+              {pointAcquisitionData.title}
+            </h2>
 
-            <p style={{ color: '#fff', fontSize: '1rem', marginBottom: '10px', whiteSpace: 'pre-line', lineHeight: '1.5' }}>{pointAcquisitionData.message}</p>
+            <p
+              style={{
+                color: '#fff',
+                fontSize: '1rem',
+                marginBottom: '10px',
+                whiteSpace: 'pre-line',
+                lineHeight: '1.5',
+              }}
+            >
+              {pointAcquisitionData.message}
+            </p>
 
-            <div style={{ fontSize: '3.5rem', margin: '20px 0', fontWeight: 'bold', color: '#fff', textShadow: `0 0 20px ${pointAcquisitionData.color || '#facc15'}` }}>
-              ✨ <span style={{ color: pointAcquisitionData.color || '#facc15' }}>{pointAcquisitionData.points}</span> <span style={{ fontSize: '1.5rem' }}>Pt</span>
+            <div
+              style={{
+                fontSize: '3.5rem',
+                margin: '20px 0',
+                fontWeight: 'bold',
+                color: '#fff',
+                textShadow: `0 0 20px ${pointAcquisitionData.color || '#facc15'}`,
+              }}
+            >
+              ✨{' '}
+              <span style={{ color: pointAcquisitionData.color || '#facc15' }}>
+                {pointAcquisitionData.points}
+              </span>{' '}
+              <span style={{ fontSize: '1.5rem' }}>Pt</span>
             </div>
 
             {pointAcquisitionData.totalPoints !== undefined && (
-              <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '30px' }}>現在の累計: {pointAcquisitionData.totalPoints} Pt</p>
+              <p
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.95rem',
+                  marginBottom: '30px',
+                }}
+              >
+                現在の累計: {pointAcquisitionData.totalPoints} Pt
+              </p>
             )}
 
             <button
               className="btn ok-button"
-              style={{ width: '150px', margin: '0 auto', background: `linear-gradient(45deg, ${pointAcquisitionData.color || '#facc15'}, ${pointAcquisitionData.darkColor || '#eab308'})`, color: '#000', fontWeight: 'bold' }}
+              style={{
+                width: '150px',
+                margin: '0 auto',
+                background: `linear-gradient(45deg, ${pointAcquisitionData.color || '#facc15'}, ${pointAcquisitionData.darkColor || '#eab308'})`,
+                color: '#000',
+                fontWeight: 'bold',
+              }}
               onClick={() => {
                 playSound?.(SOUNDS?.seClick);
-                if (pointAcquisitionData.onClose) pointAcquisitionData.onClose();
+                if (pointAcquisitionData.onClose)
+                  pointAcquisitionData.onClose();
                 setPointAcquisitionData(null);
               }}
             >
@@ -542,72 +1056,225 @@ export default function GlobalModals() {
 
       {/* Character Detail Modal */}
       {charDetailData && (
-        <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 50, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '350px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)', boxSizing: 'border-box' }}>
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 50,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--panel-bg, #1e293b)',
+              border: '2px solid #facc15',
+              borderRadius: '12px',
+              padding: '20px',
+              width: '90%',
+              maxWidth: '350px',
+              maxHeight: '95vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8)',
+              boxSizing: 'border-box',
+            }}
+          >
             {(() => {
-              const isEnemySelection = GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy;
-              const isCreateDeck = GameState.appState === 'create_deck_select_char' || GameState.gameMode === 'defense_register' && GameState.appState === 'select_player';
+              const isEnemySelection =
+                GameState.appState === 'select_enemy' ||
+                charDetailData.isDungeonEnemy;
+              const isCreateDeck =
+                GameState.appState === 'create_deck_select_char' ||
+                (GameState.gameMode === 'defense_register' &&
+                  GameState.appState === 'select_player');
               let skinIdToUse;
               if (isEnemySelection) {
-                  skinIdToUse = 'default';
-              } else if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
-                  skinIdToUse = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
+                skinIdToUse = 'default';
+              } else if (
+                charDetailData.targetDeckIndex !== undefined &&
+                GameState.decks &&
+                GameState.decks[charDetailData.targetDeckIndex]
+              ) {
+                skinIdToUse =
+                  GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[
+                    charDetailData.id
+                  ] || 'default';
               } else {
-                  skinIdToUse = GameState.playerSkins[charDetailData.id] || 'default';
+                skinIdToUse =
+                  GameState.playerSkins[charDetailData.id] || 'default';
               }
-              const imgSrc = getSkinImage(charDetailData.id, skinIdToUse, 'image');
+              const imgSrc = getSkinImage(
+                charDetailData.id,
+                skinIdToUse,
+                'image'
+              );
               return (
-                <img 
-                  src={imgSrc} 
-                  style={{ width: '140px', height: '175px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #334155', marginBottom: '10px', flexShrink: 0, cursor: 'pointer' }} 
-                  alt={charDetailData.name} 
+                <img
+                  src={imgSrc}
+                  style={{
+                    width: '140px',
+                    height: '175px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '2px solid #334155',
+                    marginBottom: '10px',
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                  }}
+                  alt={charDetailData.name}
                   onClick={() => {
-                     playSound?.(SOUNDS?.seClick);
-                     setSimpleImagePreview(imgSrc);
+                    playSound?.(SOUNDS?.seClick);
+                    setSimpleImagePreview(imgSrc);
                   }}
                 />
               );
             })()}
 
-            <h2 style={{ marginBottom: '5px', color: charDetailData.color || '#facc15', fontSize: '1.3rem', textAlign: 'center', flexShrink: 0 }}>{charDetailData.name}</h2>
+            <h2
+              style={{
+                marginBottom: '5px',
+                color: charDetailData.color || '#facc15',
+                fontSize: '1.3rem',
+                textAlign: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {charDetailData.name}
+            </h2>
 
             {charDetailData.easeOfUse && (
-              <div style={{ color: '#fbd38d', fontSize: '0.95rem', marginBottom: '5px', textShadow: '1px 1px 2px #000', flexShrink: 0 }}>
-                使いやすさ: {'★'.repeat(charDetailData.easeOfUse)}{'☆'.repeat(3 - charDetailData.easeOfUse)}
+              <div
+                style={{
+                  color: '#fbd38d',
+                  fontSize: '0.95rem',
+                  marginBottom: '5px',
+                  textShadow: '1px 1px 2px #000',
+                  flexShrink: 0,
+                }}
+              >
+                使いやすさ: {'★'.repeat(charDetailData.easeOfUse)}
+                {'☆'.repeat(3 - charDetailData.easeOfUse)}
               </div>
             )}
 
-            <div style={{ flex: 1, overflowY: 'auto', width: '100%', padding: '0 5px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <p style={{ fontSize: '0.9rem', color: '#cbd5e1', textAlign: 'center', margin: 0, lineHeight: 1.4 }}>{charDetailData.desc}</p>
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                width: '100%',
+                padding: '0 5px',
+                marginBottom: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '0.9rem',
+                  color: '#cbd5e1',
+                  textAlign: 'center',
+                  margin: 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                {charDetailData.desc}
+              </p>
 
               {charDetailData.leaderSkill && (
-                <div style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '8px', width: '100%', boxSizing: 'border-box', border: '1px solid #475569' }}>
-                  <div style={{ color: '#facc15', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>【リーダー能力】</div>
-                  <div style={{ fontWeight: 'bold', marginBottom: '3px', color: '#fff' }}>
-                    {charDetailData.leaderSkill.name} {charDetailData.leaderSkill.cost ? `(必要SP: ${charDetailData.leaderSkill.cost})` : ''}
+                <div
+                  style={{
+                    background: 'rgba(0,0,0,0.5)',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    border: '1px solid #475569',
+                  }}
+                >
+                  <div
+                    style={{
+                      color: '#facc15',
+                      fontWeight: 'bold',
+                      fontSize: '0.8rem',
+                      marginBottom: '5px',
+                    }}
+                  >
+                    【リーダー能力】
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.3 }}>{charDetailData.leaderSkill.desc}</div>
+                  <div
+                    style={{
+                      fontWeight: 'bold',
+                      marginBottom: '3px',
+                      color: '#fff',
+                    }}
+                  >
+                    {charDetailData.leaderSkill.name}{' '}
+                    {charDetailData.leaderSkill.cost
+                      ? `(必要SP: ${charDetailData.leaderSkill.cost})`
+                      : ''}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#94a3b8',
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {charDetailData.leaderSkill.desc}
+                  </div>
                 </div>
               )}
             </div>
 
-            {!(GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy) && (
+            {!(
+              GameState.appState === 'select_enemy' ||
+              charDetailData.isDungeonEnemy
+            ) && (
               <button
                 className="btn"
-                style={{ width: '100%', marginBottom: '10px', background: 'linear-gradient(45deg, #c084fc, #9333ea)', border: 'none', color: 'white', padding: '10px', borderRadius: '8px', fontWeight: 'bold', textShadow: '1px 1px 2px #000' }}
+                style={{
+                  width: '100%',
+                  marginBottom: '10px',
+                  background: 'linear-gradient(45deg, #c084fc, #9333ea)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  textShadow: '1px 1px 2px #000',
+                }}
                 onClick={() => {
                   let initialSkin = 'default';
-                  const isEnemySelection = GameState.appState === 'select_enemy' || charDetailData.isDungeonEnemy;
-                  
+                  const isEnemySelection =
+                    GameState.appState === 'select_enemy' ||
+                    charDetailData.isDungeonEnemy;
+
                   if (isEnemySelection) {
-                      initialSkin = 'default';
-                  } else if (charDetailData.targetDeckIndex !== undefined && GameState.decks && GameState.decks[charDetailData.targetDeckIndex]) {
-                      initialSkin = GameState.decks[charDetailData.targetDeckIndex].playerSkins?.[charDetailData.id] || 'default';
+                    initialSkin = 'default';
+                  } else if (
+                    charDetailData.targetDeckIndex !== undefined &&
+                    GameState.decks &&
+                    GameState.decks[charDetailData.targetDeckIndex]
+                  ) {
+                    initialSkin =
+                      GameState.decks[charDetailData.targetDeckIndex]
+                        .playerSkins?.[charDetailData.id] || 'default';
                   } else {
-                      initialSkin = GameState.playerSkins[charDetailData.id] || 'default';
+                    initialSkin =
+                      GameState.playerSkins[charDetailData.id] || 'default';
                   }
                   setSelectedSkinState(initialSkin);
-                  if (window.showSkinSelectionModalState) window.showSkinSelectionModalState();
+                  if (window.showSkinSelectionModalState)
+                    window.showSkinSelectionModalState();
                 }}
               >
                 ✨ スキン変更
@@ -615,9 +1282,31 @@ export default function GlobalModals() {
             )}
 
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-              <button className="btn" style={{ flex: 1, background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeCharDetailModal(e); }}>戻る</button>
+              <button
+                className="btn"
+                style={{ flex: 1, background: '#475569', margin: 0 }}
+                onClick={(e) => {
+                  window.playSound?.(window.SOUNDS?.seClick);
+                  window.closeCharDetailModal(e);
+                }}
+              >
+                戻る
+              </button>
               {!charDetailData.hideDecideButton && (
-                  <button className="btn" style={{ flex: 1, background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)', margin: 0 }} onClick={() => { setCharDetailData(null); confirmCharSelect?.(); }}>決定</button>
+                <button
+                  className="btn"
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)',
+                    margin: 0,
+                  }}
+                  onClick={() => {
+                    setCharDetailData(null);
+                    confirmCharSelect?.();
+                  }}
+                >
+                  決定
+                </button>
               )}
             </div>
           </div>
@@ -628,15 +1317,86 @@ export default function GlobalModals() {
 
       {/* Sync Data Modal */}
       {syncDataVisible && (
-        <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 70, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #94a3b8', borderRadius: '12px', padding: '30px', width: '90%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-            <h2 style={{ color: '#f8fafc', marginBottom: '20px' }}>データ連携</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
-              <button className="btn" style={{ background: 'linear-gradient(45deg, #0ea5e9, #2563eb)', margin: 0 }} onClick={backupDataToXML}>バックアップ</button>
-              <button className="btn" style={{ background: 'linear-gradient(45deg, #10b981, #059669)', margin: 0 }} onClick={importDataFromXML}>データ取込</button>
-              <button className="btn" style={{ background: '#475569', marginTop: '5px' }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeSyncDataModalState(e); }}>戻る</button>
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 70,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--panel-bg, #1e293b)',
+              border: '2px solid #94a3b8',
+              borderRadius: '12px',
+              padding: '30px',
+              width: '90%',
+              maxWidth: '350px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8)',
+            }}
+          >
+            <h2 style={{ color: '#f8fafc', marginBottom: '20px' }}>
+              データ連携
+            </h2>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                width: '100%',
+              }}
+            >
+              <button
+                className="btn"
+                style={{
+                  background: 'linear-gradient(45deg, #0ea5e9, #2563eb)',
+                  margin: 0,
+                }}
+                onClick={backupDataToXML}
+              >
+                バックアップ
+              </button>
+              <button
+                className="btn"
+                style={{
+                  background: 'linear-gradient(45deg, #10b981, #059669)',
+                  margin: 0,
+                }}
+                onClick={importDataFromXML}
+              >
+                データ取込
+              </button>
+              <button
+                className="btn"
+                style={{ background: '#475569', marginTop: '5px' }}
+                onClick={(e) => {
+                  window.playSound?.(window.SOUNDS?.seClick);
+                  window.closeSyncDataModalState(e);
+                }}
+              >
+                戻る
+              </button>
             </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '20px', textAlign: 'center', lineHeight: 1.4 }}>
+            <p
+              style={{
+                color: '#94a3b8',
+                fontSize: '0.75rem',
+                marginTop: '20px',
+                textAlign: 'center',
+                lineHeight: 1.4,
+              }}
+            >
               バックアップしたXMLファイルを保存するか、保存したファイルからデータを復元できます。
             </p>
           </div>
@@ -645,26 +1405,106 @@ export default function GlobalModals() {
 
       {/* Player Name Modal */}
       {playerNameVisible && (
-        <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #10b981', borderRadius: '12px', padding: '30px', width: '90%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-            <h2 style={{ color: '#10b981', marginBottom: '20px', fontSize: '1.2rem' }}>プレイヤーネーム登録</h2>
-            <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px', textAlign: 'center' }}>プレイヤーネームを入力してください。</p>
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 100,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--panel-bg, #1e293b)',
+              border: '2px solid #10b981',
+              borderRadius: '12px',
+              padding: '30px',
+              width: '90%',
+              maxWidth: '350px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8)',
+            }}
+          >
+            <h2
+              style={{
+                color: '#10b981',
+                marginBottom: '20px',
+                fontSize: '1.2rem',
+              }}
+            >
+              プレイヤーネーム登録
+            </h2>
+            <p
+              style={{
+                color: '#cbd5e1',
+                fontSize: '0.85rem',
+                marginBottom: '15px',
+                textAlign: 'center',
+              }}
+            >
+              プレイヤーネームを入力してください。
+            </p>
             <input
               type="text"
               value={playerNameInput}
               onChange={(e) => setPlayerNameInput(e.target.value)}
               placeholder="名前を入力..."
               maxLength="12"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '1rem', marginBottom: '25px', outline: 'none', textAlign: 'center' }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #334155',
+                background: '#0f172a',
+                color: '#fff',
+                fontSize: '1rem',
+                marginBottom: '25px',
+                outline: 'none',
+                textAlign: 'center',
+              }}
             />
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-              <button className="btn" style={{ flex: 1, background: '#475569', margin: 0, fontSize: '0.85rem', paddingLeft: '10px', paddingRight: '10px', whiteSpace: 'nowrap' }} onClick={window.closePlayerNameModalState}>キャンセル</button>
               <button
                 className="btn"
-                style={{ flex: 1, background: 'linear-gradient(45deg, #10b981, #059669)', margin: 0, fontSize: '0.85rem', paddingLeft: '10px', paddingRight: '10px', whiteSpace: 'nowrap' }}
+                style={{
+                  flex: 1,
+                  background: '#475569',
+                  margin: 0,
+                  fontSize: '0.85rem',
+                  paddingLeft: '10px',
+                  paddingRight: '10px',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={window.closePlayerNameModalState}
+              >
+                キャンセル
+              </button>
+              <button
+                className="btn"
+                style={{
+                  flex: 1,
+                  background: 'linear-gradient(45deg, #10b981, #059669)',
+                  margin: 0,
+                  fontSize: '0.85rem',
+                  paddingLeft: '10px',
+                  paddingRight: '10px',
+                  whiteSpace: 'nowrap',
+                }}
                 onClick={() => {
                   if (playerNameInput) {
-                    localStorage.setItem('mini_card_battle_player_name', playerNameInput);
+                    localStorage.setItem(
+                      'mini_card_battle_player_name',
+                      playerNameInput
+                    );
                   }
                   if (playerNameCallback) {
                     playerNameCallback(playerNameInput);
@@ -687,17 +1527,72 @@ export default function GlobalModals() {
 
       {/* Playmat Selection Modal */}
       {playmatSelectionVisible && (
-        <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 80, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #facc15', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '400px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-            <h2 style={{ color: '#facc15', marginBottom: '15px', fontSize: '1.2rem' }}>プレイマット設定</h2>
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 80,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--panel-bg, #1e293b)',
+              border: '2px solid #facc15',
+              borderRadius: '12px',
+              padding: '20px',
+              width: '90%',
+              maxWidth: '400px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8)',
+            }}
+          >
+            <h2
+              style={{
+                color: '#facc15',
+                marginBottom: '15px',
+                fontSize: '1.2rem',
+              }}
+            >
+              プレイマット設定
+            </h2>
 
-            <div style={{ width: '100%', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', padding: '5px', boxSizing: 'border-box' }}>
+            <div
+              style={{
+                width: '100%',
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                padding: '5px',
+                boxSizing: 'border-box',
+              }}
+            >
               <div
                 style={{
                   padding: '12px',
-                  background: (!selectedPlaymatState || selectedPlaymatState === 'null') ? 'rgba(242, 201, 76, 0.2)' : 'rgba(0, 0, 0, 0.3)',
-                  border: `2px solid ${(!selectedPlaymatState || selectedPlaymatState === 'null') ? '#facc15' : '#475569'}`,
-                  borderRadius: '8px', color: '#fff', cursor: 'pointer', textAlign: 'center', fontWeight: 'bold', transition: 'all 0.2s'
+                  background:
+                    !selectedPlaymatState || selectedPlaymatState === 'null'
+                      ? 'rgba(242, 201, 76, 0.2)'
+                      : 'rgba(0, 0, 0, 0.3)',
+                  border: `2px solid ${!selectedPlaymatState || selectedPlaymatState === 'null' ? '#facc15' : '#475569'}`,
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s',
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
@@ -708,40 +1603,100 @@ export default function GlobalModals() {
                 未選択
               </div>
 
-              {PLAYMAT_MASTER?.filter(p => ownedPlaymats?.includes(p.id)).map(p => {
-                const isSelected = selectedPlaymatState === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '12px', padding: '8px',
-                      background: isSelected ? 'rgba(242, 201, 76, 0.2)' : 'rgba(0, 0, 0, 0.3)',
-                      border: `2px solid ${isSelected ? '#facc15' : '#475569'}`,
-                      borderRadius: '8px', color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
-                    }}
-                    onClick={() => {
-                      playSound?.(SOUNDS?.seClick);
-                      GameState.selectedPlaymatId = p.id;
-                      setSelectedPlaymatState(p.id);
-                    }}
-                  >
-                    <div style={{ width: '80px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #475569', flexShrink: 0 }}>
-                      <img src={p.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={p.name} />
+              {PLAYMAT_MASTER?.filter((p) => ownedPlaymats?.includes(p.id)).map(
+                (p) => {
+                  const isSelected = selectedPlaymatState === p.id;
+                  return (
+                    <div
+                      key={p.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '8px',
+                        background: isSelected
+                          ? 'rgba(242, 201, 76, 0.2)'
+                          : 'rgba(0, 0, 0, 0.3)',
+                        border: `2px solid ${isSelected ? '#facc15' : '#475569'}`,
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onClick={() => {
+                        playSound?.(SOUNDS?.seClick);
+                        GameState.selectedPlaymatId = p.id;
+                        setSelectedPlaymatState(p.id);
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '80px',
+                          height: '40px',
+                          borderRadius: '4px',
+                          overflow: 'hidden',
+                          border: '1px solid #475569',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={p.image}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          alt={p.name}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        {p.name}
+                      </div>
                     </div>
-                    <div style={{ flex: 1, fontWeight: 'bold', fontSize: '0.9rem' }}>{p.name}</div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
 
               {(!ownedPlaymats || ownedPlaymats.length === 0) && (
-                <div style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', marginTop: '20px' }}>
-                  解放済みのプレイマットがありません。<br />実績を達成して入手しましょう！
+                <div
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: '0.8rem',
+                    textAlign: 'center',
+                    marginTop: '20px',
+                  }}
+                >
+                  解放済みのプレイマットがありません。
+                  <br />
+                  実績を達成して入手しましょう！
                 </div>
               )}
             </div>
 
-            <div style={{ marginTop: '15px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <button className="btn" style={{ background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closePlaymatSelectionModalState(e); }}>戻る</button>
+            <div
+              style={{
+                marginTop: '15px',
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                className="btn"
+                style={{ background: '#475569', margin: 0 }}
+                onClick={(e) => {
+                  window.playSound?.(window.SOUNDS?.seClick);
+                  window.closePlaymatSelectionModalState(e);
+                }}
+              >
+                戻る
+              </button>
             </div>
           </div>
         </div>
@@ -749,83 +1704,223 @@ export default function GlobalModals() {
 
       {/* Skin Selection Modal */}
       {skinSelectionVisible && (
-        <div className="screen" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 80, display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--panel-bg, #1e293b)', border: '2px solid #c084fc', borderRadius: '12px', padding: '20px', width: '90%', maxWidth: '400px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-            <h2 style={{ color: '#c084fc', marginBottom: '15px', fontSize: '1.2rem' }}>キャラスキン設定</h2>
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 80,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--panel-bg, #1e293b)',
+              border: '2px solid #c084fc',
+              borderRadius: '12px',
+              padding: '20px',
+              width: '90%',
+              maxWidth: '400px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8)',
+            }}
+          >
+            <h2
+              style={{
+                color: '#c084fc',
+                marginBottom: '15px',
+                fontSize: '1.2rem',
+              }}
+            >
+              キャラスキン設定
+            </h2>
 
-            <div style={{ width: '100%', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', padding: '5px', boxSizing: 'border-box' }}>
-              {charDetailData && charDetailData.skins && Object.keys(charDetailData.skins).map(skinId => {
-                const skinDef = charDetailData.skins[skinId];
-                const isSelected = selectedSkinState === skinId;
-                const isUnlocked = skinId === 'default' || (GameState.unlockedSkins && (GameState.unlockedSkins.includes(`${charDetailData.id}_${skinId}`) || GameState.unlockedSkins.includes(skinId)));
+            <div
+              style={{
+                width: '100%',
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                padding: '5px',
+                boxSizing: 'border-box',
+              }}
+            >
+              {charDetailData &&
+                charDetailData.skins &&
+                Object.keys(charDetailData.skins).map((skinId) => {
+                  const skinDef = charDetailData.skins[skinId];
+                  const isSelected = selectedSkinState === skinId;
+                  const isUnlocked =
+                    skinId === 'default' ||
+                    (GameState.unlockedSkins &&
+                      (GameState.unlockedSkins.includes(
+                        `${charDetailData.id}_${skinId}`
+                      ) ||
+                        GameState.unlockedSkins.includes(skinId)));
 
-                return (
-                  <div
-                    key={skinId}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '12px', padding: '8px',
-                      background: isSelected ? 'rgba(192, 132, 252, 0.2)' : 'rgba(0, 0, 0, 0.3)',
-                      border: `2px solid ${isSelected ? '#c084fc' : '#475569'}`,
-                      borderRadius: '8px', color: '#fff',
-                      cursor: isUnlocked ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.2s',
-                      opacity: isUnlocked ? 1 : 0.5
-                    }}
-                    onClick={() => {
-                      if (!isUnlocked) return;
-                      playSound?.(SOUNDS?.seClick);
+                  return (
+                    <div
+                      key={skinId}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '8px',
+                        background: isSelected
+                          ? 'rgba(192, 132, 252, 0.2)'
+                          : 'rgba(0, 0, 0, 0.3)',
+                        border: `2px solid ${isSelected ? '#c084fc' : '#475569'}`,
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.2s',
+                        opacity: isUnlocked ? 1 : 0.5,
+                      }}
+                      onClick={() => {
+                        if (!isUnlocked) return;
+                        playSound?.(SOUNDS?.seClick);
 
-                      // 1. グローバルの最新設定として保存（今まで通り）
-                      GameState.playerSkins[charDetailData.id] = skinId;
-                      localStorage.setItem('mini_card_battle_skins', JSON.stringify(GameState.playerSkins));
+                        // 1. グローバルの最新設定として保存（今まで通り）
+                        GameState.playerSkins[charDetailData.id] = skinId;
+                        localStorage.setItem(
+                          'mini_card_battle_skins',
+                          JSON.stringify(GameState.playerSkins)
+                        );
 
-                      // 2. 指定されたデッキからのスキン変更なら、デッキ固有のスキンも更新する
-                      if (charDetailData.targetDeckIndex !== undefined) {
+                        // 2. 指定されたデッキからのスキン変更なら、デッキ固有のスキンも更新する
+                        if (charDetailData.targetDeckIndex !== undefined) {
                           const deckList = GameState.decks;
-                          if (deckList && deckList[charDetailData.targetDeckIndex]) {
-                              const targetDeck = deckList[charDetailData.targetDeckIndex];
-                              if (!targetDeck.playerSkins) targetDeck.playerSkins = {};
-                              targetDeck.playerSkins[charDetailData.id] = skinId;
-                              // 現在のモードが通常デッキの場合のみ、デッキ全体のシリアライズを更新する
-                              if (GameState.gameMode !== 'defense_register' && GameState.gameMode !== 'battle_dungeon') {
-                                  localStorage.setItem('mini_card_battle_decks', JSON.stringify(deckList));
-                              }
-                              // 防衛・試練等の固有セーブは、画面を閉じる際や `saveCurrentEditDeck` 側で担保される
-                              if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-                              if (typeof renderDeckEdit === 'function') renderDeckEdit();
+                          if (
+                            deckList &&
+                            deckList[charDetailData.targetDeckIndex]
+                          ) {
+                            const targetDeck =
+                              deckList[charDetailData.targetDeckIndex];
+                            if (!targetDeck.playerSkins)
+                              targetDeck.playerSkins = {};
+                            targetDeck.playerSkins[charDetailData.id] = skinId;
+                            // 現在のモードが通常デッキの場合のみ、デッキ全体のシリアライズを更新する
+                            if (
+                              GameState.gameMode !== 'defense_register' &&
+                              GameState.gameMode !== 'battle_dungeon'
+                            ) {
+                              localStorage.setItem(
+                                'mini_card_battle_decks',
+                                JSON.stringify(deckList)
+                              );
+                            }
+                            // 防衛・試練等の固有セーブは、画面を閉じる際や `saveCurrentEditDeck` 側で担保される
+                            if (window.forceUpdateDeckList)
+                              window.forceUpdateDeckList();
+                            if (typeof renderDeckEdit === 'function')
+                              renderDeckEdit();
                           }
-                      } else {
+                        } else {
                           // 指定がない場合（キャラ選択画面など）の既存フロー
-                          if (window.saveCurrentEditDeck) window.saveCurrentEditDeck();
+                          if (window.saveCurrentEditDeck)
+                            window.saveCurrentEditDeck();
                           if (window.saveDeck) window.saveDeck();
-                          if (typeof renderDeckEdit === 'function') renderDeckEdit();
-                      }
+                          if (typeof renderDeckEdit === 'function')
+                            renderDeckEdit();
+                        }
 
-                      setSelectedSkinState(skinId);
-                      if (window.closeSkinSelectionModalState) window.closeSkinSelectionModalState();
-                      if (window.forceUpdateSelectScreen) window.forceUpdateSelectScreen();
-                    }}
-                  >
-                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #475569', flexShrink: 0 }}>
-                      <img src={skinDef.icon} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={skinDef.name} />
+                        setSelectedSkinState(skinId);
+                        if (window.closeSkinSelectionModalState)
+                          window.closeSkinSelectionModalState();
+                        if (window.forceUpdateSelectScreen)
+                          window.forceUpdateSelectScreen();
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '2px solid #475569',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={skinDef.icon}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          alt={skinDef.name}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        <span>{skinDef.name}</span>
+                        {!isUnlocked && (
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#f87171',
+                              fontWeight: 'normal',
+                            }}
+                          >
+                            未解放 (
+                            {skinDef.unlockCondition || '試練交換所で入手'})
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ flex: 1, fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', flexDirection: 'column' }}>
-                      <span>{skinDef.name}</span>
-                      {!isUnlocked && <span style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 'normal' }}>未解放 ({skinDef.unlockCondition || '試練交換所で入手'})</span>}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
               {(!charDetailData || !charDetailData.skins) && (
-                <div style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', marginTop: '20px' }}>
+                <div
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: '0.8rem',
+                    textAlign: 'center',
+                    marginTop: '20px',
+                  }}
+                >
                   このキャラクターには変更可能なスキンがありません。
                 </div>
               )}
             </div>
 
-            <div style={{ marginTop: '15px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <button className="btn" style={{ background: '#475569', margin: 0 }} onClick={(e) => { window.playSound?.(window.SOUNDS?.seClick); window.closeSkinSelectionModalState(e); }}>戻る</button>
+            <div
+              style={{
+                marginTop: '15px',
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                className="btn"
+                style={{ background: '#475569', margin: 0 }}
+                onClick={(e) => {
+                  window.playSound?.(window.SOUNDS?.seClick);
+                  window.closeSkinSelectionModalState(e);
+                }}
+              >
+                戻る
+              </button>
             </div>
           </div>
         </div>
@@ -833,23 +1928,78 @@ export default function GlobalModals() {
 
       {/* Skill Confirm Modal */}
       {skillConfirmData && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 2500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }} onClick={window.closeSkillConfirmModalReact}>
-          <div className="skill-modal-box modal-pop-animation" onClick={e => e.stopPropagation()}>
-            <h2 id="skill-confirm-name" style={{ color: '#facc15', marginBottom: '10px' }}>{skillConfirmData.skill.name}</h2>
-            <p id="skill-confirm-desc" style={{ color: '#cbd5e1', fontSize: '0.9rem', textAlign: 'center', marginBottom: '15px', lineHeight: 1.4 }}>{skillConfirmData.skill.desc}</p>
-            <div id="skill-confirm-status" style={{ margin: '10px 0 20px 0', fontWeight: 'bold', fontSize: '1.1rem', color: skillConfirmData.color }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 2500,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+          onClick={window.closeSkillConfirmModalReact}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="skill-confirm-name"
+              style={{ color: '#facc15', marginBottom: '10px' }}
+            >
+              {skillConfirmData.skill.name}
+            </h2>
+            <p
+              id="skill-confirm-desc"
+              style={{
+                color: '#cbd5e1',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                marginBottom: '15px',
+                lineHeight: 1.4,
+              }}
+            >
+              {skillConfirmData.skill.desc}
+            </p>
+            <div
+              id="skill-confirm-status"
+              style={{
+                margin: '10px 0 20px 0',
+                fontWeight: 'bold',
+                fontSize: '1.1rem',
+                color: skillConfirmData.color,
+              }}
+            >
               {skillConfirmData.statusText}
             </div>
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-              <button className="btn" style={{ flex: 1, background: '#475569', marginTop: 0 }} onClick={window.closeSkillConfirmModalReact}>閉じる</button>
+              <button
+                className="btn"
+                style={{ flex: 1, background: '#475569', marginTop: 0 }}
+                onClick={window.closeSkillConfirmModalReact}
+              >
+                閉じる
+              </button>
               {skillConfirmData.canExecute && (
                 <button
                   id="btn-execute-skill"
                   className="btn"
-                  style={{ flex: 1, background: 'linear-gradient(45deg, #ef4444, #b91c1c)', marginTop: 0 }}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(45deg, #ef4444, #b91c1c)',
+                    marginTop: 0,
+                  }}
                   onClick={() => {
                     window.closeSkillConfirmModalReact();
-                    if (skillConfirmData.onExecute) skillConfirmData.onExecute();
+                    if (skillConfirmData.onExecute)
+                      skillConfirmData.onExecute();
                   }}
                 >
                   使用する
@@ -862,14 +2012,64 @@ export default function GlobalModals() {
 
       {/* Skill Choice Modal */}
       {skillChoiceData && (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}>
-          <div className="skill-modal-box modal-pop-animation" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ color: '#facc15', marginBottom: '20px', textAlign: 'center', flexShrink: 0 }}>{skillChoiceData.isForce ? '相手のスキルを選択' : 'スキルを選択'} {skillChoiceData.maxChoices > 1 ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})` : ''}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', overflowY: skillChoiceData.choices.length > 3 ? 'auto' : 'visible', paddingRight: skillChoiceData.choices.length > 3 ? '5px' : '0' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <h2
+              style={{
+                color: '#facc15',
+                marginBottom: '20px',
+                textAlign: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {skillChoiceData.isForce ? '相手のスキルを選択' : 'スキルを選択'}{' '}
+              {skillChoiceData.maxChoices > 1
+                ? `(${skillChoiceData.selectedIndices.length}/${skillChoiceData.maxChoices})`
+                : ''}
+            </h2>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                width: '100%',
+                overflowY:
+                  skillChoiceData.choices.length > 3 ? 'auto' : 'visible',
+                paddingRight: skillChoiceData.choices.length > 3 ? '5px' : '0',
+              }}
+            >
               {skillChoiceData.choices.map((sk, idx) => {
-                const skillDef = SKILLS[sk.id] || { name: '不明', icon: '❓', desc: () => '' };
+                const skillDef = SKILLS[sk.id] || {
+                  name: '不明',
+                  icon: '❓',
+                  desc: () => '',
+                };
                 const val = sk.value || '';
-                const isSelected = skillChoiceData.selectedIndices.includes(idx);
+                const isSelected =
+                  skillChoiceData.selectedIndices.includes(idx);
 
                 return (
                   <div
@@ -877,25 +2077,28 @@ export default function GlobalModals() {
                     className="preview-skill-item"
                     style={{
                       cursor: 'pointer',
-                      transition: 'transform 0.2s, border-color 0.2s, background-color 0.2s',
+                      transition:
+                        'transform 0.2s, border-color 0.2s, background-color 0.2s',
                       border: `2px solid ${isSelected ? '#facc15' : 'rgba(250, 204, 21, 0.1)'}`,
-                      backgroundColor: isSelected ? 'rgba(250, 204, 21, 0.1)' : 'transparent',
+                      backgroundColor: isSelected
+                        ? 'rgba(250, 204, 21, 0.1)'
+                        : 'transparent',
                       borderRadius: '8px',
-                      padding: '10px'
+                      padding: '10px',
                     }}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
-                      setSkillChoiceData(prev => {
+                      setSkillChoiceData((prev) => {
                         let newIndices = [...prev.selectedIndices];
                         if (newIndices.includes(idx)) {
                           // すでに選択されていれば解除
-                          newIndices = newIndices.filter(i => i !== idx);
+                          newIndices = newIndices.filter((i) => i !== idx);
                         } else {
                           if (prev.maxChoices === 1) {
-                             // maxChoicesが1なら、前に選んだものを上書きしてこれだけにする
-                             newIndices = [idx];
+                            // maxChoicesが1なら、前に選んだものを上書きしてこれだけにする
+                            newIndices = [idx];
                           } else if (newIndices.length < prev.maxChoices) {
-                             newIndices.push(idx);
+                            newIndices.push(idx);
                           }
                         }
                         return { ...prev, selectedIndices: newIndices };
@@ -910,25 +2113,61 @@ export default function GlobalModals() {
                     onMouseOut={(e) => {
                       if (!isSelected) {
                         e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.borderColor = 'rgba(250, 204, 21, 0.1)';
+                        e.currentTarget.style.borderColor =
+                          'rgba(250, 204, 21, 0.1)';
                       }
                     }}
                   >
-                    <div className="preview-skill-badge" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: '0 auto 10px auto', width: 'fit-content', minWidth: '120px' }}>
+                    <div
+                      className="preview-skill-badge"
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '8px',
+                        margin: '0 auto 10px auto',
+                        width: 'fit-content',
+                        minWidth: '120px',
+                      }}
+                    >
                       {skillDef.icon} {skillDef.name} {val}
                     </div>
-                    <p className="preview-skill-desc" style={{ textAlign: 'center', margin: 0, fontSize: '0.85rem' }}>
+                    <p
+                      className="preview-skill-desc"
+                      style={{
+                        textAlign: 'center',
+                        margin: 0,
+                        fontSize: '0.85rem',
+                      }}
+                    >
                       {(() => {
-                        const rawDesc = typeof skillDef.desc === 'function' ? skillDef.desc(sk.value, sk) : skillDef.desc;
+                        const rawDesc =
+                          typeof skillDef.desc === 'function'
+                            ? skillDef.desc(sk.value, sk)
+                            : skillDef.desc;
                         if (Array.isArray(rawDesc)) {
                           return rawDesc.map((part, i) => {
                             if (part.type === 'link') {
-                              return <span key={i} style={{ color: '#60a5fa', textDecoration: 'underline' }} onClick={(e) => {
-                                  e.stopPropagation();
-                                  playSound?.(SOUNDS?.seClick);
-                                  const tObj = CARD_MASTER.find(c => c.id === part.targetId);
-                                  if (tObj) setCardPreviewData({ card: tObj });
-                              }}>{part.value}</span>;
+                              return (
+                                <span
+                                  key={i}
+                                  style={{
+                                    color: '#60a5fa',
+                                    textDecoration: 'underline',
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    playSound?.(SOUNDS?.seClick);
+                                    const tObj = CARD_MASTER.find(
+                                      (c) => c.id === part.targetId
+                                    );
+                                    if (tObj)
+                                      setCardPreviewData({ card: tObj });
+                                  }}
+                                >
+                                  {part.value}
+                                </span>
+                              );
                             }
                             return <span key={i}>{part.value}</span>;
                           });
@@ -943,15 +2182,39 @@ export default function GlobalModals() {
             <button
               className="btn ok-button"
               style={{
-                marginTop: '20px', width: '100%',
-                background: skillChoiceData.selectedIndices.length === Math.min(skillChoiceData.maxChoices, skillChoiceData.choices.length) ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569',
-                color: skillChoiceData.selectedIndices.length === Math.min(skillChoiceData.maxChoices, skillChoiceData.choices.length) ? '#fff' : '#94a3b8',
-                pointerEvents: skillChoiceData.selectedIndices.length === Math.min(skillChoiceData.maxChoices, skillChoiceData.choices.length) ? 'auto' : 'none',
-                flexShrink: 0
+                marginTop: '20px',
+                width: '100%',
+                background:
+                  skillChoiceData.selectedIndices.length ===
+                  Math.min(
+                    skillChoiceData.maxChoices,
+                    skillChoiceData.choices.length
+                  )
+                    ? 'linear-gradient(45deg, #10b981, #059669)'
+                    : '#475569',
+                color:
+                  skillChoiceData.selectedIndices.length ===
+                  Math.min(
+                    skillChoiceData.maxChoices,
+                    skillChoiceData.choices.length
+                  )
+                    ? '#fff'
+                    : '#94a3b8',
+                pointerEvents:
+                  skillChoiceData.selectedIndices.length ===
+                  Math.min(
+                    skillChoiceData.maxChoices,
+                    skillChoiceData.choices.length
+                  )
+                    ? 'auto'
+                    : 'none',
+                flexShrink: 0,
               }}
               onClick={() => {
                 playSound?.(SOUNDS?.seClick);
-                const selectedSkills = skillChoiceData.selectedIndices.map(i => skillChoiceData.choices[i]);
+                const selectedSkills = skillChoiceData.selectedIndices.map(
+                  (i) => skillChoiceData.choices[i]
+                );
                 const { onSelect } = skillChoiceData;
                 setSkillChoiceData(null);
                 if (onSelect) onSelect(selectedSkills);
@@ -965,52 +2228,114 @@ export default function GlobalModals() {
 
       {/* Discard Selection Modal */}
       {discardSelectionData && (
-        <div className="modal-overlay" style={{ zIndex: 3500, display: 'flex' }}>
-          <div className="skill-modal-box modal-pop-animation" style={{ width: '95%', maxWidth: '440px', padding: '20px' }} onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 3500, display: 'flex' }}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{ width: '95%', maxWidth: '440px', padding: '20px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 style={{ color: '#facc15', marginBottom: '10px' }}>
-              {discardSelectionData.isViewOnly ? '墓地一覧' : (discardSelectionData.title || '復活させるカードを選択')}
+              {discardSelectionData.isViewOnly
+                ? '墓地一覧'
+                : discardSelectionData.title || '復活させるカードを選択'}
             </h2>
             {!discardSelectionData.isViewOnly && (
-              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '15px' }}>
-                {discardSelectionData.desc || `パワー${discardSelectionData.maxPow}以下のカードを1枚場に出します。`}
+              <p
+                style={{
+                  color: '#cbd5e1',
+                  fontSize: '0.85rem',
+                  marginBottom: '15px',
+                }}
+              >
+                {discardSelectionData.desc ||
+                  `パワー${discardSelectionData.maxPow}以下のカードを1枚場に出します。`}
               </p>
             )}
             {discardSelectionData.isDual && (
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <button 
-                  className="btn" 
-                  style={{ flex: 1, margin: 0, padding: '8px', background: discardSelectionData.currentTab === 'blue' ? 'linear-gradient(45deg, #38bdf8, #0284c7)' : '#475569' }}
-                  onClick={() => { playSound?.(SOUNDS?.seClick); setDiscardSelectionData(prev => ({...prev, currentTab: 'blue'})); }}
+              <div
+                style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}
+              >
+                <button
+                  className="btn"
+                  style={{
+                    flex: 1,
+                    margin: 0,
+                    padding: '8px',
+                    background:
+                      discardSelectionData.currentTab === 'blue'
+                        ? 'linear-gradient(45deg, #38bdf8, #0284c7)'
+                        : '#475569',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    setDiscardSelectionData((prev) => ({
+                      ...prev,
+                      currentTab: 'blue',
+                    }));
+                  }}
                 >
                   自分の墓地
                 </button>
-                <button 
-                  className="btn" 
-                  style={{ flex: 1, margin: 0, padding: '8px', background: discardSelectionData.currentTab === 'red' ? 'linear-gradient(45deg, #ef4444, #b91c1c)' : '#475569' }}
-                  onClick={() => { playSound?.(SOUNDS?.seClick); setDiscardSelectionData(prev => ({...prev, currentTab: 'red'})); }}
+                <button
+                  className="btn"
+                  style={{
+                    flex: 1,
+                    margin: 0,
+                    padding: '8px',
+                    background:
+                      discardSelectionData.currentTab === 'red'
+                        ? 'linear-gradient(45deg, #ef4444, #b91c1c)'
+                        : '#475569',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    setDiscardSelectionData((prev) => ({
+                      ...prev,
+                      currentTab: 'red',
+                    }));
+                  }}
                 >
                   相手の墓地
                 </button>
               </div>
             )}
-            <div className="card-list-container" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+            <div
+              className="card-list-container"
+              style={{ maxHeight: '50vh', overflowY: 'auto' }}
+            >
               <div id="gallery-card-grid" className="card-list-grid-3col">
                 {(() => {
-                  const currentCards = (discardSelectionData.isDual && discardSelectionData.currentTab === 'red') ? discardSelectionData.redCards : discardSelectionData.cards;
+                  const currentCards =
+                    discardSelectionData.isDual &&
+                    discardSelectionData.currentTab === 'red'
+                      ? discardSelectionData.redCards
+                      : discardSelectionData.cards;
                   const isMulti = discardSelectionData.maxChoices > 1;
 
                   return (
                     <>
                       {currentCards.map((cardItem, idx) => {
-                        const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
-                        const rarityClass = cardItem.rarity ? ` rarity-${cardItem.rarity}` : '';
-                        
+                        const imgUrl = getCardImgUrl
+                          ? getCardImgUrl(cardItem)
+                          : '';
+                        const rarityClass = cardItem.rarity
+                          ? ` rarity-${cardItem.rarity}`
+                          : '';
+
                         let isSelected = false;
                         if (isMulti) {
                           const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
-                          isSelected = discardSelectionData.selectedItems.some(item => item.key === itemKey);
+                          isSelected = discardSelectionData.selectedItems.some(
+                            (item) => item.key === itemKey
+                          );
                         } else {
-                          isSelected = discardSelectionData.selectedIndex === idx && (!discardSelectionData.isDual || discardSelectionData.currentTab === 'blue');
+                          isSelected =
+                            discardSelectionData.selectedIndex === idx &&
+                            (!discardSelectionData.isDual ||
+                              discardSelectionData.currentTab === 'blue');
                         }
 
                         return (
@@ -1018,16 +2343,26 @@ export default function GlobalModals() {
                             key={idx}
                             className="deck-card-item gallery-card-wrapper"
                             onPointerDown={(e) => {
-                              if (e.pointerType === 'mouse' && e.button !== 0) return;
+                              if (e.pointerType === 'mouse' && e.button !== 0)
+                                return;
                               g_discardHasLongPressed = false;
                               g_discardLongPressTimer = setTimeout(() => {
                                 g_discardHasLongPressed = true;
                                 setCardPreviewData({ card: cardItem });
                               }, 600);
                             }}
-                            onPointerUp={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
-                            onPointerLeave={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
-                            onPointerCancel={() => { if (g_discardLongPressTimer) clearTimeout(g_discardLongPressTimer); }}
+                            onPointerUp={() => {
+                              if (g_discardLongPressTimer)
+                                clearTimeout(g_discardLongPressTimer);
+                            }}
+                            onPointerLeave={() => {
+                              if (g_discardLongPressTimer)
+                                clearTimeout(g_discardLongPressTimer);
+                            }}
+                            onPointerCancel={() => {
+                              if (g_discardLongPressTimer)
+                                clearTimeout(g_discardLongPressTimer);
+                            }}
                             onContextMenu={(e) => e.preventDefault()}
                             onClick={() => {
                               if (g_discardHasLongPressed) return;
@@ -1039,40 +2374,102 @@ export default function GlobalModals() {
                               // 選択状態をセットする
                               if (isMulti) {
                                 const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
-                                setDiscardSelectionData(prev => {
+                                setDiscardSelectionData((prev) => {
                                   let newSelected = [...prev.selectedItems];
-                                  const existingIdx = newSelected.findIndex(item => item.key === itemKey);
+                                  const existingIdx = newSelected.findIndex(
+                                    (item) => item.key === itemKey
+                                  );
                                   if (existingIdx >= 0) {
                                     newSelected.splice(existingIdx, 1);
-                                  } else if (newSelected.length < prev.maxChoices) {
-                                    newSelected.push({ key: itemKey, tab: prev.currentTab, card: cardItem, idx });
+                                  } else if (
+                                    newSelected.length < prev.maxChoices
+                                  ) {
+                                    newSelected.push({
+                                      key: itemKey,
+                                      tab: prev.currentTab,
+                                      card: cardItem,
+                                      idx,
+                                    });
                                   }
-                                  return { ...prev, selectedItems: newSelected };
+                                  return {
+                                    ...prev,
+                                    selectedItems: newSelected,
+                                  };
                                 });
                               } else {
-                                setDiscardSelectionData(prev => ({ ...prev, selectedIndex: idx }));
+                                setDiscardSelectionData((prev) => ({
+                                  ...prev,
+                                  selectedIndex: idx,
+                                }));
                               }
                             }}
-                            style={{ cursor: 'pointer', transition: 'transform 0.2s', flexShrink: 0, minWidth: '90px' }}
-                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                            style={{
+                              cursor: 'pointer',
+                              transition: 'transform 0.2s',
+                              flexShrink: 0,
+                              minWidth: '90px',
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
                           >
-                            <div className={`card ${discardSelectionData.isDual && discardSelectionData.currentTab === 'red' ? 'red' : 'blue'}${rarityClass}`} style={{ 
-                              transition: 'box-shadow 0.2s',
-                              boxShadow: isSelected ? '0 0 15px 5px #facc15' : (cardItem.rarity >= 3 ? '0 0 10px rgba(255, 215, 0, 0.5)' : 'none')
-                            }}>
-                              <div className="card-bg" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
-                              <div className="card-power" style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}>{cardItem.power}</div>
+                            <div
+                              className={`card ${discardSelectionData.isDual && discardSelectionData.currentTab === 'red' ? 'red' : 'blue'}${rarityClass}`}
+                              style={{
+                                transition: 'box-shadow 0.2s',
+                                boxShadow: isSelected
+                                  ? '0 0 15px 5px #facc15'
+                                  : cardItem.rarity >= 3
+                                    ? '0 0 10px rgba(255, 215, 0, 0.5)'
+                                    : 'none',
+                              }}
+                            >
+                              <div
+                                className="card-bg"
+                                style={{ backgroundImage: `url('${imgUrl}')` }}
+                              ></div>
+                              <div
+                                className="card-power"
+                                style={{
+                                  fontSize: '1.4rem',
+                                  bottom: 0,
+                                  right: '4px',
+                                }}
+                              >
+                                {cardItem.power}
+                              </div>
                               {renderSkillTagReact(cardItem)}
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: '#fff', textAlign: 'center', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div
+                              style={{
+                                fontSize: '0.7rem',
+                                color: '#fff',
+                                textAlign: 'center',
+                                marginTop: '4px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
                               {cardItem.name}
                             </div>
                           </div>
                         );
                       })}
                       {currentCards.length === 0 && (
-                        <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '20px' }}>墓地にはカードがありません</div>
+                        <div
+                          style={{
+                            gridColumn: '1 / -1',
+                            color: '#94a3b8',
+                            textAlign: 'center',
+                            padding: '20px',
+                          }}
+                        >
+                          墓地にはカードがありません
+                        </div>
                       )}
                     </>
                   );
@@ -1080,49 +2477,83 @@ export default function GlobalModals() {
               </div>
             </div>
             {/* 閲覧モーダルでない場合は決定ボタンを表示 */}
-            {!discardSelectionData.isViewOnly && (() => {
-              const isMulti = discardSelectionData.maxChoices > 1;
-              const canSubmit = isMulti ? true : discardSelectionData.selectedIndex != null;
-              const btnColor = canSubmit ? 'linear-gradient(45deg, #10b981, #059669)' : '#475569';
-              const btnTextColor = canSubmit ? '#fff' : '#94a3b8';
+            {!discardSelectionData.isViewOnly &&
+              (() => {
+                const isMulti = discardSelectionData.maxChoices > 1;
+                const canSubmit = isMulti
+                  ? true
+                  : discardSelectionData.selectedIndex != null;
+                const btnColor = canSubmit
+                  ? 'linear-gradient(45deg, #10b981, #059669)'
+                  : '#475569';
+                const btnTextColor = canSubmit ? '#fff' : '#94a3b8';
 
-              return (
-                <button 
-                  className="btn ok-button" 
-                  style={{ 
-                    marginTop: '15px', width: '100%', 
-                    background: btnColor,
-                    color: btnTextColor,
-                    pointerEvents: canSubmit ? 'auto' : 'none'
-                  }} 
+                return (
+                  <button
+                    className="btn ok-button"
+                    style={{
+                      marginTop: '15px',
+                      width: '100%',
+                      background: btnColor,
+                      color: btnTextColor,
+                      pointerEvents: canSubmit ? 'auto' : 'none',
+                    }}
+                    onClick={() => {
+                      playSound?.(SOUNDS?.seClick);
+                      const cb = discardSelectionData.onSelect;
+                      let result = null;
+                      if (isMulti) {
+                        result = discardSelectionData.selectedItems.map(
+                          (item) => ({ ...item.card, fromTab: item.tab })
+                        );
+                      } else {
+                        result =
+                          discardSelectionData.cards[
+                            discardSelectionData.selectedIndex
+                          ];
+                      }
+                      setDiscardSelectionData(null);
+                      if (cb) cb(result);
+                    }}
+                  >
+                    {isMulti
+                      ? `決定 (${discardSelectionData.selectedItems.length}/${discardSelectionData.maxChoices})`
+                      : '決定'}
+                  </button>
+                );
+              })()}
+            {!discardSelectionData.isViewOnly &&
+              discardSelectionData.canCancel !== false && (
+                <button
+                  className="btn"
+                  style={{
+                    marginTop: '10px',
+                    width: '100%',
+                    background: '#475569',
+                  }}
                   onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
                     const cb = discardSelectionData.onSelect;
-                    let result = null;
-                    if (isMulti) {
-                      result = discardSelectionData.selectedItems.map(item => ({ ...item.card, fromTab: item.tab }));
-                    } else {
-                      result = discardSelectionData.cards[discardSelectionData.selectedIndex];
-                    }
                     setDiscardSelectionData(null);
-                    if (cb) cb(result);
+                    if (cb) cb(null);
                   }}
                 >
-                  {isMulti ? `決定 (${discardSelectionData.selectedItems.length}/${discardSelectionData.maxChoices})` : '決定'}
+                  キャンセル
                 </button>
-              );
-            })()}
-            {(!discardSelectionData.isViewOnly && discardSelectionData.canCancel !== false) && (
-              <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
-                const cb = discardSelectionData.onSelect;
-                setDiscardSelectionData(null);
-                if (cb) cb(null);
-              }}>キャンセル</button>
-            )}
+              )}
             {discardSelectionData.isViewOnly && (
-              <button className="btn" style={{ marginTop: '10px', width: '100%', background: '#475569' }} onClick={() => {
-                setDiscardSelectionData(null);
-              }}>閉じる</button>
+              <button
+                className="btn"
+                style={{
+                  marginTop: '10px',
+                  width: '100%',
+                  background: '#475569',
+                }}
+                onClick={() => {
+                  setDiscardSelectionData(null);
+                }}
+              >
+                閉じる
+              </button>
             )}
           </div>
         </div>
@@ -1130,8 +2561,28 @@ export default function GlobalModals() {
 
       {/* Rules Modal */}
       {rulesVisible && (
-        <div id="modal-rules" className="rules-modal-overlay" style={{ display: 'flex', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 5000, alignItems: 'center', justifyContent: 'center' }} onClick={window.closeRulesModal}>
-          <div className="skill-modal-box modal-pop-animation" style={{ width: '90%', maxWidth: '400px', padding: '25px' }} onClick={(e) => e.stopPropagation()}>
+        <div
+          id="modal-rules"
+          className="rules-modal-overlay"
+          style={{
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 5000,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={window.closeRulesModal}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{ width: '90%', maxWidth: '400px', padding: '25px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 style={{ color: '#facc15', marginBottom: '20px' }}>遊び方</h2>
             <div className="rule-box" style={{ maxHeight: '350px' }}>
               <div className="rule-section">
@@ -1143,36 +2594,79 @@ export default function GlobalModals() {
               <div className="rule-section">
                 <div className="rule-category">【バトル】</div>
                 <ul>
-                  <li>毎ターン、手札から1枚を自分のレーンに召喚します。<span style={{ color: '#94a3b8' }}>（先攻1ターン目は中央のみ）</span></li>
+                  <li>
+                    毎ターン、手札から1枚を自分のレーンに召喚します。
+                    <span style={{ color: '#94a3b8' }}>
+                      （先攻1ターン目は中央のみ）
+                    </span>
+                  </li>
                   <li>置き直しの場合、下のカードは破棄されます。</li>
-                  <li><b>ターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>します。</li>
-                  <li>正面に敵がいれば戦闘となり、お互いにパワー分ダメージを与えます。</li>
+                  <li>
+                    <b>ターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>
+                    します。
+                  </li>
+                  <li>
+                    正面に敵がいれば戦闘となり、お互いにパワー分ダメージを与えます。
+                  </li>
                   <li>正面が空いていれば相手リーダーに直接ダメージ！</li>
                   <li>相手リーダーのHPを0にすれば勝利です。</li>
-                  <li>山札が0枚になると墓地から補充されますが、ペナルティとして<b>体力が半分（切り上げ）になるダメージ</b>を受けます。</li>
+                  <li>
+                    山札が0枚になると墓地から補充されますが、ペナルティとして
+                    <b>体力が半分（切り上げ）になるダメージ</b>を受けます。
+                  </li>
                 </ul>
               </div>
               <div className="rule-section">
                 <div className="rule-category">【リーダー能力】</div>
                 <ul>
-                  <li>毎ターン「SP」が溜まります。<span style={{ color: '#94a3b8' }}>（先攻1ターン目は溜まりません）</span></li>
+                  <li>
+                    毎ターン「SP」が溜まります。
+                    <span style={{ color: '#94a3b8' }}>
+                      （先攻1ターン目は溜まりません）
+                    </span>
+                  </li>
                   <li>SPがMAXで「リーダースキル」を発動可能！</li>
                 </ul>
               </div>
             </div>
-            <button className="btn" style={{ marginTop: '20px', width: '100%' }} onClick={window.closeRulesModal}>閉じる</button>
+            <button
+              className="btn"
+              style={{ marginTop: '20px', width: '100%' }}
+              onClick={window.closeRulesModal}
+            >
+              閉じる
+            </button>
           </div>
         </div>
       )}
 
       {/* Simple Image Preview Modal */}
       {simpleImagePreview && (
-        <div className="modal-overlay" style={{ zIndex: 6000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)' }} onClick={() => setSimpleImagePreview(null)}>
-          <img 
-            src={simpleImagePreview} 
-            style={{ maxWidth: '95%', maxHeight: '95%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 0 30px rgba(0,0,0,1)' }} 
-            alt="Preview" 
-            onClick={(e) => { e.stopPropagation(); setSimpleImagePreview(null); }}
+        <div
+          className="modal-overlay"
+          style={{
+            zIndex: 6000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.9)',
+          }}
+          onClick={() => setSimpleImagePreview(null)}
+        >
+          <img
+            src={simpleImagePreview}
+            style={{
+              maxWidth: '95%',
+              maxHeight: '95%',
+              objectFit: 'contain',
+              borderRadius: '12px',
+              boxShadow: '0 0 30px rgba(0,0,0,1)',
+            }}
+            alt="Preview"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSimpleImagePreview(null);
+            }}
           />
         </div>
       )}

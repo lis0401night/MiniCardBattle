@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { playSound } from '../utils/gameUtils.js';
@@ -14,7 +14,7 @@ export default function SoloMenuScreen() {
     const newCount = clickCount + 1;
     setClickCount(newCount);
     if (newCount >= 10) {
-      showConfirmModal("キャンペーンモードを開始しますか？", () => {
+      showConfirmModal('キャンペーンモードを開始しますか？', () => {
         startGameMode?.('campaign');
       });
       setClickCount(0);
@@ -22,12 +22,26 @@ export default function SoloMenuScreen() {
   };
 
   return (
-    <div id="screen-solo-menu" className="screen active" style={{
+    <div
+      id="screen-solo-menu"
+      className="screen active"
+      style={{
         backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
-    }}>
-      <h2 onClick={handleTitleClick} style={{ color: '#facc15', marginBottom: '40px', cursor: 'pointer', userSelect: 'none' }}>ソロモード</h2>
+        backgroundPosition: 'center',
+      }}
+    >
+      <h2
+        onClick={handleTitleClick}
+        style={{
+          color: '#facc15',
+          marginBottom: '40px',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+      >
+        ソロモード
+      </h2>
       <div className="menu-btn-grid">
         <div className="menu-img-btn" onClick={() => startGameMode?.('story')}>
           <div
@@ -43,7 +57,10 @@ export default function SoloMenuScreen() {
           ></div>
           <div className="menu-btn-label">フリーバトル</div>
         </div>
-        <div className="menu-img-btn" onClick={() => startGameMode?.('practice')}>
+        <div
+          className="menu-img-btn"
+          onClick={() => startGameMode?.('practice')}
+        >
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_PRACTICE || ''}')` }}
@@ -58,7 +75,7 @@ export default function SoloMenuScreen() {
           paddingTop: '20px',
           width: '100%',
           display: 'flex',
-          justifyContent: 'center'
+          justifyContent: 'center',
         }}
       >
         <button

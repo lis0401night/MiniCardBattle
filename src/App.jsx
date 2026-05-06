@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import GlobalModals from './components/GlobalModals.jsx';
 import DamageOverlay from './components/common/DamageOverlay.jsx';
 import TitleScreen from './pages/TitleScreen.jsx';
@@ -35,22 +35,46 @@ import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
 import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
 import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
-import { playSound, sleep, isTransitioning, switchScreen, setSwitchScreenHook, executeSwitchScreen, hasSkill } from './utils/gameUtils.js';
+import {
+  playSound,
+  switchScreen,
+  setSwitchScreenHook,
+  executeSwitchScreen,
+} from './utils/gameUtils.js';
 import { SOUNDS } from './utils/sounds.js';
-import { checkWinCondition, discardCard, endTurnLogic, playCard, returnToTitle, showEnemySkillConfirm, showSkillConfirm, endPlayerTurn, closeSkillConfirm, executeSkillFromConfirm, showSpeechBubble } from './hooks/battle.js';
+import {
+  returnToTitle,
+  showEnemySkillConfirm,
+  showSkillConfirm,
+  endPlayerTurn,
+  closeSkillConfirm,
+  executeSkillFromConfirm,
+} from './hooks/battle.js';
 import { loadDeck } from './hooks/deck.js';
 import { checkCollectionAchievements } from './utils/constants/achievements.js';
-import { GameState } from './hooks/gameState.js';
-import { updateCardDetail, renderBoard } from './hooks/uiBattle.js';
-import { showConfirmModal } from './hooks/uiModals.js';
 import ContinueScreen from './pages/ContinueScreen.jsx';
 import EndingScreen from './pages/EndingScreen.jsx';
 import RewardOverlay from './components/battle/RewardOverlay.jsx';
 import CutinOverlay from './components/battle/CutinOverlay.jsx';
 import VfxOverlay from './components/battle/VfxOverlay.jsx';
-import { handleClaimAchievement, debugUnlockCards, debugUnlockAchievements } from './hooks/uiGallery.js';
-import { closeSyncDataModal, backupDataToXML, importDataFromXML, reloadGame, closePlayerNameModal, closeEnemyDeckModal } from './hooks/uiMainCore.js';
-import { showNextDialogue, executeContinue, executeGameOver } from './hooks/uiDialogue.js';
+import {
+  handleClaimAchievement,
+  debugUnlockCards,
+  debugUnlockAchievements,
+} from './hooks/uiGallery.js';
+import {
+  closeSyncDataModal,
+  backupDataToXML,
+  importDataFromXML,
+  reloadGame,
+  closePlayerNameModal,
+  closeEnemyDeckModal,
+} from './hooks/uiMainCore.js';
+import {
+  showNextDialogue,
+  executeContinue,
+  executeGameOver,
+} from './hooks/uiDialogue.js';
 import { submitDefenseDeck } from './hooks/deck.js';
 // レガシーUI用に関数をグローバルに公開
 window.returnToTitle = returnToTitle;
@@ -84,24 +108,24 @@ export default function App() {
   useEffect(() => {
     // 既存のグローバル関数をオーバーライドしてReactのStateと連携
     setSwitchScreenHook((screenId) => {
-        setCurrentScreen(screenId);
-        // Reactのレンダリングを待機してから遷移後処理を行うための遅延
-        setTimeout(() => {
-            executeSwitchScreen(screenId);
-        }, 0);
+      setCurrentScreen(screenId);
+      // Reactのレンダリングを待機してから遷移後処理を行うための遅延
+      setTimeout(() => {
+        executeSwitchScreen(screenId);
+      }, 0);
     });
-
   }, []);
 
   // レガシー初期化イベントバインド
   useEffect(() => {
     // 既存のmain.jsのロジックを実行
     if (typeof loadDeck === 'function') loadDeck();
-    if (typeof window.loadAchievements === 'function') window.loadAchievements();
+    if (typeof window.loadAchievements === 'function')
+      window.loadAchievements();
 
-    setTimeout(() => { 
-        const titleScreen = document.getElementById('screen-title');
-        if(titleScreen) titleScreen.classList.add('active'); 
+    setTimeout(() => {
+      const titleScreen = document.getElementById('screen-title');
+      if (titleScreen) titleScreen.classList.add('active');
     }, 100);
   }, []);
 
@@ -116,16 +140,26 @@ export default function App() {
       {currentScreen === 'screen-event-menu' && <EventMenuScreen />}
       {currentScreen === 'screen-defense-menu' && <DefenseMenuScreen />}
       {currentScreen === 'screen-defense-rules' && <DefenseRulesScreen />}
-      {currentScreen === 'screen-high-difficulty-menu' && <HighDifficultyMenuScreen />}
+      {currentScreen === 'screen-high-difficulty-menu' && (
+        <HighDifficultyMenuScreen />
+      )}
       {currentScreen === 'screen-high-difficulty' && <HighDifficultyScreen />}
-      {currentScreen === 'screen-high-difficulty-rules' && <HighDifficultyRulesScreen />}
-      {currentScreen === 'screen-high-difficulty-exchange' && <HighDifficultyExchangeScreen />}
+      {currentScreen === 'screen-high-difficulty-rules' && (
+        <HighDifficultyRulesScreen />
+      )}
+      {currentScreen === 'screen-high-difficulty-exchange' && (
+        <HighDifficultyExchangeScreen />
+      )}
       {currentScreen === 'screen-card-list' && <CardListScreen />}
       {currentScreen === 'screen-achievements' && <AchievementsScreen />}
       {currentScreen === 'screen-exchange' && <ExchangeScreen />}
-      {currentScreen === 'screen-challenge-exchange' && <ChallengeExchangeScreen />}
+      {currentScreen === 'screen-challenge-exchange' && (
+        <ChallengeExchangeScreen />
+      )}
       {currentScreen === 'screen-challenge-unlock' && <ChallengeUnlockScreen />}
-      {currentScreen === 'screen-defense-battle-list' && <DefenseBattleListScreen />}
+      {currentScreen === 'screen-defense-battle-list' && (
+        <DefenseBattleListScreen />
+      )}
       {currentScreen === 'screen-dungeon-menu' && <DungeonMenuScreen />}
       {currentScreen === 'screen-story-resume' && <StoryResumeScreen />}
       {currentScreen === 'screen-dungeon-rules' && <DungeonRulesScreen />}

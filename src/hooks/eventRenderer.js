@@ -1,620 +1,751 @@
-import { createDamagePopup, addDamagePopupHook, playSound, sleep, getSeededRandom, mergeCardSkills } from '../utils/gameUtils.js';
+import {
+  createDamagePopup,
+  addDamagePopupHook,
+  playSound,
+  sleep,
+  getSeededRandom,
+  mergeCardSkills,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { updateHPBar, updateSPOrbs, updateDeckDisplay, cleanupDestroyedCards, showSpeechBubble, hasActiveSkill } from './battle.js';
+import {
+  updateHPBar,
+  updateSPOrbs,
+  updateDeckDisplay,
+  showSpeechBubble,
+} from './battle.js';
 import { updateCardPowerOnly, renderBoard, renderHand } from './uiBattle.js';
 import { GameState } from './gameState.js';
 
 /**
  * engine.js が生成したイベントログの配列を受け取り、
  * 順番にアニメーション、ポップアップ、効果音を再生する描画専用モジュール (Renderer)
- * 
+ *
  * @param {Array} events - { type, side, lane, amount, source, ... } の配列
  */
 export async function playEvents(events) {
-    if (!events || !Array.isArray(events) || events.length === 0) return;
+  if (!events || !Array.isArray(events) || events.length === 0) return;
 
-    for (let i = 0; i < events.length; i++) {
-        const ev = events[i];
-        const sidePrefix = ev.side === 'blue' ? 'player' : 'enemy';
-        const oppPrefix = ev.side === 'blue' ? 'enemy' : 'player';
-        const nextEv = events[i + 1];
-        const isNextDamage = nextEv && ['damage_card', 'damage_player', 'deadly'].includes(nextEv.type);
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    const sidePrefix = ev.side === 'blue' ? 'player' : 'enemy';
+    const oppPrefix = ev.side === 'blue' ? 'enemy' : 'player';
+    const nextEv = events[i + 1];
+    const isNextDamage =
+      nextEv &&
+      ['damage_card', 'damage_player', 'deadly'].includes(nextEv.type);
 
-        switch (ev.type) {
-            case 'damage_card': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                if (board[ev.lane]) board[ev.lane].currentPower -= ev.amount;
+    switch (ev.type) {
+      case 'damage_card': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        if (board[ev.lane]) board[ev.lane].currentPower -= ev.amount;
 
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    cEl.classList.remove('anim-shake');
-                    void cEl.offsetWidth; // reflow
-                    cEl.classList.add('anim-shake');
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          cEl.classList.remove('anim-shake');
+          void cEl.offsetWidth; // reflow
+          cEl.classList.add('anim-shake');
 
-                    let label = `-${ev.amount}`;
-                    if (ev.source === 'explode') label = `誘爆 ${label}`;
+          let label = `-${ev.amount}`;
+          if (ev.source === 'explode') label = `誘爆 ${label}`;
 
-                    createDamagePopup(cEl, label, '#ef4444');
-                }
-                updateCardPowerOnly(ev.lane, sidePrefix);
-                if (!isNextDamage) {
-                    playSound(SOUNDS.seDamage);
-                    await sleep(300);
-                }
-                break;
-            }
-            case 'immune_block': {
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    createDamagePopup(cEl, '無効', '#94a3b8');
-                }
-                playSound(SOUNDS.seSkill);
-                await sleep(200);
-                break;
-            }
-            case 'sturdy_block': {
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    createDamagePopup(cEl, '頑丈', '#64748b');
-                }
-                playSound(SOUNDS.seSkill);
-                await sleep(200);
-                break;
-            }
-            case 'double_strike_proc': {
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    createDamagePopup(cEl, '連撃', '#fbbf24');
-                }
-                playSound(SOUNDS.seSkill);
-                await sleep(200);
-                break;
-            }
-            case 'power_change': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                if (board[ev.lane]) {
-                    board[ev.lane].currentPower += ev.amount; // 増減そのまま
-                    if (ev.source === 'holy_march') {
-                        board[ev.lane].power += ev.amount; // 永続バフとして記録
-                        board[ev.lane].basePower = board[ev.lane].power;
-                    }
-                }
-
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    const isBuff = ev.amount > 0;
-                    const prefix = isBuff ? '+' : '';
-                    const color = isBuff ? '#4ade80' : '#ef4444';
-
-                    let label = `${prefix}${ev.amount}`;
-                    if (ev.source === 'growth') label = `成長 ${label}`;
-                    else if (ev.source === 'soul_bind') label = `魂縛 ${label}`;
-                    else if (ev.source === 'retaliate') label = `報復 ${label}`;
-
-                    createDamagePopup(cEl, label, color);
-                }
-                updateCardPowerOnly(ev.lane, sidePrefix);
-                playSound(SOUNDS.seSkill);
-                await sleep(200);
-                break;
-            }
-            case 'deadly': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                if (board[ev.lane]) board[ev.lane].currentPower = 0;
-
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    cEl.classList.remove('anim-shake');
-                    void cEl.offsetWidth;
-                    cEl.classList.add('anim-shake');
-
-                    createDamagePopup(cEl, '破壊', '#991b1b');
-                }
-                updateCardPowerOnly(ev.lane, sidePrefix);
-                if (!isNextDamage) {
-                    playSound(SOUNDS.seDamage);
-                    await sleep(300);
-                }
-                break;
-            }
-            case 'damage_player': {
-                if (ev.side === 'blue') GameState.playerHP -= ev.amount;
-                else GameState.enemyHP -= ev.amount;
-
-                const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
-                if (hpFill) {
-                    let label = `-${ev.amount}`;
-                    if (ev.source === 'contract') label = `契約 ${label}`;
-
-                    // 連続するリーダーダメージのポップアップが重ならないようYオフセットを計算
-                    let yOffset = 0;
-                    for (let j = i - 1; j >= 0; j--) {
-                        if (events[j].type === 'damage_player' && events[j].side === ev.side) {
-                            yOffset += 24; // 1つ前のポップアップ分だけ下にずらす
-                        } else {
-                            break;
-                        }
-                    }
-
-                    const rect = hpFill.getBoundingClientRect();
-                    const x = rect.left + rect.width / 2 - 10;
-                    const y = rect.top + yOffset;
-                    if (addDamagePopupHook) {
-                        addDamagePopupHook(x, y, label, '#ef4444');
-                    } else {
-                        createDamagePopup(hpFill, label, '#ef4444');
-                    }
-                }
-
-                // プレイヤー側の画面揺らし
-                const playmat = document.getElementById(`playmat-${sidePrefix}`);
-                if (playmat) {
-                    playmat.classList.remove('anim-shake');
-                    void playmat.offsetWidth;
-                    playmat.classList.add('anim-shake');
-                } else if (ev.source === 'artillery') {
-                    document.body.classList.remove('anim-shake');
-                    void document.body.offsetWidth;
-                    document.body.classList.add('anim-shake');
-                }
-
-                updateHPBar();
-                showSpeechBubble(ev.side);
-                if (!isNextDamage) {
-                    playSound(SOUNDS.seDamage);
-                    await sleep(300);
-                }
-                break;
-            }
-            case 'heal_player': {
-                let actualHeal = 0;
-                if (ev.side === 'blue') {
-                    const before = GameState.playerHP;
-                    GameState.playerHP = Math.min(GameState.playerMaxHP, GameState.playerHP + ev.amount);
-                    actualHeal = GameState.playerHP - before;
-                } else {
-                    const before = GameState.enemyHP;
-                    GameState.enemyHP = Math.min(GameState.enemyMaxHP, GameState.enemyHP + ev.amount);
-                    actualHeal = GameState.enemyHP - before;
-                }
-
-                if (actualHeal > 0) {
-                    const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
-                    if (hpFill) createDamagePopup(hpFill, `+${actualHeal}`, '#4ade80');
-                    
-                    if (ev.source === 'absorb' && ev.lane !== undefined) {
-                        const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                        if (cEl) createDamagePopup(cEl, '吸収', '#4ade80');
-                    }
-                }
-                updateHPBar();
-                playSound(SOUNDS.seSkill);
-                await sleep(300);
-                break;
-            }
-            case 'charge_sp': {
-                if (ev.side === 'blue') {
-                    const pMaxSP = GameState.playerConfig?.leaderSkill?.cost || 5;
-                    GameState.playerSP = Math.min(pMaxSP, Math.max(0, GameState.playerSP + ev.amount));
-                } else {
-                    const eMaxSP = GameState.enemyConfig?.leaderSkill?.cost || 5;
-                    GameState.enemySP = Math.min(eMaxSP, Math.max(0, GameState.enemySP + ev.amount));
-                }
-                updateSPOrbs(ev.side);
-                playSound(SOUNDS.seSkillCharge);
-                await sleep(200);
-                break;
-            }
-            case 'petrify': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                board[ev.lane] = ev.card;
-                
-                // 保護フラグを即座に適用（描画ラグ中の破壊を防ぐ）
-                if (ev.card) ev.card.isSkillResolving = true;
-
-                renderBoard();
-                playSound(SOUNDS.seSkill);
-
-                setTimeout(() => {
-                    const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                    if (cEl) {
-                        cEl.classList.add('anim-shake');
-                        createDamagePopup(cEl, '石化', '#64748b');
-                    }
-                }, 50);
-
-                await sleep(300);
-                // 石化の場合は召喚時スキルがないため、ここで解除してよい
-                if (ev.card) ev.card.isSkillResolving = false;
-                break;
-            }
-            case 'equip_card': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                const boardCard = board[ev.lane];
-                if (boardCard) {
-                    boardCard.basePower = (boardCard.basePower || 0) + (ev.card.currentPower || 0);
-                    boardCard.currentPower = (boardCard.currentPower || 0) + (ev.card.currentPower || 0);
-                    let addedSkills = [];
-                    if (ev.card.skill && ev.card.skill !== 'none' && ev.card.skill !== 'equip') addedSkills.push({ id: ev.card.skill, value: ev.card.skillValue });
-                    if (ev.card.skills) ev.card.skills.forEach(s => { if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value }); });
-                    mergeCardSkills(boardCard, addedSkills);
-                    
-                    renderBoard();
-                    playSound(SOUNDS.sePlace);
-                    
-                    const laneEl = document.getElementById(`${ev.side}-lane-${ev.lane}`);
-                    if (laneEl) {
-                        laneEl.classList.add('flash-effect');
-                        setTimeout(() => laneEl.classList.remove('flash-effect'), 500);
-                    }
-                }
-                break;
-            }
-            case 'summon_token':
-            case 'summon_card': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                board[ev.lane] = ev.card;
-
-                // 保護フラグを即座に適用
-                if (ev.card) ev.card.isSkillResolving = true;
-
-                renderBoard();
-                playSound(SOUNDS.sePlace);
-
-                let voiceCat = ev.card ? ev.card.voiceCategory : null;
-                if (!voiceCat && ev.card) {
-                    const baseId = ev.card.baseId || ev.card.id;
-                    const cMaster = CARD_MASTER.find(m => m.id === baseId || m.name === ev.card.name);
-                    if (cMaster && cMaster.voiceCategory) {
-                        voiceCat = cMaster.voiceCategory;
-                        ev.card.voiceCategory = voiceCat;
-                    }
-                }
-
-                if (voiceCat) {
-                    playCardVoice(voiceCat, 'play');
-                }
-
-                setTimeout(() => {
-                    const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                    if (cEl) {
-                        if (ev.source === 'split') {
-                            createDamagePopup(cEl, '分裂', '#facc15');
-                        }
-                        if (ev.source === 'awake') {
-                            createDamagePopup(cEl, '覚醒', '#facc15');
-                        }
-                    }
-                }, 50);
-
-                await sleep(300);
-                // 召喚時演出終了のためフラグを解除。
-                // 召喚時スキルを持つ場合は、別途 resolveOnPlaySkill 等の中で
-                // 再度フラグが立てられ、適切に管理されることを前提とする。
-                if (ev.card) {
-                    ev.card.isSkillResolving = false;
-                }
-                break;
-            }
-
-            case 'add_hand': {
-                const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
-                if (hand.length < 5) {
-                    if (!ev.card.uid) {
-                        ev.card.uid = `${ev.side}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
-                    }
-                    hand.push(ev.card);
-                }
-                renderHand();
-                updateDeckDisplay(ev.side);
-                playSound(SOUNDS.seDraw);
-                await sleep(200);
-                break;
-            }
-            case 'discard': {
-                const hand = ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
-                if (ev.card) {
-                    let idx = -1;
-                    if (ev.card.uid) {
-                        idx = hand.findIndex(c => c.uid === ev.card.uid);
-                    }
-                    // フォールバック: UIDで見つからなかった場合、非同期ズレ対策として名前やIDが一致するカードを手札の最後から探して破棄する
-                    if (idx === -1) {
-                         // uid比較ではなく、最も一致度が高いもの（基本は後ろのもの）を選ぶ
-                         for (let j = hand.length - 1; j >= 0; j--) {
-                             const c = hand[j];
-                             if ((c.uid && ev.card.uid && c.uid === ev.card.uid) || 
-                                 (c.id === ev.card.id) || 
-                                 (c.name === ev.card.name && c.power === ev.card.power)) {
-                                 idx = j;
-                                 break;
-                             }
-                         }
-                    }
-                    if (idx !== -1) {
-                        const discardedCard = hand.splice(idx, 1)[0];
-                        const discardArr = ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-
-                        // 墓地送り時の完全リセット
-                        const masterData = CARD_MASTER.find(m => m.id === (discardedCard.baseId || discardedCard.id));
-                        let restoredCard;
-                        if (masterData) {
-                            restoredCard = JSON.parse(JSON.stringify(masterData));
-                            restoredCard.uid = discardedCard.uid;
-                            restoredCard.owner = ev.side;
-                            restoredCard.baseId = discardedCard.baseId || discardedCard.id;
-                            if (discardedCard.isPremium !== undefined) restoredCard.isPremium = discardedCard.isPremium;
-                            restoredCard.basePower = restoredCard.power;
-                            restoredCard.currentPower = restoredCard.power;
-                        } else {
-                            restoredCard = { ...discardedCard };
-                            if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
-                            restoredCard.currentPower = restoredCard.power;
-                            restoredCard.skills = [];
-                        }
-                        if (!discardedCard.isToken) {
-                            discardArr.push(restoredCard);
-                        }
-                    }
-                }
-                updateDeckDisplay(ev.side);
-                renderHand();
-                break;
-            }
-            case 'add_skill': {
-                const board = ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                const targetCard = board[ev.lane];
-                if (targetCard) {
-                    if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
-                    targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
-                }
-
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                let skillNameText = ev.skillId === 'invincible' ? '無敵' : 'スキル付与';
-                if (ev.source === 'stealth') skillNameText = '潜伏';
-                if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
-                playSound(SOUNDS.seSkill);
-                await sleep(200);
-                break;
-            }
-            case 'invincible_block': {
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    createDamagePopup(cEl, '無敵', '#cbd5e1');
-                    playSound(SOUNDS.seSkill);
-                }
-                await sleep(300);
-                break;
-            }
-            case 'reflect_block': {
-                const cEl = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    createDamagePopup(cEl, '反射', '#a78bfa'); // purple
-                    playSound(SOUNDS.seSkill);
-                }
-                await sleep(300);
-                break;
-            }
-            case 'skill_popup': {
-                const atkPfx = ev.side === 'blue' ? 'player' : 'enemy';
-                const cEl = document.querySelector(`#${atkPfx}-lanes .cell[data-lane="${ev.lane}"] .card`);
-                if (cEl) {
-                    createDamagePopup(cEl, ev.skillName, '#facc15');
-                    playSound(SOUNDS.seSkill);
-                    await sleep(300);
-                }
-                break;
-            }
-            case 'leader_skill': {
-                playSound(SOUNDS.seSkill);
-                await sleep(400);
-                break;
-            }
-            case 'deck_mill': {
-                const targetDeck = ev.side === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-                const targetDiscard = ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                if (targetDeck && targetDeck.length > 0) {
-                    const milledCards = targetDeck.splice(0, ev.count);
-                    targetDiscard.push(...milledCards);
-                }
-                updateDeckDisplay(ev.side);
-                playSound(SOUNDS.seDraw);
-                await sleep(200);
-                break;
-            }
-            case 'attack': {
-                const atkPfx = ev.attackerSide === 'blue' ? 'player' : 'enemy';
-                const atkEl = document.querySelector(`#${atkPfx}-lanes .cell[data-lane="${ev.lane}"]`);
-                if (atkEl) {
-                    atkEl.style.animation = 'none'; // リセット
-                    void atkEl.offsetHeight; // リフロー
-
-                    if (ev.attackerSide === 'blue') {
-                        atkEl.style.animation = 'attack-up 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
-                    } else {
-                        atkEl.style.animation = 'attack-down 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
-                    }
-                    atkEl.style.zIndex = '20';
-                    playSound(SOUNDS.seAttack);
-
-                    // 1秒のアニメーション終了後にスタイルを元に戻す
-                    setTimeout(() => {
-                        if (atkEl) {
-                            atkEl.style.animation = '';
-                            atkEl.style.zIndex = '';
-                        }
-                    }, 1000);
-                }
-                // アニメーションが衝突するタイミング（約0.5秒）まで待機してから次のダメージ処理へ進む
-                await sleep(500);
-                break;
-            }
-            case 'destroy_cards': {
-                if (!ev.targets || ev.targets.length === 0) break;
-
-                let anyValidTarget = false;
-                let playedVoices = new Set();
-
-                // フェーズ1: 一斉にアニメーションと音を再生
-                for (const target of ev.targets) {
-                    const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
-                    const deadCard = target.card; // engine.jsによって既にboardから消えnullになっているため、event内のキャッシュを使う
-
-                    if (deadCard) {
-                        const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
-                        if (cell) {
-                            const cardEl = cell.querySelector('.card');
-                            if (cardEl) {
-                                cardEl.classList.add('anim-shake');
-                                cardEl.classList.add('anim-card-destroy');
-                            }
-                        }
-
-                        if (deadCard.voiceCategory && !playedVoices.has(deadCard.voiceCategory)) {
-                            playCardVoice(deadCard.voiceCategory, 'death');
-                            playedVoices.add(deadCard.voiceCategory);
-                        }
-                        anyValidTarget = true;
-                    }
-                }
-
-                if (!anyValidTarget) break;
-
-                playSound(SOUNDS.seDestroy); // SEは1回だけ
-                await sleep(400); // 破壊アニメーション待ち
-
-                // フェーズ2: 一斉にデータを消去・墓地送りにして再描画
-                for (const target of ev.targets) {
-                    const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
-                    const board = target.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-                    const deadCard = target.card;
-
-                    if (deadCard) {
-                        board[target.lane] = null; // 安全のため再度null化
-                        if (deadCard.equippedCards && deadCard.equippedCards.length > 0) {
-                            for (const eqCard of deadCard.equippedCards) {
-                                let restoredEq;
-                                // 【傀儡】装備カードが傀儡で奪ったものの場合、元の持ち主の墓地へ返す
-                                const eqOwner = eqCard.puppetOriginalOwner || eqCard.owner || target.side;
-                                const discard = eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                                const eqMaster = CARD_MASTER.find(m => m.id === (eqCard.baseId || eqCard.id));
-                                if (eqMaster) {
-                                    restoredEq = JSON.parse(JSON.stringify(eqMaster));
-                                    restoredEq.uid = eqCard.uid;
-                                    restoredEq.owner = eqOwner;
-                                    restoredEq.baseId = eqCard.baseId || eqCard.id;
-                                    restoredEq.basePower = restoredEq.power;
-                                    restoredEq.currentPower = restoredEq.power;
-                                } else {
-                                    restoredEq = { ...eqCard };
-                                    if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
-                                }
-                                if (!restoredEq.isToken) {
-                                    discard.push(restoredEq);
-                                }
-                            }
-                            deadCard.equippedCards = [];
-                            updateDeckDisplay(target.side);
-                        }
-
-                        if (deadCard.unionMaterials && deadCard.unionMaterials.length > 0) {
-                            for (const matCard of deadCard.unionMaterials) {
-                                let restoredMat;
-                                // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-                                const matOwner = matCard.puppetOriginalOwner || matCard.owner || target.side;
-                                const discard = matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                                const matMaster = CARD_MASTER.find(m => m.id === (matCard.baseId || matCard.id));
-                                if (matMaster) {
-                                    restoredMat = JSON.parse(JSON.stringify(matMaster));
-                                    restoredMat.uid = matCard.uid;
-                                    restoredMat.owner = matOwner;
-                                    restoredMat.baseId = matCard.baseId || matCard.id;
-                                    restoredMat.basePower = restoredMat.power;
-                                    restoredMat.currentPower = restoredMat.power;
-                                } else {
-                                    restoredMat = { ...matCard };
-                                }
-                                if (restoredMat.puppetOriginalOwner) delete restoredMat.puppetOriginalOwner;
-                                if (!restoredMat.isToken) {
-                                    discard.push(restoredMat);
-                                }
-                            }
-                            deadCard.unionMaterials = [];
-                            updateDeckDisplay(target.side);
-                        }
-
-                        if (deadCard.originalRevertTarget) {
-                            const rvTarget = deadCard.originalRevertTarget;
-                            // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-                            const rvOwner = rvTarget.puppetOriginalOwner || target.side;
-                            const discard = rvOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-                            const masterData = CARD_MASTER.find(m => m.id === (rvTarget.baseId || rvTarget.id));
-                            let restoredCard;
-                            if (masterData) {
-                                restoredCard = JSON.parse(JSON.stringify(masterData));
-                                restoredCard.uid = rvTarget.uid;
-                                restoredCard.owner = rvOwner;
-                                restoredCard.baseId = rvTarget.baseId || rvTarget.id;
-                                if (rvTarget.isPremium !== undefined) restoredCard.isPremium = rvTarget.isPremium;
-                                restoredCard.basePower = restoredCard.power;
-                                restoredCard.currentPower = restoredCard.power;
-                            } else {
-                                restoredCard = { ...rvTarget };
-                                restoredCard.equippedCards = [];
-                            }
-                            if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
-                            if (!restoredCard.isToken) {
-                                discard.push(restoredCard);
-                            }
-                            updateDeckDisplay(rvOwner);
-                        } else if (!deadCard.isToken) {
-                            // 【傀儡】傀儡スキルで奪ったカードは元の持ち主の墓地へ返す
-                            const deadOwner = deadCard.puppetOriginalOwner || target.side;
-                            const discard = deadOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-
-                            const masterData = CARD_MASTER.find(m => m.id === (deadCard.baseId || deadCard.id));
-                            let restoredCard;
-                            if (masterData) {
-                                restoredCard = JSON.parse(JSON.stringify(masterData));
-                                restoredCard.uid = deadCard.uid;
-                                restoredCard.owner = deadOwner;
-                                restoredCard.baseId = deadCard.baseId || deadCard.id;
-                                if (deadCard.isPremium !== undefined) restoredCard.isPremium = deadCard.isPremium;
-                                restoredCard.basePower = restoredCard.power;
-                                restoredCard.currentPower = restoredCard.power;
-                            } else {
-                                restoredCard = { ...deadCard };
-                                if ('basePower' in restoredCard) restoredCard.power = restoredCard.basePower;
-                                restoredCard.currentPower = restoredCard.power;
-                                restoredCard.skills = [];
-                                if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
-                            }
-
-                            discard.push(restoredCard);
-                            updateDeckDisplay(deadOwner);
-                        }
-                        board[target.lane] = null;
-
-                        // アニメーション用クラスのクリーンアップ
-                        const cell = document.querySelector(`#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`);
-                        if (cell) {
-                            const cardEl = cell.querySelector('.card');
-                            if (cardEl) {
-                                cardEl.classList.remove('anim-shake');
-                                cardEl.classList.remove('anim-card-destroy');
-                            }
-                        }
-                    }
-                }
-
-                renderBoard();
-                break;
-            }
+          createDamagePopup(cEl, label, '#ef4444');
         }
-    }
+        updateCardPowerOnly(ev.lane, sidePrefix);
+        if (!isNextDamage) {
+          playSound(SOUNDS.seDamage);
+          await sleep(300);
+        }
+        break;
+      }
+      case 'immune_block': {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '無効', '#94a3b8');
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
+      case 'sturdy_block': {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '頑丈', '#64748b');
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
+      case 'double_strike_proc': {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '連撃', '#fbbf24');
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
+      case 'power_change': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        if (board[ev.lane]) {
+          board[ev.lane].currentPower += ev.amount; // 増減そのまま
+          if (ev.source === 'holy_march') {
+            board[ev.lane].power += ev.amount; // 永続バフとして記録
+            board[ev.lane].basePower = board[ev.lane].power;
+          }
+        }
 
-    // 全てのアニメーションが完了するのを確実に待つためのバッファ
-    await sleep(600);
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          const isBuff = ev.amount > 0;
+          const prefix = isBuff ? '+' : '';
+          const color = isBuff ? '#4ade80' : '#ef4444';
+
+          let label = `${prefix}${ev.amount}`;
+          if (ev.source === 'growth') label = `成長 ${label}`;
+          else if (ev.source === 'soul_bind') label = `魂縛 ${label}`;
+          else if (ev.source === 'retaliate') label = `報復 ${label}`;
+
+          createDamagePopup(cEl, label, color);
+        }
+        updateCardPowerOnly(ev.lane, sidePrefix);
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
+      case 'deadly': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        if (board[ev.lane]) board[ev.lane].currentPower = 0;
+
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          cEl.classList.remove('anim-shake');
+          void cEl.offsetWidth;
+          cEl.classList.add('anim-shake');
+
+          createDamagePopup(cEl, '破壊', '#991b1b');
+        }
+        updateCardPowerOnly(ev.lane, sidePrefix);
+        if (!isNextDamage) {
+          playSound(SOUNDS.seDamage);
+          await sleep(300);
+        }
+        break;
+      }
+      case 'damage_player': {
+        if (ev.side === 'blue') GameState.playerHP -= ev.amount;
+        else GameState.enemyHP -= ev.amount;
+
+        const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
+        if (hpFill) {
+          let label = `-${ev.amount}`;
+          if (ev.source === 'contract') label = `契約 ${label}`;
+
+          // 連続するリーダーダメージのポップアップが重ならないようYオフセットを計算
+          let yOffset = 0;
+          for (let j = i - 1; j >= 0; j--) {
+            if (
+              events[j].type === 'damage_player' &&
+              events[j].side === ev.side
+            ) {
+              yOffset += 24; // 1つ前のポップアップ分だけ下にずらす
+            } else {
+              break;
+            }
+          }
+
+          const rect = hpFill.getBoundingClientRect();
+          const x = rect.left + rect.width / 2 - 10;
+          const y = rect.top + yOffset;
+          if (addDamagePopupHook) {
+            addDamagePopupHook(x, y, label, '#ef4444');
+          } else {
+            createDamagePopup(hpFill, label, '#ef4444');
+          }
+        }
+
+        // プレイヤー側の画面揺らし
+        const playmat = document.getElementById(`playmat-${sidePrefix}`);
+        if (playmat) {
+          playmat.classList.remove('anim-shake');
+          void playmat.offsetWidth;
+          playmat.classList.add('anim-shake');
+        } else if (ev.source === 'artillery') {
+          document.body.classList.remove('anim-shake');
+          void document.body.offsetWidth;
+          document.body.classList.add('anim-shake');
+        }
+
+        updateHPBar();
+        showSpeechBubble(ev.side);
+        if (!isNextDamage) {
+          playSound(SOUNDS.seDamage);
+          await sleep(300);
+        }
+        break;
+      }
+      case 'heal_player': {
+        let actualHeal = 0;
+        if (ev.side === 'blue') {
+          const before = GameState.playerHP;
+          GameState.playerHP = Math.min(
+            GameState.playerMaxHP,
+            GameState.playerHP + ev.amount
+          );
+          actualHeal = GameState.playerHP - before;
+        } else {
+          const before = GameState.enemyHP;
+          GameState.enemyHP = Math.min(
+            GameState.enemyMaxHP,
+            GameState.enemyHP + ev.amount
+          );
+          actualHeal = GameState.enemyHP - before;
+        }
+
+        if (actualHeal > 0) {
+          const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
+          if (hpFill) createDamagePopup(hpFill, `+${actualHeal}`, '#4ade80');
+
+          if (ev.source === 'absorb' && ev.lane !== undefined) {
+            const cEl = document.querySelector(
+              `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+            );
+            if (cEl) createDamagePopup(cEl, '吸収', '#4ade80');
+          }
+        }
+        updateHPBar();
+        playSound(SOUNDS.seSkill);
+        await sleep(300);
+        break;
+      }
+      case 'charge_sp': {
+        if (ev.side === 'blue') {
+          const pMaxSP = GameState.playerConfig?.leaderSkill?.cost || 5;
+          GameState.playerSP = Math.min(
+            pMaxSP,
+            Math.max(0, GameState.playerSP + ev.amount)
+          );
+        } else {
+          const eMaxSP = GameState.enemyConfig?.leaderSkill?.cost || 5;
+          GameState.enemySP = Math.min(
+            eMaxSP,
+            Math.max(0, GameState.enemySP + ev.amount)
+          );
+        }
+        updateSPOrbs(ev.side);
+        playSound(SOUNDS.seSkillCharge);
+        await sleep(200);
+        break;
+      }
+      case 'petrify': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        board[ev.lane] = ev.card;
+
+        // 保護フラグを即座に適用（描画ラグ中の破壊を防ぐ）
+        if (ev.card) ev.card.isSkillResolving = true;
+
+        renderBoard();
+        playSound(SOUNDS.seSkill);
+
+        setTimeout(() => {
+          const cEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+          );
+          if (cEl) {
+            cEl.classList.add('anim-shake');
+            createDamagePopup(cEl, '石化', '#64748b');
+          }
+        }, 50);
+
+        await sleep(300);
+        // 石化の場合は召喚時スキルがないため、ここで解除してよい
+        if (ev.card) ev.card.isSkillResolving = false;
+        break;
+      }
+      case 'equip_card': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const boardCard = board[ev.lane];
+        if (boardCard) {
+          boardCard.basePower =
+            (boardCard.basePower || 0) + (ev.card.currentPower || 0);
+          boardCard.currentPower =
+            (boardCard.currentPower || 0) + (ev.card.currentPower || 0);
+          let addedSkills = [];
+          if (
+            ev.card.skill &&
+            ev.card.skill !== 'none' &&
+            ev.card.skill !== 'equip'
+          )
+            addedSkills.push({ id: ev.card.skill, value: ev.card.skillValue });
+          if (ev.card.skills)
+            ev.card.skills.forEach((s) => {
+              if (s.id !== 'equip')
+                addedSkills.push({ id: s.id, value: s.value });
+            });
+          mergeCardSkills(boardCard, addedSkills);
+
+          renderBoard();
+          playSound(SOUNDS.sePlace);
+
+          const laneEl = document.getElementById(`${ev.side}-lane-${ev.lane}`);
+          if (laneEl) {
+            laneEl.classList.add('flash-effect');
+            setTimeout(() => laneEl.classList.remove('flash-effect'), 500);
+          }
+        }
+        break;
+      }
+      case 'summon_token':
+      case 'summon_card': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        board[ev.lane] = ev.card;
+
+        // 保護フラグを即座に適用
+        if (ev.card) ev.card.isSkillResolving = true;
+
+        renderBoard();
+        playSound(SOUNDS.sePlace);
+
+        let voiceCat = ev.card ? ev.card.voiceCategory : null;
+        if (!voiceCat && ev.card) {
+          const baseId = ev.card.baseId || ev.card.id;
+          const cMaster = CARD_MASTER.find(
+            (m) => m.id === baseId || m.name === ev.card.name
+          );
+          if (cMaster && cMaster.voiceCategory) {
+            voiceCat = cMaster.voiceCategory;
+            ev.card.voiceCategory = voiceCat;
+          }
+        }
+
+        if (voiceCat) {
+          playCardVoice(voiceCat, 'play');
+        }
+
+        setTimeout(() => {
+          const cEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+          );
+          if (cEl) {
+            if (ev.source === 'split') {
+              createDamagePopup(cEl, '分裂', '#facc15');
+            }
+            if (ev.source === 'awake') {
+              createDamagePopup(cEl, '覚醒', '#facc15');
+            }
+          }
+        }, 50);
+
+        await sleep(300);
+        // 召喚時演出終了のためフラグを解除。
+        // 召喚時スキルを持つ場合は、別途 resolveOnPlaySkill 等の中で
+        // 再度フラグが立てられ、適切に管理されることを前提とする。
+        if (ev.card) {
+          ev.card.isSkillResolving = false;
+        }
+        break;
+      }
+
+      case 'add_hand': {
+        const hand =
+          ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        if (hand.length < 5) {
+          if (!ev.card.uid) {
+            ev.card.uid = `${ev.side}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+          }
+          hand.push(ev.card);
+        }
+        renderHand();
+        updateDeckDisplay(ev.side);
+        playSound(SOUNDS.seDraw);
+        await sleep(200);
+        break;
+      }
+      case 'discard': {
+        const hand =
+          ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        if (ev.card) {
+          let idx = -1;
+          if (ev.card.uid) {
+            idx = hand.findIndex((c) => c.uid === ev.card.uid);
+          }
+          // フォールバック: UIDで見つからなかった場合、非同期ズレ対策として名前やIDが一致するカードを手札の最後から探して破棄する
+          if (idx === -1) {
+            // uid比較ではなく、最も一致度が高いもの（基本は後ろのもの）を選ぶ
+            for (let j = hand.length - 1; j >= 0; j--) {
+              const c = hand[j];
+              if (
+                (c.uid && ev.card.uid && c.uid === ev.card.uid) ||
+                c.id === ev.card.id ||
+                (c.name === ev.card.name && c.power === ev.card.power)
+              ) {
+                idx = j;
+                break;
+              }
+            }
+          }
+          if (idx !== -1) {
+            const discardedCard = hand.splice(idx, 1)[0];
+            const discardArr =
+              ev.side === 'blue'
+                ? GameState.playerDiscard
+                : GameState.enemyDiscard;
+
+            // 墓地送り時の完全リセット
+            const masterData = CARD_MASTER.find(
+              (m) => m.id === (discardedCard.baseId || discardedCard.id)
+            );
+            let restoredCard;
+            if (masterData) {
+              restoredCard = JSON.parse(JSON.stringify(masterData));
+              restoredCard.uid = discardedCard.uid;
+              restoredCard.owner = ev.side;
+              restoredCard.baseId = discardedCard.baseId || discardedCard.id;
+              if (discardedCard.isPremium !== undefined)
+                restoredCard.isPremium = discardedCard.isPremium;
+              restoredCard.basePower = restoredCard.power;
+              restoredCard.currentPower = restoredCard.power;
+            } else {
+              restoredCard = { ...discardedCard };
+              if ('basePower' in restoredCard)
+                restoredCard.power = restoredCard.basePower;
+              restoredCard.currentPower = restoredCard.power;
+              restoredCard.skills = [];
+            }
+            if (!discardedCard.isToken) {
+              discardArr.push(restoredCard);
+            }
+          }
+        }
+        updateDeckDisplay(ev.side);
+        renderHand();
+        break;
+      }
+      case 'add_skill': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const targetCard = board[ev.lane];
+        if (targetCard) {
+          if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
+          targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
+        }
+
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        let skillNameText = ev.skillId === 'invincible' ? '無敵' : 'スキル付与';
+        if (ev.source === 'stealth') skillNameText = '潜伏';
+        if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
+      case 'invincible_block': {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '無敵', '#cbd5e1');
+          playSound(SOUNDS.seSkill);
+        }
+        await sleep(300);
+        break;
+      }
+      case 'reflect_block': {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '反射', '#a78bfa'); // purple
+          playSound(SOUNDS.seSkill);
+        }
+        await sleep(300);
+        break;
+      }
+      case 'skill_popup': {
+        const atkPfx = ev.side === 'blue' ? 'player' : 'enemy';
+        const cEl = document.querySelector(
+          `#${atkPfx}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, ev.skillName, '#facc15');
+          playSound(SOUNDS.seSkill);
+          await sleep(300);
+        }
+        break;
+      }
+      case 'leader_skill': {
+        playSound(SOUNDS.seSkill);
+        await sleep(400);
+        break;
+      }
+      case 'deck_mill': {
+        const targetDeck =
+          ev.side === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+        const targetDiscard =
+          ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        if (targetDeck && targetDeck.length > 0) {
+          const milledCards = targetDeck.splice(0, ev.count);
+          targetDiscard.push(...milledCards);
+        }
+        updateDeckDisplay(ev.side);
+        playSound(SOUNDS.seDraw);
+        await sleep(200);
+        break;
+      }
+      case 'attack': {
+        const atkPfx = ev.attackerSide === 'blue' ? 'player' : 'enemy';
+        const atkEl = document.querySelector(
+          `#${atkPfx}-lanes .cell[data-lane="${ev.lane}"]`
+        );
+        if (atkEl) {
+          atkEl.style.animation = 'none'; // リセット
+          void atkEl.offsetHeight; // リフロー
+
+          if (ev.attackerSide === 'blue') {
+            atkEl.style.animation =
+              'attack-up 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+          } else {
+            atkEl.style.animation =
+              'attack-down 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+          }
+          atkEl.style.zIndex = '20';
+          playSound(SOUNDS.seAttack);
+
+          // 1秒のアニメーション終了後にスタイルを元に戻す
+          setTimeout(() => {
+            if (atkEl) {
+              atkEl.style.animation = '';
+              atkEl.style.zIndex = '';
+            }
+          }, 1000);
+        }
+        // アニメーションが衝突するタイミング（約0.5秒）まで待機してから次のダメージ処理へ進む
+        await sleep(500);
+        break;
+      }
+      case 'destroy_cards': {
+        if (!ev.targets || ev.targets.length === 0) break;
+
+        let anyValidTarget = false;
+        let playedVoices = new Set();
+
+        // フェーズ1: 一斉にアニメーションと音を再生
+        for (const target of ev.targets) {
+          const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
+          const deadCard = target.card; // engine.jsによって既にboardから消えnullになっているため、event内のキャッシュを使う
+
+          if (deadCard) {
+            const cell = document.querySelector(
+              `#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`
+            );
+            if (cell) {
+              const cardEl = cell.querySelector('.card');
+              if (cardEl) {
+                cardEl.classList.add('anim-shake');
+                cardEl.classList.add('anim-card-destroy');
+              }
+            }
+
+            if (
+              deadCard.voiceCategory &&
+              !playedVoices.has(deadCard.voiceCategory)
+            ) {
+              playCardVoice(deadCard.voiceCategory, 'death');
+              playedVoices.add(deadCard.voiceCategory);
+            }
+            anyValidTarget = true;
+          }
+        }
+
+        if (!anyValidTarget) break;
+
+        playSound(SOUNDS.seDestroy); // SEは1回だけ
+        await sleep(400); // 破壊アニメーション待ち
+
+        // フェーズ2: 一斉にデータを消去・墓地送りにして再描画
+        for (const target of ev.targets) {
+          const sidePrefix = target.side === 'blue' ? 'player' : 'enemy';
+          const board =
+            target.side === 'blue'
+              ? GameState.playerBoard
+              : GameState.enemyBoard;
+          const deadCard = target.card;
+
+          if (deadCard) {
+            board[target.lane] = null; // 安全のため再度null化
+            if (deadCard.equippedCards && deadCard.equippedCards.length > 0) {
+              for (const eqCard of deadCard.equippedCards) {
+                let restoredEq;
+                // 【傀儡】装備カードが傀儡で奪ったものの場合、元の持ち主の墓地へ返す
+                const eqOwner =
+                  eqCard.puppetOriginalOwner || eqCard.owner || target.side;
+                const discard =
+                  eqOwner === 'blue'
+                    ? GameState.playerDiscard
+                    : GameState.enemyDiscard;
+                const eqMaster = CARD_MASTER.find(
+                  (m) => m.id === (eqCard.baseId || eqCard.id)
+                );
+                if (eqMaster) {
+                  restoredEq = JSON.parse(JSON.stringify(eqMaster));
+                  restoredEq.uid = eqCard.uid;
+                  restoredEq.owner = eqOwner;
+                  restoredEq.baseId = eqCard.baseId || eqCard.id;
+                  restoredEq.basePower = restoredEq.power;
+                  restoredEq.currentPower = restoredEq.power;
+                } else {
+                  restoredEq = { ...eqCard };
+                  if (restoredEq.puppetOriginalOwner)
+                    delete restoredEq.puppetOriginalOwner;
+                }
+                if (!restoredEq.isToken) {
+                  discard.push(restoredEq);
+                }
+              }
+              deadCard.equippedCards = [];
+              updateDeckDisplay(target.side);
+            }
+
+            if (deadCard.unionMaterials && deadCard.unionMaterials.length > 0) {
+              for (const matCard of deadCard.unionMaterials) {
+                let restoredMat;
+                // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+                const matOwner =
+                  matCard.puppetOriginalOwner || matCard.owner || target.side;
+                const discard =
+                  matOwner === 'blue'
+                    ? GameState.playerDiscard
+                    : GameState.enemyDiscard;
+                const matMaster = CARD_MASTER.find(
+                  (m) => m.id === (matCard.baseId || matCard.id)
+                );
+                if (matMaster) {
+                  restoredMat = JSON.parse(JSON.stringify(matMaster));
+                  restoredMat.uid = matCard.uid;
+                  restoredMat.owner = matOwner;
+                  restoredMat.baseId = matCard.baseId || matCard.id;
+                  restoredMat.basePower = restoredMat.power;
+                  restoredMat.currentPower = restoredMat.power;
+                } else {
+                  restoredMat = { ...matCard };
+                }
+                if (restoredMat.puppetOriginalOwner)
+                  delete restoredMat.puppetOriginalOwner;
+                if (!restoredMat.isToken) {
+                  discard.push(restoredMat);
+                }
+              }
+              deadCard.unionMaterials = [];
+              updateDeckDisplay(target.side);
+            }
+
+            if (deadCard.originalRevertTarget) {
+              const rvTarget = deadCard.originalRevertTarget;
+              // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
+              const rvOwner = rvTarget.puppetOriginalOwner || target.side;
+              const discard =
+                rvOwner === 'blue'
+                  ? GameState.playerDiscard
+                  : GameState.enemyDiscard;
+              const masterData = CARD_MASTER.find(
+                (m) => m.id === (rvTarget.baseId || rvTarget.id)
+              );
+              let restoredCard;
+              if (masterData) {
+                restoredCard = JSON.parse(JSON.stringify(masterData));
+                restoredCard.uid = rvTarget.uid;
+                restoredCard.owner = rvOwner;
+                restoredCard.baseId = rvTarget.baseId || rvTarget.id;
+                if (rvTarget.isPremium !== undefined)
+                  restoredCard.isPremium = rvTarget.isPremium;
+                restoredCard.basePower = restoredCard.power;
+                restoredCard.currentPower = restoredCard.power;
+              } else {
+                restoredCard = { ...rvTarget };
+                restoredCard.equippedCards = [];
+              }
+              if (restoredCard.puppetOriginalOwner)
+                delete restoredCard.puppetOriginalOwner;
+              if (!restoredCard.isToken) {
+                discard.push(restoredCard);
+              }
+              updateDeckDisplay(rvOwner);
+            } else if (!deadCard.isToken) {
+              // 【傀儡】傀儡スキルで奪ったカードは元の持ち主の墓地へ返す
+              const deadOwner = deadCard.puppetOriginalOwner || target.side;
+              const discard =
+                deadOwner === 'blue'
+                  ? GameState.playerDiscard
+                  : GameState.enemyDiscard;
+
+              const masterData = CARD_MASTER.find(
+                (m) => m.id === (deadCard.baseId || deadCard.id)
+              );
+              let restoredCard;
+              if (masterData) {
+                restoredCard = JSON.parse(JSON.stringify(masterData));
+                restoredCard.uid = deadCard.uid;
+                restoredCard.owner = deadOwner;
+                restoredCard.baseId = deadCard.baseId || deadCard.id;
+                if (deadCard.isPremium !== undefined)
+                  restoredCard.isPremium = deadCard.isPremium;
+                restoredCard.basePower = restoredCard.power;
+                restoredCard.currentPower = restoredCard.power;
+              } else {
+                restoredCard = { ...deadCard };
+                if ('basePower' in restoredCard)
+                  restoredCard.power = restoredCard.basePower;
+                restoredCard.currentPower = restoredCard.power;
+                restoredCard.skills = [];
+                if (restoredCard.puppetOriginalOwner)
+                  delete restoredCard.puppetOriginalOwner;
+              }
+
+              discard.push(restoredCard);
+              updateDeckDisplay(deadOwner);
+            }
+            board[target.lane] = null;
+
+            // アニメーション用クラスのクリーンアップ
+            const cell = document.querySelector(
+              `#${sidePrefix}-lanes .cell[data-lane="${target.lane}"]`
+            );
+            if (cell) {
+              const cardEl = cell.querySelector('.card');
+              if (cardEl) {
+                cardEl.classList.remove('anim-shake');
+                cardEl.classList.remove('anim-card-destroy');
+              }
+            }
+          }
+        }
+
+        renderBoard();
+        break;
+      }
+    }
+  }
+
+  // 全てのアニメーションが完了するのを確実に待つためのバッファ
+  await sleep(600);
 }
