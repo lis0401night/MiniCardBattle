@@ -75,7 +75,8 @@ export const SKILLS = {
         }
     },
     immune: { name: '無効', icon: '🚫', desc: (val) => '能力による破壊やダメージを受けない。' },
-    fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、5/6で相手に1～5ダメージ、1/6で自分に6ダメージ。' },
+    resist: { name: '耐性', icon: '💠', desc: (val) => `${val}以上のダメージを無効化する。` },
+    fate: { name: '運命', icon: '🎲', desc: (val) => '召喚時、1/6で相手に10ダメージ、5/6で自分に6ダメージ。' },
     salvage: { name: '回収', icon: '🧲', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自分の墓地からカードを手札に加える。` },
     reinforce: { name: '増援', icon: '📣', desc: (val) => `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。` },
     extort: {
@@ -213,6 +214,6 @@ export const ACTIVE_SKILLS = [
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
-    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'reflect', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
+    'deadly', 'sturdy', 'soul_bind', 'growth', 'defender', 'split', 'invincible', 'reflect', 'legendary', 'takeover', 'pierce', 'explode', 'contract', 'double_strike', 'immune', 'resist', 'extort', 'phase', 'oblivion', 'challenge', 'move', 'brutal', 'absorb',
     'apex', 'retaliate', 'substitute', 'possession', 'cleave', 'arm_self', 'maintain', 'grave_keeper', 'awake'
 ];

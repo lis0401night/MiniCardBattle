@@ -216,7 +216,7 @@ export function retireDungeon() {
 
         showPointAcquisitionModal({
             title: '試練終了',
-            message: `ダンジョンの挑戦が終了しました。\n到達階層: ${currentStreak + 1}階（クリア: ${currentStreak}階）`,
+            message: `ダンジョンの挑戦が終了しました。\n到達階層: ${currentStreak + 1}階（クリア: ${currentStreak}階）\n試練ポイントを ${earnedPoints} Pt 獲得しました！`,
             points: earnedPoints,
             totalPoints: totalPts,
             color: '#facc15',

@@ -55,3 +55,8 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
     { id: 'queen', type: 'card', cost: 5 },
     { id: 'snowwhite', type: 'card', cost: 5 }
 ];
+
+export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = [
+    { id: 'threebears', type: 'card', cost: 5 },
+    { id: 'goldilocks', type: 'card', cost: 5 }
+];

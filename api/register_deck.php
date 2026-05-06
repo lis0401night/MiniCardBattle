@@ -65,6 +65,8 @@ $existing_defense_wins = 0;
 $existing_challenge_points = 0;
 $existing_challenge_total_points = 0;
 $existing_challenge_max_streak = 0;
+$existing_high_difficulty_points = 0;
+$existing_high_difficulty_total_points = 0;
 $filename = "{$dir}/{$uuid}.js";
 if (file_exists($filename)) {
     $content = file_get_contents($filename);
@@ -77,6 +79,8 @@ if (file_exists($filename)) {
             $existing_challenge_points = $existing_data['challenge_points'] ?? 0;
             $existing_challenge_total_points = $existing_data['challenge_total_points'] ?? 0;
             $existing_challenge_max_streak = $existing_data['challenge_max_streak'] ?? 0;
+            $existing_high_difficulty_points = $existing_data['high_difficulty_points'] ?? 0;
+            $existing_high_difficulty_total_points = $existing_data['high_difficulty_total_points'] ?? 0;
         }
     }
 }
@@ -98,6 +102,8 @@ $player_data = [
     'challenge_points' => $existing_challenge_points,
     'challenge_total_points' => $existing_challenge_total_points,
     'challenge_max_streak' => $existing_challenge_max_streak,
+    'high_difficulty_points' => $existing_high_difficulty_points,
+    'high_difficulty_total_points' => $existing_high_difficulty_total_points,
     'timestamp' => $timestamp
 ];
 $data_json = json_encode($player_data);

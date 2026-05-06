@@ -595,7 +595,7 @@ export async function showDefenseMenu() {
                             window.incrementStat('defenseWins', null, newWinsCount);
                         }
                         showAlertModal(
-                            `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛戦ポイント: ${finalPts} Pt`,
+                            `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛ポイント: ${finalPts} Pt`,
                             () => { }
                         );
                     }

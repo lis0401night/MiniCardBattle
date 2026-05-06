@@ -10,6 +10,11 @@ export default function HighDifficultyMenuScreen() {
     if (window.switchScreen) window.switchScreen('screen-high-difficulty');
   };
 
+  const handleExchangeClick = () => {
+    playSound(SOUNDS.seClick);
+    if (window.switchScreen) window.switchScreen('screen-high-difficulty-exchange');
+  };
+
   return (
     <div 
       id="screen-high-difficulty-menu" 
@@ -34,6 +39,13 @@ export default function HighDifficultyMenuScreen() {
           onClick={handleChallengeClick}
         >
           挑戦
+        </button>
+        <button 
+          className="btn" 
+          style={{ background: 'linear-gradient(45deg, #8b5cf6, #6d28d9)' }} 
+          onClick={handleExchangeClick}
+        >
+          交換所
         </button>
       </div>
 

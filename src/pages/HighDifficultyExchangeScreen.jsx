@@ -7,11 +7,11 @@ import { saveDeck } from '../hooks/deck.js';
 import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
-import { CHALLENGE_EXCHANGE_LINEUP } from '../utils/constants/config.js';
+import { HIGH_DIFFICULTY_EXCHANGE_LINEUP } from '../utils/constants/config.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 
-export default function ChallengeExchangeScreen() {
-    const [challengePoints, setChallengePoints] = useState({ current: 0, total: 0 });
+export default function HighDifficultyExchangeScreen() {
+    const [highDifficultyPoints, setHighDifficultyPoints] = useState({ current: 0, total: 0 });
     const [unlockedSkins, setUnlockedSkins] = useState([]);
     const [unlockedPlaymats, setUnlockedPlaymats] = useState([]);
     const [inventory, setInventory] = useState({});
@@ -21,9 +21,9 @@ export default function ChallengeExchangeScreen() {
 
     useEffect(() => {
         // Init Points
-        const currentPts = parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
-        const totalPts = parseInt(localStorage.getItem('mini_card_battle_challenge_total_points')) || 0;
-        setChallengePoints({ current: currentPts, total: totalPts });
+        const currentPts = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_points')) || 0;
+        const totalPts = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_total_points')) || 0;
+        setHighDifficultyPoints({ current: currentPts, total: totalPts });
 
         // Init Unlocked
         const userUnlocked = JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || [];
@@ -48,20 +48,20 @@ export default function ChallengeExchangeScreen() {
                     const myUuid = getOrCreateUUID();
                     const myData = result.players.find(p => p.uuid === myUuid);
                     if (myData) {
-                        const pts = myData.challenge_points || 0;
-                        const tPts = myData.challenge_total_points || pts || 0;
+                        const pts = myData.high_difficulty_points || 0;
+                        const tPts = myData.high_difficulty_total_points || pts || 0;
 
                         const finalPts = (pts === 0 && currentPts > 0) ? currentPts : pts;
                         const finalTotalPts = (tPts === 0 && totalPts > 0) ? totalPts : tPts;
 
                         if (finalPts > 0 || currentPts === 0) {
-                            setChallengePoints({ current: finalPts, total: finalTotalPts });
-                            localStorage.setItem('mini_card_battle_challenge_points', finalPts);
-                            localStorage.setItem('mini_card_battle_challenge_total_points', finalTotalPts);
+                            setHighDifficultyPoints({ current: finalPts, total: finalTotalPts });
+                            localStorage.setItem('mini_card_battle_high_difficulty_points', finalPts);
+                            localStorage.setItem('mini_card_battle_high_difficulty_total_points', finalTotalPts);
 
                             // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
                             if (pts === 0 && currentPts > 0) {
-                                fetch('api/update_challenge_points.php', {
+                                fetch('api/update_high_difficulty_points.php', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -84,7 +84,7 @@ export default function ChallengeExchangeScreen() {
     const savePointsToServer = (newPts, newTotal) => {
         const uuid = getOrCreateUUID();
         const playerName = localStorage.getItem('mini_card_battle_player_name') || 'Player';
-        fetch('api/update_challenge_points.php', {
+        fetch('api/update_high_difficulty_points.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -99,12 +99,12 @@ export default function ChallengeExchangeScreen() {
     const handleExchange = (item) => {
         playSound(SOUNDS?.seCardPlace);
 
-        const newPts = challengePoints.current - item.cost;
-        localStorage.setItem('mini_card_battle_challenge_points', newPts);
-        setChallengePoints(prev => ({ ...prev, current: newPts }));
+        const newPts = highDifficultyPoints.current - item.cost;
+        localStorage.setItem('mini_card_battle_high_difficulty_points', newPts);
+        setHighDifficultyPoints(prev => ({ ...prev, current: newPts }));
 
         // サーバーと同期
-        savePointsToServer(newPts, challengePoints.total);
+        savePointsToServer(newPts, highDifficultyPoints.total);
 
         if (item.type === 'card') {
             const currentCount = inventory[item.id] || 0;
@@ -132,7 +132,7 @@ export default function ChallengeExchangeScreen() {
 
     const handleBack = () => {
         playSound(SOUNDS?.seClick);
-        if (window.switchScreen) window.switchScreen('screen-dungeon-menu');
+        if (window.switchScreen) window.switchScreen('screen-high-difficulty-menu');
     };
 
     const handleTitleClick = () => {
@@ -140,20 +140,20 @@ export default function ChallengeExchangeScreen() {
         if (debugClickCount >= 10) {
             debugClickCount = 0;
             if (showConfirmModal) {
-                showConfirmModal("デバッグモードを起動して試練ポイントを100Pt獲得しますか？", () => {
+                showConfirmModal("デバッグモードを起動して高難易度ポイントを100Pt獲得しますか？", () => {
                     playSound(SOUNDS?.seSkill);
-                    const currentPts = parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
-                    const totalPts = parseInt(localStorage.getItem('mini_card_battle_challenge_total_points')) || 0;
+                    const currentPts = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_points')) || 0;
+                    const totalPts = parseInt(localStorage.getItem('mini_card_battle_high_difficulty_total_points')) || 0;
                     const newPts = currentPts + 100;
                     const newTotalPts = totalPts + 100;
 
-                    localStorage.setItem('mini_card_battle_challenge_points', newPts);
-                    localStorage.setItem('mini_card_battle_challenge_total_points', newTotalPts);
-                    setChallengePoints({ current: newPts, total: newTotalPts });
+                    localStorage.setItem('mini_card_battle_high_difficulty_points', newPts);
+                    localStorage.setItem('mini_card_battle_high_difficulty_total_points', newTotalPts);
+                    setHighDifficultyPoints({ current: newPts, total: newTotalPts });
                     savePointsToServer(newPts, newTotalPts);
 
                     if (showAlertModal) {
-                        showAlertModal("【デバッグ】試練ポイントを100Pt獲得しました！");
+                        showAlertModal("【デバッグ】高難易度ポイントを100Pt獲得しました！");
                     }
                 });
             }
@@ -161,26 +161,26 @@ export default function ChallengeExchangeScreen() {
     };
 
     return (
-        <div id="screen-challenge-exchange" className="screen active" style={{
-            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_challenge.png')`,
+        <div id="screen-high-difficulty-exchange" className="screen active" style={{
+            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_highdifficulty.png')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto'
         }}>
             <h2
-                style={{ color: '#c084fc', marginBottom: '5px', textShadow: '0 0 15px rgba(192, 132, 252, 0.6)', cursor: 'pointer' }}
+                style={{ color: '#ef4444', marginBottom: '5px', textShadow: '0 0 15px rgba(239, 68, 68, 0.6)', cursor: 'pointer' }}
                 onClick={handleTitleClick}
             >
                 交換所
             </h2>
 
             <div id="exchange-points-display" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
-                試練ポイント: {challengePoints.current} / 総試練ポイント: {challengePoints.total}
+                高難易度ポイント: {highDifficultyPoints.current} / 総高難易度ポイント: {highDifficultyPoints.total}
             </div>
 
             <div className="card-list-container">
                 <div id="exchange-item-grid" className="card-list-grid-3col">
-                    {CHALLENGE_EXCHANGE_LINEUP.map(item => {
+                    {HIGH_DIFFICULTY_EXCHANGE_LINEUP.map(item => {
                         const isCard = item.type === 'card';
                         const isPlaymat = item.type === 'playmat';
                         let isUnlocked = false;
@@ -192,7 +192,7 @@ export default function ChallengeExchangeScreen() {
                             isUnlocked = unlockedSkins.includes(item.id);
                         }
 
-                        const canAfford = challengePoints.current >= item.cost;
+                        const canAfford = highDifficultyPoints.current >= item.cost;
                         const opacity = isUnlocked ? "0.3" : (canAfford ? "1.0" : "0.6");
                         const charObj = CHARACTERS[item.charId || item.id] || CHARACTERS.android;
 

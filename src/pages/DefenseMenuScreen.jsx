@@ -41,7 +41,7 @@ export default function DefenseMenuScreen() {
               if (newWinsCount > 0 && showPointAcquisitionModal) {
                   showPointAcquisitionModal({
                       title: '防衛成功！',
-                      message: `防衛に ${newWinsCount}回 新しく成功しました！`,
+                      message: `防衛に ${newWinsCount}回 新しく成功しました！\n防衛ポイントを ${newPoints > 0 ? newPoints : 0} Pt 獲得しました！`,
                       points: newPoints > 0 ? newPoints : 0,
                       totalPoints: finalPts,
                       color: '#10b981',      // エメラルドグリーン系

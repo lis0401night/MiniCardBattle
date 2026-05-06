@@ -3,6 +3,14 @@ import { getSeededRandom } from '../utils/gameUtils.js';
 import { hasSkill, getSkillValue, unmergeCardSkills, mergeCardSkills } from '../utils/gameUtils.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 
+export function canTakeDamage(card, amount, isSkill = true) {
+    if (!card) return false;
+    if (isSkill && hasSkill(card, 'immune')) return false;
+    const resVal = getSkillValue(card, 'resist');
+    if (resVal > 0 && amount >= resVal) return false;
+    return true;
+}
+
 /**
  * Mini Card Battle - Core Game Engine
  * DOMや演出に依存しない、純粋な状態更新ロジック
@@ -151,7 +159,7 @@ export function processDestructionTriggers(state, events) {
                         const dmg = getSkillValue(deadCard, 'explode') || 3;
                         [i - 1, i + 1].forEach(adj => {
                             if (adj >= 0 && adj < 3 && board[adj]) {
-                                if (!hasSkill(board[adj], 'immune')) {
+                                if (canTakeDamage(board[adj], dmg)) {
                                     board[adj].currentPower -= dmg;
                                     events.push({ type: 'damage_card', side, lane: adj, amount: dmg, source: 'explode' });
                                 } else {
@@ -434,7 +442,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const spVal = val || 2;
             [l - 1, l, l + 1].forEach(j => {
                 if (j >= 0 && j < 3 && eB[j]) {
-                    if (!hasSkill(eB[j], 'immune')) {
+                    if (canTakeDamage(eB[j], spVal)) {
                         let d = spVal;
                         eB[j].currentPower -= d;
                         events.push({ type: 'damage_card', side: oppOwner, lane: j, amount: d, source: 'spread' });
@@ -484,7 +492,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
                 }
             }
             if (maxL !== -1) {
-                if (!hasSkill(eB[maxL], 'immune')) {
+                if (canTakeDamage(eB[maxL], snVal)) {
                     let d = snVal;
                     eB[maxL].currentPower -= d;
                     events.push({ type: 'damage_card', side: oppOwner, lane: maxL, amount: d, source: 'snipe' });
@@ -581,7 +589,7 @@ export function applyActiveSkillLogic(state, owner, l, sid, val, events = [], si
             const bAdj = l === 1 ? [0, 2] : [1];
             bAdj.forEach(j => {
                 if (b[j]) {
-                    if (!hasSkill(b[j], 'immune')) {
+                    if (canTakeDamage(b[j], bVal)) {
                         b[j].currentPower -= bVal;
                         events.push({ type: 'damage_card', side: owner, lane: j, amount: bVal, source: 'berserk' });
                     } else {
@@ -1155,7 +1163,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
             // Damage card if exists
             if (eBoard[lane] !== null) {
-                if (!hasSkill(eBoard[lane], 'immune')) {
+                if (canTakeDamage(eBoard[lane], 4)) {
                     eBoard[lane].currentPower -= 4;
                     events.push({ type: 'damage_card', side: oppOwner, lane: lane, amount: 4, source: 'seal_lanes' });
                 } else {
@@ -1189,7 +1197,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
 
             // Damage card if exists
             if (eBoard[lane] !== null) {
-                if (!hasSkill(eBoard[lane], 'immune')) {
+                if (canTakeDamage(eBoard[lane], 4)) {
                     eBoard[lane].currentPower -= 4;
                     events.push({ type: 'damage_card', side: oppOwner, lane: lane, amount: 4, source: 'night_parade' });
                 } else {
@@ -1243,7 +1251,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         events.push({ type: 'leader_skill', skill: action, side: owner });
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {
-                if (!hasSkill(eBoard[i], 'immune')) {
+                if (canTakeDamage(eBoard[i], 4)) {
                     eBoard[i].currentPower -= 4;
                     events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 4, source: 'annihilation' });
                 } else {
@@ -1257,7 +1265,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         // 敵の場のすべてのカードに4ダメージ
         for (let i = 0; i < 3; i++) {
             if (eBoard[i]) {
-                if (!hasSkill(eBoard[i], 'immune')) {
+                if (canTakeDamage(eBoard[i], 4)) {
                     eBoard[i].currentPower -= 4;
                     events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 4, source: 'android_high_volley' });
                 } else {
@@ -1282,7 +1290,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
         for (let i = 0; i < 3; i++) {
             // 自分の場のカードにも2ダメージ
             if (board[i]) {
-                if (!hasSkill(board[i], 'immune')) {
+                if (canTakeDamage(board[i], 2)) {
                     board[i].currentPower -= 2;
                     events.push({ type: 'damage_card', side: owner, lane: i, amount: 2, source: 'dragon_high_ritual' });
                 } else {
@@ -1291,7 +1299,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             }
             // 相手の場のカードにも2ダメージ
             if (eBoard[i]) {
-                if (!hasSkill(eBoard[i], 'immune')) {
+                if (canTakeDamage(eBoard[i], 2)) {
                     eBoard[i].currentPower -= 2;
                     events.push({ type: 'damage_card', side: oppOwner, lane: i, amount: 2, source: 'dragon_high_ritual' });
                 } else {
@@ -1566,7 +1574,7 @@ export function applyLeaderSkillLogic(state, owner, action, tokenLanes = null, e
             const targetLane = tokenLanes[0];
             const targetCard = eBoard[targetLane];
             if (targetCard) {
-                if (hasSkill(targetCard, 'immune')) {
+                if (!canTakeDamage(targetCard, 4)) {
                     events.push({ type: 'immune_block', side: oppOwner, lane: targetLane, source: 'tomb_guard' });
                 } else {
                     targetCard.currentPower -= 4;
@@ -1973,7 +1981,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         const brutalDmg = getSkillValue(aC, 'brutal') || 1;
         [l - 1, l + 1].forEach(tj => {
             if (tj >= 0 && tj <= 2 && atkBoard[tj]) {
-                if (!hasSkill(atkBoard[tj], 'immune')) {
+                if (canTakeDamage(atkBoard[tj], brutalDmg)) {
                     atkBoard[tj].currentPower -= brutalDmg;
                     events.push({ type: 'damage_card', side: attackerSide, lane: tj, amount: brutalDmg, source: 'brutal' });
                 } else {
@@ -2021,9 +2029,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
 
                 if (effectiveDmg > 0) {
-                    targetCard.currentPower -= effectiveDmg;
-                    events.push({ type: 'damage_card', side: defSide, lane: targetLane, amount: effectiveDmg, source: 'cleave' });
-                    totalActualDmgToDef += effectiveDmg;
+                    if (canTakeDamage(targetCard, effectiveDmg, false)) {
+                        targetCard.currentPower -= effectiveDmg;
+                        events.push({ type: 'damage_card', side: defSide, lane: targetLane, amount: effectiveDmg, source: 'cleave' });
+                        totalActualDmgToDef += effectiveDmg;
+                    } else {
+                        events.push({ type: 'immune_block', side: defSide, lane: targetLane, source: 'cleave' });
+                    }
                     
                     if (hasSkill(aC, 'deadly')) {
                         if (!hasSkill(targetCard, 'immune')) {
@@ -2152,6 +2164,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             if (dmgToAtk > 0) events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
             dmgToAtk = Math.floor(dmgToAtk / 2);
         }
+        if (dmgToDef > 0 && !canTakeDamage(dC, dmgToDef, false)) {
+            if (dmgToDef > 0) events.push({ type: 'immune_block', side: defSide, lane: dLane });
+            dmgToDef = 0;
+        }
         if (dmgToDef > 0 && hasSkill(dC, 'invincible')) {
             if (dmgToDef > 0) events.push({ type: 'invincible_block', side: defSide, lane: dLane });
             dmgToDef = 0;
@@ -2160,8 +2176,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             events.push({ type: 'reflect_block', side: defSide, lane: dLane });
             const frontCard = atkBoard[dLane];
             if (frontCard) {
-                frontCard.currentPower -= dmgToDef;
-                events.push({ type: 'damage_card', side: attackerSide, lane: dLane, amount: dmgToDef, source: 'reflect' });
+                if (canTakeDamage(frontCard, dmgToDef)) {
+                    frontCard.currentPower -= dmgToDef;
+                    events.push({ type: 'damage_card', side: attackerSide, lane: dLane, amount: dmgToDef, source: 'reflect' });
+                } else {
+                    events.push({ type: 'immune_block', side: attackerSide, lane: dLane, source: 'reflect' });
+                }
                 if (hasSkill(aC, 'deadly')) {
                     if (!hasSkill(frontCard, 'immune')) {
                         frontCard.currentPower = 0;
@@ -2177,6 +2197,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             }
             dmgToDef = 0;
         }
+        if (dmgToAtk > 0 && !canTakeDamage(aC_defend, dmgToAtk, false)) {
+            if (dmgToAtk > 0) events.push({ type: 'immune_block', side: attackerSide, lane: aLane });
+            dmgToAtk = 0;
+        }
         if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
             if (dmgToAtk > 0) events.push({ type: 'invincible_block', side: attackerSide, lane: aLane });
             dmgToAtk = 0;
@@ -2185,8 +2209,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             events.push({ type: 'reflect_block', side: attackerSide, lane: aLane });
             const frontCard = defBoard[aLane];
             if (frontCard) {
-                frontCard.currentPower -= dmgToAtk;
-                events.push({ type: 'damage_card', side: defSide, lane: aLane, amount: dmgToAtk, source: 'reflect' });
+                if (canTakeDamage(frontCard, dmgToAtk)) {
+                    frontCard.currentPower -= dmgToAtk;
+                    events.push({ type: 'damage_card', side: defSide, lane: aLane, amount: dmgToAtk, source: 'reflect' });
+                } else {
+                    events.push({ type: 'immune_block', side: defSide, lane: aLane, source: 'reflect' });
+                }
                 if (originalTarget && hasSkill(originalTarget, 'deadly')) {
                     if (!hasSkill(frontCard, 'immune')) {
                         frontCard.currentPower = 0;

@@ -44,7 +44,7 @@ export default function ExchangeScreen() {
           localStorage.setItem('mini_card_battle_defense_points', cPts);
           localStorage.setItem('mini_card_battle_defense_total_points', tPts);
           if (showAlertModal) {
-            showAlertModal("【デバッグ】ポイントを100Pt獲得しました！", () => updateExchange());
+            showAlertModal("【デバッグ】防衛ポイントを100Pt獲得しました！", () => updateExchange());
           } else {
             updateExchange();
           }
@@ -55,10 +55,10 @@ export default function ExchangeScreen() {
 
   return (
     <div id="screen-exchange" className="screen active" style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_defense.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto'
+      backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_defense.png')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', overflowY: 'auto'
     }}>
       <h2
         id="exchange-title"
@@ -68,7 +68,7 @@ export default function ExchangeScreen() {
         交換所
       </h2>
       <div id="exchange-points-display" style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}>
-        所持ポイント: {points.current} / 総ポイント: {points.total}
+        防衛ポイント: {points.current} / 総防衛ポイント: {points.total}
       </div>
 
       <div className="card-list-container">
