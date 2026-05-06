@@ -1,9 +1,9 @@
 /**
  * Mini Card Battle - Character Data
  */
+import clericHighDeck from './enemy_decks/cleric_high.js';
 import cthulhuHighDeck from './enemy_decks/cthulhu_high.js';
 import elfHighDeck from './enemy_decks/elf_high.js';
-import clericHighDeck from './enemy_decks/cleric_high.js';
 
 export const CHARACTERS = {
   android: {
@@ -667,14 +667,6 @@ export const CHARACTERS = {
       6: [
         'ここが魔王城……。フフ、最高の祭壇じゃない。',
         'サタン、貴様の座は今日から私のものよ！',
-      ],
-      5: [
-        'フン, まだ神のまがい物を信奉する愚か者が残っているとは。',
-        'すべて異端として焼き払ってあげましょう。',
-      ],
-      6: [
-        'ここが魔王城……。フフ, 最高の祭壇じゃない。',
-        'サタン, 貴様の座は今日から私のものよ！',
       ],
       7: [
         'さあ, 魔王サタン。貴様が私にひれ伏す時が来たわ。',
