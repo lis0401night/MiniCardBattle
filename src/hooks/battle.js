@@ -1483,6 +1483,12 @@ export async function waitPlayerDiscardSelection(
       }
     }
     // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
+    // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
+    if (title && title.includes('探索')) {
+      const maxP = Math.max(...validCards.map(c => c.power || 0));
+      const bestCards = validCards.filter(c => (c.power || 0) === maxP);
+      return bestCards[Math.floor(Math.random() * bestCards.length)];
+    }
     const randomIndex = Math.floor(Math.random() * validCards.length);
     return validCards[randomIndex];
   }
@@ -2328,7 +2334,7 @@ export async function startTurn(owner) {
     if (hand.length < 4) {
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       const voidToken = {
         ...voidTpl,

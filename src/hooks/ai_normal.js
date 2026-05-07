@@ -857,7 +857,7 @@ export function getBestSimulatedMove() {
         if (action.type === 'forge') {
           const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
             name: '虚空',
-            power: 1,
+            power: 0,
           };
           simState.enemyHand.push(cloneCard(voidTpl));
         }

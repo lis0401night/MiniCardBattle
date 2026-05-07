@@ -1,51 +1,47 @@
 import { GameState } from '../hooks/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 import {
   createDamagePopup,
-  playSound,
-  sleep,
   getCardImgUrl,
-  shuffleArray,
-  hasSkill,
-  getSkillValue,
-  getSeededRandom,
-  mergeCardSkills,
-  unmergeCardSkills,
   getOrCreateUUID,
+  getSeededRandom,
+  getSkillValue,
+  hasSkill,
+  mergeCardSkills,
+  playSound,
+  shuffleArray,
+  sleep,
   triggerGraveKeeperEffect,
+  unmergeCardSkills,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
-  updateHPBar,
   checkWinCondition,
-  waitPlayerLaneSelection,
-  waitPlayerEnemyLaneSelection,
-  waitPlayerHandSelection,
+  cleanupDestroyedCards,
+  consumeAIAction,
+  discardCard,
+  drawCard,
+  executeSingleCombat,
+  hasActiveSkill,
+  playCard,
+  resolveOnPlaySkill,
+  showSpeechBubble,
+  updateDeckDisplay,
+  updateHPBar,
   waitPlayerDiscardSelection,
   waitPlayerDualDiscardSelection,
+  waitPlayerEnemyLaneSelection,
+  waitPlayerHandSelection,
+  waitPlayerLaneSelection,
   waitSkillChoice,
-  discardCard,
-  updateDeckDisplay,
-  cleanupDestroyedCards,
-  drawCard,
-  hasActiveSkill,
-  resolveOnPlaySkill,
-  executeSingleCombat,
-  playCard,
-  consumeAIAction,
-  showSpeechBubble,
 } from './battle.js';
 import { applyActiveSkillLogic } from './engine.js';
-import {
-  renderHand,
-  renderBoard,
-  playSummonAnimation,
-} from './uiBattle.js';
 import { playEvents } from './eventRenderer.js';
-import { PASSIVE_SKILLS, ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { getIsHost } from './multiplayer.js';
-import { playCardVoice } from '../utils/constants/voices.js';
+import { playSummonAnimation, renderBoard, renderHand } from './uiBattle.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -304,7 +300,7 @@ export async function resolveActiveSkillEffect(
       // 虚空トークンを手札に追加（playCardの前に追加し、召喚時スキル発動前に手札にある状態にする）
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       const voidToken = {
         ...voidTpl,
@@ -484,7 +480,7 @@ export async function resolveActiveSkillEffect(
     if (selectedIdx !== -1 && selectedLane !== -1) {
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       const voidToken = {
         ...voidTpl,
@@ -2210,7 +2206,7 @@ export async function resolveActiveSkillEffect(
       }
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       for (let i = 0; i < discardIndices.length; i++) {
         const newToken = {
@@ -2218,9 +2214,9 @@ export async function resolveActiveSkillEffect(
           owner: o,
           ...voidTpl,
           isToken: true,
-          power: 1,
-          basePower: 1,
-          currentPower: 1,
+          power: voidTpl.power ?? 0,
+          basePower: voidTpl.power ?? 0,
+          currentPower: voidTpl.power ?? 0,
           imgUrl: o === 'blue' ? getCardImgUrl(voidTpl) : '',
           rarity: 1,
           uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`,
@@ -2643,7 +2639,7 @@ async function triggerExtortInAction(c, o) {
 
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       const voidToken = {
         ...voidTpl,

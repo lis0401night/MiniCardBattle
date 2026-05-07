@@ -45,7 +45,7 @@ export const SKILLS = {
         type: 'text',
         value: `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数`,
       },
-      { type: 'link', value: `「虚空（パワー1）」`, targetId: 'token_void' },
+      { type: 'link', value: `「虚空（パワー0）」`, targetId: 'token_void' },
       { type: 'text', value: 'を加える。（同値の場合は左優先）' },
     ],
   },
@@ -262,7 +262,7 @@ export const SKILLS = {
   fate: {
     name: '運命',
     icon: '🎲',
-    desc: (val) => '召喚時、1/6で相手に10ダメージ、5/6で自分に6ダメージ。',
+    desc: (val) => '召喚時、5/6で相手に1~5ダメージ、1/6で自分に6ダメージ。',
   },
   salvage: {
     name: '回収',
@@ -284,7 +284,7 @@ export const SKILLS = {
         type: 'text',
         value: `相手リーダーにダメージを与えた時、相手の手札からランダムに${val || 1}枚を捨て、同数`,
       },
-      { type: 'link', value: `「虚空（パワー1）」`, targetId: 'token_void' },
+      { type: 'link', value: `「虚空（パワー0）」`, targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
     ],
   },
@@ -298,7 +298,7 @@ export const SKILLS = {
     icon: '⚖',
     desc: (val) => [
       { type: 'text', value: `召喚時、手札を${val || 1}枚捨て、同数` },
-      { type: 'link', value: `「虚空（パワー1）」`, targetId: 'token_void' },
+      { type: 'link', value: `「虚空（パワー0）」`, targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
     ],
   },
@@ -495,7 +495,7 @@ export const SKILLS = {
         value:
           '召喚時、同じレーンに手札から1枚カードを召喚できる。そうした場合、手札に',
       },
-      { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
     ],
   },
@@ -508,7 +508,7 @@ export const SKILLS = {
         value:
           '召喚時、カードが配置されているレーンに手札から1枚「装備」を持つカードを召喚できる。または、「武装」を持つカードが配置されているレーンに手札から1枚カードを召喚できる。そうした場合、手札に',
       },
-      { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
     ],
   },
@@ -585,7 +585,7 @@ export const SKILLS = {
         type: 'text',
         value: `召喚時、手札からパワー${val}以下のカードを1枚召喚できる。そうした場合、手札に`,
       },
-      { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
     ],
   },
@@ -605,7 +605,7 @@ export const SKILLS = {
     icon: '⚙️',
     desc: (val) => [
       { type: 'text', value: '自分のターン開始時、通常のドローの代わりに' },
-      { type: 'link', value: '「虚空（パワー1）」', targetId: 'token_void' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
     ],
   },

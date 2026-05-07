@@ -447,7 +447,7 @@ export const CARD_MASTER = [
     id: 'crocodile',
     name: 'クロコダイル',
     rarity: 1,
-    power: 7,
+    power: 8,
     skill: 'maintain',
     voiceCategory: 'beast',
     flavor:
@@ -1132,7 +1132,7 @@ export const CARD_MASTER = [
     name: '鋼のマンティコア',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'maintain' }, { id: 'sturdy' }, { id: 'snipe', value: 2 }],
+    skills: [{ id: 'maintain' }, { id: 'sturdy' }, { id: 'snipe', value: 3 }],
     voiceCategory: 'machine_old',
     flavor:
       '忘れ去られた古代文明の遺物であり、侵入者を排除するためだけに稼働し続ける機械魔獣。',
@@ -1652,8 +1652,8 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 4,
     skills: [
-      { id: 'choice', value: 2 },
-      { id: 'choice', value: 2, choiceGroup: 2 },
+      { id: 'choice', value: 1 },
+      { id: 'choice', value: 1, choiceGroup: 2 },
     ],
     choices: [
       { id: 'convert', value: 2 },
@@ -2066,9 +2066,9 @@ export const CARD_MASTER = [
     id: 'valkyrie',
     name: '焦熱の戦乙女',
     rarity: 4,
-    power: 3,
+    power: 2,
     skills: [
-      { id: 'sacrifice', value: 3 },
+      { id: 'sacrifice', value: 2 },
       { id: 'double_strike' },
       { id: 'stealth', value: 1 },
       { id: 'quick' },
@@ -2415,7 +2415,7 @@ export const CARD_MASTER = [
     id: 'ippondatara',
     name: '異形の刀鍛冶',
     rarity: 4,
-    power: 3,
+    power: 4,
     skill: 'forge',
     voiceCategory: 'sword',
     flavor:
@@ -2566,7 +2566,7 @@ export const CARD_MASTER = [
     id: 'token_void',
     name: '虚空',
     rarity: 1,
-    power: 1,
+    power: 0,
     isToken: true,
     skill: 'none',
     voiceCategory: 'stone',

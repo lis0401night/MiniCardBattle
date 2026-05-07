@@ -1,36 +1,36 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getSkinImage } from '../utils/constants/characters.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  getCardImgUrl,
+  getDialogue,
+  getSeededRandom,
+  hasSkill,
+  mergeCardSkills,
   playSound,
   sleep,
-  getCardImgUrl,
-  getSeededRandom,
-  mergeCardSkills,
-  getDialogue,
-  hasSkill,
   triggerGraveKeeperEffect,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
-  updateSPOrbs,
   checkWinCondition,
-  waitPlayerLaneSelection,
-  waitPlayerEnemyLaneSelection,
-  waitPlayerHandSelection,
-  waitPlayerDiscardSelection,
-  discardCard,
-  updateDeckDisplay,
   cleanupDestroyedCards,
+  discardCard,
   drawCard,
   endTurnLogic,
   hasActiveSkill,
   resolveOnPlaySkill,
+  updateDeckDisplay,
+  updateSPOrbs,
+  waitPlayerDiscardSelection,
+  waitPlayerEnemyLaneSelection,
+  waitPlayerHandSelection,
+  waitPlayerLaneSelection,
 } from './battle.js';
-import { GameState } from './gameState.js';
-import { updateCardDetail, renderHand, renderBoard } from './uiBattle.js';
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { playCardVoice } from '../utils/constants/voices.js';
+import { GameState } from './gameState.js';
+import { renderBoard, renderHand, updateCardDetail } from './uiBattle.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -818,7 +818,7 @@ export async function executeLeaderSkillAction(
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         id: 'token_void',
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       for (let i = 0; i < opDc; i++) {
         opH.push({
@@ -827,7 +827,7 @@ export async function executeLeaderSkillAction(
           owner: opId,
           baseId: 'token_void',
           isToken: true,
-          currentPower: voidTpl.power || 1,
+          currentPower: voidTpl.power ?? 0,
         });
       }
     }

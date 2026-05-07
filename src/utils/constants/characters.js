@@ -1596,7 +1596,7 @@ CHARACTERS.cthulhu.challenges = {
       deck: () => Promise.resolve(cthulhuHighDeck),
       leaderSkill: {
         name: '異界の扉',
-        desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー1）」を加える。',
+        desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー0）」を加える。',
         action: 'otherworld_gate',
         cost: 2,
       },

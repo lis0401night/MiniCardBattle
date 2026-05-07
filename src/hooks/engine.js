@@ -511,8 +511,9 @@ export function applyActiveSkillLogic(
           (card) => card && (card.power || 0) <= maxPow
         );
         if (validCards.length > 0) {
-          validCards.sort((a, b) => (b.power || 0) - (a.power || 0));
-          const bestCard = validCards[0];
+          const mP = Math.max(...validCards.map(c => c.power || 0));
+          const bestCards = validCards.filter(c => (c.power || 0) === mP);
+          const bestCard = bestCards[Math.floor(Math.random() * bestCards.length)];
           const idx = myDeckSim.findIndex(
             (card) => card.id === bestCard.id || card.baseId === bestCard.baseId
           );
@@ -522,10 +523,11 @@ export function applyActiveSkillLogic(
           events.push({ type: 'draw', side: owner, source: 'explore' });
 
           if (myHandSim.length > 0) {
-            myHandSim.sort(
-              (a, b) => ((a || {}).power || 0) - ((b || {}).power || 0)
-            );
-            myHandSim.shift(); // 最も弱いカードを捨てる
+            const dropIndices = getAIDiscardIndices(myHandSim, 1);
+            if (dropIndices.length > 0) {
+              const dIdx = dropIndices[0];
+              myHandSim.splice(dIdx, 1);
+            }
           }
         }
       }
@@ -592,7 +594,7 @@ export function applyActiveSkillLogic(
 
             const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
               name: '虚空',
-              power: 1,
+              power: 0,
             };
             const voidToken = {
               ...voidTpl,
@@ -934,29 +936,38 @@ export function applyActiveSkillLogic(
         }
       }
       break;
-    case 'convert':
+    case 'convert': {
       const convertHand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const convertCount = val || 1;
       const actualConvertCount = Math.min(
         convertCount,
         convertHand ? convertHand.length : 0
       );
+      if (actualConvertCount > 0 && convertHand) {
+        const dropIndices = getAIDiscardIndices(convertHand, actualConvertCount);
+        const sortedDropIndices = [...dropIndices].sort((a, b) => b - a);
+        for (let i of sortedDropIndices) {
+          convertHand.splice(i, 1);
+        }
+      }
       for (let i = 0; i < actualConvertCount; i++) {
-        convertHand.pop(); // simply pop from hand
         const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
           name: '虚空',
-          power: 1,
+          power: 0,
         };
         const newToken = {
           ...voidTpl,
           isToken: true,
-          power: 1,
-          basePower: 1,
-          currentPower: 1,
+          power: voidTpl.power,
+          basePower: voidTpl.power,
+          currentPower: voidTpl.power,
+          id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_vp${i}`,
+          uid: `${owner}_sim_${Math.random()}`,
         };
         convertHand.push(newToken);
       }
       break;
+    }
     case 'summon':
       // 【重要仕様】「召喚 X」において X (val) はトークンのパワーを指す。
       // 個数は常に 1体 であるため、ループは 1回 固定。
@@ -1524,13 +1535,17 @@ export function applyActiveSkillLogic(
         });
       }
       break;
-    case 'reinforce':
+    case 'reinforce': {
       // AIシミュレーション用: 手札の枚数が十分ある前提で最大数捨てるとしてトークンを手札に加える
       const h = owner === 'blue' ? state.playerHand : state.enemyHand;
       const actualReinforceCount = Math.min(val || 1, h.length);
 
-      for (let i = 0; i < actualReinforceCount; i++) {
-        if (h.length > 0) h.shift(); // 先頭から捨てるモック
+      if (actualReinforceCount > 0 && h.length > 0) {
+        const dropIndices = getAIDiscardIndices(h, actualReinforceCount);
+        const sortedDropIndices = [...dropIndices].sort((a, b) => b - a);
+        for (let i of sortedDropIndices) {
+          h.splice(i, 1);
+        }
       }
 
       const rTC = {
@@ -1555,6 +1570,7 @@ export function applyActiveSkillLogic(
         });
       }
       break;
+    }
     case 'call':
       // 号令は純粋ロジックでの完全なシミュレーションが不可能なため（ユーザー選択や期待値ベース評価を行うため）
       // engine.jsでは盤面に干渉しない（ai_normal等で独自に+3として期待値評価する）
@@ -2096,7 +2112,7 @@ export function applyLeaderSkillLogic(
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         id: 'token_void',
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       for (let i = 0; i < opDc; i++) {
         opH.push({
@@ -3761,7 +3777,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
 
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
         name: '虚空',
-        power: 1,
+        power: 0,
       };
       const voidToken = {
         ...voidTpl,
