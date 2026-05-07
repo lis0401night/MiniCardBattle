@@ -5,7 +5,7 @@ import { SOUNDS } from '../../utils/sounds.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { saveDeck } from '../../hooks/deck.js';
 import { setupDialogueScreen } from '../../hooks/uiDialogue.js';
-import { grantHighDifficultyPoints } from '../../hooks/events.js';
+
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
 export default function RewardOverlay() {
@@ -46,14 +46,8 @@ export default function RewardOverlay() {
     playSound(SOUNDS.seClick);
     setIsVisible(false);
 
-    // 報酬確認が終わったら、高難易度イベントの場合はポイントを付与してからダイアログ（会話）シーンへ移行する
-    if (GameState.gameMode && GameState.gameMode.startsWith('event_')) {
-      grantHighDifficultyPoints(() => {
-        setupDialogueScreen();
-      });
-    } else {
-      setupDialogueScreen();
-    }
+    // 報酬確認が終わったらダイアログ（会話）シーンへ移行する
+    setupDialogueScreen();
   };
 
   const renderSkillTagReact = (c) => {

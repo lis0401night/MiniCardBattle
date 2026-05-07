@@ -1,4 +1,3 @@
-
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -25,7 +24,6 @@ export default function HighDifficultyRulesScreen() {
         <ul>
           <li>高難易度は、特別な対戦相手と戦うモードです。</li>
           <li>ここでしか手に入らない限定の報酬を手に入れましょう。</li>
-          <li>勝利すると、高難易度ポイントを1獲得できます。</li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}
           >

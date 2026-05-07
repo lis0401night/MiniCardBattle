@@ -1861,26 +1861,26 @@ export const CARD_MASTER = [
     flavor:
       '二つの首が天を仰ぎ、終末の咆哮を上げる。その翼が振り下ろされる時、世界は劫火に包まれる。',
   },
-  {
-    id: 'threebears',
-    name: '荒熊山賊団',
-    rarity: 3,
-    power: 6,
-    skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
-    voiceCategory: 'human_male_warrior',
-    flavor:
-      '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
-  },
-  {
-    id: 'goldilocks',
-    name: 'ゴールデンロックス',
-    rarity: 3,
-    power: 6,
-    skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
-    voiceCategory: 'human_female_assassin',
-    flavor:
-      '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
-  },
+  // {
+  //   id: 'threebears',
+  //   name: '荒熊山賊団',
+  //   rarity: 3,
+  //   power: 6,
+  //   skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
+  //   voiceCategory: 'human_male_warrior',
+  //   flavor:
+  //     '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
+  // },
+  // {
+  //   id: 'goldilocks',
+  //   name: 'ゴールデンロックス',
+  //   rarity: 3,
+  //   power: 6,
+  //   skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
+  //   voiceCategory: 'human_female_assassin',
+  //   flavor:
+  //     '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
+  // },
   {
     id: 'badwolf',
     name: '幻影の狼',
@@ -2270,7 +2270,7 @@ export const CARD_MASTER = [
       { id: 'choice', value: 1 },
     ],
     choices: [
-      { id: 'artillery', value: 4 },
+      { id: 'artillery', value: 3 },
       { id: 'spread', value: 4 },
     ],
     voiceCategory: 'magic',

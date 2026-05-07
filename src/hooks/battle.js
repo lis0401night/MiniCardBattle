@@ -33,7 +33,7 @@ import {
   calculateCombatPhase,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { grantHighDifficultyPoints } from './events.js';
+
 import { GameState } from './gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import {
@@ -3318,17 +3318,7 @@ export function endBattle() {
     }
 
     // ドロップがない、全所持、または敗北/引き分けの場合
-    if (
-      GameState.gameMode &&
-      GameState.gameMode.startsWith('event_') &&
-      GameState.lastBattleResult === 'win'
-    ) {
-      grantHighDifficultyPoints(() => {
-        setupDialogueScreen();
-      });
-    } else {
-      setupDialogueScreen();
-    }
+    setupDialogueScreen();
   }, 1500);
 }
 

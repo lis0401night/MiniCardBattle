@@ -13,7 +13,7 @@ import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
 import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
 import HighDifficultyMenuScreen from './pages/HighDifficultyMenuScreen.jsx';
 import HighDifficultyRulesScreen from './pages/HighDifficultyRulesScreen.jsx';
-import HighDifficultyExchangeScreen from './pages/HighDifficultyExchangeScreen.jsx';
+
 import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
 import StoryResumeScreen from './pages/StoryResumeScreen.jsx';
 import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
@@ -147,9 +147,7 @@ export default function App() {
       {currentScreen === 'screen-high-difficulty-rules' && (
         <HighDifficultyRulesScreen />
       )}
-      {currentScreen === 'screen-high-difficulty-exchange' && (
-        <HighDifficultyExchangeScreen />
-      )}
+
       {currentScreen === 'screen-card-list' && <CardListScreen />}
       {currentScreen === 'screen-achievements' && <AchievementsScreen />}
       {currentScreen === 'screen-exchange' && <ExchangeScreen />}

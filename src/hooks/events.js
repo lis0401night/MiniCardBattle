@@ -525,49 +525,7 @@ export function initEventSatanMode(charId) {
   });
 }
 
-export function grantHighDifficultyPoints(onClose) {
-  const earnedPoints = 1;
-  let currentPts =
-    parseInt(localStorage.getItem('mini_card_battle_high_difficulty_points')) ||
-    0;
-  let totalPts =
-    parseInt(
-      localStorage.getItem('mini_card_battle_high_difficulty_total_points')
-    ) || 0;
-  currentPts += earnedPoints;
-  totalPts += earnedPoints;
-  localStorage.setItem('mini_card_battle_high_difficulty_points', currentPts);
-  localStorage.setItem(
-    'mini_card_battle_high_difficulty_total_points',
-    totalPts
-  );
 
-  try {
-    const uuid = getOrCreateUUID();
-    fetch('api/update_high_difficulty_points.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uuid: uuid,
-        points: currentPts,
-        total_points: totalPts,
-      }),
-    }).catch(() => {});
-  } catch (e) {
-    console.error(e);
-  }
-
-  if (typeof showAlertModal === 'function') {
-    showAlertModal(
-      `イベントをクリアしました！\n高難易度ポイントを ${earnedPoints} Pt 獲得しました！`,
-      () => {
-        if (onClose) onClose();
-      }
-    );
-  } else {
-    if (onClose) onClose();
-  }
-}
 
 /**
  * イベントモード進行管理
