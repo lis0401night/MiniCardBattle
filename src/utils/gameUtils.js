@@ -543,6 +543,30 @@ export function unmergeCardSkills(targetCard, equipSkills) {
   }
 }
 
+export function stripEphemeralSkills(card) {
+  if (!card || (!card.baseId && !card.id)) return;
+  const masterInfo = window.CARD_MASTER
+    ? window.CARD_MASTER.find((m) => m.id === (card.baseId || card.id))
+    : null;
+
+  if (masterInfo && masterInfo.skills) {
+    // マスターデータのスキルをディープコピーして初期状態に戻す
+    card.skills = JSON.parse(JSON.stringify(masterInfo.skills));
+  } else if (masterInfo) {
+    // skills配列を持たないカードは、単一スキルがあれば配列化して初期化、なければ空配列
+    card.skills =
+      masterInfo.skill && masterInfo.skill !== 'none'
+        ? [{ id: masterInfo.skill, value: masterInfo.skillValue }]
+        : [];
+  } else {
+    // マスターが見つからないトークン等の場合
+    card.skills =
+      card.skill && card.skill !== 'none'
+        ? [{ id: card.skill, value: card.skillValue }]
+        : [];
+  }
+}
+
 export const VALID_PREMIUM_GIFS = [
   'assassin',
   'cleric',
@@ -739,3 +763,4 @@ export function renderSkillTag(card, isBoard = false) {
   return `<div class="card-skill-container">${badges.join('')}</div>`;
 }
 window.renderSkillTag = renderSkillTag;
+window.stripEphemeralSkills = stripEphemeralSkills;

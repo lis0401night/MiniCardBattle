@@ -1,7 +1,7 @@
+import { getDungeonCharacterDialogue } from './battleDungeonCharacter.js';
 import { CARD_MASTER } from './cards.js';
 import { CHARACTERS } from './characters.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
-import { getDungeonCharacterDialogue } from './battleDungeonCharacter.js';
 
 // 敵候補のカードリストを取得（golemからdicejugglerまで、トークン以外）
 export const getDungeonEnemyCandidates = () => {
@@ -208,7 +208,7 @@ export const generateCharacterBossEnemy = (floorNum) => {
   const deck =
     ENEMY_DECKS[bossId][difficultyMode] || ENEMY_DECKS[bossId].normal || [];
 
-  return {
+  let bossData = {
     ...char,
     id: `dungeon_boss_${bossId}_${Date.now()}`,
     isDungeonEnemy: true,
@@ -216,6 +216,24 @@ export const generateCharacterBossEnemy = (floorNum) => {
     hp: char.hp || 20,
     dungeonDeck: deck,
   };
+
+  // 水着スキンがあれば適用する
+  if (char.skins && char.skins.summer) {
+    const skin = char.skins.summer;
+    bossData = {
+      ...bossData,
+      ...skin,
+      currentSkin: 'summer',
+    };
+    if (skin.dialogue) {
+      bossData.dialogue = { ...char.dialogue, ...skin.dialogue };
+      if (typeof skin.dialogue.intro === 'string') {
+        bossData.preBattleLine = skin.dialogue.intro;
+      }
+    }
+  }
+
+  return bossData;
 };
 
 // 階層に基づいた敵候補の配列を返す

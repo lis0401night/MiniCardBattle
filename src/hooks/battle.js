@@ -243,9 +243,6 @@ export function prepareBattle() {
   // プレイマット設定の引き継ぎロード
   if (GameState.playerConfig && GameState.playerConfig.id) {
     let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig.id}`;
-    if (GameState.gameMode === 'defense_attack') {
-      playmatSelectKey = 'mini_card_battle_playmat_defense';
-    }
     GameState.selectedPlaymatId =
       localStorage.getItem(playmatSelectKey) || null;
   }
@@ -1769,6 +1766,9 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
       }
       if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
       if (!restoredEq.isToken) {
+        if (typeof window.stripEphemeralSkills === 'function') {
+          window.stripEphemeralSkills(restoredEq);
+        }
         discardPile.push(restoredEq);
       }
     }
@@ -1920,6 +1920,10 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
   const discardOwner = card.puppetOriginalOwner || owner;
   if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
   restoredCard.owner = discardOwner;
+
+  if (typeof window.stripEphemeralSkills === 'function') {
+    window.stripEphemeralSkills(restoredCard);
+  }
 
   (discardOwner === 'blue'
     ? GameState.playerDiscard
