@@ -1,12 +1,12 @@
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { getSeededRandom } from '../utils/gameUtils.js';
-import {
-  hasSkill,
-  getSkillValue,
-  unmergeCardSkills,
-  mergeCardSkills,
-} from '../utils/gameUtils.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import {
+  getSeededRandom,
+  getSkillValue,
+  hasSkill,
+  mergeCardSkills,
+  unmergeCardSkills,
+} from '../utils/gameUtils.js';
 
 export function canTakeDamage(card, amount, isSkill = true) {
   if (!card) return false;
@@ -27,8 +27,6 @@ export function canTakeDamage(card, amount, isSkill = true) {
  */
 export function quietDiscardFromBoard(state, owner, lane) {
   const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
-  const discardPile =
-    owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
   const targetCard = b[lane];
 
   if (!targetCard) return;
@@ -153,11 +151,11 @@ export function processDestructionTriggers(state, events) {
     let destroyedThisLoop = [];
     let tokensToSummonThisLoop = [];
     const targets = [
-      { board: state.playerBoard, side: 'blue', oppSide: 'red' },
-      { board: state.enemyBoard, side: 'red', oppSide: 'blue' },
+      { board: state.playerBoard, side: 'blue' },
+      { board: state.enemyBoard, side: 'red' },
     ];
 
-    targets.forEach(({ board, side, oppSide }) => {
+    targets.forEach(({ board, side }) => {
       for (let i = 0; i < 3; i++) {
         // パワー0以下のカードを破壊対象にするが、スキル解決中のカードは除外する
         if (
@@ -375,7 +373,7 @@ export function applyActiveSkillLogic(
         });
       }
       break;
-    case 'seal':
+    case 'seal': {
       // 召喚時、正面のレーンをvalターン封印する
       const sealTurns = val || 1;
       if (owner === 'blue') {
@@ -391,7 +389,8 @@ export function applyActiveSkillLogic(
         amount: sealTurns,
       }); // Use generic event or leader_skill format
       break;
-    case 'support':
+    }
+    case 'support': {
       const sAdj = l === 1 ? [0, 2] : [1];
       sAdj.forEach((j) => {
         if (b[j]) {
@@ -407,6 +406,7 @@ export function applyActiveSkillLogic(
         }
       });
       break;
+    }
     case 'replicate': {
       let maxOtherPower = 0;
       b.forEach((x, idx) => {
@@ -426,7 +426,7 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'hero':
+    case 'hero': {
       const occ = b.filter((x, idx) => x !== null && idx !== l).length;
       const hVal = occ * (val || 3);
       if (hVal > 0) {
@@ -440,7 +440,8 @@ export function applyActiveSkillLogic(
         });
       }
       break;
-    case 'adversity':
+    }
+    case 'adversity': {
       const opOcc = eB.filter((x) => x !== null).length;
       const advVal = opOcc * (val || 1);
       if (advVal !== 0) {
@@ -454,7 +455,8 @@ export function applyActiveSkillLogic(
         });
       }
       break;
-    case 'lone_wolf':
+    }
+    case 'lone_wolf': {
       const empty = b.filter((x) => x === null).length;
       const wVal = empty * (val || 3);
       if (wVal > 0) {
@@ -468,6 +470,7 @@ export function applyActiveSkillLogic(
         });
       }
       break;
+    }
     case 'invade': {
       const discard =
         owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
@@ -511,9 +514,10 @@ export function applyActiveSkillLogic(
           (card) => card && (card.power || 0) <= maxPow
         );
         if (validCards.length > 0) {
-          const mP = Math.max(...validCards.map(c => c.power || 0));
-          const bestCards = validCards.filter(c => (c.power || 0) === mP);
-          const bestCard = bestCards[Math.floor(Math.random() * bestCards.length)];
+          const mP = Math.max(...validCards.map((c) => c.power || 0));
+          const bestCards = validCards.filter((c) => (c.power || 0) === mP);
+          const bestCard =
+            bestCards[Math.floor(Math.random() * bestCards.length)];
           const idx = myDeckSim.findIndex(
             (card) => card.id === bestCard.id || card.baseId === bestCard.baseId
           );
@@ -533,7 +537,7 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'morph':
+    case 'morph': {
       const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
       if (eHandRef && eHandRef.length > 0) {
         const count = Number(val) || 1;
@@ -621,6 +625,7 @@ export function applyActiveSkillLogic(
         newTokens.forEach((t) => eHandRef.push(t));
       }
       break;
+    }
     case 'toxic':
       if (eB[l]) {
         const toxVal = val || 1;
@@ -645,7 +650,7 @@ export function applyActiveSkillLogic(
         });
       }
       break;
-    case 'spread':
+    case 'spread': {
       const spVal = val || 2;
       [l - 1, l, l + 1].forEach((j) => {
         if (j >= 0 && j < 3 && eB[j]) {
@@ -670,6 +675,7 @@ export function applyActiveSkillLogic(
         }
       });
       break;
+    }
     case 'bind':
       if (eB[l]) eB[l].stunTurns = (val || 1) + 1;
       break;
@@ -683,7 +689,7 @@ export function applyActiveSkillLogic(
         }
       });
       break;
-    case 'loss':
+    case 'loss': {
       const lossDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
       const lossDiscard =
         owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
@@ -692,7 +698,8 @@ export function applyActiveSkillLogic(
         if (lossDeck.length > 0) lossDiscard.push(lossDeck.pop());
       }
       break;
-    case 'burial':
+    }
+    case 'burial': {
       const burialDeck = owner === 'blue' ? state.enemyDeck : state.playerDeck;
       const burialDiscard =
         owner === 'blue' ? state.enemyDiscard : state.playerDiscard;
@@ -701,7 +708,8 @@ export function applyActiveSkillLogic(
         if (burialDeck.length > 0) burialDiscard.push(burialDeck.pop());
       }
       break;
-    case 'snipe':
+    }
+    case 'snipe': {
       const snVal = val || 4;
       let maxL = -1,
         maxP = -1;
@@ -736,7 +744,8 @@ export function applyActiveSkillLogic(
         }
       }
       break;
-    case 'crush':
+    }
+    case 'crush': {
       const crCount = val || 1;
       const crushTargetsEngine = [];
       for (let j = 0; j < 3; j++) {
@@ -756,7 +765,8 @@ export function applyActiveSkillLogic(
         eB[tr.lane] = null;
       }
       break;
-    case 'dispel':
+    }
+    case 'dispel': {
       const dpVal = val || 1;
       const dispelTargetsEngine = [];
 
@@ -858,7 +868,8 @@ export function applyActiveSkillLogic(
         }
       }
       break;
-    case 'berserk':
+    }
+    case 'berserk': {
       const bVal = val || 2;
       const bAdj = l === 1 ? [0, 2] : [1];
       bAdj.forEach((j) => {
@@ -883,14 +894,16 @@ export function applyActiveSkillLogic(
         }
       });
       break;
-    case 'heal':
+    }
+    case 'heal': {
       const hAmt = val || 3;
       if (owner === 'blue')
         state.playerHP = Math.min(state.playerMaxHP, state.playerHP + hAmt);
       else state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + hAmt);
       events.push({ type: 'heal_player', side: owner, amount: hAmt });
       break;
-    case 'sacrifice':
+    }
+    case 'sacrifice': {
       const sacAmt = val || 3;
       if (owner === 'blue') state.playerHP -= sacAmt;
       else state.enemyHP -= sacAmt;
@@ -901,7 +914,8 @@ export function applyActiveSkillLogic(
         source: 'sacrifice',
       });
       break;
-    case 'charge':
+    }
+    case 'charge': {
       const chgAmt = val || 2;
       const pMaxSP = state.playerConfig?.leaderSkill?.cost || 5;
       const eMaxSP = state.enemyConfig?.leaderSkill?.cost || 5;
@@ -911,10 +925,11 @@ export function applyActiveSkillLogic(
         state.enemySP = Math.min(eMaxSP, Math.max(0, state.enemySP + chgAmt));
       events.push({ type: 'charge_sp', side: owner, amount: chgAmt });
       break;
+    }
     case 'quick':
       applySingleCombat(state, owner, l, events);
       break;
-    case 'bless':
+    case 'bless': {
       const blessHand = owner === 'blue' ? state.playerHand : state.enemyHand;
       if (blessHand && blessHand.length > 0) {
         const blessVal = val || 1;
@@ -936,6 +951,7 @@ export function applyActiveSkillLogic(
         }
       }
       break;
+    }
     case 'convert': {
       const convertHand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const convertCount = val || 1;
@@ -944,7 +960,10 @@ export function applyActiveSkillLogic(
         convertHand ? convertHand.length : 0
       );
       if (actualConvertCount > 0 && convertHand) {
-        const dropIndices = getAIDiscardIndices(convertHand, actualConvertCount);
+        const dropIndices = getAIDiscardIndices(
+          convertHand,
+          actualConvertCount
+        );
         const sortedDropIndices = [...dropIndices].sort((a, b) => b - a);
         for (let i of sortedDropIndices) {
           convertHand.splice(i, 1);
@@ -968,7 +987,7 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'summon':
+    case 'summon': {
       // 【重要仕様】「召喚 X」において X (val) はトークンのパワーを指す。
       // 個数は常に 1体 であるため、ループは 1回 固定。
       const summonTargetPower = val || 1;
@@ -1060,7 +1079,8 @@ export function applyActiveSkillLogic(
         }
       }
       break;
-    case 'awake':
+    }
+    case 'awake': {
       // 覚醒: 同レーンにトークンを配置し、元のカードを墓地へ送る（変身/置換）
       const awakeVal = val || 1;
       let awakeTid = null;
@@ -1102,7 +1122,8 @@ export function applyActiveSkillLogic(
         source: 'awake',
       });
       break;
-    case 'wall_create':
+    }
+    case 'wall_create': {
       const wallPower = val || 10;
       const wTC = CARD_MASTER.find((m) => m.id === 'token_wall') || {
         name: 'トークン',
@@ -1160,7 +1181,8 @@ export function applyActiveSkillLogic(
         }
       }
       break;
-    case 'resurrect':
+    }
+    case 'resurrect': {
       if (isGraveKeeperActive(state)) break;
       // 復活 (AIシミュレーション用): 墓地から一番パワーの高いカードを召喚する
       const maxPowSim = val || 1;
@@ -1306,7 +1328,8 @@ export function applyActiveSkillLogic(
         if (resIdx !== -1) simDiscard.splice(resIdx, 1);
       }
       break;
-    case 'puppet':
+    }
+    case 'puppet': {
       if (isGraveKeeperActive(state)) break;
       // 【傀儡】相手の墓地からパワー以下のカードを1枚選んで自分の場に配置する（復活の逆版）
       // AIシミュレーション: 相手墓地の中で最もパワーが高いカードを優先的に選択する
@@ -1370,7 +1393,8 @@ export function applyActiveSkillLogic(
         if (puppetIdx !== -1) oppPuppetDiscard.splice(puppetIdx, 1);
       }
       break;
-    case 'clone':
+    }
+    case 'clone': {
       // 【重要仕様】「分身 X」において X (val) は召喚される個数を指す。
       const cloneCount = val || 1;
       const tC = {
@@ -1484,6 +1508,7 @@ export function applyActiveSkillLogic(
         }
       }
       break;
+    }
     case 'petrify':
       if (eB[l]) {
         const targetOriginal = JSON.parse(JSON.stringify(eB[l]));
@@ -1589,7 +1614,7 @@ export function applyActiveSkillLogic(
         source: sid,
       });
       break;
-    case 'decay':
+    case 'decay': {
       const decayAmt = Math.floor((c.currentPower || c.power || 0) / 2);
       c.power = decayAmt;
       c.currentPower = decayAmt;
@@ -1602,6 +1627,7 @@ export function applyActiveSkillLogic(
         source: 'decay',
       });
       break;
+    }
   }
 
   processDestructionTriggers(state, events);
@@ -1992,7 +2018,6 @@ export function applyLeaderSkillLogic(
     events.push({ type: 'leader_skill', skill: action, side: owner });
 
     // 1. 騎士(P:2)を最大2体「配置」
-    let summonCount = 0;
     const availableLanes = [];
     const sealedLanes = isBlue
       ? state.playerSealedLanes
@@ -2018,7 +2043,6 @@ export function applyLeaderSkillLogic(
       name: '騎士',
       power: 2,
     };
-    const spawnedTokens = [];
 
     for (let idx = 0; idx < targetLanes.length; idx++) {
       const lane = targetLanes[idx];

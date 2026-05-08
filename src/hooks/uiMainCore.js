@@ -3,41 +3,38 @@ import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
   getDialogue,
+  getOrCreateUUID,
   playSound,
   sleep,
   switchScreen,
-  getOrCreateUUID,
 } from '../utils/gameUtils.js';
-import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import {
-  startBattleFlow,
   createNewDeck,
   loadDeck,
   renderDeckEdit,
+  startBattleFlow,
 } from './deck.js';
 import {
-  initEventSatanMode,
   initEventAndroidHighMode,
-  initEventDragonHighMode,
-  initEventKnightHighMode,
-  initEventCthulhuHighMode,
-  initEventElfHighMode,
   initEventClericHighMode,
+  initEventCthulhuHighMode,
   initEventDevilhunterHighMode,
-  initEventWitchHighMode,
+  initEventDragonHighMode,
+  initEventElfHighMode,
+  initEventKnightHighMode,
   initEventOniHighMode,
+  initEventSatanMode,
+  initEventWitchHighMode,
   loadPlayerDeck,
 } from './events.js';
 
-import { GameState } from './gameState.js';
-import {
-  initStoryMode,
-  clearStoryProgress,
-} from './story.js';
-import { setupDialogueScreen } from './uiDialogue.js';
 import { prepareBattle } from './battle.js';
-import { showConfirmModal, showAlertModal } from './uiModals.js';
+import { GameState } from './gameState.js';
 import { setPlayerReadyOnly } from './multiplayer.js';
+import { clearStoryProgress, initStoryMode } from './story.js';
+import { setupDialogueScreen } from './uiDialogue.js';
+import { showAlertModal, showConfirmModal } from './uiModals.js';
 
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)
@@ -93,7 +90,9 @@ export function updateVolume(val) {
     ) {
       try {
         AUDIO_INSTANCES[key].volume = GameState.gameVolume;
-      } catch (e) {}
+      } catch {
+        // ignore
+      }
     }
   });
   // Web Audio Gain Nodeの更新 (iOSなどモバイル用)
@@ -403,9 +402,6 @@ export function goBackFromDeckEdit(isCancel = false) {
     GameState.dungeonState = 'select_opponent';
     switchScreen('screen-battle-dungeon');
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
-  } else if (GameState.gameMode === 'online_deck_edit') {
-    GameState.appState = 'select_deck';
-    switchScreen('screen-deck-list');
   } else if (GameState.gameMode === 'free_deck_edit') {
     // マイデッキ編集：デッキ一覧に戻る
     if (typeof window.loadDeck === 'function') window.loadDeck();
@@ -534,12 +530,12 @@ export async function performFadeTransition(action) {
     console.error('Fade Transition Error:', err);
   } finally {
     GameState.isProcessing = false;
-    if (typeof debugLog === 'function') debugLog('Fade End.');
+    if (typeof window.debugLog === 'function') window.debugLog('Fade End.');
     console.log('performFadeTransition: FINALLY block executed.');
   }
 }
 
-export function initSelectScreen(includeSatan) {
+export function initSelectScreen() {
   if (window.initSelectScreenReact) window.initSelectScreenReact();
 }
 
@@ -1013,8 +1009,8 @@ export function confirmStageSelect(stageId) {
     // 防衛登録：ステージ選択の後はデータ保存処理へ
     if (window.submitDefenseDeckWrapper) {
       window.submitDefenseDeckWrapper(GameState.playerName || 'プレイヤー');
-    } else if (typeof submitDefenseDeck === 'function') {
-      submitDefenseDeck(GameState.playerName || 'プレイヤー');
+    } else if (typeof window.submitDefenseDeck === 'function') {
+      window.submitDefenseDeck(GameState.playerName || 'プレイヤー');
     }
   } else if (GameState.gameMode === 'online_deck_edit') {
     // ステージ選択が完了したので最新状態をオンライン設定として保存

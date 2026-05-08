@@ -785,7 +785,7 @@ export async function resolveActiveSkillEffect(
         false,
         summonPredefinedLanes,
         false,
-        true
+        false // ルール：スキルによる「召喚」は「配置(Place)」扱いのため、制約チェックは無視する
       );
       if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
@@ -2227,111 +2227,6 @@ export async function resolveActiveSkillEffect(
       if (o === 'blue') renderHand();
     }
     await sleep(300);
-  } else if (skillId === 'summon') {
-    const val = skillValue || 1;
-    const tokenId = `token_${c.baseId || c.id}`;
-    let tC = CARD_MASTER.find((m) => m.id === tokenId);
-    if (!tC) {
-      tC = {
-        id: `token_${Math.floor(getSeededRandom() * 1000000000)}`,
-        name: '召喚獣',
-        power: val,
-        rarity: 1,
-        isToken: true,
-      };
-    }
-
-    const simulatedToken = {
-      ...tC,
-      power: val,
-      currentPower: val,
-      isToken: true,
-    };
-
-    const tLanes = await waitPlayerLaneSelection(
-      1,
-      o,
-      simulatedToken,
-      false,
-      null,
-      false
-    );
-    if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
-    let events = [];
-
-    if (tLanes && tLanes.length > 0) {
-      const targetLane = tLanes[0];
-      const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-
-      const newToken = {
-        id: `sm_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`,
-        owner: o,
-        ...tC,
-        isToken: true,
-        power: val,
-        currentPower: val,
-        basePower: val,
-        rarity: c.rarity || 1,
-      };
-      const existingCard = board[targetLane];
-      if (
-        existingCard &&
-        (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) &&
-        !hasSkill(existingCard, 'possession') &&
-        !hasSkill(newToken, 'possession') &&
-        !hasSkill(existingCard, 'reflect') &&
-        !hasSkill(newToken, 'reflect')
-      ) {
-        existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
-        existingCard.basePower =
-          (existingCard.basePower || 0) + (newToken.power || 0);
-
-        const equipSkills = [];
-        if (
-          newToken.skill &&
-          newToken.skill !== 'none' &&
-          newToken.skill !== 'equip'
-        )
-          equipSkills.push({ id: newToken.skill, value: newToken.skillValue });
-        if (newToken.skills)
-          newToken.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        mergeCardSkills(existingCard, equipSkills);
-
-        existingCard.equippedCards = existingCard.equippedCards || [];
-        existingCard.equippedCards.push(newToken);
-        events.push({
-          type: 'power_change',
-          side: o,
-          lane: targetLane,
-          amount: newToken.power,
-          source: 'equip',
-        });
-      } else {
-        if (board[targetLane]) {
-          if (!(await discardCard(o, board[targetLane], targetLane, false)))
-            board[targetLane] = null;
-        }
-        board[targetLane] = newToken;
-        // 出現時スキルを持つ場合は即座に保護フラグを立てる
-        if (hasActiveSkill(newToken)) {
-          newToken.isSkillResolving = true;
-        }
-        events.push({
-          type: 'summon_token',
-          side: o,
-          lane: targetLane,
-          card: newToken,
-          source: 'summon',
-        });
-      }
-    }
-
-    if (events.length > 0) {
-      await playEvents(events);
-      await cleanupDestroyedCards(c);
-    }
   } else if (skillId === 'call') {
     const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     if (d.length > 0) {

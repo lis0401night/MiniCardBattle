@@ -1,15 +1,11 @@
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import {
-  switchScreen,
-  getOrCreateUUID,
-} from '../utils/gameUtils.js';
+import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
+import { switchScreen } from '../utils/gameUtils.js';
 import { startBattleFlow } from './deck.js';
 import { GameState } from './gameState.js';
 import { setupDialogueScreen, showContinueScreen } from './uiDialogue.js';
 import { performFadeTransition } from './uiMainCore.js';
-import { showAlertModal } from './uiModals.js';
 
 /**
  * Mini Card Battle - イベントモード管理 (events.js)
@@ -524,8 +520,6 @@ export function initEventSatanMode(charId) {
     setupDialogueScreen();
   });
 }
-
-
 
 /**
  * イベントモード進行管理
