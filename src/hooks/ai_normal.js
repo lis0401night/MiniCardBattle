@@ -224,7 +224,7 @@ export function getBestSimulatedMove() {
 
           // 選択されたスキル（c1, c2）からの合算
           const countInChoices = (arr, group) => {
-            if (!group) return;
+            if (!group || !arr) return;
             arr.forEach((idx) => {
               const sk = group[idx];
               if (!sk) return;
@@ -742,7 +742,8 @@ export function getBestSimulatedMove() {
     leaderSkillActionStr = null,
     leaderSkillTokenLanes = null,
     skillOrderTiming = 'before',
-    leaderSkillTargetIdx = null
+    leaderSkillTargetIdx = null,
+    leaderSkillTargetUid = null
   ) {
     let simState = {
       playerBoard: opBoard.map(cloneCard),
@@ -798,7 +799,8 @@ export function getBestSimulatedMove() {
         leaderSkillActionStr,
         leaderSkillTokenLanes,
         [],
-        leaderSkillTargetIdx
+        leaderSkillTargetIdx,
+        leaderSkillTargetUid
       );
       if (simState._actionQueue && simState._actionQueue.length > 0) {
         actionQueue.unshift(...simState._actionQueue);
@@ -1214,6 +1216,7 @@ export function getBestSimulatedMove() {
                 'awake',
                 'clone',
                 'wall_create',
+                'split',
               ].includes(sk.id)
             ) {
               applyActiveSkillLogic(
@@ -1553,16 +1556,17 @@ export function getBestSimulatedMove() {
       if (action === 'devilhunter_resurrect' || action === 'overdrive') {
         for (let dIdx = 0; dIdx < discard.length; dIdx++) {
           if (discard[dIdx].isToken) continue;
+          const resTargetCard = discard[dIdx];
           let simState = processActionSequence(
             [{ type: 'pass' }],
             true,
             action,
             tokenLanes,
             'before',
-            dIdx
+            dIdx,
+            resTargetCard.baseId || resTargetCard.id
           );
           if (simState) {
-            const resTargetCard = discard[dIdx];
             candidates.push({
               index: -1,
               lane: -1,

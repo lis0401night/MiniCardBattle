@@ -2485,16 +2485,16 @@ export const CARD_MASTER = [
     flavor:
       '欠落した半身を埋めるため、未完成のホムンクルスは強者の力を模倣する。鏡に映る己が完全な存在であると信じて。',
   },
-  {
-    id: 'scarecrow',
-    name: '呪いの案山子',
-    power: 1,
-    skills: [{ id: 'convert', value: 1 }, { id: 'reflect' }],
-    rarity: 4,
-    voiceCategory: 'undead',
-    flavor:
-      '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
-  },
+  // {
+  //   id: 'scarecrow',
+  //   name: '呪いの案山子',
+  //   power: 1,
+  //   skills: [{ id: 'convert', value: 1 }, { id: 'reflect' }],
+  //   rarity: 4,
+  //   voiceCategory: 'undead',
+  //   flavor:
+  //     '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
+  // },
 
   // トークンカード
   {

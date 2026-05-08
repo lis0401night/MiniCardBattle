@@ -1,7 +1,7 @@
-import { CARD_MASTER } from './cards.js';
-import { ownedPlaymats } from './playmats.js';
 import { saveDeck } from '../../hooks/deck.js';
 import { GameState } from '../../hooks/gameState.js';
+import { CARD_MASTER } from './cards.js';
+import { ownedPlaymats } from './playmats.js';
 
 /**
  * Mini Card Battle - Achievements Data
@@ -199,38 +199,38 @@ export const ACHIEVEMENT_MASTER = [
       isPremiumUnlock: true,
     },
   },
-  {
-    id: 'unique_story_hard_2',
-    title: '高みへの第一歩',
-    description: '2種類のキャラクターのストーリー（上級）をクリアする',
-    type: 'unique_story_clear_hard',
-    targetValue: 2,
-    reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
-  },
-  {
-    id: 'unique_story_hard_4',
-    title: '数多の試練を越えて',
-    description: '4種類のキャラクターのストーリー（上級）をクリアする',
-    type: 'unique_story_clear_hard',
-    targetValue: 4,
-    reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
-  },
-  {
-    id: 'unique_story_hard_6',
-    title: '伝説への歩み',
-    description: '6種類のキャラクターのストーリー（上級）をクリアする',
-    type: 'unique_story_clear_hard',
-    targetValue: 6,
-    reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
-  },
-  {
-    id: 'unique_story_hard_8',
-    title: '英雄たちの導き手',
-    description: '8種類のキャラクターのストーリー（上級）をクリアする',
-    type: 'unique_story_clear_hard',
-    targetValue: 8,
-    reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
-  },
+  // {
+  //   id: 'unique_story_hard_2',
+  //   title: '高みへの第一歩',
+  //   description: '2種類のキャラクターのストーリー（上級）をクリアする',
+  //   type: 'unique_story_clear_hard',
+  //   targetValue: 2,
+  //   reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
+  // },
+  // {
+  //   id: 'unique_story_hard_4',
+  //   title: '数多の試練を越えて',
+  //   description: '4種類のキャラクターのストーリー（上級）をクリアする',
+  //   type: 'unique_story_clear_hard',
+  //   targetValue: 4,
+  //   reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
+  // },
+  // {
+  //   id: 'unique_story_hard_6',
+  //   title: '伝説への歩み',
+  //   description: '6種類のキャラクターのストーリー（上級）をクリアする',
+  //   type: 'unique_story_clear_hard',
+  //   targetValue: 6,
+  //   reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
+  // },
+  // {
+  //   id: 'unique_story_hard_8',
+  //   title: '英雄たちの導き手',
+  //   description: '8種類のキャラクターのストーリー（上級）をクリアする',
+  //   type: 'unique_story_clear_hard',
+  //   targetValue: 8,
+  //   reward: { type: 'card', value: 'scarecrow', name: '呪いの案山子' },
+  // },
   // --- カード収集 ---
   {
     id: 'collect_10',

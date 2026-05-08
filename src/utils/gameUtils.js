@@ -9,6 +9,7 @@ import {
 import { GameState } from '../hooks/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
 import { getSkinImage } from './constants/characters.js';
+import { CARD_MASTER } from './constants/cards.js';
 
 // BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
 export let currentBgmAudio = null;
@@ -545,25 +546,14 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 
 export function stripEphemeralSkills(card) {
   if (!card || (!card.baseId && !card.id)) return;
-  const masterInfo = window.CARD_MASTER
-    ? window.CARD_MASTER.find((m) => m.id === (card.baseId || card.id))
-    : null;
+  const masterInfo = CARD_MASTER.find((m) => m.id === (card.baseId || card.id));
 
   if (masterInfo && masterInfo.skills) {
     // マスターデータのスキルをディープコピーして初期状態に戻す
     card.skills = JSON.parse(JSON.stringify(masterInfo.skills));
-  } else if (masterInfo) {
-    // skills配列を持たないカードは、単一スキルがあれば配列化して初期化、なければ空配列
-    card.skills =
-      masterInfo.skill && masterInfo.skill !== 'none'
-        ? [{ id: masterInfo.skill, value: masterInfo.skillValue }]
-        : [];
   } else {
-    // マスターが見つからないトークン等の場合
-    card.skills =
-      card.skill && card.skill !== 'none'
-        ? [{ id: card.skill, value: card.skillValue }]
-        : [];
+    // skills配列を持たない旧仕様カードやトークン等は、付与されたスキルをすべてクリアする
+    card.skills = [];
   }
 }
 
