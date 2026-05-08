@@ -1431,8 +1431,22 @@ export function getBestSimulatedMove() {
     for (let i = 0; i < hand.length; i++) {
       let card = hand[i];
       for (let tokenLanes of tokenLanePatterns) {
-        let qs = buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
-        for (let actionQ of qs) {
+        let isResurrectLeaderSkill = (action === 'devilhunter_resurrect' || action === 'overdrive');
+        let dIdxLoop = isResurrectLeaderSkill ? discard.map((_, idx) => idx) : [-1];
+
+        for (let dIdxForTree of dIdxLoop) {
+          if (isResurrectLeaderSkill && discard[dIdxForTree].isToken) continue;
+          let qs = buildCardPlayTree(
+            card,
+            i,
+            'play',
+            hand,
+            discard,
+            [i],
+            isResurrectLeaderSkill ? [dIdxForTree] : [],
+            0
+          );
+          for (let actionQ of qs) {
           if (actionQ.length === 0) continue;
           const fA = actionQ[0];
 
@@ -1458,9 +1472,8 @@ export function getBestSimulatedMove() {
           }
 
           if (action === 'devilhunter_resurrect' || action === 'overdrive') {
-            for (let dIdx = 0; dIdx < discard.length; dIdx++) {
-              if (discard[dIdx].isToken) continue;
-              let simState = processActionSequence(
+            let dIdx = dIdxForTree;
+            let simState = processActionSequence(
                 actionQ,
                 true,
                 action,
@@ -1505,7 +1518,6 @@ export function getBestSimulatedMove() {
                   simState,
                 });
               }
-            }
           } else {
             // その他（聖戦・邪戦・サタン・龍神等）
             let simState = processActionSequence(
@@ -1550,6 +1562,7 @@ export function getBestSimulatedMove() {
             }
           }
         }
+        } // End of dIdxForTree loop
       }
     }
     for (let tokenLanes of tokenLanePatterns) {
