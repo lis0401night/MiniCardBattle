@@ -537,6 +537,89 @@ export function applyActiveSkillLogic(
       }
       break;
     }
+    case 'maintain': {
+      const myHandRef = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (myHandRef && myHandRef.length > 0) {
+        const count = Number(val) || 1;
+
+        // 対象となるカードを抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
+        const validTargets = myHandRef
+          .map((card, idx) => ({ card, idx }))
+          .filter((item) => item.card !== null)
+          .sort((a, b) => {
+            const pA = a.card.currentPower ?? a.card.power ?? 0;
+            const pB = b.card.currentPower ?? b.card.power ?? 0;
+            if (pB !== pA) return pB - pA;
+            return a.idx - b.idx; // インデックスが小さい方を優先
+          });
+
+        const actualCount = Math.min(count, validTargets.length);
+        const newTokens = [];
+
+        for (let i = 0; i < actualCount; i++) {
+          const targetInfo = validTargets[i];
+          const removeIdx = myHandRef.findIndex((c) => c === targetInfo.card);
+          if (removeIdx !== -1) {
+            const discarded = myHandRef.splice(removeIdx, 1)[0];
+            const myD = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            if (myD && !discarded.isToken) {
+              const masterData = CARD_MASTER.find(
+                (m) => m.id === (discarded.baseId || discarded.id)
+              );
+              if (masterData) {
+                const restoredCard = JSON.parse(JSON.stringify(masterData));
+                restoredCard.uid = discarded.uid;
+                restoredCard.owner = owner;
+                restoredCard.baseId = discarded.baseId || discarded.id;
+                if (discarded.isPremium !== undefined)
+                  restoredCard.isPremium = discarded.isPremium;
+                restoredCard.basePower = restoredCard.power;
+                restoredCard.currentPower = restoredCard.power;
+                myD.push(restoredCard);
+              } else {
+                myD.push({
+                  ...discarded,
+                  currentPower: discarded.basePower || discarded.power,
+                  skills: [],
+                });
+              }
+            }
+            events.push({
+              type: 'discard',
+              side: owner,
+              card: JSON.parse(JSON.stringify(discarded)),
+            });
+
+            const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+              name: '虚空',
+              power: 0,
+            };
+            const voidToken = {
+              ...voidTpl,
+              id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_vp${i}`,
+              uid: `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidvp${i}`,
+              filter: voidTpl.filter,
+              power: voidTpl.power,
+              currentPower: voidTpl.power,
+              basePower: voidTpl.power,
+              skill: voidTpl.skill || 'none',
+              voiceCategory: voidTpl.voiceCategory || 'stone',
+              isToken: true,
+              isMorphToken: true,
+            };
+            newTokens.push(voidToken);
+            events.push({
+              type: 'add_hand',
+              side: owner,
+              card: voidToken,
+              source: 'maintain',
+            });
+          }
+        }
+        newTokens.forEach((t) => myHandRef.push(t));
+      }
+      break;
+    }
     case 'morph': {
       const eHandRef = owner === 'blue' ? state.enemyHand : state.playerHand;
       if (eHandRef && eHandRef.length > 0) {
@@ -3198,6 +3281,29 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           amount: healAmt,
           source: 'absorb',
           lane: aLane,
+        });
+      }
+    }
+
+    if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
+      const healAmt = Math.floor(dmgToAtk / 2);
+      if (healAmt > 0) {
+        if (defSide === 'blue')
+          state.playerHP = Math.min(
+            state.playerMaxHP || 20,
+            state.playerHP + healAmt
+          );
+        else
+          state.enemyHP = Math.min(
+            state.enemyMaxHP || 20,
+            state.enemyHP + healAmt
+          );
+        events.push({
+          type: 'heal_player',
+          side: defSide,
+          amount: healAmt,
+          source: 'absorb',
+          lane: l,
         });
       }
     }

@@ -2330,36 +2330,7 @@ export async function startTurn(owner) {
     );
   }
 
-  const currentBoard =
-    owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-  const hasMaintain = currentBoard.some((c) => c && hasSkill(c, 'maintain'));
-  if (hasMaintain) {
-    const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
-    if (hand.length < 4) {
-      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-        name: '虚空',
-        power: 0,
-      };
-      const voidToken = {
-        ...voidTpl,
-        id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_maintain`,
-        uid: `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidmaintain`,
-        filter: voidTpl.filter,
-        power: voidTpl.power,
-        currentPower: voidTpl.power,
-        basePower: voidTpl.power,
-        skill: voidTpl.skill || 'none',
-        voiceCategory: voidTpl.voiceCategory || 'stone',
-        isToken: true,
-        isMorphToken: true,
-      };
-      hand.push(voidToken);
-      playSound(SOUNDS.seDraw);
-      if (owner === 'blue') renderHand();
-    }
-  } else {
-    drawCard(owner);
-  }
+  drawCard(owner);
   if (owner === 'blue') {
     GameState.selectedCardIndex = null;
     updateCardDetail(null);

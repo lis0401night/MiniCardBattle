@@ -447,7 +447,7 @@ export const CARD_MASTER = [
     id: 'crocodile',
     name: 'クロコダイル',
     rarity: 1,
-    power: 8,
+    power: 6,
     skill: 'maintain',
     voiceCategory: 'beast',
     flavor:
@@ -1132,7 +1132,7 @@ export const CARD_MASTER = [
     name: '鋼のマンティコア',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'maintain' }, { id: 'sturdy' }, { id: 'snipe', value: 3 }],
+    skills: [{ id: 'maintain' }, { id: 'sturdy' }, { id: 'snipe', value: 2 }],
     voiceCategory: 'machine_old',
     flavor:
       '忘れ去られた古代文明の遺物であり、侵入者を排除するためだけに稼働し続ける機械魔獣。',
@@ -1230,9 +1230,9 @@ export const CARD_MASTER = [
     id: 'cavalry',
     name: '煉獄侯爵の先陣',
     rarity: 2,
-    power: 7,
+    power: 8,
     skills: [
-      { id: 'sacrifice', value: 2 },
+      { id: 'sacrifice', value: 3 },
       { id: 'challenge' },
       { id: 'pierce' },
       { id: 'guardian' },
@@ -1312,7 +1312,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 3,
     skills: [
-      { id: 'standby', value: 3 },
+      { id: 'defender' },
       { id: 'growth', value: -1 },
       { id: 'split', value: 6, summonId: 'token_dragon' },
     ],

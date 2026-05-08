@@ -604,9 +604,12 @@ export const SKILLS = {
     name: '維持',
     icon: '⚙️',
     desc: (val) => [
-      { type: 'text', value: '自分のターン開始時、通常のドローの代わりに' },
+      {
+        type: 'text',
+        value: `自分のターン開始時、自分の手札の最大パワーのカード${val || 1}枚を捨て、同数`,
+      },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: 'を加える。' },
+      { type: 'text', value: 'を加える。（同値の場合は左優先）' },
     ],
   },
   recurse: {

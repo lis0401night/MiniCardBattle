@@ -2460,6 +2460,50 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
+    if (sk.id === 'maintain') {
+      const val = sk.value || 1;
+      const currentState = {
+        playerBoard: GameState.playerBoard.map((c) =>
+          c ? JSON.parse(JSON.stringify(c)) : null
+        ),
+        enemyBoard: GameState.enemyBoard.map((c) =>
+          c ? JSON.parse(JSON.stringify(c)) : null
+        ),
+        playerHP: GameState.playerHP,
+        enemyHP: GameState.enemyHP,
+        playerDiscard: GameState.playerDiscard,
+        enemyDiscard: GameState.enemyDiscard,
+        playerHand: GameState.playerHand,
+        enemyHand: GameState.enemyHand,
+        playerSealedLanes: GameState.playerSealedLanes,
+        enemySealedLanes: GameState.enemySealedLanes,
+      };
+
+      let maintainEvents = [];
+      applyActiveSkillLogic(
+        currentState,
+        owner,
+        lane,
+        'maintain',
+        val,
+        maintainEvents
+      );
+
+      // 盤面や手札・墓地の状態を同期
+      if (owner === 'blue') {
+        GameState.playerBoard = currentState.playerBoard;
+        GameState.playerHand = currentState.playerHand;
+        GameState.playerDiscard = currentState.playerDiscard;
+      } else {
+        GameState.enemyBoard = currentState.enemyBoard;
+        GameState.enemyHand = currentState.enemyHand;
+        GameState.enemyDiscard = currentState.enemyDiscard;
+      }
+
+      events.push(...maintainEvents);
+      triggered = true;
+    }
+
     if (sk.id === 'awake') {
       const val = sk.value || 1;
       // エンジンのロジックを流用してイベントを生成
