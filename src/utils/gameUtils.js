@@ -577,6 +577,7 @@ export const VALID_PREMIUM_GIFS = [
   'shogun',
   'omyouji',
   'mummy',
+  'pharaoh',
 ];
 export const VALID_PREMIUM_JPGS = [
   'dreadnought',
