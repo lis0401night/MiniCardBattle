@@ -133,7 +133,7 @@ export default function GlobalModals() {
       const card = CARD_MASTER?.find((c) => c.id === cardId);
       if (card) {
         playSound?.(SOUNDS?.seSkill);
-        setAcquisitionData({ type: 'premium', card, canClose: false });
+        setAcquisitionData({ type: 'premium', card: { ...card, isPremium: true }, canClose: false });
         setTimeout(
           () =>
             setAcquisitionData((prev) =>

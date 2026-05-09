@@ -63,6 +63,12 @@ export const PLAYMAT_MASTER = [
     targetCharacter: 'satan',
   },
   {
+    id: 'priest',
+    name: 'ネフティ',
+    image: 'assets/boards/board_priest.png',
+    targetCharacter: 'priest',
+  },
+  {
     id: 'pm_android_summer',
     name: '水陸両用装備',
     image: 'assets/boards/board_android_summer.png',

@@ -576,6 +576,7 @@ export const VALID_PREMIUM_GIFS = [
   'djinn',
   'shogun',
   'omyouji',
+  'mummy',
 ];
 export const VALID_PREMIUM_JPGS = [
   'dreadnought',
