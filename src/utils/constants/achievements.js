@@ -199,6 +199,27 @@ export const ACHIEVEMENT_MASTER = [
       isPremiumUnlock: true,
     },
   },
+  {
+    id: 'story_priest',
+    title: '千年の眠り',
+    description: 'ネフティのストーリーをクリアする',
+    type: 'story_clear',
+    targetValue: 'priest',
+    reward: { type: 'playmat', value: 'priest', name: 'ネフティ' },
+  },
+  {
+    id: 'story_priest_hard',
+    title: '王墓の守護者',
+    description: 'ネフティのストーリー（上級）をクリアする',
+    type: 'story_clear_hard',
+    targetValue: 'priest',
+    reward: {
+      type: 'premium',
+      value: 'mummy',
+      name: '王墓の番人',
+      isPremiumUnlock: true,
+    },
+  },
   // {
   //   id: 'unique_story_hard_2',
   //   title: '高みへの第一歩',

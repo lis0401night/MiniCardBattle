@@ -307,7 +307,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 2,
     skills: [{ id: 'wall_create', value: 5 }],
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_old',
     flavor:
       '数十年、岩石と向き合い続けてきた職人。彼が積み上げた石壁は、いかなる軍勢の猛攻をも平然と受け流す。',
   },
@@ -804,7 +804,7 @@ export const CARD_MASTER = [
     power: 4,
     skill: 'dispel',
     skillValue: 1,
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_old',
     flavor:
       '彼の呪術は敵の武装を縛り、そして砕く。千年の時を生きる老エルフの瞳には、人の造りし武具など児戯に等しい。',
   },
@@ -1223,7 +1223,7 @@ export const CARD_MASTER = [
       { id: 'sacrifice', value: 1 },
       { id: 'awake', value: 7, summonId: 'token_daemon' },
     ],
-    voiceCategory: 'human_male_normal',
+    voiceCategory: 'human_male_old',
     flavor: '歪んだ忠誠を誓う狂信者。彼の儀式は、強大な闇を招く呼び水となる。',
   },
   {
@@ -2362,7 +2362,7 @@ export const CARD_MASTER = [
       { id: 'sacrifice', value: 3 },
       { id: 'chant', value: 3 },
     ],
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_old',
     flavor:
       '歴戦の戦士のごとき風格を漂わせる、規格外の魔導士。星を砕くほどの極大魔法を紡ぎ出すためならば、己の血肉すらも代償として捧げる覚悟を持っている。',
   },

@@ -96,6 +96,11 @@ export const VOICE_CATEGORIES = {
     death: 'assets/audio/voice/voice_human_male_trickstar_death.wav',
     volume: 1.0,
   },
+  human_male_old: {
+    play: 'assets/audio/voice/voice_human_male_old_play.wav',
+    death: 'assets/audio/voice/voice_human_male_old_death.wav',
+    volume: 1.0,
+  },
   human_female_cute: {
     play: 'assets/audio/voice/voice_human_female_cute_play.wav',
     death: 'assets/audio/voice/voice_human_female_cute_death.wav',
