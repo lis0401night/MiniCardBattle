@@ -269,7 +269,14 @@ export function goBackFromSelect() {
   ) {
     switchScreen('screen-high-difficulty');
   } else if (GameState.appState === 'create_deck_select_char') {
-    if (typeof window.loadDeck === 'function') window.loadDeck();
+    // 新規作成のキャラ選択画面からキャンセルして戻る場合、
+    // gameModeを元のモードに復帰させてからデッキ一覧に戻す
+    if (GameState.prevGameModeForCreate) {
+      GameState.gameMode = GameState.prevGameModeForCreate;
+    }
+    if (GameState.prevAppStateForCreate) {
+      GameState.appState = GameState.prevAppStateForCreate;
+    }
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
   } else if (GameState.appState === 'select_enemy') {

@@ -76,13 +76,22 @@ export default function CharacterSelectScreen() {
     }
   };
   const getBackgroundImage = () => {
-    if (GameState.gameMode === 'event_satan') {
+    if (GameState.gameMode === 'tournament') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
+    } else if (
+      GameState.gameMode === 'event_satan' ||
+      (GameState.gameMode?.startsWith('event_') && GameState.gameMode?.endsWith('_high'))
+    ) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
     } else if (
       GameState.gameMode === 'defense_register' ||
       GameState.gameMode === 'defense_attack'
     ) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;
+    } else if (GameState.gameMode === 'battle_dungeon') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`;
+    } else if (GameState.gameMode === 'online_deck_edit') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_online.png')`;
     }
     return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`;
   };

@@ -29,7 +29,7 @@ export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);
   const [achievements, setAchievements] = useState([]);
   const [stats, setStats] = useState({});
-  const [statsOpen, setStatsOpen] = useState(true);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [leaderUsage, setLeaderUsage] = useState([]);
 
   const updateAchievements = () => {
