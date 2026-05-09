@@ -91,6 +91,11 @@ export const VOICE_CATEGORIES = {
     death: 'assets/audio/voice/voice_human_male_warrior_death.wav',
     volume: 1.0,
   },
+  human_male_trickstar: {
+    play: 'assets/audio/voice/voice_human_male_trickstar_play.wav',
+    death: 'assets/audio/voice/voice_human_male_trickstar_death.wav',
+    volume: 1.0,
+  },
   human_female_cute: {
     play: 'assets/audio/voice/voice_human_female_cute_play.wav',
     death: 'assets/audio/voice/voice_human_female_cute_death.wav',
@@ -109,6 +114,11 @@ export const VOICE_CATEGORIES = {
   human_female_assassin: {
     play: 'assets/audio/voice/voice_human_female_assassin_play.wav',
     death: 'assets/audio/voice/voice_human_female_assassin_death.wav',
+    volume: 1.0,
+  },
+  human_female_sexy: {
+    play: 'assets/audio/voice/voice_human_female_sexy_play.wav',
+    death: 'assets/audio/voice/voice_human_female_sexy_death.wav',
     volume: 1.0,
   },
   magic: {

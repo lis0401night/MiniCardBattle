@@ -194,7 +194,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 2,
     skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。',
   },
@@ -952,7 +952,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 2,
     skills: [{ id: 'equip' }, { id: 'soul_bind', value: 3 }],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。',
   },
@@ -1667,7 +1667,7 @@ export const CARD_MASTER = [
       { id: 'spread', value: 2 },
       { id: 'soul_bind', value: 2 },
     ],
-    voiceCategory: 'human_female_assassin',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '深き森の奥に工房を構え、秘術を操る魔女。恐ろしい噂とは裏腹に、相応の金貨や珍しい素材さえ前払いで渡せば、大抵の厄介な依頼はきっちりとこなしてくれる。',
   },
@@ -1842,7 +1842,7 @@ export const CARD_MASTER = [
       { id: 'absorb' },
       { id: 'cleave' },
     ],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '宵闇に浮かぶ冷たい微笑み。彼女の振るう大鎌は、命だけでなく、彼らが紡ぐはずだった未来の夢さえも刈り尽くす。',
   },
@@ -1916,7 +1916,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [{ id: 'draw', value: 3 }, { id: 'deadly' }],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '”世界で一番美しいのは誰？”——その問いに答える者がいなくなるまで、ただ愚か者を狩り尽くすのみ。',
   },
@@ -2323,7 +2323,7 @@ export const CARD_MASTER = [
     power: 2,
     skill: 'puppet',
     skillValue: 5,
-    voiceCategory: 'human_male_normal',
+    voiceCategory: 'human_male_trickstar',
     flavor:
       '煙渦巻く戦場を渡り歩く、異色の傭兵。戦死者の無念を糸に宿して戦力として再利用するその手腕は、極めて非情で効率的である。',
   },
@@ -2382,7 +2382,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 6,
     skills: [{ id: 'legendary' }, { id: 'petrify' }, { id: 'double_strike' }],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '蛇の髪を持つ美しき戦乙女。その一瞥を受けた者は石と化し、剣の一閃は必殺の一撃となる。',
   },
@@ -2452,7 +2452,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 5,
     skill: 'shuffle',
-    voiceCategory: 'human_male_normal',
+    voiceCategory: 'human_male_trickstar',
     flavor:
       'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。',
   },
@@ -2472,7 +2472,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 2,
     skill: 'fate',
-    voiceCategory: 'human_male_ikemen',
+    voiceCategory: 'human_male_trickstar',
     flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。',
   },
   {
