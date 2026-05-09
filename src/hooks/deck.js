@@ -21,6 +21,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
+import { saveCampaignProgress } from './campaign.js';
 import { GameState } from './gameState.js';
 import {
   closePlayerNameModal,
@@ -494,7 +495,11 @@ export function loadDeck() {
     const templateChar = CHARACTERS[activeDeck.leaderId] || CHARACTERS.android;
     if (!GameState.playerConfig || GameState.appState !== 'select_player') {
       // トーナメント進行中はstartTournamentMatchで設定済みのplayerConfig（名前・スキン設定）を保持する
-      if (GameState.gameMode === 'tournament' && GameState.tournament && GameState.playerConfig) {
+      if (
+        GameState.gameMode === 'tournament' &&
+        GameState.tournament &&
+        GameState.playerConfig
+      ) {
         // playerConfigは維持し、上書きしない
       } else {
         GameState.playerConfig = { ...templateChar };
@@ -510,7 +515,11 @@ export function loadDeck() {
     };
 
     // トーナメントモードでは学園スキンを強制設定（デッキスナップショットのスキン情報で上書きされるのを防ぐ）
-    if (GameState.gameMode === 'tournament' && GameState.tournament && GameState.playerConfig) {
+    if (
+      GameState.gameMode === 'tournament' &&
+      GameState.tournament &&
+      GameState.playerConfig
+    ) {
       if (!GameState.playerSkins) GameState.playerSkins = {};
       GameState.playerSkins[GameState.playerConfig.id] = 'school';
       if (!GameState.enemySkins) GameState.enemySkins = {};
@@ -590,12 +599,10 @@ export function createNewDeck(leaderId) {
 
 export function saveCurrentEditDeck() {
   if (GameState.gameMode === 'campaign') {
-    import('./campaign.js').then(({ saveCampaignProgress }) => {
-      GameState.campaignDeck = GameState.playerDeckSelection.map((c) =>
-        typeof c === 'string' ? c : c.baseId || c.id
-      );
-      saveCampaignProgress();
-    });
+    GameState.campaignDeck = GameState.playerDeckSelection.map((c) =>
+      typeof c === 'string' ? c : c.baseId || c.id
+    );
+    saveCampaignProgress();
     return;
   }
 

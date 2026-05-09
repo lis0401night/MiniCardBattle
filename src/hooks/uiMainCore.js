@@ -9,6 +9,7 @@ import {
   switchScreen,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
+import { initCampaignMode } from './campaign.js';
 import {
   createNewDeck,
   loadDeck,
@@ -363,11 +364,10 @@ export function goBackFromDeckEdit(isCancel = false) {
       GameState.appState = 'select_deck';
       switchScreen('screen-deck-list');
     } else {
-      GameState.pendingCharId = GameState.decks[GameState.currentDeckIndex].leaderId;
+      GameState.pendingCharId =
+        GameState.decks[GameState.currentDeckIndex].leaderId;
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
-      import('./tournament.js').then(({ initTournamentMode }) => {
-        initTournamentMode();
-      });
+      initTournamentMode();
     }
   } else if (GameState.gameMode === 'create_deck') {
     if (isCancel) {
@@ -488,9 +488,7 @@ export function startGameMode(mode) {
     }
 
     // No valid save found, start new campaign
-    import('./campaign.js').then(({ initCampaignMode }) => {
-      initCampaignMode();
-    });
+    initCampaignMode();
     return;
   }
 

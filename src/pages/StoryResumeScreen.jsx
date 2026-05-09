@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { resumeCampaignProgress } from '../hooks/campaign';
 import { GameState } from '../hooks/gameState';
-import { resumeStoryProgress, clearStoryProgress } from '../hooks/story';
+import { clearStoryProgress, resumeStoryProgress } from '../hooks/story';
+import { goBackFromSelect } from '../hooks/uiMainCore';
 import { showConfirmModal } from '../hooks/uiModals.js';
+import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { CHARACTERS } from '../utils/constants/characters';
-import { goBackFromSelect } from '../hooks/uiMainCore';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {
@@ -58,12 +59,10 @@ export default function StoryResumeScreen() {
   const handleResume = () => {
     playSound?.(SOUNDS?.seClick);
     if (isCampaign) {
-      import('../hooks/campaign').then(({ resumeCampaignProgress }) => {
-        const savedStr = localStorage.getItem('mini_card_battle_campaign_save');
-        if (savedStr) {
-          resumeCampaignProgress(JSON.parse(savedStr));
-        }
-      });
+      const savedStr = localStorage.getItem('mini_card_battle_campaign_save');
+      if (savedStr) {
+        resumeCampaignProgress(JSON.parse(savedStr));
+      }
       return;
     }
 

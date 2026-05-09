@@ -1,16 +1,13 @@
-import { GameState } from './gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import {
-  playSound,
-  stopAllBGM,
-  switchScreen,
-} from '../utils/gameUtils.js';
+import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES } from '../utils/sounds.js';
+import { loadDeck, renderDeckEdit } from './deck.js';
+import { GameState } from './gameState.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 
-import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
-import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { CHAPTER_01_NODES } from '../utils/constants/campaign/chapter01/nodes.js';
+import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
+import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 
 export function getCampaignSaveData() {
   const savedStr = localStorage.getItem('mini_card_battle_campaign_save');
@@ -109,11 +106,9 @@ export function goToCampaignDeckEdit() {
   GameState.appState = 'deck_edit';
   GameState.gameMode = 'campaign';
 
-  import('./deck.js').then(({ loadDeck, renderDeckEdit }) => {
-    loadDeck();
-    renderDeckEdit();
-    switchScreen('screen-deck-edit');
-  });
+  loadDeck();
+  renderDeckEdit();
+  switchScreen('screen-deck-edit');
 }
 
 export function onCampaignBattleEnd(isWin) {

@@ -1,15 +1,23 @@
 import { switchScreen } from '../utils/gameUtils.js';
-import { startBattleFlow } from './deck.js';
+import { prepareBattle } from './battle.js';
+import { handleBattleDungeonProgression } from './battleDungeon.js';
+import { onCampaignDialogueEnd } from './campaign.js';
+import { loadDeck, startBattleFlow } from './deck.js';
 import { handleEventProgression } from './events.js';
 import { GameState } from './gameState.js';
 import { handleStoryProgression } from './story.js';
 import {
-  performFadeTransition,
+  playTournamentPostMatchDialogue,
+  playTournamentVenueDialogue,
+  playTournamentWinDialogue,
+  saveTournamentProgress,
+} from './tournament.js';
+import {
   initSelectScreen,
+  performFadeTransition,
   showDefenseBattleList,
   showOnlineLobby,
 } from './uiMainCore.js';
-import { handleBattleDungeonProgression } from './battleDungeon.js';
 
 /**
  * Mini Card Battle - 共通進行管理 (progression.js)
@@ -23,9 +31,7 @@ export function handleProgressionNextStep() {
   if (GameState.gameMode === 'free') {
     handleFreeBattleProgression();
   } else if (GameState.gameMode === 'campaign') {
-    import('./campaign.js').then(({ onCampaignDialogueEnd }) => {
-      onCampaignDialogueEnd();
-    });
+    onCampaignDialogueEnd();
   } else if (GameState.gameMode === 'battle_dungeon') {
     handleBattleDungeonProgression();
     return;
@@ -37,7 +43,8 @@ export function handleProgressionNextStep() {
     }
   } else if (
     GameState.gameMode === 'event_satan' ||
-    (GameState.gameMode.startsWith('event_') && GameState.gameMode.endsWith('_high'))
+    (GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_high'))
   ) {
     if (typeof handleEventProgression === 'function') {
       handleEventProgression();
@@ -53,72 +60,57 @@ export function handleProgressionNextStep() {
     }
   } else if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_battle_dialogue') {
-      import('./deck.js').then(({ loadDeck }) => {
-        loadDeck();
-        GameState.appState = 'battle';
-        import('./battle.js').then(({ prepareBattle }) => {
-          prepareBattle();
-        });
-      });
+      loadDeck();
+      GameState.appState = 'battle';
+      prepareBattle();
       return;
     }
 
     if (GameState.appState === 'post_dialogue') {
       if (GameState.lastBattleResult === 'win') {
         if (GameState.tournament && GameState.tournament.round === 5) {
-          import('./tournament.js').then(({ playTournamentWinDialogue }) => {
-            playTournamentWinDialogue();
-          });
+          playTournamentWinDialogue();
           return;
         } else {
-          import('./tournament.js').then(({ playTournamentPostMatchDialogue }) => {
-            playTournamentPostMatchDialogue();
-          });
+          playTournamentPostMatchDialogue();
           return;
         }
       } else {
         // 敗北時はそのままブラケットへ
-        import('./tournament.js').then(({ saveTournamentProgress }) => {
-          saveTournamentProgress();
-          switchScreen('screen-tournament-bracket');
-        });
+        saveTournamentProgress();
+        switchScreen('screen-tournament-bracket');
         return;
       }
     }
 
     if (GameState.appState === 'pre_dialogue') {
-      import('./tournament.js').then(({ playTournamentVenueDialogue }) => {
-        playTournamentVenueDialogue();
-      });
+      playTournamentVenueDialogue();
       return;
     }
 
-    if (GameState.appState === 'venue_dialogue' || GameState.appState === 'post_tournament_match' || GameState.appState === 'tournament_win_dialogue') {
-      import('./tournament.js').then(({ saveTournamentProgress }) => {
-        saveTournamentProgress();
-        import('./uiMainCore.js').then(({ performFadeTransition }) => {
-          performFadeTransition(() => {
-            switchScreen('screen-tournament-bracket');
-          });
-        });
-      });
-      return;
-    }
-
-    if (GameState.tournament && (GameState.tournament.playerLost || GameState.tournament.round > 4)) {
-      // 終了処理 (ポイント付与などはBracket画面で行う)
-      import('./tournament.js').then(({ saveTournamentProgress }) => {
-        saveTournamentProgress();
+    if (
+      GameState.appState === 'venue_dialogue' ||
+      GameState.appState === 'post_tournament_match' ||
+      GameState.appState === 'tournament_win_dialogue'
+    ) {
+      saveTournamentProgress();
+      performFadeTransition(() => {
         switchScreen('screen-tournament-bracket');
       });
+      return;
+    }
+
+    if (
+      GameState.tournament &&
+      (GameState.tournament.playerLost || GameState.tournament.round > 4)
+    ) {
+      // 終了処理 (ポイント付与などはBracket画面で行う)
+      saveTournamentProgress();
+      switchScreen('screen-tournament-bracket');
     } else {
-      import('./tournament.js').then(({ saveTournamentProgress }) => {
-        saveTournamentProgress();
-        import('./uiMainCore.js').then(({ performFadeTransition }) => {
-          performFadeTransition(() => {
-            switchScreen('screen-tournament-bracket');
-          });
-        });
+      saveTournamentProgress();
+      performFadeTransition(() => {
+        switchScreen('screen-tournament-bracket');
       });
     }
   } else {

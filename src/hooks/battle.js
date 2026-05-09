@@ -1,10 +1,10 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
-import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
@@ -34,6 +34,7 @@ import {
   calculateCombatPhase,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
+import { simulateTournamentRound } from './tournament.js';
 
 import { GameState } from './gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
@@ -3125,7 +3126,8 @@ export function endBattle() {
     if (
       GameState.lastBattleResult === 'win' &&
       GameState.gameMode !== 'online' &&
-      GameState.gameMode !== 'practice'
+      GameState.gameMode !== 'practice' &&
+      GameState.gameMode !== 'tournament'
     ) {
       // 実績の加算処理
       if (
@@ -3232,19 +3234,15 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'tournament') {
-      import('./tournament.js').then(({ simulateTournamentRound }) => {
-        if (GameState.lastBattleResult === 'win') {
-          // トーナメント各ラウンド勝利の実績を記録
-          const wonRound = GameState.tournament.round;
-          import('../utils/constants/achievements.js').then(({ incrementStat }) => {
-            incrementStat('eventClear', `tournament_round_${wonRound}`);
-          });
-          simulateTournamentRound();
-        } else {
-          GameState.tournament.playerLost = true;
-        }
-        setupDialogueScreen();
-      });
+      if (GameState.lastBattleResult === 'win') {
+        // トーナメント各ラウンド勝利の実績を記録
+        const wonRound = GameState.tournament.round;
+        incrementStat('eventClear', `tournament_round_${wonRound}`);
+        simulateTournamentRound();
+      } else {
+        GameState.tournament.playerLost = true;
+      }
+      setupDialogueScreen();
       return;
     }
 
