@@ -396,9 +396,13 @@ export function goBackFromDeckEdit(isCancel = false) {
       initSelectScreen(false);
       switchScreen('screen-select');
     } else {
-      // 完了の場合、デッキ一覧に戻る
-      GameState.appState = 'select_deck';
-      if (typeof window.loadDeck === 'function') window.loadDeck();
+      // 完了の場合、gameModeを元のモードに復帰してからデッキ一覧に戻る
+      if (GameState.prevGameModeForCreate) {
+        GameState.gameMode = GameState.prevGameModeForCreate;
+      } else {
+        GameState.gameMode = 'free_deck_edit';
+      }
+      GameState.appState = GameState.prevAppStateForCreate || 'select_deck';
       if (window.forceUpdateDeckList) window.forceUpdateDeckList();
       switchScreen('screen-deck-list');
     }
