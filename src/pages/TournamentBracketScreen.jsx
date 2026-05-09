@@ -6,7 +6,7 @@ import {
   startTournamentMatch,
 } from '../hooks/tournament.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { getOrCreateUUID, playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
 
@@ -85,6 +85,20 @@ export default function TournamentBracketScreen() {
           'mini_card_battle_tournament_total_points',
           totalPts
         );
+
+        // サーバーにポイントを同期
+        const uuid = getOrCreateUUID();
+        if (uuid) {
+          fetch('api/update_tournament_points.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              uuid,
+              points: currentPts,
+              total_points: totalPts,
+            }),
+          }).catch((err) => console.error('Failed to sync tournament points:', err));
+        }
       }
 
       showAlertModal?.(
