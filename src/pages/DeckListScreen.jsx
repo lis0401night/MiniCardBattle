@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import { loadDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
+import { confirmCharSelect, goBackFromSelect } from '../hooks/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { loadDeck } from '../hooks/deck.js';
-import {
-  confirmCharSelect,
-  goBackFromSelect,
-} from '../hooks/uiMainCore.js';
-import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
 
 export default function DeckListScreen() {
   const [renderVersion, setRenderVersion] = useState(0);
@@ -72,8 +69,21 @@ export default function DeckListScreen() {
 
     window.forceUpdateDeckList = () => setRenderVersion((v) => v + 1);
 
-    // メニュー等から画面遷移してきた際、常に現在のgameModeに合わせたデッキ情報を再ロードする
-    loadDeck?.();
+    // デッキ一覧画面では常に通常デッキ（mini_card_battle_decks）のみを表示する。
+    // loadDeck() はgameModeに応じてGameState.decksを特殊モード用に差し替える可能性があるため、
+    // ここでは直接LocalStorageから通常デッキを読み込み、GameState.decksにセットする。
+    try {
+      const decksSaved = localStorage.getItem('mini_card_battle_decks');
+      GameState.decks = decksSaved ? JSON.parse(decksSaved) : [];
+    } catch (e) {
+      GameState.decks = [];
+    }
+    if (
+      GameState.currentDeckIndex >= GameState.decks.length ||
+      GameState.currentDeckIndex < 0
+    ) {
+      GameState.currentDeckIndex = 0;
+    }
 
     return () => {
       window.forceUpdateDeckList = null;
