@@ -285,7 +285,7 @@ export const CARD_MASTER = [
     id: 'chameleon',
     name: '迷彩カメレオン',
     rarity: 1,
-    power: 3,
+    power: 4,
     skill: 'immune',
     voiceCategory: 'lizard',
     flavor:
@@ -1639,7 +1639,7 @@ export const CARD_MASTER = [
       { id: 'choice', value: 1 },
     ],
     choices: [
-      { id: 'resurrect', value: 5 },
+      { id: 'resurrect', value: 6 },
       { id: 'charge', value: 3 },
     ],
     voiceCategory: 'magic',
@@ -1913,7 +1913,7 @@ export const CARD_MASTER = [
     id: 'queen',
     name: '嫉妬の女王',
     rarity: 3,
-    power: 4,
+    power: 5,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [{ id: 'draw', value: 3 }, { id: 'deadly' }],
     voiceCategory: 'human_female_cool',
@@ -1924,7 +1924,7 @@ export const CARD_MASTER = [
     id: 'snowwhite',
     name: 'スノウホワイト',
     rarity: 3,
-    power: 5,
+    power: 6,
     skills: [{ id: 'legendary' }, { id: 'immune' }],
     voiceCategory: 'human_female_assassin',
     flavor:

@@ -385,7 +385,8 @@ export const SKILLS = {
   move: {
     name: '移動',
     icon: '🏃',
-    desc: (val) => '自分のターン開始時に隣のレーンに移動できる。',
+    desc: (val) =>
+      '自分のターン開始時に隣のレーンに移動できる。（防御が付与されている場合は無効）',
   },
   freeze: {
     name: '凍結',

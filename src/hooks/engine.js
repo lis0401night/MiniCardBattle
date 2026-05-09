@@ -999,6 +999,19 @@ export function applyActiveSkillLogic(
       });
       break;
     }
+    case 'artillery': {
+      // 砲撃：相手リーダーに直接ダメージ
+      const artAmt = val || 3;
+      if (owner === 'blue') state.enemyHP -= artAmt;
+      else state.playerHP -= artAmt;
+      events.push({
+        type: 'damage_player',
+        side: oppOwner,
+        amount: artAmt,
+        source: 'artillery',
+      });
+      break;
+    }
     case 'charge': {
       const chgAmt = val || 2;
       const pMaxSP = state.playerConfig?.leaderSkill?.cost || 5;
