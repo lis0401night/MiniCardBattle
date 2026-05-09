@@ -22,7 +22,6 @@ if (!$data || !isset($data['uuid'])) {
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
 $points = isset($data['points']) ? intval($data['points']) : 0;
 $total_points = isset($data['total_points']) ? intval($data['total_points']) : 0;
-$max_streak = isset($data['max_streak']) ? intval($data['max_streak']) : 0;
 
 if (strlen($uuid) < 10) {
     echo json_encode(['success' => false, 'error' => 'Invalid uuid format']);
@@ -44,9 +43,6 @@ if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
     if ($playerData) {
         $playerData['tournament_points'] = $points;
         $playerData['tournament_total_points'] = $total_points;
-        if ($max_streak > 0 || !isset($playerData['tournament_max_streak']) || $max_streak > $playerData['tournament_max_streak']) {
-            $playerData['tournament_max_streak'] = $max_streak;
-        }
         $playerData['timestamp'] = time();
 
         $data_json = json_encode($playerData);
@@ -59,8 +55,7 @@ EOT;
             echo json_encode([
                 'success' => true,
                 'tournament_points' => $playerData['tournament_points'],
-                'tournament_total_points' => $playerData['tournament_total_points'],
-                'tournament_max_streak' => $playerData['tournament_max_streak'] ?? 0
+                'tournament_total_points' => $playerData['tournament_total_points']
             ]);
             exit;
         } else {

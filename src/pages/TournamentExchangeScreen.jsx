@@ -58,8 +58,8 @@ export default function TournamentExchangeScreen() {
           const myUuid = getOrCreateUUID();
           const myData = result.players.find((p) => p.uuid === myUuid);
           if (myData) {
-            const pts = myData.challenge_points || 0;
-            const tPts = myData.challenge_total_points || pts || 0;
+            const pts = myData.tournament_points || 0;
+            const tPts = myData.tournament_total_points || pts || 0;
 
             const finalPts = pts === 0 && currentPts > 0 ? currentPts : pts;
             const finalTotalPts = tPts === 0 && totalPts > 0 ? totalPts : tPts;
