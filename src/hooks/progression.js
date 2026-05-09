@@ -59,6 +59,36 @@ export function handleProgressionNextStep() {
     } else {
       switchScreen('screen-online-lobby');
     }
+  } else if (GameState.gameMode === 'tournament') {
+    if (GameState.appState === 'pre_battle_dialogue') {
+      import('./deck.js').then(({ loadDeck }) => {
+        loadDeck();
+        GameState.appState = 'battle';
+        import('./battle.js').then(({ prepareBattle }) => {
+          prepareBattle();
+          switchScreen('screen-battle');
+        });
+      });
+      return;
+    }
+
+    if (GameState.tournament && (GameState.tournament.playerLost || GameState.tournament.round > 4)) {
+      // 終了処理 (ポイント付与などはBracket画面で行うか、ここでやるか)
+      // Bracket画面で優勝/敗北を表示してから戻りたいので、必ずBracket画面に飛ばす
+      import('./tournament.js').then(({ saveTournamentProgress }) => {
+        saveTournamentProgress();
+        switchScreen('screen-tournament-bracket');
+      });
+    } else {
+      if (GameState.tournament && GameState.tournament.round === 1 && !GameState.tournament.deckEditDone) {
+        switchScreen('screen-deck-edit');
+      } else {
+        import('./tournament.js').then(({ saveTournamentProgress }) => {
+          saveTournamentProgress();
+          switchScreen('screen-tournament-bracket');
+        });
+      }
+    }
   } else {
     // デフォルトはストーリーモード
     if (typeof handleStoryProgression === 'function') {

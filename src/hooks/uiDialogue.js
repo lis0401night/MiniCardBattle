@@ -160,7 +160,8 @@ export function setupDialogueScreen() {
 
   const isCenter =
     GameState.appState === 'story_intro' ||
-    GameState.appState === 'inter_battle_story';
+    GameState.appState === 'inter_battle_story' ||
+    (GameState.gameMode === 'tournament' && GameState.appState === 'pre_dialogue');
 
   if (GameState.appState === 'post_dialogue') {
     if (GameState.lastBattleResult === 'win') {
@@ -217,12 +218,12 @@ export async function showNextDialogue(force = false) {
     window.currentDialogueData.choices = null;
   }
 
-  // 1人（モノローグ）状態から対戦相手が登場した時の暗転演出
   let didFade = false;
   if (
     window.currentDialogueData.centerMode &&
     (cur.speaker === 'enemy' || cur.speaker !== 'player') &&
-    GameState.appState !== 'ending_dialogue'
+    GameState.appState !== 'ending_dialogue' &&
+    GameState.gameMode !== 'tournament'
   ) {
     // centerMode のまま敵のターンが来たら、2人画面へ移行するべく暗転する
     if (cur.speaker === 'enemy') {
@@ -263,16 +264,28 @@ export async function showNextDialogue(force = false) {
         : GameState.enemyConfig);
     window.currentDialogueData.speakerName = charConfig.name;
     window.currentDialogueData.nameColor = charConfig.color;
-    window.currentDialogueData.rightActive = true;
-    window.currentDialogueData.leftActive = false;
     window.currentDialogueData.boxBorderColor = charConfig.color;
+
+    if (window.currentDialogueData.centerMode) {
+      window.currentDialogueData.leftActive = true;
+      window.currentDialogueData.rightActive = false;
+    } else {
+      window.currentDialogueData.rightActive = true;
+      window.currentDialogueData.leftActive = false;
+    }
 
     // 話者が変わる場合は画像も更新
     if (cur.charData || cur.charId) {
-      window.currentDialogueData.rightImage =
+      const newImg =
         getSkinImage(charConfig, 'default', 'image') ||
         charConfig.image ||
         getCardImgUrl(charConfig);
+      
+      if (window.currentDialogueData.centerMode) {
+        window.currentDialogueData.leftImage = newImg;
+      } else {
+        window.currentDialogueData.rightImage = newImg;
+      }
     }
   }
 

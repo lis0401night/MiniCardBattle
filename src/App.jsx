@@ -8,6 +8,11 @@ import RulesScreen from './pages/RulesScreen.jsx';
 import OptionsScreen from './pages/OptionsScreen.jsx';
 import GalleryMenuScreen from './pages/GalleryMenuScreen.jsx';
 import EventMenuScreen from './pages/EventMenuScreen.jsx';
+import TournamentMenuScreen from './pages/TournamentMenuScreen.jsx';
+import TournamentResumeScreen from './pages/TournamentResumeScreen.jsx';
+import TournamentExchangeScreen from './pages/TournamentExchangeScreen.jsx';
+import TournamentRulesScreen from './pages/TournamentRulesScreen.jsx';
+import TournamentBracketScreen from './pages/TournamentBracketScreen.jsx';
 import DefenseMenuScreen from './pages/DefenseMenuScreen.jsx';
 import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
 import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
@@ -138,6 +143,11 @@ export default function App() {
       {currentScreen === 'screen-options' && <OptionsScreen />}
       {currentScreen === 'screen-gallery-menu' && <GalleryMenuScreen />}
       {currentScreen === 'screen-event-menu' && <EventMenuScreen />}
+      {currentScreen === 'screen-tournament-menu' && <TournamentMenuScreen />}
+      {currentScreen === 'screen-tournament-resume' && <TournamentResumeScreen />}
+      {currentScreen === 'screen-tournament-exchange' && <TournamentExchangeScreen />}
+      {currentScreen === 'screen-tournament-rules' && <TournamentRulesScreen />}
+      {currentScreen === 'screen-tournament-bracket' && <TournamentBracketScreen />}
       {currentScreen === 'screen-defense-menu' && <DefenseMenuScreen />}
       {currentScreen === 'screen-defense-rules' && <DefenseRulesScreen />}
       {currentScreen === 'screen-high-difficulty-menu' && (

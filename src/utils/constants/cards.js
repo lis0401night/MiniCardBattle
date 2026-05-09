@@ -127,15 +127,15 @@ export const CARD_MASTER = [
     flavor:
       '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
   },
-  {
-    id: 'warden',
-    name: '監獄長',
-    rarity: 1,
-    power: 6,
-    skills: [{ id: 'takeover' }, { id: 'bind', value: 2 }],
-    voiceCategory: 'human_male_warrior',
-    flavor: '罪人を決して逃さぬ鉄壁の番人。',
-  },
+  // {
+  //   id: 'warden',
+  //   name: '監獄長',
+  //   rarity: 1,
+  //   power: 6,
+  //   skills: [{ id: 'takeover' }, { id: 'bind', value: 2 }],
+  //   voiceCategory: 'human_male_warrior',
+  //   flavor: '罪人を決して逃さぬ鉄壁の番人。',
+  // },
   {
     id: 'titan',
     name: '旧式タイタン',
@@ -1664,7 +1664,7 @@ export const CARD_MASTER = [
     choices2: [
       { id: 'draw', value: 2 },
       { id: 'heal', value: 2 },
-      { id: 'spread', value: 2 },
+      { id: 'spread', value: 1 },
       { id: 'soul_bind', value: 2 },
     ],
     voiceCategory: 'human_female_assassin',
@@ -1861,26 +1861,26 @@ export const CARD_MASTER = [
     flavor:
       '二つの首が天を仰ぎ、終末の咆哮を上げる。その翼が振り下ろされる時、世界は劫火に包まれる。',
   },
-  // {
-  //   id: 'threebears',
-  //   name: '荒熊山賊団',
-  //   rarity: 3,
-  //   power: 6,
-  //   skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
-  //   voiceCategory: 'human_male_warrior',
-  //   flavor:
-  //     '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
-  // },
-  // {
-  //   id: 'goldilocks',
-  //   name: 'ゴールデンロックス',
-  //   rarity: 3,
-  //   power: 6,
-  //   skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
-  //   voiceCategory: 'human_female_assassin',
-  //   flavor:
-  //     '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
-  // },
+  {
+    id: 'threebears',
+    name: '荒熊山賊団',
+    rarity: 3,
+    power: 6,
+    skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
+    voiceCategory: 'human_male_warrior',
+    flavor:
+      '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
+  },
+  {
+    id: 'goldilocks',
+    name: 'ゴールデンロックス',
+    rarity: 3,
+    power: 6,
+    skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
+    voiceCategory: 'human_female_assassin',
+    flavor:
+      '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
+  },
   {
     id: 'badwolf',
     name: '幻影の狼',

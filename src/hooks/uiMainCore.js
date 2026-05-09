@@ -28,6 +28,7 @@ import {
   initEventWitchHighMode,
   loadPlayerDeck,
 } from './events.js';
+import { initTournamentMode } from './tournament.js';
 
 import { prepareBattle } from './battle.js';
 import { GameState } from './gameState.js';
@@ -290,6 +291,8 @@ export function goBackFromSelect() {
     switchScreen('screen-deck-list');
   } else if (GameState.gameMode === 'online_deck_edit') {
     showOnlineLobby();
+  } else if (GameState.gameMode === 'tournament') {
+    switchScreen('screen-tournament-menu');
   } else {
     // デッキ選択のフローから抜ける際にページネーションをリセット
     GameState.deckListPage = 0;
@@ -479,6 +482,16 @@ export function startGameMode(mode) {
     return;
   }
 
+  if (mode === 'tournament') {
+    const savedTournament = localStorage.getItem('mini_card_battle_tournament_save');
+    if (savedTournament) {
+      GameState.appState = 'tournament_resume';
+      switchScreen('screen-tournament-resume');
+      return;
+    }
+  }
+
+  // 以下はストーリー/キャンペーン/トーナメント（再開なし）/ダンジョン以外の処理
   GameState.appState = 'select_deck';
   // デッキ選択画面遷移前に最新状態のデッキをリロードし、強制再描画を要求する
   if (typeof window.loadDeck === 'function') window.loadDeck();
@@ -876,6 +889,9 @@ export function confirmCharSelect() {
       initEventWitchHighMode(GameState.pendingCharId);
     } else if (GameState.gameMode === 'event_oni_high') {
       initEventOniHighMode(GameState.pendingCharId);
+    } else if (GameState.gameMode === 'tournament') {
+      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+      initTournamentMode();
     } else if (GameState.gameMode === 'free_deck_edit') {
       // マイデッキ編集時はそのままデッキ編成画面へ移行
       switchScreen('screen-deck-edit');

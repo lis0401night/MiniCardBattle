@@ -1,4 +1,3 @@
-
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -23,9 +22,7 @@ export default function DungeonRulesScreen() {
       </h2>
       <div className="rule-box">
         <ul>
-          <li>
-            試練の宮殿は、次々と現れる敵を倒しながらどこまで進めるかを競うモードです。
-          </li>
+          <li>次々と現れる敵を倒しながらどこまで進めるかを競うモードです。</li>
           <li>10階層ごとに強力なボスキャラクターが登場します。</li>
           <li>
             バトル終了後、減ったHPは回復せずにそのまま次の戦闘へ持ち越されます。

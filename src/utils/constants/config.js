@@ -204,7 +204,165 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   { id: 'snowwhite', type: 'card', cost: 5 },
 ];
 
-export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = [
+export const TOURNAMENT_EXCHANGE_LINEUP = [
+  {
+    id: 'android_school',
+    type: 'skin',
+    charId: 'android',
+    name: '学生アイギス',
+    description:
+      '最新鋭の学園防衛システム。制服は特別製の耐弾素材でできている。',
+    cost: 20,
+  },
+  {
+    id: 'dragon_school',
+    type: 'skin',
+    charId: 'dragon',
+    name: '学生イグニス',
+    description:
+      '燃えるような青春を謳歌する竜の姫。熱血すぎてたまに教室が焦げる。',
+    cost: 20,
+  },
+  {
+    id: 'knight_school',
+    type: 'skin',
+    charId: 'knight',
+    name: '学生セレスティア',
+    description: '風紀委員長を務める真面目な騎士。校則違反には容赦がない。',
+    cost: 20,
+  },
+  {
+    id: 'cthulhu_school',
+    type: 'skin',
+    charId: 'cthulhu',
+    name: '学生ナイア',
+    description: 'オカルト研究部の部長。常に怪しげな儀式を放課後に行っている。',
+    cost: 20,
+  },
+  {
+    id: 'elf_school',
+    type: 'skin',
+    charId: 'elf',
+    name: '学生リナ',
+    description: '弓道部のエース。その正確な射撃は他の追随を許さない。',
+    cost: 20,
+  },
+  {
+    id: 'cleric_school',
+    type: 'skin',
+    charId: 'cleric',
+    name: '学生エリシア',
+    description: '保健委員を務める心優しき生徒。ただし治療方法は少し過激。',
+    cost: 20,
+  },
+  {
+    id: 'devilhunter_school',
+    type: 'skin',
+    charId: 'devilhunter',
+    name: '学生マリア',
+    description:
+      '不良生徒を取り締まる影の風紀委員。二丁拳銃の代わりにチョークを投げる。',
+    cost: 20,
+  },
+  {
+    id: 'witch_school',
+    type: 'skin',
+    charId: 'witch',
+    name: '学生クロエ',
+    description:
+      '図書委員として静寂を愛する魔女。騒がしい生徒には時間の呪いをかける。',
+    cost: 20,
+  },
+  {
+    id: 'oni_school',
+    type: 'skin',
+    charId: 'oni',
+    name: '学生カグラ',
+    description: '剣道部の主将。木刀を振るう姿はまさに鬼神の如き迫力。',
+    cost: 20,
+  },
+  {
+    id: 'priest_school',
+    type: 'skin',
+    charId: 'priest',
+    name: '学生ネフティ',
+    description: '歴史研究部の幽霊部員。古代の石版を教科書代わりに読んでいる。',
+    cost: 20,
+  },
+  {
+    id: 'pm_android_school',
+    type: 'playmat',
+    name: 'プレイマット：学生アイギス',
+    description:
+      '最新鋭の学園防衛システム。制服は特別製の耐弾素材でできている。',
+    cost: 10,
+  },
+  {
+    id: 'pm_dragon_school',
+    type: 'playmat',
+    name: 'プレイマット：学生イグニス',
+    description:
+      '燃えるような青春を謳歌する竜の姫。熱血すぎてたまに教室が焦げる。',
+    cost: 10,
+  },
+  {
+    id: 'pm_knight_school',
+    type: 'playmat',
+    name: 'プレイマット：学生セレスティア',
+    description: '風紀委員長を務める真面目な騎士。校則違反には容赦がない。',
+    cost: 10,
+  },
+  {
+    id: 'pm_cthulhu_school',
+    type: 'playmat',
+    name: 'プレイマット：学生ナイア',
+    description: 'オカルト研究部の部長。常に怪しげな儀式を放課後に行っている。',
+    cost: 10,
+  },
+  {
+    id: 'pm_elf_school',
+    type: 'playmat',
+    name: 'プレイマット：学生リナ',
+    description: '弓道部のエース。その正確な射撃は他の追随を許さない。',
+    cost: 10,
+  },
+  {
+    id: 'pm_cleric_school',
+    type: 'playmat',
+    name: 'プレイマット：学生エリシア',
+    description: '保健委員を務める心優しき生徒。ただし治療方法は少し過激。',
+    cost: 10,
+  },
+  {
+    id: 'pm_devilhunter_school',
+    type: 'playmat',
+    name: 'プレイマット：学生マリア',
+    description:
+      '不良生徒を取り締まる影の風紀委員。二丁拳銃の代わりにチョークを投げる。',
+    cost: 10,
+  },
+  {
+    id: 'pm_witch_school',
+    type: 'playmat',
+    name: 'プレイマット：学生クロエ',
+    description:
+      '図書委員として静寂を愛する魔女。騒がしい生徒には時間の呪いをかける。',
+    cost: 10,
+  },
+  {
+    id: 'pm_oni_school',
+    type: 'playmat',
+    name: 'プレイマット：学生カグラ',
+    description: '剣道部の主将。木刀を振るう姿はまさに鬼神の如き迫力。',
+    cost: 10,
+  },
+  {
+    id: 'pm_priest_school',
+    type: 'playmat',
+    name: 'プレイマット：学生ネフティ',
+    description: '歴史研究部の幽霊部員。古代の石版を教科書代わりに読んでいる。',
+    cost: 10,
+  },
   { id: 'threebears', type: 'card', cost: 5 },
   { id: 'goldilocks', type: 'card', cost: 5 },
 ];

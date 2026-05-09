@@ -44,6 +44,22 @@ export default function EventMenuScreen() {
           ></div>
           <div className="menu-btn-label">試練の宮殿</div>
         </div>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            switchScreen?.('screen-tournament-menu');
+          }}
+        >
+          <div
+            className="menu-img-bg"
+            style={{
+              backgroundImage: `url('${images.EVENT_TOURNAMENT || ''}')`,
+              backgroundColor: '#2563eb', // 画像がない場合のフォールバック
+            }}
+          ></div>
+          <div className="menu-btn-label">夢幻の闘技祭</div>
+        </div>
       </div>
       <div
         style={{

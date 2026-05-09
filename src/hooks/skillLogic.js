@@ -2471,10 +2471,10 @@ export async function triggerStartTurnPassive(owner, lane) {
         ),
         playerHP: GameState.playerHP,
         enemyHP: GameState.enemyHP,
-        playerDiscard: GameState.playerDiscard,
-        enemyDiscard: GameState.enemyDiscard,
-        playerHand: GameState.playerHand,
-        enemyHand: GameState.enemyHand,
+        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
         playerSealedLanes: GameState.playerSealedLanes,
         enemySealedLanes: GameState.enemySealedLanes,
       };
@@ -2488,17 +2488,6 @@ export async function triggerStartTurnPassive(owner, lane) {
         val,
         maintainEvents
       );
-
-      // 盤面や手札・墓地の状態を同期
-      if (owner === 'blue') {
-        GameState.playerBoard = currentState.playerBoard;
-        GameState.playerHand = currentState.playerHand;
-        GameState.playerDiscard = currentState.playerDiscard;
-      } else {
-        GameState.enemyBoard = currentState.enemyBoard;
-        GameState.enemyHand = currentState.enemyHand;
-        GameState.enemyDiscard = currentState.enemyDiscard;
-      }
 
       events.push(...maintainEvents);
       triggered = true;

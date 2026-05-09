@@ -1,4 +1,3 @@
-
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -23,7 +22,7 @@ export default function DefenseRulesScreen() {
       </h2>
       <div className="rule-box">
         <ul>
-          <li>防衛戦は、他のプレイヤーのデッキと戦うモードです。</li>
+          <li>他のプレイヤーのデッキと戦うモードです。</li>
           <li>
             自分の「防衛デッキ」を登録すると、他のプレイヤーの攻撃対象になります。
           </li>

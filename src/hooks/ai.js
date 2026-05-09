@@ -1,12 +1,11 @@
-import { sleep } from '../utils/gameUtils.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { shuffleArray, sleep } from '../utils/gameUtils.js';
 import { getEasyDecision } from './ai_easy.js';
 import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
 import { discardCard, endTurnLogic, playCard } from './battle.js';
-import { GameState } from './gameState.js';
-import { shuffleArray } from '../utils/gameUtils.js';
-import { activateLeaderSkill } from './leaderSkills.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
 import { isGraveKeeperActive } from './engine.js';
+import { GameState } from './gameState.js';
+import { activateLeaderSkill } from './leaderSkills.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（シミュレーション・オーバーホール版）
@@ -72,7 +71,7 @@ export async function executeEnemyAI() {
     if (canUseSkill) {
       if (
         [
-          'dark_ritual',
+          'god_flame',
           'condemnation', // エリシア（通常・高難易度）：ダメージ+回復
           'abyss_ritual',
           'otherworld_gate', // ナイア（通常・高難易度）：手札入替系

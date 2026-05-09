@@ -946,9 +946,9 @@ export async function executeLeaderSkillAction(
     ) {
       await sleep(200);
       await window.triggerVfx('anm_summon_maria', owner, tokenLanes[0]);
-    } else if (action === 'dark_ritual' || action === 'condemnation') {
+    } else if (action === 'god_flame' || action === 'condemnation') {
       await sleep(200);
-      await window.triggerVfx('anm_dark_ritual', owner);
+      await window.triggerVfx('anm_god_flame', owner);
     } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {
       await sleep(200);
       await Promise.all(

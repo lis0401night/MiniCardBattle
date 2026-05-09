@@ -3292,6 +3292,18 @@ export function endBattle() {
       return;
     }
 
+    if (GameState.gameMode === 'tournament') {
+      import('./tournament.js').then(({ simulateTournamentRound }) => {
+        if (GameState.lastBattleResult === 'win') {
+          simulateTournamentRound();
+        } else {
+          GameState.tournament.playerLost = true;
+        }
+        setupDialogueScreen();
+      });
+      return;
+    }
+
     // ドロップがない、全所持、または敗北/引き分けの場合
     setupDialogueScreen();
   }, 1500);

@@ -13,4 +13,5 @@ export const UI_IMAGES = {
   MENU_DUNGEON: 'assets/ui/ui_dungionbutton01.png',
   MENU_ONLINE: 'assets/ui/ui_versusbutton01.png',
   MENU_DECK: 'assets/ui/ui_deckbutton01.png',
+  EVENT_TOURNAMENT: 'assets/ui/ui_event_tournament01.png',
 };

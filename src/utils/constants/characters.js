@@ -617,7 +617,7 @@ export const CHARACTERS = {
   cleric: {
     id: 'cleric',
     stageId: 'cleric',
-    name: '背徳の聖職者 エリシア',
+    name: '狂信の聖職者 エリシア',
     desc: '聖職者の皮を被った傲慢な女。自らを神の代行者と称し、異端者を嘲笑いながら排除する。',
     easeOfUse: 1,
     filter: 'none',
@@ -629,19 +629,19 @@ export const CHARACTERS = {
     imageEnding: 'assets/characters/char_cleric_ending.png',
     color: '#94a3b8',
     leaderSkill: {
-      name: '暗黒の審判',
+      name: '神炎の審判',
       desc: '(SP:3) 相手リーダーに3ダメージを与え、自身のHPを3回復する。',
       cost: 3,
-      action: 'dark_ritual',
+      action: 'god_flame',
     },
     preBattleLine: 'あら、私に逆らうなんて。身の程をわきまえなさい。',
     mirrorIntro:
       '私の偽物……？ フフ、その醜い姿で私と同じ聖職者を名乗るなんて。異端者として焼き払ってあげるわ。',
     narratorIntro:
-      '教会の重鎮でありながら、裏では禁忌の術を操る女、エリシア。彼女の微笑みは、地獄への招待状に他ならない。',
+      '教会の重鎮であり、異端審問の全権を握る女、エリシア。彼女の慈悲深き微笑みは、苛烈な拷問と火刑への招待状に他ならない。',
     storyIntro: [
-      '魔王サタンの力……。あれを手にすれば、私は真の神を超えられるわ。',
-      '貴方、私の「使徒」として光栄に思いなさい？ 私を魔王のもとへ導くのよ。',
+      '魔王サタン……最大の異端であるあの存在。私があれを浄化すれば、神は私を最も愛してくださるはずよ。',
+      '貴方、私の従者として光栄に思いなさい？ 異端の巣窟、魔王のもとへ私を案内するのよ。',
     ],
     interBattleStory: {
       1: [
@@ -665,72 +665,74 @@ export const CHARACTERS = {
         'すべて異端として焼き払ってあげましょう。',
       ],
       6: [
-        'ここが魔王城……。フフ、最高の祭壇じゃない。',
-        'サタン、貴様の座は今日から私のものよ！',
+        'ここが魔王城……。フフ、最悪の異端の巣窟ね。',
+        'サタン、貴様を灰にして、ここを私の新しい教皇庁にしてあげるわ！',
       ],
       7: [
-        'さあ, 魔王サタン。貴様が私にひれ伏す時が来たわ。',
-        'この力, 私が受け継いで, 真の神となるのよ！',
+        'さあ、魔王サタン。貴様が私の前にひれ伏し、神の裁きを受ける時が来たわ。',
+        'この聖なる炎で、骨の髄まで浄化してあげる！',
       ],
       default: [
-        ['救済を求めるなら, 死を与えてあげるわ。'],
+        ['救済を求めるなら、死を与えてあげるわ。'],
         ['神の御名において……消えなさい。'],
       ],
     },
     dialogue: {
       intro: {
-        android: 'あら, 精巧なガラクタね。私の祭壇を飾るのにちょうどいいわ。',
-        dragon: 'トカゲの姫君？ フフ, その翼, もぎ取ってあげましょうか。',
-        knight: '貴女のその眩しい信念, 私が濁らせてあげる。',
-        cthulhu: '深淵？ そんな薄暗いところ, 私の闇で塗りつぶしてあげるわ。',
-        elf: '記憶喪失のエルフ……。憐れな迷い子に, 永遠の救済を授けてあげましょう。',
-        satan: '魔王の座……私にこそふさわしいわ。大人しく明け渡しなさい！',
-        devilhunter: '悪魔狩り？ フフ, 神に仕えぬ野蛮で下品な真似ね。',
-        witch: '神の定めた時間を弄るなど, 最大の罪よ！ 異端の魔女め！',
+        android: 'あら、精巧なガラクタね。私の祭壇を飾るのにちょうどいいわ。',
+        dragon: 'トカゲの姫君？ フフ、その翼、もぎ取ってあげましょうか。',
+        knight: '貴女のその眩しい信念、私が濁らせてあげる。',
+        cthulhu:
+          '深淵？ そんな名状しがたき邪教の神なんて、私の聖なる炎で焼き尽くしてあげるわ。',
+        elf: '記憶喪失のエルフ……。憐れな迷い子に、永遠の救済を授けてあげましょう。',
+        satan: '最大の異端者……おとなしく神の裁きを受け入れなさい！',
+        devilhunter: '悪魔狩り？ フフ、神に仕えぬ野蛮で下品な真似ね。',
+        witch: '神の定めた時間を弄るなど、最大の罪よ！ 異端の魔女め！',
         oni: '穢れた鬼の血を引く異端者め！ その忌まわしい血ごと浄化してあげるわ！',
         priest:
-          '死者を操る術……！ 私の信じる暗黒神の力と, どちらが上か試してみましょうか！',
+          '死者を操る冒涜的な術……！ 異端審問官である私の聖なる力と、どちらが上か試してみましょうか！',
         default: '跪きなさい。神罰の時間はすぐそこよ。',
       },
       win: {
-        android: 'ただの鉄くずには, 祈りも必要ないわね。',
+        android: 'ただの鉄くずには、祈りも必要ないわね。',
         dragon: 'アハハハ！ 焼きトカゲの出来上がりね！',
-        knight: 'さあ, 絶望なさい！ 貴女の信じた光は, 私を救わなかったわ。',
-        cthulhu: 'フフ, 私の狂気の方が勝っていたようね。',
-        elf: '何も思い出せないまま, 私の糧になりなさい。',
-        satan: 'アハハハ！ 最高の気分よ！ 世界は私の自由になるわ！',
-        devilhunter: 'フフフ, そのまま自分の棺桶に入りなさい。',
+        knight: 'さあ、絶望なさい！ 貴女の信じた光は、私を救わなかったわ。',
+        cthulhu: 'フフ、私の苛烈な信仰の方が勝っていたようね。',
+        elf: '何も思い出せないまま、私の糧になりなさい。',
+        satan:
+          'アハハハ！ 最高の気分よ！ これで世界は、すべて私の望む通りの教義で満たされるわ！',
+        devilhunter: 'フフフ、そのまま自分の棺桶に入りなさい。',
         witch: '時間は神の御手にあるもの。人間が弄るなどおこがましいのよ。',
-        oni: 'アハハハ！ 鬼の力など, 神の代行者である私には通じないのよ！',
+        oni: 'アハハハ！ 鬼の力など、神の代行者である私には通じないのよ！',
         priest:
-          '王の権威など, 暗黒神の前では塵と同じ……！ あなたの呪い, 私が頂きます！',
+          '王の権威など、絶対なる神の前では塵と同じ……！ 異端の呪いは、私が完全に祓ってあげたわ！',
         default: 'アハハハ！ これが異端者の末路よ！ 最高の眺めだわ！',
       },
       lose: {
         android: '計算通りにいかないなんて……！',
-        dragon: 'この私が, トカゲごときに……ぐぬぬ……！',
-        knight: 'その光……不愉快だわ, 消えなさい！',
-        cthulhu: '頭が……割れる……！ 闇に飲まれるのは……イヤァァ！',
+        dragon: 'この私が、トカゲごときに……ぐぬぬ……！',
+        knight: 'その光……不愉快だわ、消えなさい！',
+        cthulhu: '頭が……割れる……！ 異端に飲まれるのは……イヤァァ！',
         elf: 'ただのエルフに……この矢は……まさか選ばれし者の……！？',
-        satan: 'おのれ……まだ, 力が足りないというの……！？',
-        devilhunter: '野蛮な鉄の塊に, 神の代行者であるこの私が……！？',
+        satan: 'おのれ……まだ、私の信仰が足りないというの……！？',
+        devilhunter: '野蛮な鉄の塊に、神の代行者であるこの私が……！？',
         witch: '神罰が……時間に阻まれるなんて……！？',
-        oni: '異端の呪術が, 私の聖なる力（暗黒）を封じるなんて……！？ あり得ないわ！',
-        priest: '王族の呪い……こんなにも深く, 重いなんて……！',
+        oni: '穢れた呪術が、私の聖なる裁きの力を封じるなんて……！？ あり得ないわ！',
+        priest: '王族の呪い……こんなにも深く、重いなんて……！',
         default: 'バカな……神に見放されたというの……！？ おのれぇー！',
       },
       damage: ['汚らわしいわね！', 'この私に……！', 'チッ……！', '不敬よ！'],
-      skill: '背徳の悦びを教えてあげるわ……死に絶えなさい！',
+      skill: '浄化の苦痛を教えてあげるわ……灰と化しなさい！',
     },
 
     storyEnding: [
       {
         speaker: 'player',
-        text: 'ついに、魔王の力はすべて私のものになったわ……。',
+        text: 'ついに、魔王を浄化し……すべての異端を根絶やしにしたわ。これで世界は私の教義の元にひれ伏すのよ。',
       },
       {
         speaker: 'player',
-        text: '貴方、最後までよく仕えてくれたわね。私の「一番の下僕」として、これからも側に置かせてあげる。フフ、フフフ……。',
+        text: '貴方、最後までよく仕えてくれたわね。私の「一番の従者」として、これからも側に置いてあげる。フフ、フフフ……。',
       },
     ],
   },
@@ -1298,6 +1300,7 @@ export const CHARACTERS = {
 };
 
 // --- スキン定義とヘルパー関数 ---
+// 水着スキン
 const SKIN_NAMES = {
   android: '水陸両用装備',
   dragon: '真夏の焔竜姫',
@@ -1309,6 +1312,34 @@ const SKIN_NAMES = {
   witch: '不機嫌なサマー・グリモワール',
   oni: '涼み鬼の波打ち肌',
   priest: '墓守の休息',
+};
+
+// 学園スキン
+const SCHOOL_SKIN_NAMES = {
+  android: '献身的な後輩',
+  dragon: '放課後ディストーション',
+  knight: '必勝の剣道部主将',
+  cthulhu: '妖しきオカ研部長',
+  elf: '癒しの飼育委員',
+  cleric: '恐怖の特別指導',
+  devilhunter: '孤高のスケバン',
+  witch: '気怠げな親友の妹',
+  oni: '鬼の風紀委員',
+  priest: 'ミステリアスな留学生',
+};
+
+// 高難易度スキン
+const HIGH_SKIN_NAMES = {
+  android: 'フルアーマーユニット',
+  dragon: '熱砂の客人',
+  knight: '暗黒騎士',
+  cleric: '断罪の執行者',
+  cthulhu: '魔界の征服者',
+  elf: 'リナ&ヴォイテク',
+  devilhunter: 'ゴーストライダー',
+  witch: '時空の探索者',
+  oni: '紅月ノ狂鬼',
+  // priest は未実装のためガードとして空にするか未定義にしておく
 };
 
 Object.values(CHARACTERS).forEach((char) => {
@@ -1329,100 +1360,30 @@ Object.values(CHARACTERS).forEach((char) => {
       icon: `assets/icons/icon_${char.id}_summer.png`,
       iconDamage: `assets/icons/icon_${char.id}_summer_damage.png`,
     },
+    school: {
+      id: 'school',
+      name: SCHOOL_SKIN_NAMES[char.id] || '学園スキン',
+      image: `assets/characters/char_${char.id}_school.png`,
+      imageLose: `assets/characters/char_${char.id}_school_lose.png`,
+      icon: `assets/icons/icon_${char.id}_school.png`,
+      iconDamage: `assets/icons/icon_${char.id}_school_damage.png`,
+      unlockCondition: 'イベント報酬',
+    },
   };
+
+  // 高難易度スキン（未実装キャラをガード）
+  if (HIGH_SKIN_NAMES[char.id]) {
+    char.skins[`${char.id}_high`] = {
+      id: `${char.id}_high`,
+      name: HIGH_SKIN_NAMES[char.id],
+      image: `assets/characters/char_${char.id}_high.png`,
+      imageLose: `assets/characters/char_${char.id}_high_lose.png`,
+      icon: `assets/icons/icon_${char.id}_high.png`,
+      iconDamage: `assets/icons/icon_${char.id}_high_damage.png`,
+      unlockCondition: '実績達成で入手',
+    };
+  }
 });
-
-CHARACTERS.android.skins['android_high'] = {
-  id: 'android_high',
-  name: 'フルアーマーユニット',
-  image: 'assets/characters/char_android_high.png',
-  imageLose: 'assets/characters/char_android_high_lose.png',
-  icon: 'assets/icons/icon_android_high.png',
-  iconDamage: 'assets/icons/icon_android_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
-
-CHARACTERS.dragon.skins['dragon_high'] = {
-  id: 'dragon_high',
-  name: '熱砂の客人',
-  image: 'assets/characters/char_dragon_high.png',
-  imageLose: 'assets/characters/char_dragon_high_lose.png',
-  icon: 'assets/icons/icon_dragon_high.png',
-  iconDamage: 'assets/icons/icon_dragon_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
-
-CHARACTERS.knight.skins['knight_high'] = {
-  id: 'knight_high',
-  name: '暗黒騎士',
-  image: 'assets/characters/char_knight_high.png',
-  imageLose: 'assets/characters/char_knight_high_lose.png',
-  icon: 'assets/icons/icon_knight_high.png',
-  iconDamage: 'assets/icons/icon_knight_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
-
-CHARACTERS.cleric.skins['cleric_high'] = {
-  id: 'cleric_high',
-  name: '断罪の執行者',
-  image: 'assets/characters/char_cleric_high.png',
-  imageLose: 'assets/characters/char_cleric_high_lose.png',
-  icon: 'assets/icons/icon_cleric_high.png',
-  iconDamage: 'assets/icons/icon_cleric_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
-
-// ============================================================
-// 高難易度スキン定義
-// ============================================================
-
-CHARACTERS.cthulhu.skins['cthulhu_high'] = {
-  id: 'cthulhu_high',
-  name: '魔界の征服者',
-  image: 'assets/characters/char_cthulhu_high.png',
-  imageLose: 'assets/characters/char_cthulhu_high_lose.png',
-  icon: 'assets/icons/icon_cthulhu_high.png',
-  iconDamage: 'assets/icons/icon_cthulhu_high_damage.png',
-};
-
-CHARACTERS.elf.skins['elf_high'] = {
-  id: 'elf_high',
-  name: 'リナ&ヴォイテク',
-  image: 'assets/characters/char_elf_high.png',
-  imageLose: 'assets/characters/char_elf_high_lose.png',
-  icon: 'assets/icons/icon_elf_high.png',
-  iconDamage: 'assets/icons/icon_elf_high_damage.png',
-};
-
-CHARACTERS.devilhunter.skins['devilhunter_high'] = {
-  id: 'devilhunter_high',
-  name: 'ゴーストライダー',
-  image: 'assets/characters/char_devilhunter_high.png',
-  imageLose: 'assets/characters/char_devilhunter_high_lose.png',
-  icon: 'assets/icons/icon_devilhunter_high.png',
-  iconDamage: 'assets/icons/icon_devilhunter_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
-
-CHARACTERS.witch.skins['witch_high'] = {
-  id: 'witch_high',
-  name: '時空の探索者',
-  image: 'assets/characters/char_witch_high.png',
-  imageLose: 'assets/characters/char_witch_high_lose.png',
-  icon: 'assets/icons/icon_witch_high.png',
-  iconDamage: 'assets/icons/icon_witch_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
-
-CHARACTERS.oni.skins['oni_high'] = {
-  id: 'oni_high',
-  name: '紅月ノ狂鬼',
-  image: 'assets/characters/char_oni_high.png',
-  imageLose: 'assets/characters/char_oni_high_lose.png',
-  icon: 'assets/icons/icon_oni_high.png',
-  iconDamage: 'assets/icons/icon_oni_high_damage.png',
-  unlockCondition: '実績達成で入手',
-};
 
 // ============================================================
 // 夏スキン台詞
@@ -1504,6 +1465,90 @@ CHARACTERS.priest.skins.summer.dialogue = {
   win: '……冷たい水に流されたな……。静かに沈むといい……。',
   lose: '……水を含んだ砂は……重い……。',
   skill: '……水底の静寂。波に飲まれろ……！',
+};
+
+// ============================================================
+// 学園スキン台詞
+// ============================================================
+
+CHARACTERS.android.skins.school.dialogue = {
+  intro:
+    '先輩、サポートはお任せください！ 相手が誰であろうと、私が先輩をお守りします！',
+  win: '無事クリアですね。先輩に怪我がなくて安心しました。',
+  lose: 'すみません、先輩……私の力不足で……っ！',
+  skill: '先輩には指一本触れさせません！ 全力でいきます！',
+};
+
+CHARACTERS.dragon.skins.school.dialogue = {
+  intro:
+    'アタシの爆音ライブに巻き込まれる覚悟はできてる？ さあ、ガンガンにいくわよ！',
+  win: 'はっはー！ 最高のセッションだったわ！ アンタらじゃアタシのビートにはついてこれないわね！',
+  lose: '痛っ！ ちょっと、大事なギターに傷がついたらどうしてくれんのよ……！',
+  skill: 'アタシの魂のシャウト！ 鼓膜ごと全部揺さぶってあげるわ！！',
+};
+
+CHARACTERS.knight.skins.school.dialogue = {
+  intro:
+    '喧嘩を売られたからには容赦はしない。我が剣道部の誇りにかけて、いざ尋常に勝負！',
+  win: '日々の鍛錬の賜物だな！ 己の未熟さを知るがいい！',
+  lose: 'くっ……私の踏み込みが甘かったか……一本、取られたな……！',
+  skill: '剣は心なり！ 迷いを断ち切る、渾身の一撃！！',
+};
+
+CHARACTERS.cthulhu.skins.school.dialogue = {
+  intro:
+    'うふふ……部活の邪魔をするなんて、いい度胸ね。呪いの儀式の実験台にしてもいいかしら？',
+  win: '残念。あなたはあちら側の世界には耐えられなかったみたいね。',
+  lose: 'あら……今日の占いは最下位だったものね。大人しく退散するわ……。',
+  skill: '学園七不思議の呪い……一緒に狂ってみましょう？',
+};
+
+CHARACTERS.elf.skins.school.dialogue = {
+  intro:
+    '争いごとは好きじゃないけれど……あなたが立ち塞がるなら、私も引くわけにはいかないわ。',
+  win: '怪我はないかしら……？ ごめんなさい、少しやりすぎちゃったわね。',
+  lose: 'ごめんなさい……これ以上は、もう無理みたい……。',
+  skill: 'どうかお願い！ 私の想い、まっすぐに届いて！',
+};
+
+CHARACTERS.cleric.skins.school.dialogue = {
+  intro:
+    'あら、私に逆らうなんていい度胸をした生徒ね。きっちり身をもって指導してあげるわ！',
+  win: '最高の特別指導になったわ！ あなたの泣き顔というご褒美付きでね！ アハハ！',
+  lose: 'ちょっと……！ 生徒の分際で、教師の私に盾突くなんて……！！',
+  skill: '退学になりたくなければ、私の言うことを聞きなさい！！',
+};
+
+CHARACTERS.devilhunter.skins.school.dialogue = {
+  intro:
+    'アタシに喧嘩を売るなんて、命知らずな奴らね。後悔しても遅いわよ、ボコボコにしてあげる！',
+  win: '口ほどにもないわね。さて、戦利品で甘いものでも食べに行こうかしら。',
+  lose: 'あーあ、おろしたての制服が台無しよ。今日の喧嘩は大赤字ね。',
+  skill: '気合入れていきな！ きっちりシメてあげるわ！',
+};
+
+CHARACTERS.witch.skins.school.dialogue = {
+  intro:
+    'はぁ……争いごととか面倒だって言ったのに、なんで私が戦わなきゃいけないんですか。さっさと終わらせますよ。',
+  win: '終わりました？ じゃあ、早くクーラーの効いた部屋に帰らせてください。',
+  lose: '痛いし、疲れたし、もう最悪です。私、帰ります！',
+  skill: '早く終わらせて帰りたいんです！ ええい、もう吹き飛んでください！！',
+};
+
+CHARACTERS.oni.skins.school.dialogue = {
+  intro:
+    '風紀委員として、校則違反のあなたたちを見過ごすわけにはいきません。実力行使で排除します！',
+  win: '服装の乱れは心の乱れ……よし、私に問題はありませんね。',
+  lose: 'あぁ……せっかく直したネクタイが、また乱れてしまって……！',
+  skill: '生徒手帳第3条！ 風紀を乱す者は、私が厳正に処罰します！',
+};
+
+CHARACTERS.priest.skins.school.dialogue = {
+  intro:
+    '……立ち塞がるなら、排除する。……私には、やらなきゃいけない課題があるから……。',
+  win: '……終わった……。静かに、眠るといい……。',
+  lose: '……少し、計算が狂った……退避する……。',
+  skill: '……邪魔だ。……退いて……！',
 };
 
 // ============================================================

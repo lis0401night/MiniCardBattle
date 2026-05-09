@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { showOnlineMenu } from '../hooks/uiMainCore.js';
+import { GameState } from '../hooks/gameState.js';
 
 export default function OnlineRulesScreen() {
   useEffect(() => {
@@ -9,8 +10,27 @@ export default function OnlineRulesScreen() {
     if (c) c.scrollTop = 0;
   }, []);
 
+  const getBackgroundImage = () => {
+    if (GameState.gameMode === 'tournament') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
+    }
+    return undefined; // デフォルトはCSSの指定に任せるか親の背景を透かす
+  };
+
   return (
-    <div id="screen-online-rules" className="screen active">
+    <div
+      id="screen-online-rules"
+      className="screen active"
+      style={
+        getBackgroundImage()
+          ? {
+              backgroundImage: getBackgroundImage(),
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : {}
+      }
+    >
       <h2
         style={{
           color: '#facc15',

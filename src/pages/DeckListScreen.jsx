@@ -15,6 +15,13 @@ export default function DeckListScreen() {
   const [renderVersion, setRenderVersion] = useState(0);
   const [currentPage, setCurrentPage] = useState(GameState.deckListPage || 0);
 
+  const getBackgroundImage = () => {
+    if (GameState.gameMode === 'tournament') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
+    }
+    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`;
+  };
+
   // ページ位置のグローバル保存
   useEffect(() => {
     GameState.deckListPage = currentPage;
@@ -338,7 +345,7 @@ export default function DeckListScreen() {
       id="screen-deck-list"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`,
+        backgroundImage: getBackgroundImage(),
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         position: 'relative',

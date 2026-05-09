@@ -22,7 +22,7 @@ export default function HighDifficultyRulesScreen() {
       </h2>
       <div className="rule-box">
         <ul>
-          <li>高難易度は、特別な対戦相手と戦うモードです。</li>
+          <li>特別な対戦相手と戦うモードです。</li>
           <li>ここでしか手に入らない限定の報酬を手に入れましょう。</li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}

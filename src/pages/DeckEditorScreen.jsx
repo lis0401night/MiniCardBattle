@@ -11,6 +11,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from '../hooks/battle.js';
+import { saveTournamentProgress } from '../hooks/tournament.js';
 import {
   getInitialDeck,
   loadDeck,
@@ -184,6 +185,13 @@ export default function DeckEditorScreen() {
       GameState.gameMode === 'free_deck_edit'
     ) {
       if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(false);
+    } else if (GameState.gameMode === 'tournament') {
+      if (GameState.tournament) {
+        GameState.tournament.deckEditDone = true;
+      }
+      saveTournamentProgress();
+      GameState.appState = 'tournament_bracket';
+      if (typeof window.switchScreen === 'function') window.switchScreen('screen-tournament-bracket');
     } else {
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {
@@ -254,7 +262,9 @@ export default function DeckEditorScreen() {
   });
 
   const getBackgroundImage = () => {
-    if (GameState.gameMode === 'event_satan') {
+    if (GameState.gameMode === 'tournament') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
+    } else if (GameState.gameMode === 'event_satan') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
     } else if (
       GameState.gameMode === 'defense_register' ||

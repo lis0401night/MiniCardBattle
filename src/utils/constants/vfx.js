@@ -128,7 +128,7 @@ export const VFX_DATA = {
   },
 
   // エリシアSPスキル「暗黒の儀式」用VFX
-  anm_dark_ritual: {
+  anm_god_flame: {
     type: 'sprite',
     src: 'assets/vfx/hujimiyaeffect_shadowattack.png',
     columns: 6,

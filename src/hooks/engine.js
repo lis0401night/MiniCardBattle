@@ -561,7 +561,8 @@ export function applyActiveSkillLogic(
           const removeIdx = myHandRef.findIndex((c) => c === targetInfo.card);
           if (removeIdx !== -1) {
             const discarded = myHandRef.splice(removeIdx, 1)[0];
-            const myD = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            const myD =
+              owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
             if (myD && !discarded.isToken) {
               const masterData = CARD_MASTER.find(
                 (m) => m.id === (discarded.baseId || discarded.id)
@@ -2785,7 +2786,7 @@ export function applyLeaderSkillLogic(
         });
       }
     }
-  } else if (action === 'dark_ritual') {
+  } else if (action === 'god_flame') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     const d = 3;
     if (isBlue) {
@@ -2799,13 +2800,13 @@ export function applyLeaderSkillLogic(
       type: 'damage_player',
       side: oppOwner,
       amount: d,
-      source: 'dark_ritual',
+      source: 'god_flame',
     });
     events.push({
       type: 'heal_player',
       side: owner,
       amount: d,
-      source: 'dark_ritual',
+      source: 'god_flame',
     });
   } else if (action === 'condemnation') {
     events.push({ type: 'leader_skill', skill: action, side: owner });

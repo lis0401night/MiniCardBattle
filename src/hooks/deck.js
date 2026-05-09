@@ -2,6 +2,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { TOURNAMENT_DECKS } from '../utils/constants/event_tournament/index.js';
 import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
@@ -106,13 +107,26 @@ export function generateDeck(owner, config, sessionId) {
       if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
 
       let recipe;
-      if (GameState.gameMode === 'campaign') {
+      if (GameState.gameMode === 'tournament' && recipeId.startsWith('npc_')) {
+        const charId = recipeId.replace('npc_', '');
+        const patterns = TOURNAMENT_DECKS[charId];
+        if (patterns && patterns.length > 0) {
+          // ランダムにパターンを選ぶ
+          const patternIdx = Math.floor(Math.random() * patterns.length);
+          recipe = patterns[patternIdx];
+        } else {
+          recipe = ENEMY_DECKS[charId] || ENEMY_DECKS.android;
+        }
+      } else if (GameState.gameMode === 'campaign') {
         recipe = CAMPAIGN_DECKS[recipeId];
       } else {
         recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
       }
 
-      if (recipe.easy && recipe.normal && recipe.hard) {
+      if (Array.isArray(recipe)) {
+        // パターンデッキやキャンペーンデッキの場合
+        deckIds = recipe;
+      } else if (recipe.easy && recipe.normal && recipe.hard) {
         if (typeof GameState.aiLevel !== 'undefined') {
           if (GameState.aiLevel == 1) deckIds = recipe.easy;
           else if (GameState.aiLevel == 3) deckIds = recipe.hard;
@@ -120,8 +134,6 @@ export function generateDeck(owner, config, sessionId) {
         } else {
           deckIds = recipe.normal;
         }
-      } else if (Array.isArray(recipe)) {
-        deckIds = recipe;
       } else {
         deckIds = Array.isArray(ENEMY_DECKS.android)
           ? ENEMY_DECKS.android
@@ -375,6 +387,34 @@ export function loadDeck() {
         GameState.decks = [];
       }
     }
+  } else if (GameState.gameMode === 'tournament') {
+    const tournamentSaved = localStorage.getItem('mini_card_battle_tournament_deck_obj');
+    if (tournamentSaved) {
+      GameState.currentDeckIndex = 0; // トーナメント時は専用の0番目（スナップショット）を使用する
+      try {
+        GameState.decks = [JSON.parse(tournamentSaved)];
+      } catch (e) {
+        GameState.decks = [];
+      }
+    } else {
+      // スナップショットがない場合（初期化前）は現在の通常デッキを読み込み、選択したインデックスを維持する
+      const decksSaved = localStorage.getItem('mini_card_battle_decks');
+      if (decksSaved) {
+        try {
+          GameState.decks = JSON.parse(decksSaved);
+        } catch (e) {
+          GameState.decks = [];
+        }
+      } else {
+        GameState.decks = [];
+      }
+      if (
+        GameState.currentDeckIndex >= GameState.decks.length ||
+        GameState.currentDeckIndex < 0
+      ) {
+        GameState.currentDeckIndex = 0;
+      }
+    }
   } else {
     // 通常のデッキ（最大20個）
     const decksSaved = localStorage.getItem('mini_card_battle_decks');
@@ -399,13 +439,16 @@ export function loadDeck() {
   if (!GameState.decks || GameState.decks.length === 0) {
     if (
       GameState.gameMode === 'defense_register' ||
-      GameState.gameMode === 'battle_dungeon'
+      GameState.gameMode === 'battle_dungeon' ||
+      GameState.gameMode === 'tournament'
     ) {
       createNewDeck('knight');
       if (GameState.gameMode === 'defense_register')
         GameState.decks[0].name = '防衛デッキ';
       if (GameState.gameMode === 'battle_dungeon')
         GameState.decks[0].name = '試練の宮殿デッキ';
+      if (GameState.gameMode === 'tournament')
+        GameState.decks[0].name = 'トーナメントデッキ';
     } else {
       // 新規プレイヤー向けの初期設定：全キャラクター（リーダー）分の初期デッキを生成
       const leaderIds = Object.keys(CHARACTERS).filter(
@@ -557,6 +600,11 @@ export function saveCurrentEditDeck() {
     } else if (GameState.gameMode === 'battle_dungeon') {
       localStorage.setItem(
         'mini_card_battle_dungeon_deck_obj',
+        JSON.stringify(activeDeck)
+      );
+    } else if (GameState.gameMode === 'tournament') {
+      localStorage.setItem(
+        'mini_card_battle_tournament_deck_obj',
         JSON.stringify(activeDeck)
       );
     } else {

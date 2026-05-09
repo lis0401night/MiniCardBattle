@@ -32,7 +32,13 @@ export default function DialogueScreen() {
   const d = dialogueData;
 
   let bgName = 'background_select.png';
-  if (
+  if (GameState.gameMode === 'tournament') {
+    if (GameState.appState === 'pre_dialogue') {
+      bgName = 'background_tournament01.png';
+    } else {
+      bgName = 'background_tournament02.png';
+    }
+  } else if (
     GameState.gameMode === 'battle_dungeon' ||
     GameState.gameMode === 'dungeon'
   ) {
