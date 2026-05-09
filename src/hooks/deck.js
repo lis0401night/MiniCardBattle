@@ -390,36 +390,41 @@ export function loadDeck() {
       }
     }
   } else if (GameState.gameMode === 'tournament') {
-    // トーナメント進行中（GameState.tournament が存在する）場合のみスナップショットデッキを使用する。
-    // デッキ選択画面（初期化前）では通常デッキを表示する。
-    // ※ スナップショットは再開用の一時データであり、デッキ一覧に表示するものではない。
-    const tournamentSaved = localStorage.getItem(
-      'mini_card_battle_tournament_deck_obj'
-    );
-    if (GameState.tournament && tournamentSaved) {
-      GameState.currentDeckIndex = 0; // トーナメント時は専用の0番目（スナップショット）を使用する
+    // トーナメントモードでも GameState.decks には常に通常デッキを読み込む。
+    // スナップショットデッキは playerDeckSelection にのみ適用し、
+    // デッキ一覧画面に表示されないようにする。
+    const decksSaved = localStorage.getItem('mini_card_battle_decks');
+    if (decksSaved) {
       try {
-        GameState.decks = [JSON.parse(tournamentSaved)];
+        GameState.decks = JSON.parse(decksSaved);
       } catch (e) {
         GameState.decks = [];
       }
     } else {
-      // トーナメント未開始 or スナップショットなし：通常デッキを読み込み、選択させる
-      const decksSaved = localStorage.getItem('mini_card_battle_decks');
-      if (decksSaved) {
-        try {
-          GameState.decks = JSON.parse(decksSaved);
-        } catch (e) {
-          GameState.decks = [];
-        }
-      } else {
-        GameState.decks = [];
-      }
-      if (
-        GameState.currentDeckIndex >= GameState.decks.length ||
-        GameState.currentDeckIndex < 0
-      ) {
-        GameState.currentDeckIndex = 0;
+      GameState.decks = [];
+    }
+    if (
+      GameState.currentDeckIndex >= GameState.decks.length ||
+      GameState.currentDeckIndex < 0
+    ) {
+      GameState.currentDeckIndex = 0;
+    }
+
+    // トーナメント進行中はスナップショットデッキをplayerDeckSelectionに反映する
+    const tournamentSaved = localStorage.getItem(
+      'mini_card_battle_tournament_deck_obj'
+    );
+    if (GameState.tournament && tournamentSaved) {
+      try {
+        const snapDeck = JSON.parse(tournamentSaved);
+        GameState.playerDeckSelection = (snapDeck.cards || [])
+          .map((id) => {
+            const template = CARD_MASTER.find((c) => c.id === id);
+            return template ? { ...template } : null;
+          })
+          .filter(Boolean);
+      } catch (e) {
+        // スナップショット読み込みエラー時は通常デッキのselectionを使用
       }
     }
   } else {

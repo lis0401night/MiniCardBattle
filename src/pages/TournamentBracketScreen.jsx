@@ -6,9 +6,13 @@ import {
   startTournamentMatch,
 } from '../hooks/tournament.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
-import { getOrCreateUUID, playSound, switchScreen } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
 import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
+import {
+  getOrCreateUUID,
+  playSound,
+  switchScreen,
+} from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 const SVG_WIDTH = 1100;
 const SVG_HEIGHT = 900;
@@ -16,8 +20,6 @@ const BOX_WIDTH = 300;
 const BOX_HEIGHT = 70;
 const CHAMPION_WIDTH = 180;
 const CHAMPION_X = 460;
-
-
 
 const getYPos = (r, idx) => {
   if (r === 0) {
@@ -69,6 +71,9 @@ export default function TournamentBracketScreen() {
       const pointsMap = [0, 1, 3, 6, 10];
       let points = pointsMap[winCount] || 0;
       clearTournamentSave();
+      // トーナメント終了後、通常モードに戻すためGameStateをリセット
+      GameState.tournament = null;
+      GameState.gameMode = 'free';
       if (points > 0) {
         let currentPts =
           parseInt(
@@ -97,7 +102,9 @@ export default function TournamentBracketScreen() {
               points: currentPts,
               total_points: totalPts,
             }),
-          }).catch((err) => console.error('Failed to sync tournament points:', err));
+          }).catch((err) =>
+            console.error('Failed to sync tournament points:', err)
+          );
         }
       }
 
