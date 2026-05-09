@@ -553,6 +553,39 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 40,
     reward: { type: 'card', value: 'dicejuggler', name: 'ダイスジャグラー' },
   },
+  // --- 夢幻の闘技祭 ---
+  {
+    id: 'tournament_round_1',
+    title: '闘技祭の幕開け',
+    description: '夢幻の闘技祭で1回戦に勝利する',
+    type: 'event_clear',
+    targetValue: 'tournament_round_1',
+    reward: { type: 'card', value: 'bell', name: '葬送の鐘' },
+  },
+  {
+    id: 'tournament_round_2',
+    title: '勝ち上がる闘志',
+    description: '夢幻の闘技祭で2回戦に勝利する',
+    type: 'event_clear',
+    targetValue: 'tournament_round_2',
+    reward: { type: 'card', value: 'bell', name: '葬送の鐘' },
+  },
+  {
+    id: 'tournament_round_3',
+    title: '決勝への道',
+    description: '夢幻の闘技祭で3回戦に勝利する',
+    type: 'event_clear',
+    targetValue: 'tournament_round_3',
+    reward: { type: 'card', value: 'bell', name: '葬送の鐘' },
+  },
+  {
+    id: 'tournament_round_4',
+    title: '夢幻の覇者',
+    description: '夢幻の闘技祭で決勝戦に勝利する',
+    type: 'event_clear',
+    targetValue: 'tournament_round_4',
+    reward: { type: 'card', value: 'bell', name: '葬送の鐘' },
+  },
   // --- 実績達成数 ---
   {
     id: 'total_unlock_5',

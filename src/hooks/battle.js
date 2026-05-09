@@ -3234,6 +3234,11 @@ export function endBattle() {
     if (GameState.gameMode === 'tournament') {
       import('./tournament.js').then(({ simulateTournamentRound }) => {
         if (GameState.lastBattleResult === 'win') {
+          // トーナメント各ラウンド勝利の実績を記録
+          const wonRound = GameState.tournament.round;
+          import('../utils/constants/achievements.js').then(({ incrementStat }) => {
+            incrementStat('eventClear', `tournament_round_${wonRound}`);
+          });
           simulateTournamentRound();
         } else {
           GameState.tournament.playerLost = true;

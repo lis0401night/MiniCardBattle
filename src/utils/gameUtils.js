@@ -133,7 +133,6 @@ export function getDialogue(
   }
 
   if (
-    type !== 'damage' &&
     skinId !== 'default' &&
     speakerConfig.skins &&
     speakerConfig.skins[skinId] &&

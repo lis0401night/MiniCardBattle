@@ -1012,6 +1012,26 @@ export function applyActiveSkillLogic(
       });
       break;
     }
+    case 'decree': {
+      // 宣告：手札の「宣告」を持つカード枚数×valダメージを相手リーダーに与える
+      const decreeMultiplier = val || 4;
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const decreeCount = (myHand || []).filter(
+        (card) => card && hasSkill(card, 'decree')
+      ).length;
+      const decreeDmg = decreeCount * decreeMultiplier;
+      if (decreeDmg > 0) {
+        if (owner === 'blue') state.enemyHP -= decreeDmg;
+        else state.playerHP -= decreeDmg;
+        events.push({
+          type: 'damage_player',
+          side: oppOwner,
+          amount: decreeDmg,
+          source: 'decree',
+        });
+      }
+      break;
+    }
     case 'charge': {
       const chgAmt = val || 2;
       const pMaxSP = state.playerConfig?.leaderSkill?.cost || 5;

@@ -2485,6 +2485,16 @@ export const CARD_MASTER = [
     flavor:
       '欠落した半身を埋めるため、未完成のホムンクルスは強者の力を模倣する。鏡に映る己が完全な存在であると信じて。',
   },
+  {
+    id: 'bell',
+    name: '葬送の鐘',
+    rarity: 4,
+    power: 0,
+    skill: 'decree',
+    voiceCategory: 'magic',
+    flavor:
+      '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
+  },
   // {
   //   id: 'scarecrow',
   //   name: '呪いの案山子',

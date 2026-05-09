@@ -220,6 +220,12 @@ export const SKILLS = {
     icon: '💥',
     desc: (val) => `召喚時、相手リーダーに${val}ダメージ`,
   },
+  decree: {
+    name: '宣告',
+    icon: '🔔',
+    desc: (val) =>
+      `召喚時、相手リーダーに手札の「宣告」を持つカードの枚数×${val || 4}ダメージ`,
+  },
   shuffle: {
     name: '攪乱',
     icon: '🃏',
@@ -649,6 +655,7 @@ export const ACTIVE_SKILLS = [
   'resurrect',
   'standby',
   'artillery',
+  'decree',
   'shuffle',
   'summon',
   'fate',
