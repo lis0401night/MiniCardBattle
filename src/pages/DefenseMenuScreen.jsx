@@ -11,13 +11,13 @@ import {
 import { showPointAcquisitionModal } from '../hooks/uiModals.js';
 
 export default function DefenseMenuScreen() {
-  const [hasRegistered, setHasRegistered] = useState(false);
+  // 初期値でLocalStorageの登録状態を判定（useEffect内での同期的setState回避）
+  const [hasRegistered] = useState(
+    () => localStorage.getItem('mini_card_battle_deck_defense') !== null
+  );
 
   useEffect(() => {
-    // 登録状態の確認
-    const isReg =
-      localStorage.getItem('mini_card_battle_deck_defense') !== null;
-    setHasRegistered(isReg);
+    const isReg = hasRegistered;
 
     if (isReg) {
       // APIからデータを取得してポイントなどを更新するロジック（そのまま移植）

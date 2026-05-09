@@ -1,23 +1,19 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  loadDungeonProgress,
+  retireDungeon,
+  saveDungeonProgress,
+  selectRentalDeck,
+  selectRewardCard,
+  startDungeonBattle,
+} from '../hooks/battleDungeon.js';
 import { GameState } from '../hooks/gameState.js';
+import { setupLongPress } from '../hooks/uiGallery.js';
+import { showConfirmModal } from '../hooks/uiModals.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import {
-  selectRentalDeck,
-  startDungeonBattle,
-  retireDungeon,
-  selectRewardCard,
-  loadDungeonProgress,
-  saveDungeonProgress,
-} from '../hooks/battleDungeon.js';
-import {
-  playSound,
-  getCardImgUrl,
-  switchScreen,
-} from '../utils/gameUtils.js';
-import { showConfirmModal } from '../hooks/uiModals.js';
-import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { setupLongPress } from '../hooks/uiGallery.js';
+import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {
@@ -1074,8 +1070,10 @@ function OpponentSelect() {
 }
 
 function RewardSelect() {
-  const deck = GameState.enemyConfig?.dungeonDeck || [];
-  const uniqueCards = useMemo(() => [...new Set(deck)], [deck]);
+  const uniqueCards = useMemo(
+    () => [...new Set(GameState.enemyConfig?.dungeonDeck || [])],
+    []
+  );
 
   const handleSelect = (id) => {
     const c = CARD_MASTER.find((m) => m.id === id);

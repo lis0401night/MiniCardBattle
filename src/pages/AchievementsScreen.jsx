@@ -1,36 +1,72 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
+import {
+  setRenderAchievementsListHook,
+  setRenderAchievementsStatsHook,
+  showCardAcquisitionModal,
+  showPlaymatAcquisitionModal,
+  showPremiumAcquisitionModal,
+  showSkinAcquisitionModal,
+} from '../hooks/uiGallery.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 import {
   ACHIEVEMENT_MASTER,
   achievementData,
+  checkAndFixMissingRewards,
+  checkCollectionAchievements,
   claimAchievementReward,
   saveAchievements,
-  checkCollectionAchievements,
-  checkAndFixMissingRewards,
 } from '../utils/constants/achievements.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import {
-  playSound,
-  switchScreen,
-} from '../utils/gameUtils.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import {
-  setRenderAchievementsListHook,
-  showCardAcquisitionModal,
-  showPremiumAcquisitionModal,
-  showPlaymatAcquisitionModal,
-  showSkinAcquisitionModal,
-  setRenderAchievementsStatsHook,
-} from '../hooks/uiGallery.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 
 export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);
-  const [achievements, setAchievements] = useState([]);
-  const [stats, setStats] = useState({});
   const [statsOpen, setStatsOpen] = useState(false);
-  const [leaderUsage, setLeaderUsage] = useState([]);
+
+  // 初期データの計算（useEffect内での同期的setState回避）
+  const computeInitialData = () => {
+    if (typeof checkAndFixMissingRewards === 'function') {
+      checkAndFixMissingRewards();
+    }
+    if (typeof checkCollectionAchievements === 'function') {
+      checkCollectionAchievements();
+      if (typeof saveAchievements === 'function') saveAchievements();
+    }
+
+    const _achievements = ACHIEVEMENT_MASTER || [];
+    const _data = achievementData || { achievements: {}, stats: {} };
+    const usageObj = _data.stats?.leaderUsage || {};
+    const totalUsage = Object.values(usageObj).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+    const sortedChars = Object.values(CHARACTERS || {})
+      .filter((c) => c.id !== 'satan' && !c.id.startsWith('campaign_'))
+      .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
+      .map((char) => {
+        const count = usageObj[char.id] || 0;
+        const percentage =
+          totalUsage > 0 ? Math.floor((count / totalUsage) * 100) : 0;
+        return { ...char, count, percentage };
+      });
+
+    return {
+      achievements: [..._achievements],
+      stats: _data.stats || {},
+      leaderUsage: { totalUsage, chars: sortedChars },
+    };
+  };
+
+  const [achievements, setAchievements] = useState(
+    () => computeInitialData().achievements
+  );
+  const [stats, setStats] = useState(() => computeInitialData().stats);
+  const [leaderUsage, setLeaderUsage] = useState(
+    () => computeInitialData().leaderUsage
+  );
 
   const updateAchievements = () => {
     if (typeof checkAndFixMissingRewards === 'function') {
@@ -69,7 +105,6 @@ export default function AchievementsScreen() {
   };
 
   useEffect(() => {
-    updateAchievements();
     setRenderAchievementsListHook(updateAchievements);
     setRenderAchievementsStatsHook(updateAchievements); // 両方カバー
   }, []);

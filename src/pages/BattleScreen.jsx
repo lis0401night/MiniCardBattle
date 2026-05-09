@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { GameState } from '../hooks/gameState.js';
+import React, { useEffect, useState } from 'react';
 import {
+  dispatchBattleAction,
+  endPlayerTurn,
   returnToTitle,
   showEnemySkillConfirm,
   showSkillConfirm,
-  endPlayerTurn,
-  dispatchBattleAction,
 } from '../hooks/battle.js';
-import { showConfirmModal } from '../hooks/uiModals.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { GameState } from '../hooks/gameState.js';
 import {
-  setUpdateCardDetailHook,
-  setUpdateBattleUIHook,
   setSummonAnimationHook,
+  setUpdateBattleUIHook,
+  setUpdateCardDetailHook,
 } from '../hooks/uiBattle.js';
+import { showConfirmModal } from '../hooks/uiModals.js';
 import {
-  playSound,
-  isTransitioning,
-  hasSkill,
   getCardImgUrl,
+  hasSkill,
+  isTransitioning,
+  playSound,
 } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
-import EnemyArea from '../components/battle/EnemyArea.jsx';
-import PlayerArea from '../components/battle/PlayerArea.jsx';
 import Board from '../components/battle/Board.jsx';
+import EnemyArea from '../components/battle/EnemyArea.jsx';
 import Hand from '../components/battle/Hand.jsx';
+import PlayerArea from '../components/battle/PlayerArea.jsx';
 import TurnOrderOverlay from '../components/battle/TurnOrderOverlay.jsx';
 import { openCardPreview } from '../hooks/uiGallery.js';
 
 export default function BattleScreen() {
-  const [renderVersion, setRenderVersion] = useState(0);
+  const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
   const [isInitializing, setIsInitializing] = useState(true);
