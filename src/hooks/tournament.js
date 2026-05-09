@@ -210,8 +210,7 @@ export function startTournamentMatch() {
   GameState.playerConfig = { ...GameState.playerConfig };
   GameState.playerConfig.name = toTournamentName(CHARACTERS[GameState.playerConfig.id]?.name);
   
-  // テスト用に敵HPを1にする
-  GameState.enemyConfig.hp = 1;
+
 
   // 敵の学園スキンを設定（getDialogueが学園スキンの台詞を参照するために必要）
   if (!GameState.enemySkins) GameState.enemySkins = {};
