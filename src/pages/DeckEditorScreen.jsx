@@ -182,16 +182,10 @@ export default function DeckEditorScreen() {
         window.switchScreen('screen-stage-select');
     } else if (
       GameState.gameMode === 'create_deck' ||
-      GameState.gameMode === 'free_deck_edit'
+      GameState.gameMode === 'free_deck_edit' ||
+      GameState.gameMode === 'tournament'
     ) {
       if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(false);
-    } else if (GameState.gameMode === 'tournament') {
-      if (GameState.tournament) {
-        GameState.tournament.deckEditDone = true;
-      }
-      saveTournamentProgress();
-      GameState.appState = 'tournament_bracket';
-      if (typeof window.switchScreen === 'function') window.switchScreen('screen-tournament-bracket');
     } else {
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {

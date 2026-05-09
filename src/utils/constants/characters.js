@@ -1623,74 +1623,117 @@ CHARACTERS.oni.skins.oni_high.dialogue = {
   skill: '百鬼夜行……！ 忌まわしき血の宴の始まりよ！ アハハハ！',
 };
 
+
 // ============================================================
-// 高難易度チャレンジ定義
+// 高難易度イベント定義
 // ============================================================
 
-CHARACTERS.cthulhu.challenges = {
-  cthulhu_high: {
-    id: 'cthulhu_high',
-    title: '【高難易度】魔界の征服者',
-    description:
-      'サタン城の最深部で怪しげな儀式を行っているナイア。強大な力を見せつける。',
-    bgm: 'high_boss',
-    bossSetting: {
-      useSkin: 'cthulhu_high',
-      maxHP: 30,
-      initSP: 0,
-      deck: () => Promise.resolve(cthulhuHighDeck),
-      leaderSkill: {
-        name: '異界の扉',
-        desc: '(SP:2) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空（パワー0）」を加える。',
-        action: 'otherworld_gate',
-        cost: 2,
-      },
+CHARACTERS.android.event_high = {
+  id: 'android_high',
+  name: 'フルアーマー アイギス',
+  maxHP: 40,
+  leaderSkill: {
+      name: '一斉射撃',
+      desc: '(SP:4) 敵の場のすべてのカードに4ダメージ、敵リーダーに2ダメージを与える。',
+      cost: 4,
+      action: 'android_high_volley',
     },
-  },
 };
 
-CHARACTERS.elf.challenges = {
-  elf_high: {
-    id: 'elf_high',
-    title: '【高難易度】リナ&ヴォイテク',
-    description:
-      '一人前の戦士になる試練として、新たな相棒「白熊のヴォイテク」と共にリナが戦いを挑んでくる。',
-    bgm: 'high_boss',
-    bossSetting: {
-      useSkin: 'elf_high',
-      maxHP: 40,
-      initSP: 0,
-      deck: () => Promise.resolve(elfHighDeck),
-      leaderSkill: {
-        name: '連携攻撃',
-        desc: '(SP:2) 連携攻撃\n相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。',
-        cost: 2,
-        action: 'elf_polarbear_combo',
-      },
+CHARACTERS.dragon.event_high = {
+  id: 'dragon_high',
+  name: '熱砂の客人 イグニス',
+  maxHP: 40,
+  leaderSkill: {
+      name: '焦熱のプレリュード',
+      desc: '(SP:4) 場のすべてのカードに2ダメージ、自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
+      cost: 4,
+      action: 'dragon_high_ritual',
     },
-  },
 };
 
-CHARACTERS.cleric.challenges = {
-  cleric_high: {
-    id: 'cleric_high',
-    title: '【高難易度】断罪の執行者 エリシア',
-    description:
-      '神の代行者を自称し、本性を現したエリシア。その強大な神聖（暗黒）魔力は、対峙する者に逃れ得ぬ断罪を突きつける。',
-    bgm: 'high_boss',
-    bossSetting: {
-      useSkin: 'cleric_high',
-      maxHP: 40,
-      initSP: 0,
-      deck: () => Promise.resolve(clericHighDeck),
-      leaderSkill: {
-        name: '断罪の執行',
-        desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。',
-        cost: 3,
-        action: 'condemnation',
-      },
+CHARACTERS.knight.event_high = {
+  id: 'knight_high',
+  name: '暗黒騎士 セレスティア',
+  maxHP: 40,
+  leaderSkill: {
+      name: '暗黒の軍勢',
+      desc: '(SP:3) 自分のレーンに「騎士(P:2/必殺/守護)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。',
+      cost: 3,
+      action: 'evil_march',
     },
-  },
+};
+
+CHARACTERS.cthulhu.event_high = {
+  id: 'cthulhu_high',
+  name: '魔界の征服者 ナイア',
+  maxHP: 40,
+  leaderSkill: {
+      name: '異界の扉',
+      desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
+      cost: 3,
+      action: 'otherworld_gate',
+    },
+};
+
+CHARACTERS.elf.event_high = {
+  id: 'elf_high',
+  name: 'リナ&ヴォイテク',
+  maxHP: 40,
+  leaderSkill: {
+      name: '連携攻撃',
+      desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。',
+      cost: 2,
+      action: 'elf_polarbear_combo',
+    },
+};
+
+CHARACTERS.cleric.event_high = {
+  id: 'cleric_high',
+  name: '断罪の執行者 エリシア',
+  maxHP: 40,
+  leaderSkill: {
+      name: 'ギロチンクロス',
+      desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。',
+      cost: 3,
+      action: 'condemnation',
+    },
+};
+
+CHARACTERS.devilhunter.event_high = {
+  id: 'devilhunter_high',
+  name: 'ゴーストライダー マリア',
+  maxHP: 40,
+  leaderSkill: {
+      name: 'オーバードライブ',
+      desc: '(SP:3) 自分の墓地からカードを1枚選び、自分のレーンに配置する。相手の墓地からカードを1枚選び、自分のレーンに配置する。',
+      cost: 3,
+      action: 'overdrive',
+    },
+};
+
+CHARACTERS.witch.event_high = {
+  id: 'witch_high',
+  name: '時空の探索者 クロエ',
+  maxHP: 40,
+  leaderSkill: {
+      name: '世界の再構築',
+      desc: '(SP:3) お互いの手札を全て捨て、墓地をリセットする。その後、自分は4枚、相手は3枚引く。追加のターンを1回行う。\n(ただし、追加ターン中はSPは溜まらず攻撃もできない)',
+      cost: 3,
+      action: 'world_reconstruct',
+    },
+};
+
+CHARACTERS.oni.event_high = {
+  id: 'oni_high',
+  name: '紅月ノ狂鬼 カグラ',
+  maxHP: 40,
+  leaderSkill: {
+      name: '百鬼夜行',
+      desc: '(SP:3) 相手のレーンを2つまで選択する。そのレーンのカードに4ダメージを与え、レーンを1ターン封印する。自分の場に「人魂（パワー1）」を2体まで配置する。',
+      cost: 3,
+      action: 'night_parade',
+    },
 };
 
 /**

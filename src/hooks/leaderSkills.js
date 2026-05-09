@@ -608,8 +608,8 @@ export async function executeLeaderSkillAction(
           validCards,
           maxPow,
           owner,
-          '復活させるカードを選択',
-          'カードを1枚場に出します。'
+          '復活: 配置するカードを選択',
+          '自分の墓地からカードを1枚配置します。'
         );
       }
       if (!selectedCard) return;

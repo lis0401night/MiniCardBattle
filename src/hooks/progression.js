@@ -37,15 +37,7 @@ export function handleProgressionNextStep() {
     }
   } else if (
     GameState.gameMode === 'event_satan' ||
-    GameState.gameMode === 'event_android_high' ||
-    GameState.gameMode === 'event_dragon_high' ||
-    GameState.gameMode === 'event_knight_high' ||
-    GameState.gameMode === 'event_cthulhu_high' ||
-    GameState.gameMode === 'event_elf_high' ||
-    GameState.gameMode === 'event_cleric_high' ||
-    GameState.gameMode === 'event_devilhunter_high' ||
-    GameState.gameMode === 'event_witch_high' ||
-    GameState.gameMode === 'event_oni_high'
+    (GameState.gameMode.startsWith('event_') && GameState.gameMode.endsWith('_high'))
   ) {
     if (typeof handleEventProgression === 'function') {
       handleEventProgression();
@@ -66,28 +58,68 @@ export function handleProgressionNextStep() {
         GameState.appState = 'battle';
         import('./battle.js').then(({ prepareBattle }) => {
           prepareBattle();
-          switchScreen('screen-battle');
+        });
+      });
+      return;
+    }
+
+    if (GameState.appState === 'post_dialogue') {
+      if (GameState.lastBattleResult === 'win') {
+        if (GameState.tournament && GameState.tournament.round === 5) {
+          import('./tournament.js').then(({ playTournamentWinDialogue }) => {
+            playTournamentWinDialogue();
+          });
+          return;
+        } else {
+          import('./tournament.js').then(({ playTournamentPostMatchDialogue }) => {
+            playTournamentPostMatchDialogue();
+          });
+          return;
+        }
+      } else {
+        // 敗北時はそのままブラケットへ
+        import('./tournament.js').then(({ saveTournamentProgress }) => {
+          saveTournamentProgress();
+          switchScreen('screen-tournament-bracket');
+        });
+        return;
+      }
+    }
+
+    if (GameState.appState === 'pre_dialogue') {
+      import('./tournament.js').then(({ playTournamentVenueDialogue }) => {
+        playTournamentVenueDialogue();
+      });
+      return;
+    }
+
+    if (GameState.appState === 'venue_dialogue' || GameState.appState === 'post_tournament_match' || GameState.appState === 'tournament_win_dialogue') {
+      import('./tournament.js').then(({ saveTournamentProgress }) => {
+        saveTournamentProgress();
+        import('./uiMainCore.js').then(({ performFadeTransition }) => {
+          performFadeTransition(() => {
+            switchScreen('screen-tournament-bracket');
+          });
         });
       });
       return;
     }
 
     if (GameState.tournament && (GameState.tournament.playerLost || GameState.tournament.round > 4)) {
-      // 終了処理 (ポイント付与などはBracket画面で行うか、ここでやるか)
-      // Bracket画面で優勝/敗北を表示してから戻りたいので、必ずBracket画面に飛ばす
+      // 終了処理 (ポイント付与などはBracket画面で行う)
       import('./tournament.js').then(({ saveTournamentProgress }) => {
         saveTournamentProgress();
         switchScreen('screen-tournament-bracket');
       });
     } else {
-      if (GameState.tournament && GameState.tournament.round === 1 && !GameState.tournament.deckEditDone) {
-        switchScreen('screen-deck-edit');
-      } else {
-        import('./tournament.js').then(({ saveTournamentProgress }) => {
-          saveTournamentProgress();
-          switchScreen('screen-tournament-bracket');
+      import('./tournament.js').then(({ saveTournamentProgress }) => {
+        saveTournamentProgress();
+        import('./uiMainCore.js').then(({ performFadeTransition }) => {
+          performFadeTransition(() => {
+            switchScreen('screen-tournament-bracket');
+          });
         });
-      }
+      });
     }
   } else {
     // デフォルトはストーリーモード

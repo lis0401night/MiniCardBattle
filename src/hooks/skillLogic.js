@@ -1669,8 +1669,8 @@ export async function resolveActiveSkillEffect(
           validCards,
           maxPow,
           o,
-          '復活させるカードを選択',
-          `パワー${maxPow}以下のカードを1枚場に出します。`
+          '復活: 配置するカードを選択',
+          `自分の墓地からパワー${maxPow}以下のカードを1枚配置します。`
         );
       }
 
@@ -1858,7 +1858,7 @@ export async function resolveActiveSkillEffect(
           maxPow,
           o,
           '傀儡: 配置するカードを選択',
-          `相手の墓地からパワー${maxPow}以下のカードを1枚自分の場に配置します。`
+          `相手の墓地からパワー${maxPow}以下のカードを1枚配置します。`
         );
       }
 
@@ -2563,6 +2563,12 @@ async function triggerExtortInAction(c, o) {
       if (eHandRef.length === 0) break;
       const randIndex = Math.floor(getSeededRandom() * eHandRef.length);
       const discarded = eHandRef.splice(randIndex, 1)[0];
+
+      if (!discarded) {
+        i--;
+        continue;
+      }
+
       await discardCard(oppSide, discarded, undefined, false);
 
       const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {

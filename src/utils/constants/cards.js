@@ -1667,7 +1667,7 @@ export const CARD_MASTER = [
       { id: 'spread', value: 1 },
       { id: 'soul_bind', value: 2 },
     ],
-    voiceCategory: 'human_female_sexy',
+    voiceCategory: 'human_female_assassin',
     flavor:
       '深き森の奥に工房を構え、秘術を操る魔女。恐ろしい噂とは裏腹に、相応の金貨や珍しい素材さえ前払いで渡せば、大抵の厄介な依頼はきっちりとこなしてくれる。',
   },
@@ -1916,7 +1916,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [{ id: 'draw', value: 3 }, { id: 'deadly' }],
-    voiceCategory: 'human_female_sexy',
+    voiceCategory: 'human_female_cool',
     flavor:
       '”世界で一番美しいのは誰？”——その問いに答える者がいなくなるまで、ただ愚か者を狩り尽くすのみ。',
   },
@@ -2382,7 +2382,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 6,
     skills: [{ id: 'legendary' }, { id: 'petrify' }, { id: 'double_strike' }],
-    voiceCategory: 'human_female_sexy',
+    voiceCategory: 'human_female_cool',
     flavor:
       '蛇の髪を持つ美しき戦乙女。その一瞥を受けた者は石と化し、剣の一閃は必殺の一撃となる。',
   },

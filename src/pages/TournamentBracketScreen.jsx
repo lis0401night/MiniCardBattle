@@ -8,6 +8,7 @@ import {
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
 
 const SVG_WIDTH = 1100;
 const SVG_HEIGHT = 900;
@@ -16,18 +17,7 @@ const BOX_HEIGHT = 70;
 const CHAMPION_WIDTH = 180;
 const CHAMPION_X = 460;
 
-const SCHOOL_NAMES = {
-  android: '学校法人機構学園',
-  dragon: '竜ヶ峰高校',
-  knight: '音奈岸高校',
-  cthulhu: 'アザトス水産高校',
-  cleric: '聖クロース女学院',
-  elf: '迷いの森学院',
-  devilhunter: 'リアニ工業高校',
-  witch: '県立黒間道高校',
-  oni: '鬼ヶ島高校',
-  priest: '王谷ハイスクール',
-};
+
 
 const getYPos = (r, idx) => {
   if (r === 0) {
@@ -351,10 +341,10 @@ export default function TournamentBracketScreen() {
     >
       <h2
         style={{
-          color: '#334155',
+          color: '#60a5fa',
           marginBottom: '15px',
           textAlign: 'center',
-          textShadow: '0 0 5px rgba(255,255,255,0.8)',
+          textShadow: '0 0 15px rgba(59, 130, 246, 0.6)',
         }}
       >
         夢幻の闘技祭

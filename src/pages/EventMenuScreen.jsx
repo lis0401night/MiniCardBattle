@@ -1,12 +1,11 @@
-
-import { UI_IMAGES } from '../utils/constants/uiImages.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
 import {
-  startHighDifficulty,
   showDefenseMenu,
   startGameMode,
+  startHighDifficulty,
 } from '../hooks/uiMainCore.js';
+import { UI_IMAGES } from '../utils/constants/uiImages.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 
 export default function EventMenuScreen() {
   const images = UI_IMAGES || {};
@@ -48,6 +47,7 @@ export default function EventMenuScreen() {
           className="menu-img-btn"
           onClick={() => {
             playSound?.(SOUNDS?.seClick);
+            playSound?.(AUDIO_INSTANCES?.bgmTournament1);
             switchScreen?.('screen-tournament-menu');
           }}
         >

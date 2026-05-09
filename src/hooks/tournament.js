@@ -4,7 +4,20 @@ import { playSound, switchScreen, getDialogue } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { startBattleFlow, loadDeck } from './deck.js';
-import { TOURNAMENT_INTRO_DIALOGUE, getTournamentPreMatchDialogue } from '../utils/constants/eventTournamentDialogues.js';
+import { TOURNAMENT_INTRO_DIALOGUE, getTournamentPreMatchDialogue, getTournamentVenueDialogue, getTournamentPostMatchDialogue, getTournamentWinDialogue } from '../utils/constants/eventTournamentDialogues.js';
+
+/**
+ * トーナメント用キャラクター名を生成する
+ * 異世界の二つ名を除去し、学園世界観であることを示す「？」を付ける
+ * 例: "機動戦姫 アイギス" → "アイギス？"
+ */
+function toTournamentName(fullName) {
+  if (!fullName) return 'プレイヤー？';
+  // 半角・全角スペースで分割し、末尾の名前部分を取得
+  const parts = fullName.split(/[\s\u3000]+/);
+  const shortName = parts.length > 1 ? parts[parts.length - 1] : fullName;
+  return `${shortName}？`;
+}
 
 export function initTournamentMode() {
   GameState.gameMode = 'tournament';
@@ -14,7 +27,8 @@ export function initTournamentMode() {
     id: 'player',
     isPlayer: true,
     charId: GameState.pendingCharId,
-    name: GameState.playerConfig.name || CHARACTERS[GameState.pendingCharId]?.name || 'プレイヤー',
+    skin: `${GameState.pendingCharId}_school`,
+    name: toTournamentName(GameState.playerConfig.name || CHARACTERS[GameState.pendingCharId]?.name),
   };
 
   // プレイヤー以外のキャラクターを9体ランダムに選ぶ
@@ -34,7 +48,8 @@ export function initTournamentMode() {
     id: `npc_${charId}`,
     isPlayer: false,
     charId: charId,
-    name: CHARACTERS[charId].name,
+    skin: `${charId}_school`,
+    name: toTournamentName(CHARACTERS[charId].name),
     isDummy: false
   }));
 
@@ -103,16 +118,29 @@ export function initTournamentMode() {
     participants: finalBracket, // 16要素
     winners: [], // 勝者のリストを保持していく
     bracketTree: [finalBracket], // [ [16人(1回戦)], [8人(2回戦)], [4人(3回戦)], [2人(決勝)], [1人(優勝)] ]
-    playerLost: false
+    playerLost: false,
+    deckEditDone: true, // デッキ編成完了フラグ（再開時にデッキ編成画面をスキップするため）
   };
 
+  // トーナメントモードでは全キャラクターが学園スキンを使用する
+  // getDialogueが学園スキンの台詞を正しく参照できるようにGameState側にも反映する
+  if (!GameState.playerSkins) GameState.playerSkins = {};
+  GameState.playerSkins[GameState.pendingCharId] = 'school';
+  if (!GameState.enemySkins) GameState.enemySkins = {};
+
   // 会話シーンのセットアップ
+  // プレイヤー名をトーナメント形式（学園世界観）に変換する
+  GameState.playerConfig = { ...GameState.playerConfig };
+  GameState.playerConfig.name = toTournamentName(CHARACTERS[GameState.pendingCharId]?.name);
   GameState.appState = 'pre_dialogue';
-  GameState.enemyConfig = GameState.playerConfig; // 選んだデッキのキャラクターが案内役になる
+  GameState.enemyConfig = GameState.playerConfig;
+  GameState.dialogueQueue = TOURNAMENT_INTRO_DIALOGUE(GameState.playerConfig);
   
-  GameState.dialogueQueue = TOURNAMENT_INTRO_DIALOGUE(GameState.enemyConfig);
-  
-  setupDialogueScreen();
+  import('./uiMainCore.js').then(({ performFadeTransition }) => {
+    performFadeTransition(() => {
+      setupDialogueScreen();
+    });
+  });
 }
 
 // ラウンドのシミュレーション（NPC戦の勝敗決定）
@@ -177,11 +205,19 @@ export function startTournamentMatch() {
   // 敵のステータスをセットアップ
   GameState.enemyConfig = { ...CHARACTERS[opponent.charId] };
   GameState.enemyConfig.name = opponent.name;
+
+  // プレイヤー名もトーナメント形式に変換する（戦闘画面で表示される名前）
+  GameState.playerConfig = { ...GameState.playerConfig };
+  GameState.playerConfig.name = toTournamentName(CHARACTERS[GameState.playerConfig.id]?.name);
   
   // テスト用に敵HPを1にする
   GameState.enemyConfig.hp = 1;
 
-  GameState.selectedStageId = 'arena'; // トーナメント用の背景
+  // 敵の学園スキンを設定（getDialogueが学園スキンの台詞を参照するために必要）
+  if (!GameState.enemySkins) GameState.enemySkins = {};
+  GameState.enemySkins[opponent.charId] = 'school';
+
+  GameState.selectedStageId = 'practice'; // トーナメント用の背景
   GameState.aiLevel = 2; // 適度な強さ
 
   // バトル前の会話をセットアップ
@@ -241,3 +277,37 @@ export function clearTournamentSave() {
   localStorage.removeItem('mini_card_battle_tournament_save');
   localStorage.removeItem('mini_card_battle_tournament_deck_obj');
 }
+
+export function playTournamentVenueDialogue() {
+  GameState.dialogueQueue = getTournamentVenueDialogue(GameState.playerConfig);
+  GameState.appState = 'venue_dialogue';
+  import('./uiMainCore.js').then(({ performFadeTransition }) => {
+    performFadeTransition(() => {
+      setupDialogueScreen();
+    });
+  });
+}
+
+export function playTournamentPostMatchDialogue() {
+  // simulateTournamentRound() で round が既にインクリメント済みのため、
+  // 「今終わったラウンド」の台詞を取得するには round - 1 を使う
+  const finishedRound = GameState.tournament.round - 1;
+  GameState.dialogueQueue = getTournamentPostMatchDialogue(finishedRound, GameState.playerConfig);
+  GameState.appState = 'post_tournament_match';
+  import('./uiMainCore.js').then(({ performFadeTransition }) => {
+    performFadeTransition(() => {
+      setupDialogueScreen();
+    });
+  });
+}
+
+export function playTournamentWinDialogue() {
+  GameState.dialogueQueue = getTournamentWinDialogue(GameState.playerConfig);
+  GameState.appState = 'tournament_win_dialogue';
+  import('./uiMainCore.js').then(({ performFadeTransition }) => {
+    performFadeTransition(() => {
+      setupDialogueScreen();
+    });
+  });
+}
+

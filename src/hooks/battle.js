@@ -1,6 +1,7 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
+import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { MAX_HP } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
@@ -355,22 +356,18 @@ export function initBattleState() {
         : GameState.selectedStageId || 'android';
     if (GameState.gameMode === 'battle_dungeon') {
       stageId = 'dungeon';
+    } else if (GameState.gameMode === 'tournament') {
+      stageId = 'practice';
     }
     const stageData = STAGES[stageId];
-
     // BGMの再生
     let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
-    if (
+    if (GameState.gameMode === 'tournament') {
+      bgmKey = 'bgmTournament2'; // トーナメントバトル専用BGM
+    } else if (
       GameState.gameMode === 'event_satan' ||
-      GameState.gameMode === 'event_android_high' ||
-      GameState.gameMode === 'event_dragon_high' ||
-      GameState.gameMode === 'event_knight_high' ||
-      GameState.gameMode === 'event_cthulhu_high' ||
-      GameState.gameMode === 'event_elf_high' ||
-      GameState.gameMode === 'event_cleric_high' ||
-      GameState.gameMode === 'event_devilhunter_high' ||
-      GameState.gameMode === 'event_witch_high' ||
-      GameState.gameMode === 'event_oni_high'
+      (GameState.gameMode.startsWith('event_') &&
+        GameState.gameMode.endsWith('_high'))
     ) {
       bgmKey = 'bgmStageHighDifficulty';
     }
@@ -386,15 +383,8 @@ export function initBattleState() {
     }
     if (
       GameState.gameMode === 'event_satan' ||
-      GameState.gameMode === 'event_android_high' ||
-      GameState.gameMode === 'event_dragon_high' ||
-      GameState.gameMode === 'event_knight_high' ||
-      GameState.gameMode === 'event_cthulhu_high' ||
-      GameState.gameMode === 'event_elf_high' ||
-      GameState.gameMode === 'event_cleric_high' ||
-      GameState.gameMode === 'event_devilhunter_high' ||
-      GameState.gameMode === 'event_witch_high' ||
-      GameState.gameMode === 'event_oni_high'
+      (GameState.gameMode.startsWith('event_') &&
+        GameState.gameMode.endsWith('_high'))
     )
       GameState.aiLevel = 3; // 念のため再セット
 
@@ -1482,8 +1472,8 @@ export async function waitPlayerDiscardSelection(
     // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
     // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
     if (title && title.includes('探索')) {
-      const maxP = Math.max(...validCards.map(c => c.power || 0));
-      const bestCards = validCards.filter(c => (c.power || 0) === maxP);
+      const maxP = Math.max(...validCards.map((c) => c.power || 0));
+      const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
       return bestCards[Math.floor(Math.random() * bestCards.length)];
     }
     const randomIndex = Math.floor(Math.random() * validCards.length);
@@ -2951,6 +2941,8 @@ export function endBattle() {
       playSound(AUDIO_INSTANCES.bgmDefense);
     } else if (GameState.gameMode === 'high_difficulty') {
       playSound(AUDIO_INSTANCES.bgmHighDifficulty);
+    } else if (GameState.gameMode === 'tournament') {
+      playSound(AUDIO_INSTANCES.bgmTournament1);
     } else {
       playSound(AUDIO_INSTANCES.bgmTitle);
     }
@@ -3006,6 +2998,19 @@ export function endBattle() {
       GameState.dialogueQueue = GameState.dialogueQueue.filter(
         (d) => d.speaker !== 'player'
       );
+    }
+
+    // トーナメント：両キャラ表示中に司会者の実況コメントを追加
+    if (GameState.gameMode === 'tournament' && GameState.tournament) {
+      const currentRound = GameState.tournament.round;
+      const playerWon = GameState.lastBattleResult === 'win';
+      const announceLines = getTournamentPostBattleAnnounce(
+        currentRound,
+        playerWon,
+        GameState.playerConfig,
+        GameState.enemyConfig
+      );
+      GameState.dialogueQueue = [...GameState.dialogueQueue, ...announceLines];
     }
 
     if (GameState.gameMode === 'battle_dungeon') {
@@ -3144,61 +3149,14 @@ export function endBattle() {
         incrementStat('eventClear', 'satan_high');
       }
       if (
-        GameState.gameMode === 'event_android_high' &&
+        GameState.gameMode.startsWith('event_') &&
+        GameState.gameMode.endsWith('_high') &&
         typeof incrementStat === 'function'
       ) {
-        incrementStat('eventClear', 'android_high');
-      }
-      if (
-        GameState.gameMode === 'event_dragon_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'dragon_high');
-      }
-      if (
-        GameState.gameMode === 'event_knight_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'knight_high');
-      }
-      if (
-        GameState.gameMode === 'event_cthulhu_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'cthulhu_high');
-      }
-      if (
-        GameState.gameMode === 'event_elf_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'elf_high');
-      }
-      if (
-        GameState.gameMode === 'event_cleric_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'cleric_high');
-      }
-      // マリア高難易度イベントクリア実績
-      if (
-        GameState.gameMode === 'event_devilhunter_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'devilhunter_high');
-      }
-      // クロエ高難易度イベントクリア実績
-      if (
-        GameState.gameMode === 'event_witch_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'witch_high');
-      }
-      // カグラ高難易度イベントクリア
-      if (
-        GameState.gameMode === 'event_oni_high' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'oni_high');
+        const charId = GameState.gameMode
+          .replace('event_', '')
+          .replace('_high', '');
+        incrementStat('eventClear', `${charId}_high`);
       }
 
       // --- カードドロップ抽選・表示処理 ---
@@ -3217,33 +3175,14 @@ export function endBattle() {
         if (GameState.gameMode === 'event_satan' && recipeId === 'satan')
           recipeId = 'satan_high';
         if (
-          GameState.gameMode === 'event_android_high' &&
-          recipeId === 'android'
-        )
-          recipeId = 'android_high';
-        if (GameState.gameMode === 'event_dragon_high' && recipeId === 'dragon')
-          recipeId = 'dragon_high';
-        if (GameState.gameMode === 'event_knight_high' && recipeId === 'knight')
-          recipeId = 'knight_high';
-        if (
-          GameState.gameMode === 'event_cthulhu_high' &&
-          recipeId === 'cthulhu'
-        )
-          recipeId = 'cthulhu_high';
-        if (GameState.gameMode === 'event_elf_high' && recipeId === 'elf')
-          recipeId = 'elf_high';
-        if (GameState.gameMode === 'event_cleric_high' && recipeId === 'cleric')
-          recipeId = 'cleric_high';
-        if (
-          GameState.gameMode === 'event_devilhunter_high' &&
-          recipeId === 'devilhunter'
-        )
-          recipeId = 'devilhunter_high';
-        if (GameState.gameMode === 'event_witch_high' && recipeId === 'witch')
-          recipeId = 'witch_high';
-        if (GameState.gameMode === 'event_oni_high' && recipeId === 'oni')
-          recipeId = 'oni_high';
-
+          GameState.gameMode.startsWith('event_') &&
+          GameState.gameMode.endsWith('_high')
+        ) {
+          const charId = GameState.gameMode
+            .replace('event_', '')
+            .replace('_high', '');
+          if (recipeId === charId) recipeId = `${charId}_high`;
+        }
         const diffKey =
           GameState.aiLevel === 1
             ? 'easy'

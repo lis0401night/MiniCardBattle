@@ -16,16 +16,8 @@ import {
   startBattleFlow,
 } from './deck.js';
 import {
-  initEventAndroidHighMode,
-  initEventClericHighMode,
-  initEventCthulhuHighMode,
-  initEventDevilhunterHighMode,
-  initEventDragonHighMode,
-  initEventElfHighMode,
-  initEventKnightHighMode,
-  initEventOniHighMode,
   initEventSatanMode,
-  initEventWitchHighMode,
+  initHighDifficultyEventMode,
   loadPlayerDeck,
 } from './events.js';
 import { initTournamentMode } from './tournament.js';
@@ -292,7 +284,16 @@ export function goBackFromSelect() {
   } else if (GameState.gameMode === 'online_deck_edit') {
     showOnlineLobby();
   } else if (GameState.gameMode === 'tournament') {
-    switchScreen('screen-tournament-menu');
+    playSound(AUDIO_INSTANCES.bgmTournament1);
+    if (GameState.tournament && GameState.tournament.participants) {
+      if (GameState.tournament.currentMatch === 0) {
+        switchScreen('screen-tournament-bracket');
+      } else {
+        switchScreen('screen-tournament-resume');
+      }
+    } else {
+      switchScreen('screen-tournament-menu');
+    }
   } else {
     // デッキ選択のフローから抜ける際にページネーションをリセット
     GameState.deckListPage = 0;
@@ -357,6 +358,17 @@ export function goBackFromDeckEdit(isCancel = false) {
     // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
     GameState.appState = 'select_deck';
     switchScreen('screen-deck-list');
+  } else if (GameState.appState === 'tournament_init_deck_edit') {
+    if (isCancel) {
+      GameState.appState = 'select_deck';
+      switchScreen('screen-deck-list');
+    } else {
+      GameState.pendingCharId = GameState.decks[GameState.currentDeckIndex].leaderId;
+      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+      import('./tournament.js').then(({ initTournamentMode }) => {
+        initTournamentMode();
+      });
+    }
   } else if (GameState.gameMode === 'create_deck') {
     if (isCancel) {
       // 新規作成中にキャンセルして戻る場合、仮で作成されたデッキを破棄する
@@ -483,7 +495,9 @@ export function startGameMode(mode) {
   }
 
   if (mode === 'tournament') {
-    const savedTournament = localStorage.getItem('mini_card_battle_tournament_save');
+    const savedTournament = localStorage.getItem(
+      'mini_card_battle_tournament_save'
+    );
     if (savedTournament) {
       GameState.appState = 'tournament_resume';
       switchScreen('screen-tournament-resume');
@@ -871,24 +885,14 @@ export function confirmCharSelect() {
     } else if (GameState.gameMode === 'event_satan') {
       // 高難易度サタン戦専用の導入へ
       initEventSatanMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_android_high') {
-      initEventAndroidHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_dragon_high') {
-      initEventDragonHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_knight_high') {
-      initEventKnightHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_cthulhu_high') {
-      initEventCthulhuHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_elf_high') {
-      initEventElfHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_cleric_high') {
-      initEventClericHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_devilhunter_high') {
-      initEventDevilhunterHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_witch_high') {
-      initEventWitchHighMode(GameState.pendingCharId);
-    } else if (GameState.gameMode === 'event_oni_high') {
-      initEventOniHighMode(GameState.pendingCharId);
+    } else if (
+      GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_high')
+    ) {
+      const enemyCharId = GameState.gameMode
+        .replace('event_', '')
+        .replace('_high', '');
+      initHighDifficultyEventMode(GameState.pendingCharId, enemyCharId);
     } else if (GameState.gameMode === 'tournament') {
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
       initTournamentMode();

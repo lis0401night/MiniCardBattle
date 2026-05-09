@@ -873,14 +873,18 @@ export function getBestSimulatedMove() {
         // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
         // summonId が分かっているなら直接トークンを生成する
         if (
-          !sourceCard &&
-          ['summon', 'wall_create', 'clone', 'split'].includes(action.skillId)
+          ['summon', 'wall_create', 'clone', 'split', 'puppet'].includes(action.skillId)
         ) {
-          const tokenPower = action.skillValue || 1;
+          let tokenPower = action.skillValue || 1;
+          if (action.skillId === 'clone' && sourceCard) {
+            tokenPower = sourceCard.currentPower !== undefined ? sourceCard.currentPower : (sourceCard.power || 0);
+          }
           let tokenId = action.summonId;
           if (!tokenId) {
             if (action.skillId === 'wall_create') {
               tokenId = 'token_wall';
+            } else if (action.skillId === 'puppet') {
+              tokenId = 'token_doll';
             } else {
               tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
             }

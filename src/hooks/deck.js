@@ -1,21 +1,21 @@
+import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { TOURNAMENT_DECKS } from '../utils/constants/event_tournament/index.js';
-import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
-import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
+import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
+import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import {
   ownedPlaymats,
   setOwnedPlaymats,
 } from '../utils/constants/playmats.js';
 import {
-  playSound,
-  switchScreen,
   getCardImgUrl,
   getOrCreateUUID,
+  playSound,
   shuffleArray,
+  switchScreen,
   VALID_PREMIUM_GIFS,
   VALID_PREMIUM_JPGS,
 } from '../utils/gameUtils.js';
@@ -23,11 +23,11 @@ import { SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
 import { GameState } from './gameState.js';
 import {
-  showDefenseMenu,
   closePlayerNameModal,
+  showDefenseMenu,
   showOnlineLobby,
 } from './uiMainCore.js';
-import { showConfirmModal, showAlertModal } from './uiModals.js';
+import { showAlertModal, showConfirmModal } from './uiModals.js';
 
 // ==========================================
 // デッキ生成・編集・セーブ・ロードロジック
@@ -107,8 +107,9 @@ export function generateDeck(owner, config, sessionId) {
       if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
 
       let recipe;
-      if (GameState.gameMode === 'tournament' && recipeId.startsWith('npc_')) {
-        const charId = recipeId.replace('npc_', '');
+      if (GameState.gameMode === 'tournament') {
+        // トーナメント時は専用デッキ（event_tournament）から取得
+        const charId = recipeId;
         const patterns = TOURNAMENT_DECKS[charId];
         if (patterns && patterns.length > 0) {
           // ランダムにパターンを選ぶ
@@ -388,8 +389,13 @@ export function loadDeck() {
       }
     }
   } else if (GameState.gameMode === 'tournament') {
-    const tournamentSaved = localStorage.getItem('mini_card_battle_tournament_deck_obj');
-    if (tournamentSaved) {
+    // トーナメント進行中（GameState.tournament が存在する）場合のみスナップショットデッキを使用する。
+    // デッキ選択画面（初期化前）では通常デッキを表示する。
+    // ※ スナップショットは再開用の一時データであり、デッキ一覧に表示するものではない。
+    const tournamentSaved = localStorage.getItem(
+      'mini_card_battle_tournament_deck_obj'
+    );
+    if (GameState.tournament && tournamentSaved) {
       GameState.currentDeckIndex = 0; // トーナメント時は専用の0番目（スナップショット）を使用する
       try {
         GameState.decks = [JSON.parse(tournamentSaved)];
@@ -397,7 +403,7 @@ export function loadDeck() {
         GameState.decks = [];
       }
     } else {
-      // スナップショットがない場合（初期化前）は現在の通常デッキを読み込み、選択したインデックスを維持する
+      // トーナメント未開始 or スナップショットなし：通常デッキを読み込み、選択させる
       const decksSaved = localStorage.getItem('mini_card_battle_decks');
       if (decksSaved) {
         try {
@@ -487,7 +493,12 @@ export function loadDeck() {
     const activeDeck = GameState.decks[GameState.currentDeckIndex];
     const templateChar = CHARACTERS[activeDeck.leaderId] || CHARACTERS.android;
     if (!GameState.playerConfig || GameState.appState !== 'select_player') {
-      GameState.playerConfig = { ...templateChar };
+      // トーナメント進行中はstartTournamentMatchで設定済みのplayerConfig（名前・スキン設定）を保持する
+      if (GameState.gameMode === 'tournament' && GameState.tournament && GameState.playerConfig) {
+        // playerConfigは維持し、上書きしない
+      } else {
+        GameState.playerConfig = { ...templateChar };
+      }
     }
     GameState.selectedPlaymatId = activeDeck.playmatId || null;
 
@@ -497,6 +508,16 @@ export function loadDeck() {
       ...GameState.playerSkins,
       ...activeDeck.playerSkins,
     };
+
+    // トーナメントモードでは学園スキンを強制設定（デッキスナップショットのスキン情報で上書きされるのを防ぐ）
+    if (GameState.gameMode === 'tournament' && GameState.tournament && GameState.playerConfig) {
+      if (!GameState.playerSkins) GameState.playerSkins = {};
+      GameState.playerSkins[GameState.playerConfig.id] = 'school';
+      if (!GameState.enemySkins) GameState.enemySkins = {};
+      if (GameState.enemyConfig) {
+        GameState.enemySkins[GameState.enemyConfig.id] = 'school';
+      }
+    }
 
     if (activeDeck.premiumCards) {
       GameState.premiumCards = [...activeDeck.premiumCards];

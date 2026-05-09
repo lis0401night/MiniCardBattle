@@ -113,6 +113,56 @@ export const PLAYMAT_MASTER = [
     image: 'assets/boards/board_priest_summer.png',
   },
   {
+    id: 'pm_android_school',
+    name: '献身的な後輩',
+    image: 'assets/boards/board_android_school.png',
+  },
+  {
+    id: 'pm_dragon_school',
+    name: '放課後ディストーション',
+    image: 'assets/boards/board_dragon_school.png',
+  },
+  {
+    id: 'pm_knight_school',
+    name: '必勝の剣道部主将',
+    image: 'assets/boards/board_knight_school.png',
+  },
+  {
+    id: 'pm_cthulhu_school',
+    name: '妖しきオカ研部長',
+    image: 'assets/boards/board_cthulhu_school.png',
+  },
+  {
+    id: 'pm_elf_school',
+    name: '癒しの飼育委員',
+    image: 'assets/boards/board_elf_school.png',
+  },
+  {
+    id: 'pm_cleric_school',
+    name: '恐怖の特別指導',
+    image: 'assets/boards/board_cleric_school.png',
+  },
+  {
+    id: 'pm_devilhunter_school',
+    name: '孤高のスケバン',
+    image: 'assets/boards/board_devilhunter_school.png',
+  },
+  {
+    id: 'pm_witch_school',
+    name: '気怠げな親友の妹',
+    image: 'assets/boards/board_witch_school.png',
+  },
+  {
+    id: 'pm_oni_school',
+    name: '鬼の風紀委員',
+    image: 'assets/boards/board_oni_school.png',
+  },
+  {
+    id: 'pm_priest_school',
+    name: 'ミステリアスな留学生',
+    image: 'assets/boards/board_priest_school.png',
+  },
+  {
     id: 'pm_android_high',
     name: 'フルアーマーユニット',
     image: 'assets/boards/board_android_high.png',

@@ -4,7 +4,7 @@ import {
   clearTournamentSave,
   loadTournamentProgress,
 } from '../hooks/tournament.js';
-import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -59,18 +59,33 @@ export default function TournamentResumeScreen() {
         const pointsMap = [0, 1, 3, 6, 10];
         let points = pointsMap[winCount] || 0;
         clearTournamentSave();
-        
+
         if (points > 0) {
-          let currentPts = parseInt(localStorage.getItem('mini_card_battle_tournament_points')) || 0;
-          let totalPts = parseInt(localStorage.getItem('mini_card_battle_tournament_total_points')) || 0;
+          let currentPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_tournament_points')
+            ) || 0;
+          let totalPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_tournament_total_points')
+            ) || 0;
           currentPts += points;
           totalPts += points;
-          localStorage.setItem('mini_card_battle_tournament_points', currentPts);
-          localStorage.setItem('mini_card_battle_tournament_total_points', totalPts);
+          localStorage.setItem(
+            'mini_card_battle_tournament_points',
+            currentPts
+          );
+          localStorage.setItem(
+            'mini_card_battle_tournament_total_points',
+            totalPts
+          );
 
-          showAlertModal?.(`リタイアしました。\n${winCount}勝の報酬として、\n大会ポイントを ${points} Pt 獲得！`, () => {
-            switchScreen('screen-tournament-menu');
-          });
+          showAlertModal?.(
+            `リタイアしました。\n${winCount}勝の報酬として、\n大会ポイントを ${points} Pt 獲得！`,
+            () => {
+              switchScreen('screen-tournament-menu');
+            }
+          );
         } else {
           switchScreen('screen-tournament-menu');
         }
@@ -89,7 +104,9 @@ export default function TournamentResumeScreen() {
       GameState.playerConfig = saveData.playerConfig;
     }
     if (window.showEnemyDeckModal) {
-      const savedStr = localStorage.getItem('mini_card_battle_tournament_deck_obj');
+      const savedStr = localStorage.getItem(
+        'mini_card_battle_tournament_deck_obj'
+      );
       let deck = null;
       if (savedStr) {
         try {
@@ -102,7 +119,7 @@ export default function TournamentResumeScreen() {
         deck = GameState.decks?.[GameState.currentDeckIndex] || null;
       }
       if (deck && deck.cards) {
-        window.showEnemyDeckModal(deck.cards, 'トーナメントデッキ確認');
+        window.showEnemyDeckModal(deck.cards, 'デッキ確認');
       } else {
         alert('デッキ情報のプレビューは再開後に可能です。');
       }

@@ -1,21 +1,12 @@
 
-import {
-  handleSatanBattle,
-  handleAndroidHighBattle,
-  handleDragonHighBattle,
-  handleKnightHighBattle,
-  handleCthulhuHighBattle,
-  handleElfHighBattle,
-  handleClericHighBattle,
-  handleDevilhunterHighBattle,
-  handleWitchHighBattle,
-  handleOniHighBattle,
-} from '../hooks/uiMainCore.js';
-
+import { handleSatanBattle, startGameMode } from '../hooks/uiMainCore.js';
+import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function HighDifficultyScreen() {
+  const highEventChars = Object.values(CHARACTERS).filter(c => c.event_high);
+
   return (
     <div
       id="screen-high-difficulty"
@@ -61,140 +52,29 @@ export default function HighDifficultyScreen() {
           </span>
         </button>
 
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleAndroidHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_android_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#38bdf8' }}>
-            フルアーマー アイギス
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleDragonHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_dragon_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#fb7185' }}>
-            熱砂の客人 イグニス
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleKnightHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_knight_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#facc15' }}>
-            暗黒騎士 セレスティア
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleCthulhuHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_cthulhu_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#c084fc' }}>
-            魔界の征服者 ナイア
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleElfHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_elf_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#4ade80' }}>
-            リナ&amp;ヴォイテク
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleClericHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_cleric_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#94a3b8' }}>
-            断罪の執行者 エリシア
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleDevilhunterHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_devilhunter_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#64748b' }}>
-            ゴーストライダー マリア
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleWitchHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_witch_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#db2777' }}>
-            時空の探索者 クロエ
-          </span>
-        </button>
-
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleOniHighBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_oni_high.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#ef4444' }}>
-            紅月ノ狂鬼 カグラ
-          </span>
-        </button>
+        {highEventChars.map((char) => {
+          const eventConf = char.event_high;
+          return (
+            <button
+              key={eventConf.id}
+              className="btn-banner legendary"
+              style={{ flexShrink: 0 }}
+              onClick={() => {
+                playSound?.(SOUNDS?.seClick);
+                if (startGameMode) startGameMode(`event_${char.id}_high`);
+              }}
+            >
+              <img
+                src={`assets/icons/icon_${eventConf.id}.png`}
+                className="banner-icon"
+                alt=""
+              />
+              <span className="banner-text" style={{ color: char.color || '#fff' }}>
+                {eventConf.name}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <button

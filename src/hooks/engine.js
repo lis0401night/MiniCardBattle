@@ -3883,6 +3883,12 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
 
       const randIndex = Math.floor(getSeededRandom() * oppHand.length);
       const discarded = oppHand.splice(randIndex, 1)[0];
+      
+      if (!discarded) {
+        i--;
+        continue;
+      }
+      
       if (!discarded.isToken) {
         const masterData = CARD_MASTER.find(
           (m) => m.id === (discarded.baseId || discarded.id)

@@ -140,28 +140,33 @@ export function setupDialogueScreen() {
   GameState.isProcessing = false;
   GameState.currentDialogueIndex = 0;
 
+  let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
+  let enemySkinId = GameState.enemySkins
+    ? GameState.enemySkins[GameState.enemyConfig.id]
+    : 'default';
+
+  if (GameState.gameMode === 'tournament') {
+    playerSkinId = 'school';
+    enemySkinId = 'school';
+  }
+
   let pLeftImg =
-    getSkinImage(
-      GameState.playerConfig,
-      GameState.playerSkins[GameState.playerConfig.id],
-      'image'
-    ) || getCardImgUrl(GameState.playerConfig);
+    getSkinImage(GameState.playerConfig, playerSkinId, 'image') || 
+    getCardImgUrl(GameState.playerConfig);
+    
   if (GameState.gameMode === 'campaign') {
     pLeftImg = null; // キャンペーンモードでは主人公画像を表示しない
   }
 
-  let enemySkinId = GameState.enemySkins
-    ? GameState.enemySkins[GameState.enemyConfig.id]
-    : 'default';
   let pRightImg =
     getSkinImage(GameState.enemyConfig, enemySkinId, 'image') ||
     GameState.enemyConfig.image ||
     getCardImgUrl(GameState.enemyConfig);
 
-  const isCenter =
+    const isCenter =
     GameState.appState === 'story_intro' ||
     GameState.appState === 'inter_battle_story' ||
-    (GameState.gameMode === 'tournament' && GameState.appState === 'pre_dialogue');
+    (GameState.gameMode === 'tournament' && (GameState.appState === 'pre_dialogue' || GameState.appState === 'venue_dialogue' || GameState.appState === 'tournament_win_dialogue' || GameState.appState === 'post_tournament_match'));
 
   if (GameState.appState === 'post_dialogue') {
     if (GameState.lastBattleResult === 'win') {
@@ -170,9 +175,11 @@ export function setupDialogueScreen() {
         GameState.enemyConfig.imageLose ||
         pRightImg;
     } else if (GameState.lastBattleResult === 'lose') {
+      let loseSkinId = GameState.playerSkins[GameState.playerConfig.id];
+      if (GameState.gameMode === 'tournament') loseSkinId = 'school';
       const loseImg = getSkinImage(
         GameState.playerConfig,
-        GameState.playerSkins[GameState.playerConfig.id],
+        loseSkinId,
         'imageLose'
       );
       pLeftImg = loseImg || pLeftImg;
@@ -250,8 +257,19 @@ export async function showNextDialogue(force = false) {
     if (GameState.appState !== 'ending_dialogue')
       window.currentDialogueData.rightActive = false;
     window.currentDialogueData.boxBorderColor = GameState.playerConfig.color;
+
+    if (window.currentDialogueData.centerMode) {
+      let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
+      if (GameState.gameMode === 'tournament') {
+        playerSkinId = 'school';
+      }
+      window.currentDialogueData.leftImage =
+        getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
+        GameState.playerConfig.image ||
+        getCardImgUrl(GameState.playerConfig);
+    }
   } else if (cur.speaker === 'narrator') {
-    window.currentDialogueData.speakerName = 'Narrator';
+    window.currentDialogueData.speakerName = cur.speakerName || 'ナレーター';
     window.currentDialogueData.nameColor = '#94a3b8';
     window.currentDialogueData.leftActive = false;
     window.currentDialogueData.rightActive = false;
@@ -275,9 +293,15 @@ export async function showNextDialogue(force = false) {
     }
 
     // 話者が変わる場合は画像も更新
-    if (cur.charData || cur.charId) {
+    if (cur.charData || cur.charId || cur.speaker === 'enemy') {
+      let enemySkinId = GameState.enemySkins
+        ? GameState.enemySkins[charConfig.id]
+        : 'default';
+      if (GameState.gameMode === 'tournament') {
+        enemySkinId = 'school';
+      }
       const newImg =
-        getSkinImage(charConfig, 'default', 'image') ||
+        getSkinImage(charConfig, enemySkinId, 'image') ||
         charConfig.image ||
         getCardImgUrl(charConfig);
       

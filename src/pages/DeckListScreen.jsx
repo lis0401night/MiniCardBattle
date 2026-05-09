@@ -98,7 +98,12 @@ export default function DeckListScreen() {
         GameState.practicePlayerDeckIndex = index;
       }
       GameState.pendingCharId = GameState.decks[index].leaderId;
-      confirmCharSelect?.();
+      if (GameState.gameMode === 'tournament' && !GameState.tournament) {
+        GameState.appState = 'tournament_init_deck_edit';
+        switchScreen?.('screen-deck-edit');
+      } else {
+        confirmCharSelect?.();
+      }
     } else {
       switchScreen?.('screen-deck-edit');
     }
