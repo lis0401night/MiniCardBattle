@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
-import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { showDungeonRules } from '../hooks/uiMainCore.js';
 import { initBattleDungeon } from '../hooks/battleDungeon.js';
-import { showAlertModal } from '../hooks/uiModals.js';
 import { GameState } from '../hooks/gameState.js';
+import { showDungeonRules, showEventMenu } from '../hooks/uiMainCore.js';
+import { showAlertModal } from '../hooks/uiModals.js';
+import { playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function DungeonMenuScreen() {
   useEffect(() => {
@@ -97,10 +97,7 @@ export default function DungeonMenuScreen() {
         className="btn"
         style={{ marginTop: '40px', background: '#475569' }}
         onClick={() => {
-          playSound?.(SOUNDS.seClick);
-          stopAllBGM?.();
-          playSound?.(AUDIO_INSTANCES.bgmTitle);
-          switchScreen?.('screen-event-menu');
+          showEventMenu?.();
         }}
       >
         戻る

@@ -1,6 +1,6 @@
+import { showEventMenu, startGameMode } from '../hooks/uiMainCore.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { startGameMode } from '../hooks/uiMainCore.js';
 
 export default function TournamentMenuScreen() {
   return (
@@ -13,7 +13,15 @@ export default function TournamentMenuScreen() {
         backgroundPosition: 'center',
       }}
     >
-      <h2 style={{ color: '#60a5fa', marginBottom: '30px', textShadow: '0 0 15px rgba(59, 130, 246, 0.6)' }}>夢幻の闘技祭</h2>
+      <h2
+        style={{
+          color: '#60a5fa',
+          marginBottom: '30px',
+          textShadow: '0 0 15px rgba(59, 130, 246, 0.6)',
+        }}
+      >
+        夢幻の闘技祭
+      </h2>
       <div
         style={{
           display: 'flex',
@@ -59,8 +67,7 @@ export default function TournamentMenuScreen() {
         className="btn"
         style={{ marginTop: '40px', background: '#475569' }}
         onClick={() => {
-          playSound?.(SOUNDS?.seClick);
-          switchScreen?.('screen-event-menu');
+          showEventMenu?.();
         }}
       >
         戻る
