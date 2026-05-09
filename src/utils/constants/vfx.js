@@ -130,10 +130,10 @@ export const VFX_DATA = {
   // エリシアSPスキル「暗黒の儀式」用VFX
   anm_god_flame: {
     type: 'sprite',
-    src: 'assets/vfx/hujimiyaeffect_shadowattack.png',
-    columns: 6,
-    rows: 5,
-    frameCount: 30,
+    src: 'assets/vfx/hujimiyaeffect_shineattack.png',
+    columns: 7,
+    rows: 7,
+    frameCount: 49,
     duration: 1000,
     se: 'seSkillCharge', // 再生する効果音、SOUNDSのキーを指定
     position: 'hp', // HPゲージの高さに合わせて表示
