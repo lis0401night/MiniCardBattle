@@ -132,7 +132,8 @@ export default function OnlineLobbyScreen() {
           GameState.selectedPlaymatId = meData.leaderConfig.playmat || null;
 
           if (!GameState.playerSkins) GameState.playerSkins = {};
-          if (!GameState.enemySkins) GameState.enemySkins = {};
+          // 前モードの敵スキン設定をクリアし、漏洩を防ぐ
+          GameState.enemySkins = {};
 
           if (meData.leaderConfig.skin) {
             GameState.playerSkins[GameState.playerConfig.id] =
@@ -175,7 +176,7 @@ export default function OnlineLobbyScreen() {
             'icon'
           );
 
-          if (!GameState.enemySkins) GameState.enemySkins = {};
+          // enemySkins は上で既にリセット・設定済み
           GameState.enemySkins[GameState.enemyConfig.id] =
             opData.leaderConfig.skin || 'default';
 

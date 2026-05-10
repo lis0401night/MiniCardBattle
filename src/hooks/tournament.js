@@ -135,7 +135,7 @@ export function initTournamentMode() {
   // getDialogueが学園スキンの台詞を正しく参照できるようにGameState側にも反映する
   if (!GameState.playerSkins) GameState.playerSkins = {};
   GameState.playerSkins[GameState.pendingCharId] = 'school';
-  if (!GameState.enemySkins) GameState.enemySkins = {};
+  // startGameMode で enemySkins は既にリセット済み
 
   // 会話シーンのセットアップ
   // プレイヤー名をトーナメント形式（学園世界観）に変換する
@@ -224,7 +224,7 @@ export function startTournamentMatch() {
   );
 
   // 敵の学園スキンを設定（getDialogueが学園スキンの台詞を参照するために必要）
-  if (!GameState.enemySkins) GameState.enemySkins = {};
+  if (!GameState.enemySkins) GameState.enemySkins = {}; // 再開時のフォールバック
   GameState.enemySkins[opponent.charId] = 'school';
 
   GameState.selectedStageId = 'practice'; // トーナメント用の背景

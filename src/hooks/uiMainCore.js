@@ -463,6 +463,9 @@ export function startGameMode(mode) {
   GameState.lastBattleResult = null;
   GameState.gameMode = mode;
 
+  // 前モードの敵スキン設定をクリアし、新モードへの漏洩を防ぐ
+  GameState.enemySkins = {};
+
   if (mode === 'battle_dungeon') {
     showDungeonMenu();
     return;
@@ -794,7 +797,8 @@ export async function startAttackBattle(enemyPlayerData) {
       );
     }
 
-    if (!GameState.enemySkins) GameState.enemySkins = {};
+    // 前モードの敵スキン設定をクリアし、漏洩を防ぐ
+    GameState.enemySkins = {};
     GameState.enemySkins[GameState.enemyConfig.id] = skinIdToUse;
     // トークン画像等の正しい表示のため、敵のスキン設定全体をマージする
     if (enemyPlayerData.skins && typeof enemyPlayerData.skins === 'object') {
@@ -973,7 +977,8 @@ export function confirmCharSelect() {
     const enemyDeckData = GameState.decks[GameState.practiceEnemyDeckIndex];
     const skinIdToUse =
       enemyDeckData.playerSkins?.[GameState.pendingCharId] || 'default';
-    if (!GameState.enemySkins) GameState.enemySkins = {};
+    // startGameMode で enemySkins は既にリセット済み
+    if (!GameState.enemySkins) GameState.enemySkins = {}; // フォールバック
     GameState.enemySkins[GameState.pendingCharId] = skinIdToUse;
 
     if (typeof getSkinImage === 'function') {

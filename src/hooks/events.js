@@ -31,7 +31,7 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
   GameState.battleCount = 7;
   GameState.selectedStageId = enemyCharId; // ステージはボスのホーム
 
-  if (!GameState.enemySkins) GameState.enemySkins = {};
+  // startGameMode で enemySkins は既にリセット済み
   GameState.enemySkins[enemyCharId] = `${enemyCharId}_high`;
 
   if (typeof getSkinImage === 'function') {
