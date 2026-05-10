@@ -8,6 +8,7 @@ export default [
     'highelf',
     'yukionna',
     'yukionna',
+    'yukionna',
     'hammer',
     'hammer',
     'hammer',

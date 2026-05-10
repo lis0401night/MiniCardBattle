@@ -1799,8 +1799,14 @@ export function evaluateSimState(state) {
       // skillTriggered = true の場合、アクティブスキルは発動済みなので
       // パッシブスキルのみ評価する
       const addUtility = (skillId) => {
-        if (AI_SKILL_UTILITY[skillId])
-          utilityScore += AI_SKILL_UTILITY[skillId];
+        const val = AI_SKILL_UTILITY[skillId];
+        if (val === undefined || val === null) return;
+        // 動的評価関数（hack等）の場合は関数を呼び出して値を取得する
+        if (typeof val === 'function') {
+          utilityScore += val(state, GameState);
+        } else {
+          utilityScore += val;
+        }
       };
       if (c.skill && c.skill !== 'none') {
         // アクティブスキル（draw, heal等）は未発動時のみ加算

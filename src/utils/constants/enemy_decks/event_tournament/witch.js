@@ -1,9 +1,9 @@
 export default [
   [
-    'babydragon',
-    'babydragon',
-    'babydragon',
-    'babydragon',
+    'assassin',
+    'assassin',
+    'assassin',
+    'assassin',
     'undeadking',
     'undeadking',
     'undeadking',
