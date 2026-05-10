@@ -351,7 +351,6 @@ export function getBestSimulatedMove() {
                   if (card.choices2 && card.choices2[idx])
                     effectiveSkills.push(card.choices2[idx]);
                 });
-
             }
 
             const buildSkillBranch = (
@@ -616,14 +615,18 @@ export function getBestSimulatedMove() {
               ) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
-                const generateLaneCombos = (remainingCount) => {
+                // 重複レーン（例: [0,0]）や順序違いの重複（例: [0,1]と[1,0]）を排除する
+                const generateLaneCombos = (remainingCount, startIdx = 0) => {
                   if (remainingCount <= 0) return [[]];
+                  const availLanes = [0, 1, 2].filter(
+                    (j) => mySealedLanes[j] === 0
+                  );
                   let combos = [];
-                  let subCombos = generateLaneCombos(remainingCount - 1);
-                  for (let j = 0; j < 3; j++) {
-                    if (mySealedLanes[j] === 1) continue;
+                  for (let k = startIdx; k < availLanes.length; k++) {
+                    const lane = availLanes[k];
+                    const subCombos = generateLaneCombos(remainingCount - 1, k + 1);
                     for (let sc of subCombos) {
-                      combos.push([j, ...sc]);
+                      combos.push([lane, ...sc]);
                     }
                   }
                   return combos;
@@ -873,7 +876,10 @@ export function getBestSimulatedMove() {
               tokenId = 'token_wall';
             } else if (action.skillId === 'puppet') {
               tokenId = 'token_doll';
+            } else if (action.skillId === 'clone') {
+              tokenId = 'token_clone';
             } else {
+              // summon / split のフォールバック（summonIdが未指定の場合）
               tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
             }
           }
@@ -882,6 +888,19 @@ export function getBestSimulatedMove() {
           for (const tLane of lanes) {
             const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
             if (sealedLanes[tLane] === 1) continue;
+            // cloneトークンは元カードのスキルを引き継ぐ（clone自身は除外）
+            // skillLogic.js の実際の処理と同じ挙動を再現する
+            let inheritedSkills = [];
+            if (action.skillId === 'clone' && sourceCard) {
+              if (sourceCard.skill && sourceCard.skill !== 'none' && sourceCard.skill !== 'clone') {
+                inheritedSkills.push({ id: sourceCard.skill, value: sourceCard.skillValue });
+              }
+              if (Array.isArray(sourceCard.skills)) {
+                inheritedSkills = inheritedSkills.concat(
+                  sourceCard.skills.filter((sk) => sk.id !== 'clone')
+                );
+              }
+            }
             const newToken = {
               id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
               baseId: tokenId,
@@ -894,7 +913,7 @@ export function getBestSimulatedMove() {
               basePower: tokenPower,
               currentPower: tokenPower,
               voiceCategory: baseMaster?.voiceCategory || 'monster',
-              skills: [],
+              skills: inheritedSkills,
             };
             if (simState.enemyBoard[tLane] !== null) {
               // シミュレーション内の簡易処理: 既存カードを墓地に移動
