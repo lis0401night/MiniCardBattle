@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
+import { goToModeSelect, startGameMode } from '../hooks/uiMainCore.js';
+import { showConfirmModal } from '../hooks/uiModals.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { startGameMode, goToModeSelect } from '../hooks/uiMainCore.js';
-import { showConfirmModal } from '../hooks/uiModals.js';
 
 export default function SoloMenuScreen() {
   const images = UI_IMAGES || {};

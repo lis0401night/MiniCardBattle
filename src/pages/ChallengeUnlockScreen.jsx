@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -12,25 +12,22 @@ const UNLOCK_ITEMS = [
 ];
 
 export default function ChallengeUnlockScreen() {
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [unlocks, setUnlocks] = useState({});
-
-  useEffect(() => {
-    const tp =
+  const [totalPoints] = useState(
+    () =>
       parseInt(
         localStorage.getItem('mini_card_battle_challenge_total_points')
-      ) || 0;
-    setTotalPoints(tp);
-
+      ) || 0
+  );
+  const [unlocks, setUnlocks] = useState(() => {
     try {
-      const saved =
+      return (
         JSON.parse(localStorage.getItem('mini_card_battle_dungeon_unlocks')) ||
-        {};
-      setUnlocks(saved);
+        {}
+      );
     } catch (e) {
-      setUnlocks({});
+      return {};
     }
-  }, []);
+  });
 
   const toggleUnlock = (id) => {
     playSound(SOUNDS?.seClick);

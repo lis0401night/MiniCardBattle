@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { goToModeSelect } from '../hooks/uiMainCore.js';
-import { unlockAudio } from '../utils/sounds.js';
 import { preloadAllGameResources } from '../utils/resourceLoader.js';
+import { unlockAudio } from '../utils/sounds.js';
 
 export default function TitleScreen() {
   const [isStarting, setIsStarting] = useState(false);

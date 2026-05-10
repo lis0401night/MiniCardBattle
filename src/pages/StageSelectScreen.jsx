@@ -1,22 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
+import { GameState } from '../hooks/gameState.js';
+import { confirmStageSelect, goBackFromStage } from '../hooks/uiMainCore.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { switchScreen } from '../utils/gameUtils.js';
-import { goBackFromStage, confirmStageSelect } from '../hooks/uiMainCore.js';
-import { GameState } from '../hooks/gameState.js';
 
 export default function StageSelectScreen() {
-  const [stages, setStages] = useState([]);
-
-  useEffect(() => {
+  const [stages] = useState(() => {
     const stagesObj = STAGES || {};
-    // stageId=plain がデフォルト
-    const stageList = Object.keys(stagesObj).map((id) => ({
+    return Object.keys(stagesObj).map((id) => ({
       id,
       ...stagesObj[id],
     }));
-    setStages(stageList);
-  }, []);
+  });
 
   const handleSelect = (stageId) => {
     if (confirmStageSelect) {
@@ -26,16 +22,14 @@ export default function StageSelectScreen() {
 
   const getBackgroundImage = () => {
     // 新規デッキ作成中はgameModeが'create_deck'になるため、元のモードを参照する
-    const mode = GameState.gameMode === 'create_deck'
-      ? (GameState.prevGameModeForCreate || 'free_deck_edit')
-      : GameState.gameMode;
+    const mode =
+      GameState.gameMode === 'create_deck'
+        ? GameState.prevGameModeForCreate || 'free_deck_edit'
+        : GameState.gameMode;
 
     if (mode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
-    } else if (
-      mode === 'defense_register' ||
-      mode === 'defense_attack'
-    ) {
+    } else if (mode === 'defense_register' || mode === 'defense_attack') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;
     } else if (mode === 'battle_dungeon') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`;

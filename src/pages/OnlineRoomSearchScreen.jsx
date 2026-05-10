@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import React, { useEffect, useState } from 'react';
 import {
-  showOnlineMenu,
-  showOnlineLobby,
-  closePlayerNameModal,
-} from '../hooks/uiMainCore.js';
-import {
-  listenToLobbyRooms,
-  joinRoom,
   forceDeleteAllRooms,
+  joinRoom,
+  listenToLobbyRooms,
 } from '../hooks/multiplayer.js';
+import {
+  closePlayerNameModal,
+  showOnlineLobby,
+  showOnlineMenu,
+} from '../hooks/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function OnlineRoomSearchScreen() {
   const [rooms, setRooms] = useState([]);
   const [isJoining, setIsJoining] = useState(false);
-  const [debugClickCount, setDebugClickCount] = useState(0);
+  const [, setDebugClickCount] = useState(0);
 
   useEffect(() => {
     const unsubscribe = listenToLobbyRooms((availableRooms) => {

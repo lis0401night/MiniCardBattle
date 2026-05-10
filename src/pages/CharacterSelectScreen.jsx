@@ -1,16 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { GameState } from '../hooks/gameState.js';
 import { goBackFromSelect, showCharDetail } from '../hooks/uiMainCore.js';
 import { achievementData } from '../utils/constants/achievements.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 
 export default function CharacterSelectScreen() {
-  const [characters, setCharacters] = useState([]);
-  const [title, setTitle] = useState('キャラクター選択');
-  const [renderVersion, setRenderVersion] = useState(0);
-
-  useEffect(() => {
+  const [characters, setCharacters] = useState(() => {
     // CHARACTERSはオブジェクト形式
     const charsObj = CHARACTERS || {};
 
@@ -22,12 +18,32 @@ export default function CharacterSelectScreen() {
     const hasStoryClear = Object.values(
       achievementData.stats?.storyClears || {}
     ).some((v) => v >= 1);
-    const charsList = Object.values(charsObj).filter((c) => {
+    return Object.values(charsObj).filter((c) => {
       if (c.id === 'satan') return isEnemySelect && hasStoryClear;
       if (c.id.startsWith('campaign_')) return false;
       return true;
     });
-    setCharacters(charsList);
+  });
+
+  const [title, setTitle] = useState(() => {
+    if (GameState.appState === 'select_enemy') {
+      return '対戦相手';
+    } else if (GameState.gameMode === 'defense_register') {
+      return '防衛キャラクター選択';
+    } else if (
+      GameState.appState === 'select_player' &&
+      GameState.gameMode === 'defense_attack'
+    ) {
+      return '自分のキャラクター選択';
+    } else {
+      return 'キャラクター選択';
+    }
+  });
+
+  const [renderVersion, setRenderVersion] = useState(0);
+
+  useEffect(() => {
+    const charsObj = CHARACTERS || {};
 
     const updateTitle = () => {
       if (GameState.appState === 'select_enemy') {
@@ -43,8 +59,6 @@ export default function CharacterSelectScreen() {
         setTitle('キャラクター選択');
       }
     };
-
-    updateTitle();
     // 画面切り替え時に再評価させるためのフックを追加
     const originalInit = window.initSelectScreenReact;
     window.initSelectScreenReact = () => {
@@ -77,9 +91,10 @@ export default function CharacterSelectScreen() {
   };
   const getBackgroundImage = () => {
     // 新規デッキ作成中はgameModeが'create_deck'になるため、元のモードを参照する
-    const mode = GameState.gameMode === 'create_deck'
-      ? (GameState.prevGameModeForCreate || 'free_deck_edit')
-      : GameState.gameMode;
+    const mode =
+      GameState.gameMode === 'create_deck'
+        ? GameState.prevGameModeForCreate || 'free_deck_edit'
+        : GameState.gameMode;
 
     if (mode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
@@ -88,10 +103,7 @@ export default function CharacterSelectScreen() {
       (mode?.startsWith('event_') && mode?.endsWith('_high'))
     ) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
-    } else if (
-      mode === 'defense_register' ||
-      mode === 'defense_attack'
-    ) {
+    } else if (mode === 'defense_register' || mode === 'defense_attack') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;
     } else if (mode === 'battle_dungeon') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`;

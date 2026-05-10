@@ -24,7 +24,7 @@ import StoryResumeScreen from './pages/StoryResumeScreen.jsx';
 import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
 import CardListScreen from './pages/CardListScreen.jsx';
 import AchievementsScreen from './pages/AchievementsScreen.jsx';
-import ExchangeScreen from './pages/ExchangeScreen.jsx';
+import DefenseExchangeScreen from './pages/DefenseExchangeScreen.jsx';
 import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
 import ChallengeUnlockScreen from './pages/ChallengeUnlockScreen.jsx';
 import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
@@ -160,7 +160,7 @@ export default function App() {
 
       {currentScreen === 'screen-card-list' && <CardListScreen />}
       {currentScreen === 'screen-achievements' && <AchievementsScreen />}
-      {currentScreen === 'screen-exchange' && <ExchangeScreen />}
+      {currentScreen === 'screen-exchange' && <DefenseExchangeScreen />}
       {currentScreen === 'screen-challenge-exchange' && (
         <ChallengeExchangeScreen />
       )}

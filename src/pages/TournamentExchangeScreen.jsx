@@ -1,46 +1,49 @@
-import { useState, useEffect } from 'react';
-import { CHARACTERS } from '../utils/constants/characters.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { GameState } from '../hooks/gameState.js';
+import { useEffect, useRef, useState } from 'react';
 import { saveDeck } from '../hooks/deck.js';
-import { playSound, getOrCreateUUID } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
-import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
+import { GameState } from '../hooks/gameState.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS } from '../utils/constants/characters.js';
 import { TOURNAMENT_EXCHANGE_LINEUP } from '../utils/constants/config.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
+import {
+  getCardImgUrl,
+  getOrCreateUUID,
+  playSound,
+} from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function TournamentExchangeScreen() {
-  const [tournamentPoints, setTournamentPoints] = useState({
-    current: 0,
-    total: 0,
-  });
-  const [unlockedSkins, setUnlockedSkins] = useState([]);
-  const [unlockedPlaymats, setUnlockedPlaymats] = useState([]);
-  const [inventory, setInventory] = useState({});
+  const [tournamentPoints, setTournamentPoints] = useState(() => ({
+    current:
+      parseInt(localStorage.getItem('mini_card_battle_tournament_points')) || 0,
+    total:
+      parseInt(
+        localStorage.getItem('mini_card_battle_tournament_total_points')
+      ) || 0,
+  }));
+  const [unlockedSkins, setUnlockedSkins] = useState(
+    () =>
+      JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || []
+  );
+  const [unlockedPlaymats, setUnlockedPlaymats] = useState(
+    () =>
+      JSON.parse(localStorage.getItem('mini_card_battle_owned_playmats')) || []
+  );
+  const [inventory, setInventory] = useState(
+    () => GameState.playerInventory || {}
+  );
   const [pointsUpdated, setPointsUpdated] = useState(false);
-  const [previewItem, setPreviewItem] = useState(null);
-  let debugClickCount = 0;
+  const debugClickCount = useRef(0);
 
   useEffect(() => {
-    // Init Points
+    // Current points to use for sync logic
     const currentPts =
       parseInt(localStorage.getItem('mini_card_battle_tournament_points')) || 0;
     const totalPts =
       parseInt(
         localStorage.getItem('mini_card_battle_tournament_total_points')
       ) || 0;
-    setTournamentPoints({ current: currentPts, total: totalPts });
-
-    // Init Unlocked
-    const userUnlocked =
-      JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || [];
-    setUnlockedSkins(userUnlocked);
-    const userPlaymats =
-      JSON.parse(localStorage.getItem('mini_card_battle_owned_playmats')) || [];
-    setUnlockedPlaymats(userPlaymats);
-
-    // Init Inventory
-    setInventory(GameState.playerInventory || {});
 
     // API Fetch to sync points
     const fetchPoints = async () => {
@@ -129,7 +132,7 @@ export default function TournamentExchangeScreen() {
       const currentCount = inventory[item.id] || 0;
       const newInventory = { ...inventory, [item.id]: currentCount + 1 };
       setInventory(newInventory);
-      GameState.playerInventory = newInventory;
+      Object.assign(GameState, { playerInventory: newInventory });
       if (typeof saveDeck === 'function') saveDeck();
       showAlertModal(`「${item.displayName || item.id}」を1枚交換しました！`);
     } else if (item.type === 'playmat') {
@@ -148,7 +151,7 @@ export default function TournamentExchangeScreen() {
         'mini_card_battle_unlocked_skins',
         JSON.stringify(newUnlocked)
       );
-      GameState.unlockedSkins = newUnlocked;
+      Object.assign(GameState, { unlockedSkins: newUnlocked });
       setUnlockedSkins(newUnlocked);
       showAlertModal(
         `「${item.name}」を交換しました！\nキャラクター選択画面でスキンを変更できます。`
@@ -156,7 +159,6 @@ export default function TournamentExchangeScreen() {
     }
 
     setPointsUpdated((prev) => !prev);
-    setPreviewItem(null); // Close modal
   };
 
   const handleBack = () => {
@@ -165,9 +167,9 @@ export default function TournamentExchangeScreen() {
   };
 
   const handleTitleClick = () => {
-    debugClickCount++;
-    if (debugClickCount >= 10) {
-      debugClickCount = 0;
+    debugClickCount.current++;
+    if (debugClickCount.current >= 10) {
+      debugClickCount.current = 0;
       if (showConfirmModal) {
         showConfirmModal(
           'デバッグモードを起動して大会ポイントを100Pt獲得しますか？',

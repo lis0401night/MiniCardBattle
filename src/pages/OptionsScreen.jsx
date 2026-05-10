@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { playSound, switchScreen } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import {
-  updateVolume,
+  handleOptionsTitleClick,
+  reloadGame,
   resetGameData,
   showSyncDataModal,
-  reloadGame,
-  handleOptionsTitleClick,
+  updateVolume,
 } from '../hooks/uiMainCore.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function OptionsScreen() {
   const [volume, setVolume] = useState(0.5);

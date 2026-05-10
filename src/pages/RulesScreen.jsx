@@ -1,4 +1,3 @@
-
 import { switchScreen } from '../utils/gameUtils.js';
 
 export default function RulesScreen() {

@@ -1,18 +1,20 @@
 import React from 'react';
 
-import { switchScreen } from '../utils/gameUtils.js';
+import { GameState } from '../hooks/gameState.js';
 import {
-  goBackFromDifficulty,
   confirmDifficulty,
+  goBackFromDifficulty,
   openEnemyDeckPreview,
 } from '../hooks/uiMainCore.js';
+import { switchScreen } from '../utils/gameUtils.js';
 
 export default function DifficultySelectScreen() {
-  const [isFreeMode, setIsFreeMode] = React.useState(false);
+  const [isFreeMode, setIsFreeMode] = React.useState(() =>
+    typeof GameState !== 'undefined' ? GameState.gameMode === 'free' : false
+  );
 
   React.useEffect(() => {
     const updateMode = () => setIsFreeMode(GameState.gameMode === 'free');
-    updateMode();
     // 画面遷移などで変更された際に強制検知させる（簡易ポーリングまたはイベント等の代替）
     const interval = setInterval(updateMode, 500);
     return () => clearInterval(interval);

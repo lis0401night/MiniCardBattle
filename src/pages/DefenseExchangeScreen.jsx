@@ -1,27 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
-import {
-  playSound,
-  isTransitioning,
-  switchScreen,
-  getCardImgUrl,
-} from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../hooks/gameState.js';
 import {
   setRenderExchangeHook,
   showExchangeDetail,
 } from '../hooks/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
+import {
+  getCardImgUrl,
+  isTransitioning,
+  playSound,
+  switchScreen,
+} from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
-export default function ExchangeScreen() {
-  const [points, setPoints] = useState({ current: 0, total: 0 });
-  const [exchangeItems, setExchangeItems] = useState([]);
-  const [inventory, setInventory] = useState({});
-  const [unlockedPremium, setUnlockedPremium] = useState([]);
-  let debugClickCount = 0;
+export default function DefenseExchangeScreen() {
+  const [points, setPoints] = useState(() => ({
+    current:
+      parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
+    total:
+      parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) ||
+      0,
+  }));
+  const [exchangeItems, setExchangeItems] = useState(
+    () => EXCHANGE_LINEUP || []
+  );
+  const [inventory, setInventory] = useState(
+    () => GameState.playerInventory || {}
+  );
+  const [unlockedPremium, setUnlockedPremium] = useState(
+    () => GameState.unlockedPremiumCards || []
+  );
+  const debugClickCount = useRef(0);
 
   const updateExchange = () => {
     const currentPts =
@@ -37,14 +49,13 @@ export default function ExchangeScreen() {
   };
 
   useEffect(() => {
-    updateExchange();
     setRenderExchangeHook(updateExchange); // グローバルからの再描画フック
   }, []);
 
   const handleTitleClick = () => {
-    debugClickCount++;
-    if (debugClickCount >= 10) {
-      debugClickCount = 0;
+    debugClickCount.current++;
+    if (debugClickCount.current >= 10) {
+      debugClickCount.current = 0;
       if (showConfirmModal) {
         showConfirmModal(
           'デバッグモードを起動して防衛ポイントを100Pt獲得しますか？',

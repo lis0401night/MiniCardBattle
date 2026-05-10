@@ -36,7 +36,7 @@ const getVX = (r, isRight) => {
 };
 
 export default function TournamentBracketScreen() {
-  const [renderCounter, setRenderCounter] = useState(0);
+  const [, setRenderCounter] = useState(0);
 
   useEffect(() => {
     const handleActive = () => setRenderCounter((c) => c + 1);
@@ -407,7 +407,7 @@ export default function TournamentBracketScreen() {
         }}
       >
         <svg
-          viewBox="0 0 1100 900"
+          viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
           style={{
             width: '100%',
             height: 'auto',
