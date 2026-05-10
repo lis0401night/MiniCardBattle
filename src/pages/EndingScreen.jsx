@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GameState } from '../hooks/gameState.js';
-import { SOUNDS } from '../utils/sounds.js';
-import { playSound } from '../utils/gameUtils.js';
+import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 
 export default function EndingScreen() {
   const [opacity, setOpacity] = useState(0);
@@ -67,8 +67,11 @@ export default function EndingScreen() {
         <button
           className="btn"
           onClick={() => {
-            if (window.reloadGame) window.reloadGame();
-            else window.location.reload();
+            playSound(SOUNDS.seClick);
+            stopAllBGM();
+            playSound(AUDIO_INSTANCES.bgmTitle);
+            GameState.appState = 'title';
+            switchScreen('screen-mode-select');
           }}
           style={{
             marginTop: '40px',
@@ -76,7 +79,7 @@ export default function EndingScreen() {
             opacity: opacity,
           }}
         >
-          タイトルへ
+          OK
         </button>
       </div>
     );
