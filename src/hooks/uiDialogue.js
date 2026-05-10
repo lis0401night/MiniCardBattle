@@ -64,15 +64,13 @@ export function startNextBattleSequence() {
     );
   }
   GameState.appState = 'pre_dialogue';
-  let introText =
-    (GameState.enemyConfig.preBattleLine || '次は私がお相手よ。') +
-    '\n' +
-    getDialogue(
-      GameState.enemyConfig,
-      GameState.playerConfig,
-      'intro',
-      'enemy'
-    );
+  // ストーリーモードではdialogue.introのみ使用（preBattleLineは連結しない）
+  let introText = getDialogue(
+    GameState.enemyConfig,
+    GameState.playerConfig,
+    'intro',
+    'enemy'
+  ) || GameState.enemyConfig.preBattleLine || '・・・・';
   if (GameState.enemyConfig.isShadow) introText = '・・・・';
   GameState.dialogueQueue = [
     { speaker: 'enemy', text: introText },
@@ -89,15 +87,13 @@ export function startNextBattleSequence() {
     },
   ];
   if (GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow) {
-    introText =
-      '……よくぞここまで辿り着いたな。' +
+    GameState.dialogueQueue[0].text =
       getDialogue(
         GameState.enemyConfig,
         GameState.playerConfig,
         'intro',
         'enemy'
-      );
-    GameState.dialogueQueue[0].text = introText;
+      ) || '……よくぞここまで辿り着いたな。';
   }
   setupDialogueScreen();
 }
