@@ -1,40 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
+import { prepareBattle } from '../hooks/battle.js';
+import { loadDeck, saveDeck, setRenderDeckEditHook } from '../hooks/deck.js';
+import { GameState } from '../hooks/gameState.js';
+import { openCardPreview } from '../hooks/uiGallery.js';
+import { goBackFromDeckEdit } from '../hooks/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { showPlaymatModal } from '../hooks/uiPlaymat.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
-  playSound,
   getCardImgUrl,
+  playSound,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { prepareBattle } from '../hooks/battle.js';
-import { saveTournamentProgress } from '../hooks/tournament.js';
-import {
-  getInitialDeck,
-  loadDeck,
-  saveDeck,
-  setRenderDeckEditHook,
-} from '../hooks/deck.js';
-import { GameState } from '../hooks/gameState.js';
-import { openCardPreview } from '../hooks/uiGallery.js';
-import { goBackFromDeckEdit } from '../hooks/uiMainCore.js';
-import { showConfirmModal, showAlertModal } from '../hooks/uiModals.js';
-import { showPlaymatModal } from '../hooks/uiPlaymat.js';
 
 export default function DeckEditorScreen() {
-  const [deckSelection, setDeckSelection] = useState([]);
-  const [inventory, setInventory] = useState({});
-  const [masterCards, setMasterCards] = useState([]);
-  const [localPremiumCards, setPremiumCards] = useState([]);
-  const [unlockedPremium, setUnlockedPremium] = useState([]);
-  const [isDefenseConfig, setIsDefenseConfig] = useState(false);
-  const [renderVersion, setRenderVersion] = useState(0);
+  // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
+  const computeInventory = () => {
+    if (GameState.gameMode === 'battle_dungeon') {
+      const dInv = {};
+      (GameState.dungeonCards || []).forEach((id) => {
+        dInv[id] = (dInv[id] || 0) + 1;
+      });
+      return dInv;
+    }
+    return GameState.playerInventory || {};
+  };
+
+  const computeMasterCards = (inv) => {
+    if (GameState.gameMode === 'battle_dungeon') {
+      const validIds = Object.keys(inv);
+      return (CARD_MASTER || []).filter((c) => validIds.includes(c.id));
+    } else if (GameState.gameMode === 'campaign') {
+      const validIds = Object.keys(inv);
+      return (CARD_MASTER || []).filter(
+        (c) => validIds.includes(c.id) && !c.isToken
+      );
+    }
+    return (CARD_MASTER || []).filter((c) => !c.isToken);
+  };
+
+  const computeDeckName = () => {
+    if (GameState.gameMode === 'campaign') return 'キャンペーンデッキ';
+    const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
+    return currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`;
+  };
+
+  const [deckSelection, setDeckSelection] = useState(() => [
+    ...(GameState.playerDeckSelection || []),
+  ]);
+  const [inventory, setInventory] = useState(computeInventory);
+  const [masterCards, setMasterCards] = useState(() =>
+    computeMasterCards(computeInventory())
+  );
+  const [unlockedPremium, setUnlockedPremium] = useState(
+    () => GameState.unlockedPremiumCards || []
+  );
+  const [isDefenseConfig, setIsDefenseConfig] = useState(
+    () => GameState.gameMode === 'defense_register'
+  );
+  const [, setRenderVersion] = useState(0);
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [deckName, setDeckName] = useState('');
+  const [deckName, setDeckName] = useState(computeDeckName);
   const [tempDeckName, setTempDeckName] = useState('');
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -49,6 +81,7 @@ export default function DeckEditorScreen() {
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
   const leaderId = deck.leaderId || GameState.playerConfig?.id || 'android';
 
+  // グローバルからの再描画用コールバック（外部からsetRenderDeckEditHook経由で呼ばれる）
   const updateDeckEditor = () => {
     setRenderVersion((v) => v + 1);
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
@@ -92,14 +125,13 @@ export default function DeckEditorScreen() {
     if (typeof loadDeck === 'function') {
       loadDeck();
     }
-    updateDeckEditor();
     // 既存の再描画関数をフック
     setRenderDeckEditHook(updateDeckEditor);
   }, []);
 
   // 変更をグローバルに反映する
   const syncToGlobal = (newSelection) => {
-    GameState.playerDeckSelection = newSelection;
+    Object.assign(GameState, { playerDeckSelection: newSelection });
     setDeckSelection(newSelection);
   };
 
@@ -201,24 +233,6 @@ export default function DeckEditorScreen() {
     });
   };
 
-  const resetDeck = () => {
-    playSound?.(SOUNDS?.seClick);
-    showConfirmModal?.('デッキを初期状態に戻しますか？', () => {
-      if (GameState.gameMode === 'battle_dungeon') {
-        const initial = (GameState.dungeonCards || [])
-          .slice(0, 20)
-          .map((id) => ({ ...CARD_MASTER.find((c) => c.id === id) }))
-          .filter(Boolean);
-        syncToGlobal(initial);
-      } else {
-        const initial = getInitialDeck
-          ? getInitialDeck(GameState.playerConfig?.id)
-          : [];
-        syncToGlobal([...initial]);
-      }
-    });
-  };
-
   const handleTogglePremium = (e, cardId) => {
     e.stopPropagation();
     playSound?.(SOUNDS?.seClick);
@@ -257,9 +271,10 @@ export default function DeckEditorScreen() {
 
   const getBackgroundImage = () => {
     // 新規デッキ作成中はgameModeが'create_deck'になるため、元のモードを参照する
-    const mode = GameState.gameMode === 'create_deck'
-      ? (GameState.prevGameModeForCreate || 'free_deck_edit')
-      : GameState.gameMode;
+    const mode =
+      GameState.gameMode === 'create_deck'
+        ? GameState.prevGameModeForCreate || 'free_deck_edit'
+        : GameState.gameMode;
 
     if (mode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
@@ -268,10 +283,7 @@ export default function DeckEditorScreen() {
       (mode?.startsWith('event_') && mode?.endsWith('_high'))
     ) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
-    } else if (
-      mode === 'defense_register' ||
-      mode === 'defense_attack'
-    ) {
+    } else if (mode === 'defense_register' || mode === 'defense_attack') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;
     } else if (mode === 'battle_dungeon') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`;
