@@ -138,7 +138,7 @@ export default function DialogueScreen() {
           src={d.rightImage || undefined}
           alt="Enemy"
           style={{
-            filter: d.rightFilter || 'none',
+            filter: d.rightFilter && d.rightFilter !== 'none' ? d.rightFilter : undefined,
             display:
               d.centerMode && GameState.gameMode !== 'campaign'
                 ? 'none'
