@@ -542,7 +542,7 @@ export function updateHPBar() {
   if (updateBattleUIHook) updateBattleUIHook();
 }
 
-export function updateSPOrbs(owner) {
+export function updateSPOrbs(_owner) {
   // innerHTML操作はReactのDOMツリーを破壊するため削除し、Reactフックを発火
   if (updateBattleUIHook) updateBattleUIHook();
 }
@@ -719,7 +719,7 @@ export async function waitPlayerLaneSelection(
   count,
   owner,
   tokenCard,
-  isLeaderSkill = false,
+  _isLeaderSkill = false,
   tokenLanes = null,
   checkConstraints = true,
   canCancel = false,
@@ -811,7 +811,6 @@ export async function waitPlayerLaneSelection(
           owner,
           tokenCard,
           count,
-          isLeaderSkill,
           canCancel,
           checkConstraints
         );
@@ -1140,7 +1139,6 @@ export async function waitPlayerEnemyLaneSelection(
 ) {
   const isBlue = owner === 'blue';
   const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
-  const targetSide = isBlue ? 'enemy' : 'player';
 
   // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む）
   const validLanes = allowEmpty
@@ -1973,7 +1971,7 @@ export async function triggerSplitSkill(owner, lane, card) {
   await sleep(300);
 }
 
-export function updateDeckDisplay(owner) {
+export function updateDeckDisplay(_owner) {
   // DOMによる deck-info の innerText 上書きは React のツリーを破壊するため削除。
   // 代わりに React 側の再描画フックを呼び出します（PlayerArea / EnemyArea に反映される）
   if (updateBattleUIHook) updateBattleUIHook();
@@ -2667,7 +2665,6 @@ export function hasActiveSkill(c) {
 }
 
 export async function triggerStartTurnSkills(owner) {
-  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   let triggered = false;
 
   for (let i = 0; i < 3; i++) {

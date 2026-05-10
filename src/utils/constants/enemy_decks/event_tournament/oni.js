@@ -24,8 +24,8 @@ export default [
   [
     'seimei',
     'seimei',
-    'shogun',
-    'shogun',
+    'monk',
+    'monk',
     'samurai',
     'samurai',
     'samurai',

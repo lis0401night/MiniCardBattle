@@ -1,9 +1,9 @@
 export default [
   [
-    'clone',
-    'clone',
-    'clone',
-    'clone',
+    'cyborgninja',
+    'cyborgninja',
+    'cyborgninja',
+    'cyborgninja',
     'badwolf',
     'badwolf',
     'badwolf',

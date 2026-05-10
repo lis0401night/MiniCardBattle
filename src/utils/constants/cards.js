@@ -168,6 +168,16 @@ export const CARD_MASTER = [
       '強固な鋼鉄の装甲を纏った者は、戦場において難攻不落の城塞と化す。例え操縦者が倒れようとも、内蔵されたAIが稼働を続け、その任務を全うするだろう。',
   },
   {
+    id: 'dancer',
+    name: '魅惑の踊り子',
+    rarity: 1,
+    power: 2,
+    skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }],
+    voiceCategory: 'human_female_sexy',
+    flavor:
+      '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。',
+  },
+  {
     id: 'drifter',
     name: 'アッシュランドの放浪者',
     rarity: 1,
@@ -187,16 +197,6 @@ export const CARD_MASTER = [
     voiceCategory: 'lizard',
     flavor:
       '湿地に潜み、獲物をつけ狙う追跡者。仲間を呼ぶその甲高い鳴き声は、無数の影が迫る前兆である。',
-  },
-  {
-    id: 'dancer',
-    name: '魅惑の踊り子',
-    rarity: 1,
-    power: 2,
-    skills: [{ id: 'bind', value: 1 }, { id: 'deadly' }],
-    voiceCategory: 'human_female_sexy',
-    flavor:
-      '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。',
   },
   {
     id: 'commander',
@@ -230,16 +230,6 @@ export const CARD_MASTER = [
     flavor: '命が安い戦場において、彼が信じるのは己の腕と報酬だけである。',
   },
   {
-    id: 'tortoise',
-    name: '鉄亀',
-    rarity: 1,
-    power: 3,
-    skill: 'sturdy',
-    voiceCategory: 'insect',
-    flavor:
-      '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。',
-  },
-  {
     id: 'jellyfish',
     name: '発光するクラゲ',
     rarity: 1,
@@ -248,6 +238,16 @@ export const CARD_MASTER = [
     skillValue: 1,
     voiceCategory: 'monster',
     flavor: '深き暗闇の中で妖しく輝き、触れる者に不思議な活力を与える。',
+  },
+  {
+    id: 'tortoise',
+    name: '鉄亀',
+    rarity: 1,
+    power: 3,
+    skill: 'sturdy',
+    voiceCategory: 'insect',
+    flavor:
+      '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。',
   },
   {
     id: 'copy',
@@ -261,6 +261,16 @@ export const CARD_MASTER = [
       'その巨大な眼差しに見つめられた時、存在の意味は虚空へと霧散し、ただ静寂のみが残される。',
   },
   {
+    id: 'charger',
+    name: '虹ハチドリ',
+    rarity: 1,
+    power: 2,
+    skill: 'charge',
+    skillValue: 1,
+    voiceCategory: 'bird',
+    flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。',
+  },
+  {
     id: 'spider',
     name: 'スパイダー',
     rarity: 1,
@@ -270,16 +280,6 @@ export const CARD_MASTER = [
     voiceCategory: 'insect',
     flavor:
       '暗闇に潜み、粘着質の糸を紡ぐ毒蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。',
-  },
-  {
-    id: 'charger',
-    name: '虹ハチドリ',
-    rarity: 1,
-    power: 2,
-    skill: 'charge',
-    skillValue: 1,
-    voiceCategory: 'bird',
-    flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。',
   },
   {
     id: 'chameleon',
@@ -2435,7 +2435,34 @@ export const CARD_MASTER = [
     flavor:
       '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。',
   },
-  // { id: 'highwayman', name: '強盗', rarity: 2, power: 4, skill: 'force', skillValue: 1, choices: [{ id: 'artillery', value: 2 }, { id: 'morph', value: 2 }], voiceCategory: 'beast' },
+  // {
+  //   id: 'highwayman',
+  //   name: '強盗',
+  //   rarity: 4,
+  //   power: 4,
+  //   skill: 'force',
+  //   skillValue: 1,
+  //   choices: [
+  //     { id: 'artillery', value: 2 },
+  //     { id: 'morph', value: 2 },
+  //   ],
+  //   voiceCategory: 'human_male_normal',
+  // },
+  // {
+  //   id: 'sphinx',
+  //   name: 'スフィンクス',
+  //   rarity: 4,
+  //   power: 4,
+  //   skill: 'force',
+  //   skillValue: 2,
+  //   choices: [
+  //     { id: 'lonewolf', value: 2 },
+  //     { id: 'spread', value: 2 },
+  //     { id: 'morph', value: 2 },
+  //     { id: 'burial', value: 4 },
+  //   ],
+  //   voiceCategory: 'human_male_normal',
+  // },
   {
     id: 'baldanders',
     name: 'バルトアンデルス',

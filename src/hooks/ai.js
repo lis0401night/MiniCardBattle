@@ -181,7 +181,6 @@ export function evaluateBestLanesForToken(
   owner,
   tokenCard,
   count,
-  isLeaderSkill = false,
   canCancel = false,
   checkConstraints = true
 ) {
@@ -207,7 +206,6 @@ export function evaluateBestLanesForToken(
       owner,
       tokenCard,
       count,
-      isLeaderSkill,
       canCancel,
       checkConstraints
     );

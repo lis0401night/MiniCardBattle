@@ -291,7 +291,6 @@ export function getBestSimulatedMove() {
 
             // 発動するスキル群を特定（召喚系アクションの場合のみ）
             let effectiveSkills = [];
-            let targetSkill = null;
 
             const isSummonAction = ['play', 'call', 'invite', 'chant'].includes(
               sourceType
@@ -353,22 +352,6 @@ export function getBestSimulatedMove() {
                     effectiveSkills.push(card.choices2[idx]);
                 });
 
-              // ターゲット選択を伴うスキルを抽出
-              targetSkill = effectiveSkills.find((s) =>
-                [
-                  'invite',
-                  'chant',
-                  'resurrect',
-                  'convert',
-                  'draw',
-                  'reinforce',
-                  'clone',
-                  'summon',
-                  'wall_create',
-                  'split',
-                  'puppet',
-                ].includes(s.id)
-              );
             }
 
             const buildSkillBranch = (
@@ -1173,9 +1156,6 @@ export function getBestSimulatedMove() {
           activeCardForSkills.skills = [...modifiedSkillsForCard];
         }
 
-        let cLanesForPass = action.cardTokenLanes
-          ? [...action.cardTokenLanes]
-          : null;
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
           skills.forEach((sk) => {
             // 【重要】アクションキューで個別に処理されるターゲット選択系スキルはここでは実行しない。
@@ -1753,7 +1733,7 @@ export function getBestSimulatedMove() {
   // 詳細な盤面ログ出力（battle.jsの[Player Turn End]と同じ [Player] ... vs [AI] ... 形式）
   const dumpB = (b) =>
     b
-      .map((c, i) =>
+      .map((c) =>
         c
           ? `${c.name}(${c.currentPower !== undefined ? c.currentPower : c.power})`
           : 'EMPTY'
@@ -1851,21 +1831,31 @@ export function evaluateSimState(state) {
   // スロット2: 生存ティア (Tier1=2, Tier2=1, Tier3=0)
   let s2 = (3 - tier) * 10000000;
 
-  // スロット2.5: 追加ターンボーナス
+  // スロット3: 追加ターンボーナス
   // 追加ターンは「次ターンにカードを追加で出せる + 敵の攻撃を受けない」ため非常に強力。
   // 戦闘フェーズスキップの恩恵はsimStateのcombatDamageTakenに既に反映されているが、
   // 「次ターンにカードを1枚追加で出せる」アドバンテージは評価されていないため加算する。
   const extraTurnBonus = (state.extraTurnCount || 0) > 0 ? 1 : 0;
-  let s25 = extraTurnBonus * 1000000;
+  let s3 = extraTurnBonus * 1000000;
 
-  // スロット3: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
+  // スロット4: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
   // -150〜150の範囲を想定し+200して正の値にする
-  let s3 = (myPower - opPower + 200) * 1000;
+  let s4 = (myPower - opPower + 200) * 1000;
 
-  // スロット4: ユーティリティ価値
-  let s4 = utilityScore * 10;
+  // スロット5: 相手リーダーへのダメージ評価
+  // 砲撃(artillery)等によるリーダーダメージを評価し、
+  // 盤面が同等の場合にリーダーHPを削る手を優先する
+  let s5 = -state.playerHP * 100;
 
-  // スロット5: タイブレーク (生存枚数)
+  // スロット6: 自分リーダーHPの評価
+  // 回復(heal)や吸収(absorb)等による自リーダーHP維持を評価する
+  // 自分のHPが高いほど高評価
+  let s6 = state.enemyHP * 100;
+
+  // スロット7: ユーティリティ価値
+  let s7 = utilityScore * 10;
+
+  // スロット8: タイブレーク (生存枚数)
   // 自分の枚数が少ないほど高評価（装備一点集中・生贄の高打点を評価）
   // 相手の枚数が少ないほど高評価（盤面制圧を評価）
   const myCount = state.enemyBoard.filter(
@@ -1878,23 +1868,23 @@ export function evaluateSimState(state) {
       c &&
       (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)
   ).length;
-  let s5 = 8 - myCount - opCount;
+  let s8 = 8 - myCount - opCount;
 
-  // スロット6: 封印ボーナス (空のレーンを封印した際の優先度：中央 > 左 > 右)
+  // スロット9: 封印ボーナス (空のレーンを封印した際の優先度：中央 > 左 > 右)
   // パワー差等で同点になった場合のタイブレークとして微小なスコアを加算
-  let s6 = 0;
+  let s9 = 0;
   if (state.playerSealedLanes) {
-    if (state.playerSealedLanes[1] === 1) s6 += 0.03; // 中央
-    if (state.playerSealedLanes[0] === 1) s6 += 0.02; // 左
-    if (state.playerSealedLanes[2] === 1) s6 += 0.01; // 右
+    if (state.playerSealedLanes[1] === 1) s9 += 0.03; // 中央
+    if (state.playerSealedLanes[0] === 1) s9 += 0.02; // 左
+    if (state.playerSealedLanes[2] === 1) s9 += 0.01; // 右
   }
 
-  // スロット7: 被ダメージペナルティ（被ダメージが少ないほど高評価）
+  // スロット10: 被ダメージペナルティ（被ダメージが少ないほど高評価）
   // レーン優先順位(0.01〜0.03)より大きい係数を使い、被ダメ差を優先する
   const damageTaken = state.combatDamageTaken || 0;
-  let s7 = -damageTaken * 0.1;
+  let s10 = -damageTaken * 0.1;
 
-  return s1 + s2 + s25 + s3 + s4 + s5 + s6 + s7;
+  return s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10;
 }
 
 export function evaluateAdhocTokenLanes(
@@ -1983,6 +1973,8 @@ export function evaluateAdhocTokenLanes(
       enemyDeck: GameState.enemyDeck.map((c) =>
         c ? JSON.parse(JSON.stringify(c)) : null
       ),
+      playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+      enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
       extraTurnCount: GameState.extraTurnCount,
       attackSkipCount: GameState.attackSkipCount,
     };
@@ -2088,6 +2080,8 @@ export function evaluateAdhocTokenLanes(
       enemyDeck: GameState.enemyDeck.map((c) =>
         c ? JSON.parse(JSON.stringify(c)) : null
       ),
+      playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+      enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
       extraTurnCount: GameState.extraTurnCount,
       attackSkipCount: GameState.attackSkipCount,
     };
@@ -2141,7 +2135,6 @@ export function getNormalTokenLanes(
   owner,
   tokenCard,
   count,
-  isLeaderSkill = false,
   canCancel = false,
   checkConstraints = true
 ) {
@@ -2310,12 +2303,10 @@ export function simulateMove(
   useSkill = false,
   currentMySP,
   tokenLanes = null,
-  skillOrder = 'before',
   choiceIndex = undefined,
   cardTokenLanes = null,
   checkConstraints = true,
-  choiceIndex2 = undefined,
-  actionQueue = undefined
+  choiceIndex2 = undefined
 ) {
   const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
   let simState = {
@@ -2333,6 +2324,8 @@ export function simulateMove(
     enemyDiscard: GameState.enemyDiscard.map(cloneCard),
     playerDeck: GameState.playerDeck.map(cloneCard),
     enemyDeck: GameState.enemyDeck.map(cloneCard),
+    playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+    enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
     extraTurnCount: GameState.extraTurnCount,
     attackSkipCount: GameState.attackSkipCount,
   };
