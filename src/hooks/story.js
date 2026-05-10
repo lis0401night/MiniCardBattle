@@ -18,7 +18,7 @@ export function initStoryMode(charId) {
 
   // 他のキャラクターのIDをランダムに並び替え（プレイヤーとサタンは除く）
   const otherIds = Object.keys(CHARACTERS).filter(
-    (id) => id !== charId && id !== 'satan'
+    (id) => id !== charId && id !== 'satan' && id !== 'campaign_player'
   );
   for (let i = otherIds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
