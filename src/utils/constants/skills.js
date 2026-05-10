@@ -34,8 +34,7 @@ export const SKILLS = {
   spread: {
     name: '拡散',
     icon: '☄️',
-    desc: (val) =>
-      `召喚時、正面とその隣のレーンのカードに${val || 2}ダメージ。`,
+    desc: (val) => `召喚時、正面と斜め前のカードに${val || 2}ダメージ。`,
   },
   morph: {
     name: '変化',
@@ -57,8 +56,7 @@ export const SKILLS = {
   support: {
     name: '援護',
     icon: '🚩',
-    desc: (val) =>
-      `召喚時、自分の場の隣のレーンのカードのパワーを+${val || 2}する。`,
+    desc: (val) => `召喚時、隣のレーンのカードのパワーを+${val || 2}する。`,
   },
   defender: {
     name: '防御',
@@ -90,7 +88,7 @@ export const SKILLS = {
   berserk: {
     name: '狂乱',
     icon: '💢',
-    desc: (val) => `召喚時、自分の場の隣のレーンのカードに${val}ダメージ。`,
+    desc: (val) => `召喚時、隣のレーンのカードに${val}ダメージ。`,
   },
   split: {
     name: '分裂',
@@ -180,8 +178,7 @@ export const SKILLS = {
   explode: {
     name: '誘爆',
     icon: '💣',
-    desc: (val) =>
-      `破壊時、自分の場の隣のレーンのカードに${val || 3}ダメージ。`,
+    desc: (val) => `破壊時、隣のレーンのカードに${val || 3}ダメージ。`,
   },
   contract: {
     name: '契約',
@@ -398,7 +395,7 @@ export const SKILLS = {
     name: '凍結',
     icon: '❄️',
     desc: (val) =>
-      `召喚時、正面とその隣のレーンのカードに${val}ターンの間「防御」を持たせる。`,
+      `召喚時、正面と斜め前のカードに${val}ターンの間「防御」を持たせる。`,
   },
   loss: {
     name: '喪失',
@@ -408,7 +405,7 @@ export const SKILLS = {
   brutal: {
     name: '暴虐',
     icon: '🌪️',
-    desc: (val) => `攻撃時、自分の場の隣のレーンのカードに${val}ダメージ。`,
+    desc: (val) => `攻撃時、隣のレーンのカードに${val}ダメージ。`,
   },
   absorb: {
     name: '吸収',
@@ -576,7 +573,7 @@ export const SKILLS = {
     name: '一掃',
     icon: '🧹',
     desc: (val) =>
-      '攻撃時、肩代わりを無視して正面とその隣のレーンにダメージを分散して与える。（左>中央>右優先）',
+      '攻撃時、肩代わりを無視して正面と斜め前にダメージを分散して与える。（左>中央>右優先）',
   },
   leap: {
     name: '跳躍',

@@ -539,11 +539,20 @@ export function loadDeck() {
       activeDeck.premiumCards = [...GameState.premiumCards];
     }
 
-    GameState.playerDeckSelection = activeDeck.cards.map((item) => {
-      const id = typeof item === 'string' ? item : item.id || '';
-      const t = CARD_MASTER.find((m) => m.id === id);
-      return t ? { ...t } : typeof item === 'string' ? { id: item } : item;
-    });
+    // トーナメント進行中かつスナップショットデッキが既にロード済みの場合は上書きしない
+    const tournamentSnapshotLoaded =
+      GameState.gameMode === 'tournament' &&
+      GameState.tournament &&
+      GameState.playerDeckSelection &&
+      GameState.playerDeckSelection.length > 0;
+
+    if (!tournamentSnapshotLoaded) {
+      GameState.playerDeckSelection = activeDeck.cards.map((item) => {
+        const id = typeof item === 'string' ? item : item.id || '';
+        const t = CARD_MASTER.find((m) => m.id === id);
+        return t ? { ...t } : typeof item === 'string' ? { id: item } : item;
+      });
+    }
   } else {
     GameState.playerDeckSelection = getInitialDeck(
       GameState.playerConfig?.id || 'knight'
