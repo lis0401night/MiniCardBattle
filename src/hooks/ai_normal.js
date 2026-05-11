@@ -615,18 +615,16 @@ export function getBestSimulatedMove() {
               ) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
-                // 重複レーン（例: [0,0]）や順序違いの重複（例: [0,1]と[1,0]）を排除する
-                const generateLaneCombos = (remainingCount, startIdx = 0) => {
+                // 同一レーンへの複数配置は武装カードへの装備等で有効な戦略のため、
+                // 重複レーンを含む全パターンを生成する（例: [0,0]も有効）
+                const generateLaneCombos = (remainingCount) => {
                   if (remainingCount <= 0) return [[]];
-                  const availLanes = [0, 1, 2].filter(
-                    (j) => mySealedLanes[j] === 0
-                  );
                   let combos = [];
-                  for (let k = startIdx; k < availLanes.length; k++) {
-                    const lane = availLanes[k];
-                    const subCombos = generateLaneCombos(remainingCount - 1, k + 1);
+                  let subCombos = generateLaneCombos(remainingCount - 1);
+                  for (let j = 0; j < 3; j++) {
+                    if (mySealedLanes[j] === 1) continue;
                     for (let sc of subCombos) {
-                      combos.push([lane, ...sc]);
+                      combos.push([j, ...sc]);
                     }
                   }
                   return combos;
@@ -1257,6 +1255,10 @@ export function getBestSimulatedMove() {
     const hpBeforeCombat = simState.enemyHP;
 
     if (!(simState.extraTurnCount > 0)) {
+      // 【絶対厳守】ここでシミュレートするのは「次のプレイヤーターンの攻撃フェーズ」のみ。
+      // ターン順序: AIカードプレイ → プレイヤーターン(パッシブ→攻撃) → AIの次ターン(パッシブ→攻撃)
+      // AIの攻撃フェーズは「AIの次のターン開始時」に発生するため、このシミュレーションの範囲外。
+      // 絶対に calculateCombatPhase(simState, 'red') を追加してはならない。
       applyPassiveSkillLogic(simState, 'blue');
       simState.playerBoard.forEach((c) => {
         if (c && c.stunTurns > 0) c.stunTurns--;
@@ -2054,6 +2056,7 @@ export function evaluateAdhocTokenLanes(
       }
     }
 
+    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
     const hpBeforeCombat = simState.enemyHP;
     applyPassiveSkillLogic(simState, 'blue');
     calculateCombatPhase(simState, 'blue');
@@ -2104,6 +2107,7 @@ export function evaluateAdhocTokenLanes(
       extraTurnCount: GameState.extraTurnCount,
       attackSkipCount: GameState.attackSkipCount,
     };
+    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
     const hpBeforeCombat = simState.enemyHP;
     applyPassiveSkillLogic(simState, 'blue');
     calculateCombatPhase(simState, 'blue');
@@ -2568,6 +2572,7 @@ export function simulateMove(
 
   const hpBeforeCombat = simState.enemyHP;
   if (!(simState.extraTurnCount > 0)) {
+    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
     applyPassiveSkillLogic(simState, 'blue');
     simState.playerBoard.forEach((c) => {
       if (c && c.stunTurns > 0) c.stunTurns--;

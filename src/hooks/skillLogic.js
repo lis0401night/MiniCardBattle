@@ -94,6 +94,7 @@ export async function resolveActiveSkillEffect(
       'chant',
       'forge',
       'destroy',
+      'explore',
     ].includes(skillId)
   ) {
     playSkillSound(skillId);
@@ -128,6 +129,7 @@ export async function resolveActiveSkillEffect(
       chant: '詠唱',
       forge: '鍛造',
       destroy: '破壊',
+      explore: '探索',
     };
     if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     await sleep(200); // Popupを見せる間

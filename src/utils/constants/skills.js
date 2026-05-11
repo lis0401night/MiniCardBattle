@@ -8,7 +8,7 @@ export const SKILLS = {
   quick: {
     name: '速攻',
     icon: '⚡',
-    desc: (val) => '召喚時、ただちに正面に攻撃する。',
+    desc: (val) => '召喚時、ただちに攻撃する。',
   },
   deadly: {
     name: '必殺',

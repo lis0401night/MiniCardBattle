@@ -173,8 +173,6 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     desc: leaderCard.flavor || '試練の宮殿の敵',
     easeOfUse: 3,
     filter: 'none',
-    cardType: 'set1',
-    cardBg: 'bg2',
     image: imagePath,
     icon: imagePath,
     color: '#dc2626',

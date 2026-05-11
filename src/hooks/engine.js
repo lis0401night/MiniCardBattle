@@ -3322,16 +3322,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
       const healAmt = Math.floor(dmgToAtk / 2);
       if (healAmt > 0) {
-        if (defSide === 'blue')
-          state.playerHP = Math.min(
-            state.playerMaxHP || 20,
-            state.playerHP + healAmt
-          );
-        else
-          state.enemyHP = Math.min(
-            state.enemyMaxHP || 20,
-            state.enemyHP + healAmt
-          );
+        // 【重要】defHPに加算する。state.xxxHPを直接変更するとdefHP書き戻しで上書きされる。
+        defHP = Math.min(
+          (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) || 20,
+          defHP + healAmt
+        );
         events.push({
           type: 'heal_player',
           side: defSide,
@@ -3698,16 +3693,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
       const healAmt = Math.floor(dmgToAtk / 2);
       if (healAmt > 0) {
-        if (defSide === 'blue')
-          state.playerHP = Math.min(
-            state.playerMaxHP || 20,
-            state.playerHP + healAmt
-          );
-        else
-          state.enemyHP = Math.min(
-            state.enemyMaxHP || 20,
-            state.enemyHP + healAmt
-          );
+        // 【重要】defHPに加算する。state.xxxHPを直接変更するとL3819のdefHP書き戻しで上書きされる。
+        defHP = Math.min(
+          (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) || 20,
+          defHP + healAmt
+        );
         events.push({
           type: 'heal_player',
           side: defSide,
