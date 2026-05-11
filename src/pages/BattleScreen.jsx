@@ -510,7 +510,7 @@ export default function BattleScreen() {
                       GameState.discardMaxCount
                     )
                     ? '#475569'
-                    : '#facc15',
+                    : '#ef4444',
                 color:
                   GameState.isDiscardingExact &&
                   GameState.discardSelectedIndices.length !==
@@ -519,7 +519,7 @@ export default function BattleScreen() {
                       GameState.discardMaxCount
                     )
                     ? '#94a3b8'
-                    : '#000',
+                    : '#fff',
                 borderColor:
                   GameState.isDiscardingExact &&
                   GameState.discardSelectedIndices.length !==
@@ -528,7 +528,7 @@ export default function BattleScreen() {
                       GameState.discardMaxCount
                     )
                     ? '#334155'
-                    : '#eab308',
+                    : '#dc2626',
                 pointerEvents:
                   GameState.isDiscardingExact &&
                   GameState.discardSelectedIndices.length !==
@@ -551,7 +551,7 @@ export default function BattleScreen() {
             <button
               id="btn-end-turn"
               className="action-btn"
-              style={{ background: '#475569', borderColor: '#334155' }}
+              style={{ background: '#ef4444', borderColor: '#dc2626' }}
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
@@ -565,7 +565,7 @@ export default function BattleScreen() {
             <button
               id="btn-end-turn"
               className="action-btn"
-              style={{ background: '#475569', borderColor: '#334155' }}
+              style={{ background: '#ef4444', borderColor: '#dc2626' }}
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
@@ -573,7 +573,7 @@ export default function BattleScreen() {
                   window.finishAlliedSelection();
               }}
             >
-              キャンセル
+              選択終了
             </button>
           ) : (
             <button

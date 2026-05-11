@@ -56,7 +56,7 @@ export const SKILLS = {
   support: {
     name: '援護',
     icon: '🚩',
-    desc: (val) => `召喚時、隣のレーンのカードのパワーを+${val || 2}する。`,
+    desc: (val) => `召喚時、隣のカードのパワーを+${val || 2}する。`,
   },
   defender: {
     name: '防御',
@@ -88,7 +88,7 @@ export const SKILLS = {
   berserk: {
     name: '狂乱',
     icon: '💢',
-    desc: (val) => `召喚時、隣のレーンのカードに${val}ダメージ。`,
+    desc: (val) => `召喚時、隣のカードに${val}ダメージ。`,
   },
   split: {
     name: '分裂',
@@ -178,7 +178,7 @@ export const SKILLS = {
   explode: {
     name: '誘爆',
     icon: '💣',
-    desc: (val) => `破壊時、隣のレーンのカードに${val || 3}ダメージ。`,
+    desc: (val) => `破壊時、隣のカードに${val || 3}ダメージ。`,
   },
   contract: {
     name: '契約',
@@ -294,7 +294,7 @@ export const SKILLS = {
   toxic: {
     name: '有毒',
     icon: '🧪',
-    desc: (val) => `召喚時、正面のレーンのカードに成長${-val}を付与する。`,
+    desc: (val) => `召喚時、正面のカードに成長${-val}を付与する。`,
   },
   convert: {
     name: '対価',
@@ -405,7 +405,7 @@ export const SKILLS = {
   brutal: {
     name: '暴虐',
     icon: '🌪️',
-    desc: (val) => `攻撃時、隣のレーンのカードに${val}ダメージ。`,
+    desc: (val) => `攻撃時、隣のカードに${val}ダメージ。`,
   },
   absorb: {
     name: '吸収',
