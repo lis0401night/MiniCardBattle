@@ -372,8 +372,16 @@ export async function executeLeaderSkillAction(
           true,
           message
         );
-        if (selectedLanes.length === 0) return;
-        tokenLanes = selectedLanes;
+        if (selectedLanes.length === 0) {
+          if (action === 'tomb_guard') {
+            // tomb_guard はカード未選択でもデッキ破壊効果だけ発動する
+            tokenLanes = [];
+          } else {
+            return; // targeted_destruction はカード未選択で中止
+          }
+        } else {
+          tokenLanes = selectedLanes;
+        }
       } else if (action === 'tomb_guard') {
         // tomb_guard は相手のカードがいなくてもデッキ破壊効果だけ発動できる
         tokenLanes = [];

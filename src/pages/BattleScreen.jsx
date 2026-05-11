@@ -559,7 +559,7 @@ export default function BattleScreen() {
                   window.finishEnemyTargetSelection();
               }}
             >
-              キャンセル
+              選択終了
             </button>
           ) : GameState.isAlliedTargetMode ? (
             <button
