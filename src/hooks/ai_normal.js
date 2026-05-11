@@ -886,17 +886,15 @@ export function getBestSimulatedMove() {
           for (const tLane of lanes) {
             const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
             if (sealedLanes[tLane] === 1) continue;
-            // cloneトークンは元カードのスキルを引き継ぐ（clone自身は除外）
-            // skillLogic.js の実際の処理と同じ挙動を再現する
+            // cloneトークンは元カードのスキルを引き継ぐ（分身含む全スキル）
+            // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
             let inheritedSkills = [];
             if (action.skillId === 'clone' && sourceCard) {
-              if (sourceCard.skill && sourceCard.skill !== 'none' && sourceCard.skill !== 'clone') {
+              if (sourceCard.skill && sourceCard.skill !== 'none') {
                 inheritedSkills.push({ id: sourceCard.skill, value: sourceCard.skillValue });
               }
               if (Array.isArray(sourceCard.skills)) {
-                inheritedSkills = inheritedSkills.concat(
-                  sourceCard.skills.filter((sk) => sk.id !== 'clone')
-                );
+                inheritedSkills = inheritedSkills.concat(sourceCard.skills);
               }
             }
             const newToken = {

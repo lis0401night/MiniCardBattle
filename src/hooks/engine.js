@@ -1521,18 +1521,17 @@ export function applyActiveSkillLogic(
         rarity: c.rarity || 1,
         voiceCategory: c.voiceCategory || 'sword',
       };
-      // スキルの引き継ぎ（分身以外）
+      // スキルの引き継ぎ（分身含む全スキル）
+      // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
       let inheritedSkills = [];
-      if (c.skill && c.skill !== 'clone') {
+      if (c.skill) {
         const inherited = { id: c.skill, value: c.skillValue };
         if (c.summonId) inherited.summonId = c.summonId;
         if (c.targetId) inherited.targetId = c.targetId;
         inheritedSkills.push(inherited);
       }
       if (Array.isArray(c.skills)) {
-        inheritedSkills = inheritedSkills.concat(
-          c.skills.filter((sk) => sk.id !== 'clone')
-        );
+        inheritedSkills = inheritedSkills.concat(c.skills);
       }
 
       for (let i = 0; i < cloneCount; i++) {
