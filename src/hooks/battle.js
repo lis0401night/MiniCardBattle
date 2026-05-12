@@ -791,8 +791,6 @@ export async function waitPlayerLaneSelection(
         if (aiAction) {
           if (Array.isArray(aiAction.lanes)) {
             selectedLanes = [...aiAction.lanes];
-            // AIが意図的に空配列を指定した場合は配置しない意思を尊重
-            if (aiAction.lanes.length === 0) intentionalEmpty = true;
           } else if (
             aiAction.laneIdx !== undefined ||
             aiAction.myLane !== undefined ||
@@ -808,9 +806,14 @@ export async function waitPlayerLaneSelection(
               selectedLanes = [lane];
             }
           }
+          // actionQueueからアクションを取得できたがレーン情報がない場合 → 空として扱う（フォールバック防止）
+          if (!selectedLanes) selectedLanes = [];
         }
       }
       if (!selectedLanes) {
+        // 【号令(call)専用フォールバック】
+        // 号令はデッキトップのカードが実行時に判明するため、事前にレーンを決定できない。
+        // そのため唯一 evaluateBestLanesForToken によるリアルタイム評価を許可する。
         selectedLanes = evaluateBestLanesForToken(
           availableAI,
           owner,

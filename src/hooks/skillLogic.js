@@ -788,6 +788,10 @@ export async function resolveActiveSkillEffect(
           // actionQueueにsummonがない場合 → キャンセル扱い
           aiSummonCancelled = true;
         }
+      } else if (GameState.aiLevel !== 1) {
+        // actionQueueなし かつ Normal以上 → キャンセル扱い（フォールバック防止）
+        // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
+        aiSummonCancelled = true;
       }
     }
 
@@ -922,17 +926,28 @@ export async function resolveActiveSkillEffect(
     let clonePredefinedLanes = null;
     if (
       o === 'red' &&
-      GameState.aiDecision &&
-      GameState.aiDecision.actionQueue
+      GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'pvp'
     ) {
-      const tpIdx = GameState.aiDecision.actionQueue.findIndex(
-        (a) => a.type === 'token_placement' && a.skillId === 'clone'
-      );
-      if (tpIdx !== -1) {
-        const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-        if (Array.isArray(tpAction.lanes)) {
-          clonePredefinedLanes = [...tpAction.lanes];
+      if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+        const tpIdx = GameState.aiDecision.actionQueue.findIndex(
+          (a) => a.type === 'token_placement' && a.skillId === 'clone'
+        );
+        if (tpIdx !== -1) {
+          const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
+          if (Array.isArray(tpAction.lanes)) {
+            clonePredefinedLanes = [...tpAction.lanes];
+          } else {
+            clonePredefinedLanes = [];
+          }
+        } else {
+          // actionQueueにcloneがない場合 → 配置しない（フォールバック防止）
+          clonePredefinedLanes = [];
         }
+      } else if (GameState.aiLevel !== 1) {
+        // actionQueueなし かつ Normal以上 → 配置しない（フォールバック防止）
+        // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
+        clonePredefinedLanes = [];
       }
     }
     const selectedLanes = await waitPlayerLaneSelection(
@@ -1553,6 +1568,10 @@ export async function resolveActiveSkillEffect(
           // actionQueueにwall_createがない場合 → キャンセル扱い
           aiWallCancelled = true;
         }
+      } else if (GameState.aiLevel !== 1) {
+        // actionQueueなし かつ Normal以上 → キャンセル扱い（フォールバック防止）
+        // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
+        aiWallCancelled = true;
       }
     }
     if (!aiWallCancelled) {
@@ -1659,6 +1678,8 @@ export async function resolveActiveSkillEffect(
       ) {
         const aiAction = consumeAIAction('resurrect');
         if (aiAction) {
+          // actionQueue取得失敗時のフォールバック防止用（後で上書きされる）
+          tokenLanes = [];
           // targetUid が存在する場合はUID優先で照合（validCardsとのインデックスずれを防ぐ）
           if (aiAction.targetUid) {
             selectedCard =
@@ -1677,6 +1698,18 @@ export async function resolveActiveSkillEffect(
               null;
           }
           if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
+        } else {
+          if (GameState.aiLevel === 1) {
+            // Easy AI: actionQueueがないため、最強カードをフォールバック選択（レーンもフォールバック配置）
+            const sortedRes = [...validCards].sort(
+              (a, b) => (b.power || 0) - (a.power || 0)
+            );
+            selectedCard = sortedRes[0] || null;
+            // tokenLanes = null のまま → evaluateBestLanesForToken で配置
+          } else {
+            // Normal以上: actionQueueにresurrectがない場合 → 配置しない（フォールバック防止）
+            tokenLanes = [];
+          }
         }
       } else {
         selectedCard = await waitPlayerDiscardSelection(
@@ -1856,8 +1889,17 @@ export async function resolveActiveSkillEffect(
             )[0];
             if (Array.isArray(tpAction.lanes)) {
               tokenLanes = [...tpAction.lanes];
+            } else {
+              tokenLanes = [];
             }
+          } else {
+            // actionQueueにpuppetがない場合 → 配置しない（フォールバック防止）
+            tokenLanes = [];
           }
+        } else if (GameState.aiLevel !== 1) {
+          // actionQueueなし かつ Normal以上 → 配置しない（フォールバック防止）
+          // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
+          tokenLanes = [];
         }
         // actionQueueに情報がなくてもフォールバックとして最強カードを選択
         // （シミュレーションと同じロジック：パワー降順ソートの最強カード）
