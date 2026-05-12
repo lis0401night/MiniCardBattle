@@ -69,7 +69,7 @@ export const CARD_MASTER = [
     id: 'cheetah',
     name: '稲妻の猟豹',
     rarity: 1,
-    power: 2,
+    power: 3,
     skill: 'quick',
     voiceCategory: 'beast',
     flavor: '稲妻を纏って戦場を駆ける最速の野獣。その爪が空気を切り裂く。',
@@ -151,7 +151,7 @@ export const CARD_MASTER = [
     id: 'mantis',
     name: '旧式マンティス',
     rarity: 1,
-    power: 3,
+    power: 4,
     skills: [{ id: 'quick' }, { id: 'growth', value: -2 }],
     voiceCategory: 'machine_old',
     flavor:
@@ -279,7 +279,7 @@ export const CARD_MASTER = [
     skillValue: 1,
     voiceCategory: 'insect',
     flavor:
-      '暗闇に潜み、粘着質の糸を紡ぐ毒蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。',
+      '暗闇に潜み、粘着質の糸を紡ぐ巨大な蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。',
   },
   {
     id: 'chameleon',
@@ -690,7 +690,7 @@ export const CARD_MASTER = [
     id: 'lion',
     name: '王家のライオン',
     rarity: 2,
-    power: 4,
+    power: 5,
     skills: [{ id: 'legendary' }, { id: 'quick' }],
     voiceCategory: 'beast',
     flavor:
@@ -974,7 +974,7 @@ export const CARD_MASTER = [
     id: 'cat',
     name: '食糧庫のコソ泥',
     rarity: 2,
-    power: 1,
+    power: 2,
     skills: [{ id: 'quick' }, { id: 'extort', value: 2 }],
     voiceCategory: 'beast',
     flavor:
@@ -1716,7 +1716,7 @@ export const CARD_MASTER = [
     id: 'kasha',
     name: '双輪の炎龍',
     rarity: 3,
-    power: 5,
+    power: 6,
     skills: [
       { id: 'takeover' },
       { id: 'quick' },
@@ -1806,7 +1806,7 @@ export const CARD_MASTER = [
       { id: 'loss', value: 4 },
       { id: 'burial', value: 6 },
     ],
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_ikemen',
     flavor:
       '神の化身として広大な砂漠を統べ、永遠の時を生きる絶対的な支配者。その絶大な力と威光の代償として、彼に仕える者たちは皆、等しく砂の底へと殉死していく運命にある。',
   },
@@ -1934,7 +1934,7 @@ export const CARD_MASTER = [
     id: 'whiterider',
     name: '征服の使徒',
     rarity: 4,
-    power: 6,
+    power: 5,
     skills: [
       { id: 'contract', value: 4 },
       { id: 'snipe', value: 8 },
@@ -1948,7 +1948,7 @@ export const CARD_MASTER = [
     id: 'redrider',
     name: '戦争の使徒',
     rarity: 4,
-    power: 4,
+    power: 5,
     skills: [{ id: 'contract', value: 4 }, { id: 'quick' }],
     voiceCategory: 'horse',
     flavor:
@@ -2066,9 +2066,9 @@ export const CARD_MASTER = [
     id: 'valkyrie',
     name: '焦熱の戦乙女',
     rarity: 4,
-    power: 2,
+    power: 3,
     skills: [
-      { id: 'sacrifice', value: 2 },
+      { id: 'sacrifice', value: 3 },
       { id: 'double_strike' },
       { id: 'stealth', value: 1 },
       { id: 'quick' },
@@ -2437,7 +2437,7 @@ export const CARD_MASTER = [
   },
   // {
   //   id: 'highwayman',
-  //   name: '強盗',
+  //   name: '裏切りの強盗',
   //   rarity: 4,
   //   power: 4,
   //   skill: 'force',
@@ -2450,18 +2450,35 @@ export const CARD_MASTER = [
   // },
   // {
   //   id: 'sphinx',
-  //   name: 'スフィンクス',
+  //   name: '試練を課すもの',
   //   rarity: 4,
   //   power: 4,
   //   skill: 'force',
-  //   skillValue: 2,
+  //   skillValue: 1,
   //   choices: [
-  //     { id: 'lonewolf', value: 2 },
-  //     { id: 'spread', value: 2 },
-  //     { id: 'morph', value: 2 },
   //     { id: 'burial', value: 4 },
+  //     { id: 'lone_wolf', value: 2 },
+  //     { id: 'spread', value: 3 },
   //   ],
   //   voiceCategory: 'human_male_normal',
+  // },
+  // {
+  //   id: 'monolith',
+  //   name: '叡智のモノリス',
+  //   rarity: 4,
+  //   power: 8,
+  //   skills: [{ id: 'defender' }, { id: 'amplify' }],
+  //   voiceCategory: 'stone',
+  // },
+  // {
+  //   id: 'cleopatra',
+  //   name: '最後の女王',
+  //   rarity: 4,
+  //   power: 5,
+  //   skills: [{ id: 'legendary' }, { id: 'force', value: 1 }],
+  //   skillValue: 1,
+  //   choices: [{ id: 'burial', value: 5 }, { id: 'cull' }],
+  //   voiceCategory: 'human_female_cool',
   // },
   {
     id: 'baldanders',

@@ -743,6 +743,8 @@ export async function waitPlayerLaneSelection(
   if (owner === 'red') {
     const availableAI = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
     let selectedLanes;
+    // AIが意図的に「配置しない」と決定した場合のフラグ
+    let intentionalEmpty = false;
 
     if (
       tokenLanes !== null &&
@@ -755,8 +757,9 @@ export async function waitPlayerLaneSelection(
       Array.isArray(tokenLanes) &&
       tokenLanes.length === 0
     ) {
-      // AIが意図的に空配列を渡した場合（例: holy_marchの0体バフのみ）、配置なしとして返す
+      // AIが意図的に空配列を渡した場合（例: summonのキャンセル、holy_marchの0体バフのみ）、配置なしとして返す
       selectedLanes = [];
+      intentionalEmpty = true;
     } else {
       // まず現在のアクション自体に紐づく指示があるか確認
       // 【重要】deleteではなくspliceで消費する。summonスキルを複数持つカード（例：慈悲なき提督）では
@@ -788,6 +791,8 @@ export async function waitPlayerLaneSelection(
         if (aiAction) {
           if (Array.isArray(aiAction.lanes)) {
             selectedLanes = [...aiAction.lanes];
+            // AIが意図的に空配列を指定した場合は配置しない意思を尊重
+            if (aiAction.lanes.length === 0) intentionalEmpty = true;
           } else if (
             aiAction.laneIdx !== undefined ||
             aiAction.myLane !== undefined ||
@@ -857,7 +862,7 @@ export async function waitPlayerLaneSelection(
     }
 
     // それでも足りない場合、空きレーンや重複を許容する（キャンセル可能な場合はAIの「配置しない・数を絞る」という判断を尊重して強制補充しない）
-    if (selectedLanes.length < count && !canCancel) {
+    if (selectedLanes.length < count && !canCancel && !intentionalEmpty) {
       let validEmptyLanes = board
         .map((c, i) => (c === null && sealedLanes[i] === 0 ? i : -1))
         .filter((i) => i !== -1);

@@ -3,7 +3,7 @@
  */
 export const SKILL_POINTS = {
   quick: {
-    base: 3,
+    base: 2,
     multiplier: 0,
   },
   deadly: {

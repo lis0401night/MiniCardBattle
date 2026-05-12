@@ -34,6 +34,7 @@ import {
   waitPlayerDiscardSelection,
   waitPlayerDualDiscardSelection,
   waitPlayerEnemyLaneSelection,
+  waitPlayerAlliedLaneSelection,
   waitPlayerHandSelection,
   waitPlayerLaneSelection,
   waitSkillChoice,
@@ -95,6 +96,7 @@ export async function resolveActiveSkillEffect(
       'forge',
       'destroy',
       'explore',
+      'cull',
     ].includes(skillId)
   ) {
     playSkillSound(skillId);
@@ -130,6 +132,7 @@ export async function resolveActiveSkillEffect(
       forge: '鍛造',
       destroy: '破壊',
       explore: '探索',
+      cull: '選別',
     };
     if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     await sleep(200); // Popupを見せる間
@@ -603,6 +606,14 @@ export async function resolveActiveSkillEffect(
     const choices =
       skObj && skObj.choiceGroup === 2 ? baseChoices2 : baseChoices;
 
+    // 「増幅」パッシブによる選択数ボーナス（自分の場に amplify があれば+1、選択肢の数は超えない）
+    const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const amplifyCount = myBoard.filter((bc) => bc && hasSkill(bc, 'amplify')).length;
+    const adjustedValue = Math.min(
+      (skillValue || 1) + amplifyCount,
+      choices ? choices.length : (skillValue || 1)
+    );
+
     let choiceArray;
     if (skillId === 'force') {
       const oppOwner = o === 'blue' ? 'red' : 'blue';
@@ -610,11 +621,11 @@ export async function resolveActiveSkillEffect(
         choices,
         oppOwner,
         c,
-        skillValue,
+        adjustedValue,
         true
       );
     } else {
-      choiceArray = await waitSkillChoice(choices, o, c, skillValue, false);
+      choiceArray = await waitSkillChoice(choices, o, c, adjustedValue, false);
     }
     if (choiceArray) {
       const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];
@@ -2383,6 +2394,42 @@ export async function resolveActiveSkillEffect(
         // 条件を満たさないため失敗
         if (cEl) createDamagePopup(cEl, `不発 (${topCard.name})`, '#94a3b8');
         await sleep(500);
+      }
+    }
+  } else if (skillId === 'cull') {
+    // 【選別】召喚時、相手は自分の場のカード1枚を選び墓地に送る
+    const oppOwner = o === 'blue' ? 'red' : 'blue';
+    const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+    const hasOppCard = oppBoard.some((bc) => bc !== null);
+
+    if (hasOppCard) {
+      let selectedLanes;
+      if (oppOwner === 'red') {
+        // 相手がAIの場合：最もパワーの低いカードを自動選択（自分の損失を最小化）
+        const occupiedLanes = oppBoard
+          .map((bc, i) => (bc !== null ? i : -1))
+          .filter((i) => i !== -1);
+        occupiedLanes.sort((a, b) => {
+          const diff = (oppBoard[a].currentPower || 0) - (oppBoard[b].currentPower || 0);
+          if (diff !== 0) return diff;
+          return a - b;
+        });
+        selectedLanes = [occupiedLanes[0]];
+        await sleep(600);
+      } else {
+        // 相手がプレイヤーの場合：自分の場のカードを1枚選択させる
+        selectedLanes = await waitPlayerAlliedLaneSelection(1, oppOwner);
+      }
+
+      if (selectedLanes && selectedLanes.length > 0) {
+        const targetLane = selectedLanes[0];
+        const targetCard = oppBoard[targetLane];
+        if (targetCard) {
+          oppBoard[targetLane] = null;
+          await discardCard(oppOwner, targetCard, targetLane);
+          renderBoard();
+          await sleep(400);
+        }
       }
     }
   } else {

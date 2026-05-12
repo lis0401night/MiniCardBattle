@@ -1744,6 +1744,32 @@ export function applyActiveSkillLogic(
       });
       break;
     }
+    case 'cull': {
+      // 【選別】相手の場で最もパワーの低いカード1枚を破壊（墓地送り）
+      const occupiedLanes = eB
+        .map((bc, i) => (bc !== null ? i : -1))
+        .filter((i) => i !== -1);
+      if (occupiedLanes.length > 0) {
+        // パワー昇順ソート（最小パワーを選択）
+        occupiedLanes.sort((a, b) => {
+          const diff = (eB[a].currentPower || 0) - (eB[b].currentPower || 0);
+          if (diff !== 0) return diff;
+          return a - b;
+        });
+        const targetLane = occupiedLanes[0];
+        const targetCard = eB[targetLane];
+        if (targetCard) {
+          const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+          oppDiscard.push(targetCard);
+          eB[targetLane] = null;
+          events.push({
+            type: 'destroy_cards',
+            targets: [{ side: oppOwner, lane: targetLane, card: targetCard }],
+          });
+        }
+      }
+      break;
+    }
   }
 
   processDestructionTriggers(state, events);

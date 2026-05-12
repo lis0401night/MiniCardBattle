@@ -157,6 +157,8 @@ export function getBestSimulatedMove() {
     let choiceCombinations = [undefined];
     let choice2Combinations = [undefined];
     if (hasSkill(card, 'choice')) {
+      // 「増幅」パッシブによる選択数ボーナス（自分の場に amplify があれば+1）
+      const amplifyBonus = myBoard.filter((bc) => bc && hasSkill(bc, 'amplify')).length;
       if (Array.isArray(card.choices)) {
         let cc = 1;
         if (card.skill === 'choice') cc = card.skillValue || 1;
@@ -164,6 +166,7 @@ export function getBestSimulatedMove() {
           const c = card.skills.find((s) => s.id === 'choice');
           if (c) cc = c.value || 1;
         }
+        cc = Math.min(cc + amplifyBonus, card.choices.length);
         const idxs = card.choices.map((_, i) => i);
         choiceCombinations = getCombinations(idxs, Math.min(idxs.length, cc));
       }
@@ -173,6 +176,7 @@ export function getBestSimulatedMove() {
           ? card.skills.find((s) => s.id === 'choice' && s.choiceGroup === 2)
           : null;
         if (c2) cc2 = c2.value || 1;
+        cc2 = Math.min(cc2 + amplifyBonus, card.choices2.length);
         const idxs2 = card.choices2.map((_, i) => i);
         choice2Combinations = getCombinations(
           idxs2,

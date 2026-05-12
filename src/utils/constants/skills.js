@@ -191,7 +191,7 @@ export const SKILLS = {
     desc: (val) => `召喚時、以下のスキルから${val}つを選んで発動する。`,
   },
   force: {
-    name: '強制',
+    name: '命令',
     icon: '⚖️',
     desc: (val) => `召喚時、以下のスキルから相手が${val}つを選んで発動する。`,
   },
@@ -627,6 +627,16 @@ export const SKILLS = {
     icon: '🗝️',
     desc: '場に居る限り、お互いに墓地のカードを選択できない。',
   },
+  amplify: {
+    name: '増幅',
+    icon: '📡',
+    desc: '場に居る限り、自分の「選択」「命令」の選択数を+1する。（選択肢の数は超えない）',
+  },
+  cull: {
+    name: '選別',
+    icon: '🚪',
+    desc: '召喚時、相手は自分の場のカード1枚を選び、墓地に送る。',
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -684,6 +694,7 @@ export const ACTIVE_SKILLS = [
   'forge',
   'destroy',
   'hack',
+  'cull',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
@@ -720,4 +731,5 @@ export const PASSIVE_SKILLS = [
   'maintain',
   'grave_keeper',
   'awake',
+  'amplify',
 ];
