@@ -2521,6 +2521,30 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
+    // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
+    if (sk.id === 'intercept') {
+      const dmg = sk.value || 2;
+      const eB = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+      let maxL = -1, maxP = -1;
+      for (let j = 0; j < 3; j++) {
+        if (eB[j]) {
+          const p = eB[j].currentPower;
+          // 同値の場合は左（jが小さい方）を優先するため、> を使用
+          if (p > maxP) { maxP = p; maxL = j; }
+        }
+      }
+      if (maxL !== -1) {
+        events.push({
+          type: 'damage_card',
+          side: owner === 'blue' ? 'red' : 'blue',
+          lane: maxL,
+          amount: dmg,
+          source: 'intercept',
+        });
+      }
+      triggered = true;
+    }
+
     if (sk.id === 'invincible') {
       sk.value--;
       if (sk.value <= 0) {

@@ -20,6 +20,6 @@ export const INITIAL_PLAYER_DECK = [
   'cheetah',
   'scorpion',
   'scorpion',
-  'airship',
-  'airship',
+  'mercenary',
+  'mercenary',
 ];

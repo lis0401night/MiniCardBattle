@@ -85,15 +85,24 @@ export const CARD_MASTER = [
       '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。',
   },
   {
-    id: 'airship',
-    name: 'セレスタリアのサルベージ船',
+    id: 'mercenary',
+    name: '傭兵',
     rarity: 1,
-    power: 4,
-    skill: 'salvage',
+    power: 6,
+    skill: 'convert',
     skillValue: 1,
-    voiceCategory: 'machine_old',
+    voiceCategory: 'human_male_warrior',
+    flavor: '命が安い戦場において、彼が信じるのは己の腕と報酬だけである。',
+  },
+  {
+    id: 'wall',
+    name: '城壁',
+    rarity: 1,
+    power: 10,
+    skill: 'defender',
+    voiceCategory: 'stone',
     flavor:
-      '空飛ぶ巨大な飛行船。その甲板には、忘れ去られた過去の遺物が山のように積まれている。',
+      '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。',
   },
   {
     id: 'leech',
@@ -114,6 +123,39 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_ikemen',
     flavor:
       '観衆の喧騒に胸を高鳴らせる、未完の闘士。無骨なセスタスには、頂点を目指す熱意と、己の拳のみで道を切り拓く覚悟が宿っている。',
+  },
+  {
+    id: 'falcon',
+    name: '急襲する隼',
+    rarity: 1,
+    power: 3,
+    skill: 'spread',
+    skillValue: 1,
+    voiceCategory: 'bird',
+    flavor:
+      '翼から硬い羽根を矢のように降らせた後、空から急降下して獲物を捉える。',
+  },
+  {
+    id: 'spider',
+    name: 'スパイダー',
+    rarity: 1,
+    power: 4,
+    skill: 'bind',
+    skillValue: 1,
+    voiceCategory: 'insect',
+    flavor:
+      '暗闇に潜み、粘着質の糸を紡ぐ巨大な蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。',
+  },
+  {
+    id: 'airship',
+    name: 'セレスタリアのサルベージ船',
+    rarity: 1,
+    power: 4,
+    skill: 'salvage',
+    skillValue: 1,
+    voiceCategory: 'machine_old',
+    flavor:
+      '空飛ぶ巨大な飛行船。その甲板には、忘れ去られた過去の遺物が山のように積まれている。',
   },
   {
     id: 'skeleton',
@@ -210,6 +252,16 @@ export const CARD_MASTER = [
       '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。',
   },
   {
+    id: 'lightpaladin',
+    name: '光の聖騎士',
+    rarity: 1,
+    power: 5,
+    skill: 'guardian',
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。',
+  },
+  {
     id: 'crenellatedwall',
     name: '民兵団の射手',
     rarity: 1,
@@ -218,16 +270,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_normal',
     flavor:
       '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。',
-  },
-  {
-    id: 'mercenary',
-    name: '傭兵',
-    rarity: 1,
-    power: 6,
-    skill: 'convert',
-    skillValue: 1,
-    voiceCategory: 'human_male_warrior',
-    flavor: '命が安い戦場において、彼が信じるのは己の腕と報酬だけである。',
   },
   {
     id: 'jellyfish',
@@ -271,15 +313,15 @@ export const CARD_MASTER = [
     flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。',
   },
   {
-    id: 'spider',
-    name: 'スパイダー',
+    id: 'bird',
+    name: '新緑の導き鳥',
     rarity: 1,
-    power: 4,
-    skill: 'bind',
-    skillValue: 1,
-    voiceCategory: 'insect',
-    flavor:
-      '暗闇に潜み、粘着質の糸を紡ぐ巨大な蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。',
+    power: 1,
+    skill: 'split',
+    skillValue: 5,
+    summonId: 'token_ent',
+    voiceCategory: 'bird',
+    flavor: 'その小さなさえずりが途絶えたとき、森の静寂は怒号へと変わる。',
   },
   {
     id: 'chameleon',
@@ -290,16 +332,6 @@ export const CARD_MASTER = [
     voiceCategory: 'lizard',
     flavor:
       '周囲の景色に完璧に溶け込む擬態能力。じっと潜んだその姿は、どんな熟練の狩人にも見抜くことはできない。',
-  },
-  {
-    id: 'wall',
-    name: '城壁',
-    rarity: 1,
-    power: 10,
-    skill: 'defender',
-    voiceCategory: 'stone',
-    flavor:
-      '幾多の戦火を耐え抜いた鉄壁の防塁。王国の平和を守り続ける沈黙の守護者。',
   },
   {
     id: 'carpenter',
@@ -323,15 +355,18 @@ export const CARD_MASTER = [
       '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。',
   },
   {
-    id: 'shade',
-    name: '墓の亡霊',
+    id: 'pray',
+    name: '救済の祈り',
     rarity: 1,
-    power: 4,
-    skill: 'soul_bind',
-    skillValue: 2,
-    voiceCategory: 'undead',
+    power: 0,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'wall_create', value: 10 },
+      { id: 'heal', value: 5 },
+    ],
+    voiceCategory: 'magic',
     flavor:
-      '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。',
+      '神聖なる祈りは時に癒しとなり、時に強固な守りとなって信徒を庇護する。',
   },
   {
     id: 'prisoner',
@@ -354,6 +389,17 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cool',
     flavor:
       '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。',
+  },
+  {
+    id: 'shade',
+    name: '墓の亡霊',
+    rarity: 1,
+    power: 4,
+    skill: 'soul_bind',
+    skillValue: 2,
+    voiceCategory: 'undead',
+    flavor:
+      '古い墓地に漂う無念の霧。生者の温もりを嫌い、その魂を冷たい死の淵へと引き摺り込む。',
   },
   {
     id: 'beginnermagic',
@@ -415,7 +461,7 @@ export const CARD_MASTER = [
     id: 'ninja',
     name: '忍者',
     rarity: 1,
-    power: 3,
+    power: 4,
     skill: 'stealth',
     skillValue: 1,
     voiceCategory: 'human_male_normal',
@@ -631,14 +677,18 @@ export const CARD_MASTER = [
       '熱砂の空を舞う暴虐の亜竜。その巨翼で砂嵐を巻き起こし絶対者のように振る舞うが、真なる竜が降臨するまでの間だけ偽りの威厳を振りかざし大地を蹂躙しているに過ぎない。',
   },
   {
-    id: 'lightpaladin',
-    name: '光の聖騎士',
+    id: 'nobleknight',
+    name: '従者持ちの騎士',
     rarity: 2,
-    power: 5,
-    skill: 'guardian',
+    power: 2,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'summon', value: 2, summonId: 'token_knight' },
+      { id: 'support', value: 2 },
+    ],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。',
+      '戦場に立つ彼の傍らには、常に忠実な影が寄り添う。名家の誇りを胸に彼が剣を掲げた時、その影は主を守る盾となり、あるいは共に敵を穿つ刃となる。',
   },
   {
     id: 'minotaur',
@@ -758,7 +808,7 @@ export const CARD_MASTER = [
     id: 'ghostship',
     name: 'ファントムポートの幽霊船',
     rarity: 2,
-    power: 5,
+    power: 6,
     skills: [{ id: 'legendary' }, { id: 'stealth', value: 1 }],
     voiceCategory: 'stone',
     flavor:
@@ -809,15 +859,15 @@ export const CARD_MASTER = [
       '彼の呪術は敵の武装を縛り、そして砕く。千年の時を生きる老エルフの瞳には、人の造りし武具など児戯に等しい。',
   },
   {
-    id: 'bird',
-    name: '新緑の導き鳥',
+    id: 'splite',
+    name: 'スプライトの冒険者',
     rarity: 2,
-    power: 1,
-    skill: 'split',
-    skillValue: 5,
-    summonId: 'token_ent',
-    voiceCategory: 'bird',
-    flavor: 'その小さなさえずりが途絶えたとき、森の静寂は怒号へと変わる。',
+    power: 2,
+    skill: 'resist',
+    skillValue: 3,
+    voiceCategory: 'human_female_cute',
+    flavor:
+      '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
   },
   {
     id: 'ranger',
@@ -828,20 +878,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_ikemen',
     flavor:
       '微かに光るルーンの印だけが、彼に失くした過去を呼び覚ます。深緑の外套を揺らし、記憶の残香を辿る旅。その道を阻む理不尽なる者がいれば、一切の迷いなき必中の矢が静かに急所を射抜く。',
-  },
-  {
-    id: 'pray',
-    name: '救済の祈り',
-    rarity: 2,
-    power: 0,
-    skills: [{ id: 'choice', value: 1 }],
-    choices: [
-      { id: 'wall_create', value: 10 },
-      { id: 'heal', value: 5 },
-    ],
-    voiceCategory: 'magic',
-    flavor:
-      '神聖なる祈りは時に癒しとなり、時に強固な守りとなって信徒を庇護する。',
   },
   {
     id: 'charity',
@@ -886,6 +922,15 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'stone',
     flavor: '古より伝わる小さな彫像。周囲に底知れぬ絶望と絶大な破滅をもたらす',
+  },
+  {
+    id: 'flak',
+    name: 'ミスリルの高射砲',
+    rarity: 2,
+    power: 6,
+    skills: [{ id: 'defender' }, { id: 'intercept', value: 3 }],
+    voiceCategory: 'machine_old',
+    flavor: '高高度を狙う神聖なる対空砲。上空からの奇襲を許さない。',
   },
   {
     id: 'monk',
@@ -1132,7 +1177,11 @@ export const CARD_MASTER = [
     name: '鋼のマンティコア',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'maintain' }, { id: 'sturdy' }, { id: 'snipe', value: 2 }],
+    skills: [
+      { id: 'maintain' },
+      { id: 'sturdy' },
+      { id: 'intercept', value: 2 },
+    ],
     voiceCategory: 'machine_old',
     flavor:
       '忘れ去られた古代文明の遺物であり、侵入者を排除するためだけに稼働し続ける機械魔獣。',
@@ -1179,6 +1228,18 @@ export const CARD_MASTER = [
       '遺跡の深部で王の眠りを守護する黄金の機械兵士。暗い石室に、古く軋んだ駆動音が響き渡る。',
   },
   {
+    id: 'dealer',
+    name: 'デビル・ディーラー',
+    rarity: 2,
+    power: 5,
+    skills: [
+      { id: 'sacrifice', value: 2 },
+      { id: 'draw', value: 3 },
+    ],
+    flavor:
+      '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。',
+  },
+  {
     id: 'warlock',
     name: '煉獄の拷問官',
     rarity: 2,
@@ -1193,26 +1254,14 @@ export const CARD_MASTER = [
       '燃え盛る炎の鞭を振るう魔界の拷問官。その一振りは敵を焼き払い、自らの魂さえも劫火の糧とする。',
   },
   {
-    id: 'dealer',
-    name: 'デビル・ディーラー',
+    id: 'hand',
+    name: '悪魔の手',
     rarity: 2,
-    power: 5,
-    skills: [
-      { id: 'sacrifice', value: 2 },
-      { id: 'draw', value: 3 },
-    ],
+    power: 2,
+    skills: [{ id: 'cull' }],
+    voiceCategory: 'stone',
     flavor:
-      '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。',
-  },
-  {
-    id: 'daemonarmor',
-    name: '悪魔の鎧',
-    rarity: 2,
-    power: 5,
-    skills: [{ id: 'equip' }, { id: 'sacrifice', value: 2 }],
-    voiceCategory: 'sword',
-    flavor:
-      '真紅の血肉を喰らい、絶大なる力を対象に宿す呪われた甲冑。身に着けた者は代償として自らの生命を削り続ける。',
+      '虚空を裂いて現れる、魔界より召喚されし巨大な腕。いかなる堅牢な障害も無慈悲に握り潰す。',
   },
   {
     id: 'minion',
@@ -1779,7 +1828,7 @@ export const CARD_MASTER = [
     ],
     choices: [
       { id: 'snipe', value: 8 },
-      { id: 'spread', value: 4 },
+      { id: 'intercept', value: 4 },
       { id: 'artillery', value: 4 },
     ],
     voiceCategory: 'machine_old',
@@ -1822,14 +1871,14 @@ export const CARD_MASTER = [
       '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。',
   },
   {
-    id: 'hand',
-    name: '悪魔の手',
+    id: 'daemonarmor',
+    name: '悪魔の鎧',
     rarity: 3,
-    power: 0,
-    skills: [{ id: 'sacrifice', value: 3 }, { id: 'destroy' }],
-    voiceCategory: 'magic',
+    power: 5,
+    skills: [{ id: 'equip' }, { id: 'sacrifice', value: 2 }, { id: 'deadly' }],
+    voiceCategory: 'sword',
     flavor:
-      '虚空を裂いて現れる、魔界より召喚されし巨大な腕。いかなる堅牢な障害も無慈悲に握り潰す。',
+      '真紅の血肉を喰らい、絶大なる力を対象に宿す呪われた甲冑。身に着けた者は代償として自らの生命を削り続ける。',
   },
   {
     id: 'succubus',
@@ -1974,7 +2023,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 5,
     skills: [
-      { id: 'contract', value: 4 },
+      { id: 'contract', value: 2 },
       { id: 'clone', value: 1 },
     ],
     voiceCategory: 'horse',
@@ -2435,51 +2484,58 @@ export const CARD_MASTER = [
     flavor:
       '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。',
   },
-  // {
-  //   id: 'highwayman',
-  //   name: '裏切りの強盗',
-  //   rarity: 4,
-  //   power: 4,
-  //   skill: 'force',
-  //   skillValue: 1,
-  //   choices: [
-  //     { id: 'artillery', value: 2 },
-  //     { id: 'morph', value: 2 },
-  //   ],
-  //   voiceCategory: 'human_male_normal',
-  // },
-  // {
-  //   id: 'sphinx',
-  //   name: '試練を課すもの',
-  //   rarity: 4,
-  //   power: 4,
-  //   skill: 'force',
-  //   skillValue: 1,
-  //   choices: [
-  //     { id: 'burial', value: 4 },
-  //     { id: 'lone_wolf', value: 2 },
-  //     { id: 'spread', value: 3 },
-  //   ],
-  //   voiceCategory: 'human_male_normal',
-  // },
-  // {
-  //   id: 'monolith',
-  //   name: '叡智のモノリス',
-  //   rarity: 4,
-  //   power: 8,
-  //   skills: [{ id: 'defender' }, { id: 'amplify' }],
-  //   voiceCategory: 'stone',
-  // },
-  // {
-  //   id: 'cleopatra',
-  //   name: '最後の女王',
-  //   rarity: 4,
-  //   power: 5,
-  //   skills: [{ id: 'legendary' }, { id: 'force', value: 1 }],
-  //   skillValue: 1,
-  //   choices: [{ id: 'burial', value: 5 }, { id: 'cull' }],
-  //   voiceCategory: 'human_female_cool',
-  // },
+  {
+    id: 'monolith',
+    name: '叡智のモノリス',
+    rarity: 4,
+    power: 8,
+    skills: [{ id: 'defender' }, { id: 'amplify' }],
+    voiceCategory: 'stone',
+    flavor:
+      '星の瞬きよりも永く、その黒き石柱は荒野の静寂の中に佇んでいる。触れる者に古代の知識を授ける。',
+  },
+  {
+    id: 'highwayman',
+    name: '裏切りの相棒',
+    rarity: 4,
+    power: 4,
+    skill: 'force',
+    skillValue: 1,
+    choices: [
+      { id: 'artillery', value: 2 },
+      { id: 'morph', value: 2 },
+    ],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '幾重もの危険な罠を共にくぐり抜けた探検の友は、最奥で目当ての財宝を手にした瞬間に冷酷な本性を現す。',
+  },
+  {
+    id: 'sphinx',
+    name: '難題の問い手',
+    rarity: 4,
+    power: 4,
+    skill: 'force',
+    skillValue: 1,
+    choices: [
+      { id: 'burial', value: 4 },
+      { id: 'lone_wolf', value: 2 },
+      { id: 'spread', value: 3 },
+    ],
+    voiceCategory: 'human_male_old',
+    flavor:
+      '砂塵の彼方に忽然と姿を現し、神域へと足を踏み入れた者の前に立ち塞がる黄金の獣。その難解な問いに対して真理を導き出せぬ者は、容赦なく熱砂の底へと永遠に葬り去られる。',
+  },
+  {
+    id: 'cleopatra',
+    name: '最後の女王',
+    rarity: 4,
+    power: 4,
+    skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
+    choices: [{ id: 'burial', value: 5 }, { id: 'cull' }],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '傾きゆく帝国の命運を、その気高き美貌と底知れぬ知略によって支え続けた統治者。彼女が玉座で下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へと消えていった。',
+  },
   {
     id: 'baldanders',
     name: 'バルトアンデルス',
@@ -2549,7 +2605,6 @@ export const CARD_MASTER = [
   //   flavor:
   //     '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
   // },
-
   // トークンカード
   {
     id: 'token_knight',

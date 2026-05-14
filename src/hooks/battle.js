@@ -65,6 +65,9 @@ import { showAlertModal, showConfirmModal } from './uiModals.js';
 
 export let pendingChoiceResolver = null;
 
+// バトル準備中の二重呼び出し防止フラグ
+let isBattleLoading = false;
+
 // ==========================================
 // イベント駆動型タスクキューエンジン (State Machine Core)
 // ==========================================
@@ -235,6 +238,10 @@ function applySyncState(state) {
 // ==========================================
 
 export function prepareBattle() {
+  // ローディング画面連打による二重呼び出し防止
+  if (isBattleLoading) return;
+  isBattleLoading = true;
+
   switchScreen('screen-loading');
   const isOnline = GameState.gameMode === 'online';
   const sessionId = isOnline
@@ -346,6 +353,9 @@ export function prepareBattle() {
 }
 
 export function initBattleState() {
+  // バトル準備フラグをリセット（次回のprepareBattle呼び出しを許可）
+  isBattleLoading = false;
+
   try {
     // 全てのBGMを停止
     stopAllBGM();
@@ -461,6 +471,7 @@ export function initBattleState() {
     GameState.selectedBoardLaneIndex = null;
     GameState.selectedBoardSide = null;
     GameState.aiDecision = null;
+    GameState.currentTurn = null;
     GameState.extraTurnCount = 0;
     GameState.attackSkipCount = 0;
 
@@ -1607,11 +1618,85 @@ export async function waitSkillChoice(
 
   // AIの場合
   if (owner === 'red') {
-    // AIが強制選択する場合は、テストのため完全ランダムとする
+    // 【命令スキル】AIが相手のスキル選択肢から選ぶ
+    // カードオーナー（プレイヤー）がforceカードを出し、AIがどのスキルを発動させるか決定する
     if (isForce) {
       await sleep(800);
-      const shuffled = shuffleArray([...choices]);
-      return shuffled.slice(0, Math.min(maxChoices, choices.length));
+      const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
+
+      // Easy AI: ランダム選択（既存の挙動を維持）
+      if (localAiLevel <= 1) {
+        const shuffled = shuffleArray([...choices]);
+        return shuffled.slice(0, Math.min(maxChoices, choices.length));
+      }
+
+      // Normal/Hard AI: シミュレーションで最もAIに有利な選択肢を選ぶ
+      // 命令スキルでは「相手が選ぶ」ため、AIは自分に有利な結果を選ぶ
+      const cardOwner = 'blue'; // forceの場合、AIが選択者＝カードオーナーはプレイヤー
+      const lane = GameState.playerBoard.indexOf(card);
+
+      if (lane === -1) {
+        // レーンが見つからない場合はランダムフォールバック
+        const shuffled = shuffleArray([...choices]);
+        return shuffled.slice(0, Math.min(maxChoices, choices.length));
+      }
+
+      // リソース変動ペナルティ係数（デッキ/手札の増減を微小に評価）
+      const RESOURCE_PENALTY = 0.1;
+      const scoredChoices = [];
+
+      // 現在のリソース数を記録
+      const baseAiHand = GameState.enemyHand.length;
+      const baseAiDeck = GameState.enemyDeck.length;
+      const basePlHand = GameState.playerHand.length;
+      const basePlDeck = GameState.playerDeck.length;
+
+      for (let i = 0; i < choices.length; i++) {
+        const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+        const simState = {
+          playerBoard: GameState.playerBoard.map(cloneCard),
+          enemyBoard: GameState.enemyBoard.map(cloneCard),
+          playerHand: GameState.playerHand.map(cloneCard),
+          enemyHand: GameState.enemyHand.map(cloneCard),
+          playerDeck: GameState.playerDeck.map(cloneCard),
+          enemyDeck: GameState.enemyDeck.map(cloneCard),
+          playerDiscard: GameState.playerDiscard.map(cloneCard),
+          enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+          playerHP: GameState.playerHP,
+          enemyHP: GameState.enemyHP,
+          playerSP: GameState.playerSP,
+          enemySP: GameState.enemySP,
+          playerMaxHP: GameState.playerMaxHP,
+          enemyMaxHP: GameState.enemyMaxHP,
+          extraTurnCount: GameState.extraTurnCount,
+          attackSkipCount: GameState.attackSkipCount,
+        };
+
+        // 1. スキル効果を適用（カードオーナー=blue側で発動）
+        applyActiveSkillLogic(simState, cardOwner, lane, choices[i].id, choices[i].value);
+        // 2. カードオーナーのターン戦闘フェーズ
+        calculateCombatPhase(simState, cardOwner);
+        // 3. 次のAIターンの戦闘フェーズ
+        calculateCombatPhase(simState, 'red');
+
+        // AIにとっての評価（高いほどAIに有利）
+        let score = simState.enemyHP - simState.playerHP;
+        for (const b of simState.enemyBoard) if (b) score += b.currentPower;
+        for (const b of simState.playerBoard) if (b) score -= b.currentPower;
+
+        // リソース変動ペナルティ: AI側の減少はマイナス、プレイヤー側の減少はプラス
+        score += (simState.enemyHand.length - baseAiHand) * RESOURCE_PENALTY;
+        score += (simState.enemyDeck.length - baseAiDeck) * RESOURCE_PENALTY;
+        score -= (simState.playerHand.length - basePlHand) * RESOURCE_PENALTY;
+        score -= (simState.playerDeck.length - basePlDeck) * RESOURCE_PENALTY;
+
+        scoredChoices.push({ choice: choices[i], score });
+      }
+
+      scoredChoices.sort((a, b) => b.score - a.score);
+      return scoredChoices
+        .slice(0, Math.min(maxChoices, choices.length))
+        .map((x) => x.choice);
     }
 
     // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoiceノード）

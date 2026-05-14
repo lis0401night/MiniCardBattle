@@ -60,7 +60,7 @@ export const SKILL_POINTS = {
   },
   stealth: {
     base: 0,
-    multiplier: 2,
+    multiplier: 1,
   },
   invincible: {
     base: 0,
@@ -337,5 +337,9 @@ export const SKILL_POINTS = {
   grave_keeper: {
     base: 0,
     multiplier: 0,
+  },
+  intercept: {
+    base: 0,
+    multiplier: 1,
   },
 };

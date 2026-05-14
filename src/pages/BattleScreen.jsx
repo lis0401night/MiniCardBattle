@@ -471,7 +471,8 @@ export default function BattleScreen() {
         ></div>
       </div>
 
-      <div className="controls">
+      {/* 初期化中（ターン順アニメーション中）はコントロール領域全体を無効化 */}
+      <div className="controls" style={{ pointerEvents: isInitializing ? 'none' : 'auto' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             id="btn-leader-skill"

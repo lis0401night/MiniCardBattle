@@ -3866,6 +3866,39 @@ export function applyPassiveSkillLogic(
         source: 'growth',
       });
     }
+    // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
+    if (hasSkill(c, 'intercept')) {
+      const dmg = getSkillValue(c, 'intercept') || 2;
+      const eB = side === 'blue' ? state.enemyBoard : state.playerBoard;
+      const oppSide = side === 'blue' ? 'red' : 'blue';
+      let maxL = -1, maxP = -1;
+      for (let j = 0; j < 3; j++) {
+        if (eB[j]) {
+          const p = eB[j].currentPower;
+          // 同値の場合は左（jが小さい方）を優先するため、> を使用
+          if (p > maxP) { maxP = p; maxL = j; }
+        }
+      }
+      if (maxL !== -1) {
+        if (canTakeDamage(eB[maxL], dmg)) {
+          eB[maxL].currentPower -= dmg;
+          events.push({
+            type: 'damage_card',
+            side: oppSide,
+            lane: maxL,
+            amount: dmg,
+            source: 'intercept',
+          });
+        } else {
+          events.push({
+            type: 'immune_block',
+            side: oppSide,
+            lane: maxL,
+            source: 'intercept',
+          });
+        }
+      }
+    }
     if (hasSkill(c, 'contract') && !skipContract) {
       let v = getSkillValue(c, 'contract') || 3;
       if (side === 'blue') state.playerHP -= v;

@@ -127,6 +127,12 @@ export const SKILLS = {
     desc: (val) =>
       `自分のターン開始時、パワーを${val >= 0 ? '+' : ''}${val}する。`,
   },
+  intercept: {
+    name: '迎撃',
+    icon: '👁',
+    desc: (val) =>
+      `自分のターン開始時、相手の場で最大パワーのカード1枚に${val || 2}ダメージ。（同値の場合は左優先）`,
+  },
   hero: {
     name: '英雄',
     icon: '🏆',
@@ -732,4 +738,5 @@ export const PASSIVE_SKILLS = [
   'grave_keeper',
   'awake',
   'amplify',
+  'intercept',
 ];
