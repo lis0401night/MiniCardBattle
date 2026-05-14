@@ -213,6 +213,11 @@ export const PLAYMAT_MASTER = [
     name: '紅月ノ狂鬼',
     image: 'assets/boards/board_oni_high.png',
   },
+  {
+    id: 'pm_priest_high',
+    name: '前世の記憶',
+    image: 'assets/boards/board_priest_high.png',
+  },
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
 export let ownedPlaymats = []; // ['android', 'dragon', ...]

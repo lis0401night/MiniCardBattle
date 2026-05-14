@@ -2200,7 +2200,7 @@ export const CARD_MASTER = [
       { id: 'convert', value: 2 },
       { id: 'morph', value: 2 },
     ],
-    voiceCategory: 'monster',
+    voiceCategory: 'human_male_ikemen',
     flavor:
       '人類の歴史より遥か昔、深き水底から遣わされた奇妙な先触れ。彼らが地上に姿を現すとき、それは世界に大いなる変革の刻が訪れたことを意味している。',
   },

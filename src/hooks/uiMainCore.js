@@ -265,7 +265,8 @@ export function goBackFromSelect() {
     GameState.gameMode === 'event_cleric_high' ||
     GameState.gameMode === 'event_devilhunter_high' ||
     GameState.gameMode === 'event_witch_high' ||
-    GameState.gameMode === 'event_oni_high'
+    GameState.gameMode === 'event_oni_high' ||
+    GameState.gameMode === 'event_priest_high'
   ) {
     switchScreen('screen-high-difficulty');
   } else if (GameState.appState === 'create_deck_select_char') {
@@ -420,7 +421,8 @@ export function goBackFromDeckEdit(isCancel = false) {
     GameState.gameMode === 'event_cleric_high' ||
     GameState.gameMode === 'event_devilhunter_high' ||
     GameState.gameMode === 'event_witch_high' ||
-    GameState.gameMode === 'event_oni_high'
+    GameState.gameMode === 'event_oni_high' ||
+    GameState.gameMode === 'event_priest_high'
   ) {
     // 高難易度画面に戻る
     switchScreen('screen-high-difficulty');
@@ -664,6 +666,11 @@ window.startHighOniEvent = () => {
   playSound(SOUNDS.seSelect);
   startGameMode('event_oni_high');
 };
+
+export function handlePriestHighBattle() {
+  playSound(SOUNDS.seClick);
+  startGameMode('event_priest_high');
+}
 
 export async function showDefenseMenu() {
   playSound(SOUNDS.seClick);

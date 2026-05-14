@@ -343,6 +343,8 @@ export function showCardReward(enemyId) {
     recipeId = 'knight_high';
   if (GameState.gameMode === 'event_cthulhu_high' && enemyId === 'cthulhu')
     recipeId = 'cthulhu_high';
+  if (GameState.gameMode === 'event_priest_high' && enemyId === 'priest')
+    recipeId = 'priest_high';
 
   let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
   let enemyDeckIds = [];

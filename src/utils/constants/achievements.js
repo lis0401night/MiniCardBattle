@@ -487,6 +487,22 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 'oni_high',
     reward: { type: 'playmat', value: 'pm_oni_high', name: '紅月ノ狂鬼' },
   },
+  {
+    id: 'event_priest_high_clear_skin',
+    title: '前世の記憶',
+    description: '高難易度イベントでネフティを倒す',
+    type: 'event_clear',
+    targetValue: 'priest_high',
+    reward: { type: 'skin', value: 'priest_high', name: '冥界の裁き' },
+  },
+  {
+    id: 'event_priest_high_clear_pm',
+    title: '死者の墓廟',
+    description: '高難易度イベントでネフティを倒す',
+    type: 'event_clear',
+    targetValue: 'priest_high',
+    reward: { type: 'playmat', value: 'pm_priest_high', name: '冥界の裁き' },
+  },
   // --- 防衛戦勝利数 ---
   {
     id: 'defense_win_10',

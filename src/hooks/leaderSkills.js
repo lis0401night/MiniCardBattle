@@ -356,14 +356,14 @@ export async function executeLeaderSkillAction(
       false
     );
     tokenLanes = selectedLanes;
-  } else if (action === 'targeted_destruction' || action === 'tomb_guard') {
+  } else if (action === 'targeted_destruction' || action === 'tomb_guard' || action === 'death_judgment') {
     if (!tokenLanes || tokenLanes.length === 0) {
       const oppBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
       const hasEnemyCard = oppBoard.some((c) => c !== null);
 
       if (hasEnemyCard) {
         const message =
-          action === 'tomb_guard'
+          action === 'tomb_guard' || action === 'death_judgment'
             ? 'ダメージを与える相手のカードを1枚選んでください'
             : '破壊する相手のカードを1枚選んでください';
         const selectedLanes = await waitPlayerEnemyLaneSelection(
@@ -373,8 +373,8 @@ export async function executeLeaderSkillAction(
           message
         );
         if (selectedLanes.length === 0) {
-          if (action === 'tomb_guard') {
-            // tomb_guard はカード未選択でもデッキ破壊効果だけ発動する
+          if (action === 'tomb_guard' || action === 'death_judgment') {
+            // カード未選択でもデッキ破壊効果だけ発動する
             tokenLanes = [];
           } else {
             return; // targeted_destruction はカード未選択で中止
@@ -382,8 +382,8 @@ export async function executeLeaderSkillAction(
         } else {
           tokenLanes = selectedLanes;
         }
-      } else if (action === 'tomb_guard') {
-        // tomb_guard は相手のカードがいなくてもデッキ破壊効果だけ発動できる
+      } else if (action === 'tomb_guard' || action === 'death_judgment') {
+        // 相手のカードがいなくてもデッキ破壊効果だけ発動できる
         tokenLanes = [];
       } else {
         return; // targeted_destruction は対象がいないと発動不可
@@ -917,7 +917,7 @@ export async function executeLeaderSkillAction(
     ) {
       await sleep(200);
       await window.triggerVfx('anm_elf_arts', owner, tokenLanes[0]);
-    } else if (action === 'tomb_guard' && tokenLanes && tokenLanes.length > 0) {
+    } else if ((action === 'tomb_guard' || action === 'death_judgment') && tokenLanes && tokenLanes.length > 0) {
       await sleep(200);
       await window.triggerVfx('anm_dark_magic', owner, tokenLanes[0]);
     } else if (

@@ -2479,6 +2479,51 @@ export function applyLeaderSkillLogic(
         }
       }
     }
+  } else if (action === 'death_judgment') {
+    // 【死者の審判】相手のデッキを残り1枚になるように墓地に送る + 相手の場のカード1枚に8ダメージ
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+    const oppDeck = isBlue ? state.enemyDeck : state.playerDeck;
+    const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+
+    // 相手のデッキを残り1枚になるまで墓地へ送る
+    const REMAINING_DECK_COUNT = 1;
+    const DEATH_JUDGMENT_DAMAGE = 8;
+    const millCount = Math.max(0, oppDeck.length - REMAINING_DECK_COUNT);
+    if (millCount > 0) {
+      const milledCards = oppDeck.splice(0, millCount);
+      oppDiscard.push(...milledCards);
+      events.push({
+        type: 'deck_mill',
+        side: oppOwner,
+        count: millCount,
+        source: 'death_judgment',
+      });
+    }
+
+    // 相手の場のカード1枚に8ダメージ
+    if (tokenLanes && tokenLanes.length > 0) {
+      const targetLane = tokenLanes[0];
+      const targetCard = eBoard[targetLane];
+      if (targetCard) {
+        if (!canTakeDamage(targetCard, DEATH_JUDGMENT_DAMAGE)) {
+          events.push({
+            type: 'immune_block',
+            side: oppOwner,
+            lane: targetLane,
+            source: 'death_judgment',
+          });
+        } else {
+          targetCard.currentPower -= DEATH_JUDGMENT_DAMAGE;
+          events.push({
+            type: 'damage_card',
+            side: oppOwner,
+            lane: targetLane,
+            amount: DEATH_JUDGMENT_DAMAGE,
+            source: 'death_judgment',
+          });
+        }
+      }
+    }
   } else if (action === 'devilhunter_resurrect') {
     if (isGraveKeeperActive(state)) return events;
     const discard = isBlue ? state.playerDiscard : state.enemyDiscard;

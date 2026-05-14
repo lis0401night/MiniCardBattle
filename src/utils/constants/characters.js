@@ -1276,7 +1276,7 @@ const HIGH_SKIN_NAMES = {
   devilhunter: 'ゴーストライダー',
   witch: '時空の探索者',
   oni: '紅月ノ狂鬼',
-  // priest は未実装のためガードとして空にするか未定義にしておく
+  priest: '前世の記憶',
 };
 
 Object.values(CHARACTERS).forEach((char) => {
@@ -1570,6 +1570,14 @@ CHARACTERS.oni.skins.oni_high.dialogue = {
   skill: '百鬼夜行……！ 忌まわしき血の宴の始まりよ！ アハハハ！',
 };
 
+CHARACTERS.priest.skins.priest_high.dialogue = {
+  intro:
+    '……思い出した。裏切られた記憶……すべて。我は女王……民に尽くし、臣下に滅ぼされた者……。',
+  win: '……審判は下った。お前もまた、裏切る者……永遠に砂の底で眠れ……。',
+  lose: '……前世の記憶が……また、遠ざかっていく……。',
+  skill: '……女王の全権を以て、裏切り者のすべてを裁く。死者の審判を！',
+};
+
 // ============================================================
 // 高難易度イベント定義
 // ============================================================
@@ -1679,6 +1687,18 @@ CHARACTERS.oni.event_high = {
     desc: '(SP:3) 相手のレーンを2つまで選択する。そのレーンのカードに4ダメージを与え、レーンを1ターン封印する。自分の場に「人魂（パワー1）」を2体まで配置する。',
     cost: 3,
     action: 'night_parade',
+  },
+};
+
+CHARACTERS.priest.event_high = {
+  id: 'priest_high',
+  name: '前世の記憶 ネフティ',
+  maxHP: 40,
+  leaderSkill: {
+    name: '死者の審判',
+    desc: '(SP:3) 相手のデッキを残り1枚になるように墓地に送る。相手の場のカード1枚を選び、8ダメージを与える。',
+    cost: 3,
+    action: 'death_judgment',
   },
 };
 

@@ -986,6 +986,7 @@ export function getBestSimulatedMove() {
         action.type === 'devilhunter_resurrect' ||
         action.type === 'targeted_destruction' ||
         action.type === 'tomb_guard' ||
+        action.type === 'death_judgment' ||
         action.type === 'elf_polarbear_combo'
       ) {
         // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
@@ -1388,7 +1389,7 @@ export function getBestSimulatedMove() {
         pairs = avail.map((l) => [l, l]);
       }
       tokenLanePatterns = pairs.length > 0 ? pairs : [null];
-    } else if (action === 'targeted_destruction' || action === 'tomb_guard') {
+    } else if (action === 'targeted_destruction' || action === 'tomb_guard' || action === 'death_judgment') {
       tokenLanePatterns = [0, 1, 2]
         .filter((l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'))
         .map((l) => [l]);

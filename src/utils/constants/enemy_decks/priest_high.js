@@ -1,0 +1,22 @@
+// ネフティ高難易度イベント専用デッキ
+export default [
+  'cleopatra',
+  'cleopatra',
+  'cleopatra',
+  'monolith',
+  'monolith',
+  'monolith',
+  'highwayman',
+  'highwayman',
+  'highwayman',
+  'highwayman',
+  'sphinx',
+  'sphinx',
+  'pharaoh',
+  'pharaoh',
+  'stormpriest',
+  'stormpriest',
+  'stormpriest',
+  'goldship',
+  'goldship',
+];

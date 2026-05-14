@@ -94,7 +94,7 @@ export async function executeEnemyAI() {
           if (GameState.playerBoard.some((c) => c !== null)) {
             shouldForceSkill = true;
           }
-        } else if (skill.action === 'tomb_guard') {
+        } else if (skill.action === 'tomb_guard' || skill.action === 'death_judgment') {
           // 相手の場にカードがあるか、デッキにカードがある場合に使用
           if (
             GameState.playerBoard.some((c) => c !== null) ||
