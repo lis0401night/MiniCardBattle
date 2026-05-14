@@ -6,6 +6,7 @@ export default [
   'monolith',
   'monolith',
   'monolith',
+  'monolith',
   'highwayman',
   'highwayman',
   'highwayman',

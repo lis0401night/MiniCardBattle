@@ -156,14 +156,14 @@ export function getBestSimulatedMove() {
 
     let choiceCombinations = [undefined];
     let choice2Combinations = [undefined];
-    if (hasSkill(card, 'choice')) {
+    if (hasSkill(card, 'choice') || hasSkill(card, 'force')) {
       // 「増幅」パッシブによる選択数ボーナス（自分の場に amplify があれば+1）
       const amplifyBonus = myBoard.filter((bc) => bc && hasSkill(bc, 'amplify')).length;
       if (Array.isArray(card.choices)) {
         let cc = 1;
-        if (card.skill === 'choice') cc = card.skillValue || 1;
+        if (card.skill === 'choice' || card.skill === 'force') cc = card.skillValue || 1;
         else if (card.skills) {
-          const c = card.skills.find((s) => s.id === 'choice');
+          const c = card.skills.find((s) => s.id === 'choice' || s.id === 'force');
           if (c) cc = c.value || 1;
         }
         cc = Math.min(cc + amplifyBonus, card.choices.length);
@@ -315,6 +315,7 @@ export function getBestSimulatedMove() {
                   'split',
                   'puppet',
                   'leap',
+                  'force',
                 ].includes(card.skill)
               ) {
                 effectiveSkills.push({
@@ -340,6 +341,7 @@ export function getBestSimulatedMove() {
                       'puppet',
                       'choice',
                       'leap',
+                      'force',
                     ].includes(s.id)
                   )
                     effectiveSkills.push(s);
@@ -689,6 +691,38 @@ export function getBestSimulatedMove() {
                     }
                   }
                 }
+              } else if (sk.id === 'force') {
+                // 【命令】相手が選ぶスキル。AI上はchoiceと同様に全組み合わせを列挙し、
+                // processActionSequenceでシミュレートして最良/最悪結果を評価する
+                const fc = sk.value || 1;
+                const fArr =
+                  sk.choiceGroup === 2 ? card.choices2 : card.choices;
+                if (fArr) {
+                  const idxs = fArr.map((_, i) => i);
+                  let combinations = getCombinations(
+                    idxs,
+                    Math.min(idxs.length, fc)
+                  );
+                  for (let combo of combinations) {
+                    const chosenSkills = combo.map((idx) => fArr[idx]);
+                    let nextSkills = [...chosenSkills, ...remainingSkills];
+                    let forceNode = {
+                      type: 'force',
+                      choices: combo,
+                      choiceGroup: sk.choiceGroup,
+                    };
+                    let nextBranches = buildSkillBranch(
+                      nextSkills,
+                      currentUsedHand,
+                      currentUsedDiscard,
+                      currentDepth,
+                      currentDiscardedFromHand
+                    );
+                    for (let nb of nextBranches) {
+                      results.push([forceNode, ...nb]);
+                    }
+                  }
+                }
               } else {
                 return buildSkillBranch(
                   remainingSkills,
@@ -809,6 +843,8 @@ export function getBestSimulatedMove() {
 
     for (let action of actionQueue) {
       if (action.type === 'pass') continue;
+      // choice/forceノードはメタ情報のみ（choices指定）で、カード配置には関与しない
+      if (action.type === 'choice' || action.type === 'force') continue;
 
       if (action.type === 'discard') {
         if (simState.enemyHand[action.targetIdx]) {
@@ -1109,7 +1145,7 @@ export function getBestSimulatedMove() {
         let modifiedSkillsForCard = [];
         if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
           if (
-            activeCardForSkills.skill === 'choice' &&
+            (activeCardForSkills.skill === 'choice' || activeCardForSkills.skill === 'force') &&
             action.choices &&
             activeCardForSkills.choices
           ) {
@@ -1135,7 +1171,7 @@ export function getBestSimulatedMove() {
         let newSkillsArr = [];
         if (Array.isArray(activeCardForSkills.skills)) {
           activeCardForSkills.skills.forEach((sk) => {
-            if (sk.id === 'choice') {
+            if (sk.id === 'choice' || sk.id === 'force') {
               if (
                 sk.choiceGroup === 2 &&
                 action.choices2 &&
