@@ -2457,7 +2457,8 @@ export async function resolveActiveSkillEffect(
           return a - b;
         });
         selectedLanes = [occupiedLanes[0]];
-        await sleep(600);
+        // AIの思考時間を演出（分身などと同程度の遅延）
+        await sleep(800);
       } else {
         // 相手がプレイヤーの場合：自分の場のカードを1枚選択させる
         selectedLanes = await waitPlayerAlliedLaneSelection(1, oppOwner);
@@ -2467,10 +2468,14 @@ export async function resolveActiveSkillEffect(
         const targetLane = selectedLanes[0];
         const targetCard = oppBoard[targetLane];
         if (targetCard) {
-          oppBoard[targetLane] = null;
-          await discardCard(oppOwner, targetCard, targetLane);
-          renderBoard();
-          await sleep(400);
+          // 破壊アニメーション・効果音・ボイスをeventRenderer経由で再生
+          const destroyEvents = [
+            {
+              type: 'destroy_cards',
+              targets: [{ side: oppOwner, lane: targetLane, card: targetCard }],
+            },
+          ];
+          await playEvents(destroyEvents);
         }
       }
     }

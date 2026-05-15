@@ -1699,9 +1699,10 @@ export async function waitSkillChoice(
         .map((x) => x.choice);
     }
 
-    // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoiceノード）
-    const aiAction = consumeAIAction('choice');
+    // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoice/forceノード）
+    const aiAction = consumeAIAction(['choice', 'force']);
     if (aiAction && aiAction.choices !== undefined) {
+      if (GameState.gameMode !== 'online') await sleep(600); // AIの思考時間を演出
       return aiAction.choices.map((i) => choices[i]);
     }
 

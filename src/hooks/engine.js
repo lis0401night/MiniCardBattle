@@ -1759,7 +1759,7 @@ export function applyActiveSkillLogic(
         const targetLane = occupiedLanes[0];
         const targetCard = eB[targetLane];
         if (targetCard) {
-          const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+          const oppDiscard = oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
           oppDiscard.push(targetCard);
           eB[targetLane] = null;
           events.push({
