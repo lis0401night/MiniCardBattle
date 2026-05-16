@@ -322,7 +322,7 @@ export async function executeLeaderSkillAction(
       if (selectedEnemyLanes === null) return;
       const tSoul = CARD_MASTER.find((m) => m.id === 'token_soul');
       const selectedAlliedLanes = await waitPlayerLaneSelection(
-        2,
+        1,
         owner,
         tSoul,
         false,

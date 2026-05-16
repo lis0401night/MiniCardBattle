@@ -1956,7 +1956,7 @@ export function applyLeaderSkillLogic(
       : state.enemySealedLanes;
 
     if (tokenLanes && tokenLanes.allied) {
-      allyTargets = [...tokenLanes.allied].slice(0, 2);
+      allyTargets = [...tokenLanes.allied].slice(0, 1);
     } else {
       // AI Selection Logic for Allied
       let availableLanes = [0, 1, 2].filter(
@@ -1971,12 +1971,12 @@ export function applyLeaderSkillLogic(
         );
 
       allyTargets = [...emptyLanes];
-      if (allyTargets.length < 2) {
+      if (allyTargets.length < 1) {
         allyTargets = allyTargets.concat(
-          occupiedLanes.slice(0, 2 - allyTargets.length)
+          occupiedLanes.slice(0, 1 - allyTargets.length)
         );
       }
-      allyTargets = allyTargets.slice(0, 2);
+      allyTargets = allyTargets.slice(0, 1);
     }
 
     const tM = CARD_MASTER.find((m) => m.id === 'token_soul') || {
@@ -2490,7 +2490,7 @@ export function applyLeaderSkillLogic(
 
     // 相手のデッキを残り1枚になるまで墓地へ送る
     const REMAINING_DECK_COUNT = 1;
-    const DEATH_JUDGMENT_DAMAGE = 8;
+    const DEATH_JUDGMENT_DAMAGE = 4;
     const millCount = Math.max(0, oppDeck.length - REMAINING_DECK_COUNT);
     if (millCount > 0) {
       const milledCards = oppDeck.splice(0, millCount);

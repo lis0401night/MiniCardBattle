@@ -1502,9 +1502,6 @@ export function getBestSimulatedMove() {
       let alliedPatterns = [[]];
       for (let l1 of availAllied) {
         alliedPatterns.push([l1]);
-        for (let l2 of availAllied) {
-          if (l1 <= l2) alliedPatterns.push([l1, l2]);
-        }
       }
 
       let combs = [];
