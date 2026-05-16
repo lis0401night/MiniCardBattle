@@ -808,7 +808,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 1,
     skills: [{ id: 'equip' }, { id: 'snipe', value: 5 }],
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_old',
     flavor:
       '弓の引き方も、剣の握り方も、全てはこの背中が教えた。種族の壁を超えて彼を育て上げたその姿は、間違いなく一人の「父親」のそれであった。',
   },
@@ -843,16 +843,6 @@ export const CARD_MASTER = [
       '微かに光るルーンの印だけが、彼に失くした過去を呼び覚ます。深緑の外套を揺らし、記憶の残香を辿る旅。その道を阻む理不尽なる者がいれば、一切の迷いなき必中の矢が静かに急所を射抜く。',
   },
   {
-    id: 'charity',
-    name: '慈愛',
-    rarity: 2,
-    power: 3,
-    skills: [{ id: 'heal', value: 4 }, { id: 'defender' }, { id: 'sturdy' }],
-    voiceCategory: 'stone',
-    flavor:
-      '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。',
-  },
-  {
     id: 'barrier',
     name: '聖光の護り手',
     rarity: 2,
@@ -861,6 +851,25 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cool',
     flavor:
       '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。',
+  },
+  {
+    id: 'flak',
+    name: 'ミスリルの高射砲',
+    rarity: 2,
+    power: 6,
+    skills: [{ id: 'defender' }, { id: 'intercept', value: 3 }],
+    voiceCategory: 'machine_old',
+    flavor: '高高度を狙う神聖なる対空砲。上空からの奇襲を許さない。',
+  },
+  {
+    id: 'charity',
+    name: '慈愛',
+    rarity: 2,
+    power: 3,
+    skills: [{ id: 'heal', value: 4 }, { id: 'defender' }, { id: 'sturdy' }],
+    voiceCategory: 'stone',
+    flavor:
+      '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。',
   },
   {
     id: 'light',
@@ -885,15 +894,6 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'stone',
     flavor: '古より伝わる小さな彫像。周囲に底知れぬ絶望と絶大な破滅をもたらす',
-  },
-  {
-    id: 'flak',
-    name: 'ミスリルの高射砲',
-    rarity: 2,
-    power: 6,
-    skills: [{ id: 'defender' }, { id: 'intercept', value: 3 }],
-    voiceCategory: 'machine_old',
-    flavor: '高高度を狙う神聖なる対空砲。上空からの奇襲を許さない。',
   },
   {
     id: 'monk',
@@ -1006,7 +1006,7 @@ export const CARD_MASTER = [
       { id: 'convert', value: 1 },
       { id: 'snipe', value: 3 },
     ],
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_normal',
     flavor:
       '剣と魔法を操る魔導士。彼らが招集されたということは、困難な任務であることを意味する',
   },
@@ -1864,26 +1864,6 @@ export const CARD_MASTER = [
       '二つの首が天を仰ぎ、終末の咆哮を上げる。その翼が振り下ろされる時、世界は劫火に包まれる。',
   },
   {
-    id: 'threebears',
-    name: '荒熊山賊団',
-    rarity: 3,
-    power: 6,
-    skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
-    voiceCategory: 'human_male_warrior',
-    flavor:
-      '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
-  },
-  {
-    id: 'goldilocks',
-    name: 'ゴールデンロックス',
-    rarity: 3,
-    power: 6,
-    skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
-    voiceCategory: 'human_female_assassin',
-    flavor:
-      '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
-  },
-  {
     id: 'badwolf',
     name: '幻影の狼',
     rarity: 3,
@@ -1931,6 +1911,26 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_assassin',
     flavor:
       '”鏡よ鏡”。いつから私が、毒を盛られて黙っているようなお姫様だと錯覚していた？純白の鎧は復讐の誓い。',
+  },
+  {
+    id: 'threebears',
+    name: '荒熊山賊団',
+    rarity: 3,
+    power: 6,
+    skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
+    voiceCategory: 'human_male_warrior',
+    flavor:
+      '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
+  },
+  {
+    id: 'goldilocks',
+    name: 'ゴールデンロックス',
+    rarity: 3,
+    power: 6,
+    skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
+    voiceCategory: 'human_female_assassin',
+    flavor:
+      '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
   },
   {
     id: 'whiterider',
