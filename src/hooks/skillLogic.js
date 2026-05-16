@@ -58,7 +58,7 @@ export async function resolveActiveSkillEffect(
   skObj = null
 ) {
   // 忘却状態ならスキルは発動しない（忘却自身と装備スキルは除く）
-  if (!hasSkill(c, skillId)) return;
+  if (hasSkill(c, 'oblivion') && skillId !== 'oblivion' && skillId !== 'equip') return;
 
   const cEl = document.querySelector(
     `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
