@@ -254,7 +254,7 @@ export const CARD_MASTER = [
     name: '民兵団の射手',
     rarity: 1,
     power: 8,
-    skills: [{ id: 'spread', value: 1 }, { id: 'defender' }],
+    skills: [{ id: 'defender' }, { id: 'spread', value: 1 }],
     voiceCategory: 'human_male_normal',
     flavor:
       '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。',
@@ -866,7 +866,7 @@ export const CARD_MASTER = [
     name: '慈愛',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'heal', value: 4 }, { id: 'defender' }, { id: 'sturdy' }],
+    skills: [{ id: 'defender' }, { id: 'sturdy' }, { id: 'heal', value: 4 }],
     voiceCategory: 'stone',
     flavor:
       '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。',
@@ -887,10 +887,10 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 3,
     skills: [
-      { id: 'spread', value: 6 },
+      { id: 'takeover' },
       { id: 'defender' },
       { id: 'sturdy' },
-      { id: 'takeover' },
+      { id: 'spread', value: 6 },
     ],
     voiceCategory: 'stone',
     flavor: '古より伝わる小さな彫像。周囲に底知れぬ絶望と絶大な破滅をもたらす',
@@ -1513,9 +1513,9 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 6,
     skills: [
-      { id: 'artillery', value: 3 },
       { id: 'defender' },
       { id: 'guardian' },
+      { id: 'artillery', value: 3 },
     ],
     voiceCategory: 'machine_old',
     flavor:
@@ -2002,8 +2002,8 @@ export const CARD_MASTER = [
     power: 8,
     skills: [
       { id: 'union', targetId: 'gearA', summonId: 'token_gearC' },
-      { id: 'artillery', value: 1 },
       { id: 'defender' },
+      { id: 'artillery', value: 1 },
     ],
     voiceCategory: 'machine_new',
     flavor:

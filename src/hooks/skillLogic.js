@@ -57,7 +57,7 @@ export async function resolveActiveSkillEffect(
   skillValue,
   skObj = null
 ) {
-  // 忘却状態ならスキルは発動しない（忘却自身と装備スキルは除く）
+  // 沈黙状態ならスキルは発動しない（沈黙自身と装備スキルは除く）
   if (hasSkill(c, 'oblivion') && skillId !== 'oblivion' && skillId !== 'equip') return;
 
   const cEl = document.querySelector(
@@ -2503,7 +2503,7 @@ export async function triggerStartTurnPassive(owner, lane) {
   const c = board[lane];
   if (!c) return false;
 
-  // 忘却状態ならパッシブスキルは発動しない
+  // 沈黙状態ならパッシブスキルは発動しない
   if (hasSkill(c, 'oblivion')) return false;
 
   // invincible のターン処理等のために一度 Engine の全体処理を呼ぶべきだが、

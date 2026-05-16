@@ -357,7 +357,7 @@ export const SKILLS = {
     ],
   },
   oblivion: {
-    name: '忘却',
+    name: '沈黙',
     icon: '⚪',
     desc: (val) =>
       '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。',
