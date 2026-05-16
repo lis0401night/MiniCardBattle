@@ -1661,7 +1661,7 @@ export const CARD_MASTER = [
     choices: [
       { id: 'convert', value: 2 },
       { id: 'sacrifice', value: 2 },
-      { id: 'berserk', value: -2 },
+      { id: 'berserk', value: 2 },
       { id: 'growth', value: -1 },
     ],
     choices2: [

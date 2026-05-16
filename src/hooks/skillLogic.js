@@ -1550,7 +1550,7 @@ export async function resolveActiveSkillEffect(
       basePower: wallPower,
       currentPower: wallPower,
       baseId: 'token_wall',
-      skills: [],
+      skills: (wTC.skills || []).map((s) => ({ ...s })),
     };
     // AI の場合：actionQueue の token_placement(wall_create) からレーン指定を取り出す（clone と同パターン）
     let wallPredefinedLanes = null;

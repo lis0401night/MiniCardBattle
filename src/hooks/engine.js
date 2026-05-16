@@ -1284,7 +1284,7 @@ export function applyActiveSkillLogic(
             basePower: wallPower,
             currentPower: wallPower,
             baseId: 'token_wall',
-            skills: [],
+            skills: (wTC.skills || []).map((s) => ({ ...s })),
             isToken: true,
           };
           processPlacementOrEquip(
