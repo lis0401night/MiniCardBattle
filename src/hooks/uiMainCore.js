@@ -294,13 +294,16 @@ export function goBackFromSelect() {
     showOnlineLobby();
   } else if (GameState.gameMode === 'tournament') {
     playSound(AUDIO_INSTANCES.bgmTournament1);
-    if (GameState.tournament && GameState.tournament.participants) {
-      if (GameState.tournament.currentMatch === 0) {
-        switchScreen('screen-tournament-bracket');
-      } else {
-        switchScreen('screen-tournament-resume');
-      }
+    // トーナメントが進行中（bracketTreeにデータがある）場合はブラケット画面へ
+    if (
+      GameState.tournament &&
+      GameState.tournament.bracketTree &&
+      GameState.tournament.bracketTree.length > 0 &&
+      GameState.tournament.deckEditDone
+    ) {
+      switchScreen('screen-tournament-bracket');
     } else {
+      // 新規挑戦前やリタイア後はメニューに戻る
       switchScreen('screen-tournament-menu');
     }
   } else {

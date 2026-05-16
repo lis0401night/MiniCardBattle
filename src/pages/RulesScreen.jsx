@@ -1,9 +1,29 @@
-import { switchScreen } from '../utils/gameUtils.js';
+import { useState } from 'react';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function RulesScreen() {
+  const [clickCount, setClickCount] = useState(0);
+
+  // 「遊び方」タイトルを10回クリックでデバッグバトル画面を起動
+  const handleTitleClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+    if (newCount >= 10) {
+      playSound(SOUNDS?.seClick);
+      switchScreen('screen-debug-battle');
+      setClickCount(0);
+    }
+  };
+
   return (
     <div id="screen-rules" className="screen active">
-      <h2 style={{ color: '#facc15', marginBottom: '20px' }}>遊び方</h2>
+      <h2
+        onClick={handleTitleClick}
+        style={{ color: '#facc15', marginBottom: '20px', cursor: 'pointer', userSelect: 'none' }}
+      >
+        遊び方
+      </h2>
       <div className="rule-box">
         <div className="rule-section">
           <div className="rule-category">【デッキ編成】</div>

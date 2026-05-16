@@ -158,12 +158,17 @@ export function getBestSimulatedMove() {
     let choice2Combinations = [undefined];
     if (hasSkill(card, 'choice') || hasSkill(card, 'force')) {
       // 「増幅」パッシブによる選択数ボーナス（自分の場に amplify があれば+1）
-      const amplifyBonus = myBoard.filter((bc) => bc && hasSkill(bc, 'amplify')).length;
+      const amplifyBonus = myBoard.filter(
+        (bc) => bc && hasSkill(bc, 'amplify')
+      ).length;
       if (Array.isArray(card.choices)) {
         let cc = 1;
-        if (card.skill === 'choice' || card.skill === 'force') cc = card.skillValue || 1;
+        if (card.skill === 'choice' || card.skill === 'force')
+          cc = card.skillValue || 1;
         else if (card.skills) {
-          const c = card.skills.find((s) => s.id === 'choice' || s.id === 'force');
+          const c = card.skills.find(
+            (s) => s.id === 'choice' || s.id === 'force'
+          );
           if (c) cc = c.value || 1;
         }
         cc = Math.min(cc + amplifyBonus, card.choices.length);
@@ -292,6 +297,13 @@ export function getBestSimulatedMove() {
               cardTokenLanes:
                 tLanes && tLanes.length > 0 ? [...tLanes] : undefined,
             };
+            // 【重要】lane === -1 は「このカードをスキップする」を意味する。
+            // スキップ時はスキルブランチ（summon, clone等の子アクション）を
+            // 生成してはならない。スキップノードのみを返す。
+            if (lane === -1) {
+              branches.push([node]);
+              continue;
+            }
 
             // 発動するスキル群を特定（召喚系アクションの場合のみ）
             let effectiveSkills = [];
@@ -931,7 +943,10 @@ export function getBestSimulatedMove() {
             let inheritedSkills = [];
             if (action.skillId === 'clone' && sourceCard) {
               if (sourceCard.skill && sourceCard.skill !== 'none') {
-                inheritedSkills.push({ id: sourceCard.skill, value: sourceCard.skillValue });
+                inheritedSkills.push({
+                  id: sourceCard.skill,
+                  value: sourceCard.skillValue,
+                });
               }
               if (Array.isArray(sourceCard.skills)) {
                 inheritedSkills = inheritedSkills.concat(sourceCard.skills);
@@ -951,12 +966,41 @@ export function getBestSimulatedMove() {
               voiceCategory: baseMaster?.voiceCategory || 'monster',
               skills: inheritedSkills,
             };
-            if (simState.enemyBoard[tLane] !== null) {
-              // シミュレーション内の簡易処理: 既存カードを墓地に移動
-              simState.enemyDiscard.push(simState.enemyBoard[tLane]);
+            // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
+            const existingCard = simState.enemyBoard[tLane];
+            if (
+              existingCard &&
+              (hasSkill(newToken, 'equip') ||
+                hasSkill(existingCard, 'arm_self')) &&
+              !hasSkill(existingCard, 'possession') &&
+              !hasSkill(newToken, 'possession') &&
+              !hasSkill(existingCard, 'reflect') &&
+              !hasSkill(newToken, 'reflect')
+            ) {
+              // 装備合体: パワー加算 + スキル統合
+              existingCard.basePower =
+                (existingCard.basePower || 0) + (newToken.currentPower || 0);
+              existingCard.currentPower =
+                (existingCard.currentPower || 0) + (newToken.currentPower || 0);
+              // トークンのスキルを統合（equip自体は除外）
+              let addedSkills = [];
+              if (newToken.skills) {
+                newToken.skills.forEach((s) => {
+                  if (s.id !== 'equip') addedSkills.push(s);
+                });
+              }
+              if (addedSkills.length > 0) {
+                mergeCardSkills(existingCard, addedSkills);
+              }
+            } else if (existingCard) {
+              // 装備不可: 既存カードを墓地に移動して上書き
+              simState.enemyDiscard.push(existingCard);
               simState.enemyBoard[tLane] = null;
+              simState.enemyBoard[tLane] = newToken;
+            } else {
+              // 空きレーン: そのまま配置
+              simState.enemyBoard[tLane] = newToken;
             }
-            simState.enemyBoard[tLane] = newToken;
           }
         } else {
           // 【重要】action.lanes のコピーを渡す。applyActiveSkillLogic 内部で shift() により
@@ -1145,7 +1189,8 @@ export function getBestSimulatedMove() {
         let modifiedSkillsForCard = [];
         if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
           if (
-            (activeCardForSkills.skill === 'choice' || activeCardForSkills.skill === 'force') &&
+            (activeCardForSkills.skill === 'choice' ||
+              activeCardForSkills.skill === 'force') &&
             action.choices &&
             activeCardForSkills.choices
           ) {
@@ -1425,7 +1470,11 @@ export function getBestSimulatedMove() {
         pairs = avail.map((l) => [l, l]);
       }
       tokenLanePatterns = pairs.length > 0 ? pairs : [null];
-    } else if (action === 'targeted_destruction' || action === 'tomb_guard' || action === 'death_judgment') {
+    } else if (
+      action === 'targeted_destruction' ||
+      action === 'tomb_guard' ||
+      action === 'death_judgment'
+    ) {
       tokenLanePatterns = [0, 1, 2]
         .filter((l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'))
         .map((l) => [l]);
@@ -1806,6 +1855,9 @@ export function getBestSimulatedMove() {
     `[AI DEBUG] After:  [Player] ${dumpB(finalDecision.simState.playerBoard)} vs [AI] ${dumpB(finalDecision.simState.enemyBoard)}`
   );
 
+  if (finalDecision.actionQueue) {
+    console.log(`[AI DEBUG] ActionQueue: ${JSON.stringify(finalDecision.actionQueue)}`);
+  }
   GameState.aiDecision = finalDecision;
   return finalDecision;
 }

@@ -10,6 +10,7 @@ import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   createDamagePopup,
+  getCardImgUrl,
   getDialogue,
   getOrCreateUUID,
   getSeededRandom,
@@ -2777,6 +2778,135 @@ export async function triggerStartTurnSkills(owner) {
 }
 
 /**
+ * 【デバッグ・チュートリアル用】プリセットからカードオブジェクトを生成する
+ * @param {string} cardId - CARD_MASTER上のカードID
+ * @param {string} owner - 'blue' | 'red'
+ * @param {number} index - 一意のインデックス（UID生成用）
+ * @returns {object|null} カードオブジェクト
+ */
+function resolvePresetCard(cardId, owner, index) {
+  const master = CARD_MASTER.find((m) => m.id === cardId);
+  if (!master) {
+    console.warn(`[BattlePreset] カードID "${cardId}" が見つかりません`);
+    return null;
+  }
+  const card = {
+    ...master,
+    baseId: master.id,
+    id: `${owner}_preset_${index}`,
+    owner: owner,
+    power: master.power,
+    basePower: master.power,
+    currentPower: master.power,
+    skills: master.skills ? master.skills.map((s) => ({ ...s })) : undefined,
+    uid: `${owner}_preset_${Date.now()}_${index}`,
+  };
+  card.imgUrl = getCardImgUrl(card);
+  return card;
+}
+
+/**
+ * 【デバッグ・チュートリアル用】バトル状態プリセットを適用する
+ * プリセットオブジェクトの各フィールド（省略可能）に基づき、GameStateを上書きする。
+ * @param {object} preset - プリセットデータ（詳細はdebug_state_plan.mdを参照）
+ */
+function applyBattlePreset(preset) {
+  if (!preset) return;
+  console.log('[BattlePreset] プリセットを適用中...', preset);
+
+  // カードID配列からカードオブジェクト配列を生成するヘルパー
+  let cardCounter = 0;
+  const resolveCards = (cardIds, owner) => {
+    if (!Array.isArray(cardIds)) return null;
+    return cardIds
+      .map((id) => resolvePresetCard(id, owner, cardCounter++))
+      .filter(Boolean);
+  };
+
+  // --- HP ---
+  if (preset.playerHP !== undefined) GameState.playerHP = preset.playerHP;
+  if (preset.enemyHP !== undefined) GameState.enemyHP = preset.enemyHP;
+
+  // --- SP ---
+  if (preset.playerSP !== undefined) GameState.playerSP = preset.playerSP;
+  if (preset.enemySP !== undefined) GameState.enemySP = preset.enemySP;
+
+  // --- ターン数 ---
+  if (preset.turnCount !== undefined) GameState.turnCount = preset.turnCount;
+
+  // --- 手札 ---
+  if (preset.playerHand) {
+    const cards = resolveCards(preset.playerHand, 'blue');
+    if (cards) GameState.playerHand = cards;
+  }
+  if (preset.enemyHand) {
+    const cards = resolveCards(preset.enemyHand, 'red');
+    if (cards) GameState.enemyHand = cards;
+  }
+
+  // --- 山札（指定された場合のみ完全入れ替え。配列の先頭がデッキトップ）---
+  if (preset.playerDeck) {
+    const cards = resolveCards(preset.playerDeck, 'blue');
+    if (cards) GameState.playerDeck = cards;
+  }
+  if (preset.enemyDeck) {
+    const cards = resolveCards(preset.enemyDeck, 'red');
+    if (cards) GameState.enemyDeck = cards;
+  }
+
+  // --- 墓地 ---
+  if (preset.playerDiscard) {
+    const cards = resolveCards(preset.playerDiscard, 'blue');
+    if (cards) GameState.playerDiscard = cards;
+  }
+  if (preset.enemyDiscard) {
+    const cards = resolveCards(preset.enemyDiscard, 'red');
+    if (cards) GameState.enemyDiscard = cards;
+  }
+
+  // --- 場（3レーン。null = 空きレーン）---
+  if (preset.playerBoard) {
+    GameState.playerBoard = preset.playerBoard.map((id, i) => {
+      if (!id) return null;
+      const card = resolvePresetCard(id, 'blue', cardCounter++);
+      if (card) {
+        // 場に直接配置するカードは召喚時効果を再発動させない
+        card.skillTriggered = true;
+        card.stunTurns = 0;
+        card.stunAppliedThisTurn = false;
+      }
+      return card;
+    });
+  }
+  if (preset.enemyBoard) {
+    GameState.enemyBoard = preset.enemyBoard.map((id, i) => {
+      if (!id) return null;
+      const card = resolvePresetCard(id, 'red', cardCounter++);
+      if (card) {
+        card.skillTriggered = true;
+        card.stunTurns = 0;
+        card.stunAppliedThisTurn = false;
+      }
+      return card;
+    });
+  }
+
+  // --- 封印レーン ---
+  if (preset.playerSealedLanes) {
+    GameState.playerSealedLanes = [...preset.playerSealedLanes];
+  }
+  if (preset.enemySealedLanes) {
+    GameState.enemySealedLanes = [...preset.enemySealedLanes];
+  }
+
+  // デッキ残数表示を更新
+  updateDeckDisplay('blue');
+  updateDeckDisplay('red');
+
+  console.log('[BattlePreset] プリセット適用完了');
+}
+
+/**
  * 先攻・後攻を決定する演出
  */
 export async function determineTurnOrder() {
@@ -2789,6 +2919,23 @@ export async function determineTurnOrder() {
       drawCard('blue');
       drawCard('red');
     }
+  }
+
+  // プリセットが設定されている場合、状態を上書きしてマリガン・先攻決定をスキップ
+  if (GameState.battlePreset) {
+    const preset = GameState.battlePreset;
+    applyBattlePreset(preset);
+    GameState.battlePreset = null; // 適用後にクリア（リトライ時の二重適用を防止）
+    GameState.firstPlayer = preset.firstPlayer || (getSeededRandom() < 0.5 ? 'blue' : 'red');
+    GameState.isProcessing = false;
+    GameState.battlePhase = 'BATTLE';
+    renderBoard();
+    renderHand();
+    updateHPBar();
+    updateSPOrbs();
+    await sleep(500);
+    await startTurn(GameState.firstPlayer);
+    return;
   }
 
   if (window.startTurnOrderReact) {

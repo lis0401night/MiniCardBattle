@@ -623,6 +623,23 @@ export function saveCurrentEditDeck() {
 
   if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
     const activeDeck = GameState.decks[GameState.currentDeckIndex];
+
+    // トーナメントモードでは学園スキンが強制設定されているため、
+    // 通常デッキのスキン情報を上書きしない（他モードへの汚染を防止）
+    if (GameState.gameMode === 'tournament') {
+      const snapshotDeck = {
+        ...activeDeck,
+        cards: GameState.playerDeckSelection.map((c) =>
+          typeof c === 'string' ? c : c.baseId || c.id
+        ),
+      };
+      localStorage.setItem(
+        'mini_card_battle_tournament_deck_obj',
+        JSON.stringify(snapshotDeck)
+      );
+      return;
+    }
+
     activeDeck.playmatId = GameState.selectedPlaymatId;
     activeDeck.playerSkins = { ...GameState.playerSkins };
     activeDeck.premiumCards = [...GameState.premiumCards];
@@ -643,11 +660,6 @@ export function saveCurrentEditDeck() {
     } else if (GameState.gameMode === 'battle_dungeon') {
       localStorage.setItem(
         'mini_card_battle_dungeon_deck_obj',
-        JSON.stringify(activeDeck)
-      );
-    } else if (GameState.gameMode === 'tournament') {
-      localStorage.setItem(
-        'mini_card_battle_tournament_deck_obj',
         JSON.stringify(activeDeck)
       );
     } else {

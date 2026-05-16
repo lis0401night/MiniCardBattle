@@ -59,6 +59,7 @@ import { loadDeck } from './hooks/deck.js';
 import { checkCollectionAchievements } from './utils/constants/achievements.js';
 import ContinueScreen from './pages/ContinueScreen.jsx';
 import EndingScreen from './pages/EndingScreen.jsx';
+import DebugBattleScreen from './pages/DebugBattleScreen.jsx';
 import RewardOverlay from './components/battle/RewardOverlay.jsx';
 import CutinOverlay from './components/battle/CutinOverlay.jsx';
 import VfxOverlay from './components/battle/VfxOverlay.jsx';
@@ -185,6 +186,7 @@ export default function App() {
       {currentScreen === 'screen-online-lobby' && <OnlineLobbyScreen />}
       {currentScreen === 'screen-continue' && <ContinueScreen />}
       {currentScreen === 'screen-ending-illust' && <EndingScreen />}
+      {currentScreen === 'screen-debug-battle' && <DebugBattleScreen />}
       <GlobalModals />
       <DamageOverlay />
       <RewardOverlay />

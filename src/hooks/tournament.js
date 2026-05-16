@@ -291,6 +291,8 @@ export function loadTournamentProgress() {
 export function clearTournamentSave() {
   localStorage.removeItem('mini_card_battle_tournament_save');
   localStorage.removeItem('mini_card_battle_tournament_deck_obj');
+  // メモリ上のトーナメント状態もクリア（goBackFromSelect等での誤参照を防止）
+  GameState.tournament = null;
 }
 
 export function playTournamentVenueDialogue() {

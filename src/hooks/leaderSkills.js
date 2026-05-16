@@ -872,7 +872,8 @@ export async function executeLeaderSkillAction(
     action !== 'abyss_ritual' &&
     action !== 'otherworld_gate' &&
     action !== 'overdrive' &&
-    action !== 'dungeon_summon_leader'
+    action !== 'dungeon_summon_leader' &&
+    action !== 'world_reconstruct'
   ) {
     // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
     // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
@@ -890,16 +891,79 @@ export async function executeLeaderSkillAction(
     // 封印状態の同期
     GameState.playerSealedLanes = currentState.playerSealedLanes;
     GameState.enemySealedLanes = currentState.enemySealedLanes;
+  }
 
-    // world_reconstruct: 手札・デッキ・墓地がengine側で変更されるためGameStateに書き戻す
-    if (action === 'world_reconstruct') {
-      GameState.playerHand = currentState.playerHand;
-      GameState.enemyHand = currentState.enemyHand;
-      GameState.playerDeck = currentState.playerDeck;
-      GameState.enemyDeck = currentState.enemyDeck;
-      GameState.playerDiscard = currentState.playerDiscard;
-      GameState.enemyDiscard = currentState.enemyDiscard;
+  // 【世界の再構築】discardCard を使った正規の手札破棄処理
+  // engine.js 側の簡易処理（AIシミュレーション用）とは異なり、
+  // 変化(morph)の巻き戻し・装備の分解・トークン自動消滅などをすべて正しく処理する
+  if (action === 'world_reconstruct') {
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+    const MY_DRAW_COUNT = 4;
+    const OP_DRAW_COUNT = 3;
+
+    // 1. 互いの手札を正規に捨てる（discardCard でバフリセット・トークン消滅を適用）
+    const myHand = isBlue ? GameState.playerHand : GameState.enemyHand;
+    const opHand = isBlue ? GameState.enemyHand : GameState.playerHand;
+    const myHandCopy = [...myHand];
+    const opHandCopy = [...opHand];
+    myHand.length = 0;
+    opHand.length = 0;
+    for (const card of myHandCopy) {
+      await discardCard(isBlue ? 'blue' : 'red', card, undefined, false);
     }
+    for (const card of opHandCopy) {
+      await discardCard(isBlue ? 'red' : 'blue', card, undefined, false);
+    }
+
+    // 2. 墓地をデッキに戻す（トークンは除外）
+    const myDiscard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
+    const opDiscard = isBlue ? GameState.enemyDiscard : GameState.playerDiscard;
+    const myDeck = isBlue ? GameState.playerDeck : GameState.enemyDeck;
+    const opDeck = isBlue ? GameState.enemyDeck : GameState.playerDeck;
+    while (myDiscard.length > 0) {
+      const card = myDiscard.pop();
+      if (!card.isToken) myDeck.push(card);
+    }
+    while (opDiscard.length > 0) {
+      const card = opDiscard.pop();
+      if (!card.isToken) opDeck.push(card);
+    }
+
+    // 3. デッキをシャッフル（シード付き乱数）
+    for (let i = myDeck.length - 1; i > 0; i--) {
+      const j = Math.floor(getSeededRandom() * (i + 1));
+      [myDeck[i], myDeck[j]] = [myDeck[j], myDeck[i]];
+    }
+    for (let i = opDeck.length - 1; i > 0; i--) {
+      const j = Math.floor(getSeededRandom() * (i + 1));
+      [opDeck[i], opDeck[j]] = [opDeck[j], opDeck[i]];
+    }
+
+    // 捨てた状態を一度描画
+    updateDeckDisplay('blue');
+    updateDeckDisplay('red');
+    renderHand();
+    await sleep(800);
+
+    // 4. ドロー（自分4枚、相手3枚）
+    for (let i = 0; i < MY_DRAW_COUNT && myDeck.length > 0; i++) {
+      const card = myDeck.pop();
+      card.uid = `${isBlue ? 'blue' : 'red'}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+      myHand.push(card);
+    }
+    for (let i = 0; i < OP_DRAW_COUNT && opDeck.length > 0; i++) {
+      const card = opDeck.pop();
+      card.uid = `${isBlue ? 'red' : 'blue'}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+      opHand.push(card);
+    }
+
+    // 5. 追加ターン1回（SP増加なし・攻撃なし）
+    GameState.extraTurnCount = (GameState.extraTurnCount || 0) + 1;
+    GameState.attackSkipCount = (GameState.attackSkipCount || 0) + 1;
+
+    updateDeckDisplay('blue');
+    updateDeckDisplay('red');
+    renderHand();
   }
 
   // 専用のVFX演出を再生

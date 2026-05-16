@@ -1946,7 +1946,8 @@ export function applyLeaderSkillLogic(
         }
       }
     }
-    processDestructionTriggers(state, events);
+    // ※ processDestructionTriggers は呼び出し元 (leaderSkills.js) 側で一括実行する
+    //    ここで呼ぶとイベントが二重になるため削除
 
     // Summon Hitodamas
     let allyTargets = [];
@@ -1985,9 +1986,11 @@ export function applyLeaderSkillLogic(
     for (let idx = 0; idx < allyTargets.length; idx++) {
       const lane = allyTargets[idx];
       const newToken = {
-        id: `tk_np_${Math.floor(getSeededRandom() * 1000000000)}_${idx}`,
-        owner,
         ...tM,
+        // ...tM のスプレッド後にidを設定し、tM.id による上書きを防ぐ
+        id: `tk_np_${Math.floor(getSeededRandom() * 1000000000)}_${idx}`,
+        baseId: tM.id,
+        owner,
         currentPower: tM.power || 1,
         rarity: tM.rarity || 1,
         isToken: true,
@@ -2953,20 +2956,24 @@ export function applyLeaderSkillLogic(
     const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
     const opDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
 
-    // 1. 互いの手札を全て墓地に送る
+    // 1. 互いの手札を全て墓地に送る（トークンは墓地に入れず除外する）
     while (myHand.length > 0) {
-      myDiscard.push(myHand.pop());
+      const card = myHand.pop();
+      if (!card.isToken) myDiscard.push(card);
     }
     while (opHand.length > 0) {
-      opDiscard.push(opHand.pop());
+      const card = opHand.pop();
+      if (!card.isToken) opDiscard.push(card);
     }
 
-    // 2. 墓地をリセット（墓地のカードをデッキに戻してシャッフル）
+    // 2. 墓地をリセット（墓地のカードをデッキに戻してシャッフル、トークンは除外）
     while (myDiscard.length > 0) {
-      myDeck.push(myDiscard.pop());
+      const card = myDiscard.pop();
+      if (!card.isToken) myDeck.push(card);
     }
     while (opDiscard.length > 0) {
-      opDeck.push(opDiscard.pop());
+      const card = opDiscard.pop();
+      if (!card.isToken) opDeck.push(card);
     }
     // シャッフル（シード付き乱数でデッキをシャッフル）
     for (let i = myDeck.length - 1; i > 0; i--) {

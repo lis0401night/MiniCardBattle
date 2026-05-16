@@ -212,8 +212,9 @@ export async function resolveActiveSkillEffect(
           selectedIdx = action.targetIdx;
         }
         console.log(
-          `[AI Chant/Invite] targetUid=${action.targetUid}, targetIdx=${action.targetIdx}, resolved=${selectedIdx}, lane=${selectedLane}, hand=[${h.map((c, i) => `${i}:${c?.name}(uid:${c?.uid})`).join(', ')}]`
+          `[AI Chant/Invite] targetUid=${action.targetUid}, targetIdx=${action.targetIdx}, resolved=${selectedIdx}, lane=${selectedLane}, actionLaneIdx=${action.laneIdx}, parentLane=${l}, hand=[${h.map((c, i) => `${i}:${c?.name}(uid:${c?.uid},id:${c?.id})`).join(', ')}]`
         );
+        console.log(`[AI Chant/Invite] Full action:`, JSON.stringify(action));
 
         // 実行時のパワー制限チェック（シミュレーション時と手札が変わっている可能性がある）
         if (
@@ -693,9 +694,10 @@ export async function resolveActiveSkillEffect(
       const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
       const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
 
-      // 墓地に送られた（リセット済みの）カードをデッキに全て戻す
+      // 墓地に送られた（リセット済みの）カードをデッキに全て戻す（トークンは除外）
       while (g.length > 0) {
-        d.push(g.pop());
+        const card = g.pop();
+        if (!card.isToken) d.push(card);
       }
     });
 

@@ -65,6 +65,8 @@ export const GameState = {
   dungeonState: 'none',
   dungeonMaxWinStreak:
     parseInt(localStorage.getItem('mini_card_battle_dungeon_max_streak')) || 0,
+  // デバッグ・チュートリアル用：バトル開始時の状態プリセット（適用後に自動クリア）
+  battlePreset: null,
 };
 
 // Global fallback for browser debugging
