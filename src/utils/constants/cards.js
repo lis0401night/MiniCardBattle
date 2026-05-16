@@ -906,6 +906,16 @@ export const CARD_MASTER = [
       '冷たい鋼の鎖帷子を纏い、闇夜を斬り裂く一条の光。神の教えを胸に刻み、冒涜者たちを容赦なく浄化する、悪魔にとって最も恐るべき裁きの代行者。',
   },
   {
+    id: 'specter',
+    name: '魂の徴税人',
+    rarity: 2,
+    power: 7,
+    skills: [{ id: 'takeover' }, { id: 'pierce' }, { id: 'extort', value: 2 }],
+    voiceCategory: 'undead',
+    flavor:
+      '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。',
+  },
+  {
     id: 'bat',
     name: '吸血コウモリ',
     rarity: 2,
@@ -928,16 +938,6 @@ export const CARD_MASTER = [
     voiceCategory: 'giant',
     flavor:
       '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。',
-  },
-  {
-    id: 'specter',
-    name: '魂の徴税人',
-    rarity: 2,
-    power: 4,
-    skills: [{ id: 'pierce' }, { id: 'extort', value: 2 }],
-    voiceCategory: 'undead',
-    flavor:
-      '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。',
   },
   {
     id: 'plaguedoctor',
