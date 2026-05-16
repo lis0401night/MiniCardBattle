@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { getOrCreateUUID } from '../utils/gameUtils.js';
+import BackButton from '../components/BackButton.jsx';
 import {
-  showEventMenu,
   showDefenseBattleList,
   showDefenseRules,
-  startDefenseRegistration,
+  showEventMenu,
   showExchangeScreen,
+  startDefenseRegistration,
 } from '../hooks/uiMainCore.js';
 import { showPointAcquisitionModal } from '../hooks/uiModals.js';
+import { getOrCreateUUID } from '../utils/gameUtils.js';
 
 export default function DefenseMenuScreen() {
   // 初期値でLocalStorageの登録状態を判定（useEffect内での同期的setState回避）
@@ -150,13 +151,10 @@ export default function DefenseMenuScreen() {
           交換所
         </button>
       </div>
-      <button
-        className="btn"
-        style={{ marginTop: '40px', background: '#475569' }}
+      <BackButton
         onClick={() => showEventMenu?.()}
-      >
-        戻る
-      </button>
+        style={{ marginTop: '40px' }}
+      />
     </div>
   );
 }

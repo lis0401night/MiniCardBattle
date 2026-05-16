@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
 import { confirmStageSelect, goBackFromStage } from '../hooks/uiMainCore.js';
 import { STAGES } from '../utils/constants/stages.js';
-import { switchScreen } from '../utils/gameUtils.js';
 
 export default function StageSelectScreen() {
   const [stages] = useState(() => {
@@ -108,16 +108,10 @@ export default function StageSelectScreen() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '20px', background: '#475569' }}
-        onClick={() => {
-          if (goBackFromStage) goBackFromStage();
-          else switchScreen?.('screen-difficulty');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton
+        onClick={() => goBackFromStage?.()}
+        style={{ marginTop: '20px' }}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import {
   setRenderAchievementsListHook,
   setRenderAchievementsStatsHook,
@@ -19,7 +20,7 @@ import {
 } from '../utils/constants/achievements.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function AchievementsScreen() {
@@ -498,17 +499,7 @@ export default function AchievementsScreen() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '15px', background: '#475569' }}
-        onClick={() => {
-          if (typeof playSound === 'function' && SOUNDS)
-            playSound(SOUNDS.seClick);
-          switchScreen?.('screen-gallery-menu');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-gallery-menu" style={{ marginTop: '15px' }} />
     </div>
   );
 }

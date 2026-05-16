@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
-import { CHARACTERS } from '../utils/constants/characters.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { GameState } from '../hooks/gameState.js';
+import { useMemo, useState } from 'react';
+import BackButton from '../components/BackButton.jsx';
 import { prepareBattle } from '../hooks/battle.js';
-import { switchScreen } from '../utils/gameUtils.js';
+import { GameState } from '../hooks/gameState.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS } from '../utils/constants/characters.js';
 
 /**
  * デバッグ用バトル設定画面
@@ -66,7 +66,7 @@ export default function DebugBattleScreen() {
   const [enemyDeck, setEnemyDeck] = useState('');
   const [playerDiscard, setPlayerDiscard] = useState('');
   const [enemyDiscard, setEnemyDiscard] = useState('');
-  const [playerBoard, setPlayerBoard] = useState(',,' );
+  const [playerBoard, setPlayerBoard] = useState(',,');
   const [enemyBoard, setEnemyBoard] = useState(',,');
 
   // --- カード検索 ---
@@ -77,25 +77,34 @@ export default function DebugBattleScreen() {
   const filteredCards = useMemo(() => {
     if (!searchQuery) return [];
     const q = searchQuery.toLowerCase();
-    const pool = showTokens ? [...PLAYABLE_CARDS, ...TOKEN_CARDS] : PLAYABLE_CARDS;
-    return pool.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)
-    ).slice(0, 20);
+    const pool = showTokens
+      ? [...PLAYABLE_CARDS, ...TOKEN_CARDS]
+      : PLAYABLE_CARDS;
+    return pool
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)
+      )
+      .slice(0, 20);
   }, [searchQuery, showTokens]);
 
   // --- バトル開始 ---
   const handleStartBattle = () => {
     // プレイヤーは常に通常キャラ、敵はモードに応じて通常/高難易度を自動選択
     const playerChar = CHARACTERS[playerCharId];
-    const actualEnemyId = gameMode === 'high' ? `${enemyCharId}_high` : enemyCharId;
+    const actualEnemyId =
+      gameMode === 'high' ? `${enemyCharId}_high` : enemyCharId;
     const enemyChar = CHARACTERS[actualEnemyId];
     if (!playerChar || !enemyChar) {
-      alert(`キャラクターが見つかりません (player: ${playerCharId}, enemy: ${actualEnemyId})`);
+      alert(
+        `キャラクターが見つかりません (player: ${playerCharId}, enemy: ${actualEnemyId})`
+      );
       return;
     }
 
     // ゲームモードの決定（高難易度の場合はevent_XXX_high形式にする）
-    const actualGameMode = gameMode === 'high' ? `event_${enemyCharId}_high` : gameMode;
+    const actualGameMode =
+      gameMode === 'high' ? `event_${enemyCharId}_high` : gameMode;
 
     GameState.playerConfig = JSON.parse(JSON.stringify(playerChar));
     GameState.enemyConfig = JSON.parse(JSON.stringify(enemyChar));
@@ -121,7 +130,10 @@ export default function DebugBattleScreen() {
     // カード配列のパース（カンマ区切りのID文字列 → 配列）
     const parseCardIds = (str) => {
       if (!str || !str.trim()) return undefined;
-      return str.split(',').map((s) => s.trim()).filter(Boolean);
+      return str
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     };
 
     const pH = parseCardIds(playerHand);
@@ -158,14 +170,15 @@ export default function DebugBattleScreen() {
     }
 
     // デッキ選択（プレイヤーのデッキをセット）
-    const defaultDeck = GameState.decks && GameState.decks.length > 0
-      ? GameState.decks[0]
-      : null;
+    const defaultDeck =
+      GameState.decks && GameState.decks.length > 0 ? GameState.decks[0] : null;
     if (defaultDeck) {
-      GameState.playerDeckSelection = defaultDeck.cards.map((id) => {
-        const master = CARD_MASTER.find((m) => m.id === id);
-        return master ? { ...master } : null;
-      }).filter(Boolean);
+      GameState.playerDeckSelection = defaultDeck.cards
+        .map((id) => {
+          const master = CARD_MASTER.find((m) => m.id === id);
+          return master ? { ...master } : null;
+        })
+        .filter(Boolean);
       GameState.selectedDeckIndex = 0;
     }
 
@@ -257,185 +270,369 @@ export default function DebugBattleScreen() {
   };
 
   return (
-    <div id="screen-debug-battle" className="screen active" style={{ overflowY: 'auto', padding: 0 }}>
-    <div style={containerStyle}>
-      {/* ヘッダー */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#a5b4fc' }}>
-          🔧 デバッグバトル
-        </h2>
-        <button style={backBtnStyle} onClick={() => switchScreen('screen-mode-select')}>
-          戻る
+    <div
+      id="screen-debug-battle"
+      className="screen active"
+      style={{ overflowY: 'auto', padding: 0 }}
+    >
+      <div style={containerStyle}>
+        {/* ヘッダー */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '12px',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              margin: 0,
+              color: '#a5b4fc',
+            }}
+          >
+            🔧 デバッグバトル
+          </h2>
+          <BackButton to="screen-mode-select" style={backBtnStyle} />
+        </div>
+
+        {/* キャラ＆モード設定 */}
+        <div style={sectionStyle}>
+          <div
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              marginBottom: '6px',
+              color: '#a5b4fc',
+            }}
+          >
+            キャラクター & モード
+          </div>
+          <div style={rowStyle}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>プレイヤー</label>
+              <select
+                style={selectStyle}
+                value={playerCharId}
+                onChange={(e) => setPlayerCharId(e.target.value)}
+              >
+                {BASE_CHARACTERS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>敵</label>
+              <select
+                style={selectStyle}
+                value={enemyCharId}
+                onChange={(e) => setEnemyCharId(e.target.value)}
+              >
+                {BASE_CHARACTERS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={rowStyle}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>ゲームモード</label>
+              <select
+                style={selectStyle}
+                value={gameMode}
+                onChange={(e) => setGameMode(e.target.value)}
+              >
+                {GAME_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>AI難易度</label>
+              <select
+                style={selectStyle}
+                value={aiLevel}
+                onChange={(e) => setAiLevel(Number(e.target.value))}
+              >
+                {AI_LEVELS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={rowStyle}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>先攻</label>
+              <select
+                style={selectStyle}
+                value={firstPlayer}
+                onChange={(e) => setFirstPlayer(e.target.value)}
+              >
+                <option value="random">ランダム</option>
+                <option value="blue">プレイヤー</option>
+                <option value="red">敵</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* HP / SP / ターン */}
+        <div style={sectionStyle}>
+          <div
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              marginBottom: '6px',
+              color: '#a5b4fc',
+            }}
+          >
+            ステータス (空欄=デフォルト)
+          </div>
+          <div style={rowStyle}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>プレイヤーHP</label>
+              <input
+                style={inputStyle}
+                type="number"
+                value={playerHP}
+                onChange={(e) => setPlayerHP(e.target.value)}
+                placeholder="20"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>敵HP</label>
+              <input
+                style={inputStyle}
+                type="number"
+                value={enemyHP}
+                onChange={(e) => setEnemyHP(e.target.value)}
+                placeholder="20"
+              />
+            </div>
+          </div>
+          <div style={rowStyle}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>プレイヤーSP</label>
+              <input
+                style={inputStyle}
+                type="number"
+                value={playerSP}
+                onChange={(e) => setPlayerSP(e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>敵SP</label>
+              <input
+                style={inputStyle}
+                type="number"
+                value={enemySP}
+                onChange={(e) => setEnemySP(e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>ターン数</label>
+              <input
+                style={inputStyle}
+                type="number"
+                value={turnCount}
+                onChange={(e) => setTurnCount(e.target.value)}
+                placeholder="1"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 手札 */}
+        <div style={sectionStyle}>
+          <div
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              marginBottom: '6px',
+              color: '#a5b4fc',
+            }}
+          >
+            手札 (カードIDをカンマ区切り、空=デフォルト)
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <label style={labelStyle}>プレイヤー手札</label>
+            <input
+              style={inputStyle}
+              value={playerHand}
+              onChange={(e) => setPlayerHand(e.target.value)}
+              placeholder="例: beginner_magic,golem,knight"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>敵手札</label>
+            <input
+              style={inputStyle}
+              value={enemyHand}
+              onChange={(e) => setEnemyHand(e.target.value)}
+              placeholder="例: beginner_magic,golem,knight"
+            />
+          </div>
+        </div>
+
+        {/* 山札・墓地 */}
+        <div style={sectionStyle}>
+          <div
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              marginBottom: '6px',
+              color: '#a5b4fc',
+            }}
+          >
+            山札・墓地 (空=デフォルト)
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <label style={labelStyle}>プレイヤー山札</label>
+            <input
+              style={inputStyle}
+              value={playerDeck}
+              onChange={(e) => setPlayerDeck(e.target.value)}
+              placeholder="カードIDをカンマ区切り"
+            />
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <label style={labelStyle}>敵山札</label>
+            <input
+              style={inputStyle}
+              value={enemyDeck}
+              onChange={(e) => setEnemyDeck(e.target.value)}
+              placeholder="カードIDをカンマ区切り"
+            />
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <label style={labelStyle}>プレイヤー墓地</label>
+            <input
+              style={inputStyle}
+              value={playerDiscard}
+              onChange={(e) => setPlayerDiscard(e.target.value)}
+              placeholder="カードIDをカンマ区切り"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>敵墓地</label>
+            <input
+              style={inputStyle}
+              value={enemyDiscard}
+              onChange={(e) => setEnemyDiscard(e.target.value)}
+              placeholder="カードIDをカンマ区切り"
+            />
+          </div>
+        </div>
+
+        {/* 場 */}
+        <div style={sectionStyle}>
+          <div
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              marginBottom: '6px',
+              color: '#a5b4fc',
+            }}
+          >
+            場 (左,中,右 | 空=なし)
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <label style={labelStyle}>プレイヤーの場</label>
+            <input
+              style={inputStyle}
+              value={playerBoard}
+              onChange={(e) => setPlayerBoard(e.target.value)}
+              placeholder="例: knight,,golem"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>敵の場</label>
+            <input
+              style={inputStyle}
+              value={enemyBoard}
+              onChange={(e) => setEnemyBoard(e.target.value)}
+              placeholder="例: ,dragon,"
+            />
+          </div>
+        </div>
+
+        {/* カード検索ヘルパー */}
+        <div style={sectionStyle}>
+          <div
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              marginBottom: '6px',
+              color: '#a5b4fc',
+            }}
+          >
+            🔍 カードID検索
+          </div>
+          <div style={rowStyle}>
+            <input
+              style={{ ...inputStyle, flex: 1 }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="カード名 or IDで検索..."
+            />
+            <label
+              style={{
+                fontSize: '11px',
+                color: '#94a3b8',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={showTokens}
+                onChange={(e) => setShowTokens(e.target.checked)}
+              />
+              トークン
+            </label>
+          </div>
+          {filteredCards.length > 0 && (
+            <div
+              style={{
+                maxHeight: '120px',
+                overflowY: 'auto',
+                marginTop: '4px',
+              }}
+            >
+              {filteredCards.map((c) => (
+                <div
+                  key={c.id}
+                  style={cardChipStyle}
+                  title={`クリックしてコピー: ${c.id}`}
+                  onClick={() => navigator.clipboard.writeText(c.id)}
+                >
+                  {c.name} <span style={{ opacity: 0.6 }}>({c.id})</span> P:
+                  {c.power}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 開始ボタン */}
+        <button style={btnStyle} onClick={handleStartBattle}>
+          ⚔️ バトル開始
         </button>
       </div>
-
-      {/* キャラ＆モード設定 */}
-      <div style={sectionStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#a5b4fc' }}>キャラクター & モード</div>
-        <div style={rowStyle}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>プレイヤー</label>
-            <select style={selectStyle} value={playerCharId} onChange={(e) => setPlayerCharId(e.target.value)}>
-              {BASE_CHARACTERS.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>敵</label>
-            <select style={selectStyle} value={enemyCharId} onChange={(e) => setEnemyCharId(e.target.value)}>
-              {BASE_CHARACTERS.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div style={rowStyle}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>ゲームモード</label>
-            <select style={selectStyle} value={gameMode} onChange={(e) => setGameMode(e.target.value)}>
-              {GAME_MODES.map((m) => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>AI難易度</label>
-            <select style={selectStyle} value={aiLevel} onChange={(e) => setAiLevel(Number(e.target.value))}>
-              {AI_LEVELS.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div style={rowStyle}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>先攻</label>
-            <select style={selectStyle} value={firstPlayer} onChange={(e) => setFirstPlayer(e.target.value)}>
-              <option value="random">ランダム</option>
-              <option value="blue">プレイヤー</option>
-              <option value="red">敵</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* HP / SP / ターン */}
-      <div style={sectionStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#a5b4fc' }}>ステータス (空欄=デフォルト)</div>
-        <div style={rowStyle}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>プレイヤーHP</label>
-            <input style={inputStyle} type="number" value={playerHP} onChange={(e) => setPlayerHP(e.target.value)} placeholder="20" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>敵HP</label>
-            <input style={inputStyle} type="number" value={enemyHP} onChange={(e) => setEnemyHP(e.target.value)} placeholder="20" />
-          </div>
-        </div>
-        <div style={rowStyle}>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>プレイヤーSP</label>
-            <input style={inputStyle} type="number" value={playerSP} onChange={(e) => setPlayerSP(e.target.value)} placeholder="0" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>敵SP</label>
-            <input style={inputStyle} type="number" value={enemySP} onChange={(e) => setEnemySP(e.target.value)} placeholder="0" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={labelStyle}>ターン数</label>
-            <input style={inputStyle} type="number" value={turnCount} onChange={(e) => setTurnCount(e.target.value)} placeholder="1" />
-          </div>
-        </div>
-      </div>
-
-      {/* 手札 */}
-      <div style={sectionStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#a5b4fc' }}>手札 (カードIDをカンマ区切り、空=デフォルト)</div>
-        <div style={{ marginBottom: '4px' }}>
-          <label style={labelStyle}>プレイヤー手札</label>
-          <input style={inputStyle} value={playerHand} onChange={(e) => setPlayerHand(e.target.value)} placeholder="例: beginner_magic,golem,knight" />
-        </div>
-        <div>
-          <label style={labelStyle}>敵手札</label>
-          <input style={inputStyle} value={enemyHand} onChange={(e) => setEnemyHand(e.target.value)} placeholder="例: beginner_magic,golem,knight" />
-        </div>
-      </div>
-
-      {/* 山札・墓地 */}
-      <div style={sectionStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#a5b4fc' }}>山札・墓地 (空=デフォルト)</div>
-        <div style={{ marginBottom: '4px' }}>
-          <label style={labelStyle}>プレイヤー山札</label>
-          <input style={inputStyle} value={playerDeck} onChange={(e) => setPlayerDeck(e.target.value)} placeholder="カードIDをカンマ区切り" />
-        </div>
-        <div style={{ marginBottom: '4px' }}>
-          <label style={labelStyle}>敵山札</label>
-          <input style={inputStyle} value={enemyDeck} onChange={(e) => setEnemyDeck(e.target.value)} placeholder="カードIDをカンマ区切り" />
-        </div>
-        <div style={{ marginBottom: '4px' }}>
-          <label style={labelStyle}>プレイヤー墓地</label>
-          <input style={inputStyle} value={playerDiscard} onChange={(e) => setPlayerDiscard(e.target.value)} placeholder="カードIDをカンマ区切り" />
-        </div>
-        <div>
-          <label style={labelStyle}>敵墓地</label>
-          <input style={inputStyle} value={enemyDiscard} onChange={(e) => setEnemyDiscard(e.target.value)} placeholder="カードIDをカンマ区切り" />
-        </div>
-      </div>
-
-      {/* 場 */}
-      <div style={sectionStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#a5b4fc' }}>場 (左,中,右 | 空=なし)</div>
-        <div style={{ marginBottom: '4px' }}>
-          <label style={labelStyle}>プレイヤーの場</label>
-          <input style={inputStyle} value={playerBoard} onChange={(e) => setPlayerBoard(e.target.value)} placeholder="例: knight,,golem" />
-        </div>
-        <div>
-          <label style={labelStyle}>敵の場</label>
-          <input style={inputStyle} value={enemyBoard} onChange={(e) => setEnemyBoard(e.target.value)} placeholder="例: ,dragon," />
-        </div>
-      </div>
-
-      {/* カード検索ヘルパー */}
-      <div style={sectionStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#a5b4fc' }}>🔍 カードID検索</div>
-        <div style={rowStyle}>
-          <input
-            style={{ ...inputStyle, flex: 1 }}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="カード名 or IDで検索..."
-          />
-          <label style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={showTokens}
-              onChange={(e) => setShowTokens(e.target.checked)}
-            />
-            トークン
-          </label>
-        </div>
-        {filteredCards.length > 0 && (
-          <div style={{ maxHeight: '120px', overflowY: 'auto', marginTop: '4px' }}>
-            {filteredCards.map((c) => (
-              <div
-                key={c.id}
-                style={cardChipStyle}
-                title={`クリックしてコピー: ${c.id}`}
-                onClick={() => navigator.clipboard.writeText(c.id)}
-              >
-                {c.name} <span style={{ opacity: 0.6 }}>({c.id})</span> P:{c.power}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 開始ボタン */}
-      <button style={btnStyle} onClick={handleStartBattle}>
-        ⚔️ バトル開始
-      </button>
-    </div>
     </div>
   );
 }

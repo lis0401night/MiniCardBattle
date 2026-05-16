@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { playSound } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import BackButton from '../components/BackButton.jsx';
+import { createRoom } from '../hooks/multiplayer.js';
 import {
+  closePlayerNameModal,
+  goToModeSelect,
+  showOnlineLobby,
   showOnlineRules,
   showOnlineSearch,
-  showOnlineLobby,
-  goToModeSelect,
-  closePlayerNameModal,
 } from '../hooks/uiMainCore.js';
-import { createRoom } from '../hooks/multiplayer.js';
 import { showAlertModal } from '../hooks/uiModals.js';
+import { playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function OnlineMenuScreen() {
   const [isMatching, setIsMatching] = useState(false);
@@ -99,14 +100,11 @@ export default function OnlineMenuScreen() {
         </div>
       )}
 
-      <button
-        className="btn"
-        style={{ marginTop: '40px', background: '#475569' }}
+      <BackButton
         onClick={() => goToModeSelect?.()}
+        style={{ marginTop: '40px' }}
         disabled={isMatching}
-      >
-        戻る
-      </button>
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
-
-import { UI_IMAGES } from '../utils/constants/uiImages.js';
-import { showCardList, showAchievements } from '../hooks/uiGallery.js';
+import BackButton from '../components/BackButton.jsx';
+import { showAchievements, showCardList } from '../hooks/uiGallery.js';
 import { goToModeSelect } from '../hooks/uiMainCore.js';
+import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 export default function GalleryMenuScreen() {
   const images = UI_IMAGES || {};
@@ -39,13 +39,7 @@ export default function GalleryMenuScreen() {
           justifyContent: 'center',
         }}
       >
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={() => goToModeSelect?.()}
-        >
-          戻る
-        </button>
+        <BackButton onClick={() => goToModeSelect?.()} />
       </div>
     </div>
   );

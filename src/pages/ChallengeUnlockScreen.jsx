@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BackButton from '../components/BackButton.jsx';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -37,11 +38,6 @@ export default function ChallengeUnlockScreen() {
       'mini_card_battle_dungeon_unlocks',
       JSON.stringify(nextState)
     );
-  };
-
-  const handleBack = () => {
-    playSound(SOUNDS?.seClick);
-    if (window.switchScreen) window.switchScreen('screen-dungeon-menu');
   };
 
   return (
@@ -146,17 +142,10 @@ export default function ChallengeUnlockScreen() {
         })}
       </div>
 
-      <button
-        className="btn"
-        style={{
-          background: '#475569',
-          padding: '10px 40px',
-          marginTop: '25px',
-        }}
-        onClick={handleBack}
-      >
-        戻る
-      </button>
+      <BackButton
+        to="screen-dungeon-menu"
+        style={{ padding: '10px 40px', marginTop: '25px' }}
+      />
     </div>
   );
 }

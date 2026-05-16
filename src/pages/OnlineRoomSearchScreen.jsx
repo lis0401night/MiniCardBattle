@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import BackButton from '../components/BackButton.jsx';
 import {
   forceDeleteAllRooms,
   joinRoom,
@@ -197,17 +198,7 @@ export default function OnlineRoomSearchScreen() {
       </div>
 
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={() => {
-            playSound?.(SOUNDS.seClick);
-            showOnlineMenu?.();
-          }}
-          disabled={isJoining}
-        >
-          戻る
-        </button>
+        <BackButton onClick={() => showOnlineMenu?.()} disabled={isJoining} />
       </div>
     </div>
   );

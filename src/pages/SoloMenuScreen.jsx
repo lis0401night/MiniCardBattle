@@ -1,10 +1,9 @@
 import { useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { goToModeSelect, startGameMode } from '../hooks/uiMainCore.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
-import { playSound } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
 
 export default function SoloMenuScreen() {
   const images = UI_IMAGES || {};
@@ -78,16 +77,7 @@ export default function SoloMenuScreen() {
           justifyContent: 'center',
         }}
       >
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            goToModeSelect?.();
-          }}
-        >
-          戻る
-        </button>
+        <BackButton onClick={() => goToModeSelect?.()} />
       </div>
     </div>
   );

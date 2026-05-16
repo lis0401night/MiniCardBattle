@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
 import {
   setRenderExchangeHook,
@@ -12,7 +13,6 @@ import {
   getCardImgUrl,
   isTransitioning,
   playSound,
-  switchScreen,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -240,17 +240,7 @@ export default function DefenseExchangeScreen() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '15px', background: '#475569' }}
-        onClick={() => {
-          if (typeof playSound === 'function' && SOUNDS)
-            playSound(SOUNDS.seClick);
-          switchScreen?.('screen-defense-menu');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-defense-menu" style={{ marginTop: '15px' }} />
     </div>
   );
 }

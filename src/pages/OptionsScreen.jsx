@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
 import {
   handleOptionsTitleClick,
@@ -8,7 +9,7 @@ import {
   showSyncDataModal,
   updateVolume,
 } from '../hooks/uiMainCore.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function OptionsScreen() {
@@ -173,16 +174,7 @@ export default function OptionsScreen() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        style={{ background: '#475569' }}
-        onClick={() => {
-          window.playSound?.(window.SOUNDS?.seClick);
-          switchScreen('screen-mode-select');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-mode-select" />
     </div>
   );
 }

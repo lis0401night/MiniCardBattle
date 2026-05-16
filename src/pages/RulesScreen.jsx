@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BackButton from '../components/BackButton.jsx';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -20,7 +21,12 @@ export default function RulesScreen() {
     <div id="screen-rules" className="screen active">
       <h2
         onClick={handleTitleClick}
-        style={{ color: '#facc15', marginBottom: '20px', cursor: 'pointer', userSelect: 'none' }}
+        style={{
+          color: '#facc15',
+          marginBottom: '20px',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
       >
         遊び方
       </h2>
@@ -71,13 +77,7 @@ export default function RulesScreen() {
           </ul>
         </div>
       </div>
-      <button
-        className="btn"
-        style={{ background: '#475569' }}
-        onClick={() => switchScreen('screen-mode-select')}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-mode-select" />
     </div>
   );
 }

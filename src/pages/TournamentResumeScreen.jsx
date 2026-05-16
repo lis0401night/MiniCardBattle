@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
 import {
   clearTournamentSave,
@@ -91,11 +92,6 @@ export default function TournamentResumeScreen() {
         }
       }
     );
-  };
-
-  const handleBack = () => {
-    playSound(SOUNDS.seClick);
-    switchScreen('screen-tournament-menu');
   };
 
   const handleCheckDeck = () => {
@@ -299,13 +295,7 @@ export default function TournamentResumeScreen() {
         </button>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '40px', background: '#475569' }}
-        onClick={handleBack}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-tournament-menu" style={{ marginTop: '40px' }} />
     </div>
   );
 }

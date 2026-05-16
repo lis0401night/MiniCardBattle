@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
 import { goBackFromSelect, showCharDetail } from '../hooks/uiMainCore.js';
 import { achievementData } from '../utils/constants/achievements.js';
@@ -151,13 +152,10 @@ export default function CharacterSelectScreen() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '20px', background: '#475569' }}
+      <BackButton
         onClick={() => goBackFromSelect?.()}
-      >
-        戻る
-      </button>
+        style={{ marginTop: '20px' }}
+      />
     </div>
   );
 }

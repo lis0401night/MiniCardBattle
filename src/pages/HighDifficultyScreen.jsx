@@ -1,11 +1,11 @@
-
+import BackButton from '../components/BackButton.jsx';
 import { handleSatanBattle, startGameMode } from '../hooks/uiMainCore.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function HighDifficultyScreen() {
-  const highEventChars = Object.values(CHARACTERS).filter(c => c.event_high);
+  const highEventChars = Object.values(CHARACTERS).filter((c) => c.event_high);
 
   return (
     <div
@@ -69,7 +69,10 @@ export default function HighDifficultyScreen() {
                 className="banner-icon"
                 alt=""
               />
-              <span className="banner-text" style={{ color: char.color || '#fff' }}>
+              <span
+                className="banner-text"
+                style={{ color: char.color || '#fff' }}
+              >
                 {eventConf.name}
               </span>
             </button>
@@ -77,17 +80,10 @@ export default function HighDifficultyScreen() {
         })}
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '30px', background: '#475569', flexShrink: 0 }}
-        onClick={() => {
-          playSound?.(SOUNDS?.seClick);
-          if (window.switchScreen)
-            window.switchScreen('screen-high-difficulty-menu');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton
+        to="screen-high-difficulty-menu"
+        style={{ marginTop: '30px', flexShrink: 0 }}
+      />
     </div>
   );
 }

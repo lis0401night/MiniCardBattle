@@ -1,9 +1,7 @@
-
-import { UI_IMAGES } from '../utils/constants/uiImages.js';
-import { playSound } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import BackButton from '../components/BackButton.jsx';
 import { showCardList } from '../hooks/uiGallery.js';
-import { showDeckEditMenu, goToModeSelect } from '../hooks/uiMainCore.js';
+import { goToModeSelect, showDeckEditMenu } from '../hooks/uiMainCore.js';
+import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 export default function CardMenuScreen() {
   const images = UI_IMAGES || {};
@@ -39,16 +37,7 @@ export default function CardMenuScreen() {
           justifyContent: 'center',
         }}
       >
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            goToModeSelect?.();
-          }}
-        >
-          戻る
-        </button>
+        <BackButton onClick={() => goToModeSelect?.()} />
       </div>
     </div>
   );

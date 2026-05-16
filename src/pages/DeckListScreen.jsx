@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { loadDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { confirmCharSelect, goBackFromSelect } from '../hooks/uiMainCore.js';
@@ -14,16 +15,14 @@ export default function DeckListScreen() {
 
   const getBackgroundImage = () => {
     // 新規デッキ作成中はgameModeが'create_deck'になるため、元のモードを参照する
-    const mode = GameState.gameMode === 'create_deck'
-      ? (GameState.prevGameModeForCreate || 'free_deck_edit')
-      : GameState.gameMode;
+    const mode =
+      GameState.gameMode === 'create_deck'
+        ? GameState.prevGameModeForCreate || 'free_deck_edit'
+        : GameState.gameMode;
 
     if (mode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
-    } else if (
-      mode === 'defense_register' ||
-      mode === 'defense_attack'
-    ) {
+    } else if (mode === 'defense_register' || mode === 'defense_attack') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;
     } else if (mode === 'battle_dungeon') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`;
@@ -182,7 +181,6 @@ export default function DeckListScreen() {
   };
 
   const handleBack = () => {
-    playSound?.(SOUNDS?.seClick);
     goBackFromSelect?.();
   };
 
@@ -667,13 +665,7 @@ export default function DeckListScreen() {
           boxSizing: 'border-box',
         }}
       >
-        <button
-          className="btn"
-          style={{ background: '#475569', margin: 0 }}
-          onClick={handleBack}
-        >
-          戻る
-        </button>
+        <BackButton onClick={handleBack} style={{ margin: 0 }} />
 
         {/* ゴミ箱 (DnD削除ゾーン / 常時表示) */}
         <div

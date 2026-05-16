@@ -1,12 +1,12 @@
 import React from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
 import {
   confirmDifficulty,
   goBackFromDifficulty,
   openEnemyDeckPreview,
 } from '../hooks/uiMainCore.js';
-import { switchScreen } from '../utils/gameUtils.js';
 
 export default function DifficultySelectScreen() {
   const [isFreeMode, setIsFreeMode] = React.useState(() =>
@@ -96,16 +96,10 @@ export default function DifficultySelectScreen() {
           )}
         </div>
       </div>
-      <button
-        className="btn"
-        style={{ marginTop: '30px', background: '#475569' }}
-        onClick={() => {
-          if (goBackFromDifficulty) goBackFromDifficulty();
-          else switchScreen?.('screen-select');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton
+        onClick={() => goBackFromDifficulty?.()}
+        style={{ marginTop: '30px' }}
+      />
     </div>
   );
 }

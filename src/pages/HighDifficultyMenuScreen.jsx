@@ -1,14 +1,13 @@
-
+import BackButton from '../components/BackButton.jsx';
+import { showEventMenu, showHighDifficultyRules } from '../hooks/uiMainCore.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { showHighDifficultyRules, showEventMenu } from '../hooks/uiMainCore.js';
 
 export default function HighDifficultyMenuScreen() {
   const handleChallengeClick = () => {
     playSound(SOUNDS.seClick);
     if (window.switchScreen) window.switchScreen('screen-high-difficulty');
   };
-
 
   return (
     <div
@@ -50,16 +49,12 @@ export default function HighDifficultyMenuScreen() {
         >
           挑戦
         </button>
-
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '40px', background: '#475569' }}
+      <BackButton
         onClick={() => showEventMenu?.()}
-      >
-        戻る
-      </button>
+        style={{ marginTop: '40px' }}
+      />
     </div>
   );
 }

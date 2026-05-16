@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { loadDeck, saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { openCardPreview, setRenderCardListHook } from '../hooks/uiGallery.js';
@@ -9,7 +10,6 @@ import {
   getCardImgUrl,
   isTransitioning,
   playSound,
-  switchScreen,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -245,17 +245,7 @@ export default function CardListScreen() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '15px', background: '#475569' }}
-        onClick={() => {
-          if (typeof playSound === 'function' && SOUNDS)
-            playSound(SOUNDS.seClick);
-          switchScreen?.('screen-gallery-menu');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-gallery-menu" style={{ marginTop: '15px' }} />
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { playSound } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
-import { showOnlineMenu } from '../hooks/uiMainCore.js';
+import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../hooks/gameState.js';
+import { showOnlineMenu } from '../hooks/uiMainCore.js';
 
 export default function OnlineRulesScreen() {
   useEffect(() => {
@@ -55,16 +54,7 @@ export default function OnlineRulesScreen() {
           </li>
         </ul>
       </div>
-      <button
-        className="btn"
-        style={{ background: '#475569' }}
-        onClick={() => {
-          playSound?.(SOUNDS.seClick);
-          showOnlineMenu?.();
-        }}
-      >
-        戻る
-      </button>
+      <BackButton onClick={() => showOnlineMenu?.()} />
     </div>
   );
 }

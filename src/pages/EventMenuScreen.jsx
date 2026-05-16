@@ -1,3 +1,4 @@
+import BackButton from '../components/BackButton.jsx';
 import {
   showDefenseMenu,
   startGameMode,
@@ -71,16 +72,7 @@ export default function EventMenuScreen() {
           justifyContent: 'center',
         }}
       >
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            switchScreen?.('screen-mode-select');
-          }}
-        >
-          戻る
-        </button>
+        <BackButton to="screen-mode-select" />
       </div>
     </div>
   );

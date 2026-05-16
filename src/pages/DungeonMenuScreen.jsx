@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 
+import BackButton from '../components/BackButton.jsx';
 import { initBattleDungeon } from '../hooks/battleDungeon.js';
 import { GameState } from '../hooks/gameState.js';
 import { showDungeonRules, showEventMenu } from '../hooks/uiMainCore.js';
@@ -93,15 +94,10 @@ export default function DungeonMenuScreen() {
           交換所
         </button>
       </div>
-      <button
-        className="btn"
-        style={{ marginTop: '40px', background: '#475569' }}
-        onClick={() => {
-          showEventMenu?.();
-        }}
-      >
-        戻る
-      </button>
+      <BackButton
+        onClick={() => showEventMenu?.()}
+        style={{ marginTop: '40px' }}
+      />
     </div>
   );
 }

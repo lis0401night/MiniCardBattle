@@ -1,13 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import {
-  playSound,
-  switchScreen,
-  getOrCreateUUID,
-} from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import BackButton from '../components/BackButton.jsx';
 import { startAttackBattle } from '../hooks/uiMainCore.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import { getOrCreateUUID } from '../utils/gameUtils.js';
 
 export default function DefenseBattleListScreen() {
   const [players, setPlayers] = useState([]);
@@ -217,16 +213,7 @@ export default function DefenseBattleListScreen() {
           })}
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '30px', background: '#475569' }}
-        onClick={() => {
-          playSound?.(SOUNDS?.seClick);
-          switchScreen?.('screen-defense-menu');
-        }}
-      >
-        戻る
-      </button>
+      <BackButton to="screen-defense-menu" style={{ marginTop: '30px' }} />
     </div>
   );
 }

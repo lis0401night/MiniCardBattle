@@ -1,3 +1,4 @@
+import BackButton from '../components/BackButton.jsx';
 import { showEventMenu, startGameMode } from '../hooks/uiMainCore.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -63,15 +64,10 @@ export default function TournamentMenuScreen() {
         </button>
       </div>
 
-      <button
-        className="btn"
-        style={{ marginTop: '40px', background: '#475569' }}
-        onClick={() => {
-          showEventMenu?.();
-        }}
-      >
-        戻る
-      </button>
+      <BackButton
+        onClick={() => showEventMenu?.()}
+        style={{ marginTop: '40px' }}
+      />
     </div>
   );
 }

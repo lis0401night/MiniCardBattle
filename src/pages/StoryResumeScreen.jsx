@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import BackButton from '../components/BackButton.jsx';
 import { resumeCampaignProgress } from '../hooks/campaign';
 import { GameState } from '../hooks/gameState';
 import { clearStoryProgress, resumeStoryProgress } from '../hooks/story';
@@ -257,13 +258,7 @@ export default function StoryResumeScreen() {
           background: 'transparent',
         }}
       >
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={() => goBackFromSelect()}
-        >
-          戻る
-        </button>
+        <BackButton onClick={() => goBackFromSelect()} />
       </div>
     </div>
   );
