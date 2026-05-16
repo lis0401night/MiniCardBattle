@@ -51,7 +51,9 @@ const METAMORPH_ESTIMATED_POWER = 5;
  */
 
 export function getBestSimulatedMove() {
-  const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+  // 【最適化】JSON.parse/stringifyは文字列化→パースの2段階でGC負荷が大きいため、
+  // structuredCloneを使用してメモリ効率を改善（スマホクラッシュ防止）
+  const cloneCard = (c) => (c ? structuredClone(c) : null);
   const hand = GameState.enemyHand.map(cloneCard);
   const discard = GameState.enemyDiscard.map(cloneCard);
   let myBoard = GameState.enemyBoard.map(cloneCard);
@@ -1360,16 +1362,26 @@ export function getBestSimulatedMove() {
     return simState;
   }
 
+  // 【最適化】候補のsimStateを即時評価してスコアのみ保持する。
+  // これにより、数百の候補それぞれにゲーム状態のフルコピーを保持し続ける
+  // メモリ蓄積を排除し、スマホでのOOMクラッシュを防止する。
   let candidates = [];
+
+  // 候補を追加するヘルパー関数（simStateを即時評価してメモリを解放する）
+  const addCandidate = (candidateData, simState) => {
+    candidateData.score = evaluateSimState(simState);
+    // simStateはスコア計算後に参照しないため保持しない（メモリ節約）
+    candidates.push(candidateData);
+  };
+
   let passSimState = processActionSequence([{ type: 'pass' }]);
   if (passSimState)
-    candidates.push({
+    addCandidate({
       index: -1,
       lane: -1,
       isOverwrite: false,
       useSkill: false,
-      simState: passSimState,
-    });
+    }, passSimState);
 
   for (let i = 0; i < hand.length; i++) {
     let card = hand[i];
@@ -1399,15 +1411,14 @@ export function getBestSimulatedMove() {
           return adjusted;
         });
 
-        candidates.push({
+        addCandidate({
           index: firstAction.targetIdx,
           lane: firstAction.laneIdx,
           useSkill: false,
           choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
           cardTokenLanes: firstAction.cardTokenLanes,
           actionQueue: followUp.length > 0 ? followUp : undefined,
-          simState: simState,
-        });
+        }, simState);
       }
     }
   }
@@ -1584,7 +1595,7 @@ export function getBestSimulatedMove() {
                   (x) => x !== undefined
                 );
                 const resTargetCard = discard[dIdx];
-                candidates.push({
+                addCandidate({
                   index: i,
                   lane: fA.laneIdx,
                   isOverwrite: myBoard[fA.laneIdx] !== null,
@@ -1613,8 +1624,7 @@ export function getBestSimulatedMove() {
                           return adjusted;
                         })
                       : undefined,
-                  simState,
-                });
+                }, simState);
               }
             } else {
               // その他（聖戦・邪戦・サタン・龍神等）
@@ -1629,7 +1639,7 @@ export function getBestSimulatedMove() {
                 let fChcs = [fA.choices, fA.choices2].filter(
                   (x) => x !== undefined
                 );
-                candidates.push({
+                addCandidate({
                   index: i,
                   lane: fA.laneIdx,
                   isOverwrite: myBoard[fA.laneIdx] !== null,
@@ -1655,8 +1665,7 @@ export function getBestSimulatedMove() {
                           return adjusted;
                         })
                       : undefined,
-                  simState,
-                });
+                }, simState);
               }
             }
           }
@@ -1678,7 +1687,7 @@ export function getBestSimulatedMove() {
             resTargetCard.baseId || resTargetCard.id
           );
           if (simState) {
-            candidates.push({
+            addCandidate({
               index: -1,
               lane: -1,
               isOverwrite: false,
@@ -1687,8 +1696,7 @@ export function getBestSimulatedMove() {
               skillOrder: 'before',
               leaderSkillTargetIdx: dIdx,
               leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
-              simState,
-            });
+            }, simState);
           }
         }
       } else {
@@ -1700,26 +1708,29 @@ export function getBestSimulatedMove() {
           'before'
         );
         if (simState)
-          candidates.push({
+          addCandidate({
             index: -1,
             lane: -1,
             isOverwrite: false,
             useSkill: true,
             tokenLanes,
             skillOrder: 'before',
-            simState,
-          });
+          }, simState);
       }
     }
   }
 
-  // simStateがnullの候補を安全に除外（processActionSequenceが想定外にnullを返した場合の防御）
-  candidates = candidates.filter(
-    (c) => c.simState !== null && c.simState !== undefined
-  );
+  // 【最適化】addCandidateでスコアは既に計算済みのため、nullフィルタは不要
+  // （addCandidateはsimStateがnullの場合は呼ばれない）
 
+  // レーン優先順位に基づくタイブレーク用スコアボーナスを加算
+  const getLanePri = (l) => {
+    if (l === 0) return 3;
+    if (l === 2) return 2;
+    if (l === 1) return 1;
+    return 0;
+  };
   candidates.forEach((c) => {
-    c.score = evaluateSimState(c.simState);
     // レーン優先順位を加味 (左 0=3点, 右 2=2点, 中央 1=1点)
     let pri = 0;
     if (c.lane === 0) pri = 3;
@@ -1730,12 +1741,6 @@ export function getBestSimulatedMove() {
     c.score += pri * 0.01;
 
     // トークンやリーダースキルの配置先にもタイブレークを適用（同点時に左を優先）
-    const getLanePri = (l) => {
-      if (l === 0) return 3;
-      if (l === 2) return 2;
-      if (l === 1) return 1;
-      return 0;
-    };
     if (c.cardTokenLanes && Array.isArray(c.cardTokenLanes)) {
       c.cardTokenLanes.forEach((l) => (c.score += getLanePri(l) * 0.001));
     }
@@ -1800,18 +1805,6 @@ export function getBestSimulatedMove() {
   );
   const initialDiff = initialMyP - initialOpP;
 
-  // シミュレート後のパワー計算
-  const finalMyP = finalDecision.simState.enemyBoard.reduce(
-    (sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0),
-    0
-  );
-  const finalOpP = finalDecision.simState.playerBoard.reduce(
-    (sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0),
-    0
-  );
-  const finalDiff = finalMyP - finalOpP;
-  const diffGain = finalDiff - initialDiff;
-
   let resInfo = '';
   if (
     finalDecision.useSkill &&
@@ -1830,36 +1823,14 @@ export function getBestSimulatedMove() {
     if (resCard) resInfo = ` (Resurrect: ${resCard.name})`;
   }
 
-  // ダメージ計算
-  const hpDmg = Math.max(0, GameState.enemyHP - finalDecision.simState.enemyHP);
-  let summonedP =
-    finalDecision.index !== -1
-      ? hand[finalDecision.index].currentPower ||
-        hand[finalDecision.index].power ||
-        0
-      : 0;
-  if (
-    finalDecision.useSkill &&
-    (skill.action === 'devilhunter_resurrect' ||
-      skill.action === 'overdrive') &&
-    finalDecision.leaderSkillTargetIdx !== undefined
-  ) {
-    const resCard = discard[finalDecision.leaderSkillTargetIdx];
-    if (resCard) summonedP += resCard.power || 0;
-  }
-  const boardDmg = Math.max(0, initialMyP + summonedP - finalMyP);
-
   console.log(
     `[AI Decision] ${cardName} -> Lane: ${finalDecision.lane}${resInfo} (Skill: ${finalDecision.useSkill ? 'YES' : 'NO'})`
   );
   console.log(
-    `[AI Reasoning] Power Diff: ${initialDiff} -> ${finalDiff} (Gain: ${diffGain > 0 ? '+' : ''}${diffGain})`
-  );
-  console.log(
-    `[AI Stats] Final Board: My ${finalMyP} vs Op ${finalOpP} (Damage: HP -${hpDmg}, Card -${boardDmg}), Candidates: ${bestGroup.length}`
+    `[AI Reasoning] Score: ${finalDecision.score.toFixed(3)}, Candidates: ${bestGroup.length}`
   );
 
-  // 詳細な盤面ログ出力（battle.jsの[Player Turn End]と同じ [Player] ... vs [AI] ... 形式）
+  // 詳細な盤面ログ出力（シミュレーション前の状態のみ）
   const dumpB = (b) =>
     b
       .map((c) =>
@@ -1870,9 +1841,6 @@ export function getBestSimulatedMove() {
       .join(' | ');
   console.log(
     `[AI DEBUG] Before: [Player] ${dumpB(opBoard)} vs [AI] ${dumpB(myBoard)}`
-  );
-  console.log(
-    `[AI DEBUG] After:  [Player] ${dumpB(finalDecision.simState.playerBoard)} vs [AI] ${dumpB(finalDecision.simState.enemyBoard)}`
   );
 
   if (finalDecision.actionQueue) {
@@ -2442,7 +2410,7 @@ export function simulateMove(
   checkConstraints = true,
   choiceIndex2 = undefined
 ) {
-  const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+  const cloneCard = (c) => (c ? structuredClone(c) : null);
   let simState = {
     playerBoard: currentOpBoard.map(cloneCard),
     enemyBoard: currentMyBoard.map(cloneCard),
