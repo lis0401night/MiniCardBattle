@@ -1731,6 +1731,29 @@ export function getBestSimulatedMove() {
     c.lanePriority = pri;
     // スコアに僅かな優先度ボーナスを乗せ、同点時に「左→右→中央」を選びやすくする
     c.score += pri * 0.01;
+
+    // トークンやリーダースキルの配置先にもタイブレークを適用（同点時に左を優先）
+    const getLanePri = (l) => {
+      if (l === 0) return 3;
+      if (l === 2) return 2;
+      if (l === 1) return 1;
+      return 0;
+    };
+    if (c.cardTokenLanes && Array.isArray(c.cardTokenLanes)) {
+      c.cardTokenLanes.forEach((l) => (c.score += getLanePri(l) * 0.001));
+    }
+    if (c.tokenLanes && Array.isArray(c.tokenLanes)) {
+      c.tokenLanes.forEach((l) => (c.score += getLanePri(l) * 0.001));
+    }
+    if (c.actionQueue) {
+      c.actionQueue.forEach((a) => {
+        if (a.lanes && Array.isArray(a.lanes)) {
+          a.lanes.forEach((l) => (c.score += getLanePri(l) * 0.0001));
+        } else if (a.laneIdx !== undefined && a.laneIdx !== -1) {
+          c.score += getLanePri(a.laneIdx) * 0.0001;
+        }
+      });
+    }
   });
 
   // スコア順、次いでリーダースキル不使用優先、最後にアクションの短さ順でソート（不要なスキル消費を避ける）

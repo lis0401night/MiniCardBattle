@@ -409,11 +409,20 @@
             activeSkills.push({ id: sk.id, val: sk.value || 0 })
           );
 
+        // 倍化と減衰の特殊処理（ベースパワーの書き換え）
+        if (activeSkills.some((sk) => sk.id === "double_power")) {
+          score = (card.power || 0) * 2 + 1;
+        } else if (activeSkills.some((sk) => sk.id === "decay")) {
+          score = Math.floor((card.power || 0) / 2) + 1;
+        }
+
         activeSkills.forEach((sk) => {
+          if (sk.id === "double_power" || sk.id === "decay") return;
+
           const choicesArr =
             sk.choiceGroup === 2 ? card.choices2 : card.choices;
           if (
-            sk.id === 'choice' &&
+            (sk.id === "choice" || sk.id === "force") &&
             Array.isArray(choicesArr) &&
             choicesArr.length > 0
           ) {
@@ -423,20 +432,21 @@
               const choVal =
                 cho.value === undefined || cho.value === 0 ? 1 : cho.value;
               choiceTotal +=
-                Number(p.base || 0) +
-                Number(choVal) * Number(p.multiplier || 0);
+                Number(p.base || 0) + Number(choVal) * Number(p.multiplier || 0);
             });
             const pickCount = sk.val === undefined || sk.val === 0 ? 1 : sk.val;
-            const choiceBaseSkillP = pointSettings['choice'] || {
+            const selfBaseSkillP = pointSettings[sk.id] || {
               base: 0,
               multiplier: 0,
             };
-            const choiceSelfScore =
-              Number(choiceBaseSkillP.base || 0) +
-              Number(pickCount) * Number(choiceBaseSkillP.multiplier || 0);
+            const selfScore =
+              Number(selfBaseSkillP.base || 0) +
+              Number(pickCount) * Number(selfBaseSkillP.multiplier || 0);
 
-            score +=
-              (choiceTotal / choicesArr.length) * pickCount + choiceSelfScore;
+            const avgScore = (choiceTotal / choicesArr.length) * pickCount;
+            // 命令の場合は -1 の補正
+            const penalty = sk.id === "force" ? -1 : 0;
+            score += avgScore + penalty + selfScore;
           } else {
             const p = pointSettings[sk.id] || { base: 0, multiplier: 0 };
             const value = sk.val === undefined || sk.val === 0 ? 1 : sk.val;
@@ -445,7 +455,7 @@
           }
         });
 
-        if (activeSkills.some((sk) => sk.id === 'defender')) {
+        if (activeSkills.some((sk) => sk.id === "defender")) {
           score = score / 2;
         }
 
@@ -542,7 +552,7 @@
                                 const choicesArr =
                                   sk.choiceGroup === 2 ? c.choices2 : c.choices;
                                 if (
-                                  (sk.id === 'choice' || sk === 'choice') &&
+                                  (sk.id === 'choice' || sk.id === 'force' || sk === 'choice' || sk === 'force') &&
                                   Array.isArray(choicesArr)
                                 ) {
                                   html += `<div class="flex items-center text-slate-400 font-bold px-1 select-none">⇒</div>`;
@@ -600,6 +610,30 @@
                     <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-red-500/30 bg-red-500/5">
                         <span class="text-[9px] md:text-[10px] font-black text-red-400 tracking-wider">固定補正</span>
                         <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5">最終評価スコアを 1/2 倍</span>
+                    </div>`;
+            } else if (k === 'choice') {
+              settingsArea = `
+                    <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-indigo-500/30 bg-indigo-500/5">
+                        <span class="text-[9px] md:text-[10px] font-black text-indigo-400 tracking-wider">特殊計算</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">候補の平均点 × 選択数 + 1<br/>+ 基礎点等</span>
+                    </div>`;
+            } else if (k === 'force') {
+              settingsArea = `
+                    <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-orange-500/30 bg-orange-500/5">
+                        <span class="text-[9px] md:text-[10px] font-black text-orange-400 tracking-wider">特殊計算</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">候補の平均点 × 選択数 - 1<br/>+ 基礎点等</span>
+                    </div>`;
+            } else if (k === 'double_power') {
+              settingsArea = `
+                    <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-indigo-500/30 bg-indigo-500/5">
+                        <span class="text-[9px] md:text-[10px] font-black text-indigo-400 tracking-wider">特殊計算</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">パワー × 2 + 1</span>
+                    </div>`;
+            } else if (k === 'decay') {
+              settingsArea = `
+                    <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-red-500/30 bg-red-500/5">
+                        <span class="text-[9px] md:text-[10px] font-black text-red-400 tracking-wider">特殊計算</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">パワー / 2 + 1</span>
                     </div>`;
             }
 

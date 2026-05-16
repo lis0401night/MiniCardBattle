@@ -12,7 +12,7 @@ export const SKILL_POINTS = {
   },
   draw: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   heal: {
     base: -1,
@@ -20,7 +20,7 @@ export const SKILL_POINTS = {
   },
   snipe: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   spread: {
     base: 0,
@@ -40,7 +40,7 @@ export const SKILL_POINTS = {
   },
   sacrifice: {
     base: 0,
-    multiplier: -0.7,
+    multiplier: -1,
   },
   bind: {
     base: 0,
@@ -84,7 +84,7 @@ export const SKILL_POINTS = {
   },
   soul_bind: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   sturdy: {
     base: 2,
@@ -103,7 +103,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   pierce: {
-    base: 1,
+    base: 1 / 2,
     multiplier: 0,
   },
   morph: {
@@ -123,8 +123,8 @@ export const SKILL_POINTS = {
     multiplier: -1,
   },
   choice: {
-    base: 0,
-    multiplier: 1,
+    base: 1,
+    multiplier: 0,
   },
   metamorph: {
     base: 5,
@@ -164,11 +164,11 @@ export const SKILL_POINTS = {
   },
   reinforce: {
     base: 0,
-    multiplier: 1,
+    multiplier: 1 / 2,
   },
   extort: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   toxic: {
     base: 0,
@@ -183,7 +183,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   equip: {
-    base: 1,
+    base: 1 / 2,
     multiplier: 0,
   },
   phase: {
@@ -216,7 +216,7 @@ export const SKILL_POINTS = {
   },
   wall_create: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   challenge: {
     base: -2,
@@ -231,8 +231,8 @@ export const SKILL_POINTS = {
     multiplier: 2,
   },
   loss: {
-    base: -1,
-    multiplier: -0.5,
+    base: 0,
+    multiplier: -1 / 2,
   },
   brutal: {
     base: 0,
@@ -256,7 +256,7 @@ export const SKILL_POINTS = {
   },
   retaliate: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   reflect: {
     base: 0,
@@ -267,7 +267,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   decay: {
-    base: -3,
+    base: 0,
     multiplier: 0,
   },
   puppet: {
@@ -291,12 +291,12 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   double_power: {
-    base: 1,
+    base: 0,
     multiplier: 0,
   },
   explore: {
     base: 0,
-    multiplier: 0.5,
+    multiplier: 1 / 2,
   },
   possession: {
     base: 0,
@@ -324,7 +324,7 @@ export const SKILL_POINTS = {
   },
   burial: {
     base: 0,
-    multiplier: 0.33,
+    multiplier: 1 / 3,
   },
   maintain: {
     base: -3,
@@ -332,7 +332,7 @@ export const SKILL_POINTS = {
   },
   recurse: {
     base: 0,
-    multiplier: 0.25,
+    multiplier: 1 / 4,
   },
   grave_keeper: {
     base: 0,
@@ -341,5 +341,33 @@ export const SKILL_POINTS = {
   intercept: {
     base: 0,
     multiplier: 1,
+  },
+  decree: {
+    base: 5,
+    multiplier: 0,
+  },
+  resist: {
+    base: 5,
+    multiplier: -1 / 2,
+  },
+  forge: {
+    base: 1,
+    multiplier: 0,
+  },
+  destroy: {
+    base: 4,
+    multiplier: 0,
+  },
+  hack: {
+    base: 0,
+    multiplier: 0,
+  },
+  amplify: {
+    base: 2,
+    multiplier: 0,
+  },
+  cull: {
+    base: 3,
+    multiplier: 0,
   },
 };

@@ -504,10 +504,7 @@ export const CARD_MASTER = [
     name: '死蠅の大群',
     rarity: 1,
     power: 1,
-    skills: [
-      { id: 'clone', value: 2 },
-      { id: 'growth', value: -1 },
-    ],
+    skills: [{ id: 'clone', value: 2 }],
     voiceCategory: 'insect',
     flavor:
       '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する',
@@ -581,7 +578,7 @@ export const CARD_MASTER = [
     power: 10,
     skills: [
       { id: 'sturdy' },
-      { id: 'standby', value: 3 },
+      { id: 'standby', value: 2 },
       { id: 'growth', value: -2 },
     ],
     voiceCategory: 'machine_old',
@@ -1349,8 +1346,8 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'legendary' },
-      { id: 'spread', value: 3 },
       { id: 'charge', value: -3 },
+      { id: 'spread', value: 3 },
     ],
     voiceCategory: 'machine_new',
     flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。',
@@ -1375,10 +1372,10 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 6,
     skills: [
-      { id: 'split', value: 6, summonId: 'token_phoenix' },
       { id: 'sacrifice', value: 3 },
       { id: 'berserk', value: 3 },
       { id: 'explode', value: 3 },
+      { id: 'split', value: 6, summonId: 'token_phoenix' },
     ],
     voiceCategory: 'bird',
     flavor:
@@ -2130,7 +2127,7 @@ export const CARD_MASTER = [
     id: 'hellkite',
     name: 'ヘルカイトの君主',
     rarity: 4,
-    power: 8,
+    power: 9,
     skills: [
       { id: 'legendary' },
       { id: 'apex' },

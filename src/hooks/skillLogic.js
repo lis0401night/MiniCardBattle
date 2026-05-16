@@ -57,6 +57,9 @@ export async function resolveActiveSkillEffect(
   skillValue,
   skObj = null
 ) {
+  // 忘却状態ならスキルは発動しない（忘却自身と装備スキルは除く）
+  if (!hasSkill(c, skillId)) return;
+
   const cEl = document.querySelector(
     `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
   );
@@ -2500,6 +2503,9 @@ export async function triggerStartTurnPassive(owner, lane) {
   const c = board[lane];
   if (!c) return false;
 
+  // 忘却状態ならパッシブスキルは発動しない
+  if (hasSkill(c, 'oblivion')) return false;
+
   // invincible のターン処理等のために一度 Engine の全体処理を呼ぶべきだが、
   // 既存構成が「カードごとに順次再生」のため、一旦ここで個別評価し、
   // Renderer に流し込む。
@@ -2541,6 +2547,14 @@ export async function triggerStartTurnPassive(owner, lane) {
         }
       }
       if (maxL !== -1) {
+        // 自分側にスキル発動のポップアップを出す
+        events.push({
+          type: 'skill_popup',
+          side: owner,
+          lane: lane,
+          skillName: '迎撃',
+        });
+
         events.push({
           type: 'damage_card',
           side: owner === 'blue' ? 'red' : 'blue',

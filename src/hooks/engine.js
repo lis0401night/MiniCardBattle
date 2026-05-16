@@ -3932,6 +3932,12 @@ export function applyPassiveSkillLogic(
         }
       }
       if (maxL !== -1) {
+        events.push({
+          type: 'skill_popup',
+          side,
+          lane: i,
+          skillName: '迎撃',
+        });
         if (canTakeDamage(eB[maxL], dmg)) {
           eB[maxL].currentPower -= dmg;
           events.push({
