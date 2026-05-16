@@ -360,6 +360,7 @@
             'witch_high',
             'oni_high',
             'satan_high',
+            'priest_high',
           ];
           for (const file of deckFiles) {
             try {
@@ -402,8 +403,6 @@
       function calculateScore(card) {
         let score = card.power || 0;
         const activeSkills = [];
-        if (card.skill && card.skill !== 'none')
-          activeSkills.push({ id: card.skill, val: card.skillValue || 0 });
         if (card.skills)
           card.skills.forEach((sk) =>
             activeSkills.push({ id: sk.id, val: sk.value || 0 })
@@ -530,11 +529,7 @@
                     </td>
                     <td class="p-2 md:p-4">
                         <div class="flex flex-col md:flex-row flex-wrap gap-1 md:gap-2">
-                            ${(c.skill && c.skill !== 'none'
-                              ? [{ id: c.skill, val: c.skillValue }]
-                              : []
-                            )
-                              .concat(c.skills || [])
+                            ${(c.skills || [])
                               .map((sk) => {
                                 const s = skillData[sk.id || sk] || {
                                   name: sk.id || sk,

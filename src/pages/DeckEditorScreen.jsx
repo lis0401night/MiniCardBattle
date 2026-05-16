@@ -305,7 +305,6 @@ export default function DeckEditorScreen() {
     new Set(
       masterCards.flatMap((c) => {
         let s = [];
-        if (c.skill && c.skill !== 'none') s.push(c.skill);
         if (c.skills) c.skills.forEach((sk) => s.push(sk.id));
         if (c.choices) c.choices.forEach((ch) => s.push(ch.id));
         if (c.choices2) c.choices2.forEach((ch) => s.push(ch.id));
@@ -323,7 +322,6 @@ export default function DeckEditorScreen() {
       return false;
     if (filters.skills.length > 0) {
       let cardSkills = [];
-      if (c.skill && c.skill !== 'none') cardSkills.push(c.skill);
       if (c.skills) c.skills.forEach((sk) => cardSkills.push(sk.id));
       if (c.choices) c.choices.forEach((ch) => cardSkills.push(ch.id));
       if (c.choices2) c.choices2.forEach((ch) => cardSkills.push(ch.id));

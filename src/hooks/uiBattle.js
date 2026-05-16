@@ -72,15 +72,8 @@ export function updateCardDetail(c) {
     }
   } else {
     textColor = '#fff';
-    let skillCandidates = []; // 1. 基本スキル
-    if (c.skill && c.skill !== 'none' && c.skill !== undefined) {
-      skillCandidates.push({
-        id: c.skill,
-        value: c.skillValue,
-        choiceGroup: c.choiceGroup,
-      });
-    }
-    // 2. 複数スキル配列（union等が必要とするtargetId/summonIdなど全プロパティを引き継ぐ）
+    let skillCandidates = [];
+    // 複数スキル配列（union等が必要とするtargetId/summonIdなど全プロパティを引き継ぐ）
     if (Array.isArray(c.skills)) {
       c.skills.forEach((sk) => {
         skillCandidates.push({ ...sk });

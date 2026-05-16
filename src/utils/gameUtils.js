@@ -462,8 +462,7 @@ export function hasSkill(c, skillId) {
   if (!c) return false;
 
   const isOblivion =
-    c.skill === 'oblivion' ||
-    (Array.isArray(c.skills) && c.skills.some((s) => s.id === 'oblivion'));
+    Array.isArray(c.skills) && c.skills.some((s) => s.id === 'oblivion');
   if (isOblivion) {
     if (skillId !== 'oblivion' && skillId !== 'equip') {
       return false;
@@ -472,7 +471,6 @@ export function hasSkill(c, skillId) {
 
   // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
   if (skillId === 'defender' && c.stunTurns > 0) return true;
-  if (c.skill === skillId) return true;
   if (Array.isArray(c.skills)) {
     return c.skills.some((s) => s.id === skillId);
   }
@@ -482,7 +480,6 @@ export function hasSkill(c, skillId) {
 // 判定補助: スキルの数値を取得
 export function getSkillValue(c, skillId) {
   if (!c) return 0;
-  if (c.skill === skillId) return c.skillValue || 0;
   if (Array.isArray(c.skills)) {
     const s = c.skills.find((s) => s.id === skillId);
     return s ? s.value || 0 : 0;
@@ -493,17 +490,7 @@ export function getSkillValue(c, skillId) {
 // 装備時などのスキル統合ロジック
 export function mergeCardSkills(targetCard, equipSkills) {
   if (!targetCard.skills) {
-    targetCard.skills =
-      targetCard.skill && targetCard.skill !== 'none'
-        ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-        : [];
-    if (targetCard.skill && targetCard.skill !== 'none') {
-      if (targetCard.summonId)
-        targetCard.skills[0].summonId = targetCard.summonId;
-      if (targetCard.targetId)
-        targetCard.skills[0].targetId = targetCard.targetId;
-    }
-    targetCard.skill = 'none';
+    targetCard.skills = [];
   }
 
   for (const newS of equipSkills) {
@@ -710,7 +697,7 @@ export function renderSkillTag(card, isBoard = false) {
     }
   };
 
-  if (card.skill) addCandidate(card.skill, card.skillValue);
+  if (card.skill && card.skill !== 'none') addCandidate(card.skill, card.skillValue);
   if (Array.isArray(card.skills)) {
     card.skills.forEach((sk) => addCandidate(sk.id, sk.value));
   }
