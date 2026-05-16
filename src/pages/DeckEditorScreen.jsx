@@ -278,10 +278,7 @@ export default function DeckEditorScreen() {
 
     if (mode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
-    } else if (
-      mode === 'event_satan' ||
-      (mode?.startsWith('event_') && mode?.endsWith('_high'))
-    ) {
+    } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
     } else if (mode === 'defense_register' || mode === 'defense_attack') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`;

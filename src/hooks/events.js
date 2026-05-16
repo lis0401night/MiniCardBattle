@@ -8,7 +8,7 @@ import { setupDialogueScreen, showContinueScreen } from './uiDialogue.js';
 import { performFadeTransition } from './uiMainCore.js';
 
 /**
- * 汎用：高難易度イベントの初期化
+ * 汎用：高難易度イベントの初期化（サタン含む全高難易度キャラ共通）
  */
 export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
   const eventConfig = CHARACTERS[enemyCharId]?.event_high;
@@ -24,7 +24,7 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
     name: eventConfig.name,
     leaderSkill: eventConfig.leaderSkill,
   };
-  
+
   const modeKey = `event_${enemyCharId}_high`;
   GameState.gameMode = modeKey;
   GameState.aiLevel = 3;
@@ -56,31 +56,12 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
 
   const dialogues =
     EVENT_DIALOGUES[modeKey]?.[playerCharId] ||
-    EVENT_DIALOGUES[modeKey]?.['default'] || [];
-  
+    EVENT_DIALOGUES[modeKey]?.['default'] ||
+    [];
+
   if (dialogues.length >= 3) {
     GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
   }
-
-  performFadeTransition(() => {
-    setupDialogueScreen();
-  });
-}
-
-export function initEventSatanMode(charId) {
-  GameState.playerConfig = { ...CHARACTERS[charId] };
-  GameState.enemyConfig = { ...CHARACTERS['satan'], hp: 100 };
-  GameState.gameMode = 'event_satan';
-  GameState.aiLevel = 3;
-  GameState.battleCount = 7;
-  GameState.selectedStageId = 'satan'; // ステージを魔王城に固定
-
-  GameState.appState = 'story_intro';
-
-  const dialogues =
-    EVENT_DIALOGUES.event_satan[charId] ||
-    EVENT_DIALOGUES.event_satan['default'];
-  GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
 
   performFadeTransition(() => {
     setupDialogueScreen();

@@ -1,12 +1,12 @@
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
+  getCardImgUrl,
+  hasSkill,
   playSound,
+  renderSkillTag,
   stopAllBGM,
   switchScreen,
-  hasSkill,
-  getCardImgUrl,
-  renderSkillTag,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES } from '../utils/sounds.js';
 import { GameState } from './gameState.js';
@@ -326,7 +326,7 @@ export function showCardReward(enemyId) {
   }
 
   let recipeId = enemyId;
-  if (GameState.gameMode === 'event_satan' && enemyId === 'satan')
+  if (GameState.gameMode === 'event_satan_high' && enemyId === 'satan')
     recipeId = 'satan_high';
   if (GameState.gameMode === 'event_android_high' && enemyId === 'android')
     recipeId = 'android_high';

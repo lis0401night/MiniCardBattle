@@ -377,26 +377,22 @@ export function initBattleState() {
     if (GameState.gameMode === 'tournament') {
       bgmKey = 'bgmTournament2'; // トーナメントバトル専用BGM
     } else if (
-      GameState.gameMode === 'event_satan' ||
-      (GameState.gameMode.startsWith('event_') &&
-        GameState.gameMode.endsWith('_high'))
+      GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_high')
     ) {
       bgmKey = 'bgmStageHighDifficulty';
     }
     playSound(SOUNDS[bgmKey]);
     GameState.playerMaxHP = MAX_HP;
     GameState.enemyMaxHP =
-      GameState.gameMode === 'event_satan'
-        ? 100
-        : GameState.enemyConfig.hp ||
-          (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP);
+      GameState.enemyConfig.hp ||
+      (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP);
     if (GameState.gameMode === 'campaign') {
       GameState.enemyMaxHP = 10;
     }
     if (
-      GameState.gameMode === 'event_satan' ||
-      (GameState.gameMode.startsWith('event_') &&
-        GameState.gameMode.endsWith('_high'))
+      GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_high')
     )
       GameState.aiLevel = 3; // 念のため再セット
 
@@ -1623,7 +1619,8 @@ export async function waitSkillChoice(
     // カードオーナー（プレイヤー）がforceカードを出し、AIがどのスキルを発動させるか決定する
     if (isForce) {
       await sleep(800);
-      const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
+      const localAiLevel =
+        parseInt(localStorage.getItem('storyDifficulty')) || 2;
 
       // Easy AI: ランダム選択（既存の挙動を維持）
       if (localAiLevel <= 1) {
@@ -1674,7 +1671,13 @@ export async function waitSkillChoice(
         };
 
         // 1. スキル効果を適用（カードオーナー=blue側で発動）
-        applyActiveSkillLogic(simState, cardOwner, lane, choices[i].id, choices[i].value);
+        applyActiveSkillLogic(
+          simState,
+          cardOwner,
+          lane,
+          choices[i].id,
+          choices[i].value
+        );
         // 2. カードオーナーのターン戦闘フェーズ
         calculateCombatPhase(simState, cardOwner);
         // 3. 次のAIターンの戦闘フェーズ
@@ -2926,7 +2929,8 @@ export async function determineTurnOrder() {
     const preset = GameState.battlePreset;
     applyBattlePreset(preset);
     GameState.battlePreset = null; // 適用後にクリア（リトライ時の二重適用を防止）
-    GameState.firstPlayer = preset.firstPlayer || (getSeededRandom() < 0.5 ? 'blue' : 'red');
+    GameState.firstPlayer =
+      preset.firstPlayer || (getSeededRandom() < 0.5 ? 'blue' : 'red');
     GameState.isProcessing = false;
     GameState.battlePhase = 'BATTLE';
     renderBoard();
@@ -3383,12 +3387,6 @@ export function endBattle() {
         }
       }
       if (
-        GameState.gameMode === 'event_satan' &&
-        typeof incrementStat === 'function'
-      ) {
-        incrementStat('eventClear', 'satan_high');
-      }
-      if (
         GameState.gameMode.startsWith('event_') &&
         GameState.gameMode.endsWith('_high') &&
         typeof incrementStat === 'function'
@@ -3412,8 +3410,6 @@ export function endBattle() {
         }
       } else {
         let recipeId = GameState.enemyConfig.id;
-        if (GameState.gameMode === 'event_satan' && recipeId === 'satan')
-          recipeId = 'satan_high';
         if (
           GameState.gameMode.startsWith('event_') &&
           GameState.gameMode.endsWith('_high')

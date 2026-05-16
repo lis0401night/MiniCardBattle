@@ -92,7 +92,7 @@ export function generateDeck(owner, config, sessionId) {
       deckIds = config.dungeonDeck;
     } else {
       let recipeId = config.id;
-      if (GameState.gameMode === 'event_satan') recipeId = 'satan_high';
+      if (GameState.gameMode === 'event_satan_high') recipeId = 'satan_high';
       if (GameState.gameMode === 'event_android_high')
         recipeId = 'android_high';
       if (GameState.gameMode === 'event_dragon_high') recipeId = 'dragon_high';

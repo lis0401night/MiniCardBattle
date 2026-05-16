@@ -1,11 +1,14 @@
 import BackButton from '../components/BackButton.jsx';
-import { handleSatanBattle, startGameMode } from '../hooks/uiMainCore.js';
+import { selectHighDifficultyTarget } from '../hooks/uiMainCore.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function HighDifficultyScreen() {
-  const highEventChars = Object.values(CHARACTERS).filter((c) => c.event_high);
+  // サタンを先頭に表示するため、satanを優先ソート
+  const highEventChars = Object.values(CHARACTERS)
+    .filter((c) => c.event_high)
+    .sort((a, b) => (a.id === 'satan' ? -1 : b.id === 'satan' ? 1 : 0));
 
   return (
     <div
@@ -37,20 +40,6 @@ export default function HighDifficultyScreen() {
           overflowY: 'auto',
         }}
       >
-        <button
-          className="btn-banner legendary"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleSatanBattle?.()}
-        >
-          <img
-            src="assets/icons/icon_satan.png"
-            className="banner-icon"
-            alt=""
-          />
-          <span className="banner-text" style={{ color: '#ef4444' }}>
-            復活の魔王 サタン
-          </span>
-        </button>
 
         {highEventChars.map((char) => {
           const eventConf = char.event_high;
@@ -61,11 +50,12 @@ export default function HighDifficultyScreen() {
               style={{ flexShrink: 0 }}
               onClick={() => {
                 playSound?.(SOUNDS?.seClick);
-                if (startGameMode) startGameMode(`event_${char.id}_high`);
+                selectHighDifficultyTarget?.(char.id);
               }}
             >
               <img
                 src={`assets/icons/icon_${eventConf.id}.png`}
+                onError={(e) => { e.target.src = char.icon; }}
                 className="banner-icon"
                 alt=""
               />

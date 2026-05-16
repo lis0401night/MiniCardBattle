@@ -42,9 +42,8 @@ export function handleProgressionNextStep() {
       switchScreen('screen-mode-select');
     }
   } else if (
-    GameState.gameMode === 'event_satan' ||
-    (GameState.gameMode.startsWith('event_') &&
-      GameState.gameMode.endsWith('_high'))
+    GameState.gameMode.startsWith('event_') &&
+    GameState.gameMode.endsWith('_high')
   ) {
     if (typeof handleEventProgression === 'function') {
       handleEventProgression();

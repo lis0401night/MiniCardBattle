@@ -1,5 +1,5 @@
 export const EVENT_DIALOGUES = {
-  event_satan: {
+  event_satan_high: {
     android: [
       {
         speaker: 'narrator',

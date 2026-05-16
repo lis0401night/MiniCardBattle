@@ -16,11 +16,7 @@ import {
   renderDeckEdit,
   startBattleFlow,
 } from './deck.js';
-import {
-  initEventSatanMode,
-  initHighDifficultyEventMode,
-  loadPlayerDeck,
-} from './events.js';
+import { initHighDifficultyEventMode, loadPlayerDeck } from './events.js';
 import { initTournamentMode } from './tournament.js';
 
 import { prepareBattle } from './battle.js';
@@ -256,17 +252,8 @@ export function goBackFromSelect() {
   } else if (GameState.gameMode === 'defense_attack') {
     switchScreen('screen-defense-battle-list');
   } else if (
-    GameState.gameMode === 'event_satan' ||
-    GameState.gameMode === 'event_android_high' ||
-    GameState.gameMode === 'event_dragon_high' ||
-    GameState.gameMode === 'event_knight_high' ||
-    GameState.gameMode === 'event_cthulhu_high' ||
-    GameState.gameMode === 'event_elf_high' ||
-    GameState.gameMode === 'event_cleric_high' ||
-    GameState.gameMode === 'event_devilhunter_high' ||
-    GameState.gameMode === 'event_witch_high' ||
-    GameState.gameMode === 'event_oni_high' ||
-    GameState.gameMode === 'event_priest_high'
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
   ) {
     switchScreen('screen-high-difficulty');
   } else if (GameState.appState === 'create_deck_select_char') {
@@ -330,6 +317,12 @@ export function goBackFromDifficulty() {
   } else if (GameState.gameMode === 'story') {
     GameState.appState = 'select_deck';
     switchScreen('screen-deck-list');
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
+  ) {
+    // 高難易度イベント：高難易度キャラ選択画面に戻る
+    switchScreen('screen-high-difficulty');
   } else {
     GameState.appState = 'select_enemy';
     initSelectScreen(false);
@@ -415,20 +408,12 @@ export function goBackFromDeckEdit(isCancel = false) {
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
   } else if (
-    GameState.gameMode === 'event_satan' ||
-    GameState.gameMode === 'event_android_high' ||
-    GameState.gameMode === 'event_dragon_high' ||
-    GameState.gameMode === 'event_knight_high' ||
-    GameState.gameMode === 'event_cthulhu_high' ||
-    GameState.gameMode === 'event_elf_high' ||
-    GameState.gameMode === 'event_cleric_high' ||
-    GameState.gameMode === 'event_devilhunter_high' ||
-    GameState.gameMode === 'event_witch_high' ||
-    GameState.gameMode === 'event_oni_high' ||
-    GameState.gameMode === 'event_priest_high'
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
   ) {
-    // 高難易度画面に戻る
-    switchScreen('screen-high-difficulty');
+    // 高難易度：難易度選択画面に戻る（デッキ確認が可能）
+    GameState.appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
   } else if (GameState.gameMode === 'battle_dungeon') {
     GameState.dungeonState = 'select_opponent';
     switchScreen('screen-battle-dungeon');
@@ -616,7 +601,20 @@ export function showHighDifficultyRules() {
 
 export function handleSatanBattle() {
   playSound(SOUNDS.seClick);
-  startGameMode('event_satan');
+  startGameMode('event_satan_high');
+}
+
+/**
+ * 高難易度イベント：キャラ選択後に難易度選択画面へ遷移する
+ * HighDifficultyScreen.jsxのボタンクリックから呼ばれる
+ */
+export function selectHighDifficultyTarget(enemyCharId) {
+  GameState.lastBattleResult = null;
+  GameState.gameMode = `event_${enemyCharId}_high`;
+  // 前モードの敵スキン設定をクリアし、新モードへの漏洩を防ぐ
+  GameState.enemySkins = {};
+  GameState.appState = 'select_difficulty';
+  switchScreen('screen-difficulty');
 }
 
 export function handleAndroidHighBattle() {
@@ -906,8 +904,8 @@ export function confirmCharSelect() {
       switchScreen('screen-difficulty');
       updateDifficultyCheckButtons();
     } else if (GameState.gameMode === 'event_satan') {
-      // 高難易度サタン戦専用の導入へ
-      initEventSatanMode(GameState.pendingCharId);
+      // 高難易度サタン戦（旧互換パス：通常はevent_satan_highで来る）
+      initHighDifficultyEventMode(GameState.pendingCharId, 'satan');
     } else if (
       GameState.gameMode.startsWith('event_') &&
       GameState.gameMode.endsWith('_high')
@@ -1029,6 +1027,15 @@ export function confirmDifficulty(level) {
     // 攻撃側：難易度選択の後はステージを敵の設定からロード（またはランダム）
     GameState.selectedStageId = GameState.enemyConfig.stageId || 'plain';
     startBattleFlow();
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
+  ) {
+    // 高難易度イベント：難易度確定後、キャラ選択画面（デッキ一覧）へ
+    GameState.appState = 'select_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
   } else {
     GameState.appState = 'select_stage';
     initStageSelectScreen();
@@ -1275,6 +1282,31 @@ export function openEnemyDeckPreview(level) {
     const titleText = `${GameState.enemyConfig.name} [上級]`;
     if (window.showEnemyDeckModal) {
       window.showEnemyDeckModal(GameState.enemyConfig.dungeonDeck, titleText);
+    }
+    return;
+  }
+
+  // 高難易度イベントのデッキ確認
+  if (level === 'high') {
+    const enemyCharId = GameState.gameMode
+      ?.replace('event_', '')
+      ?.replace('_high', '');
+    const highDeckKey = `${enemyCharId}_high`;
+    const deckIds = ENEMY_DECKS[highDeckKey];
+    if (!deckIds || deckIds.length === 0) {
+      if (window.showAlertModalHook)
+        window.showAlertModalHook(
+          'このキャラクターのデッキデータが見つかりません。'
+        );
+      return;
+    }
+    const charConfig = CHARACTERS[enemyCharId];
+    const eventName = charConfig?.event_high?.name || enemyCharId;
+    const titleText = `${eventName} [超級]`;
+    // 高難易度専用リーダースキルをモーダルに渡す
+    const leaderSkill = charConfig?.event_high?.leaderSkill || null;
+    if (window.showEnemyDeckModal) {
+      window.showEnemyDeckModal(deckIds, titleText, leaderSkill);
     }
     return;
   }

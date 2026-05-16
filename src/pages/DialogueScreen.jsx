@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { showNextDialogue } from '../hooks/uiDialogue.js';
 import { GameState } from '../hooks/gameState.js';
+import { showNextDialogue } from '../hooks/uiDialogue.js';
 
 export default function DialogueScreen() {
   const [dialogueData, setDialogueData] = useState(
@@ -43,7 +43,7 @@ export default function DialogueScreen() {
     GameState.gameMode === 'dungeon'
   ) {
     bgName = 'background_challenge.png';
-  } else if (GameState.gameMode === 'event_satan') {
+  } else if (GameState.gameMode === 'event_satan_high') {
     bgName = 'background_satan.png';
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.png';
@@ -138,7 +138,10 @@ export default function DialogueScreen() {
           src={d.rightImage || undefined}
           alt="Enemy"
           style={{
-            filter: d.rightFilter && d.rightFilter !== 'none' ? d.rightFilter : undefined,
+            filter:
+              d.rightFilter && d.rightFilter !== 'none'
+                ? d.rightFilter
+                : undefined,
             display:
               d.centerMode && GameState.gameMode !== 'campaign'
                 ? 'none'

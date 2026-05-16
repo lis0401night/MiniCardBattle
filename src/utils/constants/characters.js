@@ -1702,6 +1702,19 @@ CHARACTERS.priest.event_high = {
   },
 };
 
+// サタン（高難易度用event_high定義）
+CHARACTERS.satan.event_high = {
+  id: 'satan_high',
+  name: '復活の魔王 サタン',
+  maxHP: 100,
+  leaderSkill: {
+    name: '魔王の化身',
+    desc: '(SP:6) 自分のレーンに「サタンの化身(P:10)」を1体召喚する。',
+    cost: 6,
+    action: 'satan_avatar',
+  },
+};
+
 /**
  * 指定したキャラクター・スキン・タイプに応じた画像パスを取得する
  * @param {string|Object} charIdOrObj - キャラクターIDまたはキャラクターオブジェクト

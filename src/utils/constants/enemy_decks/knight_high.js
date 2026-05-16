@@ -5,8 +5,6 @@ export default [
   'darkpaladin',
   'darkpaladin',
   'darkpaladin',
-  'darkpaladin',
-  'elite',
   'elite',
   'elite',
   'elite',
@@ -22,4 +20,6 @@ export default [
   'assassin',
   'horse',
   'horse',
+  'lion',
+  'lion',
 ];

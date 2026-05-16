@@ -35,10 +35,7 @@ export default function StageSelectScreen() {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`;
     } else if (mode === 'online_deck_edit') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_online.png')`;
-    } else if (
-      mode === 'event_satan' ||
-      (mode?.startsWith('event_') && mode?.endsWith('_high'))
-    ) {
+    } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`;
     } else if (mode && mode.startsWith('story')) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_story01.png')`;

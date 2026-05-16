@@ -97,9 +97,9 @@ export default function GlobalModals() {
       setPointAcquisitionData(data);
     });
 
-    window.showEnemyDeckModal = (deck, title) => {
+    window.showEnemyDeckModal = (deck, title, leaderSkill = null) => {
       playSound?.(SOUNDS?.seClick);
-      setEnemyDeckData({ deck: deck || [], title: title || '敵デッキ確認' });
+      setEnemyDeckData({ deck: deck || [], title: title || '敵デッキ確認', leaderSkill });
     };
 
     setCloseEnemyDeckModalHook(() => {
@@ -726,8 +726,8 @@ export default function GlobalModals() {
               enemyDeckData.title === 'デッキ確認' ||
               enemyDeckData.title === '所持カード確認'
             ) &&
-              GameState.enemyConfig &&
-              GameState.enemyConfig.leaderSkill && (
+              (enemyDeckData.leaderSkill || (GameState.enemyConfig &&
+              GameState.enemyConfig.leaderSkill)) && (
                 <button
                   className="btn"
                   style={{
@@ -742,7 +742,7 @@ export default function GlobalModals() {
                     playSound?.(SOUNDS?.seClick);
                     if (window.showSkillConfirmModalReact) {
                       window.showSkillConfirmModalReact({
-                        skill: GameState.enemyConfig.leaderSkill,
+                        skill: enemyDeckData.leaderSkill || GameState.enemyConfig.leaderSkill,
                         statusText: '',
                         color: '#94a3b8',
                         canExecute: false,
