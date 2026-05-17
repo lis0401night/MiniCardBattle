@@ -552,7 +552,28 @@ export default function BattleScreen() {
             <button
               id="btn-end-turn"
               className="action-btn"
-              style={{ background: '#ef4444', borderColor: '#dc2626' }}
+              style={{
+                background:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? '#475569'
+                    : '#ef4444',
+                color:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? '#94a3b8'
+                    : '#fff',
+                borderColor:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? '#334155'
+                    : '#dc2626',
+                pointerEvents:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? 'none'
+                    : 'auto',
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
@@ -566,7 +587,28 @@ export default function BattleScreen() {
             <button
               id="btn-end-turn"
               className="action-btn"
-              style={{ background: '#ef4444', borderColor: '#dc2626' }}
+              style={{
+                background:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? '#475569'
+                    : '#ef4444',
+                color:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? '#94a3b8'
+                    : '#fff',
+                borderColor:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? '#334155'
+                    : '#dc2626',
+                pointerEvents:
+                  !GameState.isTargetCancelable &&
+                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                    ? 'none'
+                    : 'auto',
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);

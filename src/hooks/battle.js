@@ -1163,9 +1163,6 @@ export async function waitPlayerEnemyLaneSelection(
 
   if (validLanes.length === 0) return [];
 
-  // ターゲット数以下の場合は全選択（キャンセル不可の場合のみ）
-  if (!canCancel && validLanes.length <= count) return validLanes;
-
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
     return new Promise((resolve) => {
@@ -1260,7 +1257,11 @@ export async function waitPlayerEnemyLaneSelection(
 /**
  * 自分の場のカードを選択させるユーティリティ（強化スキル用など）
  */
-export async function waitPlayerAlliedLaneSelection(count, owner) {
+export async function waitPlayerAlliedLaneSelection(
+  count,
+  owner,
+  canCancel = false
+) {
   const isBlue = owner === 'blue';
   const targetBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
@@ -1270,9 +1271,6 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
     .filter((i) => i !== -1);
 
   if (occupiedLanes.length === 0) return [];
-
-  // ターゲット数以下の場合は全選択
-  if (occupiedLanes.length <= count) return occupiedLanes;
 
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
@@ -1297,6 +1295,7 @@ export async function waitPlayerAlliedLaneSelection(count, owner) {
     GameState.isAlliedTargetMode = true;
     GameState.targetMaxCount = count;
     GameState.targetSelectedLanes = [];
+    GameState.isTargetCancelable = canCancel;
     updateCardDetail(null);
 
     window.handleAlliedLaneClick = (laneIndex) => {

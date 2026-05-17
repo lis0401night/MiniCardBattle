@@ -2174,7 +2174,7 @@ export async function resolveActiveSkillEffect(
           let discardIndices = await waitPlayerHandSelection(
             1,
             o,
-            false,
+            true,
             '捨てるカードを1枚選んでください'
           );
           if (discardIndices && discardIndices.length > 0) {
