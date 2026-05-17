@@ -36,6 +36,7 @@ export default function PlayerArea({
             }
             alt="player icon"
           />
+          <img src="assets/icons/iconframe_gold.png" className="icon-frame" alt="frame" />
           <div id="player-sp-orbs" className="sp-orbs">
             {Array.from({ length: maxSpCount }).map((_, i) => (
               <div

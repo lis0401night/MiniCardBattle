@@ -28,6 +28,7 @@ export default function EnemyArea({
             }
             alt="enemy icon"
           />
+          <img src="assets/icons/iconframe_red.png" className="icon-frame" alt="frame" />
           {enemyConfig?.leaderSkill?.cost &&
             enemyConfig.leaderSkill.cost > 0 && (
               <div id="enemy-sp-orbs" className="sp-orbs">
