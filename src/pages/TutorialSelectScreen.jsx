@@ -7,7 +7,7 @@ import { SOUNDS } from '../utils/sounds.js';
 /**
  * チュートリアル選択画面
  * 基本ルール＋各リーダーキャラクターごとのチュートリアル項目を表示する
- * レイアウトは高難易度画面と統一（btn-banner形式のリスト）
+ * レイアウトは試練の宮殿（リーダー選択画面）と統一
  */
 
 // サタン・キャンペーン用を除外した、チュートリアル対象キャラクターIDの順序
@@ -39,6 +39,8 @@ export default function TutorialSelectScreen() {
         backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <h2
@@ -52,32 +54,76 @@ export default function TutorialSelectScreen() {
       </h2>
 
       <div
-        className="deck-edit-container"
         style={{
+          display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'flex-start',
           paddingTop: '10px',
-          gap: '10px',
+          paddingBottom: '20px',
+          gap: '15px',
           overflowY: 'auto',
+          alignItems: 'center',
+          flex: 1,
+          width: '100%',
         }}
       >
         {/* 基本ルール */}
-        <button
-          className="btn-banner"
-          style={{ flexShrink: 0 }}
-          onClick={() => handleTutorialClick('basic_rules')}
-        >
-          <div className="banner-icon-wrapper">
-            <img
-              src="assets/icons/icon_light.png"
-              className="banner-icon"
-              alt=""
-            />
-            <img src="assets/icons/iconframe_gold.png" className="banner-icon-frame" alt="frame" />
-          </div>
-          <span className="banner-text" style={{ color: '#facc15' }}>
-            基本ルール
-          </span>
-        </button>
+        <div style={{ width: '100%', maxWidth: '400px' }}>
+          <button
+            className="btn-banner"
+            style={{
+              width: '100%',
+              margin: 0,
+              borderColor: 'var(--border-color, #334155)',
+              borderWidth: '2px',
+            }}
+            onClick={() => handleTutorialClick('basic_rules')}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    border: '2px solid #334155',
+                    marginRight: '15px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <img
+                    src="assets/icons/icon_light.png"
+                    alt=""
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                    }}
+                  />
+                </div>
+                <span
+                  className="banner-text"
+                  style={{
+                    color: '#facc15',
+                    textShadow: '0px 0px 4px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  基本ルール
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
 
         {/* 各リーダーキャラクターのチュートリアル */}
         {TUTORIAL_CHAR_ORDER.map((charId) => {
@@ -88,30 +134,69 @@ export default function TutorialSelectScreen() {
           const shortName = char.name.split(' ').pop();
 
           return (
-            <button
-              key={charId}
-              className="btn-banner"
-              style={{ flexShrink: 0 }}
-              onClick={() => handleTutorialClick(`leader_${charId}`)}
-            >
-              <div className="banner-icon-wrapper">
-                <img src={char.icon} className="banner-icon" alt="" />
-                <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
-              </div>
-              <span
-                className="banner-text"
-                style={{ color: char.color || '#fff' }}
+            <div key={charId} style={{ width: '100%', maxWidth: '400px' }}>
+              <button
+                className="btn-banner"
+                style={{
+                  width: '100%',
+                  margin: 0,
+                  borderColor: 'var(--border-color, #334155)',
+                  borderWidth: '2px',
+                }}
+                onClick={() => handleTutorialClick(`leader_${charId}`)}
               >
-                {shortName}
-              </span>
-            </button>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    height: '100%',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        width: '50px',
+                        height: '50px',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        border: '2px solid #334155',
+                        marginRight: '15px',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={char.icon}
+                        alt={char.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="banner-text"
+                      style={{
+                        color: char.color || '#fff',
+                        textShadow: '0px 0px 4px rgba(0,0,0,0.8)',
+                      }}
+                    >
+                      {shortName}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </div>
           );
         })}
       </div>
 
       <BackButton
         to="screen-beginner-guide"
-        style={{ marginTop: '30px', flexShrink: 0 }}
+        style={{ marginTop: '20px', flexShrink: 0 }}
       />
     </div>
   );
