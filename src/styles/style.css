@@ -1068,6 +1068,7 @@ h2 {
 
   box-sizing: border-box;
   object-fit: cover;
+  background-color: #334155;
   flex-shrink: 0;
 
   position: relative;
@@ -1084,12 +1085,15 @@ h2 {
 }
 
 .char-icon.blue {
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8);
 }
 
 .char-icon.red {
+  background: linear-gradient(90deg, #e11d48, #fb7185);
 }
 
 .char-icon.dead {
+  background: linear-gradient(90deg, #334155, #475569);
   filter: grayscale(1);
 }
 
@@ -1101,7 +1105,7 @@ h2 {
   height: min(110px, 15vh);
   pointer-events: none;
   z-index: 3;
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 .sp-orbs {
