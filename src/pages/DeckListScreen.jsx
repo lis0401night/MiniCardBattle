@@ -556,44 +556,47 @@ export default function DeckListScreen() {
                           <div
                             style={{ display: 'flex', alignItems: 'center' }}
                           >
-                            <img
-                              src={
-                                getSkinImage
-                                  ? getSkinImage(
-                                      char,
-                                      deck.playerSkins?.[char.id],
-                                      'icon'
-                                    )
-                                  : char.icon
-                              }
-                              className="banner-icon"
-                              alt=""
-                              draggable="false"
-                              style={{
-                                cursor: 'pointer',
-                                position: 'relative',
-                                zIndex: 2,
-                              }}
-                              onClick={(e) => {
-                                if (
-                                  isSwipingRef.current ||
-                                  isDraggingRef.current
-                                )
-                                  return;
-                                e.stopPropagation();
-                                playSound?.(SOUNDS?.seClick);
-                                if (window.showCharDetailModal) {
-                                  window.showCharDetailModal({
-                                    ...char,
-                                    hideDecideButton: true,
-                                    targetDeckIndex: idx,
-                                  });
+                            <div className="banner-icon-wrapper">
+                              <img
+                                src={
+                                  getSkinImage
+                                    ? getSkinImage(
+                                        char,
+                                        deck.playerSkins?.[char.id],
+                                        'icon'
+                                      )
+                                    : char.icon
                                 }
-                              }}
-                            />
+                                className="banner-icon"
+                                alt=""
+                                draggable="false"
+                                style={{
+                                  cursor: 'pointer',
+                                  position: 'relative',
+                                  zIndex: 2,
+                                }}
+                                onClick={(e) => {
+                                  if (
+                                    isSwipingRef.current ||
+                                    isDraggingRef.current
+                                  )
+                                    return;
+                                  e.stopPropagation();
+                                  playSound?.(SOUNDS?.seClick);
+                                  if (window.showCharDetailModal) {
+                                    window.showCharDetailModal({
+                                      ...char,
+                                      hideDecideButton: true,
+                                      targetDeckIndex: idx,
+                                    });
+                                  }
+                                }}
+                              />
+                              <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+                            </div>
                             <span
                               className="banner-text"
-                              style={{ color: char.color, marginRight: '10px' }}
+                              style={{ color: char.color }}
                             >
                               {deck.name || `デッキ${idx + 1}`}
                             </span>
@@ -726,16 +729,18 @@ export default function DeckListScreen() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <img
-                  src={
-                    getSkinImage
-                      ? getSkinImage(char, deck.playerSkins?.[char.id], 'icon')
-                      : char.icon
-                  }
-                  className="banner-icon"
-                  alt=""
-                  style={{ width: '60px', height: '60px', marginRight: '15px' }}
-                />
+                <div className="banner-icon-wrapper">
+                  <img
+                    src={
+                      getSkinImage
+                        ? getSkinImage(char, deck.playerSkins?.[char.id], 'icon')
+                        : char.icon
+                    }
+                    className="banner-icon"
+                    alt=""
+                  />
+                  <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+                </div>
                 <span
                   className="banner-text"
                   style={{

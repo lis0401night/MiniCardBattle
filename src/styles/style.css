@@ -275,12 +275,30 @@ h2 {
   transform: scale(0.98);
 }
 
-.banner-icon {
+.banner-icon-wrapper {
+  position: relative;
   width: 60px;
   height: 60px;
-  object-fit: contain;
   margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.banner-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+}
+
+.banner-icon-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+  transform: scale(1);
 }
 
 .banner-text {
@@ -1057,6 +1075,7 @@ h2 {
 
 .icon-wrapper {
   position: relative;
+  margin-right: calc(min(110px, 15vh) * -0.22);
 }
 
 .char-icon {
@@ -1070,7 +1089,6 @@ h2 {
   object-fit: cover;
   background-color: #334155;
   flex-shrink: 0;
-  margin-right: calc(min(110px, 15vh) * -0.22);
 
   position: relative;
 
@@ -1096,6 +1114,17 @@ h2 {
 .char-icon.dead {
   background: linear-gradient(90deg, #334155, #475569);
   filter: grayscale(1);
+}
+
+.icon-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(110px, 15vh);
+  height: min(110px, 15vh);
+  pointer-events: none;
+  z-index: 3;
+  transform: scale(0.9);
 }
 
 .sp-orbs {

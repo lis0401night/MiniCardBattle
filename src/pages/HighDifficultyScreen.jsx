@@ -53,12 +53,15 @@ export default function HighDifficultyScreen() {
                 selectHighDifficultyTarget?.(char.id);
               }}
             >
-              <img
-                src={`assets/icons/icon_${eventConf.id}.png`}
-                onError={(e) => { e.target.src = char.icon; }}
-                className="banner-icon"
-                alt=""
-              />
+              <div className="banner-icon-wrapper">
+                <img
+                  src={`assets/icons/icon_${eventConf.id}.png`}
+                  onError={(e) => { e.target.src = char.icon; }}
+                  className="banner-icon"
+                  alt=""
+                />
+                <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+              </div>
               <span
                 className="banner-text"
                 style={{ color: char.color || '#fff' }}
