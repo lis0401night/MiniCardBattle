@@ -27,7 +27,7 @@ export default function BeginnerGuideScreen() {
         <div className="menu-img-btn" onClick={() => showRules?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_RULES || ''}')` }}
+            style={{ backgroundImage: `url('assets/ui/ui_Instructionsbutton01.png')` }}
           ></div>
           <div className="menu-btn-label">ルール</div>
         </div>
@@ -36,7 +36,7 @@ export default function BeginnerGuideScreen() {
         <div className="menu-img-btn" onClick={() => showTutorialSelect?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_RULES || ''}')` }}
+            style={{ backgroundImage: `url('assets/ui/ui_tutorialbutton01.png')` }}
           ></div>
           <div className="menu-btn-label">チュートリアル</div>
         </div>

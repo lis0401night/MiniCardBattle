@@ -66,11 +66,14 @@ export default function TutorialSelectScreen() {
           style={{ flexShrink: 0 }}
           onClick={() => handleTutorialClick('basic_rules')}
         >
-          <img
-            src="assets/icons/icon_light.png"
-            className="banner-icon"
-            alt=""
-          />
+          <div className="banner-icon-wrapper">
+            <img
+              src="assets/icons/icon_light.png"
+              className="banner-icon"
+              alt=""
+            />
+            <img src="assets/icons/iconframe_gold.png" className="banner-icon-frame" alt="frame" />
+          </div>
           <span className="banner-text" style={{ color: '#facc15' }}>
             基本ルール
           </span>
@@ -91,12 +94,15 @@ export default function TutorialSelectScreen() {
               style={{ flexShrink: 0 }}
               onClick={() => handleTutorialClick(`leader_${charId}`)}
             >
-              <img src={char.icon} className="banner-icon" alt="" />
+              <div className="banner-icon-wrapper">
+                <img src={char.icon} className="banner-icon" alt="" />
+                <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+              </div>
               <span
                 className="banner-text"
                 style={{ color: char.color || '#fff' }}
               >
-                リーダー：{shortName}
+                {shortName}
               </span>
             </button>
           );

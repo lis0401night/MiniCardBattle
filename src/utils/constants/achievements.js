@@ -10,6 +10,7 @@ import { ownedPlaymats } from './playmats.js';
 
 // 実績の定義
 export const ACHIEVEMENT_MASTER = [
+
   // --- ストーリークリア ---
   {
     id: 'story_android',
