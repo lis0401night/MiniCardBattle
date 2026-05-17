@@ -370,4 +370,8 @@ export const SKILL_POINTS = {
     base: 3,
     multiplier: 0,
   },
+  execute: {
+    base: -3,
+    multiplier: 0,
+  },
 };

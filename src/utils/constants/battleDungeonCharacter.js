@@ -129,6 +129,17 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       ending: [],
     },
   },
+  sea: {
+    preBattleLine: 'ブクブク……深海の底へ沈めてやろう。',
+    dialogue: {
+      intro: { default: '息が……続くかな？' },
+      win: { default: '……海の藻屑となったか。' },
+      lose: { default: '……波間に……消える……。' },
+      damage: ['ギョッ！', 'ブクブクッ！', '水が……'],
+      skill: '深淵の恐怖を味わうがいい！',
+      ending: [],
+    },
+  },
 
   // --- 人間系 ---
   human_male_normal: {
@@ -161,6 +172,28 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       lose: { default: '見事な腕前だ。……後は頼むぞ。' },
       damage: ['ヌウッ', '効くぞ！', 'ハハハ！'],
       skill: '全軍、突撃ィー！',
+      ending: [],
+    },
+  },
+  human_male_trickstar: {
+    preBattleLine: 'さあ、極上のショータイムを始めようか！',
+    dialogue: {
+      intro: { default: '種も仕掛けもない、ただの絶望さ。' },
+      win: { default: 'おっと、もう退場かい？' },
+      lose: { default: 'これは……計算外のイリュージョンだな……。' },
+      damage: ['おっと！', 'やるねぇ', 'あぶないあぶない'],
+      skill: 'さあ、とっておきのマジックだ！',
+      ending: [],
+    },
+  },
+  human_male_old: {
+    preBattleLine: 'ゴホッ……若者よ、あまり無理はするなよ。',
+    dialogue: {
+      intro: { default: '亀の甲より年の功、というやつを見せてやろう。' },
+      win: { default: 'フォッフォッ、まだまだ若いもんには負けんよ。' },
+      lose: { default: 'ゴホッ、ゴホッ……歳には勝てんか……。' },
+      damage: ['イタタ……', '腰が……', 'やるのう'],
+      skill: '長年の経験を侮るな！',
       ending: [],
     },
   },
@@ -205,6 +238,17 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       lose: { default: '……影に、戻るだけ……。' },
       damage: ['（無言の苦悶）', '……！', '浅い……'],
       skill: '……急所を貫く。',
+      ending: [],
+    },
+  },
+  human_female_sexy: {
+    preBattleLine: 'ふふっ、そんなに見つめられたら困っちゃうわ。',
+    dialogue: {
+      intro: { default: '優しくしてね……なんて、言わないわよ？' },
+      win: { default: 'あら、もう終わり？ つまらないわね。' },
+      lose: { default: 'ああっ……乱暴な人ね……。' },
+      damage: ['いやんっ', 'ちょっと！', '痛いじゃない'],
+      skill: '魅惑のひとときをプレゼント！',
       ending: [],
     },
   },

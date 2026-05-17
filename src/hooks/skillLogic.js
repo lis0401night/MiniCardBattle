@@ -100,6 +100,7 @@ export async function resolveActiveSkillEffect(
       'destroy',
       'explore',
       'cull',
+      'execute',
     ].includes(skillId)
   ) {
     playSkillSound(skillId);
@@ -136,6 +137,7 @@ export async function resolveActiveSkillEffect(
       destroy: '破壊',
       explore: '探索',
       cull: '選別',
+      execute: '処刑',
     };
     if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     await sleep(200); // Popupを見せる間
@@ -2419,18 +2421,6 @@ export async function resolveActiveSkillEffect(
               topCard.isSkillResolving = false;
             }
             await cleanupDestroyedCards(c);
-
-            // 使い捨てスペル等のパワー0以下のカードは、召喚効果解決後に消去する
-            const finalCard = board[targetLane];
-            if (finalCard && finalCard.currentPower <= 0) {
-              const destroyEvents = [
-                {
-                  type: 'destroy_cards',
-                  targets: [{ side: o, lane: targetLane, card: finalCard }],
-                },
-              ];
-              await playEvents(destroyEvents);
-            }
           }
         } else {
           // キャンセルされたのでデッキトップに戻す
@@ -2462,7 +2452,7 @@ export async function resolveActiveSkillEffect(
           return a - b;
         });
         selectedLanes = [occupiedLanes[0]];
-        // AIの思考時間を演出（分身などと同程度の遅延）
+        // AIの思考時間を演出
         await sleep(800);
       } else {
         // 相手がプレイヤーの場合：自分の場のカードを1枚選択させる
@@ -2473,14 +2463,97 @@ export async function resolveActiveSkillEffect(
         const targetLane = selectedLanes[0];
         const targetCard = oppBoard[targetLane];
         if (targetCard) {
-          // 破壊アニメーション・効果音・ボイスをeventRenderer経由で再生
-          const destroyEvents = [
-            {
-              type: 'destroy_cards',
-              targets: [{ side: oppOwner, lane: targetLane, card: targetCard }],
-            },
-          ];
-          await playEvents(destroyEvents);
+          // 「無効」を持つカードは破壊できない
+          if (hasSkill(targetCard, 'immune')) {
+            const tgtEl = document.querySelector(
+              `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (tgtEl) createDamagePopup(tgtEl, '無効', '#94a3b8');
+            playSound(SOUNDS.seSkill);
+            await sleep(300);
+          } else {
+            // 破壊アニメーション・ポップアップ・ボイス（crush/dispelと統一パターン）
+            const tgtEl = document.querySelector(
+              `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (tgtEl) {
+              tgtEl.classList.add('anim-shake');
+              tgtEl.classList.add('anim-card-destroy');
+              createDamagePopup(tgtEl, '破壊', '#991b1b');
+            }
+            if (targetCard.voiceCategory) {
+              playCardVoice(targetCard.voiceCategory, 'death');
+            }
+            playSound(SOUNDS.seDestroy);
+            await sleep(400);
+            // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
+            if (!(await discardCard(oppOwner, targetCard, targetLane, true)))
+              oppBoard[targetLane] = null;
+            renderBoard();
+          }
+        }
+      }
+    }
+  } else if (skillId === 'execute') {
+    // 【処刑】召喚時、自分のカード1枚を選択し、そのカードを破壊する
+    const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const hasMyCard = myBoard.some((bc) => bc !== null);
+
+    if (hasMyCard) {
+      let selectedLanes;
+      if (
+        o === 'red' &&
+        GameState.gameMode !== 'online' &&
+        GameState.gameMode !== 'pvp'
+      ) {
+        // AIの場合：最もパワーの低い自分のカードを自動選択（損失最小化）
+        const occupiedLanes = myBoard
+          .map((bc, i) => (bc !== null ? i : -1))
+          .filter((i) => i !== -1);
+        occupiedLanes.sort((a, b) => {
+          const diff = (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
+          if (diff !== 0) return diff;
+          return a - b;
+        });
+        selectedLanes = [occupiedLanes[0]];
+        await sleep(800);
+      } else {
+        // プレイヤーの場合：自分の場のカード1枚を選択させる
+        selectedLanes = await waitPlayerAlliedLaneSelection(1, o);
+      }
+
+      if (selectedLanes && selectedLanes.length > 0) {
+        const targetLane = selectedLanes[0];
+        const targetCard = myBoard[targetLane];
+        if (targetCard) {
+          // 「無効」を持つカードは破壊できない
+          if (hasSkill(targetCard, 'immune')) {
+            const tgtEl = document.querySelector(
+              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (tgtEl) createDamagePopup(tgtEl, '無効', '#94a3b8');
+            playSound(SOUNDS.seSkill);
+            await sleep(300);
+          } else {
+            // 破壊アニメーション・ポップアップ・ボイス（crush/dispelと統一パターン）
+            const tgtEl = document.querySelector(
+              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (tgtEl) {
+              tgtEl.classList.add('anim-shake');
+              tgtEl.classList.add('anim-card-destroy');
+              createDamagePopup(tgtEl, '破壊', '#991b1b');
+            }
+            if (targetCard.voiceCategory) {
+              playCardVoice(targetCard.voiceCategory, 'death');
+            }
+            playSound(SOUNDS.seDestroy);
+            await sleep(400);
+            // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
+            if (!(await discardCard(o, targetCard, targetLane, true)))
+              myBoard[targetLane] = null;
+            renderBoard();
+          }
         }
       }
     }

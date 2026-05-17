@@ -1748,7 +1748,7 @@ export function applyActiveSkillLogic(
       // 【選別】相手の場で最もパワーの低いカード1枚を破壊（墓地送り）
       const occupiedLanes = eB
         .map((bc, i) => (bc !== null ? i : -1))
-        .filter((i) => i !== -1);
+        .filter((i) => i !== -1 && !hasSkill(eB[i], 'immune'));
       if (occupiedLanes.length > 0) {
         // パワー昇順ソート（最小パワーを選択）
         occupiedLanes.sort((a, b) => {
@@ -1765,6 +1765,32 @@ export function applyActiveSkillLogic(
           events.push({
             type: 'destroy_cards',
             targets: [{ side: oppOwner, lane: targetLane, card: targetCard }],
+          });
+        }
+      }
+      break;
+    }
+    case 'execute': {
+      // 【処刑】自分の場で最もパワーの低いカード1枚を破壊（墓地送り）
+      const myOccupiedLanes = b
+        .map((bc, i) => (bc !== null ? i : -1))
+        .filter((i) => i !== -1 && !hasSkill(b[i], 'immune'));
+      if (myOccupiedLanes.length > 0) {
+        // パワー昇順ソート（最小パワーを選択して損失を最小化）
+        myOccupiedLanes.sort((a, ab) => {
+          const diff = (b[a].currentPower || 0) - (b[ab].currentPower || 0);
+          if (diff !== 0) return diff;
+          return a - ab;
+        });
+        const execLane = myOccupiedLanes[0];
+        const execCard = b[execLane];
+        if (execCard) {
+          const myDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+          myDiscard.push(execCard);
+          b[execLane] = null;
+          events.push({
+            type: 'destroy_cards',
+            targets: [{ side: owner, lane: execLane, card: execCard }],
           });
         }
       }

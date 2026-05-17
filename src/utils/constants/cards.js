@@ -33,6 +33,16 @@ export const CARD_MASTER = [
       '静寂に包まれた深い森を守るエルフの狩人。その矢は木の葉の間を縫い、目標を違わず射抜く。',
   },
   {
+    id: 'falcon',
+    name: '急襲する隼',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'spread', value: 1 }],
+    voiceCategory: 'bird',
+    flavor:
+      '翼から硬い羽根を矢のように降らせた後、空から急降下して獲物を捉える。',
+  },
+  {
     id: 'cleric',
     name: '見習い修道女',
     rarity: 1,
@@ -120,14 +130,24 @@ export const CARD_MASTER = [
       '観衆の喧騒に胸を高鳴らせる、未完の闘士。無骨なセスタスには、頂点を目指す熱意と、己の拳のみで道を切り拓く覚悟が宿っている。',
   },
   {
-    id: 'falcon',
-    name: '急襲する隼',
+    id: 'tortoise',
+    name: '鉄亀',
     rarity: 1,
     power: 3,
-    skills: [{ id: 'spread', value: 1 }],
-    voiceCategory: 'bird',
+    skills: [{ id: 'sturdy' }],
+    voiceCategory: 'insect',
     flavor:
-      '翼から硬い羽根を矢のように降らせた後、空から急降下して獲物を捉える。',
+      '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。',
+  },
+  {
+    id: 'drifter',
+    name: 'アッシュランドの放浪者',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'double_strike' }],
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '灼熱の砂塵を切り裂く双剣。彼の歩みの後には、切り刻まれた絶望のみが残る。',
   },
   {
     id: 'spider',
@@ -159,6 +179,36 @@ export const CARD_MASTER = [
     voiceCategory: 'undead',
     flavor:
       '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
+  },
+  {
+    id: 'bandit',
+    name: '山賊',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'extort', value: 2 }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '通りかかる者の富を狙う略奪者。決して優れた戦士ではないが、容赦なく全てを奪い去るため旅人から深く恐れられている。',
+  },
+  {
+    id: 'snake',
+    name: '猛毒コブラ',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'toxic', value: 3 }],
+    voiceCategory: 'snake',
+    flavor:
+      '草むらに潜み、獲物を待ち伏せる極めて危険な毒蛇。その牙から注がれる猛毒は、屈強な戦士すらも容易く死に至らしめる。',
+  },
+  {
+    id: 'crenellatedwall',
+    name: '民兵団の射手',
+    rarity: 1,
+    power: 8,
+    skills: [{ id: 'defender' }, { id: 'spread', value: 1 }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。',
   },
   // {
   //   id: 'warden',
@@ -197,7 +247,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'equip' }, { id: 'sturdy' }],
     voiceCategory: 'machine_new',
     flavor:
-      '強固な鋼鉄の装甲を纏った者は、戦場において難攻不落の城塞と化す。例え操縦者が倒れようとも、内蔵されたAIが稼働を続け、その任務を全うするだろう。',
+      '鋼鉄の装甲を纏う者は戦場で難攻不落の城塞と化す。例え操縦者が倒れても、内蔵AIが稼働を続け、その任務を全うするだろう。',
   },
   {
     id: 'dancer',
@@ -210,14 +260,14 @@ export const CARD_MASTER = [
       '華麗な舞に目を奪われた瞬間、短剣が喉元に届く。彼女の微笑みは、甘美な死への誘いである。',
   },
   {
-    id: 'drifter',
-    name: 'アッシュランドの放浪者',
+    id: 'goblin',
+    name: 'ゴブリンの司令官',
     rarity: 1,
-    power: 4,
-    skills: [{ id: 'double_strike' }],
-    voiceCategory: 'human_male_ikemen',
+    power: 6,
+    skills: [{ id: 'berserk', value: 2 }],
+    voiceCategory: 'giant',
     flavor:
-      '灼熱の砂塵を切り裂く双剣。彼の歩みの後には、切り刻まれた絶望のみが残る。',
+      '彼が前線で指揮を執る時、最も命の危険に晒されるのは敵ではなく、彼のすぐ隣に陣取った者たちである。',
   },
   {
     id: 'lizardman',
@@ -240,6 +290,16 @@ export const CARD_MASTER = [
       '最前線で兵を鼓舞し続ける老将。彼の掲げる軍旗は兵士たちの士気を極限まで高める。',
   },
   {
+    id: 'butcher',
+    name: '大斧の処刑人',
+    rarity: 1,
+    power: 8,
+    skills: [{ id: 'execute' }],
+    voiceCategory: 'human_male_warrior',
+    flavor:
+      'その一撃は全てを終わらせる。あるいは、無辜の民を巻き込む。処刑人は常に選択を迫られる。',
+  },
+  {
     id: 'lightpaladin',
     name: '光の聖騎士',
     rarity: 1,
@@ -248,16 +308,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_ikemen',
     flavor:
       '「我が盾は、共に戦う友のためにある。」気高き精神を宿した聖なる騎士。',
-  },
-  {
-    id: 'crenellatedwall',
-    name: '民兵団の射手',
-    rarity: 1,
-    power: 8,
-    skills: [{ id: 'defender' }, { id: 'spread', value: 1 }],
-    voiceCategory: 'human_male_normal',
-    flavor:
-      '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。',
   },
   {
     id: 'jellyfish',
@@ -269,14 +319,13 @@ export const CARD_MASTER = [
     flavor: '深き暗闇の中で妖しく輝き、触れる者に不思議な活力を与える。',
   },
   {
-    id: 'tortoise',
-    name: '鉄亀',
+    id: 'fish',
+    name: '魚群の壁',
     rarity: 1,
     power: 3,
-    skills: [{ id: 'sturdy' }],
-    voiceCategory: 'insect',
-    flavor:
-      '鉱石を食べて成長し、鋼鉄の如き硬度を得た霊亀。物理的な衝撃をほぼ無効化する。',
+    skills: [{ id: 'defender' }, { id: 'clone', value: 2 }],
+    voiceCategory: 'sea',
+    flavor: '一匹の力は弱いが、無数に集まることで強固な壁となる。',
   },
   {
     id: 'copy',
@@ -395,15 +444,6 @@ export const CARD_MASTER = [
     flavor: '大地に流れる脈動をマナへと変換する基礎的な魔術。',
   },
   {
-    id: 'snake',
-    name: '蛇の使い魔',
-    rarity: 1,
-    power: 3,
-    skills: [{ id: 'toxic', value: 3 }],
-    voiceCategory: 'snake',
-    flavor: '魔法使いに使役される毒蛇。術者の命令に従い、獲物を毒牙にかける。',
-  },
-  {
     id: 'shapeshifter',
     name: '変身魔導士',
     rarity: 1,
@@ -412,6 +452,19 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_warrior',
     flavor:
       '「魔術とは変化、変化とは可能性だ。」自らが生み出した泥人形の姿へと消えるその瞬間まで、男は熱心に可能性を説き続けた。',
+  },
+  {
+    id: 'iceblast',
+    name: 'アイスブラスト',
+    rarity: 1,
+    power: 0,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'bind', value: 3 },
+      { id: 'freeze', value: 2 },
+    ],
+    voiceCategory: 'magic',
+    flavor: '冷気が染み出す氷結の塊。触れた者はたちまち動きを奪われる。',
   },
   {
     id: 'ogre',
@@ -629,7 +682,7 @@ export const CARD_MASTER = [
     name: '狂戦士',
     rarity: 2,
     power: 7,
-    skills: [{ id: 'berserk', value: 3 }],
+    skills: [{ id: 'berserk', value: 4 }],
     voiceCategory: 'giant',
     flavor:
       '破壊の衝動に魂を売った禁忌の戦士。痛みすら悦びとして斧を振り回す。',
@@ -642,7 +695,17 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'spread', value: 1 }],
     voiceCategory: 'lizard',
     flavor:
-      '熱砂の空を舞う暴虐の亜竜。その巨翼で砂嵐を巻き起こし絶対者のように振る舞うが、真なる竜が降臨するまでの間だけ偽りの威厳を振りかざし大地を蹂躙しているに過ぎない。',
+      '熱砂の空を舞い砂嵐を起こす暴虐の亜竜。しかしそれは、真なる竜が降臨するまでの間だけ振りかざす偽りの威厳に過ぎない。',
+  },
+  {
+    id: 'hero',
+    name: '若き勇士',
+    rarity: 2,
+    power: 4,
+    skills: [{ id: 'hero', value: 2 }],
+    voiceCategory: 'human_female_normal',
+    flavor:
+      '安物の胸当てに、誇りと希望だけを詰め込んだ新米訓練兵。その不器用な剣筋も、いつか伝説へと連なる。',
   },
   {
     id: 'nobleknight',
@@ -659,6 +722,16 @@ export const CARD_MASTER = [
       '戦場に立つ彼の傍らには、常に忠実な影が寄り添う。名家の誇りを胸に彼が剣を掲げた時、その影は主を守る盾となり、あるいは共に敵を穿つ刃となる。',
   },
   {
+    id: 'horse',
+    name: 'セレスタリアン・チャージャー',
+    rarity: 2,
+    power: 4,
+    skills: [{ id: 'equip' }, { id: 'pierce' }],
+    voiceCategory: 'horse',
+    flavor:
+      '誇り高きセレスタリアの紋章を背負う戦馬。その力強い蹄の音は、王国の勝利を告げるファンファーレである。',
+  },
+  {
     id: 'minotaur',
     name: 'ミノタウロスの傭兵',
     rarity: 2,
@@ -673,16 +746,6 @@ export const CARD_MASTER = [
       '圧倒的な力で敵を薙ぎ払うミノタウルスの傭兵。ただし、適切な報酬が支払われなければ、敵味方の区別なく暴れまわる。',
   },
   {
-    id: 'hero',
-    name: '若き勇士',
-    rarity: 2,
-    power: 4,
-    skills: [{ id: 'hero', value: 2 }],
-    voiceCategory: 'human_female_normal',
-    flavor:
-      '安物の胸当てに、誇りと希望だけを詰め込んだ新米訓練兵。その不器用な剣筋も、いつか伝説へと連なる。',
-  },
-  {
     id: 'crusher',
     name: '豪腕の破壊者',
     rarity: 2,
@@ -691,16 +754,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_ikemen',
     flavor:
       '巨大な武器を力任せに振るい、立ち塞がる障害物や罠を淡々と壊して回る頼れる力仕事の専門家。',
-  },
-  {
-    id: 'horse',
-    name: 'セレスタリアン・チャージャー',
-    rarity: 2,
-    power: 4,
-    skills: [{ id: 'equip' }, { id: 'pierce' }],
-    voiceCategory: 'horse',
-    flavor:
-      '誇り高きセレスタリアの紋章を背負う戦馬。その力強い蹄の音は、王国の勝利を告げるファンファーレである。',
   },
   {
     id: 'lion',
@@ -741,7 +794,7 @@ export const CARD_MASTER = [
       { id: 'stealth', value: 1 },
       { id: 'standby', value: 1 },
     ],
-    voiceCategory: 'insect',
+    voiceCategory: 'sea',
     flavor:
       '深き蒼から突如として現れる規格外の巨体。その顎が海面を割る時、逃げる術は既に残されていない。',
   },
@@ -751,7 +804,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 1,
     skills: [{ id: 'bless', value: 2 }],
-    voiceCategory: 'insect',
+    voiceCategory: 'sea',
     flavor:
       '青き海を漂う幻獣。その姿を見た者には、ささやかな海の恵みがもたらされるという。',
   },
@@ -767,7 +820,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'insect',
     flavor:
-      '宇宙の深淵から飛来した、冷たく蠢く無機生命体。音もなく宿主に取り付いて生命力を啜り、自らの似姿を静かに増殖させながら、やがて全てを空洞の石へと変えていく。',
+      '宇宙の深淵から飛来した無機生命体。宿主に取り付いて生命力を啜り、増殖しながらやがて全てを空洞の石へと変えていく。',
   },
   {
     id: 'ghostship',
@@ -777,7 +830,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'stealth', value: 1 }],
     voiceCategory: 'stone',
     flavor:
-      '星の光すら届かぬ静寂の海、濃霧の奥底より音もなく現れる呪われた艦。朽ち果てた帆に亡者たちの嘆きを孕み、目撃した者を永遠の深淵へと引きずり込む。',
+      '濃霧の奥底より音もなく現れる呪われた船。朽ち果てた帆に亡者たちの嘆きを孕み、目撃した者を永遠の深淵へと引きずり込む。',
   },
   {
     id: 'bard',
@@ -840,7 +893,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'snipe', value: 4 }],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '微かに光るルーンの印だけが、彼に失くした過去を呼び覚ます。深緑の外套を揺らし、記憶の残香を辿る旅。その道を阻む理不尽なる者がいれば、一切の迷いなき必中の矢が静かに急所を射抜く。',
+      '微かに光るルーンを道標に、失った記憶を辿る旅。その道を阻む者がいれば、迷いなき必中の矢が静かに急所を射抜く。',
   },
   {
     id: 'barrier',
@@ -961,7 +1014,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'equip' }, { id: 'soul_bind', value: 3 }],
     voiceCategory: 'human_female_sexy',
     flavor:
-      '「ふふっ、とても頼もしいお方……どうか私を、貴方様の傍に置いてくださる？」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、甘い吐息と共に強き者の腕へとすり寄る。',
+      '「どうか私を、貴方様の傍に」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、強き者の腕へとすり寄る。',
   },
   {
     id: 'undeadking',
@@ -1163,7 +1216,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'challenge' }, { id: 'toxic', value: 4 }],
     voiceCategory: 'human_female_cool',
     flavor:
-      '毒蛇を従え、戦士たちに過酷な試練を課す神殿の導き手。彼女の放つ猛毒に耐え抜き、その静かなる牙を掻いくぐった者のみが、真の勇者として認められる。',
+      '毒蛇を従え、戦士に過酷な試練を課す神殿の導き手。猛毒に耐え抜き、その牙を掻いくぐった者のみが真の勇者と認められる。',
   },
   {
     id: 'kitepriest',
@@ -1375,7 +1428,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 5,
     skills: [
-      { id: 'takeover' },
+      { id: 'execute' },
       { id: 'summon', value: 2, summonId: 'token_knight' },
       { id: 'summon', value: 2, summonId: 'token_knight' },
     ],
@@ -1495,7 +1548,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'call', value: 3 }],
     voiceCategory: 'human_female_cool',
     flavor:
-      '奏でられるのは森の賛歌か、それとも愚者への鎮魂歌か。ただ確かなのは、その妖しき調べを耳にしたが最後、大いなる森の軍勢から逃れる術はないということだ。',
+      '森の賛歌か愚者への鎮魂歌か。確かなのは、その妖しき調べを耳にしたが最後、大いなる森の軍勢から逃れる術はないということ。',
   },
   {
     id: 'wolf',
@@ -1672,7 +1725,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_female_assassin',
     flavor:
-      '深き森の奥に工房を構え、秘術を操る魔女。恐ろしい噂とは裏腹に、相応の金貨や珍しい素材さえ前払いで渡せば、大抵の厄介な依頼はきっちりとこなしてくれる。',
+      '森の奥で秘術を操る魔女。恐ろしい噂とは裏腹に、相応の金貨や珍しい素材を前払いすれば、大抵の厄介な依頼はこなしてくれる。',
   },
   {
     id: 'djinn',
@@ -1713,7 +1766,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'beast',
     flavor:
-      '術者の魂すらも致命的な代償として喰らう、美しくも恐ろしき妖狐。奪った命を呪いの火として撒き散らすか、傀儡として現世に縛り付けるか、すべては彼女の気まぐれ。',
+      '術者の魂すら喰らう美しくも恐ろしき妖狐。奪った命を呪いの火として撒き散らすか、傀儡として縛り付けるかは彼女の気まぐれ。',
   },
   {
     id: 'kasha',
@@ -1787,7 +1840,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'machine_old',
     flavor:
-      '太古の神々が天空を巡るために建造したとされる、黄金に輝く巨大な飛行機関。永き眠りから目覚めたその船体は、失われた叡智の光で地上の不浄を焼き払う。',
+      '太古の神々が天空を巡るために建造した黄金の巨大飛行機関。永き眠りから目覚め、失われた叡智の光で地上の不浄を焼き払う。',
   },
   {
     id: 'jackalpriest',
@@ -1811,7 +1864,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '神の化身として広大な砂漠を統べ、永遠の時を生きる絶対的な支配者。その絶大な力と威光の代償として、彼に仕える者たちは皆、等しく砂の底へと殉死していく運命にある。',
+      '神の化身として広大な砂漠を統べる永遠の支配者。その絶大な威光の代償として、仕える者は皆砂の底へと殉死していく。',
   },
   {
     id: 'daemon',
@@ -2062,7 +2115,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'monster',
     flavor:
-      '砂海に栄華を誇った黄金の都は、一夜にして地図から消え去った。豊穣のオアシスも、天を突く尖塔も、今はすべてこの大蠕虫の腹の中。底なしの流砂だけが、かつての繁栄を静かに弔っている。',
+      '黄金の都を一夜にして飲み込んだ大蠕虫。豊穣のオアシスも尖塔も今は全て腹の中。流砂がかつての繁栄を静かに弔う。',
   },
   {
     id: 'valkyrie',
@@ -2092,7 +2145,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'dragon',
     flavor:
-      '「黒き影が空を覆う時、古き王国は灰となる」――親が子に語り継ぐ、ただの古き御伽話。だがある日、空は真に黒く染まり、伝説は業火と共に舞い降りた。',
+      '「黒き影が空を覆う時、古き王国は灰となる」というただの御伽話。だがある日空は黒く染まり、伝説は業火と共に舞い降りた。',
   },
   {
     id: 'darkpaladin',
@@ -2339,7 +2392,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_female_cute',
     flavor:
-      '洋館の奥深くに座す、精巧極まる少女の人形。自らの遊び場に足を踏み入れた客人を、彼女は温かくもてなし、そして二度と外の世界へ帰ることのない調度品へと変えていく。',
+      '洋館の奥深くに座す精巧な少女の人形。足を踏み入れた客人をもてなし、二度と外へ帰ることのない調度品へと変えていく。',
   },
   {
     id: 'student',
@@ -2349,7 +2402,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'chant', value: 0 }],
     voiceCategory: 'beast',
     flavor:
-      '故郷を遠く離れ、未知の魔法を学ぶために魔導アカデミーの門を叩いた若き獣人。使い慣れない言語の魔導書と格闘しながら、ひたむきに詠唱の練習を続けている。',
+      '魔法を学ぶためアカデミーの門を叩いた若き獣人。不慣れな言語の魔導書と格闘しながら、ひたむきに詠唱の練習を続けている。',
   },
   {
     id: 'archmage',
@@ -2362,7 +2415,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_old',
     flavor:
-      '歴戦の戦士のごとき風格を漂わせる、規格外の魔導士。星を砕くほどの極大魔法を紡ぎ出すためならば、己の血肉すらも代償として捧げる覚悟を持っている。',
+      '歴戦の戦士のごとき風格を持つ規格外の魔導士。星を砕く極大魔法を紡ぐためならば、己の血肉すら代償として捧げる覚悟を持つ。',
   },
   {
     id: 'philosopher',
@@ -2470,7 +2523,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_old',
     flavor:
-      '砂塵の彼方に忽然と姿を現し、神域へと足を踏み入れた者の前に立ち塞がる黄金の獣。その難解な問いに対して真理を導き出せぬ者は、容赦なく熱砂の底へと永遠に葬り去られる。',
+      '神域へ足を踏み入れた者の前に立ち塞がる黄金の獣。その難解な問いに答えられぬ者は、容赦なく熱砂の底へ葬られる。',
   },
   {
     id: 'cleopatra',
@@ -2481,7 +2534,7 @@ export const CARD_MASTER = [
     choices: [{ id: 'burial', value: 5 }, { id: 'cull' }],
     voiceCategory: 'human_female_cool',
     flavor:
-      '傾きゆく帝国の命運を、その気高き美貌と底知れぬ知略によって支え続けた統治者。彼女が玉座で下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へと消えていった。',
+      '傾きゆく帝国を、美貌と知略で支え続けた統治者。彼女が下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へ消えた。',
   },
   {
     id: 'baldanders',
@@ -2667,7 +2720,7 @@ export const CARD_MASTER = [
     power: 5,
     isToken: true,
     skill: 'none',
-    voiceCategory: 'monster',
+    voiceCategory: 'stone',
     flavor: '土と石で構成された自律型の魔法生物。',
   },
   {

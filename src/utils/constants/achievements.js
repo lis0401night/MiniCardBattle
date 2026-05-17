@@ -1,6 +1,7 @@
 import { saveDeck } from '../../hooks/deck.js';
 import { GameState } from '../../hooks/gameState.js';
 import { CARD_MASTER } from './cards.js';
+import { INITIAL_PLAYER_CARD } from './initial_cards.js';
 import { ownedPlaymats } from './playmats.js';
 
 /**
@@ -739,13 +740,16 @@ export function incrementStat(type, key = null, amount = 1) {
   saveAchievements();
 }
 
-// 所持カード数の実績チェック
+// 所持カード数の実績チェック（初期カードは収集カウントから除外する）
 export function checkCollectionAchievements() {
   if (!GameState.playerInventory) return;
 
-  // トークン以外のマスタカード枚数を計算
+  // 初期カードのIDセット（実績カウントから除外する）
+  const initialCardIds = new Set(INITIAL_PLAYER_CARD);
+
+  // トークンと初期カードを除いたマスタカードを対象にする
   const validMasterCards = CARD_MASTER.filter(
-    (c) => !c.isToken && !c.id.includes('token')
+    (c) => !c.isToken && !c.id.includes('token') && !initialCardIds.has(c.id)
   );
   const totalValidMasterCount = validMasterCards.length;
 

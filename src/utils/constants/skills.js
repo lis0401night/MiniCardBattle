@@ -641,7 +641,12 @@ export const SKILLS = {
   cull: {
     name: '選別',
     icon: '🚪',
-    desc: '召喚時、相手は自分の場のカード1枚を選び、墓地に送る。',
+    desc: '召喚時、相手は自分のカード1枚を選択する。そのカードを破壊する。',
+  },
+  execute: {
+    name: '処刑',
+    icon: '🪓',
+    desc: '召喚時、自分のカード1枚を選択する。そのカードを破壊する。',
   },
 };
 
@@ -701,6 +706,7 @@ export const ACTIVE_SKILLS = [
   'destroy',
   'hack',
   'cull',
+  'execute',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
