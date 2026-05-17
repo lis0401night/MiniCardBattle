@@ -1,22 +1,24 @@
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  createDamagePopup,
   addDamagePopupHook,
-  playSound,
-  sleep,
+  createDamagePopup,
   getSeededRandom,
   mergeCardSkills,
+  playSound,
+  sleep,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { playCardVoice } from '../utils/constants/voices.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
+import { GameState } from './gameState.js';
 import {
+  renderBoard,
+  renderHand,
+  showSpeechBubble,
+  updateCardPowerOnly,
+  updateDeckDisplay,
   updateHPBar,
   updateSPOrbs,
-  updateDeckDisplay,
-  showSpeechBubble,
-} from './battle.js';
-import { updateCardPowerOnly, renderBoard, renderHand } from './uiBattle.js';
-import { GameState } from './gameState.js';
+} from './uiBattle.js';
 
 /**
  * engine.js が生成したイベントログの配列を受け取り、

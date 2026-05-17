@@ -77,6 +77,7 @@ body {
 
 #screen-mode-select,
 #screen-rules,
+#screen-beginner-guide,
 #screen-select,
 #screen-difficulty,
 #screen-loading,
@@ -3316,4 +3317,105 @@ body.vfx-shake {
     opacity: 0;
     filter: brightness(2);
   }
+}
+
+/* ============================
+   チュートリアルUI
+   ============================ */
+
+/* チュートリアルオーバーレイ（画面全体を覆って操作を制御） */
+.tutorial-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: tutorialFadeIn 0.3s ease-out;
+}
+
+/* チュートリアルメッセージボックス */
+.tutorial-message-box {
+  position: relative;
+  width: 90%;
+  max-width: 380px;
+  background: linear-gradient(135deg, rgba(30, 41, 70, 0.97), rgba(20, 28, 55, 0.97));
+  border: 2px solid rgba(250, 204, 21, 0.5);
+  border-radius: 16px;
+  padding: 55px 20px 20px;
+  box-shadow:
+    0 0 30px rgba(250, 204, 21, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.6);
+  animation: tutorialBoxAppear 0.4s ease-out;
+}
+
+/* チュートリアルアイコン（icon_light） */
+.tutorial-icon-wrapper {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e2946, #0f172a);
+  border: 3px solid rgba(250, 204, 21, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+  animation: tutorialIconPulse 2s ease-in-out infinite;
+}
+
+.tutorial-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.5));
+}
+
+/* チュートリアルテキスト */
+.tutorial-text {
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* タップで次へヒント */
+.tutorial-tap-hint {
+  text-align: center;
+  color: rgba(250, 204, 21, 0.7);
+  font-size: 12px;
+  margin-top: 14px;
+  animation: tutorialHintBlink 1.5s ease-in-out infinite;
+}
+
+/* アニメーション */
+@keyframes tutorialFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tutorialBoxAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tutorialIconPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.6); }
+}
+
+@keyframes tutorialHintBlink {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }

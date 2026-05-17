@@ -1,34 +1,37 @@
-import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { SKILLS } from '../utils/constants/skills.js';
-import {
-  getCardImgUrl,
-  hasSkill,
-  playSound,
-  renderSkillTag,
-  stopAllBGM,
-  switchScreen,
-} from '../utils/gameUtils.js';
-import { AUDIO_INSTANCES } from '../utils/sounds.js';
+import { getDialogue, playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from './gameState.js';
-import { handleStoryProgression } from './story.js';
-import { setupDialogueScreen } from './uiDialogue.js';
-import { initSelectScreen } from './uiMainCore.js';
-import { showConfirmModal } from './uiModals.js';
+import { showAlertModal } from './uiModals.js';
 
 // ==========================================
 // UI Battle Logic (Hand, Board, & Detail)
 // ==========================================
 
+/**
+ * Reactの再描画を通知するコールバック（BattleScreen.jsxから登録）
+ * battle.js, eventRenderer.js 等からUI更新のトリガーとして使用される
+ */
 export let updateBattleUIHook = null;
 export function setUpdateBattleUIHook(hook) {
   updateBattleUIHook = hook;
 }
 
+/**
+ * 召喚アニメーション再生用コールバック（BattleScreen.jsxから登録）
+ */
 export let summonAnimationHook = null;
 export function setSummonAnimationHook(hook) {
   summonAnimationHook = hook;
 }
 
+/**
+ * カード召喚時のアニメーションを再生する
+ * battle.js, skillLogic.js から呼ばれる
+ * @param {object} card - 召喚するカードオブジェクト
+ * @param {string} owner - 'blue' or 'red'
+ * @returns {Promise} アニメーション完了時にresolveされるPromise
+ */
 export function playSummonAnimation(card, owner) {
   if (summonAnimationHook) {
     return summonAnimationHook(card, owner);
@@ -36,15 +39,25 @@ export function playSummonAnimation(card, owner) {
   return Promise.resolve();
 }
 
+/** Reactの再描画を内部的にトリガーするヘルパー */
 const triggerReactUpdate = () => {
   if (updateBattleUIHook) updateBattleUIHook();
 };
 
+/**
+ * カード詳細表示のHTML更新用コールバック（BattleScreen.jsxから登録）
+ */
 export let updateCardDetailHook = null;
 export function setUpdateCardDetailHook(hook) {
   updateCardDetailHook = hook;
 }
 
+/**
+ * カード詳細情報のHTMLを生成し、React側のフックで表示を更新する
+ * カード選択時・スキル確認時にbattle.js, leaderSkills.js等から呼ばれる
+ * nullが渡された場合は現在のモード（破棄/配置/ターゲット選択）に応じたガイドメッセージを生成
+ * @param {object|string|null} c - カードオブジェクト、メッセージ文字列、またはnull
+ */
 export function updateCardDetail(c) {
   let html = '';
   let textColor = '#94a3b8';
@@ -192,84 +205,27 @@ export function updateCardDetail(c) {
 }
 window.updateCardDetail = updateCardDetail;
 
-export function createCardDOM(c, isBoard = false) {
-  const rarityClass = c.rarity ? ` rarity-${c.rarity}` : '';
-  const d = document.createElement('div');
-  d.className = `card ${c.owner}${rarityClass}`;
-  let sH = renderSkillTag(c, isBoard);
-  let filter = c.filter;
-  const imgUrl = getCardImgUrl(c);
-  d.innerHTML = `
-        <div class="card-bg" style="background-image: url('${imgUrl}'); filter: ${filter};"></div>
-        ${sH}
-        <div class="card-power">${c.currentPower}</div>
-    `;
-  return d;
-}
-
+/**
+ * 手札の表示を更新する
+ * battle.js, eventRenderer.js, skillLogic.js から呼ばれる
+ */
 export function renderHand() {
   triggerReactUpdate();
 }
 
-export function highlightLanes() {
-  document.querySelectorAll('#player-lanes .cell').forEach((c, i) => {
-    if (
-      GameState.isPlacementMode ||
-      GameState.isEnemyTargetMode ||
-      GameState.isAlliedTargetMode
-    )
-      return;
-    if (GameState.selectedCardIndex === null) {
-      c.classList.remove('highlight');
-    } else {
-      const card = GameState.playerHand[GameState.selectedCardIndex];
-      // 1ターン目の制限 (先攻の場合)
-      if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
-        if (i === 1) c.classList.add('highlight');
-        else c.classList.remove('highlight');
-        return;
-      }
-      // 伝説の制限
-      if (hasSkill(card, 'legendary')) {
-        if (i === 1) c.classList.add('highlight');
-        else c.classList.remove('highlight');
-      } else {
-        c.classList.add('highlight');
-      }
-    }
-  });
-}
-
 /**
- * 特定のレーンのカード表示のみを更新する
+ * 盤面全体の表示を更新する
+ * battle.js, eventRenderer.js から呼ばれる
  */
-export function updateCardVisuals(lane, side, card) {
-  const parent = document.querySelector(
-    `#${side}-lanes .cell[data-lane="${lane}"]`
-  );
-  if (!parent) return;
-  if (!card) {
-    parent.innerHTML = '';
-    return;
-  }
-  const d = createCardDOM(card, true);
-  parent.innerHTML = '';
-  parent.appendChild(d);
-}
-
-/**
- * 特定のレーンのカードを削除する（ Surgical update ）
- */
-export function removeCardFromBoard(lane, side) {
-  triggerReactUpdate();
-}
-
 export function renderBoard() {
   triggerReactUpdate();
 }
 
 /**
  * 特定のレーンのカードパワー表示のみを更新する（アニメーション中断防止用）
+ * eventRenderer.js, battle.js から呼ばれる
+ * @param {number} lane - レーンインデックス (0-2)
+ * @param {string} side - 'player' or 'enemy'
  */
 export function updateCardPowerOnly(lane, side) {
   const board =
@@ -287,6 +243,11 @@ export function updateCardPowerOnly(lane, side) {
   }
 }
 
+/**
+ * 山札が補充された際の視覚エフェクトを表示する
+ * battle.jsの山札リフレッシュ処理から呼ばれる
+ * @param {string} owner - 'blue'（プレイヤー）or 'red'（敵）
+ */
 export function showDeckRefreshEffect(owner) {
   const battleScreen = document.getElementById('screen-battle');
   if (!battleScreen) return;
@@ -301,86 +262,228 @@ export function showDeckRefreshEffect(owner) {
   }, 1500);
 }
 
-export function returnToTitle() {
-  showConfirmModal('バトルを中断してタイトルに戻りますか？', () => {
-    stopAllBGM();
-    GameState.appState = 'title';
-    switchScreen('screen-mode-select');
-    playSound(AUDIO_INSTANCES.bgmTitle);
-  });
+// ==========================================
+// HP / SP / デッキ表示更新
+// ==========================================
+
+/**
+ * プレイヤーと敵のHPバー・テキスト表示をDOMに反映し、React側にも再描画を通知する
+ * HP0時にはアイコンに死亡演出を適用する
+ * battle.jsのダメージ処理・戦闘開始時などから呼ばれる
+ */
+export function updateHPBar() {
+  // DOMから直接更新しつつ、Reactにも同期させる
+  const pFill = document.getElementById('player-hp-fill');
+  if (pFill)
+    pFill.style.width = `${Math.max(0, (GameState.playerHP / GameState.playerMaxHP) * 100)}%`;
+  const pText = document.getElementById('player-hp-text');
+  if (pText)
+    pText.innerText = `${Math.max(0, GameState.playerHP)} / ${GameState.playerMaxHP}`;
+  const eFill = document.getElementById('enemy-hp-fill');
+  if (eFill)
+    eFill.style.width = `${Math.max(0, (GameState.enemyHP / GameState.enemyMaxHP) * 100)}%`;
+  const eText = document.getElementById('enemy-hp-text');
+  if (eText)
+    eText.innerText = `${Math.max(0, GameState.enemyHP)} / ${GameState.enemyMaxHP}`;
+
+  // HP0時のアイコン死亡演出（スタイル反映用）
+  const pIcon = document.getElementById('player-icon');
+  if (pIcon) pIcon.classList.toggle('dead', GameState.playerHP <= 0);
+  const eIcon = document.getElementById('enemy-icon');
+  if (eIcon) eIcon.classList.toggle('dead', GameState.enemyHP <= 0);
+
+  if (updateBattleUIHook) updateBattleUIHook();
 }
 
-// --- 報酬システム ---
-export let pendingRewardCard = null;
+/**
+ * SPオーブの表示を更新する（React側の再描画フックに委譲）
+ * battle.jsのターン開始処理から呼ばれる
+ */
+export function updateSPOrbs(_owner) {
+  // innerHTML操作はReactのDOMツリーを破壊するため削除し、Reactフックを発火
+  if (updateBattleUIHook) updateBattleUIHook();
+}
 
-export function showCardReward(enemyId) {
-  // 防衛戦やオンライン対戦では報酬（カード獲得）をスキップ
-  if (
-    GameState.gameMode === 'defense_attack' ||
-    GameState.gameMode === 'online'
-  ) {
-    GameState.appState = 'select_enemy';
-    initSelectScreen(true);
-    switchScreen('screen-select');
-    return;
+/**
+ * デッキ枚数・墓地枚数の表示を更新する（React側の再描画フックに委譲）
+ * battle.jsのドロー・破棄処理から呼ばれる
+ */
+export function updateDeckDisplay(_owner) {
+  // DOMによる deck-info の innerText 上書きは React のツリーを破壊するため削除。
+  // 代わりに React 側の再描画フックを呼び出します（PlayerArea / EnemyArea に反映される）
+  if (updateBattleUIHook) updateBattleUIHook();
+}
+
+// ==========================================
+// 演出エフェクト
+// ==========================================
+
+/**
+ * バトル終了演出（スローモーション＋画面揺れ）を発動する
+ * battle.jsの勝敗判定時に呼ばれる
+ */
+export function triggerFinishVisuals() {
+  // 画面全体のスローモーションと揺れ
+  document.body.classList.add('slow-motion');
+  document.body.classList.add('anim-mega-shake');
+  // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
+
+  setTimeout(() => {
+    document.body.classList.remove('anim-mega-shake');
+  }, 1000);
+}
+
+/**
+ * リーダーへの直接ダメージ時に吹き出しとダメージアイコンを表示する
+ * battle.jsの直接攻撃処理から呼ばれる
+ * @param {string} target - 'blue'（プレイヤー）or 'red'（敵）
+ */
+export function showSpeechBubble(target) {
+  const config =
+    target === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
+  let msg = getDialogue(
+    config,
+    null,
+    'damage',
+    target === 'blue' ? 'player' : 'enemy'
+  );
+
+  // シャドウ（ドッペルゲンガー）は無言
+  if (target === 'red' && GameState.enemyConfig.isShadow) {
+    msg = '・・・・';
   }
 
-  let recipeId = enemyId;
-  if (GameState.gameMode === 'event_satan_high' && enemyId === 'satan')
-    recipeId = 'satan_high';
-  if (GameState.gameMode === 'event_android_high' && enemyId === 'android')
-    recipeId = 'android_high';
-  if (GameState.gameMode === 'event_dragon_high' && enemyId === 'dragon')
-    recipeId = 'dragon_high';
-  if (GameState.gameMode === 'event_knight_high' && enemyId === 'knight')
-    recipeId = 'knight_high';
-  if (GameState.gameMode === 'event_cthulhu_high' && enemyId === 'cthulhu')
-    recipeId = 'cthulhu_high';
-  if (GameState.gameMode === 'event_priest_high' && enemyId === 'priest')
-    recipeId = 'priest_high';
+  const bubble = document.getElementById(
+    target === 'blue' ? 'player-speech' : 'enemy-speech'
+  );
+  const iconEl = document.getElementById(
+    target === 'blue' ? 'player-icon' : 'enemy-icon'
+  );
 
-  let recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
-  let enemyDeckIds = [];
-  if (recipe.easy && recipe.normal && recipe.hard) {
-    if (typeof GameState.aiLevel !== 'undefined') {
-      if (GameState.aiLevel == 1) enemyDeckIds = recipe.easy;
-      else if (GameState.aiLevel == 3) enemyDeckIds = recipe.hard;
-      else enemyDeckIds = recipe.normal;
-    } else {
-      enemyDeckIds = recipe.normal;
-    }
-  } else if (Array.isArray(recipe)) {
-    enemyDeckIds = recipe;
-  } else {
-    enemyDeckIds = recipe.normal || [];
-  }
-  const eligibleIds = [...new Set(enemyDeckIds)].filter((id) => {
-    const owned = GameState.playerInventory[id] || 0;
-    return owned < 4;
-  });
+  if (bubble) {
+    bubble.innerText = msg;
+    bubble.classList.add('active');
 
-  if (eligibleIds.length === 0) {
-    if (GameState.gameMode === 'defense_attack') {
-      GameState.appState = 'select_enemy';
-      initSelectScreen(false);
-      switchScreen('screen-select');
-    } else {
-      // ストーリーモードで報酬がない場合は、GameState.appStateを更新してから進行
-      if (
-        GameState.gameMode === 'story' &&
-        GameState.appState === 'post_dialogue'
-      ) {
-        handleStoryProgression();
-      } else {
-        setupDialogueScreen();
+    // アイコンをダメージ画像に変更
+    if (iconEl && iconEl.src) {
+      const originalSrc = iconEl.src;
+      if (!originalSrc.includes('_damage.png')) {
+        iconEl.src = originalSrc.replace('.png', '_damage.png');
+        setTimeout(() => {
+          const currentHP =
+            target === 'blue' ? GameState.playerHP : GameState.enemyHP;
+          if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
+            iconEl.src = originalSrc;
+          }
+        }, 1500);
       }
     }
+
+    setTimeout(() => bubble.classList.remove('active'), 1500);
+  }
+}
+
+// ==========================================
+// リーダースキル確認モーダル
+// ==========================================
+
+/**
+ * プレイヤーのリーダースキル確認モーダルを表示する
+ * BattleScreen.jsxのリーダースキルボタンから呼ばれる
+ * SP不足時は発動不可、パッシブスキルの場合は情報表示のみ
+ * 実行コールバックはbattle.jsのexecuteSkillFromConfirmをwindow経由で呼ぶ
+ */
+export function showSkillConfirm() {
+  const s = GameState.playerConfig.leaderSkill;
+  if (!s) {
+    showAlertModal('リーダースキルはありません');
     return;
   }
+  playSound(SOUNDS.seClick);
 
-  const rewardId = eligibleIds[Math.floor(Math.random() * eligibleIds.length)];
+  let statusText = '';
+  let color = '';
+  let canExecute = false;
 
-  if (window.showCardRewardReact) {
-    window.showCardRewardReact(rewardId);
+  if (!s.cost) {
+    statusText = 'パッシブスキル（常に発動）';
+    color = '#4ade80';
+    canExecute = false;
+  } else if (GameState.playerSP >= s.cost) {
+    if (
+      !GameState.isProcessing &&
+      !GameState.isBattleEnded &&
+      GameState.currentTurn === 'player' &&
+      !GameState.isPlacementMode
+    ) {
+      statusText = '発動可能です！';
+      color = '#4ade80';
+      canExecute = true;
+    } else {
+      statusText = '現在発動できません（自分のターン待機中のみ）';
+      color = '#facc15';
+      canExecute = false;
+    }
+  } else {
+    statusText = `発動まであと ${s.cost - GameState.playerSP} SP`;
+    color = '#f87171';
+    canExecute = false;
   }
+
+  if (window.showSkillConfirmModalReact) {
+    window.showSkillConfirmModalReact({
+      skill: s,
+      statusText,
+      color,
+      canExecute,
+      onExecute: () => {
+        // dispatchBattleActionへの依存を避けるため、window経由でbattle.jsの関数を呼ぶ
+        if (window.executeSkillFromConfirm) window.executeSkillFromConfirm();
+      },
+    });
+  }
+}
+
+/**
+ * 敵のリーダースキル確認モーダルを表示する（閲覧のみ、実行不可）
+ * BattleScreen.jsxの敵スキルボタンから呼ばれる
+ */
+export function showEnemySkillConfirm() {
+  playSound(SOUNDS.seClick);
+  const s = GameState.enemyConfig.leaderSkill;
+  if (!s) return;
+
+  let statusText = '';
+  let color = '';
+
+  if (!s.cost) {
+    statusText = 'パッシブスキル（常に発動）';
+    color = '#4ade80';
+  } else {
+    const r = Math.max(0, s.cost - GameState.enemySP);
+    if (r === 0) {
+      statusText = '発動可能状態です！注意！';
+      color = '#ef4444';
+    } else {
+      statusText = `発動まであと ${r} SP`;
+      color = '#f87171';
+    }
+  }
+
+  if (window.showSkillConfirmModalReact) {
+    window.showSkillConfirmModalReact({
+      skill: s,
+      statusText,
+      color,
+      canExecute: false, // 敵のスキルはプレイヤーが実行ボタンを押せない
+    });
+  }
+}
+
+/**
+ * リーダースキル確認モーダルを閉じる
+ */
+export function closeSkillConfirm() {
+  playSound(SOUNDS.seClick);
+  if (window.closeSkillConfirmModalReact) window.closeSkillConfirmModalReact();
 }

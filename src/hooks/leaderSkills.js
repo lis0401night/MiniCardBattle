@@ -20,8 +20,6 @@ import {
   endTurnLogic,
   hasActiveSkill,
   resolveOnPlaySkill,
-  updateDeckDisplay,
-  updateSPOrbs,
   waitPlayerDiscardSelection,
   waitPlayerEnemyLaneSelection,
   waitPlayerHandSelection,
@@ -30,7 +28,7 @@ import {
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { GameState } from './gameState.js';
-import { renderBoard, renderHand, updateCardDetail } from './uiBattle.js';
+import { renderBoard, renderHand, updateCardDetail, updateDeckDisplay, updateSPOrbs } from './uiBattle.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -772,8 +770,12 @@ export async function executeLeaderSkillAction(
 
     events.push({ type: 'leader_skill', skill: action, side: owner });
     h.forEach((c) => {
+      if (c.currentPower !== undefined && !Number.isNaN(c.currentPower)) {
+        c.currentPower += 1;
+      } else {
+        c.currentPower = c.power + 1;
+      }
       c.power += 1;
-      c.currentPower += 1;
     });
     if (isBlue) renderHand();
     // フォールスルーして共通の playEvents と resolveOnPlaySkill を実行させる

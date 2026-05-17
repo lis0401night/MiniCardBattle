@@ -2,7 +2,7 @@
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../hooks/uiGallery.js';
 import {
-  showRules,
+  showBeginnerGuide,
   showOptions,
   showSoloMenu,
   showDeckEditMenu,
@@ -21,7 +21,7 @@ export default function ModeSelectScreen() {
         ⚙
       </button>
       <div className="menu-btn-grid">
-        <div className="menu-img-btn" onClick={() => showRules?.()}>
+        <div className="menu-img-btn" onClick={() => showBeginnerGuide?.()}>
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_RULES || ''}')` }}

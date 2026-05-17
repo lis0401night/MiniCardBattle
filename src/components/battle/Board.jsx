@@ -97,7 +97,7 @@ export default function Board({
                     }
                     onCellClick(lane, 'enemy', card);
                   }}
-                  onLongPress={onCardLongPress}
+                  onLongPress={(card) => onCardLongPress(card, lane + 3)}
                 />
               )}
             </div>
@@ -228,7 +228,7 @@ export default function Board({
                     }
                     onCellClick(lane, 'player', card);
                   }}
-                  onLongPress={onCardLongPress}
+                  onLongPress={(card) => onCardLongPress(card, lane)}
                 />
               )}
             </div>

@@ -6,7 +6,7 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function RulesScreen() {
   const [clickCount, setClickCount] = useState(0);
 
-  // 「遊び方」タイトルを10回クリックでデバッグバトル画面を起動
+  // 「ルール」タイトルを10回クリックでデバッグバトル画面を起動
   const handleTitleClick = () => {
     const newCount = clickCount + 1;
     setClickCount(newCount);
@@ -28,7 +28,7 @@ export default function RulesScreen() {
           userSelect: 'none',
         }}
       >
-        遊び方
+        ルール
       </h2>
       <div className="rule-box">
         <div className="rule-section">
@@ -77,7 +77,7 @@ export default function RulesScreen() {
           </ul>
         </div>
       </div>
-      <BackButton to="screen-mode-select" />
+      <BackButton to="screen-beginner-guide" />
     </div>
   );
 }

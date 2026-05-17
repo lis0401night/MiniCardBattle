@@ -37,6 +37,7 @@ import {
   setShowErrorModalHook,
   setShowPointAcquisitionModalHook,
 } from '../hooks/uiModals.js';
+import { filterDiscardSelectionSubmit } from '../hooks/tutorialEngine.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
 let g_discardLongPressTimer = null;
@@ -477,7 +478,7 @@ export default function GlobalModals() {
             width: '100%',
             height: '100%',
             background: 'rgba(0,0,0,0.85)',
-            zIndex: 3000,
+            zIndex: 4000,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2500,8 +2501,9 @@ export default function GlobalModals() {
                     }}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
-                      const cb = discardSelectionData.onSelect;
+                      
                       let result = null;
+                      const isMulti = discardSelectionData.maxChoices > 1;
                       if (isMulti) {
                         result = discardSelectionData.selectedItems.map(
                           (item) => ({ ...item.card, fromTab: item.tab })
@@ -2512,6 +2514,13 @@ export default function GlobalModals() {
                             discardSelectionData.selectedIndex
                           ];
                       }
+
+                      // チュートリアルのフィルタリング
+                      if (!isMulti && result && filterDiscardSelectionSubmit(result.baseId || result.id)) {
+                        return;
+                      }
+
+                      const cb = discardSelectionData.onSelect;
                       setDiscardSelectionData(null);
                       if (cb) cb(result);
                     }}
@@ -2532,6 +2541,9 @@ export default function GlobalModals() {
                     background: '#475569',
                   }}
                   onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    if (filterDiscardSelectionSubmit(null)) return;
+                    
                     const cb = discardSelectionData.onSelect;
                     setDiscardSelectionData(null);
                     if (cb) cb(null);
@@ -2583,7 +2595,7 @@ export default function GlobalModals() {
             style={{ width: '90%', maxWidth: '400px', padding: '25px' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ color: '#facc15', marginBottom: '20px' }}>遊び方</h2>
+            <h2 style={{ color: '#facc15', marginBottom: '20px' }}>ルール</h2>
             <div className="rule-box" style={{ maxHeight: '350px' }}>
               <div className="rule-section">
                 <div className="rule-category">【デッキ編成】</div>

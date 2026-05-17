@@ -52,13 +52,26 @@ import {
   triggerStartTurnPassive,
 } from './skillLogic.js';
 import {
+  cleanupTutorial,
+  filterPlacementLaneClick,
+  handleTutorialEnd,
+  isTutorialMode,
+  runTutorialFlow,
+} from './tutorialEngine.js';
+import {
+  closeSkillConfirm,
   playSummonAnimation,
   renderBoard,
   renderHand,
   showDeckRefreshEffect,
+  showSpeechBubble,
+  triggerFinishVisuals,
   updateBattleUIHook,
   updateCardDetail,
   updateCardPowerOnly,
+  updateDeckDisplay,
+  updateHPBar,
+  updateSPOrbs,
 } from './uiBattle.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showDefenseBattleList } from './uiMainCore.js';
@@ -98,6 +111,10 @@ export async function dispatchBattleAction(action, isRemote = false) {
   }
 
   if (action.type === 'retire') {
+    // チュートリアルモードの場合、待機中の全Promiseを解決してからリタイア処理
+    if (GameState.gameMode === 'tutorial') {
+      cleanupTutorial();
+    }
     if (action.owner === 'blue') {
       GameState.playerConfig.hp = 0;
       GameState.playerHP = 0;
@@ -136,7 +153,11 @@ export async function processActionQueue() {
     } else if (action.type === 'leaderSkill') {
       await activateLeaderSkill(action.owner);
     } else if (action.type === 'enemyTurn') {
-      if (GameState.gameMode !== 'online') {
+      if (GameState.gameMode === 'tutorial') {
+        // チュートリアルモード: スクリプト行動を実行
+        await sleep(500);
+        await executeTutorialEnemyTurn();
+      } else if (GameState.gameMode !== 'online') {
         await sleep(500);
         await executeEnemyAI();
       }
@@ -503,7 +524,8 @@ export function initBattleState() {
       typeof incrementStat === 'function' &&
       GameState.playerConfig &&
       GameState.playerConfig.id &&
-      GameState.gameMode !== 'practice'
+      GameState.gameMode !== 'practice' &&
+      GameState.gameMode !== 'tutorial'
     ) {
       incrementStat('leaderUsage', GameState.playerConfig.id, 1);
     }
@@ -526,35 +548,6 @@ export function initBattleState() {
   }
 }
 
-export function updateHPBar() {
-  // DOMから直接更新しつつ、Reactにも同期させる
-  const pFill = document.getElementById('player-hp-fill');
-  if (pFill)
-    pFill.style.width = `${Math.max(0, (GameState.playerHP / GameState.playerMaxHP) * 100)}%`;
-  const pText = document.getElementById('player-hp-text');
-  if (pText)
-    pText.innerText = `${Math.max(0, GameState.playerHP)} / ${GameState.playerMaxHP}`;
-  const eFill = document.getElementById('enemy-hp-fill');
-  if (eFill)
-    eFill.style.width = `${Math.max(0, (GameState.enemyHP / GameState.enemyMaxHP) * 100)}%`;
-  const eText = document.getElementById('enemy-hp-text');
-  if (eText)
-    eText.innerText = `${Math.max(0, GameState.enemyHP)} / ${GameState.enemyMaxHP}`;
-
-  // HP0時のアイコン死亡演出（スタイル反映用）
-  const pIcon = document.getElementById('player-icon');
-  if (pIcon) pIcon.classList.toggle('dead', GameState.playerHP <= 0);
-  const eIcon = document.getElementById('enemy-icon');
-  if (eIcon) eIcon.classList.toggle('dead', GameState.enemyHP <= 0);
-
-  if (updateBattleUIHook) updateBattleUIHook();
-}
-
-export function updateSPOrbs(_owner) {
-  // innerHTML操作はReactのDOMツリーを破壊するため削除し、Reactフックを発火
-  if (updateBattleUIHook) updateBattleUIHook();
-}
-
 export function checkWinCondition() {
   if (GameState.isBattleEnded) return true;
 
@@ -567,146 +560,10 @@ export function checkWinCondition() {
   return false;
 }
 
-export function triggerFinishVisuals() {
-  // 画面全体のスローモーションと揺れ
-  document.body.classList.add('slow-motion');
-  document.body.classList.add('anim-mega-shake');
-  // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
-
-  setTimeout(() => {
-    document.body.classList.remove('anim-mega-shake');
-  }, 1000);
-}
-
-export function showSpeechBubble(target) {
-  const config =
-    target === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
-  let msg = getDialogue(
-    config,
-    null,
-    'damage',
-    target === 'blue' ? 'player' : 'enemy'
-  );
-
-  // シャドウ（ドッペルゲンガー）は無言
-  if (target === 'red' && GameState.enemyConfig.isShadow) {
-    msg = '・・・・';
-  }
-
-  const bubble = document.getElementById(
-    target === 'blue' ? 'player-speech' : 'enemy-speech'
-  );
-  const iconEl = document.getElementById(
-    target === 'blue' ? 'player-icon' : 'enemy-icon'
-  );
-
-  if (bubble) {
-    bubble.innerText = msg;
-    bubble.classList.add('active');
-
-    // アイコンをダメージ画像に変更
-    if (iconEl && iconEl.src) {
-      const originalSrc = iconEl.src;
-      if (!originalSrc.includes('_damage.png')) {
-        iconEl.src = originalSrc.replace('.png', '_damage.png');
-        setTimeout(() => {
-          const currentHP =
-            target === 'blue' ? GameState.playerHP : GameState.enemyHP;
-          if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
-            iconEl.src = originalSrc;
-          }
-        }, 1500);
-      }
-    }
-
-    setTimeout(() => bubble.classList.remove('active'), 1500);
-  }
-}
-
-export function showSkillConfirm() {
-  const s = GameState.playerConfig.leaderSkill;
-  if (!s) {
-    showAlertModal('リーダースキルはありません');
-    return;
-  }
-  playSound(SOUNDS.seClick);
-
-  let statusText = '';
-  let color = '';
-  let canExecute = false;
-
-  if (!s.cost) {
-    statusText = 'パッシブスキル（常に発動）';
-    color = '#4ade80';
-    canExecute = false;
-  } else if (GameState.playerSP >= s.cost) {
-    if (
-      !GameState.isProcessing &&
-      !GameState.isBattleEnded &&
-      GameState.currentTurn === 'player' &&
-      !GameState.isPlacementMode
-    ) {
-      statusText = '発動可能です！';
-      color = '#4ade80';
-      canExecute = true;
-    } else {
-      statusText = '現在発動できません（自分のターン待機中のみ）';
-      color = '#facc15';
-      canExecute = false;
-    }
-  } else {
-    statusText = `発動まであと ${s.cost - GameState.playerSP} SP`;
-    color = '#f87171';
-    canExecute = false;
-  }
-
-  if (window.showSkillConfirmModalReact) {
-    window.showSkillConfirmModalReact({
-      skill: s,
-      statusText,
-      color,
-      canExecute,
-      onExecute: () => executeSkillFromConfirm(),
-    });
-  }
-}
-
-export function showEnemySkillConfirm() {
-  playSound(SOUNDS.seClick);
-  const s = GameState.enemyConfig.leaderSkill;
-  if (!s) return;
-
-  let statusText = '';
-  let color = '';
-
-  if (!s.cost) {
-    statusText = 'パッシブスキル（常に発動）';
-    color = '#4ade80';
-  } else {
-    const r = Math.max(0, s.cost - GameState.enemySP);
-    if (r === 0) {
-      statusText = '発動可能状態です！注意！';
-      color = '#ef4444';
-    } else {
-      statusText = `発動まであと ${r} SP`;
-      color = '#f87171';
-    }
-  }
-
-  if (window.showSkillConfirmModalReact) {
-    window.showSkillConfirmModalReact({
-      skill: s,
-      statusText,
-      color,
-      canExecute: false, // 敵のスキルはプレイヤーが実行ボタンを押せない
-    });
-  }
-}
-
-export function closeSkillConfirm() {
-  playSound(SOUNDS.seClick);
-  if (window.closeSkillConfirmModalReact) window.closeSkillConfirmModalReact();
-}
+/**
+ * リーダースキル確認モーダルから実行ボタンを押した時の処理
+ * dispatchBattleActionに依存するためbattle.jsに残す
+ */
 export function executeSkillFromConfirm() {
   // 実行直前にもう一度チェック
   if (
@@ -996,6 +853,19 @@ export async function waitPlayerLaneSelection(
     };
 
     window.finishPlacement = () => {
+      // チュートリアル中はまだ配置先がある場合ブロック
+      if (isTutorialMode()) {
+        const t = GameState.tutorial;
+        if (
+          (t.placementTargetLane !== undefined &&
+            t.placementTargetLane !== null) ||
+          (Array.isArray(t.placementTargetLanes) &&
+            t.placementTargetLanes.length > 0)
+        ) {
+          playSound(SOUNDS.seDamage);
+          return;
+        }
+      }
       playSound(SOUNDS.seClick);
       resolve(cleanUp());
     };
@@ -1013,6 +883,8 @@ export async function waitPlayerLaneSelection(
         playSound(SOUNDS.seDamage);
         return;
       }
+      // チュートリアルのレーン制限フィルタ
+      if (filterPlacementLaneClick(laneIndex)) return;
       playSound(SOUNDS.seClick);
 
       const newCard = GameState.placementToken;
@@ -1212,6 +1084,10 @@ export async function waitPlayerEnemyLaneSelection(
 
     window.handleEnemyLaneClick = (laneIndex) => {
       if (!allowEmpty && targetBoard[laneIndex] === null) return;
+      
+      // チュートリアルのレーン制限フィルタ（配置やターゲット選択用）
+      if (filterPlacementLaneClick && filterPlacementLaneClick(laneIndex)) return;
+
       playSound(SOUNDS.seClick);
 
       if (!GameState.targetSelectedLanes.includes(laneIndex)) {
@@ -1411,6 +1287,11 @@ export async function waitPlayerHandSelection(
     };
 
     window.finishHandSelection = () => {
+      // チュートリアル中: カードを選ばずに終了することをブロック
+      if (isTutorialMode() && GameState.discardSelectedIndices.length === 0) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
       playSound(SOUNDS.seClick);
       const indices = cleanUp();
 
@@ -2068,12 +1949,6 @@ export async function triggerSplitSkill(owner, lane, card) {
   await sleep(300);
 }
 
-export function updateDeckDisplay(_owner) {
-  // DOMによる deck-info の innerText 上書きは React のツリーを破壊するため削除。
-  // 代わりに React 側の再描画フックを呼び出します（PlayerArea / EnemyArea に反映される）
-  if (updateBattleUIHook) updateBattleUIHook();
-}
-
 export async function cleanupDestroyedCards(excludeCard = null) {
   let anyDestroyedAtAll = false;
   while (true) {
@@ -2356,6 +2231,22 @@ export async function startTurn(owner) {
   renderBoard(); // スタン状態の見た目更新のため描画
   await sleep(50); // Reactの再描画(DOM更新)を確実に行わせるための待機時間
 
+  // チュートリアルモード: 敵ターン開始前にメッセージ表示のため一時停止
+  if (
+    owner === 'red' &&
+    GameState.tutorial &&
+    GameState.tutorial.pauseBeforeEnemyTurn
+  ) {
+    GameState.tutorial.pauseBeforeEnemyTurn = false;
+    GameState.isProcessing = false;
+    if (updateBattleUIHook) updateBattleUIHook();
+    // チュートリアルフローからの再開通知を待つ
+    await new Promise((resolve) => {
+      GameState.tutorial.enemyTurnResumeResolver = resolve;
+    });
+    GameState.isProcessing = true;
+  }
+
   const c = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
   // ターン数のカウント
   GameState.turnCount++;
@@ -2380,6 +2271,22 @@ export async function startTurn(owner) {
         GameState.enemySP = Math.min(c.leaderSkill.cost, GameState.enemySP + 1);
     }
     updateSPOrbs(owner);
+  }
+
+  // チュートリアルモード: 攻撃フェーズ前にメッセージ表示のため一時停止
+  if (
+    owner === 'blue' &&
+    GameState.tutorial &&
+    GameState.tutorial.pauseBeforeCombat
+  ) {
+    GameState.tutorial.pauseBeforeCombat = false;
+    GameState.isProcessing = false;
+    if (updateBattleUIHook) updateBattleUIHook();
+    // チュートリアルフローからの再開通知を待つ
+    await new Promise((resolve) => {
+      GameState.tutorial.combatResumeResolver = resolve;
+    });
+    GameState.isProcessing = true;
   }
 
   let skipAttack = false;
@@ -2866,31 +2773,37 @@ function applyBattlePreset(preset) {
     if (cards) GameState.enemyDiscard = cards;
   }
 
-  // --- 場（3レーン。null = 空きレーン）---
-  if (preset.playerBoard) {
-    GameState.playerBoard = preset.playerBoard.map((id, i) => {
-      if (!id) return null;
-      const card = resolvePresetCard(id, 'blue', cardCounter++);
-      if (card) {
-        // 場に直接配置するカードは召喚時効果を再発動させない
-        card.skillTriggered = true;
-        card.stunTurns = 0;
-        card.stunAppliedThisTurn = false;
+  // --- 場（3レーン。null = 空きレーン、文字列ID または {id, imgUrl?, ...} オブジェクト）---
+  const resolveBoardEntry = (entry, owner) => {
+    if (!entry) return null;
+    // オブジェクト形式: {id: 'card_id', imgUrl?: '...'} で画像等を上書き可能
+    const cardId = typeof entry === 'string' ? entry : entry.id;
+    const overrides = typeof entry === 'object' ? entry : {};
+    const card = resolvePresetCard(cardId, owner, cardCounter++);
+    if (card) {
+      card.skillTriggered = true;
+      card.stunTurns = 0;
+      card.stunAppliedThisTurn = false;
+      // オブジェクト形式で指定された追加プロパティを上書き
+      if (overrides.imgUrl) card.imgUrl = overrides.imgUrl;
+      if (overrides.power !== undefined) {
+        card.power = overrides.power;
+        card.basePower = overrides.power;
+        card.currentPower = overrides.power;
       }
-      return card;
-    });
+      if (overrides.name) card.name = overrides.name;
+    }
+    return card;
+  };
+  if (preset.playerBoard) {
+    GameState.playerBoard = preset.playerBoard.map((e) =>
+      resolveBoardEntry(e, 'blue')
+    );
   }
   if (preset.enemyBoard) {
-    GameState.enemyBoard = preset.enemyBoard.map((id, i) => {
-      if (!id) return null;
-      const card = resolvePresetCard(id, 'red', cardCounter++);
-      if (card) {
-        card.skillTriggered = true;
-        card.stunTurns = 0;
-        card.stunAppliedThisTurn = false;
-      }
-      return card;
-    });
+    GameState.enemyBoard = preset.enemyBoard.map((e) =>
+      resolveBoardEntry(e, 'red')
+    );
   }
 
   // --- 封印レーン ---
@@ -2906,6 +2819,53 @@ function applyBattlePreset(preset) {
   updateDeckDisplay('red');
 
   console.log('[BattlePreset] プリセット適用完了');
+}
+
+/**
+ * チュートリアル用: 敵のスクリプト行動
+ * ターン数に応じて事前定義されたカードを出す
+ */
+async function executeTutorialEnemyTurn() {
+  // チュートリアルIDに応じた敵行動スクリプト
+  const tutorialId = GameState.tutorial?.id || 'basic_rules';
+
+  const enemyHandIndex = 0; // 常に手札の先頭を使用
+
+  if (GameState.enemyHand.length > 0 && tutorialId !== 'leader_oni') {
+    const card = GameState.enemyHand[0];
+    let targetLane = 1; // デフォルトは中央
+
+    if (tutorialId === 'basic_rules') {
+      // 基本ルール: 鉄亀→左、ゴブリン→中央
+      if (card.id === 'tortoise' || card.baseId === 'tortoise') {
+        targetLane = 0;
+      } else if (card.id === 'goblin' || card.baseId === 'goblin') {
+        targetLane = 1;
+      }
+    } else if (tutorialId === 'leader_dragon') {
+      // イグニス: ゴーレムを右に配置
+      targetLane = 2;
+    } else if (tutorialId === 'leader_knight') {
+      // セレスティア: ゴーレムを中央に配置
+      targetLane = 1;
+    } else if (tutorialId === 'leader_devilhunter') {
+      // マリア: ゴーレムを左に配置
+      targetLane = 0;
+    } else if (tutorialId === 'leader_witch') {
+      // クロエ: ゴーレムを中央に配置
+      targetLane = 1;
+    } else if (tutorialId === 'leader_priest') {
+      // ネフティ: ゴーレムを左に配置
+      targetLane = 0;
+    }
+
+    await playCard('red', enemyHandIndex, targetLane);
+    if (checkWinCondition()) return;
+    GameState.selectedCardIndex = null;
+    await sleep(500);
+  }
+
+  await endTurnLogic('red');
 }
 
 /**
@@ -2936,8 +2896,14 @@ export async function determineTurnOrder() {
     renderHand();
     updateHPBar();
     updateSPOrbs();
+    // BattleScreen側のisInitializingをfalseにする（TurnOrderOverlayをスキップするため）
+    if (window.onBattlePresetReady) window.onBattlePresetReady();
     await sleep(500);
     await startTurn(GameState.firstPlayer);
+    // チュートリアルモードの場合、最初のターン処理完了後にフローを開始
+    if (GameState.gameMode === 'tutorial' && isTutorialMode()) {
+      runTutorialFlow();
+    }
     return;
   }
 
@@ -3171,7 +3137,8 @@ export function endBattle() {
   if (
     GameState.lastBattleResult === 'win' &&
     typeof incrementStat === 'function' &&
-    GameState.gameMode !== 'practice'
+    GameState.gameMode !== 'practice' &&
+    GameState.gameMode !== 'tutorial'
   ) {
     incrementStat('freeBattleWins');
   }
@@ -3190,6 +3157,12 @@ export function endBattle() {
     }
 
     GameState.appState = 'post_dialogue'; // 全モード共通の設定
+
+    // チュートリアルモードの場合は、ダイアログをスキップしてチュートリアル終了処理へ
+    if (GameState.gameMode === 'tutorial') {
+      handleTutorialEnd();
+      return;
+    }
 
     // 勝敗に応じたダイアログのセット (全モード共通)
     if (GameState.lastBattleResult === 'win') {
@@ -3485,6 +3458,19 @@ export function endBattle() {
 }
 
 export function returnToTitle() {
+  // チュートリアルモードの場合はチュートリアル選択画面に戻る
+  if (GameState.gameMode === 'tutorial') {
+    showConfirmModal('チュートリアルを中断しますか？', () => {
+      stopAllBGM();
+      cleanupTutorial();
+      GameState.isBattleEnded = true;
+      GameState.isProcessing = false;
+      GameState.appState = 'title';
+      switchScreen('screen-tutorial-select');
+      playSound(AUDIO_INSTANCES.bgmTitle);
+    });
+    return;
+  }
   showConfirmModal('バトルを諦めますか？', () => {
     dispatchBattleAction({ type: 'retire', owner: 'blue' });
   });

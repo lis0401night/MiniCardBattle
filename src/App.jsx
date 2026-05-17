@@ -5,6 +5,8 @@ import TitleScreen from './pages/TitleScreen.jsx';
 import ModeSelectScreen from './pages/ModeSelectScreen.jsx';
 import SoloMenuScreen from './pages/SoloMenuScreen.jsx';
 import RulesScreen from './pages/RulesScreen.jsx';
+import BeginnerGuideScreen from './pages/BeginnerGuideScreen.jsx';
+import TutorialSelectScreen from './pages/TutorialSelectScreen.jsx';
 import OptionsScreen from './pages/OptionsScreen.jsx';
 import GalleryMenuScreen from './pages/GalleryMenuScreen.jsx';
 import EventMenuScreen from './pages/EventMenuScreen.jsx';
@@ -49,12 +51,14 @@ import {
 import { SOUNDS } from './utils/sounds.js';
 import {
   returnToTitle,
-  showEnemySkillConfirm,
-  showSkillConfirm,
   endPlayerTurn,
-  closeSkillConfirm,
   executeSkillFromConfirm,
 } from './hooks/battle.js';
+import {
+  showEnemySkillConfirm,
+  showSkillConfirm,
+  closeSkillConfirm,
+} from './hooks/uiBattle.js';
 import { loadDeck } from './hooks/deck.js';
 import { checkCollectionAchievements } from './utils/constants/achievements.js';
 import ContinueScreen from './pages/ContinueScreen.jsx';
@@ -141,6 +145,8 @@ export default function App() {
       {currentScreen === 'screen-mode-select' && <ModeSelectScreen />}
       {currentScreen === 'screen-solo-menu' && <SoloMenuScreen />}
       {currentScreen === 'screen-rules' && <RulesScreen />}
+      {currentScreen === 'screen-beginner-guide' && <BeginnerGuideScreen />}
+      {currentScreen === 'screen-tutorial-select' && <TutorialSelectScreen />}
       {currentScreen === 'screen-options' && <OptionsScreen />}
       {currentScreen === 'screen-gallery-menu' && <GalleryMenuScreen />}
       {currentScreen === 'screen-event-menu' && <EventMenuScreen />}

@@ -57,6 +57,16 @@ export function goToModeSelect() {
   switchScreen('screen-mode-select');
 }
 
+export function showBeginnerGuide() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-beginner-guide');
+}
+
+export function showTutorialSelect() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-tutorial-select');
+}
+
 export function showRules() {
   playSound(SOUNDS.seClick);
   rulesClickCount = 0; // 画面を開くたびにリセット

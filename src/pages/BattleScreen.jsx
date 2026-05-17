@@ -3,14 +3,14 @@ import {
   dispatchBattleAction,
   endPlayerTurn,
   returnToTitle,
-  showEnemySkillConfirm,
-  showSkillConfirm,
 } from '../hooks/battle.js';
 import { GameState } from '../hooks/gameState.js';
 import {
   setSummonAnimationHook,
   setUpdateBattleUIHook,
   setUpdateCardDetailHook,
+  showEnemySkillConfirm,
+  showSkillConfirm,
 } from '../hooks/uiBattle.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
 import {
@@ -27,6 +27,19 @@ import Hand from '../components/battle/Hand.jsx';
 import PlayerArea from '../components/battle/PlayerArea.jsx';
 import TurnOrderOverlay from '../components/battle/TurnOrderOverlay.jsx';
 import { openCardPreview } from '../hooks/uiGallery.js';
+import {
+  isTutorialMode,
+  filterHandCardClick,
+  filterLaneClick,
+  filterEndTurn,
+  filterLeaderSkill,
+  setTutorialMessageCallback,
+  advanceTutorialMessage,
+  notifyTutorialLongPress,
+  notifyTutorialHandLongPress,
+  filterFinishHandSelection,
+  filterFinishEnemyTargetSelection,
+} from '../hooks/tutorialEngine.js';
 
 export default function BattleScreen() {
   const [_renderVersion, setRenderVersion] = useState(0);
@@ -39,6 +52,9 @@ export default function BattleScreen() {
     card: null,
     owner: 'blue',
   });
+
+  // チュートリアルメッセージ表示用
+  const [tutorialMessage, setTutorialMessage] = useState(null);
 
   // 強制再描画フックの登録
   useEffect(() => {
@@ -59,10 +75,14 @@ export default function BattleScreen() {
       });
     });
 
+    // チュートリアルメッセージコールバック登録
+    setTutorialMessageCallback((msg) => setTutorialMessage(msg));
+
     return () => {
       setUpdateBattleUIHook(null);
       setUpdateCardDetailHook(null);
       setSummonAnimationHook(null);
+      setTutorialMessageCallback(null);
     };
   }, []);
 
@@ -75,8 +95,14 @@ export default function BattleScreen() {
       setStartTurnOrderAnim(true);
     };
 
+    // プリセット使用時（TurnOrderOverlayをスキップする場合）の初期化完了通知
+    window.onBattlePresetReady = () => {
+      setIsInitializing(false);
+    };
+
     return () => {
       window.startTurnOrderReact = null;
+      window.onBattlePresetReady = null;
     };
   }, []);
 
@@ -98,6 +124,11 @@ export default function BattleScreen() {
       typeof isTransitioning === 'undefined'
     )
       return;
+
+    // チュートリアル: レーンクリックのフィルタリング
+    if (isTutorialMode() && GameState.selectedCardIndex !== null && side === 'player') {
+      if (filterLaneClick(lane, side)) return;
+    }
     if (GameState.isPlacementMode) {
       if (side === 'player' && window.handlePlacementLaneClick)
         window.handlePlacementLaneClick(lane);
@@ -298,6 +329,9 @@ export default function BattleScreen() {
     )
       return;
 
+    // チュートリアル: 手札クリックのフィルタリング
+    if (isTutorialMode() && filterHandCardClick(idx)) return;
+
     playSound(SOUNDS.seClick);
 
     if (GameState.isDiscardingMode) {
@@ -329,8 +363,20 @@ export default function BattleScreen() {
     if (window.highlightLanes) window.highlightLanes();
   };
 
-  const handleCardLongPress = (card) => {
+  const handleCardLongPress = (card, side, lane) => {
     openCardPreview(card);
+    // チュートリアル: 場のカード長押し通知
+    if (isTutorialMode() && side !== undefined && lane !== undefined) {
+      notifyTutorialLongPress(side, lane);
+    }
+  };
+
+  // チュートリアル: 手札のカード長押し
+  const handleHandCardLongPress = (card) => {
+    openCardPreview(card);
+    if (isTutorialMode() && card) {
+      notifyTutorialHandLongPress(card.id, card.baseId);
+    }
   };
 
   const stageId =
@@ -435,7 +481,8 @@ export default function BattleScreen() {
         selectedBoardLaneIndex={GameState.selectedBoardLaneIndex}
         selectedBoardSide={GameState.selectedBoardSide}
         onCellClick={handleCellClick}
-        onCardLongPress={handleCardLongPress}
+        onCardLongPress={(card, lane) => handleCardLongPress(card, lane >= 3 ? 'enemy' : 'player', lane % 3)}
+        tutorialMode={isTutorialMode()}
       />
 
       <PlayerArea
@@ -452,6 +499,7 @@ export default function BattleScreen() {
         }
         onLeaderSkillClick={() => {
           playSound(SOUNDS.seClick);
+          if (isTutorialMode() && filterLeaderSkill()) return;
           showSkillConfirm();
         }}
       />
@@ -480,6 +528,7 @@ export default function BattleScreen() {
             onClick={(e) => {
               e.stopPropagation();
               playSound(SOUNDS.seClick);
+              if (isTutorialMode() && filterLeaderSkill()) return;
               showSkillConfirm();
             }}
           >
@@ -543,6 +592,7 @@ export default function BattleScreen() {
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
+                if (isTutorialMode() && filterFinishHandSelection()) return;
                 if (window.finishHandSelection) window.finishHandSelection();
               }}
             >
@@ -577,6 +627,7 @@ export default function BattleScreen() {
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
+                if (isTutorialMode() && filterFinishEnemyTargetSelection()) return;
                 if (window.finishEnemyTargetSelection)
                   window.finishEnemyTargetSelection();
               }}
@@ -625,6 +676,7 @@ export default function BattleScreen() {
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
+                if (isTutorialMode() && filterEndTurn()) return;
                 endPlayerTurn();
               }}
             >
@@ -640,7 +692,7 @@ export default function BattleScreen() {
         isDiscardingMode={GameState.isDiscardingMode}
         discardSelectedIndices={GameState.discardSelectedIndices}
         onCardClick={handleHandCardClick}
-        onCardLongPress={handleCardLongPress}
+        onCardLongPress={handleHandCardLongPress}
       />
 
       <TurnOrderOverlay
@@ -667,6 +719,29 @@ export default function BattleScreen() {
             >
               {summonAnim.card.power}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* チュートリアルメッセージUI */}
+      {tutorialMessage && (
+        <div
+          className="tutorial-overlay"
+          onClick={() => advanceTutorialMessage()}
+        >
+          <div className="tutorial-message-box">
+            <div className="tutorial-icon-wrapper">
+              <img src="assets/icons/icon_light.png" alt="" className="tutorial-icon" />
+            </div>
+            <div className="tutorial-text">
+              {tutorialMessage.split('\n').map((line, i) => (
+                <React.Fragment key={i}>
+                  {line}
+                  {i < tutorialMessage.split('\n').length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="tutorial-tap-hint">▼ タップで次へ</div>
           </div>
         </div>
       )}

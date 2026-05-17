@@ -28,13 +28,10 @@ import {
   hasActiveSkill,
   playCard,
   resolveOnPlaySkill,
-  showSpeechBubble,
-  updateDeckDisplay,
-  updateHPBar,
+  waitPlayerAlliedLaneSelection,
   waitPlayerDiscardSelection,
   waitPlayerDualDiscardSelection,
   waitPlayerEnemyLaneSelection,
-  waitPlayerAlliedLaneSelection,
   waitPlayerHandSelection,
   waitPlayerLaneSelection,
   waitSkillChoice,
@@ -42,7 +39,15 @@ import {
 import { applyActiveSkillLogic } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { getIsHost } from './multiplayer.js';
-import { playSummonAnimation, renderBoard, renderHand } from './uiBattle.js';
+import { showMessage, hideMessage } from './tutorialEngine.js';
+import {
+  playSummonAnimation,
+  renderBoard,
+  renderHand,
+  showSpeechBubble,
+  updateDeckDisplay,
+  updateHPBar,
+} from './uiBattle.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -58,7 +63,8 @@ export async function resolveActiveSkillEffect(
   skObj = null
 ) {
   // 沈黙状態ならスキルは発動しない（沈黙自身と装備スキルは除く）
-  if (hasSkill(c, 'oblivion') && skillId !== 'oblivion' && skillId !== 'equip') return;
+  if (hasSkill(c, 'oblivion') && skillId !== 'oblivion' && skillId !== 'equip')
+    return;
 
   const cEl = document.querySelector(
     `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
@@ -614,10 +620,12 @@ export async function resolveActiveSkillEffect(
 
     // 「増幅」パッシブによる選択数ボーナス（自分の場に amplify があれば+1、選択肢の数は超えない）
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const amplifyCount = myBoard.filter((bc) => bc && hasSkill(bc, 'amplify')).length;
+    const amplifyCount = myBoard.filter(
+      (bc) => bc && hasSkill(bc, 'amplify')
+    ).length;
     const adjustedValue = Math.min(
       (skillValue || 1) + amplifyCount,
-      choices ? choices.length : (skillValue || 1)
+      choices ? choices.length : skillValue || 1
     );
 
     let choiceArray;
@@ -957,6 +965,15 @@ export async function resolveActiveSkillEffect(
         clonePredefinedLanes = [];
       }
     }
+    if (
+      GameState.gameMode === 'tutorial' &&
+      GameState.tutorial?.id === 'leader_cthulhu'
+    ) {
+      await showMessage(
+        '「分身」スキルが発動したよ！\n分身には強化されたパワーが引き継がれる！\n左のレーンに分身を配置してね！'
+      );
+      hideMessage();
+    }
     const selectedLanes = await waitPlayerLaneSelection(
       count,
       o,
@@ -969,6 +986,12 @@ export async function resolveActiveSkillEffect(
     if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
     let events = [];
+    events.push({
+      type: 'skill',
+      skillId: 'clone',
+      targetLane: l,
+      owner: o,
+    });
     for (let i = 0; i < selectedLanes.length; i++) {
       const targetLane = selectedLanes[i];
       const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -2436,7 +2459,8 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'cull') {
     // 【選別】召喚時、相手は自分の場のカード1枚を選び墓地に送る
     const oppOwner = o === 'blue' ? 'red' : 'blue';
-    const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+    const oppBoard =
+      o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     const hasOppCard = oppBoard.some((bc) => bc !== null);
 
     if (hasOppCard) {
@@ -2447,13 +2471,17 @@ export async function resolveActiveSkillEffect(
           .map((bc, i) => (bc !== null ? i : -1))
           .filter((i) => i !== -1);
         occupiedLanes.sort((a, b) => {
-          const diff = (oppBoard[a].currentPower || 0) - (oppBoard[b].currentPower || 0);
+          const diff =
+            (oppBoard[a].currentPower || 0) - (oppBoard[b].currentPower || 0);
           if (diff !== 0) return diff;
           return a - b;
         });
         selectedLanes = [occupiedLanes[0]];
         // AIの思考時間を演出
         await sleep(800);
+        // React DOMコミットを確実にするため、再描画してから少し待つ
+        renderBoard();
+        await sleep(100);
       } else {
         // 相手がプレイヤーの場合：自分の場のカードを1枚選択させる
         selectedLanes = await waitPlayerAlliedLaneSelection(1, oppOwner);
@@ -2511,12 +2539,16 @@ export async function resolveActiveSkillEffect(
           .map((bc, i) => (bc !== null ? i : -1))
           .filter((i) => i !== -1);
         occupiedLanes.sort((a, b) => {
-          const diff = (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
+          const diff =
+            (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
           if (diff !== 0) return diff;
           return a - b;
         });
         selectedLanes = [occupiedLanes[0]];
         await sleep(800);
+        // React DOMコミットを確実にするため、再描画してから少し待つ
+        renderBoard();
+        await sleep(100);
       } else {
         // プレイヤーの場合：自分の場のカード1枚を選択させる
         selectedLanes = await waitPlayerAlliedLaneSelection(1, o);
@@ -2610,13 +2642,18 @@ export async function triggerStartTurnPassive(owner, lane) {
     // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
     if (sk.id === 'intercept') {
       const dmg = sk.value || 2;
-      const eB = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-      let maxL = -1, maxP = -1;
+      const eB =
+        owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+      let maxL = -1,
+        maxP = -1;
       for (let j = 0; j < 3; j++) {
         if (eB[j]) {
           const p = eB[j].currentPower;
           // 同値の場合は左（jが小さい方）を優先するため、> を使用
-          if (p > maxP) { maxP = p; maxL = j; }
+          if (p > maxP) {
+            maxP = p;
+            maxL = j;
+          }
         }
       }
       if (maxL !== -1) {
