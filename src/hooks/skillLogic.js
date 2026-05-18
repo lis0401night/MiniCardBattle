@@ -1543,18 +1543,40 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'bless') {
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-    let targetIndices = await waitPlayerHandSelection(
-      1,
-      o,
-      false,
-      '手札のカードを1枚選んでください'
-    );
+    let targetIndices = [];
+    if (o === 'blue' || GameState.gameMode === 'online') {
+      targetIndices = await waitPlayerHandSelection(
+        1,
+        o,
+        false,
+        '手札のカードを1枚選んでください'
+      );
+    } else {
+      let bestIdx = -1;
+      let maxPower = -1;
+      for (let i = 0; i < hand.length; i++) {
+        if (hand[i] !== null && !hand[i].isToken) {
+          if (bestIdx === -1 || (hand[i].power || 0) > maxPower) {
+            maxPower = hand[i].power || 0;
+            bestIdx = i;
+          }
+        }
+      }
+      if (bestIdx === -1) {
+        bestIdx = hand.findIndex((c) => c !== null);
+      }
+      if (bestIdx !== -1) {
+        targetIndices = [bestIdx];
+        await sleep(600);
+      }
+    }
     if (targetIndices && targetIndices.length > 0) {
       const idx = targetIndices[0];
       const card = hand[idx];
       card.power = (card.power || 0) + (skillValue || 1);
       card.basePower = (card.basePower || 0) + (skillValue || 1);
       card.currentPower = (card.currentPower || 0) + (skillValue || 1);
+      if (cEl) createDamagePopup(cEl, '祝福', '#facc15');
       playSound(SOUNDS.seSkill);
       renderHand();
       await sleep(300);

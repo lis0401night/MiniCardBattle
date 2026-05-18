@@ -1065,6 +1065,14 @@ export function applyActiveSkillLogic(
           bestCard.power = (bestCard.power || 0) + blessVal;
           bestCard.currentPower = (bestCard.currentPower || 0) + blessVal;
           bestCard.basePower = (bestCard.basePower || 0) + blessVal;
+          if (events) {
+            events.push({
+              type: 'skill_popup',
+              side: owner,
+              lane: l,
+              skillName: '祝福',
+            });
+          }
         }
       }
       break;

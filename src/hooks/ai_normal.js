@@ -1258,6 +1258,10 @@ export function getBestSimulatedMove() {
 
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
           skills.forEach((sk) => {
+            if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
+              simState.actionUtilityBonus =
+                (simState.actionUtilityBonus || 0) + (AI_SKILL_UTILITY[sk.id] || 0);
+            }
             // 【重要】アクションキューで個別に処理されるターゲット選択系スキルはここでは実行しない。
             // そうしないと、召喚したレーンの自分自身を上書きしてしまう（墓荒らし3 + デスロード2 = 5 等）バグが起きる。
             // resurrect/salvage は専用ノードとして actionQueue に積まれるため、ここで呼ぶと discard が二重消費される。
@@ -1970,7 +1974,7 @@ export function evaluateSimState(state) {
   let s6 = state.enemyHP * 100;
 
   // スロット7: ユーティリティ価値
-  let s7 = utilityScore * 10;
+  let s7 = (utilityScore + (state.actionUtilityBonus || 0)) * 10;
 
   // スロット8: タイブレーク (生存枚数)
   // 自分の枚数が少ないほど高評価（装備一点集中・生贄の高打点を評価）
