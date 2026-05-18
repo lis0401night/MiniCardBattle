@@ -329,7 +329,6 @@ export function getBestSimulatedMove() {
                   'split',
                   'puppet',
                   'leap',
-                  'force',
                 ].includes(card.skill)
               ) {
                 effectiveSkills.push({
@@ -353,9 +352,7 @@ export function getBestSimulatedMove() {
                       'wall_create',
                       'split',
                       'puppet',
-                      'choice',
                       'leap',
-                      'force',
                     ].includes(s.id)
                   )
                     effectiveSkills.push(s);
