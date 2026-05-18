@@ -830,84 +830,54 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'crush': {
-      const crCount = val || 1;
-      const crushTargetsEngine = [];
+      const targets = [];
       for (let j = 0; j < 3; j++) {
         if (eB[j] && (hasSkill(eB[j], 'defender') || eB[j].stunTurns > 0)) {
-          crushTargetsEngine.push({ lane: j, targetCard: eB[j] });
+          targets.push({ side: oppOwner, lane: j, card: eB[j] });
+        }
+        if (oB[j] && (hasSkill(oB[j], 'defender') || oB[j].stunTurns > 0)) {
+          targets.push({ side: owner, lane: j, card: oB[j] });
         }
       }
-      for (let i = 0; i < Math.min(crCount, crushTargetsEngine.length); i++) {
-        const tr = crushTargetsEngine[i];
-        tr.targetCard.currentPower = 0;
+      for (let i = 0; i < targets.length; i++) {
+        const tr = targets[i];
+        tr.card.currentPower = 0;
+        if (tr.side === oppOwner) {
+          eB[tr.lane] = null;
+        } else {
+          oB[tr.lane] = null;
+        }
+      }
+      if (targets.length > 0 && events) {
         events.push({
-          type: 'destroy_card',
-          side: oppOwner,
-          lane: tr.lane,
-          source: 'crush',
+          type: 'destroy_cards',
+          targets: targets,
         });
-        eB[tr.lane] = null;
       }
       break;
     }
     case 'dispel': {
-      const dpVal = val || 1;
-      const dispelTargetsEngine = [];
-
-      if (simulatedTokenLanes) {
-        for (let i = 0; i < Math.min(dpVal, simulatedTokenLanes.length); i++) {
-          const lIdx = simulatedTokenLanes[i];
-          if (lIdx !== null && eB[lIdx]) {
-            const tgtCard = eB[lIdx];
-            const isEquipHost =
-              tgtCard.equippedCards && tgtCard.equippedCards.length > 0;
-            const isEquipItself = hasSkill(tgtCard, 'equip');
-            if (isEquipHost || isEquipItself) {
-              dispelTargetsEngine.push({
-                lane: lIdx,
-                targetCard: tgtCard,
-                isHost: isEquipHost,
-                isSelf: isEquipItself,
-              });
-            }
-          }
-        }
-        simulatedTokenLanes.splice(0, dpVal); // 消費
-      } else {
+      const targets = [];
+      const gatherDispelTargets = (board, side) => {
         for (let j = 0; j < 3; j++) {
-          if (eB[j]) {
-            const isEquipHost =
-              eB[j].equippedCards && eB[j].equippedCards.length > 0;
-            const isEquipItself = hasSkill(eB[j], 'equip');
+          if (board[j]) {
+            const isEquipHost = board[j].equippedCards && board[j].equippedCards.length > 0;
+            const isEquipItself = hasSkill(board[j], 'equip');
             if (isEquipHost || isEquipItself) {
-              let eqScore = isEquipItself ? 50 : 0;
-              if (isEquipHost)
-                eqScore += eB[j].equippedCards.reduce(
-                  (sum, eq) => sum + (eq.power || 0),
-                  0
-                );
-              dispelTargetsEngine.push({
-                lane: j,
-                score: eqScore,
-                targetCard: eB[j],
-                isHost: isEquipHost,
-                isSelf: isEquipItself,
-              });
+              targets.push({ lane: j, side: side, targetCard: board[j], isHost: isEquipHost, isSelf: isEquipItself });
             }
           }
         }
-        dispelTargetsEngine.sort(
-          (a, b) => b.score - a.score || a.lane - b.lane
-        );
-        if (dispelTargetsEngine.length > dpVal)
-          dispelTargetsEngine.length = dpVal;
-      }
+      };
+      gatherDispelTargets(eB, oppOwner);
+      gatherDispelTargets(oB, owner);
 
-      for (let i = 0; i < dispelTargetsEngine.length; i++) {
-        const maxL = dispelTargetsEngine[i].lane;
-        const tgt = dispelTargetsEngine[i].targetCard;
+      const killTargets = [];
+      for (let i = 0; i < targets.length; i++) {
+        const tr = targets[i];
+        const tgt = tr.targetCard;
 
-        if (dispelTargetsEngine[i].isHost) {
+        if (tr.isHost) {
           let totalLoss = tgt.equippedCards.reduce(
             (sum, eq) => sum + (eq.power || 0),
             0
@@ -928,28 +898,36 @@ export function applyActiveSkillLogic(
           tgt.currentPower -= totalLoss;
           tgt.basePower -= totalLoss;
           tgt.equippedCards = [];
-          events.push({
-            type: 'dispel_equip',
-            side: oppOwner,
-            lane: maxL,
-            amount: totalLoss,
-            source: 'dispel',
-          });
+          if (events) {
+            events.push({
+              type: 'dispel_equip',
+              side: tr.side,
+              lane: tr.lane,
+              amount: totalLoss,
+              source: 'dispel',
+            });
+          }
         }
 
-        if (dispelTargetsEngine[i].isSelf) {
+        if (tr.isSelf) {
           tgt.currentPower = 0;
         }
 
         if (tgt.currentPower <= 0) {
-          events.push({
-            type: 'destroy_card',
-            side: oppOwner,
-            lane: maxL,
-            source: 'dispel_kill',
-          });
-          eB[maxL] = null;
+          killTargets.push({ side: tr.side, lane: tr.lane, card: tgt });
+          if (tr.side === oppOwner) {
+            eB[tr.lane] = null;
+          } else {
+            oB[tr.lane] = null;
+          }
         }
+      }
+
+      if (killTargets.length > 0 && events) {
+        events.push({
+          type: 'destroy_cards',
+          targets: killTargets,
+        });
       }
       break;
     }

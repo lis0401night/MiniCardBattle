@@ -213,8 +213,6 @@ export function getBestSimulatedMove() {
             skillsToGather.forEach((sk) => {
               if (
                 [
-                  'crush',
-                  'dispel',
                   'snipe',
                   'artillery',
                   'seal',
@@ -241,8 +239,6 @@ export function getBestSimulatedMove() {
               if (!sk) return;
               if (
                 [
-                  'crush',
-                  'dispel',
                   'snipe',
                   'artillery',
                   'seal',

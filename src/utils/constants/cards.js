@@ -133,7 +133,7 @@ export const CARD_MASTER = [
     id: 'tortoise',
     name: '鉄亀',
     rarity: 1,
-    power: 3,
+    power: 4,
     skills: [{ id: 'sturdy' }],
     voiceCategory: 'insect',
     flavor:
@@ -749,8 +749,8 @@ export const CARD_MASTER = [
     id: 'crusher',
     name: '豪腕の破壊者',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'crush', value: 1 }],
+    power: 5,
+    skills: [{ id: 'crush' }],
     voiceCategory: 'human_male_ikemen',
     flavor:
       '巨大な武器を力任せに振るい、立ち塞がる障害物や罠を淡々と壊して回る頼れる力仕事の専門家。',
@@ -869,8 +869,8 @@ export const CARD_MASTER = [
     id: 'shaman',
     name: '樫族のシャーマン',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'dispel', value: 1 }],
+    power: 5,
+    skills: [{ id: 'dispel' }],
     voiceCategory: 'human_male_old',
     flavor:
       '彼の呪術は敵の武装を縛り、そして砕く。千年の時を生きる老エルフの瞳には、人の造りし武具など児戯に等しい。',
@@ -1081,7 +1081,7 @@ export const CARD_MASTER = [
     id: 'gargoyle',
     name: 'ガーゴイル',
     rarity: 2,
-    power: 5,
+    power: 6,
     skills: [{ id: 'sturdy' }, { id: 'standby', value: 2 }],
     voiceCategory: 'stone',
     flavor:
@@ -1531,11 +1531,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 3,
     skills: [{ id: 'choice', value: 1 }],
-    choices: [
-      { id: 'dispel', value: 1 },
-      { id: 'crush', value: 1 },
-      { id: 'salvage', value: 1 },
-    ],
+    choices: [{ id: 'dispel' }, { id: 'crush' }, { id: 'salvage', value: 1 }],
     voiceCategory: 'human_female_cool',
     flavor:
       '複雑な魔法陣の解除から力任せの破壊工作、そして遺物の回収まで。彼女の淀みない手口の前では、いかなる障害も意味を成さない。',
@@ -1706,7 +1702,7 @@ export const CARD_MASTER = [
     id: 'witch',
     name: '闇の森の魔女',
     rarity: 3,
-    power: 4,
+    power: 3,
     skills: [
       { id: 'choice', value: 1 },
       { id: 'choice', value: 1, choiceGroup: 2 },
@@ -1714,14 +1710,10 @@ export const CARD_MASTER = [
     choices: [
       { id: 'convert', value: 2 },
       { id: 'sacrifice', value: 2 },
-      { id: 'berserk', value: 2 },
-      { id: 'growth', value: -1 },
     ],
     choices2: [
-      { id: 'draw', value: 2 },
-      { id: 'heal', value: 2 },
-      { id: 'spread', value: 1 },
-      { id: 'soul_bind', value: 2 },
+      { id: 'spread', value: 2 },
+      { id: 'lone_wolf', value: 2 },
     ],
     voiceCategory: 'human_female_assassin',
     flavor:
@@ -1948,9 +1940,8 @@ export const CARD_MASTER = [
     id: 'queen',
     name: '嫉妬の女王',
     rarity: 3,
-    power: 5,
-    skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
-    choices: [{ id: 'draw', value: 3 }, { id: 'deadly' }],
+    power: 4,
+    skills: [{ id: 'legendary' }, { id: 'cull' }],
     voiceCategory: 'human_female_cool',
     flavor:
       '”世界で一番美しいのは誰？”——その問いに答える者がいなくなるまで、ただ愚か者を狩り尽くすのみ。',
@@ -2343,7 +2334,7 @@ export const CARD_MASTER = [
     id: 'goddess',
     name: '勝利の女神',
     rarity: 4,
-    power: 5,
+    power: 6,
     skills: [{ id: 'legendary' }, { id: 'possession' }, { id: 'absorb' }],
     voiceCategory: 'human_female_cool',
     flavor:
@@ -2529,9 +2520,12 @@ export const CARD_MASTER = [
     id: 'cleopatra',
     name: '最後の女王',
     rarity: 4,
-    power: 4,
+    power: 5,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
-    choices: [{ id: 'burial', value: 5 }, { id: 'cull' }],
+    choices: [
+      { id: 'burial', value: 4 },
+      { id: 'toxic', value: 3 },
+    ],
     voiceCategory: 'human_female_cool',
     flavor:
       '傾きゆく帝国を、美貌と知略で支え続けた統治者。彼女が下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へ消えた。',

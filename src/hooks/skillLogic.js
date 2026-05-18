@@ -1173,169 +1173,172 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'dispel') {
     playSound(SOUNDS.seSkillBind); // Wait, dispel sound doesn't exist, we use generic or bind sound.
-    const tgtSide = o === 'blue' ? 'red' : 'blue';
-    const eB = tgtSide === 'red' ? GameState.enemyBoard : GameState.playerBoard;
-    const eD =
-      tgtSide === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
-    const tCount = skillValue || 1;
-
-    let tLanes = await waitPlayerEnemyLaneSelection(
-      tCount,
-      o,
-      true,
-      `相手のカードを${tCount}枚選んでください`
-    );
-    if (tLanes && tLanes.length > 0) {
-      for (let targetLane of tLanes) {
-        const targetCard = eB[targetLane];
-        if (!targetCard) continue;
-
-        const hasEquipSkill = hasSkill(targetCard, 'equip');
-        const hasEquippedItems =
-          targetCard.equippedCards && targetCard.equippedCards.length > 0;
-
-        if (hasEquipSkill || hasEquippedItems) {
-          let totalPowerLoss = 0;
-
-          if (hasEquippedItems) {
-            // 装備カードを全て破壊（墓地に送る）
-            for (const eqCard of targetCard.equippedCards) {
-              totalPowerLoss += eqCard.power;
-
-              const equipSkills = [];
-              if (
-                eqCard.skill &&
-                eqCard.skill !== 'none' &&
-                eqCard.skill !== 'equip'
-              ) {
-                equipSkills.push({
-                  id: eqCard.skill,
-                  value: eqCard.skillValue,
-                });
-              }
-              if (eqCard.skills) {
-                eqCard.skills.forEach((s) => {
-                  if (s.id !== 'equip') equipSkills.push(s);
-                });
-              }
-              unmergeCardSkills(targetCard, equipSkills);
-
-              eD.push(eqCard); // 相手の墓地へ
-            }
-          }
-
-          // アニメーションと表示更新
-          const tgtEl = document.querySelector(
-            `#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`
-          );
-          if (tgtEl) {
-            tgtEl.classList.add('anim-shake');
-            createDamagePopup(
-              tgtEl,
-              hasEquipSkill ? '破壊' : `-${totalPowerLoss} 解除`,
-              '#ef4444'
-            );
-          }
-
-          if (hasEquippedItems) {
-            targetCard.power -= totalPowerLoss;
-            targetCard.currentPower -= totalPowerLoss;
-            targetCard.basePower -= totalPowerLoss;
-            targetCard.equippedCards = [];
-          }
-
-          if (hasEquipSkill) {
-            targetCard.currentPower = 0; // 装備スキルを持つカード本体を即死させる
-          }
-
-          if (targetCard.currentPower <= 0) {
-            // パワーが0以下になった場合や即死処理が入った場合は破壊
-            if (tgtEl) {
-              tgtEl.classList.add('anim-shake');
-              tgtEl.classList.add('anim-card-destroy');
-            }
-            if (targetCard.voiceCategory) {
-              playCardVoice(targetCard.voiceCategory, 'death');
-            }
-            playSound(SOUNDS.seDestroy);
-            await sleep(400); // 破壊演出待ち
-            if (!(await discardCard(tgtSide, targetCard, targetLane, true)))
-              eB[targetLane] = null;
-          }
-        } else {
-          const tgtEl = document.querySelector(
-            `#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`
-          );
-          if (tgtEl) {
-            createDamagePopup(tgtEl, 'NO TARGET', '#94a3b8');
+    const targets = [];
+    const checkTargets = (board, side) => {
+      for (let i = 0; i < 3; i++) {
+        const card = board[i];
+        if (card) {
+          const hasEquipSkill = hasSkill(card, 'equip');
+          const hasEquippedItems = card.equippedCards && card.equippedCards.length > 0;
+          if (hasEquipSkill || hasEquippedItems) {
+            targets.push({ lane: i, card, side, isSelf: hasEquipSkill, isHost: hasEquippedItems });
           }
         }
       }
-      renderBoard();
-    }
-    await sleep(500);
-    if (tLanes && tLanes.length > 0) {
-      for (let targetLane of tLanes) {
+    };
+    checkTargets(GameState.playerBoard, 'blue');
+    checkTargets(GameState.enemyBoard, 'red');
+
+    if (targets.length > 0) {
+      let anyValidTarget = false;
+      let playedVoices = new Set();
+
+      for (let t of targets) {
+        const targetCard = t.card;
+        const eD = t.side === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
+        let totalPowerLoss = 0;
+
+        if (t.isHost) {
+          // 装備カードを全て破壊（墓地に送る）
+          for (const eqCard of targetCard.equippedCards) {
+            totalPowerLoss += eqCard.power || 0;
+
+            const equipSkills = [];
+            if (eqCard.skill && eqCard.skill !== 'none' && eqCard.skill !== 'equip') {
+              equipSkills.push({ id: eqCard.skill, value: eqCard.skillValue });
+            }
+            if (eqCard.skills) {
+              eqCard.skills.forEach((s) => {
+                if (s.id !== 'equip') equipSkills.push(s);
+              });
+            }
+            unmergeCardSkills(targetCard, equipSkills);
+            eD.push(eqCard);
+          }
+        }
+
+        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
         const tgtEl = document.querySelector(
-          `#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`
+          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
         );
-        if (tgtEl) tgtEl.classList.remove('anim-shake');
+
+        if (tgtEl) {
+          tgtEl.classList.add('anim-shake');
+        }
+
+        if (t.isHost) {
+          if (tgtEl) {
+            createDamagePopup(tgtEl, `-${totalPowerLoss} 解除`, '#94a3b8');
+          }
+          targetCard.equippedCards = [];
+          targetCard.power -= totalPowerLoss;
+          targetCard.currentPower -= totalPowerLoss;
+          targetCard.basePower -= totalPowerLoss;
+        }
+
+        if (t.isSelf) {
+          targetCard.currentPower = 0;
+        }
+
+        if (targetCard.currentPower <= 0) {
+          if (tgtEl) {
+            tgtEl.classList.add('anim-card-destroy');
+            if (!t.isHost) {
+               createDamagePopup(tgtEl, '破壊', '#ef4444');
+            }
+          }
+          if (targetCard.voiceCategory && !playedVoices.has(targetCard.voiceCategory)) {
+            playCardVoice(targetCard.voiceCategory, 'death');
+            playedVoices.add(targetCard.voiceCategory);
+          }
+          anyValidTarget = true;
+        }
+      }
+
+      if (anyValidTarget) {
+        playSound(SOUNDS.seDestroy);
+        await sleep(400); // 破壊演出待ち
+      } else {
+        await sleep(400); // 解除のみの演出待ち
+      }
+
+      for (let t of targets) {
+        const targetCard = t.card;
+        if (targetCard.currentPower <= 0) {
+          const eB = t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+          if (!(await discardCard(t.side, targetCard, t.lane, true))) {
+            eB[t.lane] = null;
+          }
+        }
+      }
+
+      renderBoard();
+      await sleep(500);
+
+      for (let t of targets) {
+        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
+        const tgtEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
+        );
+        if (tgtEl) {
+          tgtEl.classList.remove('anim-shake');
+          tgtEl.classList.remove('anim-card-destroy');
+        }
       }
     }
   } else if (skillId === 'crush') {
-    const tgtSide = o === 'blue' ? 'red' : 'blue';
-    const eB = tgtSide === 'red' ? GameState.enemyBoard : GameState.playerBoard;
-    const eD =
-      tgtSide === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
-    const tCount = skillValue || 1;
-
-    let tLanes = await waitPlayerEnemyLaneSelection(
-      tCount,
-      o,
-      true,
-      `相手のカードを${tCount}枚選んでください`
-    );
-    if (tLanes && tLanes.length > 0) {
-      for (let targetLane of tLanes) {
-        const targetCard = eB[targetLane];
-        if (!targetCard) continue;
-
-        // 防御を持っているかチェック
-        const hasDefender =
-          hasSkill(targetCard, 'defender') || targetCard.stunTurns > 0;
-        const tgtEl = document.querySelector(
-          `#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`
-        );
-
-        if (hasDefender) {
-          if (tgtEl) {
-            tgtEl.classList.add('anim-shake');
-            tgtEl.classList.add('anim-card-destroy');
-            createDamagePopup(tgtEl, '破壊', '#ef4444');
-          }
-          if (targetCard.voiceCategory) {
-            playCardVoice(targetCard.voiceCategory, 'death');
-          }
-          playSound(SOUNDS.seDestroy);
-
-          await sleep(400); // 破壊演出待ち
-          if (!(await discardCard(tgtSide, targetCard, targetLane, true)))
-            eB[targetLane] = null;
-        } else {
-          if (tgtEl) {
-            createDamagePopup(tgtEl, 'NO TARGET', '#94a3b8');
-          }
+    const oppSide = o === 'blue' ? 'red' : 'blue';
+    const targets = [];
+    const checkTargets = (board, side) => {
+      for (let i = 0; i < 3; i++) {
+        if (board[i] && (hasSkill(board[i], 'defender') || board[i].stunTurns > 0)) {
+          targets.push({ lane: i, card: board[i], side });
         }
       }
-      renderBoard();
-    }
-    await sleep(500);
-    if (tLanes && tLanes.length > 0) {
-      for (let targetLane of tLanes) {
+    };
+    checkTargets(GameState.playerBoard, 'blue');
+    checkTargets(GameState.enemyBoard, 'red');
+
+    if (targets.length > 0) {
+      let anyValidTarget = false;
+      let playedVoices = new Set();
+      for (let t of targets) {
+        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
         const tgtEl = document.querySelector(
-          `#${tgtSide === 'red' ? 'enemy' : 'player'}-lanes .cell[data-lane="${targetLane}"] .card`
+          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
         );
-        if (tgtEl) tgtEl.classList.remove('anim-shake');
+        if (tgtEl) {
+          tgtEl.classList.add('anim-shake');
+          tgtEl.classList.add('anim-card-destroy');
+          createDamagePopup(tgtEl, '破壊', '#ef4444');
+        }
+        if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
+          playCardVoice(t.card.voiceCategory, 'death');
+          playedVoices.add(t.card.voiceCategory);
+        }
+        anyValidTarget = true;
+      }
+
+      if (anyValidTarget) {
+        playSound(SOUNDS.seDestroy);
+        await sleep(400); // 破壊演出待ち
+        for (let t of targets) {
+          const eB = t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+          if (!(await discardCard(t.side, t.card, t.lane, true)))
+            eB[t.lane] = null;
+        }
+        renderBoard();
+        await sleep(500);
+        for (let t of targets) {
+          const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
+          const tgtEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
+          );
+          if (tgtEl) {
+            tgtEl.classList.remove('anim-shake');
+            tgtEl.classList.remove('anim-card-destroy');
+          }
+        }
       }
     }
   } else if (skillId === 'adversity') {
