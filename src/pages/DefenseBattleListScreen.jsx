@@ -176,7 +176,11 @@ export default function DefenseBattleListScreen() {
                         className="banner-icon"
                         alt=""
                       />
-                      <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+                      <img
+                        src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`}
+                        className="banner-icon-frame"
+                        alt="frame"
+                      />
                     </div>
                     <span
                       className="banner-text"

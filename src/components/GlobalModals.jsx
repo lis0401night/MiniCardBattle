@@ -72,6 +72,11 @@ export default function GlobalModals() {
     setCardPreviewData(null);
   };
 
+  const closeEnemyDeckModal = () => {
+    playSound?.(SOUNDS?.seClick);
+    setEnemyDeckData(null);
+  };
+
   useEffect(() => {
     setShowConfirmModalHook((message, onConfirm, onCancel, isAlert = false) => {
       playSound?.(SOUNDS?.seClick);
@@ -100,13 +105,14 @@ export default function GlobalModals() {
 
     window.showEnemyDeckModal = (deck, title, leaderSkill = null) => {
       playSound?.(SOUNDS?.seClick);
-      setEnemyDeckData({ deck: deck || [], title: title || '敵デッキ確認', leaderSkill });
+      setEnemyDeckData({
+        deck: deck || [],
+        title: title || '敵デッキ確認',
+        leaderSkill,
+      });
     };
 
-    setCloseEnemyDeckModalHook(() => {
-      playSound?.(SOUNDS?.seClick);
-      setEnemyDeckData(null);
-    });
+    setCloseEnemyDeckModalHook(closeEnemyDeckModal);
 
     setOpenCardPreviewHook((card) => {
       playSound?.(SOUNDS?.seClick);
@@ -134,7 +140,11 @@ export default function GlobalModals() {
       const card = CARD_MASTER?.find((c) => c.id === cardId);
       if (card) {
         playSound?.(SOUNDS?.seSkill);
-        setAcquisitionData({ type: 'premium', card: { ...card, isPremium: true }, canClose: false });
+        setAcquisitionData({
+          type: 'premium',
+          card: { ...card, isPremium: true },
+          canClose: false,
+        });
         setTimeout(
           () =>
             setAcquisitionData((prev) =>
@@ -727,8 +737,9 @@ export default function GlobalModals() {
               enemyDeckData.title === 'デッキ確認' ||
               enemyDeckData.title === '所持カード確認'
             ) &&
-              (enemyDeckData.leaderSkill || (GameState.enemyConfig &&
-              GameState.enemyConfig.leaderSkill)) && (
+              (enemyDeckData.leaderSkill ||
+                (GameState.enemyConfig &&
+                  GameState.enemyConfig.leaderSkill)) && (
                 <button
                   className="btn"
                   style={{
@@ -743,7 +754,9 @@ export default function GlobalModals() {
                     playSound?.(SOUNDS?.seClick);
                     if (window.showSkillConfirmModalReact) {
                       window.showSkillConfirmModalReact({
-                        skill: enemyDeckData.leaderSkill || GameState.enemyConfig.leaderSkill,
+                        skill:
+                          enemyDeckData.leaderSkill ||
+                          GameState.enemyConfig.leaderSkill,
                         statusText: '',
                         color: '#94a3b8',
                         canExecute: false,
@@ -2501,7 +2514,7 @@ export default function GlobalModals() {
                     }}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
-                      
+
                       let result = null;
                       const isMulti = discardSelectionData.maxChoices > 1;
                       if (isMulti) {
@@ -2516,7 +2529,11 @@ export default function GlobalModals() {
                       }
 
                       // チュートリアルのフィルタリング
-                      if (!isMulti && result && filterDiscardSelectionSubmit(result.baseId || result.id)) {
+                      if (
+                        !isMulti &&
+                        result &&
+                        filterDiscardSelectionSubmit(result.baseId || result.id)
+                      ) {
                         return;
                       }
 
@@ -2543,7 +2560,7 @@ export default function GlobalModals() {
                   onClick={() => {
                     playSound?.(SOUNDS?.seClick);
                     if (filterDiscardSelectionSubmit(null)) return;
-                    
+
                     const cb = discardSelectionData.onSelect;
                     setDiscardSelectionData(null);
                     if (cb) cb(null);

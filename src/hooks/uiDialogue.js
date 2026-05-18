@@ -65,12 +65,15 @@ export function startNextBattleSequence() {
   }
   GameState.appState = 'pre_dialogue';
   // ストーリーモードではdialogue.introのみ使用（preBattleLineは連結しない）
-  let introText = getDialogue(
-    GameState.enemyConfig,
-    GameState.playerConfig,
-    'intro',
-    'enemy'
-  ) || GameState.enemyConfig.preBattleLine || '・・・・';
+  let introText =
+    getDialogue(
+      GameState.enemyConfig,
+      GameState.playerConfig,
+      'intro',
+      'enemy'
+    ) ||
+    GameState.enemyConfig.preBattleLine ||
+    '・・・・';
   if (GameState.enemyConfig.isShadow) introText = '・・・・';
   GameState.dialogueQueue = [
     { speaker: 'enemy', text: introText },
@@ -147,9 +150,9 @@ export function setupDialogueScreen() {
   }
 
   let pLeftImg =
-    getSkinImage(GameState.playerConfig, playerSkinId, 'image') || 
+    getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
     getCardImgUrl(GameState.playerConfig);
-    
+
   if (GameState.gameMode === 'campaign') {
     pLeftImg = null; // キャンペーンモードでは主人公画像を表示しない
   }
@@ -159,10 +162,14 @@ export function setupDialogueScreen() {
     GameState.enemyConfig.image ||
     getCardImgUrl(GameState.enemyConfig);
 
-    const isCenter =
+  const isCenter =
     GameState.appState === 'story_intro' ||
     GameState.appState === 'inter_battle_story' ||
-    (GameState.gameMode === 'tournament' && (GameState.appState === 'pre_dialogue' || GameState.appState === 'venue_dialogue' || GameState.appState === 'tournament_win_dialogue' || GameState.appState === 'post_tournament_match'));
+    (GameState.gameMode === 'tournament' &&
+      (GameState.appState === 'pre_dialogue' ||
+        GameState.appState === 'venue_dialogue' ||
+        GameState.appState === 'tournament_win_dialogue' ||
+        GameState.appState === 'post_tournament_match'));
 
   if (GameState.appState === 'post_dialogue') {
     if (GameState.lastBattleResult === 'win') {
@@ -300,7 +307,7 @@ export async function showNextDialogue(force = false) {
         getSkinImage(charConfig, enemySkinId, 'image') ||
         charConfig.image ||
         getCardImgUrl(charConfig);
-      
+
       if (window.currentDialogueData.centerMode) {
         window.currentDialogueData.leftImage = newImg;
       } else {

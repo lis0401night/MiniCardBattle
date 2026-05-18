@@ -1759,7 +1759,8 @@ export function applyActiveSkillLogic(
         const targetLane = occupiedLanes[0];
         const targetCard = eB[targetLane];
         if (targetCard) {
-          const oppDiscard = oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
+          const oppDiscard =
+            oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
           oppDiscard.push(targetCard);
           eB[targetLane] = null;
           events.push({
@@ -1785,7 +1786,8 @@ export function applyActiveSkillLogic(
         const execLane = myOccupiedLanes[0];
         const execCard = b[execLane];
         if (execCard) {
-          const myDiscard = owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+          const myDiscard =
+            owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
           myDiscard.push(execCard);
           b[execLane] = null;
           events.push({
@@ -3427,7 +3429,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       if (healAmt > 0) {
         // 【重要】defHPに加算する。state.xxxHPを直接変更するとdefHP書き戻しで上書きされる。
         defHP = Math.min(
-          (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) || 20,
+          (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) ||
+            20,
           defHP + healAmt
         );
         events.push({
@@ -3798,7 +3801,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       if (healAmt > 0) {
         // 【重要】defHPに加算する。state.xxxHPを直接変更するとL3819のdefHP書き戻しで上書きされる。
         defHP = Math.min(
-          (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) || 20,
+          (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) ||
+            20,
           defHP + healAmt
         );
         events.push({
@@ -3949,12 +3953,16 @@ export function applyPassiveSkillLogic(
       const dmg = getSkillValue(c, 'intercept') || 2;
       const eB = side === 'blue' ? state.enemyBoard : state.playerBoard;
       const oppSide = side === 'blue' ? 'red' : 'blue';
-      let maxL = -1, maxP = -1;
+      let maxL = -1,
+        maxP = -1;
       for (let j = 0; j < 3; j++) {
         if (eB[j]) {
           const p = eB[j].currentPower;
           // 同値の場合は左（jが小さい方）を優先するため、> を使用
-          if (p > maxP) { maxP = p; maxL = j; }
+          if (p > maxP) {
+            maxP = p;
+            maxL = j;
+          }
         }
       }
       if (maxL !== -1) {
@@ -4048,12 +4056,12 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
 
       const randIndex = Math.floor(getSeededRandom() * oppHand.length);
       const discarded = oppHand.splice(randIndex, 1)[0];
-      
+
       if (!discarded) {
         i--;
         continue;
       }
-      
+
       if (!discarded.isToken) {
         const masterData = CARD_MASTER.find(
           (m) => m.id === (discarded.baseId || discarded.id)

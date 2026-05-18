@@ -22,7 +22,7 @@ export default [
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,cjs}'],
     languageOptions: {
       ecmaVersion: 'latest',
       globals: {
@@ -51,6 +51,9 @@ export default [
       ],
       'react/prop-types': 'off',
       'no-unused-vars': 'off',
+      'no-empty': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',

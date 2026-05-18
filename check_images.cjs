@@ -3,18 +3,29 @@ const path = require('path');
 const basePath = 'public/';
 let missing = [];
 
-const chars = ['android', 'dragon', 'knight', 'cthulhu', 'elf', 'cleric', 'devilhunter', 'witch', 'oni', 'priest'];
+const chars = [
+  'android',
+  'dragon',
+  'knight',
+  'cthulhu',
+  'elf',
+  'cleric',
+  'devilhunter',
+  'witch',
+  'oni',
+  'priest',
+];
 
-chars.forEach(c => {
+chars.forEach((c) => {
   // Check School skins
   const schoolFiles = [
     'assets/characters/char_' + c + '_school.png',
     'assets/characters/char_' + c + '_school_lose.png',
     'assets/icons/icon_' + c + '_school.png',
     'assets/icons/icon_' + c + '_school_damage.png',
-    'assets/boards/board_' + c + '_school.png'
+    'assets/boards/board_' + c + '_school.png',
   ];
-  schoolFiles.forEach(f => {
+  schoolFiles.forEach((f) => {
     if (!fs.existsSync(path.join(basePath, f))) {
       missing.push(f);
     }
@@ -27,9 +38,9 @@ chars.forEach(c => {
       'assets/characters/char_' + c + '_high_lose.png',
       'assets/icons/icon_' + c + '_high.png',
       'assets/icons/icon_' + c + '_high_damage.png',
-      'assets/boards/board_' + c + '_high.png'
+      'assets/boards/board_' + c + '_high.png',
     ];
-    highFiles.forEach(f => {
+    highFiles.forEach((f) => {
       if (!fs.existsSync(path.join(basePath, f))) {
         missing.push(f);
       }

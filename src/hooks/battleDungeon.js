@@ -1,20 +1,13 @@
-import {
-  generateDungeonOpponentsList,
-} from '../utils/constants/battleDungeon.js';
+import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
 import { GameState } from './gameState.js';
 import {
   playSound,
   switchScreen,
   getOrCreateUUID,
 } from '../utils/gameUtils.js';
-import {
-  showPointAcquisitionModal,
-} from './uiModals.js';
+import { showPointAcquisitionModal } from './uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
-import {
-  showDungeonMenu,
-  performFadeTransition,
-} from './uiMainCore.js';
+import { showDungeonMenu, performFadeTransition } from './uiMainCore.js';
 import { startBattleFlow } from './deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';

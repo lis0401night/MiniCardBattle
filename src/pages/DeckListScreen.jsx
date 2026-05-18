@@ -592,7 +592,11 @@ export default function DeckListScreen() {
                                   }
                                 }}
                               />
-                              <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+                              <img
+                                src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`}
+                                className="banner-icon-frame"
+                                alt="frame"
+                              />
                             </div>
                             <span
                               className="banner-text"
@@ -733,13 +737,21 @@ export default function DeckListScreen() {
                   <img
                     src={
                       getSkinImage
-                        ? getSkinImage(char, deck.playerSkins?.[char.id], 'icon')
+                        ? getSkinImage(
+                            char,
+                            deck.playerSkins?.[char.id],
+                            'icon'
+                          )
                         : char.icon
                     }
                     className="banner-icon"
                     alt=""
                   />
-                  <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+                  <img
+                    src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`}
+                    className="banner-icon-frame"
+                    alt="frame"
+                  />
                 </div>
                 <span
                   className="banner-text"

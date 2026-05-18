@@ -243,7 +243,8 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     type: 'skin',
     charId: 'elf',
     name: '癒しの飼育委員',
-    description: '動物をこよなく愛する飼育委員。彼女の周りには常に動物が集まる。',
+    description:
+      '動物をこよなく愛する飼育委員。彼女の周りには常に動物が集まる。',
     cost: 20,
   },
   {
@@ -318,7 +319,8 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     id: 'pm_elf_school',
     type: 'playmat',
     name: 'プレイマット：癒しの飼育委員',
-    description: '動物をこよなく愛する飼育委員。彼女の周りには常に動物が集まる。',
+    description:
+      '動物をこよなく愛する飼育委員。彼女の周りには常に動物が集まる。',
     cost: 10,
   },
   {

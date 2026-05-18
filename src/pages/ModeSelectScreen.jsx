@@ -1,4 +1,3 @@
-
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../hooks/uiGallery.js';
 import {

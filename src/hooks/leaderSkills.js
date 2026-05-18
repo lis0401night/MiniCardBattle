@@ -28,7 +28,13 @@ import {
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { GameState } from './gameState.js';
-import { renderBoard, renderHand, updateCardDetail, updateDeckDisplay, updateSPOrbs } from './uiBattle.js';
+import {
+  renderBoard,
+  renderHand,
+  updateCardDetail,
+  updateDeckDisplay,
+  updateSPOrbs,
+} from './uiBattle.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -354,7 +360,11 @@ export async function executeLeaderSkillAction(
       false
     );
     tokenLanes = selectedLanes;
-  } else if (action === 'targeted_destruction' || action === 'tomb_guard' || action === 'death_judgment') {
+  } else if (
+    action === 'targeted_destruction' ||
+    action === 'tomb_guard' ||
+    action === 'death_judgment'
+  ) {
     if (!tokenLanes || tokenLanes.length === 0) {
       const oppBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
       const hasEnemyCard = oppBoard.some((c) => c !== null);
@@ -983,7 +993,11 @@ export async function executeLeaderSkillAction(
     ) {
       await sleep(200);
       await window.triggerVfx('anm_elf_arts', owner, tokenLanes[0]);
-    } else if ((action === 'tomb_guard' || action === 'death_judgment') && tokenLanes && tokenLanes.length > 0) {
+    } else if (
+      (action === 'tomb_guard' || action === 'death_judgment') &&
+      tokenLanes &&
+      tokenLanes.length > 0
+    ) {
       await sleep(200);
       await window.triggerVfx('anm_dark_magic', owner, tokenLanes[0]);
     } else if (

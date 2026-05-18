@@ -1,4 +1,3 @@
-
 /**
  * Mini Card Battle - Playmat UI Logic Bridge
  * Routes calls from legacy JS into GlobalModals.jsx

@@ -1376,12 +1376,15 @@ export function getBestSimulatedMove() {
 
   let passSimState = processActionSequence([{ type: 'pass' }]);
   if (passSimState)
-    addCandidate({
-      index: -1,
-      lane: -1,
-      isOverwrite: false,
-      useSkill: false,
-    }, passSimState);
+    addCandidate(
+      {
+        index: -1,
+        lane: -1,
+        isOverwrite: false,
+        useSkill: false,
+      },
+      passSimState
+    );
 
   for (let i = 0; i < hand.length; i++) {
     let card = hand[i];
@@ -1411,14 +1414,17 @@ export function getBestSimulatedMove() {
           return adjusted;
         });
 
-        addCandidate({
-          index: firstAction.targetIdx,
-          lane: firstAction.laneIdx,
-          useSkill: false,
-          choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-          cardTokenLanes: firstAction.cardTokenLanes,
-          actionQueue: followUp.length > 0 ? followUp : undefined,
-        }, simState);
+        addCandidate(
+          {
+            index: firstAction.targetIdx,
+            lane: firstAction.laneIdx,
+            useSkill: false,
+            choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+            cardTokenLanes: firstAction.cardTokenLanes,
+            actionQueue: followUp.length > 0 ? followUp : undefined,
+          },
+          simState
+        );
       }
     }
   }
@@ -1595,36 +1601,39 @@ export function getBestSimulatedMove() {
                   (x) => x !== undefined
                 );
                 const resTargetCard = discard[dIdx];
-                addCandidate({
-                  index: i,
-                  lane: fA.laneIdx,
-                  isOverwrite: myBoard[fA.laneIdx] !== null,
-                  useSkill: true,
-                  tokenLanes,
-                  skillOrder: 'before',
-                  leaderSkillTargetIdx: dIdx,
-                  leaderSkillTargetUid:
-                    resTargetCard.baseId || resTargetCard.id,
-                  choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                  cardTokenLanes: fA.cardTokenLanes,
-                  actionQueue:
-                    actionQ.slice(1).length > 0
-                      ? actionQ.slice(1).map((act) => {
-                          let adjusted = { ...act };
-                          if (
-                            (adjusted.type === 'invite' ||
-                              adjusted.type === 'chant' ||
-                              adjusted.type === 'play' ||
-                              adjusted.type === 'discard') &&
-                            fA.type === 'play'
-                          ) {
-                            if (adjusted.targetIdx > fA.targetIdx)
-                              adjusted.targetIdx -= 1;
-                          }
-                          return adjusted;
-                        })
-                      : undefined,
-                }, simState);
+                addCandidate(
+                  {
+                    index: i,
+                    lane: fA.laneIdx,
+                    isOverwrite: myBoard[fA.laneIdx] !== null,
+                    useSkill: true,
+                    tokenLanes,
+                    skillOrder: 'before',
+                    leaderSkillTargetIdx: dIdx,
+                    leaderSkillTargetUid:
+                      resTargetCard.baseId || resTargetCard.id,
+                    choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                    cardTokenLanes: fA.cardTokenLanes,
+                    actionQueue:
+                      actionQ.slice(1).length > 0
+                        ? actionQ.slice(1).map((act) => {
+                            let adjusted = { ...act };
+                            if (
+                              (adjusted.type === 'invite' ||
+                                adjusted.type === 'chant' ||
+                                adjusted.type === 'play' ||
+                                adjusted.type === 'discard') &&
+                              fA.type === 'play'
+                            ) {
+                              if (adjusted.targetIdx > fA.targetIdx)
+                                adjusted.targetIdx -= 1;
+                            }
+                            return adjusted;
+                          })
+                        : undefined,
+                  },
+                  simState
+                );
               }
             } else {
               // その他（聖戦・邪戦・サタン・龍神等）
@@ -1639,33 +1648,36 @@ export function getBestSimulatedMove() {
                 let fChcs = [fA.choices, fA.choices2].filter(
                   (x) => x !== undefined
                 );
-                addCandidate({
-                  index: i,
-                  lane: fA.laneIdx,
-                  isOverwrite: myBoard[fA.laneIdx] !== null,
-                  useSkill: true,
-                  tokenLanes,
-                  skillOrder: 'before',
-                  choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                  cardTokenLanes: fA.cardTokenLanes,
-                  actionQueue:
-                    actionQ.slice(1).length > 0
-                      ? actionQ.slice(1).map((act) => {
-                          let adjusted = { ...act };
-                          if (
-                            (adjusted.type === 'invite' ||
-                              adjusted.type === 'chant' ||
-                              adjusted.type === 'play' ||
-                              adjusted.type === 'discard') &&
-                            fA.type === 'play'
-                          ) {
-                            if (adjusted.targetIdx > fA.targetIdx)
-                              adjusted.targetIdx -= 1;
-                          }
-                          return adjusted;
-                        })
-                      : undefined,
-                }, simState);
+                addCandidate(
+                  {
+                    index: i,
+                    lane: fA.laneIdx,
+                    isOverwrite: myBoard[fA.laneIdx] !== null,
+                    useSkill: true,
+                    tokenLanes,
+                    skillOrder: 'before',
+                    choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                    cardTokenLanes: fA.cardTokenLanes,
+                    actionQueue:
+                      actionQ.slice(1).length > 0
+                        ? actionQ.slice(1).map((act) => {
+                            let adjusted = { ...act };
+                            if (
+                              (adjusted.type === 'invite' ||
+                                adjusted.type === 'chant' ||
+                                adjusted.type === 'play' ||
+                                adjusted.type === 'discard') &&
+                              fA.type === 'play'
+                            ) {
+                              if (adjusted.targetIdx > fA.targetIdx)
+                                adjusted.targetIdx -= 1;
+                            }
+                            return adjusted;
+                          })
+                        : undefined,
+                  },
+                  simState
+                );
               }
             }
           }
@@ -1687,16 +1699,19 @@ export function getBestSimulatedMove() {
             resTargetCard.baseId || resTargetCard.id
           );
           if (simState) {
-            addCandidate({
-              index: -1,
-              lane: -1,
-              isOverwrite: false,
-              useSkill: true,
-              tokenLanes,
-              skillOrder: 'before',
-              leaderSkillTargetIdx: dIdx,
-              leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
-            }, simState);
+            addCandidate(
+              {
+                index: -1,
+                lane: -1,
+                isOverwrite: false,
+                useSkill: true,
+                tokenLanes,
+                skillOrder: 'before',
+                leaderSkillTargetIdx: dIdx,
+                leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
+              },
+              simState
+            );
           }
         }
       } else {
@@ -1708,14 +1723,17 @@ export function getBestSimulatedMove() {
           'before'
         );
         if (simState)
-          addCandidate({
-            index: -1,
-            lane: -1,
-            isOverwrite: false,
-            useSkill: true,
-            tokenLanes,
-            skillOrder: 'before',
-          }, simState);
+          addCandidate(
+            {
+              index: -1,
+              lane: -1,
+              isOverwrite: false,
+              useSkill: true,
+              tokenLanes,
+              skillOrder: 'before',
+            },
+            simState
+          );
       }
     }
   }
@@ -1844,7 +1862,9 @@ export function getBestSimulatedMove() {
   );
 
   if (finalDecision.actionQueue) {
-    console.log(`[AI DEBUG] ActionQueue: ${JSON.stringify(finalDecision.actionQueue)}`);
+    console.log(
+      `[AI DEBUG] ActionQueue: ${JSON.stringify(finalDecision.actionQueue)}`
+    );
   }
   GameState.aiDecision = finalDecision;
   return finalDecision;

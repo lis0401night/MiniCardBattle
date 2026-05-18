@@ -1075,12 +1075,16 @@ h2 {
 
 .icon-wrapper {
   position: relative;
+  width: min(110px, 15vh);
+  height: min(110px, 15vh);
   margin-right: calc(min(110px, 15vh) * -0.22);
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
 }
 
 .char-icon {
-  width: min(110px, 15vh);
-  height: min(110px, 15vh);
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   border: none;
   padding: 5px;
@@ -1088,7 +1092,6 @@ h2 {
   box-sizing: border-box;
   object-fit: cover;
   background-color: #334155;
-  flex-shrink: 0;
 
   position: relative;
 
@@ -1118,13 +1121,14 @@ h2 {
 
 .icon-frame {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: min(110px, 15vh);
-  height: min(110px, 15vh);
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   pointer-events: none;
   z-index: 3;
-  transform: scale(0.9);
+  transform: translate(-50%, -50%) scale(0.9);
 }
 
 .sp-orbs {
@@ -3369,7 +3373,11 @@ body.vfx-shake {
   position: relative;
   width: 90%;
   max-width: 380px;
-  background: linear-gradient(135deg, rgba(30, 41, 70, 0.97), rgba(20, 28, 55, 0.97));
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 70, 0.97),
+    rgba(20, 28, 55, 0.97)
+  );
   border: 2px solid rgba(250, 204, 21, 0.5);
   border-radius: 16px;
   padding: 55px 20px 20px;
@@ -3424,8 +3432,12 @@ body.vfx-shake {
 
 /* アニメーション */
 @keyframes tutorialFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes tutorialBoxAppear {
@@ -3440,11 +3452,21 @@ body.vfx-shake {
 }
 
 @keyframes tutorialIconPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.6); }
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(250, 204, 21, 0.6);
+  }
 }
 
 @keyframes tutorialHintBlink {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }

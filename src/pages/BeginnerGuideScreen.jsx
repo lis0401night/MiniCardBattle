@@ -1,5 +1,9 @@
 import BackButton from '../components/BackButton.jsx';
-import { goToModeSelect, showRules, showTutorialSelect } from '../hooks/uiMainCore.js';
+import {
+  goToModeSelect,
+  showRules,
+  showTutorialSelect,
+} from '../hooks/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 /**
@@ -9,7 +13,6 @@ import { UI_IMAGES } from '../utils/constants/uiImages.js';
  */
 export default function BeginnerGuideScreen() {
   const images = UI_IMAGES || {};
-
 
   return (
     <div
@@ -27,7 +30,9 @@ export default function BeginnerGuideScreen() {
         <div className="menu-img-btn" onClick={() => showRules?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('assets/ui/ui_Instructionsbutton01.png')` }}
+            style={{
+              backgroundImage: `url('assets/ui/ui_Instructionsbutton01.png')`,
+            }}
           ></div>
           <div className="menu-btn-label">ルール</div>
         </div>
@@ -36,7 +41,9 @@ export default function BeginnerGuideScreen() {
         <div className="menu-img-btn" onClick={() => showTutorialSelect?.()}>
           <div
             className="menu-img-bg"
-            style={{ backgroundImage: `url('assets/ui/ui_tutorialbutton01.png')` }}
+            style={{
+              backgroundImage: `url('assets/ui/ui_tutorialbutton01.png')`,
+            }}
           ></div>
           <div className="menu-btn-label">チュートリアル</div>
         </div>

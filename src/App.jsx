@@ -151,10 +151,16 @@ export default function App() {
       {currentScreen === 'screen-gallery-menu' && <GalleryMenuScreen />}
       {currentScreen === 'screen-event-menu' && <EventMenuScreen />}
       {currentScreen === 'screen-tournament-menu' && <TournamentMenuScreen />}
-      {currentScreen === 'screen-tournament-resume' && <TournamentResumeScreen />}
-      {currentScreen === 'screen-tournament-exchange' && <TournamentExchangeScreen />}
+      {currentScreen === 'screen-tournament-resume' && (
+        <TournamentResumeScreen />
+      )}
+      {currentScreen === 'screen-tournament-exchange' && (
+        <TournamentExchangeScreen />
+      )}
       {currentScreen === 'screen-tournament-rules' && <TournamentRulesScreen />}
-      {currentScreen === 'screen-tournament-bracket' && <TournamentBracketScreen />}
+      {currentScreen === 'screen-tournament-bracket' && (
+        <TournamentBracketScreen />
+      )}
       {currentScreen === 'screen-defense-menu' && <DefenseMenuScreen />}
       {currentScreen === 'screen-defense-rules' && <DefenseRulesScreen />}
       {currentScreen === 'screen-high-difficulty-menu' && (

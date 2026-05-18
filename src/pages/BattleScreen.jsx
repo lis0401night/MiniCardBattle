@@ -126,7 +126,11 @@ export default function BattleScreen() {
       return;
 
     // チュートリアル: レーンクリックのフィルタリング
-    if (isTutorialMode() && GameState.selectedCardIndex !== null && side === 'player') {
+    if (
+      isTutorialMode() &&
+      GameState.selectedCardIndex !== null &&
+      side === 'player'
+    ) {
       if (filterLaneClick(lane, side)) return;
     }
     if (GameState.isPlacementMode) {
@@ -481,7 +485,9 @@ export default function BattleScreen() {
         selectedBoardLaneIndex={GameState.selectedBoardLaneIndex}
         selectedBoardSide={GameState.selectedBoardSide}
         onCellClick={handleCellClick}
-        onCardLongPress={(card, lane) => handleCardLongPress(card, lane >= 3 ? 'enemy' : 'player', lane % 3)}
+        onCardLongPress={(card, lane) =>
+          handleCardLongPress(card, lane >= 3 ? 'enemy' : 'player', lane % 3)
+        }
         tutorialMode={isTutorialMode()}
       />
 
@@ -520,7 +526,10 @@ export default function BattleScreen() {
       </div>
 
       {/* 初期化中（ターン順アニメーション中）はコントロール領域全体を無効化 */}
-      <div className="controls" style={{ pointerEvents: isInitializing ? 'none' : 'auto' }}>
+      <div
+        className="controls"
+        style={{ pointerEvents: isInitializing ? 'none' : 'auto' }}
+      >
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             id="btn-leader-skill"
@@ -605,29 +614,34 @@ export default function BattleScreen() {
               style={{
                 background:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? '#475569'
                     : '#ef4444',
                 color:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? '#94a3b8'
                     : '#fff',
                 borderColor:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? '#334155'
                     : '#dc2626',
                 pointerEvents:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? 'none'
                     : 'auto',
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 playSound(SOUNDS.seClick);
-                if (isTutorialMode() && filterFinishEnemyTargetSelection()) return;
+                if (isTutorialMode() && filterFinishEnemyTargetSelection())
+                  return;
                 if (window.finishEnemyTargetSelection)
                   window.finishEnemyTargetSelection();
               }}
@@ -641,22 +655,26 @@ export default function BattleScreen() {
               style={{
                 background:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? '#475569'
                     : '#ef4444',
                 color:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? '#94a3b8'
                     : '#fff',
                 borderColor:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? '#334155'
                     : '#dc2626',
                 pointerEvents:
                   !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length < GameState.targetMaxCount
+                  GameState.targetSelectedLanes.length <
+                    GameState.targetMaxCount
                     ? 'none'
                     : 'auto',
               }}
@@ -731,7 +749,11 @@ export default function BattleScreen() {
         >
           <div className="tutorial-message-box">
             <div className="tutorial-icon-wrapper">
-              <img src="assets/icons/icon_light.png" alt="" className="tutorial-icon" />
+              <img
+                src="assets/icons/icon_light.png"
+                alt=""
+                className="tutorial-icon"
+              />
             </div>
             <div className="tutorial-text">
               {tutorialMessage.split('\n').map((line, i) => (

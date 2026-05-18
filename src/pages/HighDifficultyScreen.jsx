@@ -40,7 +40,6 @@ export default function HighDifficultyScreen() {
           overflowY: 'auto',
         }}
       >
-
         {highEventChars.map((char) => {
           const eventConf = char.event_high;
           return (
@@ -56,11 +55,17 @@ export default function HighDifficultyScreen() {
               <div className="banner-icon-wrapper">
                 <img
                   src={`assets/icons/icon_${eventConf.id}.png`}
-                  onError={(e) => { e.target.src = char.icon; }}
+                  onError={(e) => {
+                    e.target.src = char.icon;
+                  }}
                   className="banner-icon"
                   alt=""
                 />
-                <img src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`} className="banner-icon-frame" alt="frame" />
+                <img
+                  src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`}
+                  className="banner-icon-frame"
+                  alt="frame"
+                />
               </div>
               <span
                 className="banner-text"

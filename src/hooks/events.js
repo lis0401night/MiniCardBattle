@@ -136,8 +136,11 @@ export async function loadPlayerDeck(uuid) {
     const script = document.createElement('script');
     script.src = `api/decks/players/${uuid}.js?t=${Date.now()}`;
     script.onload = () => {
-      if (typeof PLAYER_DECKS !== 'undefined' && PLAYER_DECKS[uuid]) {
-        const data = PLAYER_DECKS[uuid];
+      if (
+        typeof window.PLAYER_DECKS !== 'undefined' &&
+        window.PLAYER_DECKS[uuid]
+      ) {
+        const data = window.PLAYER_DECKS[uuid];
         // 敵デッキデータとして整形
         const enemyDeckData = {
           id: 'player_defense',

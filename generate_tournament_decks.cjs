@@ -1,9 +1,32 @@
 const fs = require('fs');
 const path = require('path');
 
-const CHARACTERS = ['android', 'cleric', 'cthulhu', 'dragon', 'elf', 'knight', 'devilhunter', 'witch', 'oni', 'priest'];
-const SRC_DIR = path.join(__dirname, 'src', 'utils', 'constants', 'enemy_decks');
-const DEST_DIR = path.join(__dirname, 'src', 'utils', 'constants', 'event_tournament');
+const CHARACTERS = [
+  'android',
+  'cleric',
+  'cthulhu',
+  'dragon',
+  'elf',
+  'knight',
+  'devilhunter',
+  'witch',
+  'oni',
+  'priest',
+];
+const SRC_DIR = path.join(
+  __dirname,
+  'src',
+  'utils',
+  'constants',
+  'enemy_decks'
+);
+const DEST_DIR = path.join(
+  __dirname,
+  'src',
+  'utils',
+  'constants',
+  'event_tournament'
+);
 
 if (!fs.existsSync(DEST_DIR)) {
   fs.mkdirSync(DEST_DIR, { recursive: true });
@@ -11,13 +34,13 @@ if (!fs.existsSync(DEST_DIR)) {
 
 let indexContent = '';
 
-CHARACTERS.forEach(char => {
+CHARACTERS.forEach((char) => {
   const srcFile = path.join(SRC_DIR, `${char}.js`);
   const destFile = path.join(DEST_DIR, `${char}.js`);
 
   if (fs.existsSync(srcFile)) {
     const code = fs.readFileSync(srcFile, 'utf8');
-    
+
     // Extract normal and hard arrays
     const normalMatch = code.match(/normal:\s*(\[[^\]]+\])/);
     const hardMatch = code.match(/hard:\s*(\[[^\]]+\])/);
@@ -40,7 +63,7 @@ CHARACTERS.forEach(char => {
 });
 
 indexContent += '\nexport const TOURNAMENT_DECKS = {\n';
-CHARACTERS.forEach(char => {
+CHARACTERS.forEach((char) => {
   indexContent += `  ${char}: ${char},\n`;
 });
 indexContent += '};\n';

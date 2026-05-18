@@ -134,7 +134,10 @@ export default function TournamentResumeScreen() {
         }}
       >
         <p style={{ color: '#fff' }}>セーブデータがありません</p>
-        <button className="btn" onClick={handleBack}>
+        <button
+          className="btn"
+          onClick={() => switchScreen('screen-tournament-menu')}
+        >
           戻る
         </button>
       </div>
