@@ -35,7 +35,7 @@ export const SKILL_POINTS = {
     multiplier: 1,
   },
   split: {
-    base: 0,
+    base: -1,
     multiplier: 1,
   },
   sacrifice: {
@@ -56,7 +56,11 @@ export const SKILL_POINTS = {
   },
   charge: {
     base: 0,
-    multiplier: 1,
+    multiplier: 2,
+  },
+  spend: {
+    base: 0,
+    multiplier: -1,
   },
   stealth: {
     base: 0,
@@ -87,7 +91,7 @@ export const SKILL_POINTS = {
     multiplier: 0.5,
   },
   sturdy: {
-    base: 2,
+    base: 1,
     multiplier: 0,
   },
   berserk: {
@@ -203,11 +207,11 @@ export const SKILL_POINTS = {
     multiplier: 1,
   },
   dispel: {
-    base: 2,
+    base: 0,
     multiplier: 0,
   },
   replicate: {
-    base: 0,
+    base: 5,
     multiplier: 0,
   },
   bless: {
@@ -275,7 +279,7 @@ export const SKILL_POINTS = {
     multiplier: 1,
   },
   crush: {
-    base: 1,
+    base: 0,
     multiplier: 0,
   },
   substitute: {

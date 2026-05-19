@@ -835,8 +835,8 @@ export function applyActiveSkillLogic(
         if (eB[j] && (hasSkill(eB[j], 'defender') || eB[j].stunTurns > 0)) {
           targets.push({ side: oppOwner, lane: j, card: eB[j] });
         }
-        if (oB[j] && (hasSkill(oB[j], 'defender') || oB[j].stunTurns > 0)) {
-          targets.push({ side: owner, lane: j, card: oB[j] });
+        if (b[j] && (hasSkill(b[j], 'defender') || b[j].stunTurns > 0)) {
+          targets.push({ side: owner, lane: j, card: b[j] });
         }
       }
       for (let i = 0; i < targets.length; i++) {
@@ -845,7 +845,7 @@ export function applyActiveSkillLogic(
         if (tr.side === oppOwner) {
           eB[tr.lane] = null;
         } else {
-          oB[tr.lane] = null;
+          b[tr.lane] = null;
         }
       }
       if (targets.length > 0 && events) {
@@ -870,7 +870,7 @@ export function applyActiveSkillLogic(
         }
       };
       gatherDispelTargets(eB, oppOwner);
-      gatherDispelTargets(oB, owner);
+      gatherDispelTargets(b, owner);
 
       const killTargets = [];
       for (let i = 0; i < targets.length; i++) {
@@ -918,7 +918,7 @@ export function applyActiveSkillLogic(
           if (tr.side === oppOwner) {
             eB[tr.lane] = null;
           } else {
-            oB[tr.lane] = null;
+            b[tr.lane] = null;
           }
         }
       }
@@ -1019,6 +1019,16 @@ export function applyActiveSkillLogic(
       else
         state.enemySP = Math.min(eMaxSP, Math.max(0, state.enemySP + chgAmt));
       events.push({ type: 'charge_sp', side: owner, amount: chgAmt });
+      break;
+    }
+    // 消費: 自分リーダーのSPをvalue分減らす（充填の逆）
+    case 'spend': {
+      const spendAmt = val || 1;
+      if (owner === 'blue')
+        state.playerSP = Math.max(0, state.playerSP - spendAmt);
+      else
+        state.enemySP = Math.max(0, state.enemySP - spendAmt);
+      events.push({ type: 'charge_sp', side: owner, amount: -spendAmt });
       break;
     }
     case 'quick':
@@ -3523,6 +3533,22 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     let dmgToDef = aP;
     let dmgToAtk = dP;
 
+    // 連撃（ダブルストライク）: 頑丈の半減より先に2倍を適用（3*2/2=3で±0になる）
+    if (hasSkill(aC, 'double_strike')) {
+      if (dmgToDef > 0)
+        events.push({
+          type: 'double_strike_proc',
+          side: attackerSide,
+          lane: l,
+        });
+      dmgToDef *= 2;
+    }
+    if (originalTarget && hasSkill(originalTarget, 'double_strike')) {
+      if (dmgToAtk > 0)
+        events.push({ type: 'double_strike_proc', side: defSide, lane: l });
+      dmgToAtk *= 2;
+    }
+
     if (dmgToDef > 0 && hasSkill(dC, 'sturdy')) {
       if (dmgToDef > 0)
         events.push({ type: 'sturdy_block', side: defSide, lane: dLane });
@@ -3652,21 +3678,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       dmgToAtk = 0;
     }
 
-    // 連撃（ダブルストライク）: 与えるダメージ2倍
-    if (hasSkill(aC, 'double_strike')) {
-      if (dmgToDef > 0)
-        events.push({
-          type: 'double_strike_proc',
-          side: attackerSide,
-          lane: l,
-        });
-      dmgToDef *= 2;
-    }
-    if (originalTarget && hasSkill(originalTarget, 'double_strike')) {
-      if (dmgToAtk > 0)
-        events.push({ type: 'double_strike_proc', side: defSide, lane: l });
-      dmgToAtk *= 2;
-    }
+    // 連撃（ダブルストライク）: sturdy判定前に移動済み（ここでは処理しない）
 
     const isOriginalTargetDefender =
       originalTarget &&

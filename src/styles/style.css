@@ -2495,7 +2495,8 @@ h2 {
     padding: 3px 10px;
   }
 
-  .char-icon {
+  /* フレーム導入に伴い、サイズ指定を .icon-wrapper に統合 */
+  .icon-wrapper {
     width: 80px;
     height: 80px;
     margin-right: -15px;
@@ -2655,7 +2656,8 @@ h2 {
     height: auto;
   }
 
-  .char-icon {
+  /* フレーム導入に伴い、サイズ指定を .icon-wrapper に統合 */
+  .icon-wrapper {
     width: 70px;
     height: 70px;
     margin-right: -10px;

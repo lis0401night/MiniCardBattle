@@ -10,14 +10,14 @@ export const elfHighDeckDef = [
   'wish',
   'wish',
   'wish',
+  'wish',
   'wolf',
   'wolf',
-  'wolf',
   'caller',
   'caller',
   'caller',
   'caller',
-  'highelf',
-  'highelf',
+  'centaur',
+  'centaur',
 ];
 export default elfHighDeckDef;

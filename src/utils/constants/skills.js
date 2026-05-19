@@ -144,6 +144,11 @@ export const SKILLS = {
     icon: '🔋',
     desc: (val) => `召喚時、自分リーダーのSPを${val >= 0 ? '+' : ''}${val}する`,
   },
+  spend: {
+    name: '消費',
+    icon: '🪫',
+    desc: (val) => `召喚時、自分リーダーのSPを${val || 1}減らす`,
+  },
   stealth: {
     name: '潜伏',
     icon: '👣',
@@ -482,8 +487,7 @@ export const SKILLS = {
   crush: {
     name: '粉砕',
     icon: '🔨',
-    desc: (val) =>
-      `召喚時、お互いの場の「防御」を持つカードを全て破壊する。`,
+    desc: (val) => `召喚時、お互いの場の「防御」を持つカードを全て破壊する。`,
   },
   substitute: {
     name: '身替',
@@ -665,6 +669,7 @@ export const ACTIVE_SKILLS = [
   'quick',
   'hero',
   'charge',
+  'spend',
   'stealth',
   'morph',
   'choice',

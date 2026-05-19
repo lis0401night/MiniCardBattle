@@ -173,9 +173,8 @@ export const CARD_MASTER = [
     id: 'skeleton',
     name: 'スケルトン',
     rarity: 1,
-    power: 2,
-    skills: [{ id: 'split', value: 3 }],
-    summonId: 'token_skeleton',
+    power: 3,
+    skills: [{ id: 'split', value: 3, summonId: 'token_skeleton' }],
     voiceCategory: 'undead',
     flavor:
       '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
@@ -347,16 +346,6 @@ export const CARD_MASTER = [
     flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。',
   },
   {
-    id: 'bird',
-    name: '新緑の導き鳥',
-    rarity: 1,
-    power: 1,
-    skills: [{ id: 'split', value: 5 }],
-    summonId: 'token_ent',
-    voiceCategory: 'bird',
-    flavor: 'その小さなさえずりが途絶えたとき、森の静寂は怒号へと変わる。',
-  },
-  {
     id: 'chameleon',
     name: '迷彩カメレオン',
     rarity: 1,
@@ -365,6 +354,16 @@ export const CARD_MASTER = [
     voiceCategory: 'lizard',
     flavor:
       '周囲の景色に完璧に溶け込む擬態能力。じっと潜んだその姿は、どんな熟練の狩人にも見抜くことはできない。',
+  },
+  {
+    id: 'splite',
+    name: 'スプライトの冒険者',
+    rarity: 1,
+    power: 2,
+    skills: [{ id: 'resist', value: 3 }],
+    voiceCategory: 'human_female_cute',
+    flavor:
+      '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
   },
   {
     id: 'carpenter',
@@ -567,21 +566,32 @@ export const CARD_MASTER = [
     name: 'ライオット・キーパー',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'charge', value: -1 }],
+    skills: [{ id: 'spend', value: 1 }],
     voiceCategory: 'machine_new',
     flavor:
       '「システム始動……これより排除を開始する。」最新型の暴徒鎮圧用アンドロイド。',
   },
+  // {
+  //   id: 'mech',
+  //   name: '略奪者のキメラ・メック',
+  //   rarity: 2,
+  //   power: 5,
+  //   skills: [
+  //     { id: 'choice', value: 1 },
+  //     { id: 'explode', value: 2 },
+  //   ],
+  //   choices: [{ id: 'snipe', value: 2 }, { id: 'sturdy' }],
+  //   voiceCategory: 'machine_old',
+  //   flavor:
+  //     'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、二つとして同じ機体は存在しない。',
+  // },
   {
     id: 'mech',
     name: '略奪者のキメラ・メック',
     rarity: 2,
-    power: 5,
-    skills: [
-      { id: 'choice', value: 1 },
-      { id: 'explode', value: 2 },
-    ],
-    choices: [{ id: 'snipe', value: 2 }, { id: 'sturdy' }],
+    power: 4,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [{ id: 'sturdy' }, { id: 'double_strike' }],
     voiceCategory: 'machine_old',
     flavor:
       'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、二つとして同じ機体は存在しない。',
@@ -592,7 +602,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 3,
     skills: [
-      { id: 'charge', value: -1 },
+      { id: 'spend', value: 1 },
       { id: 'snipe', value: 5 },
     ],
     voiceCategory: 'machine_new',
@@ -617,8 +627,7 @@ export const CARD_MASTER = [
     name: 'ダクト街の技師',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'summon', value: 1 }],
-    summonId: 'token_drone',
+    skills: [{ id: 'summon', value: 1, summonId: 'token_drone' }],
     voiceCategory: 'human_female_normal',
     flavor:
       '廃れた近未来都市で生きる腕利きのメカニック。彼女の作るドローンはどんな狭い隙間にも潜り込む。',
@@ -856,14 +865,13 @@ export const CARD_MASTER = [
       '禁域に迷い込んだ愚か者に与えられるのは、警告ではない。ただ前触れなき蹂躙のみである。',
   },
   {
-    id: 'centaur',
-    name: 'ケンタウロスの父',
+    id: 'bird',
+    name: '新緑の導き鳥',
     rarity: 2,
     power: 1,
-    skills: [{ id: 'equip' }, { id: 'snipe', value: 5 }],
-    voiceCategory: 'human_male_old',
-    flavor:
-      '弓の引き方も、剣の握り方も、全てはこの背中が教えた。種族の壁を超えて彼を育て上げたその姿は、間違いなく一人の「父親」のそれであった。',
+    skills: [{ id: 'split', value: 5, summonId: 'token_ent' }],
+    voiceCategory: 'bird',
+    flavor: 'その小さなさえずりが途絶えたとき、森の静寂は怒号へと変わる。',
   },
   {
     id: 'shaman',
@@ -876,14 +884,14 @@ export const CARD_MASTER = [
       '彼の呪術は敵の武装を縛り、そして砕く。千年の時を生きる老エルフの瞳には、人の造りし武具など児戯に等しい。',
   },
   {
-    id: 'splite',
-    name: 'スプライトの冒険者',
+    id: 'centaur',
+    name: 'ケンタウロスの戦士',
     rarity: 2,
     power: 2,
-    skills: [{ id: 'resist', value: 3 }],
-    voiceCategory: 'human_female_cute',
-    flavor:
-      '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [{ id: 'quick' }, { id: 'snipe', value: 3 }],
+    voiceCategory: 'human_male_warrior',
+    flavor: '疾風のごとき俊敏さと、百発百中の射撃技術を併せ持つ誇り高き戦士。',
   },
   {
     id: 'ranger',
@@ -1321,7 +1329,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 3,
     skills: [
-      { id: 'charge', value: -2 },
+      { id: 'spend', value: 2 },
       { id: 'choice', value: 2 },
     ],
     choices: [
@@ -1360,7 +1368,7 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'legendary' },
-      { id: 'charge', value: -3 },
+      { id: 'spend', value: 3 },
       { id: 'spread', value: 3 },
     ],
     voiceCategory: 'machine_new',
@@ -1415,7 +1423,7 @@ export const CARD_MASTER = [
     power: 6,
     skills: [
       { id: 'legendary' },
-      { id: 'berserk', value: 3 },
+      { id: 'berserk', value: 4 },
       { id: 'spread', value: 2 },
     ],
     voiceCategory: 'dragon',
@@ -1470,8 +1478,7 @@ export const CARD_MASTER = [
     name: '深海の魔物',
     rarity: 3,
     power: 4,
-    skills: [{ id: 'split', value: 2 }],
-    summonId: 'legs',
+    skills: [{ id: 'split', value: 2, summonId: 'legs' }],
     voiceCategory: 'monster',
     flavor:
       '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。',
@@ -1983,7 +1990,7 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'contract', value: 4 },
-      { id: 'snipe', value: 8 },
+      { id: 'snipe', value: 7 },
       { id: 'guardian' },
     ],
     voiceCategory: 'horse',
@@ -2127,7 +2134,7 @@ export const CARD_MASTER = [
     id: 'hellkite',
     name: 'ヘルカイトの君主',
     rarity: 4,
-    power: 9,
+    power: 8,
     skills: [
       { id: 'legendary' },
       { id: 'apex' },
@@ -2804,7 +2811,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_skeleton',
-    name: '組み直されたスケルトン',
+    name: 'スケルトン',
     rarity: 1,
     power: 3,
     isToken: true,

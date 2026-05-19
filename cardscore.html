@@ -405,7 +405,7 @@
         const activeSkills = [];
         if (card.skills)
           card.skills.forEach((sk) =>
-            activeSkills.push({ id: sk.id, val: sk.value || 0 })
+            activeSkills.push({ id: sk.id, val: sk.value || 0, choiceGroup: sk.choiceGroup })
           );
 
         // 倍化と減衰の特殊処理（ベースパワーの書き換え）
@@ -415,7 +415,19 @@
           score = Math.floor((card.power || 0) / 2) + 1;
         }
 
+        // 同一スキル（ID+value+choiceGroup）を集約
+        const groupedSkills = [];
         activeSkills.forEach((sk) => {
+          const key = `${sk.id}_${sk.val}_${sk.choiceGroup ?? ''}`;
+          const existing = groupedSkills.find((g) => g.key === key);
+          if (existing) {
+            existing.count++;
+          } else {
+            groupedSkills.push({ ...sk, key, count: 1 });
+          }
+        });
+
+        groupedSkills.forEach((sk) => {
           if (sk.id === 'double_power' || sk.id === 'decay') return;
 
           const choicesArr =
@@ -448,10 +460,11 @@
             const penalty = sk.id === 'force' ? -1 : 0;
             score += avgScore + penalty + selfScore;
           } else {
+            // baseは1回分のみ、value*multiplierは個数(count)分加算
             const p = pointSettings[sk.id] || { base: 0, multiplier: 0 };
             const value = sk.val === undefined || sk.val === 0 ? 1 : sk.val;
             score +=
-              Number(p.base || 0) + Number(value) * Number(p.multiplier || 0);
+              Number(p.base || 0) + Number(value) * Number(p.multiplier || 0) * sk.count;
           }
         });
 
@@ -530,18 +543,30 @@
                     </td>
                     <td class="p-2 md:p-4">
                         <div class="flex flex-col md:flex-row flex-wrap gap-1 md:gap-2">
-                            ${(c.skills || [])
-                              .map((sk) => {
+                            ${(() => {
+                              // 同一スキル（ID+value+choiceGroup）を集約
+                              const grouped = [];
+                              (c.skills || []).forEach((sk) => {
+                                const key = `${sk.id || sk}_${sk.value ?? ''}_${sk.choiceGroup ?? ''}`;
+                                const existing = grouped.find((g) => g.key === key);
+                                if (existing) {
+                                  existing.count++;
+                                } else {
+                                  grouped.push({ ...sk, key, count: 1 });
+                                }
+                              });
+                              return grouped.map((sk) => {
                                 const s = skillData[sk.id || sk] || {
                                   name: sk.id || sk,
                                   icon: '✨',
                                 };
+                                const countSuffix = sk.count > 1 ? ` <span class="text-indigo-500 font-black">×${sk.count}</span>` : '';
                                 let html = `
                                 <div class="flex items-center gap-1 md:gap-2 px-1.5 md:px-2.5 py-1 rounded-xl bg-slate-100 text-[9px] md:text-[10px] font-bold text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-white hover:border-indigo-200">
                                     <span class="md:scale-125">${s.icon}</span>
                                     <div class="flex flex-col leading-none">
                                         <span class="text-[6px] md:text-[7px] text-slate-400 uppercase font-black">${s.name}</span>
-                                        <span>${sk.value || sk.val || ''}</span>
+                                        <span>${sk.value || sk.val || ''}${countSuffix}</span>
                                     </div>
                                 </div>`;
 
@@ -571,8 +596,8 @@
                                   html += `</div>`;
                                 }
                                 return html;
-                              })
-                              .join('')}
+                              }).join('');
+                            })()}
                         </div>
                     </td>
                     <td class="p-2 md:p-4 text-right">
