@@ -507,12 +507,9 @@ export function applyActiveSkillLogic(
     case 'explore': {
       const myDeckSim = owner === 'blue' ? state.playerDeck : state.enemyDeck;
       const myHandSim = owner === 'blue' ? state.playerHand : state.enemyHand;
-      const maxPow = val || 3;
       if (myDeckSim && myDeckSim.length > 0) {
-        // シミュレーション：デッキから指定パワー以下の最も強いカードを引き、手札の最も弱いカードと入れ替える
-        const validCards = myDeckSim.filter(
-          (card) => card && (card.power || 0) <= maxPow
-        );
+        // シミュレーション：デッキから最も強いカードを引き、手札の最も弱いカードと入れ替える
+        const validCards = myDeckSim.filter((card) => card !== undefined);
         if (validCards.length > 0) {
           const mP = Math.max(...validCards.map((c) => c.power || 0));
           const bestCards = validCards.filter((c) => (c.power || 0) === mP);

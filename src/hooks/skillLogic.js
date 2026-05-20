@@ -2208,16 +2208,15 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'explore') {
     const deck = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-    const maxPow = skillValue || 3;
-    const validCards = deck.filter((card) => (card.power || 0) <= maxPow);
+    const validCards = [...deck];
 
     if (validCards.length > 0) {
       const selectedCard = await waitPlayerDiscardSelection(
         validCards,
-        maxPow,
+        999,
         o,
         '探索するカードを選択',
-        `デッキからパワー${maxPow}以下のカードを1枚選び、手札に加えます。`,
+        'デッキからカードを1枚選び、手札に加えます。',
         true
       );
 

@@ -346,14 +346,18 @@ export const CARD_MASTER = [
     flavor: '七色の翼を持つ小さな鳥。その羽ばたきは見る者に活力を与える。',
   },
   {
-    id: 'chameleon',
-    name: '迷彩カメレオン',
+    id: 'pray',
+    name: '森の願い',
     rarity: 1,
-    power: 4,
-    skills: [{ id: 'immune' }],
-    voiceCategory: 'lizard',
+    power: 0,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'summon', value: 5, summonId: 'token_ent' },
+      { id: 'heal', value: 5 },
+    ],
+    voiceCategory: 'magic',
     flavor:
-      '周囲の景色に完璧に溶け込む擬態能力。じっと潜んだその姿は、どんな熟練の狩人にも見抜くことはできない。',
+      '大地の脈動と古樹の祈りが交わるとき、森は自らの意志をもって覚醒する。',
   },
   {
     id: 'splite',
@@ -366,14 +370,24 @@ export const CARD_MASTER = [
       '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
   },
   {
-    id: 'carpenter',
-    name: '熟練の石大工',
+    id: 'chameleon',
+    name: '熱心な教導師',
     rarity: 1,
-    power: 2,
-    skills: [{ id: 'wall_create', value: 5 }],
+    power: 4,
+    skills: [{ id: 'immune' }],
     voiceCategory: 'human_male_old',
     flavor:
-      '数十年、岩石と向き合い続けてきた職人。彼が積み上げた石壁は、いかなる軍勢の猛攻をも平然と受け流す。',
+      '分厚い教典を片手に、休むことなく教えを説き続ける厳格な導き手。',
+  },
+  {
+    id: 'pilebunker',
+    name: '聖伐隊の先鋒',
+    rarity: 1,
+    power: 6,
+    skills: [{ id: 'pierce' }, { id: 'explode', value: 2 }],
+    voiceCategory: 'human_male_warrior',
+    flavor:
+      '祈りと共に放たれる鋼の杭。その衝撃は、あらゆる盾を粉砕する',
   },
   {
     id: 'incinerator',
@@ -384,20 +398,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cool',
     flavor:
       '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。',
-  },
-  {
-    id: 'pray',
-    name: '救済の祈り',
-    rarity: 1,
-    power: 0,
-    skills: [{ id: 'choice', value: 1 }],
-    choices: [
-      { id: 'wall_create', value: 10 },
-      { id: 'heal', value: 5 },
-    ],
-    voiceCategory: 'magic',
-    flavor:
-      '神聖なる祈りは時に癒しとなり、時に強固な守りとなって信徒を庇護する。',
   },
   {
     id: 'prisoner',
@@ -871,7 +871,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'centaur',
-    name: 'ケンタウロスの戦士',
+    name: 'ヴェルドールの狩猟者',
     rarity: 2,
     power: 2,
     skills: [{ id: 'choice', value: 1 }],
@@ -2196,7 +2196,7 @@ export const CARD_MASTER = [
     id: 'trapezohedron',
     name: 'トラペゾヘドロン',
     rarity: 4,
-    power: 1,
+    power: 0,
     skills: [{ id: 'invite' }],
     voiceCategory: 'book',
     flavor:
@@ -2237,24 +2237,10 @@ export const CARD_MASTER = [
     name: 'サテュロスの笛吹き',
     rarity: 4,
     power: 3,
-    skills: [{ id: 'explore', value: 4 }],
+    skills: [{ id: 'explore' }],
     voiceCategory: 'human_male_ikemen',
     flavor:
       '陽気な笛の音が響く時、木々は枝を揺らし、密やかな抜け道を旅人に提示する。',
-  },
-  {
-    id: 'wish',
-    name: '森の願い',
-    rarity: 4,
-    power: 0,
-    skills: [{ id: 'choice', value: 1 }],
-    choices: [
-      { id: 'summon', value: 5, summonId: 'token_ent' },
-      { id: 'explore', value: 10 },
-    ],
-    voiceCategory: 'magic',
-    flavor:
-      '大地の脈動と古樹の祈りが交わるとき、森は自らの意志をもって覚醒する。巨木を立ち上がらせ、遥かなる緑の領域を押し広げていく。',
   },
   {
     id: 'cuchulainn',
@@ -2262,13 +2248,23 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 3,
     skills: [
-      { id: 'loss', value: 5 },
-      { id: 'snipe', value: 8 },
+      { id: 'loss', value: 4 },
+      { id: 'snipe', value: 6 },
       { id: 'pierce' },
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
       '色褪せた記憶の中にあっても、呪われし槍の切っ先は恐ろしいほどに冴え渡る。因果を捻じ曲げ、ただ死のみを約束する魔の刃。',
+  },
+  {
+    id: 'wish',
+    name: 'ランペイジ',
+    rarity: 4,
+    power: 0,
+    skills: [{ id: 'call', value: 3 },{ id: 'call', value: 3 }],
+    voiceCategory: 'magic',
+    flavor:
+      '一本の木が切り倒された時、無数の獣たちが目を覚ました。',
   },
   {
     id: 'elfking',
@@ -2307,7 +2303,7 @@ export const CARD_MASTER = [
     ],
     choices: [
       { id: 'artillery', value: 3 },
-      { id: 'spread', value: 4 },
+      { id: 'spread', value: 3 },
     ],
     voiceCategory: 'magic',
     flavor: '天より降り注ぐ理不尽なる裁き。神の砲撃は敵陣を焼き尽くす。',
