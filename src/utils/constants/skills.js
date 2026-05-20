@@ -147,7 +147,7 @@ export const SKILLS = {
   spend: {
     name: '消費',
     icon: '🪫',
-    desc: (val) => `召喚時、自分リーダーのSPを${val || 1}減らす`,
+    desc: (val) => `召喚時、自分リーダーのSPを${val >= 0 ? '-' : ''}${val}する`,
   },
   stealth: {
     name: '潜伏',

@@ -407,7 +407,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'loss', value: 2 }],
     voiceCategory: 'human_male_warrior',
     flavor:
-      '重い枷を断ち切り、自由と引き換えに己の記憶を打ち捨てた。鉄面の下で獣のように吼え、正気をすり減らしながら、ただ破壊の衝動に従い暴れ狂う。',
+      '自由と引き換えに記憶を捨てた囚人。鉄面の下で正気をすり減らし、ただ破壊の衝動に従って暴れ狂う。',
   },
   {
     id: 'necromancer',
@@ -571,20 +571,6 @@ export const CARD_MASTER = [
     flavor:
       '「システム始動……これより排除を開始する。」最新型の暴徒鎮圧用アンドロイド。',
   },
-  // {
-  //   id: 'mech',
-  //   name: '略奪者のキメラ・メック',
-  //   rarity: 2,
-  //   power: 5,
-  //   skills: [
-  //     { id: 'choice', value: 1 },
-  //     { id: 'explode', value: 2 },
-  //   ],
-  //   choices: [{ id: 'snipe', value: 2 }, { id: 'sturdy' }],
-  //   voiceCategory: 'machine_old',
-  //   flavor:
-  //     'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、二つとして同じ機体は存在しない。',
-  // },
   {
     id: 'mech',
     name: '略奪者のキメラ・メック',
@@ -728,7 +714,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '戦場に立つ彼の傍らには、常に忠実な影が寄り添う。名家の誇りを胸に彼が剣を掲げた時、その影は主を守る盾となり、あるいは共に敵を穿つ刃となる。',
+      '彼の傍らには常に忠実な影が寄り添う。彼が剣を掲げる時、その影は主を守る盾となり、敵を穿つ刃となる。',
   },
   {
     id: 'horse',
@@ -964,7 +950,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'heal', value: 4 }],
     voiceCategory: 'human_female_cool',
     flavor:
-      '冷たい鋼の鎖帷子を纏い、闇夜を斬り裂く一条の光。神の教えを胸に刻み、冒涜者たちを容赦なく浄化する、悪魔にとって最も恐るべき裁きの代行者。',
+      '闇夜を切り裂く一条の光。神の教えを胸に刻み、冒涜者を容赦なく浄化する、悪魔に恐れられし裁きの代行者。',
   },
   {
     id: 'specter',
@@ -1036,7 +1022,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'undead',
     flavor:
-      '肉体が朽ち国が滅びようとも、永遠の忠誠の証である錆びた王冠を戴く骸の王。虚ろな眼窩の奥底で、死を超越した王の威光が今もなお冷たく輝いている。',
+      '国が滅びようとも錆びた王冠を戴く骸の王。その眼窩の奥で、死を超越した威光が今も冷たく輝く。',
   },
   {
     id: 'cat',
@@ -1127,20 +1113,20 @@ export const CARD_MASTER = [
     id: 'muramasa',
     name: '無銘の妖刀',
     rarity: 2,
-    power: 3,
+    power: 4,
     skills: [
       { id: 'equip' },
       { id: 'choice', value: 1 },
       { id: 'choice', value: 1, choiceGroup: 2 },
     ],
     choices: [
-      { id: 'loss', value: 4 },
       { id: 'sacrifice', value: 2 },
+      { id: 'brutal', value: 2 },
     ],
     choices2: [{ id: 'absorb' }, { id: 'soul_bind', value: 2 }],
     voiceCategory: 'sword',
     flavor:
-      '持ち主の魂をすり減らして無限の切れ味を誇る妖刀。だがその代償を支払うか、敵の血肉で補うかは刃が勝手に選び取る。',
+      '無限の切れ味を誇る妖刀。自身でその代償を支払うか、友の血肉で補うかは持ち主に委ねられる',
   },
   {
     id: 'samurai',
@@ -1180,7 +1166,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'defender' }],
     voiceCategory: 'stone',
     flavor:
-      '宵闇の道程、突如として立ちはだかる絶対の絶望。どれほど刃を立てようとも揺るがぬその巨岩の貌は、愚かな侵入者をただ冷ややかに見下ろしている。',
+      '宵闇に突如立ちはだかる絶対の絶望。どれほど刃を立てようとも揺るがぬ巨岩は、侵入者を冷たく見下ろす。',
   },
   {
     id: 'camel',
@@ -1234,7 +1220,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'recurse', value: 4 }],
     voiceCategory: 'human_female_cool',
     flavor:
-      '空高く舞う鳶の目を持ち、過去と未来を見通す冷徹なる巫女。彼女が紡ぐ神秘の呪文は、途切れた運命の糸を再び繋ぎ合わせ、何度でも奇跡を呼び起こす。',
+      '空高く舞う鳶の目を持ち、過去と未来を見通す冷徹なる巫女。神秘の呪文で、途切れた運命の糸を再び紡ぐ。',
   },
   {
     id: 'sentinel',
@@ -1628,7 +1614,6 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 5,
     skills: [
-      { id: 'sacrifice', value: 2 },
       { id: 'soul_bind', value: 4 },
       { id: 'growth', value: -1 },
     ],
@@ -1780,7 +1765,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'dragon',
     flavor:
-      '業火を纏い、地獄の車輪を軋ませて爆走する双頭の厄災。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変えながら、ただ無残に蹂躙し尽くす。',
+      '業火を纏い爆走する双頭の厄災。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変え蹂躙し尽くす。',
   },
   {
     id: 'orochi',
@@ -1849,7 +1834,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'grave_keeper' }],
     voiceCategory: 'human_male_warrior',
     flavor:
-      '生と死の境界に立ち、迷える魂を裁きの間へと導く孤高の番人。神聖なる王の眠りを妨げる愚者には、無慈悲なるジャッカルの牙が深く突き立てられる。',
+      '生と死の境界で魂を導く孤高の番人。王の眠りを妨げる愚者には、無慈悲なジャッカルの牙が突き立てられる。',
   },
   {
     id: 'pharaoh',
@@ -1971,7 +1956,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'reinforce', value: 2 }],
     voiceCategory: 'human_male_warrior',
     flavor:
-      '鬱蒼とした深森を縄張りとする、屈強な三兄弟の山賊団。熊をも素手で打ち倒すほどの圧倒的な暴力と結束力で、森に迷い込んだ獲物を決して逃がさない。',
+      '深森を縄張りとする屈強な三兄弟の山賊団。圧倒的な暴力と結束力で、迷い込んだ獲物を決して逃がさない。',
   },
   {
     id: 'goldilocks',
@@ -2205,7 +2190,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '人類の歴史より遥か昔、深き水底から遣わされた奇妙な先触れ。彼らが地上に姿を現すとき、それは世界に大いなる変革の刻が訪れたことを意味している。',
+      '人類の歴史より遥か昔、深き水底から遣わされた先触れ。地上に現れる時、世界に大いなる変革が訪れる。',
   },
   {
     id: 'trapezohedron',
@@ -2386,7 +2371,7 @@ export const CARD_MASTER = [
       { id: 'legendary' },
       { id: 'loss', value: 5 },
       { id: 'bind', value: 2 },
-      { id: 'puppet', value: 9 },
+      { id: 'puppet', value: 8 },
     ],
     voiceCategory: 'human_female_cute',
     flavor:
@@ -2423,7 +2408,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'convert', value: 1 }, { id: 'leap' }],
     voiceCategory: 'magic',
     flavor:
-      '真理を探求する者たちが生涯を捧げ、ついに到達した至高の結晶。その深紅の輝きは、自らの存在を代償とすることで次元すら越える奇跡を顕現させる。',
+      '探求者たちが生涯を捧げて到達した至高の結晶。その深紅の輝きは、存在を代償に次元を超える奇跡を起こす。',
   },
   {
     id: 'gorgon',

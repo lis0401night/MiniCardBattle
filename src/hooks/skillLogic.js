@@ -1195,6 +1195,12 @@ export async function resolveActiveSkillEffect(
 
       for (let t of targets) {
         const targetCard = t.card;
+        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
+        const tgtEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
+        );
+
+        const isImmune = hasSkill(targetCard, 'immune');
         const eD = t.side === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
         let totalPowerLoss = 0;
 
@@ -1217,11 +1223,6 @@ export async function resolveActiveSkillEffect(
           }
         }
 
-        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-        const tgtEl = document.querySelector(
-          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-        );
-
         if (tgtEl) {
           tgtEl.classList.add('anim-shake');
         }
@@ -1237,10 +1238,19 @@ export async function resolveActiveSkillEffect(
         }
 
         if (t.isSelf) {
-          targetCard.currentPower = 0;
+          if (!isImmune) {
+            targetCard.currentPower = 0;
+          }
         }
 
-        if (targetCard.currentPower <= 0) {
+        let showImmunePopup = false;
+        if (isImmune) {
+          if (t.isSelf || targetCard.currentPower <= 0) {
+            showImmunePopup = true;
+          }
+        }
+
+        if (targetCard.currentPower <= 0 && !isImmune) {
           if (tgtEl) {
             tgtEl.classList.add('anim-card-destroy');
             if (!t.isHost) {
@@ -1252,6 +1262,10 @@ export async function resolveActiveSkillEffect(
             playedVoices.add(targetCard.voiceCategory);
           }
           anyValidTarget = true;
+        } else if (showImmunePopup) {
+          if (tgtEl) {
+            createDamagePopup(tgtEl, '無効', '#94a3b8');
+          }
         }
       }
 
@@ -1259,11 +1273,13 @@ export async function resolveActiveSkillEffect(
         playSound(SOUNDS.seDestroy);
         await sleep(400); // 破壊演出待ち
       } else {
-        await sleep(400); // 解除のみの演出待ち
+        await sleep(400); // 解除・無効のみの演出待ち
       }
 
       for (let t of targets) {
         const targetCard = t.card;
+        if (hasSkill(targetCard, 'immune')) continue;
+
         if (targetCard.currentPower <= 0) {
           const eB = t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           if (!(await discardCard(t.side, targetCard, t.lane, true))) {
@@ -1276,6 +1292,8 @@ export async function resolveActiveSkillEffect(
       await sleep(500);
 
       for (let t of targets) {
+        if (hasSkill(t.card, 'immune')) continue;
+
         const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
         const tgtEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
@@ -1307,29 +1325,42 @@ export async function resolveActiveSkillEffect(
         const tgtEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
         );
-        if (tgtEl) {
-          tgtEl.classList.add('anim-shake');
-          tgtEl.classList.add('anim-card-destroy');
-          createDamagePopup(tgtEl, '破壊', '#ef4444');
+        
+        if (hasSkill(t.card, 'immune')) {
+          // 「無効」を持つカードは破壊されない
+          if (tgtEl) {
+            createDamagePopup(tgtEl, '無効', '#94a3b8');
+          }
+        } else {
+          if (tgtEl) {
+            tgtEl.classList.add('anim-shake');
+            tgtEl.classList.add('anim-card-destroy');
+            createDamagePopup(tgtEl, '破壊', '#ef4444');
+          }
+          if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
+            playCardVoice(t.card.voiceCategory, 'death');
+            playedVoices.add(t.card.voiceCategory);
+          }
+          anyValidTarget = true;
         }
-        if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
-          playCardVoice(t.card.voiceCategory, 'death');
-          playedVoices.add(t.card.voiceCategory);
-        }
-        anyValidTarget = true;
       }
 
       if (anyValidTarget) {
         playSound(SOUNDS.seDestroy);
-        await sleep(400); // 破壊演出待ち
-        for (let t of targets) {
+      }
+      await sleep(400); // 破壊または無効演出待ち
+
+      for (let t of targets) {
+        if (!hasSkill(t.card, 'immune')) {
           const eB = t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           if (!(await discardCard(t.side, t.card, t.lane, true)))
             eB[t.lane] = null;
         }
-        renderBoard();
-        await sleep(500);
-        for (let t of targets) {
+      }
+      renderBoard();
+      await sleep(500);
+      for (let t of targets) {
+        if (!hasSkill(t.card, 'immune')) {
           const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
           const tgtEl = document.querySelector(
             `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`

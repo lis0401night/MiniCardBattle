@@ -833,10 +833,14 @@ export function applyActiveSkillLogic(
       const targets = [];
       for (let j = 0; j < 3; j++) {
         if (eB[j] && (hasSkill(eB[j], 'defender') || eB[j].stunTurns > 0)) {
-          targets.push({ side: oppOwner, lane: j, card: eB[j] });
+          if (!hasSkill(eB[j], 'immune')) {
+            targets.push({ side: oppOwner, lane: j, card: eB[j] });
+          }
         }
         if (b[j] && (hasSkill(b[j], 'defender') || b[j].stunTurns > 0)) {
-          targets.push({ side: owner, lane: j, card: b[j] });
+          if (!hasSkill(b[j], 'immune')) {
+            targets.push({ side: owner, lane: j, card: b[j] });
+          }
         }
       }
       for (let i = 0; i < targets.length; i++) {
@@ -876,6 +880,7 @@ export function applyActiveSkillLogic(
       for (let i = 0; i < targets.length; i++) {
         const tr = targets[i];
         const tgt = tr.targetCard;
+        const isImmune = hasSkill(tgt, 'immune');
 
         if (tr.isHost) {
           let totalLoss = tgt.equippedCards.reduce(
@@ -910,15 +915,19 @@ export function applyActiveSkillLogic(
         }
 
         if (tr.isSelf) {
-          tgt.currentPower = 0;
+          if (!isImmune) {
+            tgt.currentPower = 0;
+          }
         }
 
         if (tgt.currentPower <= 0) {
-          killTargets.push({ side: tr.side, lane: tr.lane, card: tgt });
-          if (tr.side === oppOwner) {
-            eB[tr.lane] = null;
-          } else {
-            b[tr.lane] = null;
+          if (!isImmune) {
+            killTargets.push({ side: tr.side, lane: tr.lane, card: tgt });
+            if (tr.side === oppOwner) {
+              eB[tr.lane] = null;
+            } else {
+              b[tr.lane] = null;
+            }
           }
         }
       }

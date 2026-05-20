@@ -563,6 +563,9 @@ export async function playEvents(events) {
             if (cell) {
               const cardEl = cell.querySelector('.card');
               if (cardEl) {
+                cardEl.classList.remove('anim-shake');
+                cardEl.classList.remove('anim-card-destroy');
+                void cardEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
                 cardEl.classList.add('anim-shake');
                 cardEl.classList.add('anim-card-destroy');
               }

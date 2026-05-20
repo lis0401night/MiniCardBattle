@@ -140,7 +140,7 @@ export const SKILL_POINTS = {
   },
   standby: {
     base: 0,
-    multiplier: -2,
+    multiplier: -1,
   },
   artillery: {
     base: -1,
@@ -315,7 +315,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   leap: {
-    base: 5,
+    base: 6,
     multiplier: 0,
   },
   chant: {
