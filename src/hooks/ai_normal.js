@@ -38,6 +38,19 @@ import { GameState } from './gameState.js';
  */
 const METAMORPH_ESTIMATED_POWER = 5;
 
+const cloneCard = (c) => (c ? structuredClone(c) : null);
+
+const getCombinations = (arr, k) => {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  let results = [];
+  for (let i = 0; i <= arr.length - k; i++) {
+    let sub = getCombinations(arr.slice(i + 1), k - 1);
+    for (let s of sub) results.push([arr[i], ...s]);
+  }
+  return results;
+};
+
 /**
  * 【AI設計の絶対原則 - グローバルルール】
  * ノーマル以上のAIは、実行可能な全ての選択肢（手札、配置レーン、スキルによる対象選択、分岐）を
@@ -50,10 +63,592 @@ const METAMORPH_ESTIMATED_POWER = 5;
  * 計算コストの削減のためにシミュレーションの質を落とすことは、このAIにおいて許容されない。
  */
 
+export function processActionSequence(
+  actionQueue,
+  isLeaderSkillPlay = false,
+  leaderSkillActionStr = null,
+  leaderSkillTokenLanes = null,
+  skillOrderTiming = 'before',
+  leaderSkillTargetIdx = null,
+  leaderSkillTargetUid = null,
+  initialSimState = null
+) {
+  let simState = initialSimState;
+  if (!simState) {
+    simState = {
+      playerBoard: GameState.playerBoard.map(cloneCard),
+      enemyBoard: GameState.enemyBoard.map(cloneCard),
+      playerDiscard: GameState.playerDiscard
+        ? GameState.playerDiscard.map(cloneCard)
+        : [],
+      enemyDiscard: GameState.enemyDiscard ? GameState.enemyDiscard.map(cloneCard) : [],
+      playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+      enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
+      playerHP: GameState.playerHP,
+      enemyHP: GameState.enemyHP,
+      playerMaxHP: GameState.playerMaxHP || 25,
+      enemyMaxHP: GameState.enemyMaxHP || 25,
+      playerSP: GameState.playerSP || 0,
+      enemySP: GameState.enemySP || 0,
+      playerHand: GameState.playerHand
+        ? GameState.playerHand.map(cloneCard)
+        : [],
+      enemyHand: GameState.enemyHand ? GameState.enemyHand.map(cloneCard) : [],
+      playerDeck: GameState.playerDeck
+        ? GameState.playerDeck.map(cloneCard)
+        : [],
+      enemyDeck: [],
+      extraTurnCount: GameState.extraTurnCount || 0,
+      attackSkipCount: GameState.attackSkipCount || 0,
+      combatDamageTaken: 0,
+      lastCardPlayed: null,
+      lastPlayedLane: -1,
+      _actionQueue: [],
+    };
+  }
+
+  [simState.playerBoard, simState.enemyBoard].forEach((b) => {
+    b.forEach((c) => {
+      if (c) {
+        if (c.currentPower === undefined || c.currentPower === null) {
+          c.currentPower = c.power || 0;
+        }
+        c.isSkillResolving = false; // シミュレート空間ではアニメーション待ちの保護フラグを無効化
+      }
+    });
+  });
+
+  if (
+    isLeaderSkillPlay &&
+    skillOrderTiming === 'before' &&
+    leaderSkillActionStr
+  ) {
+    simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
+    applyLeaderSkillLogic(
+      simState,
+      'red',
+      leaderSkillActionStr,
+      leaderSkillTokenLanes,
+      [],
+      leaderSkillTargetIdx,
+      leaderSkillTargetUid
+    );
+    if (simState._actionQueue && simState._actionQueue.length > 0) {
+      actionQueue.unshift(...simState._actionQueue);
+      delete simState._actionQueue;
+    }
+    // リーダースキル適用後、パワー0以下のカードを破壊済みとしてnullにする
+    // （targeted_destruction等はcurrentPowerを0にするだけなので、制約チェックが正しく機能するよう反映）
+    for (let i = 0; i < 3; i++) {
+      if (
+        simState.playerBoard[i] &&
+        simState.playerBoard[i].currentPower <= 0
+      )
+        simState.playerBoard[i] = null;
+      if (simState.enemyBoard[i] && simState.enemyBoard[i].currentPower <= 0)
+        simState.enemyBoard[i] = null;
+    }
+  }
+
+  for (let action of actionQueue) {
+    if (action.type === 'pass') continue;
+    // choice/forceノードはメタ情報のみ（choices指定）で、カード配置には関与しない
+    if (action.type === 'choice' || action.type === 'force') continue;
+
+    if (action.type === 'discard') {
+      if (simState.enemyHand[action.targetIdx]) {
+        simState.enemyDiscard.push(simState.enemyHand[action.targetIdx]);
+        simState.enemyHand[action.targetIdx] = null;
+      }
+      continue;
+    }
+
+    const tIdx = action.targetIdx;
+    const lIdx = action.laneIdx;
+    let playedCard = null;
+
+    if (simState.enemySealedLanes[lIdx] === 1) return null;
+
+    let checkConstraints = false;
+    let triggerSkills = true;
+
+    if (
+      action.type === 'play' ||
+      action.type === 'invite' ||
+      action.type === 'chant' ||
+      action.type === 'forge' ||
+      action.type === 'play_adhoc'
+    ) {
+      // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（chant/invite/forge/play_adhoc用）
+      // 実行時と同様に手札を消費せずスキップする
+      if (
+        lIdx === -1 &&
+        (action.type === 'invite' ||
+          action.type === 'chant' ||
+          action.type === 'forge' ||
+          action.type === 'play_adhoc')
+      ) {
+        continue;
+      }
+      if (action.type === 'play_adhoc') {
+        playedCard = cloneCard(action.card);
+        checkConstraints = action.checkConstraints !== undefined ? action.checkConstraints : true;
+      } else {
+        playedCard = cloneCard(simState.enemyHand[tIdx]);
+        if (action.type === 'forge') {
+          const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+            name: '虚空',
+            power: 0,
+          };
+          simState.enemyHand.push(cloneCard(voidTpl));
+        }
+        checkConstraints = true;
+        if (simState.enemyHand[tIdx]) simState.enemyHand[tIdx] = null;
+      }
+      simState.lastPlayedLane = lIdx;
+    } else if (action.type === 'token_placement') {
+      const sourceL =
+        simState.lastPlayedLane !== -1 ? simState.lastPlayedLane : 0;
+      const sourceCard = simState.enemyBoard[sourceL];
+      // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
+      // summonId が分かっているなら直接トークンを生成する
+      if (
+        ['summon', 'wall_create', 'clone', 'split', 'puppet'].includes(
+          action.skillId
+        )
+      ) {
+        let tokenPower = action.skillValue || 1;
+        if (action.skillId === 'clone' && sourceCard) {
+          tokenPower =
+            sourceCard.currentPower !== undefined
+              ? sourceCard.currentPower
+              : sourceCard.power || 0;
+        }
+        let tokenId = action.summonId;
+        if (!tokenId) {
+          if (action.skillId === 'wall_create') {
+            tokenId = 'token_wall';
+          } else if (action.skillId === 'puppet') {
+            tokenId = 'token_doll';
+          } else if (action.skillId === 'clone') {
+            tokenId = 'token_clone';
+          } else {
+            // summon / split のフォールバック（summonIdが未指定の場合）
+            tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
+          }
+        }
+        const baseMaster = CARD_MASTER.find((m) => m.id === tokenId);
+        const lanes = [...(action.lanes || [])];
+        for (const tLane of lanes) {
+          const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
+          if (sealedLanes[tLane] === 1) continue;
+          // cloneトークンは元カードのスキルを引き継ぐ（分身含む全スキル）
+          // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
+          let inheritedSkills = [];
+          if (action.skillId === 'clone' && sourceCard) {
+            if (sourceCard.skill && sourceCard.skill !== 'none') {
+              inheritedSkills.push({
+                id: sourceCard.skill,
+                value: sourceCard.skillValue,
+              });
+            }
+            if (Array.isArray(sourceCard.skills)) {
+              inheritedSkills = inheritedSkills.concat(sourceCard.skills);
+            }
+          }
+          const newToken = {
+            id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+            baseId: tokenId,
+            name: baseMaster?.name || 'トークン',
+            isToken: true,
+            rarity: 1,
+            owner: 'red',
+            imgUrl: `assets/cards/card_${tokenId}.jpg`,
+            power: tokenPower,
+            basePower: tokenPower,
+            currentPower: tokenPower,
+            voiceCategory: baseMaster?.voiceCategory || 'monster',
+            skills: inheritedSkills,
+          };
+          // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
+          const existingCard = simState.enemyBoard[tLane];
+          if (
+            existingCard &&
+            (hasSkill(newToken, 'equip') ||
+              hasSkill(existingCard, 'arm_self')) &&
+            !hasSkill(existingCard, 'possession') &&
+            !hasSkill(newToken, 'possession') &&
+            !hasSkill(existingCard, 'reflect') &&
+            !hasSkill(newToken, 'reflect')
+          ) {
+            // 装備合体: パワー加算 + スキル統合
+            existingCard.basePower =
+              (existingCard.basePower || 0) + (newToken.currentPower || 0);
+            existingCard.currentPower =
+              (existingCard.currentPower || 0) + (newToken.currentPower || 0);
+            // トークンのスキルを統合（equip自体は除外）
+            let addedSkills = [];
+            if (newToken.skills) {
+              newToken.skills.forEach((s) => {
+                if (s.id !== 'equip') addedSkills.push(s);
+              });
+            }
+            if (addedSkills.length > 0) {
+              mergeCardSkills(existingCard, addedSkills);
+            }
+          } else if (existingCard) {
+            // 装備不可: 既存カードを墓地に移動して上書き
+            simState.enemyDiscard.push(existingCard);
+            simState.enemyBoard[tLane] = null;
+            simState.enemyBoard[tLane] = newToken;
+          } else {
+            // 空きレーン: そのまま配置
+            simState.enemyBoard[tLane] = newToken;
+          }
+        }
+      } else {
+        // 【重要】action.lanes のコピーを渡す。applyActiveSkillLogic 内部で shift() により
+        // 配列が消費されるため、元配列をそのまま渡すと actionQueue に空配列が残り、
+        // 実行時の skillLogic.js でレーン指定が取得できなくなる。
+        applyActiveSkillLogic(
+          simState,
+          'red',
+          sourceL,
+          action.skillId,
+          action.skillValue || 0,
+          [],
+          [...(action.lanes || [])],
+          undefined
+        );
+      }
+      continue;
+    } else if (action.type === 'resurrect') {
+      if (isGraveKeeperActive(simState)) return null;
+      if (lIdx === -1) continue; // 明示的キャンセル
+      // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
+      let resIdx = -1;
+      if (action.targetUid) {
+        resIdx = simState.enemyDiscard.findIndex(
+          (c) =>
+            c && (c.baseId === action.targetUid || c.id === action.targetUid)
+        );
+      }
+      if (resIdx === -1 && action.targetIdx !== undefined) {
+        resIdx = action.targetIdx;
+      }
+      if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
+      playedCard = cloneCard(simState.enemyDiscard[resIdx]);
+      simState.lastPlayedLane = lIdx;
+      if (playedCard && action.maxP !== undefined) {
+        const master = CARD_MASTER.find(
+          (m) => m.id === playedCard.id || m.id === playedCard.baseId
+        );
+        const baseP = master ? master.power : playedCard.power || 0;
+        if (baseP > action.maxP) return null; // 制限オーバーは不正として棄却
+      }
+      checkConstraints = false;
+      triggerSkills = false;
+      if (playedCard) playedCard.skillTriggered = true;
+      simState.enemyDiscard[resIdx] = null;
+    } else if (action.type === 'salvage') {
+      if (isGraveKeeperActive(simState)) return null;
+      let resIdx = -1;
+      if (action.targetUid)
+        resIdx = simState.enemyDiscard.findIndex(
+          (c) =>
+            c && (c.baseId === action.targetUid || c.id === action.targetUid)
+        );
+      if (resIdx === -1 && action.targetIdx !== undefined)
+        resIdx = action.targetIdx;
+      if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
+
+      let salvagedCard = cloneCard(simState.enemyDiscard[resIdx]);
+      simState.enemyDiscard[resIdx] = null;
+      simState.enemyHand.push(salvagedCard);
+      continue; // 盤面には出さない
+    } else if (
+      action.type === 'devilhunter_resurrect' ||
+      action.type === 'targeted_destruction' ||
+      action.type === 'tomb_guard' ||
+      action.type === 'death_judgment' ||
+      action.type === 'elf_polarbear_combo'
+    ) {
+      // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
+      // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
+      // 次のアクションのシミュレートへ移るためにcontinueする。
+      continue;
+    } else if (action.type === 'leap') {
+      // 【跳躍】追加ターンを1回付与（SP増加なし・攻撃なし）
+      simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
+      simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
+      continue;
+    }
+
+    if (!playedCard) return null;
+
+    if (checkConstraints) {
+      if (
+        hasSkill(playedCard, 'challenge') &&
+        simState.playerBoard[lIdx] === null
+      )
+        return null;
+      if (
+        hasSkill(playedCard, 'takeover') &&
+        simState.enemyBoard[lIdx] === null
+      )
+        return null;
+      if (hasSkill(playedCard, 'legendary') && lIdx !== 1) return null;
+      if (
+        hasSkill(playedCard, 'apex') &&
+        !(
+          simState.enemyBoard[lIdx] &&
+          hasSkill(simState.enemyBoard[lIdx], 'legendary')
+        )
+      )
+        return null;
+    }
+
+    let skillWasHandledByEquip = false;
+    if (
+      (hasSkill(playedCard, 'equip') ||
+        hasSkill(simState.enemyBoard[lIdx], 'arm_self')) &&
+      simState.enemyBoard[lIdx]
+    ) {
+      skillWasHandledByEquip = true;
+      const targetCard = simState.enemyBoard[lIdx];
+      targetCard.basePower =
+        (targetCard.basePower || 0) + (playedCard.power || 0);
+      targetCard.currentPower =
+        (targetCard.currentPower || 0) + (playedCard.power || 0);
+      let addedSkills = [];
+      if (
+        playedCard.skill &&
+        playedCard.skill !== 'none' &&
+        playedCard.skill !== 'equip'
+      )
+        addedSkills.push({
+          id: playedCard.skill,
+          value: playedCard.skillValue,
+        });
+      if (playedCard.skills)
+        playedCard.skills.forEach((s) => {
+          if (s.id !== 'equip')
+            addedSkills.push({ id: s.id, value: s.value });
+        });
+      mergeCardSkills(targetCard, addedSkills);
+      let cLanesForEquip = action.cardTokenLanes
+        ? [...action.cardTokenLanes]
+        : null;
+      applyActiveSkillLogic(
+        simState,
+        'red',
+        lIdx,
+        'equip',
+        0,
+        [],
+        cLanesForEquip,
+        lIdx
+      ); // 装備によるバフと付随スキルのシミュレート
+      if (simState._actionQueue && simState._actionQueue.length > 0) {
+        actionQueue.push(...simState._actionQueue);
+        delete simState._actionQueue;
+      }
+    }
+
+    if (!skillWasHandledByEquip) {
+      let activeCardForSkills = playedCard;
+      const unionSkill =
+        playedCard.skills && playedCard.skills.find((s) => s.id === 'union');
+      if (
+        unionSkill &&
+        simState.enemyBoard[lIdx] &&
+        (simState.enemyBoard[lIdx].baseId === unionSkill.targetId ||
+          simState.enemyBoard[lIdx].id === unionSkill.targetId)
+      ) {
+        const masterData =
+          CARD_MASTER.find((c) => c.id === unionSkill.summonId) ||
+          CARD_MASTER.find((c) => c.id === 'android');
+        let unionCard = JSON.parse(JSON.stringify(masterData));
+        unionCard.uid = 'sim_union_' + Math.floor(Math.random() * 1000000);
+        unionCard.owner = 'red';
+        unionCard.baseId = unionCard.id;
+        unionCard.basePower = unionCard.power;
+        unionCard.currentPower = unionCard.power;
+        unionCard.stunTurns = 0;
+        simState.enemyBoard[lIdx] = unionCard;
+        activeCardForSkills = unionCard;
+      } else {
+        if (
+          playedCard.currentPower === undefined ||
+          Number.isNaN(playedCard.currentPower) ||
+          (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)
+        ) {
+          playedCard.currentPower = playedCard.power || 0;
+          playedCard.basePower = playedCard.power || 0;
+        }
+        simState.enemyBoard[lIdx] = playedCard;
+      }
+
+      let skills = [];
+      let modifiedSkillsForCard = [];
+      if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
+        if (
+          (activeCardForSkills.skill === 'choice' ||
+            activeCardForSkills.skill === 'force') &&
+          action.choices &&
+          activeCardForSkills.choices
+        ) {
+          action.choices.forEach((idx) => {
+            if (activeCardForSkills.choices[idx]) {
+              let sk = {
+                id: activeCardForSkills.choices[idx].id,
+                value: activeCardForSkills.choices[idx].value,
+              };
+              skills.push(sk);
+              modifiedSkillsForCard.push(sk);
+            }
+          });
+          activeCardForSkills.skill = 'none';
+        } else {
+          skills.push({
+            id: activeCardForSkills.skill,
+            value: activeCardForSkills.skillValue,
+          });
+        }
+      }
+
+      let newSkillsArr = [];
+      if (Array.isArray(activeCardForSkills.skills)) {
+        activeCardForSkills.skills.forEach((sk) => {
+          if (sk.id === 'choice' || sk.id === 'force') {
+            if (
+              sk.choiceGroup === 2 &&
+              action.choices2 &&
+              activeCardForSkills.choices2
+            ) {
+              action.choices2.forEach((idx) => {
+                if (activeCardForSkills.choices2[idx]) {
+                  let chosenSk = {
+                    id: activeCardForSkills.choices2[idx].id,
+                    value: activeCardForSkills.choices2[idx].value,
+                  };
+                  skills.push(chosenSk);
+                  newSkillsArr.push(chosenSk);
+                }
+              });
+            } else if (action.choices && activeCardForSkills.choices) {
+              action.choices.forEach((idx) => {
+                if (activeCardForSkills.choices[idx]) {
+                  let chosenSk = {
+                    id: activeCardForSkills.choices[idx].id,
+                    value: activeCardForSkills.choices[idx].value,
+                  };
+                  skills.push(chosenSk);
+                  newSkillsArr.push(chosenSk);
+                }
+              });
+            }
+          } else {
+            skills.push(sk);
+            newSkillsArr.push(sk);
+          }
+        });
+        activeCardForSkills.skills = [
+          ...newSkillsArr,
+          ...modifiedSkillsForCard,
+        ];
+      } else if (modifiedSkillsForCard.length > 0) {
+        activeCardForSkills.skills = [...modifiedSkillsForCard];
+      }
+
+      if (triggerSkills && !activeCardForSkills.skillTriggered) {
+        skills.forEach((sk) => {
+          if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
+            simState.actionUtilityBonus =
+              (simState.actionUtilityBonus || 0) + (AI_SKILL_UTILITY[sk.id] || 0);
+          }
+          if (sk.id === 'call') {
+            const callBonus = sk.value || 3;
+            const boardCard = simState.enemyBoard[lIdx];
+            if (boardCard) {
+              boardCard.currentPower =
+                (boardCard.currentPower || 0) + callBonus;
+              boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+            }
+          } else if (sk.id === 'metamorph') {
+            const boardCard = simState.enemyBoard[lIdx];
+            if (boardCard) {
+              boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
+              boardCard.basePower = METAMORPH_ESTIMATED_POWER;
+            }
+          } else if (sk.id === 'leap') {
+            simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
+            simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
+          } else if (
+            ![
+              'invite',
+              'chant',
+              'convert',
+              'draw',
+              'salvage',
+              'reinforce',
+              'puppet',
+              'summon',
+              'resurrect',
+              'awake',
+              'clone',
+              'wall_create',
+              'split',
+            ].includes(sk.id)
+          ) {
+            applyActiveSkillLogic(
+              simState,
+              'red',
+              lIdx,
+              sk.id,
+              sk.value,
+              [],
+              action.cardTokenLanes ? [...action.cardTokenLanes] : null,
+              undefined
+            );
+          }
+        });
+        if (simState._actionQueue && simState._actionQueue.length > 0) {
+          actionQueue.push(...simState._actionQueue);
+          delete simState._actionQueue;
+        }
+      }
+
+      if (
+        simState.enemyBoard[lIdx] &&
+        simState.enemyBoard[lIdx].currentPower <= 0
+      ) {
+        simState.enemyBoard[lIdx] = null;
+      }
+    }
+  }
+
+  const hpBeforeCombat = simState.enemyHP;
+
+  if (!(simState.extraTurnCount > 0)) {
+    applyPassiveSkillLogic(simState, 'blue');
+    simState.playerBoard.forEach((c) => {
+      if (c && c.stunTurns > 0) c.stunTurns--;
+    });
+    calculateCombatPhase(simState, 'blue');
+    simState.combatDamageTaken = Math.max(
+      0,
+      hpBeforeCombat - simState.enemyHP
+    );
+  } else {
+    simState.extraTurnCount--;
+    simState.combatDamageTaken = 0;
+  }
+
+  return simState;
+}
+
 export function getBestSimulatedMove() {
-  // 【最適化】JSON.parse/stringifyは文字列化→パースの2段階でGC負荷が大きいため、
-  // structuredCloneを使用してメモリ効率を改善（スマホクラッシュ防止）
-  const cloneCard = (c) => (c ? structuredClone(c) : null);
   const hand = GameState.enemyHand.map(cloneCard);
   const discard = GameState.enemyDiscard.map(cloneCard);
   let myBoard = GameState.enemyBoard.map(cloneCard);
@@ -73,16 +668,6 @@ export function getBestSimulatedMove() {
     !GameState.enemyConfig.leaderSkillUsed;
   const skill = GameState.enemyConfig.leaderSkill;
 
-  const getCombinations = (arr, k) => {
-    if (k === 0) return [[]];
-    if (arr.length < k) return [];
-    let results = [];
-    for (let i = 0; i <= arr.length - k; i++) {
-      let sub = getCombinations(arr.slice(i + 1), k - 1);
-      for (let s of sub) results.push([arr[i], ...s]);
-    }
-    return results;
-  };
 
   function buildCardPlayTree(
     card,
@@ -765,604 +1350,10 @@ export function getBestSimulatedMove() {
     return branches.filter((b) => b.length > 0);
   }
 
-  function processActionSequence(
-    actionQueue,
-    isLeaderSkillPlay = false,
-    leaderSkillActionStr = null,
-    leaderSkillTokenLanes = null,
-    skillOrderTiming = 'before',
-    leaderSkillTargetIdx = null,
-    leaderSkillTargetUid = null
-  ) {
-    let simState = {
-      playerBoard: opBoard.map(cloneCard),
-      enemyBoard: myBoard.map(cloneCard),
-      playerDiscard: GameState.playerDiscard
-        ? GameState.playerDiscard.map(cloneCard)
-        : [],
-      enemyDiscard: discard ? discard.map(cloneCard) : [],
-      playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
-      enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
-      playerHP: opHP,
-      enemyHP: myHP,
-      playerMaxHP: GameState.playerMaxHP || 25,
-      enemyMaxHP: GameState.enemyMaxHP || 25,
-      playerSP: GameState.playerSP || 0,
-      enemySP: mySP || 0,
-      playerHand: GameState.playerHand
-        ? GameState.playerHand.map(cloneCard)
-        : [],
-      enemyHand: hand ? hand.map(cloneCard) : [],
-      playerDeck: GameState.playerDeck
-        ? GameState.playerDeck.map(cloneCard)
-        : [],
-      enemyDeck: [],
-      extraTurnCount: GameState.extraTurnCount || 0,
-      attackSkipCount: GameState.attackSkipCount || 0,
-      combatDamageTaken: 0,
-      lastCardPlayed: null,
-      lastPlayedLane: -1,
-      _actionQueue: [],
-    };
-
-    [simState.playerBoard, simState.enemyBoard].forEach((b) => {
-      b.forEach((c) => {
-        if (c) {
-          if (c.currentPower === undefined || c.currentPower === null) {
-            c.currentPower = c.power || 0;
-          }
-          c.isSkillResolving = false; // シミュレート空間ではアニメーション待ちの保護フラグを無効化
-        }
-      });
-    });
-
-    if (
-      isLeaderSkillPlay &&
-      skillOrderTiming === 'before' &&
-      leaderSkillActionStr
-    ) {
-      simState.enemySP -= GameState.enemyConfig.leaderSkill.cost;
-      applyLeaderSkillLogic(
-        simState,
-        'red',
-        leaderSkillActionStr,
-        leaderSkillTokenLanes,
-        [],
-        leaderSkillTargetIdx,
-        leaderSkillTargetUid
-      );
-      if (simState._actionQueue && simState._actionQueue.length > 0) {
-        actionQueue.unshift(...simState._actionQueue);
-        delete simState._actionQueue;
-      }
-      // リーダースキル適用後、パワー0以下のカードを破壊済みとしてnullにする
-      // （targeted_destruction等はcurrentPowerを0にするだけなので、制約チェックが正しく機能するよう反映）
-      for (let i = 0; i < 3; i++) {
-        if (
-          simState.playerBoard[i] &&
-          simState.playerBoard[i].currentPower <= 0
-        )
-          simState.playerBoard[i] = null;
-        if (simState.enemyBoard[i] && simState.enemyBoard[i].currentPower <= 0)
-          simState.enemyBoard[i] = null;
-      }
-    }
-
-    for (let action of actionQueue) {
-      if (action.type === 'pass') continue;
-      // choice/forceノードはメタ情報のみ（choices指定）で、カード配置には関与しない
-      if (action.type === 'choice' || action.type === 'force') continue;
-
-      if (action.type === 'discard') {
-        if (simState.enemyHand[action.targetIdx]) {
-          simState.enemyDiscard.push(simState.enemyHand[action.targetIdx]);
-          simState.enemyHand[action.targetIdx] = null;
-        }
-        continue;
-      }
-
-      const tIdx = action.targetIdx;
-      const lIdx = action.laneIdx;
-      let playedCard = null;
-
-      if (mySealedLanes[lIdx] === 1) return null;
-
-      let checkConstraints = false;
-      let triggerSkills = true;
-
-      if (
-        action.type === 'play' ||
-        action.type === 'invite' ||
-        action.type === 'chant' ||
-        action.type === 'forge'
-      ) {
-        // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（chant/invite/forge用）
-        // 実行時と同様に手札を消費せずスキップする
-        if (
-          lIdx === -1 &&
-          (action.type === 'invite' ||
-            action.type === 'chant' ||
-            action.type === 'forge')
-        ) {
-          continue;
-        }
-        playedCard = cloneCard(simState.enemyHand[tIdx]);
-        if (action.type === 'forge') {
-          const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-            name: '虚空',
-            power: 0,
-          };
-          simState.enemyHand.push(cloneCard(voidTpl));
-        }
-        checkConstraints = true;
-        if (simState.enemyHand[tIdx]) simState.enemyHand[tIdx] = null;
-        simState.lastPlayedLane = lIdx;
-      } else if (action.type === 'token_placement') {
-        const sourceL =
-          simState.lastPlayedLane !== -1 ? simState.lastPlayedLane : 0;
-        const sourceCard = simState.enemyBoard[sourceL];
-        // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
-        // summonId が分かっているなら直接トークンを生成する
-        if (
-          ['summon', 'wall_create', 'clone', 'split', 'puppet'].includes(
-            action.skillId
-          )
-        ) {
-          let tokenPower = action.skillValue || 1;
-          if (action.skillId === 'clone' && sourceCard) {
-            tokenPower =
-              sourceCard.currentPower !== undefined
-                ? sourceCard.currentPower
-                : sourceCard.power || 0;
-          }
-          let tokenId = action.summonId;
-          if (!tokenId) {
-            if (action.skillId === 'wall_create') {
-              tokenId = 'token_wall';
-            } else if (action.skillId === 'puppet') {
-              tokenId = 'token_doll';
-            } else if (action.skillId === 'clone') {
-              tokenId = 'token_clone';
-            } else {
-              // summon / split のフォールバック（summonIdが未指定の場合）
-              tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
-            }
-          }
-          const baseMaster = CARD_MASTER.find((m) => m.id === tokenId);
-          const lanes = [...(action.lanes || [])];
-          for (const tLane of lanes) {
-            const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
-            if (sealedLanes[tLane] === 1) continue;
-            // cloneトークンは元カードのスキルを引き継ぐ（分身含む全スキル）
-            // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
-            let inheritedSkills = [];
-            if (action.skillId === 'clone' && sourceCard) {
-              if (sourceCard.skill && sourceCard.skill !== 'none') {
-                inheritedSkills.push({
-                  id: sourceCard.skill,
-                  value: sourceCard.skillValue,
-                });
-              }
-              if (Array.isArray(sourceCard.skills)) {
-                inheritedSkills = inheritedSkills.concat(sourceCard.skills);
-              }
-            }
-            const newToken = {
-              id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
-              baseId: tokenId,
-              name: baseMaster?.name || 'トークン',
-              isToken: true,
-              rarity: 1,
-              owner: 'red',
-              imgUrl: `assets/cards/card_${tokenId}.jpg`,
-              power: tokenPower,
-              basePower: tokenPower,
-              currentPower: tokenPower,
-              voiceCategory: baseMaster?.voiceCategory || 'monster',
-              skills: inheritedSkills,
-            };
-            // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
-            const existingCard = simState.enemyBoard[tLane];
-            if (
-              existingCard &&
-              (hasSkill(newToken, 'equip') ||
-                hasSkill(existingCard, 'arm_self')) &&
-              !hasSkill(existingCard, 'possession') &&
-              !hasSkill(newToken, 'possession') &&
-              !hasSkill(existingCard, 'reflect') &&
-              !hasSkill(newToken, 'reflect')
-            ) {
-              // 装備合体: パワー加算 + スキル統合
-              existingCard.basePower =
-                (existingCard.basePower || 0) + (newToken.currentPower || 0);
-              existingCard.currentPower =
-                (existingCard.currentPower || 0) + (newToken.currentPower || 0);
-              // トークンのスキルを統合（equip自体は除外）
-              let addedSkills = [];
-              if (newToken.skills) {
-                newToken.skills.forEach((s) => {
-                  if (s.id !== 'equip') addedSkills.push(s);
-                });
-              }
-              if (addedSkills.length > 0) {
-                mergeCardSkills(existingCard, addedSkills);
-              }
-            } else if (existingCard) {
-              // 装備不可: 既存カードを墓地に移動して上書き
-              simState.enemyDiscard.push(existingCard);
-              simState.enemyBoard[tLane] = null;
-              simState.enemyBoard[tLane] = newToken;
-            } else {
-              // 空きレーン: そのまま配置
-              simState.enemyBoard[tLane] = newToken;
-            }
-          }
-        } else {
-          // 【重要】action.lanes のコピーを渡す。applyActiveSkillLogic 内部で shift() により
-          // 配列が消費されるため、元配列をそのまま渡すと actionQueue に空配列が残り、
-          // 実行時の skillLogic.js でレーン指定が取得できなくなる。
-          applyActiveSkillLogic(
-            simState,
-            'red',
-            sourceL,
-            action.skillId,
-            action.skillValue || 0,
-            [],
-            [...(action.lanes || [])],
-            undefined
-          );
-        }
-        continue;
-      } else if (action.type === 'resurrect') {
-        if (isGraveKeeperActive(simState)) return null;
-        if (lIdx === -1) continue; // 明示的キャンセル
-        // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
-        let resIdx = -1;
-        if (action.targetUid) {
-          resIdx = simState.enemyDiscard.findIndex(
-            (c) =>
-              c && (c.baseId === action.targetUid || c.id === action.targetUid)
-          );
-        }
-        if (resIdx === -1 && action.targetIdx !== undefined) {
-          resIdx = action.targetIdx;
-        }
-        if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
-        playedCard = cloneCard(simState.enemyDiscard[resIdx]);
-        simState.lastPlayedLane = lIdx;
-        if (playedCard && action.maxP !== undefined) {
-          const master = CARD_MASTER.find(
-            (m) => m.id === playedCard.id || m.id === playedCard.baseId
-          );
-          const baseP = master ? master.power : playedCard.power || 0;
-          if (baseP > action.maxP) return null; // 制限オーバーは不正として棄却
-        }
-        checkConstraints = false;
-        triggerSkills = false;
-        if (playedCard) playedCard.skillTriggered = true;
-        simState.enemyDiscard[resIdx] = null;
-      } else if (action.type === 'salvage') {
-        if (isGraveKeeperActive(simState)) return null;
-        let resIdx = -1;
-        if (action.targetUid)
-          resIdx = simState.enemyDiscard.findIndex(
-            (c) =>
-              c && (c.baseId === action.targetUid || c.id === action.targetUid)
-          );
-        if (resIdx === -1 && action.targetIdx !== undefined)
-          resIdx = action.targetIdx;
-        if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
-
-        let salvagedCard = cloneCard(simState.enemyDiscard[resIdx]);
-        simState.enemyDiscard[resIdx] = null;
-        simState.enemyHand.push(salvagedCard);
-        continue; // 盤面には出さない
-      } else if (
-        action.type === 'devilhunter_resurrect' ||
-        action.type === 'targeted_destruction' ||
-        action.type === 'tomb_guard' ||
-        action.type === 'death_judgment' ||
-        action.type === 'elf_polarbear_combo'
-      ) {
-        // すでにapplyLeaderSkillLogicによって、盤面への配置や合体・装備処理は「完了」している。
-        // したがって、アクションループの残りの処理（盤面の上書きやスキルの再発動）は行わず、
-        // 次のアクションのシミュレートへ移るためにcontinueする。
-        continue;
-      } else if (action.type === 'leap') {
-        // 【跳躍】追加ターンを1回付与（SP増加なし・攻撃なし）
-        simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
-        simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
-        continue;
-      }
-
-      if (!playedCard) return null;
-
-      if (checkConstraints) {
-        if (
-          hasSkill(playedCard, 'challenge') &&
-          simState.playerBoard[lIdx] === null
-        )
-          return null;
-        if (
-          hasSkill(playedCard, 'takeover') &&
-          simState.enemyBoard[lIdx] === null
-        )
-          return null;
-        if (hasSkill(playedCard, 'legendary') && lIdx !== 1) return null;
-        if (
-          hasSkill(playedCard, 'apex') &&
-          !(
-            simState.enemyBoard[lIdx] &&
-            hasSkill(simState.enemyBoard[lIdx], 'legendary')
-          )
-        )
-          return null;
-      }
-
-      let skillWasHandledByEquip = false;
-      if (
-        (hasSkill(playedCard, 'equip') ||
-          hasSkill(simState.enemyBoard[lIdx], 'arm_self')) &&
-        simState.enemyBoard[lIdx]
-      ) {
-        skillWasHandledByEquip = true;
-        const targetCard = simState.enemyBoard[lIdx];
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (playedCard.power || 0);
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (playedCard.power || 0);
-        let addedSkills = [];
-        if (
-          playedCard.skill &&
-          playedCard.skill !== 'none' &&
-          playedCard.skill !== 'equip'
-        )
-          addedSkills.push({
-            id: playedCard.skill,
-            value: playedCard.skillValue,
-          });
-        if (playedCard.skills)
-          playedCard.skills.forEach((s) => {
-            if (s.id !== 'equip')
-              addedSkills.push({ id: s.id, value: s.value });
-          });
-        mergeCardSkills(targetCard, addedSkills);
-        let cLanesForEquip = action.cardTokenLanes
-          ? [...action.cardTokenLanes]
-          : null;
-        applyActiveSkillLogic(
-          simState,
-          'red',
-          lIdx,
-          'equip',
-          0,
-          [],
-          cLanesForEquip,
-          lIdx
-        ); // 装備によるバフと付随スキルのシミュレート
-        if (simState._actionQueue && simState._actionQueue.length > 0) {
-          actionQueue.push(...simState._actionQueue);
-          delete simState._actionQueue;
-        }
-      }
-
-      if (!skillWasHandledByEquip) {
-        let activeCardForSkills = playedCard;
-        const unionSkill =
-          playedCard.skills && playedCard.skills.find((s) => s.id === 'union');
-        if (
-          unionSkill &&
-          simState.enemyBoard[lIdx] &&
-          (simState.enemyBoard[lIdx].baseId === unionSkill.targetId ||
-            simState.enemyBoard[lIdx].id === unionSkill.targetId)
-        ) {
-          const masterData =
-            CARD_MASTER.find((c) => c.id === unionSkill.summonId) ||
-            CARD_MASTER.find((c) => c.id === 'android');
-          let unionCard = JSON.parse(JSON.stringify(masterData));
-          unionCard.uid = 'sim_union_' + Math.floor(Math.random() * 1000000);
-          unionCard.owner = 'red';
-          unionCard.baseId = unionCard.id;
-          unionCard.basePower = unionCard.power;
-          unionCard.currentPower = unionCard.power;
-          unionCard.stunTurns = 0;
-          simState.enemyBoard[lIdx] = unionCard;
-          activeCardForSkills = unionCard;
-        } else {
-          if (
-            playedCard.currentPower === undefined ||
-            Number.isNaN(playedCard.currentPower) ||
-            (playedCard.currentPower <= 0 && (playedCard.power || 0) > 0)
-          ) {
-            playedCard.currentPower = playedCard.power || 0;
-            playedCard.basePower = playedCard.power || 0;
-          }
-          simState.enemyBoard[lIdx] = playedCard;
-        }
-
-        let skills = [];
-        let modifiedSkillsForCard = [];
-        if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
-          if (
-            (activeCardForSkills.skill === 'choice' ||
-              activeCardForSkills.skill === 'force') &&
-            action.choices &&
-            activeCardForSkills.choices
-          ) {
-            action.choices.forEach((idx) => {
-              if (activeCardForSkills.choices[idx]) {
-                let sk = {
-                  id: activeCardForSkills.choices[idx].id,
-                  value: activeCardForSkills.choices[idx].value,
-                };
-                skills.push(sk);
-                modifiedSkillsForCard.push(sk);
-              }
-            });
-            activeCardForSkills.skill = 'none';
-          } else {
-            skills.push({
-              id: activeCardForSkills.skill,
-              value: activeCardForSkills.skillValue,
-            });
-          }
-        }
-
-        let newSkillsArr = [];
-        if (Array.isArray(activeCardForSkills.skills)) {
-          activeCardForSkills.skills.forEach((sk) => {
-            if (sk.id === 'choice' || sk.id === 'force') {
-              if (
-                sk.choiceGroup === 2 &&
-                action.choices2 &&
-                activeCardForSkills.choices2
-              ) {
-                action.choices2.forEach((idx) => {
-                  if (activeCardForSkills.choices2[idx]) {
-                    let chosenSk = {
-                      id: activeCardForSkills.choices2[idx].id,
-                      value: activeCardForSkills.choices2[idx].value,
-                    };
-                    skills.push(chosenSk);
-                    newSkillsArr.push(chosenSk);
-                  }
-                });
-              } else if (action.choices && activeCardForSkills.choices) {
-                action.choices.forEach((idx) => {
-                  if (activeCardForSkills.choices[idx]) {
-                    let chosenSk = {
-                      id: activeCardForSkills.choices[idx].id,
-                      value: activeCardForSkills.choices[idx].value,
-                    };
-                    skills.push(chosenSk);
-                    newSkillsArr.push(chosenSk);
-                  }
-                });
-              }
-            } else {
-              skills.push(sk);
-              newSkillsArr.push(sk);
-            }
-          });
-          activeCardForSkills.skills = [
-            ...newSkillsArr,
-            ...modifiedSkillsForCard,
-          ];
-        } else if (modifiedSkillsForCard.length > 0) {
-          activeCardForSkills.skills = [...modifiedSkillsForCard];
-        }
-
-        if (triggerSkills && !activeCardForSkills.skillTriggered) {
-          skills.forEach((sk) => {
-            if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
-              simState.actionUtilityBonus =
-                (simState.actionUtilityBonus || 0) + (AI_SKILL_UTILITY[sk.id] || 0);
-            }
-            // 【重要】アクションキューで個別に処理されるターゲット選択系スキルはここでは実行しない。
-            // そうしないと、召喚したレーンの自分自身を上書きしてしまう（墓荒らし3 + デスロード2 = 5 等）バグが起きる。
-            // resurrect/salvage は専用ノードとして actionQueue に積まれるため、ここで呼ぶと discard が二重消費される。
-            // puppet と summon は token_placement として actionQueue に積まれているため2重実行を防ぐ。
-            if (sk.id === 'call') {
-              // 【号令の仮評価】
-              // デッキトップの内容はシミュレーション時点では不明。
-              // そのため、号令の値（callの skillValue）分のパワーを、号令を持つカード自身に仮加算する。
-              // 例: パワー3の「魔琴の奏者」が号令3を持つ → パワー6として戦闘結果をシミュレート。
-              // ※ この仮パワーは事前評価用であり、実際の号令発動時（skillLogic.js）には
-              //   デッキトップの実カードが判明するため、evaluateAdhocTokenLanes() で
-              //   改めてシミュレーションベースの最適レーン選択が行われる。
-              //   その際、号令元カードは GameState から読まれるので「本来のパワー」で盤面に存在する。
-              const callBonus = sk.value || 3;
-              const boardCard = simState.enemyBoard[lIdx];
-              if (boardCard) {
-                boardCard.currentPower =
-                  (boardCard.currentPower || 0) + callBonus;
-                boardCard.basePower = (boardCard.basePower || 0) + callBonus;
-              }
-            } else if (sk.id === 'metamorph') {
-              // 【変身の仮評価】
-              // 変身先はランダムで不明なため、固定の仮パワー（METAMORPH_ESTIMATED_POWER）で評価する。
-              // 変身元カードのパワー（通常0）を仮パワーで上書きして戦闘結果をシミュレートする。
-              const boardCard = simState.enemyBoard[lIdx];
-              if (boardCard) {
-                boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
-                boardCard.basePower = METAMORPH_ESTIMATED_POWER;
-              }
-            } else if (sk.id === 'leap') {
-              // 【跳躍】追加ターンを1回付与（敵の攻撃フェーズをスキップ）
-              simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
-              simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
-            } else if (
-              ![
-                'invite',
-                'chant',
-                'convert',
-                'draw',
-                'salvage',
-                'reinforce',
-                'puppet',
-                'summon',
-                'resurrect',
-                'awake',
-                'clone',
-                'wall_create',
-                'split',
-              ].includes(sk.id)
-            ) {
-              applyActiveSkillLogic(
-                simState,
-                'red',
-                lIdx,
-                sk.id,
-                sk.value,
-                [],
-                action.cardTokenLanes ? [...action.cardTokenLanes] : null,
-                undefined
-              );
-            }
-          });
-          if (simState._actionQueue && simState._actionQueue.length > 0) {
-            actionQueue.push(...simState._actionQueue);
-            delete simState._actionQueue;
-          }
-        }
-
-        if (
-          simState.enemyBoard[lIdx] &&
-          simState.enemyBoard[lIdx].currentPower <= 0
-        ) {
-          simState.enemyBoard[lIdx] = null;
-        }
-      }
-    }
-
-    const hpBeforeCombat = simState.enemyHP;
-
-    if (!(simState.extraTurnCount > 0)) {
-      // 【絶対厳守】ここでシミュレートするのは「次のプレイヤーターンの攻撃フェーズ」のみ。
-      // ターン順序: AIカードプレイ → プレイヤーターン(パッシブ→攻撃) → AIの次ターン(パッシブ→攻撃)
-      // AIの攻撃フェーズは「AIの次のターン開始時」に発生するため、このシミュレーションの範囲外。
-      // 絶対に calculateCombatPhase(simState, 'red') を追加してはならない。
-      applyPassiveSkillLogic(simState, 'blue');
-      simState.playerBoard.forEach((c) => {
-        if (c && c.stunTurns > 0) c.stunTurns--;
-      });
-      calculateCombatPhase(simState, 'blue');
-      simState.combatDamageTaken = Math.max(
-        0,
-        hpBeforeCombat - simState.enemyHP
-      );
-    } else {
-      simState.extraTurnCount--;
-      simState.combatDamageTaken = 0;
-    }
-
-    return simState;
-  }
+  // シミュレートした候補アクションを保持する配列
+  const candidates = [];
 
   // 【最適化】候補のsimStateを即時評価してスコアのみ保持する。
-  // これにより、数百の候補それぞれにゲーム状態のフルコピーを保持し続ける
-  // メモリ蓄積を排除し、スマホでのOOMクラッシュを防止する。
-  let candidates = [];
 
   // 候補を追加するヘルパー関数（simStateを即時評価してメモリを解放する）
   const addCandidate = (candidateData, simState) => {
@@ -1839,7 +1830,7 @@ export function getBestSimulatedMove() {
   }
 
   console.log(
-    `[AI Decision] ${cardName} -> Lane: ${finalDecision.lane}${resInfo} (Skill: ${finalDecision.useSkill ? 'YES' : 'NO'})`
+    `[AI Decision] ${cardName} -> Lane: ${finalDecision.lane}${resInfo} (LeaderSkill: ${finalDecision.useSkill ? 'YES' : 'NO'})`
   );
   console.log(
     `[AI Reasoning] Score: ${finalDecision.score.toFixed(3)}, Candidates: ${bestGroup.length}`
@@ -1857,6 +1848,43 @@ export function getBestSimulatedMove() {
   console.log(
     `[AI DEBUG] Before: [Player] ${dumpB(opBoard)} vs [AI] ${dumpB(myBoard)}`
   );
+
+  // 最初のプレイアクションを含む完全なアクションキューを再構築
+  const fullActionQueue = [];
+  if (finalDecision.index !== -1) {
+    const firstChoice = finalDecision.choiceIndexQueue ? finalDecision.choiceIndexQueue[0] : undefined;
+    const secondChoice = finalDecision.choiceIndexQueue && finalDecision.choiceIndexQueue.length > 1 ? finalDecision.choiceIndexQueue[1] : undefined;
+    fullActionQueue.push({
+      type: 'play',
+      targetIdx: finalDecision.index,
+      laneIdx: finalDecision.lane,
+      choices: firstChoice,
+      choices2: secondChoice,
+      cardTokenLanes: finalDecision.cardTokenLanes
+    });
+  } else {
+    fullActionQueue.push({ type: 'pass' });
+  }
+
+  if (finalDecision.actionQueue && Array.isArray(finalDecision.actionQueue)) {
+    fullActionQueue.push(...finalDecision.actionQueue);
+  }
+
+  // シミュレーション実行後の予想盤面（After）を再計算してデバッグログに常に出力
+  const afterSim = processActionSequence(
+    fullActionQueue,
+    finalDecision.useSkill,
+    skill?.action,
+    finalDecision.tokenLanes,
+    'before',
+    finalDecision.leaderSkillTargetIdx,
+    finalDecision.leaderSkillTargetUid
+  );
+  if (afterSim) {
+    console.log(
+      `[AI DEBUG] After:  [Player] ${dumpB(afterSim.playerBoard)} (HP:${afterSim.playerHP}) vs [AI] ${dumpB(afterSim.enemyBoard)} (HP:${afterSim.enemyHP})`
+    );
+  }
 
   if (finalDecision.actionQueue) {
     console.log(
@@ -2009,9 +2037,43 @@ export function evaluateAdhocTokenLanes(
   checkConstraints = true,
   canCancel = false
 ) {
+  /*
+  console.log(`[AI CALL Debug] evaluateAdhocTokenLanes start.
+  tokenCard: ${tokenCard ? JSON.stringify(tokenCard) : 'null'}
+  checkConstraints: ${checkConstraints}, canCancel: ${canCancel}
+  `);
+  */
+
+  // 号令解決時点の正確なゲーム状態をシミュレーションの初期値として構築
+  const initialSimState = {
+    playerBoard: GameState.playerBoard.map(cloneCard),
+    enemyBoard: GameState.enemyBoard.map(cloneCard),
+    playerDiscard: GameState.playerDiscard ? GameState.playerDiscard.map(cloneCard) : [],
+    enemyDiscard: GameState.enemyDiscard ? GameState.enemyDiscard.map(cloneCard) : [],
+    playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
+    enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
+    playerHP: GameState.playerHP,
+    enemyHP: GameState.enemyHP,
+    playerMaxHP: GameState.playerMaxHP || 25,
+    enemyMaxHP: GameState.enemyMaxHP || 25,
+    playerSP: GameState.playerSP || 0,
+    enemySP: GameState.enemySP || 0,
+    playerHand: GameState.playerHand ? GameState.playerHand.map(cloneCard) : [],
+    enemyHand: GameState.enemyHand ? GameState.enemyHand.map(cloneCard) : [],
+    playerDeck: GameState.playerDeck ? GameState.playerDeck.map(cloneCard) : [],
+    enemyDeck: [],
+    extraTurnCount: GameState.extraTurnCount || 0,
+    attackSkipCount: GameState.attackSkipCount || 0,
+    combatDamageTaken: 0,
+    lastCardPlayed: null,
+    lastPlayedLane: -1,
+    _actionQueue: [],
+  };
+
   const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
   const allLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
-  // 配置可能なレーンを抽出
+
+  // 配置可能なレーンを抽出（召喚制約のチェック）
   let validLanes = allLanes.filter((l) => {
     if (checkConstraints) {
       // 1ターン目の「召喚」は中央のみ
@@ -2044,209 +2106,813 @@ export function evaluateAdhocTokenLanes(
 
   if (validLanes.length === 0) return [];
 
-  /**
-   * 【号令で出されたカードのレーン選択シミュレーション】
-   * この関数（evaluateAdhocTokenLanes）は、号令などで実際にカードを出す瞬間に呼ばれる。
-   * simState は GameState から直接ディープコピーされるため:
-   * - 号令元カード（例: 魔琴の奏者）は「本来のパワー」で盤面上に存在する
-   * - processActionSequence で仮加算されたパワーは影響しない（あちらはシミュレーション空間のみ）
-   * - リーダースキルの実行はこの関数内では行わない（号令時点ではタイミングが過ぎているため）
-   *
-   * 号令で出されたカードが更に号令や変身を持っていた場合も、
-   * 下記のスキル実行ループ内で同じ仮評価ルール（callの値分加算 / metamorphは固定パワー）が適用される。
-   */
-  // シミュレーション評価
-  // 1. tokenCardがある場合: そのレーンにカードを置いた後の盤面を評価
-  // 2. tokenCardがない場合: そのレーンの相手カードを「削除」した後の盤面を評価（破壊スキル用）
-  const scores = validLanes.map((l) => {
-    const simState = {
-      playerBoard: GameState.playerBoard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyBoard: GameState.enemyBoard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerHP: GameState.playerHP,
-      enemyHP: GameState.enemyHP,
-      playerMaxHP: GameState.playerMaxHP,
-      enemyMaxHP: GameState.enemyMaxHP,
-      playerSP: GameState.playerSP,
-      enemySP: GameState.enemySP || 0,
-      playerHand: GameState.playerHand.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyHand: GameState.enemyHand.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerDiscard: GameState.playerDiscard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyDiscard: GameState.enemyDiscard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerDeck: GameState.playerDeck.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyDeck: GameState.enemyDeck.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
-      enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
-      extraTurnCount: GameState.extraTurnCount,
-      attackSkipCount: GameState.attackSkipCount,
-    };
+  // ==========================================
+  // 【号令アドホックシミュレーション用 ツリー展開ロジック】
+  // ==========================================
 
-    if (tokenCard) {
-      // 配置シミュレーション
-      const played = JSON.parse(JSON.stringify(tokenCard));
-      simState.enemyBoard[l] = played;
+  // 連鎖するスキルをシミュレーション上のアクションキューとして展開するローカル関数
+  const buildSkillBranchAdhoc = (
+    currentSkills,
+    currentUsedHand,
+    currentUsedDiscard,
+    currentDepth,
+    currentDiscardedFromHand = [],
+    laneIdx // めくれた親カードが置かれるレーン
+  ) => {
+    if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
 
-      // リナのスキル（ヴォイテク配置）の場合、破壊効果も同時にシミュレートしてトータルのアドバンテージを評価させる
-      if (tokenCard.id === 'token_polarbear') {
-        let maxOppP = -1;
-        let targetL = -1;
-        for (let i = 0; i < 3; i++) {
-          if (
-            simState.playerBoard[i] &&
-            simState.playerBoard[i].currentPower > maxOppP
-          ) {
-            maxOppP = simState.playerBoard[i].currentPower;
-            targetL = i;
+    let sk = currentSkills[0];
+    let remainingSkills = currentSkills.slice(1);
+    let results = [];
+
+    const isPlacementSkill = [
+      'clone',
+      'summon',
+      'wall_create',
+      'split',
+      'puppet',
+      'resurrect',
+    ].includes(sk.id);
+    if (!isPlacementSkill) {
+      // 配置系スキル以外は常に「このスキルをキャンセル/スキップする」選択肢を考慮する
+      results.push(
+        ...buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscardedFromHand,
+          laneIdx
+        )
+      );
+    }
+
+    if (sk.id === 'invite') {
+      const originalHand = GameState.enemyHand || [];
+      const originalDiscard = GameState.enemyDiscard || [];
+      for (let i = 0; i < originalHand.length; i++) {
+        if (currentUsedHand.includes(i)) continue;
+        let childCard = originalHand[i];
+        // 【招来】同じレーンに召喚する仕様のため、forcedLane = laneIdx を渡す
+        let children = buildCardPlayTreeAdhoc(
+          childCard,
+          i,
+          'invite',
+          originalHand,
+          originalDiscard,
+          [...currentUsedHand, i],
+          currentUsedDiscard,
+          currentDepth + 1,
+          laneIdx
+        );
+        for (let cNode of children) {
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            [...currentUsedHand, i],
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscardedFromHand,
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([...cNode, ...nb]);
           }
         }
-        if (targetL !== -1) {
-          simState.playerBoard[targetL].currentPower = 0;
+      }
+    } else if (sk.id === 'chant') {
+      const originalHand = GameState.enemyHand || [];
+      const originalDiscard = GameState.enemyDiscard || [];
+      const maxP = sk.value ?? 3;
+      for (let i = 0; i < originalHand.length; i++) {
+        if (currentUsedHand.includes(i)) continue;
+        let childCard = originalHand[i];
+        if ((childCard.power || 0) > maxP) continue;
+        // 【詠唱】全レーンが候補のためforcedLaneは指定しない
+        let children = buildCardPlayTreeAdhoc(
+          childCard,
+          i,
+          'chant',
+          originalHand,
+          originalDiscard,
+          [...currentUsedHand, i],
+          currentUsedDiscard,
+          currentDepth + 1
+        );
+        for (let cNode of children) {
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            [...currentUsedHand, i],
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscardedFromHand,
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([...cNode, ...nb]);
+          }
+        }
+      }
+    } else if (sk.id === 'forge') {
+      const originalHand = GameState.enemyHand || [];
+      const originalDiscard = GameState.enemyDiscard || [];
+      for (let i = 0; i < originalHand.length; i++) {
+        if (currentUsedHand.includes(i)) continue;
+        let childCard = originalHand[i];
+
+        const isEquip = hasSkill(childCard, 'equip');
+        let validLanes = [];
+        for (let j = 0; j < 3; j++) {
+          if (GameState.enemyBoard[j] !== null) {
+            if (isEquip || hasSkill(GameState.enemyBoard[j], 'arm_self')) {
+              validLanes.push(j);
+            }
+          }
+        }
+
+        for (let vLane of validLanes) {
+          let children = buildCardPlayTreeAdhoc(
+            childCard,
+            i,
+            'forge',
+            originalHand,
+            originalDiscard,
+            [...currentUsedHand, i],
+            currentUsedDiscard,
+            currentDepth + 1,
+            vLane
+          );
+          for (let cNode of children) {
+            let nextBranches = buildSkillBranchAdhoc(
+              remainingSkills,
+              [...currentUsedHand, i],
+              currentUsedDiscard,
+              currentDepth,
+              currentDiscardedFromHand,
+              laneIdx
+            );
+            for (let nb of nextBranches) {
+              results.push([...cNode, ...nb]);
+            }
+          }
         }
       }
 
-      // 配置したカードのスキルをシミュレーション上で実行する
-      // ※ 号令で出されたカードが号令や変身を持つ場合も、同じ仮評価ルールが適用される
-      let skills = [];
-      if (played.skill && played.skill !== 'none')
-        skills.push({ id: played.skill, value: played.skillValue });
-      if (Array.isArray(played.skills)) skills = skills.concat(played.skills);
-      skills.forEach((sk) => {
-        if (sk.id === 'call') {
-          // 【号令の仮評価】号令で出されたカードがさらに号令を持つ場合も、値分のパワーを仮加算
-          const callBonus = sk.value || 3;
-          const boardCard = simState.enemyBoard[l];
-          if (boardCard) {
-            boardCard.currentPower = (boardCard.currentPower || 0) + callBonus;
-            boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+      // スキップのブランチ
+      let nextBranches = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscardedFromHand,
+        laneIdx
+      );
+      for (let nb of nextBranches) {
+        results.push([
+          { type: 'forge', targetIdx: -1, laneIdx: -1 },
+          ...nb,
+        ]);
+      }
+    } else if (sk.id === 'leap') {
+      let leapBranch = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscardedFromHand,
+        laneIdx
+      );
+      for (let nb of leapBranch) {
+        results.push([{ type: 'leap' }, ...nb]);
+      }
+    } else if (sk.id === 'resurrect') {
+      const originalDiscard = GameState.enemyDiscard || [];
+      const maxP = sk.value || 1;
+      const candidates = [
+        ...originalDiscard,
+        ...currentDiscardedFromHand,
+      ];
+
+      for (let i = 0; i < candidates.length; i++) {
+        if (currentUsedDiscard.includes(i)) continue;
+        let resCard = candidates[i];
+
+        const master = CARD_MASTER.find(
+          (m) => m.id === resCard.id || m.id === resCard.baseId
+        );
+        const baseP = master ? master.power : resCard.power || 0;
+        if (baseP > maxP || resCard.isToken) continue;
+
+        for (let j = 0; j < 3; j++) {
+          if (sealedLanes[j] === 1) continue;
+          let resNode = {
+            type: 'resurrect',
+            targetIdx: i,
+            targetUid: resCard.baseId || resCard.id,
+            laneIdx: j,
+            maxP: maxP,
+          };
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            currentUsedHand,
+            [...currentUsedDiscard, i],
+            currentDepth,
+            currentDiscardedFromHand,
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([resNode, ...nb]);
           }
-        } else if (sk.id === 'metamorph') {
-          // 【変身の仮評価】号令で出されたカードが変身を持つ場合も、固定パワーで仮評価
-          const boardCard = simState.enemyBoard[l];
-          if (boardCard) {
-            boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
-            boardCard.basePower = METAMORPH_ESTIMATED_POWER;
-          }
-        } else {
-          applyActiveSkillLogic(simState, 'red', l, sk.id, sk.value);
         }
-      });
+      }
+
+      // 復活のキャンセル分岐
+      let cancelNode = {
+        type: 'resurrect',
+        targetIdx: -1,
+        laneIdx: -1,
+      };
+      let cancelBranches = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscardedFromHand,
+        laneIdx
+      );
+      for (let nb of cancelBranches) {
+        results.push([cancelNode, ...nb]);
+      }
+    } else if (
+      sk.id === 'convert' ||
+      sk.id === 'draw' ||
+      sk.id === 'reinforce'
+    ) {
+      const originalHand = GameState.enemyHand || [];
+      const count = sk.value || 1;
+      let handIndices = [];
+      for (let i = 0; i < originalHand.length; i++) {
+        if (!currentUsedHand.includes(i)) handIndices.push(i);
+      }
+
+      if (handIndices.length > 0) {
+        const actualCount = Math.min(count, handIndices.length);
+        let combinations = getCombinations(handIndices, actualCount);
+        for (let combo of combinations) {
+          let discardNodes = combo.map((idx) => ({
+            type: 'discard',
+            targetIdx: idx,
+          }));
+          let newlyDiscarded = combo.map((idx) => originalHand[idx]);
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            [...currentUsedHand, ...combo],
+            currentUsedDiscard,
+            currentDepth,
+            [...currentDiscardedFromHand, ...newlyDiscarded],
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([...discardNodes, ...nb]);
+          }
+        }
+      }
+    } else if (
+      ['clone', 'summon', 'wall_create', 'split', 'puppet'].includes(
+        sk.id
+      )
+    ) {
+      const count = sk.id === 'clone' ? sk.value || 1 : 1;
+      const generateLaneCombos = (remainingCount) => {
+        if (remainingCount <= 0) return [[]];
+        let combos = [];
+        let subCombos = generateLaneCombos(remainingCount - 1);
+        for (let j = 0; j < 3; j++) {
+          if (sealedLanes[j] === 1) continue;
+          for (let sc of subCombos) {
+            combos.push([j, ...sc]);
+          }
+        }
+        return combos;
+      };
+
+      let allCombos = [[]]; // 配置しない（空配列）という明示的な意思
+      for (let c = 1; c <= count; c++) {
+        allCombos.push(...generateLaneCombos(c));
+      }
+      for (let combo of allCombos) {
+        let tokenNode = {
+          type: 'token_placement',
+          skillId: sk.id,
+          skillValue: sk.value,
+          summonId: sk.summonId,
+          lanes: combo,
+        };
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscardedFromHand,
+          laneIdx
+        );
+        for (let nb of nextBranches) {
+          results.push([tokenNode, ...nb]);
+        }
+      }
+    } else if (sk.id === 'choice') {
+      const cc = sk.value || 1;
+      const cArr =
+        sk.choiceGroup === 2 ? tokenCard.choices2 : tokenCard.choices;
+      if (cArr) {
+        const idxs = cArr.map((_, i) => i);
+        let combinations = getCombinations(
+          idxs,
+          Math.min(idxs.length, cc)
+        );
+        for (let combo of combinations) {
+          const chosenSkills = combo.map((idx) => cArr[idx]);
+          let nextSkills = [...chosenSkills, ...remainingSkills];
+          let choiceNode = {
+            type: 'choice',
+            choices: combo,
+            choiceGroup: sk.choiceGroup,
+          };
+          let nextBranches = buildSkillBranchAdhoc(
+            nextSkills,
+            currentUsedHand,
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscardedFromHand,
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([choiceNode, ...nb]);
+          }
+        }
+      }
+    } else if (sk.id === 'force') {
+      const fc = sk.value || 1;
+      const fArr =
+        sk.choiceGroup === 2 ? tokenCard.choices2 : tokenCard.choices;
+      if (fArr) {
+        const idxs = fArr.map((_, i) => i);
+        let combinations = getCombinations(
+          idxs,
+          Math.min(idxs.length, fc)
+        );
+        for (let combo of combinations) {
+          const chosenSkills = combo.map((idx) => fArr[idx]);
+          let nextSkills = [...chosenSkills, ...remainingSkills];
+          let forceNode = {
+            type: 'force',
+            choices: combo,
+            choiceGroup: sk.choiceGroup,
+          };
+          let nextBranches = buildSkillBranchAdhoc(
+            nextSkills,
+            currentUsedHand,
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscardedFromHand,
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([forceNode, ...nb]);
+          }
+        }
+      }
     } else {
-      // 破壊シミュレーション (ターゲット対象を破壊したと仮定)
-      if (simState.playerBoard[l]) {
-        simState.playerBoard[l].currentPower = 0;
+      return buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscardedFromHand,
+        laneIdx
+      );
+    }
+    return results;
+  };
+
+  // 連鎖召喚用の子カードプレイツリーを構築するローカル関数
+  function buildCardPlayTreeAdhoc(
+    card,
+    sourceIdx,
+    sourceType,
+    originalHand,
+    originalDiscard,
+    usedHand,
+    usedDiscard,
+    depth,
+    forcedLane = undefined
+  ) {
+    if (depth >= 2) return [[]];
+
+    let availableLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
+
+    if (forcedLane !== undefined) {
+      if (sealedLanes[forcedLane] === 1) return [[]];
+      availableLanes = [forcedLane];
+    } else if (depth > 0) {
+      availableLanes.push(-1);
+    }
+
+    if (
+      sourceType === 'play' ||
+      sourceType === 'invite' ||
+      sourceType === 'chant'
+    ) {
+      if (GameState.turnCount === 1 && GameState.firstPlayer === 'red') {
+        availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
+      }
+
+      if (hasSkill(card, 'challenge')) {
+        availableLanes = availableLanes.filter(
+          (l) => l === -1 || GameState.playerBoard[l] !== null
+        );
+      }
+      if (hasSkill(card, 'legendary')) {
+        availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
+      }
+      if (sourceType !== 'invite' && sourceType !== 'chant') {
+        if (hasSkill(card, 'takeover')) {
+          availableLanes = availableLanes.filter(
+            (l) => l === -1 || GameState.enemyBoard[l] !== null
+          );
+        }
+        if (hasSkill(card, 'apex')) {
+          availableLanes = availableLanes.filter(
+            (l) => l === -1 || (GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))
+          );
+        }
       }
     }
 
-    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
-    const hpBeforeCombat = simState.enemyHP;
-    if (!(simState.extraTurnCount > 0)) {
-      applyPassiveSkillLogic(simState, 'blue');
-      simState.playerBoard.forEach((c) => {
-        if (c && c.stunTurns > 0) c.stunTurns--;
-      });
-      calculateCombatPhase(simState, 'blue');
-      simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
-    } else {
-      simState.extraTurnCount--;
-      simState.combatDamageTaken = 0;
+    if (
+      availableLanes.filter((l) => l !== -1).length === 0 &&
+      !availableLanes.includes(-1)
+    )
+      return [[]];
+
+    let choiceCombinations = [undefined];
+    let choice2Combinations = [undefined];
+    if (hasSkill(card, 'choice') || hasSkill(card, 'force')) {
+      const amplifyBonus = (GameState.enemyBoard || []).filter(
+        (bc) => bc && hasSkill(bc, 'amplify')
+      ).length;
+      if (Array.isArray(card.choices)) {
+        let cc = 1;
+        if (card.skill === 'choice' || card.skill === 'force')
+          cc = card.skillValue || 1;
+        else if (card.skills) {
+          const c = card.skills.find(
+            (s) => s.id === 'choice' || s.id === 'force'
+          );
+          if (c) cc = c.value || 1;
+        }
+        cc = Math.min(cc + amplifyBonus, card.choices.length);
+        const idxs = card.choices.map((_, i) => i);
+        choiceCombinations = getCombinations(idxs, Math.min(idxs.length, cc));
+      }
+      if (Array.isArray(card.choices2)) {
+        let cc2 = 1;
+        const c2 = card.skills
+          ? card.skills.find((s) => s.id === 'choice' && s.choiceGroup === 2)
+          : null;
+        if (c2) cc2 = c2.value || 1;
+        cc2 = Math.min(cc2 + amplifyBonus, card.choices2.length);
+        const idxs2 = card.choices2.map((_, i) => i);
+        choice2Combinations = getCombinations(
+          idxs2,
+          Math.min(idxs2.length, cc2)
+        );
+      }
     }
 
-    let score = evaluateSimState(simState);
-    // タイブレーク：左 > 右 > 中央
-    score += 0.1 / lanePriorityOrder[l];
+    let branches = [];
+    for (let lane of availableLanes) {
+      for (let c1 of choiceCombinations) {
+        for (let c2 of choice2Combinations) {
+          let node = {
+            type: sourceType,
+            targetIdx: sourceIdx,
+            targetUid: card.uid || card.id,
+            laneIdx: lane,
+            choices: c1 !== undefined ? [...c1] : undefined,
+            choices2: c2 !== undefined ? [...c2] : undefined,
+          };
+          if (lane === -1) {
+            branches.push([node]);
+            continue;
+          }
 
-    return { lane: l, score };
-  });
+          let effectiveSkills = [];
+          const isSummonAction = ['play', 'call', 'invite', 'chant'].includes(
+            sourceType
+          );
+          if (isSummonAction) {
+            if (
+              [
+                'invite',
+                'chant',
+                'resurrect',
+                'convert',
+                'draw',
+                'reinforce',
+                'clone',
+                'summon',
+                'wall_create',
+                'split',
+                'puppet',
+                'leap',
+              ].includes(card.skill)
+            ) {
+              effectiveSkills.push({
+                id: card.skill,
+                value: card.skillValue ?? 1,
+              });
+            }
+            if (Array.isArray(card.skills)) {
+              card.skills.forEach((s) => {
+                if (
+                  [
+                    'invite',
+                    'chant',
+                    'resurrect',
+                    'convert',
+                    'draw',
+                    'reinforce',
+                    'clone',
+                    'summon',
+                    'wall_create',
+                    'split',
+                    'puppet',
+                    'leap',
+                  ].includes(s.id)
+                )
+                  effectiveSkills.push(s);
+              });
+            }
+            if (c1)
+              c1.forEach((idx) => {
+                if (card.choices && card.choices[idx])
+                  effectiveSkills.push(card.choices[idx]);
+              });
+            if (c2)
+              c2.forEach((idx) => {
+                if (card.choices2 && card.choices2[idx])
+                  effectiveSkills.push(card.choices2[idx]);
+              });
+          }
 
-  if (canCancel) {
-    // キャンセル（配置しない）場合のシミュレーション評価
-    const simState = {
-      playerBoard: GameState.playerBoard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyBoard: GameState.enemyBoard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerHP: GameState.playerHP,
-      enemyHP: GameState.enemyHP,
-      playerMaxHP: GameState.playerMaxHP,
-      enemyMaxHP: GameState.enemyMaxHP,
-      playerSP: GameState.playerSP,
-      enemySP: GameState.enemySP || 0,
-      playerHand: GameState.playerHand.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyHand: GameState.enemyHand.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerDiscard: GameState.playerDiscard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyDiscard: GameState.enemyDiscard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerDeck: GameState.playerDeck.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      enemyDeck: GameState.enemyDeck.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      ),
-      playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
-      enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
-      extraTurnCount: GameState.extraTurnCount,
-      attackSkipCount: GameState.attackSkipCount,
-    };
-    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
-    const hpBeforeCombat = simState.enemyHP;
-    if (!(simState.extraTurnCount > 0)) {
-      applyPassiveSkillLogic(simState, 'blue');
-      simState.playerBoard.forEach((c) => {
-        if (c && c.stunTurns > 0) c.stunTurns--;
-      });
-      calculateCombatPhase(simState, 'blue');
-      simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
-    } else {
-      simState.extraTurnCount--;
-      simState.combatDamageTaken = 0;
+          if (depth < 2 && effectiveSkills.length > 0) {
+            let skillChains = buildSkillBranchAdhoc(
+              effectiveSkills,
+              usedHand,
+              usedDiscard,
+              depth,
+              [],
+              lane
+            );
+            for (let chain of skillChains) {
+              branches.push([node, ...chain]);
+            }
+          } else {
+            branches.push([node]);
+          }
+        }
+      }
     }
-    let score = evaluateSimState(simState);
-    // キャンセルを優先するための微小ボーナス
-    scores.push({ lane: -1, score: score + 0.05 });
+    return branches.filter((b) => b.length > 0);
   }
 
-  // 最高スコアのレーンを抽出
-  scores.sort((a, b) => b.score - a.score);
-  if (scores.length === 0) return [];
+  // ==========================================
+  // 【シミュレーションの実行と最善解の決定】
+  // ==========================================
 
-  if (scores[0].lane === -1) {
-    console.log(
-      `[AI Token] Cancelled placement (Score: ${scores[0].score.toFixed(1)})`
+  let bestBranch = null;
+  let maxScore = -999999999;
+  let bestLane = -1;
+  let bestSimState = null;
+
+  for (let l of validLanes) {
+    // このレーンにめくれたカードを配置するアクション
+    let playAction = {
+      type: 'play_adhoc',
+      card: tokenCard,
+      laneIdx: l,
+      checkConstraints: checkConstraints
+    };
+
+    // 発動するスキルを収集
+    let effectiveSkills = [];
+    if (tokenCard.skill && tokenCard.skill !== 'none') {
+      if (tokenCard.skill !== 'choice' && tokenCard.skill !== 'force') {
+        effectiveSkills.push({
+          id: tokenCard.skill,
+          value: tokenCard.skillValue ?? 1
+        });
+      }
+    }
+    if (Array.isArray(tokenCard.skills)) {
+      tokenCard.skills.forEach((s) => {
+        if (s.id !== 'choice' && s.id !== 'force') {
+          effectiveSkills.push(s);
+        }
+      });
+    }
+
+    // 選択スキルの選択肢展開
+    let choiceCombinations = [undefined];
+    let choice2Combinations = [undefined];
+    if (hasSkill(tokenCard, 'choice') || hasSkill(tokenCard, 'force')) {
+      const amplifyBonus = (GameState.enemyBoard || []).filter(
+        (bc) => bc && hasSkill(bc, 'amplify')
+      ).length;
+
+      if (Array.isArray(tokenCard.choices)) {
+        let cc = 1;
+        if (tokenCard.skill === 'choice' || tokenCard.skill === 'force')
+          cc = tokenCard.skillValue || 1;
+        else if (tokenCard.skills) {
+          const c = tokenCard.skills.find(
+            (s) => s.id === 'choice' || s.id === 'force'
+          );
+          if (c) cc = c.value || 1;
+        }
+        cc = Math.min(cc + amplifyBonus, tokenCard.choices.length);
+        const idxs = tokenCard.choices.map((_, i) => i);
+        choiceCombinations = getCombinations(idxs, Math.min(idxs.length, cc));
+      }
+
+      if (Array.isArray(tokenCard.choices2)) {
+        let cc2 = 1;
+        const c2 = tokenCard.skills
+          ? tokenCard.skills.find((s) => s.id === 'choice' && s.choiceGroup === 2)
+          : null;
+        if (c2) cc2 = c2.value || 1;
+        cc2 = Math.min(cc2 + amplifyBonus, tokenCard.choices2.length);
+        const idxs2 = tokenCard.choices2.map((_, i) => i);
+        choice2Combinations = getCombinations(
+          idxs2,
+          Math.min(idxs2.length, cc2)
+        );
+      }
+    }
+
+    // 各選択肢の組み合わせで展開
+    for (let c1 of choiceCombinations) {
+      for (let c2 of choice2Combinations) {
+        let branchSkills = [...effectiveSkills];
+        if (c1) {
+          c1.forEach((idx) => {
+            if (tokenCard.choices && tokenCard.choices[idx])
+              branchSkills.push(tokenCard.choices[idx]);
+          });
+        }
+        if (c2) {
+          c2.forEach((idx) => {
+            if (tokenCard.choices2 && tokenCard.choices2[idx])
+              branchSkills.push(tokenCard.choices2[idx]);
+          });
+        }
+
+        let playActionWithChoice = {
+          ...playAction,
+          choices: c1 !== undefined ? [...c1] : undefined,
+          choices2: c2 !== undefined ? [...c2] : undefined,
+        };
+
+        // スキルブランチを展開
+        let skillChains = buildSkillBranchAdhoc(
+          branchSkills,
+          [],
+          [],
+          0,
+          [],
+          l
+        );
+
+        for (let chain of skillChains) {
+          const actionQueue = [playActionWithChoice, ...chain];
+
+          // 盤面のシミュレーション実行
+          const simState = processActionSequence(
+            actionQueue,
+            false,
+            null,
+            null,
+            'before',
+            null,
+            null,
+            structuredClone(initialSimState)
+          );
+          if (!simState) continue;
+
+          let score = evaluateSimState(simState);
+          // タイブレーク：左 > 右 > 中央
+          score += 0.1 / lanePriorityOrder[l];
+
+          /*
+          console.log(`[AI CALL Debug] Lane ${l} simulation:
+          ActionQueue: ${JSON.stringify(actionQueue)}
+          Score: ${score}
+          `);
+          */
+
+          if (score > maxScore) {
+            maxScore = score;
+            bestBranch = actionQueue;
+            bestLane = l;
+            bestSimState = simState;
+          }
+        }
+      }
+    }
+  }
+
+  // 配置キャンセルのシミュレーション
+  if (canCancel) {
+    const simState = processActionSequence(
+      [{ type: 'play_adhoc', card: null, laneIdx: -1 }],
+      false,
+      null,
+      null,
+      'before',
+      null,
+      null,
+      structuredClone(initialSimState)
     );
+    if (simState) {
+      let score = evaluateSimState(simState) + 0.05; // キャンセル優先ボーナス
+      if (score > maxScore) {
+        maxScore = score;
+        bestBranch = [{ type: 'play_adhoc', card: null, laneIdx: -1 }];
+        bestLane = -1;
+        bestSimState = simState;
+      }
+    }
+  }
+
+  if (bestLane === -1) {
+    console.log(`[AI CALL] Cancelled placement (Score: ${maxScore.toFixed(1)})`);
     return null;
   }
 
-  const topScore = scores[0].score;
-  const bestLanes = scores
-    .filter((s) => Math.abs(s.score - topScore) < 0.001)
-    .map((s) => s.lane);
+  // ==========================================
+  // 【シミュレーション結果の GameState 同期（マージ）】
+  // ==========================================
+  if (bestBranch) {
+    if (!GameState.aiDecision) {
+      GameState.aiDecision = {};
+    }
+    if (!GameState.aiDecision.actionQueue) {
+      GameState.aiDecision.actionQueue = [];
+    }
+    if (!GameState.aiDecision.choiceIndexQueue) {
+      GameState.aiDecision.choiceIndexQueue = [];
+    }
+    if (!GameState.aiDecision.cardTokenLanes) {
+      GameState.aiDecision.cardTokenLanes = [];
+    }
 
-  // 号令等のトークン配置シミュレーション結果ログ（[Player] ... vs [AI] ... 形式で統一）
-  const bestEntry = scores[0];
+    // 最初の `play_adhoc` を除いた連鎖アクション（インデックス1以降）を `GameState.aiDecision.actionQueue` の先頭に unshift
+    const chainActions = bestBranch.slice(1);
+    const reversedChain = [...chainActions].reverse();
+    reversedChain.forEach((act) => {
+      GameState.aiDecision.actionQueue.unshift(act);
+
+      // 互換性および実処理部（battle.js/skillLogic.js）での取り出し順整合のため
+      // `choiceIndexQueue` や `cardTokenLanes` にも同時に割り込み登録する
+      if (act.type === 'choice' || act.type === 'force') {
+        if (act.choices !== undefined) {
+          GameState.aiDecision.choiceIndexQueue.unshift(act.choices);
+        }
+      } else if (act.type === 'token_placement') {
+        if (act.lanes !== undefined) {
+          const revLanes = [...act.lanes].reverse();
+          revLanes.forEach((lane) => {
+            GameState.aiDecision.cardTokenLanes.unshift(lane);
+          });
+        }
+      } else if (act.type === 'resurrect') {
+        if (act.laneIdx !== undefined && act.laneIdx !== -1) {
+          GameState.aiDecision.cardTokenLanes.unshift(act.laneIdx);
+        }
+      }
+    });
+
+    // めくれたカード自身が選択肢を持つ場合、その選択も choiceIndexQueue に登録する
+    const adhocPlayAct = bestBranch[0];
+    if (adhocPlayAct && adhocPlayAct.choices !== undefined) {
+      GameState.aiDecision.choiceIndexQueue.unshift(adhocPlayAct.choices);
+    }
+    if (adhocPlayAct && adhocPlayAct.choices2 !== undefined) {
+      GameState.aiDecision.choiceIndexQueue.unshift(adhocPlayAct.choices2);
+    }
+  }
+
+  // 以前の evaluateAdhocTokenLanes に合わせて、最善レーンの配列形式で統一
   const dumpB = (b) =>
     b
       .map((c) =>
@@ -2256,13 +2922,18 @@ export function evaluateAdhocTokenLanes(
       )
       .join(' | ');
   console.log(
-    `[AI Token] ${tokenCard ? tokenCard.name : 'destroy'} -> Lane: ${bestEntry.lane} (Score: ${bestEntry.score.toFixed(1)})`
+    `[AI CALL] ${tokenCard ? tokenCard.name : 'destroy'} -> Lane: ${bestLane} (Score: ${maxScore.toFixed(1)})`
   );
   console.log(
-    `[AI Token] Before: [Player] ${dumpB(GameState.playerBoard)} vs [AI] ${dumpB(GameState.enemyBoard)}`
+    `[AI CALL] Before: [Player] ${dumpB(GameState.playerBoard)} vs [AI] ${dumpB(GameState.enemyBoard)}`
   );
+  if (bestSimState) {
+    console.log(
+      `[AI CALL] After:  [Player] ${dumpB(bestSimState.playerBoard)} (HP:${bestSimState.playerHP}) vs [AI] ${dumpB(bestSimState.enemyBoard)} (HP:${bestSimState.enemyHP})`
+    );
+  }
 
-  return bestLanes;
+  return [bestLane];
 }
 
 export function getNormalTokenLanes(
