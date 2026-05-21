@@ -91,7 +91,7 @@ export const SKILL_POINTS = {
     multiplier: 0.5,
   },
   sturdy: {
-    base: 1,
+    base: 0,
     multiplier: 0,
   },
   berserk: {
@@ -243,7 +243,7 @@ export const SKILL_POINTS = {
     multiplier: -1,
   },
   absorb: {
-    base: 1,
+    base: 0,
     multiplier: 0,
   },
   seal: {

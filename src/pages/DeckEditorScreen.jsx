@@ -70,11 +70,12 @@ export default function DeckEditorScreen() {
   const [tempDeckName, setTempDeckName] = useState('');
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filters, setFilters] = useState({ rarity: [], power: [], skills: [] });
+  const [filters, setFilters] = useState({ rarity: [], power: [], skills: [], name: '' });
   const [tempFilters, setTempFilters] = useState({
     rarity: [],
     power: [],
     skills: [],
+    name: '',
   });
   const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
 
@@ -313,6 +314,8 @@ export default function DeckEditorScreen() {
     .sort();
 
   const filteredMasterCards = masterCards.filter((c) => {
+    if (filters.name && !c.name.toLowerCase().includes(filters.name.toLowerCase()))
+      return false;
     if (filters.rarity.length > 0 && !filters.rarity.includes(c.rarity))
       return false;
     if (filters.power.length > 0 && !filters.power.includes(c.power))
@@ -752,10 +755,10 @@ export default function DeckEditorScreen() {
                 padding: '4px 8px',
                 margin: 0,
                 fontSize: '0.9rem',
-                background: Object.values(filters).some((arr) => arr.length > 0)
+                background: (filters.rarity.length > 0 || filters.power.length > 0 || filters.skills.length > 0 || !!filters.name)
                   ? 'rgba(250, 204, 21, 0.3)'
                   : '#334155',
-                border: Object.values(filters).some((arr) => arr.length > 0)
+                border: (filters.rarity.length > 0 || filters.power.length > 0 || filters.skills.length > 0 || !!filters.name)
                   ? '1px solid #facc15'
                   : '1px solid #475569',
                 color: '#facc15',
@@ -1029,6 +1032,36 @@ export default function DeckEditorScreen() {
               フィルター
             </h3>
 
+            {/* カード名 */}
+            <div>
+              <div
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.9rem',
+                  marginBottom: '8px',
+                }}
+              >
+                カード名
+              </div>
+              <input
+                type="text"
+                value={tempFilters.name || ''}
+                onChange={(e) => setTempFilters({ ...tempFilters, name: e.target.value })}
+                placeholder="カード名で検索..."
+                style={{
+                  background: '#334155',
+                  color: '#fff',
+                  border: '1px solid #475569',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '0.9rem',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
             {/* レアリティ */}
             <div>
               <div
@@ -1207,7 +1240,7 @@ export default function DeckEditorScreen() {
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
-                  setTempFilters({ rarity: [], power: [], skills: [] });
+                  setTempFilters({ rarity: [], power: [], skills: [], name: '' });
                 }}
               >
                 リセット

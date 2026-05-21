@@ -233,7 +233,7 @@ export const CARD_MASTER = [
     name: '旧式マンティス',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'quick' }, { id: 'growth', value: -2 }],
+    skills: [{ id: 'growth', value: -2 }, { id: 'quick' }],
     voiceCategory: 'machine_old',
     flavor:
       '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。',
@@ -530,7 +530,7 @@ export const CARD_MASTER = [
     name: '死蠅の大群',
     rarity: 1,
     power: 1,
-    skills: [{ id: 'clone', value: 2 }],
+    skills: [{ id: 'growth', value: -1 }, { id: 'clone', value: 2 }],
     voiceCategory: 'insect',
     flavor:
       '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する',
@@ -600,9 +600,9 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 10,
     skills: [
-      { id: 'sturdy' },
       { id: 'standby', value: 2 },
       { id: 'growth', value: -2 },
+      { id: 'sturdy' },
     ],
     voiceCategory: 'machine_old',
     flavor:
@@ -786,8 +786,8 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 6,
     skills: [
-      { id: 'stealth', value: 1 },
       { id: 'standby', value: 1 },
+      { id: 'stealth', value: 1 },
     ],
     voiceCategory: 'sea',
     flavor:
@@ -809,9 +809,9 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 1,
     skills: [
+      { id: 'growth', value: -1 },
       { id: 'equip' },
       { id: 'clone', value: 1 },
-      { id: 'growth', value: -1 },
     ],
     voiceCategory: 'insect',
     flavor:
@@ -1076,7 +1076,7 @@ export const CARD_MASTER = [
     name: 'ガーゴイル',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'sturdy' }, { id: 'standby', value: 2 }],
+    skills: [{ id: 'standby', value: 2 }, { id: 'sturdy' }],
     voiceCategory: 'stone',
     flavor:
       '塔の頂から見下ろす冷たい石の瞳。夜の帳が下りる時、それは獲物を狙う狩人となる。',
@@ -1614,8 +1614,8 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 5,
     skills: [
-      { id: 'soul_bind', value: 4 },
       { id: 'growth', value: -1 },
+      { id: 'soul_bind', value: 4 },
     ],
     voiceCategory: 'undead',
     flavor:

@@ -13,7 +13,7 @@ export default [
   'benkei',
   'fox',
   'fox',
-  'fox',
+  'muramasa',
   'muramasa',
   'muramasa',
   'shogun',
