@@ -56,8 +56,9 @@ export default function OnlineMenuScreen() {
       <h2
         style={{
           color: '#38bdf8',
-          marginBottom: '30px',
+          margin: '20px 0',
           textShadow: '0 0 10px rgba(56, 189, 248, 0.5)',
+          textAlign: 'center',
         }}
       >
         オンライン対戦
@@ -100,11 +101,22 @@ export default function OnlineMenuScreen() {
         </div>
       )}
 
-      <BackButton
-        onClick={() => goToModeSelect?.()}
-        style={{ marginTop: '40px' }}
-        disabled={isMatching}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          onClick={() => goToModeSelect?.()}
+          style={{ margin: 0 }}
+          disabled={isMatching}
+        />
+      </div>
     </div>
   );
 }

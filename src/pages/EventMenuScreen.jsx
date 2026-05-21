@@ -13,7 +13,7 @@ export default function EventMenuScreen() {
 
   return (
     <div id="screen-event-menu" className="screen active">
-      <h2 style={{ color: '#facc15', marginBottom: '40px' }}>イベント</h2>
+      <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}>イベント</h2>
       <div className="menu-btn-grid">
         <div className="menu-img-btn" onClick={() => startHighDifficulty?.()}>
           <div
@@ -64,15 +64,16 @@ export default function EventMenuScreen() {
       </div>
       <div
         style={{
-          marginTop: '20px',
+          padding: '15px 0 20px 0',
           borderTop: '1px solid #334155',
-          paddingTop: '20px',
           width: '100%',
           display: 'flex',
           justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
         }}
       >
-        <BackButton to="screen-mode-select" />
+        <BackButton to="screen-mode-select" style={{ margin: 0 }} />
       </div>
     </div>
   );

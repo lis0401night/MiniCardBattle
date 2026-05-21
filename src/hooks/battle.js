@@ -2757,11 +2757,11 @@ function applyBattlePreset(preset) {
   // --- 山札（指定された場合のみ完全入れ替え。配列の先頭がデッキトップ）---
   if (preset.playerDeck) {
     const cards = resolveCards(preset.playerDeck, 'blue');
-    if (cards) GameState.playerDeck = cards;
+    if (cards) GameState.playerDeck = cards.reverse();
   }
   if (preset.enemyDeck) {
     const cards = resolveCards(preset.enemyDeck, 'red');
-    if (cards) GameState.enemyDeck = cards;
+    if (cards) GameState.enemyDeck = cards.reverse();
   }
 
   // --- 墓地 ---

@@ -23,9 +23,10 @@ export default function HighDifficultyScreen() {
       <h2
         style={{
           color: '#ef4444',
-          marginBottom: '15px',
+          margin: '20px 0',
           textShadow: '0 0 15px rgba(239, 68, 68, 0.6)',
           flexShrink: 0,
+          textAlign: 'center',
         }}
       >
         高難易度
@@ -78,10 +79,21 @@ export default function HighDifficultyScreen() {
         })}
       </div>
 
-      <BackButton
-        to="screen-high-difficulty-menu"
-        style={{ marginTop: '30px', flexShrink: 0 }}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          to="screen-high-difficulty-menu"
+          style={{ margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

@@ -22,8 +22,9 @@ export default function HighDifficultyMenuScreen() {
       <h2
         style={{
           color: '#ef4444',
-          marginBottom: '30px',
+          margin: '20px 0',
           textShadow: '0 0 15px rgba(239, 68, 68, 0.6)',
+          textAlign: 'center',
         }}
       >
         高難易度
@@ -51,10 +52,21 @@ export default function HighDifficultyMenuScreen() {
         </button>
       </div>
 
-      <BackButton
-        onClick={() => showEventMenu?.()}
-        style={{ marginTop: '40px' }}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          onClick={() => showEventMenu?.()}
+          style={{ margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

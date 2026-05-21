@@ -42,8 +42,9 @@ export default function DungeonMenuScreen() {
       <h2
         style={{
           color: '#c084fc',
-          marginBottom: '30px',
+          margin: '20px 0',
           textShadow: '0 0 15px rgba(192, 132, 252, 0.6)',
+          textAlign: 'center',
         }}
       >
         試練の宮殿
@@ -94,10 +95,21 @@ export default function DungeonMenuScreen() {
           交換所
         </button>
       </div>
-      <BackButton
-        onClick={() => showEventMenu?.()}
-        style={{ marginTop: '40px' }}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          onClick={() => showEventMenu?.()}
+          style={{ margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

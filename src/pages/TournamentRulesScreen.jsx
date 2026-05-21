@@ -15,6 +15,8 @@ export default function TournamentRulesScreen() {
         style={{
           color: '#60a5fa',
           textShadow: '0 0 10px rgba(96, 165, 250, 0.5)',
+          margin: '20px 0',
+          textAlign: 'center',
         }}
       >
         ルール
@@ -31,7 +33,18 @@ export default function TournamentRulesScreen() {
           </li>
         </ul>
       </div>
-      <BackButton to="screen-tournament-menu" />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-tournament-menu" style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }

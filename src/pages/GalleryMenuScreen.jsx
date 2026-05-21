@@ -8,7 +8,7 @@ export default function GalleryMenuScreen() {
 
   return (
     <div id="screen-gallery-menu" className="screen active">
-      <h2 style={{ color: '#facc15', marginBottom: '40px' }}>ギャラリー</h2>
+      <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}>ギャラリー</h2>
       <div className="menu-btn-grid">
         <div className="menu-img-btn" onClick={() => showCardList?.()}>
           <div
@@ -31,15 +31,16 @@ export default function GalleryMenuScreen() {
       </div>
       <div
         style={{
-          marginTop: '20px',
+          padding: '15px 0 20px 0',
           borderTop: '1px solid #334155',
-          paddingTop: '20px',
           width: '100%',
           display: 'flex',
           justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
         }}
       >
-        <BackButton onClick={() => goToModeSelect?.()} />
+        <BackButton onClick={() => goToModeSelect?.()} style={{ margin: 0 }} />
       </div>
     </div>
   );

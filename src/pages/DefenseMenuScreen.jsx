@@ -100,7 +100,7 @@ export default function DefenseMenuScreen() {
 
   return (
     <div id="screen-defense-menu" className="screen active">
-      <h2 style={{ color: '#10b981', marginBottom: '30px' }}>防衛戦</h2>
+      <h2 style={{ color: '#10b981', margin: '20px 0', textAlign: 'center' }}>防衛戦</h2>
       <div
         style={{
           display: 'flex',
@@ -151,10 +151,21 @@ export default function DefenseMenuScreen() {
           交換所
         </button>
       </div>
-      <BackButton
-        onClick={() => showEventMenu?.()}
-        style={{ marginTop: '40px' }}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          onClick={() => showEventMenu?.()}
+          style={{ margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

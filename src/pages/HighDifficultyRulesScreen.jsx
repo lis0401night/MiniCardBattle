@@ -15,6 +15,8 @@ export default function HighDifficultyRulesScreen() {
         style={{
           color: '#ef4444',
           textShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+          margin: '20px 0',
+          textAlign: 'center',
         }}
       >
         ルール
@@ -32,7 +34,18 @@ export default function HighDifficultyRulesScreen() {
           </li>
         </ul>
       </div>
-      <BackButton to="screen-high-difficulty-menu" />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-high-difficulty-menu" style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }

@@ -182,10 +182,10 @@ export default function AchievementsScreen() {
       <h2
         style={{
           color: '#facc15',
-          marginBottom: '5px',
-          fontSize: '1.2rem',
+          margin: '20px 0',
           cursor: 'pointer',
           userSelect: 'none',
+          flexShrink: 0,
         }}
         onClick={handleTitleClick}
       >
@@ -499,7 +499,18 @@ export default function AchievementsScreen() {
         </div>
       </div>
 
-      <BackButton to="screen-gallery-menu" style={{ marginTop: '15px' }} />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-gallery-menu" />
+      </div>
     </div>
   );
 }

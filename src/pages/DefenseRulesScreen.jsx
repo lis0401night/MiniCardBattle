@@ -15,6 +15,8 @@ export default function DefenseRulesScreen() {
         style={{
           color: '#10b981',
           textShadow: '0 0 10px rgba(16, 185, 129, 0.5)',
+          margin: '20px 0',
+          textAlign: 'center',
         }}
       >
         ルール
@@ -36,7 +38,18 @@ export default function DefenseRulesScreen() {
           </li>
         </ul>
       </div>
-      <BackButton to="screen-defense-menu" />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-defense-menu" style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }

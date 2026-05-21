@@ -34,9 +34,10 @@ export default function SoloMenuScreen() {
         onClick={handleTitleClick}
         style={{
           color: '#facc15',
-          marginBottom: '40px',
+          margin: '20px 0',
           cursor: 'pointer',
           userSelect: 'none',
+          textAlign: 'center',
         }}
       >
         ソロモード
@@ -69,15 +70,16 @@ export default function SoloMenuScreen() {
       </div>
       <div
         style={{
-          marginTop: '20px',
+          padding: '15px 0 20px 0',
           borderTop: '1px solid #334155',
-          paddingTop: '20px',
           width: '100%',
           display: 'flex',
           justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
         }}
       >
-        <BackButton onClick={() => goToModeSelect?.()} />
+        <BackButton onClick={() => goToModeSelect?.()} style={{ margin: 0 }} />
       </div>
     </div>
   );

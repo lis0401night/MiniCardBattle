@@ -23,9 +23,10 @@ export default function RulesScreen() {
         onClick={handleTitleClick}
         style={{
           color: '#facc15',
-          marginBottom: '20px',
+          margin: '20px 0',
           cursor: 'pointer',
           userSelect: 'none',
+          textAlign: 'center',
         }}
       >
         ルール
@@ -77,7 +78,18 @@ export default function RulesScreen() {
           </ul>
         </div>
       </div>
-      <BackButton to="screen-beginner-guide" />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-beginner-guide" style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }

@@ -785,9 +785,9 @@ const TUTORIAL_LEADER_WITCH = [
     pauseBeforeEnemyTurn: true,
   },
   {
-    id: 'enemy_golem',
+    id: 'enemy_goblin',
     type: 'message',
-    text: 'ガーゴイルは「頑丈」でダメージを半減するから、相手のゴーレムの攻撃を耐えて破壊できるよ！',
+    text: 'ガーゴイルは「頑丈」でダメージを半減するから、相手のゴブリンの攻撃を耐えて破壊できるよ！',
     resumeEnemyTurnAfter: true,
     waitBattleIdle: true,
   },
@@ -1200,7 +1200,7 @@ const TUTORIAL_CONFIGS = {
       enemyHP: 8,
       playerSP: 6,
       enemySP: 0,
-      enemyBoard: ['golem', null, null],
+      enemyBoard: ['goblin', null, null],
     },
     clearMessage: 'チュートリアル「リーダー：クロエ」をクリアしました！',
     startMessage: 'チュートリアル「リーダー：クロエ」を開始します。',
@@ -1420,6 +1420,27 @@ export function filterLaneClick(lane, side) {
   if (!step) return false;
 
   if (step.type === 'placeCard' && side === 'player') {
+    // 1. 現在選択されている手札のカードを取得
+    const selectedCard =
+      GameState.selectedCardIndex !== null
+        ? GameState.playerHand[GameState.selectedCardIndex]
+        : null;
+
+    // 2. 選択されているカードが、指定された targetCardId と一致しているか判定
+    const isCorrectCard =
+      selectedCard &&
+      (selectedCard.id === step.targetCardId ||
+        selectedCard.baseId === step.targetCardId);
+
+    if (!isCorrectCard) {
+      // 指定外のカードが選択されている場合は配置を完全にブロックし、警告を表示
+      const cardName =
+        CARD_MASTER.find((c) => c.id === step.targetCardId)?.name ||
+        step.targetCardId;
+      showBlockMessage(`「${cardName}」を選んで配置してね！`);
+      return true;
+    }
+
     // targetLane が未定義またはnullの場合は自由配置（どのレーンでもOK）
     if (
       step.targetLane == null ||
@@ -1933,6 +1954,38 @@ export function resumeTutorialEnemyTurn() {
 }
 
 /**
+ * チュートリアルクリア情報の永続化（LocalStorage）
+ */
+export const TUTORIAL_PROGRESS_KEY = 'mini_card_battle_tutorial_progress';
+
+export function loadTutorialProgress() {
+  if (typeof localStorage === 'undefined') return {};
+  const saved = localStorage.getItem(TUTORIAL_PROGRESS_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse tutorial progress:', e);
+    }
+  }
+  return {};
+}
+
+export function saveTutorialProgress(progress) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(TUTORIAL_PROGRESS_KEY, JSON.stringify(progress));
+}
+
+export function completeTutorial(tutorialId) {
+  const progress = loadTutorialProgress();
+  if (!progress[tutorialId]) {
+    progress[tutorialId] = { isCleared: false, isRewarded: false };
+  }
+  progress[tutorialId].isCleared = true;
+  saveTutorialProgress(progress);
+}
+
+/**
  * チュートリアル終了処理（勝利後）
  * endBattleから呼ばれる
  */
@@ -1944,6 +1997,9 @@ export function handleTutorialEnd() {
   const config = TUTORIAL_CONFIGS[tutorialId];
   const clearMessage =
     config?.clearMessage || 'チュートリアルをクリアしました！';
+
+  // チュートリアルクリア状況を LocalStorage に保存
+  completeTutorial(tutorialId);
 
   // 後続のステップ（勝利メッセージ等）をすべて実行
   runTutorialFlow().then(() => {

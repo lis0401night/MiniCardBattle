@@ -46,7 +46,7 @@ export default function OptionsScreen() {
   return (
     <div id="screen-options" className="screen active">
       <h2
-        style={{ color: '#facc15', marginBottom: '30px' }}
+        style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}
         onClick={() => handleOptionsTitleClick?.()}
       >
         オプション
@@ -174,7 +174,18 @@ export default function OptionsScreen() {
         </div>
       </div>
 
-      <BackButton to="screen-mode-select" />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-mode-select" style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }

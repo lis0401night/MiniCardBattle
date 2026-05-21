@@ -17,8 +17,9 @@ export default function TournamentMenuScreen() {
       <h2
         style={{
           color: '#60a5fa',
-          marginBottom: '30px',
+          margin: '20px 0',
           textShadow: '0 0 15px rgba(59, 130, 246, 0.6)',
+          textAlign: 'center',
         }}
       >
         夢幻の闘技祭
@@ -64,10 +65,21 @@ export default function TournamentMenuScreen() {
         </button>
       </div>
 
-      <BackButton
-        onClick={() => showEventMenu?.()}
-        style={{ marginTop: '40px' }}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          onClick={() => showEventMenu?.()}
+          style={{ margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

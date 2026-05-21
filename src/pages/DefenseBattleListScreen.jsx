@@ -84,11 +84,11 @@ export default function DefenseBattleListScreen() {
 
   return (
     <div id="screen-defense-battle-list" className="screen active">
-      <h2 style={{ color: '#10b981', marginBottom: '5px', fontSize: '1.2rem' }}>
+      <h2 style={{ color: '#10b981', margin: '20px 0 5px 0', fontSize: '1.2rem', textAlign: 'center' }}>
         防衛戦（攻撃側）
       </h2>
       <div
-        style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
+        style={{ fontSize: '0.9rem', marginBottom: '15px', color: '#cbd5e1', textAlign: 'center' }}
       >
         挑む相手を選択してください
       </div>
@@ -220,7 +220,18 @@ export default function DefenseBattleListScreen() {
           })}
       </div>
 
-      <BackButton to="screen-defense-menu" style={{ marginTop: '30px' }} />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton to="screen-defense-menu" style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }

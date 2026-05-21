@@ -58,6 +58,8 @@ export default function DifficultySelectScreen() {
       <h2
         style={{
           fontWeight: 900,
+          margin: '20px 0',
+          textAlign: 'center',
           ...(isHighDiffMode
             ? {
                 color: '#ef4444',
@@ -158,10 +160,21 @@ export default function DifficultySelectScreen() {
           </>
         )}
       </div>
-      <BackButton
-        onClick={() => goBackFromDifficulty?.()}
-        style={{ marginTop: '30px' }}
-      />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton
+          onClick={() => goBackFromDifficulty?.()}
+          style={{ margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

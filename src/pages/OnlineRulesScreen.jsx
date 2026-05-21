@@ -33,8 +33,9 @@ export default function OnlineRulesScreen() {
       <h2
         style={{
           color: '#facc15',
-          marginBottom: '15px',
+          margin: '20px 0',
           textShadow: '0 0 10px rgba(250, 204, 21, 0.5)',
+          textAlign: 'center',
         }}
       >
         ルール
@@ -54,7 +55,18 @@ export default function OnlineRulesScreen() {
           </li>
         </ul>
       </div>
-      <BackButton onClick={() => showOnlineMenu?.()} />
+      <div
+        style={{
+          padding: '15px 0 20px 0',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: 'transparent',
+        }}
+      >
+        <BackButton onClick={() => showOnlineMenu?.()} style={{ margin: 0 }} />
+      </div>
     </div>
   );
 }
