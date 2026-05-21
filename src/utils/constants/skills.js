@@ -553,6 +553,11 @@ export const SKILLS = {
     desc: (val) =>
       '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できず、装備になれない。',
   },
+  martyr: {
+    name: '殉教',
+    icon: '✝️',
+    desc: (val) => '自分のリーダーが戦闘で受けるダメージを肩代わりする。',
+  },
   awake: {
     name: '覚醒',
     icon: '💎',
@@ -743,6 +748,7 @@ export const PASSIVE_SKILLS = [
   'retaliate',
   'substitute',
   'possession',
+  'martyr',
   'cleave',
   'arm_self',
   'maintain',

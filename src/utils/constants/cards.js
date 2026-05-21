@@ -890,14 +890,13 @@ export const CARD_MASTER = [
       '微かに光るルーンを道標に、失った記憶を辿る旅。その道を阻む者がいれば、迷いなき必中の矢が静かに急所を射抜く。',
   },
   {
-    id: 'barrier',
-    name: '聖光の護り手',
+    id: 'flagellant',
+    name: '鎖の殉教者',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'guardian' }, { id: 'support', value: 1 }],
-    voiceCategory: 'human_female_cool',
-    flavor:
-      '清浄な心で奇跡を呼ぶ賢者。その盾は、不浄なるものを一切寄せ付けない。',
+    power: 5,
+    skills: [{ id: 'martyr' }],
+    voiceCategory: 'human_male_nomal',
+    flavor: '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
   },
   {
     id: 'flak',

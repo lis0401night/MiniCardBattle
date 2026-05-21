@@ -1,7 +1,7 @@
 export default {
   easy: [
-    'barrier',
-    'barrier',
+    'flagellant',
+    'flagellant',
     'flak',
     'flak',
     'chameleon',

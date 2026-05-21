@@ -306,6 +306,10 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0,
   },
+  martyr: {
+    base: 0,
+    multiplier: 0,
+  },
   awake: {
     base: -5,
     multiplier: 1,
