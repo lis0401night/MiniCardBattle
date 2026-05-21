@@ -124,7 +124,26 @@ export async function playEvents(events) {
           createDamagePopup(cEl, label, color);
         }
         updateCardPowerOnly(ev.lane, sidePrefix);
-        playSound(SOUNDS.seSkill);
+        if (ev.source === 'equip' && ev.card) {
+          // 「武装」による重ね配置の演出（配置音＋重ねられたトークンカードの出現ボイス）
+          playSound(SOUNDS.sePlace);
+          let voiceCat = ev.card.voiceCategory;
+          if (!voiceCat) {
+            const baseId = ev.card.baseId || ev.card.id;
+            const cMaster = CARD_MASTER.find(
+              (m) => m.id === baseId || m.name === ev.card.name
+            );
+            if (cMaster && cMaster.voiceCategory) {
+              voiceCat = cMaster.voiceCategory;
+            }
+          }
+          if (voiceCat) {
+            playCardVoice(voiceCat, 'play');
+          }
+        } else {
+          // 通常のパワー変動（バフ等）
+          playSound(SOUNDS.seSkill);
+        }
         await sleep(200);
         break;
       }

@@ -2260,7 +2260,7 @@ export const CARD_MASTER = [
     name: 'ランペイジ',
     rarity: 4,
     power: 0,
-    skills: [{ id: 'call', value: 3 },{ id: 'call', value: 3 }],
+    skills: [{ id: 'takeover' }, { id: 'call', value: 3 },{ id: 'call', value: 3 }],
     voiceCategory: 'magic',
     flavor:
       '一本の木が切り倒された時、無数の獣たちが目を覚ました。',

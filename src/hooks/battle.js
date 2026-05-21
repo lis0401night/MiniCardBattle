@@ -3012,8 +3012,12 @@ export async function resolveOnPlaySkill(o, l, c) {
   try {
     // 発動対象スキルのリストを作成
     let skillsToResolve = [];
-    if (c.skill && c.skill !== 'none')
-      skillsToResolve.push({ id: c.skill, value: c.skillValue });
+    if (c.skill && c.skill !== 'none') {
+      const skObj = { id: c.skill, value: c.skillValue };
+      if (c.summonId) skObj.summonId = c.summonId;
+      if (c.targetId) skObj.targetId = c.targetId;
+      skillsToResolve.push(skObj);
+    }
     if (Array.isArray(c.skills))
       skillsToResolve = skillsToResolve.concat(c.skills);
 
