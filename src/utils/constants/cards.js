@@ -2106,7 +2106,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 3,
     skills: [
-      { id: 'sacrifice', value: 3 },
+      { id: 'berserk', value: 3 },
       { id: 'double_strike' },
       { id: 'stealth', value: 1 },
       { id: 'quick' },
