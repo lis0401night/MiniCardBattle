@@ -2154,9 +2154,17 @@ export function evaluateAdhocTokenLanes(
 
     // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
     const hpBeforeCombat = simState.enemyHP;
-    applyPassiveSkillLogic(simState, 'blue');
-    calculateCombatPhase(simState, 'blue');
-    simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+    if (!(simState.extraTurnCount > 0)) {
+      applyPassiveSkillLogic(simState, 'blue');
+      simState.playerBoard.forEach((c) => {
+        if (c && c.stunTurns > 0) c.stunTurns--;
+      });
+      calculateCombatPhase(simState, 'blue');
+      simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+    } else {
+      simState.extraTurnCount--;
+      simState.combatDamageTaken = 0;
+    }
 
     let score = evaluateSimState(simState);
     // タイブレーク：左 > 右 > 中央
@@ -2205,9 +2213,17 @@ export function evaluateAdhocTokenLanes(
     };
     // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
     const hpBeforeCombat = simState.enemyHP;
-    applyPassiveSkillLogic(simState, 'blue');
-    calculateCombatPhase(simState, 'blue');
-    simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+    if (!(simState.extraTurnCount > 0)) {
+      applyPassiveSkillLogic(simState, 'blue');
+      simState.playerBoard.forEach((c) => {
+        if (c && c.stunTurns > 0) c.stunTurns--;
+      });
+      calculateCombatPhase(simState, 'blue');
+      simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
+    } else {
+      simState.extraTurnCount--;
+      simState.combatDamageTaken = 0;
+    }
     let score = evaluateSimState(simState);
     // キャンセルを優先するための微小ボーナス
     scores.push({ lane: -1, score: score + 0.05 });
