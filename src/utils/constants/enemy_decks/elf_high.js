@@ -17,7 +17,7 @@ export const elfHighDeckDef = [
   'caller',
   'caller',
   'caller',
-  'play',
-  'play',
+  'pray',
+  'pray',
 ];
 export default elfHighDeckDef;
