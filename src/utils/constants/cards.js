@@ -809,8 +809,8 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 1,
     skills: [
-      { id: 'growth', value: -1 },
       { id: 'equip' },
+      { id: 'growth', value: -1 },
       { id: 'clone', value: 1 },
     ],
     voiceCategory: 'insect',
@@ -1435,7 +1435,7 @@ export const CARD_MASTER = [
     name: '攻城エレファント',
     rarity: 3,
     power: 6,
-    skills: [{ id: 'takeover' }, { id: 'equip' }],
+    skills: [{ id: 'equip' }, { id: 'takeover' }],
     voiceCategory: 'stone',
     flavor:
       '分厚い装甲と武装を纏った、歩く攻城兵器。その圧倒的な質量と歩みは、いかなる城壁や防陣もただの瓦礫の山へと変える。',
