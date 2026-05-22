@@ -17,7 +17,7 @@ export function canTakeDamage(card, amount, isSkill = true) {
 }
 
 /**
- * リーダーが受けるダメージを「殉教」を持つカードに肩代わりさせるか判定し、適用する。
+ * リーダーが受けるダメージを「犠牲」を持つカードに肩代わりさせるか判定し、適用する。
  * 肩代わりが発生した場合は true を返し、カードにダメージを与えます。
  * 発生しなかった場合は false を返します。
  * 複数ある場合は、左側のレーン（インデックスが小さいレーン）から優先的に肩代わりします。
@@ -31,7 +31,8 @@ export function applyMartyrForLeader(state, side, amount, events) {
 
   for (let i = 0; i < board.length; i++) {
     const card = board[i];
-    if (card && card.currentPower > 0 && hasSkill(card, 'martyr') && card.stunTurns <= 0) {
+    // パワーが1以上で、「犠牲（martyr）」スキルを持つカードを左から検索（気絶状態でも肩代わり可能）
+    if (card && card.currentPower > 0 && hasSkill(card, 'martyr')) {
       martyrCard = card;
       martyrLane = i;
       break;
@@ -43,7 +44,7 @@ export function applyMartyrForLeader(state, side, amount, events) {
       type: 'skill_popup',
       side: side,
       lane: martyrLane,
-      skillName: '殉教',
+      skillName: '犠牲',
     });
 
     let appliedDmg = amount;
@@ -82,12 +83,12 @@ export function applyMartyrForLeader(state, side, amount, events) {
 }
 
 /**
- * リーダーにダメージを与える（殉教の肩代わりを考慮する）
+ * リーダーにダメージを与える（犠牲の肩代わりを考慮する）
  */
 export function damageLeader(state, side, amount, source, events, lane = null) {
   if (amount <= 0) return;
 
-  // 殉教の肩代わりチェック
+  // 犠牲の肩代わりチェック
   if (applyMartyrForLeader(state, side, amount, events)) {
     return; // 肩代わりされたので終了
   }
