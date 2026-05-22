@@ -1051,10 +1051,15 @@ export async function waitPlayerEnemyLaneSelection(
       typeof GameState.aiDecision !== 'undefined' &&
       GameState.aiDecision
     ) {
-      if (GameState.aiDecision.cardTokenLanes) {
-        const decidedLanes = GameState.aiDecision.cardTokenLanes;
-        delete GameState.aiDecision.cardTokenLanes;
-        return decidedLanes.slice(0, count);
+      if (
+        GameState.aiDecision.cardTokenLanes &&
+        GameState.aiDecision.cardTokenLanes.length > 0
+      ) {
+        const decidedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
+        if (GameState.aiDecision.cardTokenLanes.length === 0) {
+          delete GameState.aiDecision.cardTokenLanes;
+        }
+        return decidedLanes;
       }
     }
 

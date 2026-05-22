@@ -240,9 +240,16 @@ export async function resolveActiveSkillEffect(
         }
 
         GameState.aiDecision.actionQueue.splice(actionIdx, 1);
-        GameState.aiDecision.cardTokenLanes = action.cardTokenLanes
-          ? [...action.cardTokenLanes]
-          : undefined;
+        if (action.cardTokenLanes) {
+          if (!GameState.aiDecision.cardTokenLanes) {
+            GameState.aiDecision.cardTokenLanes = [];
+          }
+          // 既存のレーン情報を破壊しないように先頭に追加
+          GameState.aiDecision.cardTokenLanes = [
+            ...action.cardTokenLanes,
+            ...GameState.aiDecision.cardTokenLanes,
+          ];
+        }
 
         if (action.choices !== undefined || action.choices2 !== undefined) {
           if (!GameState.aiDecision.choiceIndexQueue)

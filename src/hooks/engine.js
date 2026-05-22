@@ -1254,13 +1254,13 @@ export function applyActiveSkillLogic(
         } else {
           const sealedLanes =
             owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-          const emptyLanes = [0, 1, 2].filter(
+          const emptyLanes = [0, 2, 1].filter(
             (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
           );
           if (emptyLanes.length > 0) {
             targetLane = emptyLanes[0];
           } else {
-            const validOccupiedLanes = [0, 1, 2].filter(
+            const validOccupiedLanes = [0, 2, 1].filter(
               (j) => !sealedLanes || sealedLanes[j] === 0
             );
             if (validOccupiedLanes.length > 0)
@@ -1351,13 +1351,13 @@ export function applyActiveSkillLogic(
         } else {
           const sealedLanes =
             owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-          const emptyLanes = [0, 1, 2].filter(
+          const emptyLanes = [0, 2, 1].filter(
             (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
           );
           if (emptyLanes.length > 0) {
             targetLane = emptyLanes[0];
           } else {
-            const validOccupiedLanes = [0, 1, 2].filter(
+            const validOccupiedLanes = [0, 2, 1].filter(
               (j) => !sealedLanes || sealedLanes[j] === 0
             );
             if (validOccupiedLanes.length > 0)
@@ -1422,13 +1422,13 @@ export function applyActiveSkillLogic(
       } else {
         const sealedLanes =
           owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-        const emptyLanesRes = [0, 1, 2].filter(
+        const emptyLanesRes = [0, 2, 1].filter(
           (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
         );
         if (emptyLanesRes.length > 0) {
           targetLaneRes = emptyLanesRes[0];
         } else {
-          const validOccupiedLanes = [0, 1, 2].filter(
+          const validOccupiedLanes = [0, 2, 1].filter(
             (j) => !sealedLanes || sealedLanes[j] === 0
           );
           if (validOccupiedLanes.length > 0)
@@ -1570,13 +1570,13 @@ export function applyActiveSkillLogic(
       } else {
         const sealedLanes =
           owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-        const emptyLanesPuppet = [0, 1, 2].filter(
+        const emptyLanesPuppet = [0, 2, 1].filter(
           (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
         );
         if (emptyLanesPuppet.length > 0) {
           targetLanePuppet = emptyLanesPuppet[0];
         } else {
-          const validOccupied = [0, 1, 2].filter(
+          const validOccupied = [0, 2, 1].filter(
             (j) => !sealedLanes || sealedLanes[j] === 0
           );
           if (validOccupied.length > 0) targetLanePuppet = validOccupied[0];
@@ -1641,13 +1641,13 @@ export function applyActiveSkillLogic(
         } else {
           const sealedLanes =
             owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-          const emptyLanes = [0, 1, 2].filter(
+          const emptyLanes = [0, 2, 1].filter(
             (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
           );
           if (emptyLanes.length > 0) {
             targetLane = emptyLanes[0];
           } else {
-            const validOccupiedLanes = [0, 1, 2].filter(
+            const validOccupiedLanes = [0, 2, 1].filter(
               (j) => !sealedLanes || sealedLanes[j] === 0
             );
             if (validOccupiedLanes.length > 0)
@@ -2031,7 +2031,7 @@ export function applyLeaderSkillLogic(
       enemyTargets = [...tokenLanes];
     } else {
       // AI Selection Logic
-      const priorityLanes = [0, 1, 2].filter(
+      const priorityLanes = [0, 2, 1].filter(
         (i) => !sealedLanes || sealedLanes[i] === 0
       );
       priorityLanes.sort(
@@ -2083,7 +2083,7 @@ export function applyLeaderSkillLogic(
       allyTargets = [...tokenLanes.allied].slice(0, 1);
     } else {
       // AI Selection Logic for Allied
-      let availableLanes = [0, 1, 2].filter(
+      let availableLanes = [0, 2, 1].filter(
         (i) => !mySealedLanes || mySealedLanes[i] === 0
       );
       let emptyLanes = availableLanes.filter((i) => board[i] === null);
@@ -2252,7 +2252,7 @@ export function applyLeaderSkillLogic(
       const sealedLanes = isBlue
         ? state.playerSealedLanes
         : state.enemySealedLanes;
-      const emptyLanes = [0, 1, 2].filter(
+      const emptyLanes = [0, 2, 1].filter(
         (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
       );
       if (emptyLanes.length > 0) dragonRitualLane = emptyLanes[0];
@@ -2674,7 +2674,7 @@ export function applyLeaderSkillLogic(
         const sealedLanes = isBlue
           ? state.playerSealedLanes
           : state.enemySealedLanes;
-        const emptyLanes = [0, 1, 2].filter(
+        const emptyLanes = [0, 2, 1].filter(
           (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
         );
         if (emptyLanes.length > 0) l = emptyLanes[0];
@@ -2839,7 +2839,7 @@ export function applyLeaderSkillLogic(
     // 自分の墓地 → tokenLanes[0] (forcedTargetIdx が指定されている場合はその優先)
     let lane1 = tokenLanes && tokenLanes.length > 0 ? tokenLanes[0] : -1;
     if (lane1 === -1) {
-      const emptyLanes = [0, 1, 2].filter(
+      const emptyLanes = [0, 2, 1].filter(
         (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
       );
       lane1 = emptyLanes.length > 0 ? emptyLanes[0] : 0;
@@ -2875,7 +2875,7 @@ export function applyLeaderSkillLogic(
     // 相手の墓地 → tokenLanes[1]
     let lane2 = tokenLanes && tokenLanes.length > 1 ? tokenLanes[1] : -1;
     if (lane2 === -1) {
-      const emptyLanes = [0, 1, 2].filter(
+      const emptyLanes = [0, 2, 1].filter(
         (i) =>
           board[i] === null &&
           (!sealedLanes || sealedLanes[i] === 0) &&
@@ -2901,7 +2901,7 @@ export function applyLeaderSkillLogic(
       const sealedLanes = isBlue
         ? state.playerSealedLanes
         : state.enemySealedLanes;
-      const emptyLanes = [0, 1, 2].filter(
+      const emptyLanes = [0, 2, 1].filter(
         (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
       );
       if (emptyLanes.length > 0) l = emptyLanes[0];
