@@ -494,7 +494,7 @@ export const ACHIEVEMENT_MASTER = [
     description: '高難易度イベントでネフティを倒す',
     type: 'event_clear',
     targetValue: 'priest_high',
-    reward: { type: 'skin', value: 'priest_high', name: '冥界の裁き' },
+    reward: { type: 'skin', value: 'priest_high', name: '前世の記憶' },
   },
   {
     id: 'event_priest_high_clear_pm',
@@ -502,7 +502,7 @@ export const ACHIEVEMENT_MASTER = [
     description: '高難易度イベントでネフティを倒す',
     type: 'event_clear',
     targetValue: 'priest_high',
-    reward: { type: 'playmat', value: 'pm_priest_high', name: '冥界の裁き' },
+    reward: { type: 'playmat', value: 'pm_priest_high', name: '前世の記憶' },
   },
   // --- 防衛戦勝利数 ---
   {

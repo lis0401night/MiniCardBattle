@@ -299,6 +299,9 @@ export async function resolveActiveSkillEffect(
           // 2) レーン選択（ハイライト表示付き）
           //    招来: 同じレーンのみ候補 / 詠唱: 全レーン候補
           const restrictLanes = isInvite ? [l] : null;
+          GameState.placementMessage = isInvite
+            ? `招来: 「${pickedCard.name}」を召喚するレーンを選んでください`
+            : `詠唱: 「${pickedCard.name}」を召喚するレーンを選んでください`;
           const lanes = await waitPlayerLaneSelection(
             1,
             o,
@@ -309,6 +312,7 @@ export async function resolveActiveSkillEffect(
             true, // canCancel（キャンセル可能）
             'キャンセル'
           );
+          GameState.placementMessage = null;
 
           if (lanes && lanes.length > 0) {
             selectedIdx = sIdx;
