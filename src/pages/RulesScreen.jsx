@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -18,19 +18,13 @@ export default function RulesScreen() {
   };
 
   return (
-    <div id="screen-rules" className="screen active">
-      <h2
-        onClick={handleTitleClick}
-        style={{
-          color: '#facc15',
-          margin: '20px 0',
-          cursor: 'pointer',
-          userSelect: 'none',
-          textAlign: 'center',
-        }}
-      >
-        ルール
-      </h2>
+    <ScreenLayout
+      id="screen-rules"
+      title="ルール"
+      titleColor="#facc15"
+      onTitleClick={handleTitleClick}
+      backTo="screen-beginner-guide"
+    >
       <div className="rule-box">
         <div className="rule-section">
           <div className="rule-category">【デッキ編成】</div>
@@ -78,18 +72,6 @@ export default function RulesScreen() {
           </ul>
         </div>
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton to="screen-beginner-guide" style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

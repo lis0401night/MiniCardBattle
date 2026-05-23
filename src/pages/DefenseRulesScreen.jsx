@@ -1,26 +1,20 @@
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 
+/**
+ * 防衛戦ルール説明画面
+ * 共通コンポーネント ScreenLayout を適用してリファクタリングを完了。
+ */
 export default function DefenseRulesScreen() {
   return (
-    <div
+    <ScreenLayout
       id="screen-defense-rules"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_defense.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      backgroundImage="background_defense.png"
+      title="ルール"
+      titleColor="#10b981"
+      titleGlow={true}
+      backTo="screen-defense-menu"
+      backHasBorder={false}
     >
-      <h2
-        style={{
-          color: '#10b981',
-          textShadow: '0 0 10px rgba(16, 185, 129, 0.5)',
-          margin: '20px 0',
-          textAlign: 'center',
-        }}
-      >
-        ルール
-      </h2>
       <div className="rule-box">
         <ul>
           <li>他のプレイヤーのデッキと戦うモードです。</li>
@@ -38,18 +32,6 @@ export default function DefenseRulesScreen() {
           </li>
         </ul>
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton to="screen-defense-menu" style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

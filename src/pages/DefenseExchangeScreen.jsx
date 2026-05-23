@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import BackButton from '../components/BackButton.jsx';
+import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { GameState } from '../hooks/gameState.js';
 import {
   setRenderExchangeHook,
@@ -88,32 +88,15 @@ export default function DefenseExchangeScreen() {
   };
 
   return (
-    <div
+    <CompactScreenLayout
       id="screen-exchange"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_defense.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '20px 0',
-        overflowY: 'auto',
-      }}
+      backgroundImage="background_defense.png"
+      title="交換所"
+      titleColor="#10b981"
+      titleGlow={true}
+      onTitleClick={handleTitleClick}
+      backTo="screen-defense-menu"
     >
-      <h2
-        id="exchange-title"
-        style={{
-          color: '#10b981',
-          marginBottom: '5px',
-          cursor: 'pointer',
-          textShadow: '0 0 15px rgba(16, 185, 129, 0.6)',
-        }}
-        onClick={handleTitleClick}
-      >
-        交換所
-      </h2>
       <div
         id="exchange-points-display"
         style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
@@ -239,8 +222,6 @@ export default function DefenseExchangeScreen() {
           })}
         </div>
       </div>
-
-      <BackButton to="screen-defense-menu" style={{ marginTop: '15px' }} />
-    </div>
+    </CompactScreenLayout>
   );
 }

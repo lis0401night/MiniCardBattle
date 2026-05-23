@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import BackButton from '../components/BackButton.jsx';
+import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
@@ -201,32 +201,15 @@ export default function ChallengeExchangeScreen() {
   };
 
   return (
-    <div
+    <CompactScreenLayout
       id="screen-challenge-exchange"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_challenge.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '20px 0',
-        overflowY: 'auto',
-      }}
+      backgroundImage="background_challenge.png"
+      title="交換所"
+      titleColor="#c084fc"
+      titleGlow={true}
+      onTitleClick={handleTitleClick}
+      backTo="screen-dungeon-menu"
     >
-      <h2
-        style={{
-          color: '#c084fc',
-          marginBottom: '5px',
-          textShadow: '0 0 15px rgba(192, 132, 252, 0.6)',
-          cursor: 'pointer',
-        }}
-        onClick={handleTitleClick}
-      >
-        交換所
-      </h2>
-
       <div
         id="exchange-points-display"
         style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
@@ -399,11 +382,6 @@ export default function ChallengeExchangeScreen() {
           })}
         </div>
       </div>
-
-      <BackButton
-        to="screen-dungeon-menu"
-        style={{ padding: '10px 40px', marginTop: '15px' }}
-      />
-    </div>
+    </CompactScreenLayout>
   );
 }

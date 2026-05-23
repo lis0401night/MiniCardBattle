@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
@@ -204,32 +205,15 @@ export default function TournamentExchangeScreen() {
   };
 
   return (
-    <div
+    <CompactScreenLayout
       id="screen-tournament-exchange"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_tournament01.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '20px 0',
-        overflowY: 'auto',
-      }}
+      backgroundImage="background_tournament01.png"
+      title="交換所"
+      titleColor="#60a5fa"
+      titleGlow={true}
+      onTitleClick={handleTitleClick}
+      onBackClick={handleBack}
     >
-      <h2
-        style={{
-          color: '#60a5fa',
-          marginBottom: '5px',
-          textShadow: '0 0 15px rgba(59, 130, 246, 0.6)',
-          cursor: 'pointer',
-        }}
-        onClick={handleTitleClick}
-      >
-        交換所
-      </h2>
-
       <div
         id="exchange-points-display"
         style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
@@ -402,18 +386,6 @@ export default function TournamentExchangeScreen() {
           })}
         </div>
       </div>
-
-      <button
-        className="btn"
-        style={{
-          background: '#475569',
-          padding: '10px 40px',
-          marginTop: '15px',
-        }}
-        onClick={handleBack}
-      >
-        戻る
-      </button>
-    </div>
+    </CompactScreenLayout>
   );
 }

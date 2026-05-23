@@ -1,4 +1,5 @@
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import {
   showDefenseMenu,
   startGameMode,
@@ -6,75 +7,44 @@ import {
 } from '../hooks/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
-import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
+import { AUDIO_INSTANCES } from '../utils/sounds.js';
 
 export default function EventMenuScreen() {
   const images = UI_IMAGES || {};
 
   return (
-    <div id="screen-event-menu" className="screen active">
-      <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}>イベント</h2>
+    <ScreenLayout
+      id="screen-event-menu"
+      title="イベント"
+      titleColor="#facc15"
+      backTo="screen-mode-select"
+      backHasBorder={true}
+    >
       <div className="menu-btn-grid">
-        <div className="menu-img-btn" onClick={() => startHighDifficulty?.()}>
-          <div
-            className="menu-img-bg"
-            style={{
-              backgroundImage: `url('${images.EVENT_HIGH_DIFF || ''}')`,
-            }}
-          ></div>
-          <div className="menu-btn-label">高難易度</div>
-        </div>
-        <div className="menu-img-btn" onClick={() => showDefenseMenu?.()}>
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.EVENT_DEFENSE || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">防衛戦</div>
-        </div>
-        <div
-          className="menu-img-btn"
+        <MenuImageButton
+          label="高難易度"
+          image={images.EVENT_HIGH_DIFF}
+          onClick={() => startHighDifficulty?.()}
+        />
+        <MenuImageButton
+          label="防衛戦"
+          image={images.EVENT_DEFENSE}
+          onClick={() => showDefenseMenu?.()}
+        />
+        <MenuImageButton
+          label="試練の宮殿"
+          image={images.MENU_DUNGEON}
           onClick={() => startGameMode?.('battle_dungeon')}
-        >
-          <div
-            className="menu-img-bg"
-            style={{
-              backgroundImage: `url('${images.MENU_DUNGEON || ''}')`,
-              backgroundColor: '#475569',
-            }}
-          ></div>
-          <div className="menu-btn-label">試練の宮殿</div>
-        </div>
-        <div
-          className="menu-img-btn"
+        />
+        <MenuImageButton
+          label="夢幻の闘技祭"
+          image={images.EVENT_TOURNAMENT}
           onClick={() => {
-            playSound?.(SOUNDS?.seClick);
             playSound?.(AUDIO_INSTANCES?.bgmTournament1);
             switchScreen?.('screen-tournament-menu');
           }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{
-              backgroundImage: `url('${images.EVENT_TOURNAMENT || ''}')`,
-              backgroundColor: '#2563eb', // 画像がない場合のフォールバック
-            }}
-          ></div>
-          <div className="menu-btn-label">夢幻の闘技祭</div>
-        </div>
+        />
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          borderTop: '1px solid #334155',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton to="screen-mode-select" style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

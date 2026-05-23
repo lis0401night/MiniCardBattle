@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import MenuButton from '../components/common/MenuButton.jsx';
 import {
   showDefenseBattleList,
   showDefenseRules,
@@ -99,8 +100,12 @@ export default function DefenseMenuScreen() {
   }, []);
 
   return (
-    <div id="screen-defense-menu" className="screen active">
-      <h2 style={{ color: '#10b981', margin: '20px 0', textAlign: 'center' }}>防衛戦</h2>
+    <ScreenLayout
+      id="screen-defense-menu"
+      title="防衛戦"
+      titleColor="#10b981"
+      onBackClick={() => showEventMenu?.()}
+    >
       <div
         style={{
           display: 'flex',
@@ -109,63 +114,28 @@ export default function DefenseMenuScreen() {
           width: '250px',
         }}
       >
-        <button className="btn btn-yellow" onClick={() => showDefenseRules?.()}>
-          ルール
-        </button>
-        <button
-          className="btn"
-          style={{ background: 'linear-gradient(45deg, #10b981, #059669)' }}
+        <MenuButton
+          label="ルール"
+          variant="yellow"
+          onClick={() => showDefenseRules?.()}
+        />
+        <MenuButton
+          label="防衛デッキ登録"
+          variant="emerald"
           onClick={() => startDefenseRegistration?.()}
-        >
-          防衛デッキ登録
-        </button>
-
-        {hasRegistered ? (
-          <button
-            id="btn-start-attack"
-            className="btn"
-            style={{ background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' }}
-            onClick={() => showDefenseBattleList?.()}
-          >
-            攻撃開始
-          </button>
-        ) : (
-          <div
-            id="btn-start-attack-disabled"
-            className="btn"
-            style={{
-              background: '#475569',
-              opacity: 0.5,
-              cursor: 'not-allowed',
-            }}
-          >
-            攻撃開始（未登録）
-          </div>
-        )}
-
-        <button
-          className="btn"
-          style={{ background: 'linear-gradient(45deg, #f97316, #ea580c)' }}
+        />
+        <MenuButton
+          label={hasRegistered ? '攻撃開始' : '攻撃開始（未登録）'}
+          variant="blue"
+          onClick={() => showDefenseBattleList?.()}
+          disabled={!hasRegistered}
+        />
+        <MenuButton
+          label="交換所"
+          variant="orange"
           onClick={() => showExchangeScreen?.()}
-        >
-          交換所
-        </button>
-      </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton
-          onClick={() => showEventMenu?.()}
-          style={{ margin: 0 }}
         />
       </div>
-    </div>
+    </ScreenLayout>
   );
 }

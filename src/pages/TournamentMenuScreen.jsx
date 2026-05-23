@@ -1,29 +1,18 @@
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import MenuButton from '../components/common/MenuButton.jsx';
 import { showEventMenu, startGameMode } from '../hooks/uiMainCore.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { switchScreen } from '../utils/gameUtils.js';
 
 export default function TournamentMenuScreen() {
   return (
-    <div
+    <ScreenLayout
       id="screen-tournament-menu"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)), url('assets/backgrounds/background_tournament01.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      backgroundImage="background_tournament01.png"
+      title="夢幻の闘技祭"
+      titleColor="#60a5fa"
+      titleGlow={true}
+      onBackClick={() => showEventMenu?.()}
     >
-      <h2
-        style={{
-          color: '#60a5fa',
-          margin: '20px 0',
-          textShadow: '0 0 15px rgba(59, 130, 246, 0.6)',
-          textAlign: 'center',
-        }}
-      >
-        夢幻の闘技祭
-      </h2>
       <div
         style={{
           display: 'flex',
@@ -32,54 +21,22 @@ export default function TournamentMenuScreen() {
           width: '250px',
         }}
       >
-        <button
-          className="btn btn-yellow"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            switchScreen?.('screen-tournament-rules');
-          }}
-        >
-          ルール
-        </button>
-
-        <button
-          className="btn"
-          style={{ background: 'linear-gradient(45deg, #2563eb, #1e40af)' }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            startGameMode?.('tournament');
-          }}
-        >
-          挑戦
-        </button>
-
-        <button
-          className="btn"
-          style={{ background: 'linear-gradient(45deg, #f97316, #ea580c)' }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            switchScreen?.('screen-tournament-exchange');
-          }}
-        >
-          交換所
-        </button>
-      </div>
-
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton
-          onClick={() => showEventMenu?.()}
-          style={{ margin: 0 }}
+        <MenuButton
+          label="ルール"
+          variant="yellow"
+          onClick={() => switchScreen?.('screen-tournament-rules')}
+        />
+        <MenuButton
+          label="挑戦"
+          variant="blue"
+          onClick={() => startGameMode?.('tournament')}
+        />
+        <MenuButton
+          label="交換所"
+          variant="orange"
+          onClick={() => switchScreen?.('screen-tournament-exchange')}
         />
       </div>
-    </div>
+    </ScreenLayout>
   );
 }

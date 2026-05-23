@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import { goToModeSelect, startGameMode } from '../hooks/uiMainCore.js';
 import { showConfirmModal } from '../hooks/uiModals.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
@@ -21,66 +22,32 @@ export default function SoloMenuScreen() {
   };
 
   return (
-    <div
+    <ScreenLayout
       id="screen-solo-menu"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      backgroundImage="background_select.png"
+      title="ソロモード"
+      titleColor="#facc15"
+      onTitleClick={handleTitleClick}
+      onBackClick={() => goToModeSelect?.()}
+      backHasBorder={true}
     >
-      <h2
-        onClick={handleTitleClick}
-        style={{
-          color: '#facc15',
-          margin: '20px 0',
-          cursor: 'pointer',
-          userSelect: 'none',
-          textAlign: 'center',
-        }}
-      >
-        ソロモード
-      </h2>
       <div className="menu-btn-grid">
-        <div className="menu-img-btn" onClick={() => startGameMode?.('story')}>
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_STORY || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">ストーリー</div>
-        </div>
-        <div className="menu-img-btn" onClick={() => startGameMode?.('free')}>
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_FREE || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">フリーバトル</div>
-        </div>
-        <div
-          className="menu-img-btn"
+        <MenuImageButton
+          label="ストーリー"
+          image={images.MENU_STORY}
+          onClick={() => startGameMode?.('story')}
+        />
+        <MenuImageButton
+          label="フリーバトル"
+          image={images.MENU_FREE}
+          onClick={() => startGameMode?.('free')}
+        />
+        <MenuImageButton
+          label="プラクティス"
+          image={images.MENU_PRACTICE}
           onClick={() => startGameMode?.('practice')}
-        >
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_PRACTICE || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">プラクティス</div>
-        </div>
+        />
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          borderTop: '1px solid #334155',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton onClick={() => goToModeSelect?.()} style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

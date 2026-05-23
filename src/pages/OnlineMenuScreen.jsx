@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import MenuButton from '../components/common/MenuButton.jsx';
 import { createRoom } from '../hooks/multiplayer.js';
 import {
   closePlayerNameModal,
@@ -9,16 +10,16 @@ import {
   showOnlineSearch,
 } from '../hooks/uiMainCore.js';
 import { showAlertModal } from '../hooks/uiModals.js';
-import { playSound } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
 
+/**
+ * オンライン対戦メニュー画面
+ * 共通コンポーネント ScreenLayout と MenuButton を用いてリファクタリングを完了。
+ */
 export default function OnlineMenuScreen() {
   const [isMatching, setIsMatching] = useState(false);
 
-  // マウント時BGM処理はuiMainCore.js側で管理するため削除
-
   const handleCreateRoomClick = () => {
-    playSound?.(SOUNDS.seClick);
+    // クリック音は MenuButton 側で自動再生されるため、多重再生を防ぐためここでは明示的に呼び出さない
     if (window.showPlayerNameModalState) {
       window.showPlayerNameModalState(async (name) => {
         if (!name.trim()) {
@@ -52,18 +53,16 @@ export default function OnlineMenuScreen() {
   };
 
   return (
-    <div id="screen-online-menu" className="screen active">
-      <h2
-        style={{
-          color: '#38bdf8',
-          margin: '20px 0',
-          textShadow: '0 0 10px rgba(56, 189, 248, 0.5)',
-          textAlign: 'center',
-        }}
-      >
-        オンライン対戦
-      </h2>
-
+    <ScreenLayout
+      id="screen-online-menu"
+      title="オンライン対戦"
+      titleColor="#38bdf8"
+      titleGlow={true}
+      // マッチング中は戻るボタンを無効化（クリックしても何もしない）にする
+      onBackClick={isMatching ? undefined : () => goToModeSelect?.()}
+      showBackButton={true}
+      backHasBorder={false}
+    >
       {isMatching ? (
         <div style={{ textAlign: 'center', margin: '40px 0' }}>
           <div className="spinner" style={{ margin: '0 auto 20px' }}></div>
@@ -78,45 +77,23 @@ export default function OnlineMenuScreen() {
             width: '250px',
           }}
         >
-          <button
-            className="btn btn-yellow"
+          <MenuButton
+            label="ルール"
+            variant="yellow"
             onClick={() => showOnlineRules?.()}
-          >
-            ルール
-          </button>
-          <button
-            className="btn"
+          />
+          <MenuButton
+            label="ルーム作成"
             style={{ background: 'linear-gradient(45deg, #0284c7, #0369a1)' }}
             onClick={handleCreateRoomClick}
-          >
-            ルーム作成
-          </button>
-          <button
-            className="btn"
-            style={{ background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' }}
+          />
+          <MenuButton
+            label="ルーム検索"
+            variant="blue"
             onClick={() => showOnlineSearch?.()}
-          >
-            ルーム検索
-          </button>
+          />
         </div>
       )}
-
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton
-          onClick={() => goToModeSelect?.()}
-          style={{ margin: 0 }}
-          disabled={isMatching}
-        />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

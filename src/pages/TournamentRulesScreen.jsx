@@ -1,26 +1,20 @@
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 
+/**
+ * 夢幻の闘技祭ルール説明画面
+ * 共通コンポーネント ScreenLayout を適用してリファクタリングを完了。
+ */
 export default function TournamentRulesScreen() {
   return (
-    <div
+    <ScreenLayout
       id="screen-tournament-rules"
-      className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_tournament01.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      backgroundImage="background_tournament01.png"
+      title="ルール"
+      titleColor="#60a5fa"
+      titleGlow={true}
+      backTo="screen-tournament-menu"
+      backHasBorder={false}
     >
-      <h2
-        style={{
-          color: '#60a5fa',
-          textShadow: '0 0 10px rgba(96, 165, 250, 0.5)',
-          margin: '20px 0',
-          textAlign: 'center',
-        }}
-      >
-        ルール
-      </h2>
       <div className="rule-box">
         <ul>
           <li>最大4回戦、同じデッキで戦うモードです。</li>
@@ -33,18 +27,6 @@ export default function TournamentRulesScreen() {
           </li>
         </ul>
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton to="screen-tournament-menu" style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

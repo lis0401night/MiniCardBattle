@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import BackButton from '../components/BackButton.jsx';
+import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { loadDeck, saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { openCardPreview, setRenderCardListHook } from '../hooks/uiGallery.js';
@@ -124,29 +124,13 @@ export default function CardListScreen() {
   };
 
   return (
-    <div
+    <CompactScreenLayout
       id="screen-card-list"
-      className="screen active"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '20px 0',
-        overflowY: 'auto',
-      }}
+      title="カード一覧"
+      titleColor="#facc15"
+      onTitleClick={handleTitleClick}
+      backTo="screen-gallery-menu"
     >
-      <h2
-        onClick={handleTitleClick}
-        style={{
-          color: '#facc15',
-          marginBottom: '5px',
-          fontSize: '1.2rem',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}
-      >
-        カード一覧
-      </h2>
       <div
         id="card-list-count"
         style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
@@ -244,8 +228,6 @@ export default function CardListScreen() {
           })}
         </div>
       </div>
-
-      <BackButton to="screen-gallery-menu" style={{ marginTop: '15px' }} />
-    </div>
+    </CompactScreenLayout>
   );
 }

@@ -14,4 +14,6 @@ export const UI_IMAGES = {
   MENU_ONLINE: 'assets/ui/ui_versusbutton01.png',
   MENU_DECK: 'assets/ui/ui_deckbutton01.png',
   EVENT_TOURNAMENT: 'assets/ui/ui_event_tournament01.png',
+  GUIDE_RULES: 'assets/ui/ui_Instructionsbutton01.png',
+  GUIDE_TUTORIAL: 'assets/ui/ui_tutorialbutton01.png',
 };

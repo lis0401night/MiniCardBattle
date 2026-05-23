@@ -1,10 +1,15 @@
 import { useEffect } from 'react';
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { GameState } from '../hooks/gameState.js';
 import { showOnlineMenu } from '../hooks/uiMainCore.js';
 
+/**
+ * オンライン対戦ルール説明画面
+ * 共通コンポーネント ScreenLayout を適用してリファクタリングを完了。
+ */
 export default function OnlineRulesScreen() {
   useEffect(() => {
+    // 画面切り替え時にルールテキストボックスのスクロール位置を最上部に初期化
     const c = document.getElementById('online-rules-container');
     if (c) c.scrollTop = 0;
   }, []);
@@ -13,34 +18,20 @@ export default function OnlineRulesScreen() {
     if (GameState.gameMode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
     }
-    return undefined; // デフォルトはCSSの指定に任せるか親の背景を透かす
+    return undefined; // デフォルト背景を使用
   };
 
   return (
-    <div
+    <ScreenLayout
       id="screen-online-rules"
-      className="screen active"
-      style={
-        getBackgroundImage()
-          ? {
-              backgroundImage: getBackgroundImage(),
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-          : {}
-      }
+      backgroundImage={getBackgroundImage()}
+      title="ルール"
+      titleColor="#facc15"
+      titleGlow={true}
+      onBackClick={() => showOnlineMenu?.()}
+      backHasBorder={false}
     >
-      <h2
-        style={{
-          color: '#facc15',
-          margin: '20px 0',
-          textShadow: '0 0 10px rgba(250, 204, 21, 0.5)',
-          textAlign: 'center',
-        }}
-      >
-        ルール
-      </h2>
-      <div className="rule-box">
+      <div id="online-rules-container" className="rule-box" style={{ overflowY: 'auto' }}>
         <ul>
           <li>他のプレイヤーとリアルタイムで対戦ができるモードです。</li>
           <li>
@@ -55,18 +46,6 @@ export default function OnlineRulesScreen() {
           </li>
         </ul>
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton onClick={() => showOnlineMenu?.()} style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }
