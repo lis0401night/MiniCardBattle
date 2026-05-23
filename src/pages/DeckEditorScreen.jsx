@@ -298,15 +298,23 @@ export default function DeckEditorScreen() {
     return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`;
   };
 
+  const allCardsForFilters = Array.from(
+    new Set([...masterCards, ...(deckSelection || [])])
+  );
+
   const availableRarities = Array.from(
-    new Set(masterCards.map((c) => c.rarity).filter((x) => x !== undefined))
+    new Set(
+      allCardsForFilters.map((c) => c.rarity).filter((x) => x !== undefined)
+    )
   ).sort();
   const availablePowers = Array.from(
-    new Set(masterCards.map((c) => c.power).filter((x) => x !== undefined))
+    new Set(
+      allCardsForFilters.map((c) => c.power).filter((x) => x !== undefined)
+    )
   ).sort((a, b) => a - b);
   const availableSkills = Array.from(
     new Set(
-      masterCards.flatMap((c) => {
+      allCardsForFilters.flatMap((c) => {
         let s = [];
         if (c.skills) c.skills.forEach((sk) => s.push(sk.id));
         if (c.choices) c.choices.forEach((ch) => s.push(ch.id));

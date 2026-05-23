@@ -846,7 +846,7 @@ export const CARD_MASTER = [
     name: '森の恐怖',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'pierce' }, { id: 'lone_wolf', value: 2 }],
+    skills: [{ id: 'lone_wolf', value: 2 }],
     voiceCategory: 'beast',
     flavor:
       '禁域に迷い込んだ愚か者に与えられるのは、警告ではない。ただ前触れなき蹂躙のみである。',
