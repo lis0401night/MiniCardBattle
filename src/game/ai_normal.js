@@ -410,6 +410,75 @@ export function processActionSequence(
         return null;
     }
 
+    // 【装備・配置共通】選択スキル（choice/force）を事前解決し、手札カードのスキル情報に反映する
+    if (playedCard) {
+      let resolvedSkills = [];
+      let newSkillsArr = [];
+
+      // 1. メインの単一スキル（skill）が choice / force の場合
+      if (playedCard.skill && playedCard.skill !== 'none') {
+        if (
+          (playedCard.skill === 'choice' || playedCard.skill === 'force') &&
+          action.choices &&
+          playedCard.choices
+        ) {
+          action.choices.forEach((idx) => {
+            if (playedCard.choices[idx]) {
+              resolvedSkills.push({
+                id: playedCard.choices[idx].id,
+                value: playedCard.choices[idx].value,
+              });
+            }
+          });
+          playedCard.skill = 'none';
+        }
+      }
+
+      // 2. 複数スキル配列（skills）内の各要素が choice / force の場合
+      if (Array.isArray(playedCard.skills)) {
+        playedCard.skills.forEach((sk) => {
+          if (sk.id === 'choice' || sk.id === 'force') {
+            if (
+              sk.choiceGroup === 2 &&
+              action.choices2 &&
+              playedCard.choices2
+            ) {
+              action.choices2.forEach((idx) => {
+                if (playedCard.choices2[idx]) {
+                  newSkillsArr.push({
+                    id: playedCard.choices2[idx].id,
+                    value: playedCard.choices2[idx].value,
+                  });
+                }
+              });
+            } else if (action.choices && playedCard.choices) {
+              action.choices.forEach((idx) => {
+                if (playedCard.choices[idx]) {
+                  newSkillsArr.push({
+                    id: playedCard.choices[idx].id,
+                    value: playedCard.choices[idx].value,
+                  });
+                }
+              });
+            }
+          } else {
+            newSkillsArr.push(sk);
+          }
+        });
+      }
+
+      // 3. 解決したスキルを playedCard に反映させる
+      if (resolvedSkills.length > 0) {
+        // メインスキルから解決された最初のものをメインスキルにセット、残りは skills 配列に追加する
+        playedCard.skill = resolvedSkills[0].id;
+        playedCard.skillValue = resolvedSkills[0].value;
+        if (resolvedSkills.length > 1) {
+          newSkillsArr = newSkillsArr.concat(resolvedSkills.slice(1));
+        }
+      }
+      playedCard.skills = newSkillsArr;
+    }
+
     let skillWasHandledByEquip = false;
     if (
       (hasSkill(playedCard, 'equip') ||
