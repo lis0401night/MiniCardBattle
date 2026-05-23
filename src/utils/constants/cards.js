@@ -219,14 +219,14 @@ export const CARD_MASTER = [
   //   flavor: '罪人を決して逃さぬ鉄壁の番人。',
   // },
   {
-    id: 'titan',
-    name: '旧式タイタン',
+    id: 'mechanic',
+    name: 'ダクト街の技師',
     rarity: 1,
-    power: 8,
-    skills: [{ id: 'growth', value: -2 }],
-    voiceCategory: 'machine_old',
+    power: 4,
+    skills: [{ id: 'summon', value: 1, summonId: 'token_drone' }],
+    voiceCategory: 'human_female_normal',
     flavor:
-      '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。',
+      '廃れた近未来都市で生きる腕利きのメカニック。彼女の作るドローンはどんな狭い隙間にも潜り込む。',
   },
   {
     id: 'mantis',
@@ -239,14 +239,14 @@ export const CARD_MASTER = [
       '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。',
   },
   {
-    id: 'armsuits',
-    name: '強化外骨格',
+    id: 'titan',
+    name: '旧式タイタン',
     rarity: 1,
-    power: 2,
-    skills: [{ id: 'equip' }, { id: 'sturdy' }],
-    voiceCategory: 'machine_new',
+    power: 8,
+    skills: [{ id: 'growth', value: -2 }],
+    voiceCategory: 'machine_old',
     flavor:
-      '鋼鉄の装甲を纏う者は戦場で難攻不落の城塞と化す。例え操縦者が倒れても、内蔵AIが稼働を続け、その任務を全うするだろう。',
+      '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。',
   },
   {
     id: 'dancer',
@@ -370,6 +370,16 @@ export const CARD_MASTER = [
       '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
   },
   {
+    id: 'incinerator',
+    name: 'インシネレーター',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'artillery', value: 1 }],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。',
+  },
+  {
     id: 'instructor',
     name: '熱心な教導師',
     rarity: 1,
@@ -379,23 +389,14 @@ export const CARD_MASTER = [
     flavor: '分厚い教典を片手に、休むことなく教えを説き続ける厳格な導き手。',
   },
   {
-    id: 'pilebunker',
-    name: '聖伐隊の先鋒',
+    id: 'flagellant',
+    name: '鎖の殉教者',
     rarity: 1,
-    power: 6,
-    skills: [{ id: 'pierce' }, { id: 'explode', value: 2 }],
-    voiceCategory: 'human_male_warrior',
-    flavor: '祈りと共に放たれる鋼の杭。その衝撃は、あらゆる盾を粉砕する',
-  },
-  {
-    id: 'incinerator',
-    name: 'インシネレーター',
-    rarity: 1,
-    power: 4,
-    skills: [{ id: 'artillery', value: 1 }],
-    voiceCategory: 'human_female_cool',
+    power: 5,
+    skills: [{ id: 'choice', value: 1 }],
+    voiceCategory: 'human_male_normal',
     flavor:
-      '異端の書物、教義に背く者を炎で浄化する実働部隊。マスク越しの彼女の瞳に、慈悲の色はない。',
+      '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
   },
   {
     id: 'prisoner',
@@ -610,14 +611,14 @@ export const CARD_MASTER = [
       '純粋な破壊を目的に建造された古代大戦の巨大兵器。冷たい鋼の奥底で重厚な機関音を響かせ、再び空を焦がす再起動の刻を静かに待っている。',
   },
   {
-    id: 'mechanic',
-    name: 'ダクト街の技師',
+    id: 'armsuits',
+    name: '強化外骨格',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'summon', value: 1, summonId: 'token_drone' }],
-    voiceCategory: 'human_female_normal',
+    power: 3,
+    skills: [{ id: 'equip' }, { id: 'sturdy' }],
+    voiceCategory: 'machine_new',
     flavor:
-      '廃れた近未来都市で生きる腕利きのメカニック。彼女の作るドローンはどんな狭い隙間にも潜り込む。',
+      '鋼鉄の装甲を纏う者は戦場で難攻不落の城塞と化す。例え操縦者が倒れても、内蔵AIが稼働を続け、その任務を全うするだろう。',
   },
   {
     id: 'gladiator',
@@ -891,16 +892,6 @@ export const CARD_MASTER = [
       '微かに光るルーンを道標に、失った記憶を辿る旅。その道を阻む者がいれば、迷いなき必中の矢が静かに急所を射抜く。',
   },
   {
-    id: 'flagellant',
-    name: '鎖の殉教者',
-    rarity: 2,
-    power: 5,
-    skills: [{ id: 'martyr' }],
-    voiceCategory: 'human_male_normal',
-    flavor:
-      '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
-  },
-  {
     id: 'flak',
     name: 'ミスリルの高射砲',
     rarity: 2,
@@ -918,6 +909,19 @@ export const CARD_MASTER = [
     voiceCategory: 'stone',
     flavor:
       '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。',
+  },
+  {
+    id: 'acolyte',
+    name: '天球のアコライト',
+    rarity: 2,
+    power: 2,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'heal', value: 3 },
+      { id: 'snipe', value: 3 },
+    ],
+    voiceCategory: 'human_male_old',
+    flavor: '天球の運行を読み解き、聖女の審判を補佐する老神官。',
   },
   {
     id: 'light',

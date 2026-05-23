@@ -15,7 +15,7 @@ export default [
     'servant',
     'servant',
     'servant',
-    'armsuits',
+    'servant',
     'armsuits',
     'armsuits',
     'horse',
