@@ -8,7 +8,9 @@ export default function CardMenuScreen() {
 
   return (
     <div id="screen-card-menu" className="screen active">
-      <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}>カード</h2>
+      <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}>
+        カード
+      </h2>
       <div className="menu-btn-grid">
         <div className="menu-img-btn" onClick={() => showDeckEditMenu?.()}>
           <div

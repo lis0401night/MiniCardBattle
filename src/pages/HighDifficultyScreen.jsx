@@ -89,10 +89,7 @@ export default function HighDifficultyScreen() {
           background: 'transparent',
         }}
       >
-        <BackButton
-          to="screen-high-difficulty-menu"
-          style={{ margin: 0 }}
-        />
+        <BackButton to="screen-high-difficulty-menu" style={{ margin: 0 }} />
       </div>
     </div>
   );

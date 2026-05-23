@@ -102,8 +102,6 @@ export default function TournamentExchangeScreen() {
     fetchPoints();
   }, [pointsUpdated]);
 
-
-
   const handleExchange = (item) => {
     playSound(SOUNDS?.seCardPlace);
 
@@ -112,7 +110,11 @@ export default function TournamentExchangeScreen() {
     setTournamentPoints((prev) => ({ ...prev, current: newPts }));
 
     // サーバーと同期
-    savePointsToServer(newPts, tournamentPoints.total);
+    savePointsToServer(
+      'update_tournament_points.php',
+      newPts,
+      tournamentPoints.total
+    );
 
     if (item.type === 'card') {
       const currentCount = inventory[item.id] || 0;
@@ -178,7 +180,11 @@ export default function TournamentExchangeScreen() {
           setTournamentPoints({ current: newPts, total: newTotalPts });
 
           // 共通API同期ユーティリティを介してサーバーと同期
-          savePointsToServer('update_tournament_points.php', newPts, newTotalPts);
+          savePointsToServer(
+            'update_tournament_points.php',
+            newPts,
+            newTotalPts
+          );
 
           if (showAlertModal) {
             showAlertModal('【デバッグ】大会ポイントを100Pt獲得しました！');

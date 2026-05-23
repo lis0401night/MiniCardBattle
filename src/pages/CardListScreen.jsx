@@ -4,7 +4,10 @@ import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { loadDeck, saveDeck } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
-import { openCardPreview, setRenderCardListHook } from '../services/uiGallery.js';
+import {
+  openCardPreview,
+  setRenderCardListHook,
+} from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
@@ -65,9 +68,7 @@ export default function CardListScreen() {
           if (typeof playSound === 'function' && SOUNDS)
             playSound(SOUNDS.seSkill);
           if (typeof showAlertModal === 'function')
-            showAlertModal(
-              'デバッグモード：全カードを4枚所持状態にしました！'
-            );
+            showAlertModal('デバッグモード：全カードを4枚所持状態にしました！');
           updateList();
         }
       );

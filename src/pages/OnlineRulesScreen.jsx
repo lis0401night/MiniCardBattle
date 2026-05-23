@@ -31,7 +31,11 @@ export default function OnlineRulesScreen() {
       onBackClick={() => showOnlineMenu?.()}
       backHasBorder={false}
     >
-      <div id="online-rules-container" className="rule-box" style={{ overflowY: 'auto' }}>
+      <div
+        id="online-rules-container"
+        className="rule-box"
+        style={{ overflowY: 'auto' }}
+      >
         <ul>
           <li>他のプレイヤーとリアルタイムで対戦ができるモードです。</li>
           <li>

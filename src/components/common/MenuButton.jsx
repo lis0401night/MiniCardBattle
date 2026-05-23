@@ -1,10 +1,9 @@
-import React from 'react';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
 /**
  * 共通メニューボタン
- * 
+ *
  * @param {string} label - ボタンラベル
  * @param {function} onClick - クリックイベントハンドラ
  * @param {string} [variant='default'] - 'default', 'yellow', 'purple', 'blue', 'orange', 'red', 'emerald'

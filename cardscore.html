@@ -405,7 +405,11 @@
         const activeSkills = [];
         if (card.skills)
           card.skills.forEach((sk) =>
-            activeSkills.push({ id: sk.id, val: sk.value || 0, choiceGroup: sk.choiceGroup })
+            activeSkills.push({
+              id: sk.id,
+              val: sk.value || 0,
+              choiceGroup: sk.choiceGroup,
+            })
           );
 
         // 倍化と減衰の特殊処理（ベースパワーの書き換え）
@@ -469,7 +473,8 @@
             const p = pointSettings[sk.id] || { base: 0, multiplier: 0 };
             const value = sk.val === undefined || sk.val === 0 ? 1 : sk.val;
             score +=
-              Number(p.base || 0) + Number(value) * Number(p.multiplier || 0) * sk.count;
+              Number(p.base || 0) +
+              Number(value) * Number(p.multiplier || 0) * sk.count;
           }
         });
 
@@ -553,20 +558,26 @@
                               const grouped = [];
                               (c.skills || []).forEach((sk) => {
                                 const key = `${sk.id || sk}_${sk.value ?? ''}_${sk.choiceGroup ?? ''}`;
-                                const existing = grouped.find((g) => g.key === key);
+                                const existing = grouped.find(
+                                  (g) => g.key === key
+                                );
                                 if (existing) {
                                   existing.count++;
                                 } else {
                                   grouped.push({ ...sk, key, count: 1 });
                                 }
                               });
-                              return grouped.map((sk) => {
-                                const s = skillData[sk.id || sk] || {
-                                  name: sk.id || sk,
-                                  icon: '✨',
-                                };
-                                const countSuffix = sk.count > 1 ? ` <span class="text-indigo-500 font-black">×${sk.count}</span>` : '';
-                                let html = `
+                              return grouped
+                                .map((sk) => {
+                                  const s = skillData[sk.id || sk] || {
+                                    name: sk.id || sk,
+                                    icon: '✨',
+                                  };
+                                  const countSuffix =
+                                    sk.count > 1
+                                      ? ` <span class="text-indigo-500 font-black">×${sk.count}</span>`
+                                      : '';
+                                  let html = `
                                 <div class="flex items-center gap-1 md:gap-2 px-1.5 md:px-2.5 py-1 rounded-xl bg-slate-100 text-[9px] md:text-[10px] font-bold text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-white hover:border-indigo-200">
                                     <span class="md:scale-125">${s.icon}</span>
                                     <div class="flex flex-col leading-none">
@@ -575,33 +586,36 @@
                                     </div>
                                 </div>`;
 
-                                const choicesArr =
-                                  sk.choiceGroup === 2 ? c.choices2 : c.choices;
-                                if (
-                                  (sk.id === 'choice' ||
-                                    sk.id === 'force' ||
-                                    sk === 'choice' ||
-                                    sk === 'force') &&
-                                  Array.isArray(choicesArr)
-                                ) {
-                                  html += `<div class="flex items-center text-slate-400 font-bold px-1 select-none">⇒</div>`;
-                                  html += `<div class="flex flex-wrap gap-1 p-1 bg-indigo-50/50 border border-indigo-200 rounded-xl items-center">`;
-                                  html += choicesArr
-                                    .map((cho) => {
-                                      const cs = skillData[cho.id] || {
-                                        name: cho.id,
-                                        icon: '✨',
-                                      };
-                                      return `
+                                  const choicesArr =
+                                    sk.choiceGroup === 2
+                                      ? c.choices2
+                                      : c.choices;
+                                  if (
+                                    (sk.id === 'choice' ||
+                                      sk.id === 'force' ||
+                                      sk === 'choice' ||
+                                      sk === 'force') &&
+                                    Array.isArray(choicesArr)
+                                  ) {
+                                    html += `<div class="flex items-center text-slate-400 font-bold px-1 select-none">⇒</div>`;
+                                    html += `<div class="flex flex-wrap gap-1 p-1 bg-indigo-50/50 border border-indigo-200 rounded-xl items-center">`;
+                                    html += choicesArr
+                                      .map((cho) => {
+                                        const cs = skillData[cho.id] || {
+                                          name: cho.id,
+                                          icon: '✨',
+                                        };
+                                        return `
                                         <div class="flex items-center gap-1 px-1.5 py-0.5 rounded shadow-sm bg-white border border-slate-200 text-[8px] font-bold text-slate-600">
                                             <span>${cs.icon}</span><span class="uppercase">${cs.name}</span><span>${cho.value || ''}</span>
                                         </div>`;
-                                    })
-                                    .join('');
-                                  html += `</div>`;
-                                }
-                                return html;
-                              }).join('');
+                                      })
+                                      .join('');
+                                    html += `</div>`;
+                                  }
+                                  return html;
+                                })
+                                .join('');
                             })()}
                         </div>
                     </td>

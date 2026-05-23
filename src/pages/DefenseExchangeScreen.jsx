@@ -2,11 +2,8 @@ import { useEffect, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { GameState } from '../state/gameState.js';
-import {
-  setRenderExchangeHook,
-  showExchangeDetail,
-} from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
@@ -34,6 +31,7 @@ export default function DefenseExchangeScreen() {
   const [unlockedPremium, setUnlockedPremium] = useState(
     () => GameState.unlockedPremiumCards || []
   );
+  const [pointsUpdated, setPointsUpdated] = useState(false);
 
   const updateExchange = () => {
     const currentPts =
@@ -49,8 +47,46 @@ export default function DefenseExchangeScreen() {
   };
 
   useEffect(() => {
-    setRenderExchangeHook(updateExchange); // グローバルからの再描画フック
-  }, []);
+    updateExchange();
+  }, [pointsUpdated]);
+
+  const handleExchange = (item) => {
+    playSound(SOUNDS?.seCardPlace);
+
+    const newPts = points.current - item.cost;
+    localStorage.setItem('mini_card_battle_defense_points', newPts);
+    setPoints((prev) => ({ ...prev, current: newPts }));
+
+    // 共通API同期ユーティリティを介してサーバーと同期
+    savePointsToServer('update_points.php', newPts, points.total);
+
+    if (item.type === 'premium') {
+      const newUnlocked = [...unlockedPremium, item.id];
+      localStorage.setItem(
+        'mini_card_battle_unlocked_premium',
+        JSON.stringify(newUnlocked)
+      );
+      Object.assign(GameState, { unlockedPremiumCards: newUnlocked });
+      setUnlockedPremium(newUnlocked);
+      showAlertModal(
+        `プレミアム特典を解放しました！\n（デッキ編成画面で切り替えられます）`
+      );
+    } else {
+      const currentCount = inventory[item.id] || 0;
+      const newInventory = { ...inventory, [item.id]: currentCount + 1 };
+      setInventory(newInventory);
+      Object.assign(GameState, { playerInventory: newInventory });
+      localStorage.setItem(
+        'mini_card_battle_inventory',
+        JSON.stringify(newInventory)
+      );
+      showAlertModal(
+        `カードを獲得しました！\n（デッキ編成画面で登録できます）`
+      );
+    }
+
+    setPointsUpdated((prev) => !prev);
+  };
 
   // タイトルを10回クリックで防衛ポイントを100Pt獲得するイースターエッグ
   const handleTitleClick = useEasterEgg(() => {
@@ -60,9 +96,8 @@ export default function DefenseExchangeScreen() {
         () => {
           playSound?.(SOUNDS?.seSkill);
           let cPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_defense_points')
-            ) || 0;
+            parseInt(localStorage.getItem('mini_card_battle_defense_points')) ||
+            0;
           let tPts =
             parseInt(
               localStorage.getItem('mini_card_battle_defense_total_points')
@@ -71,6 +106,11 @@ export default function DefenseExchangeScreen() {
           tPts += 100;
           localStorage.setItem('mini_card_battle_defense_points', cPts);
           localStorage.setItem('mini_card_battle_defense_total_points', tPts);
+          setPoints({ current: cPts, total: tPts });
+
+          // 共通API同期ユーティリティを介してサーバーと同期
+          savePointsToServer('update_points.php', cPts, tPts);
+
           if (showAlertModal) {
             showAlertModal(
               '【デバッグ】防衛ポイントを100Pt獲得しました！',
@@ -153,15 +193,33 @@ export default function DefenseExchangeScreen() {
                   cursor: canExchange ? 'pointer' : 'not-allowed',
                 }}
                 onClick={() => {
-                  if (!isTransitioning && showExchangeDetail) {
-                    showExchangeDetail(
-                      itemInfo.id,
-                      itemInfo.type,
-                      itemInfo.cost,
-                      itemObj,
-                      canExchange,
-                      isMaxed
-                    );
+                  playSound(SOUNDS?.seClick);
+                  if (!isTransitioning && window.showExchangeDetailModal) {
+                    window.showExchangeDetailModal({
+                      id: itemInfo.id,
+                      type: itemInfo.type,
+                      cost: itemInfo.cost,
+                      itemObj: itemObj,
+                      titleColor: '#10b981',
+                      canExchange: canExchange,
+                      isMaxed: isMaxed,
+                      titleName: itemObj.name,
+                      displayType:
+                        itemInfo.type === 'premium'
+                          ? 'プレミアム特典'
+                          : 'カード',
+                      displayFlavor: itemObj.flavor,
+                      imgUrl: imgUrl,
+                      onConfirm: () => {
+                        handleExchange({
+                          ...itemInfo,
+                          isMaxed,
+                          canExchange,
+                          imgUrl,
+                        });
+                        window.closeExchangeDetailModal?.();
+                      },
+                    });
                   }
                 }}
               >
@@ -172,6 +230,7 @@ export default function DefenseExchangeScreen() {
                     height: '120px',
                     position: 'relative',
                     display: 'block',
+                    overflow: 'hidden',
                   }}
                 >
                   <div

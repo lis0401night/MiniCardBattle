@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { startTutorial, loadTutorialProgress, saveTutorialProgress } from '../game/tutorialEngine.js';
+import {
+  startTutorial,
+  loadTutorialProgress,
+  saveTutorialProgress,
+} from '../game/tutorialEngine.js';
 import { loadDeck, saveDeck } from '../services/deck.js';
 import { showCardAcquisitionModal } from '../services/uiGallery.js';
 import { GameState } from '../state/gameState.js';
@@ -31,16 +35,16 @@ const TUTORIAL_CHAR_ORDER = [
 
 // 各リーダーチュートリアルクリア時の報酬対象シルバーレア伝説カードIDのマッピング
 const TUTORIAL_REWARDS = {
-  leader_android: 'gladiator',      // 違法リングの闘士
-  leader_dragon: 'drake',          // 熱砂地帯のドレイク
-  leader_knight: 'lion',           // 王家のライオン
-  leader_cthulhu: 'ghostship',     // ファントムポートの幽霊船
-  leader_elf: 'ranger',            // ルーン辿りのレインジャー
-  leader_cleric: 'monk',           // 夜明けの番人
-  leader_devilhunter: 'undeadking',  // 亡国のデス・ロード
-  leader_witch: 'ring',            // 願いの指輪
-  leader_oni: 'nurikabe',          // 見下ろす巨顔
-  leader_priest: 'sentinel',       // 黄金の歩哨
+  leader_android: 'gladiator', // 違法リングの闘士
+  leader_dragon: 'drake', // 熱砂地帯のドレイク
+  leader_knight: 'lion', // 王家のライオン
+  leader_cthulhu: 'ghostship', // ファントムポートの幽霊船
+  leader_elf: 'ranger', // ルーン辿りのレインジャー
+  leader_cleric: 'monk', // 夜明けの番人
+  leader_devilhunter: 'undeadking', // 亡国のデス・ロード
+  leader_witch: 'ring', // 願いの指輪
+  leader_oni: 'nurikabe', // 見下ろす巨顔
+  leader_priest: 'sentinel', // 黄金の歩哨
 };
 
 export default function TutorialSelectScreen() {
@@ -64,7 +68,7 @@ export default function TutorialSelectScreen() {
     if (typeof loadDeck === 'function') {
       loadDeck();
     }
-    
+
     // チュートリアルの進捗をロードして state に反映
     const savedProgress = loadTutorialProgress() || {};
     setTutorialProgress((prev) => {
@@ -99,7 +103,7 @@ export default function TutorialSelectScreen() {
                   isCleared: true,
                 };
               });
-              
+
               // LocalStorageへ保存
               saveTutorialProgress(updated);
               return updated;
@@ -107,7 +111,9 @@ export default function TutorialSelectScreen() {
 
             if (SOUNDS?.seSkill) playSound(SOUNDS.seSkill);
             if (typeof showAlertModal === 'function') {
-              showAlertModal('デバッグモード：すべてのチュートリアルをクリアにしました！');
+              showAlertModal(
+                'デバッグモード：すべてのチュートリアルをクリアにしました！'
+              );
             }
           }
         );
@@ -128,7 +134,8 @@ export default function TutorialSelectScreen() {
     if (!GameState.playerInventory) {
       GameState.playerInventory = {};
     }
-    GameState.playerInventory[cardId] = (GameState.playerInventory[cardId] || 0) + 1;
+    GameState.playerInventory[cardId] =
+      (GameState.playerInventory[cardId] || 0) + 1;
 
     // 2. インベントリを永続化保存
     if (typeof saveDeck === 'function') {
@@ -149,7 +156,7 @@ export default function TutorialSelectScreen() {
           isRewarded: true,
         },
       };
-      
+
       // LocalStorageへ保存
       saveTutorialProgress(nextProgress);
       return nextProgress;
@@ -330,7 +337,10 @@ export default function TutorialSelectScreen() {
             if (!char) return null;
 
             const tutorialId = `leader_${charId}`;
-            const progress = tutorialProgress[tutorialId] || { isCleared: false, isRewarded: false };
+            const progress = tutorialProgress[tutorialId] || {
+              isCleared: false,
+              isRewarded: false,
+            };
             const isCleared = progress.isCleared;
             const isClaimable = isCleared && !progress.isRewarded;
             const bgColor = isCleared
@@ -470,7 +480,9 @@ export default function TutorialSelectScreen() {
                       報酬: カード
                     </span>
                     {progress.isRewarded ? (
-                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>(取得済)</span>
+                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                        (取得済)
+                      </span>
                     ) : (
                       <button
                         className="btn"
@@ -481,7 +493,9 @@ export default function TutorialSelectScreen() {
                           margin: 0,
                           background: progress.isCleared ? '' : '#475569',
                           opacity: progress.isCleared ? '1' : '0.6',
-                          cursor: progress.isCleared ? 'pointer' : 'not-allowed',
+                          cursor: progress.isCleared
+                            ? 'pointer'
+                            : 'not-allowed',
                         }}
                         disabled={!progress.isCleared}
                         onClick={(e) => {
@@ -517,4 +531,3 @@ export default function TutorialSelectScreen() {
     </div>
   );
 }
-

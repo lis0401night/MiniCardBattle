@@ -70,7 +70,12 @@ export default function DeckEditorScreen() {
   const [tempDeckName, setTempDeckName] = useState('');
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filters, setFilters] = useState({ rarity: [], power: [], skills: [], name: '' });
+  const [filters, setFilters] = useState({
+    rarity: [],
+    power: [],
+    skills: [],
+    name: '',
+  });
   const [tempFilters, setTempFilters] = useState({
     rarity: [],
     power: [],
@@ -314,7 +319,10 @@ export default function DeckEditorScreen() {
     .sort();
 
   const filteredMasterCards = masterCards.filter((c) => {
-    if (filters.name && !c.name.toLowerCase().includes(filters.name.toLowerCase()))
+    if (
+      filters.name &&
+      !c.name.toLowerCase().includes(filters.name.toLowerCase())
+    )
       return false;
     if (filters.rarity.length > 0 && !filters.rarity.includes(c.rarity))
       return false;
@@ -755,12 +763,20 @@ export default function DeckEditorScreen() {
                 padding: '4px 8px',
                 margin: 0,
                 fontSize: '0.9rem',
-                background: (filters.rarity.length > 0 || filters.power.length > 0 || filters.skills.length > 0 || !!filters.name)
-                  ? 'rgba(250, 204, 21, 0.3)'
-                  : '#334155',
-                border: (filters.rarity.length > 0 || filters.power.length > 0 || filters.skills.length > 0 || !!filters.name)
-                  ? '1px solid #facc15'
-                  : '1px solid #475569',
+                background:
+                  filters.rarity.length > 0 ||
+                  filters.power.length > 0 ||
+                  filters.skills.length > 0 ||
+                  !!filters.name
+                    ? 'rgba(250, 204, 21, 0.3)'
+                    : '#334155',
+                border:
+                  filters.rarity.length > 0 ||
+                  filters.power.length > 0 ||
+                  filters.skills.length > 0 ||
+                  !!filters.name
+                    ? '1px solid #facc15'
+                    : '1px solid #475569',
                 color: '#facc15',
               }}
               onClick={() => {
@@ -1046,7 +1062,9 @@ export default function DeckEditorScreen() {
               <input
                 type="text"
                 value={tempFilters.name || ''}
-                onChange={(e) => setTempFilters({ ...tempFilters, name: e.target.value })}
+                onChange={(e) =>
+                  setTempFilters({ ...tempFilters, name: e.target.value })
+                }
                 placeholder="カード名で検索..."
                 style={{
                   background: '#334155',
@@ -1240,7 +1258,12 @@ export default function DeckEditorScreen() {
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
-                  setTempFilters({ rarity: [], power: [], skills: [], name: '' });
+                  setTempFilters({
+                    rarity: [],
+                    power: [],
+                    skills: [],
+                    name: '',
+                  });
                 }}
               >
                 リセット

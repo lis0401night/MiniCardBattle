@@ -81,7 +81,9 @@ export function processActionSequence(
       playerDiscard: GameState.playerDiscard
         ? GameState.playerDiscard.map(cloneCard)
         : [],
-      enemyDiscard: GameState.enemyDiscard ? GameState.enemyDiscard.map(cloneCard) : [],
+      enemyDiscard: GameState.enemyDiscard
+        ? GameState.enemyDiscard.map(cloneCard)
+        : [],
       playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
       enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
       playerHP: GameState.playerHP,
@@ -140,10 +142,7 @@ export function processActionSequence(
     // リーダースキル適用後、パワー0以下のカードを破壊済みとしてnullにする
     // （targeted_destruction等はcurrentPowerを0にするだけなので、制約チェックが正しく機能するよう反映）
     for (let i = 0; i < 3; i++) {
-      if (
-        simState.playerBoard[i] &&
-        simState.playerBoard[i].currentPower <= 0
-      )
+      if (simState.playerBoard[i] && simState.playerBoard[i].currentPower <= 0)
         simState.playerBoard[i] = null;
       if (simState.enemyBoard[i] && simState.enemyBoard[i].currentPower <= 0)
         simState.enemyBoard[i] = null;
@@ -192,7 +191,10 @@ export function processActionSequence(
       }
       if (action.type === 'play_adhoc') {
         playedCard = cloneCard(action.card);
-        checkConstraints = action.checkConstraints !== undefined ? action.checkConstraints : true;
+        checkConstraints =
+          action.checkConstraints !== undefined
+            ? action.checkConstraints
+            : true;
       } else {
         playedCard = cloneCard(simState.enemyHand[tIdx]);
         if (action.type === 'forge') {
@@ -432,8 +434,7 @@ export function processActionSequence(
         });
       if (playedCard.skills)
         playedCard.skills.forEach((s) => {
-          if (s.id !== 'equip')
-            addedSkills.push({ id: s.id, value: s.value });
+          if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value });
         });
       mergeCardSkills(targetCard, addedSkills);
       let cLanesForEquip = action.cardTokenLanes
@@ -565,7 +566,8 @@ export function processActionSequence(
         skills.forEach((sk) => {
           if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
             simState.actionUtilityBonus =
-              (simState.actionUtilityBonus || 0) + (AI_SKILL_UTILITY[sk.id] || 0);
+              (simState.actionUtilityBonus || 0) +
+              (AI_SKILL_UTILITY[sk.id] || 0);
           }
           if (sk.id === 'call') {
             const callBonus = sk.value || 3;
@@ -636,10 +638,7 @@ export function processActionSequence(
       if (c && c.stunTurns > 0) c.stunTurns--;
     });
     calculateCombatPhase(simState, 'blue');
-    simState.combatDamageTaken = Math.max(
-      0,
-      hpBeforeCombat - simState.enemyHP
-    );
+    simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
   } else {
     simState.extraTurnCount--;
     simState.combatDamageTaken = 0;
@@ -667,7 +666,6 @@ export function getBestSimulatedMove() {
     ) &&
     !GameState.enemyConfig.leaderSkillUsed;
   const skill = GameState.enemyConfig.leaderSkill;
-
 
   function buildCardPlayTree(
     card,
@@ -796,14 +794,7 @@ export function getBestSimulatedMove() {
               c.skills.forEach((s) => skillsToGather.push(s));
 
             skillsToGather.forEach((sk) => {
-              if (
-                [
-                  'snipe',
-                  'artillery',
-                  'seal',
-                  'destroy',
-                ].includes(sk.id)
-              )
+              if (['snipe', 'artillery', 'seal', 'destroy'].includes(sk.id))
                 tokenTargetCount += sk.value || 1;
 
               // 【重要仕様】スキルの値(value)の解釈：
@@ -822,14 +813,7 @@ export function getBestSimulatedMove() {
             arr.forEach((idx) => {
               const sk = group[idx];
               if (!sk) return;
-              if (
-                [
-                  'snipe',
-                  'artillery',
-                  'seal',
-                  'destroy',
-                ].includes(sk.id)
-              )
+              if (['snipe', 'artillery', 'seal', 'destroy'].includes(sk.id))
                 tokenTargetCount += sk.value || 1;
               // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
               // ※ call, metamorph は実行時の動的判断（アドホック）や自身への適用となるため、事前のレーン確保は不要
@@ -1852,15 +1836,21 @@ export function getBestSimulatedMove() {
   // 最初のプレイアクションを含む完全なアクションキューを再構築
   const fullActionQueue = [];
   if (finalDecision.index !== -1) {
-    const firstChoice = finalDecision.choiceIndexQueue ? finalDecision.choiceIndexQueue[0] : undefined;
-    const secondChoice = finalDecision.choiceIndexQueue && finalDecision.choiceIndexQueue.length > 1 ? finalDecision.choiceIndexQueue[1] : undefined;
+    const firstChoice = finalDecision.choiceIndexQueue
+      ? finalDecision.choiceIndexQueue[0]
+      : undefined;
+    const secondChoice =
+      finalDecision.choiceIndexQueue &&
+      finalDecision.choiceIndexQueue.length > 1
+        ? finalDecision.choiceIndexQueue[1]
+        : undefined;
     fullActionQueue.push({
       type: 'play',
       targetIdx: finalDecision.index,
       laneIdx: finalDecision.lane,
       choices: firstChoice,
       choices2: secondChoice,
-      cardTokenLanes: finalDecision.cardTokenLanes
+      cardTokenLanes: finalDecision.cardTokenLanes,
     });
   } else {
     fullActionQueue.push({ type: 'pass' });
@@ -2048,8 +2038,12 @@ export function evaluateAdhocTokenLanes(
   const initialSimState = {
     playerBoard: GameState.playerBoard.map(cloneCard),
     enemyBoard: GameState.enemyBoard.map(cloneCard),
-    playerDiscard: GameState.playerDiscard ? GameState.playerDiscard.map(cloneCard) : [],
-    enemyDiscard: GameState.enemyDiscard ? GameState.enemyDiscard.map(cloneCard) : [],
+    playerDiscard: GameState.playerDiscard
+      ? GameState.playerDiscard.map(cloneCard)
+      : [],
+    enemyDiscard: GameState.enemyDiscard
+      ? GameState.enemyDiscard.map(cloneCard)
+      : [],
     playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
     enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
     playerHP: GameState.playerHP,
@@ -2267,10 +2261,7 @@ export function evaluateAdhocTokenLanes(
         laneIdx
       );
       for (let nb of nextBranches) {
-        results.push([
-          { type: 'forge', targetIdx: -1, laneIdx: -1 },
-          ...nb,
-        ]);
+        results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
       }
     } else if (sk.id === 'leap') {
       let leapBranch = buildSkillBranchAdhoc(
@@ -2287,10 +2278,7 @@ export function evaluateAdhocTokenLanes(
     } else if (sk.id === 'resurrect') {
       const originalDiscard = GameState.enemyDiscard || [];
       const maxP = sk.value || 1;
-      const candidates = [
-        ...originalDiscard,
-        ...currentDiscardedFromHand,
-      ];
+      const candidates = [...originalDiscard, ...currentDiscardedFromHand];
 
       for (let i = 0; i < candidates.length; i++) {
         if (currentUsedDiscard.includes(i)) continue;
@@ -2377,9 +2365,7 @@ export function evaluateAdhocTokenLanes(
         }
       }
     } else if (
-      ['clone', 'summon', 'wall_create', 'split', 'puppet'].includes(
-        sk.id
-      )
+      ['clone', 'summon', 'wall_create', 'split', 'puppet'].includes(sk.id)
     ) {
       const count = sk.id === 'clone' ? sk.value || 1 : 1;
       const generateLaneCombos = (remainingCount) => {
@@ -2425,10 +2411,7 @@ export function evaluateAdhocTokenLanes(
         sk.choiceGroup === 2 ? tokenCard.choices2 : tokenCard.choices;
       if (cArr) {
         const idxs = cArr.map((_, i) => i);
-        let combinations = getCombinations(
-          idxs,
-          Math.min(idxs.length, cc)
-        );
+        let combinations = getCombinations(idxs, Math.min(idxs.length, cc));
         for (let combo of combinations) {
           const chosenSkills = combo.map((idx) => cArr[idx]);
           let nextSkills = [...chosenSkills, ...remainingSkills];
@@ -2456,10 +2439,7 @@ export function evaluateAdhocTokenLanes(
         sk.choiceGroup === 2 ? tokenCard.choices2 : tokenCard.choices;
       if (fArr) {
         const idxs = fArr.map((_, i) => i);
-        let combinations = getCombinations(
-          idxs,
-          Math.min(idxs.length, fc)
-        );
+        let combinations = getCombinations(idxs, Math.min(idxs.length, fc));
         for (let combo of combinations) {
           const chosenSkills = combo.map((idx) => fArr[idx]);
           let nextSkills = [...chosenSkills, ...remainingSkills];
@@ -2542,7 +2522,10 @@ export function evaluateAdhocTokenLanes(
         }
         if (hasSkill(card, 'apex')) {
           availableLanes = availableLanes.filter(
-            (l) => l === -1 || (GameState.enemyBoard[l] && hasSkill(GameState.enemyBoard[l], 'legendary'))
+            (l) =>
+              l === -1 ||
+              (GameState.enemyBoard[l] &&
+                hasSkill(GameState.enemyBoard[l], 'legendary'))
           );
         }
       }
@@ -2701,7 +2684,7 @@ export function evaluateAdhocTokenLanes(
       type: 'play_adhoc',
       card: tokenCard,
       laneIdx: l,
-      checkConstraints: checkConstraints
+      checkConstraints: checkConstraints,
     };
 
     // 発動するスキルを収集
@@ -2710,7 +2693,7 @@ export function evaluateAdhocTokenLanes(
       if (tokenCard.skill !== 'choice' && tokenCard.skill !== 'force') {
         effectiveSkills.push({
           id: tokenCard.skill,
-          value: tokenCard.skillValue ?? 1
+          value: tokenCard.skillValue ?? 1,
         });
       }
     }
@@ -2748,7 +2731,9 @@ export function evaluateAdhocTokenLanes(
       if (Array.isArray(tokenCard.choices2)) {
         let cc2 = 1;
         const c2 = tokenCard.skills
-          ? tokenCard.skills.find((s) => s.id === 'choice' && s.choiceGroup === 2)
+          ? tokenCard.skills.find(
+              (s) => s.id === 'choice' && s.choiceGroup === 2
+            )
           : null;
         if (c2) cc2 = c2.value || 1;
         cc2 = Math.min(cc2 + amplifyBonus, tokenCard.choices2.length);
@@ -2784,14 +2769,7 @@ export function evaluateAdhocTokenLanes(
         };
 
         // スキルブランチを展開
-        let skillChains = buildSkillBranchAdhoc(
-          branchSkills,
-          [],
-          [],
-          0,
-          [],
-          l
-        );
+        let skillChains = buildSkillBranchAdhoc(branchSkills, [], [], 0, [], l);
 
         for (let chain of skillChains) {
           const actionQueue = [playActionWithChoice, ...chain];
@@ -2855,7 +2833,9 @@ export function evaluateAdhocTokenLanes(
   }
 
   if (bestLane === -1) {
-    console.log(`[AI CALL] Cancelled placement (Score: ${maxScore.toFixed(1)})`);
+    console.log(
+      `[AI CALL] Cancelled placement (Score: ${maxScore.toFixed(1)})`
+    );
     return null;
   }
 

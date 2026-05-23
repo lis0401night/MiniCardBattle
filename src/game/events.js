@@ -4,7 +4,10 @@ import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
 import { startBattleFlow } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
-import { setupDialogueScreen, showContinueScreen } from '../services/uiDialogue.js';
+import {
+  setupDialogueScreen,
+  showContinueScreen,
+} from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
 
 /**

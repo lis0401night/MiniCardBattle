@@ -60,7 +60,11 @@ export async function activateLeaderSkill(
 
   // AI（赤）の場合、シミュレーションで設定されたアクションキューから現在発動するリーダースキルアクションを消費（削除）する
   // これにより、後続の召喚時スキル（号令等）で誤って使い回されることを防ぐ
-  if (owner === 'red' && GameState.aiDecision && GameState.aiDecision.actionQueue) {
+  if (
+    owner === 'red' &&
+    GameState.aiDecision &&
+    GameState.aiDecision.actionQueue
+  ) {
     const q = GameState.aiDecision.actionQueue;
     const idx = q.findIndex((a) => a.type === action);
     if (idx !== -1) {

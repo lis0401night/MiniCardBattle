@@ -1191,9 +1191,16 @@ export async function resolveActiveSkillEffect(
         const card = board[i];
         if (card) {
           const hasEquipSkill = hasSkill(card, 'equip');
-          const hasEquippedItems = card.equippedCards && card.equippedCards.length > 0;
+          const hasEquippedItems =
+            card.equippedCards && card.equippedCards.length > 0;
           if (hasEquipSkill || hasEquippedItems) {
-            targets.push({ lane: i, card, side, isSelf: hasEquipSkill, isHost: hasEquippedItems });
+            targets.push({
+              lane: i,
+              card,
+              side,
+              isSelf: hasEquipSkill,
+              isHost: hasEquippedItems,
+            });
           }
         }
       }
@@ -1213,7 +1220,8 @@ export async function resolveActiveSkillEffect(
         );
 
         const isImmune = hasSkill(targetCard, 'immune');
-        const eD = t.side === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
+        const eD =
+          t.side === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
         let totalPowerLoss = 0;
 
         if (t.isHost) {
@@ -1222,7 +1230,11 @@ export async function resolveActiveSkillEffect(
             totalPowerLoss += eqCard.power || 0;
 
             const equipSkills = [];
-            if (eqCard.skill && eqCard.skill !== 'none' && eqCard.skill !== 'equip') {
+            if (
+              eqCard.skill &&
+              eqCard.skill !== 'none' &&
+              eqCard.skill !== 'equip'
+            ) {
               equipSkills.push({ id: eqCard.skill, value: eqCard.skillValue });
             }
             if (eqCard.skills) {
@@ -1266,10 +1278,13 @@ export async function resolveActiveSkillEffect(
           if (tgtEl) {
             tgtEl.classList.add('anim-card-destroy');
             if (!t.isHost) {
-               createDamagePopup(tgtEl, '破壊', '#ef4444');
+              createDamagePopup(tgtEl, '破壊', '#ef4444');
             }
           }
-          if (targetCard.voiceCategory && !playedVoices.has(targetCard.voiceCategory)) {
+          if (
+            targetCard.voiceCategory &&
+            !playedVoices.has(targetCard.voiceCategory)
+          ) {
             playCardVoice(targetCard.voiceCategory, 'death');
             playedVoices.add(targetCard.voiceCategory);
           }
@@ -1293,7 +1308,8 @@ export async function resolveActiveSkillEffect(
         if (hasSkill(targetCard, 'immune')) continue;
 
         if (targetCard.currentPower <= 0) {
-          const eB = t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+          const eB =
+            t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           if (!(await discardCard(t.side, targetCard, t.lane, true))) {
             eB[t.lane] = null;
           }
@@ -1321,7 +1337,10 @@ export async function resolveActiveSkillEffect(
     const targets = [];
     const checkTargets = (board, side) => {
       for (let i = 0; i < 3; i++) {
-        if (board[i] && (hasSkill(board[i], 'defender') || board[i].stunTurns > 0)) {
+        if (
+          board[i] &&
+          (hasSkill(board[i], 'defender') || board[i].stunTurns > 0)
+        ) {
           targets.push({ lane: i, card: board[i], side });
         }
       }
@@ -1337,7 +1356,7 @@ export async function resolveActiveSkillEffect(
         const tgtEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
         );
-        
+
         if (hasSkill(t.card, 'immune')) {
           // 「無効」を持つカードは破壊されない
           if (tgtEl) {
@@ -1364,7 +1383,8 @@ export async function resolveActiveSkillEffect(
 
       for (let t of targets) {
         if (!hasSkill(t.card, 'immune')) {
-          const eB = t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+          const eB =
+            t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           if (!(await discardCard(t.side, t.card, t.lane, true)))
             eB[t.lane] = null;
         }

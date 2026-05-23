@@ -1055,7 +1055,10 @@ export async function waitPlayerEnemyLaneSelection(
         GameState.aiDecision.cardTokenLanes &&
         GameState.aiDecision.cardTokenLanes.length > 0
       ) {
-        const decidedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
+        const decidedLanes = GameState.aiDecision.cardTokenLanes.splice(
+          0,
+          count
+        );
         if (GameState.aiDecision.cardTokenLanes.length === 0) {
           delete GameState.aiDecision.cardTokenLanes;
         }

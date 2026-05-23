@@ -4,7 +4,7 @@ import BackButton from '../BackButton.jsx';
 /**
  * カード一覧・交換所専用のコンパクトレイアウトコンポーネント
  * 以前の個別画面のレイアウト（余白・文字サイズ）と100%同一のものを再現し、共通化します。
- * 
+ *
  * @param {string} id - スクリーン用のID
  * @param {string} [className] - 追加のクラス名
  * @param {string} [backgroundImage] - 背景画像名
@@ -28,7 +28,7 @@ export default function CompactScreenLayout({
   showBackButton = true,
   onBackClick,
   backTo,
-  children
+  children,
 }) {
   const containerStyle = {
     display: 'flex',
@@ -48,7 +48,7 @@ export default function CompactScreenLayout({
   const titleStyle = {
     color: titleColor,
     margin: '0 0 5px 0', // 上部余白なし、下部5pxで極限までコンパクトに
-    fontSize: '1.2rem',   // 今までの美しい交換所のタイトルサイズ（1.2rem）に復元・同期
+    fontSize: '1.2rem', // 今までの美しい交換所のタイトルサイズ（1.2rem）に復元・同期
     cursor: onTitleClick ? 'pointer' : 'default',
     userSelect: 'none',
     textAlign: 'center',

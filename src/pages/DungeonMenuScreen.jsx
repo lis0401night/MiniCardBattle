@@ -56,11 +56,7 @@ export default function DungeonMenuScreen() {
           variant="purple"
           onClick={handleChallengeClick}
         />
-        <MenuButton
-          label="開放"
-          variant="blue"
-          onClick={handleUnlockClick}
-        />
+        <MenuButton label="開放" variant="blue" onClick={handleUnlockClick} />
         <MenuButton
           label="交換所"
           variant="orange"

@@ -109,7 +109,6 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
   });
 }
 
-
 /**
  * Mini Card Battle - Core Game Engine
  * DOMや演出に依存しない、純粋な状態更新ロジック
@@ -956,10 +955,17 @@ export function applyActiveSkillLogic(
       const gatherDispelTargets = (board, side) => {
         for (let j = 0; j < 3; j++) {
           if (board[j]) {
-            const isEquipHost = board[j].equippedCards && board[j].equippedCards.length > 0;
+            const isEquipHost =
+              board[j].equippedCards && board[j].equippedCards.length > 0;
             const isEquipItself = hasSkill(board[j], 'equip');
             if (isEquipHost || isEquipItself) {
-              targets.push({ lane: j, side: side, targetCard: board[j], isHost: isEquipHost, isSelf: isEquipItself });
+              targets.push({
+                lane: j,
+                side: side,
+                targetCard: board[j],
+                isHost: isEquipHost,
+                isSelf: isEquipItself,
+              });
             }
           }
         }
@@ -1126,8 +1132,7 @@ export function applyActiveSkillLogic(
       const spendAmt = val || 1;
       if (owner === 'blue')
         state.playerSP = Math.max(0, state.playerSP - spendAmt);
-      else
-        state.enemySP = Math.max(0, state.enemySP - spendAmt);
+      else state.enemySP = Math.max(0, state.enemySP - spendAmt);
       events.push({ type: 'charge_sp', side: owner, amount: -spendAmt });
       break;
     }

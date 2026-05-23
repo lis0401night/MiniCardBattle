@@ -376,8 +376,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'immune' }],
     voiceCategory: 'human_male_old',
-    flavor:
-      '分厚い教典を片手に、休むことなく教えを説き続ける厳格な導き手。',
+    flavor: '分厚い教典を片手に、休むことなく教えを説き続ける厳格な導き手。',
   },
   {
     id: 'pilebunker',
@@ -386,8 +385,7 @@ export const CARD_MASTER = [
     power: 6,
     skills: [{ id: 'pierce' }, { id: 'explode', value: 2 }],
     voiceCategory: 'human_male_warrior',
-    flavor:
-      '祈りと共に放たれる鋼の杭。その衝撃は、あらゆる盾を粉砕する',
+    flavor: '祈りと共に放たれる鋼の杭。その衝撃は、あらゆる盾を粉砕する',
   },
   {
     id: 'incinerator',
@@ -530,7 +528,10 @@ export const CARD_MASTER = [
     name: '死蠅の大群',
     rarity: 1,
     power: 1,
-    skills: [{ id: 'growth', value: -1 }, { id: 'clone', value: 2 }],
+    skills: [
+      { id: 'growth', value: -1 },
+      { id: 'clone', value: 2 },
+    ],
     voiceCategory: 'insect',
     flavor:
       '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する',
@@ -895,8 +896,9 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 5,
     skills: [{ id: 'martyr' }],
-    voiceCategory: 'human_male_nomal',
-    flavor: '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
   },
   {
     id: 'flak',
@@ -2260,10 +2262,13 @@ export const CARD_MASTER = [
     name: 'ランペイジ',
     rarity: 4,
     power: 0,
-    skills: [{ id: 'takeover' }, { id: 'call', value: 3 },{ id: 'call', value: 3 }],
+    skills: [
+      { id: 'takeover' },
+      { id: 'call', value: 3 },
+      { id: 'call', value: 3 },
+    ],
     voiceCategory: 'magic',
-    flavor:
-      '一本の木が切り倒された時、無数の獣たちが目を覚ました。',
+    flavor: '一本の木が切り倒された時、無数の獣たちが目を覚ました。',
   },
   {
     id: 'elfking',

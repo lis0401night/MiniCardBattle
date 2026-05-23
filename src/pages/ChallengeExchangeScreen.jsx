@@ -38,7 +38,6 @@ export default function ChallengeExchangeScreen() {
   );
   const [pointsUpdated, setPointsUpdated] = useState(false);
 
-
   useEffect(() => {
     // API同期のために現在のポイントを取得
     const currentPts =
@@ -103,8 +102,6 @@ export default function ChallengeExchangeScreen() {
     fetchPoints();
   }, [pointsUpdated]);
 
-
-
   const handleExchange = (item) => {
     playSound(SOUNDS?.seCardPlace);
 
@@ -113,7 +110,11 @@ export default function ChallengeExchangeScreen() {
     setChallengePoints((prev) => ({ ...prev, current: newPts }));
 
     // サーバーと同期
-    savePointsToServer(newPts, challengePoints.total);
+    savePointsToServer(
+      'update_challenge_points.php',
+      newPts,
+      challengePoints.total
+    );
 
     if (item.type === 'card') {
       const currentCount = inventory[item.id] || 0;
@@ -172,9 +173,13 @@ export default function ChallengeExchangeScreen() {
             newTotalPts
           );
           setChallengePoints({ current: newPts, total: newTotalPts });
-          
+
           // 共通APIユーティリティを介してサーバーと同期
-          savePointsToServer('update_challenge_points.php', newPts, newTotalPts);
+          savePointsToServer(
+            'update_challenge_points.php',
+            newPts,
+            newTotalPts
+          );
 
           if (showAlertModal) {
             showAlertModal('【デバッグ】試練ポイントを100Pt獲得しました！');

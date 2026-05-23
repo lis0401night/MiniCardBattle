@@ -3,7 +3,7 @@ import BackButton from '../BackButton.jsx';
 
 /**
  * 共通レイアウトページコンポーネント
- * 
+ *
  * @param {string} id - スクリーン用のID
  * @param {string} [className] - 追加のクラス名
  * @param {string} [backgroundImage] - 背景画像名（例: 'background_select.png'）またはグラデーション付きスタイル
@@ -29,7 +29,7 @@ export default function ScreenLayout({
   onBackClick,
   backTo,
   backHasBorder = false,
-  children
+  children,
 }) {
   const containerStyle = {
     display: 'flex',

@@ -7,7 +7,10 @@ import {
 } from '../utils/gameUtils.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { showDungeonMenu, performFadeTransition } from '../services/uiMainCore.js';
+import {
+  showDungeonMenu,
+  performFadeTransition,
+} from '../services/uiMainCore.js';
 import { startBattleFlow } from '../services/deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';

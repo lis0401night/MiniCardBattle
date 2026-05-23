@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-language: "ja"
+language: 'ja'
 reviews:
-  profile: "assertive"
+  profile: 'assertive'
   high_level_summary: true
   poem: false
   auto_review:
     enabled: true
   path_instructions:
-    - path: "**/*"
+    - path: '**/*'
       instructions: |
         プルリクエストをレビューする際は、以下のプロジェクト固有のコーディングルールおよび厳密な制約を遵守しているか、徹底して確認してください。違反がある場合は指摘（または改善の提案）を行ってください。
 

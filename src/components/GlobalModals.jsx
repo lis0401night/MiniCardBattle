@@ -11,7 +11,11 @@ import {
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { saveDeck, renderDeckEdit, submitDefenseDeck } from '../services/deck.js';
+import {
+  saveDeck,
+  renderDeckEdit,
+  submitDefenseDeck,
+} from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import {
   renderCardList,
@@ -27,7 +31,6 @@ import {
   backupDataToXML,
   importDataFromXML,
   confirmCharSelect,
-  confirmExchange,
   setCloseEnemyDeckModalHook,
 } from '../services/uiMainCore.js';
 import {
@@ -462,8 +465,6 @@ export default function GlobalModals() {
           } else {
             if (exchangeData.onConfirm) {
               exchangeData.onConfirm();
-            } else {
-              confirmExchange();
             }
           }
         }}
