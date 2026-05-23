@@ -1,21 +1,18 @@
-import { useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+/**
+ * ソロルール説明画面
+ * useEasterEggカスタムフックによりデバッグモード起動処理をスマートに共通化。
+ */
 export default function RulesScreen() {
-  const [clickCount, setClickCount] = useState(0);
-
   // 「ルール」タイトルを10回クリックでデバッグバトル画面を起動
-  const handleTitleClick = () => {
-    const newCount = clickCount + 1;
-    setClickCount(newCount);
-    if (newCount >= 10) {
-      playSound(SOUNDS?.seClick);
-      switchScreen('screen-debug-battle');
-      setClickCount(0);
-    }
-  };
+  const handleTitleClick = useEasterEgg(() => {
+    playSound(SOUNDS?.seClick);
+    switchScreen?.('screen-debug-battle');
+  });
 
   return (
     <ScreenLayout

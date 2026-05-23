@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
+import { useEasterEgg } from '../hooks/useEasterEgg.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
@@ -35,7 +37,6 @@ export default function TournamentExchangeScreen() {
     () => GameState.playerInventory || {}
   );
   const [pointsUpdated, setPointsUpdated] = useState(false);
-  const debugClickCount = useRef(0);
 
   useEffect(() => {
     // Current points to use for sync logic
@@ -101,23 +102,7 @@ export default function TournamentExchangeScreen() {
     fetchPoints();
   }, [pointsUpdated]);
 
-  const savePointsToServer = (newPts, newTotal) => {
-    const uuid = getOrCreateUUID();
-    const playerName =
-      localStorage.getItem('mini_card_battle_player_name') || 'Player';
-    fetch('api/update_tournament_points.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uuid: uuid,
-        name: playerName,
-        points: newPts,
-        total_points: newTotal,
-      }),
-    }).catch(() => {
-      /* ignore */
-    });
-  };
+
 
   const handleExchange = (item) => {
     playSound(SOUNDS?.seCardPlace);
@@ -167,42 +152,41 @@ export default function TournamentExchangeScreen() {
     if (window.switchScreen) window.switchScreen('screen-tournament-menu');
   };
 
-  const handleTitleClick = () => {
-    debugClickCount.current++;
-    if (debugClickCount.current >= 10) {
-      debugClickCount.current = 0;
-      if (showConfirmModal) {
-        showConfirmModal(
-          'デバッグモードを起動して大会ポイントを100Pt獲得しますか？',
-          () => {
-            playSound(SOUNDS?.seSkill);
-            const currentPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_tournament_points')
-              ) || 0;
-            const totalPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_tournament_total_points')
-              ) || 0;
-            const newPts = currentPts + 100;
-            const newTotalPts = totalPts + 100;
+  // タイトルを10回クリックで大会ポイントを100Pt獲得するイースターエッグ
+  const handleTitleClick = useEasterEgg(() => {
+    if (showConfirmModal) {
+      showConfirmModal(
+        'デバッグモードを起動して大会ポイントを100Pt獲得しますか？',
+        () => {
+          playSound(SOUNDS?.seSkill);
+          const currentPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_tournament_points')
+            ) || 0;
+          const totalPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_tournament_total_points')
+            ) || 0;
+          const newPts = currentPts + 100;
+          const newTotalPts = totalPts + 100;
 
-            localStorage.setItem('mini_card_battle_tournament_points', newPts);
-            localStorage.setItem(
-              'mini_card_battle_tournament_total_points',
-              newTotalPts
-            );
-            setTournamentPoints({ current: newPts, total: newTotalPts });
-            savePointsToServer(newPts, newTotalPts);
+          localStorage.setItem('mini_card_battle_tournament_points', newPts);
+          localStorage.setItem(
+            'mini_card_battle_tournament_total_points',
+            newTotalPts
+          );
+          setTournamentPoints({ current: newPts, total: newTotalPts });
 
-            if (showAlertModal) {
-              showAlertModal('【デバッグ】大会ポイントを100Pt獲得しました！');
-            }
+          // 共通API同期ユーティリティを介してサーバーと同期
+          savePointsToServer('update_tournament_points.php', newPts, newTotalPts);
+
+          if (showAlertModal) {
+            showAlertModal('【デバッグ】大会ポイントを100Pt獲得しました！');
           }
-        );
-      }
+        }
+      );
     }
-  };
+  });
 
   return (
     <CompactScreenLayout

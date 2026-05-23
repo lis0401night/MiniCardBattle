@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
+import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { loadDeck, saveDeck } from '../hooks/deck.js';
 import { GameState } from '../hooks/gameState.js';
 import { openCardPreview, setRenderCardListHook } from '../hooks/uiGallery.js';
@@ -14,66 +15,64 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+/**
+ * カード一覧画面
+ * useEasterEggカスタムフックによりデバッグモード起動処理をスマートに共通化。
+ */
 export default function CardListScreen() {
   const [masterCards, setMasterCards] = useState([]);
   const [ownedKindCount, setOwnedKindCount] = useState(0);
   const [inventory, setInventory] = useState({});
   const [unlockedPremium, setUnlockedPremium] = useState([]);
   const [activePremium, setActivePremium] = useState([]);
-  const [clickCount, setClickCount] = useState(0);
 
-  const handleTitleClick = () => {
-    const newCount = clickCount + 1;
-    setClickCount(newCount);
-    if (newCount >= 10) {
-      setClickCount(0);
-
-      if (showConfirmModal) {
-        showConfirmModal(
-          'デバッグモードを起動して全カード・全スキンを解放しますか？',
-          () => {
-            if (CARD_MASTER && GameState.playerInventory) {
-              CARD_MASTER.forEach((card) => {
-                if (!card.isToken) {
-                  GameState.playerInventory[card.id] = 4;
-                }
-              });
-            }
-
-            const premiumTargets = [
-              'empress',
-              'assassin',
-              'cyberdragon',
-              'dragon',
-              'oldgod',
-              'wolf',
-              'cleric',
-              'nectromancer',
-              'vampire',
-              'beginnermagic',
-              'djinn',
-            ];
-            if (GameState.unlockedPremiumCards) {
-              premiumTargets.forEach((id) => {
-                if (!GameState.unlockedPremiumCards.includes(id)) {
-                  GameState.unlockedPremiumCards.push(id);
-                }
-              });
-            }
-
-            if (typeof saveDeck === 'function') saveDeck();
-            if (typeof playSound === 'function' && SOUNDS)
-              playSound(SOUNDS.seSkill);
-            if (typeof showAlertModal === 'function')
-              showAlertModal(
-                'デバッグモード：全カードを4枚所持状態にしました！'
-              );
-            updateList();
+  // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
+  const handleTitleClick = useEasterEgg(() => {
+    if (showConfirmModal) {
+      showConfirmModal(
+        'デバッグモードを起動して全カード・全スキンを解放しますか？',
+        () => {
+          if (CARD_MASTER && GameState.playerInventory) {
+            CARD_MASTER.forEach((card) => {
+              if (!card.isToken) {
+                GameState.playerInventory[card.id] = 4;
+              }
+            });
           }
-        );
-      }
+
+          const premiumTargets = [
+            'empress',
+            'assassin',
+            'cyberdragon',
+            'dragon',
+            'oldgod',
+            'wolf',
+            'cleric',
+            'nectromancer',
+            'vampire',
+            'beginnermagic',
+            'djinn',
+          ];
+          if (GameState.unlockedPremiumCards) {
+            premiumTargets.forEach((id) => {
+              if (!GameState.unlockedPremiumCards.includes(id)) {
+                GameState.unlockedPremiumCards.push(id);
+              }
+            });
+          }
+
+          if (typeof saveDeck === 'function') saveDeck();
+          if (typeof playSound === 'function' && SOUNDS)
+            playSound(SOUNDS.seSkill);
+          if (typeof showAlertModal === 'function')
+            showAlertModal(
+              'デバッグモード：全カードを4枚所持状態にしました！'
+            );
+          updateList();
+        }
+      );
     }
-  };
+  });
 
   const updateList = () => {
     // 常にグローバルなプレミアム設定を優先ロードする（デッキ固有設定に汚染されないため）

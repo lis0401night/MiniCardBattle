@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
+import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { GameState } from '../hooks/gameState.js';
 import {
   setRenderExchangeHook,
@@ -33,7 +34,6 @@ export default function DefenseExchangeScreen() {
   const [unlockedPremium, setUnlockedPremium] = useState(
     () => GameState.unlockedPremiumCards || []
   );
-  const debugClickCount = useRef(0);
 
   const updateExchange = () => {
     const currentPts =
@@ -52,40 +52,37 @@ export default function DefenseExchangeScreen() {
     setRenderExchangeHook(updateExchange); // グローバルからの再描画フック
   }, []);
 
-  const handleTitleClick = () => {
-    debugClickCount.current++;
-    if (debugClickCount.current >= 10) {
-      debugClickCount.current = 0;
-      if (showConfirmModal) {
-        showConfirmModal(
-          'デバッグモードを起動して防衛ポイントを100Pt獲得しますか？',
-          () => {
-            playSound?.(SOUNDS?.seSkill);
-            let cPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_defense_points')
-              ) || 0;
-            let tPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_defense_total_points')
-              ) || 0;
-            cPts += 100;
-            tPts += 100;
-            localStorage.setItem('mini_card_battle_defense_points', cPts);
-            localStorage.setItem('mini_card_battle_defense_total_points', tPts);
-            if (showAlertModal) {
-              showAlertModal(
-                '【デバッグ】防衛ポイントを100Pt獲得しました！',
-                () => updateExchange()
-              );
-            } else {
-              updateExchange();
-            }
+  // タイトルを10回クリックで防衛ポイントを100Pt獲得するイースターエッグ
+  const handleTitleClick = useEasterEgg(() => {
+    if (showConfirmModal) {
+      showConfirmModal(
+        'デバッグモードを起動して防衛ポイントを100Pt獲得しますか？',
+        () => {
+          playSound?.(SOUNDS?.seSkill);
+          let cPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_defense_points')
+            ) || 0;
+          let tPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_defense_total_points')
+            ) || 0;
+          cPts += 100;
+          tPts += 100;
+          localStorage.setItem('mini_card_battle_defense_points', cPts);
+          localStorage.setItem('mini_card_battle_defense_total_points', tPts);
+          if (showAlertModal) {
+            showAlertModal(
+              '【デバッグ】防衛ポイントを100Pt獲得しました！',
+              () => updateExchange()
+            );
+          } else {
+            updateExchange();
           }
-        );
-      }
+        }
+      );
     }
-  };
+  });
 
   return (
     <CompactScreenLayout
