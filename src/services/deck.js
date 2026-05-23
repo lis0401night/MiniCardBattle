@@ -31,6 +31,30 @@ import {
 import { showAlertModal, showConfirmModal } from './uiModals.js';
 
 // ==========================================
+// カードIDのマイグレーション（後方互換性維持用）
+// ==========================================
+export const CARD_ID_MIGRATION_MAP = {
+  copy: 'eye',
+  chameleon: 'instructor',
+  zombie: 'fly',
+  bigai: 'bigeye',
+  wish: 'rampage',
+};
+
+export function migrateCardId(id) {
+  if (typeof id === 'string') {
+    return CARD_ID_MIGRATION_MAP[id] || id;
+  }
+  if (id && typeof id === 'object' && id.id) {
+    return {
+      ...id,
+      id: CARD_ID_MIGRATION_MAP[id.id] || id.id,
+    };
+  }
+  return id;
+}
+
+// ==========================================
 // デッキ生成・編集・セーブ・ロードロジック
 // ==========================================
 
@@ -146,6 +170,7 @@ export function generateDeck(owner, config, sessionId) {
 
     deckIds.forEach((cardItem, i) => {
       let cardId = typeof cardItem === 'object' ? cardItem.id : cardItem;
+      cardId = migrateCardId(cardId);
       let isPremium =
         typeof cardItem === 'object' ? cardItem.isPremium || false : false;
 
@@ -185,8 +210,196 @@ export function getInitialDeck(charId) {
   return deck.slice(0, DECK_SIZE); // 20枚
 }
 
+/**
+ * ローカルストレージおよび現在のGameState内のセーブデータを安全に新IDに移行します。
+ */
+export function migrateAllSaveData() {
+  try {
+    // 1. インベントリ (mini_card_battle_inventory)
+    const invKey = 'mini_card_battle_inventory';
+    const invSaved = localStorage.getItem(invKey);
+    if (invSaved) {
+      try {
+        const inv = JSON.parse(invSaved);
+        let changed = false;
+        for (const oldId in CARD_ID_MIGRATION_MAP) {
+          if (inv[oldId] !== undefined) {
+            const newId = CARD_ID_MIGRATION_MAP[oldId];
+            inv[newId] = (inv[newId] || 0) + inv[oldId];
+            delete inv[oldId];
+            changed = true;
+          }
+        }
+        if (changed) {
+          localStorage.setItem(invKey, JSON.stringify(inv));
+        }
+      } catch (e) {
+        console.error('Inventory migration error:', e);
+      }
+    }
+
+    // 2. 通常デッキ (mini_card_battle_decks)
+    const decksKey = 'mini_card_battle_decks';
+    const decksSaved = localStorage.getItem(decksKey);
+    if (decksSaved) {
+      try {
+        const decks = JSON.parse(decksSaved);
+        let changed = false;
+        if (Array.isArray(decks)) {
+          decks.forEach((deck) => {
+            if (deck.cards && Array.isArray(deck.cards)) {
+              const originalCards = [...deck.cards];
+              deck.cards = deck.cards.map((id) => migrateCardId(id));
+              if (JSON.stringify(originalCards) !== JSON.stringify(deck.cards)) {
+                changed = true;
+              }
+            }
+            if (deck.premiumCards && Array.isArray(deck.premiumCards)) {
+              const originalPremium = [...deck.premiumCards];
+              deck.premiumCards = deck.premiumCards.map((id) => migrateCardId(id));
+              if (JSON.stringify(originalPremium) !== JSON.stringify(deck.premiumCards)) {
+                changed = true;
+              }
+            }
+          });
+        }
+        if (changed) {
+          localStorage.setItem(decksKey, JSON.stringify(decks));
+        }
+      } catch (e) {
+        console.error('Decks migration error:', e);
+      }
+    }
+
+    // Helper to migrate a single deck object
+    const migrateDeckObj = (key) => {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const deck = JSON.parse(saved);
+          let changed = false;
+          if (deck.cards && Array.isArray(deck.cards)) {
+            const originalCards = [...deck.cards];
+            deck.cards = deck.cards.map((id) => migrateCardId(id));
+            if (JSON.stringify(originalCards) !== JSON.stringify(deck.cards)) changed = true;
+          }
+          if (deck.premiumCards && Array.isArray(deck.premiumCards)) {
+            const originalPremium = [...deck.premiumCards];
+            deck.premiumCards = deck.premiumCards.map((id) => migrateCardId(id));
+            if (JSON.stringify(originalPremium) !== JSON.stringify(deck.premiumCards)) changed = true;
+          }
+          if (changed) {
+            localStorage.setItem(key, JSON.stringify(deck));
+          }
+        } catch (e) {
+          console.error(`Deck obj migration error for ${key}:`, e);
+        }
+      }
+    };
+
+    // 3. 防衛、宮殿、トーナメントのデッキオブジェクト
+    migrateDeckObj('mini_card_battle_defense_deck_obj');
+    migrateDeckObj('mini_card_battle_dungeon_deck_obj');
+    migrateDeckObj('mini_card_battle_tournament_deck_obj');
+
+    // 4. 古い防衛デッキの配列 (mini_card_battle_deck_defense)
+    const oldDefKey = 'mini_card_battle_deck_defense';
+    const oldDefSaved = localStorage.getItem(oldDefKey);
+    if (oldDefSaved) {
+      try {
+        const cards = JSON.parse(oldDefSaved);
+        if (Array.isArray(cards)) {
+          const originalCards = [...cards];
+          const migrated = cards.map((id) => migrateCardId(id));
+          if (JSON.stringify(originalCards) !== JSON.stringify(migrated)) {
+            localStorage.setItem(oldDefKey, JSON.stringify(migrated));
+          }
+        }
+      } catch (e) {
+        console.error('Old defense deck migration error:', e);
+      }
+    }
+
+    // 5. 試練の宮殿中断データ (mini_card_battle_dungeon_save)
+    const dSaveKey = 'mini_card_battle_dungeon_save';
+    const dSaveSaved = localStorage.getItem(dSaveKey);
+    if (dSaveSaved) {
+      try {
+        const dSave = JSON.parse(dSaveSaved);
+        let changed = false;
+        if (dSave.deck && Array.isArray(dSave.deck)) {
+          const original = [...dSave.deck];
+          dSave.deck = dSave.deck.map((id) => migrateCardId(id));
+          if (JSON.stringify(original) !== JSON.stringify(dSave.deck)) changed = true;
+        }
+        if (dSave.cards && Array.isArray(dSave.cards)) {
+          const original = [...dSave.cards];
+          dSave.cards = dSave.cards.map((id) => migrateCardId(id));
+          if (JSON.stringify(original) !== JSON.stringify(dSave.cards)) changed = true;
+        }
+        if (dSave.dungeonCards && Array.isArray(dSave.dungeonCards)) {
+          const original = [...dSave.dungeonCards];
+          dSave.dungeonCards = dSave.dungeonCards.map((id) => migrateCardId(id));
+          if (JSON.stringify(original) !== JSON.stringify(dSave.dungeonCards)) changed = true;
+        }
+        if (changed) {
+          localStorage.setItem(dSaveKey, JSON.stringify(dSave));
+        }
+      } catch (e) {
+        console.error('Dungeon save migration error:', e);
+      }
+    }
+
+    // Helper to migrate plain string arrays in localStorage
+    const migratePlainArray = (key) => {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const arr = JSON.parse(saved);
+          if (Array.isArray(arr)) {
+            const original = [...arr];
+            const migrated = arr.map((id) => migrateCardId(id));
+            if (JSON.stringify(original) !== JSON.stringify(migrated)) {
+              localStorage.setItem(key, JSON.stringify(migrated));
+            }
+          }
+        } catch (e) {
+          console.error(`Plain array migration error for ${key}:`, e);
+        }
+      }
+    };
+
+    // 6. プレミアム設定と解放状況
+    migratePlainArray('mini_card_battle_premium_cards');
+    migratePlainArray('mini_card_battle_unlocked_premium');
+
+    // 7. 現在の GameState にインメモリデータがあればそれらも移行
+    if (GameState) {
+      if (GameState.dungeonCards && Array.isArray(GameState.dungeonCards)) {
+        GameState.dungeonCards = GameState.dungeonCards.map((id) => migrateCardId(id));
+      }
+      if (GameState.campaignDeck && Array.isArray(GameState.campaignDeck)) {
+        GameState.campaignDeck = GameState.campaignDeck.map((id) => migrateCardId(id));
+      }
+      if (GameState.campaignCards && Array.isArray(GameState.campaignCards)) {
+        GameState.campaignCards = GameState.campaignCards.map((id) => migrateCardId(id));
+      }
+      if (GameState.premiumCards && Array.isArray(GameState.premiumCards)) {
+        GameState.premiumCards = GameState.premiumCards.map((id) => migrateCardId(id));
+      }
+      if (GameState.unlockedPremiumCards && Array.isArray(GameState.unlockedPremiumCards)) {
+        GameState.unlockedPremiumCards = GameState.unlockedPremiumCards.map((id) => migrateCardId(id));
+      }
+    }
+  } catch (e) {
+    console.error('General migration error:', e);
+  }
+}
+
 window.loadDeck = loadDeck;
 export function loadDeck() {
+  // 自動マイグレーションを実行
+  migrateAllSaveData();
   // 1. ダンジョン特殊処理
   if (GameState.gameMode === 'battle_dungeon') {
     if (
@@ -918,7 +1131,8 @@ export function importDeckXML(event) {
     const cards = xmlDoc.getElementsByTagName('card');
     GameState.playerDeckSelection = [];
     for (let i = 0; i < cards.length && i < DECK_SIZE; i++) {
-      const id = cards[i].getAttribute('id');
+      let id = cards[i].getAttribute('id');
+      id = migrateCardId(id);
       const template = CARD_MASTER.find((m) => m.id === id) || CARD_MASTER[0];
       const count = GameState.playerDeckSelection.filter(
         (c) => c.id === id

@@ -2,7 +2,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
-import { startBattleFlow } from '../services/deck.js';
+import { startBattleFlow, migrateCardId } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import {
   setupDialogueScreen,
@@ -144,15 +144,20 @@ export async function loadPlayerDeck(uuid) {
         window.PLAYER_DECKS[uuid]
       ) {
         const data = window.PLAYER_DECKS[uuid];
+        // データを安全にマイグレーション
+        const migratedDeck = Array.isArray(data.deck)
+          ? data.deck.map((item) => migrateCardId(item))
+          : [];
+
         // 敵デッキデータとして整形
         const enemyDeckData = {
           id: 'player_defense',
           name: data.name,
           character: data.character,
-          deck: data.deck,
+          deck: migratedDeck,
         };
         // ENEMY_DECKSに一時的に登録
-        ENEMY_DECKS['player_defense'] = data.deck;
+        ENEMY_DECKS['player_defense'] = migratedDeck;
 
         if (script.parentNode) script.parentNode.removeChild(script);
         resolve(enemyDeckData);

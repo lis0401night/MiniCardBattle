@@ -327,7 +327,7 @@ export const CARD_MASTER = [
     flavor: '一匹の力は弱いが、無数に集まることで強固な壁となる。',
   },
   {
-    id: 'copy',
+    id: 'eye',
     name: '虚無の目覚め',
     rarity: 1,
     power: 4,
@@ -347,7 +347,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'pray',
-    name: '森の願い',
+    name: '森の祈り',
     rarity: 1,
     power: 0,
     skills: [{ id: 'choice', value: 1 }],
@@ -370,7 +370,7 @@ export const CARD_MASTER = [
       '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
   },
   {
-    id: 'chameleon',
+    id: 'instructor',
     name: '熱心な教導師',
     rarity: 1,
     power: 4,
@@ -524,7 +524,7 @@ export const CARD_MASTER = [
       '太古の昔より大河の主として君臨し続ける巨大な爬虫類。その強靭なる顎は全てを噛み砕き、圧倒的な存在感は全てを威圧する。',
   },
   {
-    id: 'zombie',
+    id: 'fly',
     name: '死蠅の大群',
     rarity: 1,
     power: 1,
@@ -584,7 +584,7 @@ export const CARD_MASTER = [
       'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、二つとして同じ機体は存在しない。',
   },
   {
-    id: 'bigai',
+    id: 'bigeye',
     name: 'サイクロプス Mk-II',
     rarity: 2,
     power: 3,
@@ -2258,7 +2258,7 @@ export const CARD_MASTER = [
       '色褪せた記憶の中にあっても、呪われし槍の切っ先は恐ろしいほどに冴え渡る。因果を捻じ曲げ、ただ死のみを約束する魔の刃。',
   },
   {
-    id: 'wish',
+    id: 'rampage',
     name: 'ランペイジ',
     rarity: 4,
     power: 0,
