@@ -250,14 +250,21 @@ export function migrateAllSaveData() {
             if (deck.cards && Array.isArray(deck.cards)) {
               const originalCards = [...deck.cards];
               deck.cards = deck.cards.map((id) => migrateCardId(id));
-              if (JSON.stringify(originalCards) !== JSON.stringify(deck.cards)) {
+              if (
+                JSON.stringify(originalCards) !== JSON.stringify(deck.cards)
+              ) {
                 changed = true;
               }
             }
             if (deck.premiumCards && Array.isArray(deck.premiumCards)) {
               const originalPremium = [...deck.premiumCards];
-              deck.premiumCards = deck.premiumCards.map((id) => migrateCardId(id));
-              if (JSON.stringify(originalPremium) !== JSON.stringify(deck.premiumCards)) {
+              deck.premiumCards = deck.premiumCards.map((id) =>
+                migrateCardId(id)
+              );
+              if (
+                JSON.stringify(originalPremium) !==
+                JSON.stringify(deck.premiumCards)
+              ) {
                 changed = true;
               }
             }
@@ -281,12 +288,19 @@ export function migrateAllSaveData() {
           if (deck.cards && Array.isArray(deck.cards)) {
             const originalCards = [...deck.cards];
             deck.cards = deck.cards.map((id) => migrateCardId(id));
-            if (JSON.stringify(originalCards) !== JSON.stringify(deck.cards)) changed = true;
+            if (JSON.stringify(originalCards) !== JSON.stringify(deck.cards))
+              changed = true;
           }
           if (deck.premiumCards && Array.isArray(deck.premiumCards)) {
             const originalPremium = [...deck.premiumCards];
-            deck.premiumCards = deck.premiumCards.map((id) => migrateCardId(id));
-            if (JSON.stringify(originalPremium) !== JSON.stringify(deck.premiumCards)) changed = true;
+            deck.premiumCards = deck.premiumCards.map((id) =>
+              migrateCardId(id)
+            );
+            if (
+              JSON.stringify(originalPremium) !==
+              JSON.stringify(deck.premiumCards)
+            )
+              changed = true;
           }
           if (changed) {
             localStorage.setItem(key, JSON.stringify(deck));
@@ -330,17 +344,22 @@ export function migrateAllSaveData() {
         if (dSave.deck && Array.isArray(dSave.deck)) {
           const original = [...dSave.deck];
           dSave.deck = dSave.deck.map((id) => migrateCardId(id));
-          if (JSON.stringify(original) !== JSON.stringify(dSave.deck)) changed = true;
+          if (JSON.stringify(original) !== JSON.stringify(dSave.deck))
+            changed = true;
         }
         if (dSave.cards && Array.isArray(dSave.cards)) {
           const original = [...dSave.cards];
           dSave.cards = dSave.cards.map((id) => migrateCardId(id));
-          if (JSON.stringify(original) !== JSON.stringify(dSave.cards)) changed = true;
+          if (JSON.stringify(original) !== JSON.stringify(dSave.cards))
+            changed = true;
         }
         if (dSave.dungeonCards && Array.isArray(dSave.dungeonCards)) {
           const original = [...dSave.dungeonCards];
-          dSave.dungeonCards = dSave.dungeonCards.map((id) => migrateCardId(id));
-          if (JSON.stringify(original) !== JSON.stringify(dSave.dungeonCards)) changed = true;
+          dSave.dungeonCards = dSave.dungeonCards.map((id) =>
+            migrateCardId(id)
+          );
+          if (JSON.stringify(original) !== JSON.stringify(dSave.dungeonCards))
+            changed = true;
         }
         if (changed) {
           localStorage.setItem(dSaveKey, JSON.stringify(dSave));
@@ -376,19 +395,32 @@ export function migrateAllSaveData() {
     // 7. 現在の GameState にインメモリデータがあればそれらも移行
     if (GameState) {
       if (GameState.dungeonCards && Array.isArray(GameState.dungeonCards)) {
-        GameState.dungeonCards = GameState.dungeonCards.map((id) => migrateCardId(id));
+        GameState.dungeonCards = GameState.dungeonCards.map((id) =>
+          migrateCardId(id)
+        );
       }
       if (GameState.campaignDeck && Array.isArray(GameState.campaignDeck)) {
-        GameState.campaignDeck = GameState.campaignDeck.map((id) => migrateCardId(id));
+        GameState.campaignDeck = GameState.campaignDeck.map((id) =>
+          migrateCardId(id)
+        );
       }
       if (GameState.campaignCards && Array.isArray(GameState.campaignCards)) {
-        GameState.campaignCards = GameState.campaignCards.map((id) => migrateCardId(id));
+        GameState.campaignCards = GameState.campaignCards.map((id) =>
+          migrateCardId(id)
+        );
       }
       if (GameState.premiumCards && Array.isArray(GameState.premiumCards)) {
-        GameState.premiumCards = GameState.premiumCards.map((id) => migrateCardId(id));
+        GameState.premiumCards = GameState.premiumCards.map((id) =>
+          migrateCardId(id)
+        );
       }
-      if (GameState.unlockedPremiumCards && Array.isArray(GameState.unlockedPremiumCards)) {
-        GameState.unlockedPremiumCards = GameState.unlockedPremiumCards.map((id) => migrateCardId(id));
+      if (
+        GameState.unlockedPremiumCards &&
+        Array.isArray(GameState.unlockedPremiumCards)
+      ) {
+        GameState.unlockedPremiumCards = GameState.unlockedPremiumCards.map(
+          (id) => migrateCardId(id)
+        );
       }
     }
   } catch (e) {
