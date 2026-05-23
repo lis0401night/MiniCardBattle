@@ -393,7 +393,7 @@ export const CARD_MASTER = [
     name: '鎖の殉教者',
     rarity: 1,
     power: 5,
-    skills: [{ id: 'choice', value: 1 }],
+    skills: [{ id: 'martyr' }],
     voiceCategory: 'human_male_normal',
     flavor:
       '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
