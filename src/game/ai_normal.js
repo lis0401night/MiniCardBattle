@@ -523,6 +523,24 @@ export function processActionSequence(
         actionQueue.push(...simState._actionQueue);
         delete simState._actionQueue;
       }
+
+      // 【修正】装備カードが持っていた追加アクティブスキル（事前解決された選択スキル等含む）を順次実行シミュレートする
+      addedSkills.forEach((sk) => {
+        applyActiveSkillLogic(
+          simState,
+          'red',
+          lIdx,
+          sk.id,
+          sk.value,
+          [],
+          cLanesForEquip,
+          undefined
+        );
+        if (simState._actionQueue && simState._actionQueue.length > 0) {
+          actionQueue.push(...simState._actionQueue);
+          delete simState._actionQueue;
+        }
+      });
     }
 
     if (!skillWasHandledByEquip) {

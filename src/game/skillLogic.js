@@ -1027,6 +1027,7 @@ export async function resolveActiveSkillEffect(
         basePower: c.basePower !== undefined ? c.basePower : c.power || 0,
         voiceCategory: c.voiceCategory,
         skills: JSON.parse(JSON.stringify(inheritedSkills)), // スキルを引き継ぐ
+        skillTriggered: true, // 配置扱いのため、引き継いだ召喚時スキルのバッジを表示しない
       };
       const existingCard = board[targetLane];
       if (
@@ -1898,6 +1899,7 @@ export async function resolveActiveSkillEffect(
               });
             }
             mergeCardSkills(targetCard, equipSkills);
+            targetCard.skillTriggered = true; // 配置（復活）からの合体のため、追加スキルのバッジは表示しない
             // ※ユーザー指定に基づき、召喚ではないためアクティブスキルの即発動は行わない
 
             // 装備したカードは消費されて対象カードにアタッチされる
