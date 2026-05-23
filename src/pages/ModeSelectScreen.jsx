@@ -1,5 +1,5 @@
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
-import { showGallery } from '../hooks/uiGallery.js';
+import { showGallery } from '../services/uiGallery.js';
 import {
   showBeginnerGuide,
   showOptions,
@@ -7,7 +7,7 @@ import {
   showDeckEditMenu,
   showEventMenu,
   showOnlineMenu,
-} from '../hooks/uiMainCore.js';
+} from '../services/uiMainCore.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 

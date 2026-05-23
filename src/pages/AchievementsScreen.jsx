@@ -8,8 +8,8 @@ import {
   showPlaymatAcquisitionModal,
   showPremiumAcquisitionModal,
   showSkinAcquisitionModal,
-} from '../hooks/uiGallery.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+} from '../services/uiGallery.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import {
   ACHIEVEMENT_MASTER,
   achievementData,

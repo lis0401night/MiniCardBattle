@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { loadDeck } from '../hooks/deck.js';
-import { GameState } from '../hooks/gameState.js';
-import { confirmCharSelect, goBackFromSelect } from '../hooks/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { loadDeck } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
+import { confirmCharSelect, goBackFromSelect } from '../services/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';

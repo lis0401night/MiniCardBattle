@@ -11,8 +11,8 @@ import {
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { saveDeck, renderDeckEdit, submitDefenseDeck } from '../hooks/deck.js';
-import { GameState } from '../hooks/gameState.js';
+import { saveDeck, renderDeckEdit, submitDefenseDeck } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
 import {
   renderCardList,
   openCardPreview,
@@ -22,22 +22,22 @@ import {
   setShowSkinAcquisitionModalHook,
   setOpenCardPreviewHook,
   setCloseCardPreviewHook,
-} from '../hooks/uiGallery.js';
+} from '../services/uiGallery.js';
 import {
   backupDataToXML,
   importDataFromXML,
   confirmCharSelect,
   confirmExchange,
   setCloseEnemyDeckModalHook,
-} from '../hooks/uiMainCore.js';
+} from '../services/uiMainCore.js';
 import {
   showAlertModal,
   setShowConfirmModalHook,
   setShowAlertModalHook,
   setShowErrorModalHook,
   setShowPointAcquisitionModalHook,
-} from '../hooks/uiModals.js';
-import { filterDiscardSelectionSubmit } from '../hooks/tutorialEngine.js';
+} from '../services/uiModals.js';
+import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
 let g_discardLongPressTimer = null;

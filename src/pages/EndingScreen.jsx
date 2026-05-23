@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 

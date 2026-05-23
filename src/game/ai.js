@@ -4,7 +4,7 @@ import { getEasyDecision } from './ai_easy.js';
 import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
 import { discardCard, endTurnLogic, playCard } from './battle.js';
 import { isGraveKeeperActive } from './engine.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 
 /**

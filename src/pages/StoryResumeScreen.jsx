@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { resumeCampaignProgress } from '../hooks/campaign';
-import { GameState } from '../hooks/gameState';
-import { clearStoryProgress, resumeStoryProgress } from '../hooks/story';
-import { goBackFromSelect } from '../hooks/uiMainCore';
-import { showConfirmModal } from '../hooks/uiModals.js';
+import { resumeCampaignProgress } from '../game/campaign';
+import { GameState } from '../state/gameState';
+import { clearStoryProgress, resumeStoryProgress } from '../game/story';
+import { goBackFromSelect } from '../services/uiMainCore';
+import { showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';

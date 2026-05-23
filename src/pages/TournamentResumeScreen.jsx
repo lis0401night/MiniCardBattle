@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   clearTournamentSave,
   loadTournamentProgress,
-} from '../hooks/tournament.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+} from '../game/tournament.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';

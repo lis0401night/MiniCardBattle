@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { startTutorial, loadTutorialProgress, saveTutorialProgress } from '../hooks/tutorialEngine.js';
-import { loadDeck, saveDeck } from '../hooks/deck.js';
-import { showCardAcquisitionModal } from '../hooks/uiGallery.js';
-import { GameState } from '../hooks/gameState.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { startTutorial, loadTutorialProgress, saveTutorialProgress } from '../game/tutorialEngine.js';
+import { loadDeck, saveDeck } from '../services/deck.js';
+import { showCardAcquisitionModal } from '../services/uiGallery.js';
+import { GameState } from '../state/gameState.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';

@@ -1,12 +1,12 @@
 import React from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   confirmDifficulty,
   goBackFromDifficulty,
   openEnemyDeckPreview,
-} from '../hooks/uiMainCore.js';
+} from '../services/uiMainCore.js';
 
 export default function DifficultySelectScreen() {
   const [isFreeMode, setIsFreeMode] = React.useState(() =>

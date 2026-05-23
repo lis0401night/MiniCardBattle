@@ -8,10 +8,10 @@ import {
 } from '../utils/constants/eventTournamentDialogues.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { loadDeck } from './deck.js';
-import { GameState } from './gameState.js';
-import { setupDialogueScreen } from './uiDialogue.js';
-import { performFadeTransition } from './uiMainCore.js';
+import { loadDeck } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
+import { setupDialogueScreen } from '../services/uiDialogue.js';
+import { performFadeTransition } from '../services/uiMainCore.js';
 
 /**
  * トーナメント用キャラクター名を生成する

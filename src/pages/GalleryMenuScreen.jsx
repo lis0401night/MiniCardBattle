@@ -1,7 +1,7 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
-import { showAchievements, showCardList } from '../hooks/uiGallery.js';
-import { goToModeSelect } from '../hooks/uiMainCore.js';
+import { showAchievements, showCardList } from '../services/uiGallery.js';
+import { goToModeSelect } from '../services/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 export default function GalleryMenuScreen() {

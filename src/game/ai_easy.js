@@ -1,6 +1,6 @@
 import { hasSkill, getSeededRandom } from '../utils/gameUtils.js';
 import { simulateMove } from './ai_normal.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（初級・ランダム版）

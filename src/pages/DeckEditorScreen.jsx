@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
-import { prepareBattle } from '../hooks/battle.js';
-import { loadDeck, saveDeck, setRenderDeckEditHook } from '../hooks/deck.js';
-import { GameState } from '../hooks/gameState.js';
-import { openCardPreview } from '../hooks/uiGallery.js';
-import { goBackFromDeckEdit } from '../hooks/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
-import { showPlaymatModal } from '../hooks/uiPlaymat.js';
+import { prepareBattle } from '../game/battle.js';
+import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
+import { openCardPreview } from '../services/uiGallery.js';
+import { goBackFromDeckEdit } from '../services/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { showPlaymatModal } from '../services/uiPlaymat.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';

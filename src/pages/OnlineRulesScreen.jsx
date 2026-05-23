@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
-import { GameState } from '../hooks/gameState.js';
-import { showOnlineMenu } from '../hooks/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
+import { showOnlineMenu } from '../services/uiMainCore.js';
 
 /**
  * オンライン対戦ルール説明画面

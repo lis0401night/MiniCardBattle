@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { GameState } from '../../hooks/gameState.js';
+import { GameState } from '../../state/gameState.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playSound, sleep, getSeededRandom } from '../../utils/gameUtils.js';
-import { getIsHost } from '../../hooks/multiplayer.js';
+import { getIsHost } from '../../services/multiplayer.js';
 
 export default function TurnOrderOverlay({ startAnim, onComplete }) {
   const [isVisible, setIsVisible] = useState(false);

@@ -9,10 +9,10 @@ import {
   getCardImgUrl,
 } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { setupEventConfrontation } from './events.js';
-import { GameState } from './gameState.js';
-import { saveStoryProgress } from './story.js';
-import { handleProgressionNextStep } from './progression.js';
+import { setupEventConfrontation } from '../game/events.js';
+import { GameState } from '../state/gameState.js';
+import { saveStoryProgress } from '../game/story.js';
+import { handleProgressionNextStep } from '../game/progression.js';
 
 // ==========================================
 // UI Dialogue Logic (Dialogue & Sequences)

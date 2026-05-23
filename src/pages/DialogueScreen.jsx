@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { GameState } from '../hooks/gameState.js';
-import { showNextDialogue } from '../hooks/uiDialogue.js';
+import { GameState } from '../state/gameState.js';
+import { showNextDialogue } from '../services/uiDialogue.js';
 
 export default function DialogueScreen() {
   const [dialogueData, setDialogueData] = useState(

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { GameState } from '../../hooks/gameState.js';
+import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playSound } from '../../utils/gameUtils.js';
-import { saveDeck } from '../../hooks/deck.js';
-import { setupDialogueScreen } from '../../hooks/uiDialogue.js';
+import { saveDeck } from '../../services/deck.js';
+import { setupDialogueScreen } from '../../services/uiDialogue.js';
 
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
 

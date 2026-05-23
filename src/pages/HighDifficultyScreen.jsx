@@ -1,5 +1,5 @@
 import BackButton from '../components/BackButton.jsx';
-import { selectHighDifficultyTarget } from '../hooks/uiMainCore.js';
+import { selectHighDifficultyTarget } from '../services/uiMainCore.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';

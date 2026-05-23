@@ -5,7 +5,7 @@ import {
   goToModeSelect,
   showRules,
   showTutorialSelect,
-} from '../hooks/uiMainCore.js';
+} from '../services/uiMainCore.js';
 
 /**
  * 「遊び方」画面

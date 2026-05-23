@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   clearTournamentSave,
   saveTournamentProgress,
   startTournamentMatch,
-} from '../hooks/tournament.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+} from '../game/tournament.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
 import {
   getOrCreateUUID,

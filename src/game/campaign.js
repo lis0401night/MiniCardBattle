@@ -1,9 +1,9 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES } from '../utils/sounds.js';
-import { loadDeck, renderDeckEdit } from './deck.js';
-import { GameState } from './gameState.js';
-import { setupDialogueScreen } from './uiDialogue.js';
+import { loadDeck, renderDeckEdit } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
+import { setupDialogueScreen } from '../services/uiDialogue.js';
 
 import { CHAPTER_01_NODES } from '../utils/constants/campaign/chapter01/nodes.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';

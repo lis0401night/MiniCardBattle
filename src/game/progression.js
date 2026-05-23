@@ -2,9 +2,9 @@ import { switchScreen } from '../utils/gameUtils.js';
 import { prepareBattle } from './battle.js';
 import { handleBattleDungeonProgression } from './battleDungeon.js';
 import { onCampaignDialogueEnd } from './campaign.js';
-import { loadDeck, startBattleFlow } from './deck.js';
+import { loadDeck, startBattleFlow } from '../services/deck.js';
 import { handleEventProgression } from './events.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import { handleStoryProgression } from './story.js';
 import {
   playTournamentPostMatchDialogue,
@@ -17,7 +17,7 @@ import {
   performFadeTransition,
   showDefenseBattleList,
   showOnlineLobby,
-} from './uiMainCore.js';
+} from '../services/uiMainCore.js';
 
 /**
  * Mini Card Battle - 共通進行管理 (progression.js)

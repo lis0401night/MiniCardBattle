@@ -1,17 +1,17 @@
 import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   playSound,
   switchScreen,
   getOrCreateUUID,
 } from '../utils/gameUtils.js';
-import { showPointAcquisitionModal } from './uiModals.js';
+import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { showDungeonMenu, performFadeTransition } from './uiMainCore.js';
-import { startBattleFlow } from './deck.js';
+import { showDungeonMenu, performFadeTransition } from '../services/uiMainCore.js';
+import { startBattleFlow } from '../services/deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { setupDialogueScreen } from './uiDialogue.js';
+import { setupDialogueScreen } from '../services/uiDialogue.js';
 
 export function initBattleDungeon() {
   playSound(SOUNDS.seClick);

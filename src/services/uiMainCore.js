@@ -9,20 +9,20 @@ import {
   switchScreen,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
-import { initCampaignMode } from './campaign.js';
+import { initCampaignMode } from '../game/campaign.js';
 import {
   createNewDeck,
   loadDeck,
   renderDeckEdit,
   startBattleFlow,
 } from './deck.js';
-import { initHighDifficultyEventMode, loadPlayerDeck } from './events.js';
-import { initTournamentMode } from './tournament.js';
+import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
+import { initTournamentMode } from '../game/tournament.js';
 
-import { prepareBattle } from './battle.js';
-import { GameState } from './gameState.js';
+import { prepareBattle } from '../game/battle.js';
+import { GameState } from '../state/gameState.js';
 import { setPlayerReadyOnly } from './multiplayer.js';
-import { clearStoryProgress, initStoryMode } from './story.js';
+import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
 

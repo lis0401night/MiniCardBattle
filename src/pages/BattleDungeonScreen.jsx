@@ -6,10 +6,10 @@ import {
   selectRentalDeck,
   selectRewardCard,
   startDungeonBattle,
-} from '../hooks/battleDungeon.js';
-import { GameState } from '../hooks/gameState.js';
-import { setupLongPress } from '../hooks/uiGallery.js';
-import { showConfirmModal } from '../hooks/uiModals.js';
+} from '../game/battleDungeon.js';
+import { GameState } from '../state/gameState.js';
+import { setupLongPress } from '../services/uiGallery.js';
+import { showConfirmModal } from '../services/uiModals.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';

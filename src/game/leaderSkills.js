@@ -27,14 +27,14 @@ import {
 } from './battle.js';
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   renderBoard,
   renderHand,
   updateCardDetail,
   updateDeckDisplay,
   updateSPOrbs,
-} from './uiBattle.js';
+} from '../services/uiBattle.js';
 
 // ==========================================
 // リーダースキルの実行ロジック

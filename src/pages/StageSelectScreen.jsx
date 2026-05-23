@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../hooks/gameState.js';
-import { confirmStageSelect, goBackFromStage } from '../hooks/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
+import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { STAGES } from '../utils/constants/stages.js';
 
 export default function StageSelectScreen() {

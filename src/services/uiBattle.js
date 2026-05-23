@@ -1,7 +1,7 @@
 import { SKILLS } from '../utils/constants/skills.js';
 import { getDialogue, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import { showAlertModal } from './uiModals.js';
 
 // ==========================================

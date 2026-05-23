@@ -20,9 +20,9 @@ import {
   VALID_PREMIUM_JPGS,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { prepareBattle } from './battle.js';
-import { saveCampaignProgress } from './campaign.js';
-import { GameState } from './gameState.js';
+import { prepareBattle } from '../game/battle.js';
+import { saveCampaignProgress } from '../game/campaign.js';
+import { GameState } from '../state/gameState.js';
 import {
   closePlayerNameModal,
   showDefenseMenu,

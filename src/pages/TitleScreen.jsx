@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { goToModeSelect } from '../hooks/uiMainCore.js';
+import { goToModeSelect } from '../services/uiMainCore.js';
 import { preloadAllGameResources } from '../utils/resourceLoader.js';
 import { unlockAudio } from '../utils/sounds.js';
 

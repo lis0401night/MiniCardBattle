@@ -30,11 +30,11 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           gameCore: [
-            './src/hooks/uiMainCore.js',
-            './src/hooks/uiDialogue.js',
-            './src/hooks/deck.js',
-            './src/hooks/battle.js',
-            './src/hooks/battleDungeon.js',
+            './src/services/uiMainCore.js',
+            './src/services/uiDialogue.js',
+            './src/services/deck.js',
+            './src/game/battle.js',
+            './src/game/battleDungeon.js',
             './src/utils/constants/battleDungeon.js',
             './src/utils/constants/battleDungeonCharacter.js',
           ],

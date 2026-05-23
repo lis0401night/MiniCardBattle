@@ -1,6 +1,6 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
-import { showEventMenu, startGameMode } from '../hooks/uiMainCore.js';
+import { showEventMenu, startGameMode } from '../services/uiMainCore.js';
 import { switchScreen } from '../utils/gameUtils.js';
 
 export default function TournamentMenuScreen() {

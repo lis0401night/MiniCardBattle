@@ -9,7 +9,7 @@ import {
   sleep,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   renderBoard,
   renderHand,
@@ -18,7 +18,7 @@ import {
   updateDeckDisplay,
   updateHPBar,
   updateSPOrbs,
-} from './uiBattle.js';
+} from '../services/uiBattle.js';
 
 /**
  * engine.js が生成したイベントログの配列を受け取り、

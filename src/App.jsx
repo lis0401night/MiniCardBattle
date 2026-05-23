@@ -53,13 +53,13 @@ import {
   returnToTitle,
   endPlayerTurn,
   executeSkillFromConfirm,
-} from './hooks/battle.js';
+} from './game/battle.js';
 import {
   showEnemySkillConfirm,
   showSkillConfirm,
   closeSkillConfirm,
-} from './hooks/uiBattle.js';
-import { loadDeck } from './hooks/deck.js';
+} from './services/uiBattle.js';
+import { loadDeck } from './services/deck.js';
 import { checkCollectionAchievements } from './utils/constants/achievements.js';
 import ContinueScreen from './pages/ContinueScreen.jsx';
 import EndingScreen from './pages/EndingScreen.jsx';
@@ -71,7 +71,7 @@ import {
   handleClaimAchievement,
   debugUnlockCards,
   debugUnlockAchievements,
-} from './hooks/uiGallery.js';
+} from './services/uiGallery.js';
 import {
   closeSyncDataModal,
   backupDataToXML,
@@ -79,13 +79,13 @@ import {
   reloadGame,
   closePlayerNameModal,
   closeEnemyDeckModal,
-} from './hooks/uiMainCore.js';
+} from './services/uiMainCore.js';
 import {
   showNextDialogue,
   executeContinue,
   executeGameOver,
-} from './hooks/uiDialogue.js';
-import { submitDefenseDeck } from './hooks/deck.js';
+} from './services/uiDialogue.js';
+import { submitDefenseDeck } from './services/deck.js';
 // レガシーUI用に関数をグローバルに公開
 window.returnToTitle = returnToTitle;
 window.showEnemySkillConfirm = showEnemySkillConfirm;

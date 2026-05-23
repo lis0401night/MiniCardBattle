@@ -8,8 +8,8 @@ import {
   showEventMenu,
   showExchangeScreen,
   startDefenseRegistration,
-} from '../hooks/uiMainCore.js';
-import { showPointAcquisitionModal } from '../hooks/uiModals.js';
+} from '../services/uiMainCore.js';
+import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 
 export default function DefenseMenuScreen() {

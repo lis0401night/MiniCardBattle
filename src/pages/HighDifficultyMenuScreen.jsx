@@ -1,6 +1,6 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
-import { showEventMenu, showHighDifficultyRules } from '../hooks/uiMainCore.js';
+import { showEventMenu, showHighDifficultyRules } from '../services/uiMainCore.js';
 
 export default function HighDifficultyMenuScreen() {
   const handleChallengeClick = () => {

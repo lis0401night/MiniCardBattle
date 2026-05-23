@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GameState } from '../../hooks/gameState.js';
+import { GameState } from '../../state/gameState.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { getCardImgUrl, playSound } from '../../utils/gameUtils.js';

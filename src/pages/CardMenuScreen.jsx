@@ -1,6 +1,6 @@
 import BackButton from '../components/BackButton.jsx';
-import { showCardList } from '../hooks/uiGallery.js';
-import { goToModeSelect, showDeckEditMenu } from '../hooks/uiMainCore.js';
+import { showCardList } from '../services/uiGallery.js';
+import { goToModeSelect, showDeckEditMenu } from '../services/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 export default function CardMenuScreen() {

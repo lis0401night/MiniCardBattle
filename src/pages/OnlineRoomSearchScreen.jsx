@@ -4,13 +4,13 @@ import {
   forceDeleteAllRooms,
   joinRoom,
   listenToLobbyRooms,
-} from '../hooks/multiplayer.js';
+} from '../services/multiplayer.js';
 import {
   closePlayerNameModal,
   showOnlineLobby,
   showOnlineMenu,
-} from '../hooks/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+} from '../services/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../hooks/gameState.js';
-import { goBackFromSelect, showCharDetail } from '../hooks/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
+import { goBackFromSelect, showCharDetail } from '../services/uiMainCore.js';
 import { achievementData } from '../utils/constants/achievements.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GameState } from '../../hooks/gameState.js';
+import { GameState } from '../../state/gameState.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
 
 export default function CutinOverlay() {

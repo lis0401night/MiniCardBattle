@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Sound Management (Web Audio API Optimized)
  */
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 
 // Web Audio API Context
 export let audioCtx = null;

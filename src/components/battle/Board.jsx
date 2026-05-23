@@ -1,8 +1,8 @@
 import Card from './Card.jsx';
-import { GameState } from '../../hooks/gameState.js';
+import { GameState } from '../../state/gameState.js';
 import { hasSkill } from '../../utils/gameUtils.js';
 import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
-import { showAlertModal } from '../../hooks/uiModals.js';
+import { showAlertModal } from '../../services/uiModals.js';
 
 export default function Board({
   playerBoard,

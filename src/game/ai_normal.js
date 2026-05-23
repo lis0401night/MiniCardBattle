@@ -12,7 +12,7 @@ import {
   calculateCombatPhase,
   isGraveKeeperActive,
 } from './engine.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 
 /**
  * 【号令（call）・変身（metamorph）のAIシミュレーション仕様】

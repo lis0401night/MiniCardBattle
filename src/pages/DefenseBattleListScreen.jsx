@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { startAttackBattle } from '../hooks/uiMainCore.js';
+import { startAttackBattle } from '../services/uiMainCore.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 

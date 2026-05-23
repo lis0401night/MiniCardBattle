@@ -4,7 +4,7 @@ import {
   showDefenseMenu,
   startGameMode,
   startHighDifficulty,
-} from '../hooks/uiMainCore.js';
+} from '../services/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES } from '../utils/sounds.js';

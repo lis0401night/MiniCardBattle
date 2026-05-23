@@ -1,5 +1,5 @@
 import { audioCtx, voiceBuffers, loadAndDecodeAudio } from '../sounds.js';
-import { GameState } from '../../hooks/gameState.js';
+import { GameState } from '../../state/gameState.js';
 
 /**
  * Mini Card Battle - Voice Categories

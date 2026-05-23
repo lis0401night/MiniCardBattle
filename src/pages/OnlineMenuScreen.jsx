@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
-import { createRoom } from '../hooks/multiplayer.js';
+import { createRoom } from '../services/multiplayer.js';
 import {
   closePlayerNameModal,
   goToModeSelect,
   showOnlineLobby,
   showOnlineRules,
   showOnlineSearch,
-} from '../hooks/uiMainCore.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+} from '../services/uiMainCore.js';
+import { showAlertModal } from '../services/uiModals.js';
 
 /**
  * オンライン対戦メニュー画面

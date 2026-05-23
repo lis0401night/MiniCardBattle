@@ -1,5 +1,5 @@
-import { saveDeck } from '../../hooks/deck.js';
-import { GameState } from '../../hooks/gameState.js';
+import { saveDeck } from '../../services/deck.js';
+import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from './cards.js';
 import { INITIAL_PLAYER_CARD } from './initial_cards.js';
 import { ownedPlaymats } from './playmats.js';

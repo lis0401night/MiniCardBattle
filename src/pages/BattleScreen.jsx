@@ -3,16 +3,16 @@ import {
   dispatchBattleAction,
   endPlayerTurn,
   returnToTitle,
-} from '../hooks/battle.js';
-import { GameState } from '../hooks/gameState.js';
+} from '../game/battle.js';
+import { GameState } from '../state/gameState.js';
 import {
   setSummonAnimationHook,
   setUpdateBattleUIHook,
   setUpdateCardDetailHook,
   showEnemySkillConfirm,
   showSkillConfirm,
-} from '../hooks/uiBattle.js';
-import { showConfirmModal } from '../hooks/uiModals.js';
+} from '../services/uiBattle.js';
+import { showConfirmModal } from '../services/uiModals.js';
 import {
   getCardImgUrl,
   hasSkill,
@@ -26,7 +26,7 @@ import EnemyArea from '../components/battle/EnemyArea.jsx';
 import Hand from '../components/battle/Hand.jsx';
 import PlayerArea from '../components/battle/PlayerArea.jsx';
 import TurnOrderOverlay from '../components/battle/TurnOrderOverlay.jsx';
-import { openCardPreview } from '../hooks/uiGallery.js';
+import { openCardPreview } from '../services/uiGallery.js';
 import {
   isTutorialMode,
   filterHandCardClick,
@@ -39,7 +39,7 @@ import {
   notifyTutorialHandLongPress,
   filterFinishHandSelection,
   filterFinishEnemyTargetSelection,
-} from '../hooks/tutorialEngine.js';
+} from '../game/tutorialEngine.js';
 
 export default function BattleScreen() {
   const [_renderVersion, setRenderVersion] = useState(0);

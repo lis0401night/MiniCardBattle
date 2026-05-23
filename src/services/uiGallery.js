@@ -13,7 +13,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { loadDeck, saveDeck } from './deck.js';
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   incrementRulesClickCount,
   resetRulesClickCount,

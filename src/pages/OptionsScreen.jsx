@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   handleOptionsTitleClick,
   reloadGame,
   resetGameData,
   showSyncDataModal,
   updateVolume,
-} from '../hooks/uiMainCore.js';
+} from '../services/uiMainCore.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 

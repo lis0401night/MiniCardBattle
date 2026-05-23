@@ -1,8 +1,8 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
-import { goToModeSelect, startGameMode } from '../hooks/uiMainCore.js';
-import { showConfirmModal } from '../hooks/uiModals.js';
+import { goToModeSelect, startGameMode } from '../services/uiMainCore.js';
+import { showConfirmModal } from '../services/uiModals.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 /**

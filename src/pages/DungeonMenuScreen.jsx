@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
-import { initBattleDungeon } from '../hooks/battleDungeon.js';
-import { GameState } from '../hooks/gameState.js';
-import { showDungeonRules, showEventMenu } from '../hooks/uiMainCore.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+import { initBattleDungeon } from '../game/battleDungeon.js';
+import { GameState } from '../state/gameState.js';
+import { showDungeonRules, showEventMenu } from '../services/uiMainCore.js';
+import { showAlertModal } from '../services/uiModals.js';
 
 export default function DungeonMenuScreen() {
   useEffect(() => {

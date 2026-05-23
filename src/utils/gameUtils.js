@@ -6,7 +6,7 @@ import {
   unlockAudio,
   loadAndDecodeAudio,
 } from './sounds.js';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
 import { getSkinImage } from './constants/characters.js';
 import { CARD_MASTER } from './constants/cards.js';

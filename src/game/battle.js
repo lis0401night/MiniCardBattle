@@ -28,7 +28,7 @@ import {
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
-import { generateDeck } from './deck.js';
+import { generateDeck } from '../services/deck.js';
 import {
   applyActiveSkillLogic,
   applySingleCombat,
@@ -37,7 +37,7 @@ import {
 import { playEvents } from './eventRenderer.js';
 import { simulateTournamentRound } from './tournament.js';
 
-import { GameState } from './gameState.js';
+import { GameState } from '../state/gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import {
   cachedRoomData,
@@ -46,7 +46,7 @@ import {
   listenToRoomActions,
   sendOnlineAction,
   setPlayerReadyOnly,
-} from './multiplayer.js';
+} from '../services/multiplayer.js';
 import {
   resolveActiveSkillEffect,
   triggerStartTurnPassive,
@@ -72,10 +72,10 @@ import {
   updateDeckDisplay,
   updateHPBar,
   updateSPOrbs,
-} from './uiBattle.js';
-import { setupDialogueScreen } from './uiDialogue.js';
-import { showDefenseBattleList } from './uiMainCore.js';
-import { showAlertModal, showConfirmModal } from './uiModals.js';
+} from '../services/uiBattle.js';
+import { setupDialogueScreen } from '../services/uiDialogue.js';
+import { showDefenseBattleList } from '../services/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 
 export let pendingChoiceResolver = null;
 

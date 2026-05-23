@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { GameState } from '../hooks/gameState.js';
-import { executeContinue, executeGameOver } from '../hooks/uiDialogue.js';
+import { GameState } from '../state/gameState.js';
+import { executeContinue, executeGameOver } from '../services/uiDialogue.js';
 
 export default function ContinueScreen() {
   const [count, setCount] = useState(9);

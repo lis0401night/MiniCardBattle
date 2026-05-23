@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
-import { loadDeck, saveDeck } from '../hooks/deck.js';
-import { GameState } from '../hooks/gameState.js';
-import { openCardPreview, setRenderCardListHook } from '../hooks/uiGallery.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+import { loadDeck, saveDeck } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
+import { openCardPreview, setRenderCardListHook } from '../services/uiGallery.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   getCardImgUrl,

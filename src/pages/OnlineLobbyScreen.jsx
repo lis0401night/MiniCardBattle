@@ -10,13 +10,13 @@ import {
   cachedRoomData,
   listenToRoom,
   getCurrentRoomId,
-} from '../hooks/multiplayer.js';
-import { showAlertModal } from '../hooks/uiModals.js';
+} from '../services/multiplayer.js';
+import { showAlertModal } from '../services/uiModals.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { GameState } from '../hooks/gameState.js';
-import { prepareBattle } from '../hooks/battle.js';
-import { showOnlineMenu } from '../hooks/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
+import { prepareBattle } from '../game/battle.js';
+import { showOnlineMenu } from '../services/uiMainCore.js';
 
 export default function OnlineLobbyScreen() {
   const [roomData, setRoomData] = useState(cachedRoomData || null);

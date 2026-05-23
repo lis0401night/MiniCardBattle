@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import {
   setRenderExchangeHook,
   showExchangeDetail,
-} from '../hooks/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../hooks/uiModals.js';
+} from '../services/uiMainCore.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
 import {

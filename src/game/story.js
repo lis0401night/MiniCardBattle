@@ -1,13 +1,13 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { switchScreen } from '../utils/gameUtils.js';
-import { startBattleFlow, loadDeck } from './deck.js';
-import { GameState } from './gameState.js';
+import { startBattleFlow, loadDeck } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
 import {
   startNextBattleSequence,
   setupDialogueScreen,
   showContinueScreen,
-} from './uiDialogue.js';
-import { performFadeTransition } from './uiMainCore.js';
+} from '../services/uiDialogue.js';
+import { performFadeTransition } from '../services/uiMainCore.js';
 
 // ==========================================
 // ストーリーモード進行管理 (story.js)

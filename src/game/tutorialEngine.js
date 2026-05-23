@@ -16,8 +16,8 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, sleep, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle.js';
-import { GameState } from './gameState.js';
-import { showAlertModal, showConfirmModal } from './uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 
 // ============================
 // チュートリアルステップ定義

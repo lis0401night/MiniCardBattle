@@ -1,4 +1,4 @@
-import { GameState } from '../hooks/gameState.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
@@ -38,7 +38,7 @@ import {
 } from './battle.js';
 import { applyActiveSkillLogic } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { getIsHost } from './multiplayer.js';
+import { getIsHost } from '../services/multiplayer.js';
 import { showMessage, hideMessage } from './tutorialEngine.js';
 import {
   playSummonAnimation,
@@ -47,7 +47,7 @@ import {
   showSpeechBubble,
   updateDeckDisplay,
   updateHPBar,
-} from './uiBattle.js';
+} from '../services/uiBattle.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
