@@ -3320,9 +3320,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       ? Number(dC_counter.currentPower ?? dC_counter.power ?? 0) || 0
       : 0;
 
-  // 貫通計算用に防御側の元パワーを保持しておく（防御の有無に関わらずその時点のパワーを参照）
-  let originalTargetPower = originalTarget
-    ? Number(originalTarget.currentPower ?? originalTarget.power ?? 0) || 0
+  // 貫通計算用に、実際にダメージを受けるカードの元パワーを保持しておく（肩代わりが発生した場合は肩代わり先を参照）
+  let originalTargetPower = dC
+    ? Number(dC.currentPower ?? dC.power ?? 0) || 0
     : 0;
 
   // 反撃ダメージを受けるカード（攻撃者自身、またはその隣の守護）

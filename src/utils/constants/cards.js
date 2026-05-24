@@ -519,7 +519,7 @@ export const CARD_MASTER = [
     name: 'クロコダイル',
     rarity: 1,
     power: 6,
-    skills: [{ id: 'maintain' }],
+    skills: [{ id: 'standby', value: 1 }],
     voiceCategory: 'beast',
     flavor:
       '太古の昔より大河の主として君臨し続ける巨大な爬虫類。その強靭なる顎は全てを噛み砕き、圧倒的な存在感は全てを威圧する。',
@@ -732,7 +732,7 @@ export const CARD_MASTER = [
     id: 'minotaur',
     name: 'ミノタウロスの傭兵',
     rarity: 2,
-    power: 7,
+    power: 6,
     skills: [{ id: 'choice', value: 1 }, { id: 'cleave' }],
     choices: [
       { id: 'convert', value: 2 },
@@ -788,8 +788,8 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 6,
     skills: [
-      { id: 'standby', value: 1 },
-      { id: 'stealth', value: 1 },
+      { id: 'standby', value: 2 },
+      { id: 'stealth', value: 2 },
     ],
     voiceCategory: 'sea',
     flavor:
@@ -1189,7 +1189,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 4,
     skills: [
-      { id: 'maintain' },
+      { id: 'convert', value: 1 },
       { id: 'sturdy' },
       { id: 'intercept', value: 2 },
     ],
@@ -1818,7 +1818,6 @@ export const CARD_MASTER = [
     power: 8,
     skills: [
       { id: 'takeover' },
-      { id: 'maintain' },
       { id: 'standby', value: 2 },
       { id: 'choice', value: 1 },
     ],

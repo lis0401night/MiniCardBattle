@@ -347,6 +347,22 @@ export async function playEvents(events) {
         playSound(SOUNDS.sePlace);
 
         let voiceCat = ev.card ? ev.card.voiceCategory : null;
+        // 「号令」などの効果でカードを装備配置した場合（source: 'equip'）に、
+        // ボイスが装備される側の元のカードになってしまうバグを防ぐため、
+        // アタッチされた装備カード側のボイスカテゴリを優先して参照する
+        if (
+          ev.source === 'equip' &&
+          ev.card &&
+          ev.card.equippedCards &&
+          ev.card.equippedCards.length > 0
+        ) {
+          const lastEquip =
+            ev.card.equippedCards[ev.card.equippedCards.length - 1];
+          if (lastEquip && lastEquip.voiceCategory) {
+            voiceCat = lastEquip.voiceCategory;
+          }
+        }
+
         if (!voiceCat && ev.card) {
           const baseId = ev.card.baseId || ev.card.id;
           const cMaster = CARD_MASTER.find(

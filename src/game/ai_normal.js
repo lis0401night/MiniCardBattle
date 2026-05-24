@@ -13,6 +13,13 @@ import {
   isGraveKeeperActive,
 } from './engine.js';
 import { GameState } from '../state/gameState.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
+
+// 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）
+function hasActiveSkill(c) {
+  if (!c) return false;
+  return ACTIVE_SKILLS.some((s) => hasSkill(c, s));
+}
 
 /**
  * 【号令（call）・変身（metamorph）のAIシミュレーション仕様】
@@ -577,6 +584,11 @@ export function processActionSequence(
         simState.enemyBoard[lIdx] = playedCard;
       }
 
+      // 出現時スキルを持つ場合は即座に保護フラグを立てる（シミュレーション時も同様に一時的な破壊を防ぐ）
+      if (hasActiveSkill(playedCard)) {
+        playedCard.isSkillResolving = true;
+      }
+
       let skills = [];
       let modifiedSkillsForCard = [];
       if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
@@ -706,6 +718,11 @@ export function processActionSequence(
           actionQueue.push(...simState._actionQueue);
           delete simState._actionQueue;
         }
+      }
+
+      // スキル解決が終わったため、保護フラグを解除する
+      if (playedCard) {
+        playedCard.isSkillResolving = false;
       }
 
       if (
