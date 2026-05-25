@@ -630,7 +630,7 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -650,7 +650,7 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -694,7 +694,7 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -715,7 +715,7 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -748,7 +748,7 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
