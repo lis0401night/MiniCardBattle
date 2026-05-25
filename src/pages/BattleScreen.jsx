@@ -326,12 +326,18 @@ export default function BattleScreen() {
   };
 
   const handleHandCardClick = (idx) => {
-    if (GameState.isProcessing && !GameState.isDiscardingMode) return;
-    if (
-      GameState.battlePhase !== 'MULLIGAN' &&
-      (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT')
-    )
-      return;
+    // 【重要システム処理】手札破棄モード（isDiscardingMode）中は、
+    // システムが明示的にプレイヤーへ手札選択を要求しているため、
+    // ターン制限（敵ターン中である等）や処理中フラグ（isProcessing）などのすべての制限を完全にバイパスしてクリックを許可する。
+    if (!GameState.isDiscardingMode) {
+      if (GameState.isProcessing) return;
+      if (
+        GameState.battlePhase !== 'MULLIGAN' &&
+        (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT')
+      ) {
+        return;
+      }
+    }
 
     // チュートリアル: 手札クリックのフィルタリング
     if (isTutorialMode() && filterHandCardClick(idx)) return;
