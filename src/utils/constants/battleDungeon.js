@@ -66,7 +66,7 @@ export const getRentalDeckOptions = () => {
 
     const addCharDecks = (difficultyKey, label) => {
       const leaderIds = Object.keys(ENEMY_DECKS).filter(
-        (id) => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan'
+        (id) => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan' && id !== 'void' && id !== 'succubus'
       );
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];
@@ -196,7 +196,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
 // 指定したキャラクターのボス用敵を階層に応じて生成する
 export const generateCharacterBossEnemy = (floorNum) => {
   const leaderIds = Object.keys(ENEMY_DECKS).filter(
-    (id) => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan'
+    (id) => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan' && id !== 'void' && id !== 'succubus'
   );
   const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
   const char = CHARACTERS[bossId];

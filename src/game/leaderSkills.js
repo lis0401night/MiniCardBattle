@@ -866,6 +866,212 @@ export async function executeLeaderSkillAction(
       }
     }
     renderHand();
+  } else if (action === 'void_purge') {
+    const h = isBlue ? GameState.playerHand : GameState.enemyHand;
+    const opH = isBlue ? GameState.enemyHand : GameState.playerHand;
+    const opId = isBlue ? 'red' : 'blue';
+
+    // 1. 自分の手札を3枚捨てる
+    let myDiscarded = 0;
+    const myCount = Math.min(3, h.length);
+    if (myCount > 0) {
+      const selectedIndices = await waitPlayerHandSelection(myCount, owner, true, `手札を${myCount}枚選択して捨ててください`);
+      if (selectedIndices && selectedIndices.length > 0) {
+        selectedIndices.sort((a, b) => b - a);
+        for (let i of selectedIndices) {
+          const card = h.splice(i, 1)[0];
+          await discardCard(owner, card);
+          myDiscarded++;
+        }
+      }
+    }
+
+    // 2. 相手の手札を3枚捨てる
+    let opDiscarded = 0;
+    const opCount = Math.min(3, opH.length);
+    if (opCount > 0) {
+      const selectedIndices = await waitPlayerHandSelection(opCount, opId, true, `手札を${opCount}枚選択して捨ててください`);
+      if (selectedIndices && selectedIndices.length > 0) {
+        selectedIndices.sort((a, b) => b - a);
+        for (let i of selectedIndices) {
+          const card = opH.splice(i, 1)[0];
+          await discardCard(opId, card, undefined, false);
+          opDiscarded++;
+        }
+      }
+    }
+
+    // 3. 同数の虚空を加える
+    const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+      id: 'token_void',
+      name: '虚空',
+      power: 0,
+    };
+
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    for (let i = 0; i < myDiscarded; i++) {
+      const newToken = {
+        ...voidTpl,
+        uid: `${owner}_void_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+        owner: owner,
+        baseId: 'token_void',
+        isToken: true,
+        currentPower: voidTpl.power ?? 0,
+        imgUrl: owner === 'blue' ? getCardImgUrl(voidTpl) : '',
+        rarity: 1,
+      };
+      h.push(newToken);
+    }
+    for (let i = 0; i < opDiscarded; i++) {
+      const newToken = {
+        ...voidTpl,
+        uid: `${opId}_void_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+        owner: opId,
+        baseId: 'token_void',
+        isToken: true,
+        currentPower: voidTpl.power ?? 0,
+        imgUrl: opId === 'blue' ? getCardImgUrl(voidTpl) : '',
+        rarity: 1,
+      };
+      opH.push(newToken);
+    }
+
+    updateDeckDisplay('blue');
+    updateDeckDisplay('red');
+    renderHand();
+  } else if (action === 'viola_domination') {
+    const oppBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
+    const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+    const oppOwner = isBlue ? 'red' : 'blue';
+    const mySealedLanes = isBlue ? GameState.playerSealedLanes : GameState.enemySealedLanes;
+
+    const validOppLanes = [];
+    for (let j = 0; j < 3; j++) {
+      if (oppBoard[j] && mySealedLanes[j] === 0) {
+        validOppLanes.push(j);
+      }
+    }
+
+    if (validOppLanes.length > 0) {
+      let selectedOppLane = -1;
+
+      if (owner === 'red') {
+        if (tokenLanes && tokenLanes.length > 0) {
+          selectedOppLane = tokenLanes[0];
+        } else if (GameState.aiDecision && GameState.aiDecision.tokenLanes && GameState.aiDecision.tokenLanes.length > 0) {
+          selectedOppLane = GameState.aiDecision.tokenLanes.shift();
+        } else {
+          const sorted = [...validOppLanes].sort((a, b) => (oppBoard[b].currentPower ?? oppBoard[b].power ?? 0) - (oppBoard[a].currentPower ?? oppBoard[a].power ?? 0));
+          selectedOppLane = sorted[0];
+        }
+      } else {
+        selectedOppLane = await new Promise((resolve) => {
+          waitPlayerEnemyLaneSelection(
+            1,
+            owner,
+            true,
+            '相手のカードを1枚選んでください',
+            false
+          ).then((lanes) => {
+            if (lanes && lanes.length > 0) resolve(lanes[0]);
+            else resolve(-1);
+          });
+
+          const originalClick = window.handleEnemyLaneClick;
+          window.handleEnemyLaneClick = (laneIndex) => {
+            const card = oppBoard[laneIndex];
+            if (!card || mySealedLanes[laneIndex] === 1) {
+              return;
+            }
+            if (originalClick) originalClick(laneIndex);
+          };
+        });
+      }
+
+      if (selectedOppLane !== -1 && oppBoard[selectedOppLane]) {
+        const selectedCard = oppBoard[selectedOppLane];
+        const targetLane = selectedOppLane;
+
+        oppBoard[selectedOppLane] = null;
+        updateDeckDisplay(oppOwner);
+
+        selectedCard.puppetOriginalOwner = selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
+        if (selectedCard.equippedCards && selectedCard.equippedCards.length > 0) {
+          selectedCard.equippedCards.forEach((eqCard) => {
+            eqCard.puppetOriginalOwner = eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
+          });
+        }
+
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+
+        if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
+          const targetCard = board[targetLane];
+          targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+          targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+
+          if (!targetCard.skills) {
+            targetCard.skills = targetCard.skill && targetCard.skill !== 'none'
+              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+              : [];
+            targetCard.skill = 'none';
+          }
+          const equipSkills = [];
+          if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+            equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+          }
+          if (selectedCard.skills) {
+            selectedCard.skills.forEach((s) => {
+              if (s.id !== 'equip') equipSkills.push(s);
+            });
+          }
+          mergeCardSkills(targetCard, equipSkills);
+          targetCard.equippedCards = targetCard.equippedCards || [];
+          targetCard.equippedCards.push(selectedCard);
+
+          if (selectedCard?.voiceCategory) {
+            playCardVoice(selectedCard.voiceCategory, 'play');
+          }
+          playSound(SOUNDS.sePlace);
+          renderBoard();
+          events.push({
+            type: 'power_change',
+            side: owner,
+            lane: targetLane,
+            amount: selectedCard.power,
+            source: 'equip',
+          });
+        } else {
+          const existingCard = board[targetLane];
+          if (existingCard) {
+            await discardCard(owner, existingCard, targetLane, false);
+          }
+
+          const movedCard = {
+            ...selectedCard,
+            owner: owner,
+            skillTriggered: true,
+            stunTurns: selectedCard.stunTurns || 0,
+            stunAppliedThisTurn: selectedCard.stunAppliedThisTurn || false,
+          };
+          board[targetLane] = movedCard;
+
+          if (movedCard?.voiceCategory) {
+            playCardVoice(movedCard.voiceCategory, 'play');
+          }
+          playSound(SOUNDS.sePlace);
+          renderBoard();
+
+          events.push({
+            type: 'summon_card',
+            side: owner,
+            lane: targetLane,
+            card: JSON.parse(JSON.stringify(movedCard)),
+            source: 'viola_domination',
+          });
+        }
+      }
+    }
   }
 
   // Engineの共通ロジック呼び出し
@@ -897,6 +1103,8 @@ export async function executeLeaderSkillAction(
     action !== 'devilhunter_resurrect' &&
     action !== 'abyss_ritual' &&
     action !== 'otherworld_gate' &&
+    action !== 'void_purge' &&
+    action !== 'viola_domination' &&
     action !== 'overdrive' &&
     action !== 'dungeon_summon_leader' &&
     action !== 'world_reconstruct'

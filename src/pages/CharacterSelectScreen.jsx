@@ -20,7 +20,7 @@ export default function CharacterSelectScreen() {
       achievementData.stats?.storyClears || {}
     ).some((v) => v >= 1);
     return Object.values(charsObj).filter((c) => {
-      if (c.id === 'satan') return isEnemySelect && hasStoryClear;
+      if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') return isEnemySelect;
       if (c.id.startsWith('campaign_')) return false;
       return true;
     });
@@ -70,7 +70,7 @@ export default function CharacterSelectScreen() {
         achievementData.stats?.storyClears || {}
       ).some((v) => v >= 1);
       const newList = Object.values(charsObj).filter((c) => {
-        if (c.id === 'satan') return newIsEnemySelect && newHasStoryClear;
+        if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') return newIsEnemySelect;
         if (c.id.startsWith('campaign_')) return false;
         return true;
       });

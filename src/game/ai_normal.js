@@ -359,6 +359,79 @@ export function processActionSequence(
       triggerSkills = false;
       if (playedCard) playedCard.skillTriggered = true;
       simState.enemyDiscard[resIdx] = null;
+    } else if (action.type === 'dominate') {
+      const oppL = action.oppLaneIdx;
+      const myL = action.myLaneIdx;
+      if (oppL !== -1 && myL !== -1) {
+        const oppBoard = simState.playerBoard; // AI(自分)から見た相手は playerBoard
+        const board = simState.enemyBoard; // AI(自分)のボード
+
+        if (oppBoard[oppL]) {
+          const selectedCard = cloneCard(oppBoard[oppL]);
+          oppBoard[oppL] = null;
+
+          selectedCard.puppetOriginalOwner =
+            selectedCard.puppetOriginalOwner || selectedCard.owner || 'blue';
+          if (
+            selectedCard.equippedCards &&
+            selectedCard.equippedCards.length > 0
+          ) {
+            selectedCard.equippedCards.forEach((eqCard) => {
+              eqCard.puppetOriginalOwner =
+                eqCard.puppetOriginalOwner || eqCard.owner || 'blue';
+            });
+          }
+
+          if (
+            board[myL] &&
+            (hasSkill(selectedCard, 'equip') ||
+              hasSkill(board[myL], 'arm_self'))
+          ) {
+            const targetCard = board[myL];
+            targetCard.basePower =
+              (targetCard.basePower || 0) + (selectedCard.power || 0);
+            targetCard.currentPower =
+              (targetCard.currentPower || 0) + (selectedCard.power || 0);
+
+            if (!targetCard.skills) {
+              targetCard.skills =
+                targetCard.skill && targetCard.skill !== 'none'
+                  ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+                  : [];
+              targetCard.skill = 'none';
+            }
+            const equipSkills = [];
+            if (
+              selectedCard.skill &&
+              selectedCard.skill !== 'none' &&
+              selectedCard.skill !== 'equip'
+            ) {
+              equipSkills.push({
+                id: selectedCard.skill,
+                value: selectedCard.skillValue,
+              });
+            }
+            if (selectedCard.skills) {
+              selectedCard.skills.forEach((s) => {
+                if (s.id !== 'equip') equipSkills.push(s);
+              });
+            }
+            mergeCardSkills(targetCard, equipSkills);
+
+            targetCard.equippedCards = targetCard.equippedCards || [];
+            targetCard.equippedCards.push(selectedCard);
+          } else {
+            board[myL] = {
+              ...selectedCard,
+              owner: 'red',
+              skillTriggered: true,
+              stunTurns: selectedCard.stunTurns || 0,
+              stunAppliedThisTurn: selectedCard.stunAppliedThisTurn || false,
+            };
+          }
+        }
+      }
+      continue;
     } else if (action.type === 'salvage') {
       if (isGraveKeeperActive(simState)) return null;
       let resIdx = -1;
@@ -1614,6 +1687,11 @@ export function getBestSimulatedMove() {
         for (let e of enemyOcc) for (let m of myAvail) combs.push([e, m]);
         tokenLanePatterns = combs;
       } else tokenLanePatterns = [null];
+    } else if (action === 'void_purge') {
+      tokenLanePatterns = [null];
+    } else if (action === 'viola_domination') {
+      const avail = [0, 1, 2].filter((l) => opBoard[l] !== null && mySealedLanes[l] === 0);
+      tokenLanePatterns = avail.length > 0 ? avail.map((l) => [l]) : [null];
     }
 
     for (let i = 0; i < hand.length; i++) {
@@ -2434,6 +2512,60 @@ export function evaluateAdhocTokenLanes(
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
       }
+    } else if (sk.id === 'dominate') {
+      const maxP = sk.value || 0;
+      const oppBoard = GameState.playerBoard; // AI(自分)から見た相手は playerBoard
+      let validOppLanes = [];
+      for (let j = 0; j < 3; j++) {
+        if (
+          oppBoard[j] &&
+          (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxP
+        ) {
+          validOppLanes.push(j);
+        }
+      }
+
+      // 相手の対象レーンのみを展開（配置レーンは相手の対象レーン i と同じ正面対面レーンに固定）
+      for (let i of validOppLanes) {
+        const myL = i; // 奪うカードの正面（対面する同じレーン番号）！
+        if (sealedLanes[myL] === 1) continue;
+        let domNode = {
+          type: 'dominate',
+          oppLaneIdx: i,
+          myLaneIdx: myL,
+          maxP: maxP,
+        };
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscardedFromHand,
+          laneIdx
+        );
+        for (let nb of nextBranches) {
+          results.push([domNode, ...nb]);
+        }
+      }
+
+      // キャンセル（支配しない）の分岐
+      let cancelNode = {
+        type: 'dominate',
+        oppLaneIdx: -1,
+        myLaneIdx: -1,
+        maxP: maxP,
+      };
+      let cancelBranches = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscardedFromHand,
+        laneIdx
+      );
+      for (let nb of cancelBranches) {
+        results.push([cancelNode, ...nb]);
+      }
     } else if (
       sk.id === 'convert' ||
       sk.id === 'draw' ||
@@ -2982,6 +3114,10 @@ export function evaluateAdhocTokenLanes(
       } else if (act.type === 'resurrect') {
         if (act.laneIdx !== undefined && act.laneIdx !== -1) {
           GameState.aiDecision.cardTokenLanes.unshift(act.laneIdx);
+        }
+      } else if (act.type === 'dominate') {
+        if (act.oppLaneIdx !== undefined && act.oppLaneIdx !== -1) {
+          GameState.aiDecision.cardTokenLanes.unshift(act.oppLaneIdx);
         }
       }
     });

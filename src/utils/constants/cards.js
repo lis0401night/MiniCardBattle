@@ -170,14 +170,13 @@ export const CARD_MASTER = [
       '空飛ぶ巨大な飛行船。その甲板には、忘れ去られた過去の遺物が山のように積まれている。',
   },
   {
-    id: 'skeleton',
-    name: 'スケルトン',
+    id: 'hedgehog',
+    name: '威嚇する針鼠',
     rarity: 1,
     power: 3,
-    skills: [{ id: 'split', value: 3, summonId: 'token_skeleton' }],
-    voiceCategory: 'undead',
-    flavor:
-      '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
+    skills: [{ id: 'intercept', value: 2 }],
+    voiceCategory: 'machine_old',
+    flavor: 'その不機嫌そうな丸いフォルムに騙されて手を伸ばした者は、皆一様に手を血に染めて後悔することになる。',
   },
   {
     id: 'bandit',
@@ -209,15 +208,6 @@ export const CARD_MASTER = [
     flavor:
       '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。',
   },
-  // {
-  //   id: 'warden',
-  //   name: '監獄長',
-  //   rarity: 1,
-  //   power: 6,
-  //   skills: [{ id: 'takeover' }, { id: 'bind', value: 2 }],
-  //   voiceCategory: 'human_male_warrior',
-  //   flavor: '罪人を決して逃さぬ鉄壁の番人。',
-  // },
   {
     id: 'mechanic',
     name: 'ダクト街の技師',
@@ -525,17 +515,86 @@ export const CARD_MASTER = [
       '太古の昔より大河の主として君臨し続ける巨大な爬虫類。その強靭なる顎は全てを噛み砕き、圧倒的な存在感は全てを威圧する。',
   },
   {
-    id: 'fly',
-    name: '死蠅の大群',
+    id: 'atronach',
+    name: '雷のゴーレム',
+    rarity: 1,
+    power: 7,
+    skills: [{ id: 'explode', value: 5 }],
+    voiceCategory: 'stone',
+    flavor:
+      '高濃度の魔力で形成された雷の精霊。死の間際に激しい放電を引き起こす。',
+  },
+  {
+    id: 'skeleton',
+    name: 'スケルトン・ソルジャー',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'split', value: 3, summonId: 'token_skeleton' }],
+    voiceCategory: 'undead',
+    flavor:
+      '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
+  },
+  {
+    id: 'largemouth',
+    name: '肉裂き大口',
+    rarity: 1,
+    power: 6,
+    skills: [
+      { id: 'sacrifice', value: 2 },
+    ],
+    voiceCategory: 'monster',
+    flavor: '生者の絶望と血の匂いだけが、底なしの飢えを満たす道標となる',
+  },
+  {
+    id: 'voidcleric',
+    name: 'ホロウ・クレリック',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'heal_void', value: 2 }],
+    voiceCategory: 'stone',
+    flavor: '音も、痛みも、感情すら存在しない。祈りの代わりに紡がれる静寂が、兵士たちの傷を無感覚のまま塞いでいく。',
+  },
+  {
+    id: 'voidsniper',
+    name: 'ホロウ・スナイパー',
+    rarity: 1,
+    power: 2,
+    skills: [{ id: 'snipe_void', value: 3 }],
+    voiceCategory: 'stone',
+    flavor: '銃声も、閃光も存在しない。放たれた虚無の弾丸は、標的の存在そのものを空間ごと精確にえぐり取る。',
+  },
+  {
+    id: 'voidcommander',
+    name: 'ホロウ・コマンダー',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'support_void', value: 2 }],
+    voiceCategory: 'stone',
+    flavor: '言葉による命令は不要。虚空を介した冷徹な意思の伝達により、名もなき軍勢は完璧な連携で獲物を蹂躙する。',
+  },
+  {
+    id: 'minion',
+    name: '魔王のしもべ',
+    rarity: 1,
+    power: 2,
+    skills: [
+      { id: 'sacrifice', value: 1 },
+      { id: 'awake', value: 7, summonId: 'token_daemon' },
+    ],
+    voiceCategory: 'human_male_old',
+    flavor: '歪んだ忠誠を誓う狂信者。彼の儀式は、強大な闇を招く呼び水となる。',
+  },
+  {
+    id: 'siren',
+    name: '幻惑の歌姫',
     rarity: 1,
     power: 1,
     skills: [
-      { id: 'growth', value: -1 },
-      { id: 'clone', value: 2 },
+      { id: 'dominate', value: 3 },
     ],
-    voiceCategory: 'insect',
+    voiceCategory: 'human_female_sexy',
     flavor:
-      '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する',
+      '美しき旋律は嵐を呼び、青き翼は絶望を連れてくる。魅入られた者たちは己の意志を永遠に手放す。',
   },
   {
     id: 'goat',
@@ -551,17 +610,40 @@ export const CARD_MASTER = [
       '不吉な儀式の供物として捧げられる山羊。その命が尽きる時、主には強大な魔力が還元される。',
   },
   {
+    id: 'hand',
+    name: '悪魔の手',
+    rarity: 1,
+    power: 2,
+    skills: [{ id: 'cull' }],
+    voiceCategory: 'stone',
+    flavor:
+      '虚空を裂いて現れる、魔界より召喚されし巨大な腕。いかなる堅牢な障害も無慈悲に握り潰す。',
+  },
+  {
     id: 'devil',
     name: '地獄の放火魔',
     rarity: 1,
     power: 2,
     skills: [
-      { id: 'spread', value: 3 },
       { id: 'explode', value: 3 },
+      { id: 'spread', value: 3 },
     ],
     voiceCategory: 'devil',
     flavor:
       '背中のタンクには地獄の業火が詰まっている。初めて武器を与えられた小悪魔は、その焦熱を振り撒くことに至上の喜びを感じていた。',
+  },
+  {
+    id: 'fly',
+    name: '死蠅の大群',
+    rarity: 1,
+    power: 1,
+    skills: [
+      { id: 'growth', value: -1 },
+      { id: 'clone', value: 2 },
+    ],
+    voiceCategory: 'insect',
+    flavor:
+      '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する',
   },
   {
     id: 'cyberman',
@@ -577,9 +659,9 @@ export const CARD_MASTER = [
     id: 'mech',
     name: '略奪者のキメラ・メック',
     rarity: 2,
-    power: 4,
+    power: 3,
     skills: [{ id: 'choice', value: 1 }],
-    choices: [{ id: 'sturdy' }, { id: 'double_strike' }],
+    choices: [{ id: 'sturdy' }, { id: 'artillery', value: 1 }],
     voiceCategory: 'machine_old',
     flavor:
       'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、二つとして同じ機体は存在しない。',
@@ -1250,6 +1332,91 @@ export const CARD_MASTER = [
       '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。',
   },
   {
+    id: 'daemonarmor',
+    name: '悪魔の鎧',
+    rarity: 2,
+    power: 5,
+    skills: [{ id: 'equip' }, { id: 'sacrifice', value: 2 }, { id: 'deadly' }],
+    voiceCategory: 'sword',
+    flavor:
+      '真紅の血肉を喰らい、絶大なる力を対象に宿す呪われた甲冑。身に着けた者は代償として自らの生命を削り続ける。',
+  },
+  {
+    id: 'killermachine',
+    name: '殺戮歩行機械',
+    rarity: 2,
+    power: 6,
+    skills: [{ id: 'spend', value: 2 }, { id: 'double_strike' }],
+    voiceCategory: 'machine_new',
+    flavor:
+      'ただ破壊のためだけに戦場を闊歩する殺戮の権化。その双腕の刃が止まるのは、周囲のすべてが灰燼に帰した時のみである。',
+  },
+  {
+    id: 'bountyhunter',
+    name: '賞金稼ぎ',
+    rarity: 2,
+    power: 7,
+    skills: [{ id: 'convert', value: 2 }],
+    voiceCategory: 'sword',
+    flavor:
+      '扉が開かれた瞬間、酒場の喧騒は凍りついた。こぼれ落ちた麦酒が床に染み込むより早く、冷たい斧が振り下ろされる。',
+  },
+  {
+    id: 'voiddog',
+    name: '虚無の捕食者',
+    rarity: 2,
+    power: 2,
+    skills: [{ id: 'sublimation', value: 2 }],
+    voiceCategory: 'stone',
+    flavor:
+      '次元の裂け目より現れる漆黒の魔獣。獲物の存在そのものを貪り喰らう。',
+  },
+  {
+    id: 'skeletonlord',
+    name: 'スケルトン・ロード',
+    rarity: 2,
+    power: 5,
+    skills: [{ id: 'legendary' }, { id: 'split', value: 3, summonId: 'token_skeleton' }],
+    voiceCategory: 'undead',
+    flavor:
+      '迷宮を彷徨う骸の王。その体が砕け散る時、呪われた骨は新たな兵士として立ち上がる。',
+  },
+  {
+    id: 'baphomet',
+    name: '集会の主',
+    rarity: 2,
+    power: 5,
+    skills: [
+      { id: 'takeover', value: 1 }, { id: 'heal', value: 5 },
+    ],
+    voiceCategory: 'devil',
+    flavor:
+      '黒ミサを司る山羊頭の魔神。悪魔たちの誓いを束ね、血の契約を仲介する。',
+  },
+  {
+    id: 'alraune',
+    name: '茨の妖精',
+    rarity: 2,
+    power: 2,
+    skills: [
+      { id: 'choice', value: 1 },
+    ],
+    choices: [{ id: 'dominate', value: 2 }, { id: 'toxic', value: 3 },],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '深き森で微睡む紫の花に魅入られてはならない。その甘き香りは、命を蝕む死の胞子か、あるいは永遠に目覚めぬ隷属の夢への誘いなのだから。',
+  },
+  {
+    id: 'incubus',
+    name: '夜の貴公子',
+    rarity: 2,
+    power: 6,
+    skills: [{ id: 'legendary' }, { id: 'absorb' }],
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '宵闇を纏い、妖しく微笑む魔界の住人。視線に捕らえられたが最後、理性は脆くも崩れ去る。',
+  },
+  {
     id: 'warlock',
     name: '煉獄の拷問官',
     rarity: 2,
@@ -1262,28 +1429,6 @@ export const CARD_MASTER = [
     voiceCategory: 'undead',
     flavor:
       '燃え盛る炎の鞭を振るう魔界の拷問官。その一振りは敵を焼き払い、自らの魂さえも劫火の糧とする。',
-  },
-  {
-    id: 'hand',
-    name: '悪魔の手',
-    rarity: 2,
-    power: 2,
-    skills: [{ id: 'cull' }],
-    voiceCategory: 'stone',
-    flavor:
-      '虚空を裂いて現れる、魔界より召喚されし巨大な腕。いかなる堅牢な障害も無慈悲に握り潰す。',
-  },
-  {
-    id: 'minion',
-    name: '魔王のしもべ',
-    rarity: 2,
-    power: 2,
-    skills: [
-      { id: 'sacrifice', value: 1 },
-      { id: 'awake', value: 7, summonId: 'token_daemon' },
-    ],
-    voiceCategory: 'human_male_old',
-    flavor: '歪んだ忠誠を誓う狂信者。彼の儀式は、強大な闇を招く呼び水となる。',
   },
   {
     id: 'cavalry',
@@ -1574,8 +1719,8 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 4,
     skills: [
-      { id: 'choice', value: 1 },
       { id: 'explode', value: 4 },
+      { id: 'choice', value: 1 },
     ],
     choices: [
       { id: 'spread', value: 2 },
@@ -1865,14 +2010,34 @@ export const CARD_MASTER = [
       '強固な力と引き換えに契約者の魂を喰らう悪魔の兵士。その渇望は主ですら例外ではない。',
   },
   {
-    id: 'daemonarmor',
-    name: '悪魔の鎧',
+    id: 'juggernaut',
+    name: 'ジャガーノート',
     rarity: 3,
-    power: 5,
-    skills: [{ id: 'equip' }, { id: 'sacrifice', value: 2 }, { id: 'deadly' }],
-    voiceCategory: 'sword',
+    power: 8,
+    skills: [{ id: 'spend', value: 3 }],
+    voiceCategory: 'machine_new',
     flavor:
-      '真紅の血肉を喰らい、絶大なる力を対象に宿す呪われた甲冑。身に着けた者は代償として自らの生命を削り続ける。',
+      '圧倒的な質量と装甲で全てを蹂躙する超大型兵器。臨界まで充填されたエネルギーの解放を伴う突撃は、いかなる軍勢をも粉砕する。',
+  },
+  {
+    id: 'great',
+    name: '忘れられた英雄',
+    rarity: 3,
+    power: 8,
+    skills: [{ id: 'convert', value: 3 }],
+    voiceCategory: 'giant',
+    flavor:
+      '歴史書から抹消された救世の騎士。今や彼は、かつて愛した世界を蹂躙する最悪の巨城として君臨している。',
+  },
+  {
+    id: 'voidwalker',
+    name: '虚空歩き',
+    rarity: 3,
+    power: 4,
+    skills: [{ id: 'legendary' }, { id: 'sublimation', value: 2 }],
+    voiceCategory: 'stone',
+    flavor:
+      '次元の狭間である虚空を自在に渡り歩く、実体を持たない影の旅人。',
   },
   {
     id: 'succubus',
@@ -1890,19 +2055,43 @@ export const CARD_MASTER = [
       '宵闇に浮かぶ冷たい微笑み。彼女の振るう大鎌は、命だけでなく、彼らが紡ぐはずだった未来の夢さえも刈り尽くす。',
   },
   {
+    id: 'samael',
+    name: '囁く蛇',
+    rarity: 3,
+    power: 3,
+    skills: [
+      { id: 'legendary', },
+      { id: 'sacrifice', value: 3 },
+      { id: 'dominate', value: 6 },
+    ],
+    voiceCategory: 'snake',
+    flavor:
+      '暗闇より忍び寄り、甘美な禁忌を囁く魔蛇。唆された者は破滅へと歩む。',
+  },
+  {
     id: 'bahamut',
     name: '終焉の双頭竜',
     rarity: 3,
     power: 8,
     skills: [
-      { id: 'legendary' },
-      { id: 'sacrifice', value: 2 },
-      { id: 'berserk', value: 2 },
+      { id: 'sacrifice', value: 3 },
+      { id: 'berserk', value: 3 },
+      { id: 'loss', value: 3 },
       { id: 'double_strike' },
     ],
     voiceCategory: 'dragon',
     flavor:
       '二つの首が天を仰ぎ、終末の咆哮を上げる。その翼が振り下ろされる時、世界は劫火に包まれる。',
+  },
+  {
+    id: 'darkgeneral',
+    name: '蒼炎の魔将軍',
+    rarity: 3,
+    power: 7,
+    skills: [{ id: 'legendary' }, { id: 'sacrifice', value: 3 }, { id: 'execute' }, { id: 'cull' }, { id: 'cull' }],
+    voiceCategory: 'horse',
+    flavor:
+      '冥界より喚び出された不死の軍勢を率いる将軍。彼の通った跡には、青き炎に灼かれた骸と、永遠に続く夜だけが残される。',
   },
   {
     id: 'badwolf',
@@ -2123,7 +2312,7 @@ export const CARD_MASTER = [
     id: 'hellkite',
     name: 'ヘルカイトの君主',
     rarity: 4,
-    power: 8,
+    power: 9,
     skills: [
       { id: 'legendary' },
       { id: 'apex' },

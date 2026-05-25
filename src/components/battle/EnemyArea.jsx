@@ -29,7 +29,7 @@ export default function EnemyArea({
             alt="enemy icon"
           />
           <img
-            src={`assets/icons/iconframe_${enemyConfig.id === 'satan' ? 'red' : 'gold'}.png`}
+            src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(enemyConfig.id) ? 'red' : 'gold'}.png`}
             className="icon-frame"
             alt="frame"
           />

@@ -37,7 +37,7 @@ export default function PlayerArea({
             alt="player icon"
           />
           <img
-            src={`assets/icons/iconframe_${playerConfig.id === 'satan' ? 'red' : 'gold'}.png`}
+            src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(playerConfig.id) ? 'red' : 'gold'}.png`}
             className="icon-frame"
             alt="frame"
           />

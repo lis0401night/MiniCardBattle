@@ -274,6 +274,24 @@ export async function playEvents(events) {
         await sleep(200);
         break;
       }
+      case 'grant_skill': {
+        renderBoard();
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          const skillLabelMap = {
+            deadly: '必殺付与',
+            pierce: '貫通付与',
+            absorb: '吸収付与',
+            sturdy: '頑丈付与',
+          };
+          createDamagePopup(cEl, skillLabelMap[ev.skillId] || 'スキル付与', '#fbbf24');
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(300);
+        break;
+      }
       case 'petrify': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;

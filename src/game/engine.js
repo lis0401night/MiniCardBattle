@@ -483,6 +483,292 @@ export function applyActiveSkillLogic(
       }); // Use generic event or leader_skill format
       break;
     }
+    case 'dominate': {
+      const maxPower = val || 0;
+      let bestOppLane = -1;
+      let maxOppPower = -1;
+      for (let j = 0; j < 3; j++) {
+        if (eB[j]) {
+          const p = eB[j].currentPower ?? eB[j].power ?? 0;
+          if (p <= maxPower && p > maxOppPower) {
+            maxOppPower = p;
+            bestOppLane = j;
+          }
+        }
+      }
+
+      if (bestOppLane !== -1) {
+        const stolenCard = eB[bestOppLane];
+        const targetLane = bestOppLane; // 奪うカードの正面（対面する同じレーン番号）！
+
+        eB[bestOppLane] = null;
+
+        stolenCard.puppetOriginalOwner =
+          stolenCard.puppetOriginalOwner || stolenCard.owner || oppOwner;
+        if (stolenCard.equippedCards && stolenCard.equippedCards.length > 0) {
+          stolenCard.equippedCards.forEach((eqCard) => {
+            eqCard.puppetOriginalOwner =
+              eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
+          });
+        }
+
+        if (
+          b[targetLane] &&
+          (hasSkill(stolenCard, 'equip') ||
+            hasSkill(b[targetLane], 'arm_self'))
+        ) {
+          const targetCard = b[targetLane];
+          targetCard.basePower =
+            (targetCard.basePower || 0) + (stolenCard.power || 0);
+          targetCard.currentPower =
+            (targetCard.currentPower || 0) + (stolenCard.power || 0);
+
+          if (!targetCard.skills) {
+            targetCard.skills =
+              targetCard.skill && targetCard.skill !== 'none'
+                ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+                : [];
+            targetCard.skill = 'none';
+          }
+          const equipSkills = [];
+          if (
+            stolenCard.skill &&
+            stolenCard.skill !== 'none' &&
+            stolenCard.skill !== 'equip'
+          ) {
+            equipSkills.push({
+              id: stolenCard.skill,
+              value: stolenCard.skillValue,
+            });
+          }
+          if (stolenCard.skills) {
+            stolenCard.skills.forEach((s) => {
+              if (s.id !== 'equip') equipSkills.push(s);
+            });
+          }
+          mergeCardSkills(targetCard, equipSkills);
+
+          targetCard.equippedCards = targetCard.equippedCards || [];
+          targetCard.equippedCards.push(stolenCard);
+
+          events.push({
+            type: 'summon_card',
+            side: owner,
+            lane: targetLane,
+            card: targetCard,
+            source: 'equip',
+          });
+        } else {
+          const existingCard = b[targetLane];
+          if (existingCard) {
+            events.push({
+              type: 'deadly',
+              side: owner,
+              lane: targetLane,
+              source: 'overwrite',
+            });
+          }
+
+          b[targetLane] = {
+            ...stolenCard,
+            owner: owner,
+            skillTriggered: true,
+            stunTurns: stolenCard.stunTurns || 0,
+            stunAppliedThisTurn: stolenCard.stunAppliedThisTurn || false,
+          };
+
+          events.push({
+            type: 'summon_card',
+            side: owner,
+            lane: targetLane,
+            card: b[targetLane],
+            source: 'dominate',
+          });
+        }
+      }
+      break;
+    }
+    case 'grant_deadly':
+    case 'grant_pierce':
+    case 'grant_absorb':
+    case 'grant_sturdy': {
+      const skillMap = {
+        grant_deadly: 'deadly',
+        grant_pierce: 'pierce',
+        grant_absorb: 'absorb',
+        grant_sturdy: 'sturdy',
+      };
+      const targetSkillId = skillMap[sid];
+
+      b.forEach((tc, idx) => {
+        if (tc && tc.isToken) {
+          if (!tc.skills) {
+            tc.skills = tc.skill && tc.skill !== 'none'
+              ? [{ id: tc.skill, value: tc.skillValue || 0 }]
+              : [];
+            tc.skill = 'none';
+          }
+          const existing = tc.skills.find((s) => s.id === targetSkillId);
+          if (existing) {
+            existing.value = Math.max(existing.value || 0, val || 0);
+          } else {
+            tc.skills.push({ id: targetSkillId, value: val || 0 });
+          }
+
+          events.push({
+            type: 'grant_skill',
+            side: owner,
+            lane: idx,
+            skillId: targetSkillId,
+            source: sid,
+          });
+        }
+      });
+      break;
+    }
+    case 'sublimation': {
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+          ).length
+        : 0;
+      if (voidCount > 0) {
+        const bonus = (val || 0) * voidCount;
+        c.currentPower += bonus;
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: l,
+          amount: bonus,
+          source: 'sublimation',
+        });
+      }
+      break;
+    }
+    case 'snipe_void': {
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+          ).length
+        : 0;
+      if (voidCount > 0) {
+        const baseDmg = val || 4;
+        const totalDmg = baseDmg * voidCount;
+        let maxL = -1,
+          maxP = -1;
+        for (let j = 0; j < 3; j++) {
+          if (eB[j]) {
+            const p = eB[j].currentPower;
+            // 同値の場合は左（jが小さい方）を優先するため、> を使用
+            if (p > maxP) {
+              maxP = p;
+              maxL = j;
+            }
+          }
+        }
+        if (maxL !== -1) {
+          if (canTakeDamage(eB[maxL], totalDmg)) {
+            eB[maxL].currentPower -= totalDmg;
+            events.push({
+              type: 'damage_card',
+              side: oppOwner,
+              lane: maxL,
+              amount: totalDmg,
+              source: 'snipe_void',
+            });
+          } else {
+            events.push({
+              type: 'immune_block',
+              side: oppOwner,
+              lane: maxL,
+              source: 'snipe_void',
+            });
+          }
+        }
+      }
+      break;
+    }
+    case 'heal_void': {
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+          ).length
+        : 0;
+      if (voidCount > 0) {
+        const hAmt = (val || 3) * voidCount;
+        if (owner === 'blue')
+          state.playerHP = Math.min(state.playerMaxHP, state.playerHP + hAmt);
+        else state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + hAmt);
+        events.push({
+          type: 'heal_player',
+          side: owner,
+          amount: hAmt,
+          source: 'heal_void',
+        });
+      }
+      break;
+    }
+    case 'spread_void': {
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+          ).length
+        : 0;
+      if (voidCount > 0) {
+        const spVal = (val || 2) * voidCount;
+        [l - 1, l, l + 1].forEach((j) => {
+          if (j >= 0 && j < 3 && eB[j]) {
+            if (canTakeDamage(eB[j], spVal)) {
+              eB[j].currentPower -= spVal;
+              events.push({
+                type: 'damage_card',
+                side: oppOwner,
+                lane: j,
+                amount: spVal,
+                source: 'spread_void',
+              });
+            } else {
+              events.push({
+                type: 'immune_block',
+                side: oppOwner,
+                lane: j,
+                source: 'spread_void',
+              });
+            }
+          }
+        });
+      }
+      break;
+    }
+    case 'support_void': {
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) => card.id === 'token_void' || card.baseId === 'token_void'
+          ).length
+        : 0;
+      if (voidCount > 0) {
+        const adjVal = (val || 2) * voidCount;
+        const sAdj = l === 1 ? [0, 2] : [1];
+        sAdj.forEach((j) => {
+          if (b[j]) {
+            b[j].currentPower += adjVal;
+            events.push({
+              type: 'power_change',
+              side: owner,
+              lane: j,
+              amount: adjVal,
+              source: 'support_void',
+            });
+          }
+        });
+      }
+      break;
+    }
     case 'support': {
       const sAdj = l === 1 ? [0, 2] : [1];
       sAdj.forEach((j) => {
@@ -1966,7 +2252,188 @@ export function applyLeaderSkillLogic(
   const eBoard = isBlue ? state.enemyBoard : state.playerBoard;
   const oppOwner = isBlue ? 'red' : 'blue';
 
-  if (action === 'seal_lanes') {
+  if (action === 'void_purge') {
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    const myHand = isBlue ? state.playerHand : state.enemyHand;
+    const oppHand = isBlue ? state.enemyHand : state.playerHand;
+    const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
+    const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
+
+    // 1. 自分の手札を捨てる
+    let myDiscardIndices = [];
+    const myCount = Math.min(3, myHand.length);
+    if (tokenLanes && Array.isArray(tokenLanes.my)) {
+      myDiscardIndices = [...tokenLanes.my];
+    } else if (tokenLanes && Array.isArray(tokenLanes) && tokenLanes.length > 0) {
+      myDiscardIndices = [...tokenLanes];
+    } else {
+      const sorted = myHand.map((c, i) => ({ c, i })).sort((a, b) => (a.c.currentPower ?? a.c.power ?? 0) - (b.c.currentPower ?? b.c.power ?? 0));
+      myDiscardIndices = sorted.slice(0, myCount).map(x => x.i);
+    }
+    myDiscardIndices.sort((a, b) => b - a);
+    let myDiscarded = 0;
+    for (const idx of myDiscardIndices) {
+      if (myHand[idx]) {
+        const card = myHand.splice(idx, 1)[0];
+        myDiscard.push(card);
+        myDiscarded++;
+        events.push({
+          type: 'discard_card',
+          side: owner,
+          card: JSON.parse(JSON.stringify(card)),
+          source: 'void_purge',
+        });
+      }
+    }
+
+    // 2. 相手の手札を捨てる
+    let oppDiscardIndices = [];
+    const oppCount = Math.min(3, oppHand.length);
+    if (tokenLanes && Array.isArray(tokenLanes.opp)) {
+      oppDiscardIndices = [...tokenLanes.opp];
+    } else {
+      const sorted = oppHand.map((c, i) => ({ c, i })).sort((a, b) => (a.c.currentPower ?? a.c.power ?? 0) - (b.c.currentPower ?? b.c.power ?? 0));
+      oppDiscardIndices = sorted.slice(0, oppCount).map(x => x.i);
+    }
+    oppDiscardIndices.sort((a, b) => b - a);
+    let oppDiscarded = 0;
+    for (const idx of oppDiscardIndices) {
+      if (oppHand[idx]) {
+        const card = oppHand.splice(idx, 1)[0];
+        oppDiscard.push(card);
+        oppDiscarded++;
+        events.push({
+          type: 'discard_card',
+          side: oppOwner,
+          card: JSON.parse(JSON.stringify(card)),
+          source: 'void_purge',
+        });
+      }
+    }
+
+    // 3. 虚空を追加
+    const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+      id: 'token_void',
+      name: '虚空',
+      power: 0,
+    };
+    for (let i = 0; i < myDiscarded; i++) {
+      myHand.push({
+        ...voidTpl,
+        uid: `${owner}_void_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+        owner: owner,
+        baseId: 'token_void',
+        isToken: true,
+        currentPower: voidTpl.power ?? 0,
+      });
+    }
+    for (let i = 0; i < oppDiscarded; i++) {
+      oppHand.push({
+        ...voidTpl,
+        uid: `${oppOwner}_void_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
+        owner: oppOwner,
+        baseId: 'token_void',
+        isToken: true,
+        currentPower: voidTpl.power ?? 0,
+      });
+    }
+  } else if (action === 'viola_domination') {
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    let targetLane = -1;
+    const mySealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+    if (tokenLanes && Array.isArray(tokenLanes) && tokenLanes.length > 0) {
+      targetLane = tokenLanes[0];
+    } else if (tokenLanes !== null && typeof tokenLanes === 'number') {
+      targetLane = tokenLanes;
+    } else {
+      const validLanes = [];
+      for (let i = 0; i < 3; i++) {
+        if (eBoard[i] && (!mySealedLanes || mySealedLanes[i] === 0)) {
+          validLanes.push(i);
+        }
+      }
+      validLanes.sort((a, b) => (eBoard[b].currentPower ?? eBoard[b].power ?? 0) - (eBoard[a].currentPower ?? eBoard[a].power ?? 0));
+      if (validLanes.length > 0) {
+        targetLane = validLanes[0];
+      }
+    }
+
+    if (targetLane !== -1 && eBoard[targetLane] !== null && (!mySealedLanes || mySealedLanes[targetLane] === 0)) {
+      const selectedCard = eBoard[targetLane];
+      eBoard[targetLane] = null;
+
+      selectedCard.puppetOriginalOwner = selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
+      if (selectedCard.equippedCards && selectedCard.equippedCards.length > 0) {
+        selectedCard.equippedCards.forEach((eqCard) => {
+          eqCard.puppetOriginalOwner = eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
+        });
+      }
+
+      if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
+        const targetCard = board[targetLane];
+        targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+        targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+
+        if (!targetCard.skills) {
+          targetCard.skills = targetCard.skill && targetCard.skill !== 'none'
+            ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+            : [];
+          targetCard.skill = 'none';
+        }
+        const equipSkills = [];
+        if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
+          equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+        }
+        if (selectedCard.skills) {
+          selectedCard.skills.forEach((s) => {
+            if (s.id !== 'equip') equipSkills.push(s);
+          });
+        }
+        mergeCardSkills(targetCard, equipSkills);
+        targetCard.equippedCards = targetCard.equippedCards || [];
+        targetCard.equippedCards.push(selectedCard);
+
+        events.push({
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: JSON.parse(JSON.stringify(targetCard)),
+          source: 'equip',
+        });
+      } else {
+        const existingCard = board[targetLane];
+        if (existingCard) {
+          const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
+          myDiscard.push(existingCard);
+          events.push({
+            type: 'discard_card',
+            side: owner,
+            card: JSON.parse(JSON.stringify(existingCard)),
+            source: 'viola_domination_overwrite',
+          });
+        }
+
+        const movedCard = {
+          ...selectedCard,
+          owner: owner,
+          skillTriggered: true,
+          stunTurns: selectedCard.stunTurns || 0,
+          stunAppliedThisTurn: selectedCard.stunAppliedThisTurn || false,
+        };
+        board[targetLane] = movedCard;
+
+        events.push({
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: JSON.parse(JSON.stringify(movedCard)),
+          source: 'viola_domination',
+        });
+      }
+    }
+  } else if (action === 'seal_lanes') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     let targets =
       tokenLanes && Array.isArray(tokenLanes) ? [...tokenLanes] : [];

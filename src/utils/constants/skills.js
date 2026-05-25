@@ -657,6 +657,62 @@ export const SKILLS = {
     icon: '🪓',
     desc: '召喚時、自分のカード1枚を選択する。そのカードを破壊する。',
   },
+  dominate: {
+    name: '支配',
+    icon: '🧠',
+    desc: (val) =>
+      `召喚時、相手の場のパワー${val}以下のカード1枚を選び、正面のレーンに移動する。`,
+  },
+  sublimation: {
+    name: '昇華',
+    icon: '🧿',
+    desc: (val) =>
+      `召喚時、自分の手札の「虚空」1枚につきパワーを${val >= 0 ? '+' : ''}${val}する。`,
+  },
+  snipe_void: {
+    name: '狙撃(虚)',
+    icon: '🎯',
+    desc: (val) =>
+      `召喚時、自分の手札の「虚空」1枚につき相手の場で最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）`,
+  },
+  heal_void: {
+    name: '回復(虚)',
+    icon: '💚',
+    desc: (val) =>
+      `召喚時、自分の手札の「虚空」1枚につき自分リーダーのHPを${val || 3}回復する。`,
+  },
+  spread_void: {
+    name: '拡散(虚)',
+    icon: '☄️',
+    desc: (val) =>
+      `召喚時、自分の手札の「虚空」1枚につき正面とその隣のカードに${val || 2}ダメージ。`,
+  },
+  support_void: {
+    name: '援護(虚)',
+    icon: '🚩',
+    desc: (val) =>
+      `召喚時、自分の手札の「虚空」1枚につき隣のカードのパワーを+${val || 2}する。`,
+  },
+  grant_deadly: {
+    name: '付与(必殺)',
+    icon: '✡️',
+    desc: (val) => `召喚時、自分の場のトークン全てに「必殺」を付与する。`,
+  },
+  grant_pierce: {
+    name: '付与(貫通)',
+    icon: '✡️',
+    desc: (val) => `召喚時、自分の場のトークン全てに「貫通」を付与する。`,
+  },
+  grant_absorb: {
+    name: '付与(吸収)',
+    icon: '✡️',
+    desc: (val) => `召喚時、自分の場のトークン全てに「吸収」を付与する。`,
+  },
+  grant_sturdy: {
+    name: '付与(頑丈)',
+    icon: '✡️',
+    desc: (val) => `召喚時、自分の場のトークン全てに「頑丈」を付与する。`,
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -717,6 +773,16 @@ export const ACTIVE_SKILLS = [
   'hack',
   'cull',
   'execute',
+  'dominate',
+  'sublimation',
+  'snipe_void',
+  'heal_void',
+  'spread_void',
+  'support_void',
+  'grant_deadly',
+  'grant_pierce',
+  'grant_absorb',
+  'grant_sturdy',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル

@@ -14,6 +14,8 @@ import oni from './enemy_decks/oni.js';
 import priest from './enemy_decks/priest.js';
 import satan from './enemy_decks/satan.js';
 import satan_high from './enemy_decks/satan_high.js';
+import void_deck from './enemy_decks/void.js';
+import succubus_deck from './enemy_decks/succubus.js';
 import cthulhu_high from './enemy_decks/cthulhu_high.js';
 import android_high from './enemy_decks/android_high.js';
 import dragon_high from './enemy_decks/dragon_high.js';
@@ -38,6 +40,8 @@ export const ENEMY_DECKS = {
   priest,
   satan,
   satan_high,
+  void: void_deck,
+  succubus: succubus_deck,
   cthulhu_high,
   android_high,
   dragon_high,

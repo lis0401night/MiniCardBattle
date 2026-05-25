@@ -107,6 +107,16 @@ export async function resolveActiveSkillEffect(
       'explore',
       'cull',
       'execute',
+      'dominate',
+      'sublimation',
+      'snipe_void',
+      'heal_void',
+      'spread_void',
+      'support_void',
+      'grant_deadly',
+      'grant_pierce',
+      'grant_absorb',
+      'grant_sturdy',
     ].includes(skillId)
   ) {
     playSkillSound(skillId);
@@ -144,6 +154,16 @@ export async function resolveActiveSkillEffect(
       explore: '探索',
       cull: '選別',
       execute: '処刑',
+      dominate: '支配',
+      sublimation: '昇華',
+      snipe_void: '狙撃(虚)',
+      heal_void: '回復(虚)',
+      spread_void: '拡散(虚)',
+      support_void: '援護(虚)',
+      grant_deadly: '付与(必殺)',
+      grant_pierce: '付与(貫通)',
+      grant_absorb: '付与(吸収)',
+      grant_sturdy: '付与(頑丈)',
     };
     if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     await sleep(200); // Popupを見せる間
@@ -2545,6 +2565,171 @@ export async function resolveActiveSkillEffect(
         await sleep(500);
       }
     }
+  } else if (skillId === 'dominate') {
+    // 【支配】召喚時、相手の場のパワーval以下のカード1枚を選び、自分のレーンに移動する。
+    const maxPower = skillValue || 0;
+    const oppOwner = o === 'blue' ? 'red' : 'blue';
+    const oppBoard =
+      o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+    // 敵の場でパワーがmaxPower以下のカードがあるか
+    const validOppLanes = [];
+    for (let j = 0; j < 3; j++) {
+      if (
+        oppBoard[j] &&
+        (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxPower
+      ) {
+        validOppLanes.push(j);
+      }
+    }
+
+    if (validOppLanes.length > 0) {
+      let selectedOppLane = -1;
+
+      if (
+        o === 'red' &&
+        GameState.gameMode !== 'online' &&
+        GameState.gameMode !== 'pvp'
+      ) {
+        const pLanes = await waitPlayerEnemyLaneSelection(
+          1,
+          o,
+          true,
+          null,
+          false
+        );
+        if (pLanes && pLanes.length > 0) {
+          selectedOppLane = pLanes[0];
+        }
+      } else {
+        // プレイヤーの場合
+        const pLanes = await new Promise((resolve) => {
+          waitPlayerEnemyLaneSelection(
+            1,
+            o,
+            true, // canCancel = true
+            '相手のカードを1枚選んでください',
+            false
+          ).then(resolve);
+
+          const originalClick = window.handleEnemyLaneClick;
+          window.handleEnemyLaneClick = (laneIndex) => {
+            const card = oppBoard[laneIndex];
+            if (!card || (card.currentPower ?? card.power ?? 0) > maxPower) {
+              return;
+            }
+            if (originalClick) originalClick(laneIndex);
+          };
+        });
+
+        if (pLanes && pLanes.length > 0) {
+          selectedOppLane = pLanes[0];
+        }
+      }
+
+      if (selectedOppLane !== -1 && oppBoard[selectedOppLane]) {
+        const selectedCard = oppBoard[selectedOppLane];
+        const targetLane = selectedOppLane; // 選択したカードの正面（対面する同じレーン番号）！
+
+        // 相手のレーンから取り除く
+        oppBoard[selectedOppLane] = null;
+        updateDeckDisplay(oppOwner);
+
+        // 移動するカードおよびその装備に「元の持ち主」を設定
+        selectedCard.puppetOriginalOwner =
+          selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
+        if (
+          selectedCard.equippedCards &&
+          selectedCard.equippedCards.length > 0
+        ) {
+          selectedCard.equippedCards.forEach((eqCard) => {
+            eqCard.puppetOriginalOwner =
+              eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
+          });
+        }
+
+        // 装備か通常配置か
+        if (
+          board[targetLane] &&
+          (hasSkill(selectedCard, 'equip') ||
+            hasSkill(board[targetLane], 'arm_self'))
+        ) {
+          const targetCard = board[targetLane];
+          targetCard.basePower =
+            (targetCard.basePower || 0) + (selectedCard.power || 0);
+          targetCard.currentPower =
+            (targetCard.currentPower || 0) + (selectedCard.power || 0);
+
+          if (!targetCard.skills) {
+            targetCard.skills =
+              targetCard.skill && targetCard.skill !== 'none'
+                ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+                : [];
+            targetCard.skill = 'none';
+          }
+          const equipSkills = [];
+          if (
+            selectedCard.skill &&
+            selectedCard.skill !== 'none' &&
+            selectedCard.skill !== 'equip'
+          ) {
+            equipSkills.push({
+              id: selectedCard.skill,
+              value: selectedCard.skillValue,
+            });
+          }
+          if (selectedCard.skills) {
+            selectedCard.skills.forEach((s) => {
+              if (s.id !== 'equip') equipSkills.push(s);
+            });
+          }
+          mergeCardSkills(targetCard, equipSkills);
+
+          targetCard.equippedCards = targetCard.equippedCards || [];
+          targetCard.equippedCards.push(selectedCard);
+
+          if (selectedCard?.voiceCategory) {
+            playCardVoice(selectedCard.voiceCategory, 'play');
+          }
+          playSound(SOUNDS.sePlace);
+          renderBoard();
+          await sleep(400);
+          await cleanupDestroyedCards(c);
+        } else {
+          const existingCard = board[targetLane];
+          if (existingCard) {
+            if (
+              !(await discardCard(o, board[targetLane], targetLane, false))
+            ) {
+              board[targetLane] = null;
+            }
+          }
+
+          board[targetLane] = {
+            ...selectedCard,
+            owner: o,
+            skillTriggered: true, // 配置扱いのため召喚時効果は不発
+            stunTurns: selectedCard.stunTurns || 0,
+            stunAppliedThisTurn: selectedCard.stunAppliedThisTurn || false,
+          };
+
+          if (hasActiveSkill(board[targetLane])) {
+            board[targetLane].isSkillResolving = true;
+          }
+
+          if (board[targetLane]?.voiceCategory) {
+            playCardVoice(board[targetLane].voiceCategory, 'play');
+          }
+          playSound(SOUNDS.sePlace);
+          renderBoard();
+          await sleep(400);
+          if (board[targetLane]) board[targetLane].isSkillResolving = false;
+          await cleanupDestroyedCards(c);
+        }
+      }
+    }
+    await sleep(300);
   } else if (skillId === 'cull') {
     // 【選別】召喚時、相手は自分の場のカード1枚を選び墓地に送る
     const oppOwner = o === 'blue' ? 'red' : 'blue';

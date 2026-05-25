@@ -407,7 +407,8 @@ export function initBattleState() {
     GameState.playerMaxHP = MAX_HP;
     GameState.enemyMaxHP =
       GameState.enemyConfig.hp ||
-      (GameState.enemyConfig.id === 'satan' ? 40 : MAX_HP);
+      (GameState.enemyConfig.id === 'satan' ? 40 :
+       ['void', 'succubus'].includes(GameState.enemyConfig.id) ? 30 : MAX_HP);
     if (GameState.gameMode === 'campaign') {
       GameState.enemyMaxHP = 10;
     }

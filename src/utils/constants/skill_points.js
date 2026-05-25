@@ -255,7 +255,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   apex: {
-    base: -5,
+    base: -6,
     multiplier: 0,
   },
   retaliate: {

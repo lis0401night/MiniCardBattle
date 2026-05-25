@@ -63,7 +63,7 @@ export default function HighDifficultyScreen() {
                   alt=""
                 />
                 <img
-                  src={`assets/icons/iconframe_${char.id === 'satan' ? 'red' : 'gold'}.png`}
+                  src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(char.id) ? 'red' : 'gold'}.png`}
                   className="banner-icon-frame"
                   alt="frame"
                 />

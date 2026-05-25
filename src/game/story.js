@@ -16,16 +16,21 @@ import { performFadeTransition } from '../services/uiMainCore.js';
 export function initStoryMode(charId) {
   GameState.playerConfig = CHARACTERS[charId];
 
-  // 他のキャラクターのIDをランダムに並び替え（プレイヤーとサタンは除く）
+  // 他のキャラクターのIDをランダムに並び替え（プレイヤーと中ボス・大ボスは除く）
   const otherIds = Object.keys(CHARACTERS).filter(
-    (id) => id !== charId && id !== 'satan' && id !== 'campaign_player'
+    (id) =>
+      id !== charId &&
+      id !== 'satan' &&
+      id !== 'void' &&
+      id !== 'succubus' &&
+      id !== 'campaign_player'
   );
   for (let i = otherIds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [otherIds[i], otherIds[j]] = [otherIds[j], otherIds[i]];
   }
 
-  // ストーリー構成: 1-3戦目(ランダム), 4戦目(自分/影), 5-6戦目(残りランダム), 7戦目(サタン)
+  // ストーリー構成: 1-3戦目(ランダム), 4戦目(自分/影), 5-6戦目(残りランダム), 7戦目(ゼノン), 8戦目(ヴィオラ), 9戦目(サタン)
   GameState.storyQueue = [
     otherIds[0],
     otherIds[1],
@@ -33,6 +38,8 @@ export function initStoryMode(charId) {
     'shadow',
     otherIds[3],
     otherIds[4],
+    'void',
+    'succubus',
     'satan',
   ];
 
