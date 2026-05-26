@@ -1024,15 +1024,24 @@ export async function waitPlayerEnemyLaneSelection(
   owner,
   canCancel = false,
   message = null,
-  allowEmpty = false
+  allowEmpty = false,
+  maxPower = null // 【追加】支配などでパワー上限制限を設けるためのフィルター
 ) {
   const isBlue = owner === 'blue';
   const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
 
-  // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む）
+  // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む、かつmaxPower指定時はそれを超えるカードを除外）
   const validLanes = allowEmpty
     ? [0, 1, 2]
-    : targetBoard.map((c, i) => (c !== null ? i : -1)).filter((i) => i !== -1);
+    : targetBoard
+        .map((c, i) => {
+          if (c === null) return -1;
+          if (maxPower !== null && (c.currentPower ?? c.power ?? 0) > maxPower) {
+            return -1;
+          }
+          return i;
+        })
+        .filter((i) => i !== -1);
 
   if (validLanes.length === 0) return [];
 

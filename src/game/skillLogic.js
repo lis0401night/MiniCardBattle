@@ -2597,7 +2597,8 @@ export async function resolveActiveSkillEffect(
           o,
           true,
           null,
-          false
+          false,
+          maxPower // 【追加】支配できるパワー上限をフィルターとして適用
         );
         if (pLanes && pLanes.length > 0) {
           selectedOppLane = pLanes[0];
@@ -2610,7 +2611,8 @@ export async function resolveActiveSkillEffect(
             o,
             true, // canCancel = true
             '相手のカードを1枚選んでください',
-            false
+            false,
+            maxPower // 【追加】支配できるパワー上限をフィルターとして適用
           ).then(resolve);
 
           const originalClick = window.handleEnemyLaneClick;

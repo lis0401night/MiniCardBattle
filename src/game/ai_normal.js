@@ -2057,12 +2057,48 @@ export function getBestSimulatedMove() {
       `[AI DEBUG] After:  [Player] ${dumpB(afterSim.playerBoard)} (HP:${afterSim.playerHP}) vs [AI] ${dumpB(afterSim.enemyBoard)} (HP:${afterSim.enemyHP})`
     );
   }
-
   if (finalDecision.actionQueue) {
     console.log(
       `[AI DEBUG] ActionQueue: ${JSON.stringify(finalDecision.actionQueue)}`
     );
   }
+
+  // 【重要システム処理】通常プレイの意思決定決定時において、
+  // 連鎖アクション（actionQueue）に含まれるターゲット選択（支配、復活、選択など）のターゲット情報を
+  // choiceIndexQueue や cardTokenLanes にあらかじめ平坦化して割り込み登録します。
+  // これにより、アドホックプレイと同様に、実戦実行時にシミュレーション時の選択結果（dominateの対象など）が正しく取り出せるようになります。
+  if (finalDecision.actionQueue && Array.isArray(finalDecision.actionQueue)) {
+    if (!finalDecision.choiceIndexQueue) {
+      finalDecision.choiceIndexQueue = [];
+    }
+    if (!finalDecision.cardTokenLanes) {
+      finalDecision.cardTokenLanes = [];
+    }
+    const reversedChain = [...finalDecision.actionQueue].reverse();
+    reversedChain.forEach((act) => {
+      if (act.type === 'choice' || act.type === 'force') {
+        if (act.choices !== undefined) {
+          finalDecision.choiceIndexQueue.unshift(act.choices);
+        }
+      } else if (act.type === 'token_placement') {
+        if (act.lanes !== undefined) {
+          const revLanes = [...act.lanes].reverse();
+          revLanes.forEach((lane) => {
+            finalDecision.cardTokenLanes.unshift(lane);
+          });
+        }
+      } else if (act.type === 'resurrect') {
+        if (act.laneIdx !== undefined && act.laneIdx !== -1) {
+          finalDecision.cardTokenLanes.unshift(act.laneIdx);
+        }
+      } else if (act.type === 'dominate') {
+        if (act.oppLaneIdx !== undefined && act.oppLaneIdx !== -1) {
+          finalDecision.cardTokenLanes.unshift(act.oppLaneIdx);
+        }
+      }
+    });
+  }
+
   GameState.aiDecision = finalDecision;
   return finalDecision;
 }
