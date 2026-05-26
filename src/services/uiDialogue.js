@@ -241,6 +241,58 @@ export async function showNextDialogue(force = false) {
     window.currentDialogueData.choices = null;
   }
 
+  // ストーリー戦闘後のフェードアウト＆中央配置切り替え演出
+  if (cur.isTransition) {
+    GameState.isProcessing = true; // 連打防止
+
+    // フェードアウト開始：暗転させ、台詞やスピーカー名、アクティブ状態を消去する
+    window.currentDialogueData.isFading = true;
+    window.currentDialogueData.dialogueText = '';
+    window.currentDialogueData.speakerName = '';
+    window.currentDialogueData.leftActive = false;
+    window.currentDialogueData.rightActive = false;
+    if (window._reactUpdateDialogueUI) {
+      window._reactUpdateDialogueUI(window.currentDialogueData);
+    }
+
+    // フェードアウト完了まで待つ
+    await new Promise((r) => setTimeout(r, 450));
+
+    // 暗転中に中央表示（centerMode = true）に切り替え、相手キャラ画像を非表示にする
+    window.currentDialogueData.centerMode = true;
+    window.currentDialogueData.rightDisplay = 'none';
+
+    // 左画像（プレイヤー）が正しく中央に表示されるようにセット
+    let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
+    if (GameState.gameMode === 'tournament') {
+      playerSkinId = 'school';
+    }
+    window.currentDialogueData.leftImage =
+      getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
+      GameState.playerConfig.image ||
+      getCardImgUrl(GameState.playerConfig);
+
+    if (window._reactUpdateDialogueUI) {
+      window._reactUpdateDialogueUI(window.currentDialogueData);
+    }
+
+    // フェードイン復帰
+    window.currentDialogueData.isFading = false;
+    if (window._reactUpdateDialogueUI) {
+      window._reactUpdateDialogueUI(window.currentDialogueData);
+    }
+
+    // フェードイン完了まで待つ
+    await new Promise((r) => setTimeout(r, 450));
+
+    GameState.isProcessing = false;
+    GameState.currentDialogueIndex++; // トランジションノードを消化
+
+    // 自動で次の本来の台詞（同行者への語り掛けの最初のセリフ）を表示する
+    showNextDialogue(true);
+    return;
+  }
+
   let didFade = false;
   if (
     window.currentDialogueData.centerMode &&

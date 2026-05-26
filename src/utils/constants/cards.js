@@ -716,8 +716,8 @@ export const CARD_MASTER = [
     id: 'babydragon',
     name: 'ドラゴンの雛',
     rarity: 2,
-    power: 2,
-    skills: [{ id: 'growth', value: 3 }],
+    power: 3,
+    skills: [{ id: 'growth', value: 2 }],
     voiceCategory: 'lizard',
     flavor:
       'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。',
@@ -1345,8 +1345,8 @@ export const CARD_MASTER = [
     id: 'killermachine',
     name: '殺戮歩行機械',
     rarity: 2,
-    power: 5,
-    skills: [{ id: 'spend', value: 1 }, { id: 'double_strike' }],
+    power: 6,
+    skills: [{ id: 'brutal', value: 3 }, { id: 'double_strike' }],
     voiceCategory: 'machine_new',
     flavor:
       'ただ破壊のためだけに戦場を闊歩する殺戮の権化。その双腕の刃が止まるのは、周囲のすべてが灰燼に帰した時のみである。',
@@ -2013,8 +2013,8 @@ export const CARD_MASTER = [
     id: 'juggernaut',
     name: 'ジャガーノート',
     rarity: 3,
-    power: 7,
-    skills: [{ id: 'spend', value: 2 }],
+    power: 10,
+    skills: [{ id: 'takeover' }, { id: 'spend', value: 2 }, { id: 'pierce' }],
     voiceCategory: 'machine_new',
     flavor:
       '圧倒的な質量と装甲で全てを蹂躙する超大型兵器。臨界まで充填されたエネルギーの解放を伴う突撃は、いかなる軍勢をも粉砕する。',

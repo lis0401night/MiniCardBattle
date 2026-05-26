@@ -3243,6 +3243,13 @@ export function endBattle() {
         ];
       }
 
+      // 敗絶掛け合い（2人画面）の後に、中央表示切り替えのトランジション疑似ノードを挿入する
+      queue.push({
+        speaker: 'player',
+        text: '',
+        isTransition: true,
+      });
+
       if (Array.isArray(playerTalk)) {
         playerTalk.forEach((text) => {
           queue.push({ speaker: 'player', text });

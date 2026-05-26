@@ -49,9 +49,7 @@ export function initStoryMode(charId) {
 
   const storyIntroData = STORY_INTROS[charId];
   if (storyIntroData) {
-    GameState.dialogueQueue = [
-      { speaker: 'narrator', text: storyIntroData.narratorIntro, blackScreen: true },
-    ];
+    GameState.dialogueQueue = [];
     storyIntroData.storyIntro.forEach((item) => {
       if (typeof item === 'string') {
         GameState.dialogueQueue.push({ speaker: 'player', text: item });
@@ -61,7 +59,7 @@ export function initStoryMode(charId) {
     });
   } else {
     GameState.dialogueQueue = [
-      { speaker: 'narrator', text: GameState.playerConfig.narratorIntro || '旅立ちの時が来た。', blackScreen: true },
+      { speaker: 'narrator', text: '旅立ちの時が来た。', blackScreen: true },
     ];
     if (GameState.playerConfig.storyIntro) {
       GameState.playerConfig.storyIntro.forEach((item) => {
