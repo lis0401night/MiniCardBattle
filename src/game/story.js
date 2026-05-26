@@ -1,4 +1,5 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { STORY_INTROS } from '../utils/constants/storyDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
 import { startBattleFlow, loadDeck } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
@@ -46,16 +47,32 @@ export function initStoryMode(charId) {
   GameState.battleCount = 1;
   GameState.appState = 'story_intro';
 
-  GameState.dialogueQueue = [
-    { speaker: 'narrator', text: GameState.playerConfig.narratorIntro },
-  ];
-  GameState.playerConfig.storyIntro.forEach((item) => {
-    if (typeof item === 'string') {
-      GameState.dialogueQueue.push({ speaker: 'player', text: item });
-    } else {
-      GameState.dialogueQueue.push(item);
+  const storyIntroData = STORY_INTROS[charId];
+  if (storyIntroData) {
+    GameState.dialogueQueue = [
+      { speaker: 'narrator', text: storyIntroData.narratorIntro, blackScreen: true },
+    ];
+    storyIntroData.storyIntro.forEach((item) => {
+      if (typeof item === 'string') {
+        GameState.dialogueQueue.push({ speaker: 'player', text: item });
+      } else {
+        GameState.dialogueQueue.push(item);
+      }
+    });
+  } else {
+    GameState.dialogueQueue = [
+      { speaker: 'narrator', text: GameState.playerConfig.narratorIntro || '旅立ちの時が来た。', blackScreen: true },
+    ];
+    if (GameState.playerConfig.storyIntro) {
+      GameState.playerConfig.storyIntro.forEach((item) => {
+        if (typeof item === 'string') {
+          GameState.dialogueQueue.push({ speaker: 'player', text: item });
+        } else {
+          GameState.dialogueQueue.push(item);
+        }
+      });
     }
-  });
+  }
 
   performFadeTransition(() => {
     setupDialogueScreen();
@@ -72,50 +89,13 @@ export function handleStoryProgression() {
     if (GameState.lastBattleResult === 'lose') {
       showContinueScreen();
     } else {
-      // 戦闘に勝利した場合、中間のストーリーがあるか判定
-      const isSatanBattle =
-        GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow;
-      if (GameState.playerConfig.interBattleStory && !isSatanBattle) {
-        GameState.appState = 'inter_battle_story';
-        GameState.dialogueQueue = [];
-
-        let storyLines = null;
-        const stories = GameState.playerConfig.interBattleStory;
-
-        if (stories[GameState.battleCount]) {
-          storyLines = stories[GameState.battleCount];
-        } else if (stories.default && stories.default.length > 0) {
-          const randomIndex = Math.floor(
-            Math.random() * stories.default.length
-          );
-          storyLines = stories.default[randomIndex];
-        }
-
-        if (storyLines) {
-          storyLines.forEach((item) => {
-            if (typeof item === 'string') {
-              GameState.dialogueQueue.push({ speaker: 'player', text: item });
-            } else {
-              GameState.dialogueQueue.push(item);
-            }
-          });
-          performFadeTransition(() => {
-            setupDialogueScreen();
-          });
-        } else {
-          // ストーリーが無ければ即座にカウントアップして次へ
-          GameState.battleCount++;
-          performFadeTransition(() => {
-            startNextBattleSequence();
-          });
-        }
-      } else {
-        // 通常勝利またはサタン戦後のストーリー用
-        GameState.battleCount++;
-        performFadeTransition(() => {
-          startNextBattleSequence();
-        });
-      }
+      // ストーリー豪華ダイアログシステム：
+      // 戦闘後会話、同行者への語り掛け、次のナレーションはすでに post_dialogue の queue 内ですべて
+      // 再生完了しているため、即座にカウントアップして次の戦闘へ進みます。
+      GameState.battleCount++;
+      performFadeTransition(() => {
+        startNextBattleSequence();
+      });
     }
   } else if (GameState.appState === 'story_intro') {
     performFadeTransition(() => {

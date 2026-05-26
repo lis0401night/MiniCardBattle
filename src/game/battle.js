@@ -9,6 +9,12 @@ import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  STORY_DIALOGUES,
+  STORY_NARRATIONS,
+  PLAYER_TALKS,
+  getFallbackStoryDialogue
+} from '../utils/constants/storyDialogues.js';
+import {
   createDamagePopup,
   getCardImgUrl,
   getDialogue,
@@ -3188,7 +3194,67 @@ export function endBattle() {
     }
 
     // 勝敗に応じたダイアログのセット (全モード共通)
-    if (GameState.lastBattleResult === 'win') {
+    if (GameState.gameMode === 'story' && GameState.lastBattleResult === 'win') {
+      const playerId = GameState.playerConfig.id;
+      const isShadow = GameState.enemyConfig.isShadow;
+      const enemyId = isShadow ? 'shadow' : GameState.enemyConfig.id;
+      const battleCount = GameState.battleCount;
+
+      // 敗絶掛け合い4行の取得
+      let postDialogs = [];
+      const isLate = battleCount >= 5;
+      if (STORY_DIALOGUES[playerId] && STORY_DIALOGUES[playerId][enemyId]) {
+        const dialogueSource = isLate
+          ? STORY_DIALOGUES[playerId][enemyId].late
+          : STORY_DIALOGUES[playerId][enemyId].early;
+        // ディープコピーして副作用を防止
+        postDialogs = dialogueSource.post.map(line => ({ ...line }));
+      } else {
+        postDialogs = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, false, isLate);
+      }
+
+      // 影（自分自身）の場合は、敵（影）の台詞を「・・・・」に差し替え
+      if (isShadow) {
+        postDialogs = postDialogs.map(line => {
+          if (line.speaker === 'enemy') {
+            return { speaker: 'enemy', text: '・・・・' };
+          }
+          return line;
+        });
+      }
+
+      // 同行プレイヤーへの語り掛けと次のナレーション
+      const playerTalk = PLAYER_TALKS[playerId]?.[battleCount] || ['周囲の安全を確保しました。', '前進を継続しましょう。'];
+      const postNarration = STORY_NARRATIONS[battleCount]?.post || '強敵を打ち倒した一行は、さらなる深部を目指し歩みを進めるのだった。';
+
+      let queue = [];
+      if (battleCount === 4) {
+        // 4戦目(影)の場合：撃破後に影が魔王サタンの復活警告をおぞましく発し、瘴気となって消え去る演出を追加
+        queue = [
+          { speaker: 'enemy', text: 'グ、アアッ……！ バカな、我が実体たるお前に、敗れるとは……。' },
+          { speaker: 'player', text: 'これで終わりだ、私の影。元の場所へ還るがいい。' },
+          { speaker: 'enemy', text: 'フ、フハハハ……！ 喜ぶのは早いぞ……。我は魔王サタン様の魔力の残滓、ただの化身に過ぎん……！' },
+          { speaker: 'enemy', text: 'サタン様はすでに復活を遂げ、魔王城の最深部にて、世界のすべてを絶望の闇に沈める準備を終えている……！' },
+          { speaker: 'narrator', text: '不気味な哄笑と共に、影の身体は黒くドロドロとしたおぞましい瘴気となって崩れ去り、大気へと溶けて消えた。' }
+        ];
+      } else {
+        queue = [
+          ...postDialogs
+        ];
+      }
+
+      if (Array.isArray(playerTalk)) {
+        playerTalk.forEach((text) => {
+          queue.push({ speaker: 'player', text });
+        });
+      } else {
+        queue.push({ speaker: 'player', text: playerTalk });
+      }
+
+      queue.push({ speaker: 'narrator', text: postNarration });
+
+      GameState.dialogueQueue = queue;
+    } else if (GameState.lastBattleResult === 'win') {
       GameState.dialogueQueue = [
         {
           speaker: 'enemy',

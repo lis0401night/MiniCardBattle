@@ -59,9 +59,27 @@ export default function DialogueScreen() {
         backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/${bgName}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      {/* 暗転レイヤー */}
+      {/* 暗闇から目を覚ますシネマティックフェードインのための黒幕オーバーレイ */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#000',
+          opacity: d.blackScreen ? 1 : 0,
+          transition: 'opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1)',
+          zIndex: 10,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* 暗転レイヤー (話者切り替え時のフェード用) */}
       <div
         style={{
           position: 'absolute',
@@ -121,6 +139,13 @@ export default function DialogueScreen() {
 
       <div
         className={`portrait-container ${d.centerMode || GameState.gameMode === 'campaign' ? 'center' : ''}`}
+        style={{
+          display: 'flex',
+          opacity: d.blackScreen ? 0 : 1,
+          transition: 'opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1)',
+          pointerEvents: d.blackScreen ? 'none' : 'auto',
+          zIndex: 5,
+        }}
       >
         <img
           id="portrait-left"
@@ -153,7 +178,10 @@ export default function DialogueScreen() {
       <div
         className="dialogue-box"
         onClick={handleBoxClick}
-        style={{ borderColor: d.boxBorderColor || '#475569' }}
+        style={{
+          borderColor: d.boxBorderColor || '#475569',
+          zIndex: 20,
+        }}
       >
         <div id="speaker-name" style={{ color: d.nameColor || '#fff' }}>
           {d.speakerName || ''}

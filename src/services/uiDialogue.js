@@ -13,6 +13,12 @@ import { setupEventConfrontation } from '../game/events.js';
 import { GameState } from '../state/gameState.js';
 import { saveStoryProgress } from '../game/story.js';
 import { handleProgressionNextStep } from '../game/progression.js';
+import {
+  STORY_DIALOGUES,
+  STORY_NARRATIONS,
+  STORY_ENDINGS,
+  getFallbackStoryDialogue
+} from '../utils/constants/storyDialogues.js';
 
 // ==========================================
 // UI Dialogue Logic (Dialogue & Sequences)
@@ -48,7 +54,9 @@ export function startNextBattleSequence() {
     return;
   }
   let nextEnemyId = GameState.storyQueue[GameState.battleCount - 1];
+  let isShadow = false;
   if (nextEnemyId === 'shadow') {
+    isShadow = true;
     GameState.enemyConfig = { ...GameState.playerConfig };
     GameState.enemyConfig.isShadow = true;
     GameState.enemyConfig.name = `影の${GameState.playerConfig.name}`;
@@ -64,40 +72,44 @@ export function startNextBattleSequence() {
     );
   }
   GameState.appState = 'pre_dialogue';
-  // ストーリーモードではdialogue.introのみ使用（preBattleLineは連結しない）
-  let introText =
-    getDialogue(
-      GameState.enemyConfig,
-      GameState.playerConfig,
-      'intro',
-      'enemy'
-    ) ||
-    GameState.enemyConfig.preBattleLine ||
-    '・・・・';
-  if (GameState.enemyConfig.isShadow) introText = '・・・・';
-  GameState.dialogueQueue = [
-    { speaker: 'enemy', text: introText },
-    {
-      speaker: 'player',
-      text: GameState.enemyConfig.isShadow
-        ? GameState.playerConfig.mirrorIntro || 'なっ、自分自身だと……！？'
-        : getDialogue(
-            GameState.playerConfig,
-            GameState.enemyConfig,
-            'intro',
-            'player'
-          ),
-    },
-  ];
-  if (GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow) {
-    GameState.dialogueQueue[0].text =
-      getDialogue(
-        GameState.enemyConfig,
-        GameState.playerConfig,
-        'intro',
-        'enemy'
-      ) || '……よくぞここまで辿り着いたな。';
+
+  // --- ストーリー豪華ダイアログシステム：戦闘前の構築 ---
+  const playerId = GameState.playerConfig.id;
+  const enemyId = isShadow ? 'shadow' : GameState.enemyConfig.id;
+  const battleCount = GameState.battleCount;
+
+  // 開始ナレーションの取得
+  const preNarration = STORY_NARRATIONS[battleCount]?.pre || '魔界の深部へと足を進める一行。行く手に新たなる影が立ち塞がった。';
+
+  // 戦闘前会話（両者2回ずつの掛け合い、計4行）の取得
+  let dialogLines = [];
+  const isLate = battleCount >= 5;
+  if (STORY_DIALOGUES[playerId] && STORY_DIALOGUES[playerId][enemyId]) {
+    const dialogueSource = isLate
+      ? STORY_DIALOGUES[playerId][enemyId].late
+      : STORY_DIALOGUES[playerId][enemyId].early;
+    // ディープコピーして元の定義への副作用を防ぐ
+    dialogLines = dialogueSource.pre.map(line => ({ ...line }));
+  } else {
+    dialogLines = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, true, isLate);
   }
+
+  // 影（自分自身）の場合は、敵（影）の台詞を「・・・・」に差し替え
+  if (isShadow) {
+    dialogLines = dialogLines.map(line => {
+      if (line.speaker === 'enemy') {
+        return { speaker: 'enemy', text: '・・・・' };
+      }
+      return line;
+    });
+  }
+
+  // dialogueQueue に一挙に連結セット
+  GameState.dialogueQueue = [
+    { speaker: 'narrator', text: preNarration },
+    ...dialogLines
+  ];
+
   setupDialogueScreen();
 }
 
@@ -108,7 +120,7 @@ export function startEndingSequence() {
   stopSound(AUDIO_INSTANCES.bgmLastBattle);
   stopSound(AUDIO_INSTANCES.bgmStageAndroid);
   playSound(AUDIO_INSTANCES.bgmEnding);
-  GameState.dialogueQueue = GameState.playerConfig.storyEnding || [];
+  GameState.dialogueQueue = STORY_ENDINGS[GameState.playerConfig.id] || [];
   GameState.currentDialogueIndex = 0;
 
   // 実績: ストーリークリア (完遂時にプレイヤーキャラクターのIDで記録)
@@ -214,6 +226,7 @@ export async function showNextDialogue(force = false) {
 
   const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
   window.currentDialogueData = window.currentDialogueData || {};
+  window.currentDialogueData.blackScreen = !!cur.blackScreen;
 
   if (cur.choices) {
     window.currentDialogueData.choices = cur.choices;
