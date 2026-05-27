@@ -48,9 +48,9 @@ export function initStoryMode(charId) {
   GameState.appState = 'story_intro';
 
   const storyIntroData = STORY_INTROS[charId];
-  if (storyIntroData) {
+  if (Array.isArray(storyIntroData) && storyIntroData.length > 0) {
     GameState.dialogueQueue = [];
-    storyIntroData.storyIntro.forEach((item) => {
+    storyIntroData.forEach((item) => {
       if (typeof item === 'string') {
         GameState.dialogueQueue.push({ speaker: 'player', text: item });
       } else {

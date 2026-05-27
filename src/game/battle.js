@@ -3230,37 +3230,63 @@ export function endBattle() {
       let queue = [];
       if (battleCount === 4) {
         // 4戦目(影)の場合：撃破後に影が魔王サタンの復活警告をおぞましく発し、瘴気となって消え去る演出を追加
+        let progressDeclaration = 'これより魔王城へ進軍する！';
+        if (playerId === 'android') {
+          progressDeclaration = '対象（マスター）、魔王サタンの本格的な復活を確認。世界の崩壊を防ぐため、これより本拠地『魔王城』への最短進撃ルートを策定し、進軍を開始します。……私たちが、必ず勝利させます。';
+        } else if (playerId === 'dragon') {
+          progressDeclaration = 'サタンの配下の化身ですって……！？ フン、上等じゃない！ だったらその大元の魔王サタンとやらも、私の大斧で叩き潰してあげるわ！ 行くわよ相棒、さっさと魔王城に乗り込んで、あいつに本物の竜の炎を見せてやりましょう！';
+        } else if (playerId === 'knight') {
+          progressDeclaration = '魔王サタンめ、すでに本格的な復活を遂げ、魔王城で待ち受けているというのか……！ だが、我が聖剣がその野望を必ずや断ち切ってみせる！ 行こう、相棒。世界のすべてを絶望と虚無の闇から救うため、今こそ魔王城へ進軍するのだ！';
+        } else if (playerId === 'cthulhu') {
+          progressDeclaration = 'おや……あんなおぞましい影が、魔王の残滓だったのですね。ふふっ、迷い子さんを脅かすような悪い魔王様は、私が深淵の闇で包んで差し上げましょう。さあ、魔王城へとまいりましょう？ ずっと私の隣で、その戦いを見せてくださいね。';
+        } else if (playerId === 'elf') {
+          progressDeclaration = '魔王サタンの本格的な復活……。世界を絶望に沈めさせたりはしないわ。この銀の弓と星墜ちの矢で、必ず邪悪な闇を射抜いてみせる。行こう、あなた。これより魔王城へ向けて、進軍を開始しましょう。';
+        } else if (playerId === 'cleric') {
+          progressDeclaration = 'アハハハ！ 魔王サタンが本格的に復活したというの！？ 傑作ですわ！ その邪悪ごと、私の神罰のメイスで跡形もなく粉砕して差し上げます！ さあ、這いつくばってついてきなさい、迷える羊。これより神罰を下しに、魔王城へ突撃しますわよ！';
+        } else if (playerId === 'devilhunter') {
+          progressDeclaration = '魔王サタンが本格的な復活ねぇ……。ま、相手が魔王だろうが何だろうが、依頼された仕事はきっちりこなすだけよ。ねえ、雇い主さん？ 覚悟を決めなさい。奴の本拠地である魔王城へ進軍して、あの不快な悪魔どもを根こそぎ狩り尽くしてやるわ！';
+        } else if (playerId === 'witch') {
+          progressDeclaration = '魔王サタンの本格的な復活ですか……。世界のすべてが絶望の闇に沈むなんて、さすがに寝覚めが悪いですね。はぁ, 面倒ですがやるしかないですね。行きますよ、先輩。魔王城に乗り込んで、サクッとその魔王とやらを片付けてしまいましょう。';
+        } else if (playerId === 'oni') {
+          progressDeclaration = '魔王サタン様の本格的な復活……世界の調和を脅かす最大の災厄ですね。ですが、私の陰陽の符と式神の力があれば、決して後れは取りません。マスター、参りましょう。これより邪悪の根源たる魔王城へ進軍し、急急如律令をもって闇を祓います！';
+        } else if (playerId === 'priest') {
+          progressDeclaration = 'ふん、魔王サタンが本格的な復活を遂げ、魔王城で待ち受けているというのか。面白い、我が古代の呪縛と、この鋭き儀式用ナイフの錆にしてくれよう。行くぞ、侵入者。邪悪なる魔王の居城へ進軍し、世界のすべてを脅かすその闇を、今こそ完全に裁断してやる！';
+        }
+
         queue = [
-          { speaker: 'enemy', text: 'グ、アアッ……！ バカな、我が実体たるお前に、敗れるとは……。' },
+          { speaker: 'enemy', text: 'グ、アアッ……！ バ、バカな……我が実体たるお前に、敗れるなどと……。' },
           { speaker: 'player', text: 'これで終わりだ、私の影。元の場所へ還るがいい。' },
-          { speaker: 'enemy', text: 'フ、フハハハ……！ 喜ぶのは早いぞ……。我は魔王サタン様の魔力の残滓、ただの化身に過ぎん……！' },
-          { speaker: 'enemy', text: 'サタン様はすでに復活を遂げ、魔王城の最深部にて、世界のすべてを絶望の闇に沈める準備を終えている……！' },
-          { speaker: 'narrator', text: '不気味な哄笑と共に、影の身体は黒くドロドロとしたおぞましい瘴気となって崩れ去り、大気へと溶けて消えた。' }
+          { speaker: 'enemy', text: 'フ、フフフ……アハハハハ！ 喜ぶのは早いぞ……。我は魔王サタン様の宿る魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！' },
+          { speaker: 'enemy', text: 'サタン様はすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！ お前たちに、抗う術などない……！' },
+          { speaker: 'narrator', text: 'おぞましい哄笑が反転特異点に反響する。影の身体はどす黒い霧のように崩れ去り、世界そのものを激しく揺らす漆黒の瘴気へと姿を変えて、大気へと溶けるように消散した。後に残されたのは、世界に迫る破滅の予感と、骨まで凍てつく絶対的な沈黙だけだった。' },
+          { speaker: 'player', text: progressDeclaration }
         ];
+
+        GameState.dialogueQueue = queue;
       } else {
         queue = [
           ...postDialogs
         ];
-      }
 
-      // 敗絶掛け合い（2人画面）の後に、中央表示切り替えのトランジション疑似ノードを挿入する
-      queue.push({
-        speaker: 'player',
-        text: '',
-        isTransition: true,
-      });
-
-      if (Array.isArray(playerTalk)) {
-        playerTalk.forEach((text) => {
-          queue.push({ speaker: 'player', text });
+        // 敗絶掛け合い（2人画面）の後に、中央表示切り替えのトランジション疑似ノードを挿入する
+        queue.push({
+          speaker: 'player',
+          text: '',
+          isTransition: true,
         });
-      } else {
-        queue.push({ speaker: 'player', text: playerTalk });
+
+        if (Array.isArray(playerTalk)) {
+          playerTalk.forEach((text) => {
+            queue.push({ speaker: 'player', text });
+          });
+        } else {
+          queue.push({ speaker: 'player', text: playerTalk });
+        }
+
+        queue.push({ speaker: 'narrator', text: postNarration });
+
+        GameState.dialogueQueue = queue;
       }
-
-      queue.push({ speaker: 'narrator', text: postNarration });
-
-      GameState.dialogueQueue = queue;
     } else if (GameState.lastBattleResult === 'win') {
       GameState.dialogueQueue = [
         {

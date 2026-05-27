@@ -104,10 +104,23 @@ export function startNextBattleSequence() {
     });
   }
 
+  // 戦闘直前（立ち絵並立中）の状況説明ナレーション構築
+  let combatNarration = `${GameState.playerConfig.name}と${GameState.enemyConfig.name}は互いに武器を構え、緊迫した空気が張り詰める。いざ、カードバトルの幕が開く！`;
+  if (isShadow) {
+    combatNarration = `対峙する己の影。己の限界を乗り越え、真なる自己を掴むための静かなる死闘が今、幕を開ける！`;
+  } else if (enemyId === 'void') {
+    combatNarration = `虚空の騎士ゼノンから放たれる圧倒的な冥界の殺気。世界の命運を懸けた、容赦なき戦いが始まる！`;
+  } else if (enemyId === 'succubus') {
+    combatNarration = `隷属の女王ヴィオラが妖しく微笑み、周囲の空気が重く澱む。甘き破滅の誘惑を断ち切るための、死力を尽くした戦いが始まる！`;
+  } else if (enemyId === 'satan') {
+    combatNarration = `本格的な復活を遂げた魔王サタンが絶望の炎を滾らせる。世界の崩壊を食い止めるための、最終決戦が今、始まる！`;
+  }
+
   // dialogueQueue に一挙に連結セット
   GameState.dialogueQueue = [
     { speaker: 'narrator', text: preNarration },
-    ...dialogLines
+    ...dialogLines,
+    { speaker: 'narrator', text: combatNarration }
   ];
 
   setupDialogueScreen();
