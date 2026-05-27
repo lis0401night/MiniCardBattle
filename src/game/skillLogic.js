@@ -2494,6 +2494,32 @@ export async function resolveActiveSkillEffect(
             }
             mergeCardSkills(targetCard, equipSkills);
 
+            // 【バグ修正】選択（choice）スキルがある場合は、装備元の選択肢（choices / choices2）を引き継ぐ
+            if (topCard.choices && topCard.choices.length > 0) {
+              targetCard.choices = targetCard.choices || [];
+              topCard.choices.forEach((pc) => {
+                const isDup = targetCard.choices.some(
+                  (tc) =>
+                    tc.id === pc.id &&
+                    tc.value === pc.value &&
+                    tc.choiceGroup === pc.choiceGroup
+                );
+                if (!isDup) targetCard.choices.push({ ...pc });
+              });
+            }
+            if (topCard.choices2 && topCard.choices2.length > 0) {
+              targetCard.choices2 = targetCard.choices2 || [];
+              topCard.choices2.forEach((pc) => {
+                const isDup = targetCard.choices2.some(
+                  (tc) =>
+                    tc.id === pc.id &&
+                    tc.value === pc.value &&
+                    tc.choiceGroup === pc.choiceGroup
+                );
+                if (!isDup) targetCard.choices2.push({ ...pc });
+              });
+            }
+
             // デッキから出た号令カードを対象にアタッチする
             targetCard.equippedCards = targetCard.equippedCards || [];
             targetCard.equippedCards.push(topCard);
@@ -2512,12 +2538,19 @@ export async function resolveActiveSkillEffect(
             for (const sk of equipSkills) {
               if (ACTIVE_SKILLS.includes(sk.id)) {
                 await sleep(50);
+                // 【バグ修正】選択スキルに装備元の選択肢情報を渡すため、enhancedSk オブジェクトを構築して渡す
+                const enhancedSk = {
+                  ...sk,
+                  _sourceChoices: topCard.choices,
+                  _sourceChoices2: topCard.choices2,
+                };
                 await resolveActiveSkillEffect(
                   o,
                   targetLane,
                   targetCard,
                   sk.id,
-                  sk.value
+                  sk.value,
+                  enhancedSk
                 );
               }
             }

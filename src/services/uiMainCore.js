@@ -361,14 +361,17 @@ export function goBackFromStage() {
 
 export function goBackFromDeckEdit(isCancel = false) {
   playSound(SOUNDS.seClick);
-  if (
-    GameState.gameMode === 'defense_register' ||
-    GameState.gameMode === 'online_deck_edit'
-  ) {
+  if (GameState.gameMode === 'defense_register') {
     // キャラクター選択に戻る
     GameState.appState = 'select_player';
     initSelectScreen(false);
     switchScreen('screen-select');
+  } else if (GameState.gameMode === 'online_deck_edit') {
+    // オンラインデッキ編集：デッキ一覧に戻る
+    GameState.appState = 'select_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
     GameState.appState = 'select_deck';

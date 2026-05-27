@@ -378,7 +378,7 @@ export const ACHIEVEMENT_MASTER = [
   },
   {
     id: 'event_knight_high_clear_pm',
-    title: '死の谷',
+    title: '血の渓谷',
     description: '高難易度イベントでセレスティアを倒す',
     type: 'event_clear',
     targetValue: 'knight_high',

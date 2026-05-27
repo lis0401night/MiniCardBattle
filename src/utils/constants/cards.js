@@ -1436,7 +1436,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 8,
     skills: [
-      { id: 'sacrifice', value: 3 },
+      { id: 'sacrifice', value: 2 },
       { id: 'challenge' },
       { id: 'pierce' },
       { id: 'guardian' },

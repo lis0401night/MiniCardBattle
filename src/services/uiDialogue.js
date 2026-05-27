@@ -105,7 +105,7 @@ export function startNextBattleSequence() {
   }
 
   // 戦闘直前（立ち絵並立中）の状況説明ナレーション構築
-  let combatNarration = `${GameState.playerConfig.name}と${GameState.enemyConfig.name}は互いに武器を構え、緊迫した空気が張り詰める。いざ、カードバトルの幕が開く！`;
+  let combatNarration = `${GameState.playerConfig.name}と${GameState.enemyConfig.name}は互いに武器を構え、緊迫した空気が張り詰める。いざ、死闘の幕が開く！`;
   if (isShadow) {
     combatNarration = `対峙する己の影。己の限界を乗り越え、真なる自己を掴むための静かなる死闘が今、幕を開ける！`;
   } else if (enemyId === 'void') {
