@@ -164,6 +164,20 @@ export function setupDialogueScreen() {
   GameState.isProcessing = false;
   GameState.currentDialogueIndex = 0;
 
+  // ストーリーモード専用BGMの再生と切り替え
+  if (GameState.gameMode === 'story' && GameState.appState !== 'ending_dialogue') {
+    const targetBgm = GameState.battleCount >= 4
+      ? AUDIO_INSTANCES.bgmStory02
+      : AUDIO_INSTANCES.bgmStory01;
+
+    if (!targetBgm || targetBgm.paused) {
+      stopAllBGM();
+      if (targetBgm) {
+        playSound(targetBgm);
+      }
+    }
+  }
+
   let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
   let enemySkinId = GameState.enemySkins
     ? GameState.enemySkins[GameState.enemyConfig.id]

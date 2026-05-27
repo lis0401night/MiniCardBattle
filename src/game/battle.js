@@ -3181,6 +3181,11 @@ export function endBattle() {
       playSound(AUDIO_INSTANCES.bgmHighDifficulty);
     } else if (GameState.gameMode === 'tournament') {
       playSound(AUDIO_INSTANCES.bgmTournament1);
+    } else if (GameState.gameMode === 'story') {
+      const targetBgm = GameState.battleCount >= 4
+        ? AUDIO_INSTANCES.bgmStory02
+        : AUDIO_INSTANCES.bgmStory01;
+      playSound(targetBgm);
     } else {
       playSound(AUDIO_INSTANCES.bgmTitle);
     }

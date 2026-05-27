@@ -48,7 +48,12 @@ export default function DialogueScreen() {
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.png';
   } else if (GameState.gameMode && GameState.gameMode.startsWith('story')) {
-    bgName = 'background_story01.png';
+    // 魔王城到着後（第6戦の勝利後、すなわち第7戦ゼノン以降）は background_story02.png を使用
+    if (GameState.battleCount >= 7) {
+      bgName = 'background_story02.png';
+    } else {
+      bgName = 'background_story01.png';
+    }
   }
 
   return (

@@ -82,6 +82,8 @@ export const AUDIO_INSTANCES = {
   bgmStageHighDifficulty: new Audio(
     'assets/audio/bgm/bgm_stage_high_difficulty.mp3'
   ),
+  bgmStory01: new Audio('assets/audio/bgm/bgm_story01.mp3'),
+  bgmStory02: new Audio('assets/audio/bgm/bgm_story02.mp3'),
   // SE (Web Audio API用フォールバックとしても事前生成しておく)
   seClick: new Audio('assets/audio/se/se_click.mp3'),
   sePlace: new Audio('assets/audio/se/se_place.mp3'),
