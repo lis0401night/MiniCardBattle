@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import {
-  startTutorial,
   loadTutorialProgress,
   saveTutorialProgress,
+  startTutorial,
 } from '../game/tutorialEngine.js';
 import { loadDeck, saveDeck } from '../services/deck.js';
 import { showCardAcquisitionModal } from '../services/uiGallery.js';
-import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -350,7 +350,7 @@ export default function TutorialSelectScreen() {
 
             // キャラ名から二つ名を除いた短い名前を取得（スペース区切りの最後の部分）
             const shortName = char.name.split(' ').pop();
-            const displayName = `リーダースキル：${shortName}`;
+            const displayName = `リーダー：${shortName}`;
 
             return (
               <div
