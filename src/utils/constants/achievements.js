@@ -649,6 +649,8 @@ export const achievementData = {
     maxDungeonFloor: 0,
     defenseWins: 0,
     defenseAttackWins: 0,
+    voidDefeated: 0, // ゼノン撃破フラグ（実績管理）
+    succubusDefeated: 0, // ヴィオラ撃破フラグ（実績管理）
   },
 };
 
@@ -668,6 +670,8 @@ export function loadAchievements() {
         storyClearsHard: {},
         eventClear: {},
         freeBattleWins: 0,
+        voidDefeated: 0,
+        succubusDefeated: 0,
       };
       if (!achievementData.stats.leaderUsage)
         achievementData.stats.leaderUsage = {};
@@ -685,6 +689,10 @@ export function loadAchievements() {
         achievementData.stats.defenseWins = 0;
       if (typeof achievementData.stats.defenseAttackWins !== 'number')
         achievementData.stats.defenseAttackWins = 0;
+      if (typeof achievementData.stats.voidDefeated !== 'number')
+        achievementData.stats.voidDefeated = 0;
+      if (typeof achievementData.stats.succubusDefeated !== 'number')
+        achievementData.stats.succubusDefeated = 0;
     } catch (e) {
       console.error('Failed to parse achievements data', e);
     }
@@ -736,6 +744,12 @@ export function incrementStat(type, key = null, amount = 1) {
     achievementData.stats.defenseAttackWins =
       (achievementData.stats.defenseAttackWins || 0) + amount;
     checkDefenseAttackAchievements();
+  } else if (type === 'voidDefeated') {
+    achievementData.stats.voidDefeated =
+      (achievementData.stats.voidDefeated || 0) + amount;
+  } else if (type === 'succubusDefeated') {
+    achievementData.stats.succubusDefeated =
+      (achievementData.stats.succubusDefeated || 0) + amount;
   }
   saveAchievements();
 }

@@ -1,7 +1,7 @@
 import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { DECK_SIZE } from '../utils/constants/config.js';
+import { DECK_SIZE, MAX_DECK_SLOTS } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
@@ -719,7 +719,7 @@ export function loadDeck() {
       );
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];
-        if (char && (!GameState.decks || GameState.decks.length < 20)) {
+        if (char && (!GameState.decks || GameState.decks.length < MAX_DECK_SLOTS)) {
           const newIndex = createNewDeck(id);
           if (newIndex !== false && GameState.decks[newIndex]) {
             // 名前が長すぎないよう、シンプルにキャラ名+デッキにする
@@ -822,7 +822,7 @@ export function loadDeck() {
 
 export function createNewDeck(leaderId) {
   if (!GameState.decks) GameState.decks = [];
-  if (GameState.decks.length >= 20) return false;
+  if (GameState.decks.length >= MAX_DECK_SLOTS) return false;
 
   // 新規作成時のデフォルトプレミアム設定は常にグローバルの設定（LocalStorage）から取得する
   const globalPremiumSrc = localStorage.getItem(

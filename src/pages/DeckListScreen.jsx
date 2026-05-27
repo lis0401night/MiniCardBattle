@@ -8,6 +8,7 @@ import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { MAX_DECK_SLOTS } from '../utils/constants/config.js';
 
 export default function DeckListScreen() {
   const [renderVersion, setRenderVersion] = useState(0);
@@ -58,7 +59,7 @@ export default function DeckListScreen() {
 
   const decks = GameState.decks || [];
   const items = [...decks];
-  if (decks.length < 20) {
+  if (decks.length < MAX_DECK_SLOTS) {
     items.push('create');
   }
 
@@ -161,7 +162,7 @@ export default function DeckListScreen() {
 
   const handleCreateNew = () => {
     playSound?.(SOUNDS?.seClick);
-    if (decks.length >= 20) return;
+    if (decks.length >= MAX_DECK_SLOTS) return;
 
     GameState.prevGameModeForCreate = GameState.gameMode;
     GameState.prevAppStateForCreate = GameState.appState;

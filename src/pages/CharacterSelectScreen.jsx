@@ -11,16 +11,23 @@ export default function CharacterSelectScreen() {
     // CHARACTERSはオブジェクト形式
     const charsObj = CHARACTERS || {};
 
-    // 【サタン解放条件】フリーバトルの対戦相手選択画面でのみ、
-    // 一度でもストーリーをクリアしていればサタンを対戦相手として表示する。
-    // 実績データの storyClears にいずれかのキャラクターの記録があれば解放。
-    // プレイヤーキャラクター選択ではサタンは常に非表示。
+    // 【サタン・ゼノン・ヴィオラ解放条件】フリーバトルの対戦相手選択画面でのみ、
+    // それぞれストーリーモードで撃破（サタンはクリア）していれば対戦相手として表示する。
+    // プレイヤーキャラクター選択ではこれらボスキャラクターは常に非表示。
     const isEnemySelect = GameState.appState === 'select_enemy';
     const hasStoryClear = Object.values(
       achievementData.stats?.storyClears || {}
     ).some((v) => v >= 1);
+    const isVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
+    const isSuccubusUnlocked = (achievementData.stats?.succubusDefeated || 0) >= 1;
+
     return Object.values(charsObj).filter((c) => {
-      if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') return isEnemySelect;
+      if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') {
+        if (!isEnemySelect) return false;
+        if (c.id === 'satan') return hasStoryClear;
+        if (c.id === 'void') return isVoidUnlocked;
+        if (c.id === 'succubus') return isSuccubusUnlocked;
+      }
       if (c.id.startsWith('campaign_')) return false;
       return true;
     });
@@ -64,13 +71,21 @@ export default function CharacterSelectScreen() {
     const originalInit = window.initSelectScreenReact;
     window.initSelectScreenReact = () => {
       updateTitle();
-      // 画面切り替え時にサタンの表示状態を再評価する
+      // 画面切り替え時にサタン・ゼノン・ヴィオラの表示状態を再評価する
       const newIsEnemySelect = GameState.appState === 'select_enemy';
       const newHasStoryClear = Object.values(
         achievementData.stats?.storyClears || {}
       ).some((v) => v >= 1);
+      const newIsVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
+      const newIsSuccubusUnlocked = (achievementData.stats?.succubusDefeated || 0) >= 1;
+
       const newList = Object.values(charsObj).filter((c) => {
-        if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') return newIsEnemySelect;
+        if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') {
+          if (!newIsEnemySelect) return false;
+          if (c.id === 'satan') return newHasStoryClear;
+          if (c.id === 'void') return newIsVoidUnlocked;
+          if (c.id === 'succubus') return newIsSuccubusUnlocked;
+        }
         if (c.id.startsWith('campaign_')) return false;
         return true;
       });

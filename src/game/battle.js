@@ -3474,15 +3474,22 @@ export function endBattle() {
       if (
         GameState.gameMode === 'story' &&
         GameState.enemyConfig &&
-        GameState.enemyConfig.id === 'satan' &&
         typeof incrementStat === 'function'
       ) {
-        incrementStat('storyClears', GameState.playerConfig.id);
-        if (
-          typeof GameState.aiLevel !== 'undefined' &&
-          GameState.aiLevel === 3
-        ) {
-          incrementStat('storyClearsHard', GameState.playerConfig.id);
+        if (GameState.enemyConfig.id === 'satan') {
+          incrementStat('storyClears', GameState.playerConfig.id);
+          if (
+            typeof GameState.aiLevel !== 'undefined' &&
+            GameState.aiLevel === 3
+          ) {
+            incrementStat('storyClearsHard', GameState.playerConfig.id);
+          }
+        } else if (GameState.enemyConfig.id === 'void') {
+          // 【新規】虚空の騎士ゼノンをストーリーモードで撃破した記録を保存
+          incrementStat('voidDefeated');
+        } else if (GameState.enemyConfig.id === 'succubus') {
+          // 【新規】隷属の女王ヴィオラをストーリーモードで撃破した記録を保存
+          incrementStat('succubusDefeated');
         }
       }
       if (
