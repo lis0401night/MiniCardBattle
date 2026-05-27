@@ -51,15 +51,15 @@ export function getFallbackStoryDialogue(playerId, enemyId, isPre = true, isLate
 
   // 主人公への呼称の判定
   let honorific = 'あなた';
-  if (playerId === 'android') honorific = '対象（マスター）';
-  else if (playerId === 'dragon') honorific = '相棒';
+  if (playerId === 'android') honorific = 'マスター';
+  else if (playerId === 'dragon') honorific = 'あんた';
   else if (playerId === 'knight') honorific = '君';
-  else if (playerId === 'cthulhu') honorific = '迷い子さん';
+  else if (playerId === 'cthulhu') honorific = '貴方';
   else if (playerId === 'elf') honorific = 'あなた';
-  else if (playerId === 'cleric') honorific = '迷える羊';
+  else if (playerId === 'cleric') honorific = 'あんた';
   else if (playerId === 'devilhunter') honorific = '雇い主さん';
   else if (playerId === 'witch') honorific = '先輩';
-  else if (playerId === 'oni') honorific = 'マスター';
+  else if (playerId === 'oni') honorific = '貴方様';
   else if (playerId === 'priest') honorific = '侵入者';
 
   if (isPre) {
