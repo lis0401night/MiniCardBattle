@@ -3230,7 +3230,8 @@ export function endBattle() {
 
       // 同行プレイヤーへの語り掛けと次のナレーション
       const playerTalk = PLAYER_TALKS[playerId]?.[battleCount] || ['周囲の安全を確保しました。', '前進を継続しましょう。'];
-      const postNarration = STORY_NARRATIONS[battleCount]?.post || '強敵を打ち倒した一行は、さらなる深部を目指し歩みを進めるのだった。';
+      const postNarrationRaw = STORY_NARRATIONS[battleCount]?.post || ['強敵を打ち倒した一行は、さらなる深部を目指し歩みを進めるのだった。'];
+      const postNarrations = Array.isArray(postNarrationRaw) ? postNarrationRaw : [postNarrationRaw];
 
       let queue = [];
       if (battleCount === 4) {
@@ -3288,7 +3289,9 @@ export function endBattle() {
           queue.push({ speaker: 'player', text: playerTalk });
         }
 
-        queue.push({ speaker: 'narrator', text: postNarration });
+        postNarrations.forEach(text => {
+          queue.push({ speaker: 'narrator', text });
+        });
 
         GameState.dialogueQueue = queue;
       }

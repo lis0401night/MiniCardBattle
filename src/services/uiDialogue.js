@@ -79,8 +79,9 @@ export function startNextBattleSequence() {
   const enemyId = isShadow ? 'shadow' : GameState.enemyConfig.id;
   const battleCount = GameState.battleCount;
 
-  // 開始ナレーションの取得
-  const preNarration = STORY_NARRATIONS[battleCount]?.pre || '魔界の深部へと足を進める一行。行く手に新たなる影が立ち塞がった。';
+  // 開始ナレーションの取得（配列または文字列に対応）
+  const preNarrationRaw = STORY_NARRATIONS[battleCount]?.pre || ['魔界の深部へと足を進める一行。行く手に新たなる影が立ち塞がった。'];
+  const preNarrations = Array.isArray(preNarrationRaw) ? preNarrationRaw : [preNarrationRaw];
 
   // 戦闘前会話（両者2回ずつの掛け合い、計4行）の取得
   let dialogLines = [];
@@ -107,7 +108,7 @@ export function startNextBattleSequence() {
 
   // dialogueQueue に一挙に連結セット
   GameState.dialogueQueue = [
-    { speaker: 'narrator', text: preNarration },
+    ...preNarrations.map(text => ({ speaker: 'narrator', text })),
     ...dialogLines
   ];
 

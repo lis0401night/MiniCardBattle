@@ -1271,7 +1271,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 4,
     skills: [
-      { id: 'convert', value: 1 },
+      { id: 'standby', value: 1 },
       { id: 'sturdy' },
       { id: 'intercept', value: 2 },
     ],
@@ -1967,9 +1967,9 @@ export const CARD_MASTER = [
       { id: 'choice', value: 1 },
     ],
     choices: [
-      { id: 'snipe', value: 8 },
-      { id: 'intercept', value: 4 },
-      { id: 'artillery', value: 4 },
+      { id: 'snipe', value: 6 },
+      { id: 'intercept', value: 3 },
+      { id: 'artillery', value: 3 },
     ],
     voiceCategory: 'machine_old',
     flavor:
