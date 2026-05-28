@@ -2168,6 +2168,55 @@ export function drawCard(owner) {
 }
 
 export async function handleMoveSkills(owner) {
+  const currentBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const curSealed = owner === 'blue'
+    ? GameState.playerSealedLanes || [0, 0, 0]
+    : GameState.enemySealedLanes || [0, 0, 0];
+
+  // 1. 神出 (teleport) スキルの自動解決
+  const teleportMovedIds = new Set();
+  for (let i = 0; i < 3; i++) {
+    const c = currentBoard[i];
+    if (
+      c &&
+      typeof hasSkill === 'function' &&
+      hasSkill(c, 'teleport') &&
+      (c.stunTurns || 0) === 0 &&
+      !hasSkill(c, 'defender') &&
+      !teleportMovedIds.has(c.uid || c.id)
+    ) {
+      const emptyLanes = [];
+      for (let j = 0; j < 3; j++) {
+        if (currentBoard[j] === null && curSealed[j] === 0) {
+          emptyLanes.push(j);
+        }
+      }
+
+      if (emptyLanes.length > 0) {
+        const randomIndex = Math.floor(getSeededRandom() * emptyLanes.length);
+        const targetLane = emptyLanes[randomIndex];
+
+        // 演出（元の位置でポップアップ表示）
+        const originalEl = document.querySelector(
+          `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`
+        );
+        if (originalEl) {
+          createDamagePopup(originalEl, '神出', '#facc15');
+        }
+        playSound(SOUNDS.sePlace);
+
+        // 移動実行
+        currentBoard[targetLane] = c;
+        currentBoard[i] = null;
+        teleportMovedIds.add(c.uid || c.id);
+
+        await sleep(300);
+        renderBoard();
+      }
+    }
+  }
+
+  // 2. 移動 (move) スキルの解決
   if (owner !== 'blue' && GameState.gameMode !== 'online') {
     const b = GameState.enemyBoard;
     // AIの移動判断

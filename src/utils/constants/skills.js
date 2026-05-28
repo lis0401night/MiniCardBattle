@@ -413,6 +413,11 @@ export const SKILLS = {
     icon: '🕳️',
     desc: (val) => `召喚時、自分のデッキの上から${val}枚墓地に送る。`,
   },
+  teleport: {
+    name: '神出',
+    icon: '🚪',
+    desc: () => '自分のターン開始時にランダムな自分の空きレーンに移動する。（防御が付与されている場合は無効）',
+  },
   brutal: {
     name: '暴虐',
     icon: '🌪️',
@@ -632,7 +637,7 @@ export const SKILLS = {
   },
   cull: {
     name: '選別',
-    icon: '🚪',
+    icon: '🫳',
     desc: '召喚時、相手は自分のカード1枚を選択する。そのカードを破壊する。',
   },
   execute: {
@@ -780,4 +785,5 @@ export const PASSIVE_SKILLS = [
   'awake',
   'amplify',
   'intercept',
+  'teleport',
 ];

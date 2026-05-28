@@ -393,5 +393,9 @@ export const SKILL_POINTS = {
   support_void: {
     base: 0,
     multiplier: 1,
+  },
+  teleport: {
+    base: 0,
+    multiplier: 0,
   }
 };

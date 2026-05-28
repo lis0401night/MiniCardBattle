@@ -4382,9 +4382,42 @@ export function applyPassiveSkillLogic(
   processDestructionTriggers(state, events);
 
   const b = side === 'blue' ? state.playerBoard : state.enemyBoard;
+  const teleportMovedIds = new Set();
   for (let i = 0; i < 3; i++) {
     const c = b[i];
     if (!c) continue;
+
+    // 神出 (teleport): 空きレーンが1つの時に確定移動をシミュレート
+    if (
+      hasSkill(c, 'teleport') &&
+      (c.stunTurns || 0) === 0 &&
+      !hasSkill(c, 'defender') &&
+      !teleportMovedIds.has(c.uid || c.id)
+    ) {
+      const sealedLanes = side === 'blue'
+        ? state.playerSealedLanes || [0, 0, 0]
+        : state.enemySealedLanes || [0, 0, 0];
+      const emptyLanes = [];
+      for (let j = 0; j < 3; j++) {
+        if (b[j] === null && sealedLanes[j] === 0) {
+          emptyLanes.push(j);
+        }
+      }
+      if (emptyLanes.length === 1) {
+        const targetLane = emptyLanes[0];
+        b[targetLane] = c;
+        b[i] = null;
+        teleportMovedIds.add(c.uid || c.id);
+        events.push({
+          type: 'teleport_simulation',
+          side,
+          from: i,
+          to: targetLane,
+          source: 'teleport',
+        });
+      }
+    }
+
     if (hasSkill(c, 'growth')) {
       const v = getSkillValue(c, 'growth') || 1;
       c.currentPower += v;

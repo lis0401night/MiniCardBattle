@@ -221,6 +221,38 @@ export const ACHIEVEMENT_MASTER = [
       isPremiumUnlock: true,
     },
   },
+  {
+    id: 'unique_story_2',
+    title: '広がる世界',
+    description: '2種類のキャラクターのストーリーをクリアする',
+    type: 'unique_story_clear',
+    targetValue: 2,
+    reward: { type: 'card', value: 'crown', name: '道化師' },
+  },
+  {
+    id: 'unique_story_4',
+    title: '紡がれる絆',
+    description: '4種類のキャラクターのストーリーをクリアする',
+    type: 'unique_story_clear',
+    targetValue: 4,
+    reward: { type: 'card', value: 'crown', name: '道化師' },
+  },
+  {
+    id: 'unique_story_6',
+    title: '歴戦の指導者',
+    description: '6種類のキャラクターのストーリーをクリアする',
+    type: 'unique_story_clear',
+    targetValue: 6,
+    reward: { type: 'card', value: 'crown', name: '道化師' },
+  },
+  {
+    id: 'unique_story_8',
+    title: '英雄たちの王',
+    description: '8種類のキャラクターのストーリーをクリアする',
+    type: 'unique_story_clear',
+    targetValue: 8,
+    reward: { type: 'card', value: 'crown', name: '道化師' },
+  },
   // {
   //   id: 'unique_story_hard_2',
   //   title: '高みへの第一歩',
@@ -698,6 +730,7 @@ export function loadAchievements() {
     }
   }
   checkCollectionAchievements(); // カード収集状況はロード時に常に最新化して判定する
+  checkUniqueStoryAchievements(); // ストーリーのクリア種類数もロード時に判定
   checkUniqueStoryHardAchievements(); // 上級ストーリーのクリア種類数もロード時に判定
   checkTotalAchievementUnlocks(); // 累計実績もロード時に再計算して反映する
   saveAchievements();
@@ -788,6 +821,7 @@ function checkStoryAchievements(leaderId) {
     const clears = achievementData.stats.storyClears[leaderId] || 0;
     updateAchievement(ach.id, clears, 1);
   });
+  checkUniqueStoryAchievements();
 }
 
 // ストーリークリア（ハード）実績のチェック
@@ -809,6 +843,17 @@ function checkUniqueStoryHardAchievements() {
     (a) => a.type === 'unique_story_clear_hard'
   ).forEach((ach) => {
     updateAchievement(ach.id, hardClears, ach.targetValue);
+  });
+}
+
+function checkUniqueStoryAchievements() {
+  const normalClears = Object.keys(
+    achievementData.stats.storyClears || {}
+  ).filter((k) => achievementData.stats.storyClears[k] > 0).length;
+  ACHIEVEMENT_MASTER.filter(
+    (a) => a.type === 'unique_story_clear'
+  ).forEach((ach) => {
+    updateAchievement(ach.id, normalClears, ach.targetValue);
   });
 }
 

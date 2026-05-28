@@ -2735,6 +2735,16 @@ export const CARD_MASTER = [
       'その奇怪な手品師がカードを切り混ぜる時、確かなはずの未来さえも白紙に戻る。',
   },
   {
+    id: 'crown',
+    name: '道化師',
+    rarity: 4,
+    power: 5,
+    skills: [{ id: 'teleport' }],
+    voiceCategory: 'human_male_trickstar',
+    flavor:
+      '狂おしき道化師が舞台に立つ時、戦場は血塗られたサーカスへと変わる。残るのは幻影と、抗えぬ絶望のみ。',
+  },
+  {
     id: 'invader',
     name: '彼方からの侵略者',
     rarity: 4,
