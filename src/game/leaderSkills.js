@@ -306,10 +306,12 @@ export async function executeLeaderSkillAction(
         if (b[l]) {
           await discardCard(owner, b[l], l);
         }
+        // マスタデータ（CARD_MASTER）のskills配列などの参照汚染を防ぐため、ディープコピーを使用する
+        const deepClonedToken = JSON.parse(JSON.stringify(tokenCard));
         b[l] = {
           id: `dng_tk_${Math.floor(getSeededRandom() * 1000000000)}`,
           owner,
-          ...tokenCard,
+          ...deepClonedToken,
           imgUrl,
           filter: 'none',
           currentPower: tokenCard.power,

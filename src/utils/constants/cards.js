@@ -519,7 +519,7 @@ export const CARD_MASTER = [
     name: '雷のゴーレム',
     rarity: 1,
     power: 7,
-    skills: [{ id: 'explode', value: 5 }],
+    skills: [{ id: 'explode', value: 4 }],
     voiceCategory: 'stone',
     flavor:
       '高濃度の魔力で形成された雷の精霊。死の間際に激しい放電を引き起こす。',
@@ -1764,6 +1764,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 5,
     skills: [
+      { id: 'sacrifice', value: 2 },
       { id: 'growth', value: -1 },
       { id: 'soul_bind', value: 4 },
     ],

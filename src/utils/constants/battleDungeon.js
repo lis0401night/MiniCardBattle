@@ -163,8 +163,8 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     leaderCard.image || `assets/cards/card_${leaderCard.id}.jpg`;
   const dialogueData = getDungeonCharacterDialogue(leaderCard.id);
 
-  const RarityCostMap = { 1: 3, 2: 4, 3: 5, 4: 5 };
-  const leaderCost = RarityCostMap[leaderCard.rarity || targetRarity] || 3;
+  // 試練の宮殿の汎用リーダースキルはレア度に関わらず一律4ターン（SP:4）に固定
+  const leaderCost = 4;
 
   return {
     id: `dungeon_${leaderCard.id}_${Date.now()}_${Math.random()}`,

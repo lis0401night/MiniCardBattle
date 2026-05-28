@@ -363,8 +363,8 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   cull: {
-    base: 3,
-    multiplier: 0,
+    base: 0,
+    multiplier: 3,
   },
   execute: {
     base: -3,

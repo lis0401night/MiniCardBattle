@@ -436,32 +436,34 @@ export function initBattleState() {
         GameState.enemyMaxHP = GameState.enemyConfig.hp || 20;
       }
 
-      // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定
+      // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定（一律4ターン＝SP:4に固定）
       if (
         GameState.playerConfig &&
         GameState.playerConfig.leaderSkill &&
         GameState.playerConfig.leaderSkill.action === 'dungeon_summon_leader'
       ) {
-        const pRarity = GameState.playerConfig.rarity || 4;
         GameState.playerConfig = {
           ...GameState.playerConfig,
           leaderSkill: { ...GameState.playerConfig.leaderSkill },
         };
-        GameState.playerConfig.leaderSkill.cost =
-          pRarity === 1 ? 3 : pRarity === 2 ? 4 : 5;
+        GameState.playerConfig.leaderSkill.cost = 4;
+        if (GameState.playerConfig.leaderSkill.desc) {
+          GameState.playerConfig.leaderSkill.desc = GameState.playerConfig.leaderSkill.desc.replace(/\(SP:\d+\)/, '(SP:4)');
+        }
       }
       if (
         GameState.enemyConfig &&
         GameState.enemyConfig.leaderSkill &&
         GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader'
       ) {
-        const eRarity = GameState.enemyConfig.rarity || 4;
         GameState.enemyConfig = {
           ...GameState.enemyConfig,
           leaderSkill: { ...GameState.enemyConfig.leaderSkill },
         };
-        GameState.enemyConfig.leaderSkill.cost =
-          eRarity === 1 ? 3 : eRarity === 2 ? 4 : 5;
+        GameState.enemyConfig.leaderSkill.cost = 4;
+        if (GameState.enemyConfig.leaderSkill.desc) {
+          GameState.enemyConfig.leaderSkill.desc = GameState.enemyConfig.leaderSkill.desc.replace(/\(SP:\d+\)/, '(SP:4)');
+        }
       }
 
       GameState.playerHP =
