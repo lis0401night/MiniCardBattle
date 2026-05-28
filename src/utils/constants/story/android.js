@@ -169,7 +169,7 @@ export const storyDialogues = {
   dragon: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ なによあんた、そんな冷たい鉄の身体で私に勝てると思ってるわけ？' },
+        { speaker: 'enemy', text: '私はイグニス！ なによあんた、そんな冷たい鉄の身体で私に勝てると思ってるわけ？' },
         { speaker: 'player', text: '対象：イグニスの戦闘スペックおよび大斧の魔力をスキャン。' },
         { speaker: 'player', text: '本機は機動戦姫アイギス、これより実戦形式のデータ収集を開始します' },
         { speaker: 'enemy', text: '生意気ね！ そのいけ好かない分厚い装甲ごと、私の究極の炎でドロドロの鉄屑に溶かしてあげるわ！' },
@@ -183,7 +183,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ 魔王を倒しに行くんだから、邪魔しないで！ たとえ身体がボロボロだって、退くもんですか！' },
+        { speaker: 'enemy', text: '私はイグニス！ 魔王を倒しに行くんだから、邪魔しないで！ たとえ身体がボロボロだって、退くもんですか！' },
         { speaker: 'player', text: '対象：イグニスの生体バイタルをスキャン。' },
         { speaker: 'player', text: '魔王城への無謀な進軍は、生存確率0.03%以下と算出。' },
         { speaker: 'player', text: 'これ以上の前進を阻止します' },
@@ -204,7 +204,7 @@ export const storyDialogues = {
   knight: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は聖騎士セレスティア。その堅固なる鋼鉄の装甲、我が聖剣の輝きが貫けるか、一手立ち会わせてもらおう！' },
+        { speaker: 'enemy', text: '私は騎士団長セレスティア。その堅固なる鋼鉄の装甲、我が聖剣の輝きが貫けるか、一手立ち会わせてもらおう！' },
         { speaker: 'player', text: '対象：セレスティアの聖剣から放たれる高エネルギー波形を検出。' },
         { speaker: 'player', text: '機動戦姫アイギス、これより対魔法物理障壁の性能テストを行います' },
         { speaker: 'enemy', text: 'フッ、手加減などという侮辱はしない。王国の剣術、全力でいかせてもらうぞ！' },
@@ -219,7 +219,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '我が名は聖騎士セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
+        { speaker: 'enemy', text: '我が名は騎士団長セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
         { speaker: 'player', text: '対象：セレスティアの構造強度の47%が損耗。' },
         { speaker: 'player', text: 'その満身創痍の状態でサタンへ挑めば、命を落とすだけです' },
         { speaker: 'enemy', text: 'くっ、王国の騎士がここで立ち止まるわけにはいかないのだ！ 我が剣の誇りにかけて、そこを通らせてもらう！' },
@@ -240,7 +240,7 @@ export const storyDialogues = {
   cthulhu: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。ただ分厚いだけの物理的な鉄屑で、この私の混沌に抗おうだなんて……' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。ただ分厚いだけの物理的な鉄屑で、この私の混沌に抗おうだなんて……' },
         { speaker: 'player', text: '対象：ナイアの未知の狂気エネルギーを計測。' },
         { speaker: 'player', text: '機動戦姫アイギス、精神防護システムを最大稼働します' },
         { speaker: 'enemy', text: 'あら、面白い機械。いいですわ、その自信満々な新しい装甲ごと、絶望の底に沈めて差し上げますわ' },
@@ -255,7 +255,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         { speaker: 'enemy', text: 'この世界が滅びに向かう中、魔王のもとへ急ぐだなんて。私も同行させて？' },
         { speaker: 'player', text: '対象：ナイアの同行は、マスターの安全ログに甚大なリスクをもたらすため、許可できません。' },
         { speaker: 'player', text: 'また、対象の魔力コアに深刻な亀裂を検出' },
@@ -277,7 +277,7 @@ export const storyDialogues = {
   elf: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ。機械ってよくわからないけれど、私の銀の弓から放つ魔法の矢が、その装甲に通じるか試させて' },
+        { speaker: 'enemy', text: '私はリナ。機械ってよくわからないけれど、私の銀の弓から放つ魔法の矢が、その装甲に通じるか試させて' },
         { speaker: 'player', text: '対象：リナの弓および星墜ちの矢の構造をスキャン。' },
         { speaker: 'player', text: '機動戦姫アイギス、これより多弾魔法矢の軌道追尾テストを行います' },
         { speaker: 'enemy', text: 'どんなに堅い鉄の塊だって関係ないわ。私の矢に貫けないものはないって、今ここで証明してみせる！' },
@@ -291,7 +291,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ！ 森の長老との約束を果たしに魔王城へ行くの！' },
+        { speaker: 'enemy', text: '私はリナ！ 森の長老との約束を果たしに魔王城へ行くの！' },
         { speaker: 'enemy', text: '立ち塞がるなら、あなたたちでも容赦しない！' },
         { speaker: 'player', text: '対象：リナの生体エネルギー残量が15%未満。' },
         { speaker: 'player', text: 'その体力状態で魔王サタンと対峙することは自殺行為です' },
@@ -311,7 +311,7 @@ export const storyDialogues = {
   cleric: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'はぁ？ 私は狂信の聖職者エリシアよ。' },
+        { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         { speaker: 'enemy', text: 'この私に新型兵器の的当ての手伝いをしろですって？' },
         { speaker: 'player', text: '対象：エリシアの神罰のメイス、および鎖付き鉄十字架の打撃エネルギーを想定。' },
         { speaker: 'player', text: '機動戦姫アイギス、近接防御テストを申請します' },
@@ -328,7 +328,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は狂信の聖職者エリシア！ サタンを神罰のメイスで叩き潰しに行くのよ！' },
+        { speaker: 'enemy', text: '私はエリシア！ サタンを神罰のメイスで叩き潰しに行くのよ！' },
         { speaker: 'enemy', text: '邪魔するならあんた達から消すわ！' },
         { speaker: 'player', text: '対象：エリシアの呼吸器系の過負荷を検知。魔王城の瘴気による汚染が疑われます。' },
         { speaker: 'player', text: 'これ以上の進軍は即座の機能停止を招きます' },
@@ -348,7 +348,7 @@ export const storyDialogues = {
   devilhunter: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア。新兵器の限界耐久テストってわけ？' },
+        { speaker: 'enemy', text: '私はマリア。新兵器の限界耐久テストってわけ？' },
         { speaker: 'enemy', text: 'いいわ、でも対装甲弾の弾代と私の手間賃は、かなり高くつくわよ？' },
         { speaker: 'player', text: '対象：マリアの物理火器、および対装甲リボルバーの貫通力を計測。' },
         { speaker: 'player', text: '機動戦姫アイギス、これより実戦テストを開始します' },
@@ -362,7 +362,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア！ 魔王の首を狩って大金を手に入れるしかねえだろ！' },
+        { speaker: 'enemy', text: '私はマリア！ 魔王の首を狩って大金を手に入れるしかねえだろ！' },
         { speaker: 'enemy', text: 'そこをどきな！' },
         { speaker: 'player', text: '対象：マリアの筋力反応および銃を引く手の微細な震えを感知。' },
         { speaker: 'player', text: 'すでに過度の連戦により、戦闘効率が35%以下に低下しています' },
@@ -381,7 +381,7 @@ export const storyDialogues = {
   witch: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ。物理的な重武装で時間干渉魔法に抗おうっていうんですか？' },
+        { speaker: 'enemy', text: '私はクロエ。物理的な重武装で時間干渉魔法に抗おうっていうんですか？' },
         { speaker: 'enemy', text: '無茶苦茶ですよ' },
         { speaker: 'player', text: '対象：クロエの時間操作魔法のシステムをスキャン。' },
         { speaker: 'player', text: '機動戦姫アイギス、これより時間加速・遅延による内部クロックの耐性テストを行います' },
@@ -395,7 +395,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ！ 世界が滅びれば、私の時間の魔法もすべて消えてしまうんです！' },
+        { speaker: 'enemy', text: '私はクロエ！ 世界が滅びれば、私の時間の魔法もすべて消えてしまうんです！' },
         { speaker: 'enemy', text: '面倒ですけど、魔王を止めに行きます！' },
         { speaker: 'player', text: '対象：クロエの精神バイタル、および魔力回路の異常なスパイク電流を検出。' },
         { speaker: 'player', text: '過度な時間逆行による精神負荷が限界を超えています' },
@@ -415,7 +415,7 @@ export const storyDialogues = {
   oni: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ。いつ暴走するかもしれない、私の中に深く眠る鬼の力……本当に試したいのですか？' },
+        { speaker: 'enemy', text: '私はカグラ。いつ暴走するかもしれない、私の中に深く眠る鬼の力……本当に試したいのですか？' },
         { speaker: 'player', text: '対象：カグラの陰陽の符、および鬼血エネルギーの熱量を測定。' },
         { speaker: 'player', text: '機動戦姫アイギス、物理対魔の防壁テストを開始します' },
         { speaker: 'enemy', text: '手加減ができるような力ではありません。アイギスさんのその冷たい装甲で、荒ぶる鬼の力に耐えられるでしょうか！' },
@@ -429,7 +429,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ！ サタンを封印するため、この命を賭して魔王城へ向かわねば！' },
+        { speaker: 'enemy', text: '私はカグラ！ サタンを封印するため、この命を賭して魔王城へ向かわねば！' },
         { speaker: 'player', text: '対象：カグラの右腕の術式基盤の過負荷を検知。' },
         { speaker: 'player', text: '封印術式を行うには致命的な魔力破綻状態です' },
         { speaker: 'enemy', text: 'たとえこの身が引き裂かれようとも、修験者としての役目を果たすのみ！ 急急如律令、そこをどいてください！' },
@@ -447,7 +447,7 @@ export const storyDialogues = {
   priest: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。冷たい鉄の身体……自ら被検体になるなど、預言にはない奇妙な真似をする……' },
+        { speaker: 'enemy', text: '……私はネフティ。冷たい鉄の身体……自ら被検体になるなど、預言にはない奇妙な真似をする……' },
         { speaker: 'player', text: '対象：ネフティの古代の呢縛、および儀式用ナイフの組成を分析。' },
         { speaker: 'player', text: '機動戦姫アイギス、物理装甲の実証データを取得します' },
         { speaker: 'enemy', text: '……王家の呪いの深さ、お前のその鉄屑の身体で、どれほど耐えられるか教えてやろう……' },
@@ -462,7 +462,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。王墓の静寂が侵された。' },
+        { speaker: 'enemy', text: '……私はネフティ。王墓の静寂が侵された。' },
         { speaker: 'enemy', text: '我がこのナイフで、奴の心臓を穿ちに行く……' },
         { speaker: 'player', text: '対象：ネフティの左肺、および魔力呼吸器官における機能不全を検知。古代呪縛の暴走による肉体の壊死が進行しています' },
         { speaker: 'enemy', text: '……ふん、ただの機能不全だ。我が命の灯が消える前に、魔王の息の根を止めれば、王墓の役目は果たされる……！' },
@@ -481,7 +481,7 @@ export const storyDialogues = {
   android: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス。これよりマスターの契約対象としての適性を評価するため、実戦形式の手合わせを行います' },
+        { speaker: 'enemy', text: '私はアイギス。これよりマスターの契約対象としての適性を評価するため、実戦形式の手合わせを行います' },
         { speaker: 'player', text: '対象：アイギスの外装フレームおよび演算ユニットの完全な一致を確認。' },
         { speaker: 'player', text: '機動戦姫アイギス、同型機との戦闘シミュレーションを開始します' },
         { speaker: 'enemy', text: '手加減はしません。マスターへの忠誠の最適化、それこそが本機の目的です' },
@@ -494,7 +494,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
+        { speaker: 'enemy', text: '私はアイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
         { speaker: 'enemy', text: '立ち塞がる者は排除します！' },
         { speaker: 'player', text: '対象：アイギスの駆動温度が危険域に達していることを検知。' },
         { speaker: 'player', text: '冷却システムの破損を確認。これ以上の前進は機能全損を招きます' },

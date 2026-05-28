@@ -103,7 +103,6 @@ export async function resolveActiveSkillEffect(
       'leap',
       'chant',
       'forge',
-      'destroy',
       'explore',
       'cull',
       'execute',
@@ -113,10 +112,6 @@ export async function resolveActiveSkillEffect(
       'heal_void',
       'spread_void',
       'support_void',
-      'grant_deadly',
-      'grant_pierce',
-      'grant_absorb',
-      'grant_sturdy',
     ].includes(skillId)
   ) {
     playSkillSound(skillId);
@@ -150,7 +145,6 @@ export async function resolveActiveSkillEffect(
       leap: '跳躍',
       chant: '詠唱',
       forge: '鍛造',
-      destroy: '破壊',
       explore: '探索',
       cull: '選別',
       execute: '処刑',
@@ -160,10 +154,6 @@ export async function resolveActiveSkillEffect(
       heal_void: '回復(虚)',
       spread_void: '拡散(虚)',
       support_void: '援護(虚)',
-      grant_deadly: '付与(必殺)',
-      grant_pierce: '付与(貫通)',
-      grant_absorb: '付与(吸収)',
-      grant_sturdy: '付与(頑丈)',
     };
     if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
     await sleep(200); // Popupを見せる間
@@ -376,53 +366,6 @@ export async function resolveActiveSkillEffect(
     return;
   }
 
-  if (skillId === 'destroy') {
-    const board = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-    const oppOwner = o === 'blue' ? 'red' : 'blue';
-    const validLanes = [];
-    board.forEach((card, idx) => {
-      if (card) validLanes.push(idx);
-    });
-
-    if (validLanes.length > 0) {
-      let targetLane = -1;
-      if (
-        o === 'red' &&
-        GameState.gameMode !== 'online' &&
-        GameState.gameMode !== 'pvp'
-      ) {
-        const aiAction = consumeAIAction('destroy');
-        if (aiAction && aiAction.laneIdx !== undefined)
-          targetLane = aiAction.laneIdx;
-      } else {
-        const tLanes = await waitPlayerEnemyLaneSelection(
-          1,
-          o,
-          true,
-          '破壊する相手のカードを1枚選んでください'
-        );
-        if (tLanes && tLanes.length > 0) targetLane = tLanes[0];
-      }
-
-      if (targetLane !== -1) {
-        let events = [];
-        applyActiveSkillLogic(
-          currentState,
-          o,
-          l,
-          'destroy',
-          1,
-          events,
-          null,
-          targetLane
-        );
-        if (events.length > 0) {
-          await playEvents(events);
-        }
-      }
-    }
-    return;
-  }
   if (skillId === 'forge') {
     let selectedIdx = -1;
     let selectedLane = -1;
@@ -3016,38 +2959,6 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
-    if (sk.id === 'maintain') {
-      const val = sk.value || 1;
-      const currentState = {
-        playerBoard: GameState.playerBoard.map((c) =>
-          c ? JSON.parse(JSON.stringify(c)) : null
-        ),
-        enemyBoard: GameState.enemyBoard.map((c) =>
-          c ? JSON.parse(JSON.stringify(c)) : null
-        ),
-        playerHP: GameState.playerHP,
-        enemyHP: GameState.enemyHP,
-        playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-        enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-        playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-        enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-        playerSealedLanes: GameState.playerSealedLanes,
-        enemySealedLanes: GameState.enemySealedLanes,
-      };
-
-      let maintainEvents = [];
-      applyActiveSkillLogic(
-        currentState,
-        owner,
-        lane,
-        'maintain',
-        val,
-        maintainEvents
-      );
-
-      events.push(...maintainEvents);
-      triggered = true;
-    }
 
     if (sk.id === 'awake') {
       const val = sk.value || 1;

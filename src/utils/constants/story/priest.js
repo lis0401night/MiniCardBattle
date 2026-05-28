@@ -96,8 +96,8 @@ export const storyDialogues = {
   android: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス。古代呪縛の魔力熱源を検知しました。王墓の守護者、本機との限界戦闘テストを要請します' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。機械の戦姫よ、我が儀式用ナイフと古代の呪縛……その鋼鉄で防げるか……？' },
+        { speaker: 'enemy', text: '私はアイギス。古代呪縛の魔力熱源を検知しました。王墓の守護者、本機との限界戦闘テストを要請します' },
+        { speaker: 'player', text: '……私はネフティ。機械の戦姫よ、我が儀式用ナイフと古代の呪縛……その鋼鉄で防げるか……？' },
         { speaker: 'enemy', text: '防壁の最大展開を確認。物理および呪術的耐性の測定を開始します' },
         { speaker: 'player', text: '……お前のその冷徹なる演算で……我が呪縛の深淵に耐えられるか……確かめさせてもらう' }
       ],
@@ -108,7 +108,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
+        { speaker: 'enemy', text: '私はアイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
         { speaker: 'enemy', text: '立ち塞がる者は排除します！' },
         { speaker: 'player', text: '……待て、アイギス。お前の駆動回路は……すでに発煙し、臨界点を超えている……' },
         { speaker: 'enemy', text: '世界の崩壊を防ぐため、本機の生存は度外視とします。退きなさい！' },
@@ -127,7 +127,7 @@ export const storyDialogues = {
     early: {
       pre: [
         { speaker: 'enemy', text: '私の究極の炎に耐えられるか試したいって？ あっそ、あんたがそういうなら別に構わないけどさ！' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。その大斧から放たれる竜の炎、王墓の静寂を脅かすに値するか……？' },
+        { speaker: 'player', text: '……私はネフティ。その大斧から放たれる竜の炎、王墓の静寂を脅かすに値するか……？' },
         { speaker: 'enemy', text: 'なによ！ あんたのその冷たいナイフで、私の自慢の大斧と竜の炎を防ぎきれると思ってんの！？' },
         { speaker: 'player', text: '……防ぐのではない、穿つのだ。お前のその熱き闘気、我が古代呪縛で鎮めてみせよう……' }
       ],
@@ -138,7 +138,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ 魔王を倒しに行くんだから、邪魔しないで！ たとえ身体がボロボロだって、退くもんですか！' },
+        { speaker: 'enemy', text: '私はイグニス！ 魔王を倒しに行くんだから、邪魔しないで！ たとえ身体がボロボロだって、退くもんですか！' },
         { speaker: 'player', text: '……退け、イグニス。お前の全身は傷つき、大斧を握る力さえ……すでに失われかけている……' },
         { speaker: 'enemy', text: 'なによ！ あんたたちに何がわかるのよ！ 私の炎で、その頑丈な身体をこじ開けてでも先へ進んでやるんだから！' },
         { speaker: 'player', text: '……意地だけで進めば、待つのは犬死にだけだ。我が儀式用ナイフをもって……その無謀な足を縛り付ける……！' }
@@ -156,8 +156,8 @@ export const storyDialogues = {
   knight: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は聖騎士セレスティア。ネフティ、君の持つ古代呪縛の気配……邪悪を祓う素晴らしい力を感じるぞ！' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。王国の高潔なる騎士よ。' },
+        { speaker: 'enemy', text: '私は騎士団長セレスティア。ネフティ、君の持つ古代呪縛の気配……邪悪を祓う素晴らしい力を感じるぞ！' },
+        { speaker: 'player', text: '……私はネフティ。王国の高潔なる騎士よ。' },
         { speaker: 'player', text: '我が儀式用ナイフと呪縛……その聖剣とシールドで受けてみるか……？' },
         { speaker: 'enemy', text: '手加減などという侮辱はしない。我が聖剣の光をもって、全力で君の呪縛に挑ませてもらおう！' },
         { speaker: 'player', text: '……光栄だ、セレスティア。我が呪縛の闇とお前の聖なる光……どちらがより深いか、確かめよう' }
@@ -169,7 +169,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '我が名は聖騎士セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
+        { speaker: 'enemy', text: '我が名は騎士団長セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
         { speaker: 'player', text: '……待て、セレスティア。お前の鎧は砕け、その聖剣を支える腕も……限界の悲鳴を上げている……' },
         { speaker: 'enemy', text: '王国の騎士がここで立ち止まるわけにはいかないのだ！ 我が剣の誇りにかけて、そこを通らせてもらう！' },
         { speaker: 'player', text: '……誇りのために命を捨てるなど、真の騎士道ではない。我が儀式用ナイフをもって……その歩みを強制停止する……！' }
@@ -187,9 +187,9 @@ export const storyDialogues = {
   cthulhu: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         { speaker: 'enemy', text: 'あちらの席で、不気味なナイフを握りしめて。すっかり呪いに染まって……最高ですわね' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。深淵の少女よ。お前の放つ狂気の気配……' },
+        { speaker: 'player', text: '……私はネフティ。深淵の少女よ。お前の放つ狂気の気配……' },
         { speaker: 'player', text: '我が古代の呪縛すら激しくざわついている……' },
         { speaker: 'enemy', text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう' },
         { speaker: 'player', text: '……沈むのはお前だ、ナイア。' },
@@ -203,7 +203,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         { speaker: 'enemy', text: 'この世が滅びる絶望を、もっと間近で楽しむために魔王城へ向かいますの' },
         { speaker: 'player', text: '……待て、ナイア。お前の深淵の魔力は完全に暴走し……' },
         { speaker: 'player', text: 'その肉体すら崩壊しかけている……' },
@@ -225,9 +225,9 @@ export const storyDialogues = {
   elf: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ。ネフティ、あなたの古代の呪縛とナイフの術式……' },
+        { speaker: 'enemy', text: '私はリナ。ネフティ、あなたの古代の呪縛とナイフの術式……' },
         { speaker: 'enemy', text: '私の銀の弓と星墜ちの矢で、全力で受け止めてみせるわ！' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。エルフの射手よ。' },
+        { speaker: 'player', text: '……私はネフティ。エルフの射手よ。' },
         { speaker: 'player', text: 'お前の銀の弓が放つ矢、我が呪縛の防壁を射抜けるか……？' },
         { speaker: 'enemy', text: 'もちろんよ！ 森の乙女の誇りにかけて、どんな硬い障壁だって射抜いてみせるから！' },
         { speaker: 'player', text: '……ならば見せてみよ、リナ。' },
@@ -240,7 +240,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ！ 森の長老との約束を果たしに魔王城へ！' },
+        { speaker: 'enemy', text: '私はリナ！ 森の長老との約束を果たしに魔王城へ！' },
         { speaker: 'enemy', text: '邪魔するなら、あなたでも容赦しない！' },
         { speaker: 'player', text: '……待て、リナ。お前の身体はすでに満身創痍……' },
         { speaker: 'player', text: '弓を引くその両腕も……激しく震えている……' },
@@ -263,10 +263,10 @@ export const storyDialogues = {
   cleric: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'はぁ？ 私は狂信の聖職者エリシアよ。' },
+        { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         { speaker: 'enemy', text: 'なんであの古代人が私と同じくらい上座に座ってるの？ ' },
         { speaker: 'enemy', text: '目障りだからお仕置きしてあげるわ' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。不遜なる聖職者よ。' },
+        { speaker: 'player', text: '……私はネフティ。不遜なる聖職者よ。' },
         { speaker: 'player', text: 'その神罰のメイス、我が古代呪縛とナイフを叩き砕けるか……？' },
         { speaker: 'enemy', text: 'いい度胸ね！ 古代のガラクタごと、私の神罰のメイスで粉々に叩き壊してあげるわ！ ' },
         { speaker: 'enemy', text: 'かかってきなさい！' },
@@ -281,7 +281,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は狂信の聖職者エリシア！ 私の財産を脅かすサタンを、神罰のメイスで叩き潰す！' },
+        { speaker: 'enemy', text: '私はエリシア！ 私の財産を脅かすサタンを、神罰のメイスで叩き潰す！' },
         { speaker: 'enemy', text: '邪魔するならあんた達から消すわ！' },
         { speaker: 'player', text: '……どけ、エリシア。お前の身体は魔王の瘴気に侵され……' },
         { speaker: 'player', text: 'すでに呼吸すら乱れている……' },
@@ -303,9 +303,9 @@ export const storyDialogues = {
   devilhunter: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア。古代呪縛と儀式用ナイフの墓守？' },
+        { speaker: 'enemy', text: '私はマリア。古代呪縛と儀式用ナイフの墓守？' },
         { speaker: 'enemy', text: '報酬がいいなら文句はないけど、私のリボルバーは手加減しないわよ' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。お前の持つリボルバーと棺桶……' },
+        { speaker: 'player', text: '……私はネフティ。お前の持つリボルバーと棺桶……' },
         { speaker: 'player', text: '悪魔狩りの銃弾、我が古代の呪縛で防げるか……？' },
         { speaker: 'enemy', text: 'せいぜい棺桶行きにならないように、しっかり連携してかかってきなさい。' },
         { speaker: 'enemy', text: '私のリボルバーは容赦しないわよ' },
@@ -319,7 +319,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア！ 魔王の首を狩って大金を手に入れないと割に合わないのよ！ ' },
+        { speaker: 'enemy', text: '私はマリア！ 魔王の首を狩って大金を手に入れないと割に合わないのよ！ ' },
         { speaker: 'enemy', text: 'そこをどきなさい！' },
         { speaker: 'player', text: '……退け、マリア。お前の全身は裂傷にまみれ……' },
         { speaker: 'player', text: 'リボルバーを引く指も震えている……' },
@@ -341,9 +341,9 @@ export const storyDialogues = {
   witch: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ。はぁ……なんで私がネフティさんのお相手なんて。' },
+        { speaker: 'enemy', text: '私はクロエ。はぁ……なんで私がネフティさんのお相手なんて。' },
         { speaker: 'enemy', text: '面倒ですけどわかりました' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。時間の魔女よ。' },
+        { speaker: 'player', text: '……私はネフティ。時間の魔女よ。' },
         { speaker: 'player', text: 'お前の持つ懐中時計と時間の魔術……我が呪縛で歪ませてみせよう' },
         { speaker: 'enemy', text: 'さっさと適当なレポート書いて帰りましょう。その古いナイフ、一瞬でガラクタに見せてあげます' },
         { speaker: 'player', text: '……ガラクタにするのは……お前のその時間の牢獄だ。来い、クロエ……' }
@@ -356,7 +356,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ！ 世界が滅びれば、時間の魔法もすべて消えてしまう！' },
+        { speaker: 'enemy', text: '私はクロエ！ 世界が滅びれば、時間の魔法もすべて消えてしまう！' },
         { speaker: 'enemy', text: '面倒ですけど、魔王を止めに行きます！' },
         { speaker: 'player', text: '……待て、クロエ。過度な時間操作による魔力回路の逆流……' },
         { speaker: 'player', text: 'お前の脳はすでに限界のはずだ……' },
@@ -378,9 +378,9 @@ export const storyDialogues = {
   oni: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ。ネフティ殿、古代の呪縛と儀式用ナイフの冴え……' },
+        { speaker: 'enemy', text: '私はカグラ。ネフティ殿、古代の呪縛と儀式用ナイフの冴え……' },
         { speaker: 'enemy', text: '我が符で確かめさせていただきますね' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。お札と結界の巫女よ。' },
+        { speaker: 'player', text: '……私はネフティ。お札と結界の巫女よ。' },
         { speaker: 'player', text: '我が儀式用ナイフと古代の呪縛……その術式で防ぎきれるか……？' },
         { speaker: 'enemy', text: '邪悪を祓う陰陽の術式をもって、その古代呪縛を完全に浄化してみせましょう！ ' },
         { speaker: 'enemy', text: 'いざ、勝負です' },
@@ -395,7 +395,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ！ サタンを封印するため、この命を賭して魔王城へ！' },
+        { speaker: 'enemy', text: '私はカグラ！ サタンを封印するため、この命を賭して魔王城へ！' },
         { speaker: 'player', text: '……待て、カグラ。お前の中に眠る鬼の血と結界……' },
         { speaker: 'player', text: 'すでに酷使により、崩壊の寸前だ……' },
         { speaker: 'enemy', text: 'たとえこの身が引き裂かれようとも、修験者としての役目を果たすのみ！ ' },
@@ -417,7 +417,7 @@ export const storyDialogues = {
   priest: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。' },
+        { speaker: 'enemy', text: '……私はネフティ。' },
         { speaker: 'enemy', text: '自分自身を穿ち、古代の誓約をより強固なものとするため……手合わせを求める……' },
         { speaker: 'player', text: '……私もまた王墓の守護者ネフティだ。己の影を穿つための試練、喜んで受けよう。' },
         { speaker: 'player', text: '儀式用ナイフの冴え、見せてみよ……' },
@@ -435,7 +435,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。王墓の静寂が侵された。' },
+        { speaker: 'enemy', text: '……私はネフティ。王墓の静寂が侵された。' },
         { speaker: 'enemy', text: '我がこのナイフで、奴の心臓を穿ちに行く……' },
         { speaker: 'player', text: '……待て、私よ。お前の身体は古代呪縛の浸食により、' },
         { speaker: 'player', text: 'すでに崩壊の一歩手前のはずだ……' },
@@ -477,7 +477,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）' },
-        { speaker: 'player', text: '……虚空の騎士ゼノンだな。私は王墓の守護者ネフティ。' },
+        { speaker: 'player', text: '……虚空の騎士ゼノンだな。私はネフティ。' },
         { speaker: 'player', text: 'その鎧から溢れ出る冥界の魔力……我が呪縛の刃で消し去ってやろう' },
         { speaker: 'enemy', text: '……（トゲのある黒紫の甲冑が不気味に軋み、無機質な虚空の魔力が最高出力に達する）' },
         { speaker: 'player', text: '……意思なき虚無の操り人形よ。' },
@@ -496,7 +496,7 @@ export const storyDialogues = {
       pre: [
         { speaker: 'enemy', text: 'ふふっ、私は隷属の女王ヴィオラよ。冷たそうな神官様が魔王城の奥まで。' },
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。淫靡なる魅了の女王ヴィオラだな。' },
+        { speaker: 'player', text: '……私はネフティ。淫靡なる魅了の女王ヴィオラだな。' },
         { speaker: 'player', text: 'その妖しき魔鎖、我が古代の呪縛で粉砕してやろう' },
         { speaker: 'enemy', text: 'あらあら、生意気な口ね。その自慢のナイフごと、私の魔鎖の枷でがんじがらめにして、可愛がってあげるわ' },
         { speaker: 'player', text: '……甘美なる幻影など、我が心を揺らすことはできん。' },
@@ -514,7 +514,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: 'フハハハ！ 我こそは魔王サタン！ 世界のすべてを絶望と虚無の闇に沈める支配者なり！' },
-        { speaker: 'player', text: '……私は王墓の守護者ネフティ。魔王サタンよ。' },
+        { speaker: 'player', text: '……私はネフティ。魔王サタンよ。' },
         { speaker: 'player', text: '我が古代の呪縛とお前の闇、どちらが真の支配か決めよう' },
         { speaker: 'enemy', text: '脆弱な人間と呪われた墓守が、この我が絶望の力に抗えると思うか！ 我が炎で一瞬にして焼き尽くしてくれよう！' },
         { speaker: 'player', text: '……我が魂はすでに古代呪縛に捧げられている。お前の炎など恐れるに足りん。' },

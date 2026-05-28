@@ -526,11 +526,6 @@ export const SKILLS = {
       { type: 'text', value: 'を加える。' },
     ],
   },
-  destroy: {
-    name: '破壊',
-    icon: '🚪',
-    desc: (val) => '召喚時、相手の場のカード1枚を選び、破壊する。',
-  },
   hack: {
     name: '改竄',
     icon: '👾',
@@ -619,18 +614,6 @@ export const SKILLS = {
     icon: '💀',
     desc: (val) => `召喚時、相手のデッキの上から${val}枚墓地に送る。`,
   },
-  maintain: {
-    name: '維持',
-    icon: '⚙️',
-    desc: (val) => [
-      {
-        type: 'text',
-        value: `自分のターン開始時、自分の手札の最大パワーのカード${val || 1}枚を捨て、同数`,
-      },
-      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: 'を加える。（同値の場合は左優先）' },
-    ],
-  },
   recurse: {
     name: '再帰',
     icon: '♻️',
@@ -693,26 +676,6 @@ export const SKILLS = {
     desc: (val) =>
       `召喚時、自分の手札の「虚空」1枚につき隣のカードのパワーを+${val || 2}する。`,
   },
-  grant_deadly: {
-    name: '付与(必殺)',
-    icon: '✡️',
-    desc: (val) => `召喚時、自分の場のトークン全てに「必殺」を付与する。`,
-  },
-  grant_pierce: {
-    name: '付与(貫通)',
-    icon: '✡️',
-    desc: (val) => `召喚時、自分の場のトークン全てに「貫通」を付与する。`,
-  },
-  grant_absorb: {
-    name: '付与(吸収)',
-    icon: '✡️',
-    desc: (val) => `召喚時、自分の場のトークン全てに「吸収」を付与する。`,
-  },
-  grant_sturdy: {
-    name: '付与(頑丈)',
-    icon: '✡️',
-    desc: (val) => `召喚時、自分の場のトークン全てに「頑丈」を付与する。`,
-  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -769,7 +732,6 @@ export const ACTIVE_SKILLS = [
   'burial',
   'recurse',
   'forge',
-  'destroy',
   'hack',
   'cull',
   'execute',
@@ -779,16 +741,13 @@ export const ACTIVE_SKILLS = [
   'heal_void',
   'spread_void',
   'support_void',
-  'grant_deadly',
-  'grant_pierce',
-  'grant_absorb',
-  'grant_sturdy',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
 export const PASSIVE_SKILLS = [
   'deadly',
   'sturdy',
+  'guardian',
   'soul_bind',
   'growth',
   'defender',
@@ -817,7 +776,6 @@ export const PASSIVE_SKILLS = [
   'martyr',
   'cleave',
   'arm_self',
-  'maintain',
   'grave_keeper',
   'awake',
   'amplify',

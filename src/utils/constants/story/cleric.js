@@ -83,8 +83,8 @@ export const storyDialogues = {
   android: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス。これより実戦形式での限界耐久テストへ移行します。そこの聖職者、対戦をお願いします' },
-        { speaker: 'player', text: 'はぁ？ 私は狂信の聖職者エリシアよ。' },
+        { speaker: 'enemy', text: '私はアイギス。これより実戦形式での限界耐久テストへ移行します。そこの聖職者、対戦をお願いします' },
+        { speaker: 'player', text: 'はぁ？ 私はエリシアよ。' },
         { speaker: 'player', text: 'わざわざこんな所に呼び立てて、この私に新型兵器の的当ての手伝いをしろですって？' },
         { speaker: 'enemy', text: '対象の生体反応および攻撃性の高まりを確認。物理防御シールドの耐久テストを開始します。いつでもどうぞ' },
         { speaker: 'player', text: 'まぁいいわ、ちょうどストレスが溜まってたのよ！ その小憎たらしい装甲ごと、私のメイスで粉々に叩き割ってあげる！' }
@@ -96,7 +96,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
+        { speaker: 'enemy', text: '私はアイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
         { speaker: 'enemy', text: '立ち塞がる者は排除します！' },
         { speaker: 'player', text: 'ちょっと、あんたスクラップ寸前じゃない！ そんなヨロヨロの歯車で魔王城へ行くなんて、本当にイカれてるわ！' },
         { speaker: 'enemy', text: '世界の崩壊を防ぐため、本機の生存は度外視とします。退きなさい！' },
@@ -115,9 +115,9 @@ export const storyDialogues = {
   dragon: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ なによあんた、ジメジメした変なメイスを振り回しちゃって！' },
+        { speaker: 'enemy', text: '私はイグニス！ なによあんた、ジメジメした変なメイスを振り回しちゃって！' },
         { speaker: 'enemy', text: 'あんたの炎で焼き尽くしてやるわ！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ なんであの野蛮なトカゲが上座に座ってるの？ 態度のでかい顔、目障りで許せないわ！' },
+        { speaker: 'player', text: '私はエリシア！ なんであの野蛮なトカゲが上座に座ってるの？ 態度のでかい顔、目障りで許せないわ！' },
         { speaker: 'enemy', text: '誰が野蛮なトカゲよ！ あんたこそ、生意気な顔して！ 私の大斧で、そのメイスごとドロドロに溶かしてあげるわ！' },
         { speaker: 'player', text: 'おだまりなさい！ その生意気なトカゲの顔、私の神罰のメイスで粉々に叩き割って、お宝の山に奉納してあげるわ！' }
       ],
@@ -129,8 +129,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ 魔王を倒しに行くんだから、邪魔しないで！ たとえ身体がボロボロだって、退くもんですか！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、あんた全身傷だらけじゃない！ そんな満身創痍で魔王城へ行く気！？' },
+        { speaker: 'enemy', text: '私はイグニス！ 魔王を倒しに行くんだから、邪魔しないで！ たとえ身体がボロボロだって、退くもんですか！' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、あんた全身傷だらけじゃない！ そんな満身創痍で魔王城へ行く気！？' },
         { speaker: 'enemy', text: 'なによ！ あんたたちに何がわかるのよ！ 私の炎で、その頑丈な身体をこじ開けてでも先へ進んでやるんだから！' },
         { speaker: 'player', text: '本当に聞き分けのないトカゲね！ ヨロヨロの炎で勝てるわけないでしょ！' },
         { speaker: 'player', text: '私のメイスで、その無謀な足を止めさせてもらうわ！' }
@@ -147,8 +147,9 @@ export const storyDialogues = {
   knight: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は聖騎士セレスティア。エリシア、君の持つ神罰のメイス……その怒りと信仰の力、聖なる盾をもって全力で応えよう！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ 誇り高き騎士団長様がこんな所で修行？' },
+        { speaker: 'enemy', text: '私は騎士団長セレスティア。エリシア、君の持つ神罰のメイス……' },
+        { speaker: 'enemy', text: 'その怒りと信仰の力、聖なる盾をもって全力で応えよう！' },
+        { speaker: 'player', text: '私はエリシア！ 誇り高き騎士団長様がこんな所で修行？' },
         { speaker: 'player', text: '笑わせてくれるわ。さっさと叩き伏せてあげるわ' },
         { speaker: 'enemy', text: '手加減などという侮辱はしない。王国の剣術、全力でいかせてもらうぞ！' },
         { speaker: 'player', text: 'いいわ、その生意気で堅苦しい顔、私の神罰のメイスで粉々に叩き割ってあげる！ かかってきなさい！' }
@@ -160,8 +161,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '我が名は聖騎士セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ 待て、セレスティア！' },
+        { speaker: 'enemy', text: '我が名は騎士団長セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
+        { speaker: 'player', text: '私はエリシア！ 待て、セレスティア！' },
         { speaker: 'player', text: 'あんたの鎧は傷だらけで、聖剣を握る手もすでに震えているじゃない！' },
         { speaker: 'enemy', text: '王国の騎士がここで立ち止まるわけにはいかないのだ！ 我が剣の誇りにかけて、そこを通らせてもらう！' },
         { speaker: 'player', text: '誇りを守るために死に急ぐなんて、馬鹿じゃないの！ そんな満身創痍の進行、我がメイスで叩き伏せて止めてあげるわ！' }
@@ -178,8 +179,8 @@ export const storyDialogues = {
   cthulhu: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。私の財産に手をつけて世界中を狂わせそうだなんて、面白い冗談を言いますのね' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ はぁ！？' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。私の財産に手をつけて世界中を狂わせそうだなんて、面白い冗談を言いますのね' },
+        { speaker: 'player', text: '私はエリシア！ はぁ！？' },
         { speaker: 'player', text: 'せっかくお宝の山を私が制圧したのに、なんで狂った深海女が勝手に座り込んでるのよ！' },
         { speaker: 'enemy', text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう' },
         { speaker: 'player', text: 'ただでは済まさないわよ！ その這い寄る混沌ごと、私の神罰のメイスで跡形もなく粉砕してあげるわ！' }
@@ -192,8 +193,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。この世が滅びる絶望を、もっと間近で楽しむために魔王城へ向かいますの' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、ナイア！ あんたの魔力はすでに暴走し、身体も崩壊しかけているじゃない！' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。この世が滅びる絶望を、もっと間近で楽しむために魔王城へ向かいますの' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、ナイア！ あんたの魔力はすでに暴走し、身体も崩壊しかけているじゃない！' },
         { speaker: 'enemy', text: 'あらあら、心配してくださるの？ でも私の狂気は、この痛みさえも極上の快楽に変えてしまいますのよ' },
         { speaker: 'player', text: '本当に狂ってんじゃないの！？ そんな怪しい狂信者、私のメイスで目を覚まさせてその歩みを止めてあげるわ！' }
       ],
@@ -209,7 +210,7 @@ export const storyDialogues = {
   elf: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ。エリシア、あなたの持つ神罰のメイス……私の銀の弓と星墜ちの矢で、全力で受け止めてみせるわ！' },
+        { speaker: 'enemy', text: '私はリナ。エリシア、あなたの持つ神罰のメイス……私の銀の弓と星墜ちの矢で、全力で受け止めてみせるわ！' },
         { speaker: 'player', text: 'はぁ？ 森のエルフから私に挑戦？ まあ、熱心な信徒が現れたとでも思って、特別に相手をしてあげるわ' },
         { speaker: 'enemy', text: 'あなたのそのメイス、私の矢に射抜かれないものはないって、今ここで証明してみせる！' },
         { speaker: 'player', text: 'それに、あの白熊……毛皮が高く売れそうじゃない。' },
@@ -223,9 +224,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ！ 森の長老との約束を果たしに魔王城へ！' },
+        { speaker: 'enemy', text: '私はリナ！ 森の長老との約束を果たしに魔王城へ！' },
         { speaker: 'enemy', text: '邪魔するなら、あなたでも容赦しない！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、リナ！ 全身傷だらけじゃない！' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、リナ！ 全身傷だらけじゃない！' },
         { speaker: 'player', text: '弓を引く腕も震えてるのに、魔王城へ行く気！？' },
         { speaker: 'enemy', text: '森のみんなの未来が懸かっているの！ だから、どんなにボロボロになったって、私の弓は引き絞れる！' },
         { speaker: 'player', text: '強情なエルフね！ ヨロヨロの弓で魔王に勝てるわけないでしょ！' },
@@ -243,9 +244,9 @@ export const storyDialogues = {
   devilhunter: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア。おっと……聖職者がこんな血の渓谷で息抜き？' },
+        { speaker: 'enemy', text: '私はマリア。おっと……聖職者がこんな血の渓谷で息抜き？' },
         { speaker: 'enemy', text: '報酬がいいなら文句はないけど、手加減はしないわよ' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ はぁ？ 私の神罰のメイスの前でそんな棺桶なんて引きずって、いい度胸じゃない！' },
+        { speaker: 'player', text: '私はエリシア！ はぁ？ 私の神罰のメイスの前でそんな棺桶なんて引きずって、いい度胸じゃない！' },
         { speaker: 'enemy', text: 'せいぜい棺桶行きにならないように、しっかり連携してかかってきなさい。' },
         { speaker: 'enemy', text: '私のリボルバーは容赦しないわよ' },
         { speaker: 'player', text: '私のメイスで、その棺桶ごと粉々に叩き割ってあげるわ！ 覚悟しなさい！' }
@@ -258,8 +259,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア！ 世界がこうなった以上、魔王の首を狩って大金を手に入れるしかないわ！ そこをどきなさい！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、マリア！ 銃を握る手が震えてるじゃない！' },
+        { speaker: 'enemy', text: '私はマリア！ 世界がこうなった以上、魔王の首を狩って大金を手に入れるしかないわ！ そこをどきなさい！' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、マリア！ 銃を握る手が震えてるじゃない！' },
         { speaker: 'player', text: 'そんな満身創痍で魔王の首が狩れるわけ！？' },
         { speaker: 'enemy', text: 'ハンターが獲物を前にして引き下がるかよ！ その満身創痍の身体を引きずってでも、魔王城へ乗り込んでやるさ！' },
         { speaker: 'player', text: 'ビジネスの癖に無謀すぎるでしょ！ 死んだらお金も使い道ないんだからね！ 私のメイスで、その足を止めてやるわ！' }
@@ -276,9 +277,9 @@ export const storyDialogues = {
   witch: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ。はぁ……なんで私がエリシアさんのお相手なんて。' },
+        { speaker: 'enemy', text: '私はクロエ。はぁ……なんで私がエリシアさんのお相手なんて。' },
         { speaker: 'enemy', text: '面倒ですけどわかりました。' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ 面倒くさそうな顔しないでよ、クロエ！' },
+        { speaker: 'player', text: '私はエリシア！ 面倒くさそうな顔しないでよ、クロエ！' },
         { speaker: 'player', text: '懐中時計なんて見つめてないで、私と本気で戦いなさい！' },
         { speaker: 'enemy', text: 'さっさと適当なレポート書いて帰りましょう。その自慢のメイス、一瞬でガラクタに見せてあげます' },
         { speaker: 'player', text: 'おだまりなさい！ その生意気な時間の魔法、私の神罰のメイスで歯車ごと粉々に叩き壊してあげるわ！' }
@@ -291,9 +292,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ！ 世界が滅びれば、時間の魔法もすべて消えてしまう！' },
+        { speaker: 'enemy', text: '私はクロエ！ 世界が滅びれば、時間の魔法もすべて消えてしまう！' },
         { speaker: 'enemy', text: '面倒ですけど、魔王を止めに行きます！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、クロエ！ 魔力回路がボロボロじゃない！' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、クロエ！ 魔力回路がボロボロじゃない！' },
         { speaker: 'player', text: 'そんな状態で時間操作なんかする気！？' },
         { speaker: 'enemy', text: 'はぁ……もう脳が焼き切れそうに痛いですよ。でも、ここで居残りをやめて引き下がるわけないじゃないですか！' },
         { speaker: 'player', text: '脳が焼き切れる前に、私のメイスでその無謀な時間を強制停止させてあげるわ！ 覚悟しなさい！' }
@@ -310,8 +311,8 @@ export const storyDialogues = {
   oni: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ。やはり、エリシア殿でしたか。結界の中からでも、怒りの闘気が伝わってまいります' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ カグラ、あんたのお札と式神の力、どれほどのものか見せてごらんなさい！' },
+        { speaker: 'enemy', text: '私はカグラ。やはり、エリシア殿でしたか。結界の中からでも、怒りの闘気が伝わってまいります' },
+        { speaker: 'player', text: '私はエリシア！ カグラ、あんたのお札と式神の力、どれほどのものか見せてごらんなさい！' },
         { speaker: 'enemy', text: '手加減ができるような力ではありません。エリシア殿のその神罰のメイスで、私の結界が破れるか、いざ参りましょう！' },
         { speaker: 'player', text: '面白いじゃない！ あんたの結界ごと、私の神罰のメイスで粉々に叩き壊してあげるわ！ かかってきなさい！' }
       ],
@@ -322,8 +323,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ！ サタンを封印するため、この命を賭して魔王城へ！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、カグラ！ お札の魔力がボロボロじゃない！' },
+        { speaker: 'enemy', text: '私はカグラ！ サタンを封印するため、この命を賭して魔王城へ！' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、カグラ！ お札の魔力がボロボロじゃない！' },
         { speaker: 'player', text: 'そんな状態で封印へ行く気！？' },
         { speaker: 'enemy', text: 'たとえこの身が引き裂かれようとも、修験者としての役目を果たすのみ！' },
         { speaker: 'enemy', text: '急急如律令、そこをどいてください！' },
@@ -341,8 +342,8 @@ export const storyDialogues = {
   priest: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。不浄な殺戮が行われている。王墓の平穏のためにも、あの狂った聖職者を沈めに行く……' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ 誰が狂った聖職者よ！' },
+        { speaker: 'enemy', text: '……私はネフティ。不浄な殺戮が行われている。王墓の平穏のためにも、あの狂った聖職者を沈めに行く……' },
+        { speaker: 'player', text: '私はエリシア！ 誰が狂った聖職者よ！' },
         { speaker: 'player', text: 'あんたのその儀式用ナイフ、私の神罰のメイスに耐えられるかしら！' },
         { speaker: 'enemy', text: '……侵入者。少し付き合う。王墓の静寂を乱すそのメイス、我が古代の呪いで消し去ってやろう……' },
         { speaker: 'player', text: '消せるもんなら消してみなさいよ！ あんたのその冷たい呪いごと、私のメイスで完全に叩き潰してあげるわ！' }
@@ -355,9 +356,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。王墓の静寂が侵された。' },
+        { speaker: 'enemy', text: '……私はネフティ。王墓の静寂が侵された。' },
         { speaker: 'enemy', text: '我がこのナイフで、奴の心臓を穿ちに行く……' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシア！ ちょっと、ネフティ！ あんたの体、古代の呪いでボロボロじゃない！' },
+        { speaker: 'player', text: '私はエリシア！ ちょっと、ネフティ！ あんたの体、古代の呪いでボロボロじゃない！' },
         { speaker: 'player', text: 'そんなんで魔王を穿つ気！？' },
         { speaker: 'enemy', text: '……ふん、ただの侵食だ。我が命の灯が消える前に、魔王の息の根を止めれば、王墓の役目は果たされる……！' },
         { speaker: 'player', text: 'そんな死に急ぐような真似、私が許すわけないでしょ！' },
@@ -375,7 +376,7 @@ export const storyDialogues = {
   cleric: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は狂信の聖職者エリシア！ あら、私と同じ顔ね。生意気な顔……' },
+        { speaker: 'enemy', text: '私はエリシア！ あら、私と同じ顔ね。生意気な顔……' },
         { speaker: 'enemy', text: '私の神罰のメイスで、その偽物ごと粉々に叩き割ってあげるわ！' },
         { speaker: 'player', text: '何を言ってるのよ！ 私こそが狂信の聖職者エリシアよ！' },
         { speaker: 'player', text: 'あんたのその安っぽいメイスごと、私の本物の打撃で粉砕してあげるわ！' },
@@ -389,7 +390,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '開かれし魔王城の瘴気……。私は狂信の聖職者エリシア！' },
+        { speaker: 'enemy', text: '開かれし魔王城の瘴気……。私はエリシア！' },
         { speaker: 'enemy', text: '私の財産を脅かすサタンを、この神罰のメイスで叩き潰しに行くのよ！' },
         { speaker: 'player', text: 'ちょっと、エリシア！ 全身傷だらけでメイスを握る力も残ってないじゃない！' },
         { speaker: 'player', text: 'そんな満身創痍で魔王に挑む気！？' },
@@ -425,7 +426,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）' },
-        { speaker: 'player', text: '何あの黒紫のトゲトゲしい不気味な甲冑！ 私は狂信の聖職者エリシアよ！ そこをどきなさい！' },
+        { speaker: 'player', text: '何あの黒紫のトゲトゲしい不気味な甲冑！ 私はエリシアよ！ そこをどきなさい！' },
         { speaker: 'enemy', text: '……（無言のまま、虚空の大剣を構え、周囲の空間を歪ませる絶対的な殺気を滾らせる）' },
         { speaker: 'player', text: '言葉も通じない不気味な悪魔ね！ あんたのその冷たい鉄屑ごと、私のメイスで粉々に叩き割って排除してあげるわ！' }
       ],
@@ -441,7 +442,7 @@ export const storyDialogues = {
       pre: [
         { speaker: 'enemy', text: 'ふふっ、私は隷属の女王ヴィオラよ。強気で可愛い聖職者さんが魔王城の奥まで。' },
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシアよ！ 誰が隷属するもんですか！ あんたみたいな露出の多い生意気な悪魔、許せないわ！' },
+        { speaker: 'player', text: '私はエリシアよ！ 誰が隷属するもんですか！ あんたみたいな露出の多い生意気な悪魔、許せないわ！' },
         { speaker: 'enemy', text: 'あらあら、生意気なお口ね。その自慢のメイスごと、私の魔鎖の枷でがんじがらめにして、可愛がってあげるわ' },
         { speaker: 'player', text: 'そのピンク色の気持ち悪い瘴気ごと、私の神罰のメイスで粉々に叩き割ってお仕置きしてあげるわ！ 覚悟しなさい！' }
       ],
@@ -456,7 +457,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: 'フハハハ！ 我こそは魔王サタン！ 世界のすべてを絶望と虚無の闇に沈める支配者なり！' },
-        { speaker: 'player', text: '私は狂信の聖職者エリシアよ！ あんたが魔王サタンね！' },
+        { speaker: 'player', text: '私はエリシアよ！ あんたが魔王サタンね！' },
         { speaker: 'player', text: '待たせたわね、決着をつけに来たわ！' },
         { speaker: 'enemy', text: '脆弱な人間と高飛車な聖職者が、この我が絶望の力に抗えると思うか！ 我が炎で一瞬にして焼き尽くしてくれよう！' },
         { speaker: 'player', text: '神罰の力を舐めないでよね！ 絶望の炎なんて、神罰のメイスで塵一つ残さず粉砕してやるわ！' },

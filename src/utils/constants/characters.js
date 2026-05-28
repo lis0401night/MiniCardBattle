@@ -715,7 +715,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_void.png',
     color: '#ddd6fe',
     leaderSkill: {
-      name: '虚空の波動',
+      name: 'ゼロの理',
       desc: '(SP:4) お互いに手札を3枚選択して捨て、同数の「虚空(P:0)」を手札に加える。',
       cost: 4,
       action: 'void_purge',
@@ -747,7 +747,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_succubus.png',
     color: '#22d3ee',
     leaderSkill: {
-      name: '絶対隷属',
+      name: '服従の刻印',
       desc: '(SP:5) 相手の場のカード1枚を選び、正面のレーンに移動する。',
       cost: 5,
       action: 'viola_domination',

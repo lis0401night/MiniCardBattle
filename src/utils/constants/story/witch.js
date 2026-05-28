@@ -108,8 +108,8 @@ export const storyDialogues = {
   android: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス。これより実戦形式での限界耐久テストへ移行します。そこの魔女、対戦をお願いします' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。はぁ……なんで私が新型兵器の戦闘テストなんて。' },
+        { speaker: 'enemy', text: '私はアイギス。これより実戦形式での限界耐久テストへ移行します。そこの魔女、対戦をお願いします' },
+        { speaker: 'player', text: '私はクロエ。はぁ……なんで私が新型兵器の戦闘テストなんて。' },
         { speaker: 'player', text: '適当に終わらせて帰りましょう' },
         { speaker: 'enemy', text: '対象の攻撃性および時間操作の数値を演算中。対魔法防壁の性能テストを開始します。いつでもどうぞ' },
         { speaker: 'player', text: 'はぁ……先輩もアイギスさんも物好きですね。面倒ですけどわかりました。' },
@@ -122,7 +122,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は機動戦姫アイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
+        { speaker: 'enemy', text: '私はアイギス！ 魔王サタン討伐のため、全リミッターを解除し前進を継続します。' },
         { speaker: 'enemy', text: '立ち塞がる者は排除します！' },
         { speaker: 'player', text: '待ってください、アイギスさん！' },
         { speaker: 'player', text: '駆動回路から発煙してるし、装甲も限界ですよ！' },
@@ -142,9 +142,9 @@ export const storyDialogues = {
   dragon: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ 私の究極の炎に耐えられるか試したいって？' },
+        { speaker: 'enemy', text: '私はイグニス！ 私の究極の炎に耐えられるか試したいって？' },
         { speaker: 'enemy', text: 'あっそ、あんたがそういうなら別に構わないけどさ！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。はぁ……なんで私がイグニスさんのお相手なんて。' },
+        { speaker: 'player', text: '私はクロエ。はぁ……なんで私がイグニスさんのお相手なんて。' },
         { speaker: 'player', text: '面倒ですけどわかりました' },
         { speaker: 'enemy', text: 'ちょっと、なによ！ あっちの席で、さっさと適当なレポート書いて帰りましょうなんて退屈そうに言ってた癖に！' },
         { speaker: 'player', text: 'はぁ……本当に声が大きいですね、イグニスさん。その自慢の炎、一瞬で時の彼方へ巻き戻して差し上げますよ' }
@@ -156,9 +156,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は焔竜姫イグニス！ 魔王を倒しに行くんだから、邪魔しないで！' },
+        { speaker: 'enemy', text: '私はイグニス！ 魔王を倒しに行くんだから、邪魔しないで！' },
         { speaker: 'enemy', text: 'たとえ身体がボロボロだって、退くもんですか！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ ちょっと、イグニスさん、大斧を支える腕がガタガタ震えてますよ？' },
+        { speaker: 'player', text: '私はクロエ！ ちょっと、イグニスさん、大斧を支える腕がガタガタ震えてますよ？' },
         { speaker: 'player', text: '炎も今にも消えそうですよ？' },
         { speaker: 'enemy', text: 'なによ！ あんたたちに何がわかるのよ！ 私の炎で、その頑丈な身体をこじ開けてでも先へ進んでやるんだから！' }
       ],
@@ -174,9 +174,9 @@ export const storyDialogues = {
   knight: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は聖騎士セレスティア。クロエ、君の時の魔法……時間同期の乱れを感じるな。' },
+        { speaker: 'enemy', text: '私は騎士団長セレスティア。クロエ、君の時の魔法……時間同期の乱れを感じるな。' },
         { speaker: 'enemy', text: '我が剣で、君の時間の乱れを正そう！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。セレスティアさん、' },
+        { speaker: 'player', text: '私はクロエ。セレスティアさん、' },
         { speaker: 'player', text: 'あなたのその高潔な剣技、私の時間の魔法で受け止めてみせましょう' },
         { speaker: 'enemy', text: '王国騎士の誇りにかけて、我が聖剣はどのような時間操作にも屈しはしない！' },
         { speaker: 'enemy', text: 'と言いたいところですが、サクッと片付けましょう' },
@@ -189,8 +189,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '我が名は聖騎士セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ 待ってください、セレスティアさん！' },
+        { speaker: 'enemy', text: '我が名は騎士団長セレスティア！ 世界の崩壊を食い止めるため、この命が尽きようとも魔王を討たねばならんのだ！' },
+        { speaker: 'player', text: '私はクロエ！ 待ってください、セレスティアさん！' },
         { speaker: 'player', text: 'あなたの鎧は傷だらけで、聖剣を握る手もすでに震えているじゃないですか！' },
         { speaker: 'enemy', text: '王国の騎士がここで立ち止まるわけにはいかないのだ！ 我が剣の誇りにかけて、そこを通らせてもらう！' },
         { speaker: 'player', text: '誇りを守るために死に急ぐなんて、まったく無謀ですよ。' },
@@ -208,9 +208,9 @@ export const storyDialogues = {
   cthulhu: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         { speaker: 'enemy', text: 'あちらの席で、不気味な剣を握りしめて。すっかり闇に沈んで……最高ですわね' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。ナイアさん、あなたの深淵の狂気……とても冷たくておぞましいですね。お相手しましょう' },
+        { speaker: 'player', text: '私はクロエ。ナイアさん、あなたの深淵の狂気……とても冷たくておぞましいですね。お相手しましょう' },
         { speaker: 'enemy', text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう' },
         { speaker: 'player', text: 'お相手いたします。時の流れの乱れを補正しつつ、先輩の指示に従い、迅速に対象の無力化を試みます' }
       ],
@@ -221,7 +221,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私は深淵の呼び声ナイア。この世が滅びる絶望を、もっと間近で楽しむために魔王城へ向かいますの' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。この世が滅びる絶望を、もっと間近で楽しむために魔王城へ向かいますの' },
         { speaker: 'player', text: '待ってください、ナイアさん！ 魔力は暴走し、身体も崩壊しかけていますよ！' },
         { speaker: 'player', text: 'なぜそんな状態で進もうとするんですか！' },
         { speaker: 'enemy', text: 'あらあら、心配してくださるの？ でも私の狂気は、この痛みさえも極上の快楽に変えてしまいますのよ' },
@@ -240,8 +240,8 @@ export const storyDialogues = {
   elf: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ。クロエ、あなたの持つ時間の魔法……私の銀の弓と星墜ちの矢で、全力で受け止めてみせるわ！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。リナさん、あなたの放つその魔法の矢、私の時の魔法で受け止めてみせましょう' },
+        { speaker: 'enemy', text: '私はリナ。クロエ、あなたの持つ時間の魔法……私の銀の弓と星墜ちの矢で、全力で受け止めてみせるわ！' },
+        { speaker: 'player', text: '私はクロエ。リナさん、あなたの放つその魔法の矢、私の時の魔法で受け止めてみせましょう' },
         { speaker: 'enemy', text: '私の矢に射抜かれないものはないって、今ここで証明してみせる！' },
         { speaker: 'player', text: 'はぁー……せっかくレポートが終わったのに、今度はエルフの戦士の試練に付き合えって言うんですか。仕方ないですね' }
       ],
@@ -252,9 +252,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は流浪の射手リナ！ 世界を救うため、森の長老との約束を果たしに魔王城へ！' },
+        { speaker: 'enemy', text: '私はリナ！ 世界を救うため、森の長老との約束を果たしに魔王城へ！' },
         { speaker: 'enemy', text: '邪魔するなら、あなたでも容赦しない！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ ちょっと、リナさん！' },
+        { speaker: 'player', text: '私はクロエ！ ちょっと、リナさん！' },
         { speaker: 'player', text: '全身傷だらけで、弓を引く腕もカタカタ震えてるのに、魔王城へ行く気ですか！？' },
         { speaker: 'enemy', text: '森のみんなの未来が懸かっているの！ だから、どんなにボロボロになったって、私の弓は引き絞れる！' },
         { speaker: 'player', text: '強情なエルフですね！ ヨロヨロの弓で魔王に勝てるわけないでしょ！' },
@@ -272,9 +272,9 @@ export const storyDialogues = {
   cleric: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'はぁ？ 私は狂信の聖職者エリシアよ。' },
+        { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         { speaker: 'enemy', text: 'なんであの面倒くさそうな魔女が、私と同じくらい上座に座ってるの？ 目障りよ' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。エリシアさん、その神罰のメイス……' },
+        { speaker: 'player', text: '私はクロエ。エリシアさん、その神罰のメイス……' },
         { speaker: 'player', text: 'その激しい打撃、私の時の魔法で受け止めてみせましょう' },
         { speaker: 'enemy', text: 'その生意気な顔、私の神罰のメイスで粉々に叩き割って、お宝の山に奉納してあげるわ！' },
         { speaker: 'player', text: 'はあ……面倒ですけどわかりました。その自慢のメイス、一瞬でガラクタに見せて差し上げますよ' }
@@ -286,9 +286,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は狂信の聖職者エリシア！ 私の財産を脅かすサタンを、神罰のメイスで叩き潰す！' },
+        { speaker: 'enemy', text: '私はエリシア！ 私の財産を脅かすサタンを、神罰のメイスで叩き潰す！' },
         { speaker: 'enemy', text: '邪魔するならあんた達から消すわ！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ ちょっと、エリシアさん！' },
+        { speaker: 'player', text: '私はクロエ！ ちょっと、エリシアさん！' },
         { speaker: 'player', text: '全身傷だらけで、瘴気にやられてボロボロの癖に、魔王城へ行く気ですか！？' },
         { speaker: 'enemy', text: 'はぁ！？ 私が瘴気ごときに負けるわけないでしょ！ さっさとそこをどきなさい、魔女！' },
         { speaker: 'player', text: '本当に口の悪い聖職者ですね！ ヨロヨロのメイスで魔王に勝てるわけないでしょ！' },
@@ -306,9 +306,9 @@ export const storyDialogues = {
   devilhunter: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は悪魔狩りマリア。おっと……時駆けの魔女がこんな血の渓谷で人探し？' },
+        { speaker: 'enemy', text: '私はマリア。おっと……時駆けの魔女がこんな血の渓谷で人探し？' },
         { speaker: 'enemy', text: '報酬がいいなら文句はないけど、手加減はしないわよ' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。マリアさん、あなたの持つ銃と棺桶の力、私の時の魔法で挑みましょう' },
+        { speaker: 'player', text: '私はクロエ。マリアさん、あなたの持つ銃と棺桶の力、私の時の魔法で挑みましょう' },
         { speaker: 'enemy', text: 'せいぜい棺桶行きにならないように、しっかり連携してかかってきなさい。私のリボルバーは容赦しないわよ' },
         { speaker: 'player', text: '私の魔法で、その棺桶ごと過去のガラクタにして差し上げましょう。覚悟してください' }
       ],
@@ -319,8 +319,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '開かれし魔王城の瘴気……。私は悪魔狩りマリア！ 魔王の首を狩って大金を手に入れないと割に合わないのよ！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ ちょっと、マリアさん！' },
+        { speaker: 'enemy', text: '開かれし魔王城の瘴気……。私はマリア！ 魔王の首を狩って大金を手に入れないと割に合わないのよ！' },
+        { speaker: 'player', text: '私はクロエ！ ちょっと、マリアさん！' },
         { speaker: 'player', text: '銃を握る手がガタガタ震えてるじゃないですか！ そんな満身創痍で魔王の首が狩れるわけないでしょ！' },
         { speaker: 'enemy', text: 'ハンターが獲物を前にして引き下がるかよ！ その満身創痍の身体を引きずってでも、魔王城へ乗り込んでやるさ！' },
         { speaker: 'player', text: 'ビジネスの癖に無謀すぎますよ！ 死んだらお金も使い道ないですからね！' },
@@ -338,8 +338,8 @@ export const storyDialogues = {
   oni: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ。やはり、クロエ殿でしたか。結界の中からでも、時の流れの乱れが伝わってまいります' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ。カグラさん、お札と白狐の術式……' },
+        { speaker: 'enemy', text: '私はカグラ。やはり、クロエ殿でしたか。結界の中からでも、時の流れの乱れが伝わってまいります' },
+        { speaker: 'player', text: '私はクロエ。カグラさん、お札と白狐の術式……' },
         { speaker: 'player', text: '邪悪を祓う素晴らしい力を感じます。お相手しましょう' },
         { speaker: 'enemy', text: '手加減ができるような力ではありません。クロエ殿のその時間魔法で、私の結界が破れるか、いざ参りましょう！' },
         { speaker: 'player', text: '面白いですね！ あなたの結界ごと、私の時間の魔法で粉々に撃ち壊して差し上げましょう！' },
@@ -352,8 +352,8 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は鬼血の陰陽師カグラ！ サタンを封印するため、この命を賭して魔王城へ！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ ちょっと、カグラさん！' },
+        { speaker: 'enemy', text: '私はカグラ！ サタンを封印するため、この命を賭して魔王城へ！' },
+        { speaker: 'player', text: '私はクロエ！ ちょっと、カグラさん！' },
         { speaker: 'player', text: 'お札の魔力がボロボロで今にも破けそうじゃないですか！ そんな状態で封印へ行く気ですか！？' },
         { speaker: 'enemy', text: 'たとえこの身が引き裂かれようとも、修験者としての役目を果たすのみ！ 急急如律令、そこをどいてください！' },
         { speaker: 'player', text: '役目役目って、死んだら何も残らないじゃないですか！ 私の魔法で、その強情な鬼の血を手前で止めてあげます！' }
@@ -370,8 +370,8 @@ export const storyDialogues = {
   priest: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。王墓の静寂を乱す侵入者。我が儀式用ナイフで、浄化する……' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ 誰が侵入者ですか！ あなたのその儀式用ナイフ、私の時間の魔法に耐えられるかしら！' },
+        { speaker: 'enemy', text: '……私はネフティ。王墓の静寂を乱す侵入者。我が儀式用ナイフで、浄化する……' },
+        { speaker: 'player', text: '私はクロエ！ 誰が侵入者ですか！ あなたのその儀式用ナイフ、私の時間の魔法に耐えられるかしら！' },
         { speaker: 'enemy', text: '……侵入者。少し付き合う。王墓の静寂を乱すその時間、我が古代の呪いで消し去ってやろう……' },
         { speaker: 'player', text: '消せるもんなら消してみなさいよ！ あなたのその冷たい呪いごと、私の時間の魔法で完全にフリーズさせてあげます！' }
       ],
@@ -382,9 +382,9 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '……私は王墓の守護者ネフティ。王墓の静寂が侵された。' },
+        { speaker: 'enemy', text: '……私はネフティ。王墓の静寂が侵された。' },
         { speaker: 'enemy', text: '我がこのナイフで、奴の心臓を穿ちに行く……' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエ！ ちょっと、ネフティさん！' },
+        { speaker: 'player', text: '私はクロエ！ ちょっと、ネフティさん！' },
         { speaker: 'player', text: 'その体、古代の呪いに蝕まれてボロボロじゃないですか！ そんなんで魔王を穿つ気ですか！？' },
         { speaker: 'enemy', text: '……ふん、ただの侵食だ。我が命の灯が消える前に、魔王の息の根を止めれば、王墓の役目は果たされる……！' },
         { speaker: 'player', text: 'そんな死に急ぐような真似、私が許すわけないでしょ！' },
@@ -402,7 +402,7 @@ export const storyDialogues = {
   witch: {
     early: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ！ あら、私と同じ顔ですね。面白い……' },
+        { speaker: 'enemy', text: '私はクロエ！ あら、私と同じ顔ですね。面白い……' },
         { speaker: 'enemy', text: 'ねえ、あなたも私と同じなら、退屈しているのも嫌いでしょ？ 付き合いなさいよ！' },
         { speaker: 'player', text: '私も時駆けの魔女クロエですよ！ 退屈していたのは私も同じですからいいです、受けて立ちます！' },
         { speaker: 'enemy', text: '遠慮なんて絶対にしてあげないんだから！ 本物の時間魔法がどちらか、今ここで白黒つけてあげましょう！' },
@@ -415,7 +415,7 @@ export const storyDialogues = {
     },
     late: {
       pre: [
-        { speaker: 'enemy', text: '私は時駆けの魔女クロエ！ 魔王サタンを倒しに行くんだから、邪魔しないで！' },
+        { speaker: 'enemy', text: '私はクロエ！ 魔王サタンを倒しに行くんだから、邪魔しないで！' },
         { speaker: 'enemy', text: 'たとえ身体がボロボロだって、絶対に退くもんですか！' },
         { speaker: 'player', text: 'ちょっと、クロエ！ 全身傷だらけで懐中時計を握る力も残ってないじゃないですか！' },
         { speaker: 'player', text: 'そんな満身創痍で魔王に挑む気ですか！' },
@@ -453,7 +453,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）' },
-        { speaker: 'player', text: '何ですかあの黒紫のトゲトゲしい不気味な甲冑。私は時駆けの魔女クロエですよ。そこをどいてください' },
+        { speaker: 'player', text: '何ですかあの黒紫のトゲトゲしい不気味な甲冑。私はクロエですよ。そこをどいてください' },
         { speaker: 'enemy', text: '……（無言のまま、虚空の大剣を構え、周囲の空間を歪ませる絶対的な殺気を滾らせる）' },
         { speaker: 'player', text: '言葉も通じない不気味な悪魔ですか。' },
         { speaker: 'player', text: 'そのトゲトゲしい鉄屑ごと、私の時間魔法でフリーズさせて排除して差し上げますよ！' }
@@ -471,7 +471,7 @@ export const storyDialogues = {
       pre: [
         { speaker: 'enemy', text: 'ふふっ、私は隷属の女王ヴィオラよ。強気で可愛い時間魔女さんが魔王城の奥まで。' },
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエですよ！ 誰が隷属するもんですか。あんたみたいな露出の多い生意気な悪魔、お仕置きですよ' },
+        { speaker: 'player', text: '私はクロエですよ！ 誰が隷属するもんですか。あんたみたいな露出の多い生意気な悪魔、お仕置きですよ' },
         { speaker: 'enemy', text: 'あらあら、生意気なお口ね。その自慢の懐中時計ごと、私の魔鎖の枷でがんじがらめにして、可愛がってあげるわ' },
         { speaker: 'player', text: 'そのピンク色の気持ち悪い瘴気ごと、私の時間魔法でお仕置きして差し上げますよ！ 覚悟してください' }
       ],
@@ -486,7 +486,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: 'フハハハ！ 我こそは魔王サタン！ 世界のすべてを絶望と虚無の闇に沈める支配者なり！' },
-        { speaker: 'player', text: '私は時駆けの魔女クロエですよ！ あなたが魔王サタンですね。' },
+        { speaker: 'player', text: '私はクロエですよ！ あなたが魔王サタンですね。' },
         { speaker: 'player', text: '待たせましたね、決着をつけに来ましたよ。行きましょう、先輩！' },
         { speaker: 'enemy', text: '脆弱な人間と高飛車な時間魔女が、この我が絶望の力に抗えると思うか！ 我が炎で一瞬にして焼き尽くしてくれよう！' },
         { speaker: 'player', text: '時間魔法の力を舐めないでくださいね！' },

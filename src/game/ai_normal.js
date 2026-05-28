@@ -971,7 +971,7 @@ export function getBestSimulatedMove() {
               c.skills.forEach((s) => skillsToGather.push(s));
 
             skillsToGather.forEach((sk) => {
-              if (['snipe', 'artillery', 'seal', 'destroy'].includes(sk.id))
+              if (['snipe', 'artillery', 'seal'].includes(sk.id))
                 tokenTargetCount += sk.value || 1;
 
               // 【重要仕様】スキルの値(value)の解釈：
@@ -990,7 +990,7 @@ export function getBestSimulatedMove() {
             arr.forEach((idx) => {
               const sk = group[idx];
               if (!sk) return;
-              if (['snipe', 'artillery', 'seal', 'destroy'].includes(sk.id))
+              if (['snipe', 'artillery', 'seal'].includes(sk.id))
                 tokenTargetCount += sk.value || 1;
               // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
               // ※ call, metamorph は実行時の動的判断（アドホック）や自身への適用となるため、事前のレーン確保は不要
@@ -3178,7 +3178,7 @@ export function evaluateAdhocTokenLanes(
       )
       .join(' | ');
   console.log(
-    `[AI CALL] ${tokenCard ? tokenCard.name : 'destroy'} -> Lane: ${bestLane} (Score: ${maxScore.toFixed(1)})`
+    `[AI CALL] ${tokenCard ? tokenCard.name : 'unknown'} -> Lane: ${bestLane} (Score: ${maxScore.toFixed(1)})`
   );
   console.log(
     `[AI CALL] Before: [Player] ${dumpB(GameState.playerBoard)} vs [AI] ${dumpB(GameState.enemyBoard)}`

@@ -26,10 +26,6 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 2,
   },
-  copy: {
-    base: 4,
-    multiplier: 0,
-  },
   support: {
     base: 0,
     multiplier: 1,
@@ -334,10 +330,6 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0.3333333333333333,
   },
-  maintain: {
-    base: -3,
-    multiplier: 0,
-  },
   recurse: {
     base: 0,
     multiplier: 0.25,
@@ -362,10 +354,6 @@ export const SKILL_POINTS = {
     base: 1,
     multiplier: 0,
   },
-  destroy: {
-    base: 4,
-    multiplier: 0,
-  },
   hack: {
     base: 0,
     multiplier: 0,
@@ -382,4 +370,28 @@ export const SKILL_POINTS = {
     base: -3,
     multiplier: 0,
   },
+  dominate: {
+    base: 1,
+    multiplier: 1,
+  },
+  sublimation: {
+    base: 0,
+    multiplier: 1,
+  },
+  snipe_void: {
+    base: 0,
+    multiplier: 0.5,
+  },
+  heal_void: {
+    base: 0,
+    multiplier: 2 / 3,
+  },
+  spread_void: {
+    base: 0,
+    multiplier: 2,
+  },
+  support_void: {
+    base: 0,
+    multiplier: 1,
+  }
 };
