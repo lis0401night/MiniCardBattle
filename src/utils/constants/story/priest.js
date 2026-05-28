@@ -109,7 +109,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'アクチュエータの完全ロック……。これ以上の稼働は、不可能です……' },
         { speaker: 'player', text: '……アイギス、お前はもう駆動系が完全に焼き切れ、動くこともままならないはずだ。' },
         { speaker: 'player', text: 'これ以上の前進は、完全な自己崩壊を招く。ここでシステムを休止し、自己修復に専念せよ。' },
-        { speaker: 'player', text: '魔王サタンの排除は、私と侵入者が速やかに履行する。' }
+        { speaker: 'player', text: '……。魔王サタンの排除は、我らが速やかに履行する。' }
       ]
     }
   },
@@ -139,7 +139,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……イグニス、お前はもう大斧を支える腕すらまともに動かず、息も絶え絶えだ。' },
         { speaker: 'player', text: 'これ以上進めば、その竜の生命そのものが完全に燃え尽きてしまう。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で眠り、傷を癒せ。' },
-        { speaker: 'player', text: '魔王サタンの排除は、私と侵入者が確実に履行する。' }
+        { speaker: 'player', text: '……。魔王サタンの排除は、我らが確実に履行する。' }
       ]
     }
   },
@@ -169,7 +169,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……セレスティア、お前はもう聖剣を握る力すら残っておらず、満身創痍の極みだ。' },
         { speaker: 'player', text: 'これ以上進めば、誇りを守る前にその命が散ってしまう。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で休み、体力を回復させよ。' },
-        { speaker: 'player', text: '魔王サタンの排除は、私と侵入者が代わりに履行する。' }
+        { speaker: 'player', text: '……。魔王サタンの排除は、我らが代わりに履行する。' }
       ]
     }
   },
@@ -199,7 +199,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……ナイア、お前はもう魔力コアのオーバーロードで全身が完全停止寸前だ。' },
         { speaker: 'player', text: 'これ以上進めば、その存在そのものが深淵の泡となって消滅する。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で眠り、狂気を落ち着かせよ。' },
-        { speaker: 'player', text: '魔王サタンは、私と侵入者が代わりに絶望の底へ叩き落としてやる。' }
+        { speaker: 'player', text: '……。魔王の心臓は、我らが代わりに穿ち抜いてやる。' }
       ]
     }
   },
@@ -229,7 +229,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……リナ、お前はもう弓を引き絞る筋力すら完全に枯渇し、直立するのすら限界のはずだ。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまう。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で休み、傷を癒せ。' },
-        { speaker: 'player', text: '魔王の心臓は、私と侵入者が代わりに穿ってやるからな。' }
+        { speaker: 'player', text: '……。魔王の心臓は、我らが代わりに穿ってやる。' }
       ]
     }
   },
@@ -259,7 +259,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……エリシア、お前はもうメイスを振るう筋力さえ失われ、魔力汚染による衰弱が深刻だ。' },
         { speaker: 'player', text: 'これ以上進めば、魔王と戦う前に息絶える。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影に留まり、静養せよ。' },
-        { speaker: 'player', text: '魔王サタンの首は、私と侵入者が確実に粉砕してやる。' }
+        { speaker: 'player', text: '……。魔王サタンの排除は、我らが確実に履行する。' }
       ]
     }
   },
@@ -289,7 +289,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……マリア、お前はもう引き金を引く指の神経すら麻痺し、全身の血液が枯渇しかけている。' },
         { speaker: 'player', text: 'これ以上進めば、その棺桶はお前自身の寝床となる。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で横になり、身体を休めよ。' },
-        { speaker: 'player', text: '魔王サタンは、私と侵入者が代わりに狩ってやるからな。' }
+        { speaker: 'player', text: '……。魔王の心臓は、我らが代わりに穿ってやる。' }
       ]
     }
   },
@@ -319,7 +319,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……クロエ、お前はもう魔力回路の過負荷で神経が焼き切れ、立ち上がることもままならないはずだ。' },
         { speaker: 'player', text: 'これ以上進めば、二度と時を刻めぬ抜け殻となる。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で眠り、休眠状態に入れ。' },
-        { speaker: 'player', text: '魔王の排除は、私と侵入者が速やかに遂行する。' }
+        { speaker: 'player', text: '……。魔王の排除は、我らが速やかに遂行する。' }
       ]
     }
   },
@@ -349,7 +349,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……カグラ、お前はもうお札を展開する魔力すら完全に底をつき、鬼の血の暴走でボロボロだ。' },
         { speaker: 'player', text: 'これ以上進めば、確実に肉体と魂が消滅する。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で眠り、傷を癒せ。' },
-        { speaker: 'player', text: '魔王サタンの排除は、私と侵入者が必ず遂行する。' }
+        { speaker: 'player', text: '……。魔王サタンの排除は、我らが必ず遂行する。' }
       ]
     }
   },
@@ -379,7 +379,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '……私よ、お前はもう全身の脈動が衰え、立っているのすら限界の状態だ。' },
         { speaker: 'player', text: 'これ以上進めば、確実に存在そのものが消滅する。' },
         { speaker: 'player', text: 'どうかここで大人しく我が呪縛の影で傷を癒せ。' },
-        { speaker: 'player', text: '魔王サタンの排除は、私と侵入者が確実に遂行するからな。' }
+        { speaker: 'player', text: '……。魔王サタンの排除は、我らが確実に遂行する。' }
       ]
     }
   },

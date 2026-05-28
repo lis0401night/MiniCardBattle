@@ -116,7 +116,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'アクチュエータの完全ロック……。これ以上の稼働は、不可能です……' },
         { speaker: 'player', text: 'アイギス殿、あなたはもう駆動すらできない状態です。' },
         { speaker: 'player', text: 'これ以上進めば完全に壊れてしまいます。お願いだからここでシステムを休止させ、自己修復に専念してください。' },
-        { speaker: 'player', text: '魔王の討伐は、私と我が契約者様で必ず成し遂げますから。' }
+        { speaker: 'player', text: '魔王の討伐は、私たちが必ず成し遂げますから。' }
       ]
     }
   },
@@ -146,7 +146,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'イグニス殿、あなたはもう大斧を握る腕すらまともに動かない状態です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王の討伐は、私と我が契約者様で必ず討ち果たしますからね。' }
+        { speaker: 'player', text: '魔王の討伐は、私たちが必ず討ち果たしますからね。' }
       ]
     }
   },
@@ -176,7 +176,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'セレスティア殿、あなたはもう聖剣を支える腕すら震えが止まらず、満身創痍の状態です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王サタンは、私と我が契約者様が必ず討ち果たします。' }
+        { speaker: 'player', text: '魔王サタンは、私たちが必ず討ち果たします。' }
       ]
     }
   },
@@ -206,7 +206,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'ナイア殿、あなたはもう魔力コアの暴走で全身機能が完全停止しかけています。' },
         { speaker: 'player', text: 'これ以上進めば、確実に存在そのものが消滅してしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王は、私と我が契約者様で代わりに絶望の底に沈めてみせます。' }
+        { speaker: 'player', text: '魔王は、私たちが必ずやお鎮めしてみせます。' }
       ]
     }
   },
@@ -236,7 +236,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'リナ殿、あなたはもう弓を引き絞る腕の力すら残っておらず、立っているのすら限界です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王は、私と我が契約者様が代わりに射抜いてみせますからね。' }
+        { speaker: 'player', text: '魔王は、私たちが必ずや討ち果たしてみせますからね。' }
       ]
     }
   },
@@ -266,7 +266,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'エリシア殿、あなたはもうメイスを支える力もなく、魔力汚染でボロボロです。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王サタンは、私と我が契約者様で必ず討ち果たしますからね。' }
+        { speaker: 'player', text: '魔王サタンは、私たちが必ず討ち果たしますからね。' }
       ]
     }
   },
@@ -296,7 +296,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'マリア殿、あなたはもう引き金を引き絞る指の力さえ残っておらず、全身疲労で動けない状態です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王サタンは、私と我が契約者様が代わりに狩ってあげますからね。' }
+        { speaker: 'player', text: '魔王サタンは、私たちが代わりに討ち果たしてみせますからね。' }
       ]
     }
   },
@@ -326,7 +326,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'クロエ殿、あなたはもう魔力の残滓も枯渇し、意識を保つのすら限界の状態です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王は、私と我が契約者様が代わりにやっつけてあげますからね。' }
+        { speaker: 'player', text: '魔王は、私たちが代わりに討ち果たしますからね。' }
       ]
     }
   },
@@ -356,7 +356,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'ネフティ殿、あなたはもう全身の脈動が衰え、立っているのすら限界の状態です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: '魔王サタンは、私と我が契約者様が必ずや完全に浄化してみせます。' }
+        { speaker: 'player', text: '魔王サタンは、私たちが必ずや完全に浄化してみせます。' }
       ]
     }
   },
@@ -386,7 +386,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'あなたはもうお札を展開する魔力すら枯渇し、満身創痍の状態です。' },
         { speaker: 'player', text: 'これ以上進めば、確実に命を落としてしまいます。' },
         { speaker: 'player', text: 'どうかここで大人しく私の結界の中で傷を癒してください。' },
-        { speaker: 'player', text: 'サタンの排除は、私と我が契約者様が必ず遂行しますからね。' }
+        { speaker: 'player', text: 'サタンの排除は、私たちが必ず遂行しますからね。' }
       ]
     }
   },
