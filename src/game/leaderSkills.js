@@ -316,6 +316,7 @@ export async function executeLeaderSkillAction(
           filter: 'none',
           currentPower: tokenCard.power,
           rarity: tokenCard.rarity || 1,
+          isToken: true, // 破壊時に墓地に行かず消滅するようにトークン属性を付与
         };
         b[l].skillTriggered = false; // 召喚時スキルがあれば発動させるため
 
