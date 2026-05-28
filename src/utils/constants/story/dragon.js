@@ -376,7 +376,7 @@ export const storyDialogues = {
     early: {
       pre: [
         { speaker: 'enemy', text: '・・・・' },
-        { speaker: 'player', text: 'な、なよあそこから立ち上る黒い炎……！？ 私と全く同じ大斧を持った、不気味な影が現れたわ！' },
+        { speaker: 'player', text: 'な、なによあそこから立ち上る黒い炎……！？ 私と全く同じ大斧を持った、不気味な影が現れたわ！' },
         { speaker: 'enemy', text: '・・・・' },
         { speaker: 'player', text: '言葉もないってわけね……。私の偽物が本物の竜の炎に勝てると思うな！ その不気味な影ごと、消し炭にしてやるわ！' }
       ],
@@ -391,7 +391,7 @@ export const storyDialogues = {
     late: {
       pre: [
         { speaker: 'enemy', text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）' },
-        { speaker: 'player', text: 'なよあそこにある黒紫のトゲトゲしい不気味な甲冑！ 私は焔竜姫イグニスよ！ そこをどきなさい！' },
+        { speaker: 'player', text: 'なによあそこにある黒紫のトゲトゲしい不気味な甲冑！ 私は焔竜姫イグニスよ！ そこをどきなさい！' },
         { speaker: 'enemy', text: '……（無言のまま、虚空の大剣を構え、周囲の空間を歪ませる絶対的な殺気を滾らせる）' },
         { speaker: 'player', text: '言葉も通じない不気味な悪魔ね！ あんたのその冷たい鉄屑ごと、私の炎でドロドロに溶かして排除してあげるわ！' }
       ],
