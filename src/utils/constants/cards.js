@@ -865,6 +865,16 @@ export const CARD_MASTER = [
       '死骸に一滴でも取り付かれれば最後。剣を振り下ろす頃には、すでに二匹に増殖して君の喉元へ飛びかかっているだろう。',
   },
   {
+    id: 'seaslug',
+    name: 'ブルー・ドラゴン',
+    rarity: 2,
+    power: 1,
+    skills: [{ id: 'bless', value: 2 }],
+    voiceCategory: 'sea',
+    flavor:
+      '青き海を漂う幻獣。その姿を見た者には、ささやかな海の恵みがもたらされるという。',
+  },
+  {
     id: 'shark',
     name: 'メガロドン',
     rarity: 2,
@@ -876,16 +886,6 @@ export const CARD_MASTER = [
     voiceCategory: 'sea',
     flavor:
       '深き蒼から突如として現れる規格外の巨体。その顎が海面を割る時、逃げる術は既に残されていない。',
-  },
-  {
-    id: 'seaslug',
-    name: 'ブルー・ドラゴン',
-    rarity: 2,
-    power: 1,
-    skills: [{ id: 'bless', value: 2 }],
-    voiceCategory: 'sea',
-    flavor:
-      '青き海を漂う幻獣。その姿を見た者には、ささやかな海の恵みがもたらされるという。',
   },
   {
     id: 'parasite',
@@ -1436,7 +1436,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 8,
     skills: [
-      { id: 'sacrifice', value: 2 },
+      { id: 'sacrifice', value: 3 },
       { id: 'challenge' },
       { id: 'pierce' },
       { id: 'guardian' },

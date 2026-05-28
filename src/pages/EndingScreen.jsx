@@ -205,7 +205,9 @@ export default function EndingScreen() {
               wordBreak: 'break-all',
             }}
           >
-            {romanticTalks[textIndex]}
+            {typeof romanticTalks[textIndex] === 'object'
+              ? romanticTalks[textIndex].text
+              : romanticTalks[textIndex]}
           </p>
         </div>
 

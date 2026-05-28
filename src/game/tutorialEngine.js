@@ -417,6 +417,17 @@ const TUTORIAL_LEADER_KNIGHT = [
     resumeEnemyTurnAfter: true,
   },
   {
+    id: 'enemy_golem',
+    type: 'message',
+    text: '相手が中央に「大理石のゴーレム」を召喚したよ。\nでも、強化された仲間たちの一斉攻撃でトドメだ！',
+    waitBattleIdle: true,
+    resumeCombatAfter: true,
+  },
+  {
+    id: 'wait_for_win',
+    type: 'waitEnd',
+  },
+  {
     id: 'ls_victory_1',
     type: 'message',
     text: 'やったー！ 仲間の力を合わせて勝利！',

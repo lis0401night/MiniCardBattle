@@ -410,7 +410,7 @@ export const storyDialogues = {
 export const storyEnding = [
   {
     speaker: 'narrator',
-    text: '天地を揺るがす光の奔流が魔王サタンを完全に貫き、絶望の象徴が断末魔の叫びと共に崩れ去った。渦巻いていた漆黒 of 瘴気は見る間に霧散し、魔王城には静寂が戻る。'
+    text: '天地を揺るがす光の奔流が魔王サタンを完全に貫き、絶望の象徴が断末魔の叫びと共に崩れ去った。渦巻いていた漆黒の瘴気は見る間に霧散し、魔王城には静寂が戻る。'
   },
   {
     speaker: 'player',
