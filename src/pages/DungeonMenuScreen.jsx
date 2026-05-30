@@ -7,17 +7,17 @@ import { GameState } from '../state/gameState.js';
 import { showDungeonRules, showEventMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 
-export default function DungeonMenuScreen() {
+export default function DungeonMenuScreen({ switchScreen }) {
   useEffect(() => {
     GameState.gameMode = 'battle_dungeon_menu';
   }, []);
 
   const handleExchangeClick = () => {
-    if (window.switchScreen) window.switchScreen('screen-challenge-exchange');
+    if (switchScreen) switchScreen('screen-challenge-exchange');
   };
 
   const handleUnlockClick = () => {
-    if (window.switchScreen) window.switchScreen('screen-challenge-unlock');
+    if (switchScreen) switchScreen('screen-challenge-unlock');
   };
 
   const handleChallengeClick = () => {

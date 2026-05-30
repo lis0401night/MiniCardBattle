@@ -6,11 +6,11 @@ import { GameState } from '../state/gameState.js';
 import { confirmCharSelect, goBackFromSelect } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { MAX_DECK_SLOTS } from '../utils/constants/config.js';
 
-export default function DeckListScreen() {
+export default function DeckListScreen({ switchScreen }) {
   const [renderVersion, setRenderVersion] = useState(0);
   const [currentPage, setCurrentPage] = useState(GameState.deckListPage || 0);
 
@@ -171,14 +171,14 @@ export default function DeckListScreen() {
     GameState.prevGameModeForCreate = GameState.gameMode;
     GameState.prevAppStateForCreate = GameState.appState;
 
-    if (typeof window.switchScreen === 'function') {
+    if (typeof switchScreen === 'function') {
       GameState.gameMode = 'create_deck';
       GameState.appState = 'create_deck_select_char';
       // 新規作成時はプレイヤースキンをリセットし、デフォルト状態で選べるようにする
       GameState.playerSkins = {};
       if (typeof window.initSelectScreenReact === 'function')
         window.initSelectScreenReact();
-      window.switchScreen('screen-select');
+      switchScreen('screen-select');
     }
   };
 

@@ -16,7 +16,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
-export default function TournamentExchangeScreen() {
+export default function TournamentExchangeScreen({ switchScreen }) {
   const [tournamentPoints, setTournamentPoints] = useState(() => ({
     current:
       parseInt(
@@ -199,7 +199,7 @@ export default function TournamentExchangeScreen() {
 
   const handleBack = () => {
     playSound(SOUNDS?.seClick);
-    if (window.switchScreen) window.switchScreen('screen-tournament-menu');
+    if (switchScreen) switchScreen('screen-tournament-menu');
   };
 
   // タイトルを10回クリックで大会ポイントを100Pt獲得するイースターエッグ

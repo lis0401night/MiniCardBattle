@@ -82,7 +82,6 @@ window.executeContinue = executeContinue;
 window.executeGameOver = executeGameOver;
 window.executeSkillFromConfirm = executeSkillFromConfirm;
 window.submitDefenseDeck = submitDefenseDeck;
-window.switchScreen = switchScreen;
 window.playSound = playSound;
 window.SOUNDS = SOUNDS;
 
@@ -134,6 +133,7 @@ const SCREEN_COMPONENTS = {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
+  const [rulesVisible, setRulesVisible] = useState(false);
 
   // レガシー部分のルーティング互換性（一部のみ残す）
   useEffect(() => {
@@ -159,8 +159,16 @@ export default function App() {
 
   return (
     <>
-      {ScreenComponent && <ScreenComponent />}
-      <GlobalModals />
+      {ScreenComponent && (
+        <ScreenComponent
+          switchScreen={switchScreen}
+          showRulesModal={() => setRulesVisible(true)}
+        />
+      )}
+      <GlobalModals
+        rulesVisible={rulesVisible}
+        setRulesVisible={setRulesVisible}
+      />
       <DamageOverlay />
       <RewardOverlay />
       <CutinOverlay />

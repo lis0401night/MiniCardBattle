@@ -43,7 +43,7 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
-export default function GlobalModals() {
+export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const discardLongPressTimerRef = useRef(null);
   const discardHasLongPressedRef = useRef(false);
 
@@ -72,7 +72,6 @@ export default function GlobalModals() {
   const [skillConfirmData, setSkillConfirmData] = useState(null);
   const [skillChoiceData, setSkillChoiceData] = useState(null);
   const [discardSelectionData, setDiscardSelectionData] = useState(null);
-  const [rulesVisible, setRulesVisible] = useState(false);
   const [skinSelectionVisible, setSkinSelectionVisible] = useState(false);
   const [selectedSkinState, setSelectedSkinState] = useState(null);
   const [simpleImagePreview, setSimpleImagePreview] = useState(null);
@@ -354,25 +353,7 @@ export default function GlobalModals() {
       });
     };
 
-    window.showRulesModal = () => {
-      playSound?.(SOUNDS?.seClick);
-      setRulesVisible(true);
-    };
 
-    window.closeRulesModal = () => {
-      playSound?.(SOUNDS?.seClick);
-      setRulesVisible(false);
-    };
-
-    window.showSkinSelectionModalState = () => {
-      playSound?.(SOUNDS?.seClick);
-      setSkinSelectionVisible(true);
-    };
-
-    window.closeSkinSelectionModalState = () => {
-      playSound?.(SOUNDS?.seClick);
-      setSkinSelectionVisible(false);
-    };
 
     return () => {
       delete window.showEnemyDeckModal;
@@ -391,10 +372,6 @@ export default function GlobalModals() {
       delete window.showSkillChoiceModalReact;
       delete window.closeSkillChoiceModalReact;
       delete window.showDiscardSelectionModalReact;
-      delete window.showRulesModal;
-      delete window.closeRulesModal;
-      delete window.showSkinSelectionModalState;
-      delete window.closeSkinSelectionModalState;
     };
   }, []);
 
@@ -1319,8 +1296,8 @@ export default function GlobalModals() {
                       GameState.playerSkins[charDetailData.id] || 'default';
                   }
                   setSelectedSkinState(initialSkin);
-                  if (window.showSkinSelectionModalState)
-                    window.showSkinSelectionModalState();
+                  playSound?.(SOUNDS?.seClick);
+                  setSkinSelectionVisible(true);
                 }}
               >
                 ✨ スキン変更
@@ -1427,7 +1404,7 @@ export default function GlobalModals() {
                 className="btn"
                 style={{ background: '#475569', marginTop: '5px' }}
                 onClick={(e) => {
-                  window.playSound?.(window.SOUNDS?.seClick);
+                  playSound?.(SOUNDS?.seClick);
                   window.closeSyncDataModalState(e);
                 }}
               >
@@ -1737,7 +1714,7 @@ export default function GlobalModals() {
                 className="btn"
                 style={{ background: '#475569', margin: 0 }}
                 onClick={(e) => {
-                  window.playSound?.(window.SOUNDS?.seClick);
+                  playSound?.(SOUNDS?.seClick);
                   window.closePlaymatSelectionModalState(e);
                 }}
               >
@@ -1962,8 +1939,8 @@ export default function GlobalModals() {
                 className="btn"
                 style={{ background: '#475569', margin: 0 }}
                 onClick={(e) => {
-                  window.playSound?.(window.SOUNDS?.seClick);
-                  window.closeSkinSelectionModalState(e);
+                  playSound?.(SOUNDS?.seClick);
+                  setSkinSelectionVisible(false);
                 }}
               >
                 戻る
@@ -2641,7 +2618,10 @@ export default function GlobalModals() {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onClick={window.closeRulesModal}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            setRulesVisible(false);
+          }}
         >
           <div
             className="skill-modal-box modal-pop-animation"
@@ -2697,7 +2677,10 @@ export default function GlobalModals() {
             <button
               className="btn"
               style={{ marginTop: '20px', width: '100%' }}
-              onClick={window.closeRulesModal}
+              onClick={() => {
+                playSound?.(SOUNDS?.seClick);
+                setRulesVisible(false);
+              }}
             >
               閉じる
             </button>
