@@ -750,7 +750,9 @@ export function loadDeck() {
           activeDeck = parsedDeck;
         } else {
           // 【CodeRabbit指摘反映・データ整合性保護】スナップショットデータが不完全な場合は警告を出し、現在の通常デッキで安全にフォールバック代替する
-          console.warn('Invalid story deck snapshot. Fallback to current deck.');
+          console.warn(
+            'Invalid story deck snapshot. Fallback to current deck.'
+          );
         }
       } catch (e) {
         console.error('Failed to parse story deck snapshot:', e);
@@ -818,7 +820,6 @@ export function loadDeck() {
       GameState.playerConfig?.id || 'knight'
     );
   }
-
 }
 
 export function createNewDeck(leaderId) {
@@ -940,8 +941,6 @@ export function saveDeck() {
     'mini_card_battle_unlocked_premium',
     JSON.stringify(GameState.unlockedPremiumCards)
   );
-
-
 
   // 所持プレイマットもセーブ
   localStorage.setItem(

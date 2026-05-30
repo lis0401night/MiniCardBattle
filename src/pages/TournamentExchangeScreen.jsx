@@ -164,7 +164,9 @@ export default function TournamentExchangeScreen({ switchScreen }) {
       );
     } catch (e) {
       console.error('Failed to sync tournament points to server:', e);
-      showAlertModal('ポイントの同期に失敗しました。通信環境を確認して再試行してください。');
+      showAlertModal(
+        'ポイントの同期に失敗しました。通信環境を確認して再試行してください。'
+      );
       return;
     }
 

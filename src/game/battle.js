@@ -148,7 +148,11 @@ export async function processActionQueue() {
     const action = GameState.actionQueue.shift();
 
     if (action.type === 'playCard') {
-      const played = await playCard(action.owner, action.handIndex, action.lane);
+      const played = await playCard(
+        action.owner,
+        action.handIndex,
+        action.lane
+      );
       if (!played) continue;
       if (checkWinCondition()) break;
       GameState.selectedCardIndex = null;
@@ -2549,8 +2553,8 @@ export async function playCard(o, hI, l) {
 
   const sealedLanes =
     o === 'blue'
-       ? GameState.playerSealedLanes || [0, 0, 0]
-       : GameState.enemySealedLanes || [0, 0, 0];
+      ? GameState.playerSealedLanes || [0, 0, 0]
+      : GameState.enemySealedLanes || [0, 0, 0];
   const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
 
   // 封印（Seal）レーンは絶対に配置・召喚不可（最優先ルール）
@@ -3345,8 +3349,6 @@ export function endBattle() {
         );
       }
 
-
-
       // 同行プレイヤーへの語り掛けと次のナレーション
       const playerTalk = PLAYER_TALKS[playerId]?.[battleCount] || [
         '周囲の安全を確保しました。',
@@ -3360,29 +3362,28 @@ export function endBattle() {
         : [postNarrationRaw];
 
       let queue = [];
-        queue = [...postDialogs];
+      queue = [...postDialogs];
 
-        // 敗絶掛け合い（2人画面）の後に、中央表示切り替えのトランジション疑似ノードを挿入する
-        queue.push({
-          speaker: 'player',
-          text: '',
-          isTransition: true,
+      // 敗絶掛け合い（2人画面）の後に、中央表示切り替えのトランジション疑似ノードを挿入する
+      queue.push({
+        speaker: 'player',
+        text: '',
+        isTransition: true,
+      });
+
+      if (Array.isArray(playerTalk)) {
+        playerTalk.forEach((text) => {
+          queue.push({ speaker: 'player', text });
         });
+      } else {
+        queue.push({ speaker: 'player', text: playerTalk });
+      }
 
-        if (Array.isArray(playerTalk)) {
-          playerTalk.forEach((text) => {
-            queue.push({ speaker: 'player', text });
-          });
-        } else {
-          queue.push({ speaker: 'player', text: playerTalk });
-        }
+      postNarrations.forEach((text) => {
+        queue.push({ speaker: 'narrator', text });
+      });
 
-        postNarrations.forEach((text) => {
-          queue.push({ speaker: 'narrator', text });
-        });
-
-        GameState.dialogueQueue = queue;
-
+      GameState.dialogueQueue = queue;
     } else if (GameState.lastBattleResult === 'win') {
       GameState.dialogueQueue = [
         {

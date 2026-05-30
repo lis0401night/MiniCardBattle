@@ -89,7 +89,9 @@ export default function DefenseExchangeScreen() {
       await savePointsToServer('update_points.php', newPts, points.total);
     } catch (e) {
       console.error('Failed to sync points to server:', e);
-      showAlertModal('ポイントの同期に失敗しました。通信環境を確認して再試行してください。');
+      showAlertModal(
+        'ポイントの同期に失敗しました。通信環境を確認して再試行してください。'
+      );
       return;
     }
 

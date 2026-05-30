@@ -353,8 +353,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       });
     };
 
-
-
     return () => {
       delete window.showEnemyDeckModal;
       delete window.showCharDetailModal;
@@ -1811,19 +1809,25 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         if (!isUnlocked) return;
                         playSound?.(SOUNDS?.seClick);
 
-                        const targetIdx = charDetailData.targetDeckIndex !== undefined 
-                          ? charDetailData.targetDeckIndex 
-                          : GameState.currentDeckIndex;
+                        const targetIdx =
+                          charDetailData.targetDeckIndex !== undefined
+                            ? charDetailData.targetDeckIndex
+                            : GameState.currentDeckIndex;
 
-                        if (targetIdx !== undefined && GameState.decks && GameState.decks[targetIdx]) {
+                        if (
+                          targetIdx !== undefined &&
+                          GameState.decks &&
+                          GameState.decks[targetIdx]
+                        ) {
                           const targetDeck = GameState.decks[targetIdx];
-                          if (!targetDeck.playerSkins) targetDeck.playerSkins = {};
+                          if (!targetDeck.playerSkins)
+                            targetDeck.playerSkins = {};
                           targetDeck.playerSkins[charDetailData.id] = skinId;
 
                           // GameState上のスキン状態も同期
                           GameState.playerSkins = {
                             ...GameState.playerSkins,
-                            [charDetailData.id]: skinId
+                            [charDetailData.id]: skinId,
                           };
 
                           // 各モードに応じたLocalStorageセーブ
@@ -1845,8 +1849,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           }
 
                           // 画面再描画
-                          if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-                          if (typeof renderDeckEdit === 'function') renderDeckEdit();
+                          if (window.forceUpdateDeckList)
+                            window.forceUpdateDeckList();
+                          if (typeof renderDeckEdit === 'function')
+                            renderDeckEdit();
                         } else {
                           // 指定がない場合（キャラ選択画面など）の既存フロー
                           if (window.saveCurrentEditDeck)

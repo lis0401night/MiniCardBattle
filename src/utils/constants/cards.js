@@ -1011,7 +1011,11 @@ export const CARD_MASTER = [
     name: '聖なるペガサス',
     rarity: 2,
     power: 2,
-    skills: [{ id: 'equip' }, { id: 'heal', value: 3 }, { id: 'draw', value: 1 },],
+    skills: [
+      { id: 'equip' },
+      { id: 'heal', value: 3 },
+      { id: 'draw', value: 1 },
+    ],
     voiceCategory: 'horse',
     flavor:
       '美しい有翼の馬。性格は温厚だが警戒心が強く、自らが認めた乗り手以外が触れることは叶わない。',

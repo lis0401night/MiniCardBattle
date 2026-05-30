@@ -1012,7 +1012,8 @@ export default function DeckEditorScreen({ switchScreen }) {
                   () => {
                     playSound?.(SOUNDS?.seClick);
                     if (typeof stopAllBGM === 'function') stopAllBGM();
-                    if (AUDIO_INSTANCES?.bgmTitle) playSound(AUDIO_INSTANCES.bgmTitle);
+                    if (AUDIO_INSTANCES?.bgmTitle)
+                      playSound(AUDIO_INSTANCES.bgmTitle);
                     if (typeof switchScreen === 'function')
                       switchScreen('screen-solo-menu');
                   }

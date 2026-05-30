@@ -104,7 +104,9 @@ export default function StoryResumeScreen() {
           }
         }
       } else {
-        const savedStr = localStorage.getItem('mini_card_battle_story_deck_obj');
+        const savedStr = localStorage.getItem(
+          'mini_card_battle_story_deck_obj'
+        );
         if (savedStr) {
           try {
             deck = JSON.parse(savedStr);
@@ -247,7 +249,14 @@ export default function StoryResumeScreen() {
                 </div>
 
                 {/* デッキ確認ボタン */}
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '15px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    justifyContent: 'center',
+                    marginTop: '15px',
+                  }}
+                >
                   <button
                     className="btn"
                     style={{

@@ -13,4 +13,5 @@ if (container) {
     </React.StrictMode>
   );
 } else {
-  console.error("ルート要素 'app-container' が見つかりませんでした");}
+  console.error("ルート要素 'app-container' が見つかりませんでした");
+}
