@@ -124,7 +124,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'あら、ただ分厚いだけの物理的な鉄屑で、この私の深淵の狂気に抗おうだなんて……',
+          text: 'あら、ただの鉄屑が深淵の狂気に抗おうだなんて……随分と滑稽な機械さんですわね',
         },
         {
           speaker: 'enemy',
@@ -132,11 +132,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'なんて滑稽で面白い冗談を言うようになりましたの。',
-        },
-        {
-          speaker: 'player',
-          text: 'いいですわ、その自信満々な新しい鉄屑ごと、絶望の底に沈めて差し上げます',
+          text: 'いいですわ、その分厚い装甲ごと、絶望の底に沈めて差し上げます',
         },
       ],
       post: [
@@ -371,7 +367,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'フフッ、いいですわ。あなたのその健気な決意も新しい弓ごと、深い絶望の底に沈めて差し上げましょう',
+          text: 'フフッ、いいですわ。あなたのその健気な決意も弓ごと、深い絶望の底に沈めて差し上げましょう',
         },
       ],
       post: [
@@ -435,7 +431,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: 'はぁ！？ せっかくあのお宝の山を私が制圧したのに、なんであの狂った深海女が勝手に座り込んでるのよ！',
+          text: 'はぁ！？ 私はエリシアよ。なんなのよ、あのジメジメした気持ち悪い深海女！ 目障りなのよ！',
         },
         {
           speaker: 'player',
@@ -594,11 +590,11 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。さっさと時間を巻き戻して、あの深海女をつまみ出しましょう。',
+          text: '私はクロエ。はぁ……なんですか、このおぞましい気配。',
         },
         {
           speaker: 'enemy',
-          text: '先輩、おやつの配分はしっかり増やしてくださいよ',
+          text: '深海の狂気なんて、時間の外にあるべきものですよ。面倒ですね',
         },
         {
           speaker: 'player',
@@ -747,7 +743,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……私はネフティ。王家の呪いよりも悍ましい狂気。侵入者、あの玉座の新たな主を海の底へ沈めに行く……',
+          text: '……私はネフティ。王墓の呪縛よりも惍ましい狂気。……深海から這い寄る異形め、その場で切り裂く……',
         },
         {
           speaker: 'player',
@@ -806,7 +802,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'これ以上進めば、ただの灰になるだけ。私の影の中で傷を疒していなさい？',
+          text: 'これ以上進めば、ただの灰になるだけ。私の影の中で傷を癒していなさい？',
         },
         {
           speaker: 'player',
@@ -830,7 +826,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'いいですわ、その自信満々な新しい影ごと、どちらが真の深淵の闇か、深い絶望の底に沈めて差し上げましょう',
+          text: 'いいですわ、その偏り物の影ごと、どちらが真の深淵の闇か、深い絶望の底に沈めて差し上げましょう',
         },
         { speaker: 'player', text: 'クスクス……それはこちらのセリフですわ。' },
         {
@@ -883,7 +879,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'これ以上進めば、ただの自己崩壊。私の影の中で傷を疒していなさい？',
+          text: 'これ以上進めば、ただの自己崩壊。私の影の中で眠り、傷を癒していなさい？',
         },
         {
           speaker: 'player',
@@ -940,7 +936,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',

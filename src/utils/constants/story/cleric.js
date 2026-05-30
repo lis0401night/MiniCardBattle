@@ -90,7 +90,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'はぁ？ 私はエリシアよ。' },
         {
           speaker: 'player',
-          text: 'わざわざこんな所に呼び立てて、この私に新型兵器の的当ての手伝いをしろですって？',
+          text: '私に対戦を要求してきたのね。その華奢な装甲、引き剣って粉々にしてあげようかしら',
         },
         {
           speaker: 'enemy',
@@ -161,10 +161,10 @@ export const storyDialogues = {
           speaker: 'enemy',
           text: '私はイグニス！ なによあんた、ジメジメした変なメイスを振り回しちゃって！',
         },
-        { speaker: 'enemy', text: 'あんたの炎で焼き尽くしてやるわ！' },
+        { speaker: 'enemy', text: '私の炎で焼き尽くしてやるわ！' },
         {
           speaker: 'player',
-          text: '私はエリシア！ なんであの野蛮なトカゲが上座に座ってるの？ 態度のでかい顔、目障りで許せないわ！',
+          text: '私はエリシア！ なんなのよあの野蛮なトカゲ！ 態度のでかい顔、目障りで許せないわ！',
         },
         {
           speaker: 'enemy',
@@ -313,16 +313,16 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: 'クスクス……私はナイア。私の財産に手をつけて世界中を狂わせそうだなんて、面白い冗談を言いますのね',
+          text: 'クスクス……私はナイア。騒がしい聖職者さんですわね。私の平穏な静寂を乱すなど、無礼極まりありませんわ',
         },
         { speaker: 'player', text: '私はエリシア！ はぁ！？' },
         {
           speaker: 'player',
-          text: 'せっかくお宝の山を私が制圧したのに、なんで狂った深海女が勝手に座り込んでるのよ！',
+          text: 'なんなのよ、あのジメジメした気持ち悪い深海女！ 目障りなのよ！',
         },
         {
           speaker: 'enemy',
-          text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう',
+          text: 'いいですわ、その怒りのメイスごと、深い絶望の底に沈めて差し上げましょう',
         },
         {
           speaker: 'player',
@@ -559,7 +559,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'さっさと適当なレポート書いて帰りましょう。その自慢のメイス、一瞬でガラクタに見せてあげます',
+          text: 'さっさと終わらせて帰りましょう。その自慢のメイス、一瞬でガラクタに見せてあげます',
         },
         {
           speaker: 'player',
@@ -692,7 +692,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……私はネフティ。不浄な殺戮が行われている。王墓の平穏のためにも、あの狂った聖職者を沈めに行く……',
+          text: '……私はネフティ。……騒がしい聖職者がいるな。王墓の静寂を乱す者は、浄化する……',
         },
         { speaker: 'player', text: '私はエリシア！ 誰が狂った聖職者よ！' },
         {
@@ -885,7 +885,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',

@@ -190,7 +190,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私の究極の炎に耐えられるか試したいって？ あっそ、あんたがそういうなら別に構わないけどさ！',
+          text: '私はイグニス！ なによあんた、お札なんか握りしめちゃって！ 私の竜の大斧と炎で、丸焦げにしてやるわ！',
         },
         {
           speaker: 'player',
@@ -366,7 +366,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '我が符がその闇を警戒していますぞ' },
         {
           speaker: 'enemy',
-          text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう',
+          text: 'いいですわ、その符ごと、深い絶望の底に沈めて差し上げましょう',
         },
         {
           speaker: 'player',
@@ -520,7 +520,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: 'はぁ？ 私はエリシアよ。なんであの陰陽師が、私と同じくらい上座に座ってるの？ 目障りで許せないわ',
+          text: 'はぁ？ 私はエリシアよ。なんなのよあの真面目な陰陽師！ 生意気な顔が目障りで許せないわ！',
         },
         {
           speaker: 'player',
@@ -680,7 +680,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。はぁ……なんで私が、こんな豪華な宴でカグラさんのお相手なんてやらなきゃいけないんですか',
+          text: '私はクロエ。はぁ……なんでこんな場所でカグラさんのお相手なんてやらなきゃいけないんですか',
         },
         {
           speaker: 'player',
@@ -688,7 +688,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'さっさと適当なレポート書いて帰りましょう。その自慢のお札、一瞬でガラクタに見せてあげます',
+          text: 'さっさと終わらせて帰りましょう。その自慢のお札、一瞬でガラクタに見せてあげます',
         },
         {
           speaker: 'player',
@@ -760,7 +760,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……私はネフティ。王家の呪いよりも悍ましい狂気。侵入者、あの玉座の新たな主を海の底へ沈めに行く……',
+          text: '……私はネフティ。……陰陽の気配を感じる。王墓の静寂を乱す者か、浄化する……',
         },
         {
           speaker: 'player',
@@ -964,7 +964,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         { speaker: 'player', text: '虚空の騎士ゼノン殿ですね。私はカグラ。' },
         {

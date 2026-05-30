@@ -265,7 +265,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私は騎士団長セレスティア。新たな相棒とともにどれほどの力を手にしたのか。聖なるシールドをもって全力で応えよう！',
+          text: '私は騎士団長セレスティア。リナ、君の放つ銀の矢の気配、只ならぬ鬼気を感じるな。我が聖剣で受けて立とう！',
         },
         {
           speaker: 'player',
@@ -273,7 +273,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: '試練の相手としてこの私を指名するとは。彼女の眼差しにある決意、確かに受け取ったぞ！',
+          text: '試練の相手としてこの私を指名するとは。君の眼差しにある決意、確かに受け取ったぞ！',
         },
         {
           speaker: 'player',
@@ -347,7 +347,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '私の銀の矢で射抜いてみせるわ' },
         {
           speaker: 'enemy',
-          text: 'フフッ、いいですわ。あなたのその健気な決意も新しい相棒ごと、深い絶望の底に沈めて差し上げましょう',
+          text: 'フフッ、いいですわ。あなたのその健気な決意も弓ごと、深い絶望の底に沈めて差し上げましょう',
         },
         {
           speaker: 'player',
@@ -410,7 +410,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: 'はぁ？ 森のエルフから私に挑戦？ まあ、熱心な信徒が現れたとでも思って、特別に相手をしてあげるわ',
+          text: 'はぁ？ 私はエリシアよ。なんなのよ、あの地味なエルフ。おとなしそうな顔してるくせに、広い額が目障りなのよ！',
         },
         {
           speaker: 'player',
@@ -556,7 +556,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。はぁ……なんで私が、こんな豪華な宴でエルフの射手のお相手なんて',
+          text: '私はクロエ。はぁ……なんでこんな場所でエルフの射手さんに会うはめになるんですか',
         },
         { speaker: 'enemy', text: 'やらなきゃいけないんですか' },
         {
@@ -565,7 +565,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'さっさと適当なレポート書いて帰りましょう。その自慢の弓、一瞬でガラクタに見せてあげます',
+          text: 'さっさと終わらせて帰りましょう。その自慢の弓、一瞬でガラクタに見せてあげます',
         },
         {
           speaker: 'player',
@@ -630,7 +630,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はカグラ。あのエルフの少女が、新たな試練に挑むのですね。',
+          text: '私はカグラ。リナ殿、あなたの矢に宿る決意の光が伝わってまいります。',
         },
         {
           speaker: 'enemy',
@@ -723,7 +723,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: '……少し付き合う。森まで足を運び、あのエルフがどれほど成長したのか、王墓の呪いの深さで試してやる……',
+          text: '……少し付き合う。そのエルフの矢がどれほどのものか、王墓の呪いの深さで試してやる……',
         },
         {
           speaker: 'player',
@@ -902,7 +902,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',

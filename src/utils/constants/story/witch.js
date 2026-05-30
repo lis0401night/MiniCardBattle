@@ -114,7 +114,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はクロエ。はぁ……なんで私が新型兵器の戦闘テストなんて。',
+          text: '私はクロエ。はぁ……なんで私が機械の耐久テストなんて。',
         },
         { speaker: 'player', text: '適当に終わらせて帰りましょう' },
         {
@@ -189,11 +189,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はイグニス！ 私の究極の炎に耐えられるか試したいって？',
-        },
-        {
-          speaker: 'enemy',
-          text: 'あっそ、あんたがそういうなら別に構わないけどさ！',
+          text: '私はイグニス！ なによあんた、退屈そうな顔しちゃって！ 私の竜の大斧と炎で、丸焦げにしてやるわ！',
         },
         {
           speaker: 'player',
@@ -202,7 +198,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '面倒ですけどわかりました' },
         {
           speaker: 'enemy',
-          text: 'ちょっと、なによ！ あっちの席で、さっさと適当なレポート書いて帰りましょうなんて退屈そうに言ってた癖に！',
+          text: 'ちょっと、なによ！ やる気あるの！？ ないの！？ どっちなのよ！',
         },
         {
           speaker: 'player',
@@ -238,6 +234,10 @@ export const storyDialogues = {
         {
           speaker: 'enemy',
           text: 'なによ！ あんたたちに何がわかるのよ！ 私の炎で、その頑丈な身体をこじ開けてでも先へ進んでやるんだから！',
+        },
+        {
+          speaker: 'player',
+          text: 'はぁ……本当に聞き分けのないトカゲですね！ 私の魔法で、その無謀な時間を強制停止させてもらいます！',
         },
       ],
       post: [
@@ -280,7 +280,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'と言いたいところですが、サクッと片付けましょう',
+          text: 'いざ、参るぞ！',
         },
         {
           speaker: 'player',
@@ -352,7 +352,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         {
           speaker: 'enemy',
-          text: '退屈そうにため息をついている魔女さん。……その気だるげな横顔、とても素敵ですわよ',
+          text: 'あらあら、気だるそうにため息をつく魔女さん。……その懐中時計、とても素敵な時間の香りがしますわね',
         },
         {
           speaker: 'player',
@@ -360,11 +360,11 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう',
+          text: 'いいですわ、その懐中時計ごと、深い絶望の底に沈めて差し上げましょう',
         },
         {
           speaker: 'player',
-          text: 'お相手いたします。時の流れの乱れを補正しつつ、先輩の指示に従い、迅速に対象の無力化を試みます',
+          text: 'お相手いたします。先輩の指示に従い、迅速に無力化を試みます',
         },
       ],
       post: [
@@ -440,7 +440,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'はぁー……せっかくレポートが終わったのに、今度はエルフの戦士の試練に付き合えって言うんですか。仕方ないですね',
+          text: 'はぁー……やっと休めると思ったのに、今度はエルフの戦士の試練に付き合えって言うんですか。仕方ないですね',
         },
       ],
       post: [
@@ -506,7 +506,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         {
           speaker: 'enemy',
-          text: 'なんであの面倒くさそうな魔女が、私と同じくらい上座に座ってるの？ 目障りよ',
+          text: 'なんなのよあの面倒くさそうな魔女！ 生意気な顔が目障りなのよ！',
         },
         {
           speaker: 'player',
@@ -518,7 +518,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'その生意気な顔、私の神罰のメイスで粉々に叩き割って、お宝の山に奉納してあげるわ！',
+          text: 'その生意気な顔、私の神罰のメイスで粉々に叩き割ってあげるわ！',
         },
         {
           speaker: 'player',
@@ -942,7 +942,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',

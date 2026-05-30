@@ -119,7 +119,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はアイギス。これより特注の新兵器の限界耐久テストを開始します。悪魔狩り、対戦を要求します',
+          text: '私はアイギス。これより実戦形式での限界耐久テストへ移行します。悪魔狩り、対戦を要求します',
         },
         {
           speaker: 'player',
@@ -502,7 +502,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         {
           speaker: 'enemy',
-          text: 'なんであの野蛮な悪魔狩りが、私と同じくらい上座に座ってるの？ 目障りで許せないわ',
+          text: 'なんなのよあの野蛮な悪魔狩り！ 生意気な顔が目障りなのよ！',
         },
         {
           speaker: 'player',
@@ -514,7 +514,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'その生意気で堅苦しい顔、私の神罰のメイスで粉々に叩き割って、お宝の山に奉納してあげるわ！',
+          text: 'その生意気で堅苦しい顔、私の神罰のメイスで粉々に叩き割ってあげるわ！',
         },
         {
           speaker: 'player',
@@ -580,7 +580,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。はぁ……なんで私が、こんな豪華な宴で悪魔狩りのお相手なんてやらなきゃいけないんですか',
+          text: '私はクロエ。はぁ……なんでこんな場所で悪魔狩りの人に会うはめになるんですか',
         },
         {
           speaker: 'player',
@@ -588,7 +588,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'さっさと適当なレポート書いて帰りましょう。その自慢の棺桶、一瞬でガラクタに見せてあげます',
+          text: 'さっさと終わらせて帰りましょう。その自慢の棺桶、一瞬でガラクタに見せてあげます',
         },
         {
           speaker: 'player',
@@ -906,7 +906,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',

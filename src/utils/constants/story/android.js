@@ -353,7 +353,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'あら、面白い機械。いいですわ、その自信満々な新しい装甲ごと、絶望の底に沈めて差し上げますわ',
+          text: 'あら、面白い機械。いいですわ、その分厚い鉄屑ごと、絶望の底に沈めて差し上げますわ',
         },
         {
           speaker: 'player',
@@ -509,7 +509,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         {
           speaker: 'enemy',
-          text: 'この私に新型兵器の的当ての手伝いをしろですって？',
+          text: 'なんなのよ、そのガチャガチャうるさい鉄の塊は。目障りなのよ！',
         },
         {
           speaker: 'player',
@@ -593,11 +593,11 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はマリア。新兵器の限界耐久テストってわけ？',
+          text: '私はマリア。ほう、随分と頑丈そうな鉄の塊じゃない。',
         },
         {
           speaker: 'enemy',
-          text: 'いいわ、でも対装甲弾の弾代と私の手間賃は、かなり高くつくわよ？',
+          text: '私のリボルバーでその装甲がどこまで持つか、試させてもらおうかしら',
         },
         {
           speaker: 'player',
@@ -674,9 +674,9 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。物理的な重武装で時間干渉魔法に抗おうっていうんですか？',
+          text: '私はクロエ。はぁ……なんですか、そのゴツい鉄の身体。',
         },
-        { speaker: 'enemy', text: '無茶苦茶ですよ' },
+        { speaker: 'enemy', text: '私の時間魔法が通じなさそうで面倒ですね' },
         {
           speaker: 'player',
           text: '対象：クロエの時間操作魔法のシステムをスキャン。',
@@ -756,7 +756,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はカグラ。いつ暴走するかもしれない、私の中に深く眠る鬼の力……本当に試したいのですか？',
+          text: '私はカグラ。……鉄の身体を持つ戦姫、ですか。その冷たい瞳の奥に、不思議な意志の力を感じます',
         },
         {
           speaker: 'player',
@@ -836,7 +836,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……私はネフティ。冷たい鉄の身体……自ら被検体になるなど、預言にはない奇妙な真似をする……',
+          text: '……私はネフティ。この王墓に、鉄の身体を引きずって踏み入る者がいるとは……物好きな侵入者だ……',
         },
         {
           speaker: 'player',
@@ -1028,7 +1028,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         { speaker: 'player', text: '対象：ゼノンの虚空の冥界殺気を計測。' },
         {

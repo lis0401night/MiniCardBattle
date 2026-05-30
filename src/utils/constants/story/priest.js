@@ -170,7 +170,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私の究極の炎に耐えられるか試したいって？ あっそ、あんたがそういうなら別に構わないけどさ！',
+          text: '私はイグニス！ なによあんた、冷たいナイフなんか構えちゃって！ 私の竜の大斧と炎で、丸焦げにしてやるわ！',
         },
         {
           speaker: 'player',
@@ -331,7 +331,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '我が古代の呪縛すら激しくざわついている……' },
         {
           speaker: 'enemy',
-          text: 'いいですわ、その自信満々な新しい相棒ごと、深い絶望の底に沈めて差し上げましょう',
+          text: 'いいですわ、その古代の呪縛ごと、深い絶望の底に沈めて差し上げましょう',
         },
         { speaker: 'player', text: '……沈むのはお前だ、ナイア。' },
         {
@@ -494,9 +494,8 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         {
           speaker: 'enemy',
-          text: 'なんであの古代人が私と同じくらい上座に座ってるの？ ',
+          text: 'なんなのよあの古代人！ 生意気な顔が目障りだからお仕置きしてあげるわ',
         },
-        { speaker: 'enemy', text: '目障りだからお仕置きしてあげるわ' },
         { speaker: 'player', text: '……私はネフティ。不遜なる聖職者よ。' },
         {
           speaker: 'player',
@@ -677,7 +676,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'さっさと適当なレポート書いて帰りましょう。その古いナイフ、一瞬でガラクタに見せてあげます',
+          text: 'さっさと終わらせて帰りましょう。その古いナイフ、一瞬でガラクタに見せてあげます',
         },
         {
           speaker: 'player',
@@ -962,7 +961,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         { speaker: 'player', text: '……虚空の騎士ゼノンだな。私はネフティ。' },
         {

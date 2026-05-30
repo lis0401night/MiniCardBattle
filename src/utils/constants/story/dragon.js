@@ -174,7 +174,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私は騎士団長セレスティア。宴の席での無礼は許してほしいが、',
+          text: '私は騎士団長セレスティア。突然だが、',
         },
         {
           speaker: 'enemy',
@@ -186,7 +186,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: '分かった、君の真剣な頼みだ。手加減などという侮辱はしない。王国の剣術、全力でいかせてもらうぞ！',
+          text: 'フッ、いい返事だ。手加減などという侮辱はしない。王国の剣術、全力でいかせてもらうぞ！',
         },
         {
           speaker: 'player',
@@ -390,7 +390,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: 'はぁ？ 私はエリシアよ。なんであの野蛮なトカゲが、私と同じくらい上座に座ってるの？',
+          text: 'はぁ？ 私はエリシアよ。なんなのよ、あの野蛮なトカゲみたいな女。',
         },
         { speaker: 'enemy', text: '目障りで許せないわ' },
         {
@@ -464,11 +464,11 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はマリア。おっと……雇い主さん、今日の獲物は見つけたわ。',
+          text: '私はマリア。おっと……やけに威勢のいい竜の娘さんだこと。',
         },
         {
           speaker: 'enemy',
-          text: 'あの隅の席、イグニスが一人で退屈しのぎの相手を探してるみたいね',
+          text: '面白い。その大斧の腕前、ちょっと見させてもらおうかしら',
         },
         {
           speaker: 'player',
@@ -537,9 +537,9 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。はぁ……なんで私がイグニスさんのお相手なんて。',
+          text: '私はクロエ。はぁ……なんだか暑苦しい人が来ましたね。',
         },
-        { speaker: 'enemy', text: '面倒ですけどわかりました' },
+        { speaker: 'enemy', text: '面倒ですけど、通してほしいなら力ずくでどうぞ' },
         {
           speaker: 'player',
           text: '私はイグニスよ！ 面倒くさそうな顔しないでよ！ 懐中時計なんて見つめてないで、私と本気で戦いなさい！',
@@ -686,7 +686,7 @@ export const storyDialogues = {
           text: '……私はネフティ。火の竜……こんな騒がしい場所にまで。',
         },
         { speaker: 'enemy', text: 'お前を静かにさせる……' },
-        { speaker: 'player', text: '私はイグニスよ！ 馬鹿な竜ってなによ！' },
+        { speaker: 'player', text: '私はイグニスよ！ 静かにさせるですって！？ 生意気ね！' },
         {
           speaker: 'player',
           text: 'あんたのその儀式用ナイフ、冷たそうだけど私の炎に耐えられるかしら！',
@@ -875,7 +875,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',
@@ -913,7 +913,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私はイグニスよ！ 誰がトカゲ娘よ！ あんたみたいな露出の多い生意気な悪魔に、誰が隷属するもんですか！',
+          text: '私はイグニスよ！ 可愛いですって！？ 馬鹿にしないで！ あんたみたいな生意気な悪魔に、誰が隷属するもんですか！',
         },
         {
           speaker: 'enemy',

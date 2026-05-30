@@ -121,7 +121,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '君の新しいその分厚い装甲で、我が聖剣の斬撃を受け止めようというのだな。随分と機械の身体に自信があるようだ',
+          text: '君のその分厚い装甲で、我が聖剣の斬撃を受け止めようというのだな。随分と機械の身体に自信があるようだ',
         },
         {
           speaker: 'enemy',
@@ -129,7 +129,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '分かった、君の真剣な頼みだ。手加減などという侮辱はしない。我が剣技、全力でいかせてもらうぞ！',
+          text: 'フッ、いい返事だ。手加減などという侮辱はしない。我が剣技、全力でいかせてもらうぞ！',
         },
       ],
       post: [
@@ -347,7 +347,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はリナ。森の長老からの果たし状として、聖騎士セレスティア、あなたに挑戦させてもらうね！',
+          text: '私はリナ。一人前の戦士になるために、聖騎士セレスティア、あなたに挑戦させてもらうね！',
         },
         {
           speaker: 'player',
@@ -363,7 +363,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '新たな相棒とともにどれほどの力を手にしたのか。王国騎士の誇りにかけて、全力で応えよう！',
+          text: '君の放つ矢がどれほどのものか、王国騎士の誇りにかけて、全力で応えよう！',
         },
       ],
       post: [
@@ -555,7 +555,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はクロエ。はぁ……なんで私が、こんな豪華な宴で聖騎士様のお相手なんてやらなきゃいけないんですか',
+          text: '私はクロエ。はぁ……なんでこんな場所で聖騎士様に会うはめになるんですか',
         },
         {
           speaker: 'player',
@@ -567,7 +567,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'さっさと適当なレポート書いて帰りましょう。その自慢の鎧、一瞬でガラクタに見せてあげます',
+          text: 'さっさと終わらせて帰りましょう。その自慢の鎧、一瞬でガラクタに見せてあげます',
         },
         {
           speaker: 'player',
@@ -718,7 +718,7 @@ export const storyDialogues = {
         { speaker: 'player', text: 'だが、我が聖剣の光は決して曇りはしない！' },
         {
           speaker: 'enemy',
-          text: '……不浄なる炎、王墓を侵す者には死を。我が古代の呪いの深さ、教えてやる……',
+          text: '……聖剣の光か。王墓を侵す者には死を。我が古代の呪いの深さ、教えてやろう……',
         },
         {
           speaker: 'player',
@@ -903,7 +903,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）',
+          text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
         {
           speaker: 'player',

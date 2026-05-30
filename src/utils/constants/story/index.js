@@ -72,7 +72,7 @@ export function getFallbackStoryDialogue(
     // 敵の1回目の台詞で「名乗り」をプログラム的に自動挿入！
     let enemyIntro = `私は${eChar.name}。この先へ進むため、立ち塞がる者と手合わせをさせてもらう。`;
     if (enemyId === 'void') {
-      enemyIntro = `……（意思を持たぬ冷酷な瞳が、あなたと対象の魂を捉えている）`; // ゼノンは名乗り不要
+      enemyIntro = `……（意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）`; // ゼノンは名乗り不要
     } else if (enemyId === 'succubus') {
       enemyIntro = `ふふっ、私は隷属の女王ヴィオラよ。こんなところに迷い込むなんて、私に隷属したいのかしら？`;
     } else if (enemyId === 'satan') {
