@@ -31,24 +31,8 @@ export const SE_PATHS = {
 };
 
 export const SOUNDS = {
-  // 効果音パス (UI用など・文字列として保持)
-  seClick: 'assets/audio/se/se_click.mp3',
-  sePlace: 'assets/audio/se/se_place.mp3',
-  seAttack: 'assets/audio/se/se_attack.mp3',
-  seDamage: 'assets/audio/se/se_damage.mp3',
-  seSkill: 'assets/audio/se/se_skill_default.mp3',
-  seDestroy: 'assets/audio/se/se_destroy.mp3',
-  seContinue: 'assets/audio/se/se_skill_default.mp3',
-  seLegend: 'assets/audio/se/se_legend.mp3',
-  seSkillBind: 'assets/audio/se/se_skill_bind.mp3',
-  seSkillToxic: 'assets/audio/se/se_skill_toxic.mp3',
-  seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
-  seSkillFreeze: 'assets/audio/se/se_skill_freeze.mp3',
-  seSkillCrush: 'assets/audio/se/se_skill_crush.mp3',
-  seClock: 'assets/audio/se/se_clock.mp3',
-  seMetalBlast: 'assets/audio/se/se_metalblast.mp3',
-  seFire: 'assets/audio/se/se_fire.mp3',
-  seHyoushigi: 'assets/audio/se/se_hyoushigi.mp3',
+  // 効果音パス (UI用など・文字列として保持) - SE_PATHS から展開して重複を排除
+  ...SE_PATHS,
 };
 
 export const AUDIO_INSTANCES = {
@@ -265,6 +249,22 @@ export function playSkillSound(skillId) {
         ? GameState.gameVolume
         : 0.3;
 
+    const playBuffer = (buffer) => {
+      const source = audioCtx.createBufferSource();
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = baseVol;
+      source.buffer = buffer;
+      source.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      source.start(0);
+    };
+
+    // デコード済みならキャッシュから即再生
+    if (seBuffers[url]) {
+      playBuffer(seBuffers[url]);
+      return;
+    }
+
     fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -272,13 +272,8 @@ export function playSkillSound(skillId) {
       })
       .then((ab) => audioCtx.decodeAudioData(ab))
       .then((buffer) => {
-        const source = audioCtx.createBufferSource();
-        const gainNode = audioCtx.createGain();
-        gainNode.gain.value = baseVol;
-        source.buffer = buffer;
-        source.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        source.start(0);
+        seBuffers[url] = buffer;
+        playBuffer(buffer);
       })
       .catch((e) => {
         if (typeof window.playSound === 'function')

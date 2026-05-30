@@ -1,5 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: High Difficulty Satan
+ * Mini Card Battle - Enemy Deck: Satan (高難易度)
+ * 魔王サタンの高難易度デッキ
  */
 export default [
   'whiterider',

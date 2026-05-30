@@ -1,7 +1,7 @@
 import { CARD_MASTER } from './constants/cards.js';
 import { CHARACTERS } from './constants/characters.js';
 import { PLAYMAT_MASTER } from './constants/playmats.js';
-import { SE_PATHS, AUDIO_INSTANCES } from './sounds.js';
+import { AUDIO_INSTANCES, SE_PATHS } from './sounds.js';
 
 let isPreloaded = false;
 
@@ -47,7 +47,7 @@ export async function preloadAllGameResources(onProgress) {
     const audio = AUDIO_INSTANCES[key];
     // audio.src はブラウザによっては絶対パスになるため、パス指定文字を含む場合のみ
     if (audio && audio.src) {
-      const url = new URL(audio.src, window.location.href).pathname;
+      const url = new URL(audio.src, window.location.href).pathname.replace(/^\/+/, '');
       urlsToLoad.add(url);
     }
   });
@@ -69,7 +69,7 @@ export async function preloadAllGameResources(onProgress) {
         a.load();
         preloadedAudios.push(a);
       } else {
-        // 画層ファイルのキャッシュ
+        // 画像ファイルのキャッシュ
         const img = new Image();
         img.onload = resolve;
         img.onerror = resolve;

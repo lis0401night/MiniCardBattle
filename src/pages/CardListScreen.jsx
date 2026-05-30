@@ -10,6 +10,7 @@ import {
 } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
+import { MAX_CARD_COPIES } from '../utils/constants/config.js';
 import {
   getCardImgUrl,
   isTransitioning,
@@ -38,7 +39,7 @@ export default function CardListScreen() {
           if (CARD_MASTER && GameState.playerInventory) {
             CARD_MASTER.forEach((card) => {
               if (!card.isToken) {
-                GameState.playerInventory[card.id] = 4;
+                GameState.playerInventory[card.id] = MAX_CARD_COPIES;
               }
             });
           }
@@ -55,7 +56,7 @@ export default function CardListScreen() {
           if (typeof playSound === 'function' && SOUNDS)
             playSound(SOUNDS.seSkill);
           if (typeof showAlertModal === 'function')
-            showAlertModal('デバッグモード：全カードを4枚所持状態にしました！');
+            showAlertModal(`デバッグモード：全カードを${MAX_CARD_COPIES}枚所持状態にしました！`);
           updateList();
         }
       );

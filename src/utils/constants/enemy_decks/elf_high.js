@@ -1,3 +1,7 @@
+/**
+ * Mini Card Battle - Enemy Deck: Elf (高難易度)
+ * リナの高難易度デッキ
+ */
 export const elfHighDeckDef = [
   'elfking',
   'elfking',

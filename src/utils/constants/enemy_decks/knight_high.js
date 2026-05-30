@@ -1,5 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: High Difficulty Satan
+ * Mini Card Battle - Enemy Deck: Knight (高難易度)
+ * セレスティアの高難易度デッキ
  */
 export default [
   'darkpaladin',

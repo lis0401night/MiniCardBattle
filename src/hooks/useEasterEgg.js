@@ -14,11 +14,13 @@ export function useEasterEgg(onTrigger, targetCount = DEFAULT_EASTER_EGG_THRESHO
   const [clickCount, setClickCount] = useState(0);
 
   return () => {
-    const newCount = clickCount + 1;
-    setClickCount(newCount);
-    if (newCount >= targetCount) {
-      setClickCount(0);
-      onTrigger();
-    }
+    setClickCount((prevCount) => {
+      const nextCount = prevCount + 1;
+      if (nextCount >= targetCount) {
+        setTimeout(onTrigger, 0);
+        return 0;
+      }
+      return nextCount;
+    });
   };
 }

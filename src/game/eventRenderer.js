@@ -323,10 +323,14 @@ export async function playEvents(events) {
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const boardCard = board[ev.lane];
         if (boardCard) {
+          boardCard.power =
+            (boardCard.power || 0) + (ev.card.currentPower || 0);
           boardCard.basePower =
             (boardCard.basePower || 0) + (ev.card.currentPower || 0);
           boardCard.currentPower =
             (boardCard.currentPower || 0) + (ev.card.currentPower || 0);
+          boardCard.equippedCards = boardCard.equippedCards || [];
+          boardCard.equippedCards.push(JSON.parse(JSON.stringify(ev.card)));
           let addedSkills = [];
           if (
             ev.card.skill &&

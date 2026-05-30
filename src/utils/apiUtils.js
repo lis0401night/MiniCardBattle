@@ -15,6 +15,10 @@ export function savePointsToServer(endpoint, points, totalPoints) {
 
     const playerName =
       localStorage.getItem('mini_card_battle_player_name') || 'Player';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     return fetch(`api/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,8 +28,10 @@ export function savePointsToServer(endpoint, points, totalPoints) {
         points: points,
         total_points: totalPoints,
       }),
+      signal: controller.signal,
     })
       .then((res) => {
+        clearTimeout(timeoutId);
         if (!res.ok) {
           console.error(`サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`);
           return false;
@@ -35,7 +41,12 @@ export function savePointsToServer(endpoint, points, totalPoints) {
         }
       })
       .catch((err) => {
-        console.error(`サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`, err);
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          console.error(`サーバーへのポイント同期（${endpoint}）がタイムアウトしました。`);
+        } else {
+          console.error(`サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`, err);
+        }
         return false;
       });
   } catch (e) {

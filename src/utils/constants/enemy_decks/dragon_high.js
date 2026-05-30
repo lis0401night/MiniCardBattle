@@ -1,5 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: High Difficulty Satan
+ * Mini Card Battle - Enemy Deck: Dragon (高難易度)
+ * イグニスの高難易度デッキ
  */
 export default [
   'hellkite',

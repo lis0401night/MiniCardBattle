@@ -1,11 +1,21 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
 
+const safeParseArray = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error(`Failed to parse localStorage key "${key}":`, e);
+    return [];
+  }
+};
+
 export const GameState = {
   playerConfig: CHARACTERS.android,
   enemyConfig: CHARACTERS.dragon,
   playerSkins: {},
-  unlockedSkins:
-    JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || [],
+  unlockedSkins: safeParseArray('mini_card_battle_unlocked_skins'),
   decks: [], // 【追加】最大10個の別個デッキ
   currentDeckIndex: 0, // 【追加】現在操作中のデッキインデックス
   playerDeckSelection: [], // （旧）バトルや編集時の作業用として残す

@@ -1,7 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: レーサー マリア (高難易度)
- * オーバードライブとの相性を意識した墓地活用型のデッキ。
- * 積極的に消耗しながら墓地を肥やし、オーバードライブで逆転を狙う構成。
+ * Mini Card Battle - Enemy Deck: Devilhunter (高難易度)
+ * マリアの高難易度デッキ
  */
 export default [
   'doll',

@@ -106,7 +106,9 @@ export function processActionSequence(
       playerDeck: GameState.playerDeck
         ? GameState.playerDeck.map(cloneCard)
         : [],
-      enemyDeck: [],
+      enemyDeck: GameState.enemyDeck
+        ? GameState.enemyDeck.map(cloneCard)
+        : [],
       extraTurnCount: GameState.extraTurnCount || 0,
       attackSkipCount: GameState.attackSkipCount || 0,
       combatDamageTaken: 0,
@@ -2273,7 +2275,9 @@ export function evaluateAdhocTokenLanes(
     playerHand: GameState.playerHand ? GameState.playerHand.map(cloneCard) : [],
     enemyHand: GameState.enemyHand ? GameState.enemyHand.map(cloneCard) : [],
     playerDeck: GameState.playerDeck ? GameState.playerDeck.map(cloneCard) : [],
-    enemyDeck: [],
+    enemyDeck: GameState.enemyDeck
+      ? GameState.enemyDeck.map(cloneCard)
+      : [],
     extraTurnCount: GameState.extraTurnCount || 0,
     attackSkipCount: GameState.attackSkipCount || 0,
     combatDamageTaken: 0,

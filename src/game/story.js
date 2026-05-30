@@ -137,6 +137,7 @@ export function clearStoryProgress() {
  * 保存されたストーリーデータを復元して再開する
  */
 export function resumeStoryProgress(savedData) {
+  GameState.gameMode = 'story';
   GameState.pendingCharId = savedData.pendingCharId;
   GameState.storyQueue = savedData.storyQueue;
   GameState.battleCount = savedData.battleCount;

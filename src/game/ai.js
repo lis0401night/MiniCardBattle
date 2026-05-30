@@ -172,7 +172,7 @@ export async function executeEnemyAI() {
   } finally {
     if (!GameState.isBattleEnded) {
       GameState.isProcessing = false;
-      endTurnLogic('red');
+      await endTurnLogic('red');
     }
   }
 }

@@ -195,6 +195,10 @@ function generateSyncState() {
     enemyHP: GameState.enemyHP,
     playerSP: GameState.playerSP,
     enemySP: GameState.enemySP,
+    playerSealedLanes: JSON.parse(JSON.stringify(GameState.playerSealedLanes || [0, 0, 0])),
+    enemySealedLanes: JSON.parse(JSON.stringify(GameState.enemySealedLanes || [0, 0, 0])),
+    extraTurnCount: GameState.extraTurnCount || 0,
+    attackSkipCount: GameState.attackSkipCount || 0,
     playerBoard: JSON.parse(JSON.stringify(GameState.playerBoard)),
     enemyBoard: JSON.parse(JSON.stringify(GameState.enemyBoard)),
     playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
@@ -243,6 +247,12 @@ function applySyncState(state) {
   GameState.enemyDiscard = restoreArr(state.playerDiscard);
   GameState.playerDeck = restoreArr(state.enemyDeck);
   GameState.enemyDeck = restoreArr(state.playerDeck);
+
+  // 封印レーン（敵味方を反転）と戦闘追加・スキップ状態の同期
+  GameState.playerSealedLanes = restoreArr(state.enemySealedLanes, 3);
+  GameState.enemySealedLanes = restoreArr(state.playerSealedLanes, 3);
+  GameState.extraTurnCount = state.extraTurnCount || 0;
+  GameState.attackSkipCount = state.attackSkipCount || 0;
 
   // ターン表記（player / enemy）もホストから見た主観なので逆転させる
   if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
@@ -2517,6 +2527,42 @@ export async function playCard(o, hI, l) {
     b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const playingCard = h[hI];
   if (!playingCard) return;
+
+  const sealedLanes =
+    o === 'blue'
+      ? GameState.playerSealedLanes || [0, 0, 0]
+      : GameState.enemySealedLanes || [0, 0, 0];
+  const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+
+  // 封印（Seal）レーンは絶対に配置・召喚不可（最優先ルール）
+  if (sealedLanes[l] > 0) return;
+
+  // 1ターン目中央制限
+  if (GameState.turnCount === 1 && GameState.firstPlayer === o && l !== 1) return;
+
+  // 伝説のカード制限（中央のみ）
+  if (hasSkill(playingCard, 'legendary') && l !== 1) return;
+
+  // 生贄のカード制限（自分のカードがあるレーンのみ）
+  if (hasSkill(playingCard, 'takeover') && b[l] === null) return;
+
+  // 挑戦のカード制限（正面に敵がいるレーンのみ）
+  if (hasSkill(playingCard, 'challenge') && oppBoard[l] === null) return;
+
+  // 頂点のカード制限（自分の伝説カードの上のみ）
+  if (hasSkill(playingCard, 'apex')) {
+    const targetCard = b[l];
+    if (
+      !targetCard ||
+      !(
+        targetCard.skill === 'legendary' ||
+        (targetCard.skills &&
+          targetCard.skills.some((s) => s.id === 'legendary'))
+      )
+    ) {
+      return;
+    }
+  }
 
   // 手札からのプレイ（召喚・合体・装備含む）時にアニメーションを再生
   await playSummonAnimation(playingCard, o);

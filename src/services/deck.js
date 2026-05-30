@@ -1033,18 +1033,6 @@ export function finishDeckEdit() {
   if (GameState.gameMode === 'defense_register') {
     if (window.showPlayerNameModalState) {
       window.showPlayerNameModalState();
-    } else {
-      const modal = document.getElementById('modal-player-name');
-      if (modal) {
-        modal.style.display = 'flex';
-        const nameInput = document.getElementById('input-player-name');
-        if (nameInput) {
-          const savedName = localStorage.getItem(
-            'mini_card_battle_player_name'
-          );
-          if (savedName) nameInput.value = savedName;
-        }
-      }
     }
   } else if (GameState.gameMode === 'online_deck_edit') {
     GameState.appState = 'online';
@@ -1060,8 +1048,7 @@ export function finishDeckEdit() {
 }
 
 export async function submitDefenseDeck(providedName = null) {
-  const nameInput = document.getElementById('input-player-name');
-  const playerName = providedName || (nameInput ? nameInput.value.trim() : '');
+  const playerName = providedName ? providedName.trim() : '';
 
   if (!playerName) {
     showAlertModal('プレイヤーネームを入力してください。');
@@ -1136,44 +1123,4 @@ export async function submitDefenseDeck(providedName = null) {
         err.message
     );
   }
-}
-
-export function exportDeckXML() {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<deck>\n';
-  GameState.playerDeckSelection.forEach((c) => {
-    const skillsAttr = c.skills ? ` skills='${JSON.stringify(c.skills)}'` : '';
-    xml += `  <card id="${c.id}" name="${c.name}" power="${c.power}" skill="${c.skill}"${skillsAttr} />\n`;
-  });
-  xml += '</deck>';
-  const blob = new Blob([xml], { type: 'text/xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `my_deck_${GameState.playerConfig.id}.xml`;
-  a.click();
-}
-
-export function importDeckXML(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(e.target.result, 'text/xml');
-    const cards = xmlDoc.getElementsByTagName('card');
-    GameState.playerDeckSelection = [];
-    for (let i = 0; i < cards.length && i < DECK_SIZE; i++) {
-      let id = cards[i].getAttribute('id');
-      id = migrateCardId(id);
-      const template = CARD_MASTER.find((m) => m.id === id) || CARD_MASTER[0];
-      const count = GameState.playerDeckSelection.filter(
-        (c) => c.id === id
-      ).length;
-      if (count < 5) {
-        GameState.playerDeckSelection.push({ ...template });
-      }
-    }
-    renderDeckEdit();
-  };
-  reader.readAsText(file);
 }

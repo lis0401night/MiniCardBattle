@@ -1831,6 +1831,8 @@ export async function resolveActiveSkillEffect(
           ) {
             const targetCard = board[targetLane];
             // 装備によるパワー加算
+            targetCard.power =
+              (targetCard.power || 0) + (selectedCard.power || 0);
             targetCard.basePower =
               (targetCard.basePower || 0) + (selectedCard.power || 0);
             targetCard.currentPower =
@@ -2033,6 +2035,8 @@ export async function resolveActiveSkillEffect(
             // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
             const targetCard = existingCard;
 
+            targetCard.power =
+              (targetCard.power || 0) + (selectedCard.power || 0);
             targetCard.basePower =
               (targetCard.basePower || 0) + (selectedCard.power || 0);
             targetCard.currentPower =
@@ -2407,6 +2411,8 @@ export async function resolveActiveSkillEffect(
           ) {
             const targetCard = board[targetLane];
 
+            targetCard.power =
+              (targetCard.power || 0) + (topCard.power || 0);
             targetCard.basePower =
               (targetCard.basePower || 0) + (topCard.power || 0);
             targetCard.currentPower =
@@ -2582,6 +2588,7 @@ export async function resolveActiveSkillEffect(
       } else {
         // プレイヤーの場合
         const pLanes = await new Promise((resolve) => {
+          const originalClick = window.handleEnemyLaneClick;
           waitPlayerEnemyLaneSelection(
             1,
             o,
@@ -2589,9 +2596,12 @@ export async function resolveActiveSkillEffect(
             '相手のカードを1枚選んでください',
             false,
             maxPower // 【追加】支配できるパワー上限をフィルターとして適用
-          ).then(resolve);
+          )
+            .then(resolve)
+            .finally(() => {
+              window.handleEnemyLaneClick = originalClick;
+            });
 
-          const originalClick = window.handleEnemyLaneClick;
           window.handleEnemyLaneClick = (laneIndex) => {
             const card = oppBoard[laneIndex];
             if (!card || (card.currentPower ?? card.power ?? 0) > maxPower) {
@@ -2634,6 +2644,8 @@ export async function resolveActiveSkillEffect(
             hasSkill(board[targetLane], 'arm_self'))
         ) {
           const targetCard = board[targetLane];
+          targetCard.power =
+            (targetCard.power || 0) + (selectedCard.power || 0);
           targetCard.basePower =
             (targetCard.basePower || 0) + (selectedCard.power || 0);
           targetCard.currentPower =

@@ -623,7 +623,7 @@ export async function executeLeaderSkillAction(
           (c) =>
             c &&
             !c.isToken &&
-            (c.baseId === forcedTargetUid || c.id === forcedTargetUid)
+            c.uid === forcedTargetUid
         );
       }
       // フォールバック: インデックス指定
@@ -970,6 +970,15 @@ export async function executeLeaderSkillAction(
         }
       } else {
         selectedOppLane = await new Promise((resolve) => {
+          const originalClick = window.handleEnemyLaneClick;
+          window.handleEnemyLaneClick = (laneIndex) => {
+            const card = oppBoard[laneIndex];
+            if (!card || mySealedLanes[laneIndex] === 1) {
+              return;
+            }
+            if (originalClick) originalClick(laneIndex);
+          };
+
           waitPlayerEnemyLaneSelection(
             1,
             owner,
@@ -979,16 +988,9 @@ export async function executeLeaderSkillAction(
           ).then((lanes) => {
             if (lanes && lanes.length > 0) resolve(lanes[0]);
             else resolve(-1);
+          }).finally(() => {
+            window.handleEnemyLaneClick = originalClick;
           });
-
-          const originalClick = window.handleEnemyLaneClick;
-          window.handleEnemyLaneClick = (laneIndex) => {
-            const card = oppBoard[laneIndex];
-            if (!card || mySealedLanes[laneIndex] === 1) {
-              return;
-            }
-            if (originalClick) originalClick(laneIndex);
-          };
         });
       }
 
@@ -1010,8 +1012,8 @@ export async function executeLeaderSkillAction(
 
         if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
           const targetCard = board[targetLane];
+          targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
           targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
-          targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
           if (!targetCard.skills) {
             targetCard.skills = targetCard.skill && targetCard.skill !== 'none'

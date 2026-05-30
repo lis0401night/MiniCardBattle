@@ -43,6 +43,7 @@ export const PLAYMAT_MASTER = [
     id: 'devilhunter',
     name: 'マリア',
     image: 'assets/boards/board_devilhunter.png',
+    targetCharacter: 'devilhunter',
   },
   {
     id: 'witch',
@@ -57,16 +58,16 @@ export const PLAYMAT_MASTER = [
     targetCharacter: 'oni',
   },
   {
-    id: 'satan',
-    name: 'サタン',
-    image: 'assets/boards/board_satan.png',
-    targetCharacter: 'satan',
-  },
-  {
     id: 'priest',
     name: 'ネフティ',
     image: 'assets/boards/board_priest.png',
     targetCharacter: 'priest',
+  },
+  {
+    id: 'satan',
+    name: 'サタン',
+    image: 'assets/boards/board_satan.png',
+    targetCharacter: 'satan',
   },
   {
     id: 'pm_android_summer',

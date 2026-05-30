@@ -97,6 +97,7 @@ export function loadDungeonProgress() {
     return true;
   } catch (e) {
     console.error('Failed to load dungeon save', e);
+    clearDungeonSave();
     return false;
   }
 }

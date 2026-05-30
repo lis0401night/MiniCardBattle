@@ -5,6 +5,7 @@ import {
   saveAchievements,
   checkCollectionAchievements,
 } from '../utils/constants/achievements.js';
+import { MAX_CARD_COPIES } from '../utils/constants/config.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
 import {
   playSound,
@@ -170,7 +171,7 @@ export function debugUnlockCards() {
     resetRulesClickCount();
     CARD_MASTER.forEach((card) => {
       if (!card.isToken) {
-        GameState.playerInventory[card.id] = 4;
+        GameState.playerInventory[card.id] = MAX_CARD_COPIES;
       }
     });
 
@@ -183,7 +184,7 @@ export function debugUnlockCards() {
 
     saveDeck();
     playSound(SOUNDS.seSkill);
-    showAlertModal('デバッグモード：全カードを4枚所持状態にしました！');
+    showAlertModal(`デバッグモード：全カードを${MAX_CARD_COPIES}枚所持状態にしました！`);
   }
 }
 
@@ -215,6 +216,7 @@ export function debugUnlockAchievements() {
 export function setupLongPress(element, cardData) {
   let startX = 0;
   let startY = 0;
+  let localTimer = null; // ローカル変数でタイマーを管理し干渉を防ぐ
 
   const start = (e) => {
     if (e.type === 'touchstart') {
@@ -226,14 +228,14 @@ export function setupLongPress(element, cardData) {
       startY = e.clientY;
     }
 
-    clearTimeout(GameState.longPressTimer);
-    GameState.longPressTimer = setTimeout(() => {
+    clearTimeout(localTimer);
+    localTimer = setTimeout(() => {
       openCardPreview(cardData);
     }, 500);
   };
 
   const move = (e) => {
-    if (!GameState.longPressTimer) return;
+    if (!localTimer) return;
     let currentX = 0;
     let currentY = 0;
     if (e.type === 'touchmove') {
@@ -251,8 +253,8 @@ export function setupLongPress(element, cardData) {
   };
 
   const cancel = () => {
-    clearTimeout(GameState.longPressTimer);
-    GameState.longPressTimer = null;
+    clearTimeout(localTimer);
+    localTimer = null;
   };
 
   element.addEventListener('mousedown', start);
@@ -262,11 +264,26 @@ export function setupLongPress(element, cardData) {
   element.addEventListener('mouseup', cancel);
   element.addEventListener('mouseleave', cancel);
   element.addEventListener('touchend', cancel);
-  element.addEventListener('contextmenu', (e) => {
+
+  const contextHandler = (e) => {
     e.preventDefault();
     openCardPreview(cardData);
     return false;
-  });
+  };
+  element.addEventListener('contextmenu', contextHandler);
+
+  // アンマウント時・再バインド時用のクリーンアップ関数を返す
+  return () => {
+    clearTimeout(localTimer);
+    element.removeEventListener('mousedown', start);
+    element.removeEventListener('touchstart', start);
+    element.removeEventListener('mousemove', move);
+    element.removeEventListener('touchmove', move);
+    element.removeEventListener('mouseup', cancel);
+    element.removeEventListener('mouseleave', cancel);
+    element.removeEventListener('touchend', cancel);
+    element.removeEventListener('contextmenu', contextHandler);
+  };
 }
 
 export function populateCardPreview(prefix, card) {

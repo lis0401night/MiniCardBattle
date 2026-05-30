@@ -1,3 +1,7 @@
+/**
+ * Mini Card Battle - Enemy Deck: Cthulhu (高難易度)
+ * ナイアの高難易度デッキ
+ */
 export default [
   'shoggoth',
   'shoggoth',

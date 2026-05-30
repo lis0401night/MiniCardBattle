@@ -1,3 +1,6 @@
+import { initCampaignMode } from '../game/campaign.js';
+import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
+import { initTournamentMode } from '../game/tournament.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
@@ -9,20 +12,17 @@ import {
   switchScreen,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
-import { initCampaignMode } from '../game/campaign.js';
 import {
   createNewDeck,
   loadDeck,
   renderDeckEdit,
   startBattleFlow,
 } from './deck.js';
-import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
-import { initTournamentMode } from '../game/tournament.js';
 
 import { prepareBattle } from '../game/battle.js';
+import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { GameState } from '../state/gameState.js';
 import { setPlayerReadyOnly } from './multiplayer.js';
-import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
 
@@ -194,6 +194,10 @@ export function importDataFromXML() {
         const content = e.target.result;
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(content, 'text/xml');
+        if (xmlDoc.querySelector('parsererror')) {
+          showAlertModal('XMLの解析に失敗しました。正しいバックアップファイルか確認してください。');
+          return;
+        }
         const entries = xmlDoc.getElementsByTagName('Entry');
 
         if (entries.length === 0) {
@@ -207,7 +211,9 @@ export function importDataFromXML() {
             for (let i = 0; i < entries.length; i++) {
               const key = entries[i].getAttribute('key');
               const val = entries[i].textContent;
-              if (key) localStorage.setItem(key, val);
+              if (key && key.startsWith('mini_card_battle_')) {
+                localStorage.setItem(key, val);
+              }
             }
             location.reload();
           }
@@ -253,7 +259,11 @@ export function handleOptionsTitleClick() {
     const error = new Error(
       'Debug: Intentional error triggered by clicking options title 10 times.'
     );
-    window.onerror(error.message, window.location.href, 0, 0, error);
+    if (typeof window.onerror === 'function') {
+      window.onerror(error.message, window.location.href, 0, 0, error);
+    } else {
+      throw error;
+    }
   }
 }
 
@@ -691,73 +701,7 @@ export function handlePriestHighBattle() {
 export async function showDefenseMenu() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmDefense);
-  const hasRegistered =
-    localStorage.getItem('mini_card_battle_deck_defense') !== null;
-  const startBtn = document.getElementById('btn-start-attack');
-  const disabledBtn = document.getElementById('btn-start-attack-disabled');
-
-  if (startBtn && disabledBtn) {
-    if (hasRegistered) {
-      startBtn.style.display = 'block';
-      disabledBtn.style.display = 'none';
-    } else {
-      startBtn.style.display = 'none';
-      disabledBtn.style.display = 'block';
-    }
-  }
   switchScreen('screen-defense-menu');
-
-  if (hasRegistered) {
-    try {
-      const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`);
-      const result = await response.json();
-      if (result.success) {
-        const myUuid = getOrCreateUUID();
-        const myData = result.players.find((p) => p.uuid === myUuid);
-        if (myData) {
-          const wins = myData.defense_wins || 0;
-          const pts = myData.points || 0;
-          const totalPts = myData.total_points || pts;
-
-          const localPts =
-            parseInt(localStorage.getItem('mini_card_battle_defense_points')) ||
-            0;
-          const localTotalPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_defense_total_points')
-            ) || 0;
-
-          // サーバーの値が0でローカルに値がある場合は、サーバーの初期化ミスと判断して上書きを避ける
-          const finalPts = pts === 0 && localPts > 0 ? localPts : pts;
-          const finalTotalPts =
-            totalPts === 0 && localTotalPts > 0 ? localTotalPts : totalPts;
-
-          const lastWins =
-            parseInt(localStorage.getItem('mini_card_battle_defense_wins')) ||
-            0;
-          const newWinsCount = wins - lastWins;
-
-          if (newWinsCount > 0) {
-            if (typeof window.incrementStat === 'function') {
-              window.incrementStat('defenseWins', null, newWinsCount);
-            }
-            showAlertModal(
-              `防衛に ${newWinsCount} 回新しく成功しました！\n現在の防衛ポイント: ${finalPts} Pt`,
-              () => {}
-            );
-          }
-          localStorage.setItem('mini_card_battle_defense_points', finalPts);
-          localStorage.setItem(
-            'mini_card_battle_defense_total_points',
-            finalTotalPts
-          );
-          localStorage.setItem('mini_card_battle_defense_wins', wins);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
 }
 
 export function showDungeonMenu() {
@@ -870,9 +814,6 @@ export function closePlayerNameModal() {
   playSound(SOUNDS.seClick);
   if (window.closePlayerNameModalState) {
     window.closePlayerNameModalState();
-  } else {
-    const modal = document.getElementById('modal-player-name');
-    if (modal) modal.style.display = 'none';
   }
 }
 
@@ -917,7 +858,6 @@ export function confirmCharSelect() {
     } else if (GameState.gameMode === 'story') {
       GameState.appState = 'select_difficulty';
       switchScreen('screen-difficulty');
-      updateDifficultyCheckButtons();
     } else if (GameState.gameMode === 'event_satan') {
       // 高難易度サタン戦（旧互換パス：通常はevent_satan_highで来る）
       initHighDifficultyEventMode(GameState.pendingCharId, 'satan');
@@ -1028,7 +968,6 @@ export function confirmCharSelect() {
     GameState.enemyConfig = CHARACTERS[GameState.pendingCharId];
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
-    updateDifficultyCheckButtons();
   }
 }
 
@@ -1202,9 +1141,8 @@ export function openEnemyDeckPreview(level) {
 
   if (!deckIds || deckIds.length === 0) {
     if (window.showAlertModalHook)
-      window.showAlertModalHook('該難易度のデッキデータが空です。');
-    return;
-  }
+      window.showAlertModalHook('この難易度のデッキデータが空です。');
+    return;  }
 
   const titleText = `${GameState.enemyConfig.name} [${level === 1 ? '初級' : level === 2 ? '中級' : '上級'}]`;
   if (window.showEnemyDeckModal) {
@@ -1229,12 +1167,7 @@ export function closeEnemyDeckModal() {
   }
 }
 
-export function updateDifficultyCheckButtons() {
-  const showChecks = GameState.gameMode === 'free';
-  document.querySelectorAll('.btn-check-deck').forEach((btn) => {
-    btn.style.display = showChecks ? 'flex' : 'none';
-  });
-}
+
 
 // --- Online Routing ---
 export function showOnlineMenu() {

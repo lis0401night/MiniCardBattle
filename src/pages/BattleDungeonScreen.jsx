@@ -462,7 +462,10 @@ function DungeonMiniCard({
 
   useEffect(() => {
     if (cardRef.current && card) {
-      setupLongPress(cardRef.current, card);
+      const cleanup = setupLongPress(cardRef.current, card);
+      return () => {
+        cleanup();
+      };
     }
   }, [card]);
 

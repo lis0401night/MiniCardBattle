@@ -1046,6 +1046,7 @@ export function claimAchievementReward(id) {
     }
   } else if (master.reward.type === 'card') {
     const cardId = master.reward.value;
+    if (!GameState.playerInventory) GameState.playerInventory = {};
     GameState.playerInventory[cardId] =
       (GameState.playerInventory[cardId] || 0) + 1;
     ach.isRewarded = true;

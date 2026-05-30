@@ -1,4 +1,7 @@
-// ネフティ高難易度イベント専用デッキ
+/**
+ * Mini Card Battle - Enemy Deck: Priest (高難易度)
+ * ネフティの高難易度デッキ
+ */
 export default [
   'cleopatra',
   'cleopatra',

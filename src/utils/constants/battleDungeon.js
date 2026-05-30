@@ -3,6 +3,15 @@ import { CARD_MASTER } from './cards.js';
 import { CHARACTERS } from './characters.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
 
+// 試練の宮殿の敵・レンタル候補から除外するリーダーID
+const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
+  'player_defense',
+  'satan_high',
+  'satan',
+  'void',
+  'succubus',
+]);
+
 // 敵候補のカードリストを取得（golemからdicejugglerまで、トークン以外）
 export const getDungeonEnemyCandidates = () => {
   const startIndex = CARD_MASTER.findIndex((c) => c.id === 'golem');
@@ -66,10 +75,11 @@ export const getRentalDeckOptions = () => {
 
     const addCharDecks = (difficultyKey, label) => {
       const leaderIds = Object.keys(ENEMY_DECKS).filter(
-        (id) => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan' && id !== 'void' && id !== 'succubus'
+        (id) => !DUNGEON_EXCLUDED_LEADER_IDS.has(id)
       );
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];
+        if (!char) return; // 存在しないキャラクターはスキップ（NPE防止）
         const deck = ENEMY_DECKS[id][difficultyKey];
         if (deck && deck.length > 0) {
           options.push({
@@ -196,10 +206,10 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
 // 指定したキャラクターのボス用敵を階層に応じて生成する
 export const generateCharacterBossEnemy = (floorNum) => {
   const leaderIds = Object.keys(ENEMY_DECKS).filter(
-    (id) => id !== 'player_defense' && id !== 'satan_high' && id !== 'satan' && id !== 'void' && id !== 'succubus'
+    (id) => !DUNGEON_EXCLUDED_LEADER_IDS.has(id)
   );
   const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
-  const char = CHARACTERS[bossId];
+  const char = CHARACTERS[bossId] || CHARACTERS.android; // 未定義の場合に android でフォールバック
 
   // 30階まではノーマル、40階以降はハード
   const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';

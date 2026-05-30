@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: 断罪の執行者 エリシア (高難易度)
- * 教会・審判・代償をテーマにした強力なデッキ
+ * Mini Card Battle - Enemy Deck: Cleric (高難易度)
+ * エリシアの高難易度デッキ
  */
 export default [
   'goddess',

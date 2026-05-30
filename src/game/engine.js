@@ -843,13 +843,16 @@ export function applyActiveSkillLogic(
           const mP = Math.max(...validCards.map((c) => c.power || 0));
           const bestCards = validCards.filter((c) => (c.power || 0) === mP);
           const bestCard =
-            bestCards[Math.floor(Math.random() * bestCards.length)];
+            bestCards[Math.floor(getSeededRandom() * bestCards.length)];
           const idx = myDeckSim.findIndex(
             (card) => card.id === bestCard.id || card.baseId === bestCard.baseId
           );
           if (idx !== -1) myDeckSim.splice(idx, 1);
 
-          myHandSim.push({ ...bestCard, uid: `${owner}_sim_${Math.random()}` });
+          myHandSim.push({
+            ...bestCard,
+            uid: `${owner}_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+          });
           events.push({ type: 'draw', side: owner, source: 'explore' });
 
           if (myHandSim.length > 0) {
@@ -1351,7 +1354,7 @@ export function applyActiveSkillLogic(
           basePower: voidTpl.power,
           currentPower: voidTpl.power,
           id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_vp${i}`,
-          uid: `${owner}_sim_${Math.random()}`,
+          uid: `${owner}_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
         };
         convertHand.push(newToken);
       }
@@ -1845,11 +1848,6 @@ export function applyActiveSkillLogic(
               source: 'union',
             });
           } else {
-            if (existingCard) {
-              const simDiscard =
-                owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-              simDiscard.push(existingCard);
-            }
             const newToken = {
               ...tC,
               id: `cl_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
@@ -2077,10 +2075,14 @@ function tryEquipToken(board, lane, newToken, owner, events) {
       !hasSkill(boardCard, 'reflect') &&
       !hasSkill(newToken, 'reflect')
     ) {
+      boardCard.power =
+        (boardCard.power || 0) + (newToken.currentPower || 0);
       boardCard.basePower =
         (boardCard.basePower || 0) + (newToken.currentPower || 0);
       boardCard.currentPower =
         (boardCard.currentPower || 0) + (newToken.currentPower || 0);
+      boardCard.equippedCards = boardCard.equippedCards || [];
+      boardCard.equippedCards.push(newToken);
       let addedSkills = [];
       if (
         newToken.skill &&

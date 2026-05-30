@@ -91,7 +91,11 @@ export function startNextBattleSequence() {
       ? STORY_DIALOGUES[playerId][enemyId].late
       : STORY_DIALOGUES[playerId][enemyId].early;
     // ディープコピーして元の定義への副作用を防ぐ
-    dialogLines = dialogueSource.pre.map(line => ({ ...line }));
+    if (dialogueSource && Array.isArray(dialogueSource.pre)) {
+      dialogLines = dialogueSource.pre.map(line => ({ ...line }));
+    } else {
+      dialogLines = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, true, isLate);
+    }
   } else {
     dialogLines = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, true, isLate);
   }
@@ -143,8 +147,6 @@ export function startEndingSequence() {
   );
   window.currentDialogueData.rightDisplay = 'none';
 
-  document.getElementById('portrait-left').src =
-    window.currentDialogueData.leftImage;
   switchScreen('screen-dialogue');
   showNextDialogue(true);
 }
@@ -312,7 +314,7 @@ export async function showNextDialogue(force = false) {
   let didFade = false;
   if (
     window.currentDialogueData.centerMode &&
-    (cur.speaker === 'enemy' || cur.speaker !== 'player') &&
+    cur.speaker !== 'player' &&
     GameState.appState !== 'ending_dialogue' &&
     GameState.gameMode !== 'tournament'
   ) {

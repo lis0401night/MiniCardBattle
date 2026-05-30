@@ -532,10 +532,12 @@ export function getTournamentPreMatchDialogue(
     },
     {
       speaker: 'enemy',
+      charData: enemyConfig,
       text: introEnemy,
     },
     {
       speaker: 'player',
+      charData: playerConfig,
       text: introPlayer,
     },
   ];
