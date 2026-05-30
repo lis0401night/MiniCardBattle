@@ -3345,22 +3345,7 @@ export function endBattle() {
         );
       }
 
-      // 影（自分自身）の場合は、敵（影）の台詞を「・・・・」に差し替え
-      if (isShadow) {
-        postDialogs = postDialogs.map((line) => {
-          if (line.speaker === 'enemy') {
-            return { speaker: 'enemy', text: '・・・・' };
-          }
-          return line;
-        });
 
-        // 影が最後に魔王サタンの復活警告をおぞましく発する共通セリフを追加
-        postDialogs.push({
-          speaker: 'enemy',
-          charData: GameState.enemyConfig,
-          text: 'グ、アアッ……！ 喜ぶのは早いぞ……。我は魔王サタン様の宿る魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！ サタン様はすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！',
-        });
-      }
 
       // 同行プレイヤーへの語り掛けと次のナレーション
       const playerTalk = PLAYER_TALKS[playerId]?.[battleCount] || [

@@ -881,7 +881,21 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '・・・・' },
         {
           speaker: 'player',
-          text: 'これで終わりよ、私の影！ 二度と私の前に姿を現すんじゃないわ！',
+          text: 'これで終わりよ、私の影。元の場所へ消えなさい。',
+        },
+        {
+          speaker: 'enemy',
+          charData: { id: 'shadow' },
+          text: 'グ、アアッ……！ フ、フフフ……喜ぶのは早いぞ。我は魔王サタン様の魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！',
+        },
+        {
+          speaker: 'player',
+          text: 'チッ、魔王サタンの配下だと……！？ 厄介な大物の名前が出てきたじゃないの……。',
+        },
+        {
+          speaker: 'enemy',
+          charData: { id: 'shadow' },
+          text: 'サタン様はすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！',
         },
       ],
     },
