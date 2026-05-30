@@ -755,6 +755,7 @@ h2 {
 .portrait-container.center .char-portrait {
   max-width: 70%;
   margin: 0 auto;
+  transition: none !important; /* 画像切り替え時の不自然な後追い拡大アニメーションを完全に無効化 */
 }
 
 .portrait-container.center #portrait-right {

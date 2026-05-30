@@ -2234,10 +2234,17 @@ export function evaluateSimState(state) {
     if (state.playerSealedLanes[2] === 1) s9 += 0.01; // 右
   }
 
-  // スロット10: 被ダメージペナルティ（被ダメージが少ないほど高評価）
-  // レーン優先順位(0.01〜0.03)より大きい係数を使い、被ダメ差を優先する
+  // スロット10: 被ダメージペナルティ
+  // 【重要】危険状態（tier === 2、被ダメ4以上）の時は、少しでも被ダメージを抑えるプレイ（ブロック）を
+  // 盤面パワー差（スロット4：1あたり1000点）よりも絶対優先するため、大きなペナルティ（1ダメージにつき -100,000点）を適用する。
+  // 安全状態（tier === 1、被ダメ4未満）の時は、従来通りの微小なタイブレークペナルティ（-0.1）で評価する。
   const damageTaken = state.combatDamageTaken || 0;
-  let s10 = -damageTaken * 0.1;
+  let s10 = 0;
+  if (tier === 2) {
+    s10 = -damageTaken * 100000;
+  } else {
+    s10 = -damageTaken * 0.1;
+  }
 
   return s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10;
 }

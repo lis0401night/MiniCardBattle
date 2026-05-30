@@ -418,9 +418,12 @@ export function initBattleState() {
     const stageData = STAGES[stageId];
     // BGMの再生
     let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
-    if (GameState.gameMode === 'tournament') {
+    if (GameState.gameMode === 'story' && GameState.enemyConfig?.id === 'satan') {
+      bgmKey = 'bgmLastBattle'; // ストーリーのラストボス（サタン）決戦専用BGM
+    } else if (GameState.gameMode === 'tournament') {
       bgmKey = 'bgmTournament2'; // トーナメントバトル専用BGM
     } else if (
+      GameState.gameMode &&
       GameState.gameMode.startsWith('event_') &&
       GameState.gameMode.endsWith('_high')
     ) {
