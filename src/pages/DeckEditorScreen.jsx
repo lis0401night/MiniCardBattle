@@ -88,7 +88,7 @@ export default function DeckEditorScreen() {
   const leaderId = deck.leaderId || GameState.playerConfig?.id || 'android';
 
   // グローバルからの再描画用コールバック（外部からsetRenderDeckEditHook経由で呼ばれる）
-  const updateDeckEditor = () => {
+  const updateDeckEditor = React.useCallback(() => {
     setRenderVersion((v) => v + 1);
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
 
@@ -125,7 +125,7 @@ export default function DeckEditorScreen() {
     }
 
     setIsDefenseConfig(GameState.gameMode === 'defense_register');
-  };
+  }, []);
 
   useEffect(() => {
     if (typeof loadDeck === 'function') {
@@ -133,7 +133,7 @@ export default function DeckEditorScreen() {
     }
     // 既存の再描画関数をフック
     setRenderDeckEditHook(updateDeckEditor);
-  }, []);
+  }, [updateDeckEditor]);
 
   // 変更をグローバルに反映する
   const syncToGlobal = (newSelection) => {
@@ -173,6 +173,14 @@ export default function DeckEditorScreen() {
   // --- 長押しプレビュー用ロジック ---
   const holdTimerRef = React.useRef(null);
   const hasLongPressedRef = React.useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+      }
+    };
+  }, []);
 
   const handlePointerDown = (card) => {
     // 左クリックのみ長押しの開始とする
@@ -298,9 +306,15 @@ export default function DeckEditorScreen() {
     return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`;
   };
 
-  const allCardsForFilters = Array.from(
-    new Set([...masterCards, ...(deckSelection || [])])
-  );
+  // idベースで重複排除を行う
+  const allCardsForFilters = [];
+  const seenIds = new Set();
+  [...masterCards, ...(deckSelection || [])].forEach((c) => {
+    if (c && c.id && !seenIds.has(c.id)) {
+      seenIds.add(c.id);
+      allCardsForFilters.push(c);
+    }
+  });
 
   const availableRarities = Array.from(
     new Set(

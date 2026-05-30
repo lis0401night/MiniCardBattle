@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { getCardImgUrl, renderSkillTag } from '../../utils/gameUtils.js';
 
 export default function Card({
@@ -10,6 +10,14 @@ export default function Card({
 }) {
   const pressTimer = useRef(null);
   const hasLongPressed = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+      }
+    };
+  }, []);
 
   if (!cardObj) return null;
 

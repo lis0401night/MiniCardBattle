@@ -84,7 +84,6 @@ export default function OptionsScreen() {
               value={volume}
               onChange={handleVolumeChange}
               onPointerUp={handleVolumeChangeComplete}
-              onTouchEnd={handleVolumeChangeComplete}
               style={{ flexGrow: 1, cursor: 'pointer' }}
             />
             <span style={{ fontSize: '1.2rem' }}>🔊</span>

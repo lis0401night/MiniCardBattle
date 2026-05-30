@@ -19,10 +19,11 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function ChallengeExchangeScreen() {
   const [challengePoints, setChallengePoints] = useState(() => ({
     current:
-      parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0,
+      parseInt(localStorage.getItem('mini_card_battle_challenge_points'), 10) || 0,
     total:
       parseInt(
-        localStorage.getItem('mini_card_battle_challenge_total_points')
+        localStorage.getItem('mini_card_battle_challenge_total_points'),
+        10
       ) || 0,
   }));
   const [unlockedSkins, setUnlockedSkins] = useState(
@@ -41,10 +42,11 @@ export default function ChallengeExchangeScreen() {
   useEffect(() => {
     // API同期のために現在のポイントを取得
     const currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
+      parseInt(localStorage.getItem('mini_card_battle_challenge_points'), 10) || 0;
     const totalPts =
       parseInt(
-        localStorage.getItem('mini_card_battle_challenge_total_points')
+        localStorage.getItem('mini_card_battle_challenge_total_points'),
+        10
       ) || 0;
 
     // API Fetch to sync points
@@ -66,8 +68,22 @@ export default function ChallengeExchangeScreen() {
             const pts = myData.challenge_points || 0;
             const tPts = myData.challenge_total_points || pts || 0;
 
-            const finalPts = pts === 0 && currentPts > 0 ? currentPts : pts;
-            const finalTotalPts = tPts === 0 && totalPts > 0 ? totalPts : tPts;
+            // サーバーから取得したポイント(pts)がローカル(currentPts)より小さい場合、
+            // ローカルで消費が行われた直後（あるいは未同期）である可能性が高いため、
+            // サーバー側の古い値で巻き戻らないようにローカルの値を優先してガードします。
+            let finalPts = pts;
+            if (currentPts > pts) {
+              finalPts = currentPts;
+            } else if (pts === 0 && currentPts > 0) {
+              finalPts = currentPts;
+            }
+
+            let finalTotalPts = tPts;
+            if (totalPts > tPts) {
+              finalTotalPts = totalPts;
+            } else if (tPts === 0 && totalPts > 0) {
+              finalTotalPts = totalPts;
+            }
 
             if (finalPts > 0 || currentPts === 0) {
               setChallengePoints({ current: finalPts, total: finalTotalPts });
@@ -103,15 +119,39 @@ export default function ChallengeExchangeScreen() {
     fetchPoints();
   }, [pointsUpdated]);
 
-  const handleExchange = (item) => {
+  const handleExchange = async (item) => {
+    // 最終ガード: 所持上限・アンロック済みのチェック
+    const isCard = item.type === 'card';
+    const isPlaymat = item.type === 'playmat';
+    let isAlreadyUnlocked = false;
+
+    if (isCard) {
+      isAlreadyUnlocked = (inventory[item.id] || 0) >= 4;
+    } else if (isPlaymat) {
+      isAlreadyUnlocked = unlockedPlaymats.includes(item.id);
+    } else {
+      isAlreadyUnlocked = unlockedSkins.includes(item.id);
+    }
+
+    if (isAlreadyUnlocked) {
+      showAlertModal('既に最大数所持しているか、アンロック済みのアイテムです。');
+      return;
+    }
+
+    // 最終ガード: ポイント残高チェック
+    if (challengePoints.current < item.cost) {
+      showAlertModal('試練ポイントが不足しています。');
+      return;
+    }
+
     playSound(SOUNDS?.seCardPlace);
 
     const newPts = challengePoints.current - item.cost;
     localStorage.setItem('mini_card_battle_challenge_points', newPts);
     setChallengePoints((prev) => ({ ...prev, current: newPts }));
 
-    // サーバーと同期
-    savePointsToServer(
+    // サーバーと同期（非同期処理の完了を待機して競合を防止する）
+    await savePointsToServer(
       'update_challenge_points.php',
       newPts,
       challengePoints.total
@@ -159,11 +199,13 @@ export default function ChallengeExchangeScreen() {
           playSound(SOUNDS?.seSkill);
           const currentPts =
             parseInt(
-              localStorage.getItem('mini_card_battle_challenge_points')
+              localStorage.getItem('mini_card_battle_challenge_points'),
+              10
             ) || 0;
           const totalPts =
             parseInt(
-              localStorage.getItem('mini_card_battle_challenge_total_points')
+              localStorage.getItem('mini_card_battle_challenge_total_points'),
+              10
             ) || 0;
           const newPts = currentPts + 100;
           const newTotalPts = totalPts + 100;

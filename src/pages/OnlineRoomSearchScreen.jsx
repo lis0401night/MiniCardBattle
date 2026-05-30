@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import {
   forceDeleteAllRooms,
@@ -19,6 +19,7 @@ const DEBUG_MODE_CLICK_THRESHOLD = 10;
 export default function OnlineRoomSearchScreen() {
   const [rooms, setRooms] = useState([]);
   const [isJoining, setIsJoining] = useState(false);
+  const isMountedRef = useRef(true);
 
   const debugClickCountRef = React.useRef(0);
   const debugTimeout = React.useRef(null);
@@ -29,6 +30,7 @@ export default function OnlineRoomSearchScreen() {
       setRooms(availableRooms.filter((r) => r.host?.id !== myId));
     });
     return () => {
+      isMountedRef.current = false;
       unsubscribe();
       if (debugTimeout.current) {
         clearTimeout(debugTimeout.current);
@@ -75,11 +77,11 @@ export default function OnlineRoomSearchScreen() {
         setIsJoining(true);
         try {
           await joinRoom(roomId, name);
-          setIsJoining(false);
+          if (isMountedRef.current) setIsJoining(false);
           showOnlineLobby?.();
         } catch (e) {
           console.error(e);
-          setIsJoining(false);
+          if (isMountedRef.current) setIsJoining(false);
           const msg = e?.message || '';
           if (
             e?.code === 'PERMISSION_DENIED' ||

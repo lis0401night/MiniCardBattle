@@ -1,52 +1,60 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
+import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
+import {
+  renderDeckEdit,
+  saveDeck,
+  submitDefenseDeck,
+} from '../services/deck.js';
+import {
+  openCardPreview,
+  renderCardList,
+  setCloseCardPreviewHook,
+  setOpenCardPreviewHook,
+  setShowCardAcquisitionModalHook,
+  setShowPlaymatAcquisitionModalHook,
+  setShowPremiumAcquisitionModalHook,
+  setShowSkinAcquisitionModalHook,
+} from '../services/uiGallery.js';
+import {
+  backupDataToXML,
+  confirmCharSelect,
+  importDataFromXML,
+  setCloseEnemyDeckModalHook,
+} from '../services/uiMainCore.js';
+import {
+  setShowAlertModalHook,
+  setShowConfirmModalHook,
+  setShowErrorModalHook,
+  setShowPointAcquisitionModalHook,
+  showAlertModal,
+} from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { PLAYMAT_MASTER, ownedPlaymats } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
+  getCardImgUrl,
   playSound,
   stopAllBGM,
-  getCardImgUrl,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import {
-  saveDeck,
-  renderDeckEdit,
-  submitDefenseDeck,
-} from '../services/deck.js';
-import { GameState } from '../state/gameState.js';
-import {
-  renderCardList,
-  openCardPreview,
-  setShowCardAcquisitionModalHook,
-  setShowPremiumAcquisitionModalHook,
-  setShowPlaymatAcquisitionModalHook,
-  setShowSkinAcquisitionModalHook,
-  setOpenCardPreviewHook,
-  setCloseCardPreviewHook,
-} from '../services/uiGallery.js';
-import {
-  backupDataToXML,
-  importDataFromXML,
-  confirmCharSelect,
-  setCloseEnemyDeckModalHook,
-} from '../services/uiMainCore.js';
-import {
-  showAlertModal,
-  setShowConfirmModalHook,
-  setShowAlertModalHook,
-  setShowErrorModalHook,
-  setShowPointAcquisitionModalHook,
-} from '../services/uiModals.js';
-import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
-let g_discardLongPressTimer = null;
-let g_discardHasLongPressed = false;
-
 export default function GlobalModals() {
+  const discardLongPressTimerRef = useRef(null);
+  const discardHasLongPressedRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (discardLongPressTimerRef.current) {
+        clearTimeout(discardLongPressTimerRef.current);
+      }
+    };
+  }, []);
+
   const [confirmData, setConfirmData] = useState(null);
   const [errorData, setErrorData] = useState(null);
   const [enemyDeckData, setEnemyDeckData] = useState(null);
@@ -364,6 +372,29 @@ export default function GlobalModals() {
     window.closeSkinSelectionModalState = () => {
       playSound?.(SOUNDS?.seClick);
       setSkinSelectionVisible(false);
+    };
+
+    return () => {
+      delete window.showEnemyDeckModal;
+      delete window.showCharDetailModal;
+      delete window.closeCharDetailModal;
+      delete window.showExchangeDetailModal;
+      delete window.closeExchangeDetailModal;
+      delete window.showSyncDataModalState;
+      delete window.closeSyncDataModalState;
+      delete window.showPlayerNameModalState;
+      delete window.closePlayerNameModalState;
+      delete window.showPlaymatSelectionModalState;
+      delete window.closePlaymatSelectionModalState;
+      delete window.showSkillConfirmModalReact;
+      delete window.closeSkillConfirmModalReact;
+      delete window.showSkillChoiceModalReact;
+      delete window.closeSkillChoiceModalReact;
+      delete window.showDiscardSelectionModalReact;
+      delete window.showRulesModal;
+      delete window.closeRulesModal;
+      delete window.showSkinSelectionModalState;
+      delete window.closeSkinSelectionModalState;
     };
   }, []);
 
@@ -1301,7 +1332,7 @@ export default function GlobalModals() {
                 className="btn"
                 style={{ flex: 1, background: '#475569', margin: 0 }}
                 onClick={(e) => {
-                  window.playSound?.(window.SOUNDS?.seClick);
+                  playSound?.(SOUNDS?.seClick);
                   window.closeCharDetailModal(e);
                 }}
               >
@@ -2029,7 +2060,7 @@ export default function GlobalModals() {
       {skillChoiceData && (
         <div
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: 0,
             left: 0,
             width: '100%',
@@ -2360,27 +2391,27 @@ export default function GlobalModals() {
                             onPointerDown={(e) => {
                               if (e.pointerType === 'mouse' && e.button !== 0)
                                 return;
-                              g_discardHasLongPressed = false;
-                              g_discardLongPressTimer = setTimeout(() => {
-                                g_discardHasLongPressed = true;
+                              discardHasLongPressedRef.current = false;
+                              discardLongPressTimerRef.current = setTimeout(() => {
+                                discardHasLongPressedRef.current = true;
                                 setCardPreviewData({ card: cardItem });
                               }, 600);
                             }}
                             onPointerUp={() => {
-                              if (g_discardLongPressTimer)
-                                clearTimeout(g_discardLongPressTimer);
+                              if (discardLongPressTimerRef.current)
+                                clearTimeout(discardLongPressTimerRef.current);
                             }}
                             onPointerLeave={() => {
-                              if (g_discardLongPressTimer)
-                                clearTimeout(g_discardLongPressTimer);
+                              if (discardLongPressTimerRef.current)
+                                clearTimeout(discardLongPressTimerRef.current);
                             }}
                             onPointerCancel={() => {
-                              if (g_discardLongPressTimer)
-                                clearTimeout(g_discardLongPressTimer);
+                              if (discardLongPressTimerRef.current)
+                                clearTimeout(discardLongPressTimerRef.current);
                             }}
                             onContextMenu={(e) => e.preventDefault()}
                             onClick={() => {
-                              if (g_discardHasLongPressed) return;
+                              if (discardHasLongPressedRef.current) return;
                               playSound?.(SOUNDS?.seClick);
                               if (discardSelectionData.isViewOnly) {
                                 setCardPreviewData({ card: cardItem });

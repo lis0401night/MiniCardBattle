@@ -11,11 +11,11 @@ import { getOrCreateUUID } from './gameUtils.js';
 export function savePointsToServer(endpoint, points, totalPoints) {
   try {
     const uuid = getOrCreateUUID?.();
-    if (!uuid) return;
+    if (!uuid) return Promise.resolve(false);
 
     const playerName =
       localStorage.getItem('mini_card_battle_player_name') || 'Player';
-    fetch(`api/${endpoint}`, {
+    return fetch(`api/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -28,15 +28,19 @@ export function savePointsToServer(endpoint, points, totalPoints) {
       .then((res) => {
         if (!res.ok) {
           console.error(`サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`);
+          return false;
         } else {
           console.log(`サーバーへのポイント同期（${endpoint}）に成功しました。`);
+          return true;
         }
       })
       .catch((err) => {
         console.error(`サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`, err);
+        return false;
       });
   } catch (e) {
     console.error('サーバーへのポイント同期処理で例外が発生しました:', e);
+    return Promise.resolve(false);
   }
 }
 

@@ -29,16 +29,8 @@ export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);
   const [statsOpen, setStatsOpen] = useState(false);
 
-  // 初期データの計算（useEffect内での同期的setState回避）
+  // 初期データの計算（純粋なデータ抽出）
   const computeInitialData = () => {
-    if (typeof checkAndFixMissingRewards === 'function') {
-      checkAndFixMissingRewards();
-    }
-    if (typeof checkCollectionAchievements === 'function') {
-      checkCollectionAchievements();
-      if (typeof saveAchievements === 'function') saveAchievements();
-    }
-
     const _achievements = ACHIEVEMENT_MASTER || [];
     const _data = achievementData || { achievements: {}, stats: {} };
     const usageObj = _data.stats?.leaderUsage || {};
@@ -68,6 +60,29 @@ export default function AchievementsScreen() {
   const [achievements, setAchievements] = useState(initialData.achievements);
   const [stats, setStats] = useState(initialData.stats);
   const [leaderUsage, setLeaderUsage] = useState(initialData.leaderUsage);
+
+  // 実績データのチェックと初期同期（初回マウント時の副作用処理）
+  useEffect(() => {
+    let hasChanges = false;
+    if (typeof checkAndFixMissingRewards === 'function') {
+      checkAndFixMissingRewards();
+      hasChanges = true;
+    }
+    if (typeof checkCollectionAchievements === 'function') {
+      checkCollectionAchievements();
+      if (typeof saveAchievements === 'function') {
+        saveAchievements();
+      }
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      const updated = computeInitialData();
+      setAchievements(updated.achievements);
+      setStats(updated.stats);
+      setLeaderUsage(updated.leaderUsage);
+    }
+  }, []);
 
   const updateAchievements = useCallback(() => {
     if (typeof checkAndFixMissingRewards === 'function') {
@@ -108,6 +123,10 @@ export default function AchievementsScreen() {
   useEffect(() => {
     setRenderAchievementsListHook(updateAchievements);
     setRenderAchievementsStatsHook(updateAchievements); // 両方カバー
+    return () => {
+      setRenderAchievementsListHook(null);
+      setRenderAchievementsStatsHook(null);
+    };
   }, [updateAchievements]);
 
   const handleClaim = (id) => {
@@ -352,9 +371,10 @@ export default function AchievementsScreen() {
               displayProgress = displayTarget;
             }
 
+            const safeTarget = displayTarget > 0 ? displayTarget : 1;
             const percentage = Math.min(
               100,
-              Math.floor((displayProgress / displayTarget) * 100)
+              Math.floor((displayProgress / safeTarget) * 100)
             );
 
             const bgColor = isUnlocked

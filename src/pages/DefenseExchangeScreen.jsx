@@ -17,9 +17,9 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function DefenseExchangeScreen() {
   const [points, setPoints] = useState(() => ({
     current:
-      parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
+      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) || 0,
     total:
-      parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) ||
+      parseInt(localStorage.getItem('mini_card_battle_defense_total_points'), 10) ||
       0,
   }));
   const [exchangeItems, setExchangeItems] = useState(
@@ -35,9 +35,9 @@ export default function DefenseExchangeScreen() {
 
   const updateExchange = () => {
     const currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) || 0;
     const totalPts =
-      parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) ||
+      parseInt(localStorage.getItem('mini_card_battle_defense_total_points'), 10) ||
       0;
     setPoints({ current: currentPts, total: totalPts });
 
@@ -50,15 +50,36 @@ export default function DefenseExchangeScreen() {
     updateExchange();
   }, [pointsUpdated]);
 
-  const handleExchange = (item) => {
+  const handleExchange = async (item) => {
+    // 最終ガード: 所持上限・アンロック済みのチェック
+    const isPremium = item.type === 'premium';
+    let isAlreadyUnlocked = false;
+
+    if (isPremium) {
+      isAlreadyUnlocked = unlockedPremium.includes(item.id);
+    } else {
+      isAlreadyUnlocked = (inventory[item.id] || 0) >= 4;
+    }
+
+    if (isAlreadyUnlocked) {
+      showAlertModal('既に最大数所持しているか、アンロック済みのアイテムです。');
+      return;
+    }
+
+    // 最終ガード: ポイント残高チェック
+    if (points.current < item.cost) {
+      showAlertModal('防衛ポイントが不足しています。');
+      return;
+    }
+
     playSound(SOUNDS?.seCardPlace);
 
     const newPts = points.current - item.cost;
     localStorage.setItem('mini_card_battle_defense_points', newPts);
     setPoints((prev) => ({ ...prev, current: newPts }));
 
-    // 共通API同期ユーティリティを介してサーバーと同期
-    savePointsToServer('update_points.php', newPts, points.total);
+    // 共通API同期ユーティリティを介してサーバーと同期（非同期処理の完了を待機）
+    await savePointsToServer('update_points.php', newPts, points.total);
 
     if (item.type === 'premium') {
       const newUnlocked = [...unlockedPremium, item.id];
@@ -96,11 +117,12 @@ export default function DefenseExchangeScreen() {
         () => {
           playSound?.(SOUNDS?.seSkill);
           let cPts =
-            parseInt(localStorage.getItem('mini_card_battle_defense_points')) ||
+            parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) ||
             0;
           let tPts =
             parseInt(
-              localStorage.getItem('mini_card_battle_defense_total_points')
+              localStorage.getItem('mini_card_battle_defense_total_points'),
+              10
             ) || 0;
           cPts += 100;
           tPts += 100;

@@ -103,6 +103,7 @@ export default function DeckListScreen() {
     ) {
       GameState.currentDeckIndex = 0;
     }
+    setRenderVersion((v) => v + 1);
 
     return () => {
       window.forceUpdateDeckList = null;

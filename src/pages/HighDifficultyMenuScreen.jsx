@@ -4,10 +4,13 @@ import {
   showEventMenu,
   showHighDifficultyRules,
 } from '../services/uiMainCore.js';
+import { switchScreen } from '../utils/gameUtils.js';
 
 export default function HighDifficultyMenuScreen() {
   const handleChallengeClick = () => {
-    if (window.switchScreen) window.switchScreen('screen-high-difficulty');
+    if (typeof switchScreen === 'function') {
+      switchScreen('screen-high-difficulty');
+    }
   };
 
   return (

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../state/gameState.js';
 import {
   clearTournamentSave,
   loadTournamentProgress,
 } from '../game/tournament.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -58,7 +58,7 @@ export default function TournamentResumeScreen() {
         playSound(SOUNDS.seClick);
         let winCount = Math.max(0, currentRound - 1);
         const pointsMap = [0, 1, 3, 6, 10];
-        let points = pointsMap[winCount] || 0;
+        let points = pointsMap[Math.min(winCount, pointsMap.length - 1)] || 0;
         clearTournamentSave();
 
         if (points > 0) {

@@ -4,6 +4,53 @@ import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
 import { hasSkill } from '../../utils/gameUtils.js';
 import Card from './Card.jsx';
 
+/**
+ * 召喚時の配置制約条件をチェックします。
+ * 1. 1ターン目先攻制限（中央レーン固定）
+ * 2. 伝説（中央レーン固定）
+ * 3. 生贄（味方既存カードがあるレーンのみ）
+ * 4. 頂点（味方伝説カードがあるレーンのみ）
+ * 5. 挑戦（正面に敵がいるレーンのみ）
+ *
+ * @param {object} targetCard - 召喚しようとしているカード
+ * @param {number} lane - 判定対象のレーンID
+ * @param {object|null} existingCard - 自陣レーンにある既存カード
+ * @param {object|null} enemyCardAtLane - 正面（敵陣レーン）にあるカード
+ * @returns {boolean} 配置可能ならtrue
+ */
+const checkPlacementConstraints = (targetCard, lane, existingCard, enemyCardAtLane) => {
+  let valid = true;
+  // 1ターン目先攻制限: 中央レーンのみ配置可能
+  if (
+    GameState.turnCount === 1 &&
+    GameState.firstPlayer === 'blue'
+  ) {
+    valid = valid && lane === 1;
+  }
+  // 「伝説」スキル: 中央レーンのみ
+  if (hasSkill(targetCard, 'legendary')) {
+    valid = valid && lane === 1;
+  }
+  // 「生贄」スキル: 既存カードがあるレーンのみ
+  if (hasSkill(targetCard, 'takeover')) {
+    valid = valid && existingCard !== null;
+  }
+  // 「頂点」スキル: 伝説カードがあるレーンのみ
+  if (hasSkill(targetCard, 'apex')) {
+    valid =
+      valid &&
+      existingCard &&
+      (existingCard.skill === 'legendary' ||
+        (existingCard.skills &&
+          existingCard.skills.some((s) => s.id === 'legendary')));
+  }
+  // 「挑戦」スキル: 正面に敵がいるレーンのみ
+  if (hasSkill(targetCard, 'challenge')) {
+    valid = valid && enemyCardAtLane !== null;
+  }
+  return valid;
+};
+
 export default function Board({
   playerBoard,
   enemyBoard,
@@ -11,6 +58,7 @@ export default function Board({
   selectedBoardSide,
   onCellClick,
   onCardLongPress,
+  tutorialMode, // チュートリアルモード判定用propを追加
 }) {
   // 3レーン分ループ
   const lanes = [0, 1, 2];
@@ -136,65 +184,13 @@ export default function Board({
               isHighlight = false;
             } else if (tCard && checkEnv) {
               // 「召喚」時は制約チェックを実行（「配置」時は checkEnv=false でスキップ）
-              let valid = true;
-              // 1ターン目先攻制限: 中央レーンのみ配置可能
-              if (
-                GameState.turnCount === 1 &&
-                GameState.firstPlayer === 'blue'
-              ) {
-                valid = valid && lane === 1;
-              }
-              // 「伝説」スキル: 中央レーンのみ
-              if (hasSkill && hasSkill(tCard, 'legendary')) {
-                valid = valid && lane === 1;
-              }
-              // 「生贄」スキル: 既存カードがあるレーンのみ
-              if (hasSkill && hasSkill(tCard, 'takeover')) {
-                valid = valid && card !== null;
-              }
-              // 「頂点」スキル: 伝説カードがあるレーンのみ
-              if (hasSkill && hasSkill(tCard, 'apex')) {
-                valid =
-                  valid &&
-                  card &&
-                  (card.skill === 'legendary' ||
-                    (card.skills &&
-                      card.skills.some((s) => s.id === 'legendary')));
-              }
-              if (hasSkill && hasSkill(tCard, 'challenge')) {
-                valid = valid && enemyBoard[lane] !== null;
-              }
-              isHighlight = valid;
+              isHighlight = checkPlacementConstraints(tCard, lane, card, enemyBoard[lane]);
             } else {
               isHighlight = true;
             }
           } else if (selectedCard) {
             // 手札からの「召喚」: 配置制約ルールに従う
-            let valid = true;
-            if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
-              valid = valid && lane === 1;
-            }
-            // 「伝説」スキル: 中央レーンのみ
-            if (hasSkill && hasSkill(selectedCard, 'legendary')) {
-              valid = valid && lane === 1;
-            }
-            // 「生贄」スキル: 既存カードがあるレーンのみ
-            if (hasSkill && hasSkill(selectedCard, 'takeover')) {
-              valid = valid && card !== null;
-            }
-            // 「頂点」スキル: 伝説カードがあるレーンのみ
-            if (hasSkill && hasSkill(selectedCard, 'apex')) {
-              valid =
-                valid &&
-                card &&
-                (card.skill === 'legendary' ||
-                  (card.skills &&
-                    card.skills.some((s) => s.id === 'legendary')));
-            }
-            if (hasSkill && hasSkill(selectedCard, 'challenge')) {
-              valid = valid && enemyBoard[lane] !== null;
-            }
-            isHighlight = valid;
+            isHighlight = checkPlacementConstraints(selectedCard, lane, card, enemyBoard[lane]);
           }
 
           return (

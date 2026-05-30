@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
 
@@ -67,7 +67,7 @@ export default function CutinOverlay() {
           animation: 'textPop 2s ease forwards',
         }}
       >
-        {config.leaderSkill.name}!!
+        {config.leaderSkill?.name ?? 'スキル'}!!
       </div>
     </div>
   );

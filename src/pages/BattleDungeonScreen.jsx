@@ -264,33 +264,21 @@ function ResumeSelect() {
 
   const handleCheckPocket = () => {
     playSound(SOUNDS.seClick);
-    const json = localStorage.getItem('mini_card_battle_dungeon_save');
-    if (json) {
-      try {
-        const data = JSON.parse(json);
-        if (data.playerConfig) GameState.playerConfig = data.playerConfig;
-        if (window.showEnemyDeckModal) {
-          window.showEnemyDeckModal(data.cards, '所持カード確認');
-        }
-      } catch (e) {
-        console.error('所持カード確認時にセーブデータのパースに失敗しました:', e);
+    if (saveData) {
+      if (saveData.playerConfig) GameState.playerConfig = saveData.playerConfig;
+      if (window.showEnemyDeckModal) {
+        window.showEnemyDeckModal(saveData.cards || [], '所持カード確認');
       }
     }
   };
 
   const handleCheckDeck = () => {
     playSound(SOUNDS.seClick);
-    const json = localStorage.getItem('mini_card_battle_dungeon_save');
-    if (json) {
-      try {
-        const data = JSON.parse(json);
-        if (data.playerConfig) GameState.playerConfig = data.playerConfig;
-        if (window.showEnemyDeckModal) {
-          const deck = data.deck || data.cards.slice(0, 20); // 未保存対処
-          window.showEnemyDeckModal(deck, 'デッキ確認');
-        }
-      } catch (e) {
-        console.error('デッキ確認時にセーブデータのパースに失敗しました:', e);
+    if (saveData) {
+      if (saveData.playerConfig) GameState.playerConfig = saveData.playerConfig;
+      if (window.showEnemyDeckModal) {
+        const deck = saveData.deck || saveData.cards?.slice(0, 20) || [];
+        window.showEnemyDeckModal(deck, 'デッキ確認');
       }
     }
   };
@@ -1092,6 +1080,10 @@ function RewardSelect() {
 
   const handleSelect = (id) => {
     const c = CARD_MASTER.find((m) => m.id === id);
+    if (!c) {
+      console.error(`Card not found: ${id}`);
+      return;
+    }
     showConfirmModal(`${c.name} を獲得しますか？`, () => {
       selectRewardCard(id);
     });

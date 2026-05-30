@@ -23,6 +23,7 @@ export default function OnlineLobbyScreen() {
   const [localReadyConfig, setLocalReadyConfig] = useState(null);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef(null);
+  const battleStartTimeoutRef = useRef(null);
 
   // Initial config extraction
   useEffect(() => {
@@ -111,7 +112,10 @@ export default function OnlineLobbyScreen() {
 
       // 両方がReadyならバトル開始
       if (data && data.host?.isReady && data.client?.isReady) {
-        setTimeout(() => {
+        if (battleStartTimeoutRef.current) {
+          clearTimeout(battleStartTimeoutRef.current);
+        }
+        battleStartTimeoutRef.current = setTimeout(() => {
           const isHost = getIsHost();
           const meData = isHost ? data.host : data.client;
           const opData = isHost ? data.client : data.host;
@@ -189,6 +193,7 @@ export default function OnlineLobbyScreen() {
 
           window.dispatchEvent(new Event('startOnlineBattle'));
           if (typeof prepareBattle === 'function') prepareBattle();
+          battleStartTimeoutRef.current = null;
         }, 1000);
       }
     };
@@ -209,6 +214,9 @@ export default function OnlineLobbyScreen() {
     return () => {
       multiplayerCallbacks.onRoomUpdated = null;
       multiplayerCallbacks.onRoomClosed = null;
+      if (battleStartTimeoutRef.current) {
+        clearTimeout(battleStartTimeoutRef.current);
+      }
     };
   }, []);
 

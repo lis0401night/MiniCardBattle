@@ -102,6 +102,10 @@ export default function CardListScreen() {
 
     // 既存のグローバル関数をフックして、プレミアム切り替えなどの際にReactを再描画させる
     setRenderCardListHook(updateList);
+
+    return () => {
+      setRenderCardListHook(null);
+    };
   }, []);
 
   const handleTogglePremium = (e, templateId) => {

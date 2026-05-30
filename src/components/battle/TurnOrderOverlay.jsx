@@ -74,27 +74,16 @@ export default function TurnOrderOverlay({ startAnim, onComplete }) {
 
   let card1Transform = '';
   let card2Transform = '';
-  let bottomLabelOpacity = 0;
-  let topLabelOpacity = 0;
-  let bottomLabelTransform = 'translate(-50%, -50%)';
-  let topLabelTransform = 'translate(-50%, -50%)';
 
   if (phase === 'result') {
-    bottomLabelOpacity = 1;
-    topLabelOpacity = 1;
-
     if (playerFirst) {
       // プレイヤー先攻: card1(blue)が下、card2(red)が上
       card1Transform = 'translateY(140px) scale(1.1)';
       card2Transform = 'translateY(-140px) scale(0.9)';
-      bottomLabelTransform = 'translate(-50%, calc(-50% + 230px))';
-      topLabelTransform = 'translate(-50%, calc(-50% - 230px))';
     } else {
       // 敵先攻
       card1Transform = 'translateY(-140px) scale(0.9)';
       card2Transform = 'translateY(140px) scale(1.1)';
-      bottomLabelTransform = 'translate(-50%, calc(-50% + 230px))';
-      topLabelTransform = 'translate(-50%, calc(-50% - 230px))';
     }
   }
 
