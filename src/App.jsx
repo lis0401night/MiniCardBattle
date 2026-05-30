@@ -57,29 +57,14 @@ import {
 import {
   showEnemySkillConfirm,
   showSkillConfirm,
-  closeSkillConfirm,
 } from './services/uiBattle.js';
 import { loadDeck } from './services/deck.js';
-import { checkCollectionAchievements } from './utils/constants/achievements.js';
 import ContinueScreen from './pages/ContinueScreen.jsx';
 import EndingScreen from './pages/EndingScreen.jsx';
 import DebugBattleScreen from './pages/DebugBattleScreen.jsx';
 import RewardOverlay from './components/battle/RewardOverlay.jsx';
 import CutinOverlay from './components/battle/CutinOverlay.jsx';
 import VfxOverlay from './components/battle/VfxOverlay.jsx';
-import {
-  handleClaimAchievement,
-  debugUnlockCards,
-  debugUnlockAchievements,
-} from './services/uiGallery.js';
-import {
-  closeSyncDataModal,
-  backupDataToXML,
-  importDataFromXML,
-  reloadGame,
-  closePlayerNameModal,
-  closeEnemyDeckModal,
-} from './services/uiMainCore.js';
 import {
   showNextDialogue,
   executeContinue,
@@ -92,20 +77,9 @@ window.returnToTitle = returnToTitle;
 window.showEnemySkillConfirm = showEnemySkillConfirm;
 window.showSkillConfirm = showSkillConfirm;
 window.endPlayerTurn = endPlayerTurn;
-window.handleClaimAchievement = handleClaimAchievement;
-window.debugUnlockCards = debugUnlockCards;
-window.debugUnlockAchievements = debugUnlockAchievements;
-window.checkCollectionAchievements = checkCollectionAchievements;
-window.closeSyncDataModal = closeSyncDataModal;
-window.backupDataToXML = backupDataToXML;
-window.importDataFromXML = importDataFromXML;
-window.reloadGame = reloadGame;
-window.closePlayerNameModal = closePlayerNameModal;
-window.closeEnemyDeckModal = closeEnemyDeckModal;
 window.showNextDialogue = showNextDialogue;
 window.executeContinue = executeContinue;
 window.executeGameOver = executeGameOver;
-window.closeSkillConfirm = closeSkillConfirm;
 window.executeSkillFromConfirm = executeSkillFromConfirm;
 window.submitDefenseDeck = submitDefenseDeck;
 window.switchScreen = switchScreen;
