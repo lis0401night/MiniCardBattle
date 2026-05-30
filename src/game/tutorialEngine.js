@@ -1994,6 +1994,15 @@ export function completeTutorial(tutorialId) {
   }
   progress[tutorialId].isCleared = true;
   saveTutorialProgress(progress);
+
+  // 実績データを更新
+  if (typeof window !== 'undefined' && window.loadAchievements) {
+    try {
+      window.loadAchievements();
+    } catch (e) {
+      console.error('Failed to trigger window.loadAchievements in completeTutorial:', e);
+    }
+  }
 }
 
 /**

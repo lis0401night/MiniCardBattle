@@ -42,7 +42,7 @@ const TUTORIAL_REWARDS = {
   leader_elf: 'ranger', // ルーン辿りのレインジャー
   leader_cleric: 'monk', // 夜明けの番人
   leader_devilhunter: 'undeadking', // 亡国のデス・ロード
-  leader_witch: 'ring', // 願いの指輪
+  leader_witch: 'wizard', // アカデミーの大魔導士
   leader_oni: 'nurikabe', // 見下ろす巨顔
   leader_priest: 'sentinel', // 黄金の歩哨
 };

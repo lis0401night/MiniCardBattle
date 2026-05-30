@@ -442,17 +442,18 @@ export const CARD_MASTER = [
       '「魔術とは変化、変化とは可能性だ。」自らが生み出した泥人形の姿へと消えるその瞬間まで、男は熱心に可能性を説き続けた。',
   },
   {
-    id: 'iceblast',
-    name: 'アイスブラスト',
+    id: 'dragonfire',
+    name: 'ドラゴンファイア',
     rarity: 1,
     power: 0,
     skills: [{ id: 'choice', value: 1 }],
     choices: [
-      { id: 'bind', value: 3 },
-      { id: 'freeze', value: 1 },
+      { id: 'artillery', value: 2 },
+      { id: 'snipe', value: 8 },
     ],
     voiceCategory: 'magic',
-    flavor: '冷気が染み出す氷結の塊。触れた者はたちまち動きを奪われる。',
+    flavor:
+      '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。',
   },
   {
     id: 'ogre',
@@ -811,6 +812,16 @@ export const CARD_MASTER = [
       '誇り高きセレスタリアの紋章を背負う戦馬。その力強い蹄の音は、王国の勝利を告げるファンファーレである。',
   },
   {
+    id: 'crusher',
+    name: '豪腕の破壊者',
+    rarity: 2,
+    power: 5,
+    skills: [{ id: 'crush' }],
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '巨大な武器を力任せに振るい、立ち塞がる障害物や罠を淡々と壊して回る頼れる力仕事の専門家。',
+  },
+  {
     id: 'minotaur',
     name: 'ミノタウロスの傭兵',
     rarity: 2,
@@ -823,16 +834,6 @@ export const CARD_MASTER = [
     voiceCategory: 'giant',
     flavor:
       '圧倒的な力で敵を薙ぎ払うミノタウルスの傭兵。ただし、適切な報酬が支払われなければ、敵味方の区別なく暴れまわる。',
-  },
-  {
-    id: 'crusher',
-    name: '豪腕の破壊者',
-    rarity: 2,
-    power: 5,
-    skills: [{ id: 'crush' }],
-    voiceCategory: 'human_male_ikemen',
-    flavor:
-      '巨大な武器を力任せに振るい、立ち塞がる障害物や罠を淡々と壊して回る頼れる力仕事の専門家。',
   },
   {
     id: 'lion',
@@ -1006,14 +1007,14 @@ export const CARD_MASTER = [
     flavor: '天球の運行を読み解き、聖女の審判を補佐する老神官。',
   },
   {
-    id: 'light',
-    name: '無垢の光',
+    id: 'pegasus',
+    name: '聖なるペガサス',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'equip' }, { id: 'oblivion' }],
-    voiceCategory: 'human_female_cute',
+    power: 3,
+    skills: [{ id: 'equip' }, { id: 'immune', }],
+    voiceCategory: 'horse',
     flavor:
-      '優しく降り注ぐ、穢れなき無垢の光。その暖かな輝きに抱かれた時、苦しみも、悪意も、自分が何者であったかさえも安らかに白く溶け落ちていく。',
+      '非常に高い魔法抗体を持つ有翼の馬。性格は温厚だが警戒心が強く、自らが認めた乗り手以外が触れることは叶わない。',
   },
   {
     id: 'doom',
@@ -1132,6 +1133,24 @@ export const CARD_MASTER = [
       '魔導アカデミーの見習い魔導士。魔法のコントロールが苦手で、呪文を詠唱するたびに暴走した魔力が周囲へバラバラに散乱してしまう。',
   },
   {
+    id: 'ring',
+    name: '願いの指輪',
+    rarity: 2,
+    power: 1,
+    skills: [{ id: 'equip' }, { id: 'convert', value: 1 }, { id: 'choice', value: 1 }],
+    choices: [
+      { id: 'heal', value: 2 },
+      { id: 'draw', value: 2 },
+      { id: 'snipe', value: 3 },
+      { id: 'spread', value: 2 },
+      { id: 'support', value: 2 },
+      { id: 'lone_wolf', value: 2 },
+    ],
+    voiceCategory: 'devil',
+    flavor:
+      '黄金の輪に封じられし古の魔神の強大なる奇跡。富か力か、それとも破滅か。指先に光る魅惑の輝きは、持ち主の運命を狂わせる甘い毒となる。',
+  },
+  {
     id: 'battlemage',
     name: 'ギルドの戦闘魔導士',
     rarity: 2,
@@ -1145,20 +1164,6 @@ export const CARD_MASTER = [
       '剣と魔法を操る魔導士。彼らが招集されたということは、困難な任務であることを意味する',
   },
   {
-    id: 'dragonfire',
-    name: 'ドラゴンファイア',
-    rarity: 2,
-    power: 0,
-    skills: [{ id: 'choice', value: 1 }],
-    choices: [
-      { id: 'artillery', value: 2 },
-      { id: 'snipe', value: 8 },
-    ],
-    voiceCategory: 'magic',
-    flavor:
-      '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。',
-  },
-  {
     id: 'gargoyle',
     name: 'ガーゴイル',
     rarity: 2,
@@ -1169,22 +1174,14 @@ export const CARD_MASTER = [
       '塔の頂から見下ろす冷たい石の瞳。夜の帳が下りる時、それは獲物を狙う狩人となる。',
   },
   {
-    id: 'ring',
-    name: '願いの指輪',
+    id: 'wizard',
+    name: 'アカデミーの大魔導士',
     rarity: 2,
-    power: 1,
-    skills: [{ id: 'legendary' }, { id: 'equip' }, { id: 'choice', value: 1 }],
-    choices: [
-      { id: 'heal', value: 2 },
-      { id: 'spread', value: 2 },
-      { id: 'draw', value: 2 },
-      { id: 'snipe', value: 3 },
-      { id: 'support', value: 2 },
-      { id: 'lone_wolf', value: 2 },
-    ],
-    voiceCategory: 'magic',
+    power: 2,
+    skills: [{ id: 'legendary' }, { id: 'summon', value: 5, summonId: 'token_golem' }],
+    voiceCategory: 'human_male_old',
     flavor:
-      '黄金の輪に封じられし古の魔神の強大なる奇跡。富か力か、それとも破滅か。指先に光る魅惑の輝きは、持ち主の運命を狂わせる甘い毒となる。',
+      '彼が紡ぐ古代の呪文は、無機物すらも忠実な下僕へと変え、戦場に絶対的な力をもたらす。',
   },
   {
     id: 'gashadokuro',
@@ -1387,7 +1384,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 5,
     skills: [
-      { id: 'takeover', value: 1 }, { id: 'heal', value: 5 },
+      { id: 'takeover', value: 1 }, { id: 'heal', value: 4 },
     ],
     voiceCategory: 'devil',
     flavor:
@@ -1875,8 +1872,8 @@ export const CARD_MASTER = [
     choices: [
       { id: 'heal', value: 2 },
       { id: 'draw', value: 2 },
-      { id: 'spread', value: 2 },
       { id: 'snipe', value: 3 },
+      { id: 'spread', value: 2 },
       { id: 'lone_wolf', value: 2 },
       { id: 'support', value: 2 },
     ],
@@ -2716,6 +2713,16 @@ export const CARD_MASTER = [
       '傾きゆく帝国を、美貌と知略で支え続けた統治者。彼女が下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へ消えた。',
   },
   {
+    id: 'light',
+    name: '無垢の光',
+    rarity: 4,
+    power: 4,
+    skills: [{ id: 'equip' }, { id: 'oblivion' }],
+    voiceCategory: 'human_female_cute',
+    flavor:
+      '優しく降り注ぐ、穢れなき無垢の光。その暖かな輝きに抱かれた時、苦しみも、悪意も、自分が何者であったかさえも安らかに白く溶け落ちていく。',
+  },
+  {
     id: 'baldanders',
     name: 'バルトアンデルス',
     rarity: 4,
@@ -3042,9 +3049,9 @@ export const PREMIUM_CARD_IDS = [
   'shaman',
   'light',
   'plaguedoctor',
-  'dragonfire',
+  'ring',
   'yukionna',
   'kitepriest',
-  'cavalry',
+  'doom',
 ];
 

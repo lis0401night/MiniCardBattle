@@ -10,6 +10,52 @@ import { ownedPlaymats } from './playmats.js';
 
 // 実績の定義
 export const ACHIEVEMENT_MASTER = [
+  // --- チュートリアルクリア数 ---
+  {
+    id: 'tutorial_clear_2',
+    title: '入門者の知恵',
+    description: 'チュートリアルを2種類クリアする',
+    type: 'tutorial_clear',
+    targetValue: 2,
+    reward: { type: 'card', value: 'light', name: '無垢の光' },
+  },
+  {
+    id: 'tutorial_clear_4',
+    title: '探求の道標',
+    description: 'チュートリアルを4種類クリアする',
+    type: 'tutorial_clear',
+    targetValue: 4,
+    reward: { type: 'card', value: 'light', name: '無垢の光' },
+  },
+  {
+    id: 'tutorial_clear_6',
+    title: '戦術の体得',
+    description: 'チュートリアルを6種類クリアする',
+    type: 'tutorial_clear',
+    targetValue: 6,
+    reward: { type: 'card', value: 'light', name: '無垢の光' },
+  },
+  {
+    id: 'tutorial_clear_8',
+    title: '万象の理',
+    description: 'チュートリアルを8種類クリアする',
+    type: 'tutorial_clear',
+    targetValue: 8,
+    reward: { type: 'card', value: 'light', name: '無垢の光' },
+  },
+  {
+    id: 'tutorial_clear_all',
+    title: '完全なる光の導き',
+    description: '全てのチュートリアルをクリアする',
+    type: 'tutorial_clear',
+    targetValue: 11,
+    reward: {
+      type: 'premium',
+      value: 'light',
+      name: '無垢の光',
+      isPremiumUnlock: true,
+    },
+  },
   // --- ストーリークリア ---
   {
     id: 'story_android',
@@ -732,6 +778,7 @@ export function loadAchievements() {
   checkCollectionAchievements(); // カード収集状況はロード時に常に最新化して判定する
   checkUniqueStoryAchievements(); // ストーリーのクリア種類数もロード時に判定
   checkUniqueStoryHardAchievements(); // 上級ストーリーのクリア種類数もロード時に判定
+  checkTutorialAchievements(); // チュートリアルのクリア種類数もロード時に判定
   checkTotalAchievementUnlocks(); // 累計実績もロード時に再計算して反映する
   saveAchievements();
 }
@@ -903,6 +950,28 @@ function checkDefenseAttackAchievements() {
       updateAchievement(ach.id, wins, ach.targetValue);
     }
   );
+}
+
+// チュートリアルクリア数の実績チェック
+export function checkTutorialAchievements() {
+  let clearedCount = 0;
+  try {
+    const saved = localStorage.getItem('mini_card_battle_tutorial_progress');
+    if (saved) {
+      const progress = JSON.parse(saved);
+      Object.keys(progress).forEach((key) => {
+        if (progress[key] && progress[key].isCleared) {
+          clearedCount++;
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Failed to parse tutorial progress for achievements:', e);
+  }
+
+  ACHIEVEMENT_MASTER.filter((a) => a.type === 'tutorial_clear').forEach((ach) => {
+    updateAchievement(ach.id, clearedCount, ach.targetValue);
+  });
 }
 
 // 個別実績の進捗更新処理（内部用）

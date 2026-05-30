@@ -573,10 +573,10 @@ export const VALID_PREMIUM_JPGS = [
   'shaman',
   'light',
   'plaguedoctor',
-  'dragonfire',
+  'ring',
   'yukionna',
   'kitepriest',
-  'cavalry',
+  'doom',
 ];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
