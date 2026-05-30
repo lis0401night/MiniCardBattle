@@ -58,8 +58,18 @@ export function saveDungeonProgress() {
 export function loadDungeonProgress() {
   const json = localStorage.getItem('mini_card_battle_dungeon_save');
   if (!json) return false;
+
+  let data;
   try {
-    const data = JSON.parse(json);
+    data = JSON.parse(json);
+  } catch (e) {
+    // 【CodeRabbit指摘反映・データ損失防止】JSONパース自体が失敗（データ破損）した場合のみクリアを実行する
+    console.error('Failed to parse dungeon save', e);
+    clearDungeonSave();
+    return false;
+  }
+
+  try {
     GameState.dungeonWinStreak = data.winStreak || 0;
     GameState.dungeonCards = data.cards || [];
 
@@ -96,8 +106,8 @@ export function loadDungeonProgress() {
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
     return true;
   } catch (e) {
-    console.error('Failed to load dungeon save', e);
-    clearDungeonSave();
+    // 【データ損失防止】パース成功後の復元ロジックや描画時（React側）の例外ではセーブデータを保護するため削除しない
+    console.error('Failed to restore dungeon save', e);
     return false;
   }
 }

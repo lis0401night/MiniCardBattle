@@ -13,5 +13,4 @@ if (container) {
     </React.StrictMode>
   );
 } else {
-  console.error("Failed to find the root element 'app-container'");
-}
+  console.error("ルート要素 'app-container' が見つかりませんでした");}

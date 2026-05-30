@@ -1309,7 +1309,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 className="btn"
                 style={{ flex: 1, background: '#475569', margin: 0 }}
                 onClick={(e) => {
-                  playSound?.(SOUNDS?.seClick);
                   window.closeCharDetailModal(e);
                 }}
               >
@@ -1404,7 +1403,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 className="btn"
                 style={{ background: '#475569', marginTop: '5px' }}
                 onClick={(e) => {
-                  playSound?.(SOUNDS?.seClick);
                   window.closeSyncDataModalState(e);
                 }}
               >
@@ -1714,7 +1712,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 className="btn"
                 style={{ background: '#475569', margin: 0 }}
                 onClick={(e) => {
-                  playSound?.(SOUNDS?.seClick);
                   window.closePlaymatSelectionModalState(e);
                 }}
               >

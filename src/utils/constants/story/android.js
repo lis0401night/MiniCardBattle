@@ -840,7 +840,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '対象：ネフティの古代の呢縛、および儀式用ナイフの組成を分析。',
+          text: '対象：ネフティの古代の呪縛、および儀式用ナイフの組成を分析。',
         },
         {
           speaker: 'player',

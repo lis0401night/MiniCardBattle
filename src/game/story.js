@@ -157,7 +157,10 @@ export function resumeStoryProgress(savedData) {
 
   GameState.playerConfig = CHARACTERS[savedData.pendingCharId];
 
-  // デッキを再読み込み
+  // 【設計仕様解説】
+  // ストーリー専用デッキスナップショット（mini_card_battle_story_deck_obj）は、
+  // この後呼び出される loadDeck() 内部において、GameState.gameMode === 'story' を検知して
+  // 自動的かつ一元的にロード・適用される仕様になっているため、ここで直接の読み込みは不要です。
   if (typeof window.loadDeck === 'function') {
     window.loadDeck();
   } else {

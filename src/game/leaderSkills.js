@@ -541,6 +541,9 @@ export async function executeLeaderSkillAction(
         targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
         targetCard.basePower =
           (targetCard.basePower || 0) + (selectedCard.power || 0);
+        // 【CodeRabbit指摘反映】即時参照される currentPower も同期して更新する
+        targetCard.currentPower =
+          (targetCard.currentPower || 0) + (selectedCard.power || 0);
         const equipSkills = [];
         if (
           selectedCard.skill &&
@@ -559,8 +562,6 @@ export async function executeLeaderSkillAction(
         mergeCardSkills(targetCard, equipSkills);
         targetCard.equippedCards = targetCard.equippedCards || [];
         targetCard.equippedCards.push(selectedCard);
-        if (selectedCard?.voiceCategory)
-          playCardVoice(selectedCard.voiceCategory, 'play');
         renderBoard();
         events.push({
           type: 'power_change',
@@ -568,6 +569,7 @@ export async function executeLeaderSkillAction(
           lane: targetLane,
           amount: selectedCard.power,
           source: 'equip',
+          card: JSON.parse(JSON.stringify(selectedCard)),
         });
       } else {
         const resurrectedCard = {
@@ -706,6 +708,9 @@ export async function executeLeaderSkillAction(
         targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
         targetCard.basePower =
           (targetCard.basePower || 0) + (selectedCard.power || 0);
+        // 【CodeRabbit指摘反映】即時参照される currentPower も同期して更新する
+        targetCard.currentPower =
+          (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
         const equipSkills = [];
         if (
@@ -728,8 +733,6 @@ export async function executeLeaderSkillAction(
         targetCard.equippedCards = targetCard.equippedCards || [];
         targetCard.equippedCards.push(selectedCard);
 
-        if (selectedCard?.voiceCategory)
-          playCardVoice(selectedCard.voiceCategory, 'play');
         renderBoard(); // 反映を確実にする
         events.push({
           type: 'power_change',
@@ -737,6 +740,7 @@ export async function executeLeaderSkillAction(
           lane: targetLane,
           amount: selectedCard.power,
           source: 'equip',
+          card: JSON.parse(JSON.stringify(selectedCard)),
         });
         resurrectedCard = targetCard; // 後のスキル解決フラグ用
       } else {
@@ -977,13 +981,17 @@ export async function executeLeaderSkillAction(
           GameState.aiDecision.tokenLanes.length > 0
         ) {
           selectedOppLane = GameState.aiDecision.tokenLanes.shift();
-        } else {
+        }
+
+        // 【CodeRabbit指摘反映・封印強制ブロック】事前確定レーンを validOppLanes で再検証する
+        // シミュレーション後に封印状態が変わった等のケースで、封印レーンへの不正配置（最優先ルール違反）を防ぐ
+        if (!validOppLanes.includes(selectedOppLane)) {
           const sorted = [...validOppLanes].sort(
             (a, b) =>
               (oppBoard[b].currentPower ?? oppBoard[b].power ?? 0) -
               (oppBoard[a].currentPower ?? oppBoard[a].power ?? 0)
           );
-          selectedOppLane = sorted[0];
+          selectedOppLane = sorted[0] ?? -1;
         }
       } else {
         selectedOppLane = await new Promise((resolve) => {
@@ -1044,6 +1052,9 @@ export async function executeLeaderSkillAction(
             (targetCard.power || 0) + (selectedCard.power || 0);
           targetCard.basePower =
             (targetCard.basePower || 0) + (selectedCard.power || 0);
+          // 【CodeRabbit指摘反映】即時参照される currentPower も同期して更新する
+          targetCard.currentPower =
+            (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
           if (!targetCard.skills) {
             targetCard.skills =
@@ -1072,10 +1083,6 @@ export async function executeLeaderSkillAction(
           targetCard.equippedCards = targetCard.equippedCards || [];
           targetCard.equippedCards.push(selectedCard);
 
-          if (selectedCard?.voiceCategory) {
-            playCardVoice(selectedCard.voiceCategory, 'play');
-          }
-          playSound(SOUNDS.sePlace);
           renderBoard();
           events.push({
             type: 'power_change',
@@ -1083,6 +1090,7 @@ export async function executeLeaderSkillAction(
             lane: targetLane,
             amount: selectedCard.power,
             source: 'equip',
+            card: JSON.parse(JSON.stringify(selectedCard)),
           });
         } else {
           const existingCard = board[targetLane];
@@ -1099,10 +1107,6 @@ export async function executeLeaderSkillAction(
           };
           board[targetLane] = movedCard;
 
-          if (movedCard?.voiceCategory) {
-            playCardVoice(movedCard.voiceCategory, 'play');
-          }
-          playSound(SOUNDS.sePlace);
           renderBoard();
 
           events.push({

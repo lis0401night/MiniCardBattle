@@ -733,7 +733,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'これ以上進めば、ただの自滅。私の影の中で傷を疒していなさい？',
+          text: 'これ以上進めば、ただの自滅。私の影の中で傷を癒していなさい？',
         },
         {
           speaker: 'player',

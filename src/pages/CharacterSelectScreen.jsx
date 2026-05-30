@@ -82,7 +82,12 @@ export default function CharacterSelectScreen() {
       setCharacters(getFilteredCharacters());
       setRenderVersion((v) => v + 1);
     };
-    window.forceUpdateSelectScreen = () => setRenderVersion((v) => v + 1);
+    window.forceUpdateSelectScreen = () => {
+      updateTitle();
+      // 【CodeRabbit指摘反映】ボス解放直後などの強制更新時にも、表示キャラクター一覧とタイトルを最新に再評価する
+      setCharacters(getFilteredCharacters());
+      setRenderVersion((v) => v + 1);
+    };
 
     return () => {
       window.initSelectScreenReact = originalInit;

@@ -148,7 +148,8 @@ export async function processActionQueue() {
     const action = GameState.actionQueue.shift();
 
     if (action.type === 'playCard') {
-      await playCard(action.owner, action.handIndex, action.lane);
+      const played = await playCard(action.owner, action.handIndex, action.lane);
+      if (!played) continue;
       if (checkWinCondition()) break;
       GameState.selectedCardIndex = null;
       if (window.updateCardDetail) window.updateCardDetail(null);
@@ -243,6 +244,9 @@ function applySyncState(state) {
     return len !== null ? Array(len).fill(null) : [];
   };
 
+  const restoreNumericArr = (arr, len) =>
+    Array.from({ length: len }, (_, i) => Number(arr?.[i] ?? 0));
+
   GameState.playerBoard = restoreArr(state.enemyBoard, 3);
   GameState.enemyBoard = restoreArr(state.playerBoard, 3);
   GameState.playerHand = restoreArr(state.enemyHand);
@@ -253,8 +257,8 @@ function applySyncState(state) {
   GameState.enemyDeck = restoreArr(state.playerDeck);
 
   // 封印レーン（敵味方を反転）と戦闘追加・スキップ状態の同期
-  GameState.playerSealedLanes = restoreArr(state.enemySealedLanes, 3);
-  GameState.enemySealedLanes = restoreArr(state.playerSealedLanes, 3);
+  GameState.playerSealedLanes = restoreNumericArr(state.enemySealedLanes, 3);
+  GameState.enemySealedLanes = restoreNumericArr(state.playerSealedLanes, 3);
   GameState.extraTurnCount = state.extraTurnCount || 0;
   GameState.attackSkipCount = state.attackSkipCount || 0;
 
@@ -2541,29 +2545,29 @@ export async function playCard(o, hI, l) {
   const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand,
     b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const playingCard = h[hI];
-  if (!playingCard) return;
+  if (!playingCard) return false;
 
   const sealedLanes =
     o === 'blue'
-      ? GameState.playerSealedLanes || [0, 0, 0]
-      : GameState.enemySealedLanes || [0, 0, 0];
+       ? GameState.playerSealedLanes || [0, 0, 0]
+       : GameState.enemySealedLanes || [0, 0, 0];
   const oppBoard = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
 
   // 封印（Seal）レーンは絶対に配置・召喚不可（最優先ルール）
-  if (sealedLanes[l] > 0) return;
+  if (sealedLanes[l] > 0) return false;
 
   // 1ターン目中央制限
   if (GameState.turnCount === 1 && GameState.firstPlayer === o && l !== 1)
-    return;
+    return false;
 
   // 伝説のカード制限（中央のみ）
-  if (hasSkill(playingCard, 'legendary') && l !== 1) return;
+  if (hasSkill(playingCard, 'legendary') && l !== 1) return false;
 
   // 生贄のカード制限（自分のカードがあるレーンのみ）
-  if (hasSkill(playingCard, 'takeover') && b[l] === null) return;
+  if (hasSkill(playingCard, 'takeover') && b[l] === null) return false;
 
   // 挑戦のカード制限（正面に敵がいるレーンのみ）
-  if (hasSkill(playingCard, 'challenge') && oppBoard[l] === null) return;
+  if (hasSkill(playingCard, 'challenge') && oppBoard[l] === null) return false;
 
   // 頂点のカード制限（自分の伝説カードの上のみ）
   if (hasSkill(playingCard, 'apex')) {
@@ -2576,7 +2580,7 @@ export async function playCard(o, hI, l) {
           targetCard.skills.some((s) => s.id === 'legendary'))
       )
     ) {
-      return;
+      return false;
     }
   }
 
@@ -2625,7 +2629,7 @@ export async function playCard(o, hI, l) {
 
       await sleep(100);
       renderBoard();
-      return;
+      return true;
     }
 
     if (
@@ -2749,7 +2753,7 @@ export async function playCard(o, hI, l) {
         await sleep(100);
         renderBoard();
         await cleanupDestroyedCards();
-        return; // 装備完了
+        return true; // 装備完了
       }
     }
     // 通常の上書き配置時の破棄処理（装備でも合体でもない場合、破壊効果は発動させない）
@@ -2798,6 +2802,7 @@ export async function playCard(o, hI, l) {
 
   // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
   await cleanupDestroyedCards();
+  return true;
 }
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか

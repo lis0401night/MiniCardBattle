@@ -958,7 +958,7 @@ export const storyDialogues = {
       post: [
         {
           speaker: 'enemy',
-          text: 'キャアアアッ！ この私が, 負けるなんて……！ サタン様……！',
+          text: 'キャアアアッ！ この私が、負けるなんて……！ サタン様……！',
         },
         {
           speaker: 'player',

@@ -143,6 +143,18 @@ export default function App() {
       // Reactのレンダリングを待機してから遷移後処理を行うための遅延
       setTimeout(() => {
         executeSwitchScreen(screenId);
+        // 【データ整合性・画面表示保護】画面切り替え時に対応するReact画面の初期化・再評価フックを自動で呼び出す
+        if (
+          screenId === 'screen-difficulty' &&
+          typeof window.initDifficultySelectScreenReact === 'function'
+        ) {
+          window.initDifficultySelectScreenReact();
+        } else if (
+          screenId === 'screen-select' &&
+          typeof window.initSelectScreenReact === 'function'
+        ) {
+          window.initSelectScreenReact();
+        }
       }, 0);
     });
   }, []);

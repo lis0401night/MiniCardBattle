@@ -83,11 +83,18 @@ export default function DefenseExchangeScreen() {
     playSound(SOUNDS?.seCardPlace);
 
     const newPts = points.current - item.cost;
+
+    // 【CodeRabbit指摘反映・データ整合性保護】サーバーへの同期完了（成功）を待ってからローカルのポイント減算・アイテム付与を確定させる
+    try {
+      await savePointsToServer('update_points.php', newPts, points.total);
+    } catch (e) {
+      console.error('Failed to sync points to server:', e);
+      showAlertModal('ポイントの同期に失敗しました。通信環境を確認して再試行してください。');
+      return;
+    }
+
     localStorage.setItem('mini_card_battle_defense_points', newPts);
     setPoints((prev) => ({ ...prev, current: newPts }));
-
-    // 共通API同期ユーティリティを介してサーバーと同期（非同期処理の完了を待機）
-    await savePointsToServer('update_points.php', newPts, points.total);
 
     if (item.type === 'premium') {
       const newUnlocked = [...unlockedPremium, item.id];

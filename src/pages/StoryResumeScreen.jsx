@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { resumeCampaignProgress } from '../game/campaign';
-import { GameState } from '../state/gameState';
 import { clearStoryProgress, resumeStoryProgress } from '../game/story';
 import { goBackFromSelect } from '../services/uiMainCore';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState';
 import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -114,7 +114,7 @@ export default function StoryResumeScreen() {
         }
       }
 
-      if (deck && deck.cards) {
+      if (deck && deck.cards && deck.cards.length > 0) {
         window.showEnemyDeckModal(deck.cards, 'デッキ確認');
       } else {
         showAlertModal?.('デッキ情報のプレビューは再開後に可能です。');

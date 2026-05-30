@@ -741,7 +741,17 @@ export function loadDeck() {
     const storySaved = localStorage.getItem('mini_card_battle_story_deck_obj');
     if (GameState.gameMode === 'story' && storySaved) {
       try {
-        activeDeck = JSON.parse(storySaved);
+        const parsedDeck = JSON.parse(storySaved);
+        if (
+          parsedDeck &&
+          parsedDeck.leaderId &&
+          Array.isArray(parsedDeck.cards)
+        ) {
+          activeDeck = parsedDeck;
+        } else {
+          // 【CodeRabbit指摘反映・データ整合性保護】スナップショットデータが不完全な場合は警告を出し、現在の通常デッキで安全にフォールバック代替する
+          console.warn('Invalid story deck snapshot. Fallback to current deck.');
+        }
       } catch (e) {
         console.error('Failed to parse story deck snapshot:', e);
       }

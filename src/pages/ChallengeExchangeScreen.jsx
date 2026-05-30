@@ -151,15 +151,22 @@ export default function ChallengeExchangeScreen() {
     playSound(SOUNDS?.seCardPlace);
 
     const newPts = challengePoints.current - item.cost;
+
+    // 【CodeRabbit指摘水平展開・データ整合性保護】サーバーへの同期完了（成功）を待ってからローカルのポイント減算・アイテム付与を確定させる
+    try {
+      await savePointsToServer(
+        'update_challenge_points.php',
+        newPts,
+        challengePoints.total
+      );
+    } catch (e) {
+      console.error('Failed to sync challenge points to server:', e);
+      showAlertModal('ポイントの同期に失敗しました。通信環境を確認して再試行してください。');
+      return;
+    }
+
     localStorage.setItem('mini_card_battle_challenge_points', newPts);
     setChallengePoints((prev) => ({ ...prev, current: newPts }));
-
-    // サーバーと同期（非同期処理の完了を待機して競合を防止する）
-    await savePointsToServer(
-      'update_challenge_points.php',
-      newPts,
-      challengePoints.total
-    );
 
     if (item.type === 'card') {
       const currentCount = inventory[item.id] || 0;
