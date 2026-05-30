@@ -357,7 +357,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         {
           speaker: 'enemy',
-          text: 'あちらの席で、水晶玉を抱きしめて。すっかり闇に染まってしまって……最高ですわね',
+          text: 'あら、真剣な顔でお札を握りしめている巫女さん。……その健気さ、壊してみたくなりますわ',
         },
         {
           speaker: 'player',

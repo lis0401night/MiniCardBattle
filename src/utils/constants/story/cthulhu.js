@@ -206,7 +206,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'あんたの深淵ごと焼き尽くしてやるわ！' },
         {
           speaker: 'player',
-          text: 'あら、私はナイア。あちらの席で退屈そうに突っ張っていたトカゲさんが、私に何の御用かしら？',
+          text: 'あら、私はナイア。そんなに顔を真っ赤にして怒鳴り込んでくるなんて、随分と騒がしいトカゲさんですわね',
         },
         {
           speaker: 'enemy',

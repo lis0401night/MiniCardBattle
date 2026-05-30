@@ -243,14 +243,14 @@ export const storyDialogues = {
   cthulhu: {
     early: {
       pre: [
-        { speaker: 'enemy', text: 'クスクス……私はナイア。煙臭いと思ったら、' },
+        { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         {
           speaker: 'enemy',
-          text: 'あんな所にあの生意気なトカゲが一匹、退屈そうに突っ張っていますわね',
+          text: 'あら、大斧を担いで息巻いている威勢のいい娘さん。……その荒ぶる炎、とても美しいですわ',
         },
         {
           speaker: 'player',
-          text: '私はイグニスよ！ トカゲってなによトカゲって！ なによあんた、ジメジメした怪しい雰囲気を漂わせちゃって！',
+          text: '私はイグニスよ！ なによあんた、ジメジメした怪しい雰囲気を漂わせちゃって！',
         },
         {
           speaker: 'enemy',
