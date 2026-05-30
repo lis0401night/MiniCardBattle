@@ -30,7 +30,7 @@ export default function PlayerArea({
         >
           <img
             id="player-icon"
-            className="char-icon blue"
+            className={`char-icon blue ${playerHP <= 0 ? 'dead' : ''}`}
             src={
               getSkinImage(
                 playerConfig,

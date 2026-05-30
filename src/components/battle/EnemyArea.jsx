@@ -22,7 +22,7 @@ export default function EnemyArea({
         <div className="icon-wrapper" id="enemy-icon-wrap">
           <img
             id="enemy-icon"
-            className="char-icon red"
+            className={`char-icon red ${enemyConfig.isShadow ? 'shadow-icon' : ''} ${enemyHP <= 0 ? 'dead' : ''}`}
             src={
               getSkinImage(
                 enemyConfig,

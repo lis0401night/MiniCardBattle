@@ -14,9 +14,10 @@ import { SKILLS } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
   playSound,
+  stopAllBGM,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 
 export default function DeckEditorScreen() {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -1010,6 +1011,8 @@ export default function DeckEditorScreen() {
                   '一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）',
                   () => {
                     playSound?.(SOUNDS?.seClick);
+                    if (typeof stopAllBGM === 'function') stopAllBGM();
+                    if (AUDIO_INSTANCES?.bgmTitle) playSound(AUDIO_INSTANCES.bgmTitle);
                     if (typeof window.switchScreen === 'function')
                       window.switchScreen('screen-solo-menu');
                   }

@@ -468,18 +468,8 @@ export function loadDeck() {
   }
 
   // 2. 全体（アカウント）設定のベース読み込み
-  // 全体スキン
-  const skinsKey = 'mini_card_battle_skins';
-  const skinsSaved = localStorage.getItem(skinsKey);
-  let globalSkins = {};
-  if (skinsSaved) {
-    try {
-      globalSkins = JSON.parse(skinsSaved);
-    } catch (e) {
-      globalSkins = {};
-    }
-  }
-  GameState.playerSkins = { ...globalSkins };
+  // 全体スキンは廃止され、デッキ固有のスキン設定のみを使用します
+  GameState.playerSkins = {};
 
   // インベントリ
   const invKey = `mini_card_battle_inventory`;
@@ -745,7 +735,18 @@ export function loadDeck() {
   }
 
   if (GameState.decks.length > 0) {
-    const activeDeck = GameState.decks[GameState.currentDeckIndex];
+    let activeDeck = GameState.decks[GameState.currentDeckIndex];
+
+    // ストーリーモード進行中で専用スナップショットが存在する場合、アクティブデッキをそのスナップショットに差し替える
+    const storySaved = localStorage.getItem('mini_card_battle_story_deck_obj');
+    if (GameState.gameMode === 'story' && storySaved) {
+      try {
+        activeDeck = JSON.parse(storySaved);
+      } catch (e) {
+        console.error('Failed to parse story deck snapshot:', e);
+      }
+    }
+
     const templateChar = CHARACTERS[activeDeck.leaderId] || CHARACTERS.android;
     if (!GameState.playerConfig || GameState.appState !== 'select_player') {
       // トーナメント進行中はstartTournamentMatchで設定済みのplayerConfig（名前・スキン設定）を保持する
@@ -808,19 +809,6 @@ export function loadDeck() {
     );
   }
 
-  // 選択中プレイマットの読み込み
-  let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig?.id || 'android'}`;
-  if (
-    typeof GameState.gameMode !== 'undefined' &&
-    GameState.gameMode === 'defense_register'
-  ) {
-    playmatSelectKey = 'mini_card_battle_playmat_defense';
-  }
-  // デッキに紐付いて無い場合のフォールバック
-  if (!GameState.selectedPlaymatId) {
-    GameState.selectedPlaymatId =
-      localStorage.getItem(playmatSelectKey) || null;
-  }
 }
 
 export function createNewDeck(leaderId) {
@@ -943,23 +931,7 @@ export function saveDeck() {
     JSON.stringify(GameState.unlockedPremiumCards)
   );
 
-  // 選択中プレイマットもセーブ
-  let playmatSelectKey = GameState.playerConfig
-    ? `mini_card_battle_playmat_${GameState.playerConfig.id}`
-    : null;
-  if (
-    typeof GameState.gameMode !== 'undefined' &&
-    GameState.gameMode === 'defense_register'
-  ) {
-    playmatSelectKey = 'mini_card_battle_playmat_defense';
-  }
-  if (playmatSelectKey) {
-    if (GameState.selectedPlaymatId) {
-      localStorage.setItem(playmatSelectKey, GameState.selectedPlaymatId);
-    } else {
-      localStorage.removeItem(playmatSelectKey);
-    }
-  }
+
 
   // 所持プレイマットもセーブ
   localStorage.setItem(

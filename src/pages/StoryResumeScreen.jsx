@@ -4,7 +4,7 @@ import { resumeCampaignProgress } from '../game/campaign';
 import { GameState } from '../state/gameState';
 import { clearStoryProgress, resumeStoryProgress } from '../game/story';
 import { goBackFromSelect } from '../services/uiMainCore';
-import { showConfirmModal } from '../services/uiModals.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -89,6 +89,39 @@ export default function StoryResumeScreen() {
     );
   };
 
+  const handleCheckDeck = () => {
+    playSound?.(SOUNDS?.seClick);
+    if (window.showEnemyDeckModal) {
+      let deck = null;
+      if (isCampaign) {
+        const savedStr = localStorage.getItem('mini_card_battle_campaign_save');
+        if (savedStr) {
+          try {
+            const data = JSON.parse(savedStr);
+            deck = { cards: data.campaignDeck || [] };
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } else {
+        const savedStr = localStorage.getItem('mini_card_battle_story_deck_obj');
+        if (savedStr) {
+          try {
+            deck = JSON.parse(savedStr);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      if (deck && deck.cards) {
+        window.showEnemyDeckModal(deck.cards, 'デッキ確認');
+      } else {
+        showAlertModal?.('デッキ情報のプレビューは再開後に可能です。');
+      }
+    }
+  };
+
   return (
     <div
       id="screen-story-resume"
@@ -138,7 +171,7 @@ export default function StoryResumeScreen() {
             }}
           >
             <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
-              現在:{' '}
+              進行状況:{' '}
               <span style={{ color: '#facc15', fontWeight: 'bold' }}>
                 {isCampaign
                   ? `チャプター${String(battleCount).replace('_pre', '').replace('_post', '')}`
@@ -211,6 +244,23 @@ export default function StoryResumeScreen() {
                       {pConf.name}
                     </div>
                   </div>
+                </div>
+
+                {/* デッキ確認ボタン */}
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '15px' }}>
+                  <button
+                    className="btn"
+                    style={{
+                      fontSize: '0.8rem',
+                      padding: '10px 12px',
+                      width: 'auto',
+                      margin: 0,
+                      background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)',
+                    }}
+                    onClick={handleCheckDeck}
+                  >
+                    デッキ確認
+                  </button>
                 </div>
               </div>
             )}

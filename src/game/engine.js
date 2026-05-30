@@ -3858,6 +3858,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
     if (isOriginalTargetDefender) dmgToAtk = 0;
 
+    if (dmgToAtk > 0 && !canTakeDamage(aC_defend, dmgToAtk, false)) {
+      events.push({ type: 'immune_block', side: attackerSide, lane: aLane });
+      dmgToAtk = 0;
+    }
+
     if (dmgToAtk > 0) {
       events.push({
         type: 'damage_card',

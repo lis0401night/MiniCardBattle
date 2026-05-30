@@ -1837,41 +1837,42 @@ export default function GlobalModals() {
                         if (!isUnlocked) return;
                         playSound?.(SOUNDS?.seClick);
 
-                        // 1. グローバルの最新設定として保存（今まで通り）
-                        GameState.playerSkins[charDetailData.id] = skinId;
-                        localStorage.setItem(
-                          'mini_card_battle_skins',
-                          JSON.stringify(GameState.playerSkins)
-                        );
+                        const targetIdx = charDetailData.targetDeckIndex !== undefined 
+                          ? charDetailData.targetDeckIndex 
+                          : GameState.currentDeckIndex;
 
-                        // 2. 指定されたデッキからのスキン変更なら、デッキ固有のスキンも更新する
-                        if (charDetailData.targetDeckIndex !== undefined) {
-                          const deckList = GameState.decks;
-                          if (
-                            deckList &&
-                            deckList[charDetailData.targetDeckIndex]
-                          ) {
-                            const targetDeck =
-                              deckList[charDetailData.targetDeckIndex];
-                            if (!targetDeck.playerSkins)
-                              targetDeck.playerSkins = {};
-                            targetDeck.playerSkins[charDetailData.id] = skinId;
-                            // 現在のモードが通常デッキの場合のみ、デッキ全体のシリアライズを更新する
-                            if (
-                              GameState.gameMode !== 'defense_register' &&
-                              GameState.gameMode !== 'battle_dungeon'
-                            ) {
-                              localStorage.setItem(
-                                'mini_card_battle_decks',
-                                JSON.stringify(deckList)
-                              );
-                            }
-                            // 防衛・試練等の固有セーブは、画面を閉じる際や `saveCurrentEditDeck` 側で担保される
-                            if (window.forceUpdateDeckList)
-                              window.forceUpdateDeckList();
-                            if (typeof renderDeckEdit === 'function')
-                              renderDeckEdit();
+                        if (targetIdx !== undefined && GameState.decks && GameState.decks[targetIdx]) {
+                          const targetDeck = GameState.decks[targetIdx];
+                          if (!targetDeck.playerSkins) targetDeck.playerSkins = {};
+                          targetDeck.playerSkins[charDetailData.id] = skinId;
+
+                          // GameState上のスキン状態も同期
+                          GameState.playerSkins = {
+                            ...GameState.playerSkins,
+                            [charDetailData.id]: skinId
+                          };
+
+                          // 各モードに応じたLocalStorageセーブ
+                          if (GameState.gameMode === 'defense_register') {
+                            localStorage.setItem(
+                              'mini_card_battle_defense_deck_obj',
+                              JSON.stringify(targetDeck)
+                            );
+                          } else if (GameState.gameMode === 'battle_dungeon') {
+                            localStorage.setItem(
+                              'mini_card_battle_dungeon_deck_obj',
+                              JSON.stringify(targetDeck)
+                            );
+                          } else {
+                            localStorage.setItem(
+                              'mini_card_battle_decks',
+                              JSON.stringify(GameState.decks)
+                            );
                           }
+
+                          // 画面再描画
+                          if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+                          if (typeof renderDeckEdit === 'function') renderDeckEdit();
                         } else {
                           // 指定がない場合（キャラ選択画面など）の既存フロー
                           if (window.saveCurrentEditDeck)

@@ -286,11 +286,7 @@ export function updateHPBar() {
   if (eText)
     eText.innerText = `${Math.max(0, GameState.enemyHP)} / ${GameState.enemyMaxHP}`;
 
-  // HP0時のアイコン死亡演出（スタイル反映用）
-  const pIcon = document.getElementById('player-icon');
-  if (pIcon) pIcon.classList.toggle('dead', GameState.playerHP <= 0);
-  const eIcon = document.getElementById('enemy-icon');
-  if (eIcon) eIcon.classList.toggle('dead', GameState.enemyHP <= 0);
+  // HP0時のアイコン死亡演出はReactコンポーネント（PlayerArea/EnemyArea）側で自動反映されるためDOM操作は不要
 
   if (updateBattleUIHook) updateBattleUIHook();
 }

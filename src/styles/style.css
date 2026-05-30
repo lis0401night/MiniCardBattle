@@ -1119,6 +1119,10 @@ h2 {
   filter: grayscale(1);
 }
 
+.char-icon.shadow-icon {
+  filter: grayscale(1) brightness(0.25) contrast(1.2) drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+}
+
 .icon-frame {
   position: absolute;
   top: 50%;

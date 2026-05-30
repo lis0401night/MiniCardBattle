@@ -291,12 +291,7 @@ export function prepareBattle() {
     : Date.now();
   let isFinished = false;
 
-  // プレイマット設定の引き継ぎロード
-  if (GameState.playerConfig && GameState.playerConfig.id) {
-    let playmatSelectKey = `mini_card_battle_playmat_${GameState.playerConfig.id}`;
-    GameState.selectedPlaymatId =
-      localStorage.getItem(playmatSelectKey) || null;
-  }
+  // プレイマットは loadDeck() 時にデッキ固有のものが GameState.selectedPlaymatId に設定済みなのを使用する
 
   try {
     setRNGSeed(sessionId); // シードを完全に固定して初期化

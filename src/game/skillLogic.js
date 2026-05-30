@@ -36,7 +36,7 @@ import {
   waitPlayerLaneSelection,
   waitSkillChoice,
 } from './battle.js';
-import { applyActiveSkillLogic } from './engine.js';
+import { applyActiveSkillLogic, canTakeDamage } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { getIsHost } from '../services/multiplayer.js';
 import { showMessage, hideMessage } from './tutorialEngine.js';
@@ -2926,13 +2926,22 @@ export async function triggerStartTurnPassive(owner, lane) {
           skillName: '迎撃',
         });
 
-        events.push({
-          type: 'damage_card',
-          side: owner === 'blue' ? 'red' : 'blue',
-          lane: maxL,
-          amount: dmg,
-          source: 'intercept',
-        });
+        if (canTakeDamage(eB[maxL], dmg)) {
+          events.push({
+            type: 'damage_card',
+            side: owner === 'blue' ? 'red' : 'blue',
+            lane: maxL,
+            amount: dmg,
+            source: 'intercept',
+          });
+        } else {
+          events.push({
+            type: 'immune_block',
+            side: owner === 'blue' ? 'red' : 'blue',
+            lane: maxL,
+            source: 'intercept',
+          });
+        }
       }
       triggered = true;
     }

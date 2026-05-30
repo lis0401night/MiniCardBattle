@@ -2719,11 +2719,11 @@ export const CARD_MASTER = [
     id: 'cleopatra',
     name: '最後の女王',
     rarity: 4,
-    power: 5,
+    power: 6,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [
-      { id: 'burial', value: 4 },
-      { id: 'toxic', value: 3 },
+      { id: 'burial', value: 3 },
+      { id: 'morph', value: 1 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
