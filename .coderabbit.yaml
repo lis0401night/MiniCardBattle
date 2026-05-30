@@ -12,8 +12,9 @@ reviews:
     - '!dist/**'
     - '!package-lock.json'
     - 'src/**/*.js'
+    - 'src/**/*.jsx'
   path_instructions:
-    - path: '**/*.js'
+    - path: '**/*.{js,jsx}'
       instructions: |
         プルリクエストをレビューする際は、以下のプロジェクト固有のコーディングルールおよび厳密な制約を遵守しているか、徹底して確認してください。違反がある場合は指摘（または改善の提案）を行ってください。
 
