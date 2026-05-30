@@ -2787,7 +2787,7 @@ export const CARD_MASTER = [
     id: 'dicejuggler',
     name: 'ダイスジャグラー',
     rarity: 4,
-    power: 2,
+    power: 5,
     skills: [{ id: 'fate' }],
     voiceCategory: 'human_male_trickstar',
     flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。',
@@ -2812,16 +2812,16 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
-  // {
-  //   id: 'scarecrow',
-  //   name: '呪いの案山子',
-  //   power: 1,
-  //   skills: [{ id: 'convert', value: 1 }, { id: 'reflect' }],
-  //   rarity: 4,
-  //   voiceCategory: 'undead',
-  //   flavor:
-  //     '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
-  // },
+  {
+    id: 'scarecrow',
+    name: '呪いの案山子',
+    power: 1,
+    skills: [{ id: 'reflect' }],
+    rarity: 4,
+    voiceCategory: 'undead',
+    flavor:
+      '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
+  },
   // トークンカード
   {
     id: 'token_knight',
