@@ -397,5 +397,5 @@ export const SKILL_POINTS = {
   teleport: {
     base: 0,
     multiplier: 0,
-  }
+  },
 };

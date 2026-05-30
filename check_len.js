@@ -6,7 +6,7 @@ lines.forEach((l, i) => {
   if (m) {
     const t = m[1];
     if (t.length > 55) {
-      console.log(`L${i+1} (${t.length}chars): ${t}`);
+      console.log(`L${i + 1} (${t.length}chars): ${t}`);
     }
   }
 });

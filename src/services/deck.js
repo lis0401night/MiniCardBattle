@@ -719,7 +719,10 @@ export function loadDeck() {
       );
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];
-        if (char && (!GameState.decks || GameState.decks.length < MAX_DECK_SLOTS)) {
+        if (
+          char &&
+          (!GameState.decks || GameState.decks.length < MAX_DECK_SLOTS)
+        ) {
           const newIndex = createNewDeck(id);
           if (newIndex !== false && GameState.decks[newIndex]) {
             // 名前が長すぎないよう、シンプルにキャラ名+デッキにする

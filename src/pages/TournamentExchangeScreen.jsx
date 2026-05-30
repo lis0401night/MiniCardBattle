@@ -19,7 +19,10 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function TournamentExchangeScreen() {
   const [tournamentPoints, setTournamentPoints] = useState(() => ({
     current:
-      parseInt(localStorage.getItem('mini_card_battle_tournament_points'), 10) || 0,
+      parseInt(
+        localStorage.getItem('mini_card_battle_tournament_points'),
+        10
+      ) || 0,
     total:
       parseInt(
         localStorage.getItem('mini_card_battle_tournament_total_points'),
@@ -42,7 +45,10 @@ export default function TournamentExchangeScreen() {
   useEffect(() => {
     // Current points to use for sync logic
     const currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_tournament_points'), 10) || 0;
+      parseInt(
+        localStorage.getItem('mini_card_battle_tournament_points'),
+        10
+      ) || 0;
     const totalPts =
       parseInt(
         localStorage.getItem('mini_card_battle_tournament_total_points'),
@@ -133,7 +139,9 @@ export default function TournamentExchangeScreen() {
     }
 
     if (isAlreadyUnlocked) {
-      showAlertModal('既に最大数所持しているか、アンロック済みのアイテムです。');
+      showAlertModal(
+        '既に最大数所持しているか、アンロック済みのアイテムです。'
+      );
       return;
     }
 

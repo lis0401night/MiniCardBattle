@@ -47,7 +47,10 @@ export async function preloadAllGameResources(onProgress) {
     const audio = AUDIO_INSTANCES[key];
     // audio.src はブラウザによっては絶対パスになるため、パス指定文字を含む場合のみ
     if (audio && audio.src) {
-      const url = new URL(audio.src, window.location.href).pathname.replace(/^\/+/, '');
+      const url = new URL(audio.src, window.location.href).pathname.replace(
+        /^\/+/,
+        ''
+      );
       urlsToLoad.add(url);
     }
   });

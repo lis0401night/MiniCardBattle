@@ -4,7 +4,11 @@ import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import { goBackFromSelect, showCharDetail } from '../services/uiMainCore.js';
 import { achievementData } from '../utils/constants/achievements.js';
-import { CHARACTERS, getSkinImage, BOSS_CHARACTER_IDS } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  BOSS_CHARACTER_IDS,
+} from '../utils/constants/characters.js';
 
 // キャラクターフィルタリングの共通処理 (DRY原則を保ちます)
 const getFilteredCharacters = () => {
@@ -18,7 +22,8 @@ const getFilteredCharacters = () => {
     achievementData.stats?.storyClears || {}
   ).some((v) => v >= 1);
   const isVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
-  const isSuccubusUnlocked = (achievementData.stats?.succubusDefeated || 0) >= 1;
+  const isSuccubusUnlocked =
+    (achievementData.stats?.succubusDefeated || 0) >= 1;
 
   return Object.values(charsObj).filter((c) => {
     if (BOSS_CHARACTER_IDS.includes(c.id)) {

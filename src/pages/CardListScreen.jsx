@@ -56,7 +56,9 @@ export default function CardListScreen() {
           if (typeof playSound === 'function' && SOUNDS)
             playSound(SOUNDS.seSkill);
           if (typeof showAlertModal === 'function')
-            showAlertModal(`デバッグモード：全カードを${MAX_CARD_COPIES}枚所持状態にしました！`);
+            showAlertModal(
+              `デバッグモード：全カードを${MAX_CARD_COPIES}枚所持状態にしました！`
+            );
           updateList();
         }
       );

@@ -18,13 +18,15 @@ import Card from './Card.jsx';
  * @param {object|null} enemyCardAtLane - 正面（敵陣レーン）にあるカード
  * @returns {boolean} 配置可能ならtrue
  */
-const checkPlacementConstraints = (targetCard, lane, existingCard, enemyCardAtLane) => {
+const checkPlacementConstraints = (
+  targetCard,
+  lane,
+  existingCard,
+  enemyCardAtLane
+) => {
   let valid = true;
   // 1ターン目先攻制限: 中央レーンのみ配置可能
-  if (
-    GameState.turnCount === 1 &&
-    GameState.firstPlayer === 'blue'
-  ) {
+  if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
     valid = valid && lane === 1;
   }
   // 「伝説」スキル: 中央レーンのみ
@@ -184,13 +186,23 @@ export default function Board({
               isHighlight = false;
             } else if (tCard && checkEnv) {
               // 「召喚」時は制約チェックを実行（「配置」時は checkEnv=false でスキップ）
-              isHighlight = checkPlacementConstraints(tCard, lane, card, enemyBoard[lane]);
+              isHighlight = checkPlacementConstraints(
+                tCard,
+                lane,
+                card,
+                enemyBoard[lane]
+              );
             } else {
               isHighlight = true;
             }
           } else if (selectedCard) {
             // 手札からの「召喚」: 配置制約ルールに従う
-            isHighlight = checkPlacementConstraints(selectedCard, lane, card, enemyBoard[lane]);
+            isHighlight = checkPlacementConstraints(
+              selectedCard,
+              lane,
+              card,
+              enemyBoard[lane]
+            );
           }
 
           return (

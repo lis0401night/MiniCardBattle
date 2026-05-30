@@ -176,7 +176,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'intercept', value: 2 }],
     voiceCategory: 'machine_old',
-    flavor: 'その不機嫌そうな丸いフォルムに騙されて手を伸ばした者は、皆一様に手を血に染めて後悔することになる。',
+    flavor:
+      'その不機嫌そうな丸いフォルムに騙されて手を伸ばした者は、皆一様に手を血に染めて後悔することになる。',
   },
   {
     id: 'bandit',
@@ -540,9 +541,7 @@ export const CARD_MASTER = [
     name: '肉裂き大口',
     rarity: 1,
     power: 6,
-    skills: [
-      { id: 'sacrifice', value: 2 },
-    ],
+    skills: [{ id: 'sacrifice', value: 2 }],
     voiceCategory: 'monster',
     flavor: '生者の絶望と血の匂いだけが、底なしの飢えを満たす道標となる',
   },
@@ -553,7 +552,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'heal_void', value: 2 }],
     voiceCategory: 'stone',
-    flavor: '音も、痛みも、感情すら存在しない。祈りの代わりに紡がれる静寂が、兵士たちの傷を無感覚のまま塞いでいく。',
+    flavor:
+      '音も、痛みも、感情すら存在しない。祈りの代わりに紡がれる静寂が、兵士たちの傷を無感覚のまま塞いでいく。',
   },
   {
     id: 'voidsniper',
@@ -562,7 +562,8 @@ export const CARD_MASTER = [
     power: 2,
     skills: [{ id: 'snipe_void', value: 3 }],
     voiceCategory: 'stone',
-    flavor: '銃声も、閃光も存在しない。放たれた虚無の弾丸は、標的の存在そのものを空間ごと精確にえぐり取る。',
+    flavor:
+      '銃声も、閃光も存在しない。放たれた虚無の弾丸は、標的の存在そのものを空間ごと精確にえぐり取る。',
   },
   {
     id: 'voidcommander',
@@ -571,7 +572,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'support_void', value: 2 }],
     voiceCategory: 'stone',
-    flavor: '言葉による命令は不要。虚空を介した冷徹な意思の伝達により、名もなき軍勢は完璧な連携で獲物を蹂躙する。',
+    flavor:
+      '言葉による命令は不要。虚空を介した冷徹な意思の伝達により、名もなき軍勢は完璧な連携で獲物を蹂躙する。',
   },
   {
     id: 'minion',
@@ -590,9 +592,7 @@ export const CARD_MASTER = [
     name: '幻惑の歌姫',
     rarity: 1,
     power: 1,
-    skills: [
-      { id: 'dominate', value: 3 },
-    ],
+    skills: [{ id: 'dominate', value: 3 }],
     voiceCategory: 'human_female_sexy',
     flavor:
       '美しき旋律は嵐を呼び、青き翼は絶望を連れてくる。魅入られた者たちは己の意志を永遠に手放す。',
@@ -1011,7 +1011,7 @@ export const CARD_MASTER = [
     name: '聖なるペガサス',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'equip' }, { id: 'immune', }],
+    skills: [{ id: 'equip' }, { id: 'immune' }],
     voiceCategory: 'horse',
     flavor:
       '非常に高い魔法抗体を持つ有翼の馬。性格は温厚だが警戒心が強く、自らが認めた乗り手以外が触れることは叶わない。',
@@ -1137,7 +1137,11 @@ export const CARD_MASTER = [
     name: '願いの指輪',
     rarity: 2,
     power: 1,
-    skills: [{ id: 'equip' }, { id: 'convert', value: 1 }, { id: 'choice', value: 1 }],
+    skills: [
+      { id: 'equip' },
+      { id: 'convert', value: 1 },
+      { id: 'choice', value: 1 },
+    ],
     choices: [
       { id: 'heal', value: 2 },
       { id: 'draw', value: 2 },
@@ -1178,7 +1182,10 @@ export const CARD_MASTER = [
     name: 'アカデミーの大魔導士',
     rarity: 2,
     power: 2,
-    skills: [{ id: 'legendary' }, { id: 'summon', value: 5, summonId: 'token_golem' }],
+    skills: [
+      { id: 'legendary' },
+      { id: 'summon', value: 5, summonId: 'token_golem' },
+    ],
     voiceCategory: 'human_male_old',
     flavor:
       '彼が紡ぐ古代の呪文は、無機物すらも忠実な下僕へと変え、戦場に絶対的な力をもたらす。',
@@ -1373,7 +1380,10 @@ export const CARD_MASTER = [
     name: 'スケルトン・ロード',
     rarity: 2,
     power: 5,
-    skills: [{ id: 'legendary' }, { id: 'split', value: 3, summonId: 'token_skeleton' }],
+    skills: [
+      { id: 'legendary' },
+      { id: 'split', value: 3, summonId: 'token_skeleton' },
+    ],
     voiceCategory: 'undead',
     flavor:
       '迷宮を彷徨う骸の王。その体が砕け散る時、呪われた骨は新たな兵士として立ち上がる。',
@@ -1384,7 +1394,8 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 5,
     skills: [
-      { id: 'takeover', value: 1 }, { id: 'heal', value: 4 },
+      { id: 'takeover', value: 1 },
+      { id: 'heal', value: 4 },
     ],
     voiceCategory: 'devil',
     flavor:
@@ -1395,10 +1406,11 @@ export const CARD_MASTER = [
     name: '茨の妖精',
     rarity: 2,
     power: 2,
-    skills: [
-      { id: 'choice', value: 1 },
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'dominate', value: 2 },
+      { id: 'toxic', value: 3 },
     ],
-    choices: [{ id: 'dominate', value: 2 }, { id: 'toxic', value: 3 },],
     voiceCategory: 'human_female_cool',
     flavor:
       '深き森で微睡む紫の花に魅入られてはならない。その甘き香りは、命を蝕む死の胞子か、あるいは永遠に目覚めぬ隷属の夢への誘いなのだから。',
@@ -2034,8 +2046,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'legendary' }, { id: 'sublimation', value: 2 }],
     voiceCategory: 'stone',
-    flavor:
-      '次元の狭間である虚空を自在に渡り歩く、実体を持たない影の旅人。',
+    flavor: '次元の狭間である虚空を自在に渡り歩く、実体を持たない影の旅人。',
   },
   {
     id: 'succubus',
@@ -2058,7 +2069,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 3,
     skills: [
-      { id: 'legendary', },
+      { id: 'legendary' },
       { id: 'sacrifice', value: 3 },
       { id: 'dominate', value: 6 },
     ],
@@ -2086,7 +2097,13 @@ export const CARD_MASTER = [
     name: '蒼炎の魔将軍',
     rarity: 3,
     power: 7,
-    skills: [{ id: 'legendary' }, { id: 'sacrifice', value: 3 }, { id: 'execute' }, { id: 'cull' }, { id: 'cull' }],
+    skills: [
+      { id: 'legendary' },
+      { id: 'sacrifice', value: 3 },
+      { id: 'execute' },
+      { id: 'cull' },
+      { id: 'cull' },
+    ],
     voiceCategory: 'horse',
     flavor:
       '冥界より喚び出された不死の軍勢を率いる将軍。彼の通った跡には、青き炎に灼かれた骸と、永遠に続く夜だけが残される。',
@@ -3054,4 +3071,3 @@ export const PREMIUM_CARD_IDS = [
   'kitepriest',
   'doom',
 ];
-

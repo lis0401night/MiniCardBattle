@@ -1,6 +1,9 @@
 import BackButton from '../components/BackButton.jsx';
 import { selectHighDifficultyTarget } from '../services/uiMainCore.js';
-import { CHARACTERS, BOSS_CHARACTER_IDS } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  BOSS_CHARACTER_IDS,
+} from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 

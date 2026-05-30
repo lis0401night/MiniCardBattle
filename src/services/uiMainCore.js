@@ -6,7 +6,6 @@ import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
   getDialogue,
-  getOrCreateUUID,
   playSound,
   sleep,
   switchScreen,
@@ -195,7 +194,9 @@ export function importDataFromXML() {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(content, 'text/xml');
         if (xmlDoc.querySelector('parsererror')) {
-          showAlertModal('XMLの解析に失敗しました。正しいバックアップファイルか確認してください。');
+          showAlertModal(
+            'XMLの解析に失敗しました。正しいバックアップファイルか確認してください。'
+          );
           return;
         }
         const entries = xmlDoc.getElementsByTagName('Entry');
@@ -1142,7 +1143,8 @@ export function openEnemyDeckPreview(level) {
   if (!deckIds || deckIds.length === 0) {
     if (window.showAlertModalHook)
       window.showAlertModalHook('この難易度のデッキデータが空です。');
-    return;  }
+    return;
+  }
 
   const titleText = `${GameState.enemyConfig.name} [${level === 1 ? '初級' : level === 2 ? '中級' : '上級'}]`;
   if (window.showEnemyDeckModal) {
@@ -1166,8 +1168,6 @@ export function closeEnemyDeckModal() {
     playSound(SOUNDS.seClick);
   }
 }
-
-
 
 // --- Online Routing ---
 export function showOnlineMenu() {

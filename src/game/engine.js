@@ -502,8 +502,7 @@ export function applyActiveSkillLogic(
 
         if (
           b[targetLane] &&
-          (hasSkill(stolenCard, 'equip') ||
-            hasSkill(b[targetLane], 'arm_self'))
+          (hasSkill(stolenCard, 'equip') || hasSkill(b[targetLane], 'arm_self'))
         ) {
           const targetCard = b[targetLane];
           targetCard.basePower =
@@ -580,7 +579,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -600,7 +600,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -644,7 +645,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -665,7 +667,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -698,7 +701,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
         ? hand.filter(
-            (card) => card && (card.id === 'token_void' || card.baseId === 'token_void')
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
           ).length
         : 0;
       if (voidCount > 0) {
@@ -2075,8 +2079,7 @@ function tryEquipToken(board, lane, newToken, owner, events) {
       !hasSkill(boardCard, 'reflect') &&
       !hasSkill(newToken, 'reflect')
     ) {
-      boardCard.power =
-        (boardCard.power || 0) + (newToken.currentPower || 0);
+      boardCard.power = (boardCard.power || 0) + (newToken.currentPower || 0);
       boardCard.basePower =
         (boardCard.basePower || 0) + (newToken.currentPower || 0);
       boardCard.currentPower =
@@ -2133,11 +2136,21 @@ export function applyLeaderSkillLogic(
     const myCount = Math.min(3, myHand.length);
     if (tokenLanes && Array.isArray(tokenLanes.my)) {
       myDiscardIndices = [...tokenLanes.my];
-    } else if (tokenLanes && Array.isArray(tokenLanes) && tokenLanes.length > 0) {
+    } else if (
+      tokenLanes &&
+      Array.isArray(tokenLanes) &&
+      tokenLanes.length > 0
+    ) {
       myDiscardIndices = [...tokenLanes];
     } else {
-      const sorted = myHand.map((c, i) => ({ c, i })).sort((a, b) => (a.c.currentPower ?? a.c.power ?? 0) - (b.c.currentPower ?? b.c.power ?? 0));
-      myDiscardIndices = sorted.slice(0, myCount).map(x => x.i);
+      const sorted = myHand
+        .map((c, i) => ({ c, i }))
+        .sort(
+          (a, b) =>
+            (a.c.currentPower ?? a.c.power ?? 0) -
+            (b.c.currentPower ?? b.c.power ?? 0)
+        );
+      myDiscardIndices = sorted.slice(0, myCount).map((x) => x.i);
     }
     myDiscardIndices.sort((a, b) => b - a);
     let myDiscarded = 0;
@@ -2161,8 +2174,14 @@ export function applyLeaderSkillLogic(
     if (tokenLanes && Array.isArray(tokenLanes.opp)) {
       oppDiscardIndices = [...tokenLanes.opp];
     } else {
-      const sorted = oppHand.map((c, i) => ({ c, i })).sort((a, b) => (a.c.currentPower ?? a.c.power ?? 0) - (b.c.currentPower ?? b.c.power ?? 0));
-      oppDiscardIndices = sorted.slice(0, oppCount).map(x => x.i);
+      const sorted = oppHand
+        .map((c, i) => ({ c, i }))
+        .sort(
+          (a, b) =>
+            (a.c.currentPower ?? a.c.power ?? 0) -
+            (b.c.currentPower ?? b.c.power ?? 0)
+        );
+      oppDiscardIndices = sorted.slice(0, oppCount).map((x) => x.i);
     }
     oppDiscardIndices.sort((a, b) => b - a);
     let oppDiscarded = 0;
@@ -2210,7 +2229,9 @@ export function applyLeaderSkillLogic(
     events.push({ type: 'leader_skill', skill: action, side: owner });
 
     let targetLane = -1;
-    const mySealedLanes = isBlue ? state.playerSealedLanes : state.enemySealedLanes;
+    const mySealedLanes = isBlue
+      ? state.playerSealedLanes
+      : state.enemySealedLanes;
     if (tokenLanes && Array.isArray(tokenLanes) && tokenLanes.length > 0) {
       targetLane = tokenLanes[0];
     } else if (tokenLanes !== null && typeof tokenLanes === 'number') {
@@ -2222,37 +2243,61 @@ export function applyLeaderSkillLogic(
           validLanes.push(i);
         }
       }
-      validLanes.sort((a, b) => (eBoard[b].currentPower ?? eBoard[b].power ?? 0) - (eBoard[a].currentPower ?? eBoard[a].power ?? 0));
+      validLanes.sort(
+        (a, b) =>
+          (eBoard[b].currentPower ?? eBoard[b].power ?? 0) -
+          (eBoard[a].currentPower ?? eBoard[a].power ?? 0)
+      );
       if (validLanes.length > 0) {
         targetLane = validLanes[0];
       }
     }
 
-    if (targetLane !== -1 && eBoard[targetLane] !== null && (!mySealedLanes || mySealedLanes[targetLane] === 0)) {
+    if (
+      targetLane !== -1 &&
+      eBoard[targetLane] !== null &&
+      (!mySealedLanes || mySealedLanes[targetLane] === 0)
+    ) {
       const selectedCard = eBoard[targetLane];
       eBoard[targetLane] = null;
 
-      selectedCard.puppetOriginalOwner = selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
+      selectedCard.puppetOriginalOwner =
+        selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
       if (selectedCard.equippedCards && selectedCard.equippedCards.length > 0) {
         selectedCard.equippedCards.forEach((eqCard) => {
-          eqCard.puppetOriginalOwner = eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
+          eqCard.puppetOriginalOwner =
+            eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
         });
       }
 
-      if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
+      if (
+        board[targetLane] &&
+        (hasSkill(selectedCard, 'equip') ||
+          hasSkill(board[targetLane], 'arm_self'))
+      ) {
         const targetCard = board[targetLane];
-        targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
-        targetCard.currentPower = (targetCard.currentPower || 0) + (selectedCard.power || 0);
+        targetCard.basePower =
+          (targetCard.basePower || 0) + (selectedCard.power || 0);
+        targetCard.currentPower =
+          (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
         if (!targetCard.skills) {
-          targetCard.skills = targetCard.skill && targetCard.skill !== 'none'
-            ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-            : [];
+          targetCard.skills =
+            targetCard.skill && targetCard.skill !== 'none'
+              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+              : [];
           targetCard.skill = 'none';
         }
         const equipSkills = [];
-        if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
-          equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+        if (
+          selectedCard.skill &&
+          selectedCard.skill !== 'none' &&
+          selectedCard.skill !== 'equip'
+        ) {
+          equipSkills.push({
+            id: selectedCard.skill,
+            value: selectedCard.skillValue,
+          });
         }
         if (selectedCard.skills) {
           selectedCard.skills.forEach((s) => {
@@ -4396,9 +4441,10 @@ export function applyPassiveSkillLogic(
       !hasSkill(c, 'defender') &&
       !teleportMovedIds.has(c.uid || c.id)
     ) {
-      const sealedLanes = side === 'blue'
-        ? state.playerSealedLanes || [0, 0, 0]
-        : state.enemySealedLanes || [0, 0, 0];
+      const sealedLanes =
+        side === 'blue'
+          ? state.playerSealedLanes || [0, 0, 0]
+          : state.enemySealedLanes || [0, 0, 0];
       const emptyLanes = [];
       for (let j = 0; j < 3; j++) {
         if (b[j] === null && sealedLanes[j] === 0) {

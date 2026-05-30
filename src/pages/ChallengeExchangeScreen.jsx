@@ -19,7 +19,8 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function ChallengeExchangeScreen() {
   const [challengePoints, setChallengePoints] = useState(() => ({
     current:
-      parseInt(localStorage.getItem('mini_card_battle_challenge_points'), 10) || 0,
+      parseInt(localStorage.getItem('mini_card_battle_challenge_points'), 10) ||
+      0,
     total:
       parseInt(
         localStorage.getItem('mini_card_battle_challenge_total_points'),
@@ -42,7 +43,8 @@ export default function ChallengeExchangeScreen() {
   useEffect(() => {
     // API同期のために現在のポイントを取得
     const currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_challenge_points'), 10) || 0;
+      parseInt(localStorage.getItem('mini_card_battle_challenge_points'), 10) ||
+      0;
     const totalPts =
       parseInt(
         localStorage.getItem('mini_card_battle_challenge_total_points'),
@@ -134,7 +136,9 @@ export default function ChallengeExchangeScreen() {
     }
 
     if (isAlreadyUnlocked) {
-      showAlertModal('既に最大数所持しているか、アンロック済みのアイテムです。');
+      showAlertModal(
+        '既に最大数所持しているか、アンロック済みのアイテムです。'
+      );
       return;
     }
 

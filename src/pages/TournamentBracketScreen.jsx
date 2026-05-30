@@ -7,10 +7,7 @@ import {
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
-import {
-  playSound,
-  switchScreen,
-} from '../utils/gameUtils.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -93,7 +90,11 @@ export default function TournamentBracketScreen() {
         );
 
         // サーバーにポイントを同期 (DRY原則を適用し、共通のsavePointsToServerを使用)
-        savePointsToServer('update_tournament_points.php', currentPts, totalPts);
+        savePointsToServer(
+          'update_tournament_points.php',
+          currentPts,
+          totalPts
+        );
       }
 
       showAlertModal?.(

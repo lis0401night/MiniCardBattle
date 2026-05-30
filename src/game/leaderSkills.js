@@ -620,10 +620,7 @@ export async function executeLeaderSkillAction(
       // シミュレーション中に墓地構成が変わりインデックスがずれても、UIDで正しいカードを特定する
       if (forcedTargetUid) {
         selectedCard = discard.find(
-          (c) =>
-            c &&
-            !c.isToken &&
-            c.uid === forcedTargetUid
+          (c) => c && !c.isToken && c.uid === forcedTargetUid
         );
       }
       // フォールバック: インデックス指定
@@ -878,7 +875,12 @@ export async function executeLeaderSkillAction(
     let myDiscarded = 0;
     const myCount = Math.min(3, h.length);
     if (myCount > 0) {
-      const selectedIndices = await waitPlayerHandSelection(myCount, owner, true, `手札を${myCount}枚選択して捨ててください`);
+      const selectedIndices = await waitPlayerHandSelection(
+        myCount,
+        owner,
+        true,
+        `手札を${myCount}枚選択して捨ててください`
+      );
       if (selectedIndices && selectedIndices.length > 0) {
         selectedIndices.sort((a, b) => b - a);
         for (let i of selectedIndices) {
@@ -893,7 +895,12 @@ export async function executeLeaderSkillAction(
     let opDiscarded = 0;
     const opCount = Math.min(3, opH.length);
     if (opCount > 0) {
-      const selectedIndices = await waitPlayerHandSelection(opCount, opId, true, `手札を${opCount}枚選択して捨ててください`);
+      const selectedIndices = await waitPlayerHandSelection(
+        opCount,
+        opId,
+        true,
+        `手札を${opCount}枚選択して捨ててください`
+      );
       if (selectedIndices && selectedIndices.length > 0) {
         selectedIndices.sort((a, b) => b - a);
         for (let i of selectedIndices) {
@@ -947,7 +954,9 @@ export async function executeLeaderSkillAction(
     const oppBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
     const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
     const oppOwner = isBlue ? 'red' : 'blue';
-    const mySealedLanes = isBlue ? GameState.playerSealedLanes : GameState.enemySealedLanes;
+    const mySealedLanes = isBlue
+      ? GameState.playerSealedLanes
+      : GameState.enemySealedLanes;
 
     const validOppLanes = [];
     for (let j = 0; j < 3; j++) {
@@ -962,10 +971,18 @@ export async function executeLeaderSkillAction(
       if (owner === 'red') {
         if (tokenLanes && tokenLanes.length > 0) {
           selectedOppLane = tokenLanes[0];
-        } else if (GameState.aiDecision && GameState.aiDecision.tokenLanes && GameState.aiDecision.tokenLanes.length > 0) {
+        } else if (
+          GameState.aiDecision &&
+          GameState.aiDecision.tokenLanes &&
+          GameState.aiDecision.tokenLanes.length > 0
+        ) {
           selectedOppLane = GameState.aiDecision.tokenLanes.shift();
         } else {
-          const sorted = [...validOppLanes].sort((a, b) => (oppBoard[b].currentPower ?? oppBoard[b].power ?? 0) - (oppBoard[a].currentPower ?? oppBoard[a].power ?? 0));
+          const sorted = [...validOppLanes].sort(
+            (a, b) =>
+              (oppBoard[b].currentPower ?? oppBoard[b].power ?? 0) -
+              (oppBoard[a].currentPower ?? oppBoard[a].power ?? 0)
+          );
           selectedOppLane = sorted[0];
         }
       } else {
@@ -985,12 +1002,14 @@ export async function executeLeaderSkillAction(
             true,
             '相手のカードを1枚選んでください',
             false
-          ).then((lanes) => {
-            if (lanes && lanes.length > 0) resolve(lanes[0]);
-            else resolve(-1);
-          }).finally(() => {
-            window.handleEnemyLaneClick = originalClick;
-          });
+          )
+            .then((lanes) => {
+              if (lanes && lanes.length > 0) resolve(lanes[0]);
+              else resolve(-1);
+            })
+            .finally(() => {
+              window.handleEnemyLaneClick = originalClick;
+            });
         });
       }
 
@@ -1001,29 +1020,48 @@ export async function executeLeaderSkillAction(
         oppBoard[selectedOppLane] = null;
         updateDeckDisplay(oppOwner);
 
-        selectedCard.puppetOriginalOwner = selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
-        if (selectedCard.equippedCards && selectedCard.equippedCards.length > 0) {
+        selectedCard.puppetOriginalOwner =
+          selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
+        if (
+          selectedCard.equippedCards &&
+          selectedCard.equippedCards.length > 0
+        ) {
           selectedCard.equippedCards.forEach((eqCard) => {
-            eqCard.puppetOriginalOwner = eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
+            eqCard.puppetOriginalOwner =
+              eqCard.puppetOriginalOwner || eqCard.owner || oppOwner;
           });
         }
 
         events.push({ type: 'leader_skill', skill: action, side: owner });
 
-        if (board[targetLane] && (hasSkill(selectedCard, 'equip') || hasSkill(board[targetLane], 'arm_self'))) {
+        if (
+          board[targetLane] &&
+          (hasSkill(selectedCard, 'equip') ||
+            hasSkill(board[targetLane], 'arm_self'))
+        ) {
           const targetCard = board[targetLane];
-          targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
-          targetCard.basePower = (targetCard.basePower || 0) + (selectedCard.power || 0);
+          targetCard.power =
+            (targetCard.power || 0) + (selectedCard.power || 0);
+          targetCard.basePower =
+            (targetCard.basePower || 0) + (selectedCard.power || 0);
 
           if (!targetCard.skills) {
-            targetCard.skills = targetCard.skill && targetCard.skill !== 'none'
-              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-              : [];
+            targetCard.skills =
+              targetCard.skill && targetCard.skill !== 'none'
+                ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+                : [];
             targetCard.skill = 'none';
           }
           const equipSkills = [];
-          if (selectedCard.skill && selectedCard.skill !== 'none' && selectedCard.skill !== 'equip') {
-            equipSkills.push({ id: selectedCard.skill, value: selectedCard.skillValue });
+          if (
+            selectedCard.skill &&
+            selectedCard.skill !== 'none' &&
+            selectedCard.skill !== 'equip'
+          ) {
+            equipSkills.push({
+              id: selectedCard.skill,
+              value: selectedCard.skillValue,
+            });
           }
           if (selectedCard.skills) {
             selectedCard.skills.forEach((s) => {

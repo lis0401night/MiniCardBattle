@@ -328,7 +328,8 @@ export default function BattleScreen() {
       if (GameState.isProcessing) return;
       if (
         GameState.battlePhase !== 'MULLIGAN' &&
-        (GameState.currentTurn !== 'player' || GameState.battlePhase === 'COMBAT')
+        (GameState.currentTurn !== 'player' ||
+          GameState.battlePhase === 'COMBAT')
       ) {
         return;
       }

@@ -2411,8 +2411,7 @@ export async function resolveActiveSkillEffect(
           ) {
             const targetCard = board[targetLane];
 
-            targetCard.power =
-              (targetCard.power || 0) + (topCard.power || 0);
+            targetCard.power = (targetCard.power || 0) + (topCard.power || 0);
             targetCard.basePower =
               (targetCard.basePower || 0) + (topCard.power || 0);
             targetCard.currentPower =
@@ -2689,9 +2688,7 @@ export async function resolveActiveSkillEffect(
         } else {
           const existingCard = board[targetLane];
           if (existingCard) {
-            if (
-              !(await discardCard(o, board[targetLane], targetLane, false))
-            ) {
+            if (!(await discardCard(o, board[targetLane], targetLane, false))) {
               board[targetLane] = null;
             }
           }
@@ -2970,7 +2967,6 @@ export async function triggerStartTurnPassive(owner, lane) {
       });
       triggered = true;
     }
-
 
     if (sk.id === 'awake') {
       const val = sk.value || 1;

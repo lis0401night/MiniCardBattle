@@ -75,7 +75,7 @@ export async function executeEnemyAI() {
           'condemnation', // エリシア（通常・高難易度）：ダメージ+回復
           'abyss_ritual',
           'otherworld_gate', // ナイア（通常・高難易度）：手札入替系
-          'void_purge',      // ゼノン：お互いの手札を捨てて虚空を加える
+          'void_purge', // ゼノン：お互いの手札を捨てて虚空を加える
           'time_stop',
           'world_reconstruct', // クロエ（通常・高難易度）：追加ターン系
         ].includes(skill.action)

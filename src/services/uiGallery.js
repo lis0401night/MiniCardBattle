@@ -184,7 +184,9 @@ export function debugUnlockCards() {
 
     saveDeck();
     playSound(SOUNDS.seSkill);
-    showAlertModal(`デバッグモード：全カードを${MAX_CARD_COPIES}枚所持状態にしました！`);
+    showAlertModal(
+      `デバッグモード：全カードを${MAX_CARD_COPIES}枚所持状態にしました！`
+    );
   }
 }
 

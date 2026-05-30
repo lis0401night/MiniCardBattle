@@ -1,5 +1,8 @@
 import { GameState } from '../../state/gameState.js';
-import { getSkinImage, BOSS_CHARACTER_IDS } from '../../utils/constants/characters.js';
+import {
+  getSkinImage,
+  BOSS_CHARACTER_IDS,
+} from '../../utils/constants/characters.js';
 
 // 墓地確認モーダルで全カードを表示するための最大値
 const MAX_DISCARD_PREVIEW_COUNT = 999;
@@ -65,7 +68,9 @@ export default function EnemyArea({
             <div
               className="hp-bar-fill red"
               id="enemy-hp-fill"
-              style={{ width: `${enemyMaxHP > 0 ? Math.max(0, enemyHP / enemyMaxHP) * 100 : 0}%` }}
+              style={{
+                width: `${enemyMaxHP > 0 ? Math.max(0, enemyHP / enemyMaxHP) * 100 : 0}%`,
+              }}
             ></div>
             <div className="hp-text" id="enemy-hp-text">
               {enemyHP} / {enemyMaxHP}

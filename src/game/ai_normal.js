@@ -106,9 +106,7 @@ export function processActionSequence(
       playerDeck: GameState.playerDeck
         ? GameState.playerDeck.map(cloneCard)
         : [],
-      enemyDeck: GameState.enemyDeck
-        ? GameState.enemyDeck.map(cloneCard)
-        : [],
+      enemyDeck: GameState.enemyDeck ? GameState.enemyDeck.map(cloneCard) : [],
       extraTurnCount: GameState.extraTurnCount || 0,
       attackSkipCount: GameState.attackSkipCount || 0,
       combatDamageTaken: 0,
@@ -1692,7 +1690,9 @@ export function getBestSimulatedMove() {
     } else if (action === 'void_purge') {
       tokenLanePatterns = [null];
     } else if (action === 'viola_domination') {
-      const avail = [0, 1, 2].filter((l) => opBoard[l] !== null && mySealedLanes[l] === 0);
+      const avail = [0, 1, 2].filter(
+        (l) => opBoard[l] !== null && mySealedLanes[l] === 0
+      );
       tokenLanePatterns = avail.length > 0 ? avail.map((l) => [l]) : [null];
     }
 
@@ -2275,9 +2275,7 @@ export function evaluateAdhocTokenLanes(
     playerHand: GameState.playerHand ? GameState.playerHand.map(cloneCard) : [],
     enemyHand: GameState.enemyHand ? GameState.enemyHand.map(cloneCard) : [],
     playerDeck: GameState.playerDeck ? GameState.playerDeck.map(cloneCard) : [],
-    enemyDeck: GameState.enemyDeck
-      ? GameState.enemyDeck.map(cloneCard)
-      : [],
+    enemyDeck: GameState.enemyDeck ? GameState.enemyDeck.map(cloneCard) : [],
     extraTurnCount: GameState.extraTurnCount || 0,
     attackSkipCount: GameState.attackSkipCount || 0,
     combatDamageTaken: 0,

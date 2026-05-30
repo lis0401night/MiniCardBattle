@@ -12,7 +12,7 @@ import {
   STORY_DIALOGUES,
   STORY_NARRATIONS,
   PLAYER_TALKS,
-  getFallbackStoryDialogue
+  getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 import {
   createDamagePopup,
@@ -195,8 +195,12 @@ function generateSyncState() {
     enemyHP: GameState.enemyHP,
     playerSP: GameState.playerSP,
     enemySP: GameState.enemySP,
-    playerSealedLanes: JSON.parse(JSON.stringify(GameState.playerSealedLanes || [0, 0, 0])),
-    enemySealedLanes: JSON.parse(JSON.stringify(GameState.enemySealedLanes || [0, 0, 0])),
+    playerSealedLanes: JSON.parse(
+      JSON.stringify(GameState.playerSealedLanes || [0, 0, 0])
+    ),
+    enemySealedLanes: JSON.parse(
+      JSON.stringify(GameState.enemySealedLanes || [0, 0, 0])
+    ),
     extraTurnCount: GameState.extraTurnCount || 0,
     attackSkipCount: GameState.attackSkipCount || 0,
     playerBoard: JSON.parse(JSON.stringify(GameState.playerBoard)),
@@ -423,8 +427,11 @@ export function initBattleState() {
     GameState.playerMaxHP = MAX_HP;
     GameState.enemyMaxHP =
       GameState.enemyConfig.hp ||
-      (GameState.enemyConfig.id === 'satan' ? 40 :
-       ['void', 'succubus'].includes(GameState.enemyConfig.id) ? 30 : MAX_HP);
+      (GameState.enemyConfig.id === 'satan'
+        ? 40
+        : ['void', 'succubus'].includes(GameState.enemyConfig.id)
+          ? 30
+          : MAX_HP);
     if (GameState.gameMode === 'campaign') {
       GameState.enemyMaxHP = 10;
     }
@@ -458,7 +465,11 @@ export function initBattleState() {
         };
         GameState.playerConfig.leaderSkill.cost = 4;
         if (GameState.playerConfig.leaderSkill.desc) {
-          GameState.playerConfig.leaderSkill.desc = GameState.playerConfig.leaderSkill.desc.replace(/\(SP:\d+\)/, '(SP:4)');
+          GameState.playerConfig.leaderSkill.desc =
+            GameState.playerConfig.leaderSkill.desc.replace(
+              /\(SP:\d+\)/,
+              '(SP:4)'
+            );
         }
       }
       if (
@@ -472,7 +483,11 @@ export function initBattleState() {
         };
         GameState.enemyConfig.leaderSkill.cost = 4;
         if (GameState.enemyConfig.leaderSkill.desc) {
-          GameState.enemyConfig.leaderSkill.desc = GameState.enemyConfig.leaderSkill.desc.replace(/\(SP:\d+\)/, '(SP:4)');
+          GameState.enemyConfig.leaderSkill.desc =
+            GameState.enemyConfig.leaderSkill.desc.replace(
+              /\(SP:\d+\)/,
+              '(SP:4)'
+            );
         }
       }
 
@@ -1054,7 +1069,10 @@ export async function waitPlayerEnemyLaneSelection(
     : targetBoard
         .map((c, i) => {
           if (c === null) return -1;
-          if (maxPower !== null && (c.currentPower ?? c.power ?? 0) > maxPower) {
+          if (
+            maxPower !== null &&
+            (c.currentPower ?? c.power ?? 0) > maxPower
+          ) {
             return -1;
           }
           return i;
@@ -2180,10 +2198,12 @@ export function drawCard(owner) {
 }
 
 export async function handleMoveSkills(owner) {
-  const currentBoard = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-  const curSealed = owner === 'blue'
-    ? GameState.playerSealedLanes || [0, 0, 0]
-    : GameState.enemySealedLanes || [0, 0, 0];
+  const currentBoard =
+    owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const curSealed =
+    owner === 'blue'
+      ? GameState.playerSealedLanes || [0, 0, 0]
+      : GameState.enemySealedLanes || [0, 0, 0];
 
   // 1. 神出 (teleport) スキルの自動解決
   const teleportMovedIds = new Set();
@@ -2538,7 +2558,8 @@ export async function playCard(o, hI, l) {
   if (sealedLanes[l] > 0) return;
 
   // 1ターン目中央制限
-  if (GameState.turnCount === 1 && GameState.firstPlayer === o && l !== 1) return;
+  if (GameState.turnCount === 1 && GameState.firstPlayer === o && l !== 1)
+    return;
 
   // 伝説のカード制限（中央のみ）
   if (hasSkill(playingCard, 'legendary') && l !== 1) return;
@@ -3279,9 +3300,10 @@ export function endBattle() {
     } else if (GameState.gameMode === 'tournament') {
       playSound(AUDIO_INSTANCES.bgmTournament1);
     } else if (GameState.gameMode === 'story') {
-      const targetBgm = GameState.battleCount >= 4
-        ? AUDIO_INSTANCES.bgmStory02
-        : AUDIO_INSTANCES.bgmStory01;
+      const targetBgm =
+        GameState.battleCount >= 4
+          ? AUDIO_INSTANCES.bgmStory02
+          : AUDIO_INSTANCES.bgmStory01;
       playSound(targetBgm);
     } else {
       playSound(AUDIO_INSTANCES.bgmTitle);
@@ -3296,7 +3318,10 @@ export function endBattle() {
     }
 
     // 勝敗に応じたダイアログのセット (全モード共通)
-    if (GameState.gameMode === 'story' && GameState.lastBattleResult === 'win') {
+    if (
+      GameState.gameMode === 'story' &&
+      GameState.lastBattleResult === 'win'
+    ) {
       const playerId = GameState.playerConfig.id;
       const isShadow = GameState.enemyConfig.isShadow;
       const enemyId = isShadow ? 'shadow' : GameState.enemyConfig.id;
@@ -3310,14 +3335,19 @@ export function endBattle() {
           ? STORY_DIALOGUES[playerId][enemyId].late
           : STORY_DIALOGUES[playerId][enemyId].early;
         // ディープコピーして副作用を防止
-        postDialogs = dialogueSource.post.map(line => ({ ...line }));
+        postDialogs = dialogueSource.post.map((line) => ({ ...line }));
       } else {
-        postDialogs = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, false, isLate);
+        postDialogs = getFallbackStoryDialogue(
+          playerId,
+          isShadow ? playerId : enemyId,
+          false,
+          isLate
+        );
       }
 
       // 影（自分自身）の場合は、敵（影）の台詞を「・・・・」に差し替え
       if (isShadow) {
-        postDialogs = postDialogs.map(line => {
+        postDialogs = postDialogs.map((line) => {
           if (line.speaker === 'enemy') {
             return { speaker: 'enemy', text: '・・・・' };
           }
@@ -3326,50 +3356,80 @@ export function endBattle() {
       }
 
       // 同行プレイヤーへの語り掛けと次のナレーション
-      const playerTalk = PLAYER_TALKS[playerId]?.[battleCount] || ['周囲の安全を確保しました。', '前進を継続しましょう。'];
-      const postNarrationRaw = STORY_NARRATIONS[battleCount]?.post || ['強敵を打ち倒した一行は、さらなる深部を目指し歩みを進めるのだった。'];
-      const postNarrations = Array.isArray(postNarrationRaw) ? postNarrationRaw : [postNarrationRaw];
+      const playerTalk = PLAYER_TALKS[playerId]?.[battleCount] || [
+        '周囲の安全を確保しました。',
+        '前進を継続しましょう。',
+      ];
+      const postNarrationRaw = STORY_NARRATIONS[battleCount]?.post || [
+        '強敵を打ち倒した一行は、さらなる深部を目指し歩みを進めるのだった。',
+      ];
+      const postNarrations = Array.isArray(postNarrationRaw)
+        ? postNarrationRaw
+        : [postNarrationRaw];
 
       let queue = [];
       if (battleCount === 4) {
         // 4戦目(影)の場合：撃破後に影が魔王サタンの復活警告をおぞましく発し、瘴気となって消え去る演出を追加
         let progressDeclaration = 'これより魔王城へ進軍する！';
         if (playerId === 'android') {
-          progressDeclaration = '対象（マスター）、魔王サタンの本格的な復活を確認。世界の崩壊を防ぐため、これより本拠地『魔王城』への最短進撃ルートを策定し、進軍を開始します。……私たちが、必ず勝利させます。';
+          progressDeclaration =
+            '対象（マスター）、魔王サタンの本格的な復活を確認。世界の崩壊を防ぐため、これより本拠地『魔王城』への最短進撃ルートを策定し、進軍を開始します。……私たちが、必ず勝利させます。';
         } else if (playerId === 'dragon') {
-          progressDeclaration = 'サタンの配下の化身ですって……！？ フン、上等じゃない！ だったらその大元の魔王サタンとやらも、私の大斧で叩き潰してあげるわ！ 行くわよ相棒、さっさと魔王城に乗り込んで、あいつに本物の竜の炎を見せてやりましょう！';
+          progressDeclaration =
+            'サタンの配下の化身ですって……！？ フン、上等じゃない！ だったらその大元の魔王サタンとやらも、私の大斧で叩き潰してあげるわ！ 行くわよ相棒、さっさと魔王城に乗り込んで、あいつに本物の竜の炎を見せてやりましょう！';
         } else if (playerId === 'knight') {
-          progressDeclaration = '魔王サタンめ、すでに本格的な復活を遂げ、魔王城で待ち受けているというのか……！ だが、我が聖剣がその野望を必ずや断ち切ってみせる！ 行こう、相棒。世界のすべてを絶望と虚無の闇から救うため、今こそ魔王城へ進軍するのだ！';
+          progressDeclaration =
+            '魔王サタンめ、すでに本格的な復活を遂げ、魔王城で待ち受けているというのか……！ だが、我が聖剣がその野望を必ずや断ち切ってみせる！ 行こう、相棒。世界のすべてを絶望と虚無の闇から救うため、今こそ魔王城へ進軍するのだ！';
         } else if (playerId === 'cthulhu') {
-          progressDeclaration = 'おや……あんなおぞましい影が、魔王の残滓だったのですね。ふふっ、迷い子さんを脅かすような悪い魔王様は、私が深淵の闇で包んで差し上げましょう。さあ、魔王城へとまいりましょう？ ずっと私の隣で、その戦いを見せてくださいね。';
+          progressDeclaration =
+            'おや……あんなおぞましい影が、魔王の残滓だったのですね。ふふっ、迷い子さんを脅かすような悪い魔王様は、私が深淵の闇で包んで差し上げましょう。さあ、魔王城へとまいりましょう？ ずっと私の隣で、その戦いを見せてくださいね。';
         } else if (playerId === 'elf') {
-          progressDeclaration = '魔王サタンの本格的な復活……。世界を絶望に沈めさせたりはしないわ。この銀の弓と星墜ちの矢で、必ず邪悪な闇を射抜いてみせる。行こう、あなた。これより魔王城へ向けて、進軍を開始しましょう。';
+          progressDeclaration =
+            '魔王サタンの本格的な復活……。世界を絶望に沈めさせたりはしないわ。この銀の弓と星墜ちの矢で、必ず邪悪な闇を射抜いてみせる。行こう、あなた。これより魔王城へ向けて、進軍を開始しましょう。';
         } else if (playerId === 'cleric') {
-          progressDeclaration = 'アハハハ！ 魔王サタンが本格的に復活したというの！？ 傑作ですわ！ その邪悪ごと、私の神罰のメイスで跡形もなく粉砕して差し上げます！ さあ、這いつくばってついてきなさい、迷える羊。これより神罰を下しに、魔王城へ突撃しますわよ！';
+          progressDeclaration =
+            'アハハハ！ 魔王サタンが本格的に復活したというの！？ 傑作ですわ！ その邪悪ごと、私の神罰のメイスで跡形もなく粉砕して差し上げます！ さあ、這いつくばってついてきなさい、迷える羊。これより神罰を下しに、魔王城へ突撃しますわよ！';
         } else if (playerId === 'devilhunter') {
-          progressDeclaration = '魔王サタンが本格的な復活ねぇ……。ま、相手が魔王だろうが何だろうが、依頼された仕事はきっちりこなすだけよ。ねえ、雇い主さん？ 覚悟を決めなさい。奴の本拠地である魔王城へ進軍して、あの不快な悪魔どもを根こそぎ狩り尽くしてやるわ！';
+          progressDeclaration =
+            '魔王サタンが本格的な復活ねぇ……。ま、相手が魔王だろうが何だろうが、依頼された仕事はきっちりこなすだけよ。ねえ、雇い主さん？ 覚悟を決めなさい。奴の本拠地である魔王城へ進軍して、あの不快な悪魔どもを根こそぎ狩り尽くしてやるわ！';
         } else if (playerId === 'witch') {
-          progressDeclaration = '魔王サタンの本格的な復活ですか……。世界のすべてが絶望の闇に沈むなんて、さすがに寝覚めが悪いですね。はぁ, 面倒ですがやるしかないですね。行きますよ、先輩。魔王城に乗り込んで、サクッとその魔王とやらを片付けてしまいましょう。';
+          progressDeclaration =
+            '魔王サタンの本格的な復活ですか……。世界のすべてが絶望の闇に沈むなんて、さすがに寝覚めが悪いですね。はぁ, 面倒ですがやるしかないですね。行きますよ、先輩。魔王城に乗り込んで、サクッとその魔王とやらを片付けてしまいましょう。';
         } else if (playerId === 'oni') {
-          progressDeclaration = '魔王サタン様の本格的な復活……世界の調和を脅かす最大の災厄ですね。ですが、私の陰陽の符と式神の力があれば、決して後れは取りません。マスター、参りましょう。これより邪悪の根源たる魔王城へ進軍し、急急如律令をもって闇を祓います！';
+          progressDeclaration =
+            '魔王サタン様の本格的な復活……世界の調和を脅かす最大の災厄ですね。ですが、私の陰陽の符と式神の力があれば、決して後れは取りません。マスター、参りましょう。これより邪悪の根源たる魔王城へ進軍し、急急如律令をもって闇を祓います！';
         } else if (playerId === 'priest') {
-          progressDeclaration = 'ふん、魔王サタンが本格的な復活を遂げ、魔王城で待ち受けているというのか。面白い、我が古代の呪縛と、この鋭き儀式用ナイフの錆にしてくれよう。行くぞ、侵入者。邪悪なる魔王の居城へ進軍し、世界のすべてを脅かすその闇を、今こそ完全に裁断してやる！';
+          progressDeclaration =
+            'ふん、魔王サタンが本格的な復活を遂げ、魔王城で待ち受けているというのか。面白い、我が古代の呪縛と、この鋭き儀式用ナイフの錆にしてくれよう。行くぞ、侵入者。邪悪なる魔王の居城へ進軍し、世界のすべてを脅かすその闇を、今こそ完全に裁断してやる！';
         }
 
         queue = [
-          { speaker: 'enemy', text: 'グ、アアッ……！ バ、バカな……我が実体たるお前に、敗れるなどと……。' },
-          { speaker: 'player', text: 'これで終わりだ、私の影。元の場所へ還るがいい。' },
-          { speaker: 'enemy', text: 'フ、フフフ……アハハハハ！ 喜ぶのは早いぞ……。我は魔王サタン様の宿る魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！' },
-          { speaker: 'enemy', text: 'サタン様はすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！ お前たちに、抗う術などない……！' },
-          { speaker: 'narrator', text: 'おぞましい哄笑が反転特異点に反響する。影の身体はどす黒い霧のように崩れ去り、世界そのものを激しく揺らす漆黒の瘴気へと姿を変えて、大気へと溶けるように消散した。後に残されたのは、世界に迫る破滅の予感と、骨まで凍てつく絶対的な沈黙だけだった。' },
-          { speaker: 'player', text: progressDeclaration }
+          {
+            speaker: 'enemy',
+            text: 'グ、アアッ……！ バ、バカな……我が実体たるお前に、敗れるなどと……。',
+          },
+          {
+            speaker: 'player',
+            text: 'これで終わりだ、私の影。元の場所へ還るがいい。',
+          },
+          {
+            speaker: 'enemy',
+            text: 'フ、フフフ……アハハハハ！ 喜ぶのは早いぞ……。我は魔王サタン様の宿る魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！',
+          },
+          {
+            speaker: 'enemy',
+            text: 'サタン様はすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！ お前たちに、抗う術などない……！',
+          },
+          {
+            speaker: 'narrator',
+            text: 'おぞましい哄笑が反転特異点に反響する。影の身体はどす黒い霧のように崩れ去り、世界そのものを激しく揺らす漆黒の瘴気へと姿を変えて、大気へと溶けるように消散した。後に残されたのは、世界に迫る破滅の予感と、骨まで凍てつく絶対的な沈黙だけだった。',
+          },
+          { speaker: 'player', text: progressDeclaration },
         ];
 
         GameState.dialogueQueue = queue;
       } else {
-        queue = [
-          ...postDialogs
-        ];
+        queue = [...postDialogs];
 
         // 敗絶掛け合い（2人画面）の後に、中央表示切り替えのトランジション疑似ノードを挿入する
         queue.push({
@@ -3386,7 +3446,7 @@ export function endBattle() {
           queue.push({ speaker: 'player', text: playerTalk });
         }
 
-        postNarrations.forEach(text => {
+        postNarrations.forEach((text) => {
           queue.push({ speaker: 'narrator', text });
         });
 

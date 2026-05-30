@@ -33,19 +33,28 @@ export function savePointsToServer(endpoint, points, totalPoints) {
       .then((res) => {
         clearTimeout(timeoutId);
         if (!res.ok) {
-          console.error(`サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`);
+          console.error(
+            `サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`
+          );
           return false;
         } else {
-          console.log(`サーバーへのポイント同期（${endpoint}）に成功しました。`);
+          console.log(
+            `サーバーへのポイント同期（${endpoint}）に成功しました。`
+          );
           return true;
         }
       })
       .catch((err) => {
         clearTimeout(timeoutId);
         if (err.name === 'AbortError') {
-          console.error(`サーバーへのポイント同期（${endpoint}）がタイムアウトしました。`);
+          console.error(
+            `サーバーへのポイント同期（${endpoint}）がタイムアウトしました。`
+          );
         } else {
-          console.error(`サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`, err);
+          console.error(
+            `サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`,
+            err
+          );
         }
         return false;
       });
@@ -54,4 +63,3 @@ export function savePointsToServer(endpoint, points, totalPoints) {
     return Promise.resolve(false);
   }
 }
-

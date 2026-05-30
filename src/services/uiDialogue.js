@@ -18,7 +18,7 @@ import {
   STORY_DIALOGUES,
   STORY_NARRATIONS,
   STORY_ENDINGS,
-  getFallbackStoryDialogue
+  getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 
 // ==========================================
@@ -80,8 +80,12 @@ export function startNextBattleSequence() {
   const battleCount = GameState.battleCount;
 
   // 開始ナレーションの取得（配列または文字列に対応）
-  const preNarrationRaw = STORY_NARRATIONS[battleCount]?.pre || ['魔界の深部へと足を進める一行。行く手に新たなる影が立ち塞がった。'];
-  const preNarrations = Array.isArray(preNarrationRaw) ? preNarrationRaw : [preNarrationRaw];
+  const preNarrationRaw = STORY_NARRATIONS[battleCount]?.pre || [
+    '魔界の深部へと足を進める一行。行く手に新たなる影が立ち塞がった。',
+  ];
+  const preNarrations = Array.isArray(preNarrationRaw)
+    ? preNarrationRaw
+    : [preNarrationRaw];
 
   // 戦闘前会話（両者2回ずつの掛け合い、計4行）の取得
   let dialogLines = [];
@@ -92,17 +96,27 @@ export function startNextBattleSequence() {
       : STORY_DIALOGUES[playerId][enemyId].early;
     // ディープコピーして元の定義への副作用を防ぐ
     if (dialogueSource && Array.isArray(dialogueSource.pre)) {
-      dialogLines = dialogueSource.pre.map(line => ({ ...line }));
+      dialogLines = dialogueSource.pre.map((line) => ({ ...line }));
     } else {
-      dialogLines = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, true, isLate);
+      dialogLines = getFallbackStoryDialogue(
+        playerId,
+        isShadow ? playerId : enemyId,
+        true,
+        isLate
+      );
     }
   } else {
-    dialogLines = getFallbackStoryDialogue(playerId, isShadow ? playerId : enemyId, true, isLate);
+    dialogLines = getFallbackStoryDialogue(
+      playerId,
+      isShadow ? playerId : enemyId,
+      true,
+      isLate
+    );
   }
 
   // 影（自分自身）の場合は、敵（影）の台詞を「・・・・」に差し替え
   if (isShadow) {
-    dialogLines = dialogLines.map(line => {
+    dialogLines = dialogLines.map((line) => {
       if (line.speaker === 'enemy') {
         return { speaker: 'enemy', text: '・・・・' };
       }
@@ -112,8 +126,8 @@ export function startNextBattleSequence() {
 
   // dialogueQueue に一挙に連結セット
   GameState.dialogueQueue = [
-    ...preNarrations.map(text => ({ speaker: 'narrator', text })),
-    ...dialogLines
+    ...preNarrations.map((text) => ({ speaker: 'narrator', text })),
+    ...dialogLines,
   ];
 
   setupDialogueScreen();
@@ -156,10 +170,14 @@ export function setupDialogueScreen() {
   GameState.currentDialogueIndex = 0;
 
   // ストーリーモード専用BGMの再生と切り替え
-  if (GameState.gameMode === 'story' && GameState.appState !== 'ending_dialogue') {
-    const targetBgm = GameState.battleCount >= 4
-      ? AUDIO_INSTANCES.bgmStory02
-      : AUDIO_INSTANCES.bgmStory01;
+  if (
+    GameState.gameMode === 'story' &&
+    GameState.appState !== 'ending_dialogue'
+  ) {
+    const targetBgm =
+      GameState.battleCount >= 4
+        ? AUDIO_INSTANCES.bgmStory02
+        : AUDIO_INSTANCES.bgmStory01;
 
     if (currentBgmAudio !== targetBgm) {
       stopAllBGM();

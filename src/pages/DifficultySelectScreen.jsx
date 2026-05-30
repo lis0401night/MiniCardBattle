@@ -1,4 +1,3 @@
-
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import {
@@ -9,13 +8,14 @@ import {
 
 // 難易度レベル定数
 const DIFFICULTY = {
-  BEGINNER: 1,      // 初級
-  INTERMEDIATE: 2,  // 中級
-  ADVANCED: 3,      // 上級
+  BEGINNER: 1, // 初級
+  INTERMEDIATE: 2, // 中級
+  ADVANCED: 3, // 上級
 };
 
 export default function DifficultySelectScreen() {
-  const isFreeMode = typeof GameState !== 'undefined' && GameState.gameMode === 'free';
+  const isFreeMode =
+    typeof GameState !== 'undefined' && GameState.gameMode === 'free';
 
   // 高難易度イベントモードかどうかの判定
   const isHighDiffMode =
@@ -118,7 +118,9 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.INTERMEDIATE)}
+                  onClick={() =>
+                    openEnemyDeckPreview?.(DIFFICULTY.INTERMEDIATE)
+                  }
                   title="デッキ確認"
                 >
                   🔍

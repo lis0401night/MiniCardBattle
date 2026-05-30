@@ -897,11 +897,11 @@ function checkUniqueStoryAchievements() {
   const normalClears = Object.keys(
     achievementData.stats.storyClears || {}
   ).filter((k) => achievementData.stats.storyClears[k] > 0).length;
-  ACHIEVEMENT_MASTER.filter(
-    (a) => a.type === 'unique_story_clear'
-  ).forEach((ach) => {
-    updateAchievement(ach.id, normalClears, ach.targetValue);
-  });
+  ACHIEVEMENT_MASTER.filter((a) => a.type === 'unique_story_clear').forEach(
+    (ach) => {
+      updateAchievement(ach.id, normalClears, ach.targetValue);
+    }
+  );
 }
 
 // イベントクリア実績のチェック
@@ -969,9 +969,11 @@ export function checkTutorialAchievements() {
     console.error('Failed to parse tutorial progress for achievements:', e);
   }
 
-  ACHIEVEMENT_MASTER.filter((a) => a.type === 'tutorial_clear').forEach((ach) => {
-    updateAchievement(ach.id, clearedCount, ach.targetValue);
-  });
+  ACHIEVEMENT_MASTER.filter((a) => a.type === 'tutorial_clear').forEach(
+    (ach) => {
+      updateAchievement(ach.id, clearedCount, ach.targetValue);
+    }
+  );
 }
 
 // 個別実績の進捗更新処理（内部用）

@@ -2392,10 +2392,13 @@ export default function GlobalModals() {
                               if (e.pointerType === 'mouse' && e.button !== 0)
                                 return;
                               discardHasLongPressedRef.current = false;
-                              discardLongPressTimerRef.current = setTimeout(() => {
-                                discardHasLongPressedRef.current = true;
-                                setCardPreviewData({ card: cardItem });
-                              }, 600);
+                              discardLongPressTimerRef.current = setTimeout(
+                                () => {
+                                  discardHasLongPressedRef.current = true;
+                                  setCardPreviewData({ card: cardItem });
+                                },
+                                600
+                              );
                             }}
                             onPointerUp={() => {
                               if (discardLongPressTimerRef.current)

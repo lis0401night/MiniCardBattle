@@ -15,8 +15,8 @@ export default function EndingScreen() {
 
   const charId = GameState.playerConfig?.id || 'android';
   const romanticTalks = STORY_ROMANTIC_TALKS[charId] || [
-    "あなたと共に歩むこの未来を、私は心から信じています。",
-    "これからもずっと、私の隣にいてくださいね。"
+    'あなたと共に歩むこの未来を、私は心から信じています。',
+    'これからもずっと、私の隣にいてくださいね。',
   ];
 
   useEffect(() => {
@@ -158,7 +158,8 @@ export default function EndingScreen() {
           left: 0,
           width: '100%',
           height: '40%',
-          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%)',
+          background:
+            'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%)',
           pointerEvents: 'none',
           opacity: opacity,
           transition: 'opacity 2s',
@@ -187,7 +188,8 @@ export default function EndingScreen() {
             padding: '20px 30px',
             width: '100%',
             maxWidth: '800px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)',
+            boxShadow:
+              '0 10px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)',
             opacity: textOpacity * opacity,
             transition: 'opacity 0.5s ease-in-out',
             backdropFilter: 'blur(8px)',
@@ -206,7 +208,7 @@ export default function EndingScreen() {
           >
             {GameState.playerConfig?.name}
           </div>
-          
+
           {/* 台詞本文 */}
           <p
             style={{

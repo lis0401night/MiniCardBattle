@@ -2000,7 +2000,10 @@ export function completeTutorial(tutorialId) {
     try {
       window.loadAchievements();
     } catch (e) {
-      console.error('Failed to trigger window.loadAchievements in completeTutorial:', e);
+      console.error(
+        'Failed to trigger window.loadAchievements in completeTutorial:',
+        e
+      );
     }
   }
 }

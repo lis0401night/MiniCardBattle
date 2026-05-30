@@ -10,7 +10,10 @@ import { useState } from 'react';
  */
 const DEFAULT_EASTER_EGG_THRESHOLD = 10;
 
-export function useEasterEgg(onTrigger, targetCount = DEFAULT_EASTER_EGG_THRESHOLD) {
+export function useEasterEgg(
+  onTrigger,
+  targetCount = DEFAULT_EASTER_EGG_THRESHOLD
+) {
   const [clickCount, setClickCount] = useState(0);
 
   return () => {

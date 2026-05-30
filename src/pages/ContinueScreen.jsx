@@ -67,7 +67,6 @@ export default function ContinueScreen() {
     }
   }, [count, isRevived, handleGameOver]);
 
-
   return (
     <div
       id="screen-continue"

@@ -64,6 +64,5 @@ export default {
     'mech',
     'mechanic',
     'mechanic',
-
   ],
 };

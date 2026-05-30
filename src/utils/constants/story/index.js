@@ -24,7 +24,7 @@ const charModules = {
   devilhunter,
   witch,
   oni,
-  priest
+  priest,
 };
 
 // 再エクスポート用の結合オブジェクト構築
@@ -45,7 +45,12 @@ for (const [charName, module] of Object.entries(charModules)) {
 }
 
 // 汎用の対戦相手・プレイヤーの会話テンプレート (STORY_DIALOGUES 内に定義がない場合のフォールバック)
-export function getFallbackStoryDialogue(playerId, enemyId, isPre = true, isLate = false) {
+export function getFallbackStoryDialogue(
+  playerId,
+  enemyId,
+  isPre = true,
+  isLate = false
+) {
   const pChar = CHARACTERS[playerId] || CHARACTERS.android;
   const eChar = CHARACTERS[enemyId] || CHARACTERS.android;
 
@@ -97,7 +102,7 @@ export function getFallbackStoryDialogue(playerId, enemyId, isPre = true, isLate
       { speaker: 'enemy', text: enemyIntro },
       { speaker: 'player', text: playerIntro },
       { speaker: 'enemy', text: enemySecond },
-      { speaker: 'player', text: playerSecond }
+      { speaker: 'player', text: playerSecond },
     ];
   } else {
     // 戦闘後会話（敵の敗北宣言、プレイヤーの勝利宣言、計2行）
@@ -118,7 +123,7 @@ export function getFallbackStoryDialogue(playerId, enemyId, isPre = true, isLate
 
     return [
       { speaker: 'enemy', text: enemyOut },
-      { speaker: 'player', text: playerOut }
+      { speaker: 'player', text: playerOut },
     ];
   }
 }

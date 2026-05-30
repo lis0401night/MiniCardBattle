@@ -151,7 +151,9 @@ export default function DeckEditorScreen() {
     // 所持数限界、またはルールとして最大編成枚数上限（UIメッセージは別途だがロジックとしては防ぐ）
     if (inDeckCount >= ownedCount || inDeckCount >= MAX_CARD_COPIES) {
       if (inDeckCount >= MAX_CARD_COPIES && showAlertModal) {
-        showAlertModal(`デッキに同じカードは${MAX_CARD_COPIES}枚まで入れられます。`);
+        showAlertModal(
+          `デッキに同じカードは${MAX_CARD_COPIES}枚まで入れられます。`
+        );
       }
       return;
     }
@@ -662,7 +664,9 @@ export default function DeckEditorScreen() {
               const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
               const imgUrl = getCardImgUrl ? getCardImgUrl(card) : '';
               const isPremUnlocked = unlockedPremium.includes(card.id);
-              const isPremActive = (GameState.premiumCards || []).includes(card.id);
+              const isPremActive = (GameState.premiumCards || []).includes(
+                card.id
+              );
 
               return (
                 <div
@@ -827,7 +831,9 @@ export default function DeckEditorScreen() {
                 : '';
               const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
               const isPremUnlocked = unlockedPremium.includes(template.id);
-              const isPremActive = (GameState.premiumCards || []).includes(template.id);
+              const isPremActive = (GameState.premiumCards || []).includes(
+                template.id
+              );
 
               return (
                 <div

@@ -286,7 +286,11 @@ export async function playEvents(events) {
             absorb: '吸収付与',
             sturdy: '頑丈付与',
           };
-          createDamagePopup(cEl, skillLabelMap[ev.skillId] || 'スキル付与', '#fbbf24');
+          createDamagePopup(
+            cEl,
+            skillLabelMap[ev.skillId] || 'スキル付与',
+            '#fbbf24'
+          );
         }
         playSound(SOUNDS.seSkill);
         await sleep(300);

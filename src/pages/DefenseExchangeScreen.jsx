@@ -17,10 +17,13 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function DefenseExchangeScreen() {
   const [points, setPoints] = useState(() => ({
     current:
-      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) || 0,
-    total:
-      parseInt(localStorage.getItem('mini_card_battle_defense_total_points'), 10) ||
+      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) ||
       0,
+    total:
+      parseInt(
+        localStorage.getItem('mini_card_battle_defense_total_points'),
+        10
+      ) || 0,
   }));
   const [exchangeItems, setExchangeItems] = useState(
     () => EXCHANGE_LINEUP || []
@@ -35,10 +38,13 @@ export default function DefenseExchangeScreen() {
 
   const updateExchange = () => {
     const currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) || 0;
-    const totalPts =
-      parseInt(localStorage.getItem('mini_card_battle_defense_total_points'), 10) ||
+      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) ||
       0;
+    const totalPts =
+      parseInt(
+        localStorage.getItem('mini_card_battle_defense_total_points'),
+        10
+      ) || 0;
     setPoints({ current: currentPts, total: totalPts });
 
     setInventory(GameState.playerInventory || {});
@@ -62,7 +68,9 @@ export default function DefenseExchangeScreen() {
     }
 
     if (isAlreadyUnlocked) {
-      showAlertModal('既に最大数所持しているか、アンロック済みのアイテムです。');
+      showAlertModal(
+        '既に最大数所持しているか、アンロック済みのアイテムです。'
+      );
       return;
     }
 
@@ -117,8 +125,10 @@ export default function DefenseExchangeScreen() {
         () => {
           playSound?.(SOUNDS?.seSkill);
           let cPts =
-            parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) ||
-            0;
+            parseInt(
+              localStorage.getItem('mini_card_battle_defense_points'),
+              10
+            ) || 0;
           let tPts =
             parseInt(
               localStorage.getItem('mini_card_battle_defense_total_points'),
