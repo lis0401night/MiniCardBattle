@@ -112,6 +112,52 @@ window.switchScreen = switchScreen;
 window.playSound = playSound;
 window.SOUNDS = SOUNDS;
 
+const SCREEN_COMPONENTS = {
+  'screen-title': TitleScreen,
+  'screen-mode-select': ModeSelectScreen,
+  'screen-solo-menu': SoloMenuScreen,
+  'screen-rules': RulesScreen,
+  'screen-beginner-guide': BeginnerGuideScreen,
+  'screen-tutorial-select': TutorialSelectScreen,
+  'screen-options': OptionsScreen,
+  'screen-gallery-menu': GalleryMenuScreen,
+  'screen-event-menu': EventMenuScreen,
+  'screen-tournament-menu': TournamentMenuScreen,
+  'screen-tournament-resume': TournamentResumeScreen,
+  'screen-tournament-exchange': TournamentExchangeScreen,
+  'screen-tournament-rules': TournamentRulesScreen,
+  'screen-tournament-bracket': TournamentBracketScreen,
+  'screen-defense-menu': DefenseMenuScreen,
+  'screen-defense-rules': DefenseRulesScreen,
+  'screen-high-difficulty-menu': HighDifficultyMenuScreen,
+  'screen-high-difficulty': HighDifficultyScreen,
+  'screen-high-difficulty-rules': HighDifficultyRulesScreen,
+  'screen-card-list': CardListScreen,
+  'screen-achievements': AchievementsScreen,
+  'screen-exchange': DefenseExchangeScreen,
+  'screen-challenge-exchange': ChallengeExchangeScreen,
+  'screen-challenge-unlock': ChallengeUnlockScreen,
+  'screen-defense-battle-list': DefenseBattleListScreen,
+  'screen-dungeon-menu': DungeonMenuScreen,
+  'screen-story-resume': StoryResumeScreen,
+  'screen-dungeon-rules': DungeonRulesScreen,
+  'screen-deck-list': DeckListScreen,
+  'screen-deck-edit': DeckEditorScreen,
+  'screen-select': CharacterSelectScreen,
+  'screen-difficulty': DifficultySelectScreen,
+  'screen-stage-select': StageSelectScreen,
+  'screen-dialogue': DialogueScreen,
+  'screen-battle': BattleScreen,
+  'screen-battle-dungeon': BattleDungeonScreen,
+  'screen-online-menu': OnlineMenuScreen,
+  'screen-online-rules': OnlineRulesScreen,
+  'screen-online-search': OnlineRoomSearchScreen,
+  'screen-online-lobby': OnlineLobbyScreen,
+  'screen-continue': ContinueScreen,
+  'screen-ending-illust': EndingScreen,
+  'screen-debug-battle': DebugBattleScreen,
+};
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
 
@@ -135,66 +181,11 @@ export default function App() {
       window.loadAchievements();
   }, []);
 
+  const ScreenComponent = SCREEN_COMPONENTS[currentScreen];
+
   return (
     <>
-      {currentScreen === 'screen-title' && <TitleScreen />}
-      {currentScreen === 'screen-mode-select' && <ModeSelectScreen />}
-      {currentScreen === 'screen-solo-menu' && <SoloMenuScreen />}
-      {currentScreen === 'screen-rules' && <RulesScreen />}
-      {currentScreen === 'screen-beginner-guide' && <BeginnerGuideScreen />}
-      {currentScreen === 'screen-tutorial-select' && <TutorialSelectScreen />}
-      {currentScreen === 'screen-options' && <OptionsScreen />}
-      {currentScreen === 'screen-gallery-menu' && <GalleryMenuScreen />}
-      {currentScreen === 'screen-event-menu' && <EventMenuScreen />}
-      {currentScreen === 'screen-tournament-menu' && <TournamentMenuScreen />}
-      {currentScreen === 'screen-tournament-resume' && (
-        <TournamentResumeScreen />
-      )}
-      {currentScreen === 'screen-tournament-exchange' && (
-        <TournamentExchangeScreen />
-      )}
-      {currentScreen === 'screen-tournament-rules' && <TournamentRulesScreen />}
-      {currentScreen === 'screen-tournament-bracket' && (
-        <TournamentBracketScreen />
-      )}
-      {currentScreen === 'screen-defense-menu' && <DefenseMenuScreen />}
-      {currentScreen === 'screen-defense-rules' && <DefenseRulesScreen />}
-      {currentScreen === 'screen-high-difficulty-menu' && (
-        <HighDifficultyMenuScreen />
-      )}
-      {currentScreen === 'screen-high-difficulty' && <HighDifficultyScreen />}
-      {currentScreen === 'screen-high-difficulty-rules' && (
-        <HighDifficultyRulesScreen />
-      )}
-
-      {currentScreen === 'screen-card-list' && <CardListScreen />}
-      {currentScreen === 'screen-achievements' && <AchievementsScreen />}
-      {currentScreen === 'screen-exchange' && <DefenseExchangeScreen />}
-      {currentScreen === 'screen-challenge-exchange' && (
-        <ChallengeExchangeScreen />
-      )}
-      {currentScreen === 'screen-challenge-unlock' && <ChallengeUnlockScreen />}
-      {currentScreen === 'screen-defense-battle-list' && (
-        <DefenseBattleListScreen />
-      )}
-      {currentScreen === 'screen-dungeon-menu' && <DungeonMenuScreen />}
-      {currentScreen === 'screen-story-resume' && <StoryResumeScreen />}
-      {currentScreen === 'screen-dungeon-rules' && <DungeonRulesScreen />}
-      {currentScreen === 'screen-deck-list' && <DeckListScreen />}
-      {currentScreen === 'screen-deck-edit' && <DeckEditorScreen />}
-      {currentScreen === 'screen-select' && <CharacterSelectScreen />}
-      {currentScreen === 'screen-difficulty' && <DifficultySelectScreen />}
-      {currentScreen === 'screen-stage-select' && <StageSelectScreen />}
-      {currentScreen === 'screen-dialogue' && <DialogueScreen />}
-      {currentScreen === 'screen-battle' && <BattleScreen />}
-      {currentScreen === 'screen-battle-dungeon' && <BattleDungeonScreen />}
-      {currentScreen === 'screen-online-menu' && <OnlineMenuScreen />}
-      {currentScreen === 'screen-online-rules' && <OnlineRulesScreen />}
-      {currentScreen === 'screen-online-search' && <OnlineRoomSearchScreen />}
-      {currentScreen === 'screen-online-lobby' && <OnlineLobbyScreen />}
-      {currentScreen === 'screen-continue' && <ContinueScreen />}
-      {currentScreen === 'screen-ending-illust' && <EndingScreen />}
-      {currentScreen === 'screen-debug-battle' && <DebugBattleScreen />}
+      {ScreenComponent && <ScreenComponent />}
       <GlobalModals />
       <DamageOverlay />
       <RewardOverlay />

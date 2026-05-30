@@ -5,10 +5,13 @@ import './styles/style.css';
 
 // 既存のコンテナ内で React アプリを初期化
 const container = document.getElementById('app-container');
-const root = ReactDOM.createRoot(container);
-
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+if (container) {
+  const root = ReactDOM.createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  console.error("Failed to find the root element 'app-container'");
+}
