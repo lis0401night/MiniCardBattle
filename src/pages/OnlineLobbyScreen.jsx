@@ -36,7 +36,9 @@ export default function OnlineLobbyScreen() {
       if (decksSrc) {
         try {
           decks = JSON.parse(decksSrc);
-        } catch (e) {}
+        } catch (e) {
+          console.warn('デッキデータのパースに失敗しました:', e);
+        }
       }
 
       let selStage = 'plain';
@@ -55,7 +57,9 @@ export default function OnlineLobbyScreen() {
               GameState.currentDeckIndex = selIndex;
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('オンライン設定のパースに失敗しました:', e);
+        }
       }
 
       const activeDeck = decks[selIndex] || decks[0] || null;
@@ -264,8 +268,8 @@ export default function OnlineLobbyScreen() {
         localStorage.getItem('mini_card_battle_player_name') || 'Player';
       await sendChatMessage(chatInput, storedName);
       setChatInput('');
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
     }
   };
 

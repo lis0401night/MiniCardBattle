@@ -65,9 +65,12 @@ export default function DeckListScreen() {
 
   const itemsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
-  if (currentPage >= totalPages) {
-    setCurrentPage(Math.max(0, totalPages - 1));
-  }
+
+  useEffect(() => {
+    if (currentPage >= totalPages) {
+      setCurrentPage(Math.max(0, totalPages - 1));
+    }
+  }, [currentPage, totalPages]);
 
   const pages = [];
   for (let i = 0; i < totalPages; i++) {

@@ -8,6 +8,7 @@ export default function TitleScreen() {
   const [isStarting, setIsStarting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     let unmounted = false;
@@ -39,22 +40,20 @@ export default function TitleScreen() {
 
   return (
     <div id="screen-title" className="screen active" onClick={handleStart}>
-      <img
-        src="assets/ui/title_img.jpg"
-        alt="Key Visual"
-        className="title-visual"
-        onError={(e) => {
-          e.target.style.display = 'none';
-          if (e.target.nextElementSibling) {
-            e.target.nextElementSibling.style.display = 'block';
-          }
-        }}
-      />
-      <h1 className="game-title" style={{ display: 'none' }}>
-        LANE
-        <br />
-        DEFENDERS
-      </h1>
+      {!imgError ? (
+        <img
+          src="assets/ui/title_img.jpg"
+          alt="Key Visual"
+          className="title-visual"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <h1 className="game-title">
+          LANE
+          <br />
+          DEFENDERS
+        </h1>
+      )}
 
       {isLoading ? (
         <div

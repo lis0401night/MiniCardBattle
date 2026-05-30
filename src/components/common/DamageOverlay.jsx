@@ -5,18 +5,22 @@ export function setAddDamagePopupHook(h) {
   addDamagePopupHook = h;
 }
 
+// ダメージポップアップの表示時間（ミリ秒）
+const DAMAGE_POPUP_DURATION = 1000;
+
 export default function DamageOverlay() {
   const [popups, setPopups] = useState([]);
 
   useEffect(() => {
     setAddDamagePopupHook((x, y, text, color) => {
-      const id = Date.now() + Math.random().toString(36).substr(2, 9);
+      // 非推奨のsubstrを避け、sliceによる一意なID生成
+      const id = Date.now() + Math.random().toString(36).slice(2, 11);
       setPopups((prev) => [...prev, { id, x, y, text, color }]);
 
-      // Auto-remove after animation
+      // アニメーション終了後に自動的にポップアップを削除
       setTimeout(() => {
         setPopups((prev) => prev.filter((p) => p.id !== id));
-      }, 1000);
+      }, DAMAGE_POPUP_DURATION);
     });
 
     return () => setAddDamagePopupHook(null);

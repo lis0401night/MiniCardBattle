@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { GameState } from '../state/gameState.js';
 import { showOnlineMenu } from '../services/uiMainCore.js';
@@ -8,10 +8,13 @@ import { showOnlineMenu } from '../services/uiMainCore.js';
  * 共通コンポーネント ScreenLayout を適用してリファクタリングを完了。
  */
 export default function OnlineRulesScreen() {
+  const containerRef = useRef(null);
+
   useEffect(() => {
     // 画面切り替え時にルールテキストボックスのスクロール位置を最上部に初期化
-    const c = document.getElementById('online-rules-container');
-    if (c) c.scrollTop = 0;
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
   }, []);
 
   const getBackgroundImage = () => {
@@ -32,6 +35,7 @@ export default function OnlineRulesScreen() {
       backHasBorder={false}
     >
       <div
+        ref={containerRef}
         id="online-rules-container"
         className="rule-box"
         style={{ overflowY: 'auto' }}

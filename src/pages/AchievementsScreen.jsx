@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
 import {
@@ -22,6 +22,8 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+
+const DEBUG_MODE_CLICK_THRESHOLD = 10;
 
 export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);
@@ -61,15 +63,13 @@ export default function AchievementsScreen() {
     };
   };
 
-  const [achievements, setAchievements] = useState(
-    () => computeInitialData().achievements
-  );
-  const [stats, setStats] = useState(() => computeInitialData().stats);
-  const [leaderUsage, setLeaderUsage] = useState(
-    () => computeInitialData().leaderUsage
-  );
+  const initialData = useMemo(() => computeInitialData(), []);
 
-  const updateAchievements = () => {
+  const [achievements, setAchievements] = useState(initialData.achievements);
+  const [stats, setStats] = useState(initialData.stats);
+  const [leaderUsage, setLeaderUsage] = useState(initialData.leaderUsage);
+
+  const updateAchievements = useCallback(() => {
     if (typeof checkAndFixMissingRewards === 'function') {
       checkAndFixMissingRewards();
     }
@@ -103,12 +103,12 @@ export default function AchievementsScreen() {
       });
 
     setLeaderUsage({ totalUsage, chars: sortedChars });
-  };
+  }, []);
 
   useEffect(() => {
     setRenderAchievementsListHook(updateAchievements);
     setRenderAchievementsStatsHook(updateAchievements); // 両方カバー
-  }, []);
+  }, [updateAchievements]);
 
   const handleClaim = (id) => {
     try {
@@ -139,7 +139,7 @@ export default function AchievementsScreen() {
   const handleTitleClick = () => {
     const newCount = clickCount + 1;
     setClickCount(newCount);
-    if (newCount >= 10) {
+    if (newCount >= DEBUG_MODE_CLICK_THRESHOLD) {
       setClickCount(0);
 
       if (showConfirmModal) {

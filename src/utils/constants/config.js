@@ -3,6 +3,7 @@
  */
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;
+export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
 export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
 
 // 防衛戦 交換所ラインナップ

@@ -1381,3 +1381,5 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
   const skin = char.skins[skinId] || char.skins['default'];
   return skin[type] || char[type] || '';
 }
+
+export const BOSS_CHARACTER_IDS = ['satan', 'void', 'succubus'];

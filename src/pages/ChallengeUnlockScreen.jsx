@@ -16,7 +16,8 @@ export default function ChallengeUnlockScreen() {
   const [totalPoints] = useState(
     () =>
       parseInt(
-        localStorage.getItem('mini_card_battle_challenge_total_points')
+        localStorage.getItem('mini_card_battle_challenge_total_points'),
+        10
       ) || 0
   );
   const [unlocks, setUnlocks] = useState(() => {

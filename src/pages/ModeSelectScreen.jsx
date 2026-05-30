@@ -16,11 +16,23 @@ export default function ModeSelectScreen() {
 
   return (
     <div id="screen-mode-select" className="screen active">
-      <button className="btn-circle btn-gear" onClick={() => showOptions?.()}>
+      <button
+        className="btn-circle btn-gear"
+        onClick={() => {
+          playSound?.(SOUNDS?.seClick);
+          showOptions?.();
+        }}
+      >
         ⚙
       </button>
       <div className="menu-btn-grid">
-        <div className="menu-img-btn" onClick={() => showBeginnerGuide?.()}>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showBeginnerGuide?.();
+          }}
+        >
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_RULES || ''}')` }}
@@ -28,7 +40,13 @@ export default function ModeSelectScreen() {
           <div className="menu-btn-label">遊び方</div>
         </div>
 
-        <div className="menu-img-btn" onClick={() => showDeckEditMenu?.()}>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showDeckEditMenu?.();
+          }}
+        >
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_DECK || ''}')` }}
@@ -36,7 +54,13 @@ export default function ModeSelectScreen() {
           <div className="menu-btn-label">デッキ編成</div>
         </div>
 
-        <div className="menu-img-btn" onClick={() => showSoloMenu?.()}>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showSoloMenu?.();
+          }}
+        >
           <div
             className="menu-img-bg"
             style={{
@@ -46,7 +70,13 @@ export default function ModeSelectScreen() {
           <div className="menu-btn-label">ソロモード</div>
         </div>
 
-        <div className="menu-img-btn" onClick={() => showEventMenu?.()}>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showEventMenu?.();
+          }}
+        >
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_EVENT || ''}')` }}
@@ -57,7 +87,7 @@ export default function ModeSelectScreen() {
         <div
           className="menu-img-btn"
           onClick={() => {
-            playSound(SOUNDS?.seClick);
+            playSound?.(SOUNDS?.seClick);
             showOnlineMenu?.();
           }}
         >
@@ -68,7 +98,13 @@ export default function ModeSelectScreen() {
           <div className="menu-btn-label">オンライン</div>
         </div>
 
-        <div className="menu-img-btn" onClick={() => showGallery?.()}>
+        <div
+          className="menu-img-btn"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showGallery?.();
+          }}
+        >
           <div
             className="menu-img-bg"
             style={{ backgroundImage: `url('${images.MENU_GALLERY || ''}')` }}

@@ -9,7 +9,7 @@ import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { showPlaymatModal } from '../services/uiPlaymat.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { DECK_SIZE } from '../utils/constants/config.js';
+import { DECK_SIZE, MAX_CARD_COPIES } from '../utils/constants/config.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
@@ -148,10 +148,10 @@ export default function DeckEditorScreen() {
     ).length;
     const ownedCount = inventory[template.id] || 0;
 
-    // 所持数限界、またはルールとして4枚上限（UIメッセージは別途だがロジックとしては防ぐ）
-    if (inDeckCount >= ownedCount || inDeckCount >= 4) {
-      if (inDeckCount >= 4 && showAlertModal) {
-        showAlertModal('デッキに同じカードは4枚まで入れられます。');
+    // 所持数限界、またはルールとして最大編成枚数上限（UIメッセージは別途だがロジックとしては防ぐ）
+    if (inDeckCount >= ownedCount || inDeckCount >= MAX_CARD_COPIES) {
+      if (inDeckCount >= MAX_CARD_COPIES && showAlertModal) {
+        showAlertModal(`デッキに同じカードは${MAX_CARD_COPIES}枚まで入れられます。`);
       }
       return;
     }
@@ -648,7 +648,7 @@ export default function DeckEditorScreen() {
               const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
               const imgUrl = getCardImgUrl ? getCardImgUrl(card) : '';
               const isPremUnlocked = unlockedPremium.includes(card.id);
-              const isPremActive = GameState.premiumCards.includes(card.id);
+              const isPremActive = (GameState.premiumCards || []).includes(card.id);
 
               return (
                 <div
@@ -805,7 +805,7 @@ export default function DeckEditorScreen() {
                 (c) => c.id === template.id
               ).length;
               const remaining = ownedCount - inDeckCount;
-              const canAdd = remaining > 0 && inDeckCount < 4;
+              const canAdd = remaining > 0 && inDeckCount < MAX_CARD_COPIES;
 
               const opacity = !canAdd ? '0.4' : '1';
               const rarityClass = template.rarity
@@ -813,7 +813,7 @@ export default function DeckEditorScreen() {
                 : '';
               const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
               const isPremUnlocked = unlockedPremium.includes(template.id);
-              const isPremActive = GameState.premiumCards.includes(template.id);
+              const isPremActive = (GameState.premiumCards || []).includes(template.id);
 
               return (
                 <div

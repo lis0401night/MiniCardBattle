@@ -37,24 +37,14 @@ export default function DefenseMenuScreen() {
               const pts = myData.points || 0;
               const totalPts = myData.total_points || pts;
 
-              const localPts =
-                parseInt(
-                  localStorage.getItem('mini_card_battle_defense_points')
-                ) || 0;
-              const localTotalPts =
-                parseInt(
-                  localStorage.getItem('mini_card_battle_defense_total_points')
-                ) || 0;
+              const localPts = parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0;
+              const localTotalPts = parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) || 0;
+              const lastWins = parseInt(localStorage.getItem('mini_card_battle_defense_wins')) || 0;
 
               // サーバーの値が0でローカルに値がある場合は、サーバーの初期化ミスと判断して上書きを避ける
               const finalPts = pts === 0 && localPts > 0 ? localPts : pts;
               const finalTotalPts =
                 totalPts === 0 && localTotalPts > 0 ? localTotalPts : totalPts;
-
-              const lastWins =
-                parseInt(
-                  localStorage.getItem('mini_card_battle_defense_wins')
-                ) || 0;
               const newWinsCount = wins - lastWins;
               const newPoints = finalPts - localPts; // 今回増えたポイント
 
@@ -86,7 +76,9 @@ export default function DefenseMenuScreen() {
                     points: finalPts,
                     total_points: finalTotalPts,
                   }),
-                }).catch(() => {});
+                }).catch((error) => {
+                  console.error('防衛ポイントのサーバー更新に失敗しました:', error);
+                });
               }
             }
           }

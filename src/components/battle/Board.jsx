@@ -1,8 +1,8 @@
-import Card from './Card.jsx';
-import { GameState } from '../../state/gameState.js';
-import { hasSkill } from '../../utils/gameUtils.js';
-import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
 import { showAlertModal } from '../../services/uiModals.js';
+import { GameState } from '../../state/gameState.js';
+import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
+import { hasSkill } from '../../utils/gameUtils.js';
+import Card from './Card.jsx';
 
 export default function Board({
   playerBoard,
@@ -135,20 +135,24 @@ export default function Board({
             ) {
               isHighlight = false;
             } else if (tCard && checkEnv) {
+              // 「召喚」時は制約チェックを実行（「配置」時は checkEnv=false でスキップ）
               let valid = true;
-              // 1ターン目の制限 (制約チェックが有効な召喚の場合のみ)
+              // 1ターン目先攻制限: 中央レーンのみ配置可能
               if (
                 GameState.turnCount === 1 &&
                 GameState.firstPlayer === 'blue'
               ) {
                 valid = valid && lane === 1;
               }
+              // 「伝説」スキル: 中央レーンのみ
               if (hasSkill && hasSkill(tCard, 'legendary')) {
                 valid = valid && lane === 1;
               }
+              // 「生贄」スキル: 既存カードがあるレーンのみ
               if (hasSkill && hasSkill(tCard, 'takeover')) {
                 valid = valid && card !== null;
               }
+              // 「頂点」スキル: 伝説カードがあるレーンのみ
               if (hasSkill && hasSkill(tCard, 'apex')) {
                 valid =
                   valid &&
@@ -165,16 +169,20 @@ export default function Board({
               isHighlight = true;
             }
           } else if (selectedCard) {
+            // 手札からの「召喚」: 配置制約ルールに従う
             let valid = true;
             if (GameState.turnCount === 1 && GameState.firstPlayer === 'blue') {
               valid = valid && lane === 1;
             }
+            // 「伝説」スキル: 中央レーンのみ
             if (hasSkill && hasSkill(selectedCard, 'legendary')) {
               valid = valid && lane === 1;
             }
+            // 「生贄」スキル: 既存カードがあるレーンのみ
             if (hasSkill && hasSkill(selectedCard, 'takeover')) {
               valid = valid && card !== null;
             }
+            // 「頂点」スキル: 伝説カードがあるレーンのみ
             if (hasSkill && hasSkill(selectedCard, 'apex')) {
               valid =
                 valid &&

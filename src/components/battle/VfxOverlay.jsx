@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { VFX_DATA } from '../../utils/constants/vfx.js';
 import { playSound, sleep } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { VFX_DATA } from '../../utils/constants/vfx.js';
 
 /**
  * 3x10などのスプライトシートを再生するサブコンポーネント
@@ -156,7 +156,7 @@ export default function VfxOverlay() {
     return () => {
       window.triggerVfx = null;
     };
-  }, [VFX_DATA]);
+  }, []);
 
   if (activeEffects.length === 0) return null;
 

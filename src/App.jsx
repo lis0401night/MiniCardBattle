@@ -86,6 +86,7 @@ import {
   executeGameOver,
 } from './services/uiDialogue.js';
 import { submitDefenseDeck } from './services/deck.js';
+// TODO: レガシーコードからのReact完全移行後に、このwindowグローバルへの公開ブロックを段階的に縮小・撤廃する予定。
 // レガシーUI用に関数をグローバルに公開
 window.returnToTitle = returnToTitle;
 window.showEnemySkillConfirm = showEnemySkillConfirm;
@@ -132,11 +133,6 @@ export default function App() {
     if (typeof loadDeck === 'function') loadDeck();
     if (typeof window.loadAchievements === 'function')
       window.loadAchievements();
-
-    setTimeout(() => {
-      const titleScreen = document.getElementById('screen-title');
-      if (titleScreen) titleScreen.classList.add('active');
-    }, 100);
   }, []);
 
   return (

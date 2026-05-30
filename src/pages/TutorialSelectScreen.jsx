@@ -47,6 +47,8 @@ const TUTORIAL_REWARDS = {
   leader_priest: 'sentinel', // 黄金の歩哨
 };
 
+const DEBUG_MODE_CLICK_THRESHOLD = 10;
+
 export default function TutorialSelectScreen() {
   const [clickCount, setClickCount] = useState(0);
   const [tutorialProgress, setTutorialProgress] = useState({
@@ -88,7 +90,7 @@ export default function TutorialSelectScreen() {
   const handleTitleClick = () => {
     const newCount = clickCount + 1;
     setClickCount(newCount);
-    if (newCount >= 10) {
+    if (newCount >= DEBUG_MODE_CLICK_THRESHOLD) {
       setClickCount(0);
 
       if (typeof showConfirmModal === 'function') {
@@ -139,7 +141,22 @@ export default function TutorialSelectScreen() {
 
     // 2. インベントリを永続化保存
     if (typeof saveDeck === 'function') {
-      saveDeck();
+      try {
+        saveDeck();
+      } catch (error) {
+        console.error('デッキ保存に失敗しました:', error);
+        // ロールバック処理によりデータ整合性を維持
+        if (GameState.playerInventory && GameState.playerInventory[cardId]) {
+          GameState.playerInventory[cardId]--;
+          if (GameState.playerInventory[cardId] <= 0) {
+            delete GameState.playerInventory[cardId];
+          }
+        }
+        if (typeof showAlertModal === 'function') {
+          showAlertModal('保存に失敗しました。再試行してください。');
+        }
+        return;
+      }
     }
 
     // 3. 実績モーダルと同様の獲得演出を表示

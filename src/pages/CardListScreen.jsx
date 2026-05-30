@@ -9,7 +9,7 @@ import {
   setRenderCardListHook,
 } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
 import {
   getCardImgUrl,
   isTransitioning,
@@ -43,21 +43,8 @@ export default function CardListScreen() {
             });
           }
 
-          const premiumTargets = [
-            'empress',
-            'assassin',
-            'cyberdragon',
-            'dragon',
-            'oldgod',
-            'wolf',
-            'cleric',
-            'nectromancer',
-            'vampire',
-            'beginnermagic',
-            'djinn',
-          ];
           if (GameState.unlockedPremiumCards) {
-            premiumTargets.forEach((id) => {
+            PREMIUM_CARD_IDS.forEach((id) => {
               if (!GameState.unlockedPremiumCards.includes(id)) {
                 GameState.unlockedPremiumCards.push(id);
               }
@@ -83,7 +70,9 @@ export default function CardListScreen() {
     if (globalPremiumSrc) {
       try {
         GameState.premiumCards = JSON.parse(globalPremiumSrc);
-      } catch (e) {}
+      } catch (e) {
+        console.error('プレミアムカード設定のパースに失敗しました:', e);
+      }
     } else {
       GameState.premiumCards = [];
     }

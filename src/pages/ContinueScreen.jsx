@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState } from '../state/gameState.js';
 import { executeContinue, executeGameOver } from '../services/uiDialogue.js';
 
@@ -7,6 +7,7 @@ export default function ContinueScreen() {
   const [continueImg, setContinueImg] = useState('');
   const [isRevived, setIsRevived] = useState(false);
   const [countText, setCountText] = useState('9');
+  const timerRef = useRef(null);
 
   useEffect(() => {
     setCount(9);
@@ -18,12 +19,44 @@ export default function ContinueScreen() {
       setContinueImg(GameState.enemyConfig.character.image);
     }
 
-    const timer = setInterval(() => {
-      setCount((prev) => prev - 1);
+    // 毎秒デクリメントするタイマーの作成
+    timerRef.current = setInterval(() => {
+      setCount((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
+
+  // 復活(YES選択)またはゲームオーバー決定時に即座にタイマーを停止する
+  useEffect(() => {
+    if (isRevived && timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+  }, [isRevived]);
+
+  const handleGameOver = useCallback(() => {
+    if (isRevived) return;
+    setIsRevived(true);
+    executeGameOver();
+  }, [isRevived]);
+
+  const handleContinue = useCallback(() => {
+    if (isRevived) return;
+    setIsRevived(true);
+    setCountText('YES!');
+    if (GameState.playerConfig && GameState.playerConfig.image) {
+      setContinueImg(GameState.playerConfig.image);
+    }
+    executeContinue();
+  }, [isRevived]);
 
   useEffect(() => {
     if (count >= 0 && !isRevived) {
@@ -32,23 +65,8 @@ export default function ContinueScreen() {
     if (count <= 0 && !isRevived) {
       handleGameOver();
     }
-  }, [count, isRevived]);
+  }, [count, isRevived, handleGameOver]);
 
-  const handleContinue = () => {
-    if (isRevived) return;
-    setIsRevived(true);
-    setCountText('YES!');
-    if (GameState.playerConfig && GameState.playerConfig.image) {
-      setContinueImg(GameState.playerConfig.image);
-    }
-    executeContinue();
-  };
-
-  const handleGameOver = () => {
-    if (isRevived) return;
-    setIsRevived(true);
-    executeGameOver();
-  };
 
   return (
     <div

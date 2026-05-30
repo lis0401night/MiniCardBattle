@@ -5,7 +5,7 @@ import {
   saveAchievements,
   checkCollectionAchievements,
 } from '../utils/constants/achievements.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
 import {
   playSound,
   isTransitioning,
@@ -19,6 +19,8 @@ import {
   resetRulesClickCount,
 } from './uiMainCore.js';
 import { showAlertModal } from './uiModals.js';
+
+const DEBUG_CLICK_THRESHOLD = 10;
 
 // ==========================================
 // UI Gallery Logic (Card List & Previews)
@@ -164,7 +166,7 @@ export function executeRenderAchievementsStats() {
 
 export function debugUnlockCards() {
   const count = incrementRulesClickCount();
-  if (count >= 10) {
+  if (count >= DEBUG_CLICK_THRESHOLD) {
     resetRulesClickCount();
     CARD_MASTER.forEach((card) => {
       if (!card.isToken) {
@@ -172,16 +174,8 @@ export function debugUnlockCards() {
       }
     });
 
-    // プレミアムカード(empress, assassin, cyberdragon, dragon, oldgod, wolf)の解放
-    const premiumTargets = [
-      'empress',
-      'assassin',
-      'cyberdragon',
-      'dragon',
-      'oldgod',
-      'wolf',
-    ];
-    premiumTargets.forEach((id) => {
+    // プレミアムカードの解放 (DRY原則を適用し、PREMIUM_CARD_IDS定数を使用)
+    PREMIUM_CARD_IDS.forEach((id) => {
       if (!GameState.unlockedPremiumCards.includes(id)) {
         GameState.unlockedPremiumCards.push(id);
       }
@@ -196,7 +190,7 @@ export function debugUnlockCards() {
 export let achievementsClickCount = 0;
 export function debugUnlockAchievements() {
   achievementsClickCount++;
-  if (achievementsClickCount >= 10) {
+  if (achievementsClickCount >= DEBUG_CLICK_THRESHOLD) {
     achievementsClickCount = 0;
     ACHIEVEMENT_MASTER.forEach((ach) => {
       const data = achievementData.achievements[ach.id] || {

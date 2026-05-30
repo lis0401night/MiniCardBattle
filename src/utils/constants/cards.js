@@ -3008,3 +3008,43 @@ export const CARD_MASTER = [
     flavor: '再生したスケルトン',
   },
 ];
+
+// プレミアムカードとして解放可能なすべてのカードIDのリスト (網羅性を保証し、DRY原則を適用)
+export const PREMIUM_CARD_IDS = [
+  // --- 元々のデバッグ解放対象（11種） ---
+  'empress',
+  'assassin',
+  'cyberdragon',
+  'dragon',
+  'oldgod',
+  'wolf',
+  'cleric',
+  'necromancer', // 正確なID
+  'nectromancer', // 互換性維持用のスペル
+  'vampire',
+  'beginnermagic',
+  'djinn',
+  // --- 実績報酬（追加分：7種） ---
+  'golem',
+  'dancer',
+  'clone',
+  'diviner',
+  'sniper',
+  'omyouji',
+  'mummy',
+  // --- 交換所（追加分：13種） ---
+  'shogun',
+  'pharaoh',
+  'dreadnought',
+  'hammer',
+  'crusher',
+  'shark',
+  'shaman',
+  'light',
+  'plaguedoctor',
+  'dragonfire',
+  'yukionna',
+  'kitepriest',
+  'cavalry',
+];
+

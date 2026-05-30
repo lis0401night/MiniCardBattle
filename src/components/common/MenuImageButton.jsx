@@ -7,8 +7,9 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {string} label - ボタンのラベルテキスト
  * @param {string} image - 背景画像のURL
  * @param {function} onClick - クリックイベントハンドラ
+ * @param {Object} style - 背景（menu-img-bg）に適用する任意のカスタムスタイル（背景色など）
  */
-export default function MenuImageButton({ label, image, onClick }) {
+export default function MenuImageButton({ label, image, onClick, style }) {
   const handleClick = (e) => {
     playSound(SOUNDS?.seClick);
     if (onClick) onClick(e);
@@ -18,7 +19,10 @@ export default function MenuImageButton({ label, image, onClick }) {
     <div className="menu-img-btn" onClick={handleClick}>
       <div
         className="menu-img-bg"
-        style={{ backgroundImage: `url('${image || ''}')` }}
+        style={{
+          backgroundImage: image ? `url('${image}')` : undefined,
+          ...style,
+        }}
       ></div>
       <div className="menu-btn-label">{label}</div>
     </div>

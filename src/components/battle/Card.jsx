@@ -8,7 +8,6 @@ export default function Card({
   onClick = undefined,
   onLongPress = undefined,
 }) {
-  const cardRef = useRef(null);
   const pressTimer = useRef(null);
   const hasLongPressed = useRef(false);
 
@@ -19,7 +18,7 @@ export default function Card({
     : cardObj.rarity !== undefined && cardObj.rarity !== null
       ? ` rarity-${cardObj.rarity}`
       : '';
-  let filter = cardObj.filter;
+  const filter = cardObj.filter;
   // シャドウ化の特殊処理（敵側のみ）は削除
 
   const imgUrl = getCardImgUrl(cardObj);
@@ -61,7 +60,6 @@ export default function Card({
 
   return (
     <div
-      ref={cardRef}
       className={`card ${cardObj.owner}${rarityClass} ${className}`}
       onPointerDown={handlePointerDown}
       onPointerUp={cancelLongPress}
@@ -77,6 +75,10 @@ export default function Card({
           filter: filter || 'none',
         }}
       ></div>
+      {/* 
+        安全確認: skillTagHtml は静的なゲームマスターデータ定義(SKILLS)のみから生成されたバッジHTMLであり、
+        外部のユーザー入力が一切混入しないため、XSSなどの脆弱性の恐れはありません。
+      */}
       {skillTagHtml && (
         <div dangerouslySetInnerHTML={{ __html: skillTagHtml }} />
       )}

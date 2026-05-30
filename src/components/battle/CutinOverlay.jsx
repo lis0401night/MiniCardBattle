@@ -2,17 +2,28 @@ import { useState, useEffect } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
 
+// カットイン表示時間（ミリ秒）
+const CUTIN_DISPLAY_DURATION = 2500;
+
 export default function CutinOverlay() {
   const [cutinData, setCutinData] = useState(null);
 
   useEffect(() => {
+    let timeoutId = null;
+
     window.showCutinReact = (config, isBlue) => {
+      if (timeoutId) clearTimeout(timeoutId);
       setCutinData({ config, isBlue });
 
       // 2.5s後にカットイン表示を消す
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         setCutinData(null);
-      }, 2500);
+      }, CUTIN_DISPLAY_DURATION);
+    };
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      delete window.showCutinReact;
     };
   }, []);
 

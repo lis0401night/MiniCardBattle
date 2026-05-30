@@ -6,8 +6,14 @@ reviews:
   poem: false
   auto_review:
     enabled: true
+  path_filters:
+    - '!**/node_modules/**'
+    - '!node_modules/**'
+    - '!dist/**'
+    - '!package-lock.json'
+    - 'src/**/*.jsx'
   path_instructions:
-    - path: '**/*'
+    - path: '**/*.jsx'
       instructions: |
         プルリクエストをレビューする際は、以下のプロジェクト固有のコーディングルールおよび厳密な制約を遵守しているか、徹底して確認してください。違反がある場合は指摘（または改善の提案）を行ってください。
 

@@ -1,3 +1,4 @@
+import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import BackButton from '../components/BackButton.jsx';
 import { showCardList } from '../services/uiGallery.js';
 import { goToModeSelect, showDeckEditMenu } from '../services/uiMainCore.js';
@@ -12,22 +13,16 @@ export default function CardMenuScreen() {
         カード
       </h2>
       <div className="menu-btn-grid">
-        <div className="menu-img-btn" onClick={() => showDeckEditMenu?.()}>
-          <div
-            className="menu-img-bg"
-            style={{ backgroundColor: '#1e40af' }}
-          ></div>
-          <div className="menu-btn-label">デッキ編成</div>
-        </div>
-        <div className="menu-img-btn" onClick={() => showCardList?.()}>
-          <div
-            className="menu-img-bg"
-            style={{
-              backgroundImage: `url('${images.GALLERY_CARD_LIST || ''}')`,
-            }}
-          ></div>
-          <div className="menu-btn-label">カード一覧</div>
-        </div>
+        <MenuImageButton
+          label="デッキ編成"
+          style={{ backgroundColor: '#1e40af' }}
+          onClick={() => showDeckEditMenu?.()}
+        />
+        <MenuImageButton
+          label="カード一覧"
+          image={images.GALLERY_CARD_LIST}
+          onClick={() => showCardList?.()}
+        />
       </div>
       <div
         style={{

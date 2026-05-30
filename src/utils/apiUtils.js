@@ -24,10 +24,19 @@ export function savePointsToServer(endpoint, points, totalPoints) {
         points: points,
         total_points: totalPoints,
       }),
-    }).catch(() => {
-      /* ignore */
-    });
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.error(`サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`);
+        } else {
+          console.log(`サーバーへのポイント同期（${endpoint}）に成功しました。`);
+        }
+      })
+      .catch((err) => {
+        console.error(`サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`, err);
+      });
   } catch (e) {
-    console.error('サーバーへのポイント同期に失敗しました:', e);
+    console.error('サーバーへのポイント同期処理で例外が発生しました:', e);
   }
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -12,12 +12,14 @@ export default function RewardOverlay() {
   const [isVisible, setIsVisible] = useState(false);
   const [card, setCard] = useState(null);
   const [isRevealed, setIsRevealed] = useState(false);
+  const grantedRef = useRef(false);
 
   useEffect(() => {
     window.showCardRewardReact = (rewardCardId) => {
       const rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
       if (rewardCardTemplate) {
         setCard({ ...rewardCardTemplate, owner: 'blue' });
+        grantedRef.current = false; // 表示されるたびにリセット
         setIsRevealed(false);
         setIsVisible(true);
       }
@@ -26,12 +28,18 @@ export default function RewardOverlay() {
     window.closeRewardScreenReact = () => {
       setIsVisible(false);
     };
+
+    return () => {
+      delete window.showCardRewardReact;
+      delete window.closeRewardScreenReact;
+    };
   }, []);
 
   if (!isVisible || !card) return null;
 
   const handleReveal = () => {
-    if (isRevealed) return;
+    if (grantedRef.current) return;
+    grantedRef.current = true;
     playSound(SOUNDS.seClick);
     setIsRevealed(true);
     if (GameState.gameMode !== 'campaign') {

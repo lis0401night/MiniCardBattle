@@ -1,5 +1,8 @@
 import { GameState } from '../../state/gameState.js';
-import { getSkinImage } from '../../utils/constants/characters.js';
+import { getSkinImage, BOSS_CHARACTER_IDS } from '../../utils/constants/characters.js';
+
+// 墓地確認モーダルで全カードを表示するための最大値
+const MAX_DISCARD_PREVIEW_COUNT = 999;
 
 export default function PlayerArea({
   playerConfig,
@@ -36,8 +39,9 @@ export default function PlayerArea({
             }
             alt="player icon"
           />
+          {/* 敵対勢力（魔族）のリーダーは赤フレーム、それ以外は金フレームを使用 */}
           <img
-            src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(playerConfig.id) ? 'red' : 'gold'}.png`}
+            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(playerConfig.id) ? 'red' : 'gold'}.png`}
             className="icon-frame"
             alt="frame"
           />
@@ -65,7 +69,7 @@ export default function PlayerArea({
             <div
               className="hp-bar-fill blue"
               id="player-hp-fill"
-              style={{ width: `${Math.max(0, playerHP / playerMaxHP) * 100}%` }}
+              style={{ width: `${playerMaxHP > 0 ? Math.max(0, playerHP / playerMaxHP) * 100 : 0}%` }}
             ></div>
             <div className="hp-text" id="player-hp-text">
               {playerHP} / {playerMaxHP}
@@ -93,7 +97,7 @@ export default function PlayerArea({
                 e.stopPropagation();
                 window.showDiscardSelectionModalReact?.(
                   GameState.playerDiscard,
-                  999,
+                  MAX_DISCARD_PREVIEW_COUNT,
                   null,
                   true
                 );

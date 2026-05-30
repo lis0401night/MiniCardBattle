@@ -4,7 +4,6 @@ import {
   endPlayerTurn,
   returnToTitle,
 } from '../game/battle.js';
-import { GameState } from '../state/gameState.js';
 import {
   setSummonAnimationHook,
   setUpdateBattleUIHook,
@@ -13,6 +12,7 @@ import {
   showSkillConfirm,
 } from '../services/uiBattle.js';
 import { showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import {
   getCardImgUrl,
   hasSkill,
@@ -26,20 +26,20 @@ import EnemyArea from '../components/battle/EnemyArea.jsx';
 import Hand from '../components/battle/Hand.jsx';
 import PlayerArea from '../components/battle/PlayerArea.jsx';
 import TurnOrderOverlay from '../components/battle/TurnOrderOverlay.jsx';
-import { openCardPreview } from '../services/uiGallery.js';
 import {
-  isTutorialMode,
+  advanceTutorialMessage,
+  filterEndTurn,
+  filterFinishEnemyTargetSelection,
+  filterFinishHandSelection,
   filterHandCardClick,
   filterLaneClick,
-  filterEndTurn,
   filterLeaderSkill,
-  setTutorialMessageCallback,
-  advanceTutorialMessage,
-  notifyTutorialLongPress,
+  isTutorialMode,
   notifyTutorialHandLongPress,
-  filterFinishHandSelection,
-  filterFinishEnemyTargetSelection,
+  notifyTutorialLongPress,
+  setTutorialMessageCallback,
 } from '../game/tutorialEngine.js';
+import { openCardPreview } from '../services/uiGallery.js';
 
 export default function BattleScreen() {
   const [_renderVersion, setRenderVersion] = useState(0);
@@ -141,11 +141,6 @@ export default function BattleScreen() {
     if (GameState.isEnemyTargetMode) {
       if (side === 'enemy' && window.handleEnemyLaneClick)
         window.handleEnemyLaneClick(lane);
-      return;
-    }
-    if (GameState.isAlliedTargetMode) {
-      if (side === 'player' && window.handleAlliedLaneClick)
-        window.handleAlliedLaneClick(lane);
       return;
     }
     if (GameState.isAlliedTargetMode) {

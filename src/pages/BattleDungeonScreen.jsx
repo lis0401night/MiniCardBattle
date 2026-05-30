@@ -227,7 +227,14 @@ export default function BattleDungeonScreen() {
 function ResumeSelect() {
   const saveData = useMemo(() => {
     const json = localStorage.getItem('mini_card_battle_dungeon_save');
-    if (json) return JSON.parse(json);
+    if (json) {
+      try {
+        return JSON.parse(json);
+      } catch (e) {
+        console.error('ダンジョンセーブデータのパースに失敗しました:', e);
+        return null;
+      }
+    }
     return null;
   }, []);
   const pConf = saveData?.playerConfig || {
@@ -259,10 +266,14 @@ function ResumeSelect() {
     playSound(SOUNDS.seClick);
     const json = localStorage.getItem('mini_card_battle_dungeon_save');
     if (json) {
-      const data = JSON.parse(json);
-      if (data.playerConfig) GameState.playerConfig = data.playerConfig;
-      if (window.showEnemyDeckModal) {
-        window.showEnemyDeckModal(data.cards, '所持カード確認');
+      try {
+        const data = JSON.parse(json);
+        if (data.playerConfig) GameState.playerConfig = data.playerConfig;
+        if (window.showEnemyDeckModal) {
+          window.showEnemyDeckModal(data.cards, '所持カード確認');
+        }
+      } catch (e) {
+        console.error('所持カード確認時にセーブデータのパースに失敗しました:', e);
       }
     }
   };
@@ -271,11 +282,15 @@ function ResumeSelect() {
     playSound(SOUNDS.seClick);
     const json = localStorage.getItem('mini_card_battle_dungeon_save');
     if (json) {
-      const data = JSON.parse(json);
-      if (data.playerConfig) GameState.playerConfig = data.playerConfig;
-      if (window.showEnemyDeckModal) {
-        const deck = data.deck || data.cards.slice(0, 20); // 未保存対処
-        window.showEnemyDeckModal(deck, 'デッキ確認');
+      try {
+        const data = JSON.parse(json);
+        if (data.playerConfig) GameState.playerConfig = data.playerConfig;
+        if (window.showEnemyDeckModal) {
+          const deck = data.deck || data.cards.slice(0, 20); // 未保存対処
+          window.showEnemyDeckModal(deck, 'デッキ確認');
+        }
+      } catch (e) {
+        console.error('デッキ確認時にセーブデータのパースに失敗しました:', e);
       }
     }
   };
@@ -796,7 +811,7 @@ function RentalDeckSelect() {
                   className="btn"
                   style={{ flex: 1, background: '#475569', margin: 0 }}
                   onClick={(e) => {
-                    window.playSound?.(window.SOUNDS?.seClick);
+                    playSound(SOUNDS.seClick);
                     handleCancel(e);
                   }}
                 >

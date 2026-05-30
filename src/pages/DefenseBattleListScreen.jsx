@@ -23,7 +23,8 @@ export default function DefenseBattleListScreen() {
           // 自分のポイントを取得
           const myTotalPoints =
             parseInt(
-              localStorage.getItem('mini_card_battle_defense_total_points')
+              localStorage.getItem('mini_card_battle_defense_total_points'),
+              10
             ) || 0;
 
           if (activePlayers.length === 0) {

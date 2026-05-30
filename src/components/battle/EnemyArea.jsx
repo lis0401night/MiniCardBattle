@@ -1,5 +1,8 @@
 import { GameState } from '../../state/gameState.js';
-import { getSkinImage } from '../../utils/constants/characters.js';
+import { getSkinImage, BOSS_CHARACTER_IDS } from '../../utils/constants/characters.js';
+
+// 墓地確認モーダルで全カードを表示するための最大値
+const MAX_DISCARD_PREVIEW_COUNT = 999;
 
 export default function EnemyArea({
   enemyConfig,
@@ -29,7 +32,7 @@ export default function EnemyArea({
             alt="enemy icon"
           />
           <img
-            src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(enemyConfig.id) ? 'red' : 'gold'}.png`}
+            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(enemyConfig.id) ? 'red' : 'gold'}.png`}
             className="icon-frame"
             alt="frame"
           />
@@ -62,7 +65,7 @@ export default function EnemyArea({
             <div
               className="hp-bar-fill red"
               id="enemy-hp-fill"
-              style={{ width: `${Math.max(0, enemyHP / enemyMaxHP) * 100}%` }}
+              style={{ width: `${enemyMaxHP > 0 ? Math.max(0, enemyHP / enemyMaxHP) * 100 : 0}%` }}
             ></div>
             <div className="hp-text" id="enemy-hp-text">
               {enemyHP} / {enemyMaxHP}
@@ -90,7 +93,7 @@ export default function EnemyArea({
                 e.stopPropagation();
                 window.showDiscardSelectionModalReact?.(
                   GameState.enemyDiscard,
-                  999,
+                  MAX_DISCARD_PREVIEW_COUNT,
                   null,
                   true
                 );

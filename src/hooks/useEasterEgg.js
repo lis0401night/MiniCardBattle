@@ -8,7 +8,9 @@ import { useState } from 'react';
  * @param {number} [targetCount=10] - トリガーに必要なクリック数（デフォルトは10回）
  * @returns {function} クリックイベントハンドラ
  */
-export function useEasterEgg(onTrigger, targetCount = 10) {
+const DEFAULT_EASTER_EGG_THRESHOLD = 10;
+
+export function useEasterEgg(onTrigger, targetCount = DEFAULT_EASTER_EGG_THRESHOLD) {
   const [clickCount, setClickCount] = useState(0);
 
   return () => {

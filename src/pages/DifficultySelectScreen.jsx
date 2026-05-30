@@ -1,4 +1,3 @@
-import React from 'react';
 
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
@@ -8,36 +7,24 @@ import {
   openEnemyDeckPreview,
 } from '../services/uiMainCore.js';
 
+// 難易度レベル定数
+const DIFFICULTY = {
+  BEGINNER: 1,      // 初級
+  INTERMEDIATE: 2,  // 中級
+  ADVANCED: 3,      // 上級
+};
+
 export default function DifficultySelectScreen() {
-  const [isFreeMode, setIsFreeMode] = React.useState(() =>
-    typeof GameState !== 'undefined' ? GameState.gameMode === 'free' : false
-  );
+  const isFreeMode = typeof GameState !== 'undefined' && GameState.gameMode === 'free';
 
   // 高難易度イベントモードかどうかの判定
-  const [isHighDiffMode, setIsHighDiffMode] = React.useState(
-    () =>
-      typeof GameState !== 'undefined' &&
-      GameState.gameMode?.startsWith('event_') &&
-      GameState.gameMode?.endsWith('_high')
-  );
-
-  React.useEffect(() => {
-    const updateMode = () => {
-      setIsFreeMode(GameState.gameMode === 'free');
-      setIsHighDiffMode(
-        GameState.gameMode?.startsWith('event_') &&
-          GameState.gameMode?.endsWith('_high')
-      );
-    };
-    // 画面遷移などで変更された際に強制検知させる（簡易ポーリングまたはイベント等の代替）
-    const interval = setInterval(updateMode, 500);
-    return () => clearInterval(interval);
-  }, []);
+  const isHighDiffMode =
+    typeof GameState !== 'undefined' &&
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high');
 
   const handleSelect = (level) => {
-    if (confirmDifficulty) {
-      confirmDifficulty(level);
-    }
+    confirmDifficulty?.(level);
   };
 
   // 高難易度イベント用の背景スタイル
@@ -85,7 +72,7 @@ export default function DifficultySelectScreen() {
             <button
               className="btn"
               style={{ background: '#9333ea' }}
-              onClick={() => handleSelect(3)}
+              onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
             >
               超級
             </button>
@@ -104,7 +91,7 @@ export default function DifficultySelectScreen() {
               <button
                 className="btn"
                 style={{ background: '#22c55e' }}
-                onClick={() => handleSelect(1)}
+                onClick={() => handleSelect(DIFFICULTY.BEGINNER)}
               >
                 初級
               </button>
@@ -112,7 +99,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(1)}
+                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.BEGINNER)}
                   title="デッキ確認"
                 >
                   🔍
@@ -123,7 +110,7 @@ export default function DifficultySelectScreen() {
               <button
                 className="btn"
                 style={{ background: '#eab308' }}
-                onClick={() => handleSelect(2)}
+                onClick={() => handleSelect(DIFFICULTY.INTERMEDIATE)}
               >
                 中級
               </button>
@@ -131,7 +118,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(2)}
+                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.INTERMEDIATE)}
                   title="デッキ確認"
                 >
                   🔍
@@ -142,7 +129,7 @@ export default function DifficultySelectScreen() {
               <button
                 className="btn"
                 style={{ background: '#ef4444' }}
-                onClick={() => handleSelect(3)}
+                onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
               >
                 上級
               </button>
@@ -150,7 +137,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(3)}
+                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.ADVANCED)}
                   title="デッキ確認"
                 >
                   🔍

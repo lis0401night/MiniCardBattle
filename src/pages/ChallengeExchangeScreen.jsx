@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
 import { saveDeck } from '../services/deck.js';
-import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { CHALLENGE_EXCHANGE_LINEUP } from '../utils/constants/config.js';
@@ -81,6 +81,7 @@ export default function ChallengeExchangeScreen() {
               );
 
               // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
+              // これにより、オフラインで獲得したポイントがサーバーに同期される
               if (pts === 0 && currentPts > 0) {
                 fetch('api/update_challenge_points.php', {
                   method: 'POST',

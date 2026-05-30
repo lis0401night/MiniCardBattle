@@ -4,34 +4,36 @@ import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import { goBackFromSelect, showCharDetail } from '../services/uiMainCore.js';
 import { achievementData } from '../utils/constants/achievements.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import { CHARACTERS, getSkinImage, BOSS_CHARACTER_IDS } from '../utils/constants/characters.js';
+
+// キャラクターフィルタリングの共通処理 (DRY原則を保ちます)
+const getFilteredCharacters = () => {
+  const charsObj = CHARACTERS || {};
+
+  // 【サタン・ゼノン・ヴィオラ解放条件】フリーバトルの対戦相手選択画面でのみ、
+  // それぞれストーリーモードで撃破（サタンはクリア）していれば対戦相手として表示する。
+  // プレイヤーキャラクター選択ではこれらボスキャラクターは常に非表示。
+  const isEnemySelect = GameState.appState === 'select_enemy';
+  const hasStoryClear = Object.values(
+    achievementData.stats?.storyClears || {}
+  ).some((v) => v >= 1);
+  const isVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
+  const isSuccubusUnlocked = (achievementData.stats?.succubusDefeated || 0) >= 1;
+
+  return Object.values(charsObj).filter((c) => {
+    if (BOSS_CHARACTER_IDS.includes(c.id)) {
+      if (!isEnemySelect) return false;
+      if (c.id === 'satan') return hasStoryClear;
+      if (c.id === 'void') return isVoidUnlocked;
+      if (c.id === 'succubus') return isSuccubusUnlocked;
+    }
+    if (c.id.startsWith('campaign_')) return false;
+    return true;
+  });
+};
 
 export default function CharacterSelectScreen() {
-  const [characters, setCharacters] = useState(() => {
-    // CHARACTERSはオブジェクト形式
-    const charsObj = CHARACTERS || {};
-
-    // 【サタン・ゼノン・ヴィオラ解放条件】フリーバトルの対戦相手選択画面でのみ、
-    // それぞれストーリーモードで撃破（サタンはクリア）していれば対戦相手として表示する。
-    // プレイヤーキャラクター選択ではこれらボスキャラクターは常に非表示。
-    const isEnemySelect = GameState.appState === 'select_enemy';
-    const hasStoryClear = Object.values(
-      achievementData.stats?.storyClears || {}
-    ).some((v) => v >= 1);
-    const isVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
-    const isSuccubusUnlocked = (achievementData.stats?.succubusDefeated || 0) >= 1;
-
-    return Object.values(charsObj).filter((c) => {
-      if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') {
-        if (!isEnemySelect) return false;
-        if (c.id === 'satan') return hasStoryClear;
-        if (c.id === 'void') return isVoidUnlocked;
-        if (c.id === 'succubus') return isSuccubusUnlocked;
-      }
-      if (c.id.startsWith('campaign_')) return false;
-      return true;
-    });
-  });
+  const [characters, setCharacters] = useState(getFilteredCharacters);
 
   const [title, setTitle] = useState(() => {
     if (GameState.appState === 'select_enemy') {
@@ -51,8 +53,6 @@ export default function CharacterSelectScreen() {
   const [renderVersion, setRenderVersion] = useState(0);
 
   useEffect(() => {
-    const charsObj = CHARACTERS || {};
-
     const updateTitle = () => {
       if (GameState.appState === 'select_enemy') {
         setTitle('対戦相手');
@@ -69,34 +69,19 @@ export default function CharacterSelectScreen() {
     };
     // 画面切り替え時に再評価させるためのフックを追加
     const originalInit = window.initSelectScreenReact;
+    const originalForceUpdate = window.forceUpdateSelectScreen;
+
     window.initSelectScreenReact = () => {
       updateTitle();
       // 画面切り替え時にサタン・ゼノン・ヴィオラの表示状態を再評価する
-      const newIsEnemySelect = GameState.appState === 'select_enemy';
-      const newHasStoryClear = Object.values(
-        achievementData.stats?.storyClears || {}
-      ).some((v) => v >= 1);
-      const newIsVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
-      const newIsSuccubusUnlocked = (achievementData.stats?.succubusDefeated || 0) >= 1;
-
-      const newList = Object.values(charsObj).filter((c) => {
-        if (c.id === 'satan' || c.id === 'void' || c.id === 'succubus') {
-          if (!newIsEnemySelect) return false;
-          if (c.id === 'satan') return newHasStoryClear;
-          if (c.id === 'void') return newIsVoidUnlocked;
-          if (c.id === 'succubus') return newIsSuccubusUnlocked;
-        }
-        if (c.id.startsWith('campaign_')) return false;
-        return true;
-      });
-      setCharacters(newList);
+      setCharacters(getFilteredCharacters());
       setRenderVersion((v) => v + 1);
     };
     window.forceUpdateSelectScreen = () => setRenderVersion((v) => v + 1);
 
     return () => {
       window.initSelectScreenReact = originalInit;
-      window.forceUpdateSelectScreen = null;
+      window.forceUpdateSelectScreen = originalForceUpdate;
     };
   }, []);
 

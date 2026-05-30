@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { GameState } from '../state/gameState.js';
 import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
@@ -9,6 +9,9 @@ export default function EndingScreen() {
   const [textOpacity, setTextOpacity] = useState(1);
   const [step, setStep] = useState('illust'); // 'illust' or 'result'
   const [textIndex, setTextIndex] = useState(0);
+
+  const textTimerRef = useRef(null);
+  const resultTimerRef = useRef(null);
 
   const charId = GameState.playerConfig?.id || 'android';
   const romanticTalks = STORY_ROMANTIC_TALKS[charId] || [
@@ -24,21 +27,31 @@ export default function EndingScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // アンマウント時に残存タイマーをクリーンアップ
+    return () => {
+      if (textTimerRef.current) clearTimeout(textTimerRef.current);
+      if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
+    };
+  }, []);
+
   const handleClickIllust = () => {
     if (step !== 'illust') return;
     playSound(SOUNDS.seClick);
 
     if (textIndex < romanticTalks.length - 1) {
+      if (textTimerRef.current) clearTimeout(textTimerRef.current);
       // 次のセリフへフェード切り替え
       setTextOpacity(0);
-      setTimeout(() => {
+      textTimerRef.current = setTimeout(() => {
         setTextIndex((prev) => prev + 1);
         setTextOpacity(1);
       }, 500);
     } else {
+      if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
       // すべてのロマンチックな台詞を読み終えたら、GAME CLEARへフェード遷移
       setOpacity(0);
-      setTimeout(() => {
+      resultTimerRef.current = setTimeout(() => {
         setStep('result');
         setOpacity(1);
       }, 2000);

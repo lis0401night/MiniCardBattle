@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import { GameState } from '../state/gameState.js';
 import {
   clearTournamentSave,
   saveTournamentProgress,
   startTournamentMatch,
 } from '../game/tournament.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
 import {
-  getOrCreateUUID,
   playSound,
   switchScreen,
 } from '../utils/gameUtils.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 const SVG_WIDTH = 1100;
@@ -68,6 +68,7 @@ export default function TournamentBracketScreen() {
     playSound?.(SOUNDS?.seClick);
     if (isFinished) {
       let winCount = t.playerLost ? currentRound - 1 : 4;
+      // 勝利数に応じたポイント: 0勝=0pt, 1勝=1pt, 2勝=3pt, 3勝=6pt, 4勝(優勝)=10pt
       const pointsMap = [0, 1, 3, 6, 10];
       let points = pointsMap[winCount] || 0;
       clearTournamentSave();
@@ -91,21 +92,8 @@ export default function TournamentBracketScreen() {
           totalPts
         );
 
-        // サーバーにポイントを同期
-        const uuid = getOrCreateUUID();
-        if (uuid) {
-          fetch('api/update_tournament_points.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              uuid,
-              points: currentPts,
-              total_points: totalPts,
-            }),
-          }).catch((err) =>
-            console.error('Failed to sync tournament points:', err)
-          );
-        }
+        // サーバーにポイントを同期 (DRY原則を適用し、共通のsavePointsToServerを使用)
+        savePointsToServer('update_tournament_points.php', currentPts, totalPts);
       }
 
       showAlertModal?.(

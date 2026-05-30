@@ -14,10 +14,14 @@ import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+const DEBUG_MODE_CLICK_THRESHOLD = 10;
+
 export default function OnlineRoomSearchScreen() {
   const [rooms, setRooms] = useState([]);
   const [isJoining, setIsJoining] = useState(false);
-  const [, setDebugClickCount] = useState(0);
+
+  const debugClickCountRef = React.useRef(0);
+  const debugTimeout = React.useRef(null);
 
   useEffect(() => {
     const unsubscribe = listenToLobbyRooms((availableRooms) => {
@@ -26,34 +30,36 @@ export default function OnlineRoomSearchScreen() {
     });
     return () => {
       unsubscribe();
+      if (debugTimeout.current) {
+        clearTimeout(debugTimeout.current);
+      }
     };
   }, []);
 
-  let debugTimeout = React.useRef(null);
   const handleTitleClick = () => {
-    setDebugClickCount((prev) => {
-      const next = prev + 1;
-      if (debugTimeout.current) clearTimeout(debugTimeout.current);
-      debugTimeout.current = setTimeout(() => setDebugClickCount(0), 1000);
+    const next = debugClickCountRef.current + 1;
+    debugClickCountRef.current = next;
+    if (debugTimeout.current) clearTimeout(debugTimeout.current);
+    debugTimeout.current = setTimeout(() => {
+      debugClickCountRef.current = 0;
+    }, 1000);
 
-      if (next >= 10) {
-        if (debugTimeout.current) clearTimeout(debugTimeout.current);
-        playSound?.(SOUNDS.seClick);
-        showConfirmModal?.(
-          '【デバッグ機能】\n現在のすべてのオンラインルームデータを強制的に削除（解散）します。よろしいですか？',
-          async () => {
-            try {
-              await forceDeleteAllRooms();
-              showAlertModal?.('全ルームデータを削除しました。');
-            } catch (e) {
-              showAlertModal?.('削除に失敗しました: ' + e.message);
-            }
+    if (next >= DEBUG_MODE_CLICK_THRESHOLD) {
+      if (debugTimeout.current) clearTimeout(debugTimeout.current);
+      debugClickCountRef.current = 0;
+      playSound?.(SOUNDS.seClick);
+      showConfirmModal?.(
+        '【デバッグ機能】\n現在のすべてのオンラインルームデータを強制的に削除（解散）します。よろしいですか？',
+        async () => {
+          try {
+            await forceDeleteAllRooms();
+            showAlertModal?.('全ルームデータを削除しました。');
+          } catch (e) {
+            showAlertModal?.('削除に失敗しました: ' + e.message);
           }
-        );
-        return 0; // reset
-      }
-      return next;
-    });
+        }
+      );
+    }
   };
 
   const handleJoinClick = (roomId) => {

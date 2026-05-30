@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './styles/style.css';
 
-// Initialize React app in the existing container
+// 既存のコンテナ内で React アプリを初期化
 const container = document.getElementById('app-container');
 const root = ReactDOM.createRoot(container);
 

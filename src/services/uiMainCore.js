@@ -26,6 +26,8 @@ import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
 
+const DEBUG_CLICK_THRESHOLD = 10;
+
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)
  * VERSION: 1.2
@@ -245,7 +247,7 @@ export let optionsTitleClickCount = 0;
 
 export function handleOptionsTitleClick() {
   optionsTitleClickCount++;
-  if (optionsTitleClickCount >= 10) {
+  if (optionsTitleClickCount >= DEBUG_CLICK_THRESHOLD) {
     optionsTitleClickCount = 0;
     // 意図的にエラーを発生させる
     const error = new Error(

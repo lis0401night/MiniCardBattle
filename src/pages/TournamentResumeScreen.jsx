@@ -117,7 +117,7 @@ export default function TournamentResumeScreen() {
       if (deck && deck.cards) {
         window.showEnemyDeckModal(deck.cards, 'デッキ確認');
       } else {
-        alert('デッキ情報のプレビューは再開後に可能です。');
+        showAlertModal('デッキ情報のプレビューは再開後に可能です。');
       }
     }
   };
