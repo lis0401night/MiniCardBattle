@@ -811,6 +811,20 @@ h2 {
   font-size: 1.1rem;
   line-height: 1.5;
   flex-grow: 1;
+  overflow-y: auto; /* 長文テキストがボックスからはみ出さないようスクロール可能にする */
+}
+
+/* スマホ縦画面での見切れ防止: フォント・余白を縮小して表示行数を確保 */
+@media (max-height: 700px) {
+  #dialogue-text {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  #speaker-name {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+  }
 }
 
 .deck-edit-container {
