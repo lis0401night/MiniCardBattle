@@ -1010,11 +1010,11 @@ export const CARD_MASTER = [
     id: 'pegasus',
     name: '聖なるペガサス',
     rarity: 2,
-    power: 3,
-    skills: [{ id: 'equip' }, { id: 'immune' }],
+    power: 2,
+    skills: [{ id: 'equip' }, { id: 'heal', value: 3 }, { id: 'draw', value: 1 },],
     voiceCategory: 'horse',
     flavor:
-      '非常に高い魔法抗体を持つ有翼の馬。性格は温厚だが警戒心が強く、自らが認めた乗り手以外が触れることは叶わない。',
+      '美しい有翼の馬。性格は温厚だが警戒心が強く、自らが認めた乗り手以外が触れることは叶わない。',
   },
   {
     id: 'doom',
@@ -1186,7 +1186,7 @@ export const CARD_MASTER = [
       { id: 'legendary' },
       { id: 'summon', value: 5, summonId: 'token_golem' },
     ],
-    voiceCategory: 'human_male_old',
+    voiceCategory: 'human_male_normal',
     flavor:
       '彼が紡ぐ古代の呪文は、無機物すらも忠実な下僕へと変え、戦場に絶対的な力をもたらす。',
   },
@@ -2024,7 +2024,7 @@ export const CARD_MASTER = [
     name: 'ジャガーノート',
     rarity: 3,
     power: 10,
-    skills: [{ id: 'takeover' }, { id: 'spend', value: 2 }, { id: 'pierce' }],
+    skills: [{ id: 'takeover' }, { id: 'spend', value: 2 }],
     voiceCategory: 'machine_new',
     flavor:
       '圧倒的な質量と装甲で全てを蹂躙する超大型兵器。臨界まで充填されたエネルギーの解放を伴う突撃は、いかなる軍勢をも粉砕する。',
