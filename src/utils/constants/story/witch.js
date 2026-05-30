@@ -352,7 +352,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'クスクス……私はナイア。' },
         {
           speaker: 'enemy',
-          text: 'あちらの席で、不気味な剣を握りしめて。すっかり闇に沈んで……最高ですわね',
+          text: 'あちらの席で、水晶玉を抱きしめて。すっかり闇に沈んで……最高ですわね',
         },
         {
           speaker: 'player',
