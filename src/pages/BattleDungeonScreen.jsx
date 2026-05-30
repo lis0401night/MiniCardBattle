@@ -599,35 +599,47 @@ function RentalDeckSelect() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <div
-                    className={
-                      opt.rarity === 4 && !opt.isCharacterLeader
-                        ? 'rarity-4-border'
-                        : ''
-                    }
-                    style={{
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: opt.isCharacterLeader
-                        ? '2px solid #334155'
-                        : `2px solid ${getRarityColor(opt.rarity)}`,
-                      marginRight: '15px',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <img
-                      src={opt.icon}
-                      alt={opt.name}
+                  {opt.isCharacterLeader ? (
+                    /* プレイヤーキャラのリーダー：共通CSSクラスを適用してアセットの物理サイズ差によるはみ出しを解消 */
+                    <div className="banner-icon-wrapper">
+                      <img
+                        src={opt.icon}
+                        className="banner-icon"
+                        alt={opt.name}
+                      />
+                      <img
+                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(opt.leaderId) ? 'red' : 'gold'}.png`}
+                        className="banner-icon-frame"
+                        alt="frame"
+                      />
+                    </div>
+                  ) : (
+                    /* カードのリーダー：元の美しいレアリティカラーボーダーおよびレインボーボーダーを完璧に維持する */
+                    <div
+                      className={opt.rarity === 4 ? 'rarity-4-border' : ''}
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
+                        width: '60px',
+                        height: '60px',
+                        aspectRatio: '1 / 1', /* 絶対に1:1を死守してサブピクセル歪みを防止 */
                         borderRadius: '50%',
+                        overflow: 'hidden',
+                        border: `2px solid ${getRarityColor(opt.rarity)}`,
+                        marginRight: '15px',
+                        flexShrink: 0,
                       }}
-                    />
-                  </div>
+                    >
+                      <img
+                        src={opt.icon}
+                        alt={opt.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    </div>
+                  )}
                   <span
                     className={`banner-text ${opt.rarity === 4 && !opt.isCharacterLeader ? 'rarity-4-text' : ''}`}
                     style={{

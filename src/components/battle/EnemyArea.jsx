@@ -20,20 +20,23 @@ export default function EnemyArea({
     <div className="hp-area">
       <div className="status-container">
         <div className="icon-wrapper" id="enemy-icon-wrap">
-          <img
-            id="enemy-icon"
-            className={`char-icon red ${enemyConfig.isShadow ? 'shadow-icon' : ''} ${enemyHP <= 0 ? 'dead' : ''}`}
-            src={
-              getSkinImage(
-                enemyConfig,
-                GameState.enemySkins?.[enemyConfig.id],
-                'icon'
-              ) ||
-              enemyConfig.icon ||
-              enemyConfig.image
-            }
-            alt="enemy icon"
-          />
+          <div className={`char-icon-bg red ${enemyHP <= 0 ? 'dead' : ''}`}></div>
+          <div className={`char-icon-container ${enemyConfig.isShadow ? 'shadow-icon' : ''} ${enemyHP <= 0 ? 'dead' : ''}`}>
+            <img
+              id="enemy-icon"
+              className="char-icon"
+              src={
+                getSkinImage(
+                  enemyConfig,
+                  GameState.enemySkins?.[enemyConfig.id],
+                  'icon'
+                ) ||
+                enemyConfig.icon ||
+                enemyConfig.image
+              }
+              alt="enemy icon"
+            />
+          </div>
           <img
             src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(enemyConfig.id) ? 'red' : 'gold'}.png`}
             className="icon-frame"

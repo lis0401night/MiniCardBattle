@@ -575,7 +575,13 @@ export default function DeckEditorScreen({ switchScreen }) {
             leaderId !== 'unknown' &&
             leaderId !== 'npc' && (
               <div
-                style={{ cursor: 'pointer', flexShrink: 0 }}
+                className="banner-icon-wrapper"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  marginRight: 0, /* DeckEditorでは右マージン不要のため0にリセット */
+                  cursor: 'pointer',
+                }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
                   if (window.showCharDetailModal) {
@@ -599,14 +605,13 @@ export default function DeckEditorScreen({ switchScreen }) {
                         )
                       : undefined) || undefined
                   }
+                  className="banner-icon"
                   alt="Leader"
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    border: '2px solid #facc15',
-                    objectFit: 'cover',
-                  }}
+                />
+                <img
+                  src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(leaderId) ? 'red' : 'gold'}.png`}
+                  className="banner-icon-frame"
+                  alt="frame"
                 />
               </div>
             )}

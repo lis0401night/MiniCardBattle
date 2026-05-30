@@ -4,11 +4,11 @@ import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 const UNLOCK_ITEMS = [
-  { id: 'deck_easy', name: 'イージーのデッキを追加', cost: 3 },
+  { id: 'deck_easy', name: '初級のデッキを追加', cost: 3 },
   { id: 'char_silver', name: 'シルバーのリーダーを追加', cost: 10 },
-  { id: 'deck_normal', name: 'ノーマルのデッキを追加', cost: 20 },
+  { id: 'deck_normal', name: '中級のデッキを追加', cost: 20 },
   { id: 'char_gold', name: 'ゴールドのリーダーを追加', cost: 40 },
-  { id: 'deck_hard', name: 'ハードのデッキを追加', cost: 60 },
+  { id: 'deck_hard', name: '上級のデッキを追加', cost: 60 },
   { id: 'char_legend', name: 'レジェンドのリーダーを追加', cost: 80 },
 ];
 

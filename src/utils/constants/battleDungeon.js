@@ -102,9 +102,9 @@ export const getRentalDeckOptions = () => {
       });
     };
 
-    if (unlocks.deck_easy) addCharDecks('easy', 'イージー');
-    if (unlocks.deck_normal) addCharDecks('normal', 'ノーマル');
-    if (unlocks.deck_hard) addCharDecks('hard', 'ハード');
+    if (unlocks.deck_easy) addCharDecks('easy', '初級');
+    if (unlocks.deck_normal) addCharDecks('normal', '中級');
+    if (unlocks.deck_hard) addCharDecks('hard', '上級');
   } catch (e) {
     console.error('Failed to load dungeon unlocks:', e);
   }
@@ -211,7 +211,7 @@ export const generateCharacterBossEnemy = (floorNum) => {
   const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
   const char = CHARACTERS[bossId] || CHARACTERS.android; // 未定義の場合に android でフォールバック
 
-  // 30階まではノーマル、40階以降はハード
+  // 30階までは中級、40階以降は上級
   const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
   const deck =
     ENEMY_DECKS[bossId][difficultyMode] || ENEMY_DECKS[bossId].normal || [];

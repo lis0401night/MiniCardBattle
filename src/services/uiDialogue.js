@@ -379,11 +379,21 @@ export async function showNextDialogue(force = false) {
     window.currentDialogueData.rightActive = false;
     window.currentDialogueData.boxBorderColor = '#475569';
   } else {
-    const charConfig =
+    let charConfig =
       cur.charData ||
       (cur.charId
         ? CHARACTERS[cur.charId] || GameState.enemyConfig
         : GameState.enemyConfig);
+
+    // shadow の不完全な charData ({ id: 'shadow' }) が渡された場合、
+    // 実データを持つ GameState.enemyConfig からコピーをマージして名前や画像パスなどを復元する
+    if (charConfig.id === 'shadow' && !charConfig.name && !charConfig.image) {
+      charConfig = {
+        ...GameState.enemyConfig,
+        ...charConfig,
+      };
+    }
+
     window.currentDialogueData.speakerName = charConfig.name;
     window.currentDialogueData.nameColor = charConfig.color;
     window.currentDialogueData.boxBorderColor = charConfig.color;
@@ -404,8 +414,13 @@ export async function showNextDialogue(force = false) {
       if (GameState.gameMode === 'tournament') {
         enemySkinId = 'school';
       }
+      const imgType =
+        GameState.appState === 'post_dialogue' && GameState.lastBattleResult === 'win'
+          ? 'imageLose'
+          : 'image';
       const newImg =
-        getSkinImage(charConfig, enemySkinId, 'image') ||
+        getSkinImage(charConfig, enemySkinId, imgType) ||
+        charConfig[imgType] ||
         charConfig.image ||
         getCardImgUrl(charConfig);
 

@@ -871,7 +871,7 @@ function checkStoryAchievements(leaderId) {
   checkUniqueStoryAchievements();
 }
 
-// ストーリークリア（ハード）実績のチェック
+// ストーリークリア（上級）実績のチェック
 function checkStoryHardAchievements(leaderId) {
   ACHIEVEMENT_MASTER.filter(
     (a) => a.type === 'story_clear_hard' && a.targetValue === leaderId

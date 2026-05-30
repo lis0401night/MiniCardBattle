@@ -577,7 +577,6 @@ export default function DeckListScreen({ switchScreen }) {
                                 draggable="false"
                                 style={{
                                   cursor: 'pointer',
-                                  position: 'relative',
                                   zIndex: 2,
                                 }}
                                 onClick={(e) => {

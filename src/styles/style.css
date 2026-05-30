@@ -279,26 +279,31 @@ h2 {
   position: relative;
   width: 60px;
   height: 60px;
+  aspect-ratio: 1 / 1; /* 親要素のいかなる微小な歪みに対しても完璧な1:1の真円を死守 */
   margin-right: 15px;
   flex-shrink: 0;
 }
 
 .banner-icon {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+  position: absolute; /* 位置ズレを解消するため絶対配置に設定 */
+  top: 1%; /* アセット物理直径差を中央にアライン */
+  left: 1%; /* アセット物理直径差を中央にアライン */
+  width: 98%; /* キャラクター画像を199pxから195px相当へ極小縮小し、ゴールド枠の裏側に完全に隠す */
+  height: 98%;
+  object-fit: cover; /* cover にすることで画像境界と border-radius を完全に一致させ、四隅の汚れを確実にクリップ */
+  border-radius: 50%; /* アセット画像のフチを丸く綺麗にクリップ */
 }
 
 .banner-icon-frame {
   position: absolute;
-  top: 0;
+  top: 0; /* 画像と完全に同じ位置に重ねる */
   left: 0;
-  width: 100%;
+  width: 100%; /* 画像と完全に同じ100%サイズに維持（大きくも小さくもしない） */
   height: 100%;
+  object-fit: cover; /* 画像と object-fit を cover で統一し、ブラウザの端数歪みによるズレ・はみ出しを完全に防止 */
   pointer-events: none;
   z-index: 3;
-  transform: scale(1);
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)); /* 円形のフレーム外周に美しいシャドウを適用 */
 }
 
 .banner-text {
@@ -1096,22 +1101,43 @@ h2 {
   aspect-ratio: 1 / 1;
 }
 
-.char-icon {
+.char-icon-container {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: none;
-  padding: 5px;
-
-  box-sizing: border-box;
-  object-fit: cover;
-  background-color: #334155;
-
-  position: relative;
-
+  overflow: hidden; /* 子要素（画像と背景）を絶対に完璧な真円にクリップし、はみ出しを完全根絶 */
   z-index: 2;
+  box-sizing: border-box;
+  padding: 5px; /* アセット外周の余白 */
 
   transition: all 0.3s;
+  transform: scale(0.88); /* ゴールドフレーム(scale 0.9)の裏側に完全に隠すための極小アライメント */
+  transform-origin: center;
+}
+
+.char-icon-container.dead {
+  filter: grayscale(1);
+}
+
+.char-icon-container.shadow-icon {
+  filter: grayscale(1) brightness(0.25) contrast(1.2)
+    drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+}
+
+.char-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: cover;
+  background-color: transparent;
+  z-index: 2;
+  display: block;
 }
 
 .card-detail-box:empty {
@@ -1120,22 +1146,29 @@ h2 {
   padding: 0;
 }
 
-.char-icon.blue {
-  background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+/* キャラクターアイコンの背景グラデーション用レイヤー */
+.char-icon-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  z-index: 1;
+  box-sizing: border-box;
+  padding: 5px;
 }
 
-.char-icon.red {
-  background: linear-gradient(90deg, #e11d48, #fb7185);
+.char-icon-bg.blue {
+  background: #0ea5e9; /* HPバーの左端色と同化させる単色 */
 }
 
-.char-icon.dead {
-  background: linear-gradient(90deg, #334155, #475569);
-  filter: grayscale(1);
+.char-icon-bg.red {
+  background: #e11d48; /* HPバーの左端色と同化させる単色 */
 }
 
-.char-icon.shadow-icon {
-  filter: grayscale(1) brightness(0.25) contrast(1.2)
-    drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+.char-icon-bg.dead {
+  background: #334155; /* HPバー背景と同化させる単色 */
 }
 
 .icon-frame {

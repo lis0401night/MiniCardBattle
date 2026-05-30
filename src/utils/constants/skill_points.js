@@ -155,7 +155,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   fate: {
-    base: 3,
+    base: 0,
     multiplier: 0,
   },
   salvage: {

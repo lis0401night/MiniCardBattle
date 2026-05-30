@@ -28,20 +28,23 @@ export default function PlayerArea({
           onClick={onLeaderSkillClick}
           style={{ cursor: 'pointer' }}
         >
-          <img
-            id="player-icon"
-            className={`char-icon blue ${playerHP <= 0 ? 'dead' : ''}`}
-            src={
-              getSkinImage(
-                playerConfig,
-                GameState.playerSkins?.[playerConfig.id],
-                'icon'
-              ) ||
-              playerConfig.icon ||
-              playerConfig.image
-            }
-            alt="player icon"
-          />
+          <div className={`char-icon-bg blue ${playerHP <= 0 ? 'dead' : ''}`}></div>
+          <div className={`char-icon-container ${playerHP <= 0 ? 'dead' : ''}`}>
+            <img
+              id="player-icon"
+              className="char-icon"
+              src={
+                getSkinImage(
+                  playerConfig,
+                  GameState.playerSkins?.[playerConfig.id],
+                  'icon'
+                ) ||
+                playerConfig.icon ||
+                playerConfig.image
+              }
+              alt="player icon"
+            />
+          </div>
           {/* 敵対勢力（魔族）のリーダーは赤フレーム、それ以外は金フレームを使用 */}
           <img
             src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(playerConfig.id) ? 'red' : 'gold'}.png`}
