@@ -1062,7 +1062,13 @@ export async function resolveActiveSkillEffect(
     await sleep(500);
 
     if (roll <= 5) {
-      let dmg = roll;
+      // 新しい確率設計：2/6(出目1,2)で1ダメージ、2/6(出目3,4)で2ダメージ、1/6(出目5)で3ダメージ
+      let dmg = 1;
+      if (roll === 3 || roll === 4) {
+        dmg = 2;
+      } else if (roll === 5) {
+        dmg = 3;
+      }
       if (o === 'blue') {
         GameState.enemyHP -= dmg;
         createDamagePopup(
