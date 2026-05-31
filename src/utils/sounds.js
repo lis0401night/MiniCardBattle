@@ -28,6 +28,8 @@ export const SE_PATHS = {
   seMetalBlast: 'assets/audio/se/se_metalblast.mp3',
   seFire: 'assets/audio/se/se_fire.mp3',
   seHyoushigi: 'assets/audio/se/se_hyoushigi.mp3',
+  seSkillStealth: 'assets/audio/se/se_skill_stealth.mp3',
+  seSkillDominate: 'assets/audio/se/se_skill_dominate.mp3',
 };
 
 export const SOUNDS = {
@@ -82,6 +84,8 @@ export const AUDIO_INSTANCES = {
   seSkillCharge: new Audio('assets/audio/se/se_skill_charge.mp3'),
   seSkillFreeze: new Audio('assets/audio/se/se_skill_freeze.mp3'),
   seSkillCrush: new Audio('assets/audio/se/se_skill_crush.mp3'),
+  seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
+  seSkillDominate: new Audio('assets/audio/se/se_skill_dominate.mp3'),
 };
 
 // サウンドの初期設定

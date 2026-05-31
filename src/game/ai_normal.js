@@ -600,6 +600,10 @@ export function processActionSequence(
 
       // 【修正】装備カードが持っていた追加アクティブスキル（事前解決された選択スキル等含む）を順次実行シミュレートする
       addedSkills.forEach((sk) => {
+        // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
+        if (['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(sk.id)) {
+          return;
+        }
         applyActiveSkillLogic(
           simState,
           'red',
@@ -803,6 +807,31 @@ export function processActionSequence(
   const hpBeforeCombat = simState.enemyHP;
 
   if (!(simState.extraTurnCount > 0)) {
+    // 【修正】プレイヤーのターン開始に伴い、プレイヤー側カードの「無敵（invincible）」スキル持続ターンを減退・解除する
+    simState.playerBoard.forEach((c) => {
+      if (!c) return;
+      
+      // 1. メインの skill フィールドが invincible の場合
+      if (c.skill === 'invincible') {
+        c.skillValue = (c.skillValue || 1) - 1;
+        if (c.skillValue <= 0) {
+          c.skill = 'none';
+          c.skillValue = 0;
+        }
+      }
+      
+      // 2. skills 配列内に invincible がある場合
+      if (Array.isArray(c.skills)) {
+        const invSk = c.skills.find((s) => s.id === 'invincible');
+        if (invSk) {
+          invSk.value--;
+          if (invSk.value <= 0) {
+            c.skills = c.skills.filter((s) => s !== invSk);
+          }
+        }
+      }
+    });
+
     applyPassiveSkillLogic(simState, 'blue');
     simState.playerBoard.forEach((c) => {
       if (c && c.stunTurns > 0) c.stunTurns--;
@@ -815,6 +844,7 @@ export function processActionSequence(
   }
 
   return simState;
+
 }
 
 export function getBestSimulatedMove() {
@@ -1920,7 +1950,7 @@ export function getBestSimulatedMove() {
 
   // スコア順、次いでリーダースキル不使用優先、最後にアクションの短さ順でソート（不要なスキル消費を避ける）
   candidates.sort((a, b) => {
-    if (Math.abs(a.score - b.score) > 0.001) return b.score - a.score;
+    if (Math.abs(a.score - b.score) > 0.00001) return b.score - a.score;
     if (a.useSkill !== b.useSkill) return a.useSkill ? 1 : -1;
     const aLen = a.actionQueue ? a.actionQueue.length : 0;
     const bLen = b.actionQueue ? b.actionQueue.length : 0;
@@ -1931,7 +1961,7 @@ export function getBestSimulatedMove() {
 
   const bestScore = candidates[0].score;
   let bestGroup = candidates.filter(
-    (c) => Math.abs(c.score - bestScore) < 0.001
+    (c) => Math.abs(c.score - bestScore) < 0.00001
   );
 
   // 同スコア候補の中で、リーダースキルを使用しない選択肢があればそれを優先する
@@ -3456,7 +3486,11 @@ export function simulateMove(
                 addedSkills.push({ id: s.id, value: s.value });
             });
           mergeCardSkills(targetCard, addedSkills);
-          addedSkills.forEach((sk) =>
+          addedSkills.forEach((sk) => {
+            // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
+            if (['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(sk.id)) {
+              return;
+            }
             applyActiveSkillLogic(
               simState,
               'red',
@@ -3465,8 +3499,8 @@ export function simulateMove(
               sk.value,
               [],
               cLanesForPass
-            )
-          );
+            );
+          });
         } else {
           let activeCard = playedCard;
           const unionSkill =
@@ -3590,7 +3624,32 @@ export function simulateMove(
 
   const hpBeforeCombat = simState.enemyHP;
   if (!(simState.extraTurnCount > 0)) {
-    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AIの攻撃は次AIターンなので範囲外。
+    // 【修正】プレイヤーのターン開始に伴い、プレイヤー側カードの「無敵（invincible）」スキル持続ターンを減退・解除する
+    simState.playerBoard.forEach((c) => {
+      if (!c) return;
+      
+      // 1. メインの skill フィールドが invincible の場合
+      if (c.skill === 'invincible') {
+        c.skillValue = (c.skillValue || 1) - 1;
+        if (c.skillValue <= 0) {
+          c.skill = 'none';
+          c.skillValue = 0;
+        }
+      }
+      
+      // 2. skills 配列内に invincible がある場合
+      if (Array.isArray(c.skills)) {
+        const invSk = c.skills.find((s) => s.id === 'invincible');
+        if (invSk) {
+          invSk.value--;
+          if (invSk.value <= 0) {
+            c.skills = c.skills.filter((s) => s !== invSk);
+          }
+        }
+      }
+    });
+
+    // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AI of the attackは次AIターンなので範囲外。
     applyPassiveSkillLogic(simState, 'blue');
     simState.playerBoard.forEach((c) => {
       if (c && c.stunTurns > 0) c.stunTurns--;

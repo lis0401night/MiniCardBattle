@@ -1152,7 +1152,10 @@ export async function waitPlayerEnemyLaneSelection(
     }
 
     window.handleEnemyLaneClick = (laneIndex) => {
-      if (!allowEmpty && targetBoard[laneIndex] === null) return;
+      if (!validLanes.includes(laneIndex)) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
 
       // チュートリアルのレーン制限フィルタ（配置やターゲット選択用）
       if (filterPlacementLaneClick && filterPlacementLaneClick(laneIndex))

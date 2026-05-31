@@ -2522,29 +2522,14 @@ export async function resolveActiveSkillEffect(
         await sleep(AI_THINKING_DURATION);
       } else {
         // プレイヤーの場合
-        const pLanes = await new Promise((resolve) => {
-          const originalClick = window.handleEnemyLaneClick;
-          waitPlayerEnemyLaneSelection(
-            1,
-            o,
-            true, // canCancel = true
-            '相手のカードを1枚選んでください',
-            false,
-            maxPower // 【追加】支配できるパワー上限をフィルターとして適用
-          )
-            .then(resolve)
-            .finally(() => {
-              window.handleEnemyLaneClick = originalClick;
-            });
-
-          window.handleEnemyLaneClick = (laneIndex) => {
-            const card = oppBoard[laneIndex];
-            if (!card || (card.currentPower ?? card.power ?? 0) > maxPower) {
-              return;
-            }
-            if (originalClick) originalClick(laneIndex);
-          };
-        });
+        const pLanes = await waitPlayerEnemyLaneSelection(
+          1,
+          o,
+          true, // canCancel = true
+          '相手のカードを1枚選んでください',
+          false,
+          maxPower // 支配できるパワー上限をフィルターとして適用
+        );
 
         if (pLanes && pLanes.length > 0) {
           selectedOppLane = pLanes[0];
