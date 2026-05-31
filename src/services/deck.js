@@ -867,6 +867,50 @@ export function saveCurrentEditDeck() {
     return;
   }
 
+  // ストーリーモードでは通常デッキを汚染しないよう、ストーリー専用のスナップショットデッキのみを更新して保存する
+  if (GameState.gameMode === 'story') {
+    let activeDeck = null;
+    const storySaved = localStorage.getItem('mini_card_battle_story_deck_obj');
+    if (storySaved) {
+      try {
+        activeDeck = JSON.parse(storySaved);
+      } catch (e) {
+        console.error('Failed to parse story deck snapshot during save:', e);
+      }
+    }
+    if (
+      !activeDeck &&
+      GameState.decks &&
+      GameState.decks.length > GameState.currentDeckIndex
+    ) {
+      activeDeck = { ...GameState.decks[GameState.currentDeckIndex] };
+    }
+    if (!activeDeck) {
+      activeDeck = {
+        id: 'story_deck',
+        name: 'ストーリーデッキ',
+        leaderId: GameState.playerConfig?.id || 'android',
+        playmatId: null,
+        playerSkins: {},
+        premiumCards: [...GameState.premiumCards],
+        cards: [],
+      };
+    }
+
+    activeDeck.playmatId = GameState.selectedPlaymatId;
+    activeDeck.playerSkins = { ...GameState.playerSkins };
+    activeDeck.premiumCards = [...GameState.premiumCards];
+    activeDeck.cards = GameState.playerDeckSelection.map((c) =>
+      typeof c === 'string' ? c : c.baseId || c.id
+    );
+
+    localStorage.setItem(
+      'mini_card_battle_story_deck_obj',
+      JSON.stringify(activeDeck)
+    );
+    return;
+  }
+
   if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
     const activeDeck = GameState.decks[GameState.currentDeckIndex];
 
