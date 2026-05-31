@@ -539,7 +539,10 @@ export const storyDialogues = {
           speaker: 'enemy',
           text: '私はクロエ。はぁ……なんだか暑苦しい人が来ましたね。',
         },
-        { speaker: 'enemy', text: '面倒ですけど、通してほしいなら力ずくでどうぞ' },
+        {
+          speaker: 'enemy',
+          text: '面倒ですけど、通してほしいなら力ずくでどうぞ',
+        },
         {
           speaker: 'player',
           text: '私はイグニスよ！ 面倒くさそうな顔しないでよ！ 懐中時計なんて見つめてないで、私と本気で戦いなさい！',
@@ -686,7 +689,10 @@ export const storyDialogues = {
           text: '……私はネフティ。火の竜……こんな騒がしい場所にまで。',
         },
         { speaker: 'enemy', text: 'お前を静かにさせる……' },
-        { speaker: 'player', text: '私はイグニスよ！ 静かにさせるですって！？ 生意気ね！' },
+        {
+          speaker: 'player',
+          text: '私はイグニスよ！ 静かにさせるですって！？ 生意気ね！',
+        },
         {
           speaker: 'player',
           text: 'あんたのその儀式用ナイフ、冷たそうだけど私の炎に耐えられるかしら！',

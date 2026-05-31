@@ -47,7 +47,9 @@ export default function DialogueScreen() {
     bgName = 'background_satan.png';
   } else if (
     GameState.gameMode === 'high_difficulty' ||
-    (GameState.gameMode && GameState.gameMode.startsWith('event_') && GameState.gameMode.endsWith('_high'))
+    (GameState.gameMode &&
+      GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_high'))
   ) {
     bgName = 'background_highdifficulty.png';
   } else if (GameState.gameMode === 'defense_attack') {

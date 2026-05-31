@@ -1374,10 +1374,7 @@ export function applyActiveSkillLogic(
       // カード本体またはスキルから召喚IDを取得
       const skillForSummonId = c.skills?.find(
         (s) =>
-          (s.id === 'summon' ||
-            s.id === 'awake' ||
-            s.id === 'wall_create' ||
-            s.id === 'split') &&
+          (s.id === 'summon' || s.id === 'awake' || s.id === 'split') &&
           s.summonId
       );
       tIdEngine = c.summonId || skillForSummonId?.summonId;
@@ -1498,65 +1495,6 @@ export function applyActiveSkillLogic(
         card: JSON.parse(JSON.stringify(awakeToken)),
         source: 'awake',
       });
-      break;
-    }
-    case 'wall_create': {
-      const wallPower = val || 10;
-      const wTC = CARD_MASTER.find((m) => m.id === 'token_wall') || {
-        name: 'トークン',
-        power: 1,
-      };
-      for (let i = 0; i < 1; i++) {
-        let targetLane = -1;
-        if (simulatedTokenLanes && simulatedTokenLanes.length > 0) {
-          targetLane = simulatedTokenLanes.shift();
-        } else if (Array.isArray(simulatedTokenLanes)) {
-          targetLane = -1;
-        } else {
-          const sealedLanes =
-            owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-          const emptyLanes = [0, 2, 1].filter(
-            (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
-          );
-          if (emptyLanes.length > 0) {
-            targetLane = emptyLanes[0];
-          } else {
-            const validOccupiedLanes = [0, 2, 1].filter(
-              (j) => !sealedLanes || sealedLanes[j] === 0
-            );
-            if (validOccupiedLanes.length > 0)
-              targetLane = validOccupiedLanes[0];
-          }
-        }
-
-        if (targetLane !== -1) {
-          if (b[targetLane] !== null) {
-            quietDiscardFromBoard(state, owner, targetLane);
-          }
-          const newToken = {
-            ...wTC,
-            id: `WC_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
-            uid: `${owner}_WC_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
-            owner,
-            isPremium: c.isPremium,
-            imgUrl: '',
-            power: wallPower,
-            basePower: wallPower,
-            currentPower: wallPower,
-            baseId: 'token_wall',
-            skills: (wTC.skills || []).map((s) => ({ ...s })),
-            isToken: true,
-          };
-          processPlacementOrEquip(
-            state,
-            owner,
-            targetLane,
-            newToken,
-            'wall_create',
-            events
-          );
-        }
-      }
       break;
     }
     case 'resurrect': {
@@ -4064,7 +4002,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       const candidates = [];
       for (let i = 0; i < 3; i++) {
         if (state.playerBoard[i]) {
-          candidates.push({ card: state.playerBoard[i], side: 'blue', lane: i });
+          candidates.push({
+            card: state.playerBoard[i],
+            side: 'blue',
+            lane: i,
+          });
         }
         if (state.enemyBoard[i]) {
           candidates.push({ card: state.enemyBoard[i], side: 'red', lane: i });
@@ -4137,7 +4079,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       const candidates = [];
       for (let i = 0; i < 3; i++) {
         if (state.playerBoard[i]) {
-          candidates.push({ card: state.playerBoard[i], side: 'blue', lane: i });
+          candidates.push({
+            card: state.playerBoard[i],
+            side: 'blue',
+            lane: i,
+          });
         }
         if (state.enemyBoard[i]) {
           candidates.push({ card: state.enemyBoard[i], side: 'red', lane: i });

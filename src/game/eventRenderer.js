@@ -10,6 +10,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
+import { PLACE_ANIMATION_DURATION } from '../utils/constants/config.js';
 import {
   renderBoard,
   renderHand,
@@ -418,7 +419,7 @@ export async function playEvents(events) {
           }
         }, 50);
 
-        await sleep(300);
+        await sleep(PLACE_ANIMATION_DURATION);
         // 召喚時演出終了のためフラグを解除。
         // 召喚時スキルを持つ場合は、別途 resolveOnPlaySkill 等の中で
         // 再度フラグが立てられ、適切に管理されることを前提とする。

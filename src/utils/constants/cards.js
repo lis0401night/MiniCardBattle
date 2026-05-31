@@ -2941,16 +2941,6 @@ export const CARD_MASTER = [
     flavor: '土と石で構成された自律型の魔法生物。',
   },
   {
-    id: 'token_wall',
-    name: '防壁',
-    rarity: 1,
-    power: 1,
-    isToken: true,
-    skills: [{ id: 'defender' }],
-    voiceCategory: 'stone',
-    flavor: '魔法によって創造された防壁。',
-  },
-  {
     id: 'token_phoenix',
     name: 'フェニックス',
     rarity: 1,

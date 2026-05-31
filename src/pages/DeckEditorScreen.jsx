@@ -579,7 +579,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                 style={{
                   width: '38px',
                   height: '38px',
-                  marginRight: 0, /* DeckEditorでは右マージン不要のため0にリセット */
+                  marginRight: 0 /* DeckEditorでは右マージン不要のため0にリセット */,
                   cursor: 'pointer',
                 }}
                 onClick={() => {

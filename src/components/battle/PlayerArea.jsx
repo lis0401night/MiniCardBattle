@@ -28,7 +28,9 @@ export default function PlayerArea({
           onClick={onLeaderSkillClick}
           style={{ cursor: 'pointer' }}
         >
-          <div className={`char-icon-bg blue ${playerHP <= 0 ? 'dead' : ''}`}></div>
+          <div
+            className={`char-icon-bg blue ${playerHP <= 0 ? 'dead' : ''}`}
+          ></div>
           <div className={`char-icon-container ${playerHP <= 0 ? 'dead' : ''}`}>
             <img
               id="player-icon"

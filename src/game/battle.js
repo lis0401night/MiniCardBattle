@@ -2,7 +2,11 @@ import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { MAX_HP } from '../utils/constants/config.js';
+import {
+  MAX_HP,
+  AI_THINKING_DURATION,
+  PLACE_ANIMATION_DURATION,
+} from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
@@ -157,7 +161,7 @@ export async function processActionQueue() {
       if (checkWinCondition()) break;
       GameState.selectedCardIndex = null;
       if (window.updateCardDetail) window.updateCardDetail(null);
-      await sleep(500);
+      await sleep(PLACE_ANIMATION_DURATION);
       await endTurnLogic(action.owner);
     } else if (action.type === 'endTurn') {
       await endTurnLogic(action.owner);
@@ -166,10 +170,10 @@ export async function processActionQueue() {
     } else if (action.type === 'enemyTurn') {
       if (GameState.gameMode === 'tutorial') {
         // チュートリアルモード: スクリプト行動を実行
-        await sleep(500);
+        await sleep(AI_THINKING_DURATION);
         await executeTutorialEnemyTurn();
       } else if (GameState.gameMode !== 'online') {
-        await sleep(500);
+        await sleep(AI_THINKING_DURATION);
         await executeEnemyAI();
       }
     } else if (action.type === 'syncState') {
@@ -418,7 +422,10 @@ export function initBattleState() {
     const stageData = STAGES[stageId];
     // BGMの再生
     let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
-    if (GameState.gameMode === 'story' && GameState.enemyConfig?.id === 'satan') {
+    if (
+      GameState.gameMode === 'story' &&
+      GameState.enemyConfig?.id === 'satan'
+    ) {
       bgmKey = 'bgmLastBattle'; // ストーリーのラストボス（サタン）決戦専用BGM
     } else if (GameState.gameMode === 'tournament') {
       bgmKey = 'bgmTournament2'; // トーナメントバトル専用BGM
@@ -687,7 +694,6 @@ export async function waitPlayerLaneSelection(
           'call',
           'leader_skill',
           'clone',
-          'wall_create',
           'move',
           'elf_polarbear_combo',
           'token_placement',
@@ -1559,7 +1565,7 @@ export async function waitSkillChoice(
     // 【命令スキル】AIが相手のスキル選択肢から選ぶ
     // カードオーナー（プレイヤー）がforceカードを出し、AIがどのスキルを発動させるか決定する
     if (isForce) {
-      await sleep(800);
+      await sleep(AI_THINKING_DURATION);
       const localAiLevel =
         parseInt(localStorage.getItem('storyDifficulty')) || 2;
 
@@ -1647,7 +1653,7 @@ export async function waitSkillChoice(
     // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoice/forceノード）
     const aiAction = consumeAIAction(['choice', 'force']);
     if (aiAction && aiAction.choices !== undefined) {
-      if (GameState.gameMode !== 'online') await sleep(600); // AIの思考時間を演出
+      if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION); // AIの思考時間を演出
       return aiAction.choices.map((i) => choices[i]);
     }
 
@@ -2007,7 +2013,7 @@ export async function triggerSplitSkill(owner, lane, card) {
     `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`
   );
   if (cEl) createDamagePopup(cEl, '分裂', '#facc15');
-  await sleep(300);
+  await sleep(PLACE_ANIMATION_DURATION);
 }
 
 export async function cleanupDestroyedCards(excludeCard = null) {
@@ -2248,7 +2254,7 @@ export async function handleMoveSkills(owner) {
         currentBoard[i] = null;
         teleportMovedIds.add(c.uid || c.id);
 
-        await sleep(300);
+        await sleep(PLACE_ANIMATION_DURATION);
         renderBoard();
       }
     }
@@ -2264,7 +2270,7 @@ export async function handleMoveSkills(owner) {
         b[move.to] = b[move.from];
         b[move.from] = null;
         playSound(SOUNDS.seClick);
-        await sleep(300);
+        await sleep(PLACE_ANIMATION_DURATION);
         renderBoard();
       }
     }
@@ -2318,7 +2324,7 @@ export async function handleMoveSkills(owner) {
           b[i] = null;
           playSound(SOUNDS.sePlace);
           renderBoard();
-          await sleep(300);
+          await sleep(PLACE_ANIMATION_DURATION);
         }
       }
     }
@@ -3012,7 +3018,7 @@ async function executeTutorialEnemyTurn() {
     await playCard('red', enemyHandIndex, targetLane);
     if (checkWinCondition()) return;
     GameState.selectedCardIndex = null;
-    await sleep(500);
+    await sleep(PLACE_ANIMATION_DURATION);
   }
 
   await endTurnLogic('red');
@@ -3048,7 +3054,7 @@ export async function determineTurnOrder() {
     updateSPOrbs();
     // BattleScreen側のisInitializingをfalseにする（TurnOrderOverlayをスキップするため）
     if (window.onBattlePresetReady) window.onBattlePresetReady();
-    await sleep(500);
+    await sleep(PLACE_ANIMATION_DURATION);
     await startTurn(GameState.firstPlayer);
     // チュートリアルモードの場合、最初のターン処理完了後にフローを開始
     if (GameState.gameMode === 'tutorial' && isTutorialMode()) {
@@ -3149,7 +3155,7 @@ export async function startMulliganPhase() {
   GameState.placementMessage = null;
   GameState.battlePhase = 'BATTLE';
 
-  await sleep(800); // マリガン終了後に少し間をあける
+  await sleep(AI_THINKING_DURATION); // マリガン終了後に少し間をあける
 
   await startTurn(GameState.firstPlayer);
 }
@@ -3185,7 +3191,7 @@ export async function resolveOnPlaySkill(o, l, c) {
     }
 
     // バッジが消える前に一呼吸置く（プレイヤーが効果を確認できるようにするため）
-    await sleep(500);
+    await sleep(PLACE_ANIMATION_DURATION);
 
     // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
     c.skillTriggered = true;

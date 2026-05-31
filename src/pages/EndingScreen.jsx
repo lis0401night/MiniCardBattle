@@ -103,9 +103,10 @@ export default function EndingScreen() {
           left: 0,
           width: '100%',
           height: step === 'result' ? '100%' : '40%',
-          background: step === 'result'
-            ? 'rgba(0, 0, 0, 0.65)' // リザルト画面では全体を黒フィルターで覆う
-            : 'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%)',
+          background:
+            step === 'result'
+              ? 'rgba(0, 0, 0, 0.65)' // リザルト画面では全体を黒フィルターで覆う
+              : 'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%)',
           pointerEvents: 'none',
           opacity: opacity,
           transition: 'opacity 2s, height 1.5s',
@@ -135,7 +136,8 @@ export default function EndingScreen() {
               padding: '20px 30px',
               width: '100%',
               maxWidth: '800px',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)',
+              boxShadow:
+                '0 10px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)',
               opacity: textOpacity * opacity,
               transition: 'opacity 0.5s ease-in-out',
               backdropFilter: 'blur(8px)',
@@ -199,7 +201,8 @@ export default function EndingScreen() {
               opacity: opacity,
               textAlign: 'center',
               letterSpacing: '0.15em',
-              textShadow: '0 0 25px rgba(250, 204, 21, 0.6), 0 0 50px rgba(250, 204, 21, 0.3)',
+              textShadow:
+                '0 0 25px rgba(250, 204, 21, 0.6), 0 0 50px rgba(250, 204, 21, 0.3)',
               margin: 0,
             }}
           >

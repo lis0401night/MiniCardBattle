@@ -1,5 +1,9 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { shuffleArray, sleep } from '../utils/gameUtils.js';
+import {
+  AI_THINKING_DURATION,
+  PLACE_ANIMATION_DURATION,
+} from '../utils/constants/config.js';
 import { getEasyDecision } from './ai_easy.js';
 import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
 import { discardCard, endTurnLogic, playCard } from './battle.js';
@@ -19,7 +23,7 @@ export async function executeEnemyAI() {
 
   GameState.isProcessing = true;
   try {
-    await sleep(800);
+    await sleep(AI_THINKING_DURATION);
 
     const dmp = (b) =>
       b
@@ -116,7 +120,7 @@ export async function executeEnemyAI() {
       // 強制使用時はデフォルトの評価（空きレーン前方優先）
       await activateLeaderSkill('red');
       if (GameState.isBattleEnded) return;
-      await sleep(500);
+      await sleep(AI_THINKING_DURATION);
     }
 
     // 思考ルーチン: 難易度に応じた意思決定
@@ -145,7 +149,7 @@ export async function executeEnemyAI() {
           decision.leaderSkillTargetUid
         );
         if (GameState.isBattleEnded) return;
-        await sleep(500);
+        await sleep(AI_THINKING_DURATION);
       }
 
       // カードを出す
@@ -162,7 +166,7 @@ export async function executeEnemyAI() {
           await discardCard('red', oldCard, decision.lane, false);
         }
         await playCard('red', decision.index, decision.lane);
-        await sleep(600);
+        await sleep(PLACE_ANIMATION_DURATION);
       } else {
         if (!decision.useSkill) console.log('[AI] Pass turn.');
       }

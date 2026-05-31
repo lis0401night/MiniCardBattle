@@ -28,6 +28,7 @@ import {
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { GameState } from '../state/gameState.js';
+import { AI_THINKING_DURATION } from '../utils/constants/config.js';
 import {
   renderBoard,
   renderHand,
@@ -1224,7 +1225,7 @@ export async function executeLeaderSkillAction(
     updateDeckDisplay('blue');
     updateDeckDisplay('red');
     renderHand();
-    await sleep(800);
+    await sleep(AI_THINKING_DURATION);
 
     // 4. ドロー（自分4枚、相手3枚）
     for (let i = 0; i < MY_DRAW_COUNT && myDeck.length > 0; i++) {

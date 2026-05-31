@@ -620,7 +620,8 @@ function RentalDeckSelect() {
                       style={{
                         width: '60px',
                         height: '60px',
-                        aspectRatio: '1 / 1', /* 絶対に1:1を死守してサブピクセル歪みを防止 */
+                        aspectRatio:
+                          '1 / 1' /* 絶対に1:1を死守してサブピクセル歪みを防止 */,
                         borderRadius: '50%',
                         overflow: 'hidden',
                         border: `2px solid ${getRarityColor(opt.rarity)}`,

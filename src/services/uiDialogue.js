@@ -415,7 +415,8 @@ export async function showNextDialogue(force = false) {
         enemySkinId = 'school';
       }
       const imgType =
-        GameState.appState === 'post_dialogue' && GameState.lastBattleResult === 'win'
+        GameState.appState === 'post_dialogue' &&
+        GameState.lastBattleResult === 'win'
           ? 'imageLose'
           : 'image';
       const newImg =

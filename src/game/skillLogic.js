@@ -2,6 +2,10 @@ import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
+import {
+  AI_THINKING_DURATION,
+  PLACE_ANIMATION_DURATION,
+} from '../utils/constants/config.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   createDamagePopup,
@@ -644,6 +648,10 @@ export async function resolveActiveSkillEffect(
     playSkillSound(skillId);
     createDamagePopup(cEl, '入替', '#facc15');
     const selectedIndices = await waitPlayerHandSelection(count, o);
+    if (o === 'red' && selectedIndices && selectedIndices.length > 0) {
+      // AIの思考時間を演出
+      await sleep(AI_THINKING_DURATION);
+    }
     if (selectedIndices.length > 0) {
       selectedIndices.sort((a, b) => b - a);
       for (let i of selectedIndices) {
@@ -1611,116 +1619,6 @@ export async function resolveActiveSkillEffect(
       renderHand();
       await sleep(300);
     }
-  } else if (skillId === 'wall_create') {
-    const wallPower = skillValue || 10;
-    const wTC = CARD_MASTER.find((m) => m.id === 'token_wall') || {
-      name: 'トークン',
-      power: 1,
-    };
-    const sTC = {
-      ...wTC,
-      id: `WC_${Math.floor(getSeededRandom() * 1000000000)}`,
-      uid: `${o}_WC_${Math.floor(getSeededRandom() * 1000000000)}`,
-      isToken: true,
-      rarity: 1,
-      power: wallPower,
-      basePower: wallPower,
-      currentPower: wallPower,
-      baseId: 'token_wall',
-      skills: (wTC.skills || []).map((s) => ({ ...s })),
-    };
-    // AI の場合：actionQueue の token_placement(wall_create) からレーン指定を取り出す（clone と同パターン）
-    let wallPredefinedLanes = null;
-    let aiWallCancelled = false;
-    if (
-      o === 'red' &&
-      GameState.gameMode !== 'online' &&
-      GameState.gameMode !== 'pvp'
-    ) {
-      if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
-        const tpIdx = GameState.aiDecision.actionQueue.findIndex(
-          (a) => a.type === 'token_placement' && a.skillId === 'wall_create'
-        );
-        if (tpIdx !== -1) {
-          const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-          if (Array.isArray(tpAction.lanes)) {
-            wallPredefinedLanes = [...tpAction.lanes];
-          }
-        } else {
-          // actionQueueにwall_createがない場合 → キャンセル扱い
-          aiWallCancelled = true;
-        }
-      } else if (GameState.aiLevel !== 1) {
-        // actionQueueなし かつ Normal以上 → キャンセル扱い（フォールバック防止）
-        // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
-        aiWallCancelled = true;
-      }
-    }
-    if (!aiWallCancelled) {
-      const tLanes = await waitPlayerLaneSelection(
-        1,
-        o,
-        sTC,
-        false,
-        wallPredefinedLanes,
-        false,
-        true
-      );
-      if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
-      if (tLanes && tLanes.length > 0) {
-        const targetLane = tLanes[0];
-        const board =
-          o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        const existingCard = board[targetLane];
-        if (
-          existingCard &&
-          (hasSkill(sTC, 'equip') || hasSkill(existingCard, 'arm_self')) &&
-          !hasSkill(existingCard, 'possession') &&
-          !hasSkill(sTC, 'possession') &&
-          !hasSkill(existingCard, 'reflect') &&
-          !hasSkill(sTC, 'reflect')
-        ) {
-          existingCard.power = (existingCard.power || 0) + (sTC.power || 0);
-          existingCard.basePower =
-            (existingCard.basePower || 0) + (sTC.power || 0);
-          existingCard.currentPower =
-            (existingCard.currentPower || 0) + (sTC.power || 0);
-
-          const equipSkills = [];
-          if (sTC.skill && sTC.skill !== 'none' && sTC.skill !== 'equip')
-            equipSkills.push({ id: sTC.skill, value: sTC.skillValue });
-          if (sTC.skills)
-            sTC.skills.forEach((s) => {
-              if (s.id !== 'equip') equipSkills.push(s);
-            });
-          mergeCardSkills(existingCard, equipSkills);
-
-          existingCard.equippedCards = existingCard.equippedCards || [];
-          existingCard.equippedCards.push(sTC);
-          // wall_create では events.push していないため、ここでは直接表示を更新する
-          if (window.updateCardVisualsReact)
-            window.updateCardVisualsReact(targetLane, o);
-        } else {
-          if (board[targetLane]) {
-            if (!(await discardCard(o, board[targetLane], targetLane, false)))
-              board[targetLane] = null;
-          }
-          board[targetLane] = sTC;
-        }
-
-        // 出現時スキルを持つ場合は即座に保護フラグを立てる
-        if (hasActiveSkill(sTC)) {
-          sTC.isSkillResolving = true;
-        }
-
-        playSound(SOUNDS.sePlace);
-        renderBoard();
-
-        await sleep(400);
-        sTC.isSkillResolving = false; // 演出が終わったので保護フラグを解除
-        await cleanupDestroyedCards(c);
-      }
-    }
   } else if (skillId === 'standby') {
     // 【仕様】自分のカードに適用するため、+1 補正は不要。
     // bind/freeze は相手カードに適用し、「発動したターンも防御状態にする」ため +1 しているが、
@@ -1793,6 +1691,8 @@ export async function resolveActiveSkillEffect(
             tokenLanes = [];
           }
         }
+        // AIの思考時間を演出
+        await sleep(AI_THINKING_DURATION);
       } else {
         selectedCard = await waitPlayerDiscardSelection(
           validCards,
@@ -1934,7 +1834,7 @@ export async function resolveActiveSkillEffect(
             playCardVoice(voiceCard.voiceCategory, 'play');
           playSound(SOUNDS.sePlace);
           renderBoard();
-          await sleep(400);
+          await sleep(PLACE_ANIMATION_DURATION);
           // 配置演出が完了したので保護フラグを解除（復活したカード自身）
           if (board[targetLane]) board[targetLane].isSkillResolving = false;
           await cleanupDestroyedCards(c);
@@ -1992,6 +1892,8 @@ export async function resolveActiveSkillEffect(
           (a, b) => (b.power || 0) - (a.power || 0)
         );
         selectedCard = sortedPuppet[0] || null;
+        // AIの思考時間を演出
+        await sleep(AI_THINKING_DURATION);
       } else {
         // プレイヤー: 復活と同じ選択モーダルを使用
         selectedCard = await waitPlayerDiscardSelection(
@@ -2076,7 +1978,7 @@ export async function resolveActiveSkillEffect(
               playCardVoice(selectedCard.voiceCategory, 'play');
             playSound(SOUNDS.sePlace);
             renderBoard();
-            await sleep(400);
+            await sleep(PLACE_ANIMATION_DURATION);
             await cleanupDestroyedCards(c);
           } else {
             // 通常配置（装備なし・または既存カードなし）
@@ -2137,7 +2039,7 @@ export async function resolveActiveSkillEffect(
               playCardVoice(board[targetLane].voiceCategory, 'play');
             playSound(SOUNDS.sePlace);
             renderBoard();
-            await sleep(400);
+            await sleep(PLACE_ANIMATION_DURATION);
             if (board[targetLane]) board[targetLane].isSkillResolving = false;
             await cleanupDestroyedCards(c);
           }
@@ -2157,6 +2059,10 @@ export async function resolveActiveSkillEffect(
       false,
       `捨てるカードを${skillValue || 1}枚まで選んでください`
     );
+    if (o === 'red' && discardIndices && discardIndices.length > 0) {
+      // AIの思考時間を演出
+      await sleep(AI_THINKING_DURATION);
+    }
     if (discardIndices && discardIndices.length > 0) {
       // 後ろから削除するためにインデックスを降順ソート
       const sortedIndices = [...discardIndices].sort((a, b) => b - a);
@@ -2178,6 +2084,10 @@ export async function resolveActiveSkillEffect(
             '墓地からカードを1枚選び、手札に加えます。',
             false
           );
+          if (o === 'red' && selectedCard) {
+            // AIの思考時間を演出
+            await sleep(AI_THINKING_DURATION);
+          }
 
           if (selectedCard) {
             const actualIdx = discard.indexOf(selectedCard);
@@ -2220,6 +2130,10 @@ export async function resolveActiveSkillEffect(
         'デッキからカードを1枚選び、手札に加えます。',
         true
       );
+      if (o === 'red' && selectedCard) {
+        // AIの思考時間を演出
+        await sleep(AI_THINKING_DURATION);
+      }
 
       if (selectedCard) {
         // デッキから対象カードを取り除く
@@ -2256,6 +2170,10 @@ export async function resolveActiveSkillEffect(
             true,
             '捨てるカードを1枚選んでください'
           );
+          if (o === 'red' && discardIndices && discardIndices.length > 0) {
+            // AIの思考時間を演出
+            await sleep(AI_THINKING_DURATION);
+          }
           if (discardIndices && discardIndices.length > 0) {
             const discardIdx = discardIndices[0];
             const cardToDiscard = hand.splice(discardIdx, 1)[0];
@@ -2279,6 +2197,10 @@ export async function resolveActiveSkillEffect(
 
     // AIはランダム、プレイヤーは手動選択のUIを待機
     const selectedHandIndices = await waitPlayerHandSelection(count, o);
+    if (o === 'red' && selectedHandIndices && selectedHandIndices.length > 0) {
+      // AIの思考時間を演出
+      await sleep(AI_THINKING_DURATION);
+    }
     let discardedCount = 0;
 
     if (selectedHandIndices && selectedHandIndices.length > 0) {
@@ -2338,6 +2260,10 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'convert') {
     const val = skillValue || 1;
     const discardIndices = await waitPlayerHandSelection(val, o, true);
+    if (o === 'red' && discardIndices && discardIndices.length > 0) {
+      // AIの思考時間を演出
+      await sleep(AI_THINKING_DURATION);
+    }
     if (discardIndices && discardIndices.length > 0) {
       const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
       const d = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -2584,6 +2510,8 @@ export async function resolveActiveSkillEffect(
         if (pLanes && pLanes.length > 0) {
           selectedOppLane = pLanes[0];
         }
+        // AIの思考時間を演出
+        await sleep(AI_THINKING_DURATION);
       } else {
         // プレイヤーの場合
         const pLanes = await new Promise((resolve) => {
@@ -2683,7 +2611,7 @@ export async function resolveActiveSkillEffect(
           }
           playSound(SOUNDS.sePlace);
           renderBoard();
-          await sleep(400);
+          await sleep(PLACE_ANIMATION_DURATION);
           await cleanupDestroyedCards(c);
         } else {
           const existingCard = board[targetLane];
@@ -2710,7 +2638,7 @@ export async function resolveActiveSkillEffect(
           }
           playSound(SOUNDS.sePlace);
           renderBoard();
-          await sleep(400);
+          await sleep(PLACE_ANIMATION_DURATION);
           if (board[targetLane]) board[targetLane].isSkillResolving = false;
           await cleanupDestroyedCards(c);
         }
@@ -2739,7 +2667,7 @@ export async function resolveActiveSkillEffect(
         });
         selectedLanes = [occupiedLanes[0]];
         // AIの思考時間を演出
-        await sleep(800);
+        await sleep(AI_THINKING_DURATION);
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();
         await sleep(100);
@@ -2806,7 +2734,7 @@ export async function resolveActiveSkillEffect(
           return a - b;
         });
         selectedLanes = [occupiedLanes[0]];
-        await sleep(800);
+        await sleep(AI_THINKING_DURATION);
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();
         await sleep(100);

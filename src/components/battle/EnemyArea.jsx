@@ -20,8 +20,12 @@ export default function EnemyArea({
     <div className="hp-area">
       <div className="status-container">
         <div className="icon-wrapper" id="enemy-icon-wrap">
-          <div className={`char-icon-bg red ${enemyHP <= 0 ? 'dead' : ''}`}></div>
-          <div className={`char-icon-container ${enemyConfig.isShadow ? 'shadow-icon' : ''} ${enemyHP <= 0 ? 'dead' : ''}`}>
+          <div
+            className={`char-icon-bg red ${enemyHP <= 0 ? 'dead' : ''}`}
+          ></div>
+          <div
+            className={`char-icon-container ${enemyConfig.isShadow ? 'shadow-icon' : ''} ${enemyHP <= 0 ? 'dead' : ''}`}
+          >
             <img
               id="enemy-icon"
               className="char-icon"

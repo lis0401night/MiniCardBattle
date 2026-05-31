@@ -221,11 +221,7 @@ export function processActionSequence(
       const sourceCard = simState.enemyBoard[sourceL];
       // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
       // summonId が分かっているなら直接トークンを生成する
-      if (
-        ['summon', 'wall_create', 'clone', 'split', 'puppet'].includes(
-          action.skillId
-        )
-      ) {
+      if (['summon', 'clone', 'split', 'puppet'].includes(action.skillId)) {
         let tokenPower = action.skillValue || 1;
         if (action.skillId === 'clone' && sourceCard) {
           tokenPower =
@@ -235,9 +231,7 @@ export function processActionSequence(
         }
         let tokenId = action.summonId;
         if (!tokenId) {
-          if (action.skillId === 'wall_create') {
-            tokenId = 'token_wall';
-          } else if (action.skillId === 'puppet') {
+          if (action.skillId === 'puppet') {
             tokenId = 'token_doll';
           } else if (action.skillId === 'clone') {
             tokenId = 'token_clone';
@@ -1067,7 +1061,6 @@ export function getBestSimulatedMove() {
                   'reinforce',
                   'clone',
                   'summon',
-                  'wall_create',
                   'split',
                   'puppet',
                   'leap',
@@ -1091,7 +1084,6 @@ export function getBestSimulatedMove() {
                       'reinforce',
                       'clone',
                       'summon',
-                      'wall_create',
                       'split',
                       'puppet',
                       'leap',
@@ -1129,7 +1121,6 @@ export function getBestSimulatedMove() {
               const isPlacementSkill = [
                 'clone',
                 'summon',
-                'wall_create',
                 'split',
                 'puppet',
                 'resurrect',
@@ -1368,9 +1359,7 @@ export function getBestSimulatedMove() {
                 // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時に発動）のため、
                 //   召喚時のtoken_placementとしては扱わない。シミュレーション上は元のパワーのまま評価される。
               } else if (
-                ['clone', 'summon', 'wall_create', 'split', 'puppet'].includes(
-                  sk.id
-                )
+                ['clone', 'summon', 'split', 'puppet'].includes(sk.id)
               ) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
@@ -2349,7 +2338,6 @@ export function evaluateAdhocTokenLanes(
     const isPlacementSkill = [
       'clone',
       'summon',
-      'wall_create',
       'split',
       'puppet',
       'resurrect',
@@ -2645,9 +2633,7 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
-    } else if (
-      ['clone', 'summon', 'wall_create', 'split', 'puppet'].includes(sk.id)
-    ) {
+    } else if (['clone', 'summon', 'split', 'puppet'].includes(sk.id)) {
       const count = sk.id === 'clone' ? sk.value || 1 : 1;
       const generateLaneCombos = (remainingCount) => {
         if (remainingCount <= 0) return [[]];
@@ -2885,7 +2871,6 @@ export function evaluateAdhocTokenLanes(
                 'reinforce',
                 'clone',
                 'summon',
-                'wall_create',
                 'split',
                 'puppet',
                 'leap',
@@ -2908,7 +2893,6 @@ export function evaluateAdhocTokenLanes(
                     'reinforce',
                     'clone',
                     'summon',
-                    'wall_create',
                     'split',
                     'puppet',
                     'leap',

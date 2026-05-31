@@ -303,7 +303,9 @@ h2 {
   object-fit: cover; /* 画像と object-fit を cover で統一し、ブラウザの端数歪みによるズレ・はみ出しを完全に防止 */
   pointer-events: none;
   z-index: 3;
-  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5)); /* 円形のフレーム外周に美しいシャドウを適用 */
+  filter: drop-shadow(
+    0 0 5px rgba(0, 0, 0, 0.5)
+  ); /* 円形のフレーム外周に美しいシャドウを適用 */
 }
 
 .banner-text {
@@ -1115,7 +1117,9 @@ h2 {
   padding: 5px; /* アセット外周の余白 */
 
   transition: all 0.3s;
-  transform: scale(0.88); /* ゴールドフレーム(scale 0.9)の裏側に完全に隠すための極小アライメント */
+  transform: scale(
+    0.88
+  ); /* ゴールドフレーム(scale 0.9)の裏側に完全に隠すための極小アライメント */
   transform-origin: center;
 }
 

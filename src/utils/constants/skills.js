@@ -378,19 +378,6 @@ export const SKILLS = {
     icon: '🕯️',
     desc: (val) => `召喚時、手札のカード1枚を選び、パワーを+${val}する。`,
   },
-  wall_create: {
-    name: '造壁',
-    icon: '🏰',
-    desc: (val) => [
-      { type: 'text', value: '召喚時、自分のレーンに、' },
-      {
-        type: 'link',
-        value: `「防壁（パワー${val}）」`,
-        targetId: 'token_wall',
-      },
-      { type: 'text', value: 'を配置する。' },
-    ],
-  },
   challenge: {
     name: '挑戦',
     icon: '🥋',
@@ -720,7 +707,6 @@ export const ACTIVE_SKILLS = [
   'petrify',
   'call',
   'bless',
-  'wall_create',
   'dispel',
   'freeze',
   'loss',

@@ -214,10 +214,6 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 2,
   },
-  wall_create: {
-    base: 0,
-    multiplier: 0.5,
-  },
   challenge: {
     base: -2,
     multiplier: 0,
