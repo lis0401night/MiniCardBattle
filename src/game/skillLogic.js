@@ -2971,13 +2971,30 @@ async function triggerExtortInAction(c, o) {
 
   if (eHandRef && eHandRef.length > 0) {
     let discardedAmount = 0;
-    for (let i = 0; i < val; i++) {
-      if (eHandRef.length === 0) break;
-      const randIndex = Math.floor(getSeededRandom() * eHandRef.length);
-      const discarded = eHandRef.splice(randIndex, 1)[0];
+
+    // 【システム解説】
+    // UI側での簒奪（extort）処理においても、相手の手札から「最大パワー」のカードを優先的に処理します。
+    // 手札のカードをパワー降順（同値の場合は手札インデックスの小さい左側優先）でソートします。
+    const validTargets = eHandRef
+      .map((card, idx) => ({ card, idx }))
+      .filter((item) => item.card !== null)
+      .sort((a, b) => {
+        const pA = a.card.currentPower ?? a.card.power ?? 0;
+        const pB = b.card.currentPower ?? b.card.power ?? 0;
+        if (pB !== pA) return pB - pA;
+        return a.idx - b.idx; // 同値の場合は左優先
+      });
+
+    const actualCount = Math.min(val, validTargets.length);
+
+    for (let i = 0; i < actualCount; i++) {
+      const targetInfo = validTargets[i];
+      const removeIdx = eHandRef.findIndex((card) => card === targetInfo.card);
+      if (removeIdx === -1) continue;
+
+      const discarded = eHandRef.splice(removeIdx, 1)[0];
 
       if (!discarded) {
-        i--;
         continue;
       }
 

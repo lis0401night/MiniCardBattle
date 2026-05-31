@@ -4541,8 +4541,28 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
   if (oppHand && oppHand.length > 0) {
     let activated = false;
     const newTokens = [];
-    for (let i = 0; i < val; i++) {
-      if (oppHand.length === 0) break;
+
+    // 【システム解説】
+    // 簒奪（extort）スキルは相手の手札から「最大パワー」のカードを優先的に選択して処理します。
+    // 手札内の有効なカードをインデックス情報付きで抽出し、
+    // パワーの降順（同値の場合は左側＝手札のインデックスが小さい方を優先）でソートします。
+    const validTargets = oppHand
+      .map((card, idx) => ({ card, idx }))
+      .filter((item) => item.card !== null)
+      .sort((a, b) => {
+        const pA = a.card.currentPower ?? a.card.power ?? 0;
+        const pB = b.card.currentPower ?? b.card.power ?? 0;
+        if (pB !== pA) return pB - pA;
+        return a.idx - b.idx; // 同値の場合は左優先
+      });
+
+    const actualCount = Math.min(val, validTargets.length);
+
+    for (let i = 0; i < actualCount; i++) {
+      const targetInfo = validTargets[i];
+      // ソート順のカードを手札配列から直接オブジェクト参照で検索して削除（インデックスずれを防止）
+      const removeIdx = oppHand.findIndex((c) => c === targetInfo.card);
+      if (removeIdx === -1) continue;
 
       if (!activated) {
         events.push({
@@ -4554,8 +4574,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
         activated = true;
       }
 
-      const randIndex = Math.floor(getSeededRandom() * oppHand.length);
-      const discarded = oppHand.splice(randIndex, 1)[0];
+      const discarded = oppHand.splice(removeIdx, 1)[0];
 
       if (!discarded) {
         i--;
