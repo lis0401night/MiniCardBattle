@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import {
   forceDeleteAllRooms,
@@ -21,8 +21,8 @@ export default function OnlineRoomSearchScreen() {
   const [isJoining, setIsJoining] = useState(false);
   const isMountedRef = useRef(true);
 
-  const debugClickCountRef = React.useRef(0);
-  const debugTimeout = React.useRef(null);
+  const debugClickCountRef = useRef(0);
+  const debugTimeout = useRef(null);
 
   useEffect(() => {
     const unsubscribe = listenToLobbyRooms((availableRooms) => {

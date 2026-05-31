@@ -74,16 +74,12 @@ export default function ChallengeExchangeScreen() {
             // ローカルで消費が行われた直後（あるいは未同期）である可能性が高いため、
             // サーバー側の古い値で巻き戻らないようにローカルの値を優先してガードします。
             let finalPts = pts;
-            if (currentPts > pts) {
-              finalPts = currentPts;
-            } else if (pts === 0 && currentPts > 0) {
+            if (currentPts > pts || (pts === 0 && currentPts > 0)) {
               finalPts = currentPts;
             }
 
             let finalTotalPts = tPts;
-            if (totalPts > tPts) {
-              finalTotalPts = totalPts;
-            } else if (tPts === 0 && totalPts > 0) {
+            if (totalPts > tPts || (tPts === 0 && totalPts > 0)) {
               finalTotalPts = totalPts;
             }
 

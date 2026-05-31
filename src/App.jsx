@@ -116,8 +116,22 @@ const SCREEN_COMPONENTS = {
   'screen-dungeon-rules': DungeonRulesScreen,
   'screen-deck-list': DeckListScreen,
   'screen-deck-edit': DeckEditorScreen,
-  'screen-select': CharacterSelectScreen,
-  'screen-difficulty': DifficultySelectScreen,
+  'screen-select': {
+    component: CharacterSelectScreen,
+    initHook: () => {
+      if (typeof window.initSelectScreenReact === 'function') {
+        window.initSelectScreenReact();
+      }
+    },
+  },
+  'screen-difficulty': {
+    component: DifficultySelectScreen,
+    initHook: () => {
+      if (typeof window.initDifficultySelectScreenReact === 'function') {
+        window.initDifficultySelectScreenReact();
+      }
+    },
+  },
   'screen-stage-select': StageSelectScreen,
   'screen-dialogue': DialogueScreen,
   'screen-battle': BattleScreen,
@@ -144,16 +158,9 @@ export default function App() {
       setTimeout(() => {
         executeSwitchScreen(screenId);
         // 【データ整合性・画面表示保護】画面切り替え時に対応するReact画面の初期化・再評価フックを自動で呼び出す
-        if (
-          screenId === 'screen-difficulty' &&
-          typeof window.initDifficultySelectScreenReact === 'function'
-        ) {
-          window.initDifficultySelectScreenReact();
-        } else if (
-          screenId === 'screen-select' &&
-          typeof window.initSelectScreenReact === 'function'
-        ) {
-          window.initSelectScreenReact();
+        const screenEntry = SCREEN_COMPONENTS[screenId];
+        if (screenEntry?.initHook) {
+          screenEntry.initHook();
         }
       }, 0);
     });
@@ -167,7 +174,8 @@ export default function App() {
       window.loadAchievements();
   }, []);
 
-  const ScreenComponent = SCREEN_COMPONENTS[currentScreen];
+  const screenEntry = SCREEN_COMPONENTS[currentScreen];
+  const ScreenComponent = screenEntry?.component || screenEntry;
 
   return (
     <>

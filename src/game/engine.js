@@ -4014,51 +4014,55 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
 
       // ランダムに1枚決定
-      const randIdx = Math.floor(getSeededRandom() * candidates.length);
-      const chosenObj = candidates[randIdx];
+      if (candidates.length > 0) {
+        const randIdx = Math.floor(getSeededRandom() * candidates.length);
+        const chosenObj = candidates[randIdx];
 
-      // 自身以外が選ばれた場合は、そのカードにダメージを肩代わりさせる
-      if (chosenObj.card !== dC) {
-        events.push({ type: 'reflect_block', side: defSide, lane: dLane });
-        const chosenCard = chosenObj.card;
-        const chosenSide = chosenObj.side;
-        const chosenLane = chosenObj.lane;
+        // 自身以外が選ばれた場合は、そのカードにダメージを肩代わりさせる
+        if (chosenObj.card !== dC) {
+          events.push({ type: 'reflect_block', side: defSide, lane: dLane });
+          const chosenCard = chosenObj.card;
+          const chosenSide = chosenObj.side;
+          const chosenLane = chosenObj.lane;
 
-        if (canTakeDamage(chosenCard, dmgToDef)) {
-          chosenCard.currentPower -= dmgToDef;
-          events.push({
-            type: 'damage_card',
-            side: chosenSide,
-            lane: chosenLane,
-            amount: dmgToDef,
-            source: 'reflect',
-          });
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: chosenSide,
-            lane: chosenLane,
-            source: 'reflect',
-          });
-        }
-
-        // 攻撃側のカードが「即死（deadly）」を持っている場合の即死判定
-        if (hasSkill(aC, 'deadly')) {
-          if (!hasSkill(chosenCard, 'immune')) {
-            chosenCard.currentPower = 0;
-            events.push({ type: 'deadly', side: chosenSide, lane: chosenLane });
+          if (canTakeDamage(chosenCard, dmgToDef)) {
+            chosenCard.currentPower -= dmgToDef;
+            events.push({
+              type: 'damage_card',
+              side: chosenSide,
+              lane: chosenLane,
+              amount: dmgToDef,
+              source: 'reflect',
+            });
           } else {
             events.push({
               type: 'immune_block',
               side: chosenSide,
               lane: chosenLane,
-              source: 'deadly',
+              source: 'reflect',
             });
           }
+
+          // 攻撃側のカードが「即死（deadly）」を持っている場合の即死判定
+          if (hasSkill(aC, 'deadly')) {
+            if (!hasSkill(chosenCard, 'immune')) {
+              chosenCard.currentPower = 0;
+              events.push({ type: 'deadly', side: chosenSide, lane: chosenLane });
+            } else {
+              events.push({
+                type: 'immune_block',
+                side: chosenSide,
+                lane: chosenLane,
+                source: 'deadly',
+              });
+            }
+          }
+          dmgToDef = 0; // 肩代わりさせたので自身のダメージは0
         }
-        dmgToDef = 0; // 肩代わりさせたので自身のダメージは0
+        // 自身が選ばれた場合は、肩代わりが発生せず通常通り自身がダメージを受ける
+      } else {
+        // 場にカードが存在しない場合は肩代わり不可、通常通りダメージを受ける
       }
-      // 自身が選ばれた場合は、肩代わりが発生せず通常通り自身がダメージを受ける
     }
     if (dmgToAtk > 0 && !canTakeDamage(aC_defend, dmgToAtk, false)) {
       if (dmgToAtk > 0)
@@ -4091,51 +4095,55 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
 
       // ランダムに1枚決定
-      const randIdx = Math.floor(getSeededRandom() * candidates.length);
-      const chosenObj = candidates[randIdx];
+      if (candidates.length > 0) {
+        const randIdx = Math.floor(getSeededRandom() * candidates.length);
+        const chosenObj = candidates[randIdx];
 
-      // 自身以外が選ばれた場合は、そのカードにダメージを肩代わりさせる
-      if (chosenObj.card !== aC_defend) {
-        events.push({ type: 'reflect_block', side: attackerSide, lane: aLane });
-        const chosenCard = chosenObj.card;
-        const chosenSide = chosenObj.side;
-        const chosenLane = chosenObj.lane;
+        // 自身以外が選ばれた場合は、そのカードにダメージを肩代わりさせる
+        if (chosenObj.card !== aC_defend) {
+          events.push({ type: 'reflect_block', side: attackerSide, lane: aLane });
+          const chosenCard = chosenObj.card;
+          const chosenSide = chosenObj.side;
+          const chosenLane = chosenObj.lane;
 
-        if (canTakeDamage(chosenCard, dmgToAtk)) {
-          chosenCard.currentPower -= dmgToAtk;
-          events.push({
-            type: 'damage_card',
-            side: chosenSide,
-            lane: chosenLane,
-            amount: dmgToAtk,
-            source: 'reflect',
-          });
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: chosenSide,
-            lane: chosenLane,
-            source: 'reflect',
-          });
-        }
-
-        // 防御側（反撃元）のカードが「即死（deadly）」を持っている場合の即死判定
-        if (originalTarget && hasSkill(originalTarget, 'deadly')) {
-          if (!hasSkill(chosenCard, 'immune')) {
-            chosenCard.currentPower = 0;
-            events.push({ type: 'deadly', side: chosenSide, lane: chosenLane });
+          if (canTakeDamage(chosenCard, dmgToAtk)) {
+            chosenCard.currentPower -= dmgToAtk;
+            events.push({
+              type: 'damage_card',
+              side: chosenSide,
+              lane: chosenLane,
+              amount: dmgToAtk,
+              source: 'reflect',
+            });
           } else {
             events.push({
               type: 'immune_block',
               side: chosenSide,
               lane: chosenLane,
-              source: 'deadly',
+              source: 'reflect',
             });
           }
+
+          // 防御側（反撃元）のカードが「即死（deadly）」を持っている場合の即死判定
+          if (originalTarget && hasSkill(originalTarget, 'deadly')) {
+            if (!hasSkill(chosenCard, 'immune')) {
+              chosenCard.currentPower = 0;
+              events.push({ type: 'deadly', side: chosenSide, lane: chosenLane });
+            } else {
+              events.push({
+                type: 'immune_block',
+                side: chosenSide,
+                lane: chosenLane,
+                source: 'deadly',
+              });
+            }
+          }
+          dmgToAtk = 0; // 肩代わりさせたので自身のダメージは0
         }
-        dmgToAtk = 0; // 肩代わりさせたので自身のダメージは0
+        // 自身が選ばれた場合は、肩代わりが発生せず通常通り自身がダメージを受ける
+      } else {
+        // 場にカードが存在しない場合は肩代わり不可、通常通りダメージを受ける
       }
-      // 自身が選ばれた場合は、肩代わりが発生せず通常通り自身がダメージを受ける
     }
 
     // 連撃（ダブルストライク）: sturdy判定前に移動済み（ここでは処理しない）

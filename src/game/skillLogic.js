@@ -652,7 +652,7 @@ export async function resolveActiveSkillEffect(
       // AIの思考時間を演出
       await sleep(AI_THINKING_DURATION);
     }
-    if (selectedIndices.length > 0) {
+    if (selectedIndices && selectedIndices.length > 0) {
       selectedIndices.sort((a, b) => b - a);
       for (let i of selectedIndices) {
         const discarded = h.splice(i, 1)[0];

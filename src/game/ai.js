@@ -175,9 +175,12 @@ export async function executeEnemyAI() {
     console.error('AI Error:', e);
   } finally {
     if (!GameState.isBattleEnded) {
-      // 【CodeRabbit指摘反映】競合防止のため、非同期のターン終了処理（endTurnLogic）が完全に完了した後に処理中フラグを解除する
-      await endTurnLogic('red');
-      GameState.isProcessing = false;
+      try {
+        // 【CodeRabbit指摘反映】競合防止のため、非同期のターン終了処理（endTurnLogic）が完全に完了した後に処理中フラグを解除する
+        await endTurnLogic('red');
+      } finally {
+        GameState.isProcessing = false;
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useEffect } from 'react';
 
 /**
  * タイトル複数回クリックなどのイースターエッグ（デバッグモード等の起動）検知用カスタムフック
@@ -14,16 +14,21 @@ export function useEasterEgg(
   onTrigger,
   targetCount = DEFAULT_EASTER_EGG_THRESHOLD
 ) {
-  const [clickCount, setClickCount] = useState(0);
+  const clickCountRef = useRef(0);
+  const onTriggerRef = useRef(onTrigger);
+
+  // クロージャの陳腐化を防ぐため、常に最新のonTriggerコールバック関数への参照を保持
+  useEffect(() => {
+    onTriggerRef.current = onTrigger;
+  }, [onTrigger]);
 
   return () => {
-    setClickCount((prevCount) => {
-      const nextCount = prevCount + 1;
-      if (nextCount >= targetCount) {
-        setTimeout(onTrigger, 0);
-        return 0;
+    clickCountRef.current += 1;
+    if (clickCountRef.current >= targetCount) {
+      clickCountRef.current = 0;
+      if (typeof onTriggerRef.current === 'function') {
+        onTriggerRef.current();
       }
-      return nextCount;
-    });
+    }
   };
 }

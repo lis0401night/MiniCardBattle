@@ -157,12 +157,15 @@ export async function processActionQueue() {
         action.handIndex,
         action.lane
       );
-      if (!played) continue;
-      if (checkWinCondition()) break;
-      GameState.selectedCardIndex = null;
-      if (window.updateCardDetail) window.updateCardDetail(null);
-      await sleep(PLACE_ANIMATION_DURATION);
-      await endTurnLogic(action.owner);
+      if (played) {
+        if (checkWinCondition()) break;
+        GameState.selectedCardIndex = null;
+        if (window.updateCardDetail) window.updateCardDetail(null);
+        await sleep(PLACE_ANIMATION_DURATION);
+        await endTurnLogic(action.owner);
+      }
+      // 【CodeRabbit指摘反映】無効プレイ時（playedがfalse）でも、オンライン対戦での状態ズレを防ぐため、
+      // ループ後段の updateBattleUIHook() や syncState 送信をスキップせずに通す
     } else if (action.type === 'endTurn') {
       await endTurnLogic(action.owner);
     } else if (action.type === 'leaderSkill') {
