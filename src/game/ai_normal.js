@@ -793,13 +793,23 @@ export function processActionSequence(
       }
 
       // スキル解決が終わったため、保護フラグを解除する
+      // 【招来・詠唱・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
+      // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
       if (playedCard) {
-        playedCard.isSkillResolving = false;
+        const hasChainSummon =
+          hasSkill(playedCard, 'invite') ||
+          hasSkill(playedCard, 'chant') ||
+          hasSkill(playedCard, 'forge');
+        if (!hasChainSummon) {
+          playedCard.isSkillResolving = false;
+        }
       }
 
+      // 出現時スキルの処理中（isSkillResolvingがtrue）のカードは、パワー0以下でも破壊（null化）しない
       if (
         simState.enemyBoard[lIdx] &&
-        simState.enemyBoard[lIdx].currentPower <= 0
+        simState.enemyBoard[lIdx].currentPower <= 0 &&
+        !simState.enemyBoard[lIdx].isSkillResolving
       ) {
         simState.enemyBoard[lIdx] = null;
       }
@@ -3619,7 +3629,8 @@ export function simulateMove(
           }
           if (
             simState.enemyBoard[laneIdx] &&
-            simState.enemyBoard[laneIdx].currentPower <= 0
+            simState.enemyBoard[laneIdx].currentPower <= 0 &&
+            !simState.enemyBoard[laneIdx].isSkillResolving
           )
             simState.enemyBoard[laneIdx] = null;
         }

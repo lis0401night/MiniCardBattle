@@ -638,7 +638,8 @@ export async function waitPlayerLaneSelection(
   tokenLanes = null,
   checkConstraints = true,
   canCancel = false,
-  buttonText = '配置終了'
+  buttonText = '配置終了',
+  skipImmediateDiscard = false // 【追加】後続の playCard 等で破棄を行う場合、この関数内での即時破棄をスキップするフラグ
 ) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const sealedLanes =
@@ -992,7 +993,7 @@ export async function waitPlayerLaneSelection(
       }
 
       // 既にカードがあるレーンの場合は確認
-      if (board[laneIndex] !== null) {
+      if (board[laneIndex] !== null && !skipImmediateDiscard) {
         const existingCard = board[laneIndex];
         const tokenName = tokenCard ? tokenCard.name : 'トークン';
 

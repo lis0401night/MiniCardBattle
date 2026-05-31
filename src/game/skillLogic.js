@@ -323,7 +323,8 @@ export async function resolveActiveSkillEffect(
             restrictLanes, // tokenLanes（招来: 同じレーンのみ）
             true, // checkConstraints（制約チェック有効）
             true, // canCancel（キャンセル可能）
-            'キャンセル'
+            'キャンセル',
+            true // 【追加】後続の playCard で破棄を行うため、この段階での即時破棄をスキップ
           );
           GameState.placementMessage = null;
 
