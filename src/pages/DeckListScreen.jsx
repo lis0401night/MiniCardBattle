@@ -65,6 +65,7 @@ export default function DeckListScreen({ switchScreen }) {
 
   const itemsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages - 1);
 
   useEffect(() => {
     if (currentPage >= totalPages) {
@@ -405,7 +406,7 @@ export default function DeckListScreen({ switchScreen }) {
         }}
       >
         {/* 左矢印 */}
-        {totalPages > 1 && currentPage > 0 && (
+        {totalPages > 1 && safePage > 0 && (
           <div
             style={{
               position: 'absolute',
@@ -447,7 +448,7 @@ export default function DeckListScreen({ switchScreen }) {
               display: 'flex',
               width: `${totalPages * 100}%`,
               height: '100%',
-              transform: `translateX(-${(currentPage * 100) / totalPages}%)`,
+              transform: `translateX(-${(safePage * 100) / totalPages}%)`,
               transition:
                 dragIndex !== null
                   ? 'none'
@@ -634,7 +635,7 @@ export default function DeckListScreen({ switchScreen }) {
         </div>
 
         {/* 右矢印 */}
-        {totalPages > 1 && currentPage < totalPages - 1 && (
+        {totalPages > 1 && safePage < totalPages - 1 && (
           <div
             style={{
               position: 'absolute',

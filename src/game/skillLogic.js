@@ -1446,7 +1446,6 @@ export async function resolveActiveSkillEffect(
       await sleep(500);
     }
   } else if (skillId === 'freeze') {
-    playSound(SOUNDS.seSkillFreeze);
     createDamagePopup(cEl, '凍結', '#93c5fd');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     let targets = [];
@@ -1472,11 +1471,13 @@ export async function resolveActiveSkillEffect(
       if (vfxPromises.length > 0) {
         await Promise.all(vfxPromises);
       } else {
+        playSound(SOUNDS.seSkillFreeze);
         await sleep(500);
       }
 
       if (window.updateBattleUIHook) window.updateBattleUIHook(); // 反映させる
     } else {
+      playSound(SOUNDS.seSkillFreeze);
       await sleep(500);
     }
   } else if (skillId === 'artillery') {

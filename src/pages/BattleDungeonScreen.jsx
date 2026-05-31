@@ -7,9 +7,9 @@ import {
   selectRewardCard,
   startDungeonBattle,
 } from '../game/battleDungeon.js';
-import { GameState } from '../state/gameState.js';
 import { setupLongPress } from '../services/uiGallery.js';
 import { showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
@@ -464,7 +464,7 @@ function DungeonMiniCard({
     if (cardRef.current && card) {
       const cleanup = setupLongPress(cardRef.current, card);
       return () => {
-        cleanup();
+        if (typeof cleanup === 'function') cleanup();
       };
     }
   }, [card]);

@@ -199,6 +199,7 @@ export const VFX_DATA = {
     rows: 1,
     frameCount: 8,
     duration: 800,
+    se: 'seSkillFreeze',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 0.5,
@@ -214,6 +215,7 @@ export const VFX_DATA = {
     rows: 2,
     frameCount: 10,
     duration: 600,
+    se: 'seSkillSnipe',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 0.5,

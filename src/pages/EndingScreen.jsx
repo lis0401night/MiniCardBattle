@@ -49,6 +49,7 @@ export default function EndingScreen() {
           setTextOpacity(1);
         }, 500);
       } else {
+        if (textTimerRef.current) clearTimeout(textTimerRef.current);
         // すべてのロマンチックな台詞を読み終えたら、まず字幕ボックスをフェードアウトさせてイラスト単体鑑賞モード (gallery) へ
         setTextOpacity(0);
         textTimerRef.current = setTimeout(() => {

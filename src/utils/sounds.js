@@ -24,6 +24,7 @@ export const SE_PATHS = {
   seSkillCharge: 'assets/audio/se/se_skill_charge.mp3',
   seSkillFreeze: 'assets/audio/se/se_skill_freeze.mp3',
   seSkillCrush: 'assets/audio/se/se_skill_crush.mp3',
+  seSkillSnipe: 'assets/audio/se/se_skill_snipe.mp3',
   seClock: 'assets/audio/se/se_clock.mp3',
   seMetalBlast: 'assets/audio/se/se_metalblast.mp3',
   seFire: 'assets/audio/se/se_fire.mp3',
@@ -84,6 +85,7 @@ export const AUDIO_INSTANCES = {
   seSkillCharge: new Audio('assets/audio/se/se_skill_charge.mp3'),
   seSkillFreeze: new Audio('assets/audio/se/se_skill_freeze.mp3'),
   seSkillCrush: new Audio('assets/audio/se/se_skill_crush.mp3'),
+  seSkillSnipe: new Audio('assets/audio/se/se_skill_snipe.mp3'),
   seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
   seSkillDominate: new Audio('assets/audio/se/se_skill_dominate.mp3'),
 };
@@ -142,7 +144,9 @@ export function updateBgmGainNodes(vol) {
       if (audio) {
         try {
           audio.volume = vol;
-        } catch {}
+        } catch {
+          // 一部のブラウザでは volume 設定時にエラーが発生する場合があるため無視
+        }
       }
     }
   });

@@ -41,7 +41,13 @@ import {
 } from '../game/tutorialEngine.js';
 import { openCardPreview } from '../services/uiGallery.js';
 
-export default function BattleScreen({ showRulesModal = () => {} }) {
+export default function BattleScreen({ showRulesModal }) {
+  const openRulesModal = () => {
+    if (typeof showRulesModal === 'function') return showRulesModal();
+    if (typeof window.showRulesModal === 'function')
+      return window.showRulesModal();
+  };
+
   const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
@@ -403,7 +409,7 @@ export default function BattleScreen({ showRulesModal = () => {} }) {
         onClick={(e) => {
           e.stopPropagation();
           playSound(SOUNDS.seClick);
-          if (typeof showRulesModal === 'function') showRulesModal();
+          openRulesModal();
         }}
       >
         ？

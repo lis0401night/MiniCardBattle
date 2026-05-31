@@ -146,7 +146,10 @@ export default function TutorialSelectScreen() {
       } catch (error) {
         console.error('デッキ保存に失敗しました:', error);
         // ロールバック処理によりデータ整合性を維持
-        if (GameState.playerInventory && GameState.playerInventory[cardId]) {
+        if (
+          GameState.playerInventory &&
+          GameState.playerInventory[cardId] > 0
+        ) {
           GameState.playerInventory[cardId]--;
           if (GameState.playerInventory[cardId] <= 0) {
             delete GameState.playerInventory[cardId];
