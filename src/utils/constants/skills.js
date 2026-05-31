@@ -4,16 +4,16 @@
 import { CARD_MASTER } from './cards.js';
 
 export const SKILLS = {
-  none: { name: '通常', icon: '', desc: (val) => '' },
+  none: { name: '通常', icon: '', desc: () => '' },
   quick: {
     name: '速攻',
     icon: '⚡',
-    desc: (val) => '召喚時、ただちに攻撃する。',
+    desc: () => '召喚時、ただちに攻撃する。',
   },
   deadly: {
     name: '必殺',
     icon: '☠️',
-    desc: (val) => '戦闘した時、相手を破壊する。',
+    desc: () => '戦闘した時、相手を破壊する。',
   },
   draw: {
     name: '入替',
@@ -61,7 +61,7 @@ export const SKILLS = {
   defender: {
     name: '防御',
     icon: '🧱',
-    desc: (val) => '攻撃せず、敵カードや敵リーダーにダメージを与えられない。',
+    desc: () => '攻撃せず、敵カードや敵リーダーにダメージを与えられない。',
   },
   clone: {
     name: '分身',
@@ -83,7 +83,7 @@ export const SKILLS = {
   sturdy: {
     name: '頑丈',
     icon: '⛰',
-    desc: (val) => '戦闘時、受けるダメージを半減する（端数切り捨て）。',
+    desc: () => '戦闘時、受けるダメージを半減する（端数切り捨て）。',
   },
   berserk: {
     name: '狂乱',
@@ -162,28 +162,28 @@ export const SKILLS = {
   reflect: {
     name: '反射',
     icon: '↩️',
-    desc: (val) =>
+    desc: () =>
       '戦闘で受けるダメージをランダムなカードに肩代わりさせる。（自身が選ばれた場合は通常通り受ける）また、カードを装備できず、装備になれない。',
   },
   guardian: {
     name: '守護',
     icon: '🛡️',
-    desc: (val) => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。',
+    desc: () => '隣のレーンの味方が戦闘で受けるダメージを肩代わりする。',
   },
   legendary: {
     name: '伝説',
     icon: '👑',
-    desc: (val) => '中央のレーンにしか召喚できない。',
+    desc: () => '中央のレーンにしか召喚できない。',
   },
   takeover: {
     name: '生贄',
     icon: '🦖',
-    desc: (val) => 'カードが配置されているレーンにしか召喚できない。',
+    desc: () => 'カードが配置されているレーンにしか召喚できない。',
   },
   pierce: {
     name: '貫通',
     icon: '🏹',
-    desc: (val) =>
+    desc: () =>
       '攻撃時、自身のパワーの差分だけ相手リーダーにダメージを与える。',
   },
   explode: {
@@ -209,7 +209,7 @@ export const SKILLS = {
   metamorph: {
     name: '変身',
     icon: '❓',
-    desc: (val) =>
+    desc: () =>
       '召喚時、全カードの中からランダムに1枚に変身し、その能力を発動する。',
   },
   resurrect: {
@@ -237,7 +237,7 @@ export const SKILLS = {
   shuffle: {
     name: '攪乱',
     icon: '🃏',
-    desc: (val) =>
+    desc: () =>
       '召喚時、お互いの手札を全て捨て、墓地をリセットする。その後、お互いにカードを3枚引く。',
   },
   summon: {
@@ -266,7 +266,7 @@ export const SKILLS = {
   immune: {
     name: '無効',
     icon: '🚫',
-    desc: (val) => '能力による破壊やダメージを受けない。',
+    desc: () => '能力による破壊やダメージを受けない。',
   },
   resist: {
     name: '耐性',
@@ -276,7 +276,7 @@ export const SKILLS = {
   fate: {
     name: '運命',
     icon: '🎲',
-    desc: (val) => '召喚時、5/6で相手に1~5ダメージ、1/6で自分に6ダメージ。',
+    desc: () => '召喚時、5/6で相手に1~5ダメージ、1/6で自分に6ダメージ。',
   },
   salvage: {
     name: '回収',
@@ -319,36 +319,36 @@ export const SKILLS = {
   dispel: {
     name: '解除',
     icon: '🔓',
-    desc: (val) =>
+    desc: () =>
       `召喚時、お互いの場の全ての「装備中」のカードを解除し、「装備」を持つカードを全て破壊する。`,
   },
   invade: {
     name: '侵略',
     icon: '🛸',
-    desc: (val) => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。',
+    desc: () => '召喚時、自分の墓地のカードの種類1枚につきパワーを+1する。',
   },
   replicate: {
     name: '複製',
     icon: '👯',
-    desc: (val) =>
+    desc: () =>
       '召喚時、最もパワーが高い自分の他のカード1体のパワー分、自身のパワーを+する。',
   },
   equip: {
     name: '装備',
     icon: '🗡️',
-    desc: (val) =>
+    desc: () =>
       'カードが配置されているレーンに配置するとき、下のカードに自身と同じパワーと能力を付与する。',
   },
   phase: {
     name: '位相',
     icon: '🌫️',
-    desc: (val) =>
+    desc: () =>
       '「位相」か「防御」を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。（防御が付与されている場合は無効）',
   },
   petrify: {
     name: '石化',
     icon: '🗿',
-    desc: (val) => [
+    desc: () => [
       { type: 'text', value: '召喚時、正面のカードを' },
       {
         type: 'link',
@@ -364,7 +364,7 @@ export const SKILLS = {
   oblivion: {
     name: '沈黙',
     icon: '⚪',
-    desc: (val) =>
+    desc: () =>
       '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。',
   },
   call: {
@@ -381,12 +381,12 @@ export const SKILLS = {
   challenge: {
     name: '挑戦',
     icon: '🥋',
-    desc: (val) => '正面にカードが置かれているレーンにしか召喚できない。',
+    desc: () => '正面にカードが置かれているレーンにしか召喚できない。',
   },
   move: {
     name: '移動',
     icon: '🏃',
-    desc: (val) =>
+    desc: () =>
       '自分のターン開始時に隣のレーンに移動できる。（防御が付与されている場合は無効）',
   },
   freeze: {
@@ -414,13 +414,13 @@ export const SKILLS = {
   absorb: {
     name: '吸収',
     icon: '💖',
-    desc: (val) =>
+    desc: () =>
       '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。',
   },
   decay: {
     name: '減衰',
     icon: '⏬',
-    desc: (val) => '召喚時、パワーが半分になる。（端数切り捨て）',
+    desc: () => '召喚時、パワーが半分になる。（端数切り捨て）',
   },
   seal: {
     name: '結界',
@@ -430,7 +430,7 @@ export const SKILLS = {
   apex: {
     name: '頂点',
     icon: '☀️',
-    desc: (val) =>
+    desc: () =>
       '自分の場に伝説を持つカードが置かれているレーンにしか召喚できない。',
   },
   retaliate: {
@@ -480,12 +480,12 @@ export const SKILLS = {
   crush: {
     name: '粉砕',
     icon: '🔨',
-    desc: (val) => `召喚時、お互いの場の「防御」を持つカードを全て破壊する。`,
+    desc: () => `召喚時、お互いの場の「防御」を持つカードを全て破壊する。`,
   },
   substitute: {
     name: '身替',
     icon: '🎭',
-    desc: (val) => '隣のレーンの味方に戦闘で受けるダメージを肩代わりさせる。',
+    desc: () => '隣のレーンの味方に戦闘で受けるダメージを肩代わりさせる。',
   },
   adversity: {
     name: '逆境',
@@ -496,7 +496,7 @@ export const SKILLS = {
   invite: {
     name: '招来',
     icon: '🌌',
-    desc: (val) => [
+    desc: () => [
       {
         type: 'text',
         value:
@@ -509,7 +509,7 @@ export const SKILLS = {
   forge: {
     name: '鍛造',
     icon: '⚒️',
-    desc: (val) => [
+    desc: () => [
       {
         type: 'text',
         value:
@@ -522,12 +522,12 @@ export const SKILLS = {
   hack: {
     name: '改竄',
     icon: '👾',
-    desc: (val) => '召喚時、お互いのSPを合計し均等に振り分ける（端数切り捨て）',
+    desc: () => '召喚時、お互いのSPを合計し均等に振り分ける（端数切り捨て）',
   },
   double_power: {
     name: '倍化',
     icon: '⏫',
-    desc: (val) => '召喚時、パワーが2倍になる。',
+    desc: () => '召喚時、パワーが2倍になる。',
   },
   explore: {
     name: '探索',
@@ -538,13 +538,13 @@ export const SKILLS = {
   possession: {
     name: '憑依',
     icon: '💞',
-    desc: (val) =>
+    desc: () =>
       '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できず、装備になれない。',
   },
   martyr: {
     name: '犠牲',
     icon: '✝️',
-    desc: (val) => '自分のリーダーが戦闘で受けるダメージを肩代わりする。',
+    desc: () => '自分のリーダーが戦闘で受けるダメージを肩代わりする。',
   },
   awake: {
     name: '覚醒',
@@ -575,13 +575,13 @@ export const SKILLS = {
   cleave: {
     name: '一掃',
     icon: '🧹',
-    desc: (val) =>
+    desc: () =>
       '攻撃時、肩代わりを無視して正面とその隣のレーンに分散してダメージを与える。（左>中央>右優先）',
   },
   leap: {
     name: '跳躍',
     icon: '⏭️',
-    desc: (val) =>
+    desc: () =>
       '召喚時、追加のターンを1回行う。（ただし、追加ターン中はSPは溜まらず攻撃もできない）',
   },
   chant: {
@@ -599,7 +599,7 @@ export const SKILLS = {
   arm_self: {
     name: '武装',
     icon: '🦾',
-    desc: (val) =>
+    desc: () =>
       '自身の上にカードを配置するとき、自身にそのカードと同じパワーと能力を付与する。',
   },
   burial: {

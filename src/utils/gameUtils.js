@@ -210,7 +210,7 @@ export async function playSound(audioOrKey) {
   if (audio instanceof Audio) {
     try {
       audio.volume = baseVol;
-    } catch (e) {}
+    } catch {}
 
     try {
       // BGM (ループ音) の処理
@@ -236,7 +236,6 @@ export async function playSound(audioOrKey) {
             });
           }
 
-          const bgmUrl = new URL(audio.src).pathname.replace(/^\/+/, '');
           let fetchUrl = audio.src;
           // ローカルパス変換ロジック
           if (fetchUrl.includes('assets/audio/bgm/')) {
@@ -263,7 +262,7 @@ export async function playSound(audioOrKey) {
           if (audio.readyState > 0) {
             try {
               audio.currentTime = 0;
-            } catch (e) {}
+            } catch {}
           }
           currentBgmAudio = audio;
           const p = audio.play();
@@ -289,7 +288,7 @@ export async function playSound(audioOrKey) {
           const clone = audio.cloneNode();
           try {
             clone.volume = baseVol;
-          } catch (e) {}
+          } catch {}
           const p = clone.play();
           if (p !== undefined) p.catch(() => {});
         }
@@ -303,7 +302,7 @@ export function startWebAudioBgm(buffer, baseVol) {
   if (currentWebAudioBgmSource) {
     try {
       currentWebAudioBgmSource.stop();
-    } catch (e) {}
+    } catch {}
     currentWebAudioBgmSource.disconnect();
   }
   if (currentWebAudioBgmGain) {
@@ -333,7 +332,7 @@ export function stopSound(audio) {
     if (currentWebAudioBgmSource) {
       try {
         currentWebAudioBgmSource.stop();
-      } catch (e) {}
+      } catch {}
       currentWebAudioBgmSource.disconnect();
       currentWebAudioBgmSource = null;
     }

@@ -60,7 +60,6 @@ export default function Board({
   selectedBoardSide,
   onCellClick,
   onCardLongPress,
-  tutorialMode, // チュートリアルモード判定用propを追加
 }) {
   // 3レーン分ループ
   const lanes = [0, 1, 2];
@@ -123,7 +122,7 @@ export default function Board({
               key={`enemy-lane-${lane}`}
               className={`cell ${isSealed ? 'sealed' : ''} ${isEnemyHighlight ? 'highlight' : ''}`}
               data-lane={lane}
-              onClick={(e) => {
+              onClick={() => {
                 if (isSealed && window.handleEnemyLaneClick) {
                   showAlertModal('封印されています');
                   return;
@@ -211,7 +210,7 @@ export default function Board({
               className={`cell${isHighlight ? ' highlight' : ''}${isSealed ? ' sealed' : ''}`}
               data-lane={lane}
               // 配置モード時などのCellクリックに対応したい場合はここで onCellClick を呼ぶ
-              onClick={(e) => {
+              onClick={() => {
                 if (
                   isSealed &&
                   (GameState.isPlacementMode ||

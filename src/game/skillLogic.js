@@ -188,7 +188,6 @@ export async function resolveActiveSkillEffect(
     let selectedIdx = -1;
     let selectedLane = -1;
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-    const b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
     // 【詠唱】パワー制限値（招来は制限なし）
     const maxPower = skillId === 'chant' ? (skillValue ?? 3) : Infinity;
@@ -1305,7 +1304,6 @@ export async function resolveActiveSkillEffect(
       }
     }
   } else if (skillId === 'crush') {
-    const oppSide = o === 'blue' ? 'red' : 'blue';
     const targets = [];
     const checkTargets = (board, side) => {
       for (let i = 0; i < 3; i++) {
@@ -1716,7 +1714,6 @@ export async function resolveActiveSkillEffect(
         );
         if (tLanes && tLanes.length > 0) {
           const targetLane = tLanes[0];
-          const dIdx = discard.findIndex((cd) => cd.id === selectedCard.id);
           // 完全一致するオブジェクトを手動で削除
           const actualIdx = discard.indexOf(selectedCard);
           if (actualIdx !== -1) discard.splice(actualIdx, 1);
@@ -2266,7 +2263,6 @@ export async function resolveActiveSkillEffect(
     }
     if (discardIndices && discardIndices.length > 0) {
       const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-      const d = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
       discardIndices.sort((a, b) => b - a);
       for (let idx of discardIndices) {
         const dropped = h.splice(idx, 1)[0];
@@ -2966,8 +2962,6 @@ async function triggerExtortInAction(c, o) {
   const oppSide = o === 'blue' ? 'red' : 'blue';
   const eHandRef =
     oppSide === 'blue' ? GameState.playerHand : GameState.enemyHand;
-  const eD =
-    oppSide === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
 
   if (eHandRef && eHandRef.length > 0) {
     let discardedAmount = 0;

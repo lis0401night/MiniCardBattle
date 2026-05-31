@@ -110,7 +110,7 @@ export default function ChallengeExchangeScreen() {
             }
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore fetch errors in pure frontend modes
       }
     };

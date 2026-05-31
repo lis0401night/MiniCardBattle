@@ -68,7 +68,7 @@ export function showAchievements() {
   switchScreen('screen-achievements');
 }
 
-export function toggleAchievementSection(sectionId) {
+export function toggleAchievementSection() {
   // Legacy DOM logic removed. Rendered natively in AchievementsScreen.jsx
 }
 
@@ -114,7 +114,7 @@ export function showCardAcquisitionModal(cardId, onClose) {
     return showCardAcquisitionModalHook(cardId, onClose);
   executeCardAcquisitionModal(cardId);
 }
-export function executeCardAcquisitionModal(cardId) {
+export function executeCardAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.
 }
 
@@ -127,7 +127,7 @@ export function showPremiumAcquisitionModal(cardId) {
     return showPremiumAcquisitionModalHook(cardId);
   executePremiumAcquisitionModal(cardId);
 }
-export function executePremiumAcquisitionModal(cardId) {
+export function executePremiumAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.
 }
 
@@ -149,7 +149,7 @@ export function showSkinAcquisitionModal(name, id) {
     return showSkinAcquisitionModalHook(name, id);
 }
 
-export function executePlaymatAcquisitionModal(name, id) {
+export function executePlaymatAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.
 }
 
@@ -288,7 +288,7 @@ export function setupLongPress(element, cardData) {
   };
 }
 
-export function populateCardPreview(prefix, card) {
+export function populateCardPreview() {
   // Legacy DOM logic removed. Rendered natively in GlobalModals.jsx via the React hook.
 }
 
@@ -302,7 +302,7 @@ export function openCardPreview(card) {
 }
 // プレビューをどこからでも呼べるようグローバルに登録
 window.openCardPreview = openCardPreview;
-export function executeOpenCardPreview(card) {
+export function executeOpenCardPreview() {
   // Legacy DOM logic removed. Rendered natively in GlobalModals.jsx via the React hook.
 }
 

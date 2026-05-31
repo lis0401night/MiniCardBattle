@@ -4047,7 +4047,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           if (hasSkill(aC, 'deadly')) {
             if (!hasSkill(chosenCard, 'immune')) {
               chosenCard.currentPower = 0;
-              events.push({ type: 'deadly', side: chosenSide, lane: chosenLane });
+              events.push({
+                type: 'deadly',
+                side: chosenSide,
+                lane: chosenLane,
+              });
             } else {
               events.push({
                 type: 'immune_block',
@@ -4101,7 +4105,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
         // 自身以外が選ばれた場合は、そのカードにダメージを肩代わりさせる
         if (chosenObj.card !== aC_defend) {
-          events.push({ type: 'reflect_block', side: attackerSide, lane: aLane });
+          events.push({
+            type: 'reflect_block',
+            side: attackerSide,
+            lane: aLane,
+          });
           const chosenCard = chosenObj.card;
           const chosenSide = chosenObj.side;
           const chosenLane = chosenObj.lane;
@@ -4128,7 +4136,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           if (originalTarget && hasSkill(originalTarget, 'deadly')) {
             if (!hasSkill(chosenCard, 'immune')) {
               chosenCard.currentPower = 0;
-              events.push({ type: 'deadly', side: chosenSide, lane: chosenLane });
+              events.push({
+                type: 'deadly',
+                side: chosenSide,
+                lane: chosenLane,
+              });
             } else {
               events.push({
                 type: 'immune_block',

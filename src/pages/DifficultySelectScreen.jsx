@@ -15,7 +15,7 @@ const DIFFICULTY = {
 };
 
 export default function DifficultySelectScreen() {
-  const [renderVersion, setRenderVersion] = useState(0);
+  const [, setRenderVersion] = useState(0);
 
   const isFreeMode =
     typeof GameState !== 'undefined' && GameState.gameMode === 'free';

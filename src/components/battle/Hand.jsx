@@ -31,7 +31,7 @@ export default function Hand({
             key={`${card.id}-${idx}`}
             cardObj={card}
             className={classes}
-            onClick={(e) => onCardClick(idx)}
+            onClick={() => onCardClick(idx)}
             onLongPress={onCardLongPress}
           />
         );

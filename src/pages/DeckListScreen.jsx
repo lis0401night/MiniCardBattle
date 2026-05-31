@@ -11,7 +11,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import { MAX_DECK_SLOTS } from '../utils/constants/config.js';
 
 export default function DeckListScreen({ switchScreen }) {
-  const [renderVersion, setRenderVersion] = useState(0);
+  const [, setRenderVersion] = useState(0);
   const [currentPage, setCurrentPage] = useState(GameState.deckListPage || 0);
 
   const getBackgroundImage = () => {
@@ -94,7 +94,7 @@ export default function DeckListScreen({ switchScreen }) {
     try {
       const decksSaved = localStorage.getItem('mini_card_battle_decks');
       GameState.decks = decksSaved ? JSON.parse(decksSaved) : [];
-    } catch (e) {
+    } catch {
       GameState.decks = [];
     }
     if (

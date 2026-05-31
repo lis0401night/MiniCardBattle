@@ -98,7 +98,7 @@ Object.keys(AUDIO_INSTANCES).forEach((key) => {
   }
   try {
     audio.volume = 0.3;
-  } catch (e) {}
+  } catch {}
   audio.load(); // 事前ロード
 });
 
@@ -136,7 +136,7 @@ export function updateBgmGainNodes(vol) {
       if (audio) {
         try {
           audio.volume = vol;
-        } catch (e) {}
+        } catch {}
       }
     }
   });
@@ -161,9 +161,9 @@ export async function unlockAudio() {
     }
 
     // 全てのSEを非同期でロード開始
-    const loadPromises = Object.entries(SE_PATHS).map(([key, url]) =>
-      loadSE(key, url)
-    );
+    Object.entries(SE_PATHS).forEach(([key, url]) => {
+      loadSE(key, url);
+    });
 
     if (audioCtx.state === 'suspended') {
       await audioCtx.resume();
@@ -275,7 +275,7 @@ export function playSkillSound(skillId) {
         seBuffers[url] = buffer;
         playBuffer(buffer);
       })
-      .catch((e) => {
+      .catch(() => {
         if (typeof window.playSound === 'function')
           window.playSound(backupSound);
       });

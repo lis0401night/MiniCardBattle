@@ -33,7 +33,6 @@ export async function playEvents(events) {
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
     const sidePrefix = ev.side === 'blue' ? 'player' : 'enemy';
-    const oppPrefix = ev.side === 'blue' ? 'enemy' : 'player';
     const nextEv = events[i + 1];
     const isNextDamage =
       nextEv &&

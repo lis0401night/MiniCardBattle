@@ -824,8 +824,6 @@ export function getBestSimulatedMove() {
   let myBoard = GameState.enemyBoard.map(cloneCard);
   let opBoard = GameState.playerBoard.map(cloneCard);
 
-  let myHP = GameState.enemyHP;
-  let opHP = GameState.playerHP;
   let mySP = GameState.enemySP || 0;
   const mySealedLanes = GameState.enemySealedLanes || [0, 0, 0];
 
@@ -1956,17 +1954,6 @@ export function getBestSimulatedMove() {
 
   const cardName =
     finalDecision.index !== -1 ? hand[finalDecision.index].name : 'PASS';
-
-  // 現在のパワー計算
-  const initialMyP = myBoard.reduce(
-    (sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0),
-    0
-  );
-  const initialOpP = opBoard.reduce(
-    (sum, c) => sum + (c ? Math.max(0, c.currentPower ?? 0) : 0),
-    0
-  );
-  const initialDiff = initialMyP - initialOpP;
 
   let resInfo = '';
   if (

@@ -26,7 +26,7 @@ export default function ChallengeUnlockScreen() {
         JSON.parse(localStorage.getItem('mini_card_battle_dungeon_unlocks')) ||
         {}
       );
-    } catch (e) {
+    } catch {
       return {};
     }
   });

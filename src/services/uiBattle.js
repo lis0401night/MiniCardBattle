@@ -126,7 +126,6 @@ export function updateCardDetail(c) {
       return raw || '';
     };
 
-    const rarityColors = { 1: '#cd7f32', 2: '#e2e8f0', 3: '#facc15' };
     html = '<div class="card-detail-content">';
     if (grouped.length > 0) {
       grouped.forEach((sk) => {

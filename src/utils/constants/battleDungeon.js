@@ -252,7 +252,6 @@ export const generateDungeonOpponentsList = (winStreak) => {
   // ルーティン設定
   // 1,2: 銅(1)*2  3,4: 銀(2)*2  5: 金(3)*2  6,7: 銅(1)*2  8,9: 銀(2)*2  10: キャラ(Hard)*1
   let targetRarity = 1;
-  let count = 2;
   let isBoss = false;
 
   if (cyclePos === 1 || cyclePos === 2 || cyclePos === 6 || cyclePos === 7) {
@@ -268,7 +267,6 @@ export const generateDungeonOpponentsList = (winStreak) => {
     targetRarity = 3;
   } else if (cyclePos === 10) {
     isBoss = true;
-    count = 1;
   }
 
   let opponents = [];

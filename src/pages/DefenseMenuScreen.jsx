@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import {
   showDefenseBattleList,
   showDefenseRules,
@@ -101,7 +101,7 @@ export default function DefenseMenuScreen() {
 
       fetchPoints();
     }
-  }, []);
+  }, [hasRegistered]);
 
   return (
     <ScreenLayout

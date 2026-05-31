@@ -62,7 +62,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [acquisitionData, setAcquisitionData] = useState(null); // card, premium, playmat
   const [pointAcquisitionData, setPointAcquisitionData] = useState(null);
   const [charDetailData, setCharDetailData] = useState(null);
-  const [exchangeDetailData, setExchangeDetailData] = useState(null);
   const [syncDataVisible, setSyncDataVisible] = useState(false);
   const [playerNameVisible, setPlayerNameVisible] = useState(false);
   const [playerNameCallback, setPlayerNameCallback] = useState(null);
@@ -1112,10 +1111,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               const isEnemySelection =
                 GameState.appState === 'select_enemy' ||
                 charDetailData.isDungeonEnemy;
-              const isCreateDeck =
-                GameState.appState === 'create_deck_select_char' ||
-                (GameState.gameMode === 'defense_register' &&
-                  GameState.appState === 'select_player');
               let skinIdToUse;
               if (isEnemySelection) {
                 skinIdToUse = 'default';
@@ -1941,7 +1936,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               <button
                 className="btn"
                 style={{ background: '#475569', margin: 0 }}
-                onClick={(e) => {
+                onClick={() => {
                   playSound?.(SOUNDS?.seClick);
                   setSkinSelectionVisible(false);
                 }}

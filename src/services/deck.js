@@ -199,7 +199,7 @@ export function generateDeck(owner, config, sessionId) {
 /**
  * リーダー別のおすすめ初期デッキを生成 (20枚・同名5枚制限厳守)
  */
-export function getInitialDeck(charId) {
+export function getInitialDeck() {
   const deck = [];
   INITIAL_PLAYER_DECK.forEach((id) => {
     const template = CARD_MASTER.find((m) => m.id === id);
@@ -477,7 +477,7 @@ export function loadDeck() {
   if (invSaved) {
     try {
       GameState.playerInventory = JSON.parse(invSaved);
-    } catch (e) {
+    } catch {
       GameState.playerInventory = {};
     }
   } else {
@@ -505,7 +505,7 @@ export function loadDeck() {
         (id) =>
           VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)
       );
-    } catch (e) {
+    } catch {
       GameState.premiumCards = [];
     }
   } else {
@@ -521,7 +521,7 @@ export function loadDeck() {
         (id) =>
           VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)
       );
-    } catch (e) {
+    } catch {
       GameState.unlockedPremiumCards = [];
     }
   } else {
@@ -534,7 +534,7 @@ export function loadDeck() {
   if (playmatsSaved) {
     try {
       setOwnedPlaymats(JSON.parse(playmatsSaved));
-    } catch (e) {
+    } catch {
       setOwnedPlaymats([]);
     }
   } else {
@@ -559,7 +559,7 @@ export function loadDeck() {
         ) {
           GameState.decks[0].leaderId = GameState.playerConfig.id;
         }
-      } catch (e) {
+      } catch {
         GameState.decks = [];
       }
     } else {
@@ -581,7 +581,7 @@ export function loadDeck() {
               cards: cardsArr,
             },
           ];
-        } catch (e) {
+        } catch {
           GameState.decks = [];
         }
       } else {
@@ -596,7 +596,7 @@ export function loadDeck() {
     if (dungeonSaved) {
       try {
         GameState.decks = [JSON.parse(dungeonSaved)];
-      } catch (e) {
+      } catch {
         GameState.decks = [];
       }
     } else {
@@ -618,7 +618,7 @@ export function loadDeck() {
               cards: deckCardsStr,
             },
           ];
-        } catch (e) {
+        } catch {
           GameState.decks = [];
         }
       } else {
@@ -633,7 +633,7 @@ export function loadDeck() {
     if (decksSaved) {
       try {
         GameState.decks = JSON.parse(decksSaved);
-      } catch (e) {
+      } catch {
         GameState.decks = [];
       }
     } else {
@@ -659,7 +659,7 @@ export function loadDeck() {
             return template ? { ...template } : null;
           })
           .filter(Boolean);
-      } catch (e) {
+      } catch {
         // スナップショット読み込みエラー時は通常デッキのselectionを使用
       }
     }
@@ -669,7 +669,7 @@ export function loadDeck() {
     if (decksSaved) {
       try {
         GameState.decks = JSON.parse(decksSaved);
-      } catch (e) {
+      } catch {
         GameState.decks = [];
       }
     } else {
@@ -754,8 +754,8 @@ export function loadDeck() {
             'Invalid story deck snapshot. Fallback to current deck.'
           );
         }
-      } catch (e) {
-        console.error('Failed to parse story deck snapshot:', e);
+      } catch {
+        console.error('Failed to parse story deck snapshot');
       }
     }
 
@@ -816,9 +816,7 @@ export function loadDeck() {
       });
     }
   } else {
-    GameState.playerDeckSelection = getInitialDeck(
-      GameState.playerConfig?.id || 'knight'
-    );
+    GameState.playerDeckSelection = getInitialDeck();
   }
 }
 
@@ -844,7 +842,7 @@ export function createNewDeck(leaderId) {
     playmatId: null,
     playerSkins: {},
     premiumCards: globalPremiumCards,
-    cards: getInitialDeck(leaderId || 'knight').map((c) => c.id),
+    cards: getInitialDeck().map((c) => c.id),
   };
   GameState.decks.push(newDeck);
   if (
@@ -1000,7 +998,7 @@ export function clearDeck() {
 export function resetDeck() {
   playSound(SOUNDS.seClick);
   showConfirmModal('デッキを初期状態に戻しますか？', () => {
-    GameState.playerDeckSelection = getInitialDeck(GameState.playerConfig.id);
+    GameState.playerDeckSelection = getInitialDeck();
     renderDeckEdit();
   });
 }

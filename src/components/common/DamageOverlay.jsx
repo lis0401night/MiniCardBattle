@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-
-export let addDamagePopupHook = null;
-export function setAddDamagePopupHook(h) {
-  addDamagePopupHook = h;
-}
+import { setAddDamagePopupHook } from '../../utils/gameUtils.js';
 
 // ダメージポップアップの表示時間（ミリ秒）
 const DAMAGE_POPUP_DURATION = 1000;

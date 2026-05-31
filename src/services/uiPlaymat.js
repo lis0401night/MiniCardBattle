@@ -22,7 +22,7 @@ export function renderPlaymatList() {
   // Legacy DOM logic removed. Handled by React state now.
 }
 
-export function selectPlaymat(id) {
+export function selectPlaymat() {
   // Handled directly inside React component GlobalModals.jsx
   console.warn('selectPlaymat called from legacy code');
 }

@@ -113,7 +113,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
             }
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore fetch errors in pure frontend modes
       }
     };
