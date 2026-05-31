@@ -47,6 +47,23 @@ export async function playEvents(events) {
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
+
+        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）用VFX
+        if (
+          (ev.source === 'snipe' ||
+            ev.source === 'snipe_void' ||
+            ev.source === 'spread' ||
+            ev.source === 'spread_void') &&
+          window.triggerVfx
+        ) {
+          const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
+          const vfxPromise = window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane);
+          // 拡散スキルの場合は、複数レーンで同時に並行再生させるため await しない
+          if (ev.source === 'snipe' || ev.source === 'snipe_void') {
+            await vfxPromise;
+          }
+        }
+
         if (cEl) {
           cEl.classList.remove('anim-shake');
           void cEl.offsetWidth; // reflow
@@ -68,6 +85,23 @@ export async function playEvents(events) {
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
+
+        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）用VFX
+        if (
+          (ev.source === 'snipe' ||
+            ev.source === 'snipe_void' ||
+            ev.source === 'spread' ||
+            ev.source === 'spread_void') &&
+          window.triggerVfx
+        ) {
+          const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
+          const vfxPromise = window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane);
+          // 拡散スキルの場合は、複数レーンで同時に並行再生させるため await しない
+          if (ev.source === 'snipe' || ev.source === 'snipe_void') {
+            await vfxPromise;
+          }
+        }
+
         if (cEl) {
           createDamagePopup(cEl, '無効', '#94a3b8');
         }

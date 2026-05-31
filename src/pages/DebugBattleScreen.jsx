@@ -424,6 +424,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>プレイヤーSP</label>
               <input
+                id="input-player-sp"
                 style={inputStyle}
                 type="number"
                 value={playerSP}
@@ -469,6 +470,7 @@ export default function DebugBattleScreen() {
           <div style={{ marginBottom: '4px' }}>
             <label style={labelStyle}>プレイヤー手札</label>
             <input
+              id="input-player-hand"
               style={inputStyle}
               value={playerHand}
               onChange={(e) => setPlayerHand(e.target.value)}
@@ -560,6 +562,7 @@ export default function DebugBattleScreen() {
           <div>
             <label style={labelStyle}>敵の場</label>
             <input
+              id="input-enemy-board"
               style={inputStyle}
               value={enemyBoard}
               onChange={(e) => setEnemyBoard(e.target.value)}
@@ -629,7 +632,7 @@ export default function DebugBattleScreen() {
         </div>
 
         {/* 開始ボタン */}
-        <button style={btnStyle} onClick={handleStartBattle}>
+        <button id="btn-start-debug-battle" style={btnStyle} onClick={handleStartBattle}>
           ⚔️ バトル開始
         </button>
       </div>

@@ -1123,7 +1123,6 @@ export async function resolveActiveSkillEffect(
     await sleep(400);
     await executeSingleCombat(o, l);
   } else if (skillId === 'toxic') {
-    playSound(SOUNDS.seSkillToxic);
     createDamagePopup(cEl, '有毒', '#10b981');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     if (eB[l]) {
@@ -1142,22 +1141,24 @@ export async function resolveActiveSkillEffect(
       }
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
-      const tEl = document.querySelector(
-        `#${tgtSide}-lanes .cell[data-lane="${l}"] .card`
-      );
-      if (tEl) {
-        tEl.classList.add('anim-shake');
-        createDamagePopup(tEl, `成長-${toxVal}`, '#10b981');
-        if (window.updateCardVisualsReact)
-          window.updateCardVisualsReact(l, tgtSide);
-        else {
-          const ubHook = window.updateBattleUIHook;
-          if (ubHook) ubHook();
-        }
+
+      // VFX演出（SEも triggerVfx 内で自動再生されます）
+      if (window.triggerVfx) {
+        await window.triggerVfx('anm_skill_toxic', o, l);
+      } else {
+        playSound(SOUNDS.seSkillToxic);
+        await sleep(500);
       }
-      await sleep(500);
-      if (tEl) tEl.classList.remove('anim-shake');
+
+      if (window.updateCardVisualsReact)
+        window.updateCardVisualsReact(l, tgtSide);
+      else {
+        const ubHook = window.updateBattleUIHook;
+        if (ubHook) ubHook();
+      }
     } else {
+      // 効果対象が存在しない場合はSEのみ再生
+      playSound(SOUNDS.seSkillToxic);
       await sleep(500);
     }
   } else if (skillId === 'dispel') {
@@ -1397,7 +1398,6 @@ export async function resolveActiveSkillEffect(
       await sleep(400);
     }
   } else if (skillId === 'bind') {
-    playSound(SOUNDS.seSkillBind);
     createDamagePopup(cEl, '拘束', '#facc15');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     if (eB[l]) {
@@ -1405,16 +1405,23 @@ export async function resolveActiveSkillEffect(
       // val=1 で「このターンは動けない」→ターン終了時に1減って stunTurns=1 → 次ターン防御 → 終了時に0、で計1ターン拘束。
       const turns = (skillValue || 1) + 1;
       eB[l].stunTurns = turns;
-      const tEl = document.querySelector(
-        `#${dS}-lanes .cell[data-lane="${l}"] .card`
-      );
-      if (tEl) {
-        tEl.classList.add('anim-shake');
-        createDamagePopup(tEl, '拘束', '#94a3b8');
+
+      const tgtSide = o === 'blue' ? 'enemy' : 'player';
+
+      // VFX演出（SEも triggerVfx 内で自動再生されます）
+      if (window.triggerVfx) {
+        await window.triggerVfx('anm_skill_bind', o, l);
+      } else {
+        playSound(SOUNDS.seSkillBind);
+        await sleep(500);
       }
-      await sleep(500);
-      if (tEl) tEl.classList.remove('anim-shake');
+
+      if (window.updateCardVisualsReact)
+        window.updateCardVisualsReact(l, tgtSide);
+      else if (window.updateBattleUIHook)
+        window.updateBattleUIHook();
     } else {
+      playSound(SOUNDS.seSkillBind);
       await sleep(500);
     }
   } else if (skillId === 'seal') {
@@ -1453,24 +1460,23 @@ export async function resolveActiveSkillEffect(
       const turns = (skillValue || 1) + 1;
       for (const tL of targets) {
         eB[tL].stunTurns = turns;
-        const tEl = document.querySelector(
-          `#${dS}-lanes .cell[data-lane="${tL}"] .card`
-        );
-        if (tEl) {
-          tEl.classList.remove('anim-shake');
-          void tEl.offsetWidth; // Force reflow to ensure animation restarts
-          tEl.classList.add('anim-shake');
-          createDamagePopup(tEl, '凍結', '#94a3b8');
+      }
+
+      // VFX演出の再生（すべての対象レーンで同時に並列再生）
+      const vfxPromises = [];
+      if (window.triggerVfx) {
+        for (const tL of targets) {
+          vfxPromises.push(window.triggerVfx('anm_skill_freeze', o, tL));
         }
       }
-      if (window.updateBattleUIHook) window.updateBattleUIHook(); // 反映させる
-      await sleep(500);
-      for (const tL of targets) {
-        const tEl = document.querySelector(
-          `#${dS}-lanes .cell[data-lane="${tL}"] .card`
-        );
-        if (tEl) tEl.classList.remove('anim-shake');
+
+      if (vfxPromises.length > 0) {
+        await Promise.all(vfxPromises);
+      } else {
+        await sleep(500);
       }
+
+      if (window.updateBattleUIHook) window.updateBattleUIHook(); // 反映させる
     } else {
       await sleep(500);
     }

@@ -175,5 +175,69 @@ export const VFX_DATA = {
     targetSide: 'enemy', // 相手のレーンがターゲット
   },
 
+  // 有毒スキル用VFX
+  anm_skill_toxic: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_toxic.png',
+    columns: 8,
+    rows: 1,
+    frameCount: 8,
+    duration: 800,
+    se: 'seSkillToxic', // 再生する効果音、SOUNDSのキーを指定
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // 凍結スキル用VFX
+  anm_skill_freeze: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_freeze.png',
+    columns: 8,
+    rows: 1,
+    frameCount: 8,
+    duration: 800,
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // 狙撃スキル用VFX
+  anm_skill_snipe: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_snipe.png',
+    columns: 5,
+    rows: 2,
+    frameCount: 10,
+    duration: 600,
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    flipOnEnemy: true, // 手前の自分カードに当たるとき（敵が発動したとき）に上下反転させる
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // 拘束スキル用VFX
+  anm_skill_bind: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_bind.png',
+    columns: 3,
+    rows: 5,
+    frameCount: 15,
+    duration: 800,
+    se: 'seSkillBind', // 再生する効果音、SOUNDSのキーを指定
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    flipOnEnemy: true, // 手前の自分カードに当たるとき（敵が発動したとき）に上下反転させる
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK
 };
