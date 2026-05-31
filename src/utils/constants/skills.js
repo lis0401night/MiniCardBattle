@@ -29,7 +29,7 @@ export const SKILLS = {
     name: '狙撃',
     icon: '🎯',
     desc: (val) =>
-      `召喚時、相手の場で最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）`,
+      `召喚時、相手の場の最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）`,
   },
   spread: {
     name: '拡散',
@@ -131,7 +131,7 @@ export const SKILLS = {
     name: '迎撃',
     icon: '👁',
     desc: (val) =>
-      `自分のターン開始時、相手の場で最大パワーのカード1枚に${val || 2}ダメージ。（同値の場合は左優先）`,
+      `自分のターン開始時、相手の場の最大パワーのカード1枚に${val || 2}ダメージ。（同値の場合は左優先）`,
   },
   hero: {
     name: '英雄',
@@ -643,32 +643,50 @@ export const SKILLS = {
   sublimation: {
     name: '昇華',
     icon: '🧿',
-    desc: (val) =>
-      `召喚時、自分の手札の「虚空」1枚につきパワーを${val >= 0 ? '+' : ''}${val}する。`,
+    desc: (val) => [
+      { type: 'text', value: '召喚時、自分の手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      { type: 'text', value: `1枚につきパワーを${val >= 0 ? '+' : ''}${val}する。` },
+    ],
   },
   snipe_void: {
     name: '狙撃(虚)',
     icon: '🎯',
-    desc: (val) =>
-      `召喚時、自分の手札の「虚空」1枚につき相手の場で最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）`,
+    desc: (val) => [
+      { type: 'text', value: '召喚時、自分の手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      {
+        type: 'text',
+        value: `1枚につき相手の場の最大パワーのカード1枚に${val || 4}ダメージ。（同値の場合は左優先）`,
+      },
+    ],
   },
   heal_void: {
     name: '回復(虚)',
     icon: '💚',
-    desc: (val) =>
-      `召喚時、自分の手札の「虚空」1枚につき自分リーダーのHPを${val || 3}回復する。`,
+    desc: (val) => [
+      { type: 'text', value: '召喚時、自分の手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      { type: 'text', value: `1枚につき自分リーダーのHPを${val || 3}回復する。` },
+    ],
   },
   spread_void: {
     name: '拡散(虚)',
     icon: '☄️',
-    desc: (val) =>
-      `召喚時、自分の手札の「虚空」1枚につき正面とその隣のカードに${val || 2}ダメージ。`,
+    desc: (val) => [
+      { type: 'text', value: '召喚時、自分の手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      { type: 'text', value: `1枚につき正面とその隣のカードに${val || 2}ダメージ。` },
+    ],
   },
   support_void: {
     name: '援護(虚)',
     icon: '🚩',
-    desc: (val) =>
-      `召喚時、自分の手札の「虚空」1枚につき隣のカードのパワーを+${val || 2}する。`,
+    desc: (val) => [
+      { type: 'text', value: '召喚時、自分の手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      { type: 'text', value: `1枚につき隣のカードのパワーを+${val || 2}する。` },
+    ],
   },
 };
 
