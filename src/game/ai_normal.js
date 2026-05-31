@@ -765,7 +765,6 @@ export function processActionSequence(
               'resurrect',
               'awake',
               'clone',
-              'wall_create',
               'split',
             ].includes(sk.id)
           ) {

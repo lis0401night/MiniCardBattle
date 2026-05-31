@@ -6,18 +6,23 @@ import { initBattleDungeon } from '../game/battleDungeon.js';
 import { GameState } from '../state/gameState.js';
 import { showDungeonRules, showEventMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
+import { switchScreen } from '../utils/gameUtils.js';
 
-export default function DungeonMenuScreen({ switchScreen }) {
+export default function DungeonMenuScreen() {
   useEffect(() => {
     GameState.gameMode = 'battle_dungeon_menu';
   }, []);
 
   const handleExchangeClick = () => {
-    if (switchScreen) switchScreen('screen-challenge-exchange');
+    if (typeof switchScreen === 'function') {
+      switchScreen('screen-challenge-exchange');
+    }
   };
 
   const handleUnlockClick = () => {
-    if (switchScreen) switchScreen('screen-challenge-unlock');
+    if (typeof switchScreen === 'function') {
+      switchScreen('screen-challenge-unlock');
+    }
   };
 
   const handleChallengeClick = () => {

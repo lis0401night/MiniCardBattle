@@ -1976,7 +1976,7 @@ export function loadTutorialProgress() {
     try {
       return JSON.parse(saved);
     } catch (e) {
-      console.error('Failed to parse tutorial progress:', e);
+      console.error('チュートリアル進捗のパースに失敗しました:', e);
     }
   }
   return {};
@@ -2000,10 +2000,7 @@ export function completeTutorial(tutorialId) {
     try {
       window.loadAchievements();
     } catch (e) {
-      console.error(
-        'Failed to trigger window.loadAchievements in completeTutorial:',
-        e
-      );
+      console.error('実績更新トリガーに失敗しました:', e);
     }
   }
 }

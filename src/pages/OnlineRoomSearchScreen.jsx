@@ -77,8 +77,10 @@ export default function OnlineRoomSearchScreen() {
         setIsJoining(true);
         try {
           await joinRoom(roomId, name);
-          if (isMountedRef.current) setIsJoining(false);
-          showOnlineLobby?.();
+          if (isMountedRef.current) {
+            setIsJoining(false);
+            showOnlineLobby?.();
+          }
         } catch (e) {
           console.error(e);
           if (isMountedRef.current) setIsJoining(false);

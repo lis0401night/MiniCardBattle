@@ -1097,7 +1097,7 @@ function RewardSelect() {
   const handleSelect = (id) => {
     const c = CARD_MASTER.find((m) => m.id === id);
     if (!c) {
-      console.error(`Card not found: ${id}`);
+      console.error(`カードが見つかりません: ${id}`);
       return;
     }
     showConfirmModal(`${c.name} を獲得しますか？`, () => {

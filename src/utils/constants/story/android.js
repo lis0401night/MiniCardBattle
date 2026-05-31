@@ -96,9 +96,6 @@ export const storyIntro = [
   },
   {
     speaker: 'narrator',
-  },
-  {
-    speaker: 'narrator',
     text: '廃棄された研究所の冷たい床から踏み出す最初の一歩が、',
   },
   {
