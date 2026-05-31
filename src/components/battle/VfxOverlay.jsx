@@ -186,10 +186,10 @@ function VfxItem({ effect }) {
             return isSelf ? 35 : 65;
           }
         })();
-    
+
     // 敵が使用して上下反転（scale -1）される場合は、offsetYの方向も反転させる
     const isFlipped = side !== 'blue' && data.flipOnEnemy;
-    const finalOffsetY = isFlipped ? -(data.offsetY || 0) : (data.offsetY || 0);
+    const finalOffsetY = isFlipped ? -(data.offsetY || 0) : data.offsetY || 0;
     return base + finalOffsetY;
   };
 

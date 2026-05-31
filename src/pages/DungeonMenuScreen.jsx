@@ -14,15 +14,11 @@ export default function DungeonMenuScreen() {
   }, []);
 
   const handleExchangeClick = () => {
-    if (typeof switchScreen === 'function') {
-      switchScreen('screen-challenge-exchange');
-    }
+    switchScreen('screen-challenge-exchange');
   };
 
   const handleUnlockClick = () => {
-    if (typeof switchScreen === 'function') {
-      switchScreen('screen-challenge-unlock');
-    }
+    switchScreen('screen-challenge-unlock');
   };
 
   const handleChallengeClick = () => {

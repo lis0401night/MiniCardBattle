@@ -102,7 +102,9 @@ Object.keys(AUDIO_INSTANCES).forEach((key) => {
   }
   try {
     audio.volume = 0.3;
-  } catch {}
+  } catch {
+    // 一部のブラウザでは volume 設定時にエラーが発生する場合があるため無視
+  }
   audio.load(); // 事前ロード
 });
 

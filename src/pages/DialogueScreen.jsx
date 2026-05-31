@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { GameState } from '../state/gameState.js';
 import { showNextDialogue } from '../services/uiDialogue.js';
+import { GameState } from '../state/gameState.js';
 
 export default function DialogueScreen() {
   const [dialogueData, setDialogueData] = useState(
@@ -45,6 +45,7 @@ export default function DialogueScreen() {
     bgName = 'background_challenge.png';
   } else if (GameState.gameMode === 'event_satan_high') {
     bgName = 'background_satan.png';
+    // 高難易度モード（通常・イベント）用の背景
   } else if (
     GameState.gameMode === 'high_difficulty' ||
     (GameState.gameMode &&

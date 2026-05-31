@@ -601,7 +601,9 @@ export function processActionSequence(
       // 【修正】装備カードが持っていた追加アクティブスキル（事前解決された選択スキル等含む）を順次実行シミュレートする
       addedSkills.forEach((sk) => {
         // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
-        if (['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(sk.id)) {
+        if (
+          ['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(sk.id)
+        ) {
           return;
         }
         applyActiveSkillLogic(
@@ -810,7 +812,7 @@ export function processActionSequence(
     // 【修正】プレイヤーのターン開始に伴い、プレイヤー側カードの「無敵（invincible）」スキル持続ターンを減退・解除する
     simState.playerBoard.forEach((c) => {
       if (!c) return;
-      
+
       // 1. メインの skill フィールドが invincible の場合
       if (c.skill === 'invincible') {
         c.skillValue = (c.skillValue || 1) - 1;
@@ -819,7 +821,7 @@ export function processActionSequence(
           c.skillValue = 0;
         }
       }
-      
+
       // 2. skills 配列内に invincible がある場合
       if (Array.isArray(c.skills)) {
         const invSk = c.skills.find((s) => s.id === 'invincible');
@@ -844,7 +846,6 @@ export function processActionSequence(
   }
 
   return simState;
-
 }
 
 export function getBestSimulatedMove() {
@@ -3488,7 +3489,11 @@ export function simulateMove(
           mergeCardSkills(targetCard, addedSkills);
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
-            if (['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(sk.id)) {
+            if (
+              ['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(
+                sk.id
+              )
+            ) {
               return;
             }
             applyActiveSkillLogic(
@@ -3627,7 +3632,7 @@ export function simulateMove(
     // 【修正】プレイヤーのターン開始に伴い、プレイヤー側カードの「無敵（invincible）」スキル持続ターンを減退・解除する
     simState.playerBoard.forEach((c) => {
       if (!c) return;
-      
+
       // 1. メインの skill フィールドが invincible の場合
       if (c.skill === 'invincible') {
         c.skillValue = (c.skillValue || 1) - 1;
@@ -3636,7 +3641,7 @@ export function simulateMove(
           c.skillValue = 0;
         }
       }
-      
+
       // 2. skills 配列内に invincible がある場合
       if (Array.isArray(c.skills)) {
         const invSk = c.skills.find((s) => s.id === 'invincible');

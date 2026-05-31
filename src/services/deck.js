@@ -39,6 +39,7 @@ export const CARD_ID_MIGRATION_MAP = {
   zombie: 'fly',
   bigai: 'bigeye',
   wish: 'rampage',
+  nectromancer: 'necromancer', // 互換性維持用の移行マッピング
 };
 
 export function migrateCardId(id) {

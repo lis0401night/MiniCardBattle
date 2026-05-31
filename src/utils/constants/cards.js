@@ -3038,7 +3038,6 @@ export const PREMIUM_CARD_IDS = [
   'wolf',
   'cleric',
   'necromancer', // 正確なID
-  'nectromancer', // 旧バージョンのLocalStorageデータとの互換性維持用
   'vampire',
   'beginnermagic',
   'djinn',

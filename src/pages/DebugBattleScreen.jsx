@@ -632,7 +632,11 @@ export default function DebugBattleScreen() {
         </div>
 
         {/* 開始ボタン */}
-        <button id="btn-start-debug-battle" style={btnStyle} onClick={handleStartBattle}>
+        <button
+          id="btn-start-debug-battle"
+          style={btnStyle}
+          onClick={handleStartBattle}
+        >
           ⚔️ バトル開始
         </button>
       </div>

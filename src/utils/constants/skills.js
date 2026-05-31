@@ -646,7 +646,10 @@ export const SKILLS = {
     desc: (val) => [
       { type: 'text', value: '召喚時、自分の手札の' },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: `1枚につきパワーを${val >= 0 ? '+' : ''}${val}する。` },
+      {
+        type: 'text',
+        value: `1枚につきパワーを${val >= 0 ? '+' : ''}${val}する。`,
+      },
     ],
   },
   snipe_void: {
@@ -667,7 +670,10 @@ export const SKILLS = {
     desc: (val) => [
       { type: 'text', value: '召喚時、自分の手札の' },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: `1枚につき自分リーダーのHPを${val || 3}回復する。` },
+      {
+        type: 'text',
+        value: `1枚につき自分リーダーのHPを${val || 3}回復する。`,
+      },
     ],
   },
   spread_void: {
@@ -676,7 +682,10 @@ export const SKILLS = {
     desc: (val) => [
       { type: 'text', value: '召喚時、自分の手札の' },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: `1枚につき正面とその隣のカードに${val || 2}ダメージ。` },
+      {
+        type: 'text',
+        value: `1枚につき正面とその隣のカードに${val || 2}ダメージ。`,
+      },
     ],
   },
   support_void: {
@@ -685,7 +694,10 @@ export const SKILLS = {
     desc: (val) => [
       { type: 'text', value: '召喚時、自分の手札の' },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: `1枚につき隣のカードのパワーを+${val || 2}する。` },
+      {
+        type: 'text',
+        value: `1枚につき隣のカードのパワーを+${val || 2}する。`,
+      },
     ],
   },
 };

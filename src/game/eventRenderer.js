@@ -57,7 +57,11 @@ export async function playEvents(events) {
           window.triggerVfx
         ) {
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          const vfxPromise = window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane);
+          const vfxPromise = window.triggerVfx(
+            'anm_skill_snipe',
+            triggerSide,
+            ev.lane
+          );
           // 拡散スキルの場合は、複数レーンで同時に並行再生させるため await しない
           if (ev.source === 'snipe' || ev.source === 'snipe_void') {
             await vfxPromise;
@@ -95,7 +99,11 @@ export async function playEvents(events) {
           window.triggerVfx
         ) {
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          const vfxPromise = window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane);
+          const vfxPromise = window.triggerVfx(
+            'anm_skill_snipe',
+            triggerSide,
+            ev.lane
+          );
           // 拡散スキルの場合は、複数レーンで同時に並行再生させるため await しない
           if (ev.source === 'snipe' || ev.source === 'snipe_void') {
             await vfxPromise;
@@ -549,11 +557,11 @@ export async function playEvents(events) {
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
-        
+
         let skillNameText = ev.skillId === 'invincible' ? '無敵' : 'スキル付与';
         if (ev.source === 'stealth') skillNameText = '潜伏';
         if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
-        
+
         if (ev.source === 'stealth') {
           playSound(SOUNDS.seSkillStealth || SOUNDS.seSkill);
         } else {

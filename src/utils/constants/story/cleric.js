@@ -448,7 +448,7 @@ export const storyDialogues = {
       post: [
         {
           speaker: 'enemy',
-          text: 'ああっ……！ 弓を引く腕の筋肉が, もう言うことを聞かない……。私は、ここまでなの……？',
+          text: 'ああっ……！ 弓を引く腕の筋肉が、もう言うことを聞かない……。私は、ここまでなの……？',
         },
         {
           speaker: 'player',

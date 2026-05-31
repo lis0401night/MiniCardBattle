@@ -502,7 +502,12 @@ export function applyActiveSkillLogic(
 
         if (
           b[targetLane] &&
-          (hasSkill(stolenCard, 'equip') || hasSkill(b[targetLane], 'arm_self'))
+          (hasSkill(stolenCard, 'equip') ||
+            hasSkill(b[targetLane], 'arm_self')) &&
+          !hasSkill(b[targetLane], 'possession') &&
+          !hasSkill(stolenCard, 'possession') &&
+          !hasSkill(b[targetLane], 'reflect') &&
+          !hasSkill(stolenCard, 'reflect')
         ) {
           const targetCard = b[targetLane];
           targetCard.basePower =
@@ -2211,7 +2216,11 @@ export function applyLeaderSkillLogic(
       if (
         board[targetLane] &&
         (hasSkill(selectedCard, 'equip') ||
-          hasSkill(board[targetLane], 'arm_self'))
+          hasSkill(board[targetLane], 'arm_self')) &&
+        !hasSkill(board[targetLane], 'possession') &&
+        !hasSkill(selectedCard, 'possession') &&
+        !hasSkill(board[targetLane], 'reflect') &&
+        !hasSkill(selectedCard, 'reflect')
       ) {
         const targetCard = board[targetLane];
         targetCard.basePower =
@@ -4025,7 +4034,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           const chosenSide = chosenObj.side;
           const chosenLane = chosenObj.lane;
 
-          if (canTakeDamage(chosenCard, dmgToDef)) {
+          if (canTakeDamage(chosenCard, dmgToDef, false)) {
             chosenCard.currentPower -= dmgToDef;
             events.push({
               type: 'damage_card',
@@ -4114,7 +4123,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           const chosenSide = chosenObj.side;
           const chosenLane = chosenObj.lane;
 
-          if (canTakeDamage(chosenCard, dmgToAtk)) {
+          if (canTakeDamage(chosenCard, dmgToAtk, false)) {
             chosenCard.currentPower -= dmgToAtk;
             events.push({
               type: 'damage_card',

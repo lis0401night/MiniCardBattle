@@ -26,11 +26,16 @@ export default function TitleScreen() {
     if (isLoading || isStarting) return;
     setIsStarting(true);
 
-    if (typeof unlockAudio === 'function') {
-      unlockAudio().catch((e) => console.warn(e));
-    }
-    if (typeof goToModeSelect === 'function') {
-      goToModeSelect();
+    try {
+      if (typeof unlockAudio === 'function') {
+        unlockAudio().catch((e) => console.warn(e));
+      }
+      if (typeof goToModeSelect === 'function') {
+        goToModeSelect();
+      }
+    } catch (e) {
+      console.error('Failed to start:', e);
+      setIsStarting(false);
     }
   };
 

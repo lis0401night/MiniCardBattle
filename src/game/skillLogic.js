@@ -1418,8 +1418,7 @@ export async function resolveActiveSkillEffect(
 
       if (window.updateCardVisualsReact)
         window.updateCardVisualsReact(l, tgtSide);
-      else if (window.updateBattleUIHook)
-        window.updateBattleUIHook();
+      else if (window.updateBattleUIHook) window.updateBattleUIHook();
     } else {
       playSound(SOUNDS.seSkillBind);
       await sleep(500);
