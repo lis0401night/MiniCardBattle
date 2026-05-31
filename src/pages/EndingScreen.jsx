@@ -68,7 +68,7 @@ export default function EndingScreen() {
 
   return (
     <div
-      id="screen-ending"
+      id="screen-ending-illust"
       className="screen active"
       style={{
         backgroundColor: '#000',

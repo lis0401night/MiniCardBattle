@@ -175,7 +175,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 3,
     skills: [{ id: 'intercept', value: 2 }],
-    voiceCategory: 'machine_old',
+    voiceCategory: 'beast',
     flavor:
       'その不機嫌そうな丸いフォルムに騙されて手を伸ばした者は、皆一様に手を血に染めて後悔することになる。',
   },
