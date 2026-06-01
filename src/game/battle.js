@@ -248,18 +248,38 @@ function applySyncState(state) {
   GameState.playerSP = state.enemySP || 0;
   GameState.enemySP = state.playerSP || 0;
 
+  // 受信側（クライアント）では敵味方が反転するため、カードの owner プロパティも再帰的に反転させる
+  const invertCardOwner = (card) => {
+    if (!card) return null;
+    const cloned = JSON.parse(JSON.stringify(card));
+    if (cloned.owner === 'blue') cloned.owner = 'red';
+    else if (cloned.owner === 'red') cloned.owner = 'blue';
+
+    // 装備されているカード（equippedCards）も再帰的に反転する
+    if (cloned.equippedCards && cloned.equippedCards.length > 0) {
+      cloned.equippedCards = cloned.equippedCards.map(invertCardOwner);
+    }
+    return cloned;
+  };
+
   // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
   const restoreArr = (arr, len = null) => {
-    if (!arr) return len !== null ? Array(len).fill(null) : [];
-    if (Array.isArray(arr))
-      return len !== null
+    let result = [];
+    if (!arr) {
+      result = len !== null ? Array(len).fill(null) : [];
+    } else if (Array.isArray(arr)) {
+      result = len !== null
         ? Array.from({ length: len }, (_, i) => arr[i] || null)
         : arr;
-    if (typeof arr === 'object')
-      return len !== null
+    } else if (typeof arr === 'object') {
+      result = len !== null
         ? Array.from({ length: len }, (_, i) => arr[i] || null)
         : Object.values(arr);
-    return len !== null ? Array(len).fill(null) : [];
+    } else {
+      result = len !== null ? Array(len).fill(null) : [];
+    }
+    // 反転させたうえで適用する
+    return result.map((c) => invertCardOwner(c));
   };
 
   const restoreNumericArr = (arr, len) =>
