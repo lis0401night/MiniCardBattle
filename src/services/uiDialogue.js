@@ -264,7 +264,8 @@ export async function showNextDialogue(force = false) {
   window.currentDialogueData = window.currentDialogueData || {};
   window.currentDialogueData.blackScreen = !!cur.blackScreen;
   window.currentDialogueData.stillEffect = cur.stillEffect || null;
-  window.currentDialogueData.stillStep = cur.stillStep !== undefined ? cur.stillStep : null;
+  window.currentDialogueData.stillStep =
+    cur.stillStep !== undefined ? cur.stillStep : null;
 
   if (cur.choices) {
     window.currentDialogueData.choices = cur.choices;
@@ -557,12 +558,12 @@ export function executeGameOver() {
  */
 export function startSatanCastleStillTest(charId) {
   playSound(SOUNDS.seClick);
-  
+
   // テスト用の一時的なゲーム状態をセット
   if (charId && CHARACTERS[charId]) {
     GameState.playerConfig = CHARACTERS[charId];
   }
-  
+
   GameState.gameMode = 'still_test';
   GameState.appState = 'story_intro';
   GameState.dialogueQueue = [
@@ -595,9 +596,9 @@ export function startSatanCastleStillTest(charId) {
       stillStep: 1,
     },
   ];
-  
+
   GameState.currentDialogueIndex = 0;
-  
+
   window.currentDialogueData = window.currentDialogueData || {};
   window.currentDialogueData.centerMode = true;
   window.currentDialogueData.leftImage = null;
@@ -605,8 +606,7 @@ export function startSatanCastleStillTest(charId) {
   window.currentDialogueData.rightDisplay = 'none';
   window.currentDialogueData.leftActive = false;
   window.currentDialogueData.rightActive = false;
-  
+
   switchScreen('screen-dialogue');
   showNextDialogue(true);
 }
-

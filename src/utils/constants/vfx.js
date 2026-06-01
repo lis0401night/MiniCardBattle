@@ -255,7 +255,7 @@ export const VFX_DATA = {
     shake: false, // 画面全体のシェイクはなし
     targetSide: 'enemy', // 相手のHPがターゲット
   },
-  
+
   // 支配スキル用VFX
   anm_skill_dominate: {
     type: 'sprite',

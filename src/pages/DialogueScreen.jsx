@@ -105,7 +105,8 @@ export default function DialogueScreen() {
             backgroundImage: `url('assets/still/still_satancastle.png')`,
             backgroundSize: '150% auto',
             backgroundPosition: `center ${stillStep === 0 ? '100%' : '0%'}`,
-            transition: 'background-position 7.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            transition:
+              'background-position 7.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
             zIndex: 1,
           }}
         />
@@ -123,9 +124,7 @@ export default function DialogueScreen() {
             pointerEvents: 'none',
             transform: `translateX(-50%) translateY(${
               stillStep === 0 ? '0px' : '260px'
-            }) scale(${
-              stillStep === 0 ? '1.1' : '0.9'
-            })`,
+            }) scale(${stillStep === 0 ? '1.1' : '0.9'})`,
             opacity: 1.0,
             transition: 'transform 7.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
             display: 'flex',
@@ -155,7 +154,8 @@ export default function DialogueScreen() {
             left: 0,
             width: '100%',
             height: '40%',
-            background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0))',
+            background:
+              'linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0))',
             zIndex: 3,
             pointerEvents: 'none',
             opacity: stillStep === 0 ? 1 : 0,

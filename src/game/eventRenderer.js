@@ -58,11 +58,7 @@ export async function playEvents(events) {
           window.triggerVfx
         ) {
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          window.triggerVfx(
-            'anm_skill_snipe',
-            triggerSide,
-            ev.lane
-          ); // 非同期にしてテンポを向上
+          window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane); // 非同期にしてテンポを向上
           if (
             ev.source === 'snipe' ||
             ev.source === 'snipe_void' ||
@@ -104,11 +100,7 @@ export async function playEvents(events) {
           window.triggerVfx
         ) {
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          window.triggerVfx(
-            'anm_skill_snipe',
-            triggerSide,
-            ev.lane
-          ); // 非同期にしてテンポを向上
+          window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane); // 非同期にしてテンポを向上
           if (
             ev.source === 'snipe' ||
             ev.source === 'snipe_void' ||
@@ -235,7 +227,10 @@ export async function playEvents(events) {
         else GameState.enemyHP -= ev.amount;
 
         if (ev.source === 'artillery' && window.triggerVfx) {
-          console.log(`[VFX Debug] triggerVfx for artillery. triggerSide:`, ev.side === 'blue' ? 'red' : 'blue');
+          console.log(
+            `[VFX Debug] triggerVfx for artillery. triggerSide:`,
+            ev.side === 'blue' ? 'red' : 'blue'
+          );
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue'; // 被害側がblueなら発動側はred
           window.triggerVfx('anm_skill_artillery', triggerSide); // 非同期実行にしてテンポを向上
           await sleep(150); // 400msの爆発開始の瞬間に合わせてダメージ処理に移行
