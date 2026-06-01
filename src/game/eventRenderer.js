@@ -48,23 +48,27 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
 
-        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）用VFX
+        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
         if (
           (ev.source === 'snipe' ||
             ev.source === 'snipe_void' ||
             ev.source === 'spread' ||
-            ev.source === 'spread_void') &&
+            ev.source === 'spread_void' ||
+            ev.source === 'intercept') &&
           window.triggerVfx
         ) {
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          const vfxPromise = window.triggerVfx(
+          window.triggerVfx(
             'anm_skill_snipe',
             triggerSide,
             ev.lane
-          );
-          // 拡散スキルの場合は、複数レーンで同時に並行再生させるため await しない
-          if (ev.source === 'snipe' || ev.source === 'snipe_void') {
-            await vfxPromise;
+          ); // 非同期にしてテンポを向上
+          if (
+            ev.source === 'snipe' ||
+            ev.source === 'snipe_void' ||
+            ev.source === 'intercept'
+          ) {
+            await sleep(150); // 400msの演出開始に合わせて次の処理へ
           }
         }
 
@@ -90,30 +94,44 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
 
-        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）用VFX
+        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
         if (
           (ev.source === 'snipe' ||
             ev.source === 'snipe_void' ||
             ev.source === 'spread' ||
-            ev.source === 'spread_void') &&
+            ev.source === 'spread_void' ||
+            ev.source === 'intercept') &&
           window.triggerVfx
         ) {
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          const vfxPromise = window.triggerVfx(
+          window.triggerVfx(
             'anm_skill_snipe',
             triggerSide,
             ev.lane
-          );
-          // 拡散スキルの場合は、複数レーンで同時に並行再生させるため await しない
-          if (ev.source === 'snipe' || ev.source === 'snipe_void') {
-            await vfxPromise;
+          ); // 非同期にしてテンポを向上
+          if (
+            ev.source === 'snipe' ||
+            ev.source === 'snipe_void' ||
+            ev.source === 'intercept'
+          ) {
+            await sleep(150); // 400msの演出開始に合わせて次の処理へ
           }
         }
 
         if (cEl) {
           createDamagePopup(cEl, '無効', '#94a3b8');
         }
-        playSound(SOUNDS.seSkill);
+        if (
+          ![
+            'snipe',
+            'snipe_void',
+            'spread',
+            'spread_void',
+            'intercept',
+          ].includes(ev.source)
+        ) {
+          playSound(SOUNDS.seSkill);
+        }
         await sleep(200);
         break;
       }
@@ -212,8 +230,16 @@ export async function playEvents(events) {
         break;
       }
       case 'damage_player': {
+        console.log(`[VFX Debug] damage_player event:`, ev);
         if (ev.side === 'blue') GameState.playerHP -= ev.amount;
         else GameState.enemyHP -= ev.amount;
+
+        if (ev.source === 'artillery' && window.triggerVfx) {
+          console.log(`[VFX Debug] triggerVfx for artillery. triggerSide:`, ev.side === 'blue' ? 'red' : 'blue');
+          const triggerSide = ev.side === 'blue' ? 'red' : 'blue'; // 被害側がblueなら発動側はred
+          window.triggerVfx('anm_skill_artillery', triggerSide); // 非同期実行にしてテンポを向上
+          await sleep(150); // 400msの爆発開始の瞬間に合わせてダメージ処理に移行
+        }
 
         const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
         if (hpFill) {

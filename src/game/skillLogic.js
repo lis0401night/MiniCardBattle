@@ -119,7 +119,22 @@ export async function resolveActiveSkillEffect(
       'support_void',
     ].includes(skillId)
   ) {
-    playSkillSound(skillId);
+    // VFX演出を持つスキルは、VFX側で効果音（se）が再生されるため、ここでの重複再生を無効化する
+    if (
+      ![
+        'toxic',
+        'freeze',
+        'bind',
+        'snipe',
+        'snipe_void',
+        'spread',
+        'spread_void',
+        'artillery',
+        'dominate',
+      ].includes(skillId)
+    ) {
+      playSkillSound(skillId);
+    }
     const labels = {
       support: '援護',
       hero: '英雄',
@@ -1180,10 +1195,11 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        await window.triggerVfx('anm_skill_toxic', o, l);
+        window.triggerVfx('anm_skill_toxic', o, l); // 非同期にしてテンポを向上
+        await sleep(150); // 400msの演出開始に合わせて次の処理へ
       } else {
         playSound(SOUNDS.seSkillToxic);
-        await sleep(500);
+        await sleep(150);
       }
 
       if (window.updateCardVisualsReact)
@@ -1446,10 +1462,11 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        await window.triggerVfx('anm_skill_bind', o, l);
+        window.triggerVfx('anm_skill_bind', o, l); // 非同期にしてテンポを向上
+        await sleep(300); // 600msの演出（15フレーム）に合わせて、半分以上進んだ時点で次の処理へ
       } else {
         playSound(SOUNDS.seSkillBind);
-        await sleep(500);
+        await sleep(150);
       }
 
       if (window.updateCardVisualsReact)
@@ -1497,18 +1514,14 @@ export async function resolveActiveSkillEffect(
       }
 
       // VFX演出の再生（すべての対象レーンで同時に並列再生）
-      const vfxPromises = [];
       if (window.triggerVfx) {
         for (const tL of targets) {
-          vfxPromises.push(window.triggerVfx('anm_skill_freeze', o, tL));
+          window.triggerVfx('anm_skill_freeze', o, tL); // 非同期にしてテンポを向上
         }
-      }
-
-      if (vfxPromises.length > 0) {
-        await Promise.all(vfxPromises);
+        await sleep(150); // 400msの演出開始に合わせて次の処理へ
       } else {
         playSound(SOUNDS.seSkillFreeze);
-        await sleep(500);
+        await sleep(150);
       }
 
       if (window.updateBattleUIHook) window.updateBattleUIHook(); // 反映させる
@@ -1518,7 +1531,12 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'artillery') {
     let dmg = skillValue || 1;
-    await sleep(300);
+    if (window.triggerVfx) {
+      window.triggerVfx('anm_skill_artillery', o); // 非同期実行にしてテンポを向上
+      await sleep(150); // 400msの爆発開始の瞬間に合わせてダメージ処理に移行
+    } else {
+      await sleep(150);
+    }
     if (o === 'blue') {
       GameState.enemyHP -= dmg;
       createDamagePopup(
@@ -2655,6 +2673,12 @@ export async function resolveActiveSkillEffect(
           if (cEl) createDamagePopup(cEl, `封印により支配不可`, '#ef4444');
           await sleep(300);
           return;
+        }
+
+        // 支配する対象カードの中央にVFXを再生
+        if (window.triggerVfx) {
+          window.triggerVfx('anm_skill_dominate', o, selectedOppLane);
+          await sleep(400); // 400msのエフェクトが相手カードを包み込むのを待ってから移動処理へ移行
         }
 
         // 相手のレーンから取り除く

@@ -182,7 +182,7 @@ export const VFX_DATA = {
     columns: 8,
     rows: 1,
     frameCount: 8,
-    duration: 800,
+    duration: 400,
     se: 'seSkillToxic', // 再生する効果音、SOUNDSのキーを指定
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
@@ -198,7 +198,7 @@ export const VFX_DATA = {
     columns: 8,
     rows: 1,
     frameCount: 8,
-    duration: 800,
+    duration: 400,
     se: 'seSkillFreeze',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
@@ -214,7 +214,7 @@ export const VFX_DATA = {
     columns: 5,
     rows: 2,
     frameCount: 10,
-    duration: 600,
+    duration: 400,
     se: 'seSkillSnipe',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
@@ -231,8 +231,40 @@ export const VFX_DATA = {
     columns: 3,
     rows: 5,
     frameCount: 15,
-    duration: 800,
+    duration: 600, // 15フレームあるため、600msに調整して滑らかな絡みつきをしっかり見せる
     se: 'seSkillBind', // 再生する効果音、SOUNDSのキーを指定
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    flipOnEnemy: true, // 手前の自分カードに当たるとき（敵が発動したとき）に上下反転させる
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  anm_skill_artillery: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_artillery.png',
+    columns: 5,
+    rows: 1,
+    frameCount: 5,
+    duration: 400,
+    se: 'seSkillCharge', // 効果音
+    position: 'hp', // HPゲージの高さに合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false, // 画面全体のシェイクはなし
+    targetSide: 'enemy', // 相手のHPがターゲット
+  },
+  
+  // 支配スキル用VFX
+  anm_skill_dominate: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_dominate.png',
+    columns: 5,
+    rows: 3,
+    frameCount: 15,
+    duration: 400,
+    se: 'seSkillDominate', // 専用の支配効果音へ修正
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 0.5,
