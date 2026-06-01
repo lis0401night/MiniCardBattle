@@ -25,6 +25,7 @@ export default function ModeSelectScreen() {
       >
         ⚙
       </button>
+
       <div className="menu-btn-grid">
         <div
           className="menu-img-btn"

@@ -3441,7 +3441,11 @@ export function endBattle() {
       }
 
       postNarrations.forEach((text) => {
-        queue.push({ speaker: 'narrator', text });
+        if (text && typeof text === 'object') {
+          queue.push(text);
+        } else {
+          queue.push({ speaker: 'narrator', text });
+        }
       });
 
       GameState.dialogueQueue = queue;

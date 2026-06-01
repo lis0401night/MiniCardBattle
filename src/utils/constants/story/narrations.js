@@ -65,8 +65,34 @@ export const STORY_NARRATIONS = {
     post: [
       '死力を尽くした凄絶な死闘の末、辛うじて勝利を収めた同行者。',
       '満身創痍の相手に最大の敬意を表し、その場に待機させる。',
-      'そしてついに——禍々しい瘴気に包まれた「魔王城」の門前に到着した。',
-      '世界の運命を決める突入が、今果たされる。',
+      {
+        speaker: 'narrator',
+        text: 'そしてついに——禍々しい瘴気に包まれた「魔王城」の門前に到着した。',
+        stillEffect: 'satan_castle',
+        stillStep: 0,
+      },
+      {
+        isStillScroll: true,
+        stillEffect: 'satan_castle',
+      },
+      {
+        speaker: 'narrator',
+        text: '見上げるほどの巨城が、天を衝くようにそびえ立っている。',
+        stillEffect: 'satan_castle',
+        stillStep: 1,
+      },
+      {
+        speaker: 'narrator',
+        text: '門の奥からは、かつてない強大な魔力の波動が、波のように押し寄せてくる。',
+        stillEffect: 'satan_castle',
+        stillStep: 1,
+      },
+      {
+        speaker: 'narrator',
+        text: '世界の運命を決める突入が、今果たされる。',
+        stillEffect: 'satan_castle',
+        stillStep: 1,
+      },
     ],
   },
   7: {

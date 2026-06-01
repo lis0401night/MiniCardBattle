@@ -8,6 +8,25 @@ export default function DialogueScreen() {
     () => window.currentDialogueData || {}
   );
 
+  const d = dialogueData;
+  const isSatanCastleStill = d.stillEffect === 'satan_castle';
+  const stillStep = d.stillStep !== undefined ? d.stillStep : 0;
+
+  const [backviewSrc, setBackviewSrc] = useState('');
+
+  useEffect(() => {
+    if (isSatanCastleStill) {
+      const charId = GameState.playerConfig?.id || 'knight';
+      setBackviewSrc(`assets/still/backview_${charId}.png`);
+    }
+  }, [isSatanCastleStill, GameState.playerConfig?.id]);
+
+  const handleBackviewError = () => {
+    if (backviewSrc && backviewSrc !== 'assets/still/backview_knight.png') {
+      setBackviewSrc('assets/still/backview_knight.png');
+    }
+  };
+
   useEffect(() => {
     // マウント時に最新データを確実に取得
     setDialogueData({ ...window.currentDialogueData });
@@ -28,8 +47,6 @@ export default function DialogueScreen() {
       showNextDialogue();
     }
   };
-
-  const d = dialogueData;
 
   let bgName = 'background_select.png';
   if (GameState.gameMode === 'tournament') {
@@ -76,6 +93,76 @@ export default function DialogueScreen() {
         overflow: 'hidden',
       }}
     >
+      {/* 魔王城スチル演出用レイヤー */}
+      {isSatanCastleStill && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundImage: `url('assets/still/still_satancastle.png')`,
+            backgroundSize: '150% auto',
+            backgroundPosition: `center ${stillStep === 0 ? '100%' : '0%'}`,
+            transition: 'background-position 7.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            zIndex: 1,
+          }}
+        />
+      )}
+
+      {/* プレイヤーの後ろ姿（パララックス効果） */}
+      {isSatanCastleStill && backviewSrc && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '5%',
+            height: '60vh',
+            zIndex: 2,
+            pointerEvents: 'none',
+            transform: `translateX(-50%) translateY(${
+              stillStep === 0 ? '0px' : '260px'
+            }) scale(${
+              stillStep === 0 ? '1.1' : '0.9'
+            })`,
+            opacity: 1.0,
+            transition: 'transform 7.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <img
+            src={backviewSrc}
+            alt="Player Backview"
+            onError={handleBackviewError}
+            style={{
+              height: '100%',
+              width: 'auto',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 15px 15px rgba(0,0,0,0.6))',
+            }}
+          />
+        </div>
+      )}
+
+      {/* 画面上部の黒シャドウ（スクロールに合わせて晴れる） */}
+      {isSatanCastleStill && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '40%',
+            background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0))',
+            zIndex: 3,
+            pointerEvents: 'none',
+            opacity: stillStep === 0 ? 1 : 0,
+            transition: 'opacity 7.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
+          }}
+        />
+      )}
       {/* 暗闇から目を覚ますシネマティックフェードインのための黒幕オーバーレイ */}
       <div
         style={{
@@ -153,7 +240,7 @@ export default function DialogueScreen() {
       <div
         className={`portrait-container ${d.centerMode || GameState.gameMode === 'campaign' ? 'center' : ''}`}
         style={{
-          display: 'flex',
+          display: isSatanCastleStill ? 'none' : 'flex',
           opacity: d.blackScreen ? 0 : 1,
           transition: 'opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1)',
           pointerEvents: d.blackScreen ? 'none' : 'auto',
@@ -194,6 +281,9 @@ export default function DialogueScreen() {
         style={{
           borderColor: d.boxBorderColor || '#475569',
           zIndex: 20,
+          opacity: d.hideBox ? 0 : 1,
+          pointerEvents: d.hideBox ? 'none' : 'auto',
+          transition: 'opacity 0.5s ease',
         }}
       >
         <div id="speaker-name" style={{ color: d.nameColor || '#fff' }}>

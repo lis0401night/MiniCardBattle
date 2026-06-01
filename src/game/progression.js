@@ -28,6 +28,10 @@ import {
  * ダイアログ終了後などの「次のステップ」を判定して実行する
  */
 export function handleProgressionNextStep() {
+  if (GameState.gameMode === 'still_test') {
+    switchScreen('screen-mode-select');
+    return;
+  }
   if (GameState.gameMode === 'free') {
     handleFreeBattleProgression();
   } else if (GameState.gameMode === 'campaign') {

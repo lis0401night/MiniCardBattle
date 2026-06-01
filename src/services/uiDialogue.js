@@ -263,6 +263,8 @@ export async function showNextDialogue(force = false) {
   const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
   window.currentDialogueData = window.currentDialogueData || {};
   window.currentDialogueData.blackScreen = !!cur.blackScreen;
+  window.currentDialogueData.stillEffect = cur.stillEffect || null;
+  window.currentDialogueData.stillStep = cur.stillStep !== undefined ? cur.stillStep : null;
 
   if (cur.choices) {
     window.currentDialogueData.choices = cur.choices;
@@ -275,6 +277,35 @@ export async function showNextDialogue(force = false) {
     return;
   } else {
     window.currentDialogueData.choices = null;
+  }
+
+  // 魔王城自動スクロール演出
+  if (cur.isStillScroll) {
+    GameState.isProcessing = true; // 連打防止
+
+    // ダイアログボックスを非表示にしてスクロールを開始させる
+    window.currentDialogueData = window.currentDialogueData || {};
+    window.currentDialogueData.hideBox = true;
+    window.currentDialogueData.stillStep = 1; // スクロール完了位置へ移動
+    window.currentDialogueData.dialogueText = '';
+    window.currentDialogueData.speakerName = '';
+
+    if (window._reactUpdateDialogueUI) {
+      window._reactUpdateDialogueUI(window.currentDialogueData);
+    }
+
+    // スクロールアニメーションの時間（8000ms）待機
+    await new Promise((r) => setTimeout(r, 8000));
+
+    // 待機後、ダイアログボックスを再表示可能な状態にする
+    window.currentDialogueData.hideBox = false;
+
+    GameState.isProcessing = false;
+    GameState.currentDialogueIndex++; // 演出ノードを消化
+
+    // 自動で次のセリフを表示
+    showNextDialogue(true);
+    return;
   }
 
   // ストーリー戦闘後のフェードアウト＆中央配置切り替え演出
@@ -520,3 +551,62 @@ export function executeGameOver() {
   switchScreen('screen-mode-select');
   playSound(AUDIO_INSTANCES.bgmTitle);
 }
+
+/**
+ * 魔王城スチル演出の動作確認用テストを開始する
+ */
+export function startSatanCastleStillTest(charId) {
+  playSound(SOUNDS.seClick);
+  
+  // テスト用の一時的なゲーム状態をセット
+  if (charId && CHARACTERS[charId]) {
+    GameState.playerConfig = CHARACTERS[charId];
+  }
+  
+  GameState.gameMode = 'still_test';
+  GameState.appState = 'story_intro';
+  GameState.dialogueQueue = [
+    {
+      speaker: 'narrator',
+      text: 'そしてついに——禍々しい瘴気に包まれた「魔王城」の門前に到着した。',
+      stillEffect: 'satan_castle',
+      stillStep: 0,
+    },
+    {
+      isStillScroll: true,
+      stillEffect: 'satan_castle',
+    },
+    {
+      speaker: 'narrator',
+      text: '見上げるほどの巨城が、天を衝くようにそびえ立っている。',
+      stillEffect: 'satan_castle',
+      stillStep: 1,
+    },
+    {
+      speaker: 'narrator',
+      text: '門の奥からは、かつてない強大な魔力の波動が、波のように押し寄せてくる。',
+      stillEffect: 'satan_castle',
+      stillStep: 1,
+    },
+    {
+      speaker: 'narrator',
+      text: '世界の運命を決める突入が、今果たされる。',
+      stillEffect: 'satan_castle',
+      stillStep: 1,
+    },
+  ];
+  
+  GameState.currentDialogueIndex = 0;
+  
+  window.currentDialogueData = window.currentDialogueData || {};
+  window.currentDialogueData.centerMode = true;
+  window.currentDialogueData.leftImage = null;
+  window.currentDialogueData.rightImage = null;
+  window.currentDialogueData.rightDisplay = 'none';
+  window.currentDialogueData.leftActive = false;
+  window.currentDialogueData.rightActive = false;
+  
+  switchScreen('screen-dialogue');
+  showNextDialogue(true);
+}
+
