@@ -357,6 +357,10 @@ export function processActionSequence(
       const oppL = action.oppLaneIdx;
       const myL = action.myLaneIdx;
       if (oppL !== -1 && myL !== -1) {
+        // 移動先レーン（自分側）が封印されている場合はシミュレーション上でも無効（棄却）
+        if (simState.enemySealedLanes && simState.enemySealedLanes[myL] === 1)
+          return null;
+
         const oppBoard = simState.playerBoard; // AI(自分)から見た相手は playerBoard
         const board = simState.enemyBoard; // AI(自分)のボード
 
@@ -2579,7 +2583,8 @@ export function evaluateAdhocTokenLanes(
       for (let j = 0; j < 3; j++) {
         if (
           oppBoard[j] &&
-          (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxP
+          (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxP &&
+          sealedLanes[j] === 0 // 自分側の同じレーンが封印されていないこと！
         ) {
           validOppLanes.push(j);
         }

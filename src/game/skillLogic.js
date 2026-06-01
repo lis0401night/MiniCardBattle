@@ -823,11 +823,16 @@ export async function resolveActiveSkillEffect(
       let events = [];
       for (let i = 0; i < selectedLanes.length; i++) {
         const targetLane = selectedLanes[i];
-        
+
         // 【根本的リファクタリング】既存カードの上書き確認
-        const proceed = await confirmOverwrittenLane(o, simulatedToken, targetLane, false);
+        const proceed = await confirmOverwrittenLane(
+          o,
+          simulatedToken,
+          targetLane,
+          false
+        );
         if (!proceed) continue;
-        
+
         const board =
           o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const newToken = {
@@ -997,11 +1002,16 @@ export async function resolveActiveSkillEffect(
     });
     for (let i = 0; i < selectedLanes.length; i++) {
       const targetLane = selectedLanes[i];
-      
+
       // 【根本的リファクタリング】既存カードの上書き確認
-      const proceed = await confirmOverwrittenLane(o, simulatedToken, targetLane, false);
+      const proceed = await confirmOverwrittenLane(
+        o,
+        simulatedToken,
+        targetLane,
+        false
+      );
       if (!proceed) continue;
-      
+
       const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
       const newToken = {
         id: `cl_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
@@ -1754,9 +1764,14 @@ export async function resolveActiveSkillEffect(
           );
           if (!tLanes || tLanes.length === 0) return; // レーン選択キャンセル時はスキル終了
           targetLane = tLanes[0];
-          
+
           // 【根本的リファクタリング】既存カードの上書き確認と破棄処理
-          const proceed = await confirmOverwrittenLane(o, selectedCard, targetLane, false);
+          const proceed = await confirmOverwrittenLane(
+            o,
+            selectedCard,
+            targetLane,
+            false
+          );
           if (!proceed) {
             await sleep(200);
             continue; // キャンセル時はレーン選択からやり直す
@@ -1970,9 +1985,14 @@ export async function resolveActiveSkillEffect(
           if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
           if (!tLanes || tLanes.length === 0) return; // レーン選択キャンセル時はスキル終了
           targetLane = tLanes[0];
-          
+
           // 【根本的リファクタリング】既存カードの上書き確認と破棄処理
-          const proceed = await confirmOverwrittenLane(o, selectedCard, targetLane, false);
+          const proceed = await confirmOverwrittenLane(
+            o,
+            selectedCard,
+            targetLane,
+            false
+          );
           if (!proceed) {
             await sleep(200);
             continue; // キャンセル時はレーン選択からやり直す
@@ -2519,7 +2539,9 @@ export async function resolveActiveSkillEffect(
 
             // 根本的リファクタリング：配置の瞬間（代入の直前）に既存のカードを安全に墓地へ送る
             if (board[targetLane]) {
-              if (!(await discardCard(o, board[targetLane], targetLane, false))) {
+              if (
+                !(await discardCard(o, board[targetLane], targetLane, false))
+              ) {
                 board[targetLane] = null;
               }
             }
@@ -2567,12 +2589,19 @@ export async function resolveActiveSkillEffect(
       o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
-    // 敵の場でパワーがmaxPower以下のカードがあるか
+    // 自分側の正面レーン封印状態を取得
+    const mySealedLanes =
+      o === 'blue'
+        ? GameState.playerSealedLanes || [0, 0, 0]
+        : GameState.enemySealedLanes || [0, 0, 0];
+
+    // 敵の場でパワーがmaxPower以下であり、かつ自分側の同じレーンが封印されていないカードがあるか
     const validOppLanes = [];
     for (let j = 0; j < 3; j++) {
       if (
         oppBoard[j] &&
-        (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxPower
+        (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxPower &&
+        (mySealedLanes[j] || 0) === 0 // 自分側の同じレーンが封印されていないこと！
       ) {
         validOppLanes.push(j);
       }
@@ -2592,7 +2621,8 @@ export async function resolveActiveSkillEffect(
           true,
           null,
           false,
-          maxPower // 【追加】支配できるパワー上限をフィルターとして適用
+          maxPower, // 支配できるパワー上限をフィルターとして適用
+          validOppLanes // 【追加】選択可能なレーンを制限するための配列
         );
         if (pLanes && pLanes.length > 0) {
           selectedOppLane = pLanes[0];
@@ -2607,7 +2637,8 @@ export async function resolveActiveSkillEffect(
           true, // canCancel = true
           '相手のカードを1枚選んでください',
           false,
-          maxPower // 支配できるパワー上限をフィルターとして適用
+          maxPower, // 支配できるパワー上限をフィルターとして適用
+          validOppLanes // 【追加】選択可能なレーンを制限するための配列
         );
 
         if (pLanes && pLanes.length > 0) {
@@ -2618,6 +2649,13 @@ export async function resolveActiveSkillEffect(
       if (selectedOppLane !== -1 && oppBoard[selectedOppLane]) {
         const selectedCard = oppBoard[selectedOppLane];
         const targetLane = selectedOppLane; // 選択したカードの正面（対面する同じレーン番号）！
+
+        // 【最終安全ガード】移動先（自分側の正面レーン）が封印されている場合は支配不可（不発）にする
+        if ((mySealedLanes[targetLane] || 0) > 0) {
+          if (cEl) createDamagePopup(cEl, `封印により支配不可`, '#ef4444');
+          await sleep(300);
+          return;
+        }
 
         // 相手のレーンから取り除く
         oppBoard[selectedOppLane] = null;

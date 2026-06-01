@@ -377,7 +377,8 @@ export async function executeLeaderSkillAction(
           false,
           '配置終了'
         );
-        if (selectedAlliedLanes === null || selectedAlliedLanes.length === 0) return;
+        if (selectedAlliedLanes === null || selectedAlliedLanes.length === 0)
+          return;
         const l = selectedAlliedLanes[0];
         const proceed = await confirmOverwrittenLane(owner, tSoul, l, false);
         if (!proceed) {
@@ -554,7 +555,12 @@ export async function executeLeaderSkillAction(
         );
         if (!tLanes || tLanes.length === 0) return;
         targetLane = tLanes[0];
-        const proceed = await confirmOverwrittenLane(owner, selectedCard, targetLane, false);
+        const proceed = await confirmOverwrittenLane(
+          owner,
+          selectedCard,
+          targetLane,
+          false
+        );
         if (!proceed) {
           await sleep(200);
           continue;
@@ -729,7 +735,12 @@ export async function executeLeaderSkillAction(
         );
         if (!tLanes || tLanes.length === 0) return;
         targetLane = tLanes[0];
-        const proceed = await confirmOverwrittenLane(owner, selectedCard, targetLane, false);
+        const proceed = await confirmOverwrittenLane(
+          owner,
+          selectedCard,
+          targetLane,
+          false
+        );
         if (!proceed) {
           await sleep(200);
           continue;

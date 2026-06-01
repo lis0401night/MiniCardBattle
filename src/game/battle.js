@@ -994,8 +994,6 @@ export async function waitPlayerLaneSelection(
 
       // 根本的リファクタリングにより、既存カードの破棄・確認処理は呼び出し元で一元管理するため、ここでは何もしません。
 
-
-
       GameState.placementSelectedLanes.push(laneIndex);
       if (updateBattleUIHook) updateBattleUIHook();
 
@@ -1019,7 +1017,12 @@ export async function waitPlayerLaneSelection(
  * @param {boolean} checkConstraints - 制約チェックを行うかどうか（号令や招来などの召喚時はtrue、復活や分身などはfalse）
  * @returns {Promise<boolean>} 配置を続行してよいならtrue、キャンセルされたならfalse
  */
-export async function confirmOverwrittenLane(owner, tokenCard, laneIndex, checkConstraints = true) {
+export async function confirmOverwrittenLane(
+  owner,
+  tokenCard,
+  laneIndex,
+  checkConstraints = true
+) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   if (board[laneIndex] === null) return true;
 
@@ -1034,14 +1037,23 @@ export async function confirmOverwrittenLane(owner, tokenCard, laneIndex, checkC
   // 1. 合体の判定
   let canUnion = false;
   if (tokenCard) {
-    const unionSkill = tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
-    if (unionSkill && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId)) {
+    const unionSkill =
+      tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
+    if (
+      unionSkill &&
+      (existingCard.baseId === unionSkill.targetId ||
+        existingCard.id === unionSkill.targetId)
+    ) {
       canUnion = true;
     }
   }
   if (canUnion) {
     const confirmed = await new Promise((res) => {
-      showConfirmModal(`「${existingCard.name}」と合体しますか？`, () => res(true), () => res(false));
+      showConfirmModal(
+        `「${existingCard.name}」と合体しますか？`,
+        () => res(true),
+        () => res(false)
+      );
     });
     if (!confirmed) return false;
     return true;
@@ -1049,11 +1061,17 @@ export async function confirmOverwrittenLane(owner, tokenCard, laneIndex, checkC
 
   // 2. 装備の判定
   if (
-    (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) ||
+    (tokenCard &&
+      typeof hasSkill === 'function' &&
+      hasSkill(tokenCard, 'equip')) ||
     (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))
   ) {
     const confirmed = await new Promise((res) => {
-      showConfirmModal(`「${existingCard.name}」に「${tokenName}」を装備しますか？`, () => res(true), () => res(false));
+      showConfirmModal(
+        `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
+        () => res(true),
+        () => res(false)
+      );
     });
     if (!confirmed) return false;
     return true;
@@ -1061,7 +1079,11 @@ export async function confirmOverwrittenLane(owner, tokenCard, laneIndex, checkC
 
   // 3. 通常の破棄配置の判定
   const confirmed = await new Promise((res) => {
-    showConfirmModal(`「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`, () => res(true), () => res(false));
+    showConfirmModal(
+      `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
+      () => res(true),
+      () => res(false)
+    );
   });
   if (!confirmed) return false;
 
@@ -1077,13 +1099,14 @@ export async function waitPlayerEnemyLaneSelection(
   canCancel = false,
   message = null,
   allowEmpty = false,
-  maxPower = null // 【追加】支配などでパワー上限制限を設けるためのフィルター
+  maxPower = null, // 【追加】支配などでパワー上限制限を設けるためのフィルター
+  restrictLanes = null // 【追加】選択可能なレーンを制限するための配列
 ) {
   const isBlue = owner === 'blue';
   const targetBoard = isBlue ? GameState.enemyBoard : GameState.playerBoard;
 
   // ターゲット可能なレーンを取得（allowEmptyがtrueなら空レーンも含む、かつmaxPower指定時はそれを超えるカードを除外）
-  const validLanes = allowEmpty
+  let validLanes = allowEmpty
     ? [0, 1, 2]
     : targetBoard
         .map((c, i) => {
@@ -1097,6 +1120,10 @@ export async function waitPlayerEnemyLaneSelection(
           return i;
         })
         .filter((i) => i !== -1);
+
+  if (restrictLanes !== null) {
+    validLanes = validLanes.filter((i) => restrictLanes.includes(i));
+  }
 
   if (validLanes.length === 0) return [];
 
@@ -2299,8 +2326,8 @@ export async function handleMoveSkills(owner) {
       !movedIds.has(c.uid || c.id)
     ) {
       const possibleLanes = [];
-      if (i > 0) possibleLanes.push(i - 1);
-      if (i < 2) possibleLanes.push(i + 1);
+      if (i > 0 && curSealed[i - 1] === 0) possibleLanes.push(i - 1);
+      if (i < 2 && curSealed[i + 1] === 0) possibleLanes.push(i + 1);
       if (possibleLanes.length === 0) continue;
 
       let successMove = false;
