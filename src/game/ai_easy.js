@@ -109,7 +109,19 @@ export function getEasyDecision() {
 
   // 4. 通常のランダム決定（安全な候補から選択）
   // パス以外の有効な行動（手札を出す）が存在するなら、必ずそれを選択する（手札があるのにパスはしない）
-  const playMoves = safeCandidates.filter((c) => c.index !== -1);
+  let playMoves = safeCandidates.filter((c) => c.index !== -1);
+
+  // 【追加】初級AIでも、手札から「虚空（token_void）」を出すことはなるべく避ける
+  // 他に「虚空以外」を出す手がある場合は、虚空を出す手を候補から除外する
+  const nonVoidPlayMoves = playMoves.filter((c) => {
+    const card = GameState.enemyHand[c.index];
+    return card && card.id !== 'token_void' && card.baseId !== 'token_void';
+  });
+
+  if (nonVoidPlayMoves.length > 0) {
+    playMoves = nonVoidPlayMoves;
+  }
+
   if (playMoves.length > 0) {
     return playMoves[Math.floor(getSeededRandom() * playMoves.length)];
   }
