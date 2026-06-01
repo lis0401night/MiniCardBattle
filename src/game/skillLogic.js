@@ -25,6 +25,7 @@ import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
   checkWinCondition,
   cleanupDestroyedCards,
+  confirmOverwrittenLane, // 【追加】根本的リファクタリング用
   consumeAIAction,
   discardCard,
   drawCard,
@@ -323,16 +324,30 @@ export async function resolveActiveSkillEffect(
             restrictLanes, // tokenLanes（招来: 同じレーンのみ）
             true, // checkConstraints（制約チェック有効）
             true, // canCancel（キャンセル可能）
-            'キャンセル',
-            true // 【追加】後続の playCard で破棄を行うため、この段階での即時破棄をスキップ
+            'キャンセル'
           );
           GameState.placementMessage = null;
 
           if (lanes && lanes.length > 0) {
+            // 根本的リファクタリング：招来・詠唱による上書き配置時も、合体・装備・破棄の確認モーダルを一貫して表示する
+            const proceed = await confirmOverwrittenLane(
+              o,
+              pickedCard,
+              lanes[0],
+              true // 招来・詠唱は「召喚」扱いのため、制約チェックは true
+            );
+            if (!proceed) {
+              // React の再レンダリング競合を防止するためディレイを挟む
+              await sleep(200);
+              // キャンセルされた場合は手札選択からやり直す
+              continue;
+            }
             selectedIdx = sIdx;
             selectedLane = lanes[0];
             success = true;
           } else {
+            // React の再レンダリング競合を防止するためディレイを挟む
+            await sleep(200);
             // レーン選択キャンセル → 手札選択からやり直し
             continue;
           }
@@ -808,6 +823,11 @@ export async function resolveActiveSkillEffect(
       let events = [];
       for (let i = 0; i < selectedLanes.length; i++) {
         const targetLane = selectedLanes[i];
+        
+        // 【根本的リファクタリング】既存カードの上書き確認
+        const proceed = await confirmOverwrittenLane(o, simulatedToken, targetLane, false);
+        if (!proceed) continue;
+        
         const board =
           o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const newToken = {
@@ -977,6 +997,11 @@ export async function resolveActiveSkillEffect(
     });
     for (let i = 0; i < selectedLanes.length; i++) {
       const targetLane = selectedLanes[i];
+      
+      // 【根本的リファクタリング】既存カードの上書き確認
+      const proceed = await confirmOverwrittenLane(o, simulatedToken, targetLane, false);
+      if (!proceed) continue;
+      
       const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
       const newToken = {
         id: `cl_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
@@ -1715,18 +1740,31 @@ export async function resolveActiveSkillEffect(
       }
 
       if (selectedCard) {
-        // 配置先を選ばせる (召喚ではなく配置扱いのため制約チェックはしない)
-        const tLanes = await waitPlayerLaneSelection(
-          1,
-          o,
-          selectedCard,
-          false,
-          tokenLanes,
-          false,
-          true
-        );
-        if (tLanes && tLanes.length > 0) {
-          const targetLane = tLanes[0];
+        let successRes = false;
+        let targetLane = -1;
+        while (!successRes) {
+          const tLanes = await waitPlayerLaneSelection(
+            1,
+            o,
+            selectedCard,
+            false,
+            tokenLanes,
+            false,
+            true
+          );
+          if (!tLanes || tLanes.length === 0) return; // レーン選択キャンセル時はスキル終了
+          targetLane = tLanes[0];
+          
+          // 【根本的リファクタリング】既存カードの上書き確認と破棄処理
+          const proceed = await confirmOverwrittenLane(o, selectedCard, targetLane, false);
+          if (!proceed) {
+            await sleep(200);
+            continue; // キャンセル時はレーン選択からやり直す
+          }
+          successRes = true;
+        }
+
+        if (targetLane !== -1) {
           // 完全一致するオブジェクトを手動で削除
           const actualIdx = discard.indexOf(selectedCard);
           if (actualIdx !== -1) discard.splice(actualIdx, 1);
@@ -1916,20 +1954,33 @@ export async function resolveActiveSkillEffect(
       }
 
       if (selectedCard) {
-        // 配置先レーンを選択（復活と同様、制約チェックなし）
-        const tLanes = await waitPlayerLaneSelection(
-          1,
-          o,
-          selectedCard,
-          false,
-          tokenLanes,
-          false,
-          true
-        );
-        if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
-        if (tLanes && tLanes.length > 0) {
-          const targetLane = tLanes[0];
+        let successPup = false;
+        let targetLane = -1;
+        while (!successPup) {
+          // 配置先レーンを選択（復活と同様、制約チェックなし）
+          const tLanes = await waitPlayerLaneSelection(
+            1,
+            o,
+            selectedCard,
+            false,
+            tokenLanes,
+            false,
+            true
+          );
+          if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
+          if (!tLanes || tLanes.length === 0) return; // レーン選択キャンセル時はスキル終了
+          targetLane = tLanes[0];
+          
+          // 【根本的リファクタリング】既存カードの上書き確認と破棄処理
+          const proceed = await confirmOverwrittenLane(o, selectedCard, targetLane, false);
+          if (!proceed) {
+            await sleep(200);
+            continue; // キャンセル時はレーン選択からやり直す
+          }
+          successPup = true;
+        }
 
+        if (targetLane !== -1) {
           // 相手の墓地から取り除く
           const actualIdx = oppDiscard.indexOf(selectedCard);
           if (actualIdx !== -1) oppDiscard.splice(actualIdx, 1);
@@ -2315,24 +2366,48 @@ export async function resolveActiveSkillEffect(
         d.pop();
         updateDeckDisplay(o);
 
-        // キャンセル可能なレーン選択
-        GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
-        const selectedLanes = await waitPlayerLaneSelection(
-          1,
-          o,
-          topCard,
-          true,
-          null,
-          true,
-          true,
-          '召喚終了'
-        );
-        GameState.placementMessage = null;
+        // キャンセル可能なレーン選択（ループによるやり直しに対応）
+        let successCall = false;
+        let targetLane = -1;
+        while (!successCall) {
+          GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
+          const selectedLanes = await waitPlayerLaneSelection(
+            1,
+            o,
+            topCard,
+            true,
+            null,
+            true,
+            true,
+            '召喚終了'
+          );
+          GameState.placementMessage = null;
 
-        if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
+          if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
-        if (selectedLanes && selectedLanes.length > 0) {
-          const targetLane = selectedLanes[0];
+          if (!selectedLanes || selectedLanes.length === 0) {
+            // レーン選択キャンセル（召喚終了）時は、デッキトップに戻してスキル終了
+            d.push(topCard);
+            updateDeckDisplay(o);
+            return;
+          }
+          targetLane = selectedLanes[0];
+
+          // 根本的リファクタリング：上書き確認
+          const proceed = await confirmOverwrittenLane(
+            o,
+            topCard,
+            targetLane,
+            true // 号令は「召喚」扱いのため、制約チェックは true
+          );
+          if (!proceed) {
+            await sleep(200);
+            continue; // キャンセル時はレーン選択からやり直す
+          }
+          successCall = true;
+        }
+
+        if (targetLane !== -1) {
           const board =
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
@@ -2442,8 +2517,11 @@ export async function resolveActiveSkillEffect(
             topCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
             topCard.owner = o;
 
+            // 根本的リファクタリング：配置の瞬間（代入の直前）に既存のカードを安全に墓地へ送る
             if (board[targetLane]) {
-              await discardCard(o, board[targetLane], targetLane, false);
+              if (!(await discardCard(o, board[targetLane], targetLane, false))) {
+                board[targetLane] = null;
+              }
             }
             board[targetLane] = topCard;
 

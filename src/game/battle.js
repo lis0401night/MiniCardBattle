@@ -992,64 +992,9 @@ export async function waitPlayerLaneSelection(
         }
       }
 
-      // 既にカードがあるレーンの場合は確認
-      if (board[laneIndex] !== null && !skipImmediateDiscard) {
-        const existingCard = board[laneIndex];
-        const tokenName = tokenCard ? tokenCard.name : 'トークン';
+      // 根本的リファクタリングにより、既存カードの破棄・確認処理は呼び出し元で一元管理するため、ここでは何もしません。
 
-        let canUnion = false;
-        if (tokenCard) {
-          const unionSkill =
-            tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
-          if (
-            unionSkill &&
-            (existingCard.baseId === unionSkill.targetId ||
-              existingCard.id === unionSkill.targetId)
-          ) {
-            canUnion = true;
-          }
-        }
 
-        if (canUnion) {
-          const confirmed = await new Promise((res) => {
-            showConfirmModal(
-              `「${existingCard.name}」と合体しますか？`,
-              () => res(true),
-              () => res(false)
-            );
-          });
-          if (!confirmed) return;
-          // 合体の場合は既存カードの自動破棄は行わない（呼び出し元で素材にするためスルーする）
-        } else if (
-          (tokenCard &&
-            typeof hasSkill === 'function' &&
-            hasSkill(tokenCard, 'equip')) ||
-          (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))
-        ) {
-          const confirmed = await new Promise((res) => {
-            showConfirmModal(
-              `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
-              () => res(true),
-              () => res(false)
-            );
-          });
-          if (!confirmed) return;
-        } else {
-          const confirmed = await new Promise((res) => {
-            showConfirmModal(
-              `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
-              () => res(true),
-              () => res(false)
-            );
-          });
-          if (!confirmed) return;
-
-          // 既存カードを破棄（上書き配置のため破壊効果等は発動させない）
-          if (!(await discardCard(owner, board[laneIndex], laneIndex, false)))
-            board[laneIndex] = null;
-          if (updateBattleUIHook) updateBattleUIHook();
-        }
-      }
 
       GameState.placementSelectedLanes.push(laneIndex);
       if (updateBattleUIHook) updateBattleUIHook();
@@ -1063,6 +1008,64 @@ export async function waitPlayerLaneSelection(
 
     if (updateBattleUIHook) updateBattleUIHook();
   });
+}
+
+/**
+ * 既存カードがあるレーンへの配置・移動・召喚時に、合体・装備・破棄の確認モーダルを表示します。
+ * 状態の変更（カードの破棄など）は行いません。
+ * @param {string} owner - 'blue' | 'red'
+ * @param {object} tokenCard - 配置しようとしているカード
+ * @param {number} laneIndex - 配置先レーン
+ * @param {boolean} checkConstraints - 制約チェックを行うかどうか（号令や招来などの召喚時はtrue、復活や分身などはfalse）
+ * @returns {Promise<boolean>} 配置を続行してよいならtrue、キャンセルされたならfalse
+ */
+export async function confirmOverwrittenLane(owner, tokenCard, laneIndex, checkConstraints = true) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  if (board[laneIndex] === null) return true;
+
+  const existingCard = board[laneIndex];
+  const tokenName = tokenCard ? tokenCard.name : 'トークン';
+
+  // AI（owner !== 'blue'）の場合は、確認モーダルを出さずに自動的に承諾したものとして進行する
+  if (owner !== 'blue') {
+    return true;
+  }
+
+  // 1. 合体の判定
+  let canUnion = false;
+  if (tokenCard) {
+    const unionSkill = tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
+    if (unionSkill && (existingCard.baseId === unionSkill.targetId || existingCard.id === unionSkill.targetId)) {
+      canUnion = true;
+    }
+  }
+  if (canUnion) {
+    const confirmed = await new Promise((res) => {
+      showConfirmModal(`「${existingCard.name}」と合体しますか？`, () => res(true), () => res(false));
+    });
+    if (!confirmed) return false;
+    return true;
+  }
+
+  // 2. 装備の判定
+  if (
+    (tokenCard && typeof hasSkill === 'function' && hasSkill(tokenCard, 'equip')) ||
+    (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))
+  ) {
+    const confirmed = await new Promise((res) => {
+      showConfirmModal(`「${existingCard.name}」に「${tokenName}」を装備しますか？`, () => res(true), () => res(false));
+    });
+    if (!confirmed) return false;
+    return true;
+  }
+
+  // 3. 通常の破棄配置の判定
+  const confirmed = await new Promise((res) => {
+    showConfirmModal(`「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`, () => res(true), () => res(false));
+  });
+  if (!confirmed) return false;
+
+  return true;
 }
 
 /**
@@ -2300,28 +2303,39 @@ export async function handleMoveSkills(owner) {
       if (i < 2) possibleLanes.push(i + 1);
       if (possibleLanes.length === 0) continue;
 
-      if (owner === 'blue') {
-        GameState.placementMessage = `移動するレーンを選んでください`;
-        if (updateBattleUIHook) updateBattleUIHook();
-      }
+      let successMove = false;
+      while (!successMove) {
+        if (owner === 'blue') {
+          GameState.placementMessage = `移動するレーンを選んでください`;
+          if (updateBattleUIHook) updateBattleUIHook();
+        }
 
-      const targetIdx = await waitPlayerLaneSelection(
-        1,
-        owner,
-        c,
-        false,
-        possibleLanes,
-        false,
-        true,
-        '移動終了'
-      );
+        const targetIdx = await waitPlayerLaneSelection(
+          1,
+          owner,
+          c,
+          false,
+          possibleLanes,
+          false,
+          true,
+          '移動終了'
+        );
 
-      if (owner === 'blue') {
-        GameState.placementMessage = null;
-      }
-      if (targetIdx && targetIdx.length > 0) {
+        if (owner === 'blue') {
+          GameState.placementMessage = null;
+        }
+        if (!targetIdx || targetIdx.length === 0) {
+          // 移動選択自体をキャンセルした場合は移動を終了
+          break;
+        }
         const target = targetIdx[0];
         if (target !== i) {
+          // 根本的リファクタリング：移動先レーンに既存カードがある場合の上書き確認
+          const proceed = await confirmOverwrittenLane(owner, c, target, false);
+          if (!proceed) {
+            await sleep(200);
+            continue; // キャンセルされた場合はレーン選択からやり直す
+          }
           if (b[target]) {
             if (!(await discardCard(owner, b[target], target, false)))
               b[target] = null;
@@ -2332,6 +2346,10 @@ export async function handleMoveSkills(owner) {
           playSound(SOUNDS.sePlace);
           renderBoard();
           await sleep(PLACE_ANIMATION_DURATION);
+          successMove = true;
+        } else {
+          // 同じレーンをクリックした場合は何もせず移動終了
+          successMove = true;
         }
       }
     }

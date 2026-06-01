@@ -24,6 +24,7 @@ import {
   waitPlayerEnemyLaneSelection,
   waitPlayerHandSelection,
   waitPlayerLaneSelection,
+  confirmOverwrittenLane,
 } from './battle.js';
 import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
 import { playEvents } from './eventRenderer.js';
@@ -218,31 +219,52 @@ export async function executeLeaderSkillAction(
     const tS = CARD_MASTER.find((m) => m.id === 'token_satan');
     const tI = CARD_MASTER.find((m) => m.id === 'token_ignis');
     const token = action === 'satan_avatar' ? tS : tI;
-    const selectedLanes = await waitPlayerLaneSelection(
-      1,
-      owner,
-      token,
-      true,
-      tokenLanes,
-      false
-    );
-    if (selectedLanes.length === 0) return; // キャンセルされた場合
-    tokenLanes = selectedLanes;
+    let successSatan = false;
+    while (!successSatan) {
+      const selectedLanes = await waitPlayerLaneSelection(
+        1,
+        owner,
+        token,
+        true,
+        tokenLanes,
+        false
+      );
+      if (selectedLanes.length === 0) return; // キャンセルされた場合
+      const l = selectedLanes[0];
+      const proceed = await confirmOverwrittenLane(owner, token, l, false);
+      if (!proceed) {
+        await sleep(200);
+        continue;
+      }
+      tokenLanes = selectedLanes;
+      successSatan = true;
+    }
   } else if (action === 'dungeon_summon_leader') {
     const config =
       owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
     const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     const tokenCard = CARD_MASTER.find((m) => m.id === config.leaderCardId);
-    const selectedLanes = await waitPlayerLaneSelection(
-      1,
-      owner,
-      tokenCard,
-      true,
-      tokenLanes,
-      true,
-      '召喚終了'
-    );
-    if (selectedLanes.length === 0) return;
+    let successDng = false;
+    let selectedLanes = null;
+    while (!successDng) {
+      selectedLanes = await waitPlayerLaneSelection(
+        1,
+        owner,
+        tokenCard,
+        true,
+        tokenLanes,
+        true,
+        '召喚終了'
+      );
+      if (!selectedLanes || selectedLanes.length === 0) return;
+      const l = selectedLanes[0];
+      const proceed = await confirmOverwrittenLane(owner, tokenCard, l, false);
+      if (!proceed) {
+        await sleep(200);
+        continue;
+      }
+      successDng = true;
+    }
     if (selectedLanes.length > 0) {
       const l = selectedLanes[0];
       const imgUrl =
@@ -305,7 +327,7 @@ export async function executeLeaderSkillAction(
           playCardVoice(tokenCard.voiceCategory, 'play');
       } else {
         if (b[l]) {
-          await discardCard(owner, b[l], l);
+          await discardCard(owner, b[l], l, false);
         }
         // マスタデータ（CARD_MASTER）のskills配列などの参照汚染を防ぐため、ディープコピーを使用する
         const deepClonedToken = JSON.parse(JSON.stringify(tokenCard));
@@ -343,16 +365,27 @@ export async function executeLeaderSkillAction(
       );
       if (selectedEnemyLanes === null) return;
       const tSoul = CARD_MASTER.find((m) => m.id === 'token_soul');
-      const selectedAlliedLanes = await waitPlayerLaneSelection(
-        1,
-        owner,
-        tSoul,
-        false,
-        null,
-        false,
-        '配置終了'
-      );
-      if (selectedAlliedLanes === null) return;
+      let successSoul = false;
+      let selectedAlliedLanes = null;
+      while (!successSoul) {
+        selectedAlliedLanes = await waitPlayerLaneSelection(
+          1,
+          owner,
+          tSoul,
+          false,
+          null,
+          false,
+          '配置終了'
+        );
+        if (selectedAlliedLanes === null || selectedAlliedLanes.length === 0) return;
+        const l = selectedAlliedLanes[0];
+        const proceed = await confirmOverwrittenLane(owner, tSoul, l, false);
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successSoul = true;
+      }
       tokenLanes = { enemy: selectedEnemyLanes, allied: selectedAlliedLanes };
     }
   } else if (action === 'seal_lanes') {
@@ -377,7 +410,16 @@ export async function executeLeaderSkillAction(
       tokenLanes,
       false
     );
-    tokenLanes = selectedLanes;
+    if (!selectedLanes || selectedLanes.length === 0) return;
+    const validSelectedLanes = [];
+    for (const l of selectedLanes) {
+      const proceed = await confirmOverwrittenLane(owner, tK, l, false);
+      if (proceed) {
+        validSelectedLanes.push(l);
+      }
+    }
+    if (validSelectedLanes.length === 0) return;
+    tokenLanes = validSelectedLanes;
   } else if (
     action === 'targeted_destruction' ||
     action === 'tomb_guard' ||
@@ -434,18 +476,29 @@ export async function executeLeaderSkillAction(
 
       // パート2: ヴォイテクを配置する自分のレーンを選択
       const token = CARD_MASTER.find((m) => m.id === 'token_polarbear');
-      const myLanes = await waitPlayerLaneSelection(
-        1,
-        owner,
-        token,
-        false,
-        null,
-        false
-      );
-      if (!myLanes || myLanes.length === 0) return;
+      let successBear = false;
+      let l = -1;
+      while (!successBear) {
+        const myLanes = await waitPlayerLaneSelection(
+          1,
+          owner,
+          token,
+          false,
+          null,
+          false
+        );
+        if (!myLanes || myLanes.length === 0) return;
+        l = myLanes[0];
+        const proceed = await confirmOverwrittenLane(owner, token, l, false);
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successBear = true;
+      }
 
       // tokenLanesには [敵レーン番号, 自分のレーン番号] を格納してengineに渡す
-      tokenLanes = [enemyTargetLane, myLanes[0]];
+      tokenLanes = [enemyTargetLane, l];
     }
   } else if (action === 'overdrive') {
     if (await triggerGraveKeeperEffect()) return;
@@ -487,21 +540,32 @@ export async function executeLeaderSkillAction(
       ) {
         predefinedLanes = [GameState.aiDecision.tokenLanes.shift()];
       }
-      const tLanes = await waitPlayerLaneSelection(
-        1,
-        owner,
-        selectedCard,
-        false,
-        predefinedLanes,
-        false
-      );
-      if (!tLanes || tLanes.length === 0) return;
+      let successOD = false;
+      let targetLane = -1;
+      let tLanes = null;
+      while (!successOD) {
+        tLanes = await waitPlayerLaneSelection(
+          1,
+          owner,
+          selectedCard,
+          false,
+          predefinedLanes,
+          false
+        );
+        if (!tLanes || tLanes.length === 0) return;
+        targetLane = tLanes[0];
+        const proceed = await confirmOverwrittenLane(owner, selectedCard, targetLane, false);
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successOD = true;
+      }
 
       const actualIdx = discard.indexOf(selectedCard);
       if (actualIdx !== -1) discard.splice(actualIdx, 1);
       updateDeckDisplay(owner);
 
-      const targetLane = tLanes[0];
       tokenLanes = tLanes; // VFX用
       const existingCard = board[targetLane];
       const isEquip =
@@ -586,7 +650,9 @@ export async function executeLeaderSkillAction(
         // 【傀儡と同じ処理】相手墓地から取ったカードは、破壊時に元の持ち主（相手）の墓地へ返却する
         const oppOwner = owner === 'blue' ? 'red' : 'blue';
         if (isOppDiscard) resurrectedCard.puppetOriginalOwner = oppOwner;
-        if (existingCard) await discardCard(owner, existingCard, targetLane);
+        if (existingCard) {
+          await discardCard(owner, existingCard, targetLane, false);
+        }
         board[targetLane] = resurrectedCard;
         events.push({
           type: 'summon_card',
@@ -649,15 +715,27 @@ export async function executeLeaderSkillAction(
 
       // 復活させる対象を engine に伝えるために無理くり渡しちゃうか、UI介入でここまで決まったら
       // 配置レーンも決めます。
-      const tLanes = await waitPlayerLaneSelection(
-        1,
-        owner,
-        selectedCard,
-        false,
-        tokenLanes,
-        false
-      );
-      if (!tLanes || tLanes.length === 0) return;
+      let successMaria = false;
+      let targetLane = -1;
+      let tLanes = null;
+      while (!successMaria) {
+        tLanes = await waitPlayerLaneSelection(
+          1,
+          owner,
+          selectedCard,
+          false,
+          tokenLanes,
+          false
+        );
+        if (!tLanes || tLanes.length === 0) return;
+        targetLane = tLanes[0];
+        const proceed = await confirmOverwrittenLane(owner, selectedCard, targetLane, false);
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successMaria = true;
+      }
 
       // Engine側へ伝えるための事前準備（引数だけでは足りないので、Engineが拾えるように選択カード情報を付与するか、ここでやってしまうか）
       // この蘇生アクションは UI 依存度が高すぎるため、蘇生処理の解決だけは部分的に残しつつ engineの枠組みに乗せる。
@@ -666,7 +744,6 @@ export async function executeLeaderSkillAction(
       if (actualIdx !== -1) discard.splice(actualIdx, 1);
       updateDeckDisplay(owner);
 
-      const targetLane = tLanes[0];
       tokenLanes = tLanes; // VFXセクションで参照できるように代入
       const existingCard = board[targetLane];
       const unionSkill =
@@ -756,9 +833,8 @@ export async function executeLeaderSkillAction(
         resurrectedCard.stunTurns = 0;
         resurrectedCard.stunAppliedThisTurn = false;
 
-        // 既存のカードがあれば破棄する（UNION/EQUIPでない場合）
         if (existingCard) {
-          await discardCard(owner, existingCard, targetLane);
+          await discardCard(owner, existingCard, targetLane, false);
         }
         board[targetLane] = resurrectedCard;
         events.push({
