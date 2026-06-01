@@ -176,15 +176,15 @@ export default function App() {
 
   const screenEntry = SCREEN_COMPONENTS[currentScreen];
   const ScreenComponent = screenEntry?.component || screenEntry;
+  // 未登録の画面IDの場合はタイトル画面をフォールバック表示
+  const FinalScreenComponent = ScreenComponent || TitleScreen;
 
   return (
     <>
-      {ScreenComponent && (
-        <ScreenComponent
-          switchScreen={switchScreen}
-          showRulesModal={() => setRulesVisible(true)}
-        />
-      )}
+      <FinalScreenComponent
+        switchScreen={switchScreen}
+        showRulesModal={() => setRulesVisible(true)}
+      />
       <GlobalModals
         rulesVisible={rulesVisible}
         setRulesVisible={setRulesVisible}

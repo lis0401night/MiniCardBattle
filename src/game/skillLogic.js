@@ -2000,7 +2000,6 @@ export async function resolveActiveSkillEffect(
             false,
             true
           );
-          if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
           if (!tLanes || tLanes.length === 0) return; // レーン選択キャンセル時はスキル終了
           targetLane = tLanes[0];
 

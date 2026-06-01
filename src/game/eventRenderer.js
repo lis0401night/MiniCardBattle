@@ -222,15 +222,10 @@ export async function playEvents(events) {
         break;
       }
       case 'damage_player': {
-        console.log(`[VFX Debug] damage_player event:`, ev);
         if (ev.side === 'blue') GameState.playerHP -= ev.amount;
         else GameState.enemyHP -= ev.amount;
 
         if (ev.source === 'artillery' && window.triggerVfx) {
-          console.log(
-            `[VFX Debug] triggerVfx for artillery. triggerSide:`,
-            ev.side === 'blue' ? 'red' : 'blue'
-          );
           const triggerSide = ev.side === 'blue' ? 'red' : 'blue'; // 被害側がblueなら発動側はred
           window.triggerVfx('anm_skill_artillery', triggerSide); // 非同期実行にしてテンポを向上
           await sleep(150); // 400msの爆発開始の瞬間に合わせてダメージ処理に移行

@@ -161,6 +161,29 @@ export function processActionSequence(
     // choice/forceノードはメタ情報のみ（choices指定）で、カード配置には関与しない
     if (action.type === 'choice' || action.type === 'force') continue;
 
+    // 連鎖召喚の子プレイ（またはスキップ）が始まったら、親カードの保護フラグを解除し、パワー0以下なら破壊する
+    if (
+      action.type === 'invite' ||
+      action.type === 'chant' ||
+      action.type === 'forge'
+    ) {
+      for (let i = 0; i < 3; i++) {
+        const c = simState.enemyBoard[i];
+        if (c && c.isSkillResolving) {
+          if (
+            hasSkill(c, 'invite') ||
+            hasSkill(c, 'chant') ||
+            hasSkill(c, 'forge')
+          ) {
+            c.isSkillResolving = false;
+            if (c.currentPower <= 0) {
+              simState.enemyBoard[i] = null;
+            }
+          }
+        }
+      }
+    }
+
     if (action.type === 'discard') {
       if (simState.enemyHand[action.targetIdx]) {
         simState.enemyDiscard.push(simState.enemyHand[action.targetIdx]);
@@ -173,7 +196,7 @@ export function processActionSequence(
     const lIdx = action.laneIdx;
     let playedCard = null;
 
-    if (simState.enemySealedLanes[lIdx] === 1) return null;
+    if (simState.enemySealedLanes[lIdx] > 0) return null;
 
     let checkConstraints = false;
     let triggerSkills = true;
@@ -244,7 +267,7 @@ export function processActionSequence(
         const lanes = [...(action.lanes || [])];
         for (const tLane of lanes) {
           const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
-          if (sealedLanes[tLane] === 1) continue;
+          if (sealedLanes[tLane] > 0) continue;
           // cloneトークンは元カードのスキルを引き継ぐ（分身含む全スキル）
           // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
           let inheritedSkills = [];
@@ -358,7 +381,7 @@ export function processActionSequence(
       const myL = action.myLaneIdx;
       if (oppL !== -1 && myL !== -1) {
         // 移動先レーン（自分側）が封印されている場合はシミュレーション上でも無効（棄却）
-        if (simState.enemySealedLanes && simState.enemySealedLanes[myL] === 1)
+        if (simState.enemySealedLanes && simState.enemySealedLanes[myL] > 0)
           return null;
 
         const oppBoard = simState.playerBoard; // AI(自分)から見た相手は playerBoard
@@ -896,7 +919,7 @@ export function getBestSimulatedMove() {
     let availableLanes = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
 
     if (forcedLane !== undefined) {
-      if (mySealedLanes[forcedLane] === 1) return [[]];
+      if (mySealedLanes[forcedLane] > 0) return [[]];
       availableLanes = [forcedLane];
     } else if (depth > 0) {
       availableLanes.push(-1);
@@ -1327,7 +1350,7 @@ export function getBestSimulatedMove() {
                   if (baseP > maxP || resCard.isToken) continue;
 
                   for (let j = 0; j < 3; j++) {
-                    if (mySealedLanes[j] === 1) continue;
+                    if (mySealedLanes[j] > 0) continue;
                     // targetUid: discardCard はマスターデータで再構成するため baseId（マスターID）を優先使用する。
                     // ランタイムID（"red_xxx_7" 等）は discardCard 後に失われるため使用不可。
                     let resNode = {
@@ -1412,7 +1435,7 @@ export function getBestSimulatedMove() {
                   let combos = [];
                   let subCombos = generateLaneCombos(remainingCount - 1);
                   for (let j = 0; j < 3; j++) {
-                    if (mySealedLanes[j] === 1) continue;
+                    if (mySealedLanes[j] > 0) continue;
                     for (let sc of subCombos) {
                       combos.push([j, ...sc]);
                     }
@@ -2249,9 +2272,9 @@ export function evaluateSimState(state) {
   // パワー差等で同点になった場合のタイブレークとして微小なスコアを加算
   let s9 = 0;
   if (state.playerSealedLanes) {
-    if (state.playerSealedLanes[1] === 1) s9 += 0.03; // 中央
-    if (state.playerSealedLanes[0] === 1) s9 += 0.02; // 左
-    if (state.playerSealedLanes[2] === 1) s9 += 0.01; // 右
+    if (state.playerSealedLanes[1] > 0) s9 += 0.03; // 中央
+    if (state.playerSealedLanes[0] > 0) s9 += 0.02; // 左
+    if (state.playerSealedLanes[2] > 0) s9 += 0.01; // 右
   }
 
   // スロット10: 被ダメージペナルティ
@@ -3553,6 +3576,10 @@ export function simulateMove(
             }
             simState.enemyBoard[laneIdx] = playedCard;
           }
+          // 出現時スキルを持つ場合は即座に保護フラグを立てる（シミュレーション時も同様に一時的な破壊を防ぐ）
+          if (hasActiveSkill(activeCard)) {
+            activeCard.isSkillResolving = true;
+          }
           let skills = [];
           if (activeCard.skill && activeCard.skill !== 'none') {
             if (
@@ -3631,6 +3658,18 @@ export function simulateMove(
                 );
               }
             });
+          }
+          // スキル解決が終わったため、保護フラグを解除する
+          // 【招来・詠唱・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
+          // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
+          if (activeCard) {
+            const hasChainSummon =
+              hasSkill(activeCard, 'invite') ||
+              hasSkill(activeCard, 'chant') ||
+              hasSkill(activeCard, 'forge');
+            if (!hasChainSummon) {
+              activeCard.isSkillResolving = false;
+            }
           }
           if (
             simState.enemyBoard[laneIdx] &&

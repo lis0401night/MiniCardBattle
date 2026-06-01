@@ -3,9 +3,7 @@ import {
   getSkinImage,
   BOSS_CHARACTER_IDS,
 } from '../../utils/constants/characters.js';
-
-// 墓地確認モーダルで全カードを表示するための最大値
-const MAX_DISCARD_PREVIEW_COUNT = 999;
+import { MAX_DISCARD_PREVIEW_COUNT } from '../../utils/constants/config.js';
 
 export default function EnemyArea({
   enemyConfig,

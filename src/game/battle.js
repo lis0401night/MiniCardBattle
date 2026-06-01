@@ -92,6 +92,9 @@ export let pendingChoiceResolver = null;
 // バトル準備中の二重呼び出し防止フラグ
 let isBattleLoading = false;
 
+// オンライン対戦時の非同期競合を防ぐためのキューエンジン処理中フラグ
+let isQueueProcessing = false;
+
 // ==========================================
 // イベント駆動型タスクキューエンジン (State Machine Core)
 // ==========================================
@@ -147,58 +150,62 @@ export async function dispatchBattleAction(action, isRemote = false) {
 export async function processActionQueue() {
   if (GameState.isProcessing) return;
   GameState.isProcessing = true;
+  isQueueProcessing = true;
 
-  while (GameState.actionQueue.length > 0) {
-    const action = GameState.actionQueue.shift();
+  try {
+    while (GameState.actionQueue.length > 0) {
+      const action = GameState.actionQueue.shift();
 
-    if (action.type === 'playCard') {
-      const played = await playCard(
-        action.owner,
-        action.handIndex,
-        action.lane
-      );
-      if (played) {
-        if (checkWinCondition()) break;
-        GameState.selectedCardIndex = null;
-        if (window.updateCardDetail) window.updateCardDetail(null);
-        await sleep(PLACE_ANIMATION_DURATION);
+      if (action.type === 'playCard') {
+        const played = await playCard(
+          action.owner,
+          action.handIndex,
+          action.lane
+        );
+        if (played) {
+          if (checkWinCondition()) break;
+          GameState.selectedCardIndex = null;
+          if (window.updateCardDetail) window.updateCardDetail(null);
+          await sleep(PLACE_ANIMATION_DURATION);
+          await endTurnLogic(action.owner);
+        }
+        // 【CodeRabbit指摘反映】無効プレイ時（playedがfalse）でも、オンライン対戦での状態ズレを防ぐため、
+        // ループ後段の updateBattleUIHook() や syncState 送信をスキップせずに通す
+      } else if (action.type === 'endTurn') {
         await endTurnLogic(action.owner);
+      } else if (action.type === 'leaderSkill') {
+        await activateLeaderSkill(action.owner);
+      } else if (action.type === 'enemyTurn') {
+        if (GameState.gameMode === 'tutorial') {
+          // チュートリアルモード: スクリプト行動を実行
+          await sleep(AI_THINKING_DURATION);
+          await executeTutorialEnemyTurn();
+        } else if (GameState.gameMode !== 'online') {
+          await sleep(AI_THINKING_DURATION);
+          await executeEnemyAI();
+        }
+      } else if (action.type === 'syncState') {
+        applySyncState(action.state);
       }
-      // 【CodeRabbit指摘反映】無効プレイ時（playedがfalse）でも、オンライン対戦での状態ズレを防ぐため、
-      // ループ後段の updateBattleUIHook() や syncState 送信をスキップせずに通す
-    } else if (action.type === 'endTurn') {
-      await endTurnLogic(action.owner);
-    } else if (action.type === 'leaderSkill') {
-      await activateLeaderSkill(action.owner);
-    } else if (action.type === 'enemyTurn') {
-      if (GameState.gameMode === 'tutorial') {
-        // チュートリアルモード: スクリプト行動を実行
-        await sleep(AI_THINKING_DURATION);
-        await executeTutorialEnemyTurn();
-      } else if (GameState.gameMode !== 'online') {
-        await sleep(AI_THINKING_DURATION);
-        await executeEnemyAI();
+
+      if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
+
+      // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
+      if (
+        GameState.gameMode === 'online' &&
+        getIsHost() &&
+        action.type !== 'syncState' &&
+        action.type !== 'enemyTurn' &&
+        action.type !== 'submitChoice'
+      ) {
+        sendOnlineAction({ type: 'syncState', state: generateSyncState() });
       }
-    } else if (action.type === 'syncState') {
-      applySyncState(action.state);
     }
-
-    if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
-
-    // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
-    if (
-      GameState.gameMode === 'online' &&
-      getIsHost() &&
-      action.type !== 'syncState' &&
-      action.type !== 'enemyTurn' &&
-      action.type !== 'submitChoice'
-    ) {
-      sendOnlineAction({ type: 'syncState', state: generateSyncState() });
-    }
+  } finally {
+    isQueueProcessing = false;
+    GameState.isProcessing = false;
+    if (updateBattleUIHook) updateBattleUIHook();
   }
-
-  GameState.isProcessing = false;
-  if (updateBattleUIHook) updateBattleUIHook();
 }
 
 function generateSyncState() {
@@ -2363,16 +2370,155 @@ export async function handleMoveSkills(owner) {
             await sleep(200);
             continue; // キャンセルされた場合はレーン選択からやり直す
           }
-          if (b[target]) {
-            if (!(await discardCard(owner, b[target], target, false)))
-              b[target] = null;
+          let didUnion = false;
+          let didEquip = false;
+          const existingCard = b[target];
+
+          if (existingCard) {
+            // 1. 合体（Union）の判定と処理
+            const unionSkill =
+              c.skills && c.skills.find((s) => s.id === 'union');
+            if (
+              unionSkill &&
+              (existingCard.baseId === unionSkill.targetId ||
+                existingCard.id === unionSkill.targetId)
+            ) {
+              const combineId = unionSkill.summonId;
+              const masterData = CARD_MASTER.find((m) => m.id === combineId);
+              if (masterData) {
+                let unionCard = JSON.parse(JSON.stringify(masterData));
+                unionCard.uid = getOrCreateUUID(null);
+                unionCard.owner = owner;
+                unionCard.baseId = unionCard.id;
+                unionCard.basePower = unionCard.power;
+                unionCard.currentPower = unionCard.power;
+                unionCard.unionMaterials = [existingCard, c];
+
+                b[target] = unionCard;
+                b[i] = null;
+                movedIds.add(unionCard.uid);
+
+                playSound(SOUNDS.sePlace);
+                if (unionCard.voiceCategory) {
+                  playCardVoice(unionCard.voiceCategory, 'play');
+                }
+                renderBoard();
+                await sleep(PLACE_ANIMATION_DURATION);
+
+                await resolveOnPlaySkill(owner, target, unionCard);
+                await cleanupDestroyedCards();
+
+                await sleep(100);
+                renderBoard();
+                didUnion = true;
+              }
+            }
+
+            // 2. 装備（Equip / Arm Self）の判定と処理
+            if (
+              !didUnion &&
+              (hasSkill(c, 'equip') || hasSkill(existingCard, 'arm_self')) &&
+              !hasSkill(existingCard, 'possession') &&
+              !hasSkill(c, 'possession') &&
+              !hasSkill(existingCard, 'reflect') &&
+              !hasSkill(c, 'reflect')
+            ) {
+              // 装備によるパワー加算
+              existingCard.basePower =
+                (existingCard.basePower || 0) + (c.power || 0);
+              existingCard.currentPower =
+                (existingCard.currentPower || 0) + (c.power || 0);
+
+              // スキルの統合
+              if (!existingCard.skills) {
+                existingCard.skills =
+                  existingCard.skill !== 'none'
+                    ? [
+                        {
+                          id: existingCard.skill,
+                          value: existingCard.skillValue,
+                        },
+                      ]
+                    : [];
+                if (existingCard.skill !== 'none' && existingCard.summonId) {
+                  existingCard.skills[0].summonId = existingCard.summonId;
+                }
+                if (existingCard.skill !== 'none' && existingCard.targetId) {
+                  existingCard.skills[0].targetId = existingCard.targetId;
+                }
+                existingCard.skill = 'none';
+              }
+
+              const equipSkills = [];
+              if (c.skill && c.skill !== 'none' && c.skill !== 'equip') {
+                equipSkills.push({
+                  id: c.skill,
+                  value: c.skillValue,
+                  summonId: c.summonId,
+                  targetId: c.targetId,
+                });
+              }
+              if (c.skills) {
+                c.skills.forEach((s) => {
+                  if (s.id !== 'equip') equipSkills.push(s);
+                });
+              }
+              if (equipSkills.length > 0) {
+                mergeCardSkills(existingCard, equipSkills);
+              }
+
+              // 装備カードリストに追加
+              existingCard.equippedCards = existingCard.equippedCards || [];
+              existingCard.equippedCards.push(c);
+
+              b[i] = null;
+              movedIds.add(existingCard.uid || existingCard.id);
+
+              playSound(SOUNDS.sePlace);
+              renderBoard();
+              await sleep(PLACE_ANIMATION_DURATION);
+
+              // 装備時の追加効果スキル等を解決
+              const skillsToResolve = [...equipSkills];
+              skillsToResolve.sort((a, b) => {
+                const order = { quick: 100, choice: 90 };
+                const orderA = order[a.id] || 0;
+                const orderB = order[b.id] || 0;
+                return orderA - orderB;
+              });
+              for (const sk of skillsToResolve) {
+                if (ACTIVE_SKILLS.includes(sk.id)) {
+                  await resolveActiveSkillEffect(
+                    owner,
+                    target,
+                    existingCard,
+                    sk.id,
+                    sk.value,
+                    sk
+                  );
+                }
+              }
+              await cleanupDestroyedCards();
+
+              await sleep(100);
+              renderBoard();
+              didEquip = true;
+            }
           }
-          movedIds.add(c.uid || c.id);
-          b[target] = c;
-          b[i] = null;
-          playSound(SOUNDS.sePlace);
-          renderBoard();
-          await sleep(PLACE_ANIMATION_DURATION);
+
+          // 3. 通常の破棄配置の処理
+          if (!didUnion && !didEquip) {
+            if (b[target]) {
+              if (!(await discardCard(owner, b[target], target, false)))
+                b[target] = null;
+            }
+            movedIds.add(c.uid || c.id);
+            b[target] = c;
+            b[i] = null;
+            playSound(SOUNDS.sePlace);
+            renderBoard();
+            await sleep(PLACE_ANIMATION_DURATION);
+          }
           successMove = true;
         } else {
           // 同じレーンをクリックした場合は何もせず移動終了
@@ -2499,11 +2645,15 @@ export async function startTurn(owner) {
     updateCardDetail(null);
     renderHand();
     renderBoard();
-    GameState.isProcessing = false;
+    if (!isQueueProcessing) {
+      GameState.isProcessing = false;
+    }
     GameState.battlePhase = 'MAIN_ACTION';
   } else {
     renderBoard(); // 重要: 敵ターン開始前の状態（戦闘結果等）を画面に反映
-    GameState.isProcessing = false;
+    if (!isQueueProcessing) {
+      GameState.isProcessing = false;
+    }
     dispatchBattleAction({ type: 'enemyTurn' });
   }
 }
@@ -2527,7 +2677,9 @@ export async function endPlayerTurn() {
   renderHand();
   renderBoard();
   // processActionQueue内でロックするため、ここは解除しておく（または最初からセットしない）
-  GameState.isProcessing = false;
+  if (!isQueueProcessing) {
+    GameState.isProcessing = false;
+  }
   dispatchBattleAction({ type: 'endTurn', owner: 'blue' });
 }
 

@@ -7,6 +7,7 @@ export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
 export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
 export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の思考ウェイト時間 (ms)
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
+export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
 
 // 防衛戦 交換所ラインナップ
 export const EXCHANGE_LINEUP = [

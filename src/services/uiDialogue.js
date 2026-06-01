@@ -25,6 +25,9 @@ import {
 // UI Dialogue Logic (Dialogue & Sequences)
 // ==========================================
 
+// スチルスクロール演出の待機時間（ミリ秒）
+const STILL_SCROLL_DURATION = 8000;
+
 export function handleDialogueChoice(choiceIndex) {
   playSound(SOUNDS.seClick);
   const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
@@ -296,7 +299,7 @@ export async function showNextDialogue(force = false) {
     }
 
     // スクロールアニメーションの時間（8000ms）待機
-    await new Promise((r) => setTimeout(r, 8000));
+    await new Promise((r) => setTimeout(r, STILL_SCROLL_DURATION));
 
     // 待機後、ダイアログボックスを再表示可能な状態にする
     window.currentDialogueData.hideBox = false;
