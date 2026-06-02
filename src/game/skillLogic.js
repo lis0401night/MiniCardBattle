@@ -1273,7 +1273,7 @@ export async function resolveActiveSkillEffect(
               });
             }
             unmergeCardSkills(targetCard, equipSkills);
-            eD.push(eqCard);
+            await discardCard(t.side, eqCard, undefined, false);
           }
         }
 
@@ -2787,7 +2787,11 @@ export async function resolveActiveSkillEffect(
 
     if (hasOppCard) {
       let selectedLanes;
-      if (oppOwner === 'red') {
+      if (
+        oppOwner === 'red' &&
+        GameState.gameMode !== 'online' &&
+        GameState.gameMode !== 'pvp'
+      ) {
         // 相手がAIの場合：最もパワーの低いカードを自動選択（自分の損失を最小化）
         const occupiedLanes = oppBoard
           .map((bc, i) => (bc !== null ? i : -1))

@@ -255,6 +255,9 @@ function applySyncState(state) {
     if (cloned.owner === 'blue') cloned.owner = 'red';
     else if (cloned.owner === 'red') cloned.owner = 'blue';
 
+    if (cloned.puppetOriginalOwner === 'blue') cloned.puppetOriginalOwner = 'red';
+    else if (cloned.puppetOriginalOwner === 'red') cloned.puppetOriginalOwner = 'blue';
+
     // 装備されているカード（equippedCards）も再帰的に反転する
     if (cloned.equippedCards && cloned.equippedCards.length > 0) {
       cloned.equippedCards = cloned.equippedCards.map(invertCardOwner);
