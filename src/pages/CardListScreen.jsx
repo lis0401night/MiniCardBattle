@@ -10,6 +10,7 @@ import {
 } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
+import { SKILLS } from '../utils/constants/skills.js';
 import { MAX_CARD_COPIES } from '../utils/constants/config.js';
 import {
   getCardImgUrl,
@@ -29,6 +30,22 @@ export default function CardListScreen() {
   const [inventory, setInventory] = useState({});
   const [unlockedPremium, setUnlockedPremium] = useState([]);
   const [activePremium, setActivePremium] = useState([]);
+
+  // フィルター用状態定義
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    rarity: [],
+    power: [],
+    skills: [],
+    name: '',
+  });
+  const [tempFilters, setTempFilters] = useState({
+    rarity: [],
+    power: [],
+    skills: [],
+    name: '',
+  });
+  const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
 
   // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
   const handleTitleClick = useEasterEgg(() => {
@@ -119,6 +136,67 @@ export default function CardListScreen() {
     updateList();
   };
 
+  const toggleTempFilter = (type, val) => {
+    playSound?.(SOUNDS?.seClick);
+    setTempFilters((prev) => {
+      const arr = prev[type];
+      return {
+        ...prev,
+        [type]: arr.includes(val)
+          ? arr.filter((x) => x !== val)
+          : [...arr, val],
+      };
+    });
+  };
+
+  // フィルター選択肢の抽出
+  const allCardsForFilters = masterCards;
+
+  const availableRarities = Array.from(
+    new Set(
+      allCardsForFilters.map((c) => c.rarity).filter((x) => x !== undefined)
+    )
+  ).sort();
+  const availablePowers = Array.from(
+    new Set(
+      allCardsForFilters.map((c) => c.power).filter((x) => x !== undefined)
+    )
+  ).sort((a, b) => a - b);
+  const availableSkills = Array.from(
+    new Set(
+      allCardsForFilters.flatMap((c) => {
+        let s = [];
+        if (c.skills) c.skills.forEach((sk) => s.push(sk.id));
+        if (c.choices) c.choices.forEach((ch) => s.push(ch.id));
+        if (c.choices2) c.choices2.forEach((ch) => s.push(ch.id));
+        return s;
+      })
+    )
+  )
+    .filter(Boolean)
+    .sort();
+
+  // フィルター適用後のカードリスト
+  const filteredMasterCards = masterCards.filter((c) => {
+    if (
+      filters.name &&
+      !c.name.toLowerCase().includes(filters.name.toLowerCase())
+    )
+      return false;
+    if (filters.rarity.length > 0 && !filters.rarity.includes(c.rarity))
+      return false;
+    if (filters.power.length > 0 && !filters.power.includes(c.power))
+      return false;
+    if (filters.skills.length > 0) {
+      let cardSkills = [];
+      if (c.skills) c.skills.forEach((sk) => cardSkills.push(sk.id));
+      if (c.choices) c.choices.forEach((ch) => cardSkills.push(ch.id));
+      if (c.choices2) c.choices2.forEach((ch) => cardSkills.push(ch.id));
+      if (!filters.skills.every((sk) => cardSkills.includes(sk))) return false;
+    }
+    return true;
+  });
+
   return (
     <CompactScreenLayout
       id="screen-card-list"
@@ -128,15 +206,60 @@ export default function CardListScreen() {
       backTo="screen-gallery-menu"
     >
       <div
-        id="card-list-count"
-        style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#cbd5e1' }}
+        style={{
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: '10px',
+          width: '95%',
+          maxWidth: '440px',
+          boxSizing: 'border-box',
+        }}
       >
-        カード種類: {ownedKindCount} / {masterCards.length}
+        <div
+          id="card-list-count"
+          style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: 0, textAlign: 'center' }}
+        >
+          カード種類: {ownedKindCount} / {masterCards.length}
+        </div>
+        <button
+          className="btn"
+          style={{
+            position: 'absolute',
+            right: '4px', // 枠の右端（内側）に綺麗にアライン
+            padding: '4px 8px',
+            margin: 0,
+            fontSize: '0.9rem',
+            background:
+              filters.rarity.length > 0 ||
+              filters.power.length > 0 ||
+              filters.skills.length > 0 ||
+              !!filters.name
+                ? 'rgba(250, 204, 21, 0.3)'
+                : '#334155',
+            border:
+              filters.rarity.length > 0 ||
+              filters.power.length > 0 ||
+              filters.skills.length > 0 ||
+              !!filters.name
+                ? '1px solid #facc15'
+                : '1px solid #475569',
+            color: '#facc15',
+          }}
+          onClick={() => {
+            setTempFilters({ ...filters });
+            setIsFilterModalOpen(true);
+            playSound?.(SOUNDS?.seClick);
+          }}
+        >
+          🔍
+        </button>
       </div>
 
       <div className="card-list-container">
         <div id="gallery-card-grid" className="card-list-grid-3col">
-          {masterCards.map((template) => {
+          {filteredMasterCards.map((template) => {
             const ownedCount = inventory[template.id] || 0;
             const isOwned = ownedCount > 0;
             const opacity = isOwned ? '1' : '0.4';
@@ -224,6 +347,313 @@ export default function CardListScreen() {
           })}
         </div>
       </div>
+
+      {/* フィルターダイアログ */}
+      {isFilterModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            zIndex: 9999,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onClick={() => setIsFilterModalOpen(false)}
+        >
+          <div
+            style={{
+              background: '#1e293b',
+              border: '2px solid #facc15',
+              borderRadius: '12px',
+              padding: '20px',
+              width: '90%',
+              maxWidth: '400px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '15px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                margin: 0,
+                color: '#facc15',
+                textAlign: 'center',
+                fontSize: '1.2rem',
+              }}
+            >
+              フィルター
+            </h3>
+
+            {/* カード名 */}
+            <div>
+              <div
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.9rem',
+                  marginBottom: '8px',
+                }}
+              >
+                カード名
+              </div>
+              <input
+                type="text"
+                value={tempFilters.name || ''}
+                onChange={(e) =>
+                  setTempFilters({ ...tempFilters, name: e.target.value })
+                }
+                placeholder="カード名で検索..."
+                style={{
+                  background: '#334155',
+                  color: '#fff',
+                  border: '1px solid #475569',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '0.9rem',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* レアリティ */}
+            <div>
+              <div
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.9rem',
+                  marginBottom: '8px',
+                }}
+              >
+                レアリティ
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {availableRarities.map((r) => (
+                  <div
+                    key={`r-${r}`}
+                    onClick={() => toggleTempFilter('rarity', r)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      border: tempFilters.rarity.includes(r)
+                        ? '2px solid #facc15'
+                        : '2px solid #475569',
+                      background: tempFilters.rarity.includes(r)
+                        ? 'rgba(250, 204, 21, 0.2)'
+                        : '#334155',
+                      color: tempFilters.rarity.includes(r)
+                        ? '#facc15'
+                        : '#94a3b8',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                    }}
+                  >
+                    ★{r}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* パワー */}
+            <div>
+              <div
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.9rem',
+                  marginBottom: '8px',
+                }}
+              >
+                パワー
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {availablePowers.map((p) => (
+                  <div
+                    key={`p-${p}`}
+                    onClick={() => toggleTempFilter('power', p)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      border: tempFilters.power.includes(p)
+                        ? '2px solid #facc15'
+                        : '2px solid #475569',
+                      background: tempFilters.power.includes(p)
+                        ? 'rgba(250, 204, 21, 0.2)'
+                        : '#334155',
+                      color: tempFilters.power.includes(p)
+                        ? '#facc15'
+                        : '#94a3b8',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                    }}
+                  >
+                    P{p}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 能力 */}
+            <div>
+              <div
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setIsSkillAccordionOpen(!isSkillAccordionOpen);
+                }}
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.9rem',
+                  marginBottom: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '6px',
+                  backgroundColor: '#334155',
+                  borderRadius: '6px',
+                  border:
+                    tempFilters.skills.length > 0
+                      ? '1px solid #facc15'
+                      : '1px solid transparent',
+                }}
+              >
+                <span
+                  style={{
+                    color:
+                      tempFilters.skills.length > 0 ? '#facc15' : '#94a3b8',
+                  }}
+                >
+                  能力
+                </span>
+                <span>{isSkillAccordionOpen ? '▲' : '▼'}</span>
+              </div>
+              {isSkillAccordionOpen && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '6px',
+                    maxHeight: '180px',
+                    overflowY: 'auto',
+                    padding: '6px',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {availableSkills.map((sk) => {
+                    const skillDef = SKILLS[sk] || { name: sk, icon: '' };
+                    return (
+                      <div
+                        key={sk}
+                        onClick={() => toggleTempFilter('skills', sk)}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          border: tempFilters.skills.includes(sk)
+                            ? '1px solid #facc15'
+                            : '1px solid #475569',
+                          background: tempFilters.skills.includes(sk)
+                            ? 'rgba(250, 204, 21, 0.2)'
+                            : '#334155',
+                          color: tempFilters.skills.includes(sk)
+                            ? '#facc15'
+                            : '#94a3b8',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          userSelect: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <span>{skillDef.icon}</span>
+                        <span>{skillDef.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '15px',
+                justifyContent: 'center',
+                marginTop: '10px',
+              }}
+            >
+              <button
+                className="action-btn"
+                style={{
+                  background: '#7f1d1d',
+                  margin: 0,
+                  padding: '8px',
+                  flex: 1,
+                  minWidth: '80px',
+                  fontSize: '1rem',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setTempFilters({
+                    rarity: [],
+                    power: [],
+                    skills: [],
+                    name: '',
+                  });
+                }}
+              >
+                リセット
+              </button>
+              <button
+                className="btn"
+                style={{
+                  background: '#64748b',
+                  margin: 0,
+                  padding: '8px',
+                  flex: 1,
+                  minWidth: '80px',
+                  fontSize: '1rem',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setIsFilterModalOpen(false);
+                }}
+              >
+                閉じる
+              </button>
+              <button
+                className="btn"
+                style={{
+                  background: '#10b981',
+                  margin: 0,
+                  padding: '8px',
+                  flex: 1,
+                  minWidth: '80px',
+                  fontSize: '1rem',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setFilters({ ...tempFilters });
+                  setIsFilterModalOpen(false);
+                }}
+              >
+                適用
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </CompactScreenLayout>
   );
 }
