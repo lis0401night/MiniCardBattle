@@ -131,6 +131,8 @@ export async function resolveActiveSkillEffect(
         'spread_void',
         'artillery',
         'dominate',
+        'heal',
+        'heal_void',
       ].includes(skillId)
     ) {
       playSkillSound(skillId);
@@ -1563,6 +1565,18 @@ export async function resolveActiveSkillEffect(
     updateHPBar();
     checkWinCondition();
     await sleep(400);
+  } else if (skillId === 'heal' || skillId === 'heal_void') {
+    if (window.triggerVfx) {
+      window.triggerVfx('anm_skill_heal', o); // 発動したプレイヤー側（o）に対して回復VFXを再生
+      await sleep(150); // 演出開始の瞬間に合わせて回復処理へ移行
+    } else {
+      await sleep(150);
+    }
+    let events = [];
+    applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0, events);
+    if (events.length > 0) {
+      await playEvents(events);
+    }
   } else if (skillId === 'loss') {
     playSound(SOUNDS.seSkill);
     createDamagePopup(cEl, '喪失', '#991b1b');

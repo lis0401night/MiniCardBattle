@@ -29,7 +29,7 @@ export const SE_PATHS = {
   seMetalBlast: 'assets/audio/se/se_metalblast.mp3',
   seFire: 'assets/audio/se/se_fire.mp3',
   seHyoushigi: 'assets/audio/se/se_hyoushigi.mp3',
-  seSkillStealth: 'assets/audio/se/se_skill_stealth.mp3',
+  seSkillHeal: 'assets/audio/se/se_skill_heal.mp3',
   seSkillDominate: 'assets/audio/se/se_skill_dominate.mp3',
 };
 
@@ -86,7 +86,7 @@ export const AUDIO_INSTANCES = {
   seSkillFreeze: new Audio('assets/audio/se/se_skill_freeze.mp3'),
   seSkillCrush: new Audio('assets/audio/se/se_skill_crush.mp3'),
   seSkillSnipe: new Audio('assets/audio/se/se_skill_snipe.mp3'),
-  seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
+  seSkillHeal: new Audio('assets/audio/se/se_skill_heal.mp3'),
   seSkillDominate: new Audio('assets/audio/se/se_skill_dominate.mp3'),
 };
 

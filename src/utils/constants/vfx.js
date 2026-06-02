@@ -273,5 +273,21 @@ export const VFX_DATA = {
     targetSide: 'enemy', // 相手のレーンがターゲット
   },
 
+  // 回復スキル用VFX
+  anm_skill_heal: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_heal.png',
+    columns: 8,
+    rows: 1,
+    frameCount: 8,
+    duration: 400,
+    se: 'seSkillHeal',
+    position: 'hp', // HPゲージ of height に合わせて表示
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    targetSide: 'self', // 回復を受けた側（自分）がターゲット
+  },
+
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK
 };

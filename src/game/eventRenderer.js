@@ -300,7 +300,10 @@ export async function playEvents(events) {
           }
         }
         updateHPBar();
-        playSound(SOUNDS.seSkill);
+        // VFX演出がない回復（吸収等）の場合のみ、通常のSEを再生する（VFX側でseSkillが再生されるため重複防止）
+        if (!['heal', 'heal_void'].includes(ev.source)) {
+          playSound(SOUNDS.seSkill);
+        }
         await sleep(300);
         break;
       }
@@ -569,11 +572,7 @@ export async function playEvents(events) {
         if (ev.source === 'stealth') skillNameText = '潜伏';
         if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
 
-        if (ev.source === 'stealth') {
-          playSound(SOUNDS.seSkillStealth || SOUNDS.seSkill);
-        } else {
-          playSound(SOUNDS.seSkill);
-        }
+        playSound(SOUNDS.seSkill);
         await sleep(200);
         break;
       }
