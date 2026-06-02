@@ -743,11 +743,18 @@ export function loadDeck() {
     if (GameState.gameMode === 'story' && storySaved) {
       try {
         const parsedDeck = JSON.parse(storySaved);
-        if (
+        const isValidStoryDeck =
           parsedDeck &&
-          parsedDeck.leaderId &&
-          Array.isArray(parsedDeck.cards)
-        ) {
+          typeof parsedDeck.leaderId === 'string' &&
+          Array.isArray(parsedDeck.cards) &&
+          parsedDeck.cards.length === DECK_SIZE &&
+          parsedDeck.cards.every((item) => {
+            const id = typeof item === 'string' ? item : item?.id;
+            return (
+              typeof id === 'string' && CARD_MASTER.some((c) => c.id === id)
+            );
+          });
+        if (isValidStoryDeck) {
           activeDeck = parsedDeck;
         } else {
           // 【CodeRabbit指摘反映・データ整合性保護】スナップショットデータが不完全な場合は警告を出し、現在の通常デッキで安全にフォールバック代替する

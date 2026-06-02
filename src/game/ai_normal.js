@@ -685,8 +685,8 @@ export function processActionSequence(
       }
 
       // 出現時スキルを持つ場合は即座に保護フラグを立てる（シミュレーション時も同様に一時的な破壊を防ぐ）
-      if (hasActiveSkill(playedCard)) {
-        playedCard.isSkillResolving = true;
+      if (hasActiveSkill(activeCardForSkills)) {
+        activeCardForSkills.isSkillResolving = true;
       }
 
       let skills = [];
@@ -822,13 +822,13 @@ export function processActionSequence(
       // スキル解決が終わったため、保護フラグを解除する
       // 【招来・詠唱・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
       // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
-      if (playedCard) {
+      if (activeCardForSkills) {
         const hasChainSummon =
-          hasSkill(playedCard, 'invite') ||
-          hasSkill(playedCard, 'chant') ||
-          hasSkill(playedCard, 'forge');
+          hasSkill(activeCardForSkills, 'invite') ||
+          hasSkill(activeCardForSkills, 'chant') ||
+          hasSkill(activeCardForSkills, 'forge');
         if (!hasChainSummon) {
-          playedCard.isSkillResolving = false;
+          activeCardForSkills.isSkillResolving = false;
         }
       }
 
@@ -2560,7 +2560,7 @@ export function evaluateAdhocTokenLanes(
         if (baseP > maxP || resCard.isToken) continue;
 
         for (let j = 0; j < 3; j++) {
-          if (sealedLanes[j] === 1) continue;
+          if (sealedLanes[j] > 0) continue;
           let resNode = {
             type: 'resurrect',
             targetIdx: i,
@@ -2616,7 +2616,7 @@ export function evaluateAdhocTokenLanes(
       // 相手の対象レーンのみを展開（配置レーンは相手の対象レーン i と同じ正面対面レーンに固定）
       for (let i of validOppLanes) {
         const myL = i; // 奪うカードの正面（対面する同じレーン番号）！
-        if (sealedLanes[myL] === 1) continue;
+        if (sealedLanes[myL] > 0) continue;
         let domNode = {
           type: 'dominate',
           oppLaneIdx: i,
@@ -2695,7 +2695,7 @@ export function evaluateAdhocTokenLanes(
         let combos = [];
         let subCombos = generateLaneCombos(remainingCount - 1);
         for (let j = 0; j < 3; j++) {
-          if (sealedLanes[j] === 1) continue;
+          if (sealedLanes[j] > 0) continue;
           for (let sc of subCombos) {
             combos.push([j, ...sc]);
           }
@@ -2813,7 +2813,7 @@ export function evaluateAdhocTokenLanes(
     let availableLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
 
     if (forcedLane !== undefined) {
-      if (sealedLanes[forcedLane] === 1) return [[]];
+      if (sealedLanes[forcedLane] > 0) return [[]];
       availableLanes = [forcedLane];
     } else if (depth > 0) {
       availableLanes.push(-1);

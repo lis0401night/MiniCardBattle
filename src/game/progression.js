@@ -1,10 +1,16 @@
+import { loadDeck, startBattleFlow } from '../services/deck.js';
+import {
+  initSelectScreen,
+  performFadeTransition,
+  showDefenseBattleList,
+  showOnlineLobby,
+} from '../services/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
 import { switchScreen } from '../utils/gameUtils.js';
 import { prepareBattle } from './battle.js';
 import { handleBattleDungeonProgression } from './battleDungeon.js';
 import { onCampaignDialogueEnd } from './campaign.js';
-import { loadDeck, startBattleFlow } from '../services/deck.js';
 import { handleEventProgression } from './events.js';
-import { GameState } from '../state/gameState.js';
 import { handleStoryProgression } from './story.js';
 import {
   playTournamentPostMatchDialogue,
@@ -12,12 +18,6 @@ import {
   playTournamentWinDialogue,
   saveTournamentProgress,
 } from './tournament.js';
-import {
-  initSelectScreen,
-  performFadeTransition,
-  showDefenseBattleList,
-  showOnlineLobby,
-} from '../services/uiMainCore.js';
 
 /**
  * Mini Card Battle - 共通進行管理 (progression.js)
@@ -28,6 +28,7 @@ import {
  * ダイアログ終了後などの「次のステップ」を判定して実行する
  */
 export function handleProgressionNextStep() {
+  // スキルテストモードの場合は即座にモード選択画面に戻る
   if (GameState.gameMode === 'still_test') {
     switchScreen('screen-mode-select');
     return;

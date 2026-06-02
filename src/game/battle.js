@@ -264,6 +264,14 @@ function applySyncState(state) {
     if (cloned.equippedCards && cloned.equippedCards.length > 0) {
       cloned.equippedCards = cloned.equippedCards.map(invertCardOwner);
     }
+    if (cloned.unionMaterials && cloned.unionMaterials.length > 0) {
+      cloned.unionMaterials = cloned.unionMaterials.map(invertCardOwner);
+    }
+    if (cloned.originalRevertTarget) {
+      cloned.originalRevertTarget = invertCardOwner(
+        cloned.originalRevertTarget
+      );
+    }
     return cloned;
   };
 
@@ -2432,7 +2440,6 @@ export async function handleMoveSkills(owner) {
                 renderBoard();
                 await sleep(PLACE_ANIMATION_DURATION);
 
-                await resolveOnPlaySkill(owner, target, unionCard);
                 await cleanupDestroyedCards();
 
                 await sleep(100);
@@ -2505,26 +2512,6 @@ export async function handleMoveSkills(owner) {
               renderBoard();
               await sleep(PLACE_ANIMATION_DURATION);
 
-              // 装備時の追加効果スキル等を解決
-              const skillsToResolve = [...equipSkills];
-              skillsToResolve.sort((a, b) => {
-                const order = { quick: 100, choice: 90 };
-                const orderA = order[a.id] || 0;
-                const orderB = order[b.id] || 0;
-                return orderA - orderB;
-              });
-              for (const sk of skillsToResolve) {
-                if (ACTIVE_SKILLS.includes(sk.id)) {
-                  await resolveActiveSkillEffect(
-                    owner,
-                    target,
-                    existingCard,
-                    sk.id,
-                    sk.value,
-                    sk
-                  );
-                }
-              }
               await cleanupDestroyedCards();
 
               await sleep(100);

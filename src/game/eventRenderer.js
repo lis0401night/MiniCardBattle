@@ -21,6 +21,31 @@ import {
   updateSPOrbs,
 } from '../services/uiBattle.js';
 
+// 狙撃・拡散・迎撃などのVFXトリガー共通処理（DRY原則適用）
+const SNIPE_SKILLS = [
+  'snipe',
+  'snipe_void',
+  'spread',
+  'spread_void',
+  'intercept',
+];
+const SNIPE_DELAY_SKILLS = ['snipe', 'snipe_void', 'intercept'];
+
+async function triggerSnipeVfx(source, side, lane) {
+  if (!SNIPE_SKILLS.includes(source) || !window.triggerVfx) {
+    return false;
+  }
+
+  const triggerSide = side === 'blue' ? 'red' : 'blue';
+  window.triggerVfx('anm_skill_snipe', triggerSide, lane); // 非同期にしてテンポを向上
+
+  if (SNIPE_DELAY_SKILLS.includes(source)) {
+    await sleep(150); // 400msの演出開始に合わせて次の処理へ
+  }
+
+  return true;
+}
+
 /**
  * engine.js が生成したイベントログの配列を受け取り、
  * 順番にアニメーション、ポップアップ、効果音を再生する描画専用モジュール (Renderer)
@@ -49,24 +74,7 @@ export async function playEvents(events) {
         );
 
         // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
-        if (
-          (ev.source === 'snipe' ||
-            ev.source === 'snipe_void' ||
-            ev.source === 'spread' ||
-            ev.source === 'spread_void' ||
-            ev.source === 'intercept') &&
-          window.triggerVfx
-        ) {
-          const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane); // 非同期にしてテンポを向上
-          if (
-            ev.source === 'snipe' ||
-            ev.source === 'snipe_void' ||
-            ev.source === 'intercept'
-          ) {
-            await sleep(150); // 400msの演出開始に合わせて次の処理へ
-          }
-        }
+        await triggerSnipeVfx(ev.source, ev.side, ev.lane);
 
         if (cEl) {
           cEl.classList.remove('anim-shake');
@@ -91,24 +99,7 @@ export async function playEvents(events) {
         );
 
         // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
-        if (
-          (ev.source === 'snipe' ||
-            ev.source === 'snipe_void' ||
-            ev.source === 'spread' ||
-            ev.source === 'spread_void' ||
-            ev.source === 'intercept') &&
-          window.triggerVfx
-        ) {
-          const triggerSide = ev.side === 'blue' ? 'red' : 'blue';
-          window.triggerVfx('anm_skill_snipe', triggerSide, ev.lane); // 非同期にしてテンポを向上
-          if (
-            ev.source === 'snipe' ||
-            ev.source === 'snipe_void' ||
-            ev.source === 'intercept'
-          ) {
-            await sleep(150); // 400msの演出開始に合わせて次の処理へ
-          }
-        }
+        await triggerSnipeVfx(ev.source, ev.side, ev.lane);
 
         if (cEl) {
           createDamagePopup(cEl, '無効', '#94a3b8');

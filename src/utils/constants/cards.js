@@ -2774,6 +2774,16 @@ export const CARD_MASTER = [
       '狂おしき道化師が舞台に立つ時、戦場は血塗られたサーカスへと変わる。残るのは幻影と、抗えぬ絶望のみ。',
   },
   {
+    id: 'scarecrow',
+    name: '呪いの案山子',
+    power: 1,
+    skills: [{ id: 'reflect' }],
+    rarity: 4,
+    voiceCategory: 'undead',
+    flavor:
+      '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
+  },
+  {
     id: 'invader',
     name: '彼方からの侵略者',
     rarity: 4,
@@ -2811,16 +2821,6 @@ export const CARD_MASTER = [
     voiceCategory: 'magic',
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
-  },
-  {
-    id: 'scarecrow',
-    name: '呪いの案山子',
-    power: 1,
-    skills: [{ id: 'reflect' }],
-    rarity: 4,
-    voiceCategory: 'undead',
-    flavor:
-      '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',
   },
   // トークンカード
   {

@@ -4034,40 +4034,52 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           const chosenSide = chosenObj.side;
           const chosenLane = chosenObj.lane;
 
-          if (canTakeDamage(chosenCard, dmgToDef, false)) {
-            chosenCard.currentPower -= dmgToDef;
+          let effectiveDmg = dmgToDef;
+          if (hasSkill(chosenCard, 'invincible')) {
             events.push({
-              type: 'damage_card',
+              type: 'invincible_block',
               side: chosenSide,
               lane: chosenLane,
-              amount: dmgToDef,
-              source: 'reflect',
             });
-          } else {
-            events.push({
-              type: 'immune_block',
-              side: chosenSide,
-              lane: chosenLane,
-              source: 'reflect',
-            });
+            effectiveDmg = 0;
           }
 
-          // 攻撃側のカードが「即死（deadly）」を持っている場合の即死判定
-          if (hasSkill(aC, 'deadly')) {
-            if (!hasSkill(chosenCard, 'immune')) {
-              chosenCard.currentPower = 0;
+          if (effectiveDmg > 0) {
+            if (canTakeDamage(chosenCard, effectiveDmg, false)) {
+              chosenCard.currentPower -= effectiveDmg;
               events.push({
-                type: 'deadly',
+                type: 'damage_card',
                 side: chosenSide,
                 lane: chosenLane,
+                amount: effectiveDmg,
+                source: 'reflect',
               });
             } else {
               events.push({
                 type: 'immune_block',
                 side: chosenSide,
                 lane: chosenLane,
-                source: 'deadly',
+                source: 'reflect',
               });
+            }
+
+            // 攻撃側のカードが「即死（deadly）」を持っている場合の即死判定
+            if (hasSkill(aC, 'deadly')) {
+              if (!hasSkill(chosenCard, 'immune')) {
+                chosenCard.currentPower = 0;
+                events.push({
+                  type: 'deadly',
+                  side: chosenSide,
+                  lane: chosenLane,
+                });
+              } else {
+                events.push({
+                  type: 'immune_block',
+                  side: chosenSide,
+                  lane: chosenLane,
+                  source: 'deadly',
+                });
+              }
             }
           }
           dmgToDef = 0; // 肩代わりさせたので自身のダメージは0
@@ -4123,40 +4135,52 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           const chosenSide = chosenObj.side;
           const chosenLane = chosenObj.lane;
 
-          if (canTakeDamage(chosenCard, dmgToAtk, false)) {
-            chosenCard.currentPower -= dmgToAtk;
+          let effectiveDmg = dmgToAtk;
+          if (hasSkill(chosenCard, 'invincible')) {
             events.push({
-              type: 'damage_card',
+              type: 'invincible_block',
               side: chosenSide,
               lane: chosenLane,
-              amount: dmgToAtk,
-              source: 'reflect',
             });
-          } else {
-            events.push({
-              type: 'immune_block',
-              side: chosenSide,
-              lane: chosenLane,
-              source: 'reflect',
-            });
+            effectiveDmg = 0;
           }
 
-          // 防御側（反撃元）のカードが「即死（deadly）」を持っている場合の即死判定
-          if (originalTarget && hasSkill(originalTarget, 'deadly')) {
-            if (!hasSkill(chosenCard, 'immune')) {
-              chosenCard.currentPower = 0;
+          if (effectiveDmg > 0) {
+            if (canTakeDamage(chosenCard, effectiveDmg, false)) {
+              chosenCard.currentPower -= effectiveDmg;
               events.push({
-                type: 'deadly',
+                type: 'damage_card',
                 side: chosenSide,
                 lane: chosenLane,
+                amount: effectiveDmg,
+                source: 'reflect',
               });
             } else {
               events.push({
                 type: 'immune_block',
                 side: chosenSide,
                 lane: chosenLane,
-                source: 'deadly',
+                source: 'reflect',
               });
+            }
+
+            // 防御側（反撃元）のカードが「即死（deadly）」を持っている場合の即死判定
+            if (originalTarget && hasSkill(originalTarget, 'deadly')) {
+              if (!hasSkill(chosenCard, 'immune')) {
+                chosenCard.currentPower = 0;
+                events.push({
+                  type: 'deadly',
+                  side: chosenSide,
+                  lane: chosenLane,
+                });
+              } else {
+                events.push({
+                  type: 'immune_block',
+                  side: chosenSide,
+                  lane: chosenLane,
+                  source: 'deadly',
+                });
+              }
             }
           }
           dmgToAtk = 0; // 肩代わりさせたので自身のダメージは0

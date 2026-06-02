@@ -204,7 +204,9 @@ export default function TournamentExchangeScreen({ switchScreen }) {
 
   const handleBack = () => {
     playSound(SOUNDS?.seClick);
-    if (switchScreen) switchScreen('screen-tournament-menu');
+    if (typeof switchScreen === 'function') {
+      switchScreen('screen-tournament-menu');
+    }
   };
 
   // タイトルを10回クリックで大会ポイントを100Pt獲得するイースターエッグ

@@ -1819,12 +1819,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             targetDeck.playerSkins = {};
                           targetDeck.playerSkins[charDetailData.id] = skinId;
 
-                          // GameState上のスキン状態も同期
-                          GameState.playerSkins = {
-                            ...GameState.playerSkins,
-                            [charDetailData.id]: skinId,
-                          };
-
                           // 各モードに応じたLocalStorageセーブ
                           if (GameState.gameMode === 'defense_register') {
                             localStorage.setItem(
