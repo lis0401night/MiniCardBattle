@@ -51,7 +51,10 @@ export default function BattleScreen({ showRulesModal }) {
   const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(() => {
+    // すでにバトルフェーズが進行している場合（フォールバックや別ルートでMULLIGANやBATTLEに入っている場合）は操作ロックをかけない
+    return !GameState.battlePhase || GameState.battlePhase === 'INIT';
+  });
   const [startTurnOrderAnim, setStartTurnOrderAnim] = useState(false);
   const [summonAnim, setSummonAnim] = useState({
     active: false,
@@ -105,6 +108,16 @@ export default function BattleScreen({ showRulesModal }) {
     window.onBattlePresetReady = () => {
       setIsInitializing(false);
     };
+
+    // マウント時にすでにバトルフェーズが進行している場合のフェイルセーフ
+    if (GameState.battlePhase && GameState.battlePhase !== 'INIT') {
+      setIsInitializing(false);
+    }
+
+    // マウント完了と演出関数の準備が整ったことをバトル進行側に通知
+    if (typeof window.onBattleScreenReady === 'function') {
+      window.onBattleScreenReady();
+    }
 
     return () => {
       window.startTurnOrderReact = null;

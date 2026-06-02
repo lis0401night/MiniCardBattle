@@ -625,10 +625,24 @@ export function initBattleState() {
     // バトル画面への遷移シグナル。ここから先は BattleScreen.jsx に委ねる
     switchScreen('screen-battle');
 
-    // 画面切り替えとDOM構成を待機してから戦闘開始処理へ
-    setTimeout(() => {
-      determineTurnOrder();
-    }, 1000);
+    // セーフティタイムアウト（万が一マウントが完全に失敗した場合のフリーズ防止用保険）
+    const safetyTimeout = setTimeout(() => {
+      if (window.onBattleScreenReady) {
+        console.warn('BattleScreen ready timed out. Forcing start...');
+        window.onBattleScreenReady();
+      }
+    }, 4000); // 4秒のセーフティ
+
+    // React側のマウント完了コールバックを待つ
+    window.onBattleScreenReady = () => {
+      clearTimeout(safetyTimeout);
+      window.onBattleScreenReady = null;
+
+      // 演出が唐突に始まらないよう、マウント完了から正確に1秒待って開始する
+      setTimeout(() => {
+        determineTurnOrder();
+      }, 1000);
+    };
   } catch (e) {
     console.error('Critical error in initBattleState:', e);
     showAlertModal(
