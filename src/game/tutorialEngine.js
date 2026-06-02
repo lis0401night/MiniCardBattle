@@ -1688,6 +1688,7 @@ export function startTutorial(tutorialId) {
     stepIndex: 0,
     waitingForInput: false,
     turnPhase: null,
+    battleEnded: false, // バトルが終了してhandleTutorialEndが呼ばれたことを示すフラグ
   };
 
   // バトルプリセットを設定
@@ -1737,11 +1738,11 @@ export async function runTutorialFlow() {
 
     switch (step.type) {
       case 'message':
-        // 勝利メッセージは、ゲームが終了する（HPが0になる）まで待機する共通ロジック
+        // 勝利メッセージは、バトル終了処理が呼び出されるまで待機する共通ロジック（重複した多重実行を防ぐためにbattleEndedフラグで判定）
         if (
           step.id &&
           step.id.includes('victory') &&
-          !GameState.isBattleEnded
+          (!GameState.tutorial || !GameState.tutorial.battleEnded)
         ) {
           return; // バトル終了（handleTutorialEnd）からの再開を待つ
         }
@@ -2020,6 +2021,11 @@ export function handleTutorialEnd() {
 
   // チュートリアルクリア状況を LocalStorage に保存
   completeTutorial(tutorialId);
+
+  // バトル終了フラグをセットして、勝利メッセージへ進めるようにする
+  if (GameState.tutorial) {
+    GameState.tutorial.battleEnded = true;
+  }
 
   // 後続のステップ（勝利メッセージ等）をすべて実行
   runTutorialFlow().then(() => {
