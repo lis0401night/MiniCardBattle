@@ -219,7 +219,12 @@ export default function CardListScreen() {
       >
         <div
           id="card-list-count"
-          style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: 0, textAlign: 'center' }}
+          style={{
+            fontSize: '0.9rem',
+            color: '#cbd5e1',
+            margin: 0,
+            textAlign: 'center',
+          }}
         >
           カード種類: {ownedKindCount} / {masterCards.length}
         </div>

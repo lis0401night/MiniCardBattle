@@ -132,6 +132,8 @@ export function saveStoryProgress() {
       'mini_card_battle_story_deck_obj',
       JSON.stringify(storyDeckSnapshot)
     );
+  } else {
+    localStorage.removeItem('mini_card_battle_story_deck_obj');
   }
 }
 
