@@ -255,8 +255,10 @@ function applySyncState(state) {
     if (cloned.owner === 'blue') cloned.owner = 'red';
     else if (cloned.owner === 'red') cloned.owner = 'blue';
 
-    if (cloned.puppetOriginalOwner === 'blue') cloned.puppetOriginalOwner = 'red';
-    else if (cloned.puppetOriginalOwner === 'red') cloned.puppetOriginalOwner = 'blue';
+    if (cloned.puppetOriginalOwner === 'blue')
+      cloned.puppetOriginalOwner = 'red';
+    else if (cloned.puppetOriginalOwner === 'red')
+      cloned.puppetOriginalOwner = 'blue';
 
     // 装備されているカード（equippedCards）も再帰的に反転する
     if (cloned.equippedCards && cloned.equippedCards.length > 0) {
@@ -271,13 +273,15 @@ function applySyncState(state) {
     if (!arr) {
       result = len !== null ? Array(len).fill(null) : [];
     } else if (Array.isArray(arr)) {
-      result = len !== null
-        ? Array.from({ length: len }, (_, i) => arr[i] || null)
-        : arr;
+      result =
+        len !== null
+          ? Array.from({ length: len }, (_, i) => arr[i] || null)
+          : arr;
     } else if (typeof arr === 'object') {
-      result = len !== null
-        ? Array.from({ length: len }, (_, i) => arr[i] || null)
-        : Object.values(arr);
+      result =
+        len !== null
+          ? Array.from({ length: len }, (_, i) => arr[i] || null)
+          : Object.values(arr);
     } else {
       result = len !== null ? Array(len).fill(null) : [];
     }
