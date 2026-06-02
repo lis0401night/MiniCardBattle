@@ -198,7 +198,7 @@ export async function unlockAudio() {
     osc.stop(0.1);
 
     isAudioUnlocked = true;
-    console.log('Web Audio Context Unlocked and SE Buffers Loaded');
+    console.log('Web Audio Context Unlocked and SE Buffers Loading...');
 
     // バックグラウンド・フォアグラウンド移行時の音声バグ対策 (iOS/Android Safari, Chrome)
     if (typeof document !== 'undefined') {

@@ -225,35 +225,36 @@ export default function BattleDungeonScreen() {
  * 再開・やり直し選択画面
  */
 function ResumeSelect() {
-  const saveData = useMemo(() => {
+  const [saveData, setSaveData] = useState(null);
+
+  useEffect(() => {
     const json = localStorage.getItem('mini_card_battle_dungeon_save');
     if (json) {
       try {
-        return JSON.parse(json);
+        setSaveData(JSON.parse(json));
       } catch (e) {
         console.error('ダンジョンセーブデータのパースに失敗しました:', e);
         // 【データ整合性担保】破損セーブデータをクリアし、自動的に最初から開始する導線へ強制リセットする
         localStorage.removeItem('mini_card_battle_dungeon_save');
-        setTimeout(() => {
-          GameState.dungeonState = 'select_rental_deck';
-          GameState.dungeonWinStreak = 0;
-          GameState.dungeonCards = [];
-          GameState.dungeonOpponents = [];
-          GameState.playerDeckSelection = null;
-          delete GameState.dungeonPlayerHP;
-          if (window.renderBattleDungeonReact)
-            window.renderBattleDungeonReact();
 
-          if (showAlertModal) {
-            showAlertModal(
-              '中断セーブデータが破損していたため、消去して最初から開始します。'
-            );
-          }
-        }, 50);
-        return null;
+        GameState.dungeonState = 'select_rental_deck';
+        GameState.dungeonWinStreak = 0;
+        GameState.dungeonCards = [];
+        GameState.dungeonOpponents = [];
+        GameState.playerDeckSelection = null;
+        delete GameState.dungeonPlayerHP;
+
+        if (window.renderBattleDungeonReact) {
+          window.renderBattleDungeonReact();
+        }
+
+        if (showAlertModal) {
+          showAlertModal(
+            '中断セーブデータが破損していたため、消去して最初から開始します。'
+          );
+        }
       }
     }
-    return null;
   }, []);
   const pConf = saveData?.playerConfig || {
     name: 'Player',

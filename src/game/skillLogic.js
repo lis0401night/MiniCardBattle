@@ -1570,6 +1570,7 @@ export async function resolveActiveSkillEffect(
       window.triggerVfx('anm_skill_heal', o); // 発動したプレイヤー側（o）に対して回復VFXを再生
       await sleep(150); // 演出開始の瞬間に合わせて回復処理へ移行
     } else {
+      playSound(SOUNDS.seSkillHeal);
       await sleep(150);
     }
     let events = [];
@@ -2692,6 +2693,9 @@ export async function resolveActiveSkillEffect(
         if (window.triggerVfx) {
           window.triggerVfx('anm_skill_dominate', o, selectedOppLane);
           await sleep(400); // 400msのエフェクトが相手カードを包み込むのを待ってから移動処理へ移行
+        } else {
+          playSound(SOUNDS.seSkillDominate);
+          await sleep(400);
         }
 
         // 相手のレーンから取り除く

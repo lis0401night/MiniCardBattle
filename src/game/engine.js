@@ -2223,6 +2223,7 @@ export function applyLeaderSkillLogic(
         !hasSkill(selectedCard, 'reflect')
       ) {
         const targetCard = board[targetLane];
+        targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
         targetCard.basePower =
           (targetCard.basePower || 0) + (selectedCard.power || 0);
         targetCard.currentPower =

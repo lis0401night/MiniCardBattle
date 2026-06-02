@@ -45,6 +45,37 @@ function hasActiveSkill(c) {
  */
 const METAMORPH_ESTIMATED_POWER = 5;
 
+/**
+ * ボード上の全カードの「無敵（invincible）」スキルの持続ターンを減退・解除する共通ヘルパー
+ * @param {Array} board - カードの配列 (playerBoard または enemyBoard)
+ */
+function decayInvincibleSkills(board) {
+  if (!Array.isArray(board)) return;
+  board.forEach((c) => {
+    if (!c) return;
+
+    // 1. メインの skill フィールドが invincible の場合
+    if (c.skill === 'invincible') {
+      c.skillValue = (c.skillValue || 1) - 1;
+      if (c.skillValue <= 0) {
+        c.skill = 'none';
+        c.skillValue = 0;
+      }
+    }
+
+    // 2. skills 配列内に invincible がある場合
+    if (Array.isArray(c.skills)) {
+      const invSk = c.skills.find((s) => s.id === 'invincible');
+      if (invSk) {
+        invSk.value--;
+        if (invSk.value <= 0) {
+          c.skills = c.skills.filter((s) => s !== invSk);
+        }
+      }
+    }
+  });
+}
+
 const cloneCard = (c) => (c ? structuredClone(c) : null);
 
 const getCombinations = (arr, k) => {
@@ -847,29 +878,7 @@ export function processActionSequence(
 
   if (!(simState.extraTurnCount > 0)) {
     // 【修正】プレイヤーのターン開始に伴い、プレイヤー側カードの「無敵（invincible）」スキル持続ターンを減退・解除する
-    simState.playerBoard.forEach((c) => {
-      if (!c) return;
-
-      // 1. メインの skill フィールドが invincible の場合
-      if (c.skill === 'invincible') {
-        c.skillValue = (c.skillValue || 1) - 1;
-        if (c.skillValue <= 0) {
-          c.skill = 'none';
-          c.skillValue = 0;
-        }
-      }
-
-      // 2. skills 配列内に invincible がある場合
-      if (Array.isArray(c.skills)) {
-        const invSk = c.skills.find((s) => s.id === 'invincible');
-        if (invSk) {
-          invSk.value--;
-          if (invSk.value <= 0) {
-            c.skills = c.skills.filter((s) => s !== invSk);
-          }
-        }
-      }
-    });
+    decayInvincibleSkills(simState.playerBoard);
 
     applyPassiveSkillLogic(simState, 'blue');
     simState.playerBoard.forEach((c) => {
@@ -3685,29 +3694,7 @@ export function simulateMove(
   const hpBeforeCombat = simState.enemyHP;
   if (!(simState.extraTurnCount > 0)) {
     // 【修正】プレイヤーのターン開始に伴い、プレイヤー側カードの「無敵（invincible）」スキル持続ターンを減退・解除する
-    simState.playerBoard.forEach((c) => {
-      if (!c) return;
-
-      // 1. メインの skill フィールドが invincible の場合
-      if (c.skill === 'invincible') {
-        c.skillValue = (c.skillValue || 1) - 1;
-        if (c.skillValue <= 0) {
-          c.skill = 'none';
-          c.skillValue = 0;
-        }
-      }
-
-      // 2. skills 配列内に invincible がある場合
-      if (Array.isArray(c.skills)) {
-        const invSk = c.skills.find((s) => s.id === 'invincible');
-        if (invSk) {
-          invSk.value--;
-          if (invSk.value <= 0) {
-            c.skills = c.skills.filter((s) => s !== invSk);
-          }
-        }
-      }
-    });
+    decayInvincibleSkills(simState.playerBoard);
 
     // 【絶対厳守】プレイヤーの攻撃フェーズのみシミュレート。AI of the attackは次AIターンなので範囲外。
     applyPassiveSkillLogic(simState, 'blue');

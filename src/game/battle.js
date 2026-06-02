@@ -1065,6 +1065,31 @@ export async function waitPlayerLaneSelection(
 }
 
 /**
+ * 対象カードに配置カードを装備可能かどうかを判定する共通ヘルパー関数
+ * （憑依・反射などの装備禁止スキル持ちのカードは除外する）
+ * @param {object} playingCard - 配置・移動しようとしているカード
+ * @param {object} targetCard - 盤面の配置先にあるカード
+ * @returns {boolean} 装備可能ならtrue、不可能ならfalse
+ */
+export function canEquipCard(playingCard, targetCard) {
+  if (!playingCard || !targetCard) return false;
+
+  // 1. 基本的な装備スキル/武装スキルの所持チェック
+  const hasEquipAbility =
+    hasSkill(playingCard, 'equip') || hasSkill(targetCard, 'arm_self');
+  if (!hasEquipAbility) return false;
+
+  // 2. 装備禁止（憑依・反射）のチェック
+  const hasRestriction =
+    hasSkill(targetCard, 'possession') ||
+    hasSkill(playingCard, 'possession') ||
+    hasSkill(targetCard, 'reflect') ||
+    hasSkill(playingCard, 'reflect');
+
+  return !hasRestriction;
+}
+
+/**
  * 既存カードがあるレーンへの配置・移動・召喚時に、合体・装備・破棄の確認モーダルを表示します。
  * 状態の変更（カードの破棄など）は行いません。
  * @param {string} owner - 'blue' | 'red'
@@ -1115,13 +1140,8 @@ export async function confirmOverwrittenLane(
     return true;
   }
 
-  // 2. 装備の判定
-  if (
-    (tokenCard &&
-      typeof hasSkill === 'function' &&
-      hasSkill(tokenCard, 'equip')) ||
-    (typeof hasSkill === 'function' && hasSkill(existingCard, 'arm_self'))
-  ) {
+  // 2. 装備の判定（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
+  if (canEquipCard(tokenCard, existingCard)) {
     const confirmed = await new Promise((res) => {
       showConfirmModal(
         `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
@@ -2462,15 +2482,8 @@ export async function handleMoveSkills(owner) {
               }
             }
 
-            // 2. 装備（Equip / Arm Self）の判定と処理
-            if (
-              !didUnion &&
-              (hasSkill(c, 'equip') || hasSkill(existingCard, 'arm_self')) &&
-              !hasSkill(existingCard, 'possession') &&
-              !hasSkill(c, 'possession') &&
-              !hasSkill(existingCard, 'reflect') &&
-              !hasSkill(c, 'reflect')
-            ) {
+            // 2. 装備（Equip / Arm Self）の判定と処理（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
+            if (!didUnion && canEquipCard(c, existingCard)) {
               // 装備によるパワー加算
               existingCard.basePower =
                 (existingCard.basePower || 0) + (c.power || 0);
@@ -2877,129 +2890,115 @@ export async function playCard(o, hI, l) {
       return true;
     }
 
-    if (
-      hasSkill(playingCard, 'equip') ||
-      (b[l] && hasSkill(b[l], 'arm_self'))
-    ) {
+    // 2. 装備（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
+    if (canEquipCard(playingCard, b[l])) {
       const targetCard = b[l];
+      // 装備によるパワー加算
+      targetCard.basePower =
+        (targetCard.basePower || 0) + (playingCard.power || 0);
+      targetCard.currentPower =
+        (targetCard.currentPower || 0) + (playingCard.power || 0);
 
-      // 【憑依】：「憑依」を持つカードには装備できない。また「憑依」を持つカード自身も装備になれない。
-      if (
-        targetCard &&
-        (hasSkill(targetCard, 'possession') ||
-          hasSkill(playingCard, 'possession') ||
-          hasSkill(targetCard, 'reflect') ||
-          hasSkill(playingCard, 'reflect'))
-      ) {
-        // possession チェック: equip 処理をスキップし、下の通常上書き配置へ進む
-      } else if (targetCard) {
-        // 装備によるパワー加算
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (playingCard.power || 0);
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (playingCard.power || 0);
-
-        // スキルの統合
-        if (!targetCard.skills) {
-          targetCard.skills =
-            targetCard.skill !== 'none'
-              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-              : [];
-          if (targetCard.skill !== 'none' && targetCard.summonId) {
-            targetCard.skills[0].summonId = targetCard.summonId;
-          }
-          if (targetCard.skill !== 'none' && targetCard.targetId) {
-            targetCard.skills[0].targetId = targetCard.targetId;
-          }
-          targetCard.skill = 'none';
+      // スキルの統合
+      if (!targetCard.skills) {
+        targetCard.skills =
+          targetCard.skill !== 'none'
+            ? [{ id: targetCard.skill, value: targetCard.skillValue }]
+            : [];
+        if (targetCard.skill !== 'none' && targetCard.summonId) {
+          targetCard.skills[0].summonId = targetCard.summonId;
         }
-
-        const equipSkills = [];
-        if (
-          playingCard.skill &&
-          playingCard.skill !== 'none' &&
-          playingCard.skill !== 'equip'
-        ) {
-          equipSkills.push({
-            id: playingCard.skill,
-            value: playingCard.skillValue,
-          });
+        if (targetCard.skill !== 'none' && targetCard.targetId) {
+          targetCard.skills[0].targetId = targetCard.targetId;
         }
-        if (playingCard.skills) {
-          playingCard.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        }
-        mergeCardSkills(targetCard, equipSkills);
-
-        // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
-        if (playingCard.choices && playingCard.choices.length > 0) {
-          targetCard.choices = targetCard.choices || [];
-          playingCard.choices.forEach((pc) => {
-            const isDup = targetCard.choices.some(
-              (tc) =>
-                tc.id === pc.id &&
-                tc.value === pc.value &&
-                tc.choiceGroup === pc.choiceGroup
-            );
-            if (!isDup) targetCard.choices.push({ ...pc });
-          });
-        }
-        if (playingCard.choices2 && playingCard.choices2.length > 0) {
-          targetCard.choices2 = targetCard.choices2 || [];
-          playingCard.choices2.forEach((pc) => {
-            const isDup = targetCard.choices2.some(
-              (tc) =>
-                tc.id === pc.id &&
-                tc.value === pc.value &&
-                tc.choiceGroup === pc.choiceGroup
-            );
-            if (!isDup) targetCard.choices2.push({ ...pc });
-          });
-        }
-
-        // 手札の装備カードを消費して対象カードにアタッチ
-        const consumedCard = h.splice(hI, 1)[0];
-        targetCard.equippedCards = targetCard.equippedCards || [];
-        targetCard.equippedCards.push(consumedCard);
-
-        // 配置音・ボイス
-        playSound(SOUNDS.sePlace);
-        if (playingCard.voiceCategory)
-          playCardVoice(playingCard.voiceCategory, 'play');
-
-        if (o === 'blue') {
-          GameState.selectedCardIndex = null;
-          updateCardDetail(null);
-        }
-        renderHand();
-        renderBoard();
-
-        // 装備カードが持っていたアクティブスキルを即時発動させる
-        for (const sk of equipSkills) {
-          if (ACTIVE_SKILLS.includes(sk.id)) {
-            await sleep(50);
-            const enhancedSk = {
-              ...sk,
-              _sourceChoices: playingCard.choices,
-              _sourceChoices2: playingCard.choices2,
-            };
-            await resolveActiveSkillEffect(
-              o,
-              l,
-              targetCard,
-              sk.id,
-              sk.value,
-              enhancedSk
-            );
-          }
-        }
-
-        await sleep(100);
-        renderBoard();
-        await cleanupDestroyedCards();
-        return true; // 装備完了
+        targetCard.skill = 'none';
       }
+
+      const equipSkills = [];
+      if (
+        playingCard.skill &&
+        playingCard.skill !== 'none' &&
+        playingCard.skill !== 'equip'
+      ) {
+        equipSkills.push({
+          id: playingCard.skill,
+          value: playingCard.skillValue,
+        });
+      }
+      if (playingCard.skills) {
+        playingCard.skills.forEach((s) => {
+          if (s.id !== 'equip') equipSkills.push(s);
+        });
+      }
+      mergeCardSkills(targetCard, equipSkills);
+
+      // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
+      if (playingCard.choices && playingCard.choices.length > 0) {
+        targetCard.choices = targetCard.choices || [];
+        playingCard.choices.forEach((pc) => {
+          const isDup = targetCard.choices.some(
+            (tc) =>
+              tc.id === pc.id &&
+              tc.value === pc.value &&
+              tc.choiceGroup === pc.choiceGroup
+          );
+          if (!isDup) targetCard.choices.push({ ...pc });
+        });
+      }
+      if (playingCard.choices2 && playingCard.choices2.length > 0) {
+        targetCard.choices2 = targetCard.choices2 || [];
+        playingCard.choices2.forEach((pc) => {
+          const isDup = targetCard.choices2.some(
+            (tc) =>
+              tc.id === pc.id &&
+              tc.value === pc.value &&
+              tc.choiceGroup === pc.choiceGroup
+          );
+          if (!isDup) targetCard.choices2.push({ ...pc });
+        });
+      }
+
+      // 手札の装備カードを消費して対象カードにアタッチ
+      const consumedCard = h.splice(hI, 1)[0];
+      targetCard.equippedCards = targetCard.equippedCards || [];
+      targetCard.equippedCards.push(consumedCard);
+
+      // 配置音・ボイス
+      playSound(SOUNDS.sePlace);
+      if (playingCard.voiceCategory)
+        playCardVoice(playingCard.voiceCategory, 'play');
+
+      if (o === 'blue') {
+        GameState.selectedCardIndex = null;
+        updateCardDetail(null);
+      }
+      renderHand();
+      renderBoard();
+
+      // 装備カードが持っていたアクティブスキルを即時発動させる
+      for (const sk of equipSkills) {
+        if (ACTIVE_SKILLS.includes(sk.id)) {
+          await sleep(50);
+          const enhancedSk = {
+            ...sk,
+            _sourceChoices: playingCard.choices,
+            _sourceChoices2: playingCard.choices2,
+          };
+          await resolveActiveSkillEffect(
+            o,
+            l,
+            targetCard,
+            sk.id,
+            sk.value,
+            enhancedSk
+          );
+        }
+      }
+
+      await sleep(100);
+      renderBoard();
+      await cleanupDestroyedCards();
+      return true; // 装備完了
     }
     // 通常の上書き配置時の破棄処理（装備でも合体でもない場合、破壊効果は発動させない）
     if (!(await discardCard(o, b[l], l, false))) b[l] = null;
