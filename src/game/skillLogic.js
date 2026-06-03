@@ -77,48 +77,25 @@ export async function resolveActiveSkillEffect(
   const dS = o === 'blue' ? 'enemy' : 'player';
 
   // 演出用のポップアップと音（一括した基本演出）
-  if (
-    [
-      'support',
-      'hero',
-      'lone_wolf',
-      'morph',
-      'spread',
-      'snipe',
-      'berserk',
-      'heal',
-      'charge',
-      'sacrifice',
-      'quick',
-      'choice',
-      'artillery',
-      'decree',
-      'standby',
-      'resurrect',
-      'summon',
-      'salvage',
-      'dispel',
-      'seal',
-      'crush',
-      'adversity',
-      'double_power',
-      'invite',
-      'decay',
-      'puppet',
-      'leap',
-      'chant',
-      'forge',
-      'explore',
-      'cull',
-      'execute',
-      'dominate',
-      'sublimation',
-      'snipe_void',
-      'heal_void',
-      'spread_void',
-      'support_void',
-    ].includes(skillId)
-  ) {
+  // 演出用のポップアップと音（一括した基本演出）
+  // ※ すでに個別ロジック内で個別の色やタイミングで createDamagePopup を実行しているスキルは除外する
+  const EXCLUDE_POPUP_SKILLS = [
+    'draw',
+    'shuffle',
+    'fate',
+    'toxic',
+    'bind',
+    'freeze',
+    'loss',
+    'burial',
+    'recurse',
+    'bless',
+    'call',
+    'reinforce',
+    'metamorph',
+  ];
+
+  if (ACTIVE_SKILLS.includes(skillId)) {
     // VFX演出を持つスキルは、VFX側で効果音（se）が再生されるため、ここでの重複再生を無効化する
     if (
       ![
@@ -133,6 +110,7 @@ export async function resolveActiveSkillEffect(
         'dominate',
         'heal',
         'heal_void',
+        'metamorph',
       ].includes(skillId)
     ) {
       playSkillSound(skillId);
@@ -155,6 +133,7 @@ export async function resolveActiveSkillEffect(
       standby: '待機',
       resurrect: '復活',
       summon: '召喚',
+      clone: '分身',
       salvage: '回収',
       dispel: '解除',
       seal: '結界',
@@ -176,9 +155,31 @@ export async function resolveActiveSkillEffect(
       heal_void: '回復(虚)',
       spread_void: '拡散(虚)',
       support_void: '援護(虚)',
+      call: '号令',
+      bless: '祝福',
+      draw: '入替',
+      spend: '消費',
+      stealth: '潜伏',
+      force: '命令',
+      metamorph: '変身',
+      shuffle: '攪乱',
+      fate: '運命',
+      reinforce: '増援',
+      toxic: '有毒',
+      convert: '対価',
+      invade: '侵略',
+      petrify: '石化',
+      freeze: '凍結',
+      loss: '喪失',
+      burial: '埋葬',
+      recurse: '再帰',
+      replicate: '複製',
+      hack: '改竄',
     };
-    if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
-    await sleep(200); // Popupを見せる間
+    if (!EXCLUDE_POPUP_SKILLS.includes(skillId)) {
+      if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
+      await sleep(200); // Popupを見せる間
+    }
   }
 
   // --- ロジックの実行 (Engineの呼び出し) ---
@@ -549,7 +550,7 @@ export async function resolveActiveSkillEffect(
     // 演出
     playSkillSound(skillId);
     if (cEl) {
-      createDamagePopup(cEl, '変相', '#facc15');
+      createDamagePopup(cEl, '変身', '#facc15');
       cEl.classList.add('anim-shake');
       await sleep(300);
     }
