@@ -377,8 +377,11 @@ export async function executeLeaderSkillAction(
           false,
           '配置終了'
         );
-        if (selectedAlliedLanes === null || selectedAlliedLanes.length === 0)
-          return;
+        if (selectedAlliedLanes === null) return;
+        if (selectedAlliedLanes.length === 0) {
+          successSoul = true;
+          continue;
+        }
         const l = selectedAlliedLanes[0];
         const proceed = await confirmOverwrittenLane(owner, tSoul, l, false);
         if (!proceed) {
@@ -411,7 +414,7 @@ export async function executeLeaderSkillAction(
       tokenLanes,
       false
     );
-    if (!selectedLanes || selectedLanes.length === 0) return;
+    if (!selectedLanes) return;
     const validSelectedLanes = [];
     for (const l of selectedLanes) {
       const proceed = await confirmOverwrittenLane(owner, tK, l, false);
@@ -419,7 +422,6 @@ export async function executeLeaderSkillAction(
         validSelectedLanes.push(l);
       }
     }
-    if (validSelectedLanes.length === 0) return;
     tokenLanes = validSelectedLanes;
   } else if (
     action === 'targeted_destruction' ||
@@ -488,7 +490,12 @@ export async function executeLeaderSkillAction(
           null,
           false
         );
-        if (!myLanes || myLanes.length === 0) return;
+        if (!myLanes) return;
+        if (myLanes.length === 0) {
+          l = -1;
+          successBear = true;
+          continue;
+        }
         l = myLanes[0];
         const proceed = await confirmOverwrittenLane(owner, token, l, false);
         if (!proceed) {
