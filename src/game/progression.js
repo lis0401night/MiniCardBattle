@@ -28,9 +28,39 @@ import {
  * ダイアログ終了後などの「次のステップ」を判定して実行する
  */
 export function handleProgressionNextStep() {
+  // gameModeが設定されていない場合は安全にモード選択画面に戻る
+  if (!GameState.gameMode) {
+    switchScreen('screen-mode-select');
+    return;
+  }
   // スキルテストモードの場合は即座にモード選択画面に戻る
   if (GameState.gameMode === 'still_test') {
     switchScreen('screen-mode-select');
+    return;
+  }
+  // カード獲得演出デモモードの場合
+  if (GameState.gameMode === 'reward_demo') {
+    const characterRewardMap = {
+      android: 'killermachine',
+      dragon: 'dragon',
+      knight: 'nobleknight',
+      cthulhu: 'cthulhu',
+      elf: 'elfking',
+      cleric: 'cleric',
+      devilhunter: 'vampire',
+      witch: 'witch',
+      oni: 'omyouji',
+      priest: 'voidcleric',
+      satan: 'baphomet',
+    };
+    const enemyId = GameState.enemyConfig?.id || 'android';
+    const rewardCardId = characterRewardMap[enemyId] || 'skeleton';
+
+    if (window.showCardRewardReact) {
+      window.showCardRewardReact(rewardCardId);
+    } else {
+      switchScreen('screen-solo-menu');
+    }
     return;
   }
   if (GameState.gameMode === 'free') {
@@ -47,8 +77,8 @@ export function handleProgressionNextStep() {
       switchScreen('screen-mode-select');
     }
   } else if (
-    GameState.gameMode.startsWith('event_') &&
-    GameState.gameMode.endsWith('_high')
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
   ) {
     if (typeof handleEventProgression === 'function') {
       handleEventProgression();
