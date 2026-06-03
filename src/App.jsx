@@ -87,33 +87,9 @@ window.SOUNDS = SOUNDS;
 
 const LoadingScreen = () => (
   <div id="screen-loading" className="screen active">
-    <div
-      style={{
-        textAlign: 'center',
-        color: '#f8fafc',
-        fontSize: '24px',
-        fontWeight: 'bold',
-        fontFamily: 'Outfit, Noto Sans JP, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          border: '4px solid rgba(248, 250, 252, 0.1)',
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          borderLeftColor: '#38bdf8',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 20px auto',
-        }}
-      ></div>
+    <div className="loading-content">
+      <div className="loading-spinner"></div>
       LOADING...
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   </div>
 );

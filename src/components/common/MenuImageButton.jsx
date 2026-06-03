@@ -7,7 +7,7 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {string} label - ボタンのラベルテキスト
  * @param {string} image - 背景画像のURL
  * @param {function} onClick - クリックイベントハンドラ
- * @param {Object} style - 背景（menu-img-bg）に適用する任意のカスタムスタイル（背景色など）
+ * @param {Object} style - 背景（menu-img-bg）に適用する任意のカスタムスタイル（背景色など）。backgroundImageを含めるとimageプロップを上書きします。
  */
 export default function MenuImageButton({ label, image, onClick, style }) {
   const handleClick = (e) => {
