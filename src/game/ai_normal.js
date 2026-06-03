@@ -187,6 +187,7 @@ export function processActionSequence(
     }
   }
 
+  let parentCardOnLane = [null, null, null];
   for (let action of actionQueue) {
     if (action.type === 'pass') continue;
     // choice/forceノードはメタ情報のみ（choices指定）で、カード配置には関与しない
@@ -206,6 +207,7 @@ export function processActionSequence(
             hasSkill(c, 'chant') ||
             hasSkill(c, 'forge')
           ) {
+            parentCardOnLane[i] = c; // 親カードの参照を記録
             c.isSkillResolving = false;
             if (c.currentPower <= 0) {
               simState.enemyBoard[i] = null;
@@ -526,20 +528,25 @@ export function processActionSequence(
         simState.playerBoard[lIdx] === null
       )
         return null;
-      if (
-        hasSkill(playedCard, 'takeover') &&
-        simState.enemyBoard[lIdx] === null
-      )
-        return null;
+      if (hasSkill(playedCard, 'takeover')) {
+        const hasExisting =
+          simState.enemyBoard[lIdx] !== null || parentCardOnLane[lIdx] !== null;
+        if (!hasExisting) return null;
+      }
       if (hasSkill(playedCard, 'legendary') && lIdx !== 1) return null;
-      if (
-        hasSkill(playedCard, 'apex') &&
-        !(
-          simState.enemyBoard[lIdx] &&
-          hasSkill(simState.enemyBoard[lIdx], 'legendary')
-        )
-      )
-        return null;
+      if (hasSkill(playedCard, 'apex')) {
+        const targetCard = simState.enemyBoard[lIdx] || parentCardOnLane[lIdx];
+        if (
+          !targetCard ||
+          !(
+            targetCard.skill === 'legendary' ||
+            (targetCard.skills &&
+              targetCard.skills.some((s) => s.id === 'legendary'))
+          )
+        ) {
+          return null;
+        }
+      }
     }
 
     // 【装備・配置共通】選択スキル（choice/force）を事前解決し、手札カードのスキル情報に反映する
@@ -1120,9 +1127,13 @@ export function getBestSimulatedMove() {
             // 発動するスキル群を特定（召喚系アクションの場合のみ）
             let effectiveSkills = [];
 
-            const isSummonAction = ['play', 'call', 'invite', 'chant'].includes(
-              sourceType
-            );
+            const isSummonAction = [
+              'play',
+              'call',
+              'invite',
+              'chant',
+              'forge',
+            ].includes(sourceType);
             if (isSummonAction) {
               // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時発動）のため、ここには含めない
               if (
@@ -1138,6 +1149,7 @@ export function getBestSimulatedMove() {
                   'split',
                   'puppet',
                   'leap',
+                  'forge',
                 ].includes(card.skill)
               ) {
                 effectiveSkills.push({
@@ -1161,6 +1173,7 @@ export function getBestSimulatedMove() {
                       'split',
                       'puppet',
                       'leap',
+                      'forge',
                     ].includes(s.id)
                   )
                     effectiveSkills.push(s);
@@ -1280,8 +1293,12 @@ export function getBestSimulatedMove() {
                   const isEquip = hasSkill(childCard, 'equip');
                   let validLanes = [];
                   for (let j = 0; j < 3; j++) {
-                    if (myBoard[j] !== null) {
-                      if (isEquip || hasSkill(myBoard[j], 'arm_self')) {
+                    const isParentOnThisLane = j === lane;
+                    const simulatedBoardCard = isParentOnThisLane
+                      ? card
+                      : myBoard[j];
+                    if (simulatedBoardCard !== null) {
+                      if (isEquip || hasSkill(simulatedBoardCard, 'arm_self')) {
                         validLanes.push(j);
                       }
                     }
@@ -1992,6 +2009,9 @@ export function getBestSimulatedMove() {
           c.score += getLanePri(a.laneIdx) * 0.0001;
         }
       });
+      // 【手数ペナルティ】アクション数（手数）が増えるごとにスコアを微小減点する
+      // （不要な中間プレイによるタイブレーク加点を防ぎ、最短手数を選択させる）
+      c.score -= c.actionQueue.length * 0.002;
     }
   });
 
@@ -2921,9 +2941,13 @@ export function evaluateAdhocTokenLanes(
           }
 
           let effectiveSkills = [];
-          const isSummonAction = ['play', 'call', 'invite', 'chant'].includes(
-            sourceType
-          );
+          const isSummonAction = [
+            'play',
+            'call',
+            'invite',
+            'chant',
+            'forge',
+          ].includes(sourceType);
           if (isSummonAction) {
             if (
               [
@@ -2938,6 +2962,7 @@ export function evaluateAdhocTokenLanes(
                 'split',
                 'puppet',
                 'leap',
+                'forge',
               ].includes(card.skill)
             ) {
               effectiveSkills.push({
@@ -2960,6 +2985,7 @@ export function evaluateAdhocTokenLanes(
                     'split',
                     'puppet',
                     'leap',
+                    'forge',
                   ].includes(s.id)
                 )
                   effectiveSkills.push(s);
