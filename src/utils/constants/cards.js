@@ -2301,7 +2301,7 @@ export const CARD_MASTER = [
     id: 'wurm',
     name: '文明喰らい',
     rarity: 4,
-    power: 8,
+    power: 7,
     skills: [
       { id: 'takeover' },
       { id: 'berserk', value: 3 },
@@ -2316,9 +2316,9 @@ export const CARD_MASTER = [
     id: 'valkyrie',
     name: '焦熱の戦乙女',
     rarity: 4,
-    power: 3,
+    power: 2,
     skills: [
-      { id: 'berserk', value: 3 },
+      { id: 'berserk', value: 2 },
       { id: 'double_strike' },
       { id: 'stealth', value: 1 },
       { id: 'quick' },
