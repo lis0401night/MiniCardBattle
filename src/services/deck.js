@@ -706,7 +706,9 @@ export function loadDeck() {
           id !== 'campaign_player' &&
           id !== 'unknown' &&
           id !== 'npc' &&
-          id !== 'satan'
+          id !== 'satan' &&
+          id !== 'void' &&
+          id !== 'succubus'
       );
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];

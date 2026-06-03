@@ -39,7 +39,13 @@ export default function AchievementsScreen() {
       0
     );
     const sortedChars = Object.values(CHARACTERS || {})
-      .filter((c) => c.id !== 'satan' && !c.id.startsWith('campaign_'))
+      .filter(
+        (c) =>
+          c.id !== 'satan' &&
+          c.id !== 'void' &&
+          c.id !== 'succubus' &&
+          !c.id.startsWith('campaign_')
+      )
       .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
       .map((char) => {
         const count = usageObj[char.id] || 0;
@@ -108,7 +114,13 @@ export default function AchievementsScreen() {
     );
 
     const sortedChars = Object.values(CHARACTERS || {})
-      .filter((c) => c.id !== 'satan' && !c.id.startsWith('campaign_'))
+      .filter(
+        (c) =>
+          c.id !== 'satan' &&
+          c.id !== 'void' &&
+          c.id !== 'succubus' &&
+          !c.id.startsWith('campaign_')
+      )
       .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
       .map((char) => {
         const count = usageObj[char.id] || 0;

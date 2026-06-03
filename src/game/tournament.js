@@ -46,6 +46,8 @@ export function initTournamentMode() {
       !CHARACTERS[id].isDummy &&
       id !== GameState.pendingCharId &&
       id !== 'satan' && // ボスすぎるキャラは除くかはお好みだが一旦除外
+      id !== 'void' && // ゼノンも除外
+      id !== 'succubus' && // ヴィオラも除外
       id !== 'campaign_player' // キャンペーン用キャラは除外
   );
 
