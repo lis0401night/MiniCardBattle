@@ -21,7 +21,8 @@ export default function RewardOverlay() {
       let rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
       if (!rewardCardTemplate) {
         // カードデータが見つからない場合、スケルトンをフォールバックとして使用
-        rewardCardTemplate = CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
+        rewardCardTemplate =
+          CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
       }
       if (rewardCardTemplate) {
         setCard({ ...rewardCardTemplate, owner: 'blue' });
@@ -81,7 +82,7 @@ export default function RewardOverlay() {
     if (GameState.gameMode === 'reward_demo') {
       GameState.gameMode = null;
       setIsFadingOut(true);
-      
+
       // 先に裏の画面を切り替え
       if (window.switchScreen) {
         window.switchScreen('screen-solo-menu');
@@ -111,7 +112,8 @@ export default function RewardOverlay() {
 
   // 対戦相手の画像を取得(フォールバック付き)
   const enemyId = GameState.enemyConfig?.id || 'android';
-  const enemyImg = GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.png`;
+  const enemyImg =
+    GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.png`;
 
   // 難易度に応じた発光色を判定
   const getGlowColorClass = () => {
@@ -359,9 +361,7 @@ export default function RewardOverlay() {
       {phase !== 'reveal' ? (
         <div className="reward-pack-wrapper">
           {/* 飛び出すカード(パックの後ろに描画) */}
-          {phase === 'animating' && (
-            <div className="shooting-card" />
-          )}
+          {phase === 'animating' && <div className="shooting-card" />}
 
           {/* パック本体 */}
           <div
@@ -399,9 +399,7 @@ export default function RewardOverlay() {
             />
 
             {phase === 'pack' && (
-              <div className="tap-prompt">
-                タップしてパックを開封！
-              </div>
+              <div className="tap-prompt">タップしてパックを開封！</div>
             )}
           </div>
         </div>
