@@ -990,24 +990,13 @@ export async function executeLeaderSkillAction(
       }
     }
 
-    // 2. 相手の手札を3枚捨てる
+    // 2. 相手の手札を全て捨てる
     let opDiscarded = 0;
-    const opCount = Math.min(3, opH.length);
-    if (opCount > 0) {
-      const selectedIndices = await waitPlayerHandSelection(
-        opCount,
-        opId,
-        true,
-        `手札を${opCount}枚選択して捨ててください`
-      );
-      if (selectedIndices && selectedIndices.length > 0) {
-        selectedIndices.sort((a, b) => b - a);
-        for (let i of selectedIndices) {
-          const card = opH.splice(i, 1)[0];
-          await discardCard(opId, card, undefined, false);
-          opDiscarded++;
-        }
-      }
+    const opCards = [...opH];
+    opH.length = 0;
+    for (const card of opCards) {
+      await discardCard(opId, card, undefined, false);
+      opDiscarded++;
     }
 
     // 3. 同数の虚空を加える

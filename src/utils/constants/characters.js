@@ -793,7 +793,7 @@ export const CHARACTERS = {
     color: '#ddd6fe',
     leaderSkill: {
       name: 'ゼロの理',
-      desc: '(SP:4) お互いに手札を3枚選択して捨て、同数の「虚空(P:0)」を手札に加える。',
+      desc: '(SP:4) 自分の手札を3枚選んで捨てる。相手は手札を全て捨てる。その後、お互いに捨てた枚数分の「虚空(P:0)」を手札に加える。',
       cost: 4,
       action: 'void_purge',
     },

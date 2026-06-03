@@ -2111,35 +2111,19 @@ export function applyLeaderSkillLogic(
       }
     }
 
-    // 2. 相手の手札を捨てる
-    let oppDiscardIndices = [];
-    const oppCount = Math.min(3, oppHand.length);
-    if (tokenLanes && Array.isArray(tokenLanes.opp)) {
-      oppDiscardIndices = [...tokenLanes.opp];
-    } else {
-      const sorted = oppHand
-        .map((c, i) => ({ c, i }))
-        .sort(
-          (a, b) =>
-            (a.c.currentPower ?? a.c.power ?? 0) -
-            (b.c.currentPower ?? b.c.power ?? 0)
-        );
-      oppDiscardIndices = sorted.slice(0, oppCount).map((x) => x.i);
-    }
-    oppDiscardIndices.sort((a, b) => b - a);
+    // 2. 相手の手札を全て捨てる
     let oppDiscarded = 0;
-    for (const idx of oppDiscardIndices) {
-      if (oppHand[idx]) {
-        const card = oppHand.splice(idx, 1)[0];
-        oppDiscard.push(card);
-        oppDiscarded++;
-        events.push({
-          type: 'discard_card',
-          side: oppOwner,
-          card: JSON.parse(JSON.stringify(card)),
-          source: 'void_purge',
-        });
-      }
+    const oppCards = [...oppHand];
+    oppHand.length = 0;
+    for (const card of oppCards) {
+      oppDiscard.push(card);
+      oppDiscarded++;
+      events.push({
+        type: 'discard_card',
+        side: oppOwner,
+        card: JSON.parse(JSON.stringify(card)),
+        source: 'void_purge',
+      });
     }
 
     // 3. 虚空を追加
