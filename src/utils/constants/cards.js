@@ -1963,8 +1963,8 @@ export const CARD_MASTER = [
     power: 2,
     skills: [
       { id: 'convert', value: 2 },
-      { id: 'berserk', value: 2 },
       { id: 'summon', value: 6, summonId: 'token_dragon' },
+      { id: 'berserk', value: 2 },
     ],
     voiceCategory: 'human_male_normal',
     flavor:
