@@ -70,6 +70,7 @@ export function getEasyDecision() {
         false,
         GameState.enemySP
       );
+      if (!sim) continue;
       allCandidates.push({
         index: idx,
         lane: lane,

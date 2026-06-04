@@ -1,6 +1,6 @@
 import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { DECK_SIZE, MAX_DECK_SLOTS } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
@@ -802,6 +802,26 @@ export function loadDeck() {
       if (!GameState.enemySkins) GameState.enemySkins = {};
       if (GameState.enemyConfig) {
         GameState.enemySkins[GameState.enemyConfig.id] = 'school';
+      }
+    }
+
+    // プレイヤースキンの適用
+    if (GameState.playerConfig && GameState.playerConfig.id) {
+      if (!GameState.playerSkins) GameState.playerSkins = {};
+      const skinIdToUse =
+        GameState.playerSkins[GameState.playerConfig.id] || 'default';
+      if (typeof getSkinImage === 'function') {
+        const templateChar = CHARACTERS[GameState.playerConfig.id];
+        if (templateChar) {
+          GameState.playerConfig.image =
+            getSkinImage(templateChar, skinIdToUse, 'image') ||
+            templateChar.image;
+          GameState.playerConfig.imageLose =
+            getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
+            templateChar.imageLose;
+          GameState.playerConfig.icon =
+            getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
+        }
       }
     }
 

@@ -886,6 +886,20 @@ export function confirmCharSelect() {
       startBattleFlow();
       if (chosenSkin) {
         GameState.playerSkins[GameState.pendingCharId] = chosenSkin;
+        if (typeof getSkinImage === 'function' && GameState.playerConfig) {
+          const templateChar = CHARACTERS[GameState.pendingCharId];
+          if (templateChar) {
+            GameState.playerConfig.image =
+              getSkinImage(templateChar, chosenSkin, 'image') ||
+              templateChar.image;
+            GameState.playerConfig.imageLose =
+              getSkinImage(templateChar, chosenSkin, 'imageLose') ||
+              templateChar.imageLose;
+            GameState.playerConfig.icon =
+              getSkinImage(templateChar, chosenSkin, 'icon') ||
+              templateChar.icon;
+          }
+        }
         if (
           GameState.gameMode === 'defense_register' &&
           GameState.defenseDeck
