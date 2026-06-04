@@ -353,6 +353,19 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     };
 
     return () => {
+      // アンマウント時にサービス側のモーダルフックを解除
+      setShowConfirmModalHook(null);
+      setShowAlertModalHook(null);
+      setShowErrorModalHook(null);
+      setShowPointAcquisitionModalHook(null);
+      setOpenCardPreviewHook(null);
+      setCloseCardPreviewHook(null);
+      setShowCardAcquisitionModalHook(null);
+      setShowPremiumAcquisitionModalHook(null);
+      setShowPlaymatAcquisitionModalHook(null);
+      setShowSkinAcquisitionModalHook(null);
+      setCloseEnemyDeckModalHook(null);
+
       delete window.showEnemyDeckModal;
       delete window.showCharDetailModal;
       delete window.closeCharDetailModal;

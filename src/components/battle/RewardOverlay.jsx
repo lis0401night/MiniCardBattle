@@ -84,7 +84,7 @@ export default function RewardOverlay() {
       setIsFadingOut(true);
 
       // 先に裏の画面を切り替え
-      if (window.switchScreen) {
+      if (typeof window.switchScreen === 'function') {
         window.switchScreen('screen-solo-menu');
       }
 

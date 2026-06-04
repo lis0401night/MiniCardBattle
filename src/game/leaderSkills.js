@@ -219,13 +219,14 @@ export async function executeLeaderSkillAction(
     const tS = CARD_MASTER.find((m) => m.id === 'token_satan');
     const tI = CARD_MASTER.find((m) => m.id === 'token_ignis');
     const token = action === 'satan_avatar' ? tS : tI;
+    const checkConstraints = action !== 'dragon_high_ritual';
     let successSatan = false;
     while (!successSatan) {
       const selectedLanes = await waitPlayerLaneSelection(
         1,
         owner,
         token,
-        true,
+        checkConstraints,
         tokenLanes,
         false
       );
