@@ -1,6 +1,10 @@
 import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  BOSS_CHARACTER_IDS,
+  CHARACTERS,
+  getSkinImage,
+} from '../utils/constants/characters.js';
 import { DECK_SIZE, MAX_DECK_SLOTS } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
@@ -706,9 +710,7 @@ export function loadDeck() {
           id !== 'campaign_player' &&
           id !== 'unknown' &&
           id !== 'npc' &&
-          id !== 'satan' &&
-          id !== 'void' &&
-          id !== 'succubus'
+          !BOSS_CHARACTER_IDS.includes(id)
       );
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];

@@ -712,7 +712,9 @@ export async function waitPlayerLaneSelection(
     // number[] に正規化
     if (!rawVal || rawVal === -1) return [];
     if (Array.isArray(rawVal)) {
-      return rawVal.map(x => (typeof x === 'string' ? parseInt(x, 10) : x)).filter(x => !isNaN(x));
+      return rawVal
+        .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
+        .filter((x) => !isNaN(x));
     }
     if (typeof rawVal === 'number') return [rawVal];
     if (typeof rawVal === 'string') {
@@ -1224,7 +1226,9 @@ export async function waitPlayerEnemyLaneSelection(
     // number[] に正規化
     if (!rawVal || rawVal === -1) return [];
     if (Array.isArray(rawVal)) {
-      return rawVal.map(x => (typeof x === 'string' ? parseInt(x, 10) : x)).filter(x => !isNaN(x));
+      return rawVal
+        .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
+        .filter((x) => !isNaN(x));
     }
     if (typeof rawVal === 'number') return [rawVal];
     if (typeof rawVal === 'string') {
@@ -1566,7 +1570,8 @@ export async function waitPlayerDiscardSelection(
       targetId = choiceStr;
     } else if (Array.isArray(choiceStr) && choiceStr.length > 0) {
       const first = choiceStr[0];
-      targetId = typeof first === 'string' ? first : (first?.uid || first?.id || '');
+      targetId =
+        typeof first === 'string' ? first : first?.uid || first?.id || '';
     } else if (choiceStr && typeof choiceStr === 'object') {
       targetId = choiceStr.uid || choiceStr.id || '';
     }
@@ -1683,9 +1688,13 @@ export async function waitPlayerDualDiscardSelection(
       strToSplit = choiceStr;
     } else if (Array.isArray(choiceStr)) {
       const allCards = [...blueCards, ...redCards];
-      return allCards.filter((c) =>
-        choiceStr.includes(c.uid) || choiceStr.includes(c.id) ||
-        choiceStr.some(item => item && (item.uid === c.uid || item.id === c.id))
+      return allCards.filter(
+        (c) =>
+          choiceStr.includes(c.uid) ||
+          choiceStr.includes(c.id) ||
+          choiceStr.some(
+            (item) => item && (item.uid === c.uid || item.id === c.id)
+          )
       );
     } else if (choiceStr && typeof choiceStr === 'object') {
       const allCards = [...blueCards, ...redCards];
