@@ -110,8 +110,8 @@ export async function dispatchBattleAction(action, isRemote = false) {
     // 自分が送信した選択結果の反響(echo)は完全に無視する（自分のローカルはUIのPromiseで既に勝手に解決されているため）
     if (action.owner === 'blue') return;
 
-    // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空配列とみなす
-    const choiceData = action.choiceData !== undefined ? action.choiceData : [];
+    // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空文字列とみなす
+    const choiceData = action.choiceData !== undefined ? action.choiceData : '';
 
     if (pendingChoiceResolver) {
       pendingChoiceResolver(choiceData);
@@ -704,11 +704,22 @@ export async function waitPlayerLaneSelection(
       : GameState.enemySealedLanes || [0, 0, 0];
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
-    return new Promise((resolve) => {
+    const rawVal = await new Promise((resolve) => {
       if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
+    // number[] に正規化
+    if (!rawVal || rawVal === -1) return [];
+    if (Array.isArray(rawVal)) {
+      return rawVal.map(x => (typeof x === 'string' ? parseInt(x, 10) : x)).filter(x => !isNaN(x));
+    }
+    if (typeof rawVal === 'number') return [rawVal];
+    if (typeof rawVal === 'string') {
+      const parsed = parseInt(rawVal, 10);
+      return isNaN(parsed) ? [] : [parsed];
+    }
+    return [];
   }
 
   // AIの場合：
@@ -1205,11 +1216,22 @@ export async function waitPlayerEnemyLaneSelection(
 
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
-    return new Promise((resolve) => {
+    const rawVal = await new Promise((resolve) => {
       if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
+    // number[] に正規化
+    if (!rawVal || rawVal === -1) return [];
+    if (Array.isArray(rawVal)) {
+      return rawVal.map(x => (typeof x === 'string' ? parseInt(x, 10) : x)).filter(x => !isNaN(x));
+    }
+    if (typeof rawVal === 'number') return [rawVal];
+    if (typeof rawVal === 'string') {
+      const parsed = parseInt(rawVal, 10);
+      return isNaN(parsed) ? [] : [parsed];
+    }
+    return [];
   }
 
   // AIの場合：判定済みのシミュレーション結果があれば優先
@@ -1330,11 +1352,26 @@ export async function waitPlayerAlliedLaneSelection(
 
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
-    return new Promise((resolve) => {
+    const rawVal = await new Promise((resolve) => {
       if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
+    // number[] に正規化
+    if (!rawVal || rawVal === -1) return [];
+    if (Array.isArray(rawVal)) {
+      return rawVal
+        .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
+        .filter((x) => !isNaN(x) && x >= 0 && x < 3);
+    }
+    if (typeof rawVal === 'number') {
+      return rawVal >= 0 && rawVal < 3 ? [rawVal] : [];
+    }
+    if (typeof rawVal === 'string') {
+      const parsed = parseInt(rawVal, 10);
+      return isNaN(parsed) || parsed < 0 || parsed >= 3 ? [] : [parsed];
+    }
+    return [];
   }
 
   // AIの場合：パワーが最も高いカード優先
@@ -1410,11 +1447,24 @@ export async function waitPlayerHandSelection(
 
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
-    return new Promise((resolve) => {
+    const rawVal = await new Promise((resolve) => {
       if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
+    // number[] に正規化
+    if (!rawVal || rawVal === -1) return [];
+    if (Array.isArray(rawVal)) {
+      return rawVal
+        .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
+        .filter((x) => !isNaN(x));
+    }
+    if (typeof rawVal === 'number') return [rawVal];
+    if (typeof rawVal === 'string') {
+      const parsed = parseInt(rawVal, 10);
+      return isNaN(parsed) ? [] : [parsed];
+    }
+    return [];
   }
 
   // AIの場合：判定済みのシミュレーション結果があれば優先
@@ -1510,11 +1560,23 @@ export async function waitPlayerDiscardSelection(
       else pendingChoiceResolver = resolve;
     });
     if (!choiceStr || choiceStr === -1) return null;
+
+    let targetId = '';
+    if (typeof choiceStr === 'string') {
+      targetId = choiceStr;
+    } else if (Array.isArray(choiceStr) && choiceStr.length > 0) {
+      const first = choiceStr[0];
+      targetId = typeof first === 'string' ? first : (first?.uid || first?.id || '');
+    } else if (choiceStr && typeof choiceStr === 'object') {
+      targetId = choiceStr.uid || choiceStr.id || '';
+    }
+
+    if (!targetId) return null;
     // UID優先、なければidで検索して同期ズレを防ぐ
     const matchingCard = validCards.find(
-      (c) => c.uid === choiceStr || c.id === choiceStr
+      (c) => c.uid === targetId || c.id === targetId
     );
-    return matchingCard || validCards[0];
+    return matchingCard || validCards[0] || null;
   }
 
   // AIの場合
@@ -1593,6 +1655,20 @@ export async function waitPlayerDualDiscardSelection(
   canCancel = true
 ) {
   if (await triggerGraveKeeperEffect()) return [];
+
+  // 両方の墓地が空の場合は選択処理自体を即時スキップして解決
+  const totalCardsCount = (blueCards?.length || 0) + (redCards?.length || 0);
+  if (totalCardsCount === 0) {
+    if (GameState.gameMode === 'online' && owner === 'blue') {
+      sendOnlineAction({
+        type: 'submitChoice',
+        owner: 'blue',
+        choiceData: '', // 空文字列を送信
+      });
+    }
+    return [];
+  }
+
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
     const choiceStr = await new Promise((resolve) => {
@@ -1601,7 +1677,24 @@ export async function waitPlayerDualDiscardSelection(
       else pendingChoiceResolver = resolve;
     });
     if (!choiceStr || choiceStr === -1) return [];
-    const uids = choiceStr.split(',');
+
+    let strToSplit = '';
+    if (typeof choiceStr === 'string') {
+      strToSplit = choiceStr;
+    } else if (Array.isArray(choiceStr)) {
+      const allCards = [...blueCards, ...redCards];
+      return allCards.filter((c) =>
+        choiceStr.includes(c.uid) || choiceStr.includes(c.id) ||
+        choiceStr.some(item => item && (item.uid === c.uid || item.id === c.id))
+      );
+    } else if (choiceStr && typeof choiceStr === 'object') {
+      const allCards = [...blueCards, ...redCards];
+      const targetId = choiceStr.uid || choiceStr.id;
+      return allCards.filter((c) => c.uid === targetId || c.id === targetId);
+    }
+
+    if (!strToSplit) return [];
+    const uids = strToSplit.split(',');
     const allCards = [...blueCards, ...redCards];
     return allCards.filter((c) => uids.includes(c.uid) || uids.includes(c.id));
   }
@@ -1666,11 +1759,43 @@ export async function waitSkillChoice(
 
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
-    return new Promise((resolve) => {
+    const rawVal = await new Promise((resolve) => {
       if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
+    if (!rawVal || rawVal === -1) return [];
+
+    const results = [];
+    const parseItem = (item) => {
+      if (item === null || item === undefined) return;
+      if (typeof item === 'object') {
+        const id = item.id;
+        const match = choices.find((c) => c && c.id === id);
+        if (match) results.push(match);
+      } else if (typeof item === 'number') {
+        if (choices[item]) results.push(choices[item]);
+      } else if (typeof item === 'string') {
+        const idx = parseInt(item, 10);
+        if (!isNaN(idx) && choices[idx]) {
+          results.push(choices[idx]);
+        } else {
+          const match = choices.find((c) => c && c.id === item);
+          if (match) results.push(match);
+        }
+      }
+    };
+
+    if (Array.isArray(rawVal)) {
+      rawVal.forEach(parseItem);
+    } else {
+      parseItem(rawVal);
+    }
+
+    if (results.length === 0 && choices.length > 0) {
+      return [choices[0]];
+    }
+    return results;
   }
 
   // AIの場合
