@@ -1857,6 +1857,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             renderDeckEdit();
                         } else {
                           // 指定がない場合（キャラ選択画面など）の既存フロー
+                          if (!GameState.playerSkins) {
+                            GameState.playerSkins = {};
+                          }
+                          GameState.playerSkins[charDetailData.id] = skinId;
+
                           if (window.saveCurrentEditDeck)
                             window.saveCurrentEditDeck();
                           if (window.saveDeck) window.saveDeck();
