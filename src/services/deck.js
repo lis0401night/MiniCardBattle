@@ -820,7 +820,8 @@ export function loadDeck() {
             getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
             templateChar.imageLose;
           GameState.playerConfig.icon =
-            getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
+            getSkinImage(templateChar, skinIdToUse, 'icon') ||
+            templateChar.icon;
         }
       }
     }
