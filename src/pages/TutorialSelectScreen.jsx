@@ -47,7 +47,7 @@ const TUTORIAL_REWARDS = {
   leader_priest: 'sentinel', // 黄金の歩哨
 };
 
-const DEBUG_MODE_CLICK_THRESHOLD = 10;
+const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 export default function TutorialSelectScreen() {
   const [clickCount, setClickCount] = useState(0);

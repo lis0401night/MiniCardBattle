@@ -56,6 +56,7 @@ import {
   listenToRoomActions,
   sendOnlineAction,
   setPlayerReadyOnly,
+  multiplayerCallbacks,
 } from '../services/multiplayer.js';
 import {
   resolveActiveSkillEffect,
@@ -84,7 +85,7 @@ import {
   updateSPOrbs,
 } from '../services/uiBattle.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
-import { showDefenseBattleList } from '../services/uiMainCore.js';
+import { showDefenseBattleList, showOnlineLobby } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 
 export let pendingChoiceResolver = null;
@@ -387,6 +388,35 @@ export function prepareBattle() {
 
         dispatchBattleAction(action, true);
       });
+
+      // ホスト側：クライアントが切断して status が waiting に戻った（または client が消去された）場合の検知
+      if (isHost) {
+        multiplayerCallbacks.onRoomUpdated = (data) => {
+          if (!data || GameState.isBattleEnded) return;
+
+          if (!data.client || data.status === 'waiting') {
+            GameState.isBattleEnded = true;
+            document.body.classList.remove('slow-motion');
+            stopAllBGM();
+
+            if (typeof showAlertModal === 'function') {
+              showAlertModal('接続が切れました。', () => {
+                if (typeof showOnlineLobby === 'function') {
+                  showOnlineLobby();
+                } else {
+                  switchScreen('screen-online-lobby');
+                }
+              });
+            } else {
+              if (typeof showOnlineLobby === 'function') {
+                showOnlineLobby();
+              } else {
+                switchScreen('screen-online-lobby');
+              }
+            }
+          }
+        };
+      }
     } else {
       GameState.playerDeck = generateDeck(
         'blue',

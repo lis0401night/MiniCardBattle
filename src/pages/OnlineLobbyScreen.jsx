@@ -213,7 +213,12 @@ export default function OnlineLobbyScreen() {
 
     return () => {
       multiplayerCallbacks.onRoomUpdated = null;
-      multiplayerCallbacks.onRoomClosed = null;
+      // ロビーを抜けて対戦画面に移った後も機能するように、ReactのState更新を行わないアラート & メニュー戻り処理へ差し替える
+      multiplayerCallbacks.onRoomClosed = () => {
+        showAlertModal('ルームが解散されました。', () => {
+          showOnlineMenu?.();
+        });
+      };
       if (battleStartTimeoutRef.current) {
         clearTimeout(battleStartTimeoutRef.current);
       }

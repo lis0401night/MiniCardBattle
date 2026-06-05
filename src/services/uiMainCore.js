@@ -25,7 +25,7 @@ import { setPlayerReadyOnly } from './multiplayer.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
 
-const DEBUG_CLICK_THRESHOLD = 10;
+const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)

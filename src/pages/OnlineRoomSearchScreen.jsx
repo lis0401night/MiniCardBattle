@@ -14,7 +14,7 @@ import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
-const DEBUG_MODE_CLICK_THRESHOLD = 10;
+const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 export default function OnlineRoomSearchScreen() {
   const [rooms, setRooms] = useState([]);

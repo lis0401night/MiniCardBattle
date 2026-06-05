@@ -8,6 +8,7 @@ import {
   remove,
   serverTimestamp,
   onChildAdded,
+  onDisconnect,
 } from 'firebase/database';
 import { database } from '../utils/firebase.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
@@ -121,6 +122,9 @@ export async function createRoom(hostName) {
   currentRoomId = newRoomRef.key;
   isHost = true;
 
+  // ホスト切断時の自動部屋削除を予約
+  onDisconnect(newRoomRef).remove().catch((e) => console.error('onDisconnect error:', e));
+
   await set(newRoomRef, {
     status: 'waiting',
     createdAt: serverTimestamp(),
@@ -158,6 +162,14 @@ export async function joinRoom(roomId, clientName) {
 
   currentRoomId = roomId;
   isHost = false;
+
+  // クライアント切断時の自動ロビー戻り（クライアント削除 & ステータス復元）を予約
+  onDisconnect(roomRef)
+    .update({
+      status: 'waiting',
+      client: null,
+    })
+    .catch((e) => console.error('onDisconnect error:', e));
 
   // クライアント情報を書き込み、ステータスを playing に切り替える
   await update(roomRef, {
@@ -336,6 +348,9 @@ export async function leaveRoom() {
   }
 
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+
+  // 正常退室のため、切断時の予約を解除
+  onDisconnect(roomRef).cancel().catch((e) => console.error(e));
 
   if (isHost) {
     // ホストが抜ける場合はルームごと削除

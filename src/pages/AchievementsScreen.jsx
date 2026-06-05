@@ -23,7 +23,7 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
-const DEBUG_MODE_CLICK_THRESHOLD = 10;
+const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);

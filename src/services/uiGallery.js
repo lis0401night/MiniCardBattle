@@ -21,7 +21,7 @@ import {
 } from './uiMainCore.js';
 import { showAlertModal } from './uiModals.js';
 
-const DEBUG_CLICK_THRESHOLD = 10;
+const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 // ==========================================
 // UI Gallery Logic (Card List & Previews)
