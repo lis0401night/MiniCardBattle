@@ -1,22 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { prepareBattle } from '../game/battle.js';
+import {
+  cachedRoomData,
+  getCurrentRoomId,
+  getIsHost,
+  leaveRoom,
+  listenToRoom,
+  multiplayerCallbacks,
+  sendChatMessage,
+  updatePlayerReady,
+} from '../services/multiplayer.js';
+import { showOnlineMenu } from '../services/uiMainCore.js';
+import { showAlertModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import {
-  multiplayerCallbacks,
-  leaveRoom,
-  getIsHost,
-  updatePlayerReady,
-  sendChatMessage,
-  cachedRoomData,
-  listenToRoom,
-  getCurrentRoomId,
-} from '../services/multiplayer.js';
-import { showAlertModal } from '../services/uiModals.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { GameState } from '../state/gameState.js';
-import { prepareBattle } from '../game/battle.js';
-import { showOnlineMenu } from '../services/uiMainCore.js';
 
 export default function OnlineLobbyScreen() {
   const [roomData, setRoomData] = useState(cachedRoomData || null);
@@ -213,7 +213,8 @@ export default function OnlineLobbyScreen() {
 
     return () => {
       multiplayerCallbacks.onRoomUpdated = null;
-      // ロビーを抜けて対戦画面に移った後も機能するように、ReactのState更新を行わないアラート & メニュー戻り処理へ差し替える
+      // ロビーを抜けて対戦画面に移った後も機能するように、
+      // React の State 更新（setRoomData）を行わずアラート & メニュー戻り処理のみ実行するコールバックへ差し替える
       multiplayerCallbacks.onRoomClosed = () => {
         showAlertModal('ルームが解散されました。', () => {
           showOnlineMenu?.();

@@ -2116,7 +2116,9 @@ export function applyLeaderSkillLogic(
     const oppCards = [...oppHand];
     oppHand.length = 0;
     for (const card of oppCards) {
-      oppDiscard.push(card);
+      if (!card.isToken) {
+        oppDiscard.push(card);
+      }
       oppDiscarded++;
       events.push({
         type: 'discard_card',

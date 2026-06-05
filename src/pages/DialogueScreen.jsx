@@ -19,7 +19,7 @@ export default function DialogueScreen() {
       const charId = GameState.playerConfig?.id || 'knight';
       setBackviewSrc(`assets/still/backview_${charId}.png`);
     }
-  }, [isSatanCastleStill, GameState.playerConfig?.id]);
+  }, [isSatanCastleStill]);
 
   const handleBackviewError = () => {
     if (backviewSrc && backviewSrc !== 'assets/still/backview_knight.png') {

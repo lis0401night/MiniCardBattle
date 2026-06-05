@@ -74,7 +74,6 @@ export async function resolveActiveSkillEffect(
   const cEl = document.querySelector(
     `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
   );
-  const dS = o === 'blue' ? 'enemy' : 'player';
 
   // 演出用のポップアップと音（一括した基本演出）
   // 演出用のポップアップと音（一括した基本演出）
@@ -1253,8 +1252,6 @@ export async function resolveActiveSkillEffect(
         );
 
         const isImmune = hasSkill(targetCard, 'immune');
-        const eD =
-          t.side === 'red' ? GameState.enemyDiscard : GameState.playerDiscard;
         let totalPowerLoss = 0;
 
         if (t.isHost) {

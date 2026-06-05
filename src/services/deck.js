@@ -1,3 +1,6 @@
+import { prepareBattle } from '../game/battle.js';
+import { saveCampaignProgress } from '../game/campaign.js';
+import { GameState } from '../state/gameState.js';
 import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
@@ -24,9 +27,6 @@ import {
   VALID_PREMIUM_JPGS,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { prepareBattle } from '../game/battle.js';
-import { saveCampaignProgress } from '../game/campaign.js';
-import { GameState } from '../state/gameState.js';
 import {
   closePlayerNameModal,
   showDefenseMenu,
@@ -808,13 +808,17 @@ export function loadDeck() {
     }
 
     // プレイヤースキンの適用
+    // デッキ固有のスキン設定から、現在のキャラクターに対応するスキンIDを取得し、
+    // getSkinImage を使って image/imageLose/icon を再計算して playerConfig に反映する
     if (GameState.playerConfig && GameState.playerConfig.id) {
       if (!GameState.playerSkins) GameState.playerSkins = {};
       const skinIdToUse =
         GameState.playerSkins[GameState.playerConfig.id] || 'default';
+      // getSkinImage が関数として存在する場合のみ実行（後方互換性維持）
       if (typeof getSkinImage === 'function') {
         const templateChar = CHARACTERS[GameState.playerConfig.id];
         if (templateChar) {
+          // スキンに対応する画像を取得、存在しない場合はテンプレート画像にフォールバック
           GameState.playerConfig.image =
             getSkinImage(templateChar, skinIdToUse, 'image') ||
             templateChar.image;

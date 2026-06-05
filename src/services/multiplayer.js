@@ -123,7 +123,9 @@ export async function createRoom(hostName) {
   isHost = true;
 
   // ホスト切断時の自動部屋削除を予約
-  onDisconnect(newRoomRef).remove().catch((e) => console.error('onDisconnect error:', e));
+  onDisconnect(newRoomRef)
+    .remove()
+    .catch((e) => console.error('onDisconnect error:', e));
 
   await set(newRoomRef, {
     status: 'waiting',
@@ -350,7 +352,9 @@ export async function leaveRoom() {
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
 
   // 正常退室のため、切断時の予約を解除
-  onDisconnect(roomRef).cancel().catch((e) => console.error(e));
+  onDisconnect(roomRef)
+    .cancel()
+    .catch((e) => console.error(e));
 
   if (isHost) {
     // ホストが抜ける場合はルームごと削除

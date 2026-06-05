@@ -11,7 +11,6 @@ import CardPreviewContent from '../common/CardPreviewContent.jsx';
 export default function RewardOverlay() {
   const [isVisible, setIsVisible] = useState(false);
   const [card, setCard] = useState(null);
-  const [isRevealed, setIsRevealed] = useState(false);
   const [phase, setPhase] = useState('pack'); // 'pack' | 'animating' | 'reveal'
   const [isFadingOut, setIsFadingOut] = useState(false);
   const grantedRef = useRef(false);
@@ -27,7 +26,6 @@ export default function RewardOverlay() {
       if (rewardCardTemplate) {
         setCard({ ...rewardCardTemplate, owner: 'blue' });
         grantedRef.current = false; // 表示されるたびにリセット
-        setIsRevealed(false);
         setPhase('pack');
         setIsFadingOut(false);
         setIsVisible(true);
@@ -67,7 +65,6 @@ export default function RewardOverlay() {
           saveDeck();
         }
       }
-      setIsRevealed(true);
       setPhase('reveal');
       // 表示される瞬間はインパクトのある音を鳴らす
       playSound(SOUNDS.seSkill || SOUNDS.seClick);

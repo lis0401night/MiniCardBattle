@@ -886,9 +886,11 @@ export function confirmCharSelect() {
       startBattleFlow();
       if (chosenSkin) {
         GameState.playerSkins[GameState.pendingCharId] = chosenSkin;
+        // 選択されたスキンに対応する画像を playerConfig に適用する
         if (typeof getSkinImage === 'function' && GameState.playerConfig) {
           const templateChar = CHARACTERS[GameState.pendingCharId];
           if (templateChar) {
+            // スキン画像を取得し、存在しない場合はテンプレート画像にフォールバック
             GameState.playerConfig.image =
               getSkinImage(templateChar, chosenSkin, 'image') ||
               templateChar.image;

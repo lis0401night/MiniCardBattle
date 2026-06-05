@@ -70,6 +70,7 @@ export function getEasyDecision() {
         false,
         GameState.enemySP
       );
+      // simulateMove が無効な結果を返した場合はスキップ
       if (!sim) continue;
       allCandidates.push({
         index: idx,
