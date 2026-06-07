@@ -24,6 +24,8 @@ import {
   getDialogue,
   getOrCreateUUID,
   getSeededRandom,
+  getCurrentRNG,
+  setCurrentRNG,
   getSkillValue,
   hasSkill,
   mergeCardSkills,
@@ -265,11 +267,21 @@ function applySyncState(state) {
       cloned.puppetOriginalOwner = 'blue';
 
     // 装備されているカード（equippedCards）も再帰的に反転する
-    if (cloned.equippedCards && cloned.equippedCards.length > 0) {
-      cloned.equippedCards = cloned.equippedCards.map(invertCardOwner);
+    if (cloned.equippedCards) {
+      const eqArr = Array.isArray(cloned.equippedCards)
+        ? cloned.equippedCards
+        : typeof cloned.equippedCards === 'object'
+          ? Object.values(cloned.equippedCards)
+          : [];
+      cloned.equippedCards = eqArr.map(invertCardOwner);
     }
-    if (cloned.unionMaterials && cloned.unionMaterials.length > 0) {
-      cloned.unionMaterials = cloned.unionMaterials.map(invertCardOwner);
+    if (cloned.unionMaterials) {
+      const matArr = Array.isArray(cloned.unionMaterials)
+        ? cloned.unionMaterials
+        : typeof cloned.unionMaterials === 'object'
+          ? Object.values(cloned.unionMaterials)
+          : [];
+      cloned.unionMaterials = matArr.map(invertCardOwner);
     }
     if (cloned.originalRevertTarget) {
       cloned.originalRevertTarget = invertCardOwner(
@@ -1971,56 +1983,61 @@ export async function waitSkillChoice(
       // Normal/Hard: ここで簡易的にシミュレーション
       // 本来は意思決定時に行われるべきだが、フォールバックとして実装
       console.log('AI performing on-the-fly skill choice simulation');
-      const scoredChoices = [];
-      const originalBoard = GameState.enemyBoard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      );
-      const originalPlayerBoard = GameState.playerBoard.map((c) =>
-        c ? JSON.parse(JSON.stringify(c)) : null
-      );
+      const savedRNG = getCurrentRNG();
+      try {
+        const scoredChoices = [];
+        const originalBoard = GameState.enemyBoard.map((c) =>
+          c ? JSON.parse(JSON.stringify(c)) : null
+        );
+        const originalPlayerBoard = GameState.playerBoard.map((c) =>
+          c ? JSON.parse(JSON.stringify(c)) : null
+        );
 
-      for (let i = 0; i < choices.length; i++) {
-        const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
-        const simState = {
-          playerBoard: originalPlayerBoard.map(cloneCard),
-          enemyBoard: originalBoard.map(cloneCard),
-          playerHand: GameState.playerHand.map(cloneCard),
-          enemyHand: GameState.enemyHand.map(cloneCard),
-          playerDeck: GameState.playerDeck.map(cloneCard),
-          enemyDeck: GameState.enemyDeck.map(cloneCard),
-          playerDiscard: GameState.playerDiscard.map(cloneCard),
-          enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-          playerHP: GameState.playerHP,
-          enemyHP: GameState.enemyHP,
-          playerSP: GameState.playerSP,
-          enemySP: GameState.enemySP,
-          playerMaxHP: GameState.playerMaxHP,
-          enemyMaxHP: GameState.enemyMaxHP,
-          extraTurnCount: GameState.extraTurnCount,
-          attackSkipCount: GameState.attackSkipCount,
-        };
-        // 簡易シミュレーション
-        const lane = GameState.enemyBoard.indexOf(card);
-        let score = -Infinity;
-        if (lane !== -1) {
-          applyActiveSkillLogic(
-            simState,
-            'red',
-            lane,
-            choices[i].id,
-            choices[i].value
-          );
-          calculateCombatPhase(simState, 'blue');
-          // スコア計算
-          score = simState.enemyHP - simState.playerHP;
-          for (let b of simState.enemyBoard) if (b) score += b.currentPower;
+        for (let i = 0; i < choices.length; i++) {
+          const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+          const simState = {
+            playerBoard: originalPlayerBoard.map(cloneCard),
+            enemyBoard: originalBoard.map(cloneCard),
+            playerHand: GameState.playerHand.map(cloneCard),
+            enemyHand: GameState.enemyHand.map(cloneCard),
+            playerDeck: GameState.playerDeck.map(cloneCard),
+            enemyDeck: GameState.enemyDeck.map(cloneCard),
+            playerDiscard: GameState.playerDiscard.map(cloneCard),
+            enemyDiscard: GameState.enemyDiscard.map(cloneCard),
+            playerHP: GameState.playerHP,
+            enemyHP: GameState.enemyHP,
+            playerSP: GameState.playerSP,
+            enemySP: GameState.enemySP,
+            playerMaxHP: GameState.playerMaxHP,
+            enemyMaxHP: GameState.enemyMaxHP,
+            extraTurnCount: GameState.extraTurnCount,
+            attackSkipCount: GameState.attackSkipCount,
+          };
+          // 簡易シミュレーション
+          const lane = GameState.enemyBoard.indexOf(card);
+          let score = -Infinity;
+          if (lane !== -1) {
+            applyActiveSkillLogic(
+              simState,
+              'red',
+              lane,
+              choices[i].id,
+              choices[i].value
+            );
+            calculateCombatPhase(simState, 'blue');
+            // スコア計算
+            score = simState.enemyHP - simState.playerHP;
+            for (let b of simState.enemyBoard) if (b) score += b.currentPower;
+          }
+          scoredChoices.push({ choice: choices[i], score });
         }
-        scoredChoices.push({ choice: choices[i], score });
+        scoredChoices.sort((a, b) => b.score - a.score);
+        return scoredChoices
+          .slice(0, Math.min(maxChoices, choices.length))
+          .map((x) => x.choice);
+      } finally {
+        setCurrentRNG(savedRNG);
       }
-      scoredChoices.sort((a, b) => b.score - a.score);
-      return scoredChoices
-        .slice(0, Math.min(maxChoices, choices.length))
-        .map((x) => x.choice);
     }
   }
 
@@ -2029,9 +2046,9 @@ export async function waitSkillChoice(
     if (window.showSkillChoiceModalReact) {
       window.showSkillChoiceModalReact(
         choices,
-        (selectedSkill) => {
+        async (selectedSkill) => {
           if (GameState.gameMode === 'online') {
-            sendOnlineAction({
+            await sendOnlineAction({
               type: 'submitChoice',
               owner: 'blue',
               choiceData: selectedSkill,
@@ -3120,7 +3137,9 @@ export async function playCard(o, hI, l) {
 
       // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
       if (!hasSkill(playingCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-        targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+        targetCard.skills = targetCard.skills.filter(
+          (s) => s.id !== 'arm_self'
+        );
       }
 
       // 配置音・ボイス

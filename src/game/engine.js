@@ -215,7 +215,9 @@ export function processPlacementOrEquip(
 
     // 武装（arm_self）の消費処理
     if (!hasSkill(newCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
-      existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+      existingCard.skills = existingCard.skills.filter(
+        (s) => s.id !== 'arm_self'
+      );
     }
 
     events.push({
@@ -530,8 +532,13 @@ export function applyActiveSkillLogic(
           targetCard.equippedCards.push(stolenCard);
 
           // 武装（arm_self）の消費処理
-          if (!hasSkill(stolenCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-            targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+          if (
+            !hasSkill(stolenCard, 'equip') &&
+            hasSkill(targetCard, 'arm_self')
+          ) {
+            targetCard.skills = targetCard.skills.filter(
+              (s) => s.id !== 'arm_self'
+            );
           }
 
           events.push({
@@ -933,6 +940,7 @@ export function applyActiveSkillLogic(
               ...voidTpl,
               id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_vp${i}`,
               uid: `${oppOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidvp${i}`,
+              baseId: 'token_void',
               filter: voidTpl.filter,
               power: voidTpl.power,
               currentPower: voidTpl.power,
@@ -1355,6 +1363,7 @@ export function applyActiveSkillLogic(
           currentPower: voidTpl.power,
           id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_vp${i}`,
           uid: `${owner}_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+          baseId: 'token_void',
         };
         convertHand.push(newToken);
       }
@@ -1603,8 +1612,13 @@ export function applyActiveSkillLogic(
             mergeCardSkills(existingCard, equipSkills);
 
             // 武装（arm_self）の消費処理
-            if (!hasSkill(simResCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
-              existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+            if (
+              !hasSkill(simResCard, 'equip') &&
+              hasSkill(existingCard, 'arm_self')
+            ) {
+              existingCard.skills = existingCard.skills.filter(
+                (s) => s.id !== 'arm_self'
+              );
             }
             events.push({
               type: 'power_change',
@@ -2246,8 +2260,13 @@ export function applyLeaderSkillLogic(
         targetCard.equippedCards.push(selectedCard);
 
         // 武装（arm_self）の消費処理
-        if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-          targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+        if (
+          !hasSkill(selectedCard, 'equip') &&
+          hasSkill(targetCard, 'arm_self')
+        ) {
+          targetCard.skills = targetCard.skills.filter(
+            (s) => s.id !== 'arm_self'
+          );
         }
 
         events.push({
@@ -2738,6 +2757,7 @@ export function applyLeaderSkillLogic(
         opH.push({
           ...voidTpl,
           owner: oppOwner,
+          baseId: 'token_void',
           isToken: true,
           currentPower: voidTpl.power || 1,
         });
@@ -3086,8 +3106,13 @@ export function applyLeaderSkillLogic(
           existingCard.equippedCards.push(selectedCard);
 
           // 武装（arm_self）の消費処理
-          if (!hasSkill(selectedCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
-            existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+          if (
+            !hasSkill(selectedCard, 'equip') &&
+            hasSkill(existingCard, 'arm_self')
+          ) {
+            existingCard.skills = existingCard.skills.filter(
+              (s) => s.id !== 'arm_self'
+            );
           }
 
           events.push({
@@ -4665,6 +4690,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
         ...voidTpl,
         id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_extort${i}`,
         uid: `${oppSide}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidext${i}`,
+        baseId: 'token_void',
         filter: voidTpl.filter,
         power: voidTpl.power,
         currentPower: voidTpl.power,

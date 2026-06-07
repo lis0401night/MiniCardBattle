@@ -375,6 +375,14 @@ export function resetRNG() {
   currentRNG = Math.random;
 }
 
+export function getCurrentRNG() {
+  return currentRNG;
+}
+
+export function setCurrentRNG(rng) {
+  currentRNG = rng;
+}
+
 export function getSeededRandom() {
   return currentRNG();
 }

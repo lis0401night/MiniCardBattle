@@ -638,9 +638,7 @@ export const CARD_MASTER = [
     name: '死蠅の大群',
     rarity: 1,
     power: 1,
-    skills: [
-      { id: 'clone', value: 2 },
-    ],
+    skills: [{ id: 'clone', value: 2 }],
     voiceCategory: 'insect',
     flavor:
       '屍から次々と湧き出し、空を黒く染め上げる不浄の群れ。おぞましい羽音を響かせて増殖する',
@@ -892,10 +890,7 @@ export const CARD_MASTER = [
     name: '招かれざる来訪者',
     rarity: 2,
     power: 1,
-    skills: [
-      { id: 'equip' },
-      { id: 'clone', value: 1 },
-    ],
+    skills: [{ id: 'equip' }, { id: 'clone', value: 1 }],
     voiceCategory: 'insect',
     flavor:
       '宇宙の深淵から飛来した無機生命体。宿主に取り付いて生命力を啜り、増殖しながらやがて全てを空洞の石へと変えていく。',
@@ -1057,10 +1052,7 @@ export const CARD_MASTER = [
     name: '吸血コウモリ',
     rarity: 2,
     power: 2,
-    skills: [
-      { id: 'clone', value: 1 },
-      { id: 'absorb' },
-    ],
+    skills: [{ id: 'clone', value: 1 }, { id: 'absorb' }],
     voiceCategory: 'insect',
     flavor:
       '影から忍び寄り、静かに獲物の命を啜る。その羽ばたきが聞こえた時、既に逃げ場は失われている。',

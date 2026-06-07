@@ -326,7 +326,9 @@ export async function executeLeaderSkillAction(
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
         if (!hasSkill(tokenCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-          targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+          targetCard.skills = targetCard.skills.filter(
+            (s) => s.id !== 'arm_self'
+          );
         }
 
         if (tokenCard?.voiceCategory)
@@ -648,8 +650,13 @@ export async function executeLeaderSkillAction(
         targetCard.equippedCards.push(selectedCard);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-          targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+        if (
+          !hasSkill(selectedCard, 'equip') &&
+          hasSkill(targetCard, 'arm_self')
+        ) {
+          targetCard.skills = targetCard.skills.filter(
+            (s) => s.id !== 'arm_self'
+          );
         }
         renderBoard();
         events.push({
@@ -841,8 +848,13 @@ export async function executeLeaderSkillAction(
         targetCard.equippedCards.push(selectedCard);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-          targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+        if (
+          !hasSkill(selectedCard, 'equip') &&
+          hasSkill(targetCard, 'arm_self')
+        ) {
+          targetCard.skills = targetCard.skills.filter(
+            (s) => s.id !== 'arm_self'
+          );
         }
 
         renderBoard(); // 反映を確実にする

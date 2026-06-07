@@ -382,6 +382,7 @@ export async function resolveActiveSkillEffect(
         ...voidTpl,
         id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_${skillId}`,
         uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void${skillId}`,
+        baseId: 'token_void',
         filter: voidTpl.filter,
         power: voidTpl.power,
         currentPower: voidTpl.power,
@@ -515,6 +516,7 @@ export async function resolveActiveSkillEffect(
         ...voidTpl,
         id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_${skillId}`,
         uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void${skillId}`,
+        baseId: 'token_void',
         filter: voidTpl.filter,
         power: voidTpl.power,
         currentPower: voidTpl.power,
@@ -910,8 +912,13 @@ export async function resolveActiveSkillEffect(
           existingCard.equippedCards.push(newToken);
 
           // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-          if (!hasSkill(newToken, 'equip') && hasSkill(existingCard, 'arm_self')) {
-            existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+          if (
+            !hasSkill(newToken, 'equip') &&
+            hasSkill(existingCard, 'arm_self')
+          ) {
+            existingCard.skills = existingCard.skills.filter(
+              (s) => s.id !== 'arm_self'
+            );
           }
           events.push({
             type: 'power_change',
@@ -1094,8 +1101,13 @@ export async function resolveActiveSkillEffect(
         existingCard.equippedCards.push(newToken);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (!hasSkill(newToken, 'equip') && hasSkill(existingCard, 'arm_self')) {
-          existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+        if (
+          !hasSkill(newToken, 'equip') &&
+          hasSkill(existingCard, 'arm_self')
+        ) {
+          existingCard.skills = existingCard.skills.filter(
+            (s) => s.id !== 'arm_self'
+          );
         }
         events.push({
           type: 'power_change',
@@ -1883,8 +1895,13 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards.push(selectedCard);
 
             // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            if (
+              !hasSkill(selectedCard, 'equip') &&
+              hasSkill(targetCard, 'arm_self')
+            ) {
+              targetCard.skills = targetCard.skills.filter(
+                (s) => s.id !== 'arm_self'
+              );
             }
           } else {
             const existingCard = board[targetLane];
@@ -2108,8 +2125,13 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards.push(selectedCard);
 
             // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            if (
+              !hasSkill(selectedCard, 'equip') &&
+              hasSkill(targetCard, 'arm_self')
+            ) {
+              targetCard.skills = targetCard.skills.filter(
+                (s) => s.id !== 'arm_self'
+              );
             }
 
             if (selectedCard?.voiceCategory)
@@ -2560,8 +2582,13 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards.push(topCard);
 
             // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            if (!hasSkill(topCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            if (
+              !hasSkill(topCard, 'equip') &&
+              hasSkill(targetCard, 'arm_self')
+            ) {
+              targetCard.skills = targetCard.skills.filter(
+                (s) => s.id !== 'arm_self'
+              );
             }
 
             let callEvents = [];
@@ -2788,8 +2815,13 @@ export async function resolveActiveSkillEffect(
           targetCard.equippedCards.push(selectedCard);
 
           // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-          if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-            targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+          if (
+            !hasSkill(selectedCard, 'equip') &&
+            hasSkill(targetCard, 'arm_self')
+          ) {
+            targetCard.skills = targetCard.skills.filter(
+              (s) => s.id !== 'arm_self'
+            );
           }
 
           if (selectedCard?.voiceCategory) {
@@ -3196,6 +3228,7 @@ async function triggerExtortInAction(c, o) {
         ...voidTpl,
         id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_extUI${i}`,
         uid: `${oppSide}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidextUI${i}`,
+        baseId: 'token_void',
         filter: voidTpl.filter,
         power: voidTpl.power,
         currentPower: voidTpl.power,

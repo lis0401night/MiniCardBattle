@@ -1817,17 +1817,14 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         if (!isUnlocked) return;
                         playSound?.(SOUNDS?.seClick);
 
-                        const targetIdx =
-                          charDetailData.targetDeckIndex !== undefined
-                            ? charDetailData.targetDeckIndex
-                            : GameState.currentDeckIndex;
-
-                        if (
-                          targetIdx !== undefined &&
+                        const hasTargetDeck =
+                          charDetailData.targetDeckIndex !== undefined &&
                           GameState.decks &&
-                          GameState.decks[targetIdx]
-                        ) {
-                          const targetDeck = GameState.decks[targetIdx];
+                          GameState.decks[charDetailData.targetDeckIndex];
+
+                        if (hasTargetDeck) {
+                          const targetDeck =
+                            GameState.decks[charDetailData.targetDeckIndex];
                           if (!targetDeck.playerSkins)
                             targetDeck.playerSkins = {};
                           targetDeck.playerSkins[charDetailData.id] = skinId;
