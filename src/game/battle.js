@@ -780,10 +780,12 @@ export async function waitPlayerLaneSelection(
     }
 
     if (checkConstraints && tokenCard) {
-      const oppBoard = owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+      const oppBoard =
+        owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
       const hasLegendary =
         tokenCard.skill === 'legendary' ||
-        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'legendary'));
+        (tokenCard.skills &&
+          tokenCard.skills.some((s) => s.id === 'legendary'));
       const hasTakeover =
         tokenCard.skill === 'takeover' ||
         (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'takeover'));
@@ -792,10 +794,15 @@ export async function waitPlayerLaneSelection(
         (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'apex'));
       const hasChallenge =
         tokenCard.skill === 'challenge' ||
-        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'challenge'));
+        (tokenCard.skills &&
+          tokenCard.skills.some((s) => s.id === 'challenge'));
 
       validLanes = validLanes.filter((i) => {
-        if (GameState.turnCount === 1 && GameState.firstPlayer === owner && i !== 1) {
+        if (
+          GameState.turnCount === 1 &&
+          GameState.firstPlayer === owner &&
+          i !== 1
+        ) {
           return false;
         }
         if (hasLegendary && i !== 1) {
@@ -810,7 +817,8 @@ export async function waitPlayerLaneSelection(
             !targetCard ||
             !(
               targetCard.skill === 'legendary' ||
-              (targetCard.skills && targetCard.skills.some((s) => s.id === 'legendary'))
+              (targetCard.skills &&
+                targetCard.skills.some((s) => s.id === 'legendary'))
             )
           ) {
             return false;
@@ -827,7 +835,9 @@ export async function waitPlayerLaneSelection(
     const resultLanes = parsedLanes.filter((i) => validLanes.includes(i));
 
     if (resultLanes.length === 0 && !canCancel) {
-      throw new Error("Invalid online action: Empty lane selection not allowed when cancel is disabled.");
+      throw new Error(
+        'Invalid online action: Empty lane selection not allowed when cancel is disabled.'
+      );
     }
 
     return resultLanes.slice(0, count);
@@ -1351,7 +1361,9 @@ export async function waitPlayerEnemyLaneSelection(
     const resultLanes = parsedLanes.filter((i) => validLanes.includes(i));
 
     if (resultLanes.length === 0 && !canCancel) {
-      throw new Error("Invalid online action: Empty enemy lane selection not allowed when cancel is disabled.");
+      throw new Error(
+        'Invalid online action: Empty enemy lane selection not allowed when cancel is disabled.'
+      );
     }
 
     return resultLanes.slice(0, count);
@@ -1499,7 +1511,9 @@ export async function waitPlayerAlliedLaneSelection(
     const resultLanes = parsedLanes.filter((i) => occupiedLanes.includes(i));
 
     if (resultLanes.length === 0 && !canCancel) {
-      throw new Error("Invalid online action: Empty allied lane selection not allowed when cancel is disabled.");
+      throw new Error(
+        'Invalid online action: Empty allied lane selection not allowed when cancel is disabled.'
+      );
     }
 
     return resultLanes.slice(0, count);
@@ -1599,14 +1613,20 @@ export async function waitPlayerHandSelection(
     }
 
     parsedIndices = Array.from(new Set(parsedIndices));
-    const resultIndices = parsedIndices.filter((i) => i >= 0 && i < hand.length);
+    const resultIndices = parsedIndices.filter(
+      (i) => i >= 0 && i < hand.length
+    );
 
     if (forceExact && resultIndices.length < count) {
-      throw new Error(`Invalid online action: Hand selection requires exact count of ${count}, but got ${resultIndices.length}.`);
+      throw new Error(
+        `Invalid online action: Hand selection requires exact count of ${count}, but got ${resultIndices.length}.`
+      );
     }
     if (resultIndices.length === 0 && !forceExact) {
       if (hand.length > 0) {
-        throw new Error("Invalid online action: Hand selection cannot be empty when hand is not empty.");
+        throw new Error(
+          'Invalid online action: Hand selection cannot be empty when hand is not empty.'
+        );
       }
     }
 
@@ -1707,7 +1727,9 @@ export async function waitPlayerDiscardSelection(
     });
     if (!choiceStr || choiceStr === -1) {
       if (!canCancel) {
-        throw new Error("Invalid online action: Discard selection cannot be cancelled.");
+        throw new Error(
+          'Invalid online action: Discard selection cannot be cancelled.'
+        );
       }
       return null;
     }
@@ -1725,7 +1747,9 @@ export async function waitPlayerDiscardSelection(
 
     if (!targetId) {
       if (!canCancel) {
-        throw new Error("Invalid online action: Discard selection cannot be cancelled.");
+        throw new Error(
+          'Invalid online action: Discard selection cannot be cancelled.'
+        );
       }
       return null;
     }
@@ -1735,7 +1759,9 @@ export async function waitPlayerDiscardSelection(
     );
     if (!matchingCard) {
       if (!canCancel) {
-        throw new Error("Invalid online action: Discard selection card not found and cancel is disabled.");
+        throw new Error(
+          'Invalid online action: Discard selection card not found and cancel is disabled.'
+        );
       }
       return null;
     }
@@ -1841,7 +1867,9 @@ export async function waitPlayerDualDiscardSelection(
     });
     if (!choiceStr || choiceStr === -1) {
       if (!canCancel) {
-        throw new Error("Invalid online action: Dual discard selection cannot be cancelled.");
+        throw new Error(
+          'Invalid online action: Dual discard selection cannot be cancelled.'
+        );
       }
       return [];
     }
@@ -1860,10 +1888,14 @@ export async function waitPlayerDualDiscardSelection(
       );
     } else if (choiceStr && typeof choiceStr === 'object') {
       const targetId = choiceStr.uid || choiceStr.id;
-      selected = allCards.filter((c) => c.uid === targetId || c.id === targetId);
+      selected = allCards.filter(
+        (c) => c.uid === targetId || c.id === targetId
+      );
     } else if (typeof choiceStr === 'string' && choiceStr) {
       const uids = choiceStr.split(',');
-      selected = allCards.filter((c) => uids.includes(c.uid) || uids.includes(c.id));
+      selected = allCards.filter(
+        (c) => uids.includes(c.uid) || uids.includes(c.id)
+      );
     }
 
     // 重複除去
@@ -1877,7 +1909,9 @@ export async function waitPlayerDualDiscardSelection(
     });
 
     if (uniqueSelected.length === 0 && !canCancel) {
-      throw new Error("Invalid online action: Dual discard selection cannot be empty and cancel is disabled.");
+      throw new Error(
+        'Invalid online action: Dual discard selection cannot be empty and cancel is disabled.'
+      );
     }
 
     return uniqueSelected.slice(0, maxChoices);
@@ -1950,7 +1984,9 @@ export async function waitSkillChoice(
     });
     if (!rawVal || rawVal === -1) {
       if (isForce) {
-        throw new Error("Invalid online action: Forced skill choice cannot be cancelled.");
+        throw new Error(
+          'Invalid online action: Forced skill choice cannot be cancelled.'
+        );
       }
       return [];
     }
@@ -1993,7 +2029,9 @@ export async function waitSkillChoice(
 
     if (uniqueResults.length === 0 && choices.length > 0) {
       if (isForce) {
-        throw new Error("Invalid online action: Forced skill choice result cannot be empty.");
+        throw new Error(
+          'Invalid online action: Forced skill choice result cannot be empty.'
+        );
       }
       return [choices[0]];
     }
@@ -2805,8 +2843,7 @@ export async function handleMoveSkills(owner) {
             // 2. 装備（Equip / Arm Self）の判定と処理（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
             if (!didUnion && canEquipCard(c, existingCard)) {
               // 装備によるパワー加算
-              existingCard.power =
-                (existingCard.power || 0) + (c.power || 0);
+              existingCard.power = (existingCard.power || 0) + (c.power || 0);
               existingCard.basePower =
                 (existingCard.basePower || 0) + (c.power || 0);
               existingCard.currentPower =
@@ -3216,8 +3253,7 @@ export async function playCard(o, hI, l) {
     if (canEquipCard(playingCard, b[l])) {
       const targetCard = b[l];
       // 装備によるパワー加算
-      targetCard.power =
-        (targetCard.power || 0) + (playingCard.power || 0);
+      targetCard.power = (targetCard.power || 0) + (playingCard.power || 0);
       targetCard.basePower =
         (targetCard.basePower || 0) + (playingCard.power || 0);
       targetCard.currentPower =
