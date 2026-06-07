@@ -16,7 +16,7 @@ export const CARD_MASTER = [
     id: 'clone',
     name: '鏡の戦士',
     rarity: 1,
-    power: 2,
+    power: 3,
     skills: [{ id: 'clone', value: 1 }],
     voiceCategory: 'sword',
     flavor:
@@ -639,7 +639,6 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 1,
     skills: [
-      { id: 'growth', value: -1 },
       { id: 'clone', value: 2 },
     ],
     voiceCategory: 'insect',
@@ -859,7 +858,7 @@ export const CARD_MASTER = [
     id: 'slime',
     name: '這い寄るスライム',
     rarity: 2,
-    power: 4,
+    power: 5,
     skills: [{ id: 'takeover' }, { id: 'clone', value: 1 }],
     voiceCategory: 'undead',
     flavor:
@@ -895,7 +894,6 @@ export const CARD_MASTER = [
     power: 1,
     skills: [
       { id: 'equip' },
-      { id: 'growth', value: -1 },
       { id: 'clone', value: 1 },
     ],
     voiceCategory: 'insect',
@@ -1060,7 +1058,6 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 2,
     skills: [
-      { id: 'sacrifice', value: 2 },
       { id: 'clone', value: 1 },
       { id: 'absorb' },
     ],
@@ -2116,7 +2113,7 @@ export const CARD_MASTER = [
     id: 'badwolf',
     name: '幻影の狼',
     rarity: 3,
-    power: 1,
+    power: 2,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [
       { id: 'clone', value: 2 },
@@ -2133,8 +2130,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [
-      { id: 'snipe', value: 5 },
-      { id: 'spread', value: 1 },
+      { id: 'snipe', value: 6 },
+      { id: 'spread', value: 2 },
     ],
     voiceCategory: 'human_female_normal',
     flavor:
@@ -2224,7 +2221,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 5,
     skills: [
-      { id: 'contract', value: 2 },
+      { id: 'contract', value: 4 },
       { id: 'clone', value: 1 },
     ],
     voiceCategory: 'horse',

@@ -908,6 +908,11 @@ export async function resolveActiveSkillEffect(
 
           existingCard.equippedCards = existingCard.equippedCards || [];
           existingCard.equippedCards.push(newToken);
+
+          // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+          if (!hasSkill(newToken, 'equip') && hasSkill(existingCard, 'arm_self')) {
+            existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+          }
           events.push({
             type: 'power_change',
             side: o,
@@ -999,12 +1004,19 @@ export async function resolveActiveSkillEffect(
       );
       hideMessage();
     }
+
+    // 分身スキルの調整：配置先レーンを元のカードがあるレーン l の隣（隣接レーンのみ）に制限する
+    let restrictLanes = clonePredefinedLanes;
+    if (!restrictLanes) {
+      restrictLanes = l === 1 ? [0, 2] : [1];
+    }
+
     const selectedLanes = await waitPlayerLaneSelection(
       count,
       o,
       simulatedToken,
       false,
-      clonePredefinedLanes,
+      restrictLanes,
       false,
       true
     );
@@ -1080,6 +1092,11 @@ export async function resolveActiveSkillEffect(
 
         existingCard.equippedCards = existingCard.equippedCards || [];
         existingCard.equippedCards.push(newToken);
+
+        // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+        if (!hasSkill(newToken, 'equip') && hasSkill(existingCard, 'arm_self')) {
+          existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+        }
         events.push({
           type: 'power_change',
           side: o,
@@ -1864,6 +1881,11 @@ export async function resolveActiveSkillEffect(
             // 装備したカードは消費されて対象カードにアタッチされる
             targetCard.equippedCards = targetCard.equippedCards || [];
             targetCard.equippedCards.push(selectedCard);
+
+            // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+            if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            }
           } else {
             const existingCard = board[targetLane];
             const unionSkill =
@@ -2084,6 +2106,11 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards = targetCard.equippedCards || [];
             selectedCard.puppetOriginalOwner = oppOwner; // 元の持ち主を記録
             targetCard.equippedCards.push(selectedCard);
+
+            // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+            if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            }
 
             if (selectedCard?.voiceCategory)
               playCardVoice(selectedCard.voiceCategory, 'play');
@@ -2532,6 +2559,11 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards = targetCard.equippedCards || [];
             targetCard.equippedCards.push(topCard);
 
+            // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+            if (!hasSkill(topCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            }
+
             let callEvents = [];
             callEvents.push({
               type: 'summon_card',
@@ -2754,6 +2786,11 @@ export async function resolveActiveSkillEffect(
 
           targetCard.equippedCards = targetCard.equippedCards || [];
           targetCard.equippedCards.push(selectedCard);
+
+          // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+          if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+            targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+          }
 
           if (selectedCard?.voiceCategory) {
             playCardVoice(selectedCard.voiceCategory, 'play');

@@ -213,6 +213,11 @@ export function processPlacementOrEquip(
     existingCard.equippedCards = existingCard.equippedCards || [];
     existingCard.equippedCards.push(newCard);
 
+    // 武装（arm_self）の消費処理
+    if (!hasSkill(newCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
+      existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+    }
+
     events.push({
       type: 'power_change',
       side: owner,
@@ -523,6 +528,11 @@ export function applyActiveSkillLogic(
 
           targetCard.equippedCards = targetCard.equippedCards || [];
           targetCard.equippedCards.push(stolenCard);
+
+          // 武装（arm_self）の消費処理
+          if (!hasSkill(stolenCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+            targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+          }
 
           events.push({
             type: 'summon_card',
@@ -1591,6 +1601,11 @@ export function applyActiveSkillLogic(
               });
             }
             mergeCardSkills(existingCard, equipSkills);
+
+            // 武装（arm_self）の消費処理
+            if (!hasSkill(simResCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
+              existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+            }
             events.push({
               type: 'power_change',
               side: owner,
@@ -1729,13 +1744,15 @@ export function applyActiveSkillLogic(
         } else {
           const sealedLanes =
             owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-          const emptyLanes = [0, 2, 1].filter(
+          // 分身スキルの調整：元のレーン l の隣接レーンのみを対象とする
+          const adjacentLanes = l === 1 ? [0, 2] : [1];
+          const emptyLanes = adjacentLanes.filter(
             (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
           );
           if (emptyLanes.length > 0) {
             targetLane = emptyLanes[0];
           } else {
-            const validOccupiedLanes = [0, 2, 1].filter(
+            const validOccupiedLanes = adjacentLanes.filter(
               (j) => !sealedLanes || sealedLanes[j] === 0
             );
             if (validOccupiedLanes.length > 0)
@@ -2010,6 +2027,11 @@ function tryEquipToken(board, lane, newToken, owner, events) {
         (boardCard.currentPower || 0) + (newToken.currentPower || 0);
       boardCard.equippedCards = boardCard.equippedCards || [];
       boardCard.equippedCards.push(newToken);
+
+      // 武装（arm_self）の消費処理
+      if (!hasSkill(newToken, 'equip') && hasSkill(boardCard, 'arm_self')) {
+        boardCard.skills = boardCard.skills.filter((s) => s.id !== 'arm_self');
+      }
       let addedSkills = [];
       if (
         newToken.skill &&
@@ -2222,6 +2244,11 @@ export function applyLeaderSkillLogic(
         mergeCardSkills(targetCard, equipSkills);
         targetCard.equippedCards = targetCard.equippedCards || [];
         targetCard.equippedCards.push(selectedCard);
+
+        // 武装（arm_self）の消費処理
+        if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+          targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+        }
 
         events.push({
           type: 'summon_card',
@@ -3057,6 +3084,11 @@ export function applyLeaderSkillLogic(
 
           existingCard.equippedCards = existingCard.equippedCards || [];
           existingCard.equippedCards.push(selectedCard);
+
+          // 武装（arm_self）の消費処理
+          if (!hasSkill(selectedCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
+            existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+          }
 
           events.push({
             type: 'power_change',

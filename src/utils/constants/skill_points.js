@@ -75,7 +75,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   clone: {
-    base: 0,
+    base: -1,
     multiplier: 3,
   },
   lone_wolf: {

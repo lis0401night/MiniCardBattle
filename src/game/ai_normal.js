@@ -355,6 +355,10 @@ export function processActionSequence(
             if (addedSkills.length > 0) {
               mergeCardSkills(existingCard, addedSkills);
             }
+            // 武装（arm_self）の消費処理
+            if (!hasSkill(newToken, 'equip') && hasSkill(existingCard, 'arm_self')) {
+              existingCard.skills = existingCard.skills.filter((s) => s.id !== 'arm_self');
+            }
           } else if (existingCard) {
             // 装備不可: 既存カードを墓地に移動して上書き
             simState.enemyDiscard.push(existingCard);
@@ -474,6 +478,11 @@ export function processActionSequence(
 
             targetCard.equippedCards = targetCard.equippedCards || [];
             targetCard.equippedCards.push(selectedCard);
+
+            // 武装（arm_self）の消費処理
+            if (!hasSkill(selectedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+              targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+            }
           } else {
             board[myL] = {
               ...selectedCard,
@@ -645,6 +654,11 @@ export function processActionSequence(
           if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value });
         });
       mergeCardSkills(targetCard, addedSkills);
+
+      // 武装（arm_self）の消費処理
+      if (!hasSkill(playedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+        targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+      }
       let cLanesForEquip = action.cardTokenLanes
         ? [...action.cardTokenLanes]
         : null;
@@ -1460,7 +1474,14 @@ export function getBestSimulatedMove() {
                   if (remainingCount <= 0) return [[]];
                   let combos = [];
                   let subCombos = generateLaneCombos(remainingCount - 1);
-                  for (let j = 0; j < 3; j++) {
+                  // 分身スキルの調整：元のレーン lane の隣接レーンのみを対象とする
+                  const allowedLanes =
+                    sk.id === 'clone'
+                      ? lane === 1
+                        ? [0, 2]
+                        : [1]
+                      : [0, 1, 2];
+                  for (let j of allowedLanes) {
                     if (mySealedLanes[j] > 0) continue;
                     for (let sc of subCombos) {
                       combos.push([j, ...sc]);
@@ -2723,7 +2744,14 @@ export function evaluateAdhocTokenLanes(
         if (remainingCount <= 0) return [[]];
         let combos = [];
         let subCombos = generateLaneCombos(remainingCount - 1);
-        for (let j = 0; j < 3; j++) {
+        // 分身スキルの調整：元のレーン laneIdx の隣接レーンのみを対象とする
+        const allowedLanes =
+          sk.id === 'clone'
+            ? laneIdx === 1
+              ? [0, 2]
+              : [1]
+            : [0, 1, 2];
+        for (let j of allowedLanes) {
           if (sealedLanes[j] > 0) continue;
           for (let sc of subCombos) {
             combos.push([j, ...sc]);
@@ -3560,6 +3588,11 @@ export function simulateMove(
                 addedSkills.push({ id: s.id, value: s.value });
             });
           mergeCardSkills(targetCard, addedSkills);
+
+          // 武装（arm_self）の消費処理
+          if (!hasSkill(playedCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+            targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+          }
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
             if (

@@ -3118,6 +3118,11 @@ export async function playCard(o, hI, l) {
       targetCard.equippedCards = targetCard.equippedCards || [];
       targetCard.equippedCards.push(consumedCard);
 
+      // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
+      if (!hasSkill(playingCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
+        targetCard.skills = targetCard.skills.filter((s) => s.id !== 'arm_self');
+      }
+
       // 配置音・ボイス
       playSound(SOUNDS.sePlace);
       if (playingCard.voiceCategory)
