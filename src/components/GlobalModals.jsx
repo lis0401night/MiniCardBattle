@@ -1870,6 +1870,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         }
 
                         setSelectedSkinState(skinId);
+                        setSkinSelectionVisible(false); // スキン選択モーダルを閉じる
+                        if (charDetailData) {
+                          // キャラクター詳細モーダルの画像更新のため再レンダリングをトリガー
+                          setCharDetailData({ ...charDetailData });
+                        }
                         if (window.closeSkinSelectionModalState)
                           window.closeSkinSelectionModalState();
                         if (window.forceUpdateSelectScreen)

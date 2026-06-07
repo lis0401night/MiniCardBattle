@@ -1627,7 +1627,7 @@ export const CARD_MASTER = [
     name: '深海の魔物',
     rarity: 3,
     power: 4,
-    skills: [{ id: 'split', value: 2, summonId: 'legs' }],
+    skills: [{ id: 'split', value: 2, summonId: 'token_legs' }],
     voiceCategory: 'monster',
     flavor:
       '深海に潜む異形の魔物。全身が筋肉の塊で、足を失ってもすぐに生えてくる。',
@@ -2826,7 +2826,6 @@ export const CARD_MASTER = [
   {
     id: 'token_knight',
     name: '騎士',
-    rarity: 1,
     power: 2,
     isToken: true,
     skill: 'none',
@@ -2836,7 +2835,6 @@ export const CARD_MASTER = [
   {
     id: 'token_dragon',
     name: 'ドラゴン',
-    rarity: 1,
     power: 6,
     isToken: true,
     skill: 'none',
@@ -2846,7 +2844,6 @@ export const CARD_MASTER = [
   {
     id: 'token_ignis',
     name: 'イグニス',
-    rarity: 1,
     power: 7,
     isToken: true,
     skills: [{ id: 'legendary' }],
@@ -2855,7 +2852,6 @@ export const CARD_MASTER = [
   {
     id: 'token_satan',
     name: '魔王の化身',
-    rarity: 1,
     power: 10,
     isToken: true,
     skill: 'none',
@@ -2864,7 +2860,6 @@ export const CARD_MASTER = [
   {
     id: 'token_clone',
     name: '分身',
-    rarity: 1,
     power: 1,
     isToken: true,
     skill: 'none',
@@ -2873,16 +2868,14 @@ export const CARD_MASTER = [
   {
     id: 'token_reinforce',
     name: '増援',
-    rarity: 1,
     power: 4,
     isToken: true,
     skill: 'none',
     flavor: '呼び声に応え、現れた仲間。',
   },
   {
-    id: 'legs',
+    id: 'token_legs',
     name: '蛸足',
-    rarity: 1,
     power: 2,
     isToken: true,
     skill: 'none',
@@ -2891,7 +2884,6 @@ export const CARD_MASTER = [
   {
     id: 'token_void',
     name: '虚空',
-    rarity: 1,
     power: 0,
     isToken: true,
     skill: 'none',
@@ -2902,7 +2894,6 @@ export const CARD_MASTER = [
   {
     id: 'token_ent',
     name: 'エント',
-    rarity: 1,
     power: 5,
     isToken: true,
     skill: 'none',
@@ -2913,7 +2904,6 @@ export const CARD_MASTER = [
   {
     id: 'token_statue',
     name: '石像',
-    rarity: 1,
     power: 5,
     isToken: true,
     skills: [{ id: 'defender' }, { id: 'sturdy' }],
@@ -2923,7 +2913,6 @@ export const CARD_MASTER = [
   {
     id: 'token_drone',
     name: 'ドローン',
-    rarity: 1,
     power: 1,
     isToken: true,
     skill: 'none',
@@ -2933,7 +2922,6 @@ export const CARD_MASTER = [
   {
     id: 'token_golem',
     name: 'ゴーレム',
-    rarity: 1,
     power: 5,
     isToken: true,
     skill: 'none',
@@ -2943,7 +2931,6 @@ export const CARD_MASTER = [
   {
     id: 'token_phoenix',
     name: 'フェニックス',
-    rarity: 1,
     power: 6,
     isToken: true,
     skill: 'none',
@@ -2953,7 +2940,6 @@ export const CARD_MASTER = [
   {
     id: 'token_soul',
     name: '人魂',
-    rarity: 1,
     power: 1,
     isToken: true,
     skill: 'none',
@@ -2963,7 +2949,6 @@ export const CARD_MASTER = [
   {
     id: 'token_gearC',
     name: '機神プロメテウス',
-    rarity: 1,
     power: 10,
     isToken: true,
     skills: [
@@ -2978,7 +2963,6 @@ export const CARD_MASTER = [
   {
     id: 'token_reinforceddrone',
     name: '強化ドローン',
-    rarity: 1,
     power: 5,
     isToken: true,
     skill: 'none',
@@ -2989,7 +2973,6 @@ export const CARD_MASTER = [
   {
     id: 'token_polarbear',
     name: 'ヴォイテク',
-    rarity: 1,
     power: 4,
     isToken: true,
     skills: [{ id: 'legendary' }, { id: 'pierce' }],
@@ -2999,7 +2982,6 @@ export const CARD_MASTER = [
   {
     id: 'token_daemon',
     name: 'デーモン',
-    rarity: 1,
     power: 7,
     isToken: true,
     skill: 'none',
@@ -3018,7 +3000,6 @@ export const CARD_MASTER = [
   {
     id: 'token_skeleton',
     name: 'スケルトン',
-    rarity: 1,
     power: 3,
     isToken: true,
     skill: 'none',
