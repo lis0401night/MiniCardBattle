@@ -8,7 +8,7 @@ import { switchScreen } from '../utils/gameUtils.js';
 
 export default function HighDifficultyMenuScreen() {
   const handleChallengeClick = () => {
-    switchScreen('screen-high-difficulty');
+    switchScreen?.('screen-high-difficulty');
   };
 
   return (

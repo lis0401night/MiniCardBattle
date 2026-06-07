@@ -15,7 +15,7 @@ import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function OnlineLobbyScreen() {
@@ -188,6 +188,16 @@ export default function OnlineLobbyScreen() {
           GameState.enemySkins[GameState.enemyConfig.id] =
             opData.leaderConfig.skin || 'default';
 
+          // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
+          multiplayerCallbacks.onRoomClosed = () => {
+            GameState.isBattleEnded = true;
+            document.body.classList.remove('slow-motion');
+            if (typeof stopAllBGM === 'function') stopAllBGM();
+            showAlertModal('ルームが解散されました。', () => {
+              showOnlineMenu?.();
+            });
+          };
+
           GameState.gameMode = 'online';
           GameState.appState = 'battle';
 
@@ -213,13 +223,11 @@ export default function OnlineLobbyScreen() {
 
     return () => {
       multiplayerCallbacks.onRoomUpdated = null;
-      // ロビーを抜けて対戦画面に移った後も機能するように、
-      // React の State 更新（setRoomData）を行わずアラート & メニュー戻り処理のみ実行するコールバックへ差し替える
-      multiplayerCallbacks.onRoomClosed = () => {
-        showAlertModal('ルームが解散されました。', () => {
-          showOnlineMenu?.();
-        });
-      };
+      // ロビー画面から離脱した場合（対戦開始時を除く）はコールバックを解除
+      // 対戦開始時は対戦用のコールバックを維持するため、バトル状態でない場合のみ null にする
+      if (GameState.appState !== 'battle') {
+        multiplayerCallbacks.onRoomClosed = null;
+      }
       if (battleStartTimeoutRef.current) {
         clearTimeout(battleStartTimeoutRef.current);
       }

@@ -2766,8 +2766,8 @@ export const CARD_MASTER = [
     id: 'scarecrow',
     name: '呪いの案山子',
     power: 1,
-    skills: [{ id: 'reflect' }],
     rarity: 4,
+    skills: [{ id: 'reflect' }],
     voiceCategory: 'undead',
     flavor:
       '燃やそうとした者は黒焦げになり、切り刻もうとした者は四肢を失った。案山子は何事もなかったかのように、今日も畑に立っている。',

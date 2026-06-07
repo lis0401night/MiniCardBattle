@@ -230,7 +230,7 @@ export async function executeLeaderSkillAction(
         tokenLanes,
         false
       );
-      if (selectedLanes.length === 0) return; // キャンセルされた場合
+      if (!selectedLanes || selectedLanes.length === 0) return; // キャンセルされた場合
       const l = selectedLanes[0];
       const proceed = await confirmOverwrittenLane(owner, token, l, false);
       if (!proceed) {
@@ -1157,7 +1157,11 @@ export async function executeLeaderSkillAction(
         if (
           board[targetLane] &&
           (hasSkill(selectedCard, 'equip') ||
-            hasSkill(board[targetLane], 'arm_self'))
+            hasSkill(board[targetLane], 'arm_self')) &&
+          !hasSkill(board[targetLane], 'possession') &&
+          !hasSkill(selectedCard, 'possession') &&
+          !hasSkill(board[targetLane], 'reflect') &&
+          !hasSkill(selectedCard, 'reflect')
         ) {
           const targetCard = board[targetLane];
           targetCard.power =
@@ -1194,6 +1198,16 @@ export async function executeLeaderSkillAction(
           mergeCardSkills(targetCard, equipSkills);
           targetCard.equippedCards = targetCard.equippedCards || [];
           targetCard.equippedCards.push(selectedCard);
+
+          // 武装（arm_self）の消費処理
+          if (
+            !hasSkill(selectedCard, 'equip') &&
+            hasSkill(targetCard, 'arm_self')
+          ) {
+            targetCard.skills = targetCard.skills.filter(
+              (s) => s.id !== 'arm_self'
+            );
+          }
 
           renderBoard();
           events.push({

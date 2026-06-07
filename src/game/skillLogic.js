@@ -1027,6 +1027,7 @@ export async function resolveActiveSkillEffect(
       false,
       true
     );
+    if (!selectedLanes || selectedLanes.length === 0) return; // キャンセル時はスキル終了
     if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
     let events = [];
