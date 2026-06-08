@@ -286,9 +286,9 @@ export function processDestructionTriggers(state, events) {
               side,
               lane: i,
               card: {
+                ...JSON.parse(JSON.stringify(tL)),
                 id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
                 owner: side,
-                ...tL,
                 imgUrl: `assets/cards/card_${tokenId}.jpg`,
                 power: val,
                 currentPower: val,
@@ -2456,7 +2456,7 @@ export function applyLeaderSkillLogic(
     for (let idx = 0; idx < allyTargets.length; idx++) {
       const lane = allyTargets[idx];
       const newToken = {
-        ...tM,
+        ...JSON.parse(JSON.stringify(tM)),
         // ...tM のスプレッド後にidを設定し、tM.id による上書きを防ぐ
         id: `tk_np_${Math.floor(getSeededRandom() * 1000000000)}_${idx}`,
         baseId: tM.id,
@@ -2607,9 +2607,9 @@ export function applyLeaderSkillLogic(
       const tM = CARD_MASTER.find((m) => m.id === 'token_ignis');
       if (tM) {
         const newToken = {
+          ...JSON.parse(JSON.stringify(tM)),
           id: `tk_dr_${Math.floor(getSeededRandom() * 1000000000)}`,
           owner,
-          ...tM,
           currentPower: 7,
           rarity: tM.rarity || 1,
           // imgUrl は getCardImgUrl がスキンを参照して解決する
@@ -3271,9 +3271,9 @@ export function applyLeaderSkillLogic(
           m.id === (action === 'satan_avatar' ? 'token_satan' : 'token_ignis')
       );
       const newToken = {
+        ...JSON.parse(JSON.stringify(tM)),
         id: `tk_${Math.floor(getSeededRandom() * 1000000000)}`,
         owner,
-        ...tM,
         currentPower: power,
         rarity: tM.rarity || 1,
       };
@@ -3303,9 +3303,9 @@ export function applyLeaderSkillLogic(
     const addKnight = (lane) => {
       const tK = CARD_MASTER.find((m) => m.id === 'token_knight');
       const tk = {
+        ...JSON.parse(JSON.stringify(tK)),
         id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
         owner,
-        ...tK,
         currentPower: tK.power,
         rarity: tK.rarity || 1,
         imgUrl: 'assets/cards/card_token_knight.jpg',
@@ -3326,9 +3326,9 @@ export function applyLeaderSkillLogic(
       for (let l of tokenLanes) {
         const tK = CARD_MASTER.find((m) => m.id === 'token_knight');
         const tk = {
+          ...JSON.parse(JSON.stringify(tK)),
           id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
           owner,
-          ...tK,
           currentPower: tK.power,
           rarity: tK.rarity || 1,
           imgUrl: 'assets/cards/card_token_knight.jpg',
