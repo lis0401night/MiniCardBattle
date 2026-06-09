@@ -2599,6 +2599,8 @@ export async function triggerExplodeSkill(owner, lane, card) {
       );
       if (cEl) {
         requestAnimationFrame(() => {
+          cEl.classList.remove('anim-shake');
+          void cEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
           cEl.classList.add('anim-shake');
         });
         createDamagePopup(cEl, `誘爆 -${val}`, '#ef4444');

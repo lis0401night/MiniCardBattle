@@ -1160,7 +1160,11 @@ export async function resolveActiveSkillEffect(
           '#ef4444'
         );
         const eh = document.getElementById('playmat-enemy');
-        if (eh) eh.classList.add('anim-shake');
+        if (eh) {
+          eh.classList.remove('anim-shake');
+          void eh.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+          eh.classList.add('anim-shake');
+        }
         showSpeechBubble('red');
         await triggerExtortInAction(c, o);
       } else {
@@ -1195,7 +1199,11 @@ export async function resolveActiveSkillEffect(
           '#ef4444'
         );
         const eh = document.getElementById('playmat-enemy');
-        if (eh) eh.classList.add('anim-shake');
+        if (eh) {
+          eh.classList.remove('anim-shake');
+          void eh.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+          eh.classList.add('anim-shake');
+        }
         showSpeechBubble('red');
       }
     }
@@ -1308,6 +1316,8 @@ export async function resolveActiveSkillEffect(
         }
 
         if (tgtEl) {
+          tgtEl.classList.remove('anim-shake');
+          void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
           tgtEl.classList.add('anim-shake');
         }
 
@@ -1423,6 +1433,8 @@ export async function resolveActiveSkillEffect(
           }
         } else {
           if (tgtEl) {
+            tgtEl.classList.remove('anim-shake');
+            void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
             tgtEl.classList.add('anim-shake');
             tgtEl.classList.add('anim-card-destroy');
             createDamagePopup(tgtEl, '破壊', '#ef4444');
@@ -2917,6 +2929,8 @@ export async function resolveActiveSkillEffect(
               `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
             if (tgtEl) {
+              tgtEl.classList.remove('anim-shake');
+              void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
               tgtEl.classList.add('anim-shake');
               tgtEl.classList.add('anim-card-destroy');
               createDamagePopup(tgtEl, '破壊', '#991b1b');
@@ -2984,6 +2998,8 @@ export async function resolveActiveSkillEffect(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
             if (tgtEl) {
+              tgtEl.classList.remove('anim-shake');
+              void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
               tgtEl.classList.add('anim-shake');
               tgtEl.classList.add('anim-card-destroy');
               createDamagePopup(tgtEl, '破壊', '#991b1b');
