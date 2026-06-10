@@ -498,6 +498,11 @@ const TUTORIAL_LEADER_CTHULHU = [
     type: 'waitCombat',
   },
   {
+    id: 'ls_cheetah_explain',
+    type: 'message',
+    text: '「稲妻の猟豹」もリーダースキルでパワーが上がっているよ！\n左のレーンに重ねて召喚（上書き配置）して、速攻でトドメだ！',
+  },
+  {
     id: 'select_cheetah',
     type: 'selectCard',
     targetCardId: 'cheetah',
@@ -507,14 +512,8 @@ const TUTORIAL_LEADER_CTHULHU = [
     id: 'place_cheetah',
     type: 'placeCard',
     targetCardId: 'cheetah',
-    targetLane: 2,
-    blockMessage: '右の空いているレーンに配置してね！',
-  },
-  {
-    id: 'ls_cheetah_explain',
-    type: 'message',
-    text: '猟豹もリーダースキルでパワーが上がっているよ！\n「速攻」で敵リーダーにトドメだ！',
-    waitBattleIdle: true,
+    targetLane: 0,
+    blockMessage: '左のレーンに重ねて配置してね！',
   },
   {
     id: 'ls_victory_1',
