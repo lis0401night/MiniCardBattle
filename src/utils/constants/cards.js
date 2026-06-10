@@ -1385,7 +1385,7 @@ export const CARD_MASTER = [
     id: 'baphomet',
     name: '集会の主',
     rarity: 2,
-    power: 5,
+    power: 6,
     skills: [
       { id: 'takeover', value: 1 },
       { id: 'heal', value: 4 },
@@ -2213,7 +2213,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 5,
     skills: [
-      { id: 'contract', value: 4 },
+      { id: 'contract', value: 2 },
       { id: 'clone', value: 1 },
     ],
     voiceCategory: 'horse',
