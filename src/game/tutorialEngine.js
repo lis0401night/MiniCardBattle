@@ -559,7 +559,8 @@ const TUTORIAL_LEADER_ELF = [
     type: 'useLeaderSkill',
     blockMessage: 'リーダースキルボタンをタップしてね！',
     requiredEnemyTargetCount: 1,
-    targetLanesBlockMessage: '相手のカードを選んで破壊してね！',
+    targetLanesBlockMessage: '中央の「古代の大蜥蜴」を選んで破壊してね！',
+    targetLanes: [1], // 中央に限定
   },
   {
     id: 'ls_result',
@@ -577,7 +578,8 @@ const TUTORIAL_LEADER_ELF = [
     id: 'place_cheetah',
     type: 'placeCard',
     targetCardId: 'cheetah',
-    blockMessage: '敵がいないレーンに配置してね！',
+    targetLane: 1, // 中央に限定
+    blockMessage: '中央の空いたレーンに配置してね！',
   },
   {
     id: 'ls_victory_1',
@@ -1452,12 +1454,22 @@ export function filterLaneClick(lane, side) {
       return true;
     }
 
-    // targetLane が未定義またはnullの場合は自由配置（どのレーンでもOK）
-    if (
-      step.targetLane == null ||
-      lane === step.targetLane ||
-      (Array.isArray(step.targetLanes) && step.targetLanes.includes(lane))
-    ) {
+    // targetLane および targetLanes のいずれかが設定されている場合はその条件に従い、
+    // どちらも設定されていない場合のみ自由配置（どのレーンでもOK）とする
+    const hasTargetLane = step.targetLane != null;
+    const hasTargetLanes =
+      Array.isArray(step.targetLanes) && step.targetLanes.length > 0;
+
+    let isLaneAllowed = false;
+    if (!hasTargetLane && !hasTargetLanes) {
+      isLaneAllowed = true; // どちらも指定されていない場合は自由配置
+    } else if (hasTargetLane && lane === step.targetLane) {
+      isLaneAllowed = true; // 指定された単一レーンと一致
+    } else if (hasTargetLanes && step.targetLanes.includes(lane)) {
+      isLaneAllowed = true; // 指定された複数レーンのいずれかと一致
+    }
+
+    if (isLaneAllowed) {
       if (step.nextPlacementTargetLane !== undefined) {
         GameState.tutorial.placementTargetLane = step.nextPlacementTargetLane;
         GameState.tutorial.placementBlockMessage =
@@ -1905,7 +1917,19 @@ export async function runTutorialFlow() {
         break;
       }
 
+      case 'waitCombat':
+        // 一時停止している戦闘フェーズを再開する
+        resumeTutorialCombat();
+        if (!GameState.tutorial) break;
+        // 戦闘フェーズが完了して、次のターン開始時の一時停止に到達するまで待機
+        await waitForTutorialPause();
+        if (!GameState.tutorial) break;
+        GameState.tutorial.stepIndex++;
+        await sleep(500);
+        break;
+
       case 'end':
+      case 'endTutorial':
         // チュートリアル終了
         hideMessage();
         GameState.tutorial.active = false;
