@@ -682,9 +682,8 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 10,
     skills: [
-      { id: 'standby', value: 2 },
-      { id: 'growth', value: -2 },
-      { id: 'sturdy' },
+      { id: 'standby', value: 3 },
+
     ],
     voiceCategory: 'machine_old',
     flavor:
@@ -1796,7 +1795,7 @@ export const CARD_MASTER = [
     name: '廃教会の獣',
     rarity: 3,
     power: 7,
-    skills: [{ id: 'loss', value: 5 }],
+    skills: [{ id: 'loss', value: 4 }],
     voiceCategory: 'wolf',
     flavor:
       '見捨てられた街の大橋に巣くう巨大な獣。自らが何者であったのか、記憶の全てを失ってもなお、主のいない教会を侵入者から守り続けている。',
@@ -2290,12 +2289,12 @@ export const CARD_MASTER = [
     id: 'wurm',
     name: '文明喰らい',
     rarity: 4,
-    power: 7,
+    power: 8,
     skills: [
       { id: 'takeover' },
-      { id: 'berserk', value: 3 },
+      { id: 'berserk', value: 4 },
       { id: 'cleave' },
-      { id: 'retaliate', value: 3 },
+      { id: 'retaliate', value: 2 },
     ],
     voiceCategory: 'monster',
     flavor:
