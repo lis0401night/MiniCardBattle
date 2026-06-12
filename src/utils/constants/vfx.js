@@ -99,9 +99,9 @@ export const VFX_DATA = {
   anm_summon_satan: {
     type: 'sprite',
     src: 'assets/vfx/hujimiyaeffect_godcircle.png',
-    columns: 7,
-    rows: 10,
-    frameCount: 70,
+    columns: 8,
+    rows: 8,
+    frameCount: 64,
     duration: 1000,
     se: 'seSkillCharge',
     position: 'lane', // ターゲットのレーンに合わせて表示
@@ -219,7 +219,7 @@ export const VFX_DATA = {
     se: 'seSkillCharge',
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
-    scale: 3.0,
+    scale: 1.0,
     shake: false,
     targetSide: 'self', // スキル処理から両方を指定するためselfベースにする
   },

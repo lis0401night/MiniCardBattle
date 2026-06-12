@@ -15,9 +15,12 @@
     />
     <meta name="apple-mobile-web-app-title" content="MCB" />
     <meta name="theme-color" content="#000000" />
+    <!-- ホーム画面に追加した際のアイコン設定 -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/apple-touch-icon.png" />
 
-    <!-- 本番環境でPWA化する時にコメントを外してください -->
-    <!-- <link rel="manifest" href="manifest.json"> -->
+    <!-- Android等でのPWA完全対応用マニフェスト -->
+    <link rel="manifest" href="/manifest.json" />
     <script>
       window.onerror = function (msg, url, line, col, error) {
         if (typeof showErrorModal === 'function') {
