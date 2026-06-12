@@ -349,6 +349,20 @@ export function stopAllBGM() {
     }
   });
 }
+
+export function forceSoundReload() {
+  if (typeof unlockAudio === 'function' && !isAudioUnlocked) {
+    unlockAudio();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+  if (currentBgmAudio) {
+    const bgm = currentBgmAudio;
+    currentBgmAudio = null;
+    playSound(bgm);
+  }
+}
 export const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // PRNG (Pseudo-Random Number Generator) for Multiplayer Sync
@@ -387,6 +401,27 @@ export function getSeededRandom() {
   return currentRNG();
 }
 
+// iOS Safari等の長時間のバックグラウンドサスペンドに対するオーディオ復帰機構
+let backgroundStartTime = 0;
+let needsAudioRecovery = false;
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      backgroundStartTime = Date.now();
+    } else if (document.visibilityState === 'visible') {
+      if (backgroundStartTime > 0) {
+        const elapsedMinutes = (Date.now() - backgroundStartTime) / 1000 / 60;
+        // 5分以上バックグラウンドにいた場合はオーディオエンジンが破棄（クラッシュ）されている可能性が高いと判定
+        if (elapsedMinutes >= 5) {
+          needsAudioRecovery = true;
+        }
+        backgroundStartTime = 0;
+      }
+    }
+  });
+}
+
 // 画面遷移
 export let isTransitioning = false;
 let switchScreenHook = null;
@@ -407,6 +442,14 @@ export function switchScreen(id) {
 export function executeSwitchScreen(id) {
   if (isTransitioning) return;
   isTransitioning = true;
+
+  // 長時間のバックグラウンド放置からの復帰時で、BGMが鳴っているべき場合に強制再起動を行う
+  if (needsAudioRecovery && currentBgmAudio) {
+    needsAudioRecovery = false;
+    const bgmToRestart = currentBgmAudio;
+    currentBgmAudio = null; // 一旦nullにしてプレイ済みチェックを回避させる
+    playSound(bgmToRestart);
+  }
 
   // モバイル等でのボタン選択状態（Sticky Focus）を解除
   if (document.activeElement && document.activeElement.tagName !== 'BODY') {

@@ -7,6 +7,7 @@ export default function NewsBanner() {
   const [newsItems, setNewsItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedNews, setSelectedNews] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetch('api/get_news.php')
@@ -33,7 +34,7 @@ export default function NewsBanner() {
               return true;
             });
             
-            if (activeNews.length > 0) setNewsItems(activeNews);
+            setNewsItems(activeNews);
           }
         } catch (e) {
           // ローカルのViteサーバー環境などでPHPが実行されずパースエラーになった場合のフォールバック
@@ -53,24 +54,32 @@ export default function NewsBanner() {
       })
       .catch(err => {
         console.error('Failed to fetch news:', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, []);
 
+  const displayItems = isLoading 
+    ? [{ id: 'loading', title: 'お知らせを確認中...', icon: '⏳', color1: '#1e293b', color2: '#0f172a', isPlaceholder: true }]
+    : newsItems.length === 0 
+      ? [{ id: 'empty', title: '新しいお知らせはありません', icon: '💤', color1: '#1e293b', color2: '#0f172a', isPlaceholder: true }]
+      : newsItems;
+
   useEffect(() => {
-    if (newsItems.length <= 1) return;
+    if (displayItems.length <= 1) return;
     const timer = setInterval(() => {
       // モーダルが開いている間は自動スライドを停止
       if (!selectedNews) {
-        setCurrentIndex((prev) => (prev + 1) % newsItems.length);
+        setCurrentIndex((prev) => (prev + 1) % displayItems.length);
       }
     }, 4000); // 4秒ごとにスライド
 
     return () => clearInterval(timer);
-  }, [newsItems.length, selectedNews]);
-
-  if (newsItems.length === 0) return null;
+  }, [displayItems.length, selectedNews]);
 
   const handleBannerClick = (item) => {
+    if (item.isPlaceholder) return;
     console.log("handleBannerClick fired!", item);
     try {
       playSound?.(SOUNDS?.seClick);
@@ -91,15 +100,15 @@ export default function NewsBanner() {
           className="news-banner-track"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {newsItems.map((item) => (
+          {displayItems.map((item) => (
             <div 
               key={item.id} 
               className="news-banner-slide"
               onClick={() => handleBannerClick(item)}
               style={
                 item.imageUrl 
-                  ? { backgroundImage: `url(${item.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'pointer' }
-                  : { background: `linear-gradient(135deg, ${item.color1 || '#333'}, ${item.color2 || '#111'})`, cursor: 'pointer' }
+                  ? { backgroundImage: `url(${item.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', cursor: item.isPlaceholder ? 'default' : 'pointer' }
+                  : { background: `linear-gradient(135deg, ${item.color1 || '#333'}, ${item.color2 || '#111'})`, cursor: item.isPlaceholder ? 'default' : 'pointer' }
               }
             >
               <div style={{
@@ -114,24 +123,26 @@ export default function NewsBanner() {
                 pointerEvents: 'none'
               }}>
                 <span className="news-banner-icon">{item.icon}</span>
-                <span className="news-banner-text" style={{ textShadow: '1px 1px 3px black' }}>{item.title}</span>
+                <span className="news-banner-text" style={{ textShadow: '1px 1px 3px black', color: item.isPlaceholder ? '#94a3b8' : '#fff' }}>{item.title}</span>
               </div>
             </div>
           ))}
         </div>
         
-        <div className="news-banner-indicators">
-          {newsItems.map((_, index) => (
-            <div 
-              key={index}
-              className={`news-banner-dot ${index === currentIndex ? 'active' : ''}`}
-              onClick={() => {
-                playSound?.(SOUNDS?.seClick);
-                setCurrentIndex(index);
-              }}
-            />
-          ))}
-        </div>
+        {displayItems.length > 1 && (
+          <div className="news-banner-indicators">
+            {displayItems.map((_, index) => (
+              <div 
+                key={index}
+                className={`news-banner-dot ${index === currentIndex ? 'active' : ''}`}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setCurrentIndex(index);
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* お知らせ詳細ポップアップ */}

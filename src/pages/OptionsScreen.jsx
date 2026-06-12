@@ -9,7 +9,7 @@ import {
   showSyncDataModal,
   updateVolume,
 } from '../services/uiMainCore.js';
-import { playSound } from '../utils/gameUtils.js';
+import { playSound, forceSoundReload } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function OptionsScreen() {
@@ -81,16 +81,37 @@ export default function OptionsScreen() {
       >
         {/* 音量調整 */}
         <div style={{ marginBottom: '20px' }}>
-          <label
-            style={{
-              display: 'block',
-              marginBottom: '10px',
-              color: '#cbd5e1',
-              fontSize: '0.9rem',
-            }}
-          >
-            音量調整
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <label
+              style={{
+                color: '#cbd5e1',
+                fontSize: '0.9rem',
+                margin: 0
+              }}
+            >
+              音量調整
+            </label>
+            <button
+              className="btn"
+              style={{
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                background: '#475569',
+                margin: 0,
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              onClick={() => {
+                if (typeof forceSoundReload === 'function') {
+                  forceSoundReload();
+                }
+              }}
+            >
+              <span style={{ fontSize: '0.9rem' }}>🔄</span> サウンド復旧
+            </button>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.2rem' }}>🔈</span>
             <input
