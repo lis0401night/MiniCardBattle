@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { switchScreen, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -8,6 +8,10 @@ export default function NewsBanner() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedNews, setSelectedNews] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // フリック操作用のRef
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => {
     fetch('api/get_news.php')
@@ -78,8 +82,38 @@ export default function NewsBanner() {
     return () => clearInterval(timer);
   }, [displayItems.length, selectedNews]);
 
+  // タッチ操作のハンドラー
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (displayItems.length <= 1) return;
+    const distance = touchStartX.current - touchEndX.current;
+    
+    // 左にフリック（次へ）
+    if (distance > 50) {
+      setCurrentIndex((prev) => (prev + 1) % displayItems.length);
+    } 
+    // 右にフリック（前へ）
+    else if (distance < -50) {
+      setCurrentIndex((prev) => (prev - 1 + displayItems.length) % displayItems.length);
+    }
+  };
+
   const handleBannerClick = (item) => {
     if (item.isPlaceholder) return;
+    
+    // スワイプ操作と判定される場合はクリックを無効化（誤タップ防止）
+    if (Math.abs(touchStartX.current - touchEndX.current) > 20) {
+      return;
+    }
+
     console.log("handleBannerClick fired!", item);
     try {
       playSound?.(SOUNDS?.seClick);
@@ -95,7 +129,12 @@ export default function NewsBanner() {
 
   return (
     <>
-      <div className="news-banner-container">
+      <div 
+        className="news-banner-container"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div 
           className="news-banner-track"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
