@@ -2846,6 +2846,18 @@ h2 {
   margin-top: 20px;
 }
 
+@keyframes badge-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.badge-animated {
+  background: linear-gradient(45deg, #39ff14, #a3e635, #39ff14) !important;
+  background-size: 200% 200% !important;
+  animation: badge-gradient-shift 3s ease infinite;
+}
+
 .menu-img-btn {
   width: calc(50% - 12.5px);
   flex: 0 0 calc(50% - 12.5px);

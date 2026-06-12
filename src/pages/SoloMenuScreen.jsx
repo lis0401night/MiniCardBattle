@@ -33,11 +33,13 @@ export default function SoloMenuScreen() {
           label="ストーリー"
           image={images.MENU_STORY}
           onClick={() => startGameMode?.('story')}
+          badgeText="勝利でカードGET"
         />
         <MenuImageButton
           label="フリーバトル"
           image={images.MENU_FREE}
           onClick={() => startGameMode?.('free')}
+          badgeText="勝利でカードGET"
         />
         <MenuImageButton
           label="プラクティス"

@@ -10,6 +10,7 @@ import {
 } from '../services/uiMainCore.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import MenuImageButton from '../components/common/MenuImageButton.jsx';
 
 export default function ModeSelectScreen() {
   const images = UI_IMAGES || {};
@@ -27,91 +28,41 @@ export default function ModeSelectScreen() {
       </button>
 
       <div className="menu-btn-grid">
-        <div
-          className="menu-img-btn"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            showBeginnerGuide?.();
-          }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_RULES || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">遊び方</div>
-        </div>
+        <MenuImageButton
+          label="遊び方"
+          image={images.MENU_RULES}
+          onClick={() => showBeginnerGuide?.()}
+        />
 
-        <div
-          className="menu-img-btn"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            showDeckEditMenu?.();
-          }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_DECK || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">デッキ編成</div>
-        </div>
+        <MenuImageButton
+          label="デッキ編成"
+          image={images.MENU_DECK}
+          onClick={() => showDeckEditMenu?.()}
+        />
 
-        <div
-          className="menu-img-btn"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            showSoloMenu?.();
-          }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{
-              backgroundImage: `url('${images.MENU_SOLO || images.MENU_STORY || ''}')`,
-            }}
-          ></div>
-          <div className="menu-btn-label">ソロモード</div>
-        </div>
+        <MenuImageButton
+          label="ソロモード"
+          image={images.MENU_SOLO || images.MENU_STORY}
+          onClick={() => showSoloMenu?.()}
+        />
 
-        <div
-          className="menu-img-btn"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            showEventMenu?.();
-          }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_EVENT || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">イベント</div>
-        </div>
+        <MenuImageButton
+          label="イベント"
+          image={images.MENU_EVENT}
+          onClick={() => showEventMenu?.()}
+        />
 
-        <div
-          className="menu-img-btn"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            showOnlineMenu?.();
-          }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_ONLINE || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">オンライン</div>
-        </div>
+        <MenuImageButton
+          label="オンライン"
+          image={images.MENU_ONLINE}
+          onClick={() => showOnlineMenu?.()}
+        />
 
-        <div
-          className="menu-img-btn"
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            showGallery?.();
-          }}
-        >
-          <div
-            className="menu-img-bg"
-            style={{ backgroundImage: `url('${images.MENU_GALLERY || ''}')` }}
-          ></div>
-          <div className="menu-btn-label">ギャラリー</div>
-        </div>
+        <MenuImageButton
+          label="ギャラリー"
+          image={images.MENU_GALLERY}
+          onClick={() => showGallery?.()}
+        />
       </div>
     </div>
   );

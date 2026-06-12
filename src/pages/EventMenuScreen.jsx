@@ -25,6 +25,7 @@ export default function EventMenuScreen() {
           label="高難易度"
           image={images.EVENT_HIGH_DIFF}
           onClick={() => startHighDifficulty?.()}
+          badgeText="勝利でカードGET"
         />
         <MenuImageButton
           label="防衛戦"
