@@ -9,7 +9,7 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {function} onClick - クリックイベントハンドラ
  * @param {Object} style - 背景（menu-img-bg）に適用する任意のカスタムスタイル（背景色など）。backgroundImageを含めるとimageプロップを上書きします。
  */
-export default function MenuImageButton({ label, image, onClick, style, badgeText }) {
+export default function MenuImageButton({ label, image, onClick, style, badgeText, notificationBadge }) {
   const handleClick = (e) => {
     playSound(SOUNDS?.seClick);
     if (onClick) onClick(e);
@@ -39,6 +39,22 @@ export default function MenuImageButton({ label, image, onClick, style, badgeTex
         >
           {badgeText}
         </div>
+      )}
+      {notificationBadge && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '-2px',
+            right: '-2px',
+            width: '20px',
+            height: '20px',
+            background: '#ef4444',
+            border: '2px solid white',
+            borderRadius: '50%',
+            zIndex: 10,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+          }}
+        />
       )}
       <div 
         className="menu-img-btn" 

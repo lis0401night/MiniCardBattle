@@ -11,6 +11,7 @@ import {
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
+import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
 
 export default function ModeSelectScreen() {
   const images = UI_IMAGES || {};
@@ -62,6 +63,7 @@ export default function ModeSelectScreen() {
           label="ギャラリー"
           image={images.MENU_GALLERY}
           onClick={() => showGallery?.()}
+          notificationBadge={hasUnclaimedAchievements()}
         />
       </div>
     </div>

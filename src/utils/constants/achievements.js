@@ -1186,5 +1186,12 @@ export function checkAndFixMissingRewards() {
   }
 }
 
+export function hasUnclaimedAchievements() {
+  if (!achievementData || !achievementData.achievements) return false;
+  return Object.values(achievementData.achievements).some(
+    (ach) => ach.isUnlocked && !ach.isRewarded
+  );
+}
+
 window.loadAchievements = loadAchievements;
 window.incrementStat = incrementStat;
