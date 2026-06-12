@@ -2,7 +2,7 @@
   "name": "Mini Card Battle",
   "short_name": "MCB",
   "description": "ブラウザで遊べる本格カードバトルゲーム",
-  "start_url": "/?source=pwa",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
