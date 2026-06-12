@@ -4258,12 +4258,29 @@ export function endBattle() {
           });
 
           if (availableCards.length > 0) {
-            const rewardCardId =
-              availableCards[
-                Math.floor(getSeededRandom() * availableCards.length)
-              ];
-            if (window.showCardRewardReact) {
-              window.showCardRewardReact(rewardCardId);
+            const rewardCount = GameState.gameMode === 'story' ? 2 : 1;
+            const rewardCards = [];
+            const tempInventory = { ...GameState.playerInventory };
+
+            for (let i = 0; i < rewardCount; i++) {
+              const currentAvailable = uniqueCards.filter((cid) => {
+                const count = tempInventory[cid] || 0;
+                return count < 4;
+              });
+
+              if (currentAvailable.length > 0) {
+                const rewardCardId =
+                  currentAvailable[
+                    Math.floor(getSeededRandom() * currentAvailable.length)
+                  ];
+                rewardCards.push(rewardCardId);
+                tempInventory[rewardCardId] =
+                  (tempInventory[rewardCardId] || 0) + 1;
+              }
+            }
+
+            if (window.showCardRewardReact && rewardCards.length > 0) {
+              window.showCardRewardReact(rewardCards);
             }
             return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
           }

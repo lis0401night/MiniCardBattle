@@ -14,22 +14,30 @@ export default function RewardOverlay() {
   const [phase, setPhase] = useState('pack'); // 'pack' | 'animating' | 'reveal'
   const [isFadingOut, setIsFadingOut] = useState(false);
   const grantedRef = useRef(false);
+  const [rewardQueue, setRewardQueue] = useState([]);
+
+  const setupReward = (rewardCardId) => {
+    let rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
+    if (!rewardCardTemplate) {
+      // カードデータが見つからない場合、スケルトンをフォールバックとして使用
+      rewardCardTemplate =
+        CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
+    }
+    if (rewardCardTemplate) {
+      setCard({ ...rewardCardTemplate, owner: 'blue' });
+      grantedRef.current = false; // 表示されるたびにリセット
+      setPhase('pack');
+      setIsFadingOut(false);
+      setIsVisible(true);
+    }
+  };
 
   useEffect(() => {
-    window.showCardRewardReact = (rewardCardId) => {
-      let rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
-      if (!rewardCardTemplate) {
-        // カードデータが見つからない場合、スケルトンをフォールバックとして使用
-        rewardCardTemplate =
-          CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
-      }
-      if (rewardCardTemplate) {
-        setCard({ ...rewardCardTemplate, owner: 'blue' });
-        grantedRef.current = false; // 表示されるたびにリセット
-        setPhase('pack');
-        setIsFadingOut(false);
-        setIsVisible(true);
-      }
+    window.showCardRewardReact = (rewardCardIds) => {
+      const ids = Array.isArray(rewardCardIds) ? rewardCardIds : [rewardCardIds];
+      if (ids.length === 0) return;
+      setRewardQueue(ids);
+      setupReward(ids[0]);
     };
 
     window.closeRewardScreenReact = () => {
@@ -90,6 +98,13 @@ export default function RewardOverlay() {
         setIsVisible(false);
         setIsFadingOut(false);
       }, 300);
+      return;
+    }
+
+    if (rewardQueue.length > 1) {
+      const nextQueue = rewardQueue.slice(1);
+      setRewardQueue(nextQueue);
+      setupReward(nextQueue[0]);
       return;
     }
 
@@ -353,10 +368,50 @@ export default function RewardOverlay() {
           display: flex;
           max-height: 95vh; /* 画面内に収めてスクロール領域を有効化 */
         }
+
+        .stacked-pack {
+          position: absolute;
+          top: -15px;
+          right: -25px;
+          width: 280px;
+          height: 380px;
+          transform: scale(0.95);
+          z-index: 0;
+          filter: brightness(0.85);
+          pointer-events: none;
+        }
       `}</style>
 
       {phase !== 'reveal' ? (
         <div className="reward-pack-wrapper">
+          {/* 背後の待機パック（複数ある場合） */}
+          {rewardQueue.length > 1 && (
+            <div className="stacked-pack">
+              <img
+                className="pack-image"
+                src="assets/ui/packimg01.png"
+                alt="Booster Pack"
+              />
+              <div className="enemy-portrait-frame">
+                <img
+                  className="enemy-portrait-img"
+                  src={enemyImg}
+                  alt="Enemy Key Visual"
+                />
+              </div>
+              <img
+                className="pack-image specular"
+                src="assets/ui/packimg01.png"
+                alt="Booster Pack Specular"
+              />
+              <img
+                className="pack-text-image"
+                src="assets/ui/packtextimg01.png"
+                alt="Pack Text"
+              />
+            </div>
+          )}
+
           {/* 飛び出すカード(パックの後ろに描画) */}
           {phase === 'animating' && <div className="shooting-card" />}
 
