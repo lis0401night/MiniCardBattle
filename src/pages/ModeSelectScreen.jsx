@@ -11,6 +11,7 @@ import {
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
+import NewsBanner from '../components/common/NewsBanner.jsx';
 import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
 
 export default function ModeSelectScreen() {
@@ -27,6 +28,8 @@ export default function ModeSelectScreen() {
       >
         ⚙
       </button>
+
+      <NewsBanner />
 
       <div className="menu-btn-grid">
         <MenuImageButton
