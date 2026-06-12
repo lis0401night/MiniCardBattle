@@ -95,6 +95,22 @@ export const VFX_DATA = {
     targetSide: 'self', // 自陣に召喚
   },
 
+  // サタン召喚用VFX
+  anm_summon_satan: {
+    type: 'sprite',
+    src: 'assets/vfx/hujimiyaeffect_godcircle.png',
+    columns: 7,
+    rows: 10,
+    frameCount: 70,
+    duration: 1000,
+    se: 'seSkillCharge',
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 1.0,
+    shake: true,
+    targetSide: 'self', // 自陣に召喚
+  },
+
   // セレスティア召喚用VFX
   anm_summon_celestia: {
     type: 'sprite',
@@ -146,7 +162,7 @@ export const VFX_DATA = {
   // ナイアSPスキル「深淵の儀式」用VFX
   anm_abyss_ritual: {
     type: 'sprite',
-    src: 'assets/vfx/pipo-mapeffect016_640.png',
+    src: 'assets/vfx/pipo-mapeffect016_320.png',
     columns: 4,
     rows: 5,
     frameCount: 20,
@@ -154,7 +170,7 @@ export const VFX_DATA = {
     se: 'seSkillCharge',
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
-    scale: 2.0,
+    scale: 3.0,
     shake: false,
     targetSide: 'self', // 手札入れ替え(自分への効果)のため、自分のHPゲージ位置
   },
@@ -173,6 +189,39 @@ export const VFX_DATA = {
     scale: 0.6,
     shake: true,
     targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // ヴィオラスキル用VFX
+  anm_viola_arts: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_skill_dominate2.png',
+    columns: 5,
+    rows: 3,
+    frameCount: 15,
+    duration: 400,
+    se: 'seSkillDominate', // 専用の支配効果音へ修正
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.8,
+    shake: false,
+    flipOnEnemy: true, // 手前の自分カードに当たるとき（敵が発動したとき）に上下反転させる
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // ゼノンスキル用VFX
+  anm_otherworld_gate: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-mapeffect015_192.png',
+    columns: 5,
+    rows: 2,
+    frameCount: 10,
+    duration: 1000,
+    se: 'seSkillCharge',
+    position: 'hp', // HPゲージの高さに合わせて表示
+    offsetY: 0,
+    scale: 3.0,
+    shake: false,
+    targetSide: 'self', // スキル処理から両方を指定するためselfベースにする
   },
 
   // 有毒スキル用VFX

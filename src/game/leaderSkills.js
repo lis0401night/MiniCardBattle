@@ -945,7 +945,8 @@ export async function executeLeaderSkillAction(
       );
 
       if (window.triggerVfx) {
-        await window.triggerVfx('anm_abyss_ritual', owner);
+        window.triggerVfx('anm_otherworld_gate', owner);
+        await window.triggerVfx('anm_otherworld_gate', opId);
       }
 
       if (selectedIndices && selectedIndices.length > 0) {
@@ -957,6 +958,11 @@ export async function executeLeaderSkillAction(
       }
 
       for (let i = 0; i < dc; i++) drawCard(owner);
+    } else {
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_otherworld_gate', owner);
+        await window.triggerVfx('anm_otherworld_gate', opId);
+      }
     }
 
     events.push({ type: 'leader_skill', skill: action, side: owner });
@@ -1008,6 +1014,12 @@ export async function executeLeaderSkillAction(
         true,
         `手札を${myCount}枚選択して捨ててください`
       );
+
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_otherworld_gate', owner);
+        await window.triggerVfx('anm_otherworld_gate', opId);
+      }
+
       if (selectedIndices && selectedIndices.length > 0) {
         selectedIndices.sort((a, b) => b - a);
         for (let i of selectedIndices) {
@@ -1015,6 +1027,11 @@ export async function executeLeaderSkillAction(
           await discardCard(owner, card);
           myDiscarded++;
         }
+      }
+    } else {
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_otherworld_gate', owner);
+        await window.triggerVfx('anm_otherworld_gate', opId);
       }
     }
 
@@ -1136,6 +1153,7 @@ export async function executeLeaderSkillAction(
       if (selectedOppLane !== -1 && oppBoard[selectedOppLane]) {
         const selectedCard = oppBoard[selectedOppLane];
         const targetLane = selectedOppLane;
+        tokenLanes = [selectedOppLane]; // VFX用に渡す
 
         oppBoard[selectedOppLane] = null;
         updateDeckDisplay(oppOwner);
@@ -1402,6 +1420,20 @@ export async function executeLeaderSkillAction(
     ) {
       await sleep(200);
       await window.triggerVfx('anm_summon_ignis', owner, tokenLanes[0]);
+    } else if (
+      action === 'satan_avatar' &&
+      tokenLanes &&
+      tokenLanes.length > 0
+    ) {
+      await sleep(200);
+      await window.triggerVfx('anm_summon_satan', owner, tokenLanes[0]);
+    } else if (
+      action === 'viola_domination' &&
+      tokenLanes &&
+      tokenLanes.length > 0
+    ) {
+      await sleep(200);
+      await window.triggerVfx('anm_viola_arts', owner, tokenLanes[0]);
     } else if (action === 'elf_polarbear_combo') {
       await sleep(200);
       if (tokenLanes && tokenLanes[0] >= 0) {
