@@ -72,6 +72,15 @@ export function initStoryMode(charId) {
     }
   }
 
+  // ストーリー開始時に現在選択されているデッキのスナップショットを保存
+  if (GameState.decks && GameState.decks[GameState.currentDeckIndex]) {
+    const storyDeckSnapshot = GameState.decks[GameState.currentDeckIndex];
+    localStorage.setItem(
+      'mini_card_battle_story_deck_obj',
+      JSON.stringify(storyDeckSnapshot)
+    );
+  }
+
   performFadeTransition(() => {
     setupDialogueScreen();
   });
@@ -124,17 +133,6 @@ export function saveStoryProgress() {
     currentDeckIndex: GameState.currentDeckIndex,
   };
   localStorage.setItem('mini_card_battle_story_save', JSON.stringify(saveObj));
-
-  // 現在選択されているデッキのスナップショットをストーリー専用データとして保存
-  if (GameState.decks && GameState.decks[GameState.currentDeckIndex]) {
-    const storyDeckSnapshot = GameState.decks[GameState.currentDeckIndex];
-    localStorage.setItem(
-      'mini_card_battle_story_deck_obj',
-      JSON.stringify(storyDeckSnapshot)
-    );
-  } else {
-    localStorage.removeItem('mini_card_battle_story_deck_obj');
-  }
 }
 
 /**
