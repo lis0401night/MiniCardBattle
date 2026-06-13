@@ -64,6 +64,13 @@ export async function playEvents(events) {
       ['damage_card', 'damage_player', 'deadly'].includes(nextEv.type);
 
     switch (ev.type) {
+      case 'vfx_trigger': {
+        if (window.triggerVfx && ev.vfxId) {
+          window.triggerVfx(ev.vfxId, ev.side, ev.lane);
+          await sleep(200); // 演出が始まるまで少し待機
+        }
+        break;
+      }
       case 'damage_card': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;

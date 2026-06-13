@@ -1837,6 +1837,12 @@ export function applyActiveSkillLogic(
     }
     case 'petrify':
       if (eB[l]) {
+        events.push({
+          type: 'vfx_trigger',
+          vfxId: 'anm_skill_petrify',
+          side: owner, // 発動者（自分）を基準にする。vfx.js側の 'targetSide: enemy' によって相手側のレーンに描画される
+          lane: l
+        });
         const targetOriginal = JSON.parse(JSON.stringify(eB[l]));
         const statueTpl = CARD_MASTER.find((m) => m.id === 'token_statue') || {
           name: '石像',
@@ -3684,6 +3690,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
   if (hasSkill(aC, 'brutal')) {
     const brutalDmg = getSkillValue(aC, 'brutal') || 1;
+    events.push({
+      type: 'vfx_trigger',
+      vfxId: 'anm_skill_brutal',
+      side: attackerSide,
+      lane: l
+    });
+
     [l - 1, l + 1].forEach((tj) => {
       if (tj >= 0 && tj <= 2 && atkBoard[tj]) {
         if (canTakeDamage(atkBoard[tj], brutalDmg)) {

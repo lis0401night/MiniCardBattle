@@ -17,7 +17,6 @@ export const VFX_DATA = {
     shake: true, // 画面を揺らす
     targetSide: 'enemy', // ターゲット (enemy: 相手陣地, self: 自分陣地)
   },
-
   // クロエSPスキル
   anm_witch_arts: {
     type: 'sprite', // 演出タイプ ('sprite' または 'css')
@@ -170,7 +169,7 @@ export const VFX_DATA = {
     se: 'seSkillCharge',
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
-    scale: 3.0,
+    scale: 1.5,
     shake: false,
     targetSide: 'self', // 手札入れ替え(自分への効果)のため、自分のHPゲージ位置
   },
@@ -336,6 +335,38 @@ export const VFX_DATA = {
     scale: 0.5,
     shake: false,
     targetSide: 'self', // 回復を受けた側（自分）がターゲット
+  },
+
+  // 暴虐スキル（隣接ダメージ）
+  anm_skill_brutal: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect177_640.png', // 薙ぎ払うアニメ素材
+    columns: 2,
+    rows: 5,
+    frameCount: 10,
+    duration: 600,
+    se: 'seSkillGoaCrush', // なぎ払い専用SE
+    position: 'lane', // 発動レーンに合わせる
+    offsetY: 0,
+    scale: 0.8, // 横にも判定があるため少し大きめに表示
+    shake: false,
+    targetSide: 'self', // 回復を受けた側（自分）がターゲット
+  },
+
+  // 石化スキル
+  anm_skill_petrify: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect204_192.png',
+    columns: 5,
+    rows: 3, // 192px系は5x3か5x4が多いですが、一般的な20フレームとして設定します
+    frameCount: 15,
+    duration: 600,
+    se: 'seSkillMorph',
+    position: 'lane', // 発動対象レーンに合わせる
+    offsetY: 0,
+    scale: 0.5,
+    shake: false,
+    targetSide: 'enemy', // 相手のレーンがターゲット
   },
 
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK
