@@ -220,7 +220,6 @@
   max-width: 80%;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.8));
   z-index: 20;
   opacity: 0;
   animation: vsStamp 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards 1s;
@@ -240,13 +239,11 @@
   75% {
     transform: translate(-50%, -50%) scale(1.1);
     opacity: 1;
-    filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.8));
   }
 
   100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
-    filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.8));
   }
 }
 
