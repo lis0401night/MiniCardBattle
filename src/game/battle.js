@@ -1,4 +1,5 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -357,108 +358,138 @@ export function prepareBattle() {
   if (isBattleLoading) return;
   isBattleLoading = true;
 
-  switchScreen('screen-loading');
-  const isOnline = GameState.gameMode === 'online';
-  const sessionId = isOnline
-    ? GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()
-    : Date.now();
-  let isFinished = false;
+  // 0. 最新のスキン情報でConfigを同期（対戦相手のスキンなどが確実に反映されるようにする）
+  if (GameState.playerConfig && GameState.playerSkins && GameState.playerSkins[GameState.playerConfig.id]) {
+    const selSkin = GameState.playerSkins[GameState.playerConfig.id];
+    const charObj = CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
+    if (getSkinImage) {
+      GameState.playerConfig.image = getSkinImage(charObj, selSkin, 'image');
+      GameState.playerConfig.imageLose = getSkinImage(charObj, selSkin, 'image');
+      GameState.playerConfig.icon = getSkinImage(charObj, selSkin, 'icon');
+    }
+  }
 
-  // プレイマットは loadDeck() 時にデッキ固有のものが GameState.selectedPlaymatId に設定済みなのを使用する
+  if (GameState.enemyConfig && GameState.enemySkins && GameState.enemySkins[GameState.enemyConfig.id]) {
+    const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
+    const charObj = CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
+    if (getSkinImage) {
+      GameState.enemyConfig.image = getSkinImage(charObj, selSkin, 'image');
+      GameState.enemyConfig.imageLose = getSkinImage(charObj, selSkin, 'image');
+      GameState.enemyConfig.icon = getSkinImage(charObj, selSkin, 'icon');
+    }
+  }
 
-  try {
-    setRNGSeed(sessionId); // シードを完全に固定して初期化
+  // 1. 以前のBGMを強制停止
+  stopAllBGM();
 
-    if (isOnline) {
-      const isHost = getIsHost();
-      const hostConfig = isHost
-        ? GameState.playerConfig
-        : GameState.enemyConfig;
-      const clientConfig = isHost
-        ? GameState.enemyConfig
-        : GameState.playerConfig;
+  // 2. マッチング画面の表示（表示中に裏でローディングを進行させる）
+  const startLoadingAndBattle = (onLoadComplete) => {
+    switchScreen('screen-loading');
+    const isOnline = GameState.gameMode === 'online';
+    const sessionId = isOnline
+      ? GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()
+      : Date.now();
+    let isFinished = false;
 
-      // オンライン時はホスト -> クライアントの順でデッキを生成し、乱数消費順を世界共通に固定する
-      const hostDeck = generateDeck(
-        isHost ? 'blue' : 'red',
-        hostConfig,
-        sessionId
-      );
-      const clientDeck = generateDeck(
-        isHost ? 'red' : 'blue',
-        clientConfig,
-        sessionId
-      );
+    // プレイマットは loadDeck() 時にデッキ固有のものが GameState.selectedPlaymatId に設定済みなのを使用する
 
-      GameState.playerDeck = isHost ? hostDeck : clientDeck;
-      GameState.enemyDeck = isHost ? clientDeck : hostDeck;
+    try {
+      setRNGSeed(sessionId); // シードを完全に固定して初期化
 
-      // アクション受信リスナー起動
-      listenToRoomActions((snapshotVal) => {
-        const { action, actor } = snapshotVal;
-        // 自分自身が出したアクションか判定
-        const isMe = actor === (getIsHost() ? 'host' : 'client');
-        // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
-        action.owner = isMe ? 'blue' : 'red';
+      if (isOnline) {
+        const isHost = getIsHost();
+        const hostConfig = isHost
+          ? GameState.playerConfig
+          : GameState.enemyConfig;
+        const clientConfig = isHost
+          ? GameState.enemyConfig
+          : GameState.playerConfig;
 
-        dispatchBattleAction(action, true);
-      });
+        // オンライン時はホスト -> クライアントの順でデッキを生成し、乱数消費順を世界共通に固定する
+        const hostDeck = generateDeck(
+          isHost ? 'blue' : 'red',
+          hostConfig,
+          sessionId
+        );
+        const clientDeck = generateDeck(
+          isHost ? 'red' : 'blue',
+          clientConfig,
+          sessionId
+        );
 
-      // ホスト側：クライアントが切断して status が waiting に戻った（または client が消去された）場合の検知
-      if (isHost) {
-        multiplayerCallbacks.onRoomUpdated = (data) => {
-          if (!data || GameState.isBattleEnded) return;
+        GameState.playerDeck = isHost ? hostDeck : clientDeck;
+        GameState.enemyDeck = isHost ? clientDeck : hostDeck;
 
-          if (!data.client || data.status === 'waiting') {
-            GameState.isBattleEnded = true;
-            document.body.classList.remove('slow-motion');
-            stopAllBGM();
+        // アクション受信リスナー起動
+        listenToRoomActions((snapshotVal) => {
+          const { action, actor } = snapshotVal;
+          // 自分自身が出したアクションか判定
+          const isMe = actor === (getIsHost() ? 'host' : 'client');
+          // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
+          action.owner = isMe ? 'blue' : 'red';
 
-            if (typeof showAlertModal === 'function') {
-              showAlertModal('接続が切れました。', () => {
+          dispatchBattleAction(action, true);
+        });
+
+        // ホスト側：クライアントが切断して status が waiting に戻った（または client が消去された）場合の検知
+        if (isHost) {
+          multiplayerCallbacks.onRoomUpdated = (data) => {
+            if (!data || GameState.isBattleEnded) return;
+
+            if (!data.client || data.status === 'waiting') {
+              GameState.isBattleEnded = true;
+              document.body.classList.remove('slow-motion');
+              stopAllBGM();
+
+              if (typeof showAlertModal === 'function') {
+                showAlertModal('接続が切れました。', () => {
+                  if (typeof showOnlineLobby === 'function') {
+                    showOnlineLobby();
+                  } else {
+                    switchScreen('screen-online-lobby');
+                  }
+                });
+              } else {
                 if (typeof showOnlineLobby === 'function') {
                   showOnlineLobby();
                 } else {
                   switchScreen('screen-online-lobby');
                 }
-              });
-            } else {
-              if (typeof showOnlineLobby === 'function') {
-                showOnlineLobby();
-              } else {
-                switchScreen('screen-online-lobby');
               }
             }
-          }
-        };
+          };
+        }
+      } else {
+        GameState.playerDeck = generateDeck(
+          'blue',
+          GameState.playerConfig,
+          sessionId
+        );
+        GameState.enemyDeck = generateDeck(
+          'red',
+          GameState.enemyConfig,
+          sessionId
+        );
       }
-    } else {
-      GameState.playerDeck = generateDeck(
-        'blue',
-        GameState.playerConfig,
-        sessionId
-      );
-      GameState.enemyDeck = generateDeck(
-        'red',
-        GameState.enemyConfig,
-        sessionId
-      );
+    } catch (e) {
+      console.error('Deck generation error:', e);
+      // エラー時も空のデッキで続行を試みる（フリーズ回避）
+      GameState.playerDeck = GameState.playerDeck || [];
+      GameState.enemyDeck = GameState.enemyDeck || [];
     }
-  } catch (e) {
-    console.error('Deck generation error:', e);
-    // エラー時も空のデッキで続行を試みる（フリーズ回避）
-    GameState.playerDeck = GameState.playerDeck || [];
-    GameState.enemyDeck = GameState.enemyDeck || [];
-  }
 
-  const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
-  let loaded = 0;
+    const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
+    let loaded = 0;
 
-  const finishLoading = () => {
-    if (isFinished) return;
-    isFinished = true;
-    setTimeout(initBattleState, 500);
-  };
+    const finishLoading = () => {
+      if (isFinished) return;
+      isFinished = true;
+      if (onLoadComplete) {
+        onLoadComplete();
+      } else {
+        setTimeout(initBattleState, 500);
+      }
+    };
 
   // セーフティタイムアウト: 5秒経過したら強制的に開始
   setTimeout(() => {
@@ -484,11 +515,42 @@ export function prepareBattle() {
   }
 
   allCards.forEach((card) => {
-    const img = new Image();
-    img.onload = updateProgress;
-    img.onerror = updateProgress;
-    img.src = card.imgUrl;
-  });
+      const img = new Image();
+      img.onload = updateProgress;
+      img.onerror = updateProgress;
+      img.src = card.imgUrl;
+    });
+  };
+
+  if (typeof window.showMatchingScreen === 'function') {
+    setTimeout(() => {
+      let matchingDone = false;
+      let loadingDone = false;
+      
+      const tryInit = () => {
+        if (matchingDone && loadingDone) {
+          setTimeout(initBattleState, 50);
+        }
+      };
+
+      // マッチング画面開始
+      window.showMatchingScreen(() => {
+        matchingDone = true;
+        tryInit();
+      });
+
+      // 読み込みも開始
+      startLoadingAndBattle(() => {
+        loadingDone = true;
+        tryInit();
+      });
+    }, 500); // 演出前に0.5秒ディレイ
+  } else {
+    // 従来の挙動
+    startLoadingAndBattle(() => {
+      setTimeout(initBattleState, 500);
+    });
+  }
 }
 
 export function initBattleState() {

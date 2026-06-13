@@ -1,0 +1,282 @@
+.matching-screen-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  background: #000;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.matching-screen-container.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.matching-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-image: url('/assets/backgrounds/background_boss.png');
+  /* Dummy for now */
+}
+
+.enemy-bg {
+  clip-path: polygon(0 0, 100% 0, 100% 40%, 0 60%);
+  filter: brightness(0.6) sepia(0.3) hue-rotate(-20deg);
+}
+
+.player-bg {
+  clip-path: polygon(0 60%, 100% 40%, 100% 100%, 0 100%);
+  filter: brightness(0.6) sepia(0.3) hue-rotate(200deg);
+}
+
+.matching-split-line {
+  position: absolute;
+  top: 50%;
+  left: -10%;
+  width: 120%;
+  height: 6px;
+  background: #fff;
+  box-shadow: 0 0 20px 8px #38bdf8, 0 0 40px 15px #1e3a8a;
+  transform: translateY(-50%) rotate(-11.3deg);
+  /* roughly aligns with the 40-60 clip-path */
+  z-index: 5;
+  animation: splitLineExpand 0.6s ease-out forwards;
+}
+
+@keyframes splitLineExpand {
+  0% {
+    transform: translateY(-50%) rotate(-11.3deg) scaleX(0);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(-50%) rotate(-11.3deg) scaleX(1);
+    opacity: 1;
+  }
+}
+
+.matching-side {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+}
+
+.enemy-side {
+  top: 0;
+  justify-content: flex-end;
+  padding-right: 5%;
+}
+
+.player-side {
+  bottom: 0;
+  justify-content: flex-start;
+  padding-left: 5%;
+}
+
+.matching-char-wrapper {
+  position: relative;
+  height: 105%;
+  max-width: 60%;
+  /* This prevents it from taking over the screen width and looking centered */
+  width: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.enemy-side .matching-char-wrapper {
+  animation: slideInRight 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards 0.3s;
+}
+
+.player-side .matching-char-wrapper {
+  animation: slideInLeft 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards 0.3s;
+}
+
+.matching-char-img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
+  z-index: 1;
+}
+
+.matching-char-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(200px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-200px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.matching-info {
+  position: absolute;
+  color: #fff;
+  text-shadow: 2px 2px 4px #000, 0 0 10px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  animation: fadeIn 0.5s ease forwards 0.8s;
+  display: flex;
+  flex-direction: column;
+}
+
+.enemy-side .matching-info {
+  top: 30px;
+  left: 5%;
+  align-items: flex-start;
+}
+
+.player-side .matching-info {
+  bottom: 30px;
+  right: 5%;
+  align-items: flex-end;
+}
+
+.matching-subtitle {
+  font-size: 1.2rem;
+  color: #bae6fd;
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.9), transparent);
+  padding: 6px 30px 6px 15px;
+  border-left: 4px solid #38bdf8;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.player-side .matching-subtitle {
+  background: linear-gradient(-90deg, rgba(30, 58, 138, 0.9), transparent);
+  border-left: none;
+  border-right: 4px solid #38bdf8;
+  padding: 6px 15px 6px 30px;
+}
+
+.matching-name-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.matching-class-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 15px #38bdf8, inset 0 0 10px rgba(255, 255, 255, 0.5);
+  padding: 4px;
+}
+
+.matching-name {
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  font-family: serif;
+}
+
+.matching-vs-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(5);
+  width: 200px;
+  max-width: 80%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.8));
+  z-index: 20;
+  opacity: 0;
+  animation: vsStamp 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards 1s;
+}
+
+@keyframes vsStamp {
+  0% {
+    transform: translate(-50%, -50%) scale(5);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+
+  75% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+    filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.8));
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.8));
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .matching-name {
+    font-size: 2rem;
+  }
+
+  .matching-subtitle {
+    font-size: 1rem;
+    padding: 4px 15px;
+  }
+
+  .matching-class-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .matching-vs-logo {
+    font-size: 5rem;
+  }
+
+  .matching-char-img {
+    height: 120%;
+  }
+}

@@ -342,6 +342,16 @@ export function stopSound(audio) {
   }
 }
 export function stopAllBGM() {
+  if (currentBgmAudio) {
+    stopSound(currentBgmAudio);
+  }
+  if (currentWebAudioBgmSource) {
+    try {
+      currentWebAudioBgmSource.stop();
+    } catch {}
+    currentWebAudioBgmSource.disconnect();
+    currentWebAudioBgmSource = null;
+  }
   currentBgmAudio = null;
   Object.keys(SOUNDS).forEach((key) => {
     if (key.startsWith('bgm')) {

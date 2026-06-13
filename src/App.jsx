@@ -42,6 +42,7 @@ import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
 import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
 import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
+import MatchingScreen from './components/battle/MatchingScreen.jsx';
 import {
   playSound,
   switchScreen,
@@ -158,6 +159,14 @@ const SCREEN_COMPONENTS = {
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
   const [rulesVisible, setRulesVisible] = useState(false);
+  const [matchingState, setMatchingState] = useState({ show: false, onComplete: null });
+
+  // グローバルに関数を公開
+  useEffect(() => {
+    window.showMatchingScreen = (onComplete) => {
+      setMatchingState({ show: true, onComplete });
+    };
+  }, []);
 
   // レガシー部分のルーティング互換性（一部のみ残す）
   useEffect(() => {
@@ -204,6 +213,14 @@ export default function App() {
       <CutinOverlay />
       <VfxOverlay />
       <div id="fade-overlay" className="fade-overlay"></div>
+      {matchingState.show && (
+        <MatchingScreen
+          onComplete={() => {
+            setMatchingState({ show: false, onComplete: null });
+            if (matchingState.onComplete) matchingState.onComplete();
+          }}
+        />
+      )}
     </>
   );
 }

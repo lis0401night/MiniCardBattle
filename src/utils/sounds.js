@@ -32,6 +32,8 @@ export const SE_PATHS = {
   seSkillHeal: 'assets/audio/se/se_skill_heal.mp3',
   seSkillDominate: 'assets/audio/se/se_skill_dominate.mp3',
   seTurnover: 'assets/audio/se/se_turnoverthecard.mp3',
+  seMatching: 'assets/audio/bgm/bgm_matching_metal.mp3',
+  seVS: 'assets/audio/se/se_heavyslash.mp3',
 };
 
 export const SOUNDS = {
