@@ -177,10 +177,10 @@ export const VFX_DATA = {
   // カグラSPスキル「封印の儀」用VFX
   anm_seal_lanes: {
     type: 'sprite',
-    src: 'assets/vfx/pipo-btleffect018.png',
-    columns: 8,
-    rows: 1,
-    frameCount: 8,
+    src: 'assets/vfx/pipofm-horroreffect05_192.png',
+    columns: 5,
+    rows: 3,
+    frameCount: 15,
     duration: 800,
     se: 'seHyoushigi',
     position: 'lane', // ターゲットのレーンに合わせて表示
@@ -289,6 +289,7 @@ export const VFX_DATA = {
     targetSide: 'enemy', // 相手のレーンがターゲット
   },
 
+  // 砲撃スキル
   anm_skill_artillery: {
     type: 'sprite',
     src: 'assets/vfx/vfx_skill_artillery.png',
@@ -298,7 +299,7 @@ export const VFX_DATA = {
     duration: 400,
     se: 'seSkillCharge', // 効果音
     position: 'hp', // HPゲージの高さに合わせて表示
-    offsetY: 0,
+    offsetY: -1,
     scale: 0.5,
     shake: false, // 画面全体のシェイクはなし
     targetSide: 'enemy', // 相手のHPがターゲット
@@ -367,6 +368,54 @@ export const VFX_DATA = {
     scale: 0.5,
     shake: false,
     targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // 代償スキル
+  anm_sacrifice: {
+    type: 'sprite',
+    src: 'assets/vfx/pipofm-horroreffect03_192.png',
+    columns: 5,
+    rows: 2,
+    frameCount: 10,
+    duration: 1000,
+    se: 'seSkillBloodDamage', // 再生する効果音、SOUNDSのキーを指定
+    position: 'hp', // HPゲージの高さに合わせて表示
+    offsetY: 0,
+    scale: 0.3,
+    shake: true,
+    targetSide: 'self', // 自分のHPがターゲット
+  },
+
+  // 結界スキル
+  anm_seal: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect018.png',
+    columns: 8,
+    rows: 1,
+    frameCount: 8,
+    duration: 800,
+    se: 'seHyoushigi',
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.6,
+    shake: false,
+    targetSide: 'enemy', // 相手のレーンがターゲット
+  },
+
+  // 誘爆スキル
+  anm_skill_explode: {
+    type: 'sprite',
+    src: 'assets/vfx/pipofm-element01-fire03.png', // 薙ぎ払うアニメ素材
+    columns: 5,
+    rows: 4,
+    frameCount: 20,
+    duration: 800,
+    se: 'seSkillExplode', // 効果音
+    position: 'lane', // 発動レーンに合わせる
+    offsetY: 0,
+    scale: 0.8, // 横にも判定があるため少し大きめに表示
+    shake: false,
+    targetSide: 'self', // 回復を受けた側（自分）がターゲット
   },
 
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK

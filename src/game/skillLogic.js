@@ -1530,6 +1530,16 @@ export async function resolveActiveSkillEffect(
       const tEl = document.querySelector(
         `#${targetSide}-lanes .cell[data-lane="${l}"]`
       );
+
+      // VFX演出
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_seal', o, l); // 非同期にしてテンポを向上
+        await sleep(400); // 800msの演出（8フレーム）に合わせて、半分以上進んだ時点で次の処理へ
+      } else {
+        if (SOUNDS.seHyoushigi) playSound(SOUNDS.seHyoushigi);
+        await sleep(150);
+      }
+
       if (tEl) {
         tEl.classList.add('anim-shake');
         createDamagePopup(tEl, '封印', '#94a3b8');

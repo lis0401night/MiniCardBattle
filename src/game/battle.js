@@ -2429,10 +2429,6 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
         await triggerSplitSkill(owner, lane, card);
         return true; // 分裂した場合は墓地に行かず場に残る
       }
-      // 誘爆(explode)
-      if (sk.id === 'explode' && lane !== undefined) {
-        await triggerExplodeSkill(owner, lane, card);
-      }
     }
   }
 
@@ -2632,7 +2628,6 @@ export async function cleanupDestroyedCards(excludeCard = null) {
   return anyDestroyedAtAll;
 }
 
-// 以前の定義を削除
 export async function triggerExplodeSkill(owner, lane, card) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const side = owner === 'blue' ? 'player' : 'enemy';
@@ -2640,6 +2635,11 @@ export async function triggerExplodeSkill(owner, lane, card) {
   const adj = lane === 1 ? [0, 2] : [1];
 
   console.log(`Exploding at ${lane} with value ${val}`);
+
+  if (window.triggerVfx) {
+    window.triggerVfx('anm_skill_explode', owner, lane);
+    await sleep(400); // アニメーションの前半部分を見せるための待機
+  }
 
   let targetsFound = false;
   adj.forEach((j) => {
