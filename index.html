@@ -23,6 +23,9 @@
     <link rel="manifest" href="/manifest.json" />
     <script>
       window.onerror = function (msg, url, line, col, error) {
+        // Safariの共有メニューやブラウザ拡張機能などが引き起こす、ゲームと無関係なクロスオリジンエラーを無視する
+        if (msg === 'Script error.' && line === 0) return true;
+
         if (typeof showErrorModal === 'function') {
           showErrorModal(msg + '\nLine: ' + line + '\nURL: ' + url);
         } else {
