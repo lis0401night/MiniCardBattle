@@ -774,6 +774,12 @@ export function applyActiveSkillLogic(
       if (hVal > 0) {
         c.currentPower += hVal;
         events.push({
+          type: 'vfx_trigger',
+          vfxId: 'anm_skill_hero',
+          side: owner,
+          lane: l
+        });
+        events.push({
           type: 'power_change',
           side: owner,
           lane: l,
@@ -788,6 +794,12 @@ export function applyActiveSkillLogic(
       const advVal = opOcc * (val || 1);
       if (advVal !== 0) {
         c.currentPower += advVal;
+        events.push({
+          type: 'vfx_trigger',
+          vfxId: 'anm_skill_adversity',
+          side: owner,
+          lane: l
+        });
         events.push({
           type: 'power_change',
           side: owner,
@@ -4674,6 +4686,12 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
           side: attackerSide,
           lane: aLane,
           skillName: '簒奪',
+        });
+        events.push({
+          type: 'vfx_trigger',
+          vfxId: 'anm_skill_extort',
+          side: attackerSide,
+          lane: aLane
         });
         activated = true;
       }

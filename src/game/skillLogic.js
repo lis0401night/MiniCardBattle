@@ -98,6 +98,8 @@ export async function resolveActiveSkillEffect(
     // VFX演出を持つスキルは、VFX側で効果音（se）が再生されるため、ここでの重複再生を無効化する
     if (
       ![
+        'hero',
+        'adversity',
         'toxic',
         'freeze',
         'bind',
@@ -1474,22 +1476,6 @@ export async function resolveActiveSkillEffect(
           }
         }
       }
-    }
-  } else if (skillId === 'adversity') {
-    const opB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-    const occ = opB.filter((x) => x !== null).length;
-    const advVal = occ * (skillValue || 1);
-    if (advVal !== 0) {
-      c.power = (c.power || 0) + advVal;
-      c.basePower = (c.basePower || 0) + advVal;
-      c.currentPower = (c.currentPower || 0) + advVal;
-      if (cEl) {
-        createDamagePopup(cEl, `+${advVal}`, '#10b981');
-        if (window.updateCardVisualsReact) window.updateCardVisualsReact(l, o);
-        else if (window.updateBattleUIHook) window.updateBattleUIHook();
-      }
-      renderBoard();
-      await sleep(400);
     }
   } else if (skillId === 'bind') {
     createDamagePopup(cEl, '拘束', '#facc15');

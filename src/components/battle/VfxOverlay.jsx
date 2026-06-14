@@ -212,7 +212,11 @@ function VfxItem({ effect }) {
   return (
     <div
       className={`vfx-overlay ${type} ${side} ${positionClass}`}
-      style={{ '--vfx-top': `${finalTop}%`, '--vfx-left': `${finalLeft}%` }}
+      style={{ 
+        '--vfx-top': `${finalTop}%`, 
+        '--vfx-left': `${finalLeft}%`,
+        mixBlendMode: data.blendMode || 'normal'
+      }}
     >
       <div
         className="vfx-position-wrapper"
