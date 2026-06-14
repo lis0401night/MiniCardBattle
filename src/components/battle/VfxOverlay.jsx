@@ -257,6 +257,38 @@ function VfxItem({ effect }) {
             />
           </div>
         )}
+
+        {data.type === 'custom_joker' && (
+          <div style={{
+            position: 'absolute',
+            width: '120px',
+            height: '120px',
+            pointerEvents: 'none',
+          }}>
+            {/* 背後のぼかしエフェクト */}
+            <img 
+              src="assets/ui/ui_joker.png" 
+              className="vfx-joker-blur"
+              alt=""
+              style={{
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+            {/* 手前のメインシンボル */}
+            <img 
+              src="assets/ui/ui_joker.png" 
+              className="vfx-joker-main"
+              alt="Joker"
+              style={{
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

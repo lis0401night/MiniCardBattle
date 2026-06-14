@@ -419,4 +419,13 @@ export const VFX_DATA = {
   },
 
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK
+
+  // デッキリセット時のジョーカー演出
+  anm_deck_reset_joker: {
+    type: 'custom_joker',
+    duration: 1200,
+    se: 'voiceUndeadPlay', // ボイス再生
+    position: 'hp', // HPゲージの中央
+    targetSide: 'self',
+  },
 };

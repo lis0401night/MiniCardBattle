@@ -17,7 +17,7 @@ export default function SoloMenuScreen() {
   const [showMatchingTest, setShowMatchingTest] = useState(false);
   const [testEnemyId, setTestEnemyId] = useState('android');
   const [testEnemySkinId, setTestEnemySkinId] = useState('default');
-
+  
   const selectedEnemy = CHARACTERS[testEnemyId];
   const availableSkins = selectedEnemy?.skins ? Object.keys(selectedEnemy.skins) : ['default'];
 
@@ -57,7 +57,11 @@ export default function SoloMenuScreen() {
             onClick={() => startGameMode?.('practice')}
           />
         </div>
-      </ScreenLayout>
+        
+        </ScreenLayout>
+
+      
     </>
   );
 }
+
