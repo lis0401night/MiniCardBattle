@@ -770,10 +770,13 @@ export function renderSkillTag(card, isBoard = false) {
     );
   }
 
-  // 2. IDと値が一致するものを集計
+  // 2. IDと値が一致するものを集計（「選択」と「命令」はマージせず個別に表示）
   let grouped = [];
   skillCandidates.forEach((c) => {
-    const existing = grouped.find((g) => g.id === c.id && g.value === c.value);
+    const isExcludedFromMerge = c.id === 'choice' || c.id === 'force';
+    const existing = isExcludedFromMerge
+      ? null
+      : grouped.find((g) => g.id === c.id && g.value === c.value);
     if (existing) {
       existing.count++;
     } else {

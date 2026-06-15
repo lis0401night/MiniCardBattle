@@ -32,8 +32,6 @@ export const INITIAL_PLAYER_CARD = [
   'tortoise',
   'fighter',
   'fighter',
-  'drifter',
-  'drifter',
   'spider',
   'spider',
   'airship',
@@ -44,6 +42,8 @@ export const INITIAL_PLAYER_CARD = [
   'bandit',
   'snake',
   'snake',
+  'butcher',
+  'butcher',
   'crenellatedwall',
   'crenellatedwall',
 ];

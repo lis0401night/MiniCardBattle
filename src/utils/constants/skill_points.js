@@ -390,6 +390,10 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 1,
   },
+  sacrifice_void: {
+    base: 0,
+    multiplier: -1,
+  },
   teleport: {
     base: 0,
     multiplier: 0,

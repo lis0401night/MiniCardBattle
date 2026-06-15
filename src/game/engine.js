@@ -1119,6 +1119,38 @@ export function applyActiveSkillLogic(
       }
       break;
     }
+    case 'treason': {
+      // お互いの場の「伝説」を持つカードを全て破壊する
+      const targets = [];
+      for (let j = 0; j < 3; j++) {
+        if (eB[j] && hasSkill(eB[j], 'legendary')) {
+          if (!hasSkill(eB[j], 'immune')) {
+            targets.push({ side: oppOwner, lane: j, card: eB[j] });
+          }
+        }
+        if (b[j] && hasSkill(b[j], 'legendary')) {
+          if (!hasSkill(b[j], 'immune')) {
+            targets.push({ side: owner, lane: j, card: b[j] });
+          }
+        }
+      }
+      for (let i = 0; i < targets.length; i++) {
+        const tr = targets[i];
+        tr.card.currentPower = 0;
+        if (tr.side === oppOwner) {
+          eB[tr.lane] = null;
+        } else {
+          b[tr.lane] = null;
+        }
+      }
+      if (targets.length > 0 && events) {
+        events.push({
+          type: 'destroy_cards',
+          targets: targets,
+        });
+      }
+      break;
+    }
     case 'dispel': {
       const targets = [];
       const gatherDispelTargets = (board, side) => {
@@ -1257,6 +1289,34 @@ export function applyActiveSkillLogic(
         amount: sacAmt,
         source: 'sacrifice',
       });
+      break;
+    }
+    case 'sacrifice_void': {
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
+          ).length
+        : 0;
+      if (voidCount > 0) {
+        events.push({
+          type: 'vfx_trigger',
+          vfxId: 'anm_sacrifice',
+          side: owner,
+          lane: l
+        });
+
+        const sacAmt = (val || 1) * voidCount;
+        if (owner === 'blue') state.playerHP -= sacAmt;
+        else state.enemyHP -= sacAmt;
+        events.push({
+          type: 'damage_player',
+          side: owner,
+          amount: sacAmt,
+          source: 'sacrifice_void',
+        });
+      }
       break;
     }
     case 'artillery': {

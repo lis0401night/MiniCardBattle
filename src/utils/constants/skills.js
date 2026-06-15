@@ -482,6 +482,11 @@ export const SKILLS = {
     icon: '🔨',
     desc: () => `召喚時、お互いの場の「防御」を持つカードを全て破壊する。`,
   },
+  treason: {
+    name: '反逆',
+    icon: '👑',
+    desc: () => `召喚時、お互いの場の「伝説」を持つカードを全て破壊する。`,
+  },
   substitute: {
     name: '身替',
     icon: '🎭',
@@ -700,6 +705,18 @@ export const SKILLS = {
       },
     ],
   },
+  sacrifice_void: {
+    name: '代償(虚)',
+    icon: '🩸',
+    desc: (val) => [
+      { type: 'text', value: '召喚時、自分の手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      {
+        type: 'text',
+        value: `1枚につき、自分リーダーに${val || 1}ダメージ。`,
+      },
+    ],
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -764,6 +781,8 @@ export const ACTIVE_SKILLS = [
   'heal_void',
   'spread_void',
   'support_void',
+  'treason',
+  'sacrifice_void',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
