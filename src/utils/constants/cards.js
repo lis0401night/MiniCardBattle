@@ -508,7 +508,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 4,
     skills: [{ id: 'awake', value: 5, summonId: 'token_golem' }],
-    voiceCategory: 'human_male_warrior',
+    voiceCategory: 'human_male_old',
     flavor:
       '「魔術とは変化、変化とは可能性だ。」自らが生み出した泥人形の姿へと消えるその瞬間まで、男は熱心に可能性を説き続けた。',
   },
@@ -550,16 +550,6 @@ export const CARD_MASTER = [
       '血に飢えた咆哮とともに、巨大な金棒が振り下ろされる。理性を失ったその暴虐なる一撃は、周囲のすべてを無差別に粉砕する。',
   },
   {
-    id: 'omyouji',
-    name: '漆黒の除霊師',
-    rarity: 1,
-    power: 4,
-    skills: [{ id: 'seal', value: 1 }],
-    voiceCategory: 'human_female_cool',
-    flavor:
-      '闇を以て闇を制する異端の術士。彼女が札をきる時、悪霊は光ではなく、より深い漆黒の結界へと封じ込められる。',
-  },
-  {
     id: 'ninja',
     name: '忍者',
     rarity: 1,
@@ -578,6 +568,16 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_warrior',
     flavor:
       '深山に棲まう、風を操り空を舞う人外の剣客。武の神髄を修めたその一太刀は、驕れる人間たちに真の恐怖と剣術の深淵を叩き込む。',
+  },
+  {
+    id: 'omyouji',
+    name: '漆黒の除霊師',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'seal', value: 1 }],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '闇を以て闇を制する異端の術士。彼女が札をきる時、悪霊は光ではなく、より深い漆黒の結界へと封じ込められる。',
   },
   {
     id: 'drifter',

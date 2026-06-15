@@ -399,8 +399,10 @@ export function prepareBattle() {
   stopAllBGM();
 
   // 2. マッチング画面の表示（表示中に裏でローディングを進行させる）
-  const startLoadingAndBattle = (onLoadComplete) => {
-    switchScreen('screen-loading');
+  const startLoadingAndBattle = (onLoadComplete, skipLoadingScreen = false) => {
+    if (!skipLoadingScreen) {
+      switchScreen('screen-loading');
+    }
     const isOnline = GameState.gameMode === 'online';
     const sessionId = isOnline
       ? GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()
@@ -559,13 +561,13 @@ export function prepareBattle() {
       startLoadingAndBattle(() => {
         loadingDone = true;
         tryInit();
-      });
+      }, true);
     }, 500); // 演出前に0.5秒ディレイ
   } else {
     // 従来の挙動
     startLoadingAndBattle(() => {
       setTimeout(initBattleState, 500);
-    });
+    }, false);
   }
 }
 

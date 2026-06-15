@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
@@ -11,6 +11,11 @@ export default function MatchingScreen({
   testEnemySkinId,
 }) {
   const [visible, setVisible] = useState(false);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     // マウント時にアニメーション開始
@@ -27,14 +32,12 @@ export default function MatchingScreen({
       if (typeof playSound === 'function') {
         playSound(SOUNDS.seVS);
       }
-    }, 1050); // cssの1s遅延 + 最初の50ms遅延
+    }, 1050); // css of 1s delay + first 50ms delay
 
     // 約5秒後に自動でフェードアウトして完了する
     const endTimer = setTimeout(() => {
       setVisible(false);
-      setTimeout(() => {
-        if (onComplete) onComplete();
-      }, 500); // フェードアウトの0.5秒待ち
+      if (onCompleteRef.current) onCompleteRef.current();
     }, 4500); // 演出時間を考慮して約5秒
 
     return () => {
@@ -42,7 +45,7 @@ export default function MatchingScreen({
       clearTimeout(vsTimer);
       clearTimeout(endTimer);
     };
-  }, [onComplete]);
+  }, []);
 
   // デバッグ用にプレイヤーと敵の情報を取得（未設定の場合はデフォルト）
   const player = GameState.playerConfig || CHARACTERS['dragon'];

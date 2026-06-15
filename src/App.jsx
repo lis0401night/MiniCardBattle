@@ -219,8 +219,12 @@ export default function App() {
       {matchingState.show && (
         <MatchingScreen
           onComplete={() => {
-            setMatchingState({ show: false, onComplete: null });
+            // 裏でバトル画面の初期化と遷移を開始
             if (matchingState.onComplete) matchingState.onComplete();
+            // フェードアウト演出が完了した後にアンマウント
+            setTimeout(() => {
+              setMatchingState({ show: false, onComplete: null });
+            }, 600);
           }}
         />
       )}
