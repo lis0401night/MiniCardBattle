@@ -47,6 +47,8 @@ export const SE_PATHS = {
   seSkillSeal: 'assets/audio/se/se_skill_seal.mp3',
   seSkillArtillery: 'assets/audio/se/se_skill_artillery.mp3',
   seSkillSacrifice: 'assets/audio/se/se_skill_sacrifice.mp3',
+  seSkillExecute: 'assets/audio/se/se_skill_execute.mp3',
+  seSkillStealth: 'assets/audio/se/se_skill_stealth.mp3',
 };
 
 export const SOUNDS = {
@@ -116,6 +118,8 @@ export const AUDIO_INSTANCES = {
   seSkillSeal: new Audio('assets/audio/se/se_skill_seal.mp3'),
   seSkillArtillery: new Audio('assets/audio/se/se_skill_artillery.mp3'),
   seSkillSacrifice: new Audio('assets/audio/se/se_skill_sacrifice.mp3'),
+  seSkillExecute: new Audio('assets/audio/se/se_skill_execute.mp3'),
+  seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
 };
 
 // サウンドの初期設定
@@ -209,7 +213,7 @@ export async function unlockAudio() {
 
     const baseVol =
       typeof GameState !== 'undefined' &&
-      typeof GameState.gameVolume !== 'undefined'
+        typeof GameState.gameVolume !== 'undefined'
         ? GameState.gameVolume
         : 0.3;
 
@@ -246,7 +250,7 @@ export async function unlockAudio() {
             } else {
               if (audio._wasPlayingBeforeHide) {
                 const p = audio.play();
-                if (p !== undefined) p.catch(() => {});
+                if (p !== undefined) p.catch(() => { });
                 audio._wasPlayingBeforeHide = false;
               }
             }
@@ -283,7 +287,7 @@ export function playSkillSound(skillId) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const baseVol =
       typeof GameState !== 'undefined' &&
-      typeof GameState.gameVolume !== 'undefined'
+        typeof GameState.gameVolume !== 'undefined'
         ? GameState.gameVolume
         : 0.3;
 
@@ -330,7 +334,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     // audioCtxがすでにある場合、resumeだけは確実に行わせる
     if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().catch(() => {});
+      audioCtx.resume().catch(() => { });
     }
     document.removeEventListener('click', unlockHandler, true);
     document.removeEventListener('touchstart', unlockHandler, true);

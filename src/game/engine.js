@@ -3721,12 +3721,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
   if (hasSkill(aC, 'brutal')) {
     const brutalDmg = getSkillValue(aC, 'brutal') || 1;
-    events.push({
-      type: 'vfx_trigger',
-      vfxId: 'anm_skill_brutal',
-      side: attackerSide,
-      lane: l,
-    });
 
     [l - 1, l + 1].forEach((tj) => {
       if (tj >= 0 && tj <= 2 && atkBoard[tj]) {

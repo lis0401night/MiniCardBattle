@@ -567,8 +567,12 @@ export async function playEvents(events) {
         if (ev.source === 'stealth') skillNameText = '潜伏';
         if (cEl) createDamagePopup(cEl, skillNameText, '#facc15');
 
-        playSound(SOUNDS.seSkill);
-        await sleep(200);
+        if (ev.source === 'stealth' && window.triggerVfx) {
+          await window.triggerVfx('anm_skill_stealth', ev.side, ev.lane);
+        } else {
+          playSound(SOUNDS.seSkill);
+          await sleep(200);
+        }
         break;
       }
       case 'invincible_block': {

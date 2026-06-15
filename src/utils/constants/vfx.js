@@ -338,22 +338,6 @@ export const VFX_DATA = {
     targetSide: 'self', // 回復を受けた側（自分）がターゲット
   },
 
-  // 暴虐スキル（隣接ダメージ）
-  anm_skill_brutal: {
-    type: 'sprite',
-    src: 'assets/vfx/pipo-btleffect177_640.png', // 薙ぎ払うアニメ素材
-    columns: 2,
-    rows: 5,
-    frameCount: 10,
-    duration: 600,
-    se: 'seSkillBrutal', // なぎ払い専用SE
-    position: 'lane', // 発動レーンに合わせる
-    offsetY: 0,
-    scale: 0.8, // 横にも判定があるため少し大きめに表示
-    shake: false,
-    targetSide: 'self', // 発動者と同じ陣営の隣接カードがターゲット
-  },
-
   // 石化スキル
   anm_skill_petrify: {
     type: 'sprite',
@@ -485,15 +469,30 @@ export const VFX_DATA = {
     targetSide: 'enemy',
   },
 
+  // 潜伏スキル用VFX
+  anm_skill_stealth: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect111a.png',
+    columns: 5,
+    rows: 2,
+    frameCount: 10,
+    duration: 800,
+    se: 'seSkillStealth',
+    position: 'lane',
+    offsetY: 0,
+    scale: 0.4,
+    shake: false,
+    targetSide: 'self',
+  },
+
   // 処刑スキル
   anm_skill_execute: {
     type: 'sprite',
-    src: 'assets/vfx/pipofm-horroreffect01_192.png',
-    columns: 5,
-    rows: 3,
-    frameCount: 15,
-    duration: 800,
-    se: 'seSkillDominate',
+    src: 'assets/vfx/pipo-btleffect088.png',
+    columns: 9,
+    rows: 1,
+    frameCount: 9,
+    duration: 300,
     position: 'lane',
     offsetY: 0,
     scale: 0.6,

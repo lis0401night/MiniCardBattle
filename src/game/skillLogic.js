@@ -3262,12 +3262,11 @@ export async function resolveActiveSkillEffect(
             playSound(SOUNDS.seSkill);
             await sleep(300);
           } else {
-            // VFX演出（SEも triggerVfx 内で自動再生されます）
+            // VFX演出（SEも triggerVfx 内で自動再生されますが、処刑はアニメ後に手動再生）
             if (typeof window.triggerVfx === 'function') {
               await window.triggerVfx('anm_skill_execute', o, targetLane);
-            } else {
-              playSound(SOUNDS.seDestroy);
             }
+            playSound(SOUNDS.seSkillExecute);
             const tgtEl = document.querySelector(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
