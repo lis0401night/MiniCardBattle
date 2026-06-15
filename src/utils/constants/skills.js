@@ -80,6 +80,18 @@ export const SKILLS = {
     icon: '⛓️',
     desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。`,
   },
+  soul_bind_void: {
+    name: '魂縛(虚)',
+    icon: '⛓️',
+    desc: (val) => [
+      { type: 'text', value: '戦闘で敵を破壊した時、手札の' },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      {
+        type: 'text',
+        value: `1枚につきパワーを+${val || 2}する。`,
+      },
+    ],
+  },
   sturdy: {
     name: '頑丈',
     icon: '⛰',
@@ -182,7 +194,7 @@ export const SKILLS = {
   },
   pierce: {
     name: '貫通',
-    icon: '🏹',
+    icon: '🔱',
     desc: () =>
       '攻撃時、自身のパワーの差分だけ相手リーダーにダメージを与える。',
   },
@@ -791,6 +803,7 @@ export const PASSIVE_SKILLS = [
   'sturdy',
   'guardian',
   'soul_bind',
+  'soul_bind_void',
   'growth',
   'defender',
   'split',

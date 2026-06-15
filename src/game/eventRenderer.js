@@ -169,6 +169,7 @@ export async function playEvents(events) {
           let label = `${prefix}${ev.amount}`;
           if (ev.source === 'growth') label = `成長 ${label}`;
           else if (ev.source === 'soul_bind') label = `魂縛 ${label}`;
+          else if (ev.source === 'soul_bind_void') label = `魂縛(虚) ${label}`;
           else if (ev.source === 'retaliate') label = `報復 ${label}`;
 
           createDamagePopup(cEl, label, color);

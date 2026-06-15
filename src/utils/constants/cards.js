@@ -666,10 +666,10 @@ export const CARD_MASTER = [
     id: 'voidbraver',
     name: 'ホロウ・ブレイバー',
     rarity: 1,
-    power: 6,
-    skills: [{ id: 'sacrifice_void', value: 2 }],
-    voiceCategory: 'human_male_ikemen',
-    flavor: 'その仮面の下にある希望は冷めきってはいない。',
+    power: 4,
+    skills: [{ id: 'soul_bind_void', value: 1 }],
+    voiceCategory: 'stone',
+    flavor: 'その仮面の下には、もはや人の心は存在しない。虚無の魂が、ただ彼の体を動かしているだけだ。',
   },
   {
     id: 'voidcleric',
@@ -937,7 +937,7 @@ export const CARD_MASTER = [
     name: 'ミノタウロスの傭兵',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'choice', value: 1 }, { id: 'cleave' }],
+    skills: [{ id: 'choice', value: 1 }, { id: 'cleave' }, { id: 'pierce' }],
     choices: [
       { id: 'convert', value: 2 },
       { id: 'brutal', value: 2 },
@@ -2088,12 +2088,11 @@ export const CARD_MASTER = [
     id: 'orochi',
     name: '神々の宿敵',
     rarity: 3,
-    power: 9,
+    power: 6,
     skills: [
-      { id: 'takeover' },
+      { id: 'brutal', value: 6 },
       { id: 'double_strike' },
       { id: 'cleave' },
-      { id: 'brutal', value: 3 },
     ],
     voiceCategory: 'snake',
     flavor:

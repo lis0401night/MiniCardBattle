@@ -3998,42 +3998,83 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
     }
 
-    // [5] 魂縛: 一掃で破壊した敵カードの数だけ発動（攻撃者自身が生存している場合のみ）
-    if (hasSkill(aC, 'soul_bind') && aC.currentPower > 0) {
+    // [5] 魂縛 / 魂縛(虚): 一掃で破壊した敵カードの数だけ発動（攻撃者自身が生存している場合のみ）
+    if (aC.currentPower > 0) {
       let destroyedCount = 0;
       for (let targetLane of targets) {
         const targetCard = defBoard[targetLane];
         if (targetCard && targetCard.currentPower <= 0) destroyedCount++;
       }
       if (destroyedCount > 0) {
-        const val = getSkillValue(aC, 'soul_bind') || 2;
-        const totalGain = val * destroyedCount;
-        aC.currentPower += totalGain;
+        if (hasSkill(aC, 'soul_bind')) {
+          const val = getSkillValue(aC, 'soul_bind') || 2;
+          const totalGain = val * destroyedCount;
+          aC.currentPower += totalGain;
+          events.push({
+            type: 'power_change',
+            side: attackerSide,
+            lane: l,
+            amount: totalGain,
+            source: 'soul_bind',
+          });
+        }
+        if (hasSkill(aC, 'soul_bind_void')) {
+          const hand = attackerSide === 'blue' ? state.playerHand : state.enemyHand;
+          const voidCount = hand
+            ? hand.filter(
+                (card) =>
+                  card && (card.id === 'token_void' || card.baseId === 'token_void')
+              ).length
+            : 0;
+          if (voidCount > 0) {
+            const val = getSkillValue(aC, 'soul_bind_void') || 2;
+            const totalGain = val * voidCount * destroyedCount;
+            aC.currentPower += totalGain;
+            events.push({
+              type: 'power_change',
+              side: attackerSide,
+              lane: l,
+              amount: totalGain,
+              source: 'soul_bind_void',
+            });
+          }
+        }
+      }
+    }
+    // 防御側の魂縛 / 魂縛(虚): 反撃で攻撃者（またはその守護）を倒した場合に発動
+    if (originalTarget && originalTarget.currentPower > 0 && aC_defend.currentPower <= 0) {
+      if (hasSkill(originalTarget, 'soul_bind')) {
+        const val = getSkillValue(originalTarget, 'soul_bind') || 2;
+        originalTarget.currentPower += val;
         events.push({
           type: 'power_change',
-          side: attackerSide,
+          side: defSide,
           lane: l,
-          amount: totalGain,
+          amount: val,
           source: 'soul_bind',
         });
       }
-    }
-    // 防御側の魂縛: 反撃で攻撃者（またはその守護）を倒した場合に発動
-    if (
-      originalTarget &&
-      hasSkill(originalTarget, 'soul_bind') &&
-      originalTarget.currentPower > 0 &&
-      aC_defend.currentPower <= 0
-    ) {
-      const val = getSkillValue(originalTarget, 'soul_bind') || 2;
-      originalTarget.currentPower += val;
-      events.push({
-        type: 'power_change',
-        side: defSide,
-        lane: l,
-        amount: val,
-        source: 'soul_bind',
-      });
+      if (hasSkill(originalTarget, 'soul_bind_void')) {
+        const hand = defSide === 'blue' ? state.playerHand : state.enemyHand;
+        const voidCount = hand
+          ? hand.filter(
+              (card) =>
+                card && (card.id === 'token_void' || card.baseId === 'token_void')
+            ).length
+          : 0;
+        if (voidCount > 0) {
+          const val = getSkillValue(originalTarget, 'soul_bind_void') || 2;
+          const totalGain = val * voidCount;
+          originalTarget.currentPower += totalGain;
+          events.push({
+            type: 'power_change',
+            side: defSide,
+            lane: l,
+            amount: totalGain,
+            source: 'soul_bind_void',
+          });
+        }
+      }
     }
   } else if (dC) {
     let dmgToDef = aP;
@@ -4439,30 +4480,76 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
     }
 
-    // 魂縛
+    // 魂縛 / 魂縛(虚)
     let aD = aC_defend.currentPower <= 0,
       dD = dC.currentPower <= 0;
-    if (dD && !aD && hasSkill(aC, 'soul_bind')) {
-      const val = getSkillValue(aC, 'soul_bind') || 2;
-      aC.currentPower += val;
-      events.push({
-        type: 'power_change',
-        side: attackerSide,
-        lane: l,
-        amount: val,
-        source: 'soul_bind',
-      });
+    if (dD && !aD) {
+      if (hasSkill(aC, 'soul_bind')) {
+        const val = getSkillValue(aC, 'soul_bind') || 2;
+        aC.currentPower += val;
+        events.push({
+          type: 'power_change',
+          side: attackerSide,
+          lane: l,
+          amount: val,
+          source: 'soul_bind',
+        });
+      }
+      if (hasSkill(aC, 'soul_bind_void')) {
+        const hand = attackerSide === 'blue' ? state.playerHand : state.enemyHand;
+        const voidCount = hand
+          ? hand.filter(
+              (card) =>
+                card && (card.id === 'token_void' || card.baseId === 'token_void')
+            ).length
+          : 0;
+        if (voidCount > 0) {
+          const val = getSkillValue(aC, 'soul_bind_void') || 2;
+          const totalGain = val * voidCount;
+          aC.currentPower += totalGain;
+          events.push({
+            type: 'power_change',
+            side: attackerSide,
+            lane: l,
+            amount: totalGain,
+            source: 'soul_bind_void',
+          });
+        }
+      }
     }
-    if (aD && !dD && hasSkill(dC, 'soul_bind')) {
-      const val = getSkillValue(dC, 'soul_bind') || 2;
-      dC.currentPower += val;
-      events.push({
-        type: 'power_change',
-        side: defSide,
-        lane: dLane,
-        amount: val,
-        source: 'soul_bind',
-      });
+    if (aD && !dD) {
+      if (hasSkill(dC, 'soul_bind')) {
+        const val = getSkillValue(dC, 'soul_bind') || 2;
+        dC.currentPower += val;
+        events.push({
+          type: 'power_change',
+          side: defSide,
+          lane: dLane,
+          amount: val,
+          source: 'soul_bind',
+        });
+      }
+      if (hasSkill(dC, 'soul_bind_void')) {
+        const hand = defSide === 'blue' ? state.playerHand : state.enemyHand;
+        const voidCount = hand
+          ? hand.filter(
+              (card) =>
+                card && (card.id === 'token_void' || card.baseId === 'token_void')
+            ).length
+          : 0;
+        if (voidCount > 0) {
+          const val = getSkillValue(dC, 'soul_bind_void') || 2;
+          const totalGain = val * voidCount;
+          dC.currentPower += totalGain;
+          events.push({
+            type: 'power_change',
+            side: defSide,
+            lane: dLane,
+            amount: totalGain,
+            source: 'soul_bind_void',
+          });
+        }
+      }
     }
   } else {
     let finalDmg = aP;

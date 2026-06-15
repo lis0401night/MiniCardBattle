@@ -157,6 +157,8 @@ export async function resolveActiveSkillEffect(
       charge: '充填',
       sacrifice: '代償',
       sacrifice_void: '代償(虚)',
+      soul_bind: '魂縛',
+      soul_bind_void: '魂縛(虚)',
       quick: '速攻',
       choice: '選択',
       artillery: '砲撃',
