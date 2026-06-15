@@ -493,6 +493,7 @@ export const VFX_DATA = {
     rows: 1,
     frameCount: 9,
     duration: 300,
+    se: 'seSkillExecute',
     position: 'lane',
     offsetY: 0,
     scale: 0.6,
