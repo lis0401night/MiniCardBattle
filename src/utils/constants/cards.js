@@ -1557,7 +1557,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_female_sexy',
     flavor:
-      '妖艶な微笑みと共に振り下ろされる凶刃。一つの命を奪うことで、彼女は深淵より悪魔を呼び覚ます。',
+      '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
   },
   {
     id: 'alraune',
