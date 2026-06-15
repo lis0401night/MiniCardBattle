@@ -59,6 +59,34 @@ export function migrateCardId(id) {
   return id;
 }
 
+/**
+ * デッキ固有のスキン設定から、現在のキャラクターに対応するスキン画像を
+ * playerConfig に適用します（プレイヤースキンの適用）。
+ */
+function applySkinToPlayerConfig() {
+  if (GameState.playerConfig && GameState.playerConfig.id) {
+    if (!GameState.playerSkins) GameState.playerSkins = {};
+    const skinIdToUse =
+      GameState.playerSkins[GameState.playerConfig.id] || 'default';
+    // getSkinImage が関数として存在する場合のみ実行（後方互換性維持）
+    if (typeof getSkinImage === 'function') {
+      const templateChar = CHARACTERS[GameState.playerConfig.id];
+      if (templateChar) {
+        // スキンに対応する画像を取得、存在しない場合はテンプレート画像にフォールバック
+        GameState.playerConfig.image =
+          getSkinImage(templateChar, skinIdToUse, 'image') ||
+          templateChar.image;
+        GameState.playerConfig.imageLose =
+          getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
+          templateChar.imageLose;
+        GameState.playerConfig.icon =
+          getSkinImage(templateChar, skinIdToUse, 'icon') ||
+          templateChar.icon;
+      }
+    }
+  }
+}
+
 // ==========================================
 // デッキ生成・編集・セーブ・ロードロジック
 // ==========================================
@@ -811,29 +839,7 @@ export function loadDeck() {
     }
 
     // プレイヤースキンの適用
-    // デッキ固有のスキン設定から、現在のキャラクターに対応するスキンIDを取得し、
-    // getSkinImage を使って image/imageLose/icon を再計算して playerConfig に反映する
-    if (GameState.playerConfig && GameState.playerConfig.id) {
-      if (!GameState.playerSkins) GameState.playerSkins = {};
-      const skinIdToUse =
-        GameState.playerSkins[GameState.playerConfig.id] || 'default';
-      // getSkinImage が関数として存在する場合のみ実行（後方互換性維持）
-      if (typeof getSkinImage === 'function') {
-        const templateChar = CHARACTERS[GameState.playerConfig.id];
-        if (templateChar) {
-          // スキンに対応する画像を取得、存在しない場合はテンプレート画像にフォールバック
-          GameState.playerConfig.image =
-            getSkinImage(templateChar, skinIdToUse, 'image') ||
-            templateChar.image;
-          GameState.playerConfig.imageLose =
-            getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
-            templateChar.imageLose;
-          GameState.playerConfig.icon =
-            getSkinImage(templateChar, skinIdToUse, 'icon') ||
-            templateChar.icon;
-        }
-      }
-    }
+    applySkinToPlayerConfig();
 
     if (activeDeck.premiumCards) {
       GameState.premiumCards = [...activeDeck.premiumCards];
@@ -1000,24 +1006,7 @@ export function saveCurrentEditDeck() {
   }
 
   // プレイヤースキンの適用（セーブ後の同期ズレ防止）
-  if (GameState.playerConfig && GameState.playerConfig.id) {
-    if (!GameState.playerSkins) GameState.playerSkins = {};
-    const skinIdToUse =
-      GameState.playerSkins[GameState.playerConfig.id] || 'default';
-    if (typeof getSkinImage === 'function') {
-      const templateChar = CHARACTERS[GameState.playerConfig.id];
-      if (templateChar) {
-        GameState.playerConfig.image =
-          getSkinImage(templateChar, skinIdToUse, 'image') ||
-          templateChar.image;
-        GameState.playerConfig.imageLose =
-          getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
-          templateChar.imageLose;
-        GameState.playerConfig.icon =
-          getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
-      }
-    }
-  }
+  applySkinToPlayerConfig();
 }
 
 export function saveDeck() {

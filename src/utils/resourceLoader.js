@@ -33,13 +33,6 @@ export async function preloadAllGameResources(onProgress) {
     }
   });
 
-  // プレイマット画像は起動時にロードせず、必要な画面（バトルや設定モーダル）で都度読み込ませるように変更
-  /*
-  PLAYMAT_MASTER.forEach((pm) => {
-    if (pm.image) urlsToLoad.add(pm.image);
-  });
-  */
-
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {
     urlsToLoad.add(path);

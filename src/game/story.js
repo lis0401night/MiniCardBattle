@@ -75,10 +75,14 @@ export function initStoryMode(charId) {
   // ストーリー開始時に現在選択されているデッキのスナップショットを保存
   if (GameState.decks && GameState.decks[GameState.currentDeckIndex]) {
     const storyDeckSnapshot = GameState.decks[GameState.currentDeckIndex];
-    localStorage.setItem(
-      'mini_card_battle_story_deck_obj',
-      JSON.stringify(storyDeckSnapshot)
-    );
+    try {
+      localStorage.setItem(
+        'mini_card_battle_story_deck_obj',
+        JSON.stringify(storyDeckSnapshot)
+      );
+    } catch (error) {
+      console.error('デッキスナップショットの保存に失敗しました:', error);
+    }
   }
 
   performFadeTransition(() => {
@@ -132,7 +136,11 @@ export function saveStoryProgress() {
     storyDifficulty: GameState.storyDifficulty,
     currentDeckIndex: GameState.currentDeckIndex,
   };
-  localStorage.setItem('mini_card_battle_story_save', JSON.stringify(saveObj));
+  try {
+    localStorage.setItem('mini_card_battle_story_save', JSON.stringify(saveObj));
+  } catch (error) {
+    console.error('ストーリー進行状況の保存に失敗しました:', error);
+  }
 }
 
 /**

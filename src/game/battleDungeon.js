@@ -98,7 +98,7 @@ export function loadDungeonProgress() {
       GameState.enemyConfig = data.enemyConfig;
       // 敵のスキンを同期
       if (!GameState.enemySkins) GameState.enemySkins = {};
-      if (data.enemyConfig.currentSkin) {
+      if (data.enemyConfig.id && data.enemyConfig.currentSkin) {
         GameState.enemySkins[data.enemyConfig.id] =
           data.enemyConfig.currentSkin;
       }

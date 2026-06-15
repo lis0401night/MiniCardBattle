@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { playSound, switchScreen } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -327,7 +328,7 @@ export default function NewsBanner() {
                 border: '1px solid #334155',
                 borderRadius: '8px',
               }}
-              dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedNews.content) }}
             />
 
             {/* フッターボタン */}

@@ -405,6 +405,7 @@ export function getSeededRandom() {
 }
 
 // iOS Safari等の長時間のバックグラウンドサスペンドに対するオーディオ復帰機構
+const AUDIO_RECOVERY_THRESHOLD_MINUTES = 5;
 let backgroundStartTime = 0;
 let needsAudioRecovery = false;
 
@@ -416,7 +417,7 @@ if (typeof document !== 'undefined') {
       if (backgroundStartTime > 0) {
         const elapsedMinutes = (Date.now() - backgroundStartTime) / 1000 / 60;
         // 5分以上バックグラウンドにいた場合はオーディオエンジンが破棄（クラッシュ）されている可能性が高いと判定
-        if (elapsedMinutes >= 5) {
+        if (elapsedMinutes >= AUDIO_RECOVERY_THRESHOLD_MINUTES) {
           needsAudioRecovery = true;
         }
         backgroundStartTime = 0;

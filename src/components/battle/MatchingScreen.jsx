@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
@@ -34,11 +34,11 @@ export default function MatchingScreen({
       }
     }, 1050); // css of 1s delay + first 50ms delay
 
-    // 約5秒後に自動でフェードアウトして完了する
+    // 約4.5秒後に自動でフェードアウトして完了する
     const endTimer = setTimeout(() => {
       setVisible(false);
       if (onCompleteRef.current) onCompleteRef.current();
-    }, 4500); // 演出時間を考慮して約5秒
+    }, 4500); // 演出時間を考慮して約4.5秒
 
     return () => {
       clearTimeout(t);

@@ -19,36 +19,34 @@ export default function SoloMenuScreen() {
   });
 
   return (
-    <>
-      <ScreenLayout
-        id="screen-solo-menu"
-        backgroundImage="background_select.png"
-        title="ソロモード"
-        titleColor="#facc15"
-        onTitleClick={handleTitleClick}
-        onBackClick={() => goToModeSelect?.()}
-        backHasBorder={true}
-      >
-        <div className="menu-btn-grid">
-          <MenuImageButton
-            label="ストーリー"
-            image={images.MENU_STORY}
-            onClick={() => startGameMode?.('story')}
-            badgeText="勝利でカードGET"
-          />
-          <MenuImageButton
-            label="フリーバトル"
-            image={images.MENU_FREE}
-            onClick={() => startGameMode?.('free')}
-            badgeText="勝利でカードGET"
-          />
-          <MenuImageButton
-            label="プラクティス"
-            image={images.MENU_PRACTICE}
-            onClick={() => startGameMode?.('practice')}
-          />
-        </div>
-      </ScreenLayout>
-    </>
+    <ScreenLayout
+      id="screen-solo-menu"
+      backgroundImage="background_select.png"
+      title="ソロモード"
+      titleColor="#facc15"
+      onTitleClick={handleTitleClick}
+      onBackClick={() => goToModeSelect?.()}
+      backHasBorder={true}
+    >
+      <div className="menu-btn-grid">
+        <MenuImageButton
+          label="ストーリー"
+          image={images.MENU_STORY}
+          onClick={() => startGameMode?.('story')}
+          badgeText="勝利でカードGET"
+        />
+        <MenuImageButton
+          label="フリーバトル"
+          image={images.MENU_FREE}
+          onClick={() => startGameMode?.('free')}
+          badgeText="勝利でカードGET"
+        />
+        <MenuImageButton
+          label="プラクティス"
+          image={images.MENU_PRACTICE}
+          onClick={() => startGameMode?.('practice')}
+        />
+      </div>
+    </ScreenLayout>
   );
 }

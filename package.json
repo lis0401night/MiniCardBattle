@@ -12,6 +12,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "dompurify": "^3.4.10",
     "firebase": "^12.11.0",
     "pngjs": "^7.0.0",
     "puppeteer": "^24.38.0",
