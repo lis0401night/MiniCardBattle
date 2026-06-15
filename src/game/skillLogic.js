@@ -1829,7 +1829,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出の再生（すべての対象レーンで同時に並列再生）
       if (window.triggerVfx) {
-        await Promise.all(targets.map(tL => window.triggerVfx('anm_skill_freeze', o, tL)));
+        await Promise.all(
+          targets.map((tL) => window.triggerVfx('anm_skill_freeze', o, tL))
+        );
       } else {
         playSound(SOUNDS.seSkillFreeze);
       }

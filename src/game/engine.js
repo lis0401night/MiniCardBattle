@@ -4019,11 +4019,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           });
         }
         if (hasSkill(aC, 'soul_bind_void')) {
-          const hand = attackerSide === 'blue' ? state.playerHand : state.enemyHand;
+          const hand =
+            attackerSide === 'blue' ? state.playerHand : state.enemyHand;
           const voidCount = hand
             ? hand.filter(
                 (card) =>
-                  card && (card.id === 'token_void' || card.baseId === 'token_void')
+                  card &&
+                  (card.id === 'token_void' || card.baseId === 'token_void')
               ).length
             : 0;
           if (voidCount > 0) {
@@ -4042,7 +4044,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
     }
     // 防御側の魂縛 / 魂縛(虚): 反撃で攻撃者（またはその守護）を倒した場合に発動
-    if (originalTarget && originalTarget.currentPower > 0 && aC_defend.currentPower <= 0) {
+    if (
+      originalTarget &&
+      originalTarget.currentPower > 0 &&
+      aC_defend.currentPower <= 0
+    ) {
       if (hasSkill(originalTarget, 'soul_bind')) {
         const val = getSkillValue(originalTarget, 'soul_bind') || 2;
         originalTarget.currentPower += val;
@@ -4059,7 +4065,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         const voidCount = hand
           ? hand.filter(
               (card) =>
-                card && (card.id === 'token_void' || card.baseId === 'token_void')
+                card &&
+                (card.id === 'token_void' || card.baseId === 'token_void')
             ).length
           : 0;
         if (voidCount > 0) {
@@ -4496,11 +4503,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         });
       }
       if (hasSkill(aC, 'soul_bind_void')) {
-        const hand = attackerSide === 'blue' ? state.playerHand : state.enemyHand;
+        const hand =
+          attackerSide === 'blue' ? state.playerHand : state.enemyHand;
         const voidCount = hand
           ? hand.filter(
               (card) =>
-                card && (card.id === 'token_void' || card.baseId === 'token_void')
+                card &&
+                (card.id === 'token_void' || card.baseId === 'token_void')
             ).length
           : 0;
         if (voidCount > 0) {
@@ -4534,7 +4543,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         const voidCount = hand
           ? hand.filter(
               (card) =>
-                card && (card.id === 'token_void' || card.baseId === 'token_void')
+                card &&
+                (card.id === 'token_void' || card.baseId === 'token_void')
             ).length
           : 0;
         if (voidCount > 0) {

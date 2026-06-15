@@ -46,6 +46,14 @@ async function triggerSnipeVfx(source, side, lane) {
   return true;
 }
 
+let discardCardRef = null;
+/**
+ * 循環参照を回避しつつ、battle.jsのdiscardCard関数を登録するための依存性注入用関数
+ */
+export function registerDiscardCard(fn) {
+  discardCardRef = fn;
+}
+
 /**
  * engine.js が生成したイベントログの配列を受け取り、
  * 順番にアニメーション、ポップアップ、効果音を再生する描画専用モジュール (Renderer)
@@ -399,6 +407,10 @@ export async function playEvents(events) {
       case 'summon_card': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        // 上書き配置時の既存カード破棄（装備カードの墓地送り漏れを防ぐ）
+        if (board[ev.lane] && discardCardRef) {
+          await discardCardRef(ev.side, board[ev.lane], ev.lane, false);
+        }
         board[ev.lane] = ev.card;
 
         // 保護フラグを即座に適用

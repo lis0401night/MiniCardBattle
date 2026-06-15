@@ -47,7 +47,7 @@ import {
   applySingleCombat,
   calculateCombatPhase,
 } from './engine.js';
-import { playEvents } from './eventRenderer.js';
+import { playEvents, registerDiscardCard } from './eventRenderer.js';
 import { simulateTournamentRound } from './tournament.js';
 
 import { GameState } from '../state/gameState.js';
@@ -4417,3 +4417,6 @@ export function returnToTitle() {
     dispatchBattleAction({ type: 'retire', owner: 'blue' });
   });
 }
+
+// eventRenderer.jsへ、循環参照を回避しつつ discardCard 関数への参照を注入
+registerDiscardCard(discardCard);

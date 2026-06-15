@@ -39,7 +39,7 @@ export default function NewsBanner() {
 
             setNewsItems(activeNews);
           }
-        } catch (e) {
+        } catch {
           // ローカルのViteサーバー環境などでPHPが実行されずパースエラーになった場合のフォールバック
           setNewsItems([
             {
@@ -136,7 +136,7 @@ export default function NewsBanner() {
 
     try {
       playSound?.(SOUNDS?.seClick);
-    } catch (e) {}
+    } catch {}
     setSelectedNews(item);
   };
 

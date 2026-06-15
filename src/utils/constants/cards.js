@@ -669,7 +669,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'soul_bind_void', value: 1 }],
     voiceCategory: 'stone',
-    flavor: 'その仮面の下には、もはや人の心は存在しない。虚無の魂が、ただ彼の体を動かしているだけだ。',
+    flavor:
+      'その仮面の下には、もはや人の心は存在しない。虚無の魂が、ただ彼の体を動かしているだけだ。',
   },
   {
     id: 'voidcleric',
