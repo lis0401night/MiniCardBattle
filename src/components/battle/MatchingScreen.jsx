@@ -21,10 +21,15 @@ export default function MatchingScreen({
 }) {
   const [visible, setVisible] = useState(false);
   const onCompleteRef = useRef(onComplete);
+  const onFadeOutCompleteRef = useRef(onFadeOutComplete);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
+
+  useEffect(() => {
+    onFadeOutCompleteRef.current = onFadeOutComplete;
+  }, [onFadeOutComplete]);
 
   useEffect(() => {
     // マウント時にアニメーション開始
@@ -55,7 +60,7 @@ export default function MatchingScreen({
 
     // 5.0秒後（0.5秒のフェードアウトアニメーション完了後）にアンマウント用のコールバックを実行
     const destroyTimer = setTimeout(() => {
-      if (onFadeOutComplete) onFadeOutComplete();
+      if (onFadeOutCompleteRef.current) onFadeOutCompleteRef.current();
     }, TIMING.DESTROY_DELAY);
 
     return () => {
@@ -65,7 +70,7 @@ export default function MatchingScreen({
       clearTimeout(endTimer);
       clearTimeout(destroyTimer);
     };
-  }, [onFadeOutComplete]);
+  }, []);
 
   // デバッグ用にプレイヤーと敵の情報を取得（未設定の場合はデフォルト）
   const player = GameState.playerConfig || CHARACTERS['dragon'];
