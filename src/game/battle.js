@@ -2655,8 +2655,7 @@ export async function triggerExplodeSkill(owner, lane, card) {
   console.log(`Exploding at ${lane} with value ${val}`);
 
   if (window.triggerVfx) {
-    window.triggerVfx('anm_skill_explode', owner, lane);
-    await sleep(400); // アニメーションの前半部分を見せるための待機
+    await window.triggerVfx('anm_skill_explode', owner, lane);
   }
 
   let targetsFound = false;
