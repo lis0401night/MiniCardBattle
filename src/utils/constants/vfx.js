@@ -469,6 +469,38 @@ export const VFX_DATA = {
     targetSide: 'self',
   },
 
+  // 選別スキル
+  anm_skill_cull: {
+    type: 'sprite',
+    src: 'assets/vfx/pipofm-horroreffect01_192.png',
+    columns: 5,
+    rows: 3,
+    frameCount: 15,
+    duration: 800,
+    se: 'seSkillDominate',
+    position: 'lane',
+    offsetY: 0,
+    scale: 0.6,
+    shake: true,
+    targetSide: 'enemy',
+  },
+
+  // 処刑スキル
+  anm_skill_execute: {
+    type: 'sprite',
+    src: 'assets/vfx/pipofm-horroreffect01_192.png',
+    columns: 5,
+    rows: 3,
+    frameCount: 15,
+    duration: 800,
+    se: 'seSkillDominate',
+    position: 'lane',
+    offsetY: 0,
+    scale: 0.6,
+    shake: true,
+    targetSide: 'self',
+  },
+
   // デッキリセット時のジョーカー演出
   anm_deck_reset_joker: {
     type: 'custom_joker',

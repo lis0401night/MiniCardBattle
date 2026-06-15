@@ -141,6 +141,8 @@ export async function resolveActiveSkillEffect(
         'petrify',
         'sacrifice',
         'sacrifice_void',
+        'cull',
+        'execute',
       ].includes(skillId)
     ) {
       playSkillSound(skillId);
@@ -1270,11 +1272,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_toxic', o, l); // 非同期にしてテンポを向上
-        await sleep(150); // 400msの演出開始に合わせて次の処理へ
+        await window.triggerVfx('anm_skill_toxic', o, l);
       } else {
         playSound(SOUNDS.seSkillToxic);
-        await sleep(150);
       }
 
       if (window.updateCardVisualsReact)
@@ -1324,11 +1324,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_petrify', o, l); // 非同期にしてテンポを向上
-        await sleep(150);
+        await window.triggerVfx('anm_skill_petrify', o, l);
       } else {
         playSound(SOUNDS.seSkillMorph);
-        await sleep(150);
       }
 
       const tgtEl = document.querySelector(
@@ -1365,11 +1363,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_hero', o, l); // 非同期にしてテンポを向上
-        await sleep(150);
+        await window.triggerVfx('anm_skill_hero', o, l);
       } else {
         playSound(SOUNDS.seSkill);
-        await sleep(150);
       }
 
       if (cEl) {
@@ -1397,11 +1393,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_adversity', o, l); // 非同期にしてテンポを向上
-        await sleep(150);
+        await window.triggerVfx('anm_skill_adversity', o, l);
       } else {
         playSound(SOUNDS.seSkill);
-        await sleep(150);
       }
 
       if (cEl) {
@@ -1445,11 +1439,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_sacrifice', o, l);
-        await sleep(150);
+        await window.triggerVfx('anm_skill_sacrifice', o, l);
       } else {
         playSound(SOUNDS.seSkillSacrifice);
-        await sleep(150);
       }
 
       // ダメージポップアップと画面揺らし
@@ -1778,11 +1770,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_bind', o, l); // 非同期にしてテンポを向上
-        await sleep(300); // 600msの演出（15フレーム）に合わせて、半分以上進んだ時点で次の処理へ
+        await window.triggerVfx('anm_skill_bind', o, l);
       } else {
         playSound(SOUNDS.seSkillBind);
-        await sleep(150);
       }
 
       if (window.updateCardVisualsReact)
@@ -1807,11 +1797,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出
       if (window.triggerVfx) {
-        window.triggerVfx('anm_skill_seal', o, l); // 非同期にしてテンポを向上
-        await sleep(400); // 800msの演出（8フレーム）に合わせて、半分以上進んだ時点で次の処理へ
+        await window.triggerVfx('anm_skill_seal', o, l);
       } else {
         if (SOUNDS.seSkillSeal) playSound(SOUNDS.seSkillSeal);
-        await sleep(150);
       }
 
       if (tEl) {
@@ -1841,13 +1829,9 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出の再生（すべての対象レーンで同時に並列再生）
       if (window.triggerVfx) {
-        for (const tL of targets) {
-          window.triggerVfx('anm_skill_freeze', o, tL); // 非同期にしてテンポを向上
-        }
-        await sleep(150); // 400msの演出開始に合わせて次の処理へ
+        await Promise.all(targets.map(tL => window.triggerVfx('anm_skill_freeze', o, tL)));
       } else {
         playSound(SOUNDS.seSkillFreeze);
-        await sleep(150);
       }
 
       if (window.updateBattleUIHook) window.updateBattleUIHook(); // 反映させる
@@ -1858,10 +1842,7 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'artillery') {
     let dmg = skillValue || 1;
     if (window.triggerVfx) {
-      window.triggerVfx('anm_skill_artillery', o); // 非同期実行にしてテンポを向上
-      await sleep(150); // 400msの爆発開始の瞬間に合わせてダメージ処理に移行
-    } else {
-      await sleep(150);
+      await window.triggerVfx('anm_skill_artillery', o);
     }
     if (o === 'blue') {
       GameState.enemyHP -= dmg;
@@ -3045,11 +3026,9 @@ export async function resolveActiveSkillEffect(
 
         // 支配する対象カードの中央にVFXを再生
         if (window.triggerVfx) {
-          window.triggerVfx('anm_skill_dominate', o, selectedOppLane);
-          await sleep(400); // 400msのエフェクトが相手カードを包み込むのを待ってから移動処理へ移行
+          await window.triggerVfx('anm_skill_dominate', o, selectedOppLane);
         } else {
           playSound(SOUNDS.seSkillDominate);
-          await sleep(400);
         }
 
         // 相手のレーンから取り除く
@@ -3208,7 +3187,12 @@ export async function resolveActiveSkillEffect(
             playSound(SOUNDS.seSkill);
             await sleep(300);
           } else {
-            // 破壊アニメーション・ポップアップ・ボイス（crush/dispelと統一パターン）
+            // VFX演出（SEも triggerVfx 内で自動再生されます）
+            if (typeof window.triggerVfx === 'function') {
+              await window.triggerVfx('anm_skill_cull', o, targetLane);
+            } else {
+              playSound(SOUNDS.seDestroy);
+            }
             const tgtEl = document.querySelector(
               `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
@@ -3222,8 +3206,7 @@ export async function resolveActiveSkillEffect(
             if (targetCard.voiceCategory) {
               playCardVoice(targetCard.voiceCategory, 'death');
             }
-            playSound(SOUNDS.seDestroy);
-            await sleep(400);
+            await sleep(300);
             // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
             if (!(await discardCard(oppOwner, targetCard, targetLane, true)))
               oppBoard[targetLane] = null;
@@ -3277,7 +3260,12 @@ export async function resolveActiveSkillEffect(
             playSound(SOUNDS.seSkill);
             await sleep(300);
           } else {
-            // 破壊アニメーション・ポップアップ・ボイス（crush/dispelと統一パターン）
+            // VFX演出（SEも triggerVfx 内で自動再生されます）
+            if (typeof window.triggerVfx === 'function') {
+              await window.triggerVfx('anm_skill_execute', o, targetLane);
+            } else {
+              playSound(SOUNDS.seDestroy);
+            }
             const tgtEl = document.querySelector(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
@@ -3291,8 +3279,7 @@ export async function resolveActiveSkillEffect(
             if (targetCard.voiceCategory) {
               playCardVoice(targetCard.voiceCategory, 'death');
             }
-            playSound(SOUNDS.seDestroy);
-            await sleep(400);
+            await sleep(300);
             // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
             if (!(await discardCard(o, targetCard, targetLane, true)))
               myBoard[targetLane] = null;
