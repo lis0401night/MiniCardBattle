@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { switchScreen, playSound } from '../../utils/gameUtils.js';
+import { useEffect, useRef, useState } from 'react';
+import { playSound, switchScreen } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
 export default function NewsBanner() {
@@ -134,7 +134,6 @@ export default function NewsBanner() {
       return;
     }
 
-    console.log('handleBannerClick fired!', item);
     try {
       playSound?.(SOUNDS?.seClick);
     } catch (e) {}

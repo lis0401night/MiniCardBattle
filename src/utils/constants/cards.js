@@ -408,7 +408,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'resist', value: 3 }],
     voiceCategory: 'human_female_cute',
     flavor:
-      '未知なる世界への憧れを胸に、安全な故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
+      '未知なる世界への憧れを胸に、故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
   },
   {
     id: 'incinerator',
@@ -469,15 +469,14 @@ export const CARD_MASTER = [
     flavor:
       '自由と引き換えに記憶を捨てた囚人。鉄面の下で正気をすり減らし、ただ破壊の衝動に従って暴れ狂う。',
   },
-  {
+{
     id: 'cook',
-    name: '至高の料理人',
+    name: '恐怖の調理長',
     rarity: 1,
-    power: 4,
-    skills: [{ id: 'execute' }, { id: 'heal', value: 5 }],
+    power: 5,
+    skills: [{ id: 'execute' }, { id: 'heal', value: 4 }],
     voiceCategory: 'human_male_warrior',
-    flavor:
-      'その一撃は全てを終わらせる。あるいは、無辜の民を巻き込む。処刑人は常に選択を迫られる。',
+    flavor: '彼の作る肉シチューは絶品だが、何の肉を使っているかは誰も聞こうとしない。',
   },
   {
     id: 'necromancer',
@@ -707,7 +706,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 4,
     skills: [{ id: 'move' }, { id: 'cleave' }],
-    voiceCategory: 'human_female_nomal',
+    voiceCategory: 'human_female_normal',
     flavor: '空を舞う半人半鳥の怪物。獲物を鋭い爪で切り刻む。',
   },
   {

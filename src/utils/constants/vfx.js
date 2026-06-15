@@ -351,7 +351,7 @@ export const VFX_DATA = {
     offsetY: 0,
     scale: 0.8, // 横にも判定があるため少し大きめに表示
     shake: false,
-    targetSide: 'self', // 回復を受けた側（自分）がターゲット
+    targetSide: 'self', // 発動者と同じ陣営の隣接カードがターゲット
   },
 
   // 石化スキル
@@ -415,7 +415,7 @@ export const VFX_DATA = {
     offsetY: 0,
     scale: 0.8, // 横にも判定があるため少し大きめに表示
     shake: false,
-    targetSide: 'self', // 回復を受けた側（自分）がターゲット
+    targetSide: 'self', // 破壊されたカードと同じ陣営の隣接カードがターゲット
   },
 
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK

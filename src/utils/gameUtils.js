@@ -1,15 +1,15 @@
+import { GameState } from '../state/gameState.js';
+import { CARD_MASTER } from './constants/cards.js';
+import { getSkinImage } from './constants/characters.js';
+import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import {
   audioCtx,
+  isAudioUnlocked,
+  loadAndDecodeAudio,
   seBuffers,
   SOUNDS,
-  isAudioUnlocked,
   unlockAudio,
-  loadAndDecodeAudio,
 } from './sounds.js';
-import { GameState } from '../state/gameState.js';
-import { SKILLS, ACTIVE_SKILLS } from './constants/skills.js';
-import { getSkinImage } from './constants/characters.js';
-import { CARD_MASTER } from './constants/cards.js';
 
 // BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
 export let currentBgmAudio = null;
@@ -344,13 +344,6 @@ export function stopSound(audio) {
 export function stopAllBGM() {
   if (currentBgmAudio) {
     stopSound(currentBgmAudio);
-  }
-  if (currentWebAudioBgmSource) {
-    try {
-      currentWebAudioBgmSource.stop();
-    } catch {}
-    currentWebAudioBgmSource.disconnect();
-    currentWebAudioBgmSource = null;
   }
   currentBgmAudio = null;
   Object.keys(SOUNDS).forEach((key) => {
