@@ -213,7 +213,7 @@ export async function unlockAudio() {
 
     const baseVol =
       typeof GameState !== 'undefined' &&
-        typeof GameState.gameVolume !== 'undefined'
+      typeof GameState.gameVolume !== 'undefined'
         ? GameState.gameVolume
         : 0.3;
 
@@ -250,7 +250,7 @@ export async function unlockAudio() {
             } else {
               if (audio._wasPlayingBeforeHide) {
                 const p = audio.play();
-                if (p !== undefined) p.catch(() => { });
+                if (p !== undefined) p.catch(() => {});
                 audio._wasPlayingBeforeHide = false;
               }
             }
@@ -287,7 +287,7 @@ export function playSkillSound(skillId) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const baseVol =
       typeof GameState !== 'undefined' &&
-        typeof GameState.gameVolume !== 'undefined'
+      typeof GameState.gameVolume !== 'undefined'
         ? GameState.gameVolume
         : 0.3;
 
@@ -334,7 +334,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
     // audioCtxがすでにある場合、resumeだけは確実に行わせる
     if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().catch(() => { });
+      audioCtx.resume().catch(() => {});
     }
     document.removeEventListener('click', unlockHandler, true);
     document.removeEventListener('touchstart', unlockHandler, true);

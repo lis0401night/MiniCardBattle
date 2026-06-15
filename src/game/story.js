@@ -137,7 +137,10 @@ export function saveStoryProgress() {
     currentDeckIndex: GameState.currentDeckIndex,
   };
   try {
-    localStorage.setItem('mini_card_battle_story_save', JSON.stringify(saveObj));
+    localStorage.setItem(
+      'mini_card_battle_story_save',
+      JSON.stringify(saveObj)
+    );
   } catch (error) {
     console.error('ストーリー進行状況の保存に失敗しました:', error);
   }

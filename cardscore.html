@@ -390,7 +390,9 @@
                   if (!deckData[baseChar]) {
                     deckData[baseChar] = {};
                   }
-                  deckData[baseChar]['high'] = Array.isArray(deck) ? deck : (deck.normal || deck.hard || []);
+                  deckData[baseChar]['high'] = Array.isArray(deck)
+                    ? deck
+                    : deck.normal || deck.hard || [];
                 } else {
                   if (!deckData[file]) {
                     deckData[file] = {};

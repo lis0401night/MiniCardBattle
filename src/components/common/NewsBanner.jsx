@@ -328,7 +328,9 @@ export default function NewsBanner() {
                 border: '1px solid #334155',
                 borderRadius: '8px',
               }}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedNews.content) }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(selectedNews.content),
+              }}
             />
 
             {/* フッターボタン */}
