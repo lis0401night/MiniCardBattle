@@ -802,7 +802,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'scavenger',
-    name: 'ジャンクヤードのあさり屋',
+    name: 'スカベンジャー',
     rarity: 2,
     power: 3,
     skills: [{ id: 'salvage', value: 2 }],
@@ -2087,7 +2087,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'orochi',
-    name: '八岐大蛇',
+    name: '神々の宿敵',
     rarity: 3,
     power: 9,
     skills: [
