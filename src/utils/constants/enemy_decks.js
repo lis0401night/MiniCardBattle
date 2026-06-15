@@ -13,19 +13,19 @@ import witch from './enemy_decks/witch.js';
 import oni from './enemy_decks/oni.js';
 import priest from './enemy_decks/priest.js';
 import satan from './enemy_decks/satan.js';
-import satan_high from './enemy_decks/satan_high.js';
+import satan_high from './enemy_decks/event_high/satan.js';
 import void_deck from './enemy_decks/void.js';
 import succubus_deck from './enemy_decks/succubus.js';
-import cthulhu_high from './enemy_decks/cthulhu_high.js';
-import android_high from './enemy_decks/android_high.js';
-import dragon_high from './enemy_decks/dragon_high.js';
-import knight_high from './enemy_decks/knight_high.js';
-import elf_high from './enemy_decks/elf_high.js';
-import cleric_high from './enemy_decks/cleric_high.js';
-import devilhunter_high from './enemy_decks/devilhunter_high.js';
-import witch_high from './enemy_decks/witch_high.js';
-import oni_high from './enemy_decks/oni_high.js';
-import priest_high from './enemy_decks/priest_high.js';
+import cthulhu_high from './enemy_decks/event_high/cthulhu.js';
+import android_high from './enemy_decks/event_high/android.js';
+import dragon_high from './enemy_decks/event_high/dragon.js';
+import knight_high from './enemy_decks/event_high/knight.js';
+import elf_high from './enemy_decks/event_high/elf.js';
+import cleric_high from './enemy_decks/event_high/cleric.js';
+import devilhunter_high from './enemy_decks/event_high/devilhunter.js';
+import witch_high from './enemy_decks/event_high/witch.js';
+import oni_high from './enemy_decks/event_high/oni.js';
+import priest_high from './enemy_decks/event_high/priest.js';
 
 export const ENEMY_DECKS = {
   android,

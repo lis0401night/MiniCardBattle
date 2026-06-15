@@ -366,18 +366,33 @@
           ];
           for (const file of deckFiles) {
             try {
-              const deckModule = await import(
-                `./src/utils/constants/enemy_decks/${file}.js`
-              );
+              const isHigh = file.endsWith('_high');
+              const path = isHigh
+                ? `./src/utils/constants/enemy_decks/event_high/${file.replace('_high', '')}.js`
+                : `./src/utils/constants/enemy_decks/${file}.js`;
+              const deckModule = await import(path);
               const deck =
                 deckModule.default ||
                 deckModule[file] ||
-                deckModule.ENEMY_DECKS?.[file];
+                deckModule[file.replace('_high', '')] ||
+                deckModule.ENEMY_DECKS?.[file] ||
+                deckModule.ENEMY_DECKS?.[file.replace('_high', '')];
               if (deck) {
-                if (Array.isArray(deck)) {
-                  deckData[file] = { Extra: deck };
+                if (isHigh) {
+                  const baseChar = file.replace('_high', '');
+                  if (!deckData[baseChar]) {
+                    deckData[baseChar] = {};
+                  }
+                  deckData[baseChar]['high'] = Array.isArray(deck) ? deck : (deck.normal || deck.hard || []);
                 } else {
-                  deckData[file] = deck;
+                  if (!deckData[file]) {
+                    deckData[file] = {};
+                  }
+                  if (Array.isArray(deck)) {
+                    deckData[file]['Extra'] = deck;
+                  } else {
+                    Object.assign(deckData[file], deck);
+                  }
                 }
               }
             } catch (e) {
