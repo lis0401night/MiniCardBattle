@@ -212,10 +212,10 @@ function VfxItem({ effect }) {
   return (
     <div
       className={`vfx-overlay ${type} ${side} ${positionClass}`}
-      style={{ 
-        '--vfx-top': `${finalTop}%`, 
+      style={{
+        '--vfx-top': `${finalTop}%`,
         '--vfx-left': `${finalLeft}%`,
-        mixBlendMode: data.blendMode || 'normal'
+        mixBlendMode: data.blendMode || 'normal',
       }}
     >
       <div
@@ -263,32 +263,40 @@ function VfxItem({ effect }) {
         )}
 
         {data.type === 'custom_joker' && (
-          <div style={{
-            position: 'absolute',
-            width: '120px',
-            height: '120px',
-            pointerEvents: 'none',
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              width: '120px',
+              height: '120px',
+              pointerEvents: 'none',
+            }}
+          >
             {/* 背後のぼかしエフェクト */}
-            <img 
-              src="assets/ui/ui_joker.png" 
+            <img
+              src="assets/ui/ui_joker.png"
               className="vfx-joker-blur"
               alt=""
               style={{
-                position: 'absolute', top: 0, left: 0,
-                width: '100%', height: '100%',
-                objectFit: 'contain'
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
               }}
             />
             {/* 手前のメインシンボル */}
-            <img 
-              src="assets/ui/ui_joker.png" 
+            <img
+              src="assets/ui/ui_joker.png"
               className="vfx-joker-main"
               alt="Joker"
               style={{
-                position: 'absolute', top: 0, left: 0,
-                width: '100%', height: '100%',
-                objectFit: 'contain'
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
               }}
             />
           </div>

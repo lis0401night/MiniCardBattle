@@ -34,7 +34,9 @@ export default function RewardOverlay() {
 
   useEffect(() => {
     window.showCardRewardReact = (rewardCardIds) => {
-      const ids = Array.isArray(rewardCardIds) ? rewardCardIds : [rewardCardIds];
+      const ids = Array.isArray(rewardCardIds)
+        ? rewardCardIds
+        : [rewardCardIds];
       if (ids.length === 0) return;
       setRewardQueue(ids);
       setupReward(ids[0]);

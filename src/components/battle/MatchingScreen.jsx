@@ -5,7 +5,11 @@ import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import './MatchingScreen.css';
 
-export default function MatchingScreen({ onComplete, testEnemyId, testEnemySkinId }) {
+export default function MatchingScreen({
+  onComplete,
+  testEnemyId,
+  testEnemySkinId,
+}) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -42,12 +46,18 @@ export default function MatchingScreen({ onComplete, testEnemyId, testEnemySkinI
 
   // デバッグ用にプレイヤーと敵の情報を取得（未設定の場合はデフォルト）
   const player = GameState.playerConfig || CHARACTERS['dragon'];
-  const baseEnemy = testEnemyId ? CHARACTERS[testEnemyId] : (GameState.enemyConfig || CHARACTERS['android']);
+  const baseEnemy = testEnemyId
+    ? CHARACTERS[testEnemyId]
+    : GameState.enemyConfig || CHARACTERS['android'];
 
   const enemy = {
     ...baseEnemy,
-    image: testEnemySkinId ? getSkinImage(baseEnemy, testEnemySkinId, 'image') : baseEnemy.image,
-    icon: testEnemySkinId ? getSkinImage(baseEnemy, testEnemySkinId, 'icon') : baseEnemy.icon
+    image: testEnemySkinId
+      ? getSkinImage(baseEnemy, testEnemySkinId, 'image')
+      : baseEnemy.image,
+    icon: testEnemySkinId
+      ? getSkinImage(baseEnemy, testEnemySkinId, 'icon')
+      : baseEnemy.icon,
   };
 
   // 「肩書 名前」から分離するヘルパー
@@ -65,20 +75,24 @@ export default function MatchingScreen({ onComplete, testEnemyId, testEnemySkinI
   const eData = parseName(enemy.name);
 
   // バトルのステージIDを決定（initBattleStateと同じロジック）
-  const stageId = GameState.gameMode === 'story'
-    ? enemy.stageId || 'android'
-    : GameState.selectedStageId || enemy.stageId || enemy.id.replace('_high', '') || 'android';
+  const stageId =
+    GameState.gameMode === 'story'
+      ? enemy.stageId || 'android'
+      : GameState.selectedStageId ||
+        enemy.stageId ||
+        enemy.id.replace('_high', '') ||
+        'android';
 
   return (
     <div className={`matching-screen-container ${visible ? 'show' : ''}`}>
       {/* 背景（全体） */}
-      <div 
-        className="matching-bg" 
-        style={{ 
+      <div
+        className="matching-bg"
+        style={{
           backgroundImage: `url('assets/backgrounds/background_${stageId}.png')`,
-          filter: 'brightness(0.5)' // キャラを目立たせるために少し暗くする
-        }}>
-      </div>
+          filter: 'brightness(0.5)', // キャラを目立たせるために少し暗くする
+        }}
+      ></div>
 
       {/* 中央の光るライン */}
       <div className="matching-split-line"></div>
@@ -86,8 +100,16 @@ export default function MatchingScreen({ onComplete, testEnemyId, testEnemySkinI
       {/* 敵サイド (右上) */}
       <div className="matching-side enemy-side">
         <div className="matching-char-wrapper">
-          <img src={enemy.image} alt={enemy.name} className="matching-char-img" />
-          <img src="assets/ui/chara_frame.png" alt="frame" className="matching-char-frame" />
+          <img
+            src={enemy.image}
+            alt={enemy.name}
+            className="matching-char-img"
+          />
+          <img
+            src="assets/ui/chara_frame.png"
+            alt="frame"
+            className="matching-char-frame"
+          />
         </div>
         <div className="matching-info">
           <div className="matching-subtitle">{eData.subtitle}</div>
@@ -100,8 +122,16 @@ export default function MatchingScreen({ onComplete, testEnemyId, testEnemySkinI
       {/* プレイヤーサイド (左下) */}
       <div className="matching-side player-side">
         <div className="matching-char-wrapper">
-          <img src={player.image} alt={player.name} className="matching-char-img" />
-          <img src="assets/ui/chara_frame.png" alt="frame" className="matching-char-frame" />
+          <img
+            src={player.image}
+            alt={player.name}
+            className="matching-char-img"
+          />
+          <img
+            src="assets/ui/chara_frame.png"
+            alt="frame"
+            className="matching-char-frame"
+          />
         </div>
         <div className="matching-info">
           <div className="matching-subtitle">{pData.subtitle}</div>

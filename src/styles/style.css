@@ -2882,14 +2882,18 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
 .news-banner-icon {
   font-size: 1.2rem;
   margin-right: 10px;
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
 }
 
 .news-banner-text {
@@ -2922,7 +2926,7 @@ h2 {
   background: rgba(255, 255, 255, 0.9);
   width: 12px;
   border-radius: 3px;
-  box-shadow: 0 0 4px rgba(255,255,255,0.5);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
 }
 
 #screen-mode-select {
@@ -2941,9 +2945,15 @@ h2 {
 }
 
 @keyframes badge-gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .badge-animated {
@@ -3655,16 +3665,44 @@ body.vfx-shake {
 
 /* Joker VFX Animation */
 @keyframes vfxJokerBlur {
-  0% { transform: scale(1); opacity: 0; filter: blur(4px); }
-  30% { transform: scale(1.6); opacity: 0.8; filter: blur(8px) drop-shadow(0 0 20px red); }
-  70% { transform: scale(1.2); opacity: 0.5; filter: blur(4px) drop-shadow(0 0 10px red); }
-  100% { transform: scale(2.2); opacity: 0; filter: blur(12px); }
+  0% {
+    transform: scale(1);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  30% {
+    transform: scale(1.6);
+    opacity: 0.8;
+    filter: blur(8px) drop-shadow(0 0 20px red);
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 0.5;
+    filter: blur(4px) drop-shadow(0 0 10px red);
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+    filter: blur(12px);
+  }
 }
 @keyframes vfxJokerMain {
-  0% { transform: scale(0.5); opacity: 0; }
-  30% { transform: scale(1.1); opacity: 1; }
-  70% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 .vfx-joker-blur {
   animation: vfxJokerBlur 1.2s ease-in-out forwards;
@@ -3672,4 +3710,3 @@ body.vfx-shake {
 .vfx-joker-main {
   animation: vfxJokerMain 1.2s ease-in-out forwards;
 }
-

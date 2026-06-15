@@ -81,12 +81,19 @@ export default function OptionsScreen() {
       >
         {/* 音量調整 */}
         <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '10px',
+            }}
+          >
             <label
               style={{
                 color: '#cbd5e1',
                 fontSize: '0.9rem',
-                margin: 0
+                margin: 0,
               }}
             >
               音量調整
@@ -101,7 +108,7 @@ export default function OptionsScreen() {
                 borderRadius: '6px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '4px',
               }}
               onClick={() => {
                 if (typeof forceSoundReload === 'function') {

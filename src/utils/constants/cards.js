@@ -274,7 +274,7 @@ export const CARD_MASTER = [
     name: '竜巻',
     rarity: 1,
     power: 7,
-    skills: [{ id: 'defender' },{ id: 'growth', value: 2 }],
+    skills: [{ id: 'defender' }, { id: 'growth', value: 2 }],
     voiceCategory: 'stone',
     flavor:
       '砂漠の熱風が巻き起こす竜巻。砂と岩を巻き込みながら容赦なく荒れ狂い、哀れな旅人たちの行く手を塞ぐ。',
@@ -653,7 +653,11 @@ export const CARD_MASTER = [
     name: 'スケルトン・ディフェンダー',
     rarity: 1,
     power: 6,
-    skills: [{ id: 'takeover' }, { id: 'guardian' }, { id: 'split', value: 3, summonId: 'token_skeleton' }],
+    skills: [
+      { id: 'takeover' },
+      { id: 'guardian' },
+      { id: 'split', value: 3, summonId: 'token_skeleton' },
+    ],
     voiceCategory: 'undead',
     flavor:
       '生前の規格外な巨体を、さらに巨大な鎧とメイスで武装した骸骨の重衛兵。',
@@ -665,8 +669,7 @@ export const CARD_MASTER = [
     power: 6,
     skills: [{ id: 'sacrifice_void', value: 2 }],
     voiceCategory: 'human_male_ikemen',
-    flavor:
-      'その仮面の下にある希望は冷めきってはいない。',
+    flavor: 'その仮面の下にある希望は冷めきってはいない。',
   },
   {
     id: 'voidcleric',
@@ -703,10 +706,9 @@ export const CARD_MASTER = [
     name: '荒ぶるハーピー',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'move' }, { id: 'cleave'}],
+    skills: [{ id: 'move' }, { id: 'cleave' }],
     voiceCategory: 'human_female_nomal',
-    flavor:
-      '空を舞う半人半鳥の怪物。獲物を鋭い爪で切り刻む。',
+    flavor: '空を舞う半人半鳥の怪物。獲物を鋭い爪で切り刻む。',
   },
   {
     id: 'goat',
@@ -749,9 +751,7 @@ export const CARD_MASTER = [
     name: '魔王のしもべ',
     rarity: 1,
     power: 2,
-    skills: [
-      { id: 'awake', value: 7, summonId: 'token_daemon' },
-    ],
+    skills: [{ id: 'awake', value: 7, summonId: 'token_daemon' }],
     voiceCategory: 'human_male_old',
     flavor: '歪んだ忠誠を誓う狂信者。彼の儀式は、強大な闇を招く呼び水となる。',
   },
@@ -815,9 +815,7 @@ export const CARD_MASTER = [
     name: 'ドラゴン・ドレッドノート',
     rarity: 2,
     power: 10,
-    skills: [
-      { id: 'standby', value: 3 },
-    ],
+    skills: [{ id: 'standby', value: 3 }],
     voiceCategory: 'machine_old',
     flavor:
       '純粋な破壊を目的に建造された古代大戦の巨大兵器。冷たい鋼の奥底で重厚な機関音を響かせ、再び空を焦がす再起動の刻を静かに待っている。',
@@ -827,8 +825,14 @@ export const CARD_MASTER = [
     name: '略奪者のキメラ・メック',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'choice', value: 1 }, { id: 'choice', value: 1, choiceGroup: 2 },],
-    choices: [{ id: 'spend', value: 1 }, { id: 'explode', value: 2 }],
+    skills: [
+      { id: 'choice', value: 1 },
+      { id: 'choice', value: 1, choiceGroup: 2 },
+    ],
+    choices: [
+      { id: 'spend', value: 1 },
+      { id: 'explode', value: 2 },
+    ],
     choices2: [{ id: 'sturdy' }, { id: 'double_strike' }, { id: 'move' }],
     voiceCategory: 'machine_old',
     flavor:
@@ -967,7 +971,10 @@ export const CARD_MASTER = [
     name: '不屈の先導者',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'berserk', value: 2 }, { id: 'choice', value: 1 }],
+    skills: [
+      { id: 'berserk', value: 2 },
+      { id: 'choice', value: 1 },
+    ],
     choices: [
       { id: 'summon', value: 2, summonId: 'token_knight' },
       { id: 'support', value: 4 },
@@ -1024,9 +1031,14 @@ export const CARD_MASTER = [
     name: 'アビス・ガーディアン',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'convert', value: 2 }, { id: 'bind', value: 1 }, { id: 'pierce' }],
+    skills: [
+      { id: 'convert', value: 2 },
+      { id: 'bind', value: 1 },
+      { id: 'pierce' },
+    ],
     voiceCategory: 'monster',
-    flavor: '深海の神殿の番人。捕らえた獲物を暗い水底へ引きずり込み、手にした鋭い銛で無慈悲に貫く。',
+    flavor:
+      '深海の神殿の番人。捕らえた獲物を暗い水底へ引きずり込み、手にした鋭い銛で無慈悲に貫く。',
   },
   {
     id: 'parasite',
@@ -1095,7 +1107,10 @@ export const CARD_MASTER = [
     name: 'ダンジョン・シーカー',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'lone_wolf', value: 1 }, { id: 'resist', value: 4 }],
+    skills: [
+      { id: 'lone_wolf', value: 1 },
+      { id: 'resist', value: 4 },
+    ],
     voiceCategory: 'human_female_cool',
     flavor:
       '未踏の迷宮を踏破する熟練の探索者。鋭い勘と身のこなしで、幾多の危険をくぐり抜ける。',
@@ -1171,7 +1186,8 @@ export const CARD_MASTER = [
       { id: 'awake', value: 7, summonId: 'token_angel' },
     ],
     voiceCategory: 'stone',
-    flavor: '朽ちた廃教会で、沈黙のまま祭壇を守り続ける石像。信仰の光が再び灯る時、真の姿を取り戻すという。',
+    flavor:
+      '朽ちた廃教会で、沈黙のまま祭壇を守り続ける石像。信仰の光が再び灯る時、真の姿を取り戻すという。',
   },
   {
     id: 'monk',
@@ -1383,7 +1399,10 @@ export const CARD_MASTER = [
     name: '盲目の怪僧',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'seal', value: 1 }, { id: 'summon', value: 1, summonId: 'token_soul' }],
+    skills: [
+      { id: 'seal', value: 1 },
+      { id: 'summon', value: 1, summonId: 'token_soul' },
+    ],
     voiceCategory: 'undead',
     flavor:
       '朽ちた琵琶を掻き鳴らす、盲目の僧。その音色は迷える魂を呼び寄せ、生者の力を奪い去る。',

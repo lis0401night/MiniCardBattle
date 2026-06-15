@@ -159,7 +159,10 @@ const SCREEN_COMPONENTS = {
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
   const [rulesVisible, setRulesVisible] = useState(false);
-  const [matchingState, setMatchingState] = useState({ show: false, onComplete: null });
+  const [matchingState, setMatchingState] = useState({
+    show: false,
+    onComplete: null,
+  });
 
   // グローバルに関数を公開
   useEffect(() => {

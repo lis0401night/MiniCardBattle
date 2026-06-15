@@ -3110,7 +3110,8 @@ export async function resolveActiveSkillEffect(
     // エンジンのイベントによって状態と描画が同期される
     if (events.length > 0) {
       await playEvents(events);
-      if (skillId === 'sacrifice' || skillId === 'sacrifice_void') checkWinCondition();
+      if (skillId === 'sacrifice' || skillId === 'sacrifice_void')
+        checkWinCondition();
     }
   }
 }

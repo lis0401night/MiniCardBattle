@@ -223,7 +223,8 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     type: 'skin',
     charId: 'dragon',
     name: '放課後ディストーション',
-    description: '軽音部でギターをかき鳴らすサークルの姫。彼女のライブはいつも爆音。',
+    description:
+      '軽音部でギターをかき鳴らすサークルの姫。彼女のライブはいつも爆音。',
     cost: 20,
   },
   {
@@ -302,7 +303,8 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     id: 'pm_dragon_school',
     type: 'playmat',
     name: 'プレイマット：放課後ディストーション',
-    description: '軽音部でギターをかき鳴らすサークルの姫。彼女のライブはいつも爆音。',
+    description:
+      '軽音部でギターをかき鳴らすサークルの姫。彼女のライブはいつも爆音。',
     cost: 10,
   },
   {

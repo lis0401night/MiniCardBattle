@@ -304,7 +304,7 @@ export function processDestructionTriggers(state, events) {
               type: 'vfx_trigger',
               vfxId: 'anm_skill_explode',
               side,
-              lane: i
+              lane: i,
             });
             const dmg = getSkillValue(deadCard, 'explode') || 3;
             [i - 1, i + 1].forEach((adj) => {
@@ -777,7 +777,7 @@ export function applyActiveSkillLogic(
           type: 'vfx_trigger',
           vfxId: 'anm_skill_hero',
           side: owner,
-          lane: l
+          lane: l,
         });
         events.push({
           type: 'power_change',
@@ -798,7 +798,7 @@ export function applyActiveSkillLogic(
           type: 'vfx_trigger',
           vfxId: 'anm_skill_adversity',
           side: owner,
-          lane: l
+          lane: l,
         });
         events.push({
           type: 'power_change',
@@ -1289,7 +1289,7 @@ export function applyActiveSkillLogic(
         type: 'vfx_trigger',
         vfxId: 'anm_sacrifice',
         side: owner,
-        lane: l // 必須プロパティとして一応設定
+        lane: l, // 必須プロパティとして一応設定
       });
 
       const sacAmt = val || 3;
@@ -1316,7 +1316,7 @@ export function applyActiveSkillLogic(
           type: 'vfx_trigger',
           vfxId: 'anm_sacrifice',
           side: owner,
-          lane: l
+          lane: l,
         });
 
         const sacAmt = (val || 1) * voidCount;
@@ -1926,7 +1926,7 @@ export function applyActiveSkillLogic(
           type: 'vfx_trigger',
           vfxId: 'anm_skill_petrify',
           side: owner, // 発動者（自分）を基準にする。vfx.js側の 'targetSide: enemy' によって相手側のレーンに描画される
-          lane: l
+          lane: l,
         });
         const targetOriginal = JSON.parse(JSON.stringify(eB[l]));
         const statueTpl = CARD_MASTER.find((m) => m.id === 'token_statue') || {
@@ -3779,7 +3779,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       type: 'vfx_trigger',
       vfxId: 'anm_skill_brutal',
       side: attackerSide,
-      lane: l
+      lane: l,
     });
 
     [l - 1, l + 1].forEach((tj) => {
@@ -4751,7 +4751,7 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
           type: 'vfx_trigger',
           vfxId: 'anm_skill_extort',
           side: attackerSide,
-          lane: aLane
+          lane: aLane,
         });
         activated = true;
       }

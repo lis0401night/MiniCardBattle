@@ -9,14 +9,28 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {function} onClick - クリックイベントハンドラ
  * @param {Object} style - 背景（menu-img-bg）に適用する任意のカスタムスタイル（背景色など）。backgroundImageを含めるとimageプロップを上書きします。
  */
-export default function MenuImageButton({ label, image, onClick, style, badgeText, notificationBadge }) {
+export default function MenuImageButton({
+  label,
+  image,
+  onClick,
+  style,
+  badgeText,
+  notificationBadge,
+}) {
   const handleClick = (e) => {
     playSound(SOUNDS?.seClick);
     if (onClick) onClick(e);
   };
 
   return (
-    <div style={{ position: 'relative', width: 'calc(50% - 12.5px)', flex: '0 0 calc(50% - 12.5px)', aspectRatio: '1/1' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: 'calc(50% - 12.5px)',
+        flex: '0 0 calc(50% - 12.5px)',
+        aspectRatio: '1/1',
+      }}
+    >
       {badgeText && (
         <div
           className="menu-btn-badge badge-animated"
@@ -34,7 +48,7 @@ export default function MenuImageButton({ label, image, onClick, style, badgeTex
             whiteSpace: 'nowrap',
             zIndex: 10,
             boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            border: '1px solid #86efac'
+            border: '1px solid #86efac',
           }}
         >
           {badgeText}
@@ -52,13 +66,13 @@ export default function MenuImageButton({ label, image, onClick, style, badgeTex
             border: '2px solid white',
             borderRadius: '50%',
             zIndex: 10,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+            boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
           }}
         />
       )}
-      <div 
-        className="menu-img-btn" 
-        onClick={handleClick} 
+      <div
+        className="menu-img-btn"
+        onClick={handleClick}
         style={{ width: '100%', height: '100%', flex: 'none', margin: 0 }}
       >
         <div

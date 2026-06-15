@@ -359,19 +359,33 @@ export function prepareBattle() {
   isBattleLoading = true;
 
   // 0. 最新のスキン情報でConfigを同期（対戦相手のスキンなどが確実に反映されるようにする）
-  if (GameState.playerConfig && GameState.playerSkins && GameState.playerSkins[GameState.playerConfig.id]) {
+  if (
+    GameState.playerConfig &&
+    GameState.playerSkins &&
+    GameState.playerSkins[GameState.playerConfig.id]
+  ) {
     const selSkin = GameState.playerSkins[GameState.playerConfig.id];
-    const charObj = CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
+    const charObj =
+      CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
     if (getSkinImage) {
       GameState.playerConfig.image = getSkinImage(charObj, selSkin, 'image');
-      GameState.playerConfig.imageLose = getSkinImage(charObj, selSkin, 'image');
+      GameState.playerConfig.imageLose = getSkinImage(
+        charObj,
+        selSkin,
+        'image'
+      );
       GameState.playerConfig.icon = getSkinImage(charObj, selSkin, 'icon');
     }
   }
 
-  if (GameState.enemyConfig && GameState.enemySkins && GameState.enemySkins[GameState.enemyConfig.id]) {
+  if (
+    GameState.enemyConfig &&
+    GameState.enemySkins &&
+    GameState.enemySkins[GameState.enemyConfig.id]
+  ) {
     const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
-    const charObj = CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
+    const charObj =
+      CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
     if (getSkinImage) {
       GameState.enemyConfig.image = getSkinImage(charObj, selSkin, 'image');
       GameState.enemyConfig.imageLose = getSkinImage(charObj, selSkin, 'image');
@@ -491,30 +505,30 @@ export function prepareBattle() {
       }
     };
 
-  // セーフティタイムアウト: 5秒経過したら強制的に開始
-  setTimeout(() => {
-    if (!isFinished) {
-      console.warn('Battle loading timed out. Forcing start...');
+    // セーフティタイムアウト: 5秒経過したら強制的に開始
+    setTimeout(() => {
+      if (!isFinished) {
+        console.warn('Battle loading timed out. Forcing start...');
+        finishLoading();
+      }
+    }, 5000);
+
+    const updateProgress = () => {
+      if (isFinished) return;
+      loaded++;
+      const loadingText = document.getElementById('loading-text');
+      if (loadingText) {
+        loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+      }
+      if (loaded >= allCards.length) finishLoading();
+    };
+
+    if (allCards.length === 0) {
       finishLoading();
+      return;
     }
-  }, 5000);
 
-  const updateProgress = () => {
-    if (isFinished) return;
-    loaded++;
-    const loadingText = document.getElementById('loading-text');
-    if (loadingText) {
-      loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
-    }
-    if (loaded >= allCards.length) finishLoading();
-  };
-
-  if (allCards.length === 0) {
-    finishLoading();
-    return;
-  }
-
-  allCards.forEach((card) => {
+    allCards.forEach((card) => {
       const img = new Image();
       img.onload = updateProgress;
       img.onerror = updateProgress;
@@ -526,7 +540,7 @@ export function prepareBattle() {
     setTimeout(() => {
       let matchingDone = false;
       let loadingDone = false;
-      
+
       const tryInit = () => {
         if (matchingDone && loadingDone) {
           setTimeout(initBattleState, 50);
@@ -2722,7 +2736,7 @@ export function drawCard(owner) {
         '#ef4444'
       );
       playSound(SOUNDS.seDamage);
-      
+
       if (window.triggerVfx) {
         window.triggerVfx('anm_deck_reset_joker', owner);
       }

@@ -46,7 +46,9 @@
   width: 120%;
   height: 6px;
   background: #fff;
-  box-shadow: 0 0 20px 8px #38bdf8, 0 0 40px 15px #1e3a8a;
+  box-shadow:
+    0 0 20px 8px #38bdf8,
+    0 0 40px 15px #1e3a8a;
   transform: translateY(-50%) rotate(-11.3deg);
   /* roughly aligns with the 40-60 clip-path */
   z-index: 5;
@@ -152,7 +154,9 @@
 .matching-info {
   position: absolute;
   color: #fff;
-  text-shadow: 2px 2px 4px #000, 0 0 10px rgba(0, 0, 0, 0.8);
+  text-shadow:
+    2px 2px 4px #000,
+    0 0 10px rgba(0, 0, 0, 0.8);
   opacity: 0;
   animation: fadeIn 0.5s ease forwards 0.8s;
   display: flex;
@@ -200,7 +204,9 @@
   height: 64px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 15px #38bdf8, inset 0 0 10px rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 0 15px #38bdf8,
+    inset 0 0 10px rgba(255, 255, 255, 0.5);
   padding: 4px;
 }
 

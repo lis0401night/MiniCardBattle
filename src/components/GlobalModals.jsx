@@ -1828,15 +1828,34 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           if (!targetDeck.playerSkins)
                             targetDeck.playerSkins = {};
                           targetDeck.playerSkins[charDetailData.id] = skinId;
-                          
-                          if (!GameState.playerSkins) GameState.playerSkins = {};
+
+                          if (!GameState.playerSkins)
+                            GameState.playerSkins = {};
                           GameState.playerSkins[charDetailData.id] = skinId;
 
-                          if (GameState.playerConfig && GameState.playerConfig.id === charDetailData.id) {
-                            const charObj = Object.values(CHARACTERS || {}).find(c => c.id === charDetailData.id) || charDetailData;
-                            GameState.playerConfig.image = getSkinImage(charObj, skinId, 'image');
-                            GameState.playerConfig.imageLose = getSkinImage(charObj, skinId, 'image');
-                            GameState.playerConfig.icon = getSkinImage(charObj, skinId, 'icon');
+                          if (
+                            GameState.playerConfig &&
+                            GameState.playerConfig.id === charDetailData.id
+                          ) {
+                            const charObj =
+                              Object.values(CHARACTERS || {}).find(
+                                (c) => c.id === charDetailData.id
+                              ) || charDetailData;
+                            GameState.playerConfig.image = getSkinImage(
+                              charObj,
+                              skinId,
+                              'image'
+                            );
+                            GameState.playerConfig.imageLose = getSkinImage(
+                              charObj,
+                              skinId,
+                              'image'
+                            );
+                            GameState.playerConfig.icon = getSkinImage(
+                              charObj,
+                              skinId,
+                              'icon'
+                            );
                           }
 
                           // 各モードに応じたLocalStorageセーブ
@@ -1869,11 +1888,29 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           }
                           GameState.playerSkins[charDetailData.id] = skinId;
 
-                          if (GameState.playerConfig && GameState.playerConfig.id === charDetailData.id) {
-                            const charObj = Object.values(CHARACTERS || {}).find(c => c.id === charDetailData.id) || charDetailData;
-                            GameState.playerConfig.image = getSkinImage(charObj, skinId, 'image');
-                            GameState.playerConfig.imageLose = getSkinImage(charObj, skinId, 'image');
-                            GameState.playerConfig.icon = getSkinImage(charObj, skinId, 'icon');
+                          if (
+                            GameState.playerConfig &&
+                            GameState.playerConfig.id === charDetailData.id
+                          ) {
+                            const charObj =
+                              Object.values(CHARACTERS || {}).find(
+                                (c) => c.id === charDetailData.id
+                              ) || charDetailData;
+                            GameState.playerConfig.image = getSkinImage(
+                              charObj,
+                              skinId,
+                              'image'
+                            );
+                            GameState.playerConfig.imageLose = getSkinImage(
+                              charObj,
+                              skinId,
+                              'image'
+                            );
+                            GameState.playerConfig.icon = getSkinImage(
+                              charObj,
+                              skinId,
+                              'icon'
+                            );
                           }
 
                           if (window.saveCurrentEditDeck)

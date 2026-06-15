@@ -1,6 +1,5 @@
 import { CARD_MASTER } from './constants/cards.js';
 import { CHARACTERS } from './constants/characters.js';
-import { PLAYMAT_MASTER } from './constants/playmats.js';
 import { AUDIO_INSTANCES, SE_PATHS } from './sounds.js';
 
 let isPreloaded = false;
