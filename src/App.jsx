@@ -221,10 +221,10 @@ export default function App() {
           onComplete={() => {
             // 裏でバトル画面の初期化と遷移を開始
             if (matchingState.onComplete) matchingState.onComplete();
+          }}
+          onFadeOutComplete={() => {
             // フェードアウト演出が完了した後にアンマウント
-            setTimeout(() => {
-              setMatchingState({ show: false, onComplete: null });
-            }, 600);
+            setMatchingState({ show: false, onComplete: null });
           }}
         />
       )}
