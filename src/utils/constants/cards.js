@@ -485,7 +485,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 1,
     skills: [{ id: 'resurrect', value: 4 }],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_sexy',
     flavor:
       '『さあ、起きなさい…永遠なる奉仕の時間が始まるわ』。真紅の瞳が見つめる先、死者は再び立ち上がる。',
   },
