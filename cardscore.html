@@ -367,10 +367,17 @@
           for (const file of deckFiles) {
             try {
               const isHigh = file.endsWith('_high');
-              const path = isHigh
-                ? `./src/utils/constants/enemy_decks/event_high/${file.replace('_high', '')}.js`
-                : `./src/utils/constants/enemy_decks/${file}.js`;
-              const deckModule = await import(path);
+              let deckModule;
+              if (isHigh) {
+                const cleanFile = file.replace('_high', '');
+                deckModule = await import(
+                  `./src/utils/constants/enemy_decks/event_high/${cleanFile}.js`
+                );
+              } else {
+                deckModule = await import(
+                  `./src/utils/constants/enemy_decks/${file}.js`
+                );
+              }
               const deck =
                 deckModule.default ||
                 deckModule[file] ||
