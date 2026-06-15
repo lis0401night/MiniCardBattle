@@ -96,6 +96,12 @@ export function loadDungeonProgress() {
 
     if (data.enemyConfig) {
       GameState.enemyConfig = data.enemyConfig;
+      // 敵のスキンを同期
+      if (!GameState.enemySkins) GameState.enemySkins = {};
+      if (data.enemyConfig.currentSkin) {
+        GameState.enemySkins[data.enemyConfig.id] =
+          data.enemyConfig.currentSkin;
+      }
     }
 
     GameState.dungeonState = data.dungeonState || 'select_opponent';
@@ -156,6 +162,12 @@ export function startDungeonBattle(enemyIndex) {
   GameState.aiLevel = enemy.fixedAiLevel || 3;
   GameState.dungeonState = 'battle';
   GameState.selectedStageId = 'dungeon';
+
+  // 敵のスキンを同期
+  if (!GameState.enemySkins) GameState.enemySkins = {};
+  if (enemy.currentSkin) {
+    GameState.enemySkins[enemy.id] = enemy.currentSkin;
+  }
 
   // ダンジョン敵の場合は専用デッキを設定
   if (enemy.dungeonDeck) {

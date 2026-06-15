@@ -469,14 +469,15 @@ export const CARD_MASTER = [
     flavor:
       '自由と引き換えに記憶を捨てた囚人。鉄面の下で正気をすり減らし、ただ破壊の衝動に従って暴れ狂う。',
   },
-{
+  {
     id: 'cook',
     name: '恐怖の調理長',
     rarity: 1,
     power: 5,
     skills: [{ id: 'execute' }, { id: 'heal', value: 4 }],
     voiceCategory: 'human_male_warrior',
-    flavor: '彼の作る肉シチューは絶品だが、何の肉を使っているかは誰も聞こうとしない。',
+    flavor:
+      '彼の作る肉シチューは絶品だが、何の肉を使っているかは誰も聞こうとしない。',
   },
   {
     id: 'necromancer',

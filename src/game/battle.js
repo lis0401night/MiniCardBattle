@@ -367,14 +367,13 @@ export function prepareBattle() {
     const selSkin = GameState.playerSkins[GameState.playerConfig.id];
     const charObj =
       CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
-    if (getSkinImage) {
-      GameState.playerConfig.image = getSkinImage(charObj, selSkin, 'image');
-      GameState.playerConfig.imageLose = getSkinImage(
-        charObj,
-        selSkin,
-        'image'
-      );
-      GameState.playerConfig.icon = getSkinImage(charObj, selSkin, 'icon');
+    if (typeof getSkinImage === 'function') {
+      GameState.playerConfig.image =
+        getSkinImage(charObj, selSkin, 'image') || charObj.image;
+      GameState.playerConfig.imageLose =
+        getSkinImage(charObj, selSkin, 'imageLose') || charObj.imageLose;
+      GameState.playerConfig.icon =
+        getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
     }
   }
 
@@ -386,10 +385,13 @@ export function prepareBattle() {
     const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
     const charObj =
       CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
-    if (getSkinImage) {
-      GameState.enemyConfig.image = getSkinImage(charObj, selSkin, 'image');
-      GameState.enemyConfig.imageLose = getSkinImage(charObj, selSkin, 'image');
-      GameState.enemyConfig.icon = getSkinImage(charObj, selSkin, 'icon');
+    if (typeof getSkinImage === 'function') {
+      GameState.enemyConfig.image =
+        getSkinImage(charObj, selSkin, 'image') || charObj.image;
+      GameState.enemyConfig.imageLose =
+        getSkinImage(charObj, selSkin, 'imageLose') || charObj.imageLose;
+      GameState.enemyConfig.icon =
+        getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
     }
   }
 

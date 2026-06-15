@@ -230,7 +230,11 @@ export const generateCharacterBossEnemy = (floorNum) => {
     const skin = char.skins.summer;
     bossData = {
       ...bossData,
-      ...skin,
+      // id や name は上書きしない
+      image: skin.image || bossData.image,
+      imageLose: skin.imageLose || bossData.imageLose,
+      icon: skin.icon || bossData.icon,
+      iconDamage: skin.iconDamage || bossData.iconDamage,
       currentSkin: 'summer',
     };
     if (skin.dialogue) {

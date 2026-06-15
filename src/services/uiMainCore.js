@@ -426,6 +426,7 @@ export function goBackFromDeckEdit(isCancel = false) {
         GameState.gameMode = 'free_deck_edit';
       }
       GameState.appState = GameState.prevAppStateForCreate || 'select_deck';
+      if (typeof window.loadDeck === 'function') window.loadDeck();
       if (window.forceUpdateDeckList) window.forceUpdateDeckList();
       switchScreen('screen-deck-list');
     }

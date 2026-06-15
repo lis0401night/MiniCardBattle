@@ -998,6 +998,26 @@ export function saveCurrentEditDeck() {
       );
     }
   }
+
+  // プレイヤースキンの適用（セーブ後の同期ズレ防止）
+  if (GameState.playerConfig && GameState.playerConfig.id) {
+    if (!GameState.playerSkins) GameState.playerSkins = {};
+    const skinIdToUse =
+      GameState.playerSkins[GameState.playerConfig.id] || 'default';
+    if (typeof getSkinImage === 'function') {
+      const templateChar = CHARACTERS[GameState.playerConfig.id];
+      if (templateChar) {
+        GameState.playerConfig.image =
+          getSkinImage(templateChar, skinIdToUse, 'image') ||
+          templateChar.image;
+        GameState.playerConfig.imageLose =
+          getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
+          templateChar.imageLose;
+        GameState.playerConfig.icon =
+          getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
+      }
+    }
+  }
 }
 
 export function saveDeck() {
