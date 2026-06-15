@@ -366,7 +366,7 @@ export const VFX_DATA = {
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
     scale: 0.3,
-    shake: true,
+    shake: false,
     targetSide: 'self', // 自分のHPがターゲット
   },
 
@@ -465,7 +465,7 @@ export const VFX_DATA = {
     position: 'lane',
     offsetY: 0,
     scale: 0.6,
-    shake: true,
+    shake: false,
     targetSide: 'enemy',
   },
 
@@ -497,7 +497,7 @@ export const VFX_DATA = {
     position: 'lane',
     offsetY: 0,
     scale: 0.6,
-    shake: true,
+    shake: false,
     targetSide: 'self',
   },
 
