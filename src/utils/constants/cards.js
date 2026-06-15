@@ -979,7 +979,7 @@ export const CARD_MASTER = [
       { id: 'summon', value: 2, summonId: 'token_knight' },
       { id: 'support', value: 4 },
     ],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_assassin',
     flavor:
       '彼女の前で甘えは許されない。過酷な試練を与えることで、兵士たちを真の戦士へと鍛え上げているのだ。',
   },
