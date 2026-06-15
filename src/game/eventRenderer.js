@@ -355,32 +355,7 @@ export async function playEvents(events) {
         await sleep(300);
         break;
       }
-      case 'petrify': {
-        const board =
-          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        board[ev.lane] = ev.card;
 
-        // 保護フラグを即座に適用（描画ラグ中の破壊を防ぐ）
-        if (ev.card) ev.card.isSkillResolving = true;
-
-        renderBoard();
-        playSound(SOUNDS.seSkill);
-
-        setTimeout(() => {
-          const cEl = document.querySelector(
-            `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
-          );
-          if (cEl) {
-            cEl.classList.add('anim-shake');
-            createDamagePopup(cEl, '石化', '#64748b');
-          }
-        }, 50);
-
-        await sleep(300);
-        // 石化の場合は召喚時スキルがないため、ここで解除してよい
-        if (ev.card) ev.card.isSkillResolving = false;
-        break;
-      }
       case 'equip_card': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;

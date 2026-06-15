@@ -1556,8 +1556,7 @@ export const CARD_MASTER = [
       { id: 'resurrect', value: 5 },
     ],
     voiceCategory: 'human_female_sexy',
-    flavor:
-      '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
+    flavor: '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
   },
   {
     id: 'alraune',

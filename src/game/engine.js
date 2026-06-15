@@ -385,12 +385,23 @@ export const isGraveKeeperActive = (state) => {
 
 /**
  * 配置時スキルの効果を適用する (純粋関数)
+ *
+ * =========================================================================
+ * 【開発ガイドライン：エンジン側でのアクティブスキル実装統一ルール】
+ *
+ * AIの思考シミュレーション等で使用されるこの関数内では、描画・VFX演出に関連する処理を
+ * 一切記述しないでください。
+ * - 「events.push({ type: 'vfx_trigger', ... })」などは絶対に積まないでください。
+ * - 純粋に盤面データの更新やリーダーHP、SPの計算のみを処理してください。
+ * - 実画面での演出と適用処理は「src/game/skillLogic.js」内の個別ロジックで担当します。
+ * =========================================================================
+ *
  * @param {Object} state { b, eB, pHP, eHP, pSP, eSP, ... }
  * @param {string} owner 'blue' or 'red'
  * @param {number} l lane index
  * @param {string} sid skillId
  * @param {number} val skillValue
- * @param {Array} events - オプションのイベントログ配列
+ * @param {Array} events - オプション of イベントログ配列
  * @returns {Array} 発生したイベントログ
  */
 export function applyActiveSkillLogic(
@@ -773,19 +784,6 @@ export function applyActiveSkillLogic(
       const hVal = occ * (val || 3);
       if (hVal > 0) {
         c.currentPower += hVal;
-        events.push({
-          type: 'vfx_trigger',
-          vfxId: 'anm_skill_hero',
-          side: owner,
-          lane: l,
-        });
-        events.push({
-          type: 'power_change',
-          side: owner,
-          lane: l,
-          amount: hVal,
-          source: 'hero',
-        });
       }
       break;
     }
@@ -794,19 +792,6 @@ export function applyActiveSkillLogic(
       const advVal = opOcc * (val || 1);
       if (advVal !== 0) {
         c.currentPower += advVal;
-        events.push({
-          type: 'vfx_trigger',
-          vfxId: 'anm_skill_adversity',
-          side: owner,
-          lane: l,
-        });
-        events.push({
-          type: 'power_change',
-          side: owner,
-          lane: l,
-          amount: advVal,
-          source: 'adversity',
-        });
       }
       break;
     }
@@ -1285,22 +1270,9 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'sacrifice': {
-      events.push({
-        type: 'vfx_trigger',
-        vfxId: 'anm_skill_sacrifice',
-        side: owner,
-        lane: l, // 必須プロパティとして一応設定
-      });
-
       const sacAmt = val || 3;
       if (owner === 'blue') state.playerHP -= sacAmt;
       else state.enemyHP -= sacAmt;
-      events.push({
-        type: 'damage_player',
-        side: owner,
-        amount: sacAmt,
-        source: 'sacrifice',
-      });
       break;
     }
     case 'sacrifice_void': {
@@ -1312,22 +1284,9 @@ export function applyActiveSkillLogic(
           ).length
         : 0;
       if (voidCount > 0) {
-        events.push({
-          type: 'vfx_trigger',
-          vfxId: 'anm_skill_sacrifice',
-          side: owner,
-          lane: l,
-        });
-
         const sacAmt = (val || 1) * voidCount;
         if (owner === 'blue') state.playerHP -= sacAmt;
         else state.enemyHP -= sacAmt;
-        events.push({
-          type: 'damage_player',
-          side: owner,
-          amount: sacAmt,
-          source: 'sacrifice_void',
-        });
       }
       break;
     }
@@ -1922,12 +1881,6 @@ export function applyActiveSkillLogic(
     }
     case 'petrify':
       if (eB[l]) {
-        events.push({
-          type: 'vfx_trigger',
-          vfxId: 'anm_skill_petrify',
-          side: owner, // 発動者（自分）を基準にする。vfx.js側の 'targetSide: enemy' によって相手側のレーンに描画される
-          lane: l,
-        });
         const targetOriginal = JSON.parse(JSON.stringify(eB[l]));
         const statueTpl = CARD_MASTER.find((m) => m.id === 'token_statue') || {
           name: '石像',
@@ -1968,13 +1921,6 @@ export function applyActiveSkillLogic(
 
         // 既存のカードを消すわけではなく変身扱いとするため、破壊イベントは積まない（あるいは変身イベントを積む）
         eB[l] = statueToken;
-        events.push({
-          type: 'petrify',
-          side: oppOwner,
-          lane: l,
-          card: JSON.parse(JSON.stringify(statueToken)),
-          source: 'petrify',
-        });
       }
       break;
     case 'reinforce': {

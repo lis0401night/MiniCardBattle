@@ -57,6 +57,29 @@ import {
 /**
  * Mini Card Battle - Skill Implementation Logic
  * 分割されたスキル実行ロジック
+ *
+ * =========================================================================
+ * 【開発ガイドライン：新規アクティブスキルを追加・更新する際の実装統一ルール】
+ *
+ * 演出（VFXエフェクトや固有SE）を伴うアクティブスキルを追加する際は、以下の構成に従ってください。
+ *
+ * 1. 実画面での適用と演出（実プレイ時）
+ *    - 実プレイ時の演出と処理は、この「src/game/skillLogic.js」内の
+ *      「resolveActiveSkillEffect」の個別ロジック分岐（else if 分岐）で行います。
+ *    - その中で直接「window.triggerVfx(...)」を呼び出し、実際の盤面状態やHP等の更新、
+ *      およびReact UIの更新（updateCardVisualsReact 等）をその場で一貫して記述します。
+ *    - 重複するポップアップや共通のSEを防ぐため、必要に応じて「EXCLUDE_POPUP_SKILLS」や
+ *      「playSkillSound」の除外対象リストへ追加します。
+ *
+ * 2. シミュレーション（AI思考時）
+ *    - AIの思考シミュレーション用の処理は、「src/game/engine.js」内の
+ *      「applyActiveSkillLogic」で行います。
+ *    - シミュレーション用の処理では、描画（VFX、DOM、React等）に一切依存せず、
+ *      演出イベント（vfx_trigger等）も一切積まずに、純粋な状態データのみを更新するようにします。
+ *
+ * ※注意：石化（petrify）、英雄（hero）、逆境（adversity）、代償（sacrifice）は
+ *   上記設計（パターンA：直接トリガー型）に統一されています。
+ * =========================================================================
  */
 
 export async function resolveActiveSkillEffect(
@@ -92,6 +115,9 @@ export async function resolveActiveSkillEffect(
     'call',
     'reinforce',
     'metamorph',
+    'petrify',
+    'sacrifice',
+    'sacrifice_void',
   ];
 
   if (ACTIVE_SKILLS.includes(skillId)) {
@@ -112,6 +138,9 @@ export async function resolveActiveSkillEffect(
         'heal',
         'heal_void',
         'metamorph',
+        'petrify',
+        'sacrifice',
+        'sacrifice_void',
       ].includes(skillId)
     ) {
       playSkillSound(skillId);
@@ -1257,6 +1286,190 @@ export async function resolveActiveSkillEffect(
       playSound(SOUNDS.seSkillToxic);
       await sleep(500);
     }
+  } else if (skillId === 'petrify') {
+    createDamagePopup(cEl, '石化', '#64748b');
+    const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+    const oppOwner = o === 'blue' ? 'red' : 'blue';
+    const tgtSide = o === 'blue' ? 'enemy' : 'player';
+
+    if (eB[l]) {
+      const targetOriginal = JSON.parse(JSON.stringify(eB[l]));
+      const statueTpl = CARD_MASTER.find((m) => m.id === 'token_statue') || {
+        name: '石像',
+        power: 5,
+        rarity: 1,
+      };
+      const statueToken = {
+        ...statueTpl,
+        id: `statue_${Math.floor(getSeededRandom() * 1000000000)}`,
+        baseId: 'token_statue',
+        uid: `${oppOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_statue`,
+        filter: statueTpl.filter,
+        power: statueTpl.power,
+        currentPower: statueTpl.power,
+        basePower: statueTpl.power,
+        skill: statueTpl.skill || 'none',
+        voiceCategory: statueTpl.voiceCategory || 'stone',
+        originalRevertTarget: targetOriginal,
+        owner: oppOwner,
+        isToken: true,
+        isMorphToken: true,
+        isSkillResolving: true, // 保護フラグ
+      };
+
+      eB[l] = statueToken;
+      renderBoard();
+
+      // VFX演出（SEも triggerVfx 内で自動再生されます）
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_skill_petrify', o, l); // 非同期にしてテンポを向上
+        await sleep(150);
+      } else {
+        playSound(SOUNDS.seSkillMorph);
+        await sleep(150);
+      }
+
+      const tgtEl = document.querySelector(
+        `#${tgtSide}-lanes .cell[data-lane="${l}"] .card`
+      );
+      if (tgtEl) {
+        tgtEl.classList.remove('anim-shake');
+        void tgtEl.offsetWidth;
+        tgtEl.classList.add('anim-shake');
+        createDamagePopup(tgtEl, '石化', '#64748b');
+      }
+
+      await sleep(300);
+      statueToken.isSkillResolving = false; // 保護解除
+
+      if (window.updateCardVisualsReact) {
+        window.updateCardVisualsReact(l, tgtSide);
+      } else if (window.updateBattleUIHook) {
+        window.updateBattleUIHook();
+      }
+    } else {
+      playSound(SOUNDS.seSkillMorph);
+      await sleep(500);
+    }
+  } else if (skillId === 'hero') {
+    // 【開発ガイドライン適用】直接トリガー型アクティブスキル
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const occ = board.filter((x, idx) => x !== null && idx !== l).length;
+    const hVal = occ * (skillValue || 3);
+    if (hVal > 0) {
+      c.power = (c.power || 0) + hVal;
+      c.basePower = c.power;
+      c.currentPower = (c.currentPower || 0) + hVal;
+
+      // VFX演出（SEも triggerVfx 内で自動再生されます）
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_skill_hero', o, l); // 非同期にしてテンポを向上
+        await sleep(150);
+      } else {
+        playSound(SOUNDS.seSkill);
+        await sleep(150);
+      }
+
+      if (cEl) {
+        createDamagePopup(cEl, `+${hVal}`, '#4ade80');
+      }
+
+      renderBoard();
+
+      if (window.updateCardVisualsReact) {
+        window.updateCardVisualsReact(l, o === 'blue' ? 'player' : 'enemy');
+      } else if (window.updateBattleUIHook) {
+        window.updateBattleUIHook();
+      }
+      await sleep(200);
+    }
+  } else if (skillId === 'adversity') {
+    // 【開発ガイドライン適用】直接トリガー型アクティブスキル
+    const opB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+    const occ = opB.filter((x) => x !== null).length;
+    const advVal = occ * (skillValue || 1);
+    if (advVal !== 0) {
+      c.power = (c.power || 0) + advVal;
+      c.basePower = c.power;
+      c.currentPower = (c.currentPower || 0) + advVal;
+
+      // VFX演出（SEも triggerVfx 内で自動再生されます）
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_skill_adversity', o, l); // 非同期にしてテンポを向上
+        await sleep(150);
+      } else {
+        playSound(SOUNDS.seSkill);
+        await sleep(150);
+      }
+
+      if (cEl) {
+        createDamagePopup(cEl, `+${advVal}`, '#10b981');
+      }
+
+      renderBoard();
+
+      if (window.updateCardVisualsReact) {
+        window.updateCardVisualsReact(l, o === 'blue' ? 'player' : 'enemy');
+      } else if (window.updateBattleUIHook) {
+        window.updateBattleUIHook();
+      }
+      await sleep(200);
+    }
+  } else if (skillId === 'sacrifice' || skillId === 'sacrifice_void') {
+    // 【開発ガイドライン適用】直接トリガー型アクティブスキル
+    const sidePrefix = o === 'blue' ? 'player' : 'enemy';
+    const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
+    const oppOwner = o === 'blue' ? 'red' : 'blue';
+
+    let dmg = skillValue || 3;
+    if (skillId === 'sacrifice_void') {
+      const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+      const voidCount = hand
+        ? hand.filter(
+            (card) =>
+              card && (card.id === 'token_void' || card.baseId === 'token_void')
+          ).length
+        : 0;
+      dmg = (skillValue || 1) * voidCount;
+    }
+
+    if (dmg > 0) {
+      // 実際のHP減少
+      if (o === 'blue') {
+        GameState.playerHP = Math.max(0, GameState.playerHP - dmg);
+      } else {
+        GameState.enemyHP = Math.max(0, GameState.enemyHP - dmg);
+      }
+
+      // VFX演出（SEも triggerVfx 内で自動再生されます）
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_skill_sacrifice', o, l);
+        await sleep(150);
+      } else {
+        playSound(SOUNDS.seSkillSacrifice);
+        await sleep(150);
+      }
+
+      // ダメージポップアップと画面揺らし
+      if (hpFill) {
+        const label = `${skillId === 'sacrifice_void' ? '代償(虚)' : '代償'} -${dmg}`;
+        createDamagePopup(hpFill, label, '#ef4444');
+      }
+
+      const playmat = document.getElementById(`playmat-${sidePrefix}`);
+      if (playmat) {
+        playmat.classList.remove('anim-shake');
+        void playmat.offsetWidth;
+        playmat.classList.add('anim-shake');
+      }
+
+      playSound(SOUNDS.seDamage);
+      updateHPBar();
+      showSpeechBubble(oppOwner); // 被害側のセリフ
+
+      await sleep(300);
+      checkWinCondition();
+    }
   } else if (skillId === 'dispel') {
     playSound(SOUNDS.seSkillBind); // Wait, dispel sound doesn't exist, we use generic or bind sound.
     const targets = [];
@@ -1549,22 +1762,6 @@ export async function resolveActiveSkillEffect(
           }
         }
       }
-    }
-  } else if (skillId === 'adversity') {
-    const opB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-    const occ = opB.filter((x) => x !== null).length;
-    const advVal = occ * (skillValue || 1);
-    if (advVal !== 0) {
-      c.power = (c.power || 0) + advVal;
-      c.basePower = (c.basePower || 0) + advVal;
-      c.currentPower = (c.currentPower || 0) + advVal;
-      if (cEl) {
-        createDamagePopup(cEl, `+${advVal}`, '#10b981');
-        if (window.updateCardVisualsReact) window.updateCardVisualsReact(l, o);
-        else if (window.updateBattleUIHook) window.updateBattleUIHook();
-      }
-      renderBoard();
-      await sleep(400);
     }
   } else if (skillId === 'bind') {
     createDamagePopup(cEl, '拘束', '#facc15');
