@@ -39,6 +39,10 @@ export const SE_PATHS = {
   seSkillGoaCrush: 'assets/audio/se/se_skill_goacrush.mp3',
   seSkillBloodDamage: 'assets/audio/se/se_blooddamage.mp3',
   seSkillExplode: 'assets/audio/se/se_skill_explode.mp3',
+  voiceUndeadPlay: 'assets/audio/voice/voice_undead_play.wav',
+  seSkillHero: 'assets/audio/se/se_skill_hero.mp3',
+  seSkillExtort: 'assets/audio/se/se_skill_extort.mp3',
+  seSkillAdversity: 'assets/audio/se/se_skill_adversity.mp3',
 };
 
 export const SOUNDS = {
@@ -100,6 +104,10 @@ export const AUDIO_INSTANCES = {
   seSkillGoaCrush: new Audio('assets/audio/se/se_skill_goacrush.mp3'),
   seSkillBloodDamage: new Audio('assets/audio/se/se_blooddamage.mp3'),
   seSkillExplode: new Audio('assets/audio/se/se_skill_explode.mp3'),
+  voiceUndeadPlay: new Audio('assets/audio/voice/voice_undead_play.wav'),
+  seSkillHero: new Audio('assets/audio/se/se_skill_hero.mp3'),
+  seSkillExtort: new Audio('assets/audio/se/se_skill_extort.mp3'),
+  seSkillAdversity: new Audio('assets/audio/se/se_skill_adversity.mp3'),
 };
 
 // サウンドの初期設定

@@ -2722,6 +2722,11 @@ export function drawCard(owner) {
         '#ef4444'
       );
       playSound(SOUNDS.seDamage);
+      
+      if (window.triggerVfx) {
+        window.triggerVfx('anm_deck_reset_joker', owner);
+      }
+
       showSpeechBubble(owner);
       updateHPBar();
       checkWinCondition();

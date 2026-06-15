@@ -419,4 +419,62 @@ export const VFX_DATA = {
   },
 
   // 今後、新しいエフェクトを追加する際はここに追加するだけでOK
+
+  // 英雄スキル
+  anm_skill_hero: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect046.png',
+    columns: 10,
+    rows: 1,
+    frameCount: 10,
+    duration: 600,
+    se: 'seSkillHero',
+    position: 'lane',
+    offsetY: 0,
+    scale: 0.8,
+    shake: false,
+    blendMode: 'screen', // 黒背景を透過させる
+    targetSide: 'self',
+  },
+
+  // 簒奪スキル
+  anm_skill_extort: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect142.png',
+    columns: 5,
+    rows: 6,
+    frameCount: 30,
+    duration: 1000,
+    se: 'seSkillExtort',
+    position: 'hp', // 相手の手札周辺（リーダー付近）に表示
+    offsetY: 0,
+    scale: 1.0,
+    shake: false,
+    targetSide: 'enemy',
+  },
+
+  // 逆境スキル
+  anm_skill_adversity: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-roseeffect02_192.png',
+    columns: 5,
+    rows: 3,
+    frameCount: 15,
+    duration: 800,
+    se: 'seSkillAdversity',
+    position: 'lane',
+    offsetY: 0,
+    scale: 1.0,
+    shake: false,
+    targetSide: 'self',
+  },
+
+  // デッキリセット時のジョーカー演出
+  anm_deck_reset_joker: {
+    type: 'custom_joker',
+    duration: 1200,
+    se: 'voiceUndeadPlay', // ボイス再生
+    position: 'hp', // HPゲージの中央
+    targetSide: 'self',
+  },
 };

@@ -98,6 +98,8 @@ export async function resolveActiveSkillEffect(
     // VFX演出を持つスキルは、VFX側で効果音（se）が再生されるため、ここでの重複再生を無効化する
     if (
       ![
+        'hero',
+        'adversity',
         'toxic',
         'freeze',
         'bind',
