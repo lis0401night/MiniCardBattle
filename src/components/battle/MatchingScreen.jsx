@@ -7,6 +7,7 @@ import './MatchingScreen.css';
 
 export default function MatchingScreen({
   onComplete,
+  onFadeOutComplete,
   testEnemyId,
   testEnemySkinId,
 }) {
@@ -34,18 +35,29 @@ export default function MatchingScreen({
       }
     }, 1050); // css of 1s delay + first 50ms delay
 
-    // 約4.5秒後に自動でフェードアウトして完了する
+    // 演出終了の少し前（4.0秒時点）で裏側のバトル画面への遷移を開始（チラつき防止のため完全に覆われている間に切り替える）
+    const transitionTimer = setTimeout(() => {
+      if (onCompleteRef.current) onCompleteRef.current();
+    }, 4000);
+
+    // 4.5秒後に自動でフェードアウトを開始する
     const endTimer = setTimeout(() => {
       setVisible(false);
-      if (onCompleteRef.current) onCompleteRef.current();
-    }, 4500); // 演出時間を考慮して約4.5秒
+    }, 4500);
+
+    // 5.0秒後（0.5秒のフェードアウトアニメーション完了後）にアンマウント用のコールバックを実行
+    const destroyTimer = setTimeout(() => {
+      if (onFadeOutComplete) onFadeOutComplete();
+    }, 5000);
 
     return () => {
       clearTimeout(t);
       clearTimeout(vsTimer);
+      clearTimeout(transitionTimer);
       clearTimeout(endTimer);
+      clearTimeout(destroyTimer);
     };
-  }, []);
+  }, [onFadeOutComplete]);
 
   // デバッグ用にプレイヤーと敵の情報を取得（未設定の場合はデフォルト）
   const player = GameState.playerConfig || CHARACTERS['dragon'];
