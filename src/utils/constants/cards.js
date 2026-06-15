@@ -968,7 +968,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sergeant',
-    name: '不屈の先導者',
+    name: '鉄血の教官',
     rarity: 2,
     power: 4,
     skills: [
