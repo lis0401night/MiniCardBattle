@@ -371,7 +371,9 @@ export function prepareBattle() {
       GameState.playerConfig.image =
         getSkinImage(charObj, selSkin, 'image') || charObj.image;
       GameState.playerConfig.imageLose =
-        getSkinImage(charObj, selSkin, 'imageLose') || charObj.imageLose;
+        getSkinImage(charObj, selSkin, 'imageLose') ||
+        charObj.imageLose ||
+        charObj.image;
       GameState.playerConfig.icon =
         getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
     }
@@ -389,7 +391,9 @@ export function prepareBattle() {
       GameState.enemyConfig.image =
         getSkinImage(charObj, selSkin, 'image') || charObj.image;
       GameState.enemyConfig.imageLose =
-        getSkinImage(charObj, selSkin, 'imageLose') || charObj.imageLose;
+        getSkinImage(charObj, selSkin, 'imageLose') ||
+        charObj.imageLose ||
+        charObj.image;
       GameState.enemyConfig.icon =
         getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
     }

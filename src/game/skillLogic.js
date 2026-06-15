@@ -82,6 +82,70 @@ import {
  * =========================================================================
  */
 
+/**
+ * 複数の対象カードを一括して破壊（無効化、アニメーション、墓地送り）する共通処理。
+ * @param {Array<{lane: number, card: Object, side: string}>} targets
+ */
+async function executeGroupDestruction(targets) {
+  if (targets.length === 0) return;
+
+  let anyValidTarget = false;
+  let playedVoices = new Set();
+  for (let t of targets) {
+    const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
+    const tgtEl = document.querySelector(
+      `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
+    );
+
+    if (hasSkill(t.card, 'immune')) {
+      // 「無効」を持つカードは破壊されない
+      if (tgtEl) {
+        createDamagePopup(tgtEl, '無効', '#94a3b8');
+      }
+    } else {
+      if (tgtEl) {
+        tgtEl.classList.remove('anim-shake');
+        void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+        tgtEl.classList.add('anim-shake');
+        tgtEl.classList.add('anim-card-destroy');
+        createDamagePopup(tgtEl, '破壊', '#ef4444');
+      }
+      if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
+        playCardVoice(t.card.voiceCategory, 'death');
+        playedVoices.add(t.card.voiceCategory);
+      }
+      anyValidTarget = true;
+    }
+  }
+
+  if (anyValidTarget) {
+    playSound(SOUNDS.seDestroy);
+  }
+  await sleep(400); // 破壊または無効演出待ち
+
+  for (let t of targets) {
+    if (!hasSkill(t.card, 'immune')) {
+      const eB =
+        t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+      if (!(await discardCard(t.side, t.card, t.lane, true))) eB[t.lane] = null;
+    }
+  }
+  renderBoard();
+  await sleep(500);
+  for (let t of targets) {
+    if (!hasSkill(t.card, 'immune')) {
+      const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
+      const tgtEl = document.querySelector(
+        `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
+      );
+      if (tgtEl) {
+        tgtEl.classList.remove('anim-shake');
+        tgtEl.classList.remove('anim-card-destroy');
+      }
+    }
+  }
+}
+
 export async function resolveActiveSkillEffect(
   o,
   l,
@@ -1628,64 +1692,7 @@ export async function resolveActiveSkillEffect(
     checkTargets(GameState.playerBoard, 'blue');
     checkTargets(GameState.enemyBoard, 'red');
 
-    if (targets.length > 0) {
-      let anyValidTarget = false;
-      let playedVoices = new Set();
-      for (let t of targets) {
-        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-        const tgtEl = document.querySelector(
-          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-        );
-
-        if (hasSkill(t.card, 'immune')) {
-          // 「無効」を持つカードは破壊されない
-          if (tgtEl) {
-            createDamagePopup(tgtEl, '無効', '#94a3b8');
-          }
-        } else {
-          if (tgtEl) {
-            tgtEl.classList.remove('anim-shake');
-            void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-            tgtEl.classList.add('anim-shake');
-            tgtEl.classList.add('anim-card-destroy');
-            createDamagePopup(tgtEl, '破壊', '#ef4444');
-          }
-          if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
-            playCardVoice(t.card.voiceCategory, 'death');
-            playedVoices.add(t.card.voiceCategory);
-          }
-          anyValidTarget = true;
-        }
-      }
-
-      if (anyValidTarget) {
-        playSound(SOUNDS.seDestroy);
-      }
-      await sleep(400); // 破壊または無効演出待ち
-
-      for (let t of targets) {
-        if (!hasSkill(t.card, 'immune')) {
-          const eB =
-            t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-          if (!(await discardCard(t.side, t.card, t.lane, true)))
-            eB[t.lane] = null;
-        }
-      }
-      renderBoard();
-      await sleep(500);
-      for (let t of targets) {
-        if (!hasSkill(t.card, 'immune')) {
-          const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-          const tgtEl = document.querySelector(
-            `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-          );
-          if (tgtEl) {
-            tgtEl.classList.remove('anim-shake');
-            tgtEl.classList.remove('anim-card-destroy');
-          }
-        }
-      }
-    }
+    await executeGroupDestruction(targets);
   } else if (skillId === 'treason') {
     // 【仕様】お互いの場の「伝説」を持つカードを全て破壊する。
     const targets = [];
@@ -1699,64 +1706,7 @@ export async function resolveActiveSkillEffect(
     checkTargets(GameState.playerBoard, 'blue');
     checkTargets(GameState.enemyBoard, 'red');
 
-    if (targets.length > 0) {
-      let anyValidTarget = false;
-      let playedVoices = new Set();
-      for (let t of targets) {
-        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-        const tgtEl = document.querySelector(
-          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-        );
-
-        if (hasSkill(t.card, 'immune')) {
-          // 「無効」を持つカードは破壊されない
-          if (tgtEl) {
-            createDamagePopup(tgtEl, '無効', '#94a3b8');
-          }
-        } else {
-          if (tgtEl) {
-            tgtEl.classList.remove('anim-shake');
-            void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-            tgtEl.classList.add('anim-shake');
-            tgtEl.classList.add('anim-card-destroy');
-            createDamagePopup(tgtEl, '破壊', '#ef4444');
-          }
-          if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
-            playCardVoice(t.card.voiceCategory, 'death');
-            playedVoices.add(t.card.voiceCategory);
-          }
-          anyValidTarget = true;
-        }
-      }
-
-      if (anyValidTarget) {
-        playSound(SOUNDS.seDestroy);
-      }
-      await sleep(400); // 破壊または無効演出待ち
-
-      for (let t of targets) {
-        if (!hasSkill(t.card, 'immune')) {
-          const eB =
-            t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-          if (!(await discardCard(t.side, t.card, t.lane, true)))
-            eB[t.lane] = null;
-        }
-      }
-      renderBoard();
-      await sleep(500);
-      for (let t of targets) {
-        if (!hasSkill(t.card, 'immune')) {
-          const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-          const tgtEl = document.querySelector(
-            `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-          );
-          if (tgtEl) {
-            tgtEl.classList.remove('anim-shake');
-            tgtEl.classList.remove('anim-card-destroy');
-          }
-        }
-      }
-    }
+    await executeGroupDestruction(targets);
   } else if (skillId === 'bind') {
     createDamagePopup(cEl, '拘束', '#facc15');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;

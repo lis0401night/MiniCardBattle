@@ -300,12 +300,6 @@ export function processDestructionTriggers(state, events) {
 
           // 誘爆(explode)
           if (hasSkill(deadCard, 'explode')) {
-            events.push({
-              type: 'vfx_trigger',
-              vfxId: 'anm_skill_explode',
-              side,
-              lane: i,
-            });
             const dmg = getSkillValue(deadCard, 'explode') || 3;
             [i - 1, i + 1].forEach((adj) => {
               if (adj >= 0 && adj < 3 && board[adj]) {
@@ -4783,12 +4777,6 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
           side: attackerSide,
           lane: aLane,
           skillName: '簒奪',
-        });
-        events.push({
-          type: 'vfx_trigger',
-          vfxId: 'anm_skill_extort',
-          side: attackerSide,
-          lane: aLane,
         });
         activated = true;
       }

@@ -5,6 +5,14 @@ import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import './MatchingScreen.css';
 
+const TIMING = {
+  INITIAL_DELAY: 50,
+  VS_SOUND_DELAY: 1050,
+  TRANSITION_DELAY: 4000,
+  FADEOUT_START: 4500,
+  DESTROY_DELAY: 5000,
+};
+
 export default function MatchingScreen({
   onComplete,
   onFadeOutComplete,
@@ -26,29 +34,29 @@ export default function MatchingScreen({
       if (typeof playSound === 'function') {
         playSound(SOUNDS.seMatching); // 追加いただいたBGM/SEを再生
       }
-    }, 50);
+    }, TIMING.INITIAL_DELAY);
 
     // VSロゴのアニメーション（1秒後に開始）に合わせてSEを鳴らす
     const vsTimer = setTimeout(() => {
       if (typeof playSound === 'function') {
         playSound(SOUNDS.seVS);
       }
-    }, 1050); // css of 1s delay + first 50ms delay
+    }, TIMING.VS_SOUND_DELAY); // css of 1s delay + first 50ms delay
 
     // 演出終了の少し前（4.0秒時点）で裏側のバトル画面への遷移を開始（チラつき防止のため完全に覆われている間に切り替える）
     const transitionTimer = setTimeout(() => {
       if (onCompleteRef.current) onCompleteRef.current();
-    }, 4000);
+    }, TIMING.TRANSITION_DELAY);
 
     // 4.5秒後に自動でフェードアウトを開始する
     const endTimer = setTimeout(() => {
       setVisible(false);
-    }, 4500);
+    }, TIMING.FADEOUT_START);
 
     // 5.0秒後（0.5秒のフェードアウトアニメーション完了後）にアンマウント用のコールバックを実行
     const destroyTimer = setTimeout(() => {
       if (onFadeOutComplete) onFadeOutComplete();
-    }, 5000);
+    }, TIMING.DESTROY_DELAY);
 
     return () => {
       clearTimeout(t);

@@ -3,6 +3,11 @@ import DOMPurify from 'dompurify';
 import { playSound, switchScreen } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
+const NEWS_API_ENDPOINT = 'api/get_news.php';
+const CAROUSEL_INTERVAL_MS = 4000;
+const SWIPE_THRESHOLD_PX = 50;
+const TAP_THRESHOLD_PX = 20;
+
 export default function NewsBanner() {
   const [newsItems, setNewsItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -14,7 +19,7 @@ export default function NewsBanner() {
   const touchEndX = useRef(0);
 
   useEffect(() => {
-    fetch('api/get_news.php')
+    fetch(NEWS_API_ENDPOINT)
       .then((res) => res.text())
       .then((text) => {
         try {
@@ -96,7 +101,7 @@ export default function NewsBanner() {
       if (!selectedNews) {
         setCurrentIndex((prev) => (prev + 1) % displayItems.length);
       }
-    }, 4000); // 4秒ごとにスライド
+    }, CAROUSEL_INTERVAL_MS);
 
     return () => clearInterval(timer);
   }, [displayItems.length, selectedNews]);
@@ -116,11 +121,11 @@ export default function NewsBanner() {
     const distance = touchStartX.current - touchEndX.current;
 
     // 左にフリック（次へ）
-    if (distance > 50) {
+    if (distance > SWIPE_THRESHOLD_PX) {
       setCurrentIndex((prev) => (prev + 1) % displayItems.length);
     }
     // 右にフリック（前へ）
-    else if (distance < -50) {
+    else if (distance < -SWIPE_THRESHOLD_PX) {
       setCurrentIndex(
         (prev) => (prev - 1 + displayItems.length) % displayItems.length
       );
@@ -131,7 +136,7 @@ export default function NewsBanner() {
     if (item.isPlaceholder) return;
 
     // スワイプ操作と判定される場合はクリックを無効化（誤タップ防止）
-    if (Math.abs(touchStartX.current - touchEndX.current) > 20) {
+    if (Math.abs(touchStartX.current - touchEndX.current) > TAP_THRESHOLD_PX) {
       return;
     }
 

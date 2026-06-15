@@ -13,8 +13,13 @@ export default function ContinueScreen() {
     setCount(9);
     setCountText('9');
     setIsRevived(false);
-    if (GameState.playerConfig && GameState.playerConfig.imageLose) {
-      setContinueImg(GameState.playerConfig.imageLose);
+    if (
+      GameState.playerConfig &&
+      (GameState.playerConfig.imageLose || GameState.playerConfig.image)
+    ) {
+      setContinueImg(
+        GameState.playerConfig.imageLose || GameState.playerConfig.image
+      );
     } else if (GameState.enemyConfig && GameState.enemyConfig.character) {
       setContinueImg(GameState.enemyConfig.character.image);
     }

@@ -398,4 +398,8 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0,
   },
+  soul_bind_void: {
+    base: 0,
+    multiplier: 0.5,
+  },
 };

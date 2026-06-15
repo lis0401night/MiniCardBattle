@@ -1849,7 +1849,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             GameState.playerConfig.imageLose = getSkinImage(
                               charObj,
                               skinId,
-                              'image'
+                              'imageLose'
                             );
                             GameState.playerConfig.icon = getSkinImage(
                               charObj,
@@ -1904,7 +1904,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             GameState.playerConfig.imageLose = getSkinImage(
                               charObj,
                               skinId,
-                              'image'
+                              'imageLose'
                             );
                             GameState.playerConfig.icon = getSkinImage(
                               charObj,

@@ -164,10 +164,12 @@ export default function App() {
     onComplete: null,
   });
 
-  // グローバルに関数を公開
   useEffect(() => {
     window.showMatchingScreen = (onComplete) => {
       setMatchingState({ show: true, onComplete });
+    };
+    return () => {
+      window.showMatchingScreen = undefined;
     };
   }, []);
 

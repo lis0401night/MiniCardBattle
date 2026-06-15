@@ -78,7 +78,8 @@ function applySkinToPlayerConfig() {
           templateChar.image;
         GameState.playerConfig.imageLose =
           getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
-          templateChar.imageLose;
+          templateChar.imageLose ||
+          templateChar.image;
         GameState.playerConfig.icon =
           getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
       }
