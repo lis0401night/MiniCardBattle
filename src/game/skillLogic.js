@@ -1608,10 +1608,10 @@ export async function resolveActiveSkillEffect(
 
       // VFX演出
       if (window.triggerVfx) {
-        window.triggerVfx('anm_seal', o, l); // 非同期にしてテンポを向上
+        window.triggerVfx('anm_skill_seal', o, l); // 非同期にしてテンポを向上
         await sleep(400); // 800msの演出（8フレーム）に合わせて、半分以上進んだ時点で次の処理へ
       } else {
-        if (SOUNDS.seHyoushigi) playSound(SOUNDS.seHyoushigi);
+        if (SOUNDS.seSkillSeal) playSound(SOUNDS.seSkillSeal);
         await sleep(150);
       }
 

@@ -142,7 +142,7 @@ export const VFX_DATA = {
     targetSide: 'self', // 自陣に召喚
   },
 
-  // エリシアSPスキル「暗黒の儀式」用VFX
+  // エリシアSPスキル「神炎の審判」用VFX
   anm_god_flame: {
     type: 'sprite',
     src: 'assets/vfx/hujimiyaeffect_shineattack.png',
@@ -297,7 +297,7 @@ export const VFX_DATA = {
     rows: 1,
     frameCount: 5,
     duration: 400,
-    se: 'seSkillCharge', // 効果音
+    se: 'seSkillArtillery', // 効果音
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: -1,
     scale: 0.5,
@@ -346,7 +346,7 @@ export const VFX_DATA = {
     rows: 5,
     frameCount: 10,
     duration: 600,
-    se: 'seSkillGoaCrush', // なぎ払い専用SE
+    se: 'seSkillBrutal', // なぎ払い専用SE
     position: 'lane', // 発動レーンに合わせる
     offsetY: 0,
     scale: 0.8, // 横にも判定があるため少し大きめに表示
@@ -371,14 +371,14 @@ export const VFX_DATA = {
   },
 
   // 代償スキル
-  anm_sacrifice: {
+  anm_skill_sacrifice: {
     type: 'sprite',
     src: 'assets/vfx/pipofm-horroreffect03_192.png',
     columns: 5,
     rows: 2,
     frameCount: 10,
     duration: 1000,
-    se: 'seSkillBloodDamage', // 再生する効果音、SOUNDSのキーを指定
+    se: 'seSkillSacrifice', // 再生する効果音、SOUNDSのキーを指定
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
     scale: 0.3,
@@ -387,14 +387,14 @@ export const VFX_DATA = {
   },
 
   // 結界スキル
-  anm_seal: {
+  anm_skill_seal: {
     type: 'sprite',
     src: 'assets/vfx/pipo-btleffect018.png',
     columns: 8,
     rows: 1,
     frameCount: 8,
     duration: 800,
-    se: 'seHyoushigi',
+    se: 'seSkillSeal',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 0.6,

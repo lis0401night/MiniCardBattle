@@ -1287,7 +1287,7 @@ export function applyActiveSkillLogic(
     case 'sacrifice': {
       events.push({
         type: 'vfx_trigger',
-        vfxId: 'anm_sacrifice',
+        vfxId: 'anm_skill_sacrifice',
         side: owner,
         lane: l, // 必須プロパティとして一応設定
       });
@@ -1314,7 +1314,7 @@ export function applyActiveSkillLogic(
       if (voidCount > 0) {
         events.push({
           type: 'vfx_trigger',
-          vfxId: 'anm_sacrifice',
+          vfxId: 'anm_skill_sacrifice',
           side: owner,
           lane: l,
         });
