@@ -515,14 +515,6 @@ export async function triggerGraveKeeperEffect() {
 export function hasSkill(c, skillId) {
   if (!c) return false;
 
-  const isOblivion =
-    Array.isArray(c.skills) && c.skills.some((s) => s.id === 'oblivion');
-  if (isOblivion) {
-    if (skillId !== 'oblivion' && skillId !== 'equip') {
-      return false;
-    }
-  }
-
   // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
   if (skillId === 'defender' && c.stunTurns > 0) return true;
   if (Array.isArray(c.skills)) {
@@ -755,13 +747,6 @@ export function renderSkillTag(card, isBoard = false) {
     addCandidate(card.skill, card.skillValue);
   if (Array.isArray(card.skills)) {
     card.skills.forEach((sk) => addCandidate(sk.id, sk.value));
-  }
-
-  const isOblivion = skillCandidates.some((c) => c.id === 'oblivion');
-  if (isOblivion) {
-    skillCandidates = skillCandidates.filter(
-      (c) => c.id === 'oblivion' || c.id === 'equip'
-    );
   }
 
   // 2. IDと値が一致するものを集計（「選択」と「命令」はマージせず個別に表示）

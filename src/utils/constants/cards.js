@@ -368,14 +368,17 @@ export const CARD_MASTER = [
       '死骸に一滴でも取り付かれれば最後。剣を振り下ろす頃には、すでに二匹に増殖して君の喉元へ飛びかかっているだろう。',
   },
   {
-    id: 'bear',
-    name: '森の恐怖',
+    id: 'bard',
+    name: '森の歌うたい',
     rarity: 1,
-    power: 3,
-    skills: [{ id: 'lone_wolf', value: 2 }],
-    voiceCategory: 'beast',
+    power: 2,
+    skills: [
+      { id: 'support', value: 2 },
+      { id: 'heal', value: 2 },
+    ],
+    voiceCategory: 'human_female_cool',
     flavor:
-      '禁域に迷い込んだ愚か者に与えられるのは、警告ではない。ただ前触れなき蹂躙のみである。',
+      'ウクレレを奏でる彼を、森の動物たちは親しみを持って「先生」と呼ぶ。その歌声は傷ついた心も体も癒やす。',
   },
   {
     id: 'charger',
@@ -401,14 +404,14 @@ export const CARD_MASTER = [
       '大地の脈動と古樹の祈りが交わるとき、森は自らの意志をもって覚醒する。',
   },
   {
-    id: 'splite',
-    name: 'スプライトの冒険者',
+    id: 'bear',
+    name: '森の恐怖',
     rarity: 1,
-    power: 2,
-    skills: [{ id: 'resist', value: 3 }],
-    voiceCategory: 'human_female_cute',
+    power: 3,
+    skills: [{ id: 'lone_wolf', value: 2 }],
+    voiceCategory: 'beast',
     flavor:
-      '未知なる世界への憧れを胸に、故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
+      '禁域に迷い込んだ愚か者に与えられるのは、警告ではない。ただ前触れなき蹂躙のみである。',
   },
   {
     id: 'incinerator',
@@ -707,7 +710,7 @@ export const CARD_MASTER = [
     name: '荒ぶるハーピー',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'move' }, { id: 'cleave' }],
+    skills: [{ id: 'dodge', value: 5 }],
     voiceCategory: 'human_female_normal',
     flavor: '空を舞う半人半鳥の怪物。獲物を鋭い爪で切り刻む。',
   },
@@ -864,7 +867,7 @@ export const CARD_MASTER = [
     name: '竜人族の騎兵',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'pierce' }, { id: 'snipe', value: 2 }],
+    skills: [{ id: 'snipe', value: 2 }, { id: 'pierce' }],
     voiceCategory: 'horse',
     flavor:
       '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫き、遠方の獲物も逃さない。',
@@ -1062,6 +1065,16 @@ export const CARD_MASTER = [
       '濃霧の奥底より音もなく現れる呪われた船。朽ち果てた帆に亡者たちの嘆きを孕み、目撃した者を永遠の深淵へと引きずり込む。',
   },
   {
+    id: 'splite',
+    name: 'スプライトの冒険者',
+    rarity: 2,
+    power: 2,
+    skills: [{ id: 'dodge', value: 3 }],
+    voiceCategory: 'human_female_cute',
+    flavor:
+      '未知なる世界への憧れを胸に、故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
+  },
+  {
     id: 'bird',
     name: '新緑の導き鳥',
     rarity: 2,
@@ -1069,19 +1082,6 @@ export const CARD_MASTER = [
     skills: [{ id: 'split', value: 5, summonId: 'token_ent' }],
     voiceCategory: 'bird',
     flavor: 'その小さなさえずりが途絶えたとき、森の静寂は怒号へと変わる。',
-  },
-  {
-    id: 'bard',
-    name: '森の歌うたい',
-    rarity: 2,
-    power: 1,
-    skills: [
-      { id: 'support', value: 2 },
-      { id: 'heal', value: 2 },
-    ],
-    voiceCategory: 'human_female_cool',
-    flavor:
-      'ウクレレを奏でる彼を、森の動物たちは親しみを持って「先生」と呼ぶ。その歌声は傷ついた心も体も癒やす。',
   },
   {
     id: 'shaman',
@@ -1110,7 +1110,7 @@ export const CARD_MASTER = [
     power: 3,
     skills: [
       { id: 'lone_wolf', value: 1 },
-      { id: 'resist', value: 4 },
+      { id: 'dodge', value: 4 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
@@ -1235,10 +1235,13 @@ export const CARD_MASTER = [
     name: '烏羽の医師',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'choice', value: 1 }],
+    skills: [
+      { id: 'convert', value: 1 },
+      { id: 'choice', value: 1 },
+    ],
     choices: [
-      { id: 'heal', value: 2 },
-      { id: 'toxic', value: 2 },
+      { id: 'heal', value: 3 },
+      { id: 'toxic', value: 3 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
@@ -1790,7 +1793,7 @@ export const CARD_MASTER = [
     id: 'hound',
     name: '破片の猟犬',
     rarity: 3,
-    power: 4,
+    power: 5,
     skills: [{ id: 'phase' }],
     voiceCategory: 'monster',
     flavor:
@@ -2328,7 +2331,7 @@ export const CARD_MASTER = [
     name: 'ゴールデンロックス',
     rarity: 3,
     power: 6,
-    skills: [{ id: 'legendary' }, { id: 'resist', value: 6 }],
+    skills: [{ id: 'legendary' }, { id: 'dodge', value: 5 }],
     voiceCategory: 'human_female_assassin',
     flavor:
       '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
@@ -2469,11 +2472,11 @@ export const CARD_MASTER = [
     id: 'valkyrie',
     name: '焦熱の戦乙女',
     rarity: 4,
-    power: 2,
+    power: 3,
     skills: [
-      { id: 'berserk', value: 2 },
+      { id: 'berserk', value: 3 },
       { id: 'double_strike' },
-      { id: 'stealth', value: 1 },
+      { id: 'dodge', value: 6 },
       { id: 'quick' },
     ],
     voiceCategory: 'human_female_cool',
@@ -2484,12 +2487,12 @@ export const CARD_MASTER = [
     id: 'hellkite',
     name: 'ヘルカイトの君主',
     rarity: 4,
-    power: 9,
+    power: 10,
     skills: [
       { id: 'legendary' },
       { id: 'apex' },
-      { id: 'berserk', value: 4 },
-      { id: 'spread', value: 4 },
+      { id: 'berserk', value: 6 },
+      { id: 'spread', value: 6 },
     ],
     voiceCategory: 'dragon',
     flavor:
@@ -2890,8 +2893,8 @@ export const CARD_MASTER = [
     id: 'light',
     name: '無垢の光',
     rarity: 4,
-    power: 4,
-    skills: [{ id: 'equip' }, { id: 'oblivion' }],
+    power: 5,
+    skills: [{ id: 'oblivion' }],
     voiceCategory: 'human_female_cute',
     flavor:
       '優しく降り注ぐ、穢れなき無垢の光。その暖かな輝きに抱かれた時、苦しみも、悪意も、自分が何者であったかさえも安らかに白く溶け落ちていく。',

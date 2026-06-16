@@ -154,10 +154,6 @@ export async function resolveActiveSkillEffect(
   skillValue,
   skObj = null
 ) {
-  // 沈黙状態ならスキルは発動しない（沈黙自身と装備スキルは除く）
-  if (hasSkill(c, 'oblivion') && skillId !== 'oblivion' && skillId !== 'equip')
-    return;
-
   const cEl = document.querySelector(
     `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
   );
@@ -1314,6 +1310,38 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'quick') {
     await sleep(400);
     await executeSingleCombat(o, l);
+  } else if (skillId === 'oblivion') {
+    const myBoard = GameState.playerBoard;
+    const oppBoard = GameState.enemyBoard;
+
+    // お互いの場のカードの全ての能力をなくし、一時的効果もクリアする
+    const boards = [
+      { b: myBoard, side: 'player' },
+      { b: oppBoard, side: 'enemy' },
+    ];
+
+    for (const { b, side } of boards) {
+      for (let i = 0; i < 3; i++) {
+        const card = b[i];
+        if (card) {
+          card.skills = [];
+          card.skill = 'none';
+          card.skillValue = 0;
+          card.stunTurns = 0;
+          card.stunAppliedThisTurn = false;
+
+          if (window.updateCardVisualsReact) {
+            window.updateCardVisualsReact(i, side);
+          }
+        }
+      }
+    }
+
+    if (!window.updateCardVisualsReact && window.updateBattleUIHook) {
+      window.updateBattleUIHook();
+    }
+    renderBoard();
+    await sleep(400);
   } else if (skillId === 'toxic') {
     createDamagePopup(cEl, '有毒', '#10b981');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
@@ -3258,9 +3286,6 @@ export async function triggerStartTurnPassive(owner, lane) {
   const side = owner === 'blue' ? 'player' : 'enemy';
   const c = board[lane];
   if (!c) return false;
-
-  // 沈黙状態ならパッシブスキルは発動しない
-  if (hasSkill(c, 'oblivion')) return false;
 
   // invincible のターン処理等のために一度 Engine の全体処理を呼ぶべきだが、
   // 既存構成が「カードごとに順次再生」のため、一旦ここで個別評価し、

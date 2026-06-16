@@ -342,7 +342,7 @@ export const SKILL_POINTS = {
     base: 5,
     multiplier: 0,
   },
-  resist: {
+  dodge: {
     base: 5,
     multiplier: -0.5,
   },

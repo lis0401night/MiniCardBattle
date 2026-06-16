@@ -11,7 +11,7 @@ import {
 export function canTakeDamage(card, amount, isSkill = true) {
   if (!card) return false;
   if (isSkill && hasSkill(card, 'immune')) return false;
-  const resVal = getSkillValue(card, 'resist');
+  const resVal = getSkillValue(card, 'dodge');
   if (resVal > 0 && amount >= resVal) return false;
   return true;
 }
@@ -418,6 +418,32 @@ export function applyActiveSkillLogic(
     case 'choice':
       // 選択スキル自体は純粋ロジックでは解決できない（上位のシミュレーション層で展開済みのため）
       break;
+    case 'oblivion': {
+      const myBoard = state.playerBoard;
+      const oppBoard = state.enemyBoard;
+
+      [myBoard, oppBoard].forEach((board, bIdx) => {
+        const side = bIdx === 0 ? 'blue' : 'red';
+        for (let i = 0; i < 3; i++) {
+          const card = board[i];
+          if (card) {
+            card.skills = [];
+            card.skill = 'none';
+            card.skillValue = 0;
+            card.stunTurns = 0;
+            card.stunAppliedThisTurn = false;
+
+            events.push({
+              type: 'oblivion_clear',
+              side,
+              lane: i,
+              card: JSON.parse(JSON.stringify(card)),
+            });
+          }
+        }
+      });
+      break;
+    }
     case 'hack': {
       const myOldSP = owner === 'blue' ? state.playerSP : state.enemySP;
       const oppOldSP = owner === 'blue' ? state.enemySP : state.playerSP;

@@ -63,13 +63,6 @@ export default function CardPreviewContent({
   if (Array.isArray(card.skills))
     card.skills.forEach((sk) => skillCandidates.push({ ...sk }));
 
-  const isOblivion = skillCandidates.some((sk) => sk.id === 'oblivion');
-  if (isOblivion) {
-    skillCandidates = skillCandidates.filter(
-      (sk) => sk.id === 'oblivion' || sk.id === 'equip'
-    );
-  }
-
   let lookupId = card.baseId || card.id;
   let isPremiumActive = false;
   let isPremiumUnlocked = false;

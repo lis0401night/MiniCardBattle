@@ -93,13 +93,6 @@ export function updateCardDetail(c) {
       });
     }
 
-    const isOblivion = skillCandidates.some((sk) => sk.id === 'oblivion');
-    if (isOblivion) {
-      skillCandidates = skillCandidates.filter(
-        (sk) => sk.id === 'oblivion' || sk.id === 'equip'
-      );
-    }
-
     if (c.stunTurns > 0) {
       skillCandidates.push({ id: 'defender', value: null, isBind: true });
     }

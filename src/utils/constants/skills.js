@@ -280,8 +280,8 @@ export const SKILLS = {
     icon: '🚫',
     desc: () => '能力による破壊やダメージを受けない。',
   },
-  resist: {
-    name: '耐性',
+  dodge: {
+    name: '回避',
     icon: '💠',
     desc: (val) => `${val}以上のダメージを無効化する。`,
   },
@@ -377,7 +377,7 @@ export const SKILLS = {
     name: '沈黙',
     icon: '⚪',
     desc: () =>
-      '場に居る間、この能力以外の全ての能力を失い、新たな能力も得られない。',
+      '召喚時、お互いの場のカードの全ての能力をなくし、一時的な効果も解除する。',
   },
   call: {
     name: '号令',
@@ -816,7 +816,7 @@ export const PASSIVE_SKILLS = [
   'contract',
   'double_strike',
   'immune',
-  'resist',
+  'dodge',
   'extort',
   'phase',
   'oblivion',

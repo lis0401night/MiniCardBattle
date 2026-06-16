@@ -409,7 +409,11 @@ export async function playEvents(events) {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         // 上書き配置時の既存カード破棄（装備カードの墓地送り漏れを防ぐ）
-        if (board[ev.lane] && board[ev.lane].uid !== ev.card?.uid && discardCardRef) {
+        if (
+          board[ev.lane] &&
+          board[ev.lane].uid !== ev.card?.uid &&
+          discardCardRef
+        ) {
           await discardCardRef(ev.side, board[ev.lane], ev.lane, false);
         }
         board[ev.lane] = ev.card;
