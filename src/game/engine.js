@@ -1122,17 +1122,6 @@ export function applyActiveSkillLogic(
       for (let i = 0; i < targets.length; i++) {
         const tr = targets[i];
         tr.card.currentPower = 0;
-        if (tr.side === oppOwner) {
-          eB[tr.lane] = null;
-        } else {
-          b[tr.lane] = null;
-        }
-      }
-      if (targets.length > 0 && events) {
-        events.push({
-          type: 'destroy_cards',
-          targets: targets,
-        });
       }
       break;
     }
@@ -1154,17 +1143,6 @@ export function applyActiveSkillLogic(
       for (let i = 0; i < targets.length; i++) {
         const tr = targets[i];
         tr.card.currentPower = 0;
-        if (tr.side === oppOwner) {
-          eB[tr.lane] = null;
-        } else {
-          b[tr.lane] = null;
-        }
-      }
-      if (targets.length > 0 && events) {
-        events.push({
-          type: 'destroy_cards',
-          targets: targets,
-        });
       }
       break;
     }
@@ -4504,7 +4482,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     // 魂縛 / 魂縛(虚)
     let aD = aC_defend.currentPower <= 0,
       dD = dC.currentPower <= 0;
-    if (dD && !aD) {
+    if (dD && aC.currentPower > 0) {
       if (hasSkill(aC, 'soul_bind')) {
         const val = getSkillValue(aC, 'soul_bind') || 2;
         aC.currentPower += val;
@@ -4540,19 +4518,21 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
       }
     }
-    if (aD && !dD) {
-      if (hasSkill(dC, 'soul_bind')) {
-        const val = getSkillValue(dC, 'soul_bind') || 2;
-        dC.currentPower += val;
+    const counterSoulBindCard =
+      originalTarget && originalTarget.currentPower > 0 ? originalTarget : null;
+    if (aD && counterSoulBindCard) {
+      if (hasSkill(counterSoulBindCard, 'soul_bind')) {
+        const val = getSkillValue(counterSoulBindCard, 'soul_bind') || 2;
+        counterSoulBindCard.currentPower += val;
         events.push({
           type: 'power_change',
           side: defSide,
-          lane: dLane,
+          lane: l,
           amount: val,
           source: 'soul_bind',
         });
       }
-      if (hasSkill(dC, 'soul_bind_void')) {
+      if (hasSkill(counterSoulBindCard, 'soul_bind_void')) {
         const hand = defSide === 'blue' ? state.playerHand : state.enemyHand;
         const voidCount = hand
           ? hand.filter(
@@ -4562,13 +4542,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             ).length
           : 0;
         if (voidCount > 0) {
-          const val = getSkillValue(dC, 'soul_bind_void') || 2;
+          const val = getSkillValue(counterSoulBindCard, 'soul_bind_void') || 2;
           const totalGain = val * voidCount;
-          dC.currentPower += totalGain;
+          counterSoulBindCard.currentPower += totalGain;
           events.push({
             type: 'power_change',
             side: defSide,
-            lane: dLane,
+            lane: l,
             amount: totalGain,
             source: 'soul_bind_void',
           });

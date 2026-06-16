@@ -43,6 +43,25 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
+// スキン選択時のplayerConfig画像同期ヘルパー
+const syncPlayerConfigImages = (charDetailData, skinId) => {
+  if (
+    GameState.playerConfig &&
+    GameState.playerConfig.id === charDetailData.id
+  ) {
+    const charObj =
+      Object.values(CHARACTERS || {}).find((c) => c.id === charDetailData.id) ||
+      charDetailData;
+    GameState.playerConfig.image = getSkinImage(charObj, skinId, 'image');
+    GameState.playerConfig.imageLose = getSkinImage(
+      charObj,
+      skinId,
+      'imageLose'
+    );
+    GameState.playerConfig.icon = getSkinImage(charObj, skinId, 'icon');
+  }
+};
+
 export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const discardLongPressTimerRef = useRef(null);
   const discardHasLongPressedRef = useRef(false);
@@ -1833,30 +1852,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             GameState.playerSkins = {};
                           GameState.playerSkins[charDetailData.id] = skinId;
 
-                          if (
-                            GameState.playerConfig &&
-                            GameState.playerConfig.id === charDetailData.id
-                          ) {
-                            const charObj =
-                              Object.values(CHARACTERS || {}).find(
-                                (c) => c.id === charDetailData.id
-                              ) || charDetailData;
-                            GameState.playerConfig.image = getSkinImage(
-                              charObj,
-                              skinId,
-                              'image'
-                            );
-                            GameState.playerConfig.imageLose = getSkinImage(
-                              charObj,
-                              skinId,
-                              'imageLose'
-                            );
-                            GameState.playerConfig.icon = getSkinImage(
-                              charObj,
-                              skinId,
-                              'icon'
-                            );
-                          }
+                          syncPlayerConfigImages(charDetailData, skinId);
 
                           // 各モードに応じたLocalStorageセーブ
                           if (GameState.gameMode === 'defense_register') {
@@ -1888,30 +1884,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           }
                           GameState.playerSkins[charDetailData.id] = skinId;
 
-                          if (
-                            GameState.playerConfig &&
-                            GameState.playerConfig.id === charDetailData.id
-                          ) {
-                            const charObj =
-                              Object.values(CHARACTERS || {}).find(
-                                (c) => c.id === charDetailData.id
-                              ) || charDetailData;
-                            GameState.playerConfig.image = getSkinImage(
-                              charObj,
-                              skinId,
-                              'image'
-                            );
-                            GameState.playerConfig.imageLose = getSkinImage(
-                              charObj,
-                              skinId,
-                              'imageLose'
-                            );
-                            GameState.playerConfig.icon = getSkinImage(
-                              charObj,
-                              skinId,
-                              'icon'
-                            );
-                          }
+                          syncPlayerConfigImages(charDetailData, skinId);
 
                           if (window.saveCurrentEditDeck)
                             window.saveCurrentEditDeck();

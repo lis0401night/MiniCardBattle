@@ -945,8 +945,10 @@ export async function executeLeaderSkillAction(
       );
 
       if (window.triggerVfx) {
-        window.triggerVfx('anm_otherworld_gate', owner);
-        await window.triggerVfx('anm_otherworld_gate', opId);
+        await Promise.all([
+          window.triggerVfx('anm_otherworld_gate', owner),
+          window.triggerVfx('anm_otherworld_gate', opId),
+        ]);
       }
 
       if (selectedIndices && selectedIndices.length > 0) {
@@ -960,8 +962,10 @@ export async function executeLeaderSkillAction(
       for (let i = 0; i < dc; i++) drawCard(owner);
     } else {
       if (window.triggerVfx) {
-        window.triggerVfx('anm_otherworld_gate', owner);
-        await window.triggerVfx('anm_otherworld_gate', opId);
+        await Promise.all([
+          window.triggerVfx('anm_otherworld_gate', owner),
+          window.triggerVfx('anm_otherworld_gate', opId),
+        ]);
       }
     }
 
@@ -1016,8 +1020,10 @@ export async function executeLeaderSkillAction(
       );
 
       if (window.triggerVfx) {
-        window.triggerVfx('anm_otherworld_gate', owner);
-        await window.triggerVfx('anm_otherworld_gate', opId);
+        await Promise.all([
+          window.triggerVfx('anm_otherworld_gate', owner),
+          window.triggerVfx('anm_otherworld_gate', opId),
+        ]);
       }
 
       if (selectedIndices && selectedIndices.length > 0) {
@@ -1030,8 +1036,10 @@ export async function executeLeaderSkillAction(
       }
     } else {
       if (window.triggerVfx) {
-        window.triggerVfx('anm_otherworld_gate', owner);
-        await window.triggerVfx('anm_otherworld_gate', opId);
+        await Promise.all([
+          window.triggerVfx('anm_otherworld_gate', owner),
+          window.triggerVfx('anm_otherworld_gate', opId),
+        ]);
       }
     }
 
