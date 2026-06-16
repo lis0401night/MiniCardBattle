@@ -1479,7 +1479,6 @@ export async function resolveActiveSkillEffect(
     // 【開発ガイドライン適用】直接トリガー型アクティブスキル
     const sidePrefix = o === 'blue' ? 'player' : 'enemy';
     const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
-    const oppOwner = o === 'blue' ? 'red' : 'blue';
 
     let dmg = skillValue || 3;
     if (skillId === 'sacrifice_void') {
@@ -1523,7 +1522,7 @@ export async function resolveActiveSkillEffect(
 
       playSound(SOUNDS.seDamage);
       updateHPBar();
-      showSpeechBubble(oppOwner); // 被害側のセリフ
+      showSpeechBubble(o); // 被害側（自傷した本人）のセリフ
 
       await sleep(300);
       checkWinCondition();
