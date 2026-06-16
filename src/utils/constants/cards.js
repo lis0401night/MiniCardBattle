@@ -1531,7 +1531,7 @@ export const CARD_MASTER = [
     id: 'voiddog',
     name: '虚無の捕食者',
     rarity: 2,
-    power: 2,
+    power: 3,
     skills: [{ id: 'sublimation', value: 2 }],
     voiceCategory: 'stone',
     flavor:
@@ -2203,7 +2203,7 @@ export const CARD_MASTER = [
     id: 'voidwalker',
     name: '虚空歩き',
     rarity: 3,
-    power: 4,
+    power: 5,
     skills: [{ id: 'legendary' }, { id: 'sublimation', value: 2 }],
     voiceCategory: 'stone',
     flavor: '次元の狭間である虚空を自在に渡り歩く、実体を持たない影の旅人。',
