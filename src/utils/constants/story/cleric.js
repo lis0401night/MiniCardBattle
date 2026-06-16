@@ -398,7 +398,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'それに、あの白熊……毛皮が高く売れそうじゃない。',
+          text: 'それに、その銀の弓……かなりいい銀が使われてるじゃない。',
         },
         {
           speaker: 'player',
