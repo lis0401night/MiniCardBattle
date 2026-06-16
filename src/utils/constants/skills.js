@@ -376,8 +376,7 @@ export const SKILLS = {
   oblivion: {
     name: '沈黙',
     icon: '⚪',
-    desc: () =>
-      '召喚時、お互いの場のカードの全ての能力をなくし、一時的な効果も解除する。',
+    desc: () => '召喚時、お互いの場のカードの全ての能力をなくす。',
   },
   call: {
     name: '号令',
@@ -795,6 +794,7 @@ export const ACTIVE_SKILLS = [
   'support_void',
   'treason',
   'sacrifice_void',
+  'oblivion',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
@@ -819,7 +819,6 @@ export const PASSIVE_SKILLS = [
   'dodge',
   'extort',
   'phase',
-  'oblivion',
   'challenge',
   'move',
   'brutal',

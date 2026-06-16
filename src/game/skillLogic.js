@@ -222,6 +222,7 @@ export async function resolveActiveSkillEffect(
       soul_bind: '魂縛',
       soul_bind_void: '魂縛(虚)',
       quick: '速攻',
+      oblivion: '沈黙',
       choice: '選択',
       artillery: '砲撃',
       decree: '宣告',

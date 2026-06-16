@@ -741,10 +741,10 @@ export const CARD_MASTER = [
     id: 'baphomet',
     name: '集会の主',
     rarity: 1,
-    power: 6,
+    power: 7,
     skills: [
       { id: 'takeover', value: 1 },
-      { id: 'heal', value: 4 },
+      { id: 'heal', value: 3 },
     ],
     voiceCategory: 'devil',
     flavor:
@@ -785,8 +785,8 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 2,
     skills: [
-      { id: 'explode', value: 3 },
       { id: 'spread', value: 3 },
+      { id: 'explode', value: 3 },
     ],
     voiceCategory: 'devil',
     flavor:
@@ -1590,10 +1590,10 @@ export const CARD_MASTER = [
     id: 'cavalry',
     name: '煉獄侯爵の先陣',
     rarity: 2,
-    power: 8,
+    power: 5,
     skills: [
-      { id: 'sacrifice', value: 3 },
       { id: 'challenge' },
+      { id: 'hero', value: 2 },
       { id: 'pierce' },
       { id: 'guardian' },
     ],
@@ -2475,8 +2475,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [
       { id: 'berserk', value: 3 },
-      { id: 'double_strike' },
       { id: 'dodge', value: 6 },
+      { id: 'double_strike' },
       { id: 'quick' },
     ],
     voiceCategory: 'human_female_cool',
@@ -2736,7 +2736,7 @@ export const CARD_MASTER = [
     power: 2,
     skills: [
       { id: 'legendary' },
-      { id: 'loss', value: 5 },
+      { id: 'loss', value: 4 },
       { id: 'bind', value: 2 },
       { id: 'puppet', value: 8 },
     ],
@@ -2867,9 +2867,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'force', value: 1 }],
     choices: [
-      { id: 'burial', value: 4 },
       { id: 'lone_wolf', value: 2 },
-      { id: 'spread', value: 3 },
+      { id: 'clone', value: 1 },
     ],
     voiceCategory: 'human_male_old',
     flavor:
@@ -2879,11 +2878,11 @@ export const CARD_MASTER = [
     id: 'cleopatra',
     name: '最後の女王',
     rarity: 4,
-    power: 6,
-    skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
-    choices: [
-      { id: 'burial', value: 3 },
-      { id: 'morph', value: 1 },
+    power: 4,
+    skills: [
+      { id: 'legendary' },
+      { id: 'dominate', value: 5 },
+      { id: 'execute' },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
