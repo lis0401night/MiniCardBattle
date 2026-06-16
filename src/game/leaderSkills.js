@@ -1155,6 +1155,11 @@ export async function executeLeaderSkillAction(
         const targetLane = selectedOppLane;
         tokenLanes = [selectedOppLane]; // VFX用に渡す
 
+        // カード移動の前にVFXを再生（支配スキルと同様のタイミング）
+        if (window.triggerVfx) {
+          await window.triggerVfx('anm_viola_arts', owner, selectedOppLane);
+        }
+
         oppBoard[selectedOppLane] = null;
         updateDeckDisplay(oppOwner);
 
@@ -1427,13 +1432,6 @@ export async function executeLeaderSkillAction(
     ) {
       await sleep(200);
       await window.triggerVfx('anm_summon_satan', owner, tokenLanes[0]);
-    } else if (
-      action === 'viola_domination' &&
-      tokenLanes &&
-      tokenLanes.length > 0
-    ) {
-      await sleep(200);
-      await window.triggerVfx('anm_viola_arts', owner, tokenLanes[0]);
     } else if (action === 'elf_polarbear_combo') {
       await sleep(200);
       if (tokenLanes && tokenLanes[0] >= 0) {
