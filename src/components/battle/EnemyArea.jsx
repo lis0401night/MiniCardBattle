@@ -4,12 +4,14 @@ import {
   BOSS_CHARACTER_IDS,
 } from '../../utils/constants/characters.js';
 import { MAX_DISCARD_PREVIEW_COUNT } from '../../utils/constants/config.js';
+import DeckIcon from './DeckIcon.jsx';
 
 export default function EnemyArea({
   enemyConfig,
   enemyHP,
   enemyMaxHP,
   deckCount,
+  maxDeckCount = 20,
   dropCount,
 }) {
   if (!enemyConfig) return null;
@@ -93,8 +95,9 @@ export default function EnemyArea({
               gap: '8px',
             }}
           >
-            <span>
-              山札: {deckCount} / 墓地: {dropCount}
+            <DeckIcon count={deckCount} max={maxDeckCount} color="red" />
+            <span style={{ display: 'inline-block', minWidth: '150px', textAlign: 'left', fontVariantNumeric: 'tabular-nums' }}>
+              山札：{deckCount} / 墓地：{dropCount}
             </span>
             <button
               className="action-btn"

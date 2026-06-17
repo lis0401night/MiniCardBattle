@@ -32,6 +32,8 @@ export const GameState = {
   enemyDeck: [],
   playerDiscard: [],
   enemyDiscard: [],
+  initialPlayerDeckCount: 20,
+  initialEnemyDeckCount: 20,
   playerBoard: [null, null, null],
   enemyBoard: [null, null, null],
   playerSealedLanes: [0, 0, 0],

@@ -446,6 +446,7 @@ export default function BattleScreen({ showRulesModal }) {
         enemyHP={GameState.enemyHP}
         enemyMaxHP={GameState.enemyMaxHP === 0 ? 1 : GameState.enemyMaxHP}
         deckCount={GameState.enemyDeck.length}
+        maxDeckCount={GameState.initialEnemyDeckCount || 20}
         dropCount={GameState.enemyDiscard.length}
       />
 
@@ -517,6 +518,7 @@ export default function BattleScreen({ showRulesModal }) {
         playerHP={GameState.playerHP}
         playerMaxHP={GameState.playerMaxHP === 0 ? 1 : GameState.playerMaxHP}
         deckCount={GameState.playerDeck.length}
+        maxDeckCount={GameState.initialPlayerDeckCount || 20}
         dropCount={GameState.playerDiscard.length}
         spCount={GameState.playerSP}
         maxSpCount={
