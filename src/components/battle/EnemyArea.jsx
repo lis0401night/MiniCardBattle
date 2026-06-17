@@ -95,8 +95,15 @@ export default function EnemyArea({
               gap: '8px',
             }}
           >
-            <DeckIcon count={deckCount} max={maxDeckCount} color="red" />
-            <span style={{ display: 'inline-block', minWidth: '150px', textAlign: 'left', fontVariantNumeric: 'tabular-nums' }}>
+            <DeckIcon count={deckCount} max={maxDeckCount} />
+            <span
+              style={{
+                display: 'inline-block',
+                minWidth: '150px',
+                textAlign: 'left',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
               山札：{deckCount} / 墓地：{dropCount}
             </span>
             <button
