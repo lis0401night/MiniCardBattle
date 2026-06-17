@@ -48,6 +48,7 @@ export const SE_PATHS = {
   seSkillSacrifice: 'assets/audio/se/se_skill_sacrifice.mp3',
   seSkillExecute: 'assets/audio/se/se_skill_execute.mp3',
   seSkillStealth: 'assets/audio/se/se_skill_stealth.mp3',
+  seSkillCall: 'assets/audio/se/se_skill_call.mp3',
 };
 
 export const SOUNDS = {
@@ -122,6 +123,7 @@ export const AUDIO_INSTANCES = {
   seSkillSacrifice: new Audio('assets/audio/se/se_skill_sacrifice.mp3'),
   seSkillExecute: new Audio('assets/audio/se/se_skill_execute.mp3'),
   seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
+  seSkillCall: new Audio('assets/audio/se/se_skill_call.mp3'),
 };
 
 // サウンドの初期設定

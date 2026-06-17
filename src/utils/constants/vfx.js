@@ -437,6 +437,22 @@ export const VFX_DATA = {
     targetSide: 'enemy',
   },
 
+  // 号令スキル
+  anm_skill_call: {
+    type: 'sprite',
+    src: 'assets/vfx/pipo-btleffect011.png',
+    columns: 1,
+    rows: 15, // 320x1800 -> 15frames of 320x120
+    frameCount: 15,
+    duration: 600,
+    se: 'seSkillCall',
+    position: 'lane',
+    offsetY: 0,
+    scale: 0.3,
+    shake: false,
+    targetSide: 'self',
+  },
+
   // 逆境スキル
   anm_skill_adversity: {
     type: 'sprite',

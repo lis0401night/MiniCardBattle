@@ -203,6 +203,7 @@ export async function resolveActiveSkillEffect(
         'sacrifice_void',
         'cull',
         'execute',
+        'call',
       ].includes(skillId)
     ) {
       playSkillSound(skillId);
@@ -2708,6 +2709,9 @@ export async function resolveActiveSkillEffect(
     }
     await sleep(300);
   } else if (skillId === 'call') {
+    // 【演出】号令スキルのVFXを再生
+    await window.triggerVfx('anm_skill_call', o, l);
+
     const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     if (d.length > 0) {
       const topCard = d[d.length - 1];
