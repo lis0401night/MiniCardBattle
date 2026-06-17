@@ -87,8 +87,7 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'deadly' }],
     voiceCategory: 'insect',
-    flavor:
-      '漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。',
+    flavor: '漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。',
   },
   {
     id: 'mercenary',
@@ -829,11 +828,7 @@ export const CARD_MASTER = [
     name: '略奪者のキメラ・メック',
     rarity: 2,
     power: 4,
-    skills: [
-      { id: 'choice', value: 1 },
-      { id: 'sturdy' },
-      { id: 'move' }
-    ],
+    skills: [{ id: 'choice', value: 1 }, { id: 'sturdy' }, { id: 'move' }],
     choices: [
       { id: 'spend', value: 1 },
       { id: 'explode', value: 2 },

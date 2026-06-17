@@ -4719,8 +4719,10 @@ export function applyPassiveSkillLogic(
       // 輪廻: ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。
       const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
       const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
-      const myDiscard = side === 'blue' ? state.playerDiscard : state.enemyDiscard;
-      const opDiscard = side === 'blue' ? state.enemyDiscard : state.playerDiscard;
+      const myDiscard =
+        side === 'blue' ? state.playerDiscard : state.enemyDiscard;
+      const opDiscard =
+        side === 'blue' ? state.enemyDiscard : state.playerDiscard;
       const myDeck = side === 'blue' ? state.playerDeck : state.enemyDeck;
       const opDeck = side === 'blue' ? state.enemyDeck : state.playerDeck;
 
@@ -4747,10 +4749,10 @@ export function applyPassiveSkillLogic(
         const h = p === 'blue' ? state.playerHand : state.enemyHand;
         const d = p === 'blue' ? state.playerDeck : state.enemyDeck;
         const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
-        
+
         if (!h || !d) return;
         if (h.length >= 4) return;
-        
+
         if (d.length === 0 && ds && ds.length > 0) {
           // 墓地を戻す
           d.push(...ds);
@@ -4767,7 +4769,7 @@ export function applyPassiveSkillLogic(
             state.enemyHP = Math.ceil(state.enemyHP / 2);
           }
         }
-        
+
         if (d.length > 0) {
           const drawn = d.pop();
           if (drawn) {
