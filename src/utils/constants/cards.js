@@ -1102,9 +1102,9 @@ export const CARD_MASTER = [
     id: 'darkelf',
     name: 'ダンジョン・シーカー',
     rarity: 2,
-    power: 1,
+    power: 2,
     skills: [
-      { id: 'lone_wolf', value: 2 },
+      { id: 'lone_wolf', value: 1 },
       { id: 'dodge', value: 4 },
     ],
     voiceCategory: 'human_female_cool',
