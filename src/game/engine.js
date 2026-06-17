@@ -4715,6 +4715,88 @@ export function applyPassiveSkillLogic(
         source: 'contract',
       });
     }
+    if (hasSkill(c, 'samsara')) {
+      // 輪廻: ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。
+      const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
+      const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
+      const myDiscard = side === 'blue' ? state.playerDiscard : state.enemyDiscard;
+      const opDiscard = side === 'blue' ? state.enemyDiscard : state.playerDiscard;
+      const myDeck = side === 'blue' ? state.playerDeck : state.enemyDeck;
+      const opDeck = side === 'blue' ? state.enemyDeck : state.playerDeck;
+
+      // 1. お互いの手札を全て捨てる（トークンは除外）
+      if (myHand) {
+        while (myHand.length > 0) {
+          const card = myHand.pop();
+          if (card && !card.isToken && myDiscard) {
+            myDiscard.push(card);
+          }
+        }
+      }
+      if (opHand) {
+        while (opHand.length > 0) {
+          const card = opHand.pop();
+          if (card && !card.isToken && opDiscard) {
+            opDiscard.push(card);
+          }
+        }
+      }
+
+      // 2. お互いに3枚引く
+      const drawSim = (p) => {
+        const h = p === 'blue' ? state.playerHand : state.enemyHand;
+        const d = p === 'blue' ? state.playerDeck : state.enemyDeck;
+        const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
+        
+        if (!h || !d) return;
+        if (h.length >= 4) return;
+        
+        if (d.length === 0 && ds && ds.length > 0) {
+          // 墓地を戻す
+          d.push(...ds);
+          ds.length = 0;
+          // シャッフル
+          for (let k = d.length - 1; k > 0; k--) {
+            const j = Math.floor(getSeededRandom() * (k + 1));
+            [d[k], d[j]] = [d[j], d[k]];
+          }
+          // HP半減
+          if (p === 'blue') {
+            state.playerHP = Math.ceil(state.playerHP / 2);
+          } else {
+            state.enemyHP = Math.ceil(state.enemyHP / 2);
+          }
+        }
+        
+        if (d.length > 0) {
+          const drawn = d.pop();
+          if (drawn) {
+            if (
+              drawn.currentPower === undefined ||
+              Number.isNaN(drawn.currentPower) ||
+              (drawn.currentPower <= 0 && (drawn.power || 0) > 0)
+            ) {
+              drawn.currentPower = drawn.power || 0;
+            }
+            h.push(drawn);
+          }
+        }
+      };
+
+      for (let k = 0; k < 3; k++) {
+        drawSim('blue');
+      }
+      for (let k = 0; k < 3; k++) {
+        drawSim('red');
+      }
+
+      events.push({
+        type: 'samsara_trigger',
+        side,
+        lane: i,
+        source: 'samsara',
+      });
+    }
     if (hasSkill(c, 'awake')) {
       const v = getSkillValue(c, 'awake') || 1;
       const awakeSkill =

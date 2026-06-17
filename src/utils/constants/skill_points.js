@@ -247,7 +247,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   apex: {
-    base: -6,
+    base: -10,
     multiplier: 0,
   },
   retaliate: {
@@ -352,10 +352,6 @@ export const SKILL_POINTS = {
   },
   hack: {
     base: 0,
-    multiplier: 0,
-  },
-  amplify: {
-    base: 2,
     multiplier: 0,
   },
   cull: {

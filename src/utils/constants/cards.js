@@ -88,7 +88,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'deadly' }],
     voiceCategory: 'insect',
     flavor:
-      '夜の砂漠に潜む漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。',
+      '漆黒の巨蠍。その尾から放たれる猛毒は対象を一瞬で絶命させる。',
   },
   {
     id: 'mercenary',
@@ -447,7 +447,7 @@ export const CARD_MASTER = [
     name: '慈愛',
     rarity: 1,
     power: 3,
-    skills: [{ id: 'defender' }, { id: 'sturdy' }, { id: 'heal', value: 4 }],
+    skills: [{ id: 'defender' }, { id: 'heal', value: 4 }, { id: 'sturdy' }],
     voiceCategory: 'stone',
     flavor:
       '古より伝わる小さな彫像。周囲に清らかな癒しと絶対の護りをもたらす。',
@@ -831,13 +831,13 @@ export const CARD_MASTER = [
     power: 4,
     skills: [
       { id: 'choice', value: 1 },
-      { id: 'choice', value: 1, choiceGroup: 2 },
+      { id: 'sturdy' },
+      { id: 'move' }
     ],
     choices: [
       { id: 'spend', value: 1 },
       { id: 'explode', value: 2 },
     ],
-    choices2: [{ id: 'sturdy' }, { id: 'double_strike' }, { id: 'move' }],
     voiceCategory: 'machine_old',
     flavor:
       'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、時に不純な粗悪燃料すら注ぎ込まれる。',
@@ -941,7 +941,7 @@ export const CARD_MASTER = [
     name: 'ミノタウロスの傭兵',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'choice', value: 1 }, { id: 'cleave' }, { id: 'pierce' }],
+    skills: [{ id: 'choice', value: 1 }, { id: 'cleave' }],
     choices: [
       { id: 'convert', value: 2 },
       { id: 'brutal', value: 2 },
@@ -1107,9 +1107,9 @@ export const CARD_MASTER = [
     id: 'darkelf',
     name: 'ダンジョン・シーカー',
     rarity: 2,
-    power: 3,
+    power: 1,
     skills: [
-      { id: 'lone_wolf', value: 1 },
+      { id: 'lone_wolf', value: 2 },
       { id: 'dodge', value: 4 },
     ],
     voiceCategory: 'human_female_cool',
@@ -1157,8 +1157,8 @@ export const CARD_MASTER = [
     skills: [
       { id: 'takeover' },
       { id: 'defender' },
-      { id: 'sturdy' },
       { id: 'spread', value: 6 },
+      { id: 'sturdy' },
     ],
     voiceCategory: 'stone',
     flavor: '古より伝わる小さな彫像。周囲に底知れぬ絶望と絶大な破滅をもたらす',
@@ -1386,17 +1386,13 @@ export const CARD_MASTER = [
     power: 4,
     skills: [
       { id: 'equip' },
-      { id: 'choice', value: 1 },
-      { id: 'choice', value: 1, choiceGroup: 2 },
-    ],
-    choices: [
-      { id: 'sacrifice', value: 2 },
       { id: 'brutal', value: 2 },
+      { id: 'choice', value: 1 },
     ],
-    choices2: [{ id: 'absorb' }, { id: 'soul_bind', value: 2 }],
+    choices: [{ id: 'absorb' }, { id: 'soul_bind', value: 2 }],
     voiceCategory: 'sword',
     flavor:
-      '無限の切れ味を誇る妖刀。自身でその代償を支払うか、友の血肉で補うかは持ち主に委ねられる',
+      '無限の切れ味を誇る妖刀。振るうたびに、共に戦う者の血肉を啜り尽くす。',
   },
   {
     id: 'biwa',
@@ -1555,10 +1551,7 @@ export const CARD_MASTER = [
     name: '聖餐の司祭',
     rarity: 2,
     power: 4,
-    skills: [
-      { id: 'execute', value: 1 },
-      { id: 'resurrect', value: 5 },
-    ],
+    skills: [{ id: 'execute' }, { id: 'resurrect', value: 5 }],
     voiceCategory: 'human_female_sexy',
     flavor: '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
   },
@@ -1591,12 +1584,7 @@ export const CARD_MASTER = [
     name: '煉獄侯爵の先陣',
     rarity: 2,
     power: 5,
-    skills: [
-      { id: 'challenge' },
-      { id: 'hero', value: 2 },
-      { id: 'pierce' },
-      { id: 'guardian' },
-    ],
+    skills: [{ id: 'challenge' }, { id: 'hero', value: 2 }, { id: 'pierce' }],
     voiceCategory: 'horse',
     flavor:
       '焦熱の風を切り裂き、気高き悪魔が戦場を駆ける。その立ち振る舞いはどこまでも優雅にして、振るう一撃は残酷そのもの。',
@@ -1804,7 +1792,7 @@ export const CARD_MASTER = [
     name: '太古のカブトガニ',
     rarity: 3,
     power: 1,
-    skills: [{ id: 'deadly' }, { id: 'bless', value: 1 }],
+    skills: [{ id: 'bless', value: 1 }, { id: 'deadly' }],
     voiceCategory: 'insect',
     flavor:
       '数億年の時を超えて生き続ける、生きた化石。その堅牢な甲殻と秘めた猛毒は、全ての外敵を等しく絶望へと突き落とす。',
@@ -1889,8 +1877,8 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 4,
     skills: [
-      { id: 'explode', value: 4 },
       { id: 'choice', value: 1 },
+      { id: 'explode', value: 4 },
     ],
     choices: [
       { id: 'spread', value: 2 },
@@ -1904,7 +1892,7 @@ export const CARD_MASTER = [
     id: 'carousel',
     name: 'カルーセル',
     rarity: 3,
-    power: 6,
+    power: 7,
     skills: [
       { id: 'defender' },
       { id: 'sturdy' },
@@ -2837,16 +2825,6 @@ export const CARD_MASTER = [
       '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。',
   },
   {
-    id: 'monolith',
-    name: '叡智のモノリス',
-    rarity: 4,
-    power: 8,
-    skills: [{ id: 'defender' }, { id: 'amplify' }],
-    voiceCategory: 'stone',
-    flavor:
-      '星の瞬きよりも永く、その黒き石柱は荒野の静寂の中に佇んでいる。触れる者に古代の知識を授ける。',
-  },
-  {
     id: 'highwayman',
     name: '裏切りの相棒',
     rarity: 4,
@@ -2873,6 +2851,16 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_old',
     flavor:
       '神域へ足を踏み入れた者の前に立ち塞がる黄金の獣。その難解な問いに答えられぬ者は、容赦なく熱砂の底へ葬られる。',
+  },
+  {
+    id: 'uroboros',
+    name: '白銀の円環',
+    rarity: 4,
+    power: 5,
+    skills: [{ id: 'samsara' }],
+    voiceCategory: 'snake',
+    flavor:
+      '始まりは終わりであり、終わりは始まり。白銀の円環は、永遠に続く死と再生を紡ぎ出す。',
   },
   {
     id: 'cleopatra',

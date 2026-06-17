@@ -17,7 +17,7 @@
 | `spread` | 拡散 | **21** | 12 | 9 | 急襲する隼 (falcon), 民兵団の射手 (crenellatedwall), 地獄の放火魔 (devil), 熱砂地帯のドレイク (drake), 破滅 (doom), 未熟な拡散魔導士 (mage), 煉獄の拷問官 (warlock), 試作型ドラグーン (cyberdragon), ファイア・ドラゴン (dragon), ストライクギア (gearA), ヘルカイトの君主 (hellkite), 機神プロメテウス (token_gearC) | 願いの指輪 (ring) [choices], パニッシャー (punisher) [choices], 闇の森の魔女 (witch) [choices2], 願いの魔神 (djinn) [choices], 魂喰いの狐 (fox) [choices], 魂喰いの狐 (fox) [choices], レッドフード (redhood) [choices], 神罰 (punishment) [choices], 難題の問い手 (sphinx) [choices] |
 | `sacrifice` | 代償 | **19** | 17 | 2 | 肉裂き大口 (largemouth), スケープゴート (goat), デビル・ディーラー (dealer), 悪魔の鎧 (daemonarmor), 煉獄侯爵の先陣 (cavalry), 煉獄の拷問官 (warlock), カラドのフェニックス (phoenix), 渇きの王 (vampire), ヘッドコレクター (collector), 魔界の尖兵 (daemon), 囁く蛇 (samael), 終焉の双頭竜 (bahamut), 蒼炎の魔将軍 (darkgeneral), 血濡れの決闘者 (duelist), 神罰 (punishment), 異端のアークメイジ (archmage), 双牙衆の刺客 (kunoichi) | 無銘の妖刀 (muramasa) [choices], 闇の森の魔女 (witch) [choices] |
 | `takeover` | 生贄 | **18** | 18 | 0 | 古代の大蜥蜴 (dinosaur), 這い寄るスライム (slime), スケルトン・ディフェンダー (skeletondefender), 集会の主 (baphomet), 群れのワイヴァーン (wyvern), 攻城エレファント (elephant), 破滅 (doom), 魂の徴税人 (specter), グリフィン (griffin), 吹雪の悪霊 (wendigo), 古の神 (oldgod), 双輪の炎龍 (kasha), 太陽の船 (goldship), ジャガーノート (juggernaut), 文明喰らい (wurm), 大いなる支配者 (cthulhu), ランペイジ (rampage), 死神 (grimreaper) | - |
-| `defender` | 防御 | **15** | 15 | 0 | 城壁 (wall), 民兵団の射手 (crenellatedwall), 竜巻 (twister), 魚群の壁 (fish), 慈愛 (charity), ミスリルの高射砲 (flak), 破滅 (doom), 天使の像 (angelstatue), 見下ろす巨顔 (nurikabe), ドラゴンの卵 (egg), 浄化の炎 (fire), カルーセル (carousel), グランドギア (gearB), 叡智のモノリス (monolith), 石像 (token_statue) | - |
+| `defender` | 防御 | **15** | 15 | 0 | 城壁 (wall), 民兵団の射手 (crenellatedwall), 竜巻 (twister), 魚群の壁 (fish), 慈愛 (charity), ミスリルの高射砲 (flak), 破滅 (doom), 天使の像 (angelstatue), 見下ろす巨顔 (nurikabe), ドラゴンの卵 (egg), 浄化の炎 (fire), カルーセル (carousel), グランドギア (gearB), 叡智のモノリス (uroboros), 石像 (token_statue) | - |
 | `convert` | 対価 | **15** | 13 | 2 | 傭兵 (mercenary), アビス・ガーディアン (sahagin), 願いの指輪 (ring), ギルドの戦闘魔導士 (battlemage), 賞金稼ぎ (bountyhunter), 優雅な墓荒らし (graverobber), 禁書目録 (book), 願いの魔神 (djinn), 嵐の神官 (stormpriest), 忘れられた英雄 (great), 旧世界からの使者 (starfish), 賢者の石 (philosopher), 双牙衆の刺客 (kunoichi) | ミノタウロスの傭兵 (minotaur) [choices], 闇の森の魔女 (witch) [choices] |
 | `summon` | 召喚 | **15** | 10 | 5 | ダクト街の技師 (mechanic), 従者持ちの騎士 (nobleknight), アカデミーの大魔導士 (wizard), 盲目の怪僧 (biwa), 慈悲なき提督 (admiral), 慈悲なき提督 (admiral), 嵐の神官 (stormpriest), 世紀の天才科学者 (scientist), 世紀の天才科学者 (scientist), 双牙衆の刺客 (kunoichi) | 森の祈り (pray) [choices], 初級魔術 (beginnermagic) [choices], 鉄血の教官 (sergeant) [choices], 魂喰いの狐 (fox) [choices], 魂喰いの狐 (fox) [choices] |
 | `equip` | 装備 | **13** | 13 | 0 | 強化外骨格 (armsuits), 雷神の鎚 (hammer), セレスタリアン・チャージャー (horse), 攻城エレファント (elephant), 招かれざる来訪者 (parasite), 聖なるペガサス (pegasus), 吸血鬼の従者 (servant), 願いの指輪 (ring), 無銘の妖刀 (muramasa), 駄載ラクダ (camel), 悪魔の鎧 (daemonarmor), イーグルブースター (booster), 無垢の光 (light) | - |
@@ -82,7 +82,7 @@
 | `sublimation` | 昇華 | **2** | 2 | 0 | 虚無の捕食者 (voiddog), 虚空歩き (voidwalker) | - |
 | `crush` | 粉砕 | **2** | 1 | 1 | 豪腕の破壊者 (crusher) | ギルドの錠前破り (thief) [choices] |
 | `dispel` | 解除 | **2** | 1 | 1 | 樫族のシャーマン (shaman) | ギルドの錠前破り (thief) [choices] |
-| `amplify` | 増幅 | **1** | 1 | 0 | 叡智のモノリス (monolith) | - |
+| `amplify` | 増幅 | **1** | 1 | 0 | 叡智のモノリス (uroboros) | - |
 | `apex` | 頂点 | **1** | 1 | 0 | ヘルカイトの君主 (hellkite) | - |
 | `decay` | 減衰 | **1** | 1 | 0 | 継ぎ接ぎの擬竜 (dragonzombie) | - |
 | `decree` | 宣告 | **1** | 1 | 0 | 葬送の鐘 (bell) | - |

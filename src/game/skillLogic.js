@@ -728,13 +728,8 @@ export async function resolveActiveSkillEffect(
     const choices =
       skObj && skObj.choiceGroup === 2 ? baseChoices2 : baseChoices;
 
-    // 「増幅」パッシブによる選択数ボーナス（自分の場に amplify があれば+1、選択肢の数は超えない）
-    const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const amplifyCount = myBoard.filter(
-      (bc) => bc && hasSkill(bc, 'amplify')
-    ).length;
     const adjustedValue = Math.min(
-      (skillValue || 1) + amplifyCount,
+      skillValue || 1,
       choices ? choices.length : skillValue || 1
     );
 
@@ -3390,6 +3385,51 @@ export async function triggerStartTurnPassive(owner, lane) {
         amount: val,
         source: 'contract',
       });
+      triggered = true;
+    }
+
+    if (sk.id === 'samsara') {
+      const cEl = document.querySelector(
+        `#${side}-lanes .cell[data-lane="${lane}"] .card`
+      );
+      if (cEl) {
+        createDamagePopup(cEl, '輪廻', '#facc15');
+      }
+      playSkillSound('samsara');
+
+      let processOrder = ['blue', 'red'];
+      if (GameState.gameMode === 'online') {
+        processOrder = getIsHost() ? ['blue', 'red'] : ['red', 'blue'];
+      }
+
+      // 1. お互いの手札を全て捨てる
+      for (const p of processOrder) {
+        const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
+        const hCards = [...h]; // 手札のコピーを保持
+        h.length = 0; // 手札の配列を空にする
+
+        for (let i = 0; i < hCards.length; i++) {
+          await discardCard(p, hCards[i], undefined, false);
+        }
+      }
+
+      updateDeckDisplay('blue');
+      updateDeckDisplay('red');
+      renderHand();
+      await sleep(600);
+
+      // 2. お互いにカードを3枚引く
+      for (const p of processOrder) {
+        for (let i = 0; i < 3; i++) {
+          drawCard(p);
+        }
+      }
+
+      updateDeckDisplay('blue');
+      updateDeckDisplay('red');
+      renderHand();
+      await sleep(600);
+
       triggered = true;
     }
 

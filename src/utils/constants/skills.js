@@ -634,12 +634,6 @@ export const SKILLS = {
     icon: '🗝️',
     desc: () => '場に居る限り、お互いに墓地のカードを選択できない。',
   },
-  amplify: {
-    name: '増幅',
-    icon: '📡',
-    desc: () =>
-      '場に居る限り、自分の「選択」「命令」の選択数を+1する。（選択肢の数は超えない）',
-  },
   cull: {
     name: '選別',
     icon: '🫳',
@@ -727,6 +721,11 @@ export const SKILLS = {
         value: `1枚につき、自分リーダーに${val || 1}ダメージ。`,
       },
     ],
+  },
+  samsara: {
+    name: '輪廻',
+    icon: '🔄',
+    desc: () => 'ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。',
   },
 };
 
@@ -832,7 +831,7 @@ export const PASSIVE_SKILLS = [
   'arm_self',
   'grave_keeper',
   'awake',
-  'amplify',
   'intercept',
   'teleport',
+  'samsara',
 ];
