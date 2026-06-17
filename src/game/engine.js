@@ -4723,8 +4723,6 @@ export function applyPassiveSkillLogic(
         side === 'blue' ? state.playerDiscard : state.enemyDiscard;
       const opDiscard =
         side === 'blue' ? state.enemyDiscard : state.playerDiscard;
-      const myDeck = side === 'blue' ? state.playerDeck : state.enemyDeck;
-      const opDeck = side === 'blue' ? state.enemyDeck : state.playerDeck;
 
       // 1. お互いの手札を全て捨てる（トークンは除外）
       if (myHand) {
