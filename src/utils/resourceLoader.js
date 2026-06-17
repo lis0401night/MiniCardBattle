@@ -40,7 +40,7 @@ export async function preloadAllGameResources(onProgress) {
 
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
     const audio = AUDIO_INSTANCES[key];
-    // audio.src はブラウザによっては絶対パスになるため、パス指定文字を含む場合のみ
+    // audio.src はブラウザによって絶対URLになるため、URLオブジェクトを介してパス名のみを抽出します
     if (audio && audio.src) {
       const url = new URL(audio.src, window.location.href).pathname;
       urlsToLoad.add(url);

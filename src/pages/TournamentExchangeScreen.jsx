@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
 import { saveDeck } from '../services/deck.js';
-import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { TOURNAMENT_EXCHANGE_LINEUP } from '../utils/constants/config.js';
@@ -78,12 +78,12 @@ export default function TournamentExchangeScreen({ switchScreen }) {
             // ローカルで消費が行われた直後（あるいは未同期）である可能性が高いため、
             // サーバー側の古い値で巻き戻らないようにローカルの値を優先してガードします。
             let finalPts = pts;
-            if (currentPts > pts || (pts === 0 && currentPts > 0)) {
+            if (currentPts > pts) {
               finalPts = currentPts;
             }
 
             let finalTotalPts = tPts;
-            if (totalPts > tPts || (tPts === 0 && totalPts > 0)) {
+            if (totalPts > tPts) {
               finalTotalPts = totalPts;
             }
 
@@ -114,7 +114,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
           }
         }
       } catch {
-        // Ignore fetch errors in pure frontend modes
+        // 純粋なフロントエンドモードではサーバーが存在しないため、フェッチエラーを無視
       }
     };
     fetchPoints();

@@ -312,7 +312,9 @@ export function updateDeckDisplay(_owner) {
  */
 export function triggerFinishVisuals() {
   // 画面全体のスローモーションと揺れ
-  document.body.classList.add('slow-motion');
+  if (typeof window.setSlowMotionReact === 'function') {
+    window.setSlowMotionReact(true);
+  }
   document.body.classList.add('anim-mega-shake');
   // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
 

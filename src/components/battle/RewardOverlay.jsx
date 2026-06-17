@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -15,22 +15,34 @@ export default function RewardOverlay() {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const grantedRef = useRef(false);
   const [rewardQueue, setRewardQueue] = useState([]);
+  const timersRef = useRef([]);
 
-  const setupReward = (rewardCardId) => {
-    let rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
-    if (!rewardCardTemplate) {
-      // カードデータが見つからない場合、スケルトンをフォールバックとして使用
-      rewardCardTemplate =
-        CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
-    }
-    if (rewardCardTemplate) {
-      setCard({ ...rewardCardTemplate, owner: 'blue' });
-      grantedRef.current = false; // 表示されるたびにリセット
-      setPhase('pack');
-      setIsFadingOut(false);
-      setIsVisible(true);
-    }
-  };
+  const clearAllTimers = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  }, []);
+
+  const setupReward = useCallback(
+    (rewardCardId) => {
+      // 新しい報酬を表示する前に既存のタイマーをすべてクリア
+      clearAllTimers();
+
+      let rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
+      if (!rewardCardTemplate) {
+        // カードデータが見つからない場合、スケルトンをフォールバックとして使用
+        rewardCardTemplate =
+          CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
+      }
+      if (rewardCardTemplate) {
+        setCard({ ...rewardCardTemplate, owner: 'blue' });
+        grantedRef.current = false; // 表示されるたびにリセット
+        setPhase('pack');
+        setIsFadingOut(false);
+        setIsVisible(true);
+      }
+    },
+    [clearAllTimers]
+  );
 
   useEffect(() => {
     window.showCardRewardReact = (rewardCardIds) => {
@@ -43,14 +55,16 @@ export default function RewardOverlay() {
     };
 
     window.closeRewardScreenReact = () => {
+      clearAllTimers();
       setIsVisible(false);
     };
 
     return () => {
       delete window.showCardRewardReact;
       delete window.closeRewardScreenReact;
+      clearAllTimers();
     };
-  }, []);
+  }, [setupReward, clearAllTimers]);
 
   if (!isVisible || !card) return null;
 
@@ -60,12 +74,13 @@ export default function RewardOverlay() {
     setPhase('animating');
 
     // カードがシュッと飛び出すタイミングでめくるSEを再生 (タップ音と重なりすぎないよう150ms遅延)
-    setTimeout(() => {
+    const timer1 = setTimeout(() => {
       playSound(SOUNDS.seTurnover);
     }, 150);
+    timersRef.current.push(timer1);
 
     // 0.8秒後にカード表示フェーズへ移行
-    setTimeout(() => {
+    const timer2 = setTimeout(() => {
       if (!grantedRef.current) {
         grantedRef.current = true;
         // キャンペーンモード以外の場合にインベントリへ追加・保存
@@ -79,6 +94,7 @@ export default function RewardOverlay() {
       // 表示される瞬間はインパクトのある音を鳴らす
       playSound(SOUNDS.seSkill || SOUNDS.seClick);
     }, 800);
+    timersRef.current.push(timer2);
   };
 
   const handleNext = (e) => {
@@ -95,11 +111,14 @@ export default function RewardOverlay() {
         window.switchScreen('screen-solo-menu');
       }
 
+      clearAllTimers();
+
       // フェードアウト時間300ms待ってから消去
-      setTimeout(() => {
+      const timer3 = setTimeout(() => {
         setIsVisible(false);
         setIsFadingOut(false);
       }, 300);
+      timersRef.current.push(timer3);
       return;
     }
 
@@ -111,6 +130,7 @@ export default function RewardOverlay() {
     }
 
     // 報酬確認が終わったらダイアログ（会話）シーンへ移行する
+    clearAllTimers();
     setIsVisible(false);
     setupDialogueScreen();
   };

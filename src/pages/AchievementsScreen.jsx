@@ -25,6 +25,15 @@ import { SOUNDS } from '../utils/sounds.js';
 
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
+const shouldExcludeFromLeaderStats = (charId) => {
+  return (
+    charId === 'satan' ||
+    charId === 'void' ||
+    charId === 'succubus' ||
+    charId.startsWith('campaign_')
+  );
+};
+
 export default function AchievementsScreen() {
   const [clickCount, setClickCount] = useState(0);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -39,13 +48,7 @@ export default function AchievementsScreen() {
       0
     );
     const sortedChars = Object.values(CHARACTERS || {})
-      .filter(
-        (c) =>
-          c.id !== 'satan' &&
-          c.id !== 'void' &&
-          c.id !== 'succubus' &&
-          !c.id.startsWith('campaign_')
-      )
+      .filter((c) => !shouldExcludeFromLeaderStats(c.id))
       .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
       .map((char) => {
         const count = usageObj[char.id] || 0;
@@ -114,13 +117,7 @@ export default function AchievementsScreen() {
     );
 
     const sortedChars = Object.values(CHARACTERS || {})
-      .filter(
-        (c) =>
-          c.id !== 'satan' &&
-          c.id !== 'void' &&
-          c.id !== 'succubus' &&
-          !c.id.startsWith('campaign_')
-      )
+      .filter((c) => !shouldExcludeFromLeaderStats(c.id))
       .sort((a, b) => (usageObj[b.id] || 0) - (usageObj[a.id] || 0))
       .map((char) => {
         const count = usageObj[char.id] || 0;

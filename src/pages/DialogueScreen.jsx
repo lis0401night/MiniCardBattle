@@ -119,7 +119,7 @@ export default function DialogueScreen() {
             position: 'absolute',
             left: '50%',
             bottom: '5%',
-            height: '60vh',
+            height: '60dvh',
             zIndex: 2,
             pointerEvents: 'none',
             transform: `translateX(-50%) translateY(${
@@ -133,7 +133,7 @@ export default function DialogueScreen() {
         >
           <img
             src={backviewSrc}
-            alt="Player Backview"
+            alt="プレイヤーの後ろ姿"
             onError={handleBackviewError}
             style={{
               height: '100%',

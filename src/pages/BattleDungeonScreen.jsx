@@ -32,7 +32,7 @@ const getRarityColor = (rarity) => {
 
 export default function BattleDungeonScreen() {
   const [dungeonState, setDungeonState] = useState(GameState.dungeonState);
-  const [, setRenderTick] = useState(0);
+  const [_renderTick, setRenderTick] = useState(0);
 
   useEffect(() => {
     window.renderBattleDungeonReact = () => {

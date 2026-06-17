@@ -1186,6 +1186,10 @@ export function checkAndFixMissingRewards() {
   }
 }
 
+/**
+ * 未受取の実績が存在するかを判定する
+ * @returns {boolean} 未受取の実績が存在する場合はtrue
+ */
 export function hasUnclaimedAchievements() {
   if (!achievementData || !achievementData.achievements) return false;
   return Object.values(achievementData.achievements).some(

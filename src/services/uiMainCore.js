@@ -764,6 +764,11 @@ export async function startAttackBattle(enemyPlayerData) {
         skinIdToUse,
         'icon'
       );
+      GameState.enemyConfig.iconDamage = getSkinImage(
+        GameState.enemyConfig,
+        skinIdToUse,
+        'iconDamage'
+      );
     }
 
     // 前モードの敵スキン設定をクリアし、漏洩を防ぐ
@@ -977,6 +982,11 @@ export function confirmCharSelect() {
         GameState.enemyConfig,
         skinIdToUse,
         'icon'
+      );
+      GameState.enemyConfig.iconDamage = getSkinImage(
+        GameState.enemyConfig,
+        skinIdToUse,
+        'iconDamage'
       );
     }
 

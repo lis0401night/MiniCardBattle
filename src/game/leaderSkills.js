@@ -326,9 +326,13 @@ export async function executeLeaderSkillAction(
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
         if (!hasSkill(tokenCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-          targetCard.skills = targetCard.skills.filter(
-            (s) => s.id !== 'arm_self'
-          );
+          if (targetCard.skill === 'arm_self') {
+            targetCard.skill = 'none';
+            targetCard.skillValue = 0;
+          }
+          targetCard.skills = Array.isArray(targetCard.skills)
+            ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+            : [];
         }
 
         if (tokenCard?.voiceCategory)

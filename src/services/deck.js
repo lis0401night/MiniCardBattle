@@ -82,6 +82,9 @@ function applySkinToPlayerConfig() {
           templateChar.image;
         GameState.playerConfig.icon =
           getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
+        GameState.playerConfig.iconDamage =
+          getSkinImage(templateChar, skinIdToUse, 'iconDamage') ||
+          templateChar.iconDamage;
       }
     }
   }

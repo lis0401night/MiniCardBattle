@@ -2837,7 +2837,7 @@ h2 {
 }
 
 /* ==========================================
-   News Banner
+   ニュースバナー
    ========================================== */
 .news-banner-container {
   width: 90%;
@@ -3663,7 +3663,7 @@ body.vfx-shake {
   }
 }
 
-/* Joker VFX Animation */
+/* ジョーカーVFXアニメーション */
 @keyframes vfxJokerBlur {
   0% {
     transform: scale(1);

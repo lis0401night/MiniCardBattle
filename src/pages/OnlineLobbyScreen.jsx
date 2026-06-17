@@ -191,7 +191,9 @@ export default function OnlineLobbyScreen() {
           // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
           multiplayerCallbacks.onRoomClosed = () => {
             GameState.isBattleEnded = true;
-            document.body.classList.remove('slow-motion');
+            if (typeof window.setSlowMotionReact === 'function') {
+              window.setSlowMotionReact(false);
+            }
             if (typeof stopAllBGM === 'function') stopAllBGM();
             showAlertModal('ルームが解散されました。', () => {
               showOnlineMenu?.();

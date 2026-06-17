@@ -32,6 +32,7 @@ export const GameState = {
   enemyDeck: [],
   playerDiscard: [],
   enemyDiscard: [],
+  // バトル開始時の初期デッキ枚数（デッキアイコン表示等で使用）
   initialPlayerDeckCount: 20,
   initialEnemyDeckCount: 20,
   playerBoard: [null, null, null],

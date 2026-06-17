@@ -468,10 +468,7 @@ export async function showNextDialogue(force = false) {
     }
   }
 
-  let text = cur.text;
-  if (cur.speaker === 'enemy' && GameState.enemyConfig.isShadow)
-    text = '・・・・';
-  window.currentDialogueData.dialogueText = text;
+  window.currentDialogueData.dialogueText = cur.text;
 
   if (window._reactUpdateDialogueUI) {
     window._reactUpdateDialogueUI(window.currentDialogueData);

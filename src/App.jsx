@@ -163,6 +163,24 @@ export default function App() {
     show: false,
     onComplete: null,
   });
+  const [isSlowMotion, setIsSlowMotion] = useState(false);
+
+  useEffect(() => {
+    window.setSlowMotionReact = (val) => {
+      setIsSlowMotion(val);
+    };
+    return () => {
+      delete window.setSlowMotionReact;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isSlowMotion) {
+      document.body.classList.add('slow-motion');
+    } else {
+      document.body.classList.remove('slow-motion');
+    }
+  }, [isSlowMotion]);
 
   useEffect(() => {
     window.showMatchingScreen = (onComplete) => {

@@ -331,7 +331,7 @@ export const VFX_DATA = {
     frameCount: 8,
     duration: 400,
     se: 'seSkillHeal',
-    position: 'hp', // HPゲージ of height に合わせて表示
+    position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
     scale: 0.5,
     shake: false,
@@ -343,7 +343,7 @@ export const VFX_DATA = {
     type: 'sprite',
     src: 'assets/vfx/pipo-btleffect204_192.png',
     columns: 5,
-    rows: 3, // 192px系は5x3か5x4が多いですが、一般的な20フレームとして設定します
+    rows: 3, // 192px系は5x3または5x4が多いため、この素材は15フレームとして設定
     frameCount: 15,
     duration: 600,
     se: 'seSkillMorph',

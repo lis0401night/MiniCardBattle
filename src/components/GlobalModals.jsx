@@ -43,7 +43,6 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 
-// スキン選択時のplayerConfig画像同期ヘルパー
 const syncPlayerConfigImages = (charDetailData, skinId) => {
   if (
     GameState.playerConfig &&
@@ -59,6 +58,11 @@ const syncPlayerConfigImages = (charDetailData, skinId) => {
       'imageLose'
     );
     GameState.playerConfig.icon = getSkinImage(charObj, skinId, 'icon');
+    GameState.playerConfig.iconDamage = getSkinImage(
+      charObj,
+      skinId,
+      'iconDamage'
+    );
   }
 };
 

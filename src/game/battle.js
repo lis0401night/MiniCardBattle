@@ -205,7 +205,10 @@ export async function processActionQueue() {
         action.type !== 'enemyTurn' &&
         action.type !== 'submitChoice'
       ) {
-        sendOnlineAction({ type: 'syncState', state: generateSyncState() });
+        await sendOnlineAction({
+          type: 'syncState',
+          state: generateSyncState(),
+        });
       }
     }
   } finally {
@@ -460,7 +463,9 @@ export function prepareBattle() {
 
             if (!data.client || data.status === 'waiting') {
               GameState.isBattleEnded = true;
-              document.body.classList.remove('slow-motion');
+              if (typeof window.setSlowMotionReact === 'function') {
+                window.setSlowMotionReact(false);
+              }
               stopAllBGM();
 
               if (typeof showAlertModal === 'function') {
@@ -1430,7 +1435,12 @@ export async function waitPlayerEnemyLaneSelection(
     });
     // number[] に正規化
     let parsedLanes = [];
-    if (rawVal && rawVal !== -1) {
+    if (
+      rawVal !== null &&
+      rawVal !== undefined &&
+      rawVal !== '' &&
+      rawVal !== -1
+    ) {
       if (Array.isArray(rawVal)) {
         parsedLanes = rawVal
           .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
@@ -1580,7 +1590,12 @@ export async function waitPlayerAlliedLaneSelection(
     });
     // number[] に正規化
     let parsedLanes = [];
-    if (rawVal && rawVal !== -1) {
+    if (
+      rawVal !== null &&
+      rawVal !== undefined &&
+      rawVal !== '' &&
+      rawVal !== -1
+    ) {
       if (Array.isArray(rawVal)) {
         parsedLanes = rawVal
           .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
@@ -1685,7 +1700,12 @@ export async function waitPlayerHandSelection(
     });
     // number[] に正規化
     let parsedIndices = [];
-    if (rawVal && rawVal !== -1) {
+    if (
+      rawVal !== null &&
+      rawVal !== undefined &&
+      rawVal !== '' &&
+      rawVal !== -1
+    ) {
       if (Array.isArray(rawVal)) {
         parsedIndices = rawVal
           .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
@@ -1707,13 +1727,6 @@ export async function waitPlayerHandSelection(
       throw new Error(
         `Invalid online action: Hand selection requires exact count of ${count}, but got ${resultIndices.length}.`
       );
-    }
-    if (resultIndices.length === 0 && !forceExact) {
-      if (hand.length > 0) {
-        throw new Error(
-          'Invalid online action: Hand selection cannot be empty when hand is not empty.'
-        );
-      }
     }
 
     return resultIndices.slice(0, count);
@@ -2068,7 +2081,12 @@ export async function waitSkillChoice(
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
-    if (!rawVal || rawVal === -1) {
+    if (
+      rawVal === null ||
+      rawVal === undefined ||
+      rawVal === '' ||
+      rawVal === -1
+    ) {
       if (isForce) {
         throw new Error(
           'Invalid online action: Forced skill choice cannot be cancelled.'
@@ -2983,6 +3001,17 @@ export async function handleMoveSkills(owner) {
               existingCard.equippedCards = existingCard.equippedCards || [];
               existingCard.equippedCards.push(c);
 
+              // 武装（arm_self）の消費処理
+              if (!hasSkill(c, 'equip') && hasSkill(existingCard, 'arm_self')) {
+                if (existingCard.skill === 'arm_self') {
+                  existingCard.skill = 'none';
+                  existingCard.skillValue = 0;
+                }
+                existingCard.skills = Array.isArray(existingCard.skills)
+                  ? existingCard.skills.filter((s) => s.id !== 'arm_self')
+                  : [];
+              }
+
               b[i] = null;
               movedIds.add(existingCard.uid || existingCard.id);
 
@@ -3419,9 +3448,13 @@ export async function playCard(o, hI, l) {
 
       // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
       if (!hasSkill(playingCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-        targetCard.skills = targetCard.skills.filter(
-          (s) => s.id !== 'arm_self'
-        );
+        if (targetCard.skill === 'arm_self') {
+          targetCard.skill = 'none';
+          targetCard.skillValue = 0;
+        }
+        targetCard.skills = Array.isArray(targetCard.skills)
+          ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+          : [];
       }
 
       // 配置音・ボイス
@@ -3964,7 +3997,9 @@ export async function executeCombatPhase(atk) {
 }
 
 export function endBattle() {
-  document.body.classList.remove('slow-motion');
+  if (typeof window.setSlowMotionReact === 'function') {
+    window.setSlowMotionReact(false);
+  }
   stopAllBGM();
   GameState.lastBattleResult =
     GameState.playerHP > 0

@@ -371,9 +371,13 @@ export function processActionSequence(
                 !hasSkill(newToken, 'equip') &&
                 hasSkill(existingCard, 'arm_self')
               ) {
-                existingCard.skills = existingCard.skills.filter(
-                  (s) => s.id !== 'arm_self'
-                );
+                if (existingCard.skill === 'arm_self') {
+                  existingCard.skill = 'none';
+                  existingCard.skillValue = 0;
+                }
+                existingCard.skills = Array.isArray(existingCard.skills)
+                  ? existingCard.skills.filter((s) => s.id !== 'arm_self')
+                  : [];
               }
             } else if (existingCard) {
               // 装備不可: 既存カードを墓地に移動して上書き
@@ -500,9 +504,13 @@ export function processActionSequence(
                 !hasSkill(selectedCard, 'equip') &&
                 hasSkill(targetCard, 'arm_self')
               ) {
-                targetCard.skills = targetCard.skills.filter(
-                  (s) => s.id !== 'arm_self'
-                );
+                if (targetCard.skill === 'arm_self') {
+                  targetCard.skill = 'none';
+                  targetCard.skillValue = 0;
+                }
+                targetCard.skills = Array.isArray(targetCard.skills)
+                  ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+                  : [];
               }
             } else {
               board[myL] = {
@@ -684,9 +692,13 @@ export function processActionSequence(
           !hasSkill(playedCard, 'equip') &&
           hasSkill(targetCard, 'arm_self')
         ) {
-          targetCard.skills = targetCard.skills.filter(
-            (s) => s.id !== 'arm_self'
-          );
+          if (targetCard.skill === 'arm_self') {
+            targetCard.skill = 'none';
+            targetCard.skillValue = 0;
+          }
+          targetCard.skills = Array.isArray(targetCard.skills)
+            ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+            : [];
         }
         let cLanesForEquip = action.cardTokenLanes
           ? [...action.cardTokenLanes]
@@ -880,6 +892,7 @@ export function processActionSequence(
                 'awake',
                 'clone',
                 'split',
+                'forge',
               ].includes(sk.id)
             ) {
               applyActiveSkillLogic(
@@ -3610,9 +3623,13 @@ export function simulateMove(
             !hasSkill(playedCard, 'equip') &&
             hasSkill(targetCard, 'arm_self')
           ) {
-            targetCard.skills = targetCard.skills.filter(
-              (s) => s.id !== 'arm_self'
-            );
+            if (targetCard.skill === 'arm_self') {
+              targetCard.skill = 'none';
+              targetCard.skillValue = 0;
+            }
+            targetCard.skills = Array.isArray(targetCard.skills)
+              ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+              : [];
           }
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする

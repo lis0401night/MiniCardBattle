@@ -215,9 +215,13 @@ export function processPlacementOrEquip(
 
     // 武装（arm_self）の消費処理
     if (!hasSkill(newCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
-      existingCard.skills = existingCard.skills.filter(
-        (s) => s.id !== 'arm_self'
-      );
+      if (existingCard.skill === 'arm_self') {
+        existingCard.skill = 'none';
+        existingCard.skillValue = 0;
+      }
+      existingCard.skills = Array.isArray(existingCard.skills)
+        ? existingCard.skills.filter((s) => s.id !== 'arm_self')
+        : [];
     }
 
     events.push({
@@ -573,9 +577,13 @@ export function applyActiveSkillLogic(
             !hasSkill(stolenCard, 'equip') &&
             hasSkill(targetCard, 'arm_self')
           ) {
-            targetCard.skills = targetCard.skills.filter(
-              (s) => s.id !== 'arm_self'
-            );
+            if (targetCard.skill === 'arm_self') {
+              targetCard.skill = 'none';
+              targetCard.skillValue = 0;
+            }
+            targetCard.skills = Array.isArray(targetCard.skills)
+              ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+              : [];
           }
 
           events.push({
@@ -1658,9 +1666,13 @@ export function applyActiveSkillLogic(
               !hasSkill(simResCard, 'equip') &&
               hasSkill(existingCard, 'arm_self')
             ) {
-              existingCard.skills = existingCard.skills.filter(
-                (s) => s.id !== 'arm_self'
-              );
+              if (existingCard.skill === 'arm_self') {
+                existingCard.skill = 'none';
+                existingCard.skillValue = 0;
+              }
+              existingCard.skills = Array.isArray(existingCard.skills)
+                ? existingCard.skills.filter((s) => s.id !== 'arm_self')
+                : [];
             }
             events.push({
               type: 'power_change',
@@ -2079,7 +2091,13 @@ function tryEquipToken(board, lane, newToken, owner, events) {
 
       // 武装（arm_self）の消費処理
       if (!hasSkill(newToken, 'equip') && hasSkill(boardCard, 'arm_self')) {
-        boardCard.skills = boardCard.skills.filter((s) => s.id !== 'arm_self');
+        if (boardCard.skill === 'arm_self') {
+          boardCard.skill = 'none';
+          boardCard.skillValue = 0;
+        }
+        boardCard.skills = Array.isArray(boardCard.skills)
+          ? boardCard.skills.filter((s) => s.id !== 'arm_self')
+          : [];
       }
       let addedSkills = [];
       if (
@@ -2299,9 +2317,13 @@ export function applyLeaderSkillLogic(
           !hasSkill(selectedCard, 'equip') &&
           hasSkill(targetCard, 'arm_self')
         ) {
-          targetCard.skills = targetCard.skills.filter(
-            (s) => s.id !== 'arm_self'
-          );
+          if (targetCard.skill === 'arm_self') {
+            targetCard.skill = 'none';
+            targetCard.skillValue = 0;
+          }
+          targetCard.skills = Array.isArray(targetCard.skills)
+            ? targetCard.skills.filter((s) => s.id !== 'arm_self')
+            : [];
         }
 
         events.push({
@@ -3145,9 +3167,13 @@ export function applyLeaderSkillLogic(
             !hasSkill(selectedCard, 'equip') &&
             hasSkill(existingCard, 'arm_self')
           ) {
-            existingCard.skills = existingCard.skills.filter(
-              (s) => s.id !== 'arm_self'
-            );
+            if (existingCard.skill === 'arm_self') {
+              existingCard.skill = 'none';
+              existingCard.skillValue = 0;
+            }
+            existingCard.skills = Array.isArray(existingCard.skills)
+              ? existingCard.skills.filter((s) => s.id !== 'arm_self')
+              : [];
           }
 
           events.push({
