@@ -697,6 +697,8 @@ export function initBattleState() {
     GameState.enemyHand = [];
     GameState.playerDiscard = [];
     GameState.enemyDiscard = [];
+    GameState.initialPlayerDeckCount = GameState.playerDeck.length;
+    GameState.initialEnemyDeckCount = GameState.enemyDeck.length;
     GameState.playerBoard = [null, null, null];
     GameState.enemyBoard = [null, null, null];
     GameState.playerSealedLanes = [0, 0, 0];
