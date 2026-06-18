@@ -14,6 +14,7 @@ const safeParseArray = (key) => {
 export const GameState = {
   playerConfig: CHARACTERS.android,
   enemyConfig: CHARACTERS.dragon,
+  isInitializing: false,
   playerSkins: {},
   unlockedSkins: safeParseArray('mini_card_battle_unlocked_skins'),
   decks: [], // 【追加】最大10個の別個デッキ

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { playSound, sleep, getSeededRandom } from '../../utils/gameUtils.js';
+import { playSound, sleep } from '../../utils/gameUtils.js';
 import { getIsHost } from '../../services/multiplayer.js';
 
-export default function TurnOrderOverlay({ startAnim, onComplete }) {
+export default function TurnOrderOverlay({ startAnim, firstPlayer, onComplete }) {
   const [isVisible, setIsVisible] = useState(false);
   const [phase, setPhase] = useState('idle'); // 'idle' | 'shuffling' | 'result'
   const [playerFirst, setPlayerFirst] = useState(true);
@@ -28,16 +28,7 @@ export default function TurnOrderOverlay({ startAnim, onComplete }) {
       if (!mounted) return;
 
       // 結果の決定
-      let isFirst = false;
-      if (GameState.gameMode === 'online') {
-        const hostGoesFirst = getSeededRandom() < 0.5;
-        const iAmHost = getIsHost();
-        isFirst = (hostGoesFirst && iAmHost) || (!hostGoesFirst && !iAmHost);
-      } else {
-        isFirst = getSeededRandom() < 0.5;
-      }
-
-      GameState.firstPlayer = isFirst ? 'blue' : 'red';
+      const isFirst = firstPlayer === 'blue';
       setPlayerFirst(isFirst);
 
       setPhase('result');
@@ -57,7 +48,7 @@ export default function TurnOrderOverlay({ startAnim, onComplete }) {
       setPhase('idle');
 
       if (onComplete) {
-        onComplete(GameState.firstPlayer);
+        onComplete();
       }
     };
 

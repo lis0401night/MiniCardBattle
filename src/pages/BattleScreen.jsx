@@ -51,11 +51,11 @@ export default function BattleScreen({ showRulesModal }) {
   const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
-  const [isInitializing, setIsInitializing] = useState(() => {
-    // すでにバトルフェーズが進行している場合（フォールバックや別ルートでMULLIGANやBATTLEに入っている場合）は操作ロックをかけない
-    return !GameState.battlePhase || GameState.battlePhase === 'INIT';
+  const isInitializing = GameState.isInitializing;
+  const [startTurnOrderAnim, setStartTurnOrderAnim] = useState({
+    active: false,
+    firstPlayer: 'blue',
   });
-  const [startTurnOrderAnim, setStartTurnOrderAnim] = useState(false);
   const [summonAnim, setSummonAnim] = useState({
     active: false,
     card: null,
@@ -95,23 +95,21 @@ export default function BattleScreen({ showRulesModal }) {
     };
   }, []);
 
-  const turnOrderResolver = React.useRef(null);
-
   // バトル進行側(battle.js)からのターン開始シグナルを受け取る
   useEffect(() => {
-    window.startTurnOrderReact = (resolve) => {
-      turnOrderResolver.current = resolve;
-      setStartTurnOrderAnim(true);
+    window.startTurnOrderReact = (firstPlayer) => {
+      setStartTurnOrderAnim({ active: true, firstPlayer });
     };
 
     // プリセット使用時（TurnOrderOverlayをスキップする場合）の初期化完了通知
     window.onBattlePresetReady = () => {
-      setIsInitializing(false);
+      GameState.isInitializing = false;
+      setRenderVersion((v) => v + 1);
     };
 
     // マウント時にすでにバトルフェーズが進行している場合のフェイルセーフ
     if (GameState.battlePhase && GameState.battlePhase !== 'INIT') {
-      setIsInitializing(false);
+      GameState.isInitializing = false;
     }
 
     // マウント完了と演出関数の準備が整ったことをバトル進行側に通知
@@ -125,12 +123,10 @@ export default function BattleScreen({ showRulesModal }) {
     };
   }, []);
 
-  const handleTurnOrderComplete = React.useCallback((firstPlayer) => {
-    setStartTurnOrderAnim(false);
-    setIsInitializing(false);
-    if (turnOrderResolver.current) {
-      turnOrderResolver.current(firstPlayer);
-      turnOrderResolver.current = null;
+  const handleTurnOrderComplete = React.useCallback(() => {
+    setStartTurnOrderAnim({ active: false, firstPlayer: 'blue' });
+    if (window.finishTurnOrder) {
+      window.finishTurnOrder();
     }
     setRenderVersion((v) => v + 1);
   }, []);
@@ -737,7 +733,8 @@ export default function BattleScreen({ showRulesModal }) {
       />
 
       <TurnOrderOverlay
-        startAnim={startTurnOrderAnim}
+        startAnim={startTurnOrderAnim.active}
+        firstPlayer={startTurnOrderAnim.firstPlayer}
         onComplete={handleTurnOrderComplete}
       />
 

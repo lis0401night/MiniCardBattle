@@ -661,6 +661,7 @@ export function prepareBattle() {
 export function initBattleState() {
   // バトル準備フラグをリセット（次回のprepareBattle呼び出しを許可）
   isBattleLoading = false;
+  GameState.isInitializing = true;
 
   try {
     // 全てのBGMを停止
@@ -3876,6 +3877,7 @@ async function executeTutorialEnemyTurn() {
  */
 export async function determineTurnOrder() {
   GameState.isProcessing = true;
+  GameState.isInitializing = true;
   GameState.turnCount = 0;
 
   // ゲーム開始時の初期ドロー（両者3枚ずつ）
@@ -3893,6 +3895,7 @@ export async function determineTurnOrder() {
     GameState.battlePreset = null; // 適用後にクリア（リトライ時の二重適用を防止）
     GameState.firstPlayer =
       preset.firstPlayer || (getSeededRandom() < 0.5 ? 'blue' : 'red');
+    GameState.isInitializing = false;
     GameState.isProcessing = false;
     GameState.battlePhase = 'BATTLE';
     renderBoard();
@@ -3910,17 +3913,28 @@ export async function determineTurnOrder() {
     return;
   }
 
-  if (window.startTurnOrderReact) {
-    window.startTurnOrderReact((firstPlayer) => {
-      GameState.firstPlayer = firstPlayer;
-      GameState.isProcessing = false;
-      startMulliganPhase();
-    });
+  // 先攻後攻の判定
+  let isFirst = false;
+  if (GameState.gameMode === 'online') {
+    const hostGoesFirst = getSeededRandom() < 0.5;
+    const iAmHost = getIsHost();
+    isFirst = (hostGoesFirst && iAmHost) || (!hostGoesFirst && !iAmHost);
   } else {
-    // フォールバック
-    GameState.firstPlayer = getSeededRandom() < 0.5 ? 'blue' : 'red';
+    isFirst = getSeededRandom() < 0.5;
+  }
+  GameState.firstPlayer = isFirst ? 'blue' : 'red';
+
+  window.finishTurnOrder = () => {
+    window.finishTurnOrder = null;
+    GameState.isInitializing = false;
     GameState.isProcessing = false;
     startMulliganPhase();
+  };
+
+  if (window.startTurnOrderReact) {
+    window.startTurnOrderReact(GameState.firstPlayer);
+  } else {
+    window.finishTurnOrder();
   }
 }
 
