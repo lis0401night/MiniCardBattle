@@ -1812,10 +1812,11 @@ export async function waitPlayerDiscardSelection(
   owner,
   title,
   desc,
-  canCancel = true
+  canCancel = true,
+  maxChoices = 1
 ) {
-  if (await triggerGraveKeeperEffect()) return null;
-  if (!validCards || validCards.length === 0) return null;
+  if (await triggerGraveKeeperEffect()) return maxChoices > 1 ? [] : null;
+  if (!validCards || validCards.length === 0) return maxChoices > 1 ? [] : null;
 
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
@@ -1830,41 +1831,47 @@ export async function waitPlayerDiscardSelection(
           'Invalid online action: Discard selection cannot be cancelled.'
         );
       }
-      return null;
+      return maxChoices > 1 ? [] : null;
     }
 
-    let targetId = '';
-    if (typeof choiceStr === 'string') {
-      targetId = choiceStr;
-    } else if (Array.isArray(choiceStr) && choiceStr.length > 0) {
-      const first = choiceStr[0];
-      targetId =
-        typeof first === 'string' ? first : first?.uid || first?.id || '';
+    let selected = [];
+    if (Array.isArray(choiceStr)) {
+      selected = validCards.filter(
+        (c) =>
+          choiceStr.includes(c.uid) ||
+          choiceStr.includes(c.id) ||
+          choiceStr.some(
+            (item) => item && (item.uid === c.uid || item.id === c.id)
+          )
+      );
     } else if (choiceStr && typeof choiceStr === 'object') {
-      targetId = choiceStr.uid || choiceStr.id || '';
+      const targetId = choiceStr.uid || choiceStr.id;
+      selected = validCards.filter(
+        (c) => c.uid === targetId || c.id === targetId
+      );
+    } else if (typeof choiceStr === 'string' && choiceStr) {
+      const uids = choiceStr.split(',');
+      selected = validCards.filter(
+        (c) => uids.includes(c.uid) || uids.includes(c.id)
+      );
     }
 
-    if (!targetId) {
-      if (!canCancel) {
+    if (maxChoices > 1) {
+      if (selected.length === 0 && !canCancel) {
         throw new Error(
-          'Invalid online action: Discard selection cannot be cancelled.'
+          'Invalid online action: Discard selection cannot be empty and cancel is disabled.'
         );
       }
-      return null;
-    }
-    // UID優先、なければidで検索して同期ズレを防ぐ
-    const matchingCard = validCards.find(
-      (c) => c.uid === targetId || c.id === targetId
-    );
-    if (!matchingCard) {
-      if (!canCancel) {
+      return selected.slice(0, maxChoices);
+    } else {
+      const matchingCard = selected[0] || null;
+      if (!matchingCard && !canCancel) {
         throw new Error(
           'Invalid online action: Discard selection card not found and cancel is disabled.'
         );
       }
-      return null;
+      return matchingCard;
     }
-    return matchingCard;
   }
 
   // AIの場合
@@ -1882,51 +1889,94 @@ export async function waitPlayerDiscardSelection(
       'choice',
     ]);
     if (aiAction) {
-      // targetUid が存在する場合はUID優先で照合（フィルタ済みvalidCardsとのインデックスずれを防ぐ）
-      if (aiAction.targetUid) {
-        const byUid = validCards.find(
-          (c) => c.uid === aiAction.targetUid || c.id === aiAction.targetUid
-        );
-        if (byUid) return byUid;
-      }
-      // フォールバック: targetIdx がそのまま使える場合
-      if (aiAction.targetIdx !== undefined && validCards[aiAction.targetIdx]) {
-        return validCards[aiAction.targetIdx];
+      if (maxChoices > 1) {
+        let selected = [];
+        if (aiAction.targetUid) {
+          const uids = String(aiAction.targetUid).split(',');
+          selected = validCards.filter(
+            (c) => uids.includes(c.uid) || uids.includes(c.id)
+          );
+        }
+        if (selected.length > 0) return selected.slice(0, maxChoices);
+      } else {
+        // targetUid が存在する場合はUID優先で照合（フィルタ済みvalidCardsとのインデックスずれを防ぐ）
+        if (aiAction.targetUid) {
+          const byUid = validCards.find(
+            (c) => c.uid === aiAction.targetUid || c.id === aiAction.targetUid
+          );
+          if (byUid) return byUid;
+        }
+        // フォールバック: targetIdx がそのまま使える場合
+        if (
+          aiAction.targetIdx !== undefined &&
+          validCards[aiAction.targetIdx]
+        ) {
+          return validCards[aiAction.targetIdx];
+        }
       }
     }
     // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
-    // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
-    if (title && title.includes('探索')) {
-      const maxP = Math.max(...validCards.map((c) => c.power || 0));
-      const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
-      return bestCards[Math.floor(Math.random() * bestCards.length)];
+    if (maxChoices > 1) {
+      const shuffled = [...validCards].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, maxChoices);
+    } else {
+      // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
+      if (title && title.includes('探索')) {
+        const maxP = Math.max(...validCards.map((c) => c.power || 0));
+        const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
+        return bestCards[Math.floor(Math.random() * bestCards.length)];
+      }
+      const randomIndex = Math.floor(Math.random() * validCards.length);
+      return validCards[randomIndex];
     }
-    const randomIndex = Math.floor(Math.random() * validCards.length);
-    return validCards[randomIndex];
   }
 
   // プレイヤーの場合
   if (window.showDiscardSelectionModalReact) {
-    const card = await new Promise((resolve) => {
-      window.showDiscardSelectionModalReact(
-        validCards,
-        maxPow,
-        (c) => resolve(c),
-        { title, desc, canCancel }
-      );
-    });
-
-    if (GameState.gameMode === 'online') {
-      const choiceStr = card ? card.uid || card.id : null;
-      await sendOnlineAction({
-        type: 'submitChoice',
-        owner: 'blue',
-        choiceData: choiceStr,
+    if (maxChoices > 1) {
+      const selectedCards = await new Promise((resolve) => {
+        window.showDiscardSelectionModalReact(
+          validCards,
+          maxPow,
+          (cards) => resolve(cards),
+          { title, desc, canCancel, maxChoices }
+        );
       });
+
+      if (GameState.gameMode === 'online') {
+        const choiceStr =
+          selectedCards && selectedCards.length > 0
+            ? selectedCards.map((c) => c.uid || c.id).join(',')
+            : null;
+        await sendOnlineAction({
+          type: 'submitChoice',
+          owner: 'blue',
+          choiceData: choiceStr,
+        });
+      }
+      return selectedCards || [];
+    } else {
+      const card = await new Promise((resolve) => {
+        window.showDiscardSelectionModalReact(
+          validCards,
+          maxPow,
+          (c) => resolve(c),
+          { title, desc, canCancel }
+        );
+      });
+
+      if (GameState.gameMode === 'online') {
+        const choiceStr = card ? card.uid || card.id : null;
+        await sendOnlineAction({
+          type: 'submitChoice',
+          owner: 'blue',
+          choiceData: choiceStr,
+        });
+      }
+      return card;
     }
-    return card;
   } else {
-    return validCards[0];
+    return maxChoices > 1 ? [] : validCards[0];
   }
 }
 

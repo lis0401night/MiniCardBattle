@@ -2487,45 +2487,54 @@ export async function resolveActiveSkillEffect(
       updateDeckDisplay(o);
       renderHand();
 
-      for (let i = 0; i < discardIndices.length; i++) {
-        const validCards = discard.filter((card) => !card.isToken);
-        if (validCards.length > 0) {
-          const selectedCard = await waitPlayerDiscardSelection(
-            validCards,
-            999,
-            o,
-            '回収するカードを選択',
-            '墓地からカードを1枚選び、手札に加えます。',
-            false
+      const validCards = discard.filter((card) => !card.isToken);
+      if (validCards.length > 0) {
+        const actualMaxChoices = Math.min(
+          discardIndices.length,
+          validCards.length
+        );
+        const selectedResult = await waitPlayerDiscardSelection(
+          validCards,
+          999,
+          o,
+          '回収するカードを選択',
+          `墓地からカードを${actualMaxChoices}枚選び、手札に加えます。`,
+          false,
+          actualMaxChoices
+        );
+        if (o === 'red' && selectedResult) {
+          // AIの思考時間を演出
+          await sleep(AI_THINKING_DURATION);
+        }
+
+        const cardsToProcess = Array.isArray(selectedResult)
+          ? selectedResult
+          : selectedResult
+            ? [selectedResult]
+            : [];
+
+        for (const selectedCard of cardsToProcess) {
+          const actualIdx = discard.indexOf(selectedCard);
+          if (actualIdx !== -1) discard.splice(actualIdx, 1);
+
+          // カードのステータスを初期状態にリセット
+          const masterData = CARD_MASTER.find(
+            (m) => m.id === (selectedCard.baseId || selectedCard.id)
           );
-          if (o === 'red' && selectedCard) {
-            // AIの思考時間を演出
-            await sleep(AI_THINKING_DURATION);
-          }
+          const restoredCard = masterData
+            ? JSON.parse(JSON.stringify(masterData))
+            : { ...selectedCard };
+          restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
+          restoredCard.basePower = restoredCard.power;
+          restoredCard.currentPower = restoredCard.power;
 
-          if (selectedCard) {
-            const actualIdx = discard.indexOf(selectedCard);
-            if (actualIdx !== -1) discard.splice(actualIdx, 1);
-
-            // カードのステータスを初期状態にリセット
-            const masterData = CARD_MASTER.find(
-              (m) => m.id === (selectedCard.baseId || selectedCard.id)
-            );
-            const restoredCard = masterData
-              ? JSON.parse(JSON.stringify(masterData))
-              : { ...selectedCard };
-            restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
-            restoredCard.basePower = restoredCard.power;
-            restoredCard.currentPower = restoredCard.power;
-
-            hand.push({
-              ...restoredCard,
-              uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`,
-            });
-            playSound(SOUNDS.seDraw);
-            updateDeckDisplay(o);
-            renderHand();
-          }
+          hand.push({
+            ...restoredCard,
+            uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`,
+          });
+          playSound(SOUNDS.seDraw);
+          updateDeckDisplay(o);
+          renderHand();
         }
       }
     }
