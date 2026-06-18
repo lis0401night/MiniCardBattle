@@ -37,8 +37,13 @@ import {
   stopAllBGM,
   switchScreen,
   triggerGraveKeeperEffect,
+  decodedBgms,
 } from '../utils/gameUtils.js';
-import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
+import {
+  AUDIO_INSTANCES,
+  SOUNDS,
+  loadAndDecodeAudio,
+} from '../utils/sounds.js';
 import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
 import { generateDeck } from '../services/deck.js';
@@ -507,9 +512,14 @@ export function prepareBattle() {
 
     const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
     let loaded = 0;
+    let bgmLoaded = false;
+    let cardsLoaded = false;
 
     const finishLoading = () => {
       if (isFinished) return;
+      // 両方のロードが完了するまで進めない
+      if (!bgmLoaded || !cardsLoaded) return;
+
       isFinished = true;
       if (onLoadComplete) {
         onLoadComplete();
@@ -522,6 +532,8 @@ export function prepareBattle() {
     setTimeout(() => {
       if (!isFinished) {
         console.warn('Battle loading timed out. Forcing start...');
+        bgmLoaded = true;
+        cardsLoaded = true;
         finishLoading();
       }
     }, 5000);
@@ -533,10 +545,76 @@ export function prepareBattle() {
       if (loadingText) {
         loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
       }
-      if (loaded >= allCards.length) finishLoading();
+      if (loaded >= allCards.length) {
+        cardsLoaded = true;
+        finishLoading();
+      }
     };
 
+    // --- BGMのロードとデコード処理 ---
+    // ステージ情報の取得
+    let stageId =
+      GameState.gameMode === 'story'
+        ? GameState.enemyConfig.stageId || 'android'
+        : GameState.selectedStageId || 'android';
+    if (GameState.gameMode === 'battle_dungeon') {
+      stageId = 'dungeon';
+    } else if (GameState.gameMode === 'tournament') {
+      stageId = 'practice';
+    }
+    const stageData = STAGES[stageId];
+    let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
+    if (
+      GameState.gameMode === 'story' &&
+      GameState.enemyConfig?.id === 'satan'
+    ) {
+      bgmKey = 'bgmLastBattle'; // ストーリーのラストボス決戦
+    } else if (GameState.gameMode === 'tournament') {
+      bgmKey = 'bgmTournament2'; // トーナメントバトル
+    } else if (
+      GameState.gameMode &&
+      GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_high')
+    ) {
+      bgmKey = 'bgmStageHighDifficulty';
+    }
+
+    const bgmAudio = AUDIO_INSTANCES[bgmKey];
+    if (bgmAudio && bgmAudio.src) {
+      let fetchUrl = bgmAudio.src;
+      if (fetchUrl.includes('assets/audio/bgm/')) {
+        fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
+      }
+
+      if (!decodedBgms[fetchUrl]) {
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) {
+          loadingText.innerText = 'Loading Stage BGM...';
+        }
+        loadAndDecodeAudio(fetchUrl)
+          .then((buffer) => {
+            if (buffer) {
+              decodedBgms[fetchUrl] = buffer;
+            }
+            bgmLoaded = true;
+            finishLoading();
+          })
+          .catch((e) => {
+            console.warn('Failed to preload battle BGM:', e);
+            bgmLoaded = true; // エラー時も進行を止めない
+            finishLoading();
+          });
+      } else {
+        bgmLoaded = true;
+        finishLoading();
+      }
+    } else {
+      bgmLoaded = true;
+      finishLoading();
+    }
+
     if (allCards.length === 0) {
+      cardsLoaded = true;
       finishLoading();
       return;
     }

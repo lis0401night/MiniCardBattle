@@ -12,8 +12,6 @@ export default [
   'dragonzombie',
   'dragonzombie',
   'dragonzombie',
-  'dragonzombie',
-  'grimreaper',
   'grimreaper',
   'grimreaper',
   'collector',
@@ -21,6 +19,8 @@ export default [
   'collector',
   'vampire',
   'vampire',
+  'beast',
+  'beast',
   'plaguedoctor',
   'plaguedoctor',
 ];
