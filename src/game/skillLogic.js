@@ -20,11 +20,13 @@ import {
   sleep,
   triggerGraveKeeperEffect,
   unmergeCardSkills,
+  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
   checkWinCondition,
   cleanupDestroyedCards,
+  canEquipCard,
   confirmOverwrittenLane, // 【追加】根本的リファクタリング用
   consumeAIAction,
   discardCard,
@@ -103,11 +105,10 @@ async function executeGroupDestruction(targets) {
         createDamagePopup(tgtEl, '無効', '#94a3b8');
       }
     } else {
+      // React State経由でアニメーションクラスを付与
+      t.card.animClass = 'anim-shake anim-card-destroy';
+
       if (tgtEl) {
-        tgtEl.classList.remove('anim-shake');
-        void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-        tgtEl.classList.add('anim-shake');
-        tgtEl.classList.add('anim-card-destroy');
         createDamagePopup(tgtEl, '破壊', '#ef4444');
       }
       if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
@@ -117,6 +118,9 @@ async function executeGroupDestruction(targets) {
       anyValidTarget = true;
     }
   }
+
+  // アニメーション表示のために再描画
+  renderBoard();
 
   if (anyValidTarget) {
     playSound(SOUNDS.seDestroy);
@@ -132,18 +136,7 @@ async function executeGroupDestruction(targets) {
   }
   renderBoard();
   await sleep(500);
-  for (let t of targets) {
-    if (!hasSkill(t.card, 'immune')) {
-      const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-      const tgtEl = document.querySelector(
-        `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-      );
-      if (tgtEl) {
-        tgtEl.classList.remove('anim-shake');
-        tgtEl.classList.remove('anim-card-destroy');
-      }
-    }
-  }
+  // 墓地送り完了後はカードが盤面から消去されるため、DOM操作でのクリーンアップは不要です
 }
 
 export async function resolveActiveSkillEffect(
@@ -1006,14 +999,7 @@ export async function resolveActiveSkillEffect(
           existingCard.equippedCards.push(newToken);
 
           // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-          if (
-            !hasSkill(newToken, 'equip') &&
-            hasSkill(existingCard, 'arm_self')
-          ) {
-            existingCard.skills = existingCard.skills.filter(
-              (s) => s.id !== 'arm_self'
-            );
-          }
+          consumeArmSelf(existingCard, newToken);
           events.push({
             type: 'power_change',
             side: o,
@@ -1196,14 +1182,7 @@ export async function resolveActiveSkillEffect(
         existingCard.equippedCards.push(newToken);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (
-          !hasSkill(newToken, 'equip') &&
-          hasSkill(existingCard, 'arm_self')
-        ) {
-          existingCard.skills = existingCard.skills.filter(
-            (s) => s.id !== 'arm_self'
-          );
-        }
+        consumeArmSelf(existingCard, newToken);
         events.push({
           type: 'power_change',
           side: o,
@@ -2101,11 +2080,7 @@ export async function resolveActiveSkillEffect(
 
           const board =
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-          if (
-            board[targetLane] &&
-            (hasSkill(selectedCard, 'equip') ||
-              hasSkill(board[targetLane], 'arm_self'))
-          ) {
+          if (canEquipCard(selectedCard, board[targetLane])) {
             const targetCard = board[targetLane];
             // 装備によるパワー加算
             targetCard.power =
@@ -2149,14 +2124,7 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards.push(selectedCard);
 
             // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            if (
-              !hasSkill(selectedCard, 'equip') &&
-              hasSkill(targetCard, 'arm_self')
-            ) {
-              targetCard.skills = targetCard.skills.filter(
-                (s) => s.id !== 'arm_self'
-              );
-            }
+            consumeArmSelf(targetCard, selectedCard);
           } else {
             const existingCard = board[targetLane];
             const unionSkill =
@@ -2210,11 +2178,7 @@ export async function resolveActiveSkillEffect(
           }
 
           let voiceCard = board[targetLane];
-          if (
-            board[targetLane] &&
-            (hasSkill(selectedCard, 'equip') ||
-              hasSkill(board[targetLane], 'arm_self'))
-          ) {
+          if (canEquipCard(selectedCard, board[targetLane])) {
             voiceCard = selectedCard;
           }
           if (voiceCard?.voiceCategory)
@@ -2333,11 +2297,7 @@ export async function resolveActiveSkillEffect(
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           const existingCard = board[targetLane];
 
-          if (
-            existingCard &&
-            (hasSkill(selectedCard, 'equip') ||
-              hasSkill(existingCard, 'arm_self'))
-          ) {
+          if (canEquipCard(selectedCard, existingCard)) {
             // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
             const targetCard = existingCard;
 
@@ -2379,14 +2339,7 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards.push(selectedCard);
 
             // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            if (
-              !hasSkill(selectedCard, 'equip') &&
-              hasSkill(targetCard, 'arm_self')
-            ) {
-              targetCard.skills = targetCard.skills.filter(
-                (s) => s.id !== 'arm_self'
-              );
-            }
+            consumeArmSelf(targetCard, selectedCard);
 
             if (selectedCard?.voiceCategory)
               playCardVoice(selectedCard.voiceCategory, 'play');
@@ -2719,7 +2672,11 @@ export async function resolveActiveSkillEffect(
     await sleep(300);
   } else if (skillId === 'call') {
     // 【演出】号令スキルのVFXを再生
-    await window.triggerVfx('anm_skill_call', o, l);
+    if (typeof window.triggerVfx === 'function') {
+      await window.triggerVfx('anm_skill_call', o, l);
+    } else {
+      playSound(SOUNDS.seSkill);
+    }
 
     const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     if (d.length > 0) {
@@ -2779,11 +2736,7 @@ export async function resolveActiveSkillEffect(
           // 演出：号令による召喚の場合もアニメーションを再生
           await playSummonAnimation(topCard, o);
 
-          if (
-            board[targetLane] &&
-            (hasSkill(topCard, 'equip') ||
-              hasSkill(board[targetLane], 'arm_self'))
-          ) {
+          if (canEquipCard(topCard, board[targetLane])) {
             const targetCard = board[targetLane];
 
             targetCard.power = (targetCard.power || 0) + (topCard.power || 0);
@@ -2848,14 +2801,7 @@ export async function resolveActiveSkillEffect(
             targetCard.equippedCards.push(topCard);
 
             // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            if (
-              !hasSkill(topCard, 'equip') &&
-              hasSkill(targetCard, 'arm_self')
-            ) {
-              targetCard.skills = targetCard.skills.filter(
-                (s) => s.id !== 'arm_self'
-              );
-            }
+            consumeArmSelf(targetCard, topCard);
 
             let callEvents = [];
             callEvents.push({
@@ -3037,11 +2983,7 @@ export async function resolveActiveSkillEffect(
         }
 
         // 装備か通常配置か
-        if (
-          board[targetLane] &&
-          (hasSkill(selectedCard, 'equip') ||
-            hasSkill(board[targetLane], 'arm_self'))
-        ) {
+        if (canEquipCard(selectedCard, board[targetLane])) {
           const targetCard = board[targetLane];
           targetCard.power =
             (targetCard.power || 0) + (selectedCard.power || 0);
@@ -3079,14 +3021,7 @@ export async function resolveActiveSkillEffect(
           targetCard.equippedCards.push(selectedCard);
 
           // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-          if (
-            !hasSkill(selectedCard, 'equip') &&
-            hasSkill(targetCard, 'arm_self')
-          ) {
-            targetCard.skills = targetCard.skills.filter(
-              (s) => s.id !== 'arm_self'
-            );
-          }
+          consumeArmSelf(targetCard, selectedCard);
 
           if (selectedCard?.voiceCategory) {
             playCardVoice(selectedCard.voiceCategory, 'play');

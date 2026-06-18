@@ -6,6 +6,7 @@ import {
   hasSkill,
   mergeCardSkills,
   unmergeCardSkills,
+  consumeArmSelf,
 } from '../utils/gameUtils.js';
 
 export function canTakeDamage(card, amount, isSkill = true) {
@@ -214,15 +215,7 @@ export function processPlacementOrEquip(
     existingCard.equippedCards.push(newCard);
 
     // 武装（arm_self）の消費処理
-    if (!hasSkill(newCard, 'equip') && hasSkill(existingCard, 'arm_self')) {
-      if (existingCard.skill === 'arm_self') {
-        existingCard.skill = 'none';
-        existingCard.skillValue = 0;
-      }
-      existingCard.skills = Array.isArray(existingCard.skills)
-        ? existingCard.skills.filter((s) => s.id !== 'arm_self')
-        : [];
-    }
+    consumeArmSelf(existingCard, newCard);
 
     events.push({
       type: 'power_change',
@@ -573,18 +566,7 @@ export function applyActiveSkillLogic(
           targetCard.equippedCards.push(stolenCard);
 
           // 武装（arm_self）の消費処理
-          if (
-            !hasSkill(stolenCard, 'equip') &&
-            hasSkill(targetCard, 'arm_self')
-          ) {
-            if (targetCard.skill === 'arm_self') {
-              targetCard.skill = 'none';
-              targetCard.skillValue = 0;
-            }
-            targetCard.skills = Array.isArray(targetCard.skills)
-              ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-              : [];
-          }
+          consumeArmSelf(targetCard, stolenCard);
 
           events.push({
             type: 'summon_card',
@@ -1662,18 +1644,7 @@ export function applyActiveSkillLogic(
             mergeCardSkills(existingCard, equipSkills);
 
             // 武装（arm_self）の消費処理
-            if (
-              !hasSkill(simResCard, 'equip') &&
-              hasSkill(existingCard, 'arm_self')
-            ) {
-              if (existingCard.skill === 'arm_self') {
-                existingCard.skill = 'none';
-                existingCard.skillValue = 0;
-              }
-              existingCard.skills = Array.isArray(existingCard.skills)
-                ? existingCard.skills.filter((s) => s.id !== 'arm_self')
-                : [];
-            }
+            consumeArmSelf(existingCard, simResCard);
             events.push({
               type: 'power_change',
               side: owner,
@@ -2090,15 +2061,7 @@ function tryEquipToken(board, lane, newToken, owner, events) {
       boardCard.equippedCards.push(newToken);
 
       // 武装（arm_self）の消費処理
-      if (!hasSkill(newToken, 'equip') && hasSkill(boardCard, 'arm_self')) {
-        if (boardCard.skill === 'arm_self') {
-          boardCard.skill = 'none';
-          boardCard.skillValue = 0;
-        }
-        boardCard.skills = Array.isArray(boardCard.skills)
-          ? boardCard.skills.filter((s) => s.id !== 'arm_self')
-          : [];
-      }
+      consumeArmSelf(boardCard, newToken);
       let addedSkills = [];
       if (
         newToken.skill &&
@@ -2186,6 +2149,7 @@ export function applyLeaderSkillLogic(
     const oppCards = [...oppHand];
     oppHand.length = 0;
     for (const card of oppCards) {
+      if (!card) continue;
       if (!card.isToken) {
         oppDiscard.push(card);
       }
@@ -2313,18 +2277,7 @@ export function applyLeaderSkillLogic(
         targetCard.equippedCards.push(selectedCard);
 
         // 武装（arm_self）の消費処理
-        if (
-          !hasSkill(selectedCard, 'equip') &&
-          hasSkill(targetCard, 'arm_self')
-        ) {
-          if (targetCard.skill === 'arm_self') {
-            targetCard.skill = 'none';
-            targetCard.skillValue = 0;
-          }
-          targetCard.skills = Array.isArray(targetCard.skills)
-            ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-            : [];
-        }
+        consumeArmSelf(targetCard, selectedCard);
 
         events.push({
           type: 'summon_card',
@@ -2816,7 +2769,9 @@ export function applyLeaderSkillLogic(
           owner: oppOwner,
           baseId: 'token_void',
           isToken: true,
-          currentPower: voidTpl.power || 1,
+          power: voidTpl.power ?? 0,
+          basePower: voidTpl.power ?? 0,
+          currentPower: voidTpl.power ?? 0,
         });
       }
     }
@@ -3163,18 +3118,7 @@ export function applyLeaderSkillLogic(
           existingCard.equippedCards.push(selectedCard);
 
           // 武装（arm_self）の消費処理
-          if (
-            !hasSkill(selectedCard, 'equip') &&
-            hasSkill(existingCard, 'arm_self')
-          ) {
-            if (existingCard.skill === 'arm_self') {
-              existingCard.skill = 'none';
-              existingCard.skillValue = 0;
-            }
-            existingCard.skills = Array.isArray(existingCard.skills)
-              ? existingCard.skills.filter((s) => s.id !== 'arm_self')
-              : [];
-          }
+          consumeArmSelf(existingCard, selectedCard);
 
           events.push({
             type: 'power_change',
@@ -4180,8 +4124,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           }
 
           if (effectiveDmg > 0) {
+            let damageApplied = false;
             if (canTakeDamage(chosenCard, effectiveDmg, false)) {
               chosenCard.currentPower -= effectiveDmg;
+              damageApplied = true;
               events.push({
                 type: 'damage_card',
                 side: chosenSide,
@@ -4199,7 +4145,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             }
 
             // 攻撃側のカードが「即死（deadly）」を持っている場合の即死判定
-            if (hasSkill(aC, 'deadly')) {
+            if (damageApplied && hasSkill(aC, 'deadly')) {
               if (!hasSkill(chosenCard, 'immune')) {
                 chosenCard.currentPower = 0;
                 events.push({
@@ -4281,8 +4227,10 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           }
 
           if (effectiveDmg > 0) {
+            let damageApplied = false;
             if (canTakeDamage(chosenCard, effectiveDmg, false)) {
               chosenCard.currentPower -= effectiveDmg;
+              damageApplied = true;
               events.push({
                 type: 'damage_card',
                 side: chosenSide,
@@ -4300,7 +4248,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             }
 
             // 防御側（反撃元）のカードが「即死（deadly）」を持っている場合の即死判定
-            if (originalTarget && hasSkill(originalTarget, 'deadly')) {
+            if (
+              damageApplied &&
+              originalTarget &&
+              hasSkill(originalTarget, 'deadly')
+            ) {
               if (!hasSkill(chosenCard, 'immune')) {
                 chosenCard.currentPower = 0;
                 events.push({

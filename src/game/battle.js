@@ -38,6 +38,7 @@ import {
   switchScreen,
   triggerGraveKeeperEffect,
   decodedBgms,
+  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import {
   AUDIO_INSTANCES,
@@ -541,9 +542,9 @@ export function prepareBattle() {
     const updateProgress = () => {
       if (isFinished) return;
       loaded++;
-      const loadingText = document.getElementById('loading-text');
-      if (loadingText) {
-        loadingText.innerText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+      const progressText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+      if (window.updateLoadingTextReact) {
+        window.updateLoadingTextReact(progressText);
       }
       if (loaded >= allCards.length) {
         cardsLoaded = true;
@@ -587,9 +588,8 @@ export function prepareBattle() {
       }
 
       if (!decodedBgms[fetchUrl]) {
-        const loadingText = document.getElementById('loading-text');
-        if (loadingText) {
-          loadingText.innerText = 'Loading Stage BGM...';
+        if (window.updateLoadingTextReact) {
+          window.updateLoadingTextReact('Loading Stage BGM...');
         }
         loadAndDecodeAudio(fetchUrl)
           .then((buffer) => {
@@ -2223,12 +2223,21 @@ export async function waitSkillChoice(
       return [];
     }
 
+    const choiceKey = (choice) =>
+      [
+        choice?.id ?? '',
+        choice?.value ?? '',
+        choice?.choiceGroup ?? '',
+        choice?.summonId ?? '',
+        choice?.targetId ?? '',
+      ].join('|');
+
     let results = [];
     const parseItem = (item) => {
       if (item === null || item === undefined) return;
       if (typeof item === 'object') {
-        const id = item.id;
-        const match = choices.find((c) => c && c.id === id);
+        const key = choiceKey(item);
+        const match = choices.find((c) => choiceKey(c) === key);
         if (match) results.push(match);
       } else if (typeof item === 'number') {
         if (choices[item]) results.push(choices[item]);
@@ -2251,10 +2260,11 @@ export async function waitSkillChoice(
 
     // 重複除去
     const uniqueResults = [];
-    const seenIds = new Set();
+    const seenKeys = new Set();
     results.forEach((item) => {
-      if (item && !seenIds.has(item.id)) {
-        seenIds.add(item.id);
+      const key = choiceKey(item);
+      if (item && !seenKeys.has(key)) {
+        seenKeys.add(key);
         uniqueResults.push(item);
       }
     });
@@ -3130,15 +3140,7 @@ export async function handleMoveSkills(owner) {
               existingCard.equippedCards.push(c);
 
               // 武装（arm_self）の消費処理
-              if (!hasSkill(c, 'equip') && hasSkill(existingCard, 'arm_self')) {
-                if (existingCard.skill === 'arm_self') {
-                  existingCard.skill = 'none';
-                  existingCard.skillValue = 0;
-                }
-                existingCard.skills = Array.isArray(existingCard.skills)
-                  ? existingCard.skills.filter((s) => s.id !== 'arm_self')
-                  : [];
-              }
+              consumeArmSelf(existingCard, c);
 
               b[i] = null;
               movedIds.add(existingCard.uid || existingCard.id);
@@ -3575,15 +3577,7 @@ export async function playCard(o, hI, l) {
       targetCard.equippedCards.push(consumedCard);
 
       // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-      if (!hasSkill(playingCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-        if (targetCard.skill === 'arm_self') {
-          targetCard.skill = 'none';
-          targetCard.skillValue = 0;
-        }
-        targetCard.skills = Array.isArray(targetCard.skills)
-          ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-          : [];
-      }
+      consumeArmSelf(targetCard, playingCard);
 
       // 配置音・ボイス
       playSound(SOUNDS.sePlace);

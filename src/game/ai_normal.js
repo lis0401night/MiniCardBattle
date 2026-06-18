@@ -6,6 +6,7 @@ import {
   mergeCardSkills,
   getCurrentRNG,
   setCurrentRNG,
+  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import {
   applyActiveSkillLogic,
@@ -367,18 +368,7 @@ export function processActionSequence(
                 mergeCardSkills(existingCard, addedSkills);
               }
               // 武装（arm_self）の消費処理
-              if (
-                !hasSkill(newToken, 'equip') &&
-                hasSkill(existingCard, 'arm_self')
-              ) {
-                if (existingCard.skill === 'arm_self') {
-                  existingCard.skill = 'none';
-                  existingCard.skillValue = 0;
-                }
-                existingCard.skills = Array.isArray(existingCard.skills)
-                  ? existingCard.skills.filter((s) => s.id !== 'arm_self')
-                  : [];
-              }
+              consumeArmSelf(existingCard, newToken);
             } else if (existingCard) {
               // 装備不可: 既存カードを墓地に移動して上書き
               simState.enemyDiscard.push(existingCard);
@@ -500,18 +490,7 @@ export function processActionSequence(
               targetCard.equippedCards.push(selectedCard);
 
               // 武装（arm_self）の消費処理
-              if (
-                !hasSkill(selectedCard, 'equip') &&
-                hasSkill(targetCard, 'arm_self')
-              ) {
-                if (targetCard.skill === 'arm_self') {
-                  targetCard.skill = 'none';
-                  targetCard.skillValue = 0;
-                }
-                targetCard.skills = Array.isArray(targetCard.skills)
-                  ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-                  : [];
-              }
+              consumeArmSelf(targetCard, selectedCard);
             } else {
               board[myL] = {
                 ...selectedCard,
@@ -688,18 +667,7 @@ export function processActionSequence(
         mergeCardSkills(targetCard, addedSkills);
 
         // 武装（arm_self）の消費処理
-        if (
-          !hasSkill(playedCard, 'equip') &&
-          hasSkill(targetCard, 'arm_self')
-        ) {
-          if (targetCard.skill === 'arm_self') {
-            targetCard.skill = 'none';
-            targetCard.skillValue = 0;
-          }
-          targetCard.skills = Array.isArray(targetCard.skills)
-            ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-            : [];
-        }
+        consumeArmSelf(targetCard, playedCard);
         let cLanesForEquip = action.cardTokenLanes
           ? [...action.cardTokenLanes]
           : null;
@@ -3619,18 +3587,7 @@ export function simulateMove(
           mergeCardSkills(targetCard, addedSkills);
 
           // 武装（arm_self）の消費処理
-          if (
-            !hasSkill(playedCard, 'equip') &&
-            hasSkill(targetCard, 'arm_self')
-          ) {
-            if (targetCard.skill === 'arm_self') {
-              targetCard.skill = 'none';
-              targetCard.skillValue = 0;
-            }
-            targetCard.skills = Array.isArray(targetCard.skills)
-              ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-              : [];
-          }
+          consumeArmSelf(targetCard, playedCard);
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
             if (

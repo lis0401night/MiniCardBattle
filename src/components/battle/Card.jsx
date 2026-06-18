@@ -68,7 +68,7 @@ export default function Card({
 
   return (
     <div
-      className={`card ${cardObj.owner}${rarityClass} ${className}`}
+      className={`card ${cardObj.owner}${rarityClass} ${cardObj.animClass || ''} ${className}`}
       onPointerDown={handlePointerDown}
       onPointerUp={cancelLongPress}
       onPointerLeave={cancelLongPress}

@@ -86,11 +86,11 @@ window.submitDefenseDeck = submitDefenseDeck;
 window.playSound = playSound;
 window.SOUNDS = SOUNDS;
 
-const LoadingScreen = () => (
+const LoadingScreen = ({ loadingText }) => (
   <div id="screen-loading" className="screen active">
     <div className="loading-content">
       <div className="loading-spinner"></div>
-      LOADING...
+      <span id="loading-text">{loadingText || 'LOADING...'}</span>
     </div>
   </div>
 );
@@ -158,6 +158,16 @@ const SCREEN_COMPONENTS = {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
+  const [loadingText, setLoadingText] = useState('LOADING...');
+
+  useEffect(() => {
+    window.updateLoadingTextReact = (text) => {
+      setLoadingText(text);
+    };
+    return () => {
+      delete window.updateLoadingTextReact;
+    };
+  }, []);
   const [rulesVisible, setRulesVisible] = useState(false);
   const [matchingState, setMatchingState] = useState({
     show: false,
@@ -226,6 +236,7 @@ export default function App() {
       <FinalScreenComponent
         switchScreen={switchScreen}
         showRulesModal={() => setRulesVisible(true)}
+        loadingText={loadingText}
       />
       <GlobalModals
         rulesVisible={rulesVisible}

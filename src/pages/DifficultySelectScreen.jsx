@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import {
@@ -15,7 +15,7 @@ const DIFFICULTY = {
 };
 
 export default function DifficultySelectScreen() {
-  const [, setRenderVersion] = useState(0);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   const isFreeMode =
     typeof GameState !== 'undefined' && GameState.gameMode === 'free';
@@ -30,7 +30,7 @@ export default function DifficultySelectScreen() {
     const originalInit = window.initDifficultySelectScreenReact;
     window.initDifficultySelectScreenReact = () => {
       // 【CodeRabbit指摘反映】画面切り替え時やGameState.gameModeの変化を検知した際に、強制的に再描画して表示を同期する
-      setRenderVersion((v) => v + 1);
+      forceUpdate();
     };
 
     return () => {

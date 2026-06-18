@@ -13,7 +13,6 @@ export default function RewardOverlay() {
   const [card, setCard] = useState(null);
   const [phase, setPhase] = useState('pack'); // 'pack' | 'animating' | 'reveal'
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const grantedRef = useRef(false);
   const [rewardQueue, setRewardQueue] = useState([]);
   const timersRef = useRef([]);
 
@@ -35,7 +34,14 @@ export default function RewardOverlay() {
       }
       if (rewardCardTemplate) {
         setCard({ ...rewardCardTemplate, owner: 'blue' });
-        grantedRef.current = false; // 表示されるたびにリセット
+
+        // 報酬を即座に付与（アニメーションのタイミングに依存しない）
+        if (GameState.gameMode !== 'campaign') {
+          GameState.playerInventory[rewardCardId] =
+            (GameState.playerInventory[rewardCardId] || 0) + 1;
+          saveDeck();
+        }
+
         setPhase('pack');
         setIsFadingOut(false);
         setIsVisible(true);
@@ -81,15 +87,6 @@ export default function RewardOverlay() {
 
     // 0.8秒後にカード表示フェーズへ移行
     const timer2 = setTimeout(() => {
-      if (!grantedRef.current) {
-        grantedRef.current = true;
-        // キャンペーンモード以外の場合にインベントリへ追加・保存
-        if (GameState.gameMode !== 'campaign') {
-          GameState.playerInventory[card.id] =
-            (GameState.playerInventory[card.id] || 0) + 1;
-          saveDeck();
-        }
-      }
       setPhase('reveal');
       // 表示される瞬間はインパクトのある音を鳴らす
       playSound(SOUNDS.seSkill || SOUNDS.seClick);

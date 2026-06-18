@@ -10,6 +10,7 @@ import {
   playSound,
   sleep,
   triggerGraveKeeperEffect,
+  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -325,15 +326,7 @@ export async function executeLeaderSkillAction(
         targetCard.equippedCards.push(eqToken);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (!hasSkill(tokenCard, 'equip') && hasSkill(targetCard, 'arm_self')) {
-          if (targetCard.skill === 'arm_self') {
-            targetCard.skill = 'none';
-            targetCard.skillValue = 0;
-          }
-          targetCard.skills = Array.isArray(targetCard.skills)
-            ? targetCard.skills.filter((s) => s.id !== 'arm_self')
-            : [];
-        }
+        consumeArmSelf(targetCard, tokenCard);
 
         if (tokenCard?.voiceCategory)
           playCardVoice(tokenCard.voiceCategory, 'play');
@@ -654,14 +647,7 @@ export async function executeLeaderSkillAction(
         targetCard.equippedCards.push(selectedCard);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (
-          !hasSkill(selectedCard, 'equip') &&
-          hasSkill(targetCard, 'arm_self')
-        ) {
-          targetCard.skills = targetCard.skills.filter(
-            (s) => s.id !== 'arm_self'
-          );
-        }
+        consumeArmSelf(targetCard, selectedCard);
         renderBoard();
         events.push({
           type: 'power_change',
@@ -852,14 +838,7 @@ export async function executeLeaderSkillAction(
         targetCard.equippedCards.push(selectedCard);
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        if (
-          !hasSkill(selectedCard, 'equip') &&
-          hasSkill(targetCard, 'arm_self')
-        ) {
-          targetCard.skills = targetCard.skills.filter(
-            (s) => s.id !== 'arm_self'
-          );
-        }
+        consumeArmSelf(targetCard, selectedCard);
 
         renderBoard(); // 反映を確実にする
         events.push({
@@ -1052,6 +1031,7 @@ export async function executeLeaderSkillAction(
     const opCards = [...opH];
     opH.length = 0;
     for (const card of opCards) {
+      if (!card) continue;
       await discardCard(opId, card, undefined, false);
       opDiscarded++;
     }
@@ -1235,14 +1215,7 @@ export async function executeLeaderSkillAction(
           targetCard.equippedCards.push(selectedCard);
 
           // 武装（arm_self）の消費処理
-          if (
-            !hasSkill(selectedCard, 'equip') &&
-            hasSkill(targetCard, 'arm_self')
-          ) {
-            targetCard.skills = targetCard.skills.filter(
-              (s) => s.id !== 'arm_self'
-            );
-          }
+          consumeArmSelf(targetCard, selectedCard);
 
           renderBoard();
           events.push({

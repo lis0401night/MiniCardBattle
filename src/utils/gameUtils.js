@@ -397,6 +397,9 @@ export function getCurrentRNG() {
 }
 
 export function setCurrentRNG(rng) {
+  if (typeof rng !== 'function') {
+    throw new TypeError('rng must be a function');
+  }
   currentRNG = rng;
 }
 
@@ -573,6 +576,20 @@ export function unmergeCardSkills(targetCard, equipSkills) {
         targetCard.skills = targetCard.skills.filter((s) => s !== existingInfo);
       }
     }
+  }
+}
+
+// 武装(arm_self)スキルの消費処理
+export function consumeArmSelf(host, equipped) {
+  if (!host || !equipped) return;
+  if (!hasSkill(equipped, 'equip') && hasSkill(host, 'arm_self')) {
+    if (host.skill === 'arm_self') {
+      host.skill = 'none';
+      host.skillValue = 0;
+    }
+    host.skills = Array.isArray(host.skills)
+      ? host.skills.filter((s) => s.id !== 'arm_self')
+      : [];
   }
 }
 

@@ -1852,11 +1852,15 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             targetDeck.playerSkins = {};
                           targetDeck.playerSkins[charDetailData.id] = skinId;
 
-                          if (!GameState.playerSkins)
-                            GameState.playerSkins = {};
-                          GameState.playerSkins[charDetailData.id] = skinId;
-
-                          syncPlayerConfigImages(charDetailData, skinId);
+                          const isActiveDeck =
+                            GameState.selectedDeckIndex ===
+                            charDetailData.targetDeckIndex;
+                          if (isActiveDeck) {
+                            if (!GameState.playerSkins)
+                              GameState.playerSkins = {};
+                            GameState.playerSkins[charDetailData.id] = skinId;
+                            syncPlayerConfigImages(charDetailData, skinId);
+                          }
 
                           // 各モードに応じたLocalStorageセーブ
                           if (GameState.gameMode === 'defense_register') {

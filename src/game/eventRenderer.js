@@ -415,6 +415,10 @@ export async function playEvents(events) {
           discardCardRef
         ) {
           await discardCardRef(ev.side, board[ev.lane], ev.lane, false);
+        } else if (board[ev.lane] && board[ev.lane].uid !== ev.card?.uid) {
+          console.warn(
+            '[eventRenderer] discardCardRef not registered, existing card may not be properly discarded'
+          );
         }
         board[ev.lane] = ev.card;
 
