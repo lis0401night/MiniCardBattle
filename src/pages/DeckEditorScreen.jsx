@@ -10,7 +10,7 @@ import { showPlaymatModal } from '../services/uiPlaymat.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { DECK_SIZE, MAX_CARD_COPIES } from '../utils/constants/config.js';
-import { SKILLS } from '../utils/constants/skills.js';
+import { SKILLS, SKILL_CATEGORIES } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
   playSound,
@@ -1205,43 +1205,128 @@ export default function DeckEditorScreen({ switchScreen }) {
                 <div
                   style={{
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    maxHeight: '180px',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    maxHeight: '260px',
                     overflowY: 'auto',
-                    padding: '6px',
-                    background: 'rgba(0,0,0,0.2)',
+                    padding: '8px',
+                    background: 'rgba(0,0,0,0.3)',
                     borderRadius: '8px',
                   }}
                 >
-                  {availableSkills.map((sk) => {
-                    const skillDef = SKILLS[sk] || { name: sk, icon: '' };
+                  {SKILL_CATEGORIES.map((category) => {
+                    const activeGroups = category.groups
+                      .map((group) => ({
+                        ...group,
+                        validSkills: group.skills.filter((sk) =>
+                          availableSkills.includes(sk)
+                        ),
+                      }))
+                      .filter((g) => g.validSkills.length > 0);
+
+                    if (activeGroups.length === 0) return null;
+
                     return (
                       <div
-                        key={sk}
-                        onClick={() => toggleTempFilter('skills', sk)}
+                        key={category.id}
                         style={{
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: tempFilters.skills.includes(sk)
-                            ? '1px solid #facc15'
-                            : '1px solid #475569',
-                          background: tempFilters.skills.includes(sk)
-                            ? 'rgba(250, 204, 21, 0.2)'
-                            : '#334155',
-                          color: tempFilters.skills.includes(sk)
-                            ? '#facc15'
-                            : '#94a3b8',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          userSelect: 'none',
                           display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
+                          flexDirection: 'column',
+                          gap: '6px',
                         }}
                       >
-                        <span>{skillDef.icon}</span>
-                        <span>{skillDef.name}</span>
+                        <div
+                          style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            color: '#facc15',
+                            borderBottom: '1px solid rgba(250, 204, 21, 0.2)',
+                            paddingBottom: '2px',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          {category.name}
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            paddingLeft: '4px',
+                          }}
+                        >
+                          {activeGroups.map((group, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                                background: 'rgba(255,255,255,0.02)',
+                                padding: '6px',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontSize: '0.75rem',
+                                  color: '#94a3b8',
+                                  fontWeight: 'bold',
+                                }}
+                              >
+                                {group.name}
+                              </div>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  gap: '6px',
+                                }}
+                              >
+                                {group.validSkills.map((sk) => {
+                                  const skillDef = SKILLS[sk] || {
+                                    name: sk,
+                                    icon: '',
+                                  };
+                                  const isSelected =
+                                    tempFilters.skills.includes(sk);
+                                  return (
+                                    <div
+                                      key={sk}
+                                      onClick={() =>
+                                        toggleTempFilter('skills', sk)
+                                      }
+                                      style={{
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        border: isSelected
+                                          ? '1px solid #facc15'
+                                          : '1px solid #475569',
+                                        background: isSelected
+                                          ? 'rgba(250, 204, 21, 0.2)'
+                                          : '#334155',
+                                        color: isSelected
+                                          ? '#facc15'
+                                          : '#cbd5e1',
+                                        cursor: 'pointer',
+                                        fontSize: '0.8rem',
+                                        userSelect: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        transition: 'all 0.15s ease',
+                                      }}
+                                    >
+                                      <span>{skillDef.icon}</span>
+                                      <span>{skillDef.name}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
