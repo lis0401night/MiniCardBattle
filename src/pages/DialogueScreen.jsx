@@ -238,7 +238,7 @@ export default function DialogueScreen() {
       )}
 
       <div
-        className={`portrait-container ${d.centerMode || GameState.gameMode === 'campaign' ? 'center' : ''}`}
+        className={`portrait-container ${d.centerMode ? 'center' : ''}`}
         style={{
           display: isSatanCastleStill ? 'none' : 'flex',
           opacity: d.blackScreen ? 0 : 1,
@@ -254,7 +254,6 @@ export default function DialogueScreen() {
           alt="Player"
           style={{
             visibility: d.leftImage ? 'visible' : 'hidden',
-            display: GameState.gameMode === 'campaign' ? 'none' : 'block',
           }}
         />
         <img
@@ -268,7 +267,7 @@ export default function DialogueScreen() {
                 ? d.rightFilter
                 : undefined,
             display:
-              d.centerMode && GameState.gameMode !== 'campaign'
+              d.centerMode
                 ? 'none'
                 : d.rightDisplay || 'block',
             visibility: d.rightImage ? 'visible' : 'hidden',

@@ -31,8 +31,7 @@ const shouldExcludeFromLeaderStats = (charId) => {
   return (
     charId === 'satan' ||
     charId === 'void' ||
-    charId === 'succubus' ||
-    charId.startsWith('campaign_')
+    charId === 'succubus'
   );
 };
 

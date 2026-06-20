@@ -204,10 +204,6 @@ export function setupDialogueScreen() {
     getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
     getCardImgUrl(GameState.playerConfig);
 
-  if (GameState.gameMode === 'campaign') {
-    pLeftImg = null; // キャンペーンモードでは主人公画像を表示しない
-  }
-
   let pRightImg =
     getSkinImage(GameState.enemyConfig, enemySkinId, 'image') ||
     GameState.enemyConfig.image ||

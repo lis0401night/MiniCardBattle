@@ -703,9 +703,7 @@ export function initBattleState() {
         : ['void', 'succubus'].includes(GameState.enemyConfig.id)
           ? 30
           : MAX_HP);
-    if (GameState.gameMode === 'campaign') {
-      GameState.enemyMaxHP = 10;
-    }
+
     if (
       GameState.gameMode.startsWith('event_') &&
       GameState.gameMode.endsWith('_high')
@@ -4302,11 +4300,7 @@ export function endBattle() {
       ];
     }
 
-    if (GameState.gameMode === 'campaign') {
-      GameState.dialogueQueue = GameState.dialogueQueue.filter(
-        (d) => d.speaker !== 'player'
-      );
-    }
+
 
     // トーナメント：両キャラ表示中に司会者の実況コメントを追加
     if (GameState.gameMode === 'tournament' && GameState.tournament) {
@@ -4470,79 +4464,67 @@ export function endBattle() {
       }
 
       // --- カードドロップ抽選・表示処理 ---
-      if (GameState.gameMode === 'campaign') {
-        let rewardCardId = null;
-        if (GameState.campaignNode === '1-1') rewardCardId = 'skeleton';
-        else if (GameState.campaignNode === '1-2') rewardCardId = 'shade';
-        else if (GameState.campaignNode === '1-3') rewardCardId = 'warden';
+      let recipeId = GameState.enemyConfig.id;
+      if (
+        GameState.gameMode.startsWith('event_') &&
+        GameState.gameMode.endsWith('_high')
+      ) {
+        const charId = GameState.gameMode
+          .replace('event_', '')
+          .replace('_high', '');
+        if (recipeId === charId) recipeId = `${charId}_high`;
+      }
+      const diffKey =
+        GameState.aiLevel === 1
+          ? 'easy'
+          : GameState.aiLevel === 3
+            ? 'hard'
+            : 'normal';
 
-        if (rewardCardId && window.showCardRewardReact) {
-          window.showCardRewardReact(rewardCardId);
-          return;
-        }
-      } else {
-        let recipeId = GameState.enemyConfig.id;
-        if (
-          GameState.gameMode.startsWith('event_') &&
-          GameState.gameMode.endsWith('_high')
-        ) {
-          const charId = GameState.gameMode
-            .replace('event_', '')
-            .replace('_high', '');
-          if (recipeId === charId) recipeId = `${charId}_high`;
-        }
-        const diffKey =
-          GameState.aiLevel === 1
-            ? 'easy'
-            : GameState.aiLevel === 3
-              ? 'hard'
-              : 'normal';
+      let deckList = [];
+      if (Array.isArray(ENEMY_DECKS[recipeId])) {
+        deckList = ENEMY_DECKS[recipeId];
+      } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
+        deckList = ENEMY_DECKS[recipeId][diffKey];
+      } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
+        deckList = ENEMY_DECKS[recipeId]['normal'];
+      }
 
-        let deckList = [];
-        if (Array.isArray(ENEMY_DECKS[recipeId])) {
-          deckList = ENEMY_DECKS[recipeId];
-        } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
-          deckList = ENEMY_DECKS[recipeId][diffKey];
-        } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
-          deckList = ENEMY_DECKS[recipeId]['normal'];
-        }
+      let availableCards = [];
+      if (deckList.length > 0) {
+        const uniqueCards = [...new Set(deckList)];
+        // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
+        availableCards = uniqueCards.filter((cid) => {
+          const count = GameState.playerInventory[cid] || 0;
+          return count < 4;
+        });
 
-        let availableCards = [];
-        if (deckList.length > 0) {
-          const uniqueCards = [...new Set(deckList)];
-          // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
-          availableCards = uniqueCards.filter((cid) => {
-            const count = GameState.playerInventory[cid] || 0;
-            return count < 4;
-          });
+        if (availableCards.length > 0) {
+          const rewardCount = GameState.gameMode === 'story' ? 2 : 1;
+          const rewardCards = [];
+          const tempInventory = { ...GameState.playerInventory };
 
-          if (availableCards.length > 0) {
-            const rewardCount = GameState.gameMode === 'story' ? 2 : 1;
-            const rewardCards = [];
-            const tempInventory = { ...GameState.playerInventory };
+          for (let i = 0; i < rewardCount; i++) {
+            const currentAvailable = uniqueCards.filter((cid) => {
+              const count = tempInventory[cid] || 0;
+              return count < 4;
+            });
 
-            for (let i = 0; i < rewardCount; i++) {
-              const currentAvailable = uniqueCards.filter((cid) => {
-                const count = tempInventory[cid] || 0;
-                return count < 4;
-              });
-
-              if (currentAvailable.length > 0) {
-                const rewardCardId =
-                  currentAvailable[
-                    Math.floor(getSeededRandom() * currentAvailable.length)
-                  ];
-                rewardCards.push(rewardCardId);
-                tempInventory[rewardCardId] =
-                  (tempInventory[rewardCardId] || 0) + 1;
-              }
+            if (currentAvailable.length > 0) {
+              const rewardCardId =
+                currentAvailable[
+                  Math.floor(getSeededRandom() * currentAvailable.length)
+                ];
+              rewardCards.push(rewardCardId);
+              tempInventory[rewardCardId] =
+                (tempInventory[rewardCardId] || 0) + 1;
             }
-
-            if (window.showCardRewardReact && rewardCards.length > 0) {
-              window.showCardRewardReact(rewardCards);
-            }
-            return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
           }
+
+          if (window.showCardRewardReact && rewardCards.length > 0) {
+            window.showCardRewardReact(rewardCards);
+          }
+          return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
         }
       }
     }

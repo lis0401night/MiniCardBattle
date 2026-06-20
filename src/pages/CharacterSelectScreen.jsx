@@ -32,7 +32,6 @@ const getFilteredCharacters = () => {
       if (c.id === 'void') return isVoidUnlocked;
       if (c.id === 'succubus') return isSuccubusUnlocked;
     }
-    if (c.id.startsWith('campaign_')) return false;
     return true;
   });
 };

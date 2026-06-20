@@ -36,17 +36,13 @@ export default function DeckEditorScreen({ switchScreen }) {
     if (GameState.gameMode === 'battle_dungeon') {
       const validIds = Object.keys(inv);
       return (CARD_MASTER || []).filter((c) => validIds.includes(c.id));
-    } else if (GameState.gameMode === 'campaign') {
-      const validIds = Object.keys(inv);
-      return (CARD_MASTER || []).filter(
-        (c) => validIds.includes(c.id) && !c.isToken
-      );
+
     }
     return (CARD_MASTER || []).filter((c) => !c.isToken);
   };
 
   const computeDeckName = () => {
-    if (GameState.gameMode === 'campaign') return 'キャンペーンデッキ';
+
     const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
     return currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`;
   };
@@ -94,13 +90,9 @@ export default function DeckEditorScreen({ switchScreen }) {
     setDeckSelection([...(GameState.playerDeckSelection || [])]);
 
     const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
-    if (GameState.gameMode === 'campaign') {
-      setDeckName('キャンペーンデッキ');
-    } else {
-      setDeckName(
-        currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`
-      );
-    }
+    setDeckName(
+      currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`
+    );
 
     setUnlockedPremium(GameState.unlockedPremiumCards || []);
 
@@ -114,12 +106,7 @@ export default function DeckEditorScreen({ switchScreen }) {
       setMasterCards(
         (CARD_MASTER || []).filter((c) => validIds.includes(c.id))
       );
-    } else if (GameState.gameMode === 'campaign') {
-      setInventory(GameState.playerInventory || {});
-      const validIds = Object.keys(GameState.playerInventory || {});
-      setMasterCards(
-        (CARD_MASTER || []).filter((c) => validIds.includes(c.id) && !c.isToken)
-      );
+
     } else {
       setInventory(GameState.playerInventory || {});
       setMasterCards((CARD_MASTER || []).filter((c) => !c.isToken));
@@ -397,8 +384,7 @@ export default function DeckEditorScreen({ switchScreen }) {
           }}
         >
           {isDefenseConfig ||
-          GameState.gameMode === 'battle_dungeon' ||
-          GameState.gameMode === 'campaign' ? (
+          GameState.gameMode === 'battle_dungeon' ? (
             <h2
               style={{
                 color: '#facc15',
@@ -409,9 +395,7 @@ export default function DeckEditorScreen({ switchScreen }) {
             >
               {isDefenseConfig
                 ? '防衛デッキ構築'
-                : GameState.gameMode === 'campaign'
-                  ? 'キャンペーンデッキ'
-                  : 'デッキ構築'}
+                : 'デッキ構築'}
             </h2>
           ) : (
             <div
@@ -959,14 +943,12 @@ export default function DeckEditorScreen({ switchScreen }) {
           }}
           onClick={handleFinish}
         >
-          {GameState.gameMode === 'campaign'
-            ? '次へ進む'
-            : isDefenseConfig ||
-                GameState.gameMode === 'create_deck' ||
-                GameState.gameMode === 'free_deck_edit' ||
-                GameState.gameMode === 'online_deck_edit'
-              ? '編成完了'
-              : 'バトル開始！'}
+          {isDefenseConfig ||
+          GameState.gameMode === 'create_deck' ||
+          GameState.gameMode === 'free_deck_edit' ||
+          GameState.gameMode === 'online_deck_edit'
+            ? '編成完了'
+            : 'バトル開始！'}
         </button>
       </div>
 
@@ -1012,10 +994,7 @@ export default function DeckEditorScreen({ switchScreen }) {
             }}
             onClick={() => {
               playSound?.(SOUNDS?.seClick);
-              if (
-                GameState.gameMode === 'story' ||
-                GameState.gameMode === 'campaign'
-              ) {
+              if (GameState.gameMode === 'story') {
                 showConfirmModal?.(
                   '一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）',
                   () => {
@@ -1034,7 +1013,7 @@ export default function DeckEditorScreen({ switchScreen }) {
               }
             }}
           >
-            {GameState.gameMode === 'story' || GameState.gameMode === 'campaign'
+            {GameState.gameMode === 'story'
               ? '一時中断して戻る'
               : '戻る'}
           </button>

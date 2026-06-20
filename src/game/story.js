@@ -23,8 +23,7 @@ export function initStoryMode(charId) {
       id !== charId &&
       id !== 'satan' &&
       id !== 'void' &&
-      id !== 'succubus' &&
-      id !== 'campaign_player'
+      id !== 'succubus'
   );
   for (let i = otherIds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

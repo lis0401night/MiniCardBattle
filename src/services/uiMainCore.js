@@ -1,4 +1,3 @@
-import { initCampaignMode } from '../game/campaign.js';
 import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
@@ -503,25 +502,7 @@ export function startGameMode(mode) {
     }
   }
 
-  if (mode === 'campaign') {
-    const savedCampaignStr = localStorage.getItem(
-      'mini_card_battle_campaign_save'
-    );
-    if (savedCampaignStr) {
-      try {
-        JSON.parse(savedCampaignStr);
-        GameState.appState = 'story_resume'; // Reusing story resume screen
-        switchScreen('screen-story-resume');
-        return;
-      } catch (e) {
-        console.error('Campaign save data parse error', e);
-      }
-    }
 
-    // No valid save found, start new campaign
-    initCampaignMode();
-    return;
-  }
 
   if (mode === 'tournament') {
     const savedTournament = localStorage.getItem(

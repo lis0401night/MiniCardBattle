@@ -955,32 +955,6 @@ export const CHARACTERS = {
     },
     hp: 40,
   },
-  campaign_player: {
-    id: 'campaign_player',
-    stageId: 'plain',
-    name: 'プレイヤー',
-    desc: '記憶を失い監獄で目覚めた主人公。',
-    filter: 'none',
-    image: 'assets/characters/char_player.png',
-    imageLose: 'assets/characters/char_player_lose.png',
-    icon: 'assets/icons/icon_player.png',
-    color: '#cbd5e1',
-    leaderSkill: null,
-    preBattleLine: '……行くぞ。',
-    dialogue: {
-      intro: {
-        default: '……行くぞ。',
-      },
-      win: {
-        default: '……よし。',
-      },
-      lose: {
-        default: '……くっ。',
-      },
-      damage: ['……！', 'くっ！', 'まだだ！', 'しまっ……！'],
-      skill: '……',
-    },
-  },
 };
 
 // --- スキン定義とヘルパー関数 ---

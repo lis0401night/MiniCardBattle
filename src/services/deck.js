@@ -1,7 +1,5 @@
 import { prepareBattle } from '../game/battle.js';
-import { saveCampaignProgress } from '../game/campaign.js';
 import { GameState } from '../state/gameState.js';
-import { CAMPAIGN_DECKS } from '../utils/constants/campaign_decks.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
@@ -182,8 +180,7 @@ export function generateDeck(owner, config, sessionId) {
         } else {
           recipe = ENEMY_DECKS[charId] || ENEMY_DECKS.android;
         }
-      } else if (GameState.gameMode === 'campaign') {
-        recipe = CAMPAIGN_DECKS[recipeId];
+
       } else {
         recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
       }
@@ -438,16 +435,7 @@ export function migrateAllSaveData() {
           migrateCardId(id)
         );
       }
-      if (GameState.campaignDeck && Array.isArray(GameState.campaignDeck)) {
-        GameState.campaignDeck = GameState.campaignDeck.map((id) =>
-          migrateCardId(id)
-        );
-      }
-      if (GameState.campaignCards && Array.isArray(GameState.campaignCards)) {
-        GameState.campaignCards = GameState.campaignCards.map((id) =>
-          migrateCardId(id)
-        );
-      }
+
       if (GameState.premiumCards && Array.isArray(GameState.premiumCards)) {
         GameState.premiumCards = GameState.premiumCards.map((id) =>
           migrateCardId(id)
@@ -488,23 +476,7 @@ export function loadDeck() {
     return;
   }
 
-  if (GameState.gameMode === 'campaign') {
-    GameState.playerDeckSelection = (GameState.campaignDeck || [])
-      .map((id) => {
-        const template = CARD_MASTER.find((c) => c.id === id);
-        return template ? { ...template } : null;
-      })
-      .filter(Boolean);
 
-    GameState.playerInventory = {};
-    if (GameState.campaignCards) {
-      GameState.campaignCards.forEach((id) => {
-        GameState.playerInventory[id] =
-          (GameState.playerInventory[id] || 0) + 1;
-      });
-    }
-    return;
-  }
 
   // 2. 全体（アカウント）設定のベース読み込み
   // 全体スキンは廃止され、デッキ固有のスキン設定のみを使用します
@@ -741,7 +713,6 @@ export function loadDeck() {
       const leaderIds = Object.keys(CHARACTERS).filter(
         (id) =>
           id !== 'player' &&
-          id !== 'campaign_player' &&
           id !== 'unknown' &&
           id !== 'npc' &&
           !BOSS_CHARACTER_IDS.includes(id)
@@ -907,13 +878,7 @@ export function createNewDeck(leaderId) {
 }
 
 export function saveCurrentEditDeck() {
-  if (GameState.gameMode === 'campaign') {
-    GameState.campaignDeck = GameState.playerDeckSelection.map((c) =>
-      typeof c === 'string' ? c : c.baseId || c.id
-    );
-    saveCampaignProgress();
-    return;
-  }
+
 
   // ストーリーモードでは通常デッキを汚染しないよう、ストーリー専用のスナップショットデッキのみを更新して保存する
   if (GameState.gameMode === 'story') {
@@ -1116,9 +1081,6 @@ export function finishDeckEdit() {
     GameState.appState = 'online';
     if (window.reloadOnlineLobbyConfig) window.reloadOnlineLobbyConfig();
     showOnlineLobby();
-  } else if (GameState.gameMode === 'campaign') {
-    GameState.appState = 'battle';
-    prepareBattle();
   } else {
     GameState.appState = 'battle';
     prepareBattle();

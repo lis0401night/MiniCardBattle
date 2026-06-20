@@ -36,11 +36,9 @@ export default function RewardOverlay() {
         setCard({ ...rewardCardTemplate, owner: 'blue' });
 
         // 報酬を即座に付与（アニメーションのタイミングに依存しない）
-        if (GameState.gameMode !== 'campaign') {
-          GameState.playerInventory[rewardCardId] =
-            (GameState.playerInventory[rewardCardId] || 0) + 1;
-          saveDeck();
-        }
+        GameState.playerInventory[rewardCardId] =
+          (GameState.playerInventory[rewardCardId] || 0) + 1;
+        saveDeck();
 
         setPhase('pack');
         setIsFadingOut(false);

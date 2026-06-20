@@ -1,22 +1,13 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
-import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { goToModeSelect, startGameMode } from '../services/uiMainCore.js';
-import { showConfirmModal } from '../services/uiModals.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 /**
  * ソロモードメニュー画面
- * useEasterEggカスタムフックにより、イースターエッグ（キャンペーンモード起動）の処理を共通化。
  */
 export default function SoloMenuScreen() {
   const images = UI_IMAGES || {};
-
-  const handleTitleClick = useEasterEgg(() => {
-    showConfirmModal('キャンペーンモードを開始しますか？', () => {
-      startGameMode?.('campaign');
-    });
-  });
 
   return (
     <ScreenLayout
@@ -24,7 +15,6 @@ export default function SoloMenuScreen() {
       backgroundImage="background_select.png"
       title="ソロモード"
       titleColor="#facc15"
-      onTitleClick={handleTitleClick}
       onBackClick={() => goToModeSelect?.()}
       backHasBorder={true}
     >

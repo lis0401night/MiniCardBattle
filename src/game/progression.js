@@ -9,7 +9,7 @@ import { GameState } from '../state/gameState.js';
 import { switchScreen } from '../utils/gameUtils.js';
 import { prepareBattle } from './battle.js';
 import { handleBattleDungeonProgression } from './battleDungeon.js';
-import { onCampaignDialogueEnd } from './campaign.js';
+
 import { handleEventProgression } from './events.js';
 import { handleStoryProgression } from './story.js';
 import {
@@ -65,8 +65,7 @@ export function handleProgressionNextStep() {
   }
   if (GameState.gameMode === 'free') {
     handleFreeBattleProgression();
-  } else if (GameState.gameMode === 'campaign') {
-    onCampaignDialogueEnd();
+
   } else if (GameState.gameMode === 'battle_dungeon') {
     handleBattleDungeonProgression();
     return;
