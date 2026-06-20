@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { GameState } from '../../state/gameState.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playSound, sleep } from '../../utils/gameUtils.js';
-import { getIsHost } from '../../services/multiplayer.js';
 
-export default function TurnOrderOverlay({ startAnim, firstPlayer, onComplete }) {
+export default function TurnOrderOverlay({
+  startAnim,
+  firstPlayer,
+  onComplete,
+}) {
   const [isVisible, setIsVisible] = useState(false);
   const [phase, setPhase] = useState('idle'); // 'idle' | 'shuffling' | 'result'
   const [playerFirst, setPlayerFirst] = useState(true);
