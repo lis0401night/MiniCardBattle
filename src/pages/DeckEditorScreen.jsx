@@ -36,13 +36,11 @@ export default function DeckEditorScreen({ switchScreen }) {
     if (GameState.gameMode === 'battle_dungeon') {
       const validIds = Object.keys(inv);
       return (CARD_MASTER || []).filter((c) => validIds.includes(c.id));
-
     }
     return (CARD_MASTER || []).filter((c) => !c.isToken);
   };
 
   const computeDeckName = () => {
-
     const currentDeck = GameState.decks?.[GameState.currentDeckIndex] || {};
     return currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`;
   };
@@ -106,7 +104,6 @@ export default function DeckEditorScreen({ switchScreen }) {
       setMasterCards(
         (CARD_MASTER || []).filter((c) => validIds.includes(c.id))
       );
-
     } else {
       setInventory(GameState.playerInventory || {});
       setMasterCards((CARD_MASTER || []).filter((c) => !c.isToken));
@@ -383,8 +380,7 @@ export default function DeckEditorScreen({ switchScreen }) {
             padding: '0 40px',
           }}
         >
-          {isDefenseConfig ||
-          GameState.gameMode === 'battle_dungeon' ? (
+          {isDefenseConfig || GameState.gameMode === 'battle_dungeon' ? (
             <h2
               style={{
                 color: '#facc15',
@@ -393,9 +389,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                 textAlign: 'center',
               }}
             >
-              {isDefenseConfig
-                ? '防衛デッキ構築'
-                : 'デッキ構築'}
+              {isDefenseConfig ? '防衛デッキ構築' : 'デッキ構築'}
             </h2>
           ) : (
             <div
@@ -1013,9 +1007,7 @@ export default function DeckEditorScreen({ switchScreen }) {
               }
             }}
           >
-            {GameState.gameMode === 'story'
-              ? '一時中断して戻る'
-              : '戻る'}
+            {GameState.gameMode === 'story' ? '一時中断して戻る' : '戻る'}
           </button>
         </div>
 

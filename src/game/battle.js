@@ -4300,8 +4300,6 @@ export function endBattle() {
       ];
     }
 
-
-
     // トーナメント：両キャラ表示中に司会者の実況コメントを追加
     if (GameState.gameMode === 'tournament' && GameState.tournament) {
       const currentRound = GameState.tournament.round;

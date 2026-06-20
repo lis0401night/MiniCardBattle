@@ -502,8 +502,6 @@ export function startGameMode(mode) {
     }
   }
 
-
-
   if (mode === 'tournament') {
     const savedTournament = localStorage.getItem(
       'mini_card_battle_tournament_save'

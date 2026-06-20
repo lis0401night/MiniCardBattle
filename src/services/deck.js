@@ -180,7 +180,6 @@ export function generateDeck(owner, config, sessionId) {
         } else {
           recipe = ENEMY_DECKS[charId] || ENEMY_DECKS.android;
         }
-
       } else {
         recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
       }
@@ -475,8 +474,6 @@ export function loadDeck() {
     }
     return;
   }
-
-
 
   // 2. 全体（アカウント）設定のベース読み込み
   // 全体スキンは廃止され、デッキ固有のスキン設定のみを使用します
@@ -878,8 +875,6 @@ export function createNewDeck(leaderId) {
 }
 
 export function saveCurrentEditDeck() {
-
-
   // ストーリーモードでは通常デッキを汚染しないよう、ストーリー専用のスナップショットデッキのみを更新して保存する
   if (GameState.gameMode === 'story') {
     let activeDeck = null;

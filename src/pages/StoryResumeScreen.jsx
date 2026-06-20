@@ -3,7 +3,6 @@ import BackButton from '../components/BackButton.jsx';
 import { clearStoryProgress, resumeStoryProgress } from '../game/story';
 import { goBackFromSelect } from '../services/uiMainCore';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { GameState } from '../state/gameState';
 import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';

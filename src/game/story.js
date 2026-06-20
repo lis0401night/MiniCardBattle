@@ -20,10 +20,7 @@ export function initStoryMode(charId) {
   // 他のキャラクターのIDをランダムに並び替え（プレイヤーと中ボス・大ボスは除く）
   const otherIds = Object.keys(CHARACTERS).filter(
     (id) =>
-      id !== charId &&
-      id !== 'satan' &&
-      id !== 'void' &&
-      id !== 'succubus'
+      id !== charId && id !== 'satan' && id !== 'void' && id !== 'succubus'
   );
   for (let i = otherIds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

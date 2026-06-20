@@ -28,11 +28,7 @@ const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 // リーダー統計から除外すべきキャラクターを判定
 // satan: 特殊キャラクター、void/succubus: トーナメント除外キャラ、campaign_*: キャンペーン専用
 const shouldExcludeFromLeaderStats = (charId) => {
-  return (
-    charId === 'satan' ||
-    charId === 'void' ||
-    charId === 'succubus'
-  );
+  return charId === 'satan' || charId === 'void' || charId === 'succubus';
 };
 
 export default function AchievementsScreen() {

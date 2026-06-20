@@ -65,7 +65,6 @@ export function handleProgressionNextStep() {
   }
   if (GameState.gameMode === 'free') {
     handleFreeBattleProgression();
-
   } else if (GameState.gameMode === 'battle_dungeon') {
     handleBattleDungeonProgression();
     return;

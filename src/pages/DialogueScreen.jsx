@@ -266,10 +266,7 @@ export default function DialogueScreen() {
               d.rightFilter && d.rightFilter !== 'none'
                 ? d.rightFilter
                 : undefined,
-            display:
-              d.centerMode
-                ? 'none'
-                : d.rightDisplay || 'block',
+            display: d.centerMode ? 'none' : d.rightDisplay || 'block',
             visibility: d.rightImage ? 'visible' : 'hidden',
           }}
         />
