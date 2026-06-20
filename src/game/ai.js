@@ -58,11 +58,7 @@ export async function executeEnemyAI() {
       const lc = CARD_MASTER.find(
         (c) => c.id === GameState.enemyConfig.leaderCardId
       );
-      if (
-        lc &&
-        (lc.skill === 'takeover' ||
-          (lc.skills && lc.skills.some((s) => s.id === 'takeover')))
-      ) {
+      if (lc && lc.skills && lc.skills.some((s) => s.id === 'takeover')) {
         if (!GameState.enemyBoard.some((c) => c !== null)) {
           canUseSkill = false;
         }

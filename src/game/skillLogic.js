@@ -656,8 +656,6 @@ export async function resolveActiveSkillEffect(
     c.power = randomMaster.power;
     c.currentPower = randomMaster.power;
     c.basePower = randomMaster.power;
-    c.skill = randomMaster.skill || 'none';
-    c.skillValue = randomMaster.skillValue || 0;
     c.skills = randomMaster.skills
       ? JSON.parse(JSON.stringify(randomMaster.skills))
       : [];
@@ -1301,8 +1299,6 @@ export async function resolveActiveSkillEffect(
         const card = b[i];
         if (card) {
           card.skills = [];
-          card.skill = 'none';
-          card.skillValue = 0;
           card.stunTurns = 0;
           card.stunAppliedThisTurn = false;
 
@@ -1325,15 +1321,11 @@ export async function resolveActiveSkillEffect(
       const toxVal = skillValue || 1;
       eB[l].skills = eB[l].skills || [];
 
-      if (eB[l].skill === 'growth') {
-        eB[l].skillValue = (eB[l].skillValue || 0) - toxVal;
+      const exist = eB[l].skills.find((s) => s.id === 'growth');
+      if (exist) {
+        exist.value = (exist.value || 0) - toxVal;
       } else {
-        const exist = eB[l].skills.find((s) => s.id === 'growth');
-        if (exist) {
-          exist.value = (exist.value || 0) - toxVal;
-        } else {
-          eB[l].skills.push({ id: 'growth', value: -toxVal });
-        }
+        eB[l].skills.push({ id: 'growth', value: -toxVal });
       }
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
@@ -2092,24 +2084,10 @@ export async function resolveActiveSkillEffect(
 
             // スキルの統合
             if (!targetCard.skills) {
-              targetCard.skills =
-                targetCard.skill && targetCard.skill !== 'none'
-                  ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                  : [];
-              targetCard.skill = 'none';
+              targetCard.skills = [];
             }
 
             const equipSkills = [];
-            if (
-              selectedCard.skill &&
-              selectedCard.skill !== 'none' &&
-              selectedCard.skill !== 'equip'
-            ) {
-              equipSkills.push({
-                id: selectedCard.skill,
-                value: selectedCard.skillValue,
-              });
-            }
             if (selectedCard.skills) {
               selectedCard.skills.forEach((s) => {
                 if (s.id !== 'equip') equipSkills.push(s);

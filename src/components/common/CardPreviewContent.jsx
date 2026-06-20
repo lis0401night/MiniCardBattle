@@ -51,17 +51,9 @@ export default function CardPreviewContent({
     styleProps.titleColor || rarityColors[card.rarity] || '#fff';
   const filter = GameState.playerConfig?.filter || 'none';
 
-  let skillCandidates = [];
-  if (card.skill && card.skill !== 'none' && card.skill !== undefined)
-    skillCandidates.push({
-      id: card.skill,
-      value: card.skillValue,
-      choiceGroup: card.choiceGroup,
-      targetId: card.targetId,
-      summonId: card.summonId,
-    });
-  if (Array.isArray(card.skills))
-    card.skills.forEach((sk) => skillCandidates.push({ ...sk }));
+  const skillCandidates = Array.isArray(card.skills)
+    ? card.skills.map((sk) => ({ ...sk }))
+    : [];
 
   let lookupId = card.baseId || card.id;
   let isPremiumActive = false;

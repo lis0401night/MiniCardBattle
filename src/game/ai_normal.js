@@ -57,15 +57,6 @@ function decayInvincibleSkills(board) {
   board.forEach((c) => {
     if (!c) return;
 
-    // 1. メインの skill フィールドが invincible の場合
-    if (c.skill === 'invincible') {
-      c.skillValue = (c.skillValue || 1) - 1;
-      if (c.skillValue <= 0) {
-        c.skill = 'none';
-        c.skillValue = 0;
-      }
-    }
-
     // 2. skills 配列内に invincible がある場合
     if (Array.isArray(c.skills)) {
       const invSk = c.skills.find((s) => s.id === 'invincible');
@@ -317,12 +308,6 @@ export function processActionSequence(
             // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
             let inheritedSkills = [];
             if (action.skillId === 'clone' && sourceCard) {
-              if (sourceCard.skill && sourceCard.skill !== 'none') {
-                inheritedSkills.push({
-                  id: sourceCard.skill,
-                  value: sourceCard.skillValue,
-                });
-              }
               if (Array.isArray(sourceCard.skills)) {
                 inheritedSkills = inheritedSkills.concat(sourceCard.skills);
               }
@@ -462,23 +447,9 @@ export function processActionSequence(
                 (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
               if (!targetCard.skills) {
-                targetCard.skills =
-                  targetCard.skill && targetCard.skill !== 'none'
-                    ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                    : [];
-                targetCard.skill = 'none';
+                targetCard.skills = [];
               }
               const equipSkills = [];
-              if (
-                selectedCard.skill &&
-                selectedCard.skill !== 'none' &&
-                selectedCard.skill !== 'equip'
-              ) {
-                equipSkills.push({
-                  id: selectedCard.skill,
-                  value: selectedCard.skillValue,
-                });
-              }
               if (selectedCard.skills) {
                 selectedCard.skills.forEach((s) => {
                   if (s.id !== 'equip') equipSkills.push(s);
@@ -555,14 +526,7 @@ export function processActionSequence(
         if (hasSkill(playedCard, 'apex')) {
           const targetCard =
             simState.enemyBoard[lIdx] || parentCardOnLane[lIdx];
-          if (
-            !targetCard ||
-            !(
-              targetCard.skill === 'legendary' ||
-              (targetCard.skills &&
-                targetCard.skills.some((s) => s.id === 'legendary'))
-            )
-          ) {
+          if (!targetCard || !hasSkill(targetCard, 'legendary')) {
             return null;
           }
         }
@@ -570,29 +534,9 @@ export function processActionSequence(
 
       // 【装備・配置共通】選択スキル（choice/force）を事前解決し、手札カードのスキル情報に反映する
       if (playedCard) {
-        let resolvedSkills = [];
         let newSkillsArr = [];
 
-        // 1. メインの単一スキル（skill）が choice / force の場合
-        if (playedCard.skill && playedCard.skill !== 'none') {
-          if (
-            (playedCard.skill === 'choice' || playedCard.skill === 'force') &&
-            action.choices &&
-            playedCard.choices
-          ) {
-            action.choices.forEach((idx) => {
-              if (playedCard.choices[idx]) {
-                resolvedSkills.push({
-                  id: playedCard.choices[idx].id,
-                  value: playedCard.choices[idx].value,
-                });
-              }
-            });
-            playedCard.skill = 'none';
-          }
-        }
-
-        // 2. 複数スキル配列（skills）内の各要素が choice / force の場合
+        // 複数スキル配列（skills）内の各要素が choice / force の場合
         if (Array.isArray(playedCard.skills)) {
           playedCard.skills.forEach((sk) => {
             if (sk.id === 'choice' || sk.id === 'force') {
@@ -624,16 +568,6 @@ export function processActionSequence(
             }
           });
         }
-
-        // 3. 解決したスキルを playedCard に反映させる
-        if (resolvedSkills.length > 0) {
-          // メインスキルから解決された最初のものをメインスキルにセット、残りは skills 配列に追加する
-          playedCard.skill = resolvedSkills[0].id;
-          playedCard.skillValue = resolvedSkills[0].value;
-          if (resolvedSkills.length > 1) {
-            newSkillsArr = newSkillsArr.concat(resolvedSkills.slice(1));
-          }
-        }
         playedCard.skills = newSkillsArr;
       }
 
@@ -650,15 +584,6 @@ export function processActionSequence(
         targetCard.currentPower =
           (targetCard.currentPower || 0) + (playedCard.power || 0);
         let addedSkills = [];
-        if (
-          playedCard.skill &&
-          playedCard.skill !== 'none' &&
-          playedCard.skill !== 'equip'
-        )
-          addedSkills.push({
-            id: playedCard.skill,
-            value: playedCard.skillValue,
-          });
         if (playedCard.skills)
           playedCard.skills.forEach((s) => {
             if (s.id !== 'equip')
@@ -751,33 +676,6 @@ export function processActionSequence(
         }
 
         let skills = [];
-        let modifiedSkillsForCard = [];
-        if (activeCardForSkills.skill && activeCardForSkills.skill !== 'none') {
-          if (
-            (activeCardForSkills.skill === 'choice' ||
-              activeCardForSkills.skill === 'force') &&
-            action.choices &&
-            activeCardForSkills.choices
-          ) {
-            action.choices.forEach((idx) => {
-              if (activeCardForSkills.choices[idx]) {
-                let sk = {
-                  id: activeCardForSkills.choices[idx].id,
-                  value: activeCardForSkills.choices[idx].value,
-                };
-                skills.push(sk);
-                modifiedSkillsForCard.push(sk);
-              }
-            });
-            activeCardForSkills.skill = 'none';
-          } else {
-            skills.push({
-              id: activeCardForSkills.skill,
-              value: activeCardForSkills.skillValue,
-            });
-          }
-        }
-
         let newSkillsArr = [];
         if (Array.isArray(activeCardForSkills.skills)) {
           activeCardForSkills.skills.forEach((sk) => {
@@ -814,12 +712,7 @@ export function processActionSequence(
               newSkillsArr.push(sk);
             }
           });
-          activeCardForSkills.skills = [
-            ...newSkillsArr,
-            ...modifiedSkillsForCard,
-          ];
-        } else if (modifiedSkillsForCard.length > 0) {
-          activeCardForSkills.skills = [...modifiedSkillsForCard];
+          activeCardForSkills.skills = newSkillsArr;
         }
 
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
@@ -1026,9 +919,7 @@ export function getBestSimulatedMove() {
     if (hasSkill(card, 'choice') || hasSkill(card, 'force')) {
       if (Array.isArray(card.choices)) {
         let cc = 1;
-        if (card.skill === 'choice' || card.skill === 'force')
-          cc = card.skillValue || 1;
-        else if (card.skills) {
+        if (card.skills) {
           const c = card.skills.find(
             (s) => s.id === 'choice' || s.id === 'force'
           );
@@ -1065,11 +956,7 @@ export function getBestSimulatedMove() {
 
           // 基本性能からの集計
           const gatherCounts = (c) => {
-            const skillsToGather = [];
-            if (c.skill && c.skill !== 'none')
-              skillsToGather.push({ id: c.skill, value: c.skillValue ?? 1 });
-            if (Array.isArray(c.skills))
-              c.skills.forEach((s) => skillsToGather.push(s));
+            const skillsToGather = Array.isArray(c.skills) ? [...c.skills] : [];
 
             skillsToGather.forEach((sk) => {
               if (['snipe', 'artillery', 'seal'].includes(sk.id))
@@ -1162,27 +1049,6 @@ export function getBestSimulatedMove() {
             ].includes(sourceType);
             if (isSummonAction) {
               // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時発動）のため、ここには含めない
-              if (
-                [
-                  'invite',
-                  'chant',
-                  'resurrect',
-                  'convert',
-                  'draw',
-                  'reinforce',
-                  'clone',
-                  'summon',
-                  'split',
-                  'puppet',
-                  'leap',
-                  'forge',
-                ].includes(card.skill)
-              ) {
-                effectiveSkills.push({
-                  id: card.skill,
-                  value: card.skillValue ?? 1,
-                });
-              }
               if (Array.isArray(card.skills)) {
                 card.skills.forEach((s) => {
                   // ※ awake（覚醒）はパッシブスキルのため除外
@@ -1205,6 +1071,7 @@ export function getBestSimulatedMove() {
                     effectiveSkills.push(s);
                 });
               }
+
               if (c1)
                 c1.forEach((idx) => {
                   if (card.choices && card.choices[idx])
@@ -2244,17 +2111,9 @@ export function evaluateSimState(state) {
           utilityScore += val;
         }
       };
-      if (c.skill && c.skill !== 'none') {
-        // アクティブスキル（draw, heal等）は未発動時のみ加算
-        if (
-          !c.skillTriggered ||
-          !['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(c.skill)
-        ) {
-          addUtility(c.skill);
-        }
-      }
       if (Array.isArray(c.skills)) {
         c.skills.forEach((sk) => {
+          // アクティブスキル（draw, heal等）は未発動時のみ加算
           if (
             !c.skillTriggered ||
             !['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
@@ -2925,9 +2784,7 @@ export function evaluateAdhocTokenLanes(
     if (hasSkill(card, 'choice') || hasSkill(card, 'force')) {
       if (Array.isArray(card.choices)) {
         let cc = 1;
-        if (card.skill === 'choice' || card.skill === 'force')
-          cc = card.skillValue || 1;
-        else if (card.skills) {
+        if (card.skills) {
           const c = card.skills.find(
             (s) => s.id === 'choice' || s.id === 'force'
           );
@@ -2978,27 +2835,6 @@ export function evaluateAdhocTokenLanes(
             'forge',
           ].includes(sourceType);
           if (isSummonAction) {
-            if (
-              [
-                'invite',
-                'chant',
-                'resurrect',
-                'convert',
-                'draw',
-                'reinforce',
-                'clone',
-                'summon',
-                'split',
-                'puppet',
-                'leap',
-                'forge',
-              ].includes(card.skill)
-            ) {
-              effectiveSkills.push({
-                id: card.skill,
-                value: card.skillValue ?? 1,
-              });
-            }
             if (Array.isArray(card.skills)) {
               card.skills.forEach((s) => {
                 if (
@@ -3073,14 +2909,6 @@ export function evaluateAdhocTokenLanes(
 
     // 発動するスキルを収集
     let effectiveSkills = [];
-    if (tokenCard.skill && tokenCard.skill !== 'none') {
-      if (tokenCard.skill !== 'choice' && tokenCard.skill !== 'force') {
-        effectiveSkills.push({
-          id: tokenCard.skill,
-          value: tokenCard.skillValue ?? 1,
-        });
-      }
-    }
     if (Array.isArray(tokenCard.skills)) {
       tokenCard.skills.forEach((s) => {
         if (s.id !== 'choice' && s.id !== 'force') {
@@ -3095,9 +2923,7 @@ export function evaluateAdhocTokenLanes(
     if (hasSkill(tokenCard, 'choice') || hasSkill(tokenCard, 'force')) {
       if (Array.isArray(tokenCard.choices)) {
         let cc = 1;
-        if (tokenCard.skill === 'choice' || tokenCard.skill === 'force')
-          cc = tokenCard.skillValue || 1;
-        else if (tokenCard.skills) {
+        if (tokenCard.skills) {
           const c = tokenCard.skills.find(
             (s) => s.id === 'choice' || s.id === 'force'
           );
@@ -3570,15 +3396,6 @@ export function simulateMove(
           targetCard.currentPower =
             (targetCard.currentPower || 0) + (playedCard.power || 0);
           let addedSkills = [];
-          if (
-            playedCard.skill &&
-            playedCard.skill !== 'none' &&
-            playedCard.skill !== 'equip'
-          )
-            addedSkills.push({
-              id: playedCard.skill,
-              value: playedCard.skillValue,
-            });
           if (playedCard.skills)
             playedCard.skills.forEach((s) => {
               if (s.id !== 'equip')
@@ -3644,28 +3461,6 @@ export function simulateMove(
             activeCard.isSkillResolving = true;
           }
           let skills = [];
-          if (activeCard.skill && activeCard.skill !== 'none') {
-            if (
-              activeCard.skill === 'choice' &&
-              choiceIndex !== undefined &&
-              activeCard.choices
-            ) {
-              let idxs = Array.isArray(choiceIndex)
-                ? choiceIndex
-                : [choiceIndex];
-              idxs.forEach((idx) => {
-                if (activeCard.choices[idx])
-                  skills.push({
-                    id: activeCard.choices[idx].id,
-                    value: activeCard.choices[idx].value,
-                  });
-              });
-            } else
-              skills.push({
-                id: activeCard.skill,
-                value: activeCard.skillValue,
-              });
-          }
           if (Array.isArray(activeCard.skills)) {
             activeCard.skills.forEach((sk) => {
               if (sk.id === 'choice') {
@@ -3687,7 +3482,6 @@ export function simulateMove(
 
           // 選択されたスキルでカードのスキルを上書きし、パッシブスキルの評価に反映させる
           activeCard.skills = [...skills];
-          activeCard.skill = 'none';
 
           if (!activeCard.skillTriggered) {
             skills.forEach((sk) => {

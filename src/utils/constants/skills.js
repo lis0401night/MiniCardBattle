@@ -842,35 +842,143 @@ export const SKILL_CATEGORIES = [
     id: 'active',
     name: 'アクティブスキル (召喚時に発動)',
     groups: [
-      { name: '火力・ダメージ', skills: ['snipe', 'snipe_void', 'spread', 'spread_void', 'artillery', 'decree', 'fate'] },
-      { name: '妨害・状態付与', skills: ['bind', 'freeze', 'toxic', 'seal', 'petrify', 'oblivion'] },
-      { name: '召喚・展開', skills: ['summon', 'clone', 'resurrect', 'puppet', 'invite', 'chant', 'forge', 'call'] },
-      { name: '手札・山札操作', skills: ['draw', 'salvage', 'reinforce', 'convert', 'explore', 'loss', 'burial', 'recurse', 'shuffle'] },
-      { name: '自己バフ・変身', skills: ['support', 'support_void', 'sublimation', 'bless', 'replicate', 'double_power', 'metamorph'] },
-      { name: '行動変化・特殊', skills: ['quick', 'standby', 'stealth', 'leap', 'dominate'] },
-      { name: '回復・自傷・SP', skills: ['heal', 'heal_void', 'sacrifice', 'sacrifice_void', 'charge', 'spend', 'hack'] },
-      { name: '破壊・除去', skills: ['execute', 'cull', 'crush', 'treason', 'dispel'] },
+      {
+        name: '火力・ダメージ',
+        skills: [
+          'snipe',
+          'snipe_void',
+          'spread',
+          'spread_void',
+          'artillery',
+          'decree',
+          'fate',
+        ],
+      },
+      {
+        name: '妨害・状態付与',
+        skills: ['bind', 'freeze', 'toxic', 'seal', 'petrify', 'oblivion'],
+      },
+      {
+        name: '召喚・展開',
+        skills: [
+          'summon',
+          'clone',
+          'resurrect',
+          'puppet',
+          'invite',
+          'chant',
+          'forge',
+          'call',
+        ],
+      },
+      {
+        name: '手札・山札操作',
+        skills: [
+          'draw',
+          'salvage',
+          'reinforce',
+          'convert',
+          'explore',
+          'loss',
+          'burial',
+          'recurse',
+          'shuffle',
+        ],
+      },
+      {
+        name: '自己バフ・変身',
+        skills: [
+          'support',
+          'support_void',
+          'sublimation',
+          'bless',
+          'replicate',
+          'double_power',
+          'metamorph',
+        ],
+      },
+      {
+        name: '行動変化・特殊',
+        skills: ['quick', 'standby', 'stealth', 'leap', 'dominate'],
+      },
+      {
+        name: '回復・自傷・SP',
+        skills: [
+          'heal',
+          'heal_void',
+          'sacrifice',
+          'sacrifice_void',
+          'charge',
+          'spend',
+          'hack',
+        ],
+      },
+      {
+        name: '破壊・除去',
+        skills: ['execute', 'cull', 'crush', 'treason', 'dispel'],
+      },
       { name: '選択・命令', skills: ['choice', 'force'] },
-      { name: 'デバフ・盤面参照', skills: ['decay', 'lone_wolf', 'hero', 'adversity'] },
-    ]
+      {
+        name: 'デバフ・盤面参照',
+        skills: ['decay', 'lone_wolf', 'hero', 'adversity'],
+      },
+    ],
   },
   {
     id: 'passive',
     name: 'パッシブスキル (継続・戦闘時効果)',
     groups: [
-      { name: '戦闘補正', skills: ['sturdy', 'double_strike', 'deadly', 'pierce', 'cleave'] },
-      { name: '戦闘時・撃破時誘発', skills: ['soul_bind', 'soul_bind_void', 'extort', 'retaliate', 'explode', 'split'] },
-      { name: 'ダメージ肩代わり', skills: ['guardian', 'substitute', 'martyr', 'possession'] },
-      { name: '耐性・防御', skills: ['invincible', 'reflect', 'immune', 'dodge', 'defender'] },
-      { name: 'ターン開始時効果', skills: ['growth', 'intercept', 'awake', 'samsara', 'contract'] },
-      { name: '盤面影響・その他', skills: ['move', 'teleport', 'phase', 'brutal', 'absorb', 'equip', 'arm_self', 'union', 'grave_keeper'] },
-    ]
+      {
+        name: '戦闘補正',
+        skills: ['sturdy', 'double_strike', 'deadly', 'pierce', 'cleave'],
+      },
+      {
+        name: '戦闘時・撃破時誘発',
+        skills: [
+          'soul_bind',
+          'soul_bind_void',
+          'extort',
+          'retaliate',
+          'explode',
+          'split',
+        ],
+      },
+      {
+        name: 'ダメージ肩代わり',
+        skills: ['guardian', 'substitute', 'martyr', 'possession'],
+      },
+      {
+        name: '耐性・防御',
+        skills: ['invincible', 'reflect', 'immune', 'dodge', 'defender'],
+      },
+      {
+        name: 'ターン開始時効果',
+        skills: ['growth', 'intercept', 'awake', 'samsara', 'contract'],
+      },
+      {
+        name: '盤面影響・その他',
+        skills: [
+          'move',
+          'teleport',
+          'phase',
+          'brutal',
+          'absorb',
+          'equip',
+          'arm_self',
+          'union',
+          'grave_keeper',
+        ],
+      },
+    ],
   },
   {
     id: 'constraint',
     name: '制約スキル (配置ルール制限)',
     groups: [
-      { name: '配置制約', skills: ['legendary', 'takeover', 'challenge', 'apex'] }
-    ]
-  }
+      {
+        name: '配置制約',
+        skills: ['legendary', 'takeover', 'challenge', 'apex'],
+      },
+    ],
+  },
 ];

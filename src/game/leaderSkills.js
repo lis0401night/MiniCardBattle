@@ -283,23 +283,9 @@ export async function executeLeaderSkillAction(
         targetCard.currentPower =
           (targetCard.currentPower || 0) + (tokenCard.power || 0);
         if (!targetCard.skills) {
-          targetCard.skills =
-            targetCard.skill && targetCard.skill !== 'none'
-              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-              : [];
-          targetCard.skill = 'none';
+          targetCard.skills = [];
         }
         const equipSkills = [];
-        if (
-          tokenCard.skill &&
-          tokenCard.skill !== 'none' &&
-          tokenCard.skill !== 'equip'
-        ) {
-          equipSkills.push({
-            id: tokenCard.skill,
-            value: tokenCard.skillValue,
-          });
-        }
         if (tokenCard.skills) {
           tokenCard.skills.forEach((s) => {
             if (s.id !== 'equip') equipSkills.push(s);
@@ -1188,23 +1174,9 @@ export async function executeLeaderSkillAction(
             (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
           if (!targetCard.skills) {
-            targetCard.skills =
-              targetCard.skill && targetCard.skill !== 'none'
-                ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                : [];
-            targetCard.skill = 'none';
+            targetCard.skills = [];
           }
           const equipSkills = [];
-          if (
-            selectedCard.skill &&
-            selectedCard.skill !== 'none' &&
-            selectedCard.skill !== 'equip'
-          ) {
-            equipSkills.push({
-              id: selectedCard.skill,
-              value: selectedCard.skillValue,
-            });
-          }
           if (selectedCard.skills) {
             selectedCard.skills.forEach((s) => {
               if (s.id !== 'equip') equipSkills.push(s);

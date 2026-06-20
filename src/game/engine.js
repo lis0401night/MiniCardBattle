@@ -203,8 +203,6 @@ export function processPlacementOrEquip(
       (existingCard.currentPower || 0) + (newCard.power || 0);
 
     let equipSkills = [];
-    if (newCard.skill && newCard.skill !== 'none' && newCard.skill !== 'equip')
-      equipSkills.push({ id: newCard.skill, value: newCard.skillValue });
     if (newCard.skills)
       newCard.skills.forEach((s) => {
         if (s.id !== 'equip') equipSkills.push(s);
@@ -425,8 +423,6 @@ export function applyActiveSkillLogic(
           const card = board[i];
           if (card) {
             card.skills = [];
-            card.skill = 'none';
-            card.skillValue = 0;
             card.stunTurns = 0;
             card.stunAppliedThisTurn = false;
 
@@ -538,23 +534,9 @@ export function applyActiveSkillLogic(
             (targetCard.currentPower || 0) + (stolenCard.power || 0);
 
           if (!targetCard.skills) {
-            targetCard.skills =
-              targetCard.skill && targetCard.skill !== 'none'
-                ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                : [];
-            targetCard.skill = 'none';
+            targetCard.skills = [];
           }
           const equipSkills = [];
-          if (
-            stolenCard.skill &&
-            stolenCard.skill !== 'none' &&
-            stolenCard.skill !== 'equip'
-          ) {
-            equipSkills.push({
-              id: stolenCard.skill,
-              value: stolenCard.skillValue,
-            });
-          }
           if (stolenCard.skills) {
             stolenCard.skills.forEach((s) => {
               if (s.id !== 'equip') equipSkills.push(s);
@@ -958,7 +940,6 @@ export function applyActiveSkillLogic(
               power: voidTpl.power,
               currentPower: voidTpl.power,
               basePower: voidTpl.power,
-              skill: voidTpl.skill || 'none',
               voiceCategory: voidTpl.voiceCategory || 'undead',
               isToken: true,
               isMorphToken: true,
@@ -980,15 +961,11 @@ export function applyActiveSkillLogic(
       if (eB[l]) {
         const toxVal = val || 1;
         eB[l].skills = eB[l].skills || [];
-        if (eB[l].skill === 'growth') {
-          eB[l].skillValue = (eB[l].skillValue || 0) - toxVal;
+        const exist = eB[l].skills.find((s) => s.id === 'growth');
+        if (exist) {
+          exist.value = (exist.value || 0) - toxVal;
         } else {
-          const exist = eB[l].skills.find((s) => s.id === 'growth');
-          if (exist) {
-            exist.value = (exist.value || 0) - toxVal;
-          } else {
-            eB[l].skills.push({ id: 'growth', value: -toxVal });
-          }
+          eB[l].skills.push({ id: 'growth', value: -toxVal });
         }
         events.push({
           type: 'add_skill',
@@ -1172,9 +1149,6 @@ export function applyActiveSkillLogic(
           );
           for (const eqC of tgt.equippedCards) {
             const equipSkills = [];
-            if (eqC.skill && eqC.skill !== 'none' && eqC.skill !== 'equip') {
-              equipSkills.push({ id: eqC.skill, value: eqC.skillValue });
-            }
             if (eqC.skills) {
               eqC.skills.forEach((s) => {
                 if (s.id !== 'equip') equipSkills.push(s);
@@ -1495,11 +1469,7 @@ export function applyActiveSkillLogic(
       // 覚醒: 同レーンにトークンを配置し、元のカードを墓地へ送る（変身/置換）
       const awakeVal = val || 1;
       let awakeTid = null;
-      const awakeSkill =
-        c.skills?.find((s) => s.id === 'awake') ||
-        (c.skill === 'awake'
-          ? { id: 'awake', value: c.skillValue, summonId: c.summonId }
-          : null);
+      const awakeSkill = c.skills?.find((s) => s.id === 'awake');
       awakeTid = awakeSkill?.summonId || 'token_dragon';
 
       const awakeTpl = CARD_MASTER.find((m) => m.id === awakeTid);
@@ -1626,16 +1596,6 @@ export function applyActiveSkillLogic(
               (existingCard.currentPower || 0) + (simResCard.power || 0);
 
             const equipSkills = [];
-            if (
-              simResCard.skill &&
-              simResCard.skill !== 'none' &&
-              simResCard.skill !== 'equip'
-            ) {
-              equipSkills.push({
-                id: simResCard.skill,
-                value: simResCard.skillValue,
-              });
-            }
             if (Array.isArray(simResCard.skills)) {
               simResCard.skills.forEach((s) => {
                 if (s.id !== 'equip') equipSkills.push(s);
@@ -1761,16 +1721,7 @@ export function applyActiveSkillLogic(
       };
       // スキルの引き継ぎ（分身含む全スキル）
       // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
-      let inheritedSkills = [];
-      if (c.skill) {
-        const inherited = { id: c.skill, value: c.skillValue };
-        if (c.summonId) inherited.summonId = c.summonId;
-        if (c.targetId) inherited.targetId = c.targetId;
-        inheritedSkills.push(inherited);
-      }
-      if (Array.isArray(c.skills)) {
-        inheritedSkills = inheritedSkills.concat(c.skills);
-      }
+      let inheritedSkills = Array.isArray(c.skills) ? [...c.skills] : [];
 
       for (let i = 0; i < cloneCount; i++) {
         let targetLane = -1;
@@ -2063,12 +2014,6 @@ function tryEquipToken(board, lane, newToken, owner, events) {
       // 武装（arm_self）の消費処理
       consumeArmSelf(boardCard, newToken);
       let addedSkills = [];
-      if (
-        newToken.skill &&
-        newToken.skill !== 'none' &&
-        newToken.skill !== 'equip'
-      )
-        addedSkills.push({ id: newToken.skill, value: newToken.skillValue });
       if (newToken.skills)
         newToken.skills.forEach((s) => {
           if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value });
@@ -2250,23 +2195,9 @@ export function applyLeaderSkillLogic(
           (targetCard.currentPower || 0) + (selectedCard.power || 0);
 
         if (!targetCard.skills) {
-          targetCard.skills =
-            targetCard.skill && targetCard.skill !== 'none'
-              ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-              : [];
-          targetCard.skill = 'none';
+          targetCard.skills = [];
         }
         const equipSkills = [];
-        if (
-          selectedCard.skill &&
-          selectedCard.skill !== 'none' &&
-          selectedCard.skill !== 'equip'
-        ) {
-          equipSkills.push({
-            id: selectedCard.skill,
-            value: selectedCard.skillValue,
-          });
-        }
         if (selectedCard.skills) {
           selectedCard.skills.forEach((s) => {
             if (s.id !== 'equip') equipSkills.push(s);
@@ -3097,16 +3028,6 @@ export function applyLeaderSkillLogic(
             (existingCard.currentPower || 0) + (selectedCard.power || 0);
 
           const equipSkills = [];
-          if (
-            selectedCard.skill &&
-            selectedCard.skill !== 'none' &&
-            selectedCard.skill !== 'equip'
-          ) {
-            equipSkills.push({
-              id: selectedCard.skill,
-              value: selectedCard.skillValue,
-            });
-          }
           if (selectedCard.skills) {
             selectedCard.skills.forEach((s) => {
               if (s.id !== 'equip') equipSkills.push(s);
@@ -4777,11 +4698,7 @@ export function applyPassiveSkillLogic(
     }
     if (hasSkill(c, 'awake')) {
       const v = getSkillValue(c, 'awake') || 1;
-      const awakeSkill =
-        c.skills?.find((s) => s.id === 'awake') ||
-        (c.skill === 'awake'
-          ? { id: 'awake', value: c.skillValue, summonId: c.summonId }
-          : null);
+      const awakeSkill = c.skills?.find((s) => s.id === 'awake');
       const summonId = awakeSkill?.summonId || 'token_dragon';
 
       // 同レーンにトークンを配置（Place）
@@ -4890,7 +4807,6 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
         power: voidTpl.power,
         currentPower: voidTpl.power,
         basePower: voidTpl.power,
-        skill: voidTpl.skill || 'none',
         voiceCategory: voidTpl.voiceCategory || 'undead',
         isToken: true,
         isMorphToken: true,

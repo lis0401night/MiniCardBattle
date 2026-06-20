@@ -955,20 +955,10 @@ export async function waitPlayerLaneSelection(
     if (checkConstraints && tokenCard) {
       const oppBoard =
         owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-      const hasLegendary =
-        tokenCard.skill === 'legendary' ||
-        (tokenCard.skills &&
-          tokenCard.skills.some((s) => s.id === 'legendary'));
-      const hasTakeover =
-        tokenCard.skill === 'takeover' ||
-        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'takeover'));
-      const hasApex =
-        tokenCard.skill === 'apex' ||
-        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'apex'));
-      const hasChallenge =
-        tokenCard.skill === 'challenge' ||
-        (tokenCard.skills &&
-          tokenCard.skills.some((s) => s.id === 'challenge'));
+      const hasLegendary = hasSkill(tokenCard, 'legendary');
+      const hasTakeover = hasSkill(tokenCard, 'takeover');
+      const hasApex = hasSkill(tokenCard, 'apex');
+      const hasChallenge = hasSkill(tokenCard, 'challenge');
 
       validLanes = validLanes.filter((i) => {
         if (
@@ -986,14 +976,7 @@ export async function waitPlayerLaneSelection(
         }
         if (hasApex) {
           const targetCard = board[i];
-          if (
-            !targetCard ||
-            !(
-              targetCard.skill === 'legendary' ||
-              (targetCard.skills &&
-                targetCard.skills.some((s) => s.id === 'legendary'))
-            )
-          ) {
+          if (!targetCard || !hasSkill(targetCard, 'legendary')) {
             return false;
           }
         }
@@ -1103,16 +1086,9 @@ export async function waitPlayerLaneSelection(
 
     // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
     if (checkConstraints && tokenCard) {
-      const hasLegendary =
-        tokenCard.skill === 'legendary' ||
-        (tokenCard.skills &&
-          tokenCard.skills.some((s) => s.id === 'legendary'));
-      const hasTakeover =
-        tokenCard.skill === 'takeover' ||
-        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'takeover'));
-      const hasApex =
-        tokenCard.skill === 'apex' ||
-        (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'apex'));
+      const hasLegendary = hasSkill(tokenCard, 'legendary');
+      const hasTakeover = hasSkill(tokenCard, 'takeover');
+      const hasApex = hasSkill(tokenCard, 'apex');
 
       if (hasLegendary) {
         selectedLanes = selectedLanes.filter((i) => i === 1);
@@ -1122,17 +1098,10 @@ export async function waitPlayerLaneSelection(
       }
       if (hasApex) {
         selectedLanes = selectedLanes.filter(
-          (i) =>
-            board[i] &&
-            (board[i].skill === 'legendary' ||
-              (board[i].skills &&
-                board[i].skills.some((s) => s.id === 'legendary')))
+          (i) => board[i] && hasSkill(board[i], 'legendary')
         );
       }
-      const hasChallenge =
-        tokenCard.skill === 'challenge' ||
-        (tokenCard.skills &&
-          tokenCard.skills.some((s) => s.id === 'challenge'));
+      const hasChallenge = hasSkill(tokenCard, 'challenge');
       if (hasChallenge) {
         const oppBoard =
           owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
@@ -1153,17 +1122,9 @@ export async function waitPlayerLaneSelection(
       );
 
       if (checkConstraints && tokenCard) {
-        const hasLegendary =
-          tokenCard.skill === 'legendary' ||
-          (tokenCard.skills &&
-            tokenCard.skills.some((s) => s.id === 'legendary'));
-        const hasTakeover =
-          tokenCard.skill === 'takeover' ||
-          (tokenCard.skills &&
-            tokenCard.skills.some((s) => s.id === 'takeover'));
-        const hasApex =
-          tokenCard.skill === 'apex' ||
-          (tokenCard.skills && tokenCard.skills.some((s) => s.id === 'apex'));
+        const hasLegendary = hasSkill(tokenCard, 'legendary');
+        const hasTakeover = hasSkill(tokenCard, 'takeover');
+        const hasApex = hasSkill(tokenCard, 'apex');
 
         if (hasLegendary) {
           validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
@@ -1174,24 +1135,13 @@ export async function waitPlayerLaneSelection(
         }
         if (hasApex) {
           validEmptyLanes = validEmptyLanes.filter(
-            (i) =>
-              board[i] &&
-              (board[i].skill === 'legendary' ||
-                (board[i].skills &&
-                  board[i].skills.some((s) => s.id === 'legendary')))
+            (i) => board[i] && hasSkill(board[i], 'legendary')
           );
           validOccupiedLanes = validOccupiedLanes.filter(
-            (i) =>
-              board[i] &&
-              (board[i].skill === 'legendary' ||
-                (board[i].skills &&
-                  board[i].skills.some((s) => s.id === 'legendary')))
+            (i) => board[i] && hasSkill(board[i], 'legendary')
           );
         }
-        const hasChallenge =
-          tokenCard.skill === 'challenge' ||
-          (tokenCard.skills &&
-            tokenCard.skills.some((s) => s.id === 'challenge'));
+        const hasChallenge = hasSkill(tokenCard, 'challenge');
         if (hasChallenge) {
           const oppBoard =
             owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
@@ -1325,14 +1275,7 @@ export async function waitPlayerLaneSelection(
         }
         if (hasSkill(newCard, 'apex')) {
           const targetCard = board[laneIndex];
-          if (
-            !targetCard ||
-            !(
-              targetCard.skill === 'legendary' ||
-              (targetCard.skills &&
-                targetCard.skills.some((s) => s.id === 'legendary'))
-            )
-          ) {
+          if (!targetCard || !hasSkill(targetCard, 'legendary')) {
             playSound(SOUNDS.seDamage);
             showAlertModal(
               `「${newCard.name}」は頂点のカードのため、自分の場の伝説カードの上にしか召喚できません。`
@@ -2593,11 +2536,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
   }
 
   if (card.isToken) return false;
-  let skillsToResolve = [];
-  if (card.skill && card.skill !== 'none')
-    skillsToResolve.push({ id: card.skill, value: card.skillValue });
-  if (Array.isArray(card.skills))
-    skillsToResolve = skillsToResolve.concat(card.skills);
+  let skillsToResolve = Array.isArray(card.skills) ? [...card.skills] : [];
 
   for (const sk of skillsToResolve) {
     if (isDestroyed) {
@@ -2629,8 +2568,6 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
       card.power = originalMaster.power || 0;
       card.basePower = originalMaster.power || 0;
       card.currentPower = originalMaster.power || 0;
-      card.skill = originalMaster.skill || 'none';
-      card.skillValue = originalMaster.skillValue || 0;
       card.skills = originalMaster.skills
         ? JSON.parse(JSON.stringify(originalMaster.skills))
         : [];
@@ -3096,33 +3033,10 @@ export async function handleMoveSkills(owner) {
 
               // スキルの統合
               if (!existingCard.skills) {
-                existingCard.skills =
-                  existingCard.skill !== 'none'
-                    ? [
-                        {
-                          id: existingCard.skill,
-                          value: existingCard.skillValue,
-                        },
-                      ]
-                    : [];
-                if (existingCard.skill !== 'none' && existingCard.summonId) {
-                  existingCard.skills[0].summonId = existingCard.summonId;
-                }
-                if (existingCard.skill !== 'none' && existingCard.targetId) {
-                  existingCard.skills[0].targetId = existingCard.targetId;
-                }
-                existingCard.skill = 'none';
+                existingCard.skills = [];
               }
 
               const equipSkills = [];
-              if (c.skill && c.skill !== 'none' && c.skill !== 'equip') {
-                equipSkills.push({
-                  id: c.skill,
-                  value: c.skillValue,
-                  summonId: c.summonId,
-                  targetId: c.targetId,
-                });
-              }
               if (c.skills) {
                 c.skills.forEach((s) => {
                   if (s.id !== 'equip') equipSkills.push(s);
@@ -3437,14 +3351,7 @@ export async function playCard(o, hI, l) {
   // 頂点のカード制限（自分の伝説カードの上のみ）
   if (hasSkill(playingCard, 'apex')) {
     const targetCard = b[l];
-    if (
-      !targetCard ||
-      !(
-        targetCard.skill === 'legendary' ||
-        (targetCard.skills &&
-          targetCard.skills.some((s) => s.id === 'legendary'))
-      )
-    ) {
+    if (!targetCard || !hasSkill(targetCard, 'legendary')) {
       return false;
     }
   }
@@ -3509,32 +3416,10 @@ export async function playCard(o, hI, l) {
 
       // スキルの統合
       if (!targetCard.skills) {
-        targetCard.skills =
-          targetCard.skill !== 'none'
-            ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-            : [];
-        if (targetCard.skill !== 'none' && targetCard.summonId) {
-          targetCard.skills[0].summonId = targetCard.summonId;
-        }
-        if (targetCard.skill !== 'none' && targetCard.targetId) {
-          targetCard.skills[0].targetId = targetCard.targetId;
-        }
-        targetCard.skill = 'none';
+        targetCard.skills = [];
       }
 
       const equipSkills = [];
-      if (
-        playingCard.skill &&
-        playingCard.skill !== 'none' &&
-        playingCard.skill !== 'equip'
-      ) {
-        equipSkills.push({
-          id: playingCard.skill,
-          value: playingCard.skillValue,
-          summonId: playingCard.summonId,
-          targetId: playingCard.targetId,
-        });
-      }
       if (playingCard.skills) {
         playingCard.skills.forEach((s) => {
           if (s.id !== 'equip') equipSkills.push(s);
@@ -4023,15 +3908,7 @@ export async function resolveOnPlaySkill(o, l, c) {
 
   try {
     // 発動対象スキルのリストを作成
-    let skillsToResolve = [];
-    if (c.skill && c.skill !== 'none') {
-      const skObj = { id: c.skill, value: c.skillValue };
-      if (c.summonId) skObj.summonId = c.summonId;
-      if (c.targetId) skObj.targetId = c.targetId;
-      skillsToResolve.push(skObj);
-    }
-    if (Array.isArray(c.skills))
-      skillsToResolve = skillsToResolve.concat(c.skills);
+    let skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
 
     // 召喚時に複数のスキルがある場合は、特定のスキル（quickやchoice等）を後回しにするなどして安全な順序で処理する
     skillsToResolve.sort((a, b) => {

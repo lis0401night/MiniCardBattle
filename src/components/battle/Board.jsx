@@ -39,12 +39,7 @@ const checkPlacementConstraints = (
   }
   // 「頂点」スキル: 伝説カードがあるレーンのみ
   if (hasSkill(targetCard, 'apex')) {
-    valid =
-      valid &&
-      existingCard &&
-      (existingCard.skill === 'legendary' ||
-        (existingCard.skills &&
-          existingCard.skills.some((s) => s.id === 'legendary')));
+    valid = valid && existingCard && hasSkill(existingCard, 'legendary');
   }
   // 「挑戦」スキル: 正面に敵がいるレーンのみ
   if (hasSkill(targetCard, 'challenge')) {
