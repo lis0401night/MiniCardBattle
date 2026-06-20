@@ -8,6 +8,8 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {string} image - 背景画像のURL
  * @param {function} onClick - クリックイベントハンドラ
  * @param {Object} style - 背景（menu-img-bg）に適用する任意のカスタムスタイル（背景色など）。backgroundImageを含めるとimageプロップを上書きします。
+ * @param {string} [badgeText] - ボタン上部に表示するバッジテキスト（オプション）
+ * @param {boolean} [notificationBadge] - 右上に通知バッジを表示するかどうか（オプション）
  */
 export default function MenuImageButton({
   label,

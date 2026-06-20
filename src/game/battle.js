@@ -926,7 +926,12 @@ export async function waitPlayerLaneSelection(
     });
     // number[] に正規化
     let parsedLanes = [];
-    if (rawVal && rawVal !== -1) {
+    if (
+      rawVal !== null &&
+      rawVal !== undefined &&
+      rawVal !== '' &&
+      rawVal !== -1
+    ) {
       if (Array.isArray(rawVal)) {
         parsedLanes = rawVal
           .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
@@ -2076,13 +2081,6 @@ export async function waitPlayerDualDiscardSelection(
   // 両方の墓地が空の場合は選択処理自体を即時スキップして解決
   const totalCardsCount = (blueCards?.length || 0) + (redCards?.length || 0);
   if (totalCardsCount === 0) {
-    if (GameState.gameMode === 'online' && owner === 'blue') {
-      await sendOnlineAction({
-        type: 'submitChoice',
-        owner: 'blue',
-        choiceData: '', // 空文字列を送信
-      });
-    }
     return [];
   }
 

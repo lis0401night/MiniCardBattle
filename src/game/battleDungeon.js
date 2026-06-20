@@ -16,6 +16,18 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 
+/**
+ * 敵のスキンを GameState.enemySkins に同期する
+ * @param {string} enemyId - 敵のID
+ * @param {string} skinName - スキン名
+ */
+function syncEnemySkin(enemyId, skinName) {
+  if (!GameState.enemySkins) GameState.enemySkins = {};
+  if (enemyId && skinName) {
+    GameState.enemySkins[enemyId] = skinName;
+  }
+}
+
 export function initBattleDungeon() {
   playSound(SOUNDS.seClick);
   GameState.gameMode = 'battle_dungeon';
@@ -97,11 +109,7 @@ export function loadDungeonProgress() {
     if (data.enemyConfig) {
       GameState.enemyConfig = data.enemyConfig;
       // 敵のスキンを同期
-      if (!GameState.enemySkins) GameState.enemySkins = {};
-      if (data.enemyConfig.id && data.enemyConfig.currentSkin) {
-        GameState.enemySkins[data.enemyConfig.id] =
-          data.enemyConfig.currentSkin;
-      }
+      syncEnemySkin(data.enemyConfig.id, data.enemyConfig.currentSkin);
     }
 
     GameState.dungeonState = data.dungeonState || 'select_opponent';
@@ -164,10 +172,7 @@ export function startDungeonBattle(enemyIndex) {
   GameState.selectedStageId = 'dungeon';
 
   // 敵のスキンを同期
-  if (!GameState.enemySkins) GameState.enemySkins = {};
-  if (enemy.currentSkin) {
-    GameState.enemySkins[enemy.id] = enemy.currentSkin;
-  }
+  syncEnemySkin(enemy.id, enemy.currentSkin);
 
   // ダンジョン敵の場合は専用デッキを設定
   if (enemy.dungeonDeck) {

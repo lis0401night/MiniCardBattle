@@ -70,7 +70,7 @@ function decayInvincibleSkills(board) {
     if (Array.isArray(c.skills)) {
       const invSk = c.skills.find((s) => s.id === 'invincible');
       if (invSk) {
-        invSk.value--;
+        invSk.value = (invSk.value || 1) - 1;
         if (invSk.value <= 0) {
           c.skills = c.skills.filter((s) => s !== invSk);
         }

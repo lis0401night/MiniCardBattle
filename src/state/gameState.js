@@ -1,4 +1,5 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { DECK_SIZE } from '../utils/constants/config.js';
 
 const safeParseArray = (key) => {
   try {
@@ -34,8 +35,8 @@ export const GameState = {
   playerDiscard: [],
   enemyDiscard: [],
   // バトル開始時の初期デッキ枚数（デッキアイコン表示等で使用）
-  initialPlayerDeckCount: 20,
-  initialEnemyDeckCount: 20,
+  initialPlayerDeckCount: DECK_SIZE,
+  initialEnemyDeckCount: DECK_SIZE,
   playerBoard: [null, null, null],
   enemyBoard: [null, null, null],
   playerSealedLanes: [0, 0, 0],

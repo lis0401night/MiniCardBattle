@@ -1093,10 +1093,10 @@ export async function resolveActiveSkillEffect(
     }
 
     // 分身スキルの調整：配置先レーンを元のカードがあるレーン l の隣（隣接レーンのみ）に制限する
-    let restrictLanes = clonePredefinedLanes;
-    if (!restrictLanes) {
-      restrictLanes = l === 1 ? [0, 2] : [1];
-    }
+    const adjacentLanes = l === 1 ? [0, 2] : [1];
+    const restrictLanes = Array.isArray(clonePredefinedLanes)
+      ? clonePredefinedLanes.filter((lane) => adjacentLanes.includes(lane))
+      : adjacentLanes;
 
     const selectedLanes = await waitPlayerLaneSelection(
       count,

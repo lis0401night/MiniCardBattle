@@ -30,12 +30,17 @@ export default function TitleScreen() {
       candidateIds = ['golem', 'clone', 'sniper'];
     }
 
-    const selectRandomCard = () => {
+    const getRandomCard = () => {
       const randomId =
         candidateIds[Math.floor(Math.random() * candidateIds.length)];
-      const master =
+      return (
         CARD_MASTER.find((c) => c.id === randomId) ||
-        CARD_MASTER.find((c) => c.id === 'golem');
+        CARD_MASTER.find((c) => c.id === 'golem')
+      );
+    };
+
+    const selectRandomCard = () => {
+      const master = getRandomCard();
       if (master) {
         const imgUrl = getCardImgUrl(master);
         const img = new Image();
@@ -53,11 +58,7 @@ export default function TitleScreen() {
     };
 
     // 初回はフェードなしで即座に表示するため、直接セットする
-    const initialId =
-      candidateIds[Math.floor(Math.random() * candidateIds.length)];
-    const initialMaster =
-      CARD_MASTER.find((c) => c.id === initialId) ||
-      CARD_MASTER.find((c) => c.id === 'golem');
+    const initialMaster = getRandomCard();
     if (initialMaster) setCurrentCard(initialMaster);
 
     const interval = setInterval(() => {

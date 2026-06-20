@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
+import { useEffect, useRef, useState } from 'react';
 import { playSound, switchScreen } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -7,6 +7,46 @@ const NEWS_API_ENDPOINT = 'api/get_news.php';
 const CAROUSEL_INTERVAL_MS = 4000;
 const SWIPE_THRESHOLD_PX = 50;
 const TAP_THRESHOLD_PX = 20;
+
+const ALLOWED_SHORTCUTS = [
+  'screen-title',
+  'screen-mode-select',
+  'screen-solo-menu',
+  'screen-rules',
+  'screen-beginner-guide',
+  'screen-tutorial-select',
+  'screen-options',
+  'screen-gallery-menu',
+  'screen-event-menu',
+  'screen-tournament-menu',
+  'screen-tournament-resume',
+  'screen-tournament-exchange',
+  'screen-tournament-rules',
+  'screen-tournament-bracket',
+  'screen-defense-menu',
+  'screen-defense-rules',
+  'screen-high-difficulty-menu',
+  'screen-high-difficulty',
+  'screen-high-difficulty-rules',
+  'screen-card-list',
+  'screen-achievements',
+  'screen-exchange',
+  'screen-challenge-exchange',
+  'screen-challenge-unlock',
+  'screen-defense-battle-list',
+  'screen-dungeon-menu',
+  'screen-story-resume',
+  'screen-dungeon-rules',
+  'screen-deck-list',
+  'screen-deck-edit',
+  'screen-stage-select',
+  'screen-online-menu',
+  'screen-online-rules',
+  'screen-online-search',
+  'screen-online-lobby',
+  'screen-continue',
+  'screen-ending-illust',
+];
 
 export default function NewsBanner() {
   const [newsItems, setNewsItems] = useState([]);
@@ -151,6 +191,10 @@ export default function NewsBanner() {
   };
 
   const handleShortcut = (shortcut) => {
+    if (!ALLOWED_SHORTCUTS.includes(shortcut)) {
+      console.warn('Invalid shortcut screen ID:', shortcut);
+      return;
+    }
     playSound?.(SOUNDS?.seClick);
     setSelectedNews(null);
     switchScreen(shortcut);
@@ -257,7 +301,7 @@ export default function NewsBanner() {
               overflow: 'hidden',
               maxWidth: '400px',
               width: '90%',
-              maxHeight: '80vh',
+              maxHeight: '80dvh',
               display: 'flex',
               flexDirection: 'column',
               background: '#1e293b',

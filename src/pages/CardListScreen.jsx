@@ -166,9 +166,9 @@ export default function CardListScreen() {
     new Set(
       allCardsForFilters.flatMap((c) => {
         let s = [];
-        if (c.skills) c.skills.forEach((sk) => s.push(sk.id));
-        if (c.choices) c.choices.forEach((ch) => s.push(ch.id));
-        if (c.choices2) c.choices2.forEach((ch) => s.push(ch.id));
+        if (Array.isArray(c.skills)) c.skills.forEach((sk) => s.push(sk.id));
+        if (Array.isArray(c.choices)) c.choices.forEach((ch) => s.push(ch.id));
+        if (Array.isArray(c.choices2)) c.choices2.forEach((ch) => s.push(ch.id));
         return s;
       })
     )
@@ -189,9 +189,9 @@ export default function CardListScreen() {
       return false;
     if (filters.skills.length > 0) {
       let cardSkills = [];
-      if (c.skills) c.skills.forEach((sk) => cardSkills.push(sk.id));
-      if (c.choices) c.choices.forEach((ch) => cardSkills.push(ch.id));
-      if (c.choices2) c.choices2.forEach((ch) => cardSkills.push(ch.id));
+      if (Array.isArray(c.skills)) c.skills.forEach((sk) => cardSkills.push(sk.id));
+      if (Array.isArray(c.choices)) c.choices.forEach((ch) => cardSkills.push(ch.id));
+      if (Array.isArray(c.choices2)) c.choices2.forEach((ch) => cardSkills.push(ch.id));
       if (!filters.skills.every((sk) => cardSkills.includes(sk))) return false;
     }
     return true;

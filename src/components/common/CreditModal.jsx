@@ -34,7 +34,7 @@ export default function CreditModal({ visible, onClose }) {
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          maxHeight: '80vh',
+          maxHeight: '80dvh',
           overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}

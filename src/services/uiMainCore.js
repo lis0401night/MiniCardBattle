@@ -906,6 +906,9 @@ export function confirmCharSelect() {
             GameState.playerConfig.icon =
               getSkinImage(templateChar, chosenSkin, 'icon') ||
               templateChar.icon;
+            GameState.playerConfig.iconDamage =
+              getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
+              templateChar.iconDamage;
           }
         }
         if (
