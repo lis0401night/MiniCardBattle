@@ -185,7 +185,7 @@ export function generateDeck(owner, config, sessionId) {
       }
 
       if (Array.isArray(recipe)) {
-        // パターンデッキやキャンペーンデッキの場合
+        // パターンデッキの場合
         deckIds = recipe;
       } else if (recipe.easy && recipe.normal && recipe.hard) {
         if (typeof GameState.aiLevel !== 'undefined') {

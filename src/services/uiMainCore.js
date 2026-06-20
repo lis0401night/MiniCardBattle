@@ -513,7 +513,7 @@ export function startGameMode(mode) {
     }
   }
 
-  // 以下はストーリー/キャンペーン/トーナメント（再開なし）/ダンジョン以外の処理
+  // 以下はストーリー/トーナメント（再開なし）/ダンジョン以外の処理
   GameState.appState = 'select_deck';
   // デッキ選択画面遷移前に最新状態のデッキをリロードし、強制再描画を要求する
   if (typeof window.loadDeck === 'function') window.loadDeck();

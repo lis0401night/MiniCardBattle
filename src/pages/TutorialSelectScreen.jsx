@@ -19,7 +19,7 @@ import { SOUNDS } from '../utils/sounds.js';
  * レイアウトは試練の宮殿（リーダー選択画面）と統一
  */
 
-// サタン・キャンペーン用を除外した、チュートリアル対象キャラクターIDの順序
+// 敵専用キャラクターを除外した、チュートリアル対象キャラクターIDの順序
 const TUTORIAL_CHAR_ORDER = [
   'android',
   'dragon',
