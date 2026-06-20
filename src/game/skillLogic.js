@@ -1362,7 +1362,7 @@ export async function resolveActiveSkillEffect(
         rarity: 1,
       };
       const statueToken = {
-        ...statueTpl,
+        ...JSON.parse(JSON.stringify(statueTpl)),
         id: `statue_${Math.floor(getSeededRandom() * 1000000000)}`,
         baseId: 'token_statue',
         uid: `${oppOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_statue`,
@@ -1417,8 +1417,6 @@ export async function resolveActiveSkillEffect(
     const occ = board.filter((x, idx) => x !== null && idx !== l).length;
     const hVal = occ * (skillValue || 3);
     if (hVal > 0) {
-      c.power = (c.power || 0) + hVal;
-      c.basePower = c.power;
       c.currentPower = (c.currentPower || 0) + hVal;
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）
@@ -1447,8 +1445,6 @@ export async function resolveActiveSkillEffect(
     const occ = opB.filter((x) => x !== null).length;
     const advVal = occ * (skillValue || 1);
     if (advVal !== 0) {
-      c.power = (c.power || 0) + advVal;
-      c.basePower = c.power;
       c.currentPower = (c.currentPower || 0) + advVal;
 
       // VFX演出（SEも triggerVfx 内で自動再生されます）

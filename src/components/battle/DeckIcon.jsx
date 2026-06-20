@@ -1,7 +1,7 @@
 const DeckIcon = ({ count, max = 20 }) => {
   const displayCount = Math.min(Math.max(0, count), max);
 
-  // SVG dimensions
+  // SVGのサイズ
   const SVG_WIDTH = 44;
   const SVG_HEIGHT = 36;
 

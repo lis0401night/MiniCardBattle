@@ -2432,8 +2432,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'retaliate', value: 2 }],
     voiceCategory: 'sword',
-    flavor:
-      '喪われた同胞の痛哭が、刃をより深く、より凄惨な紅に染め上げる。残されたのは、血の代償を求める果てなき渇望のみ。',
+    flavor: '喪われた同胞の痛哭が、鱗をより深く、より凄惨な紅に染め上げる。',
   },
   {
     id: 'wurm',
@@ -2463,7 +2462,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_female_cool',
     flavor:
-      '炎のオーラを纏い、強襲を掛ける戦乙女。一瞬の瞬きすら許さない神速の連撃が、標的を瞬く間に灰燼に帰す。',
+      '炎のオーラを纏い、強襲を掛ける戦乙女。神速の連撃が、標的を瞬く間に灰燼に帰す。',
   },
   {
     id: 'hellkite',
@@ -2511,8 +2510,7 @@ export const CARD_MASTER = [
     ],
     choices: [{ id: 'support', value: 3 }, { id: 'deadly' }],
     voiceCategory: 'human_male_normal',
-    flavor:
-      'その指先ひとつで街の経済が回り、裏社会の命運が決まる。表と裏、どちらの顔を見せるかは彼の気分次第だ。',
+    flavor: 'その指先ひとつで街の経済が回り、裏社会の命運が決まる。',
   },
   {
     id: 'duelist',
@@ -2580,7 +2578,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'monster',
     flavor:
-      'その姿を視認した瞬間、あらゆる物理法則は崩壊を始める。ただ空に浮かぶだけで周囲の空間を歪め、無限の絶望を増殖させていく絶対の主。',
+      'その姿を視認した瞬間、あらゆる物理法則は崩壊を始める。無限の絶望を増殖させていく絶対の主。',
   },
   {
     id: 'piper',
@@ -2604,7 +2602,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '色褪せた記憶の中にあっても、呪われし槍の切っ先は恐ろしいほどに冴え渡る。因果を捻じ曲げ、ただ死のみを約束する魔の刃。',
+      '色褪せた記憶の中にあっても、呪われし槍の切っ先は恐ろしいほどに冴え渡る。',
   },
   {
     id: 'rampage',
@@ -2689,7 +2687,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'decay' }],
     voiceCategory: 'undead',
     flavor:
-      '竜の威容を模して、数多の獣の屍を縫い合わせた歪な肉塊。その巨大な体躯は維持するだけで崩壊を始め、本来の力を削ぎ落としていく。',
+      '竜の威容を模して、数多の獣の屍を縫い合わせた歪な肉塊。その巨大な体躯は維持するだけで崩壊を始める。',
   },
   {
     id: 'grimreaper',
@@ -2709,7 +2707,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'puppet', value: 5 }],
     voiceCategory: 'human_male_trickstar',
     flavor:
-      '煙渦巻く戦場を渡り歩く、異色の傭兵。戦死者の無念を糸に宿して戦力として再利用するその手腕は、極めて非情で効率的である。',
+      '煙渦巻く戦場を渡り歩く、異色の傭兵。その手腕は、極めて非情で効率的である。',
   },
   {
     id: 'doll',
@@ -2747,7 +2745,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_old',
     flavor:
-      '歴戦の戦士のごとき風格を持つ規格外の魔導士。星を砕く極大魔法を紡ぐためならば、己の血肉すら代償として捧げる覚悟を持つ。',
+      '規格外の魔導士。星を砕く極大魔法を紡ぐためならば、己の血肉すら代償として捧げる覚悟を持つ。',
   },
   {
     id: 'philosopher',
@@ -2878,7 +2876,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'oblivion' }],
     voiceCategory: 'human_female_cute',
     flavor:
-      '優しく降り注ぐ、穢れなき無垢の光。その暖かな輝きに抱かれた時、苦しみも、悪意も、自分が何者であったかさえも安らかに白く溶け落ちていく。',
+      '優しく降り注ぐ、穢れなき無垢の光。苦しみも、悪意も、自分が何者であったかさえも安らかに白く溶け落ちていく。',
   },
   {
     id: 'baldanders',
@@ -2966,7 +2964,7 @@ export const CARD_MASTER = [
     power: 2,
     isToken: true,
     voiceCategory: 'sword',
-    flavor: '号令で召喚された騎士。',
+    flavor: '訓練を受けた騎士。',
   },
   {
     id: 'token_dragon',

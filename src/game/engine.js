@@ -2697,6 +2697,8 @@ export function applyLeaderSkillLogic(
       for (let i = 0; i < opDc; i++) {
         opH.push({
           ...voidTpl,
+          id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_owg${i}`,
+          uid: `${oppOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidowg${i}`,
           owner: oppOwner,
           baseId: 'token_void',
           isToken: true,
