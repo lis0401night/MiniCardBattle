@@ -460,8 +460,15 @@
         groupedSkills.forEach((sk) => {
           if (sk.id === 'double_power' || sk.id === 'decay') return;
           if (sk.id === 'sturdy' || sk.id === 'absorb') {
-            // 頑丈・吸収はパワー÷4点の特殊計算
-            score += ((card.power || 0) / 4) * sk.count;
+            // 頑丈・吸収はパワー4につき1点（端数切り上げ。パワー5なら2点）
+            score += Math.ceil((card.power || 0) / 4) * sk.count;
+            return;
+          }
+          if (sk.id === 'dodge') {
+            // 回避は5を基準に5未満なら1+(5-val)点、5以上なら1点
+            const val = sk.val === undefined || sk.val === 0 ? 5 : sk.val;
+            const dodgeScore = val >= 5 ? 1 : 1 + (5 - val);
+            score += dodgeScore * sk.count;
             return;
           }
 
@@ -708,7 +715,13 @@
               settingsArea = `
                     <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-indigo-500/30 bg-indigo-500/5">
                         <span class="text-[9px] md:text-[10px] font-black text-indigo-400 tracking-wider">特殊計算</span>
-                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">パワー / 4</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">パワー / 4 (端数切り上げ)</span>
+                    </div>`;
+            } else if (k === 'dodge') {
+              settingsArea = `
+                    <div class="mt-auto h-full flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-indigo-500/30 bg-indigo-500/5">
+                        <span class="text-[9px] md:text-[10px] font-black text-indigo-400 tracking-wider">特殊計算</span>
+                        <span class="text-[8px] md:text-[9px] font-bold text-slate-400 mt-0.5 text-center">5未満: 1 + (5 - 値)<br/>5以上: 1</span>
                     </div>`;
             }
 

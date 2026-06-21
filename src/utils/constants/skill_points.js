@@ -86,10 +86,7 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0.5,
   },
-  sturdy: {
-    base: 0,
-    multiplier: 0,
-  },
+  // sturdy: 特殊計算（パワー4につき1点、端数切り上げ）のためポイント定義不要
   berserk: {
     base: 0,
     multiplier: -0.5,
@@ -135,7 +132,7 @@ export const SKILL_POINTS = {
     multiplier: 1,
   },
   standby: {
-    base: 0,
+    base: 1,
     multiplier: -2,
   },
   artillery: {
@@ -187,7 +184,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   phase: {
-    base: 1,
+    base: 0,
     multiplier: 0,
   },
   petrify: {
@@ -234,10 +231,7 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: -1,
   },
-  absorb: {
-    base: 0,
-    multiplier: 0,
-  },
+  // absorb: 特殊計算（パワー4につき1点、端数切り上げ）のためポイント定義不要
   seal: {
     base: 1,
     multiplier: 0,
@@ -262,10 +256,7 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0,
   },
-  decay: {
-    base: 0,
-    multiplier: 0,
-  },
+  // decay: 特殊計算（パワー÷2 + 1）のためポイント定義不要
   puppet: {
     base: -1,
     multiplier: 1,
@@ -286,10 +277,7 @@ export const SKILL_POINTS = {
     base: 4,
     multiplier: 0,
   },
-  double_power: {
-    base: 0,
-    multiplier: 0,
-  },
+  // double_power: 特殊計算（パワー×2 + 1）のためポイント定義不要
   explore: {
     base: 2,
     multiplier: 0,
@@ -342,10 +330,7 @@ export const SKILL_POINTS = {
     base: 5,
     multiplier: 0,
   },
-  dodge: {
-    base: 5,
-    multiplier: -0.5,
-  },
+  // dodge: 特殊計算（5を基準に5未満なら1+(5-val)点、5以上なら1点）のためポイント定義不要
   forge: {
     base: 1,
     multiplier: 0,
