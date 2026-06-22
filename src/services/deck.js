@@ -115,6 +115,8 @@ export function generateDeck(owner, config, sessionId) {
         currentPower: t.power,
         isPremium: isPremium,
         skills: t.skills ? t.skills.map((s) => ({ ...s })) : undefined,
+        choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
+        choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
       };
     });
     return shuffleArray(deck);
@@ -137,6 +139,8 @@ export function generateDeck(owner, config, sessionId) {
         currentPower: t.power,
         isPremium: isPremium,
         skills: t.skills ? t.skills.map((s) => ({ ...s })) : undefined,
+        choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
+        choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
       };
     });
   } else {
@@ -227,6 +231,8 @@ export function generateDeck(owner, config, sessionId) {
         currentPower: p,
         isPremium: isPremium,
         skills: t.skills ? t.skills.map((s) => ({ ...s })) : undefined,
+        choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
+        choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
       });
     });
   }

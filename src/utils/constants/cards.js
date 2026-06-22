@@ -765,7 +765,7 @@ export const CARD_MASTER = [
       { id: 'cull', value: 2 },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor: '漆黒の祭壇で行われる禁忌の儀式。その祈りは、闇の王を呼び覚ます。',
   },
   {
     id: 'skeleton',

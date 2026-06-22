@@ -81,7 +81,7 @@ async function run() {
     }
   });
 
-  const url = 'http://localhost:5174/';
+  const url = 'http://localhost:5173/';
   console.log(`Navigating to ${url} ...`);
   try {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
@@ -142,16 +142,22 @@ async function run() {
 
   // マリガンの「選択終了」をクリックして対戦開始
   console.log('Finishing Mulligan (selecting hand)...');
+  await page.waitForSelector('#btn-end-turn', { timeout: 10000 });
   await page.click('#btn-end-turn');
   await sleep(3000);
 
   // プレイヤーのターンなので、単にターン終了（パス）する
   console.log('Player passes turn...');
+  await page.waitForSelector('#btn-end-turn', { timeout: 10000 });
   await page.click('#btn-end-turn');
 
   // AIのターンが実行されるのを待つ (AI思考 + プレイ処理アニメーション等で長めに待機)
   console.log('Waiting for AI turn and decision logs...');
   await sleep(8000);
+
+  console.log('--- All Browser Logs ---');
+  allLogs.forEach(log => console.log(log));
+  console.log('------------------------');
 
   console.log('--- AI Debug Logs Collected ---');
   aiDebugLogs.forEach(log => console.log(`  ${log}`));

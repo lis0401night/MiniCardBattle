@@ -231,7 +231,7 @@ export const generateCharacterBossEnemy = (floorNum) => {
     const skin = char.skins.summer;
     bossData = {
       ...bossData,
-      // id や name は上書きしない
+      // ボスのIDや名前は維持し、画像関連のプロパティのみスキンで上書きする
       image: skin.image || bossData.image,
       imageLose: skin.imageLose || bossData.imageLose,
       icon: skin.icon || bossData.icon,

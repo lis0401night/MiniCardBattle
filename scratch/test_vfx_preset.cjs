@@ -41,7 +41,7 @@ async function run() {
     consoleErrors.push(err.toString());
   });
 
-  const url = 'http://localhost:5174/';
+  const url = 'http://localhost:5173/';
   console.log(`Navigating to ${url} ...`);
   try {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });

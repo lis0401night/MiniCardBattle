@@ -3,7 +3,10 @@ import {
   getSkinImage,
   BOSS_CHARACTER_IDS,
 } from '../../utils/constants/characters.js';
-import { MAX_DISCARD_PREVIEW_COUNT } from '../../utils/constants/config.js';
+import {
+  MAX_DISCARD_PREVIEW_COUNT,
+  DECK_SIZE,
+} from '../../utils/constants/config.js';
 import DeckIcon from './DeckIcon.jsx';
 
 export default function PlayerArea({
@@ -11,7 +14,7 @@ export default function PlayerArea({
   playerHP,
   playerMaxHP,
   deckCount,
-  maxDeckCount = 20,
+  maxDeckCount = DECK_SIZE,
   dropCount,
   spCount,
   maxSpCount,

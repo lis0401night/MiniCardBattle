@@ -726,8 +726,10 @@ export async function resolveActiveSkillEffect(
     );
 
     let choiceArray;
+    let executionOwner = o;
     if (skillId === 'force') {
       const oppOwner = o === 'blue' ? 'red' : 'blue';
+      executionOwner = oppOwner;
       choiceArray = await waitSkillChoice(
         choices,
         oppOwner,
@@ -740,6 +742,48 @@ export async function resolveActiveSkillEffect(
     }
     if (choiceArray) {
       const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];
+
+      // 【命令スキルの根本治療】
+      // プレイヤーが選んだ選択肢のインデックスを特定し、AIのアクション予定ブランチを切り替える
+      if (
+        skillId === 'force' &&
+        GameState.aiDecision &&
+        GameState.aiDecision.branches
+      ) {
+        const selectedIndices = [];
+        arr.forEach((ch) => {
+          const idx = choices.findIndex(
+            (cOpt) => cOpt && cOpt.id === ch.id && cOpt.value === ch.value
+          );
+          if (idx !== -1) selectedIndices.push(idx);
+        });
+
+        const branchKey = selectedIndices.sort((a, b) => a - b).join(',');
+        let foundBranch = GameState.aiDecision.branches[branchKey];
+        if (!foundBranch) {
+          // 部分一致（複数選択などで前方一致するもの）を探す
+          const matchingKey = Object.keys(GameState.aiDecision.branches).find(
+            (k) => k === branchKey || k.startsWith(branchKey + '|')
+          );
+          if (matchingKey) {
+            foundBranch = GameState.aiDecision.branches[matchingKey];
+          }
+        }
+
+        if (foundBranch) {
+          console.log(
+            `[AI Decision Branch Switch] Switched to branch key: ${branchKey}`
+          );
+          GameState.aiDecision.actionQueue = JSON.parse(
+            JSON.stringify(foundBranch.actionQueue)
+          );
+          GameState.aiDecision.cardTokenLanes = [...foundBranch.cardTokenLanes];
+          GameState.aiDecision.choiceIndexQueue = [
+            ...foundBranch.choiceIndexQueue,
+          ];
+        }
+      }
+
       for (const choice of arr) {
         // もしパッシブスキル（機能が場に留まるスキル）を選んだ場合はカード自身に永続付与する
         if (PASSIVE_SKILLS.includes(choice.id)) {
@@ -749,7 +793,7 @@ export async function resolveActiveSkillEffect(
         }
         // 選択されたスキルを順に実行
         await resolveActiveSkillEffect(
-          o,
+          executionOwner,
           l,
           c,
           choice.id,
@@ -1299,6 +1343,11 @@ export async function resolveActiveSkillEffect(
         const card = b[i];
         if (card) {
           card.skills = [];
+          card.skill = 'none';
+          card.skillValue = 0;
+          card.choices = [];
+          card.choices2 = null;
+          if ('summonId' in card) delete card.summonId;
           card.stunTurns = 0;
           card.stunAppliedThisTurn = false;
 
@@ -1321,9 +1370,15 @@ export async function resolveActiveSkillEffect(
       const toxVal = skillValue || 1;
       eB[l].skills = eB[l].skills || [];
 
-      const exist = eB[l].skills.find((s) => s.id === 'growth');
+      const existIndex = eB[l].skills.findIndex((s) => s.id === 'growth');
+      const exist = existIndex !== -1 ? eB[l].skills[existIndex] : null;
       if (exist) {
-        exist.value = (exist.value || 0) - toxVal;
+        const nextValue = (exist.value ?? 1) - toxVal;
+        if (nextValue === 0) {
+          eB[l].skills.splice(existIndex, 1);
+        } else {
+          exist.value = nextValue;
+        }
       } else {
         eB[l].skills.push({ id: 'growth', value: -toxVal });
       }
@@ -2106,6 +2161,9 @@ export async function resolveActiveSkillEffect(
               let unionCard = JSON.parse(JSON.stringify(masterData));
               unionCard.uid = getOrCreateUUID(null);
               unionCard.owner = o;
+              unionCard.isPremium =
+                (existingCard && existingCard.isPremium) ||
+                (selectedCard && selectedCard.isPremium);
               unionCard.baseId = unionCard.id;
               unionCard.basePower = unionCard.power;
               unionCard.currentPower = unionCard.power;
@@ -2330,6 +2388,9 @@ export async function resolveActiveSkillEffect(
               let unionCard = JSON.parse(JSON.stringify(masterData));
               unionCard.uid = getOrCreateUUID(null);
               unionCard.owner = o;
+              unionCard.isPremium =
+                (existingCard2 && existingCard2.isPremium) ||
+                (selectedCard && selectedCard.isPremium);
               unionCard.baseId = unionCard.id;
               unionCard.basePower = unionCard.power;
               unionCard.currentPower = unionCard.power;
@@ -2444,6 +2505,9 @@ export async function resolveActiveSkillEffect(
           restoredCard.baseId = selectedCard.baseId || selectedCard.id; // 画像URLのための保全
           restoredCard.basePower = restoredCard.power;
           restoredCard.currentPower = restoredCard.power;
+          if (selectedCard.isPremium !== undefined) {
+            restoredCard.isPremium = selectedCard.isPremium;
+          }
 
           hand.push({
             ...restoredCard,
@@ -2493,6 +2557,9 @@ export async function resolveActiveSkillEffect(
         restoredCard.baseId = selectedCard.baseId || selectedCard.id;
         restoredCard.basePower = restoredCard.power;
         restoredCard.currentPower = restoredCard.power;
+        if (selectedCard.isPremium !== undefined) {
+          restoredCard.isPremium = selectedCard.isPremium;
+        }
 
         hand.push({
           ...restoredCard,
@@ -3051,6 +3118,11 @@ export async function resolveActiveSkillEffect(
       ) {
         // 相手がAIの場合：最もパワーの低いカードを自動選択（自分の損失を最小化）
         const sortedLanes = [...occupiedLanes].sort((a, b) => {
+          const aImmune = hasSkill(oppBoard[a], 'immune');
+          const bImmune = hasSkill(oppBoard[b], 'immune');
+          if (aImmune && !bImmune) return -1;
+          if (!aImmune && bImmune) return 1;
+
           const diff =
             (oppBoard[a].currentPower || 0) - (oppBoard[b].currentPower || 0);
           if (diff !== 0) return diff;
@@ -3130,6 +3202,11 @@ export async function resolveActiveSkillEffect(
           .map((bc, i) => (bc !== null ? i : -1))
           .filter((i) => i !== -1);
         occupiedLanes.sort((a, b) => {
+          const aImmune = hasSkill(myBoard[a], 'immune');
+          const bImmune = hasSkill(myBoard[b], 'immune');
+          if (aImmune && !bImmune) return -1;
+          if (!aImmune && bImmune) return 1;
+
           const diff =
             (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
           if (diff !== 0) return diff;
@@ -3281,7 +3358,7 @@ export async function triggerStartTurnPassive(owner, lane) {
 
   for (const sk of skillsToResolve) {
     if (sk.id === 'growth') {
-      const val = sk.value || 1;
+      const val = sk.value ?? 1;
       c.power += val; // RendererがcurrentPowerを処理するのでここはpowerのみアップ
       events.push({
         type: 'power_change',

@@ -78,7 +78,7 @@ async function run() {
     }
   });
 
-  const url = 'http://localhost:5174/';
+  const url = 'http://localhost:5173/';
   console.log(`Navigating to ${url} ...`);
   try {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
@@ -142,6 +142,7 @@ async function run() {
 
   // プレイヤーの手札から「幽霊船」を選択して、レーン1（中央）にプレイ
   console.log('Selecting ghostship from hand...');
+  await page.waitForSelector('#player-hand .hand-card', { timeout: 10000 });
   await page.click('#player-hand .hand-card');
   await sleep(1000);
 

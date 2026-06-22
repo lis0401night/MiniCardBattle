@@ -275,9 +275,17 @@ export function processActionSequence(
         }
         simState.lastPlayedLane = lIdx;
       } else if (action.type === 'token_placement') {
+        const side = action.owner || 'red';
+        const board =
+          side === 'blue' ? simState.playerBoard : simState.enemyBoard;
+        const sealedLanes =
+          side === 'blue'
+            ? simState.playerSealedLanes
+            : simState.enemySealedLanes;
         const sourceL =
           simState.lastPlayedLane !== -1 ? simState.lastPlayedLane : 0;
-        const sourceCard = simState.enemyBoard[sourceL];
+        const sourceCard =
+          simState.enemyBoard[sourceL] || simState.playerBoard[sourceL];
         // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
         // summonId が分かっているなら直接トークンを生成する
         if (['summon', 'clone', 'split', 'puppet'].includes(action.skillId)) {
@@ -302,7 +310,6 @@ export function processActionSequence(
           const baseMaster = CARD_MASTER.find((m) => m.id === tokenId);
           const lanes = [...(action.lanes || [])];
           for (const tLane of lanes) {
-            const sealedLanes = simState.enemySealedLanes || [0, 0, 0];
             if (sealedLanes[tLane] > 0) continue;
             // cloneトークンは元カードのスキルを引き継ぐ（分身含む全スキル）
             // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
@@ -768,6 +775,7 @@ export function processActionSequence(
               );
             }
           });
+          activeCardForSkills.skillTriggered = true;
           if (simState._actionQueue && simState._actionQueue.length > 0) {
             actionQueue.push(...simState._actionQueue);
             delete simState._actionQueue;
@@ -1377,6 +1385,7 @@ export function getBestSimulatedMove() {
                     skillValue: sk.value,
                     summonId: sk.summonId,
                     lanes: combo,
+                    owner: sk.owner,
                   };
                   let nextBranches = buildSkillBranch(
                     remainingSkills,
@@ -1433,7 +1442,14 @@ export function getBestSimulatedMove() {
                     Math.min(idxs.length, fc)
                   );
                   for (let combo of combinations) {
-                    const chosenSkills = combo.map((idx) => fArr[idx]);
+                    const chosenSkills = combo
+                      .map((idx) => {
+                        const choiceSkill = fArr[idx];
+                        return choiceSkill
+                          ? { ...choiceSkill, owner: 'blue' }
+                          : null;
+                      })
+                      .filter(Boolean);
                     let nextSkills = [...chosenSkills, ...remainingSkills];
                     let forceNode = {
                       type: 'force',
@@ -2068,6 +2084,76 @@ export function getBestSimulatedMove() {
         }
       }
     });
+
+    // 【命令スキルの根本治療】
+    // finalDecision と同じプレイ（同じカード・同じレーン）から分岐する他のシミュレーション候補を抽出し、
+    // プレイヤーが選んだ命令（force）スキルの選択肢に応じて、アクションキューを切り替えられるよう branchMap を構築する。
+    // ※ プレイしたカードまたはアクションキューの中に 'force' アクションが含まれる場合のみ適用する。
+    const playedCard =
+      finalDecision.index !== -1 ? hand[finalDecision.index] : null;
+    const hasForceInPlay =
+      playedCard &&
+      (playedCard.skill === 'force' ||
+        (playedCard.skills && playedCard.skills.some((s) => s.id === 'force')));
+    const hasForceInQueue = finalDecision.actionQueue.some(
+      (act) => act.type === 'force'
+    );
+
+    if (hasForceInPlay || hasForceInQueue) {
+      const samePlayCandidates = candidates.filter(
+        (c) =>
+          c.index === finalDecision.index &&
+          c.lane === finalDecision.lane &&
+          c.useSkill === finalDecision.useSkill
+      );
+
+      const branchMap = {};
+      samePlayCandidates.forEach((c) => {
+        if (c.choiceIndexQueue && Array.isArray(c.choiceIndexQueue)) {
+          // 例: [[1]] -> "1", [[0, 2]] -> "0,2"
+          const key = c.choiceIndexQueue
+            .map((q) =>
+              Array.isArray(q) ? [...q].sort((a, b) => a - b).join(',') : ''
+            )
+            .join('|');
+
+          const tempBranch = {
+            actionQueue: c.actionQueue
+              ? JSON.parse(JSON.stringify(c.actionQueue))
+              : [],
+            choiceIndexQueue: [],
+            cardTokenLanes: [],
+          };
+
+          const revChain = [...tempBranch.actionQueue].reverse();
+          revChain.forEach((act) => {
+            if (act.type === 'choice' || act.type === 'force') {
+              if (act.choices !== undefined) {
+                tempBranch.choiceIndexQueue.unshift(act.choices);
+              }
+            } else if (act.type === 'token_placement') {
+              if (act.lanes !== undefined) {
+                const revLanes = [...act.lanes].reverse();
+                revLanes.forEach((lane) => {
+                  tempBranch.cardTokenLanes.unshift(lane);
+                });
+              }
+            } else if (act.type === 'resurrect') {
+              if (act.laneIdx !== undefined && act.laneIdx !== -1) {
+                tempBranch.cardTokenLanes.unshift(act.laneIdx);
+              }
+            } else if (act.type === 'dominate') {
+              if (act.oppLaneIdx !== undefined && act.oppLaneIdx !== -1) {
+                tempBranch.cardTokenLanes.unshift(act.oppLaneIdx);
+              }
+            }
+          });
+
+          branchMap[key] = tempBranch;
+        }
+      });
+      finalDecision.branches = branchMap;
+    }
   }
 
   GameState.aiDecision = finalDecision;
@@ -3516,6 +3602,7 @@ export function simulateMove(
                 );
               }
             });
+            activeCard.skillTriggered = true;
           }
           // スキル解決が終わったため、保護フラグを解除する
           // 【招来・詠唱・鍛造】これらの連続プレイを伴う出現時スキルの場合は、

@@ -22,9 +22,9 @@ async function run() {
     consoleErrors.push(err.toString());
   });
 
-  console.log('Navigating to http://localhost:5174/ ...');
+  console.log('Navigating to http://localhost:5173/ ...');
   try {
-    await page.goto('http://localhost:5174/', { waitUntil: 'networkidle2', timeout: 10000 });
+    await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2', timeout: 10000 });
   } catch (err) {
     console.error('Failed to load page:', err);
     await browser.close();

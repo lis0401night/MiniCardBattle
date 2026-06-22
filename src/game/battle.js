@@ -3593,6 +3593,10 @@ function resolvePresetCard(cardId, owner, index) {
     basePower: master.power,
     currentPower: master.power,
     skills: master.skills ? master.skills.map((s) => ({ ...s })) : undefined,
+    choices: master.choices ? master.choices.map((c) => ({ ...c })) : undefined,
+    choices2: master.choices2
+      ? master.choices2.map((c) => ({ ...c }))
+      : undefined,
     uid: `${owner}_preset_${Date.now()}_${index}`,
   };
   card.imgUrl = getCardImgUrl(card);

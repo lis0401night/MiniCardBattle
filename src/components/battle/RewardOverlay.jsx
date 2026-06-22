@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState } from '../../state/gameState.js';
-import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { SOUNDS } from '../../utils/sounds.js';
-import { playSound } from '../../utils/gameUtils.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { saveDeck } from '../../services/deck.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
+import { GameState } from '../../state/gameState.js';
+import { CARD_MASTER } from '../../utils/constants/cards.js';
+import { playSound } from '../../utils/gameUtils.js';
+import { SOUNDS } from '../../utils/sounds.js';
 
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
@@ -383,7 +383,7 @@ export default function RewardOverlay() {
         .reveal-wrapper {
           animation: card-flip-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           display: flex;
-          max-height: 95vh; /* 画面内に収めてスクロール領域を有効化 */
+          max-height: 95dvh; /* 画面内に収めてスクロール領域を有効化 */
         }
 
         .stacked-pack {

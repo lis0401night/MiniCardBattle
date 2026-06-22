@@ -423,6 +423,11 @@ export function applyActiveSkillLogic(
           const card = board[i];
           if (card) {
             card.skills = [];
+            card.skill = 'none';
+            card.skillValue = 0;
+            card.choices = [];
+            card.choices2 = null;
+            if ('summonId' in card) delete card.summonId;
             card.stunTurns = 0;
             card.stunAppliedThisTurn = false;
 
@@ -961,9 +966,18 @@ export function applyActiveSkillLogic(
       if (eB[l]) {
         const toxVal = val || 1;
         eB[l].skills = eB[l].skills || [];
-        const exist = eB[l].skills.find((s) => s.id === 'growth');
+        const existIndex = eB[l].skills.findIndex((s) => s.id === 'growth');
+        const exist = existIndex !== -1 ? eB[l].skills[existIndex] : null;
+        let finalValue = -toxVal;
         if (exist) {
-          exist.value = (exist.value || 0) - toxVal;
+          const nextValue = (exist.value ?? 1) - toxVal;
+          if (nextValue === 0) {
+            eB[l].skills.splice(existIndex, 1);
+            finalValue = 0;
+          } else {
+            exist.value = nextValue;
+            finalValue = nextValue;
+          }
         } else {
           eB[l].skills.push({ id: 'growth', value: -toxVal });
         }
@@ -972,7 +986,7 @@ export function applyActiveSkillLogic(
           side: oppOwner,
           lane: l,
           skillId: 'growth',
-          skillValue: -toxVal,
+          skillValue: finalValue,
           source: 'toxic',
         });
       }
@@ -1927,10 +1941,15 @@ export function applyActiveSkillLogic(
       // 【選別】相手の場でパワーの低いカードを指定枚数破壊（墓地送り）
       const occupiedLanes = eB
         .map((bc, i) => (bc !== null ? i : -1))
-        .filter((i) => i !== -1 && !hasSkill(eB[i], 'immune'));
+        .filter((i) => i !== -1);
       if (occupiedLanes.length > 0) {
-        // パワー昇順ソート（最小パワーを選択）
+        // パワー昇順ソート。ただし免疫(immune)を最優先で選択して損失を回避する
         occupiedLanes.sort((a, b) => {
+          const aImmune = hasSkill(eB[a], 'immune');
+          const bImmune = hasSkill(eB[b], 'immune');
+          if (aImmune && !bImmune) return -1;
+          if (!aImmune && bImmune) return 1;
+
           const diff = (eB[a].currentPower || 0) - (eB[b].currentPower || 0);
           if (diff !== 0) return diff;
           return a - b;
@@ -1944,15 +1963,24 @@ export function applyActiveSkillLogic(
           const targetLane = occupiedLanes[idx];
           const targetCard = eB[targetLane];
           if (targetCard) {
-            const oppDiscard =
-              oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
-            oppDiscard.push(targetCard);
-            eB[targetLane] = null;
-            targets.push({
-              side: oppOwner,
-              lane: targetLane,
-              card: targetCard,
-            });
+            if (hasSkill(targetCard, 'immune')) {
+              events.push({
+                type: 'immune_block',
+                side: oppOwner,
+                lane: targetLane,
+                card: targetCard,
+              });
+            } else {
+              const oppDiscard =
+                oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
+              oppDiscard.push(targetCard);
+              eB[targetLane] = null;
+              targets.push({
+                side: oppOwner,
+                lane: targetLane,
+                card: targetCard,
+              });
+            }
           }
         }
 
@@ -2010,10 +2038,15 @@ export function applyActiveSkillLogic(
       // 【処刑】自分の場で最もパワーの低いカード1枚を破壊（墓地送り）
       const myOccupiedLanes = b
         .map((bc, i) => (bc !== null ? i : -1))
-        .filter((i) => i !== -1 && !hasSkill(b[i], 'immune'));
+        .filter((i) => i !== -1);
       if (myOccupiedLanes.length > 0) {
-        // パワー昇順ソート（最小パワーを選択して損失を最小化）
+        // パワー昇順ソート。ただし免疫(immune)を最優先で選択して損失を回避する
         myOccupiedLanes.sort((a, ab) => {
+          const aImmune = hasSkill(b[a], 'immune');
+          const bImmune = hasSkill(b[ab], 'immune');
+          if (aImmune && !bImmune) return -1;
+          if (!aImmune && bImmune) return 1;
+
           const diff = (b[a].currentPower || 0) - (b[ab].currentPower || 0);
           if (diff !== 0) return diff;
           return a - ab;
@@ -2021,14 +2054,23 @@ export function applyActiveSkillLogic(
         const execLane = myOccupiedLanes[0];
         const execCard = b[execLane];
         if (execCard) {
-          const myDiscard =
-            owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-          myDiscard.push(execCard);
-          b[execLane] = null;
-          events.push({
-            type: 'destroy_cards',
-            targets: [{ side: owner, lane: execLane, card: execCard }],
-          });
+          if (hasSkill(execCard, 'immune')) {
+            events.push({
+              type: 'immune_block',
+              side: owner,
+              lane: execLane,
+              card: execCard,
+            });
+          } else {
+            const myDiscard =
+              owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            myDiscard.push(execCard);
+            b[execLane] = null;
+            events.push({
+              type: 'destroy_cards',
+              targets: [{ side: owner, lane: execLane, card: execCard }],
+            });
+          }
         }
       }
       break;
@@ -4711,7 +4753,8 @@ export function applyPassiveSkillLogic(
     }
 
     if (hasSkill(c, 'growth')) {
-      const v = getSkillValue(c, 'growth') || 1;
+      const sk = c.skills ? c.skills.find((s) => s.id === 'growth') : null;
+      const v = sk ? (sk.value ?? 1) : 1;
       c.currentPower += v;
       events.push({
         type: 'power_change',
