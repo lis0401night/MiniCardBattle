@@ -78,6 +78,23 @@ export const VFX_DATA = {
     targetSide: 'enemy', // 相手のレーンがターゲット
   },
 
+  // バルタザールSPスキル「魔宴の儀」用VFX（自陣がターゲット）
+  anm_dark_magic_self: {
+    type: 'sprite',
+    src: 'assets/vfx/hujimiyaeffect_shadowattack.png', // 暗黒魔法エフェクト
+    columns: 6,
+    rows: 5,
+    frameCount: 30,
+    duration: 800,
+    se: 'seSkillCharge',
+    position: 'lane',
+    offsetY: 0,
+    scale: 1,
+    shake: true,
+    flipOnEnemy: false,
+    targetSide: 'self', // 自分のレーンがターゲット
+  },
+
   // イグニス召喚用VFX
   anm_summon_ignis: {
     type: 'sprite',

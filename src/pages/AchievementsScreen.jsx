@@ -26,9 +26,14 @@ import { SOUNDS } from '../utils/sounds.js';
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 // リーダー統計から除外すべきキャラクターを判定
-// satan: 特殊キャラクター、void/succubus: トーナメント除外キャラ
+// satan: 特殊キャラクター、void/succubus/warlock: トーナメント除外キャラ
 const shouldExcludeFromLeaderStats = (charId) => {
-  return charId === 'satan' || charId === 'void' || charId === 'succubus';
+  return (
+    charId === 'satan' ||
+    charId === 'void' ||
+    charId === 'succubus' ||
+    charId === 'warlock'
+  );
 };
 
 export default function AchievementsScreen() {
@@ -188,6 +193,14 @@ export default function AchievementsScreen() {
                 }
                 achievementData.achievements[ach.id] = data;
               });
+            }
+            if (achievementData && achievementData.stats) {
+              achievementData.stats.voidDefeated = 1;
+              achievementData.stats.succubusDefeated = 1;
+              achievementData.stats.warlockDefeated = 1;
+              achievementData.stats.storyClears =
+                achievementData.stats.storyClears || {};
+              achievementData.stats.storyClears['knight'] = 1; // サタン解放用
             }
 
             if (typeof saveAchievements === 'function') saveAchievements();

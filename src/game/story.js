@@ -20,14 +20,18 @@ export function initStoryMode(charId) {
   // 他のキャラクターのIDをランダムに並び替え（プレイヤーと中ボス・大ボスは除く）
   const otherIds = Object.keys(CHARACTERS).filter(
     (id) =>
-      id !== charId && id !== 'satan' && id !== 'void' && id !== 'succubus'
+      id !== charId &&
+      id !== 'satan' &&
+      id !== 'void' &&
+      id !== 'succubus' &&
+      id !== 'warlock'
   );
   for (let i = otherIds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [otherIds[i], otherIds[j]] = [otherIds[j], otherIds[i]];
   }
 
-  // ストーリー構成: 1-3戦目(ランダム), 4戦目(自分/影), 5-6戦目(残りランダム), 7戦目(ゼノン), 8戦目(ヴィオラ), 9戦目(サタン)
+  // ストーリー構成: 1-3戦目(ランダム), 4戦目(自分/影), 5-6戦目(残りランダム), 7戦目(ゼノン), 8戦目(ヴィオラ), 9戦目(バルタザール), 10戦目(サタン)
   GameState.storyQueue = [
     otherIds[0],
     otherIds[1],
@@ -37,6 +41,7 @@ export function initStoryMode(charId) {
     otherIds[4],
     'void',
     'succubus',
+    'warlock',
     'satan',
   ];
 

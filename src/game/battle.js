@@ -700,7 +700,7 @@ export function initBattleState() {
       GameState.enemyConfig.hp ||
       (GameState.enemyConfig.id === 'satan'
         ? 40
-        : ['void', 'succubus'].includes(GameState.enemyConfig.id)
+        : ['void', 'succubus', 'warlock'].includes(GameState.enemyConfig.id)
           ? 30
           : MAX_HP);
 
@@ -4325,6 +4325,9 @@ export function endBattle() {
         } else if (GameState.enemyConfig.id === 'succubus') {
           // 【新規】隷属の女王ヴィオラをストーリーモードで撃破した記録を保存
           incrementStat('succubusDefeated');
+        } else if (GameState.enemyConfig.id === 'warlock') {
+          // 【新規】闇の総帥バルタザールをストーリーモードで撃破した記録を保存
+          incrementStat('warlockDefeated');
         }
       }
       if (

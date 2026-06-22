@@ -208,6 +208,49 @@ export const CARD_MASTER = [
       '故郷を守るために立ち上がった志願兵たち。門の内側から放たれる矢は、侵略者を決して逃さない。',
   },
   {
+    id: 'fireatronach',
+    name: '炎の精霊',
+    rarity: 1,
+    power: 3,
+    skills: [
+      { id: 'sacrifice', value: 3 },
+      { id: 'snipe', value: 5 },
+    ],
+    voiceCategory: 'stone',
+    flavor:
+      '高濃度の魔力で形成された炎の精霊。揺らめく灼熱の炎は、離れた標的をも的確に捕捉し、圧倒的な熱量で焼き尽くす。',
+  },
+  {
+    id: 'iceatronach',
+    name: '氷の精霊',
+    rarity: 1,
+    power: 5,
+    skills: [{ id: 'growth', value: -1 }, { id: 'sturdy' }],
+    voiceCategory: 'stone',
+    flavor:
+      '高濃度の魔力で形成された氷の精霊。絶対零度の冷気を纏い、いかなる衝撃にも揺るがない極寒の盾として君臨する。',
+  },
+  {
+    id: 'windatronach',
+    name: '風の精霊',
+    rarity: 1,
+    power: 5,
+    skills: [{ id: 'berserk', value: 3 }, { id: 'move' }],
+    voiceCategory: 'stone',
+    flavor:
+      '高濃度の魔力で形成された風の精霊。戦場を縦横無尽に駆け巡り、荒れ狂う烈風となって瞬く間に敵陣を圧倒する。',
+  },
+  {
+    id: 'lightningatronach',
+    name: '雷の精霊',
+    rarity: 1,
+    power: 7,
+    skills: [{ id: 'explode', value: 4 }],
+    voiceCategory: 'stone',
+    flavor:
+      '高濃度の魔力で形成された雷の精霊。死の間際に激しい放電を引き起こす。',
+  },
+  {
     id: 'mantis',
     name: '旧式マンティス',
     rarity: 1,
@@ -621,54 +664,11 @@ export const CARD_MASTER = [
       'しなやかな鞭を華麗に操る冒険家。敵を攻撃する際に、その長いリーチを活かして複数の対象を同時に討つ。',
   },
   {
-    id: 'atronach',
-    name: '雷のゴーレム',
-    rarity: 1,
-    power: 7,
-    skills: [{ id: 'explode', value: 4 }],
-    voiceCategory: 'stone',
-    flavor:
-      '高濃度の魔力で形成された雷の精霊。死の間際に激しい放電を引き起こす。',
-  },
-  {
-    id: 'largemouth',
-    name: '肉裂き大口',
-    rarity: 1,
-    power: 6,
-    skills: [{ id: 'sacrifice', value: 2 }],
-    voiceCategory: 'monster',
-    flavor: '生者の絶望と血の匂いだけが、底なしの飢えを満たす道標となる',
-  },
-  {
-    id: 'skeleton',
-    name: 'スケルトン・ソルジャー',
-    rarity: 1,
-    power: 3,
-    skills: [{ id: 'split', value: 3, summonId: 'token_skeleton' }],
-    voiceCategory: 'undead',
-    flavor:
-      '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
-  },
-  {
-    id: 'skeletondefender',
-    name: 'スケルトン・ディフェンダー',
-    rarity: 1,
-    power: 6,
-    skills: [
-      { id: 'takeover' },
-      { id: 'guardian' },
-      { id: 'split', value: 3, summonId: 'token_skeleton' },
-    ],
-    voiceCategory: 'undead',
-    flavor:
-      '生前の規格外な巨体を、さらに巨大な鎧とメイスで武装した骸骨の重衛兵。',
-  },
-  {
     id: 'voidbraver',
     name: 'ホロウ・ブレイバー',
     rarity: 1,
-    power: 4,
-    skills: [{ id: 'soul_bind_void', value: 1 }],
+    power: 3,
+    skills: [{ id: 'sublimation', value: 2 }],
     voiceCategory: 'stone',
     flavor:
       'その仮面の下には、もはや人の心は存在しない。虚無の魂が、ただ彼の体を動かしているだけだ。',
@@ -740,10 +740,7 @@ export const CARD_MASTER = [
     name: '集会の主',
     rarity: 1,
     power: 7,
-    skills: [
-      { id: 'takeover', value: 1 },
-      { id: 'heal', value: 3 },
-    ],
+    skills: [{ id: 'takeover' }, { id: 'heal', value: 3 }],
     voiceCategory: 'devil',
     flavor:
       '黒ミサを司る山羊頭の魔神。悪魔たちの誓いを束ね、血の契約を仲介する。',
@@ -756,6 +753,51 @@ export const CARD_MASTER = [
     skills: [{ id: 'awake', value: 7, summonId: 'token_daemon' }],
     voiceCategory: 'human_male_old',
     flavor: '歪んだ忠誠を誓う狂信者。彼の儀式は、強大な闇を招く呼び水となる。',
+  },
+  {
+    id: 'ritual',
+    name: '教団の儀式',
+    rarity: 1,
+    power: 0,
+    skills: [{ id: 'takeover' }, { id: 'choice', value: 1 }],
+    choices: [
+      { id: 'summon', value: 7, summonId: 'token_daemon' },
+      { id: 'cull', value: 2 },
+    ],
+    voiceCategory: 'magic',
+    flavor: '',
+  },
+  {
+    id: 'skeleton',
+    name: 'スケルトン・ソルジャー',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'split', value: 3, summonId: 'token_skeleton' }],
+    voiceCategory: 'undead',
+    flavor:
+      '骨と骨が組み合わさった古の戦士。一度倒してもバラバラのパーツを再構築して復活する。',
+  },
+  {
+    id: 'skeletondefender',
+    name: 'スケルトン・ウォリアー',
+    rarity: 1,
+    power: 6,
+    skills: [
+      { id: 'standby', value: 2 },
+      { id: 'split', value: 3, summonId: 'token_skeleton' },
+    ],
+    voiceCategory: 'undead',
+    flavor:
+      '生前の規格外な巨体を、さらに巨大な鎧とメイスで武装した骸骨の重衛兵。',
+  },
+  {
+    id: 'largemouth',
+    name: '肉裂き大口',
+    rarity: 1,
+    power: 6,
+    skills: [{ id: 'sacrifice', value: 2 }],
+    voiceCategory: 'monster',
+    flavor: '生者の絶望と血の匂いだけが、底なしの飢えを満たす道標となる',
   },
   {
     id: 'fly',
@@ -772,7 +814,7 @@ export const CARD_MASTER = [
     name: '悪魔の手',
     rarity: 1,
     power: 2,
-    skills: [{ id: 'cull' }],
+    skills: [{ id: 'cull', value: 1 }],
     voiceCategory: 'stone',
     flavor:
       '虚空を裂いて現れる、魔界より召喚されし巨大な腕。いかなる堅牢な障害も無慈悲に握り潰す。',
@@ -823,18 +865,18 @@ export const CARD_MASTER = [
       '純粋な破壊を目的に建造された古代大戦の巨大兵器。冷たい鋼の奥底で重厚な機関音を響かせ、再び空を焦がす再起動の刻を静かに待っている。',
   },
   {
-    id: 'mech',
-    name: '略奪者のキメラ・メック',
+    id: 'cop',
+    name: 'ボーダー・エンフォーサー',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'choice', value: 1 }, { id: 'sturdy' }, { id: 'move' }],
-    choices: [
-      { id: 'spend', value: 1 },
-      { id: 'explode', value: 2 },
+    power: 5,
+    skills: [
+      { id: 'challenge' },
+      { id: 'bind', value: 1 },
+      { id: 'summon', value: 1, summonId: 'token_drone' },
     ],
-    voiceCategory: 'machine_old',
+    voiceCategory: 'machine_new',
     flavor:
-      'アッシュランドの盗賊団に好まれる歩行戦車。拾い集めた鉄屑で思い思いの魔改造が施されており、時に不純な粗悪燃料すら注ぎ込まれる。',
+      'ドローンで逃亡者を路地裏へと追い詰め、一切の感情を交えずに手錠をかける。この街に、彼らから逃れられる暗がりなど存在しない。',
   },
   {
     id: 'armsuits',
@@ -1521,24 +1563,21 @@ export const CARD_MASTER = [
     id: 'voiddog',
     name: '虚無の捕食者',
     rarity: 2,
-    power: 3,
-    skills: [{ id: 'sublimation', value: 2 }],
+    power: 2,
+    skills: [{ id: 'sublimation', value: 1 }, { id: 'quick' }],
     voiceCategory: 'stone',
     flavor:
       '次元の裂け目より現れる漆黒の魔獣。獲物の存在そのものを貪り喰らう。',
   },
   {
-    id: 'skeletonlord',
-    name: 'スケルトン・ロード',
+    id: 'traveler',
+    name: '追放された旅人',
     rarity: 2,
     power: 5,
-    skills: [
-      { id: 'legendary' },
-      { id: 'split', value: 3, summonId: 'token_skeleton' },
-    ],
-    voiceCategory: 'undead',
+    skills: [{ id: 'legendary' }, { id: 'deadly' }],
+    voiceCategory: 'human_male_ikemen',
     flavor:
-      '迷宮を彷徨う骸の王。その体が砕け散る時、呪われた骨は新たな兵士として立ち上がる。',
+      '村を救った英雄は病魔に冒され、故郷を追われた。かつて自らが守り抜いた世界に背を向けて。',
   },
   {
     id: 'priestess',
@@ -1572,6 +1611,39 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_ikemen',
     flavor:
       '宵闇を纏い、妖しく微笑む魔界の住人。視線に捕らえられたが最後、理性は脆くも崩れ去る。',
+  },
+  {
+    id: 'enchanter',
+    name: 'ダーク・エンチャンター',
+    rarity: 2,
+    power: 4,
+    skills: [{ id: 'grant_deadly' }],
+    voiceCategory: 'human_male_old',
+    flavor:
+      '闇の魔力を注ぎ込み、魂を調律する老魔術師。その秘術を施された者は、敵を確実に葬る致命の刃となる。',
+  },
+  {
+    id: 'metalworker',
+    name: '教団の職工',
+    rarity: 2,
+    power: 4,
+    skills: [{ id: 'grant_sturdy' }],
+    voiceCategory: 'devil',
+    flavor:
+      '仲間の肉体を無慈悲に改造する悪魔。身を捩るほどの激痛の代償として、冷たく強固な金属の体を与える。',
+  },
+  {
+    id: 'skeletonlord',
+    name: 'スケルトン・ロード',
+    rarity: 2,
+    power: 5,
+    skills: [
+      { id: 'legendary' },
+      { id: 'split', value: 3, summonId: 'token_skeleton' },
+    ],
+    voiceCategory: 'undead',
+    flavor:
+      '迷宮を彷徨う骸の王。その体が砕け散る時、呪われた骨は新たな兵士として立ち上がる。',
   },
   {
     id: 'cavalry',
@@ -1730,7 +1802,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
-      '狂気と野望を海図に描き、己の栄光のために部下をも駒として消費する冷酷なる海将。',
+      '狂気と野望を海図に描き、己の栄光のために部下をも駒として消費する冷酷なる将軍。',
   },
   {
     id: 'assassin',
@@ -1739,8 +1811,7 @@ export const CARD_MASTER = [
     power: 1,
     skills: [{ id: 'deadly' }, { id: 'stealth', value: 1 }, { id: 'quick' }],
     voiceCategory: 'human_female_assassin',
-    flavor:
-      '黒い服と2つの短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。',
+    flavor: '2本の短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。',
   },
   {
     id: 'kingslayer',
@@ -2220,6 +2291,35 @@ export const CARD_MASTER = [
       '暗闇より忍び寄り、甘美な禁忌を囁く魔蛇。唆された者は破滅へと歩む。',
   },
   {
+    id: 'spy',
+    name: '悪魔の密偵',
+    rarity: 3,
+    power: 5,
+    skills: [
+      { id: 'sacrifice', value: 3 },
+      { id: 'awake', value: 7, summonId: 'token_daemon' },
+    ],
+    voiceCategory: 'human_male_trickstar',
+    flavor:
+      '人々の欲望が渦巻く夜会は、彼にとって最高の狩り場である。優雅な立ち振る舞いで獲物を油断させ、破滅への生贄として漆黒の祭壇へと送り込んでいく。',
+  },
+  {
+    id: 'dread',
+    name: '戦慄の先導者',
+    rarity: 3,
+    power: 5,
+    skills: [
+      { id: 'legendary' },
+      { id: 'sacrifice', value: 2 },
+      { id: 'summon', value: 3, summonId: 'token_skeleton' },
+      { id: 'choice', value: 1 },
+    ],
+    choices: [{ id: 'grant_deadly' }, { id: 'grant_sturdy' }],
+    voiceCategory: 'devil',
+    flavor:
+      '絶望の空の下、悪魔の王は亡者の軍勢を率いる。その黒き矛が示す先にあるのは、絶対的な死と破壊のみ。',
+  },
+  {
     id: 'bahamut',
     name: '終焉の双頭竜',
     rarity: 3,
@@ -2243,8 +2343,8 @@ export const CARD_MASTER = [
       { id: 'legendary' },
       { id: 'sacrifice', value: 3 },
       { id: 'execute' },
-      { id: 'cull' },
-      { id: 'cull' },
+      { id: 'cull', value: 1 },
+      { id: 'cull', value: 1 },
     ],
     voiceCategory: 'horse',
     flavor:
@@ -2283,7 +2383,7 @@ export const CARD_MASTER = [
     name: '嫉妬の女王',
     rarity: 3,
     power: 4,
-    skills: [{ id: 'legendary' }, { id: 'cull' }],
+    skills: [{ id: 'legendary' }, { id: 'cull', value: 1 }],
     voiceCategory: 'human_female_cool',
     flavor:
       '”世界で一番美しいのは誰？”——その問いに答える者がいなくなるまで、ただ愚か者を狩り尽くすのみ。',

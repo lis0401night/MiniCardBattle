@@ -24,6 +24,7 @@ const getFilteredCharacters = () => {
   const isVoidUnlocked = (achievementData.stats?.voidDefeated || 0) >= 1;
   const isSuccubusUnlocked =
     (achievementData.stats?.succubusDefeated || 0) >= 1;
+  const isWarlockUnlocked = (achievementData.stats?.warlockDefeated || 0) >= 1;
 
   return Object.values(charsObj).filter((c) => {
     if (BOSS_CHARACTER_IDS.includes(c.id)) {
@@ -31,6 +32,7 @@ const getFilteredCharacters = () => {
       if (c.id === 'satan') return hasStoryClear;
       if (c.id === 'void') return isVoidUnlocked;
       if (c.id === 'succubus') return isSuccubusUnlocked;
+      if (c.id === 'warlock') return isWarlockUnlocked;
     }
     return true;
   });

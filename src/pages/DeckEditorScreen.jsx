@@ -591,7 +591,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                   alt="Leader"
                 />
                 <img
-                  src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(leaderId) ? 'red' : 'gold'}.png`}
+                  src={`assets/icons/iconframe_${['satan', 'void', 'succubus', 'warlock'].includes(leaderId) ? 'red' : 'gold'}.png`}
                   className="banner-icon-frame"
                   alt="frame"
                 />

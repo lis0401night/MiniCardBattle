@@ -637,7 +637,8 @@ export const SKILLS = {
   cull: {
     name: '選別',
     icon: '🫳',
-    desc: () => '召喚時、相手は自分のカード1枚を選択して破壊する。',
+    desc: (val) =>
+      `召喚時、相手は自分のカードを${val || 1}枚選択して破壊する。`,
   },
   execute: {
     name: '処刑',
@@ -728,6 +729,18 @@ export const SKILLS = {
     desc: () =>
       'ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。',
   },
+  grant_deadly: {
+    name: '付与(必殺)',
+    icon: '☠️',
+    desc: () =>
+      '召喚時、自分の場の元々の能力を持たないカード全てに「必殺」を付与する。',
+  },
+  grant_sturdy: {
+    name: '付与(頑丈)',
+    icon: '⛰',
+    desc: () =>
+      '召喚時、自分の場の元々の能力を持たないカード全てに「頑丈」を付与する。',
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -795,6 +808,8 @@ export const ACTIVE_SKILLS = [
   'treason',
   'sacrifice_void',
   'oblivion',
+  'grant_deadly',
+  'grant_sturdy',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
@@ -886,10 +901,12 @@ export const SKILL_CATEGORIES = [
         ],
       },
       {
-        name: '自己バフ・変身',
+        name: '強化・変身',
         skills: [
           'support',
           'support_void',
+          'grant_deadly',
+          'grant_sturdy',
           'sublimation',
           'bless',
           'replicate',
@@ -953,13 +970,19 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: 'ターン開始時効果',
-        skills: ['growth', 'intercept', 'awake', 'samsara', 'contract'],
+        skills: [
+          'growth',
+          'intercept',
+          'awake',
+          'samsara',
+          'contract',
+          'move',
+          'teleport',
+        ],
       },
       {
         name: '盤面影響・その他',
         skills: [
-          'move',
-          'teleport',
           'phase',
           'brutal',
           'absorb',

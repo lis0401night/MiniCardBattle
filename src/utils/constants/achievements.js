@@ -729,6 +729,7 @@ export const achievementData = {
     defenseAttackWins: 0,
     voidDefeated: 0, // ゼノン撃破フラグ（実績管理）
     succubusDefeated: 0, // ヴィオラ撃破フラグ（実績管理）
+    warlockDefeated: 0, // バルタザール撃破フラグ（実績管理）
   },
 };
 
@@ -750,6 +751,7 @@ export function loadAchievements() {
         freeBattleWins: 0,
         voidDefeated: 0,
         succubusDefeated: 0,
+        warlockDefeated: 0,
       };
       if (!achievementData.stats.leaderUsage)
         achievementData.stats.leaderUsage = {};
@@ -771,6 +773,8 @@ export function loadAchievements() {
         achievementData.stats.voidDefeated = 0;
       if (typeof achievementData.stats.succubusDefeated !== 'number')
         achievementData.stats.succubusDefeated = 0;
+      if (typeof achievementData.stats.warlockDefeated !== 'number')
+        achievementData.stats.warlockDefeated = 0;
     } catch (e) {
       console.error('Failed to parse achievements data', e);
     }
@@ -830,6 +834,9 @@ export function incrementStat(type, key = null, amount = 1) {
   } else if (type === 'succubusDefeated') {
     achievementData.stats.succubusDefeated =
       (achievementData.stats.succubusDefeated || 0) + amount;
+  } else if (type === 'warlockDefeated') {
+    achievementData.stats.warlockDefeated =
+      (achievementData.stats.warlockDefeated || 0) + amount;
   }
   saveAchievements();
 }

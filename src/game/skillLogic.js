@@ -1389,16 +1389,6 @@ export async function resolveActiveSkillEffect(
         playSound(SOUNDS.seSkillMorph);
       }
 
-      const tgtEl = document.querySelector(
-        `#${tgtSide}-lanes .cell[data-lane="${l}"] .card`
-      );
-      if (tgtEl) {
-        tgtEl.classList.remove('anim-shake');
-        void tgtEl.offsetWidth;
-        tgtEl.classList.add('anim-shake');
-        createDamagePopup(tgtEl, '石化', '#64748b');
-      }
-
       await sleep(300);
       statueToken.isSkillResolving = false; // 保護解除
 
@@ -3037,77 +3027,88 @@ export async function resolveActiveSkillEffect(
     }
     await sleep(300);
   } else if (skillId === 'cull') {
-    // 【選別】召喚時、相手は自分の場のカード1枚を選び墓地に送る
+    // 【選別】召喚時、相手は自分の場のカードを指定枚数選び墓地に送る
     const oppOwner = o === 'blue' ? 'red' : 'blue';
     const oppBoard =
       o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-    const hasOppCard = oppBoard.some((bc) => bc !== null);
+
+    const occupiedLanes = oppBoard
+      .map((bc, i) => (bc !== null ? i : -1))
+      .filter((i) => i !== -1);
+
+    const hasOppCard = occupiedLanes.length > 0;
 
     if (hasOppCard) {
-      let selectedLanes;
+      const valCount =
+        skillValue === undefined || skillValue === 0 ? 1 : skillValue;
+      const selectCount = Math.min(valCount, occupiedLanes.length);
+      let selectedLanes = [];
+
       if (
         oppOwner === 'red' &&
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
         // 相手がAIの場合：最もパワーの低いカードを自動選択（自分の損失を最小化）
-        const occupiedLanes = oppBoard
-          .map((bc, i) => (bc !== null ? i : -1))
-          .filter((i) => i !== -1);
-        occupiedLanes.sort((a, b) => {
+        const sortedLanes = [...occupiedLanes].sort((a, b) => {
           const diff =
             (oppBoard[a].currentPower || 0) - (oppBoard[b].currentPower || 0);
           if (diff !== 0) return diff;
           return a - b;
         });
-        selectedLanes = [occupiedLanes[0]];
+        selectedLanes = sortedLanes.slice(0, selectCount);
         // AIの思考時間を演出
         await sleep(AI_THINKING_DURATION);
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();
         await sleep(100);
       } else {
-        // 相手がプレイヤーの場合：自分の場のカードを1枚選択させる
-        selectedLanes = await waitPlayerAlliedLaneSelection(1, oppOwner);
+        // 相手がプレイヤーの場合：自分の場のカードを選択させる
+        selectedLanes = await waitPlayerAlliedLaneSelection(
+          selectCount,
+          oppOwner
+        );
       }
 
       if (selectedLanes && selectedLanes.length > 0) {
-        const targetLane = selectedLanes[0];
-        const targetCard = oppBoard[targetLane];
-        if (targetCard) {
-          // 「無効」を持つカードは破壊できない
-          if (hasSkill(targetCard, 'immune')) {
-            const tgtEl = document.querySelector(
-              `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
-            );
-            if (tgtEl) createDamagePopup(tgtEl, '無効', '#94a3b8');
-            playSound(SOUNDS.seSkill);
-            await sleep(300);
-          } else {
-            // VFX演出（SEも triggerVfx 内で自動再生されます）
-            if (typeof window.triggerVfx === 'function') {
-              await window.triggerVfx('anm_skill_cull', o, targetLane);
+        // 選択された複数のカードを順次破壊する
+        for (const targetLane of selectedLanes) {
+          const targetCard = oppBoard[targetLane];
+          if (targetCard) {
+            // 「無効」を持つカードは破壊できない
+            if (hasSkill(targetCard, 'immune')) {
+              const tgtEl = document.querySelector(
+                `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+              );
+              if (tgtEl) createDamagePopup(tgtEl, '無効', '#94a3b8');
+              playSound(SOUNDS.seSkill);
+              await sleep(300);
             } else {
-              playSound(SOUNDS.seDestroy);
+              // VFX演出（SEも triggerVfx 内で自動再生されます）
+              if (typeof window.triggerVfx === 'function') {
+                await window.triggerVfx('anm_skill_cull', o, targetLane);
+              } else {
+                playSound(SOUNDS.seDestroy);
+              }
+              const tgtEl = document.querySelector(
+                `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+              );
+              if (tgtEl) {
+                tgtEl.classList.remove('anim-shake');
+                void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+                tgtEl.classList.add('anim-shake');
+                tgtEl.classList.add('anim-card-destroy');
+                createDamagePopup(tgtEl, '破壊', '#991b1b');
+              }
+              if (targetCard.voiceCategory) {
+                playCardVoice(targetCard.voiceCategory, 'death');
+              }
+              await sleep(300);
+              // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
+              if (!(await discardCard(oppOwner, targetCard, targetLane, true)))
+                oppBoard[targetLane] = null;
+              renderBoard();
             }
-            const tgtEl = document.querySelector(
-              `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
-            );
-            if (tgtEl) {
-              tgtEl.classList.remove('anim-shake');
-              void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-              tgtEl.classList.add('anim-shake');
-              tgtEl.classList.add('anim-card-destroy');
-              createDamagePopup(tgtEl, '破壊', '#991b1b');
-            }
-            if (targetCard.voiceCategory) {
-              playCardVoice(targetCard.voiceCategory, 'death');
-            }
-            await sleep(300);
-            // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
-            if (!(await discardCard(oppOwner, targetCard, targetLane, true)))
-              oppBoard[targetLane] = null;
-            renderBoard();
           }
         }
       }
@@ -3184,6 +3185,65 @@ export async function resolveActiveSkillEffect(
           }
         }
       }
+    }
+  } else if (skillId === 'grant_deadly' || skillId === 'grant_sturdy') {
+    const isBlue = o === 'blue';
+    const myBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+    const targetSkill = skillId === 'grant_deadly' ? 'deadly' : 'sturdy';
+    const side = isBlue ? 'player' : 'enemy';
+
+    let activated = false;
+    for (let i = 0; i < 3; i++) {
+      const tc = myBoard[i];
+      if (tc && tc !== c) {
+        // 元々の能力を持たないカードを判定
+        const originalCard = CARD_MASTER.find(
+          (m) => m.id === (tc.baseId || tc.id)
+        );
+        const isVanilla = originalCard
+          ? !originalCard.skills ||
+            originalCard.skills.length === 0 ||
+            originalCard.skills.every((s) => s.id === 'none')
+          : !tc.skills ||
+            tc.skills.length === 0 ||
+            tc.skills.every((s) => s.id === 'none');
+        if (isVanilla) {
+          if (!tc.skills) {
+            tc.skills = [];
+          }
+          // 'none' が入っている場合は消去する
+          tc.skills = tc.skills.filter((s) => s.id !== 'none');
+
+          // 重複付与を防ぐ（頑丈や必殺は最大1個まで）
+          if (!tc.skills.some((s) => s.id === targetSkill)) {
+            tc.skills.push({ id: targetSkill });
+
+            // ポップアップなどの演出を各カードに表示
+            const tEl = document.querySelector(
+              `#${side}-lanes .cell[data-lane="${i}"] .card`
+            );
+            if (tEl) {
+              createDamagePopup(
+                tEl,
+                targetSkill === 'deadly' ? '必殺付与' : '頑丈付与',
+                '#c084fc'
+              );
+            }
+            if (window.updateCardVisualsReact) {
+              window.updateCardVisualsReact(i, side);
+            }
+            activated = true;
+          }
+        }
+      }
+    }
+
+    if (activated) {
+      playSound(SOUNDS.seSkill);
+      if (window.updateBattleUIHook) {
+        window.updateBattleUIHook();
+      }
+      await sleep(500);
     }
   } else {
     // 標準的なスキルは完全に Engine と Renderer に移譲

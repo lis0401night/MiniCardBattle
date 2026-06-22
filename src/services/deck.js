@@ -38,10 +38,12 @@ import { showAlertModal, showConfirmModal } from './uiModals.js';
 export const CARD_ID_MIGRATION_MAP = {
   copy: 'eye',
   chameleon: 'instructor',
+  mech: 'cop',
   zombie: 'fly',
   bigai: 'bigeye',
   wish: 'rampage',
   nectromancer: 'necromancer', // 互換性維持用の移行マッピング
+  atronach: 'lightningatronach',
 };
 
 export function migrateCardId(id) {

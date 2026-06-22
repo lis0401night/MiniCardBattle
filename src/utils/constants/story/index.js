@@ -75,6 +75,8 @@ export function getFallbackStoryDialogue(
       enemyIntro = `……（意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）`; // ゼノンは名乗り不要
     } else if (enemyId === 'succubus') {
       enemyIntro = `ふふっ、私は隷属の女王ヴィオラよ。こんなところに迷い込むなんて、私に隷属したいのかしら？`;
+    } else if (enemyId === 'warlock') {
+      enemyIntro = `フフフ……私はかつて大賢者と呼ばれ、今は邪教を支配する者、バルタザール。魔王の力すらも私の野望を果たすための道具に過ぎん。邪魔する愚か者どもめ、塵にしてくれよう。`;
     } else if (enemyId === 'satan') {
       enemyIntro = `フハハハ！ 我こそは魔王サタン！ 世界を絶望と虚無の闇に沈める支配者なり！`;
     }
@@ -89,6 +91,8 @@ export function getFallbackStoryDialogue(
       enemySecond = `……`;
     } else if (enemyId === 'succubus') {
       enemySecond = `あなたの綺麗な魂、絶望の快楽に沈めて差し上げましょう！`;
+    } else if (enemyId === 'warlock') {
+      enemySecond = `言い訳など不要……。私の闇の魔術の前に、ひれ伏して絶命するが良い！`;
     } else if (enemyId === 'satan') {
       enemySecond = `我が絶望の炎で、一瞬にして焼き尽くしてくれよう！`;
     }
@@ -111,6 +115,8 @@ export function getFallbackStoryDialogue(
       enemyOut = `……（黒き甲冑が崩れ去り、虚空の底へと消えていく……）`;
     } else if (enemyId === 'succubus') {
       enemyOut = `キャアアアッ！ この私が、負けるなんて……！ サタン様……！`;
+    } else if (enemyId === 'warlock') {
+      enemyOut = `バ、バカな……！ この私が、このような小童どもに敗れるなど……あり得ん……！`;
     } else if (enemyId === 'satan') {
       enemyOut = `グ、オオオオッ……！ 我が滅びるだと……！？ この魔王サタンが……！`;
     }

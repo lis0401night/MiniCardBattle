@@ -10,6 +10,7 @@ const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
   'satan',
   'void',
   'succubus',
+  'warlock',
 ]);
 
 // 敵候補のカードリストを取得（golemからdicejugglerまで、トークン以外）

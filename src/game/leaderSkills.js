@@ -11,6 +11,7 @@ import {
   sleep,
   triggerGraveKeeperEffect,
   consumeArmSelf,
+  createDamagePopup,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -37,6 +38,8 @@ import {
   updateCardDetail,
   updateDeckDisplay,
   updateSPOrbs,
+  updateHPBar,
+  showSpeechBubble,
 } from '../services/uiBattle.js';
 
 // ==========================================
@@ -1014,12 +1017,47 @@ export async function executeLeaderSkillAction(
 
     // 2. 相手の手札を全て捨てる
     let opDiscarded = 0;
+    let voidDiscarded = 0;
     const opCards = [...opH];
     opH.length = 0;
     for (const card of opCards) {
       if (!card) continue;
+      if (card.id === 'token_void' || card.baseId === 'token_void') {
+        voidDiscarded++;
+      }
       await discardCard(opId, card, undefined, false);
       opDiscarded++;
+    }
+
+    // 相手が捨てた虚空の枚数分、相手がダメージを受ける
+    if (voidDiscarded > 0) {
+      if (opId === 'blue') {
+        GameState.playerHP -= voidDiscarded;
+        if (GameState.playerHP < 0) GameState.playerHP = 0;
+      } else {
+        GameState.enemyHP -= voidDiscarded;
+        if (GameState.enemyHP < 0) GameState.enemyHP = 0;
+      }
+
+      // 被弾演出
+      const hpFill = document.getElementById(
+        `${opId === 'blue' ? 'player' : 'enemy'}-hp-fill`
+      );
+      if (hpFill) {
+        createDamagePopup(hpFill, `-${voidDiscarded}`, '#ef4444');
+      }
+      playSound(SOUNDS.seDamage);
+
+      const boardEl = document.getElementById('battle-screen');
+      if (boardEl) {
+        boardEl.classList.remove('anim-shake-screen');
+        void boardEl.offsetWidth;
+        boardEl.classList.add('anim-shake-screen');
+      }
+
+      updateHPBar();
+      showSpeechBubble(opId);
+      checkWinCondition();
     }
 
     // 3. 同数の虚空を加える
@@ -1225,6 +1263,124 @@ export async function executeLeaderSkillAction(
         }
       }
     }
+  } else if (action === 'warlock_place_demons') {
+    const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+    const mySealedLanes = isBlue
+      ? GameState.playerSealedLanes
+      : GameState.enemySealedLanes;
+    const skeletonTpl = CARD_MASTER.find((m) => m.id === 'token_skeleton');
+    const daemonTpl = CARD_MASTER.find((m) => m.id === 'token_daemon');
+
+    // UIの介入（スケルトン配置先の選択）をこのブロック内で処理
+    let selectedLanes = tokenLanes;
+    if (!selectedLanes || selectedLanes.length === 0) {
+      let success = false;
+      while (!success) {
+        const selection = await waitPlayerLaneSelection(
+          1,
+          owner,
+          skeletonTpl,
+          false,
+          null,
+          false
+        );
+        if (!selection || selection.length === 0) return; // キャンセルされた場合
+        const l = selection[0];
+        const proceed = await confirmOverwrittenLane(
+          owner,
+          skeletonTpl,
+          l,
+          false
+        );
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        selectedLanes = selection;
+        success = true;
+      }
+    }
+    tokenLanes = selectedLanes;
+
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    // 1. スケルトン1体を配置（選択されたレーン）
+    if (tokenLanes && tokenLanes.length > 0) {
+      const l = tokenLanes[0];
+      if (board[l]) {
+        await discardCard(owner, board[l], l, false);
+      }
+
+      const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
+      const skImg =
+        getCardImgUrl({ ...skeletonTpl, owner }) ||
+        `assets/cards/card_${skeletonTpl.id}.jpg`;
+
+      board[l] = {
+        id: `warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+        owner,
+        ...deepClonedSk,
+        imgUrl: skImg,
+        filter: 'none',
+        currentPower: skeletonTpl.power,
+        rarity: skeletonTpl.rarity || 1,
+        isToken: true,
+      };
+      // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+      board[l].skillTriggered = true;
+
+      events.push({
+        type: 'summon_card',
+        side: owner,
+        lane: l,
+        card: board[l],
+        source: 'warlock_place_demons',
+      });
+    }
+
+    // 2. その後、自分のカードが配置されている全てのレーンにデーモンを配置
+    const targetLanes = [];
+    for (let l = 0; l < 3; l++) {
+      // 自分のカードが存在し、かつ封印されていないレーン
+      if (board[l] !== null && mySealedLanes[l] === 0) {
+        targetLanes.push(l);
+
+        // 既存のカードを墓地へ送る（「配置」に伴う上書き）
+        await discardCard(owner, board[l], l, false);
+
+        // トークンのディープコピーを作成して配置する
+        const deepClonedToken = JSON.parse(JSON.stringify(daemonTpl));
+
+        const imgUrl =
+          getCardImgUrl({ ...daemonTpl, owner }) ||
+          `assets/cards/card_${daemonTpl.id}.jpg`;
+
+        board[l] = {
+          id: `warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          owner,
+          ...deepClonedToken,
+          imgUrl,
+          filter: 'none',
+          currentPower: daemonTpl.power,
+          rarity: daemonTpl.rarity || 1,
+          isToken: true, // トークン属性を付与
+        };
+        // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+        board[l].skillTriggered = true;
+
+        events.push({
+          type: 'summon_card',
+          side: owner,
+          lane: l,
+          card: board[l],
+          source: 'warlock_place_demons',
+        });
+      }
+    }
+
+    if (targetLanes.length > 0) {
+      tokenLanes = targetLanes; // VFXの参照用に渡す
+    }
   }
 
   // Engineの共通ロジック呼び出し
@@ -1426,6 +1582,17 @@ export async function executeLeaderSkillAction(
           window.triggerVfx('anm_seal_lanes', owner, lane)
         )
       );
+    } else if (
+      action === 'warlock_place_demons' &&
+      tokenLanes &&
+      tokenLanes.length > 0
+    ) {
+      await sleep(200);
+      await Promise.all(
+        tokenLanes.map((lane) =>
+          window.triggerVfx('anm_dark_magic_self', owner, lane)
+        )
+      );
     } else if (action === 'night_parade' && tokenLanes && tokenLanes.enemy) {
       await sleep(200);
       await Promise.all(
@@ -1437,9 +1604,9 @@ export async function executeLeaderSkillAction(
   }
 
   // イベントログを再生（再生中にGameStateと描画が逐次更新される）
-  // dragon_summon: イグニストークンのimgUrlを現在設定中のスキンに合わせて書き換える
+  // dragon_summon / dragon_high_ritual: イグニストークンのimgUrlを現在設定中のスキンに合わせて書き換える
   // （engine.jsは純粋関数のためGameStateにアクセスできないため、ここでパッチする）
-  if (action === 'dragon_summon') {
+  if (action === 'dragon_summon' || action === 'dragon_high_ritual') {
     const skinId = isBlue
       ? GameState.playerSkins?.[config.id] || 'default'
       : GameState.enemySkins?.[config.id] || 'default';

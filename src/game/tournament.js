@@ -47,7 +47,8 @@ export function initTournamentMode() {
       id !== GameState.pendingCharId &&
       id !== 'satan' && // ボスすぎるキャラは除くかはお好みだが一旦除外
       id !== 'void' && // ゼノンも除外
-      id !== 'succubus' // ヴィオラも除外
+      id !== 'succubus' && // ヴィオラも除外
+      id !== 'warlock' // バルタザールも除外
   );
 
   // シャッフル

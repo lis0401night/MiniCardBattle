@@ -627,7 +627,7 @@ function RentalDeckSelect() {
                         alt={opt.name}
                       />
                       <img
-                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus'].includes(opt.leaderId) ? 'red' : 'gold'}.png`}
+                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus', 'warlock'].includes(opt.leaderId) ? 'red' : 'gold'}.png`}
                         className="banner-icon-frame"
                         alt="frame"
                       />

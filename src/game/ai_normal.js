@@ -1571,6 +1571,7 @@ export function getBestSimulatedMove() {
         'dragon_high_ritual',
         'devilhunter_resurrect',
         'dungeon_summon_leader',
+        'warlock_place_demons',
       ].includes(action)
     ) {
       tokenLanePatterns = [[0], [1], [2]].filter(

@@ -1924,7 +1924,7 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'cull': {
-      // 【選別】相手の場で最もパワーの低いカード1枚を破壊（墓地送り）
+      // 【選別】相手の場でパワーの低いカードを指定枚数破壊（墓地送り）
       const occupiedLanes = eB
         .map((bc, i) => (bc !== null ? i : -1))
         .filter((i) => i !== -1 && !hasSkill(eB[i], 'immune'));
@@ -1935,17 +1935,73 @@ export function applyActiveSkillLogic(
           if (diff !== 0) return diff;
           return a - b;
         });
-        const targetLane = occupiedLanes[0];
-        const targetCard = eB[targetLane];
-        if (targetCard) {
-          const oppDiscard =
-            oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
-          oppDiscard.push(targetCard);
-          eB[targetLane] = null;
+
+        const count = val === undefined || val === 0 ? 1 : val;
+        const selectCount = Math.min(count, occupiedLanes.length);
+        const targets = [];
+
+        for (let idx = 0; idx < selectCount; idx++) {
+          const targetLane = occupiedLanes[idx];
+          const targetCard = eB[targetLane];
+          if (targetCard) {
+            const oppDiscard =
+              oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
+            oppDiscard.push(targetCard);
+            eB[targetLane] = null;
+            targets.push({
+              side: oppOwner,
+              lane: targetLane,
+              card: targetCard,
+            });
+          }
+        }
+
+        if (targets.length > 0) {
           events.push({
             type: 'destroy_cards',
-            targets: [{ side: oppOwner, lane: targetLane, card: targetCard }],
+            targets: targets,
           });
+        }
+      }
+      break;
+    }
+    case 'grant_deadly':
+    case 'grant_sturdy': {
+      const targetSkill = sid === 'grant_deadly' ? 'deadly' : 'sturdy';
+      const myBoard = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+
+      for (let i = 0; i < 3; i++) {
+        const tc = myBoard[i];
+        if (tc && tc !== c) {
+          const originalCard = CARD_MASTER.find(
+            (m) => m.id === (tc.baseId || tc.id)
+          );
+          const isVanilla = originalCard
+            ? !originalCard.skills ||
+              originalCard.skills.length === 0 ||
+              originalCard.skills.every((s) => s.id === 'none')
+            : !tc.skills ||
+              tc.skills.length === 0 ||
+              tc.skills.every((s) => s.id === 'none');
+          if (isVanilla) {
+            if (!tc.skills) {
+              tc.skills = [];
+            }
+            tc.skills = tc.skills.filter((s) => s.id !== 'none');
+
+            // 重複付与を防ぐ（頑丈や必殺は最大1個まで）
+            if (!tc.skills.some((s) => s.id === targetSkill)) {
+              tc.skills.push({ id: targetSkill });
+              events.push({
+                type: 'add_skill',
+                side: owner,
+                lane: i,
+                skillId: targetSkill,
+                value: 0,
+                source: sid,
+              });
+            }
+          }
         }
       }
       break;
@@ -2091,10 +2147,14 @@ export function applyLeaderSkillLogic(
 
     // 2. 相手の手札を全て捨てる
     let oppDiscarded = 0;
+    let voidDiscarded = 0;
     const oppCards = [...oppHand];
     oppHand.length = 0;
     for (const card of oppCards) {
       if (!card) continue;
+      if (card.id === 'token_void' || card.baseId === 'token_void') {
+        voidDiscarded++;
+      }
       if (!card.isToken) {
         oppDiscard.push(card);
       }
@@ -2103,6 +2163,23 @@ export function applyLeaderSkillLogic(
         type: 'discard_card',
         side: oppOwner,
         card: JSON.parse(JSON.stringify(card)),
+        source: 'void_purge',
+      });
+    }
+
+    // 相手が捨てた虚空の枚数分、相手がダメージを受ける
+    if (voidDiscarded > 0) {
+      if (oppOwner === 'blue') {
+        state.playerHP -= voidDiscarded;
+        if (state.playerHP < 0) state.playerHP = 0;
+      } else {
+        state.enemyHP -= voidDiscarded;
+        if (state.enemyHP < 0) state.enemyHP = 0;
+      }
+      events.push({
+        type: 'damage_player',
+        side: oppOwner,
+        amount: voidDiscarded,
         source: 'void_purge',
       });
     }
@@ -2550,6 +2627,7 @@ export function applyLeaderSkillLogic(
         const newToken = {
           ...JSON.parse(JSON.stringify(tM)),
           id: `tk_dr_${Math.floor(getSeededRandom() * 1000000000)}`,
+          baseId: tM.id,
           owner,
           currentPower: 7,
           rarity: tM.rarity || 1,
@@ -3169,6 +3247,86 @@ export function applyLeaderSkillLogic(
       lane2 = emptyLanes.length > 0 ? emptyLanes[0] : lane1 !== 0 ? 0 : 1;
     }
     placeFromDiscard(oppDiscard, lane2);
+  } else if (action === 'warlock_place_demons') {
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    const sealedLanes = isBlue
+      ? state.playerSealedLanes
+      : state.enemySealedLanes;
+    const skeletonTpl = CARD_MASTER.find((m) => m.id === 'token_skeleton');
+    const daemonTpl = CARD_MASTER.find((m) => m.id === 'token_daemon');
+
+    // 1. スケルトン1体を配置するレーンの決定
+    let targetLane = -1;
+    if (tokenLanes && tokenLanes.length > 0) {
+      targetLane = tokenLanes[0];
+    } else {
+      // AI予測等で指定がない場合の自動選択（空いている且つ封印されていないレーン優先、なければ上書き可能な適当な非封印レーン）
+      const nonSealedLanes = [0, 1, 2].filter(
+        (i) => !sealedLanes || sealedLanes[i] === 0
+      );
+      if (nonSealedLanes.length > 0) {
+        const emptyLanes = nonSealedLanes.filter((i) => board[i] === null);
+        targetLane = emptyLanes.length > 0 ? emptyLanes[0] : nonSealedLanes[0];
+      }
+    }
+
+    // 2. スケルトンを配置
+    if (targetLane !== -1) {
+      if (board[targetLane] !== null) {
+        quietDiscardFromBoard(state, owner, targetLane);
+      }
+      const newSkeleton = {
+        ...JSON.parse(JSON.stringify(skeletonTpl)),
+        id: `tk_sk_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`,
+        owner,
+        currentPower: skeletonTpl.power,
+        rarity: skeletonTpl.rarity || 1,
+        imgUrl: 'assets/cards/card_token_skeleton.jpg',
+        isToken: true,
+      };
+      // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+      newSkeleton.skillTriggered = true;
+
+      board[targetLane] = newSkeleton;
+      events.push({
+        type: 'summon_token',
+        side: owner,
+        lane: targetLane,
+        card: JSON.parse(JSON.stringify(newSkeleton)),
+        source: 'warlock_place_demons',
+      });
+    }
+
+    // 3. その後、自分のカードが配置されているすべてのレーンにデーモンを配置
+    for (let l = 0; l < 3; l++) {
+      // 自分のカードが存在し、かつ封印されていないレーン
+      if (board[l] !== null && (!sealedLanes || sealedLanes[l] === 0)) {
+        // カードを静かに捨てる
+        quietDiscardFromBoard(state, owner, l);
+
+        const newDaemon = {
+          ...JSON.parse(JSON.stringify(daemonTpl)),
+          id: `tk_d_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          owner,
+          currentPower: daemonTpl.power,
+          rarity: daemonTpl.rarity || 1,
+          imgUrl: 'assets/cards/card_token_daemon.jpg',
+          isToken: true,
+        };
+        // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+        newDaemon.skillTriggered = true;
+
+        board[l] = newDaemon;
+        events.push({
+          type: 'summon_token',
+          side: owner,
+          lane: l,
+          card: JSON.parse(JSON.stringify(newDaemon)),
+          source: 'warlock_place_demons',
+        });
+      }
+    }
   } else if (
     action === 'satan_avatar' ||
     action === 'dragon_summon' ||
@@ -3201,6 +3359,7 @@ export function applyLeaderSkillLogic(
       const newToken = {
         ...JSON.parse(JSON.stringify(tM)),
         id: `tk_${Math.floor(getSeededRandom() * 1000000000)}`,
+        baseId: tM.id,
         owner,
         currentPower: power,
         rarity: tM.rarity || 1,
