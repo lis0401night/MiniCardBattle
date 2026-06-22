@@ -1617,6 +1617,9 @@ export function applyActiveSkillLogic(
             }
             mergeCardSkills(existingCard, equipSkills);
 
+            existingCard.equippedCards = existingCard.equippedCards || [];
+            existingCard.equippedCards.push(simResCard);
+
             // 武装（arm_self）の消費処理
             consumeArmSelf(existingCard, simResCard);
             events.push({
@@ -3301,7 +3304,14 @@ export function applyLeaderSkillLogic(
     // 1. スケルトン1体を配置するレーンの決定
     let targetLane = -1;
     if (tokenLanes && tokenLanes.length > 0) {
-      targetLane = tokenLanes[0];
+      const requestedLane = tokenLanes[0];
+      if (
+        requestedLane >= 0 &&
+        requestedLane < 3 &&
+        (!sealedLanes || sealedLanes[requestedLane] === 0)
+      ) {
+        targetLane = requestedLane;
+      }
     } else {
       // AI予測等で指定がない場合の自動選択（空いている且つ封印されていないレーン優先、なければ上書き可能な適当な非封印レーン）
       const nonSealedLanes = [0, 1, 2].filter(
@@ -3321,6 +3331,8 @@ export function applyLeaderSkillLogic(
       const newSkeleton = {
         ...JSON.parse(JSON.stringify(skeletonTpl)),
         id: `tk_sk_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`,
+        uid: `${owner}_tk_sk_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`,
+        baseId: skeletonTpl.id,
         owner,
         currentPower: skeletonTpl.power,
         rarity: skeletonTpl.rarity || 1,
@@ -3350,6 +3362,8 @@ export function applyLeaderSkillLogic(
         const newDaemon = {
           ...JSON.parse(JSON.stringify(daemonTpl)),
           id: `tk_d_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          uid: `${owner}_tk_d_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          baseId: daemonTpl.id,
           owner,
           currentPower: daemonTpl.power,
           rarity: daemonTpl.rarity || 1,

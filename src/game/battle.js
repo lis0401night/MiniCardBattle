@@ -639,7 +639,16 @@ export function prepareBattle() {
       };
 
       // マッチング画面開始
+      const matchingSafetyTimeout = setTimeout(() => {
+        if (!matchingDone) {
+          console.warn('Matching screen timed out. Forcing battle start...');
+          matchingDone = true;
+          tryInit();
+        }
+      }, 7000);
+
       window.showMatchingScreen(() => {
+        clearTimeout(matchingSafetyTimeout);
         matchingDone = true;
         tryInit();
       });
@@ -2362,6 +2371,7 @@ export async function waitSkillChoice(
         );
 
         for (let i = 0; i < choices.length; i++) {
+          setCurrentRNG(savedRNG);
           const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
           const simState = {
             playerBoard: originalPlayerBoard.map(cloneCard),
@@ -4374,7 +4384,15 @@ export function endBattle() {
 
       let availableCards = [];
       if (deckList.length > 0) {
-        const uniqueCards = [...new Set(deckList)];
+        const uniqueCards = [
+          ...new Set(
+            deckList
+              .map((item) =>
+                typeof item === 'string' ? item : item && item.id
+              )
+              .filter(Boolean)
+          ),
+        ];
         // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
         availableCards = uniqueCards.filter((cid) => {
           const count = GameState.playerInventory[cid] || 0;

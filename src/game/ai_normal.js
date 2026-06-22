@@ -276,8 +276,6 @@ export function processActionSequence(
         simState.lastPlayedLane = lIdx;
       } else if (action.type === 'token_placement') {
         const side = action.owner || 'red';
-        const board =
-          side === 'blue' ? simState.playerBoard : simState.enemyBoard;
         const sealedLanes =
           side === 'blue'
             ? simState.playerSealedLanes

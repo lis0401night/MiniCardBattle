@@ -67,7 +67,8 @@ export default function NewsBanner() {
           if (data.success && data.news && data.news.length > 0) {
             const now = new Date();
 
-            // ユーザー表示用にisActiveがtrueかつ公開期間内のものだけフィルタ
+            // 【お知らせ配信期間フィルター】ユーザー表示用にisActiveがtrueかつ公開期間内のものだけフィルタ
+            // 現在時刻とお知らせの開始日・終了日を比較して表示対象を絞り込む
             const activeNews = data.news.filter((n) => {
               if (!n.isActive) return false;
 
@@ -140,8 +141,9 @@ export default function NewsBanner() {
 
   useEffect(() => {
     if (displayItems.length <= 1) return;
+    // 【自動スライドタイマー】お知らせバナーを定期的に自動で切り替える
     const timer = setInterval(() => {
-      // モーダルが開いている間は自動スライドを停止
+      // モーダルが開いている間は自動スライドを停止してユーザーの閲覧を妨げない
       if (!selectedNews) {
         setCurrentIndex((prev) => (prev + 1) % displayItems.length);
       }
@@ -150,7 +152,8 @@ export default function NewsBanner() {
     return () => clearInterval(timer);
   }, [displayItems.length, selectedNews]);
 
-  // タッチ操作のハンドラー
+  // 【タッチ操作ハンドラー】フリック（スワイプ）によるバナー切り替え処理
+  // タッチ開始位置と終了位置を記録してフリック判定に使用
   const handleTouchStart = (e) => {
     touchStartX.current = e.targetTouches[0].clientX;
     touchEndX.current = e.targetTouches[0].clientX;
@@ -160,15 +163,16 @@ export default function NewsBanner() {
     touchEndX.current = e.targetTouches[0].clientX;
   };
 
+  // タッチ終了時にスワイプの移動距離と閾値を比較してバナーを切り替える
   const handleTouchEnd = () => {
     if (displayItems.length <= 1) return;
     const distance = touchStartX.current - touchEndX.current;
 
-    // 左にフリック（次へ）
+    // 左にフリック（次へスライド）
     if (distance > SWIPE_THRESHOLD_PX) {
       setCurrentIndex((prev) => (prev + 1) % displayItems.length);
     }
-    // 右にフリック（前へ）
+    // 右にフリック（前へスライド）
     else if (distance < -SWIPE_THRESHOLD_PX) {
       setCurrentIndex(
         (prev) => (prev - 1 + displayItems.length) % displayItems.length

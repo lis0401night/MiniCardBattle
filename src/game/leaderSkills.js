@@ -1307,6 +1307,7 @@ export async function executeLeaderSkillAction(
     // 1. スケルトン1体を配置（選択されたレーン）
     if (tokenLanes && tokenLanes.length > 0) {
       const l = tokenLanes[0];
+      if (mySealedLanes && mySealedLanes[l] > 0) return;
       if (board[l]) {
         await discardCard(owner, board[l], l, false);
       }
@@ -1317,9 +1318,11 @@ export async function executeLeaderSkillAction(
         `assets/cards/card_${skeletonTpl.id}.jpg`;
 
       board[l] = {
-        id: `warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-        owner,
         ...deepClonedSk,
+        id: `warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+        uid: `${owner}_warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+        baseId: skeletonTpl.id,
+        owner,
         imgUrl: skImg,
         filter: 'none',
         currentPower: skeletonTpl.power,
@@ -1356,9 +1359,11 @@ export async function executeLeaderSkillAction(
           `assets/cards/card_${daemonTpl.id}.jpg`;
 
         board[l] = {
-          id: `warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-          owner,
           ...deepClonedToken,
+          id: `warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          uid: `${owner}_warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          baseId: daemonTpl.id,
+          owner,
           imgUrl,
           filter: 'none',
           currentPower: daemonTpl.power,

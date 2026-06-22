@@ -23,8 +23,8 @@ import { setupDialogueScreen } from '../services/uiDialogue.js';
  */
 function syncEnemySkin(enemyId, skinName) {
   if (!GameState.enemySkins) GameState.enemySkins = {};
-  if (enemyId && skinName) {
-    GameState.enemySkins[enemyId] = skinName;
+  if (enemyId) {
+    GameState.enemySkins[enemyId] = skinName || 'default';
   }
 }
 

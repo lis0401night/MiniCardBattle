@@ -51,18 +51,18 @@ const syncPlayerConfigImages = (charDetailData, skinId) => {
     const charObj =
       Object.values(CHARACTERS || {}).find((c) => c.id === charDetailData.id) ||
       charDetailData;
-    GameState.playerConfig.image = getSkinImage(charObj, skinId, 'image');
-    GameState.playerConfig.imageLose = getSkinImage(
-      charObj,
-      skinId,
-      'imageLose'
-    );
-    GameState.playerConfig.icon = getSkinImage(charObj, skinId, 'icon');
-    GameState.playerConfig.iconDamage = getSkinImage(
-      charObj,
-      skinId,
-      'iconDamage'
-    );
+    GameState.playerConfig.image =
+      getSkinImage(charObj, skinId, 'image') || charObj.image;
+    GameState.playerConfig.imageLose =
+      getSkinImage(charObj, skinId, 'imageLose') ||
+      charObj.imageLose ||
+      charObj.image;
+    GameState.playerConfig.icon =
+      getSkinImage(charObj, skinId, 'icon') || charObj.icon;
+    GameState.playerConfig.iconDamage =
+      getSkinImage(charObj, skinId, 'iconDamage') ||
+      charObj.iconDamage ||
+      charObj.icon;
   }
 };
 
@@ -1853,7 +1853,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           targetDeck.playerSkins[charDetailData.id] = skinId;
 
                           const isActiveDeck =
-                            GameState.selectedDeckIndex ===
+                            GameState.currentDeckIndex ===
                             charDetailData.targetDeckIndex;
                           if (isActiveDeck) {
                             if (!GameState.playerSkins)

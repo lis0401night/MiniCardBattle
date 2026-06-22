@@ -61,7 +61,7 @@ export default function TurnOrderOverlay({
     return () => {
       mounted = false;
     };
-  }, [startAnim, onComplete]);
+  }, [startAnim, onComplete, firstPlayer]);
 
   if (!isVisible) return null;
 

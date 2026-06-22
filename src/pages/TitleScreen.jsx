@@ -6,6 +6,8 @@ import { unlockAudio } from '../utils/sounds.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl } from '../utils/gameUtils.js';
 
+const CARD_ROTATION_INTERVAL_MS = 10000; // カード切り替え間隔（ミリ秒）
+
 export default function TitleScreen() {
   const [isStarting, setIsStarting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,8 +17,10 @@ export default function TitleScreen() {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
+    // 【タイトル画面カード表示】プレイヤーの所持カードからランダムに選んで10秒ごとに切り替える
     let candidateIds = [];
     try {
+      // LocalStorageから所持カード情報を取得
       const invSaved = localStorage.getItem('mini_card_battle_inventory');
       if (invSaved) {
         const inv = JSON.parse(invSaved);
@@ -26,10 +30,12 @@ export default function TitleScreen() {
       console.error('Failed to parse inventory for title screen', e);
     }
 
+    // 候補カードがない場合はデフォルトカードを使用
     if (!candidateIds || candidateIds.length === 0) {
       candidateIds = ['golem', 'clone', 'sniper'];
     }
 
+    // 候補からランダムにカードを1枚選択する関数
     const getRandomCard = () => {
       const randomId =
         candidateIds[Math.floor(Math.random() * candidateIds.length)];
@@ -39,9 +45,11 @@ export default function TitleScreen() {
       );
     };
 
+    // カード画像のプリロードとフェード切り替えを行う関数
     const selectRandomCard = () => {
       const master = getRandomCard();
       if (master) {
+        // 画像のプリロードを行い、読み込み完了後にフェード切り替え
         const imgUrl = getCardImgUrl(master);
         const img = new Image();
         const updateCard = () => {
@@ -63,7 +71,7 @@ export default function TitleScreen() {
 
     const interval = setInterval(() => {
       selectRandomCard();
-    }, 10000);
+    }, CARD_ROTATION_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, []);

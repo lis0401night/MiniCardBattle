@@ -777,9 +777,11 @@ export async function resolveActiveSkillEffect(
           GameState.aiDecision.actionQueue = JSON.parse(
             JSON.stringify(foundBranch.actionQueue)
           );
-          GameState.aiDecision.cardTokenLanes = [...foundBranch.cardTokenLanes];
+          GameState.aiDecision.cardTokenLanes = [
+            ...(foundBranch.cardTokenLanes || []),
+          ];
           GameState.aiDecision.choiceIndexQueue = [
-            ...foundBranch.choiceIndexQueue,
+            ...(foundBranch.choiceIndexQueue || []),
           ];
         }
       }
@@ -1860,8 +1862,9 @@ export async function resolveActiveSkillEffect(
     await sleep(400);
   } else if (skillId === 'heal' || skillId === 'heal_void') {
     if (window.triggerVfx) {
-      window.triggerVfx('anm_skill_heal', o); // 発動したプレイヤー側（o）に対して回復VFXを再生
+      const vfxPromise = window.triggerVfx('anm_skill_heal', o); // 発動したプレイヤー側（o）に対して回復VFXを再生
       await sleep(150); // 演出開始の瞬間に合わせて回復処理へ移行
+      await vfxPromise;
     } else {
       playSound(SOUNDS.seSkillHeal);
       await sleep(150);
