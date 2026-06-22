@@ -925,6 +925,7 @@ export const SKILL_CATEGORIES = [
           'heal_void',
           'sacrifice',
           'sacrifice_void',
+          'berserk',
           'charge',
           'spend',
           'hack',

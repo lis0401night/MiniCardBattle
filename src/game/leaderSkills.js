@@ -1421,7 +1421,8 @@ export async function executeLeaderSkillAction(
     action !== 'viola_domination' &&
     action !== 'overdrive' &&
     action !== 'dungeon_summon_leader' &&
-    action !== 'world_reconstruct'
+    action !== 'world_reconstruct' &&
+    action !== 'warlock_place_demons'
   ) {
     // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
     // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
