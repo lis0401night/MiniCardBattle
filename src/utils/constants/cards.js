@@ -213,7 +213,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 3,
     skills: [
-      { id: 'sacrifice', value: 3 },
+      { id: 'berserk', value: 3 },
       { id: 'snipe', value: 5 },
     ],
     voiceCategory: 'stone',
