@@ -1177,20 +1177,14 @@ export async function executeLeaderSkillAction(
       if (selectedOppLane !== -1 && oppBoard[selectedOppLane]) {
         const selectedCard = oppBoard[selectedOppLane];
         const targetLane = selectedOppLane;
-        tokenLanes = [selectedOppLane]; // VFX用に渡す
-
-        // カード移動の前にVFXを再生（支配スキルと同様のタイミング）
-        if (window.triggerVfx) {
-          await window.triggerVfx('anm_viola_arts', owner, selectedOppLane);
-        }
-
         oppBoard[selectedOppLane] = null;
         updateDeckDisplay(oppOwner);
 
-        // 相手のボードからカードを取り除くイベントを登録
+        // 1. VFX再生イベントを登録（演出再生システムに統合）
         events.push({
-          type: 'remove_card',
-          side: oppOwner,
+          type: 'vfx_trigger',
+          vfxId: 'anm_viola_arts',
+          side: owner,
           lane: selectedOppLane,
         });
 
@@ -1250,6 +1244,7 @@ export async function executeLeaderSkillAction(
             amount: selectedCard.power,
             source: 'equip',
             card: JSON.parse(JSON.stringify(selectedCard)),
+            stealFromLane: selectedOppLane, // 奪い元のレーンを指定
           });
         } else {
           const existingCard = board[targetLane];
@@ -1274,6 +1269,7 @@ export async function executeLeaderSkillAction(
             lane: targetLane,
             card: JSON.parse(JSON.stringify(movedCard)),
             source: 'viola_domination',
+            stealFromLane: selectedOppLane, // 奪い元のレーンを指定
           });
         }
       }

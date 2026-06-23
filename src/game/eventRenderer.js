@@ -159,6 +159,13 @@ export async function playEvents(events) {
       case 'power_change': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const oppBoard =
+          ev.side === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+
+        // 支配(奪う)効果時の対応：相手の盤面からカードを同時に消去して、一瞬消えるのを防ぐ
+        if (ev.stealFromLane !== undefined) {
+          oppBoard[ev.stealFromLane] = null;
+        }
         if (board[ev.lane]) {
           board[ev.lane].currentPower += ev.amount; // 増減そのまま
           if (ev.source === 'holy_march') {
@@ -399,18 +406,17 @@ export async function playEvents(events) {
         break;
       }
 
-      case 'remove_card': {
-        const board =
-          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        board[ev.lane] = null;
-        renderBoard();
-        break;
-      }
-
       case 'summon_token':
       case 'summon_card': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const oppBoard =
+          ev.side === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+
+        // 支配(奪う)効果時の対応：相手の盤面からカードを同時に消去して、一瞬消えるのを防ぐ
+        if (ev.stealFromLane !== undefined) {
+          oppBoard[ev.stealFromLane] = null;
+        }
         // 上書き配置時の既存カード破棄（装備カードの墓地送り漏れを防ぐ）
         if (
           board[ev.lane] &&

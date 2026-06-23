@@ -2295,10 +2295,11 @@ export function applyLeaderSkillLogic(
       const selectedCard = eBoard[targetLane];
       eBoard[targetLane] = null;
 
-      // 相手の場からカードを消去するイベントを登録
+      // 1. VFX再生イベントを登録（演出再生システムに統合）
       events.push({
-        type: 'remove_card',
-        side: oppOwner,
+        type: 'vfx_trigger',
+        vfxId: 'anm_viola_arts',
+        side: owner,
         lane: targetLane,
       });
 
@@ -2349,6 +2350,7 @@ export function applyLeaderSkillLogic(
           lane: targetLane,
           card: JSON.parse(JSON.stringify(targetCard)),
           source: 'equip',
+          stealFromLane: targetLane, // 奪い元のレーンを指定
         });
       } else {
         const existingCard = board[targetLane];
@@ -2378,6 +2380,7 @@ export function applyLeaderSkillLogic(
           lane: targetLane,
           card: JSON.parse(JSON.stringify(movedCard)),
           source: 'viola_domination',
+          stealFromLane: targetLane, // 奪い元のレーンを指定
         });
       }
     }
