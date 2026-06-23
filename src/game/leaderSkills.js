@@ -1187,6 +1187,13 @@ export async function executeLeaderSkillAction(
         oppBoard[selectedOppLane] = null;
         updateDeckDisplay(oppOwner);
 
+        // 相手のボードからカードを取り除くイベントを登録
+        events.push({
+          type: 'remove_card',
+          side: oppOwner,
+          lane: selectedOppLane,
+        });
+
         selectedCard.puppetOriginalOwner =
           selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
         if (

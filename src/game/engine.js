@@ -2295,6 +2295,13 @@ export function applyLeaderSkillLogic(
       const selectedCard = eBoard[targetLane];
       eBoard[targetLane] = null;
 
+      // 相手の場からカードを消去するイベントを登録
+      events.push({
+        type: 'remove_card',
+        side: oppOwner,
+        lane: targetLane,
+      });
+
       selectedCard.puppetOriginalOwner =
         selectedCard.puppetOriginalOwner || selectedCard.owner || oppOwner;
       if (selectedCard.equippedCards && selectedCard.equippedCards.length > 0) {

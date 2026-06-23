@@ -398,6 +398,15 @@ export async function playEvents(events) {
         }
         break;
       }
+
+      case 'remove_card': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        board[ev.lane] = null;
+        renderBoard();
+        break;
+      }
+
       case 'summon_token':
       case 'summon_card': {
         const board =
