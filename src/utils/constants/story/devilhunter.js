@@ -915,7 +915,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '何あの黒紫のトゲトゲしい不気味な甲冑！ 私はマリアよ！ そこをどきなさい！',
+          text: '何あの黒紫のトゲトゲしい不気味な甲冑！ そこをどきなさい！',
         },
         {
           speaker: 'enemy',
@@ -949,7 +949,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私はマリアよ！ 誰が隷属するもんですか！ あんたみたいな露出の多い生意気な悪魔、許せないわ！',
+          text: '誰が隷属するもんですか！ あんたみたいな露出の多い生意気な悪魔、許せないわ！',
         },
         {
           speaker: 'enemy',
@@ -1019,7 +1019,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はマリアよ！ あんたが世界のすべてを絶望に沈める魔王サタンね！ 待たせたわね、決着をつけに来たわ！',
+          text: 'あんたが世界のすべてを絶望に沈める魔王サタンね！ 待たせたわね、決着をつけに来たわ！',
         },
         {
           speaker: 'enemy',

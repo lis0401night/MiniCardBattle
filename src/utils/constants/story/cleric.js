@@ -895,7 +895,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '何あの黒紫のトゲトゲしい不気味な甲冑！ 私はエリシアよ！ そこをどきなさい！',
+          text: '何あの黒紫のトゲトゲしい不気味な甲冑！ そこをどきなさい！',
         },
         {
           speaker: 'enemy',
@@ -929,7 +929,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私はエリシアよ！ 誰が隷属するもんですか！ あんたみたいな露出の多い生意気な悪魔、許せないわ！',
+          text: '誰が隷属するもんですか！ あんたみたいな露出の多い生意気な悪魔、許せないわ！',
         },
         {
           speaker: 'enemy',
@@ -997,7 +997,7 @@ export const storyDialogues = {
           speaker: 'enemy',
           text: 'フハハハ！ 我こそは魔王サタン！ 世界のすべてを絶望と虚無の闇に沈める支配者なり！',
         },
-        { speaker: 'player', text: '私はエリシアよ！ あんたが魔王サタンね！' },
+        { speaker: 'player', text: 'あんたが魔王サタンね！' },
         { speaker: 'player', text: '待たせたわね、決着をつけに来たわ！' },
         {
           speaker: 'enemy',

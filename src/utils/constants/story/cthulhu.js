@@ -946,7 +946,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'あら、全身を禍々しいトゲのある虚空の鎧で包んだ無口な騎士様。私はナイア。そこを通してくださる？',
+          text: 'あら、全身を禍々しいトゲのある虚空の鎧で包んだ無口な騎士様。そこを通してくださる？',
         },
         {
           speaker: 'enemy',
@@ -984,7 +984,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私はナイア。コウモリの羽を生やした悪魔の女王様。',
+          text: 'コウモリの羽を生やした悪魔の女王様。',
         },
         {
           speaker: 'player',
@@ -1022,7 +1022,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はナイア。おや、100年前の古き書物に記されていた大賢者バルタザールですわね？',
+          text: 'おや、100年前の古き書物に記されていた大賢者バルタザールですわね？',
         },
         {
           speaker: 'player',
@@ -1059,7 +1059,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はナイア。巨大な山羊の角を生やした魔王サタン様。',
+          text: '巨大な山羊の角を生やした魔王サタン様。',
         },
         { speaker: 'player', text: 'やっとお目にかかれましたわね' },
         {

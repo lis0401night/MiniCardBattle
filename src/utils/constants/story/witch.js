@@ -951,7 +951,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '何ですかあの黒紫のトゲトゲしい不気味な甲冑。私はクロエですよ。そこをどいてください',
+          text: '何ですかあの黒紫のトゲトゲしい不気味な甲冑。そこをどいてください',
         },
         {
           speaker: 'enemy',
@@ -987,7 +987,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私はクロエですよ！ 誰が隷属するもんですか。あんたみたいな露出の多い生意気な悪魔、お仕置きですよ',
+          text: '誰が隷属するもんですか。あんたみたいな露出の多い生意気な悪魔、お仕置きですよ',
         },
         {
           speaker: 'enemy',
@@ -1020,7 +1020,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はクロエですよ！ バルタザール……大書庫の年表に載っていた、100年前の大賢者ですね？',
+          text: 'バルタザール……大書庫の年表に載っていた、100年前の大賢者ですね？',
         },
         {
           speaker: 'player',
@@ -1057,7 +1057,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はクロエですよ！ あなたが魔王サタンですね。',
+          text: 'あなたが魔王サタンですね。',
         },
         {
           speaker: 'player',

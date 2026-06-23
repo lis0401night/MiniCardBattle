@@ -972,7 +972,7 @@ export const storyDialogues = {
           speaker: 'enemy',
           text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
-        { speaker: 'player', text: '虚空の騎士ゼノン殿ですね。私はカグラ。' },
+        { speaker: 'player', text: '虚空の騎士ゼノン殿ですね。' },
         {
           speaker: 'player',
           text: 'その放たれる圧倒的な冥界の殺気……我が陰陽の符が必ずや祓い清めてみせましょう！',
@@ -1007,7 +1007,7 @@ export const storyDialogues = {
           text: 'ふふっ、私は隷属の女王ヴィオラよ。こんなに可愛い巫女様が、魔王城の奥まで迷い込むなんて。',
         },
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
-        { speaker: 'player', text: '私はカグラ！ 魅了の女王ヴィオラですね！' },
+        { speaker: 'player', text: '魅了の女王ヴィオラですね！' },
         {
           speaker: 'player',
           text: '妖しい魔鎖で人々を縛る悪魔め、我が白狐の結界がその枷を許しはしません！',
@@ -1047,7 +1047,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はカグラ！ 待ってください……その姿と澱んだ魔力、100年前の異変の最中に闇へと堕ちたという伝説の大賢者バルタザールですか！？',
+          text: '待ってください……その姿と澱んだ魔力、100年前の異変の最中に闇へと堕ちたという伝説の大賢者バルタザールですか！？',
         },
         {
           speaker: 'player',
@@ -1084,7 +1084,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はカグラ！ 世界を絶望に沈める魔王サタン様、',
+          text: '世界を絶望に沈める魔王サタンよ、',
         },
         {
           speaker: 'player',

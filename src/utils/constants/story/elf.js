@@ -911,7 +911,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '虚空の騎士ゼノンだね。私はリナ。あなたの放つその虚空の殺気……私の銀の矢で射抜いてみせるわ！',
+          text: '虚空の騎士ゼノンだね。あなたの放つその虚空の殺気……私の銀の矢で射抜いてみせるわ！',
         },
         {
           speaker: 'enemy',
@@ -943,7 +943,7 @@ export const storyDialogues = {
           text: 'ふふっ、私は隷属の女王ヴィオラよ。こんなに可愛いエルフの女の子が、魔王城の奥まで迷い込むなんて。',
         },
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
-        { speaker: 'player', text: '私はリナ。魅了の女王ヴィオラだね。' },
+        { speaker: 'player', text: '魅了の女王ヴィオラだね。' },
         {
           speaker: 'player',
           text: '妖しい魔鎖で人々を縛る悪魔……、私の銀の矢でその枷を射抜いてみせるわ！',
@@ -979,7 +979,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はリナ。暗黒の魔術……あなたの名前、私の失われた記憶の奥でかすかに響くような……？',
+          text: '暗黒の魔術……あなたの名前、私の失われた記憶の奥でかすかに響くような……？',
         },
         {
           speaker: 'enemy',
@@ -1016,7 +1016,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はリナ。世界を絶望に沈める魔王サタン、',
+          text: '世界を絶望に沈める魔王サタンよ。',
         },
         {
           speaker: 'player',

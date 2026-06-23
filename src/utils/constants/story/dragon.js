@@ -891,7 +891,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: 'なによあそこにある黒紫のトゲトゲしい不気味な甲冑！ 私はイグニスよ！ そこをどきなさい！',
+          text: 'なによあそこにある黒紫のトゲトゲしい不気味な甲冑！ そこをどきなさい！',
         },
         {
           speaker: 'enemy',
@@ -925,7 +925,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私はイグニスよ！ 可愛いですって！？ 馬鹿にしないで！ あんたみたいな生意気な悪魔に、誰が隷属するもんですか！',
+          text: '可愛いですって！？ 馬鹿にしないで！ あんたみたいな生意気な悪魔に、誰が隷属するもんですか！',
         },
         {
           speaker: 'enemy',
@@ -958,7 +958,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はイグニスよ！ あんた、ただの人間じゃないわね……。あ、分かったわ！ 竜の伝承に載ってた100年前の大賢者バルタザールでしょ！',
+          text: 'あんた、ただの人間じゃないわね……。あ、分かったわ！ 竜の伝承に載ってた100年前の大賢者バルタザールでしょ！',
         },
         {
           speaker: 'player',
@@ -995,7 +995,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私はイグニスよ！ あんたが世界のすべてを絶望に沈める魔王サタンね！ 待たせたわね、決着をつけに来たわ！',
+          text: 'あんたが世界のすべてを絶望に沈める魔王サタンね！ 待たせたわね、決着をつけに来たわ！',
         },
         {
           speaker: 'enemy',

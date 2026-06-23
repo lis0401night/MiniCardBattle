@@ -963,7 +963,7 @@ export const storyDialogues = {
           speaker: 'enemy',
           text: '……（虚空の騎士ゼノン。意思を持たぬ冷酷な瞳が、あなたたちの魂を捉えている）',
         },
-        { speaker: 'player', text: '……虚空の騎士ゼノンだな。私はネフティ。' },
+        { speaker: 'player', text: '……虚空の騎士ゼノンだな。' },
         {
           speaker: 'player',
           text: 'その鎧から溢れ出る冥界の魔力……我が呪縛の刃で消し去ってやろう',
@@ -1002,7 +1002,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '……私はネフティ。淫靡なる魅了の女王ヴィオラだな。',
+          text: '……淫靡なる魅了の女王ヴィオラだな。',
         },
         {
           speaker: 'player',
@@ -1047,7 +1047,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '……私はネフティ。バルタザール……100年前に死んだはずの、古代の術式に通じていたという大賢者だな。',
+          text: '……バルタザール……100年前に死んだはずの、古代の術式に通じていたという大賢者だな。',
         },
         {
           speaker: 'player',
@@ -1086,7 +1086,7 @@ export const storyDialogues = {
           speaker: 'enemy',
           text: 'フハハハ！ 我こそは魔王サタン！ 世界のすべてを絶望と虚無の闇に沈める支配者なり！',
         },
-        { speaker: 'player', text: '……私はネフティ。魔王サタンよ。' },
+        { speaker: 'player', text: '……魔王サタンか。' },
         {
           speaker: 'player',
           text: '我が古代の呪縛とお前の闇、どちらが真の支配か決めよう',

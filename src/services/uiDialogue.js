@@ -53,7 +53,7 @@ window.handleDialogueChoice = handleDialogueChoice;
 export function startNextBattleSequence() {
   if (GameState.gameMode !== 'story') return;
   saveStoryProgress();
-  if (GameState.battleCount > 9) {
+  if (GameState.battleCount > 10) {
     startEndingSequence();
     return;
   }

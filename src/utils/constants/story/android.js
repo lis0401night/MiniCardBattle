@@ -1036,7 +1036,7 @@ export const storyDialogues = {
         { speaker: 'player', text: '対象：ゼノンの虚空の冥界殺気を計測。' },
         {
           speaker: 'player',
-          text: '機動戦姫アイギス、これより魔力物理装甲の実戦テストを開始します',
+          text: 'これより魔力物理装甲の実戦テストを開始します',
         },
         {
           speaker: 'enemy',
@@ -1164,7 +1164,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '本機は機動戦姫アイギス、これより最終排除任務に移行します',
+          text: 'これより最終排除任務に移行します',
         },
         {
           speaker: 'enemy',

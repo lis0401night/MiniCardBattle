@@ -913,7 +913,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '虚空の騎士ゼノンだな！ 私は騎士団長セレスティア！',
+          text: '虚空の騎士ゼノンだな！',
         },
         {
           speaker: 'player',
@@ -951,7 +951,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: '私に隷属して、甘美な破滅を味わう？' },
         {
           speaker: 'player',
-          text: '私は騎士団長セレスティア！ 魅了の女王ヴィオラだな！',
+          text: '魅了の女王ヴィオラだな！',
         },
         {
           speaker: 'player',
@@ -988,7 +988,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私は騎士団長セレスティア！ 待て、バルタザールだと……！？',
+          text: '待て、バルタザールだと……！？',
         },
         {
           speaker: 'player',
@@ -1025,7 +1025,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '私は騎士団長セレスティア！ 世界を絶望に沈める悪魔サタン、我が聖剣がその大いなる野望を必ずや断ち切ってみせる！',
+          text: '世界を絶望に沈める悪魔サタンよ！ 我が聖剣がその大いなる野望を必ずや断ち切ってみせる！',
         },
         {
           speaker: 'enemy',
