@@ -755,19 +755,6 @@ export const CARD_MASTER = [
     flavor: '歪んだ忠誠を誓う狂信者。彼の儀式は、強大な闇を招く呼び水となる。',
   },
   {
-    id: 'ritual',
-    name: '教団の儀式',
-    rarity: 1,
-    power: 0,
-    skills: [{ id: 'takeover' }, { id: 'choice', value: 1 }],
-    choices: [
-      { id: 'summon', value: 7, summonId: 'token_daemon' },
-      { id: 'cull', value: 2 },
-    ],
-    voiceCategory: 'magic',
-    flavor: '漆黒の祭壇で行われる禁忌の儀式。その祈りは、闇の王を呼び覚ます。',
-  },
-  {
     id: 'skeleton',
     name: 'スケルトン・ソルジャー',
     rarity: 1,
@@ -789,6 +776,19 @@ export const CARD_MASTER = [
     voiceCategory: 'undead',
     flavor:
       '生前の規格外な巨体を、さらに巨大な鎧とメイスで武装した骸骨の重衛兵。',
+  },
+  {
+    id: 'ritual',
+    name: '教団の儀式',
+    rarity: 1,
+    power: 0,
+    skills: [{ id: 'takeover' }, { id: 'choice', value: 1 }],
+    choices: [
+      { id: 'summon', value: 7, summonId: 'token_daemon' },
+      { id: 'cull', value: 2 },
+    ],
+    voiceCategory: 'magic',
+    flavor: '漆黒の祭壇で行われる禁忌の儀式。その祈りは、闇の王を呼び覚ます。',
   },
   {
     id: 'largemouth',
