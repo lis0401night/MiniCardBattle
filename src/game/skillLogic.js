@@ -481,7 +481,6 @@ export async function resolveActiveSkillEffect(
         power: voidTpl.power,
         currentPower: voidTpl.power,
         basePower: voidTpl.power,
-        skill: voidTpl.skill || 'none',
         voiceCategory: voidTpl.voiceCategory || 'stone',
         isToken: true,
         isMorphToken: true,
@@ -615,7 +614,6 @@ export async function resolveActiveSkillEffect(
         power: voidTpl.power,
         currentPower: voidTpl.power,
         basePower: voidTpl.power,
-        skill: voidTpl.skill || 'none',
         voiceCategory: voidTpl.voiceCategory || 'stone',
         isToken: true,
         isMorphToken: true,
@@ -918,7 +916,6 @@ export async function resolveActiveSkillEffect(
       id: tId,
       name: tName,
       power: pValue,
-      skill: 'none',
       isToken: true,
       rarity: 1,
       voiceCategory: pValue >= 5 ? 'monster' : 'machine_new',
@@ -1083,16 +1080,7 @@ export async function resolveActiveSkillEffect(
 
     // スキルの引き継ぎ（分身含む全スキル）
     // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
-    let inheritedSkills = [];
-    if (c.skill) {
-      const inherited = { id: c.skill, value: c.skillValue };
-      if (c.summonId) inherited.summonId = c.summonId;
-      if (c.targetId) inherited.targetId = c.targetId;
-      inheritedSkills.push(inherited);
-    }
-    if (Array.isArray(c.skills)) {
-      inheritedSkills = inheritedSkills.concat(c.skills);
-    }
+    let inheritedSkills = Array.isArray(c.skills) ? [...c.skills] : [];
 
     const simulatedToken = {
       ...tC,
@@ -1347,8 +1335,6 @@ export async function resolveActiveSkillEffect(
         const card = b[i];
         if (card) {
           card.skills = [];
-          card.skill = 'none';
-          card.skillValue = 0;
           card.choices = [];
           card.choices2 = null;
           if ('summonId' in card) delete card.summonId;
@@ -1425,11 +1411,9 @@ export async function resolveActiveSkillEffect(
         id: `statue_${Math.floor(getSeededRandom() * 1000000000)}`,
         baseId: 'token_statue',
         uid: `${oppOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_statue`,
-        filter: statueTpl.filter,
         power: statueTpl.power,
         currentPower: statueTpl.power,
         basePower: statueTpl.power,
-        skill: statueTpl.skill || 'none',
         voiceCategory: statueTpl.voiceCategory || 'stone',
         originalRevertTarget: targetOriginal,
         owner: oppOwner,
@@ -3355,11 +3339,7 @@ export async function triggerStartTurnPassive(owner, lane) {
   let events = [];
 
   // Engine 内の個別処理を真似て状態更新ログを作成
-  let skillsToResolve = [];
-  if (c.skill && c.skill !== 'none')
-    skillsToResolve.push({ id: c.skill, value: c.skillValue });
-  if (Array.isArray(c.skills))
-    skillsToResolve = skillsToResolve.concat(c.skills);
+  let skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
 
   for (const sk of skillsToResolve) {
     if (sk.id === 'growth') {
@@ -3424,8 +3404,7 @@ export async function triggerStartTurnPassive(owner, lane) {
     if (sk.id === 'invincible') {
       sk.value--;
       if (sk.value <= 0) {
-        if (c.skill === 'invincible') c.skill = 'none';
-        else if (Array.isArray(c.skills)) {
+        if (Array.isArray(c.skills)) {
           const idx = c.skills.indexOf(sk);
           if (idx !== -1) c.skills.splice(idx, 1);
         }
@@ -3599,11 +3578,9 @@ async function triggerExtortInAction(c, o) {
         id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_extUI${i}`,
         uid: `${oppSide}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_voidextUI${i}`,
         baseId: 'token_void',
-        filter: voidTpl.filter,
         power: voidTpl.power,
         currentPower: voidTpl.power,
         basePower: voidTpl.power,
-        skill: voidTpl.skill || 'none',
         voiceCategory: voidTpl.voiceCategory || 'undead',
         isToken: true,
         isMorphToken: true,

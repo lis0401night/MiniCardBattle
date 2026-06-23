@@ -380,13 +380,7 @@ export async function playEvents(events) {
           boardCard.equippedCards = boardCard.equippedCards || [];
           boardCard.equippedCards.push(JSON.parse(JSON.stringify(ev.card)));
           let addedSkills = [];
-          if (
-            ev.card.skill &&
-            ev.card.skill !== 'none' &&
-            ev.card.skill !== 'equip'
-          )
-            addedSkills.push({ id: ev.card.skill, value: ev.card.skillValue });
-          if (ev.card.skills)
+          if (Array.isArray(ev.card.skills))
             ev.card.skills.forEach((s) => {
               if (s.id !== 'equip')
                 addedSkills.push({ id: s.id, value: s.value });

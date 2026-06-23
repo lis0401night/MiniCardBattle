@@ -760,8 +760,6 @@ export function renderSkillTag(card, isBoard = false) {
     }
   };
 
-  if (card.skill && card.skill !== 'none')
-    addCandidate(card.skill, card.skillValue);
   if (Array.isArray(card.skills)) {
     card.skills.forEach((sk) => addCandidate(sk.id, sk.value));
   }

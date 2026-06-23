@@ -280,10 +280,13 @@ export function processActionSequence(
           side === 'blue'
             ? simState.playerSealedLanes
             : simState.enemySealedLanes;
+        const targetBoard =
+          side === 'blue' ? simState.playerBoard : simState.enemyBoard;
+        const targetDiscard =
+          side === 'blue' ? simState.playerDiscard : simState.enemyDiscard;
         const sourceL =
           simState.lastPlayedLane !== -1 ? simState.lastPlayedLane : 0;
-        const sourceCard =
-          simState.enemyBoard[sourceL] || simState.playerBoard[sourceL];
+        const sourceCard = targetBoard[sourceL];
         // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
         // summonId が分かっているなら直接トークンを生成する
         if (['summon', 'clone', 'split', 'puppet'].includes(action.skillId)) {
@@ -323,7 +326,7 @@ export function processActionSequence(
               name: baseMaster?.name || 'トークン',
               isToken: true,
               rarity: 1,
-              owner: 'red',
+              owner: side,
               imgUrl: `assets/cards/card_${tokenId}.jpg`,
               power: tokenPower,
               basePower: tokenPower,
@@ -332,7 +335,7 @@ export function processActionSequence(
               skills: inheritedSkills,
             };
             // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
-            const existingCard = simState.enemyBoard[tLane];
+            const existingCard = targetBoard[tLane];
             if (
               existingCard &&
               (hasSkill(newToken, 'equip') ||
@@ -361,12 +364,11 @@ export function processActionSequence(
               consumeArmSelf(existingCard, newToken);
             } else if (existingCard) {
               // 装備不可: 既存カードを墓地に移動して上書き
-              simState.enemyDiscard.push(existingCard);
-              simState.enemyBoard[tLane] = null;
-              simState.enemyBoard[tLane] = newToken;
+              targetDiscard.push(existingCard);
+              targetBoard[tLane] = newToken;
             } else {
               // 空きレーン: そのまま配置
-              simState.enemyBoard[tLane] = newToken;
+              targetBoard[tLane] = newToken;
             }
           }
         } else {
@@ -2076,76 +2078,78 @@ export function getBestSimulatedMove() {
         }
       }
     });
+  }
 
-    // 【命令スキルの根本治療】
-    // finalDecision と同じプレイ（同じカード・同じレーン）から分岐する他のシミュレーション候補を抽出し、
-    // プレイヤーが選んだ命令（force）スキルの選択肢に応じて、アクションキューを切り替えられるよう branchMap を構築する。
-    // ※ プレイしたカードまたはアクションキューの中に 'force' アクションが含まれる場合のみ適用する。
-    const playedCard =
-      finalDecision.index !== -1 ? hand[finalDecision.index] : null;
-    const hasForceInPlay =
-      playedCard &&
-      (playedCard.skill === 'force' ||
-        (playedCard.skills && playedCard.skills.some((s) => s.id === 'force')));
-    const hasForceInQueue = finalDecision.actionQueue.some(
-      (act) => act.type === 'force'
+  // 【命令スキルの根本治療】
+  // finalDecision と同じプレイ（同じカード・同じレーン）から分岐する他のシミュレーション候補を抽出し、
+  // プレイヤーが選んだ命令（force）スキルの選択肢に応じて、アクションキューを切り替えられるよう branchMap を構築する。
+  // ※ プレイしたカードまたはアクションキューの中に 'force' アクションが含まれる場合のみ適用する。
+  const decisionQueue = Array.isArray(finalDecision.actionQueue)
+    ? finalDecision.actionQueue
+    : [];
+
+  const playedCard =
+    finalDecision.index !== -1 ? hand[finalDecision.index] : null;
+  const hasForceInPlay =
+    playedCard &&
+    playedCard.skills &&
+    playedCard.skills.some((s) => s.id === 'force');
+  const hasForceInQueue = decisionQueue.some((act) => act.type === 'force');
+
+  if (hasForceInPlay || hasForceInQueue) {
+    const samePlayCandidates = candidates.filter(
+      (c) =>
+        c.index === finalDecision.index &&
+        c.lane === finalDecision.lane &&
+        c.useSkill === finalDecision.useSkill
     );
 
-    if (hasForceInPlay || hasForceInQueue) {
-      const samePlayCandidates = candidates.filter(
-        (c) =>
-          c.index === finalDecision.index &&
-          c.lane === finalDecision.lane &&
-          c.useSkill === finalDecision.useSkill
-      );
+    const branchMap = {};
+    samePlayCandidates.forEach((c) => {
+      if (c.choiceIndexQueue && Array.isArray(c.choiceIndexQueue)) {
+        // 例: [[1]] -> "1", [[0, 2]] -> "0,2"
+        const key = c.choiceIndexQueue
+          .map((q) =>
+            Array.isArray(q) ? [...q].sort((a, b) => a - b).join(',') : ''
+          )
+          .join('|');
 
-      const branchMap = {};
-      samePlayCandidates.forEach((c) => {
-        if (c.choiceIndexQueue && Array.isArray(c.choiceIndexQueue)) {
-          // 例: [[1]] -> "1", [[0, 2]] -> "0,2"
-          const key = c.choiceIndexQueue
-            .map((q) =>
-              Array.isArray(q) ? [...q].sort((a, b) => a - b).join(',') : ''
-            )
-            .join('|');
+        const tempBranch = {
+          actionQueue: c.actionQueue
+            ? JSON.parse(JSON.stringify(c.actionQueue))
+            : [],
+          choiceIndexQueue: [],
+          cardTokenLanes: [],
+        };
 
-          const tempBranch = {
-            actionQueue: c.actionQueue
-              ? JSON.parse(JSON.stringify(c.actionQueue))
-              : [],
-            choiceIndexQueue: [],
-            cardTokenLanes: [],
-          };
-
-          const revChain = [...tempBranch.actionQueue].reverse();
-          revChain.forEach((act) => {
-            if (act.type === 'choice' || act.type === 'force') {
-              if (act.choices !== undefined) {
-                tempBranch.choiceIndexQueue.unshift(act.choices);
-              }
-            } else if (act.type === 'token_placement') {
-              if (act.lanes !== undefined) {
-                const revLanes = [...act.lanes].reverse();
-                revLanes.forEach((lane) => {
-                  tempBranch.cardTokenLanes.unshift(lane);
-                });
-              }
-            } else if (act.type === 'resurrect') {
-              if (act.laneIdx !== undefined && act.laneIdx !== -1) {
-                tempBranch.cardTokenLanes.unshift(act.laneIdx);
-              }
-            } else if (act.type === 'dominate') {
-              if (act.oppLaneIdx !== undefined && act.oppLaneIdx !== -1) {
-                tempBranch.cardTokenLanes.unshift(act.oppLaneIdx);
-              }
+        const revChain = [...tempBranch.actionQueue].reverse();
+        revChain.forEach((act) => {
+          if (act.type === 'choice' || act.type === 'force') {
+            if (act.choices !== undefined) {
+              tempBranch.choiceIndexQueue.unshift(act.choices);
             }
-          });
+          } else if (act.type === 'token_placement') {
+            if (act.lanes !== undefined) {
+              const revLanes = [...act.lanes].reverse();
+              revLanes.forEach((lane) => {
+                tempBranch.cardTokenLanes.unshift(lane);
+              });
+            }
+          } else if (act.type === 'resurrect') {
+            if (act.laneIdx !== undefined && act.laneIdx !== -1) {
+              tempBranch.cardTokenLanes.unshift(act.laneIdx);
+            }
+          } else if (act.type === 'dominate') {
+            if (act.oppLaneIdx !== undefined && act.oppLaneIdx !== -1) {
+              tempBranch.cardTokenLanes.unshift(act.oppLaneIdx);
+            }
+          }
+        });
 
-          branchMap[key] = tempBranch;
-        }
-      });
-      finalDecision.branches = branchMap;
-    }
+        branchMap[key] = tempBranch;
+      }
+    });
+    finalDecision.branches = branchMap;
   }
 
   GameState.aiDecision = finalDecision;

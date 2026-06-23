@@ -3046,9 +3046,7 @@ export async function handleMoveSkills(owner) {
                 (existingCard.currentPower || 0) + (c.power || 0);
 
               // スキルの統合
-              if (!existingCard.skills) {
-                existingCard.skills = [];
-              }
+              existingCard.skills = existingCard.skills || [];
 
               const equipSkills = [];
               if (c.skills) {
@@ -3429,9 +3427,7 @@ export async function playCard(o, hI, l) {
         (targetCard.currentPower || 0) + (playingCard.power || 0);
 
       // スキルの統合
-      if (!targetCard.skills) {
-        targetCard.skills = [];
-      }
+      targetCard.skills = targetCard.skills || [];
 
       const equipSkills = [];
       if (playingCard.skills) {

@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 
 import { prepareBattle } from '../game/battle.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
-import { GameState } from '../state/gameState.js';
 import { openCardPreview } from '../services/uiGallery.js';
 import { goBackFromDeckEdit } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { showPlaymatModal } from '../services/uiPlaymat.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { DECK_SIZE, MAX_CARD_COPIES } from '../utils/constants/config.js';
@@ -17,7 +17,7 @@ import {
   stopAllBGM,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
-import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -940,7 +940,8 @@ export default function DeckEditorScreen({ switchScreen }) {
           {isDefenseConfig ||
           GameState.gameMode === 'create_deck' ||
           GameState.gameMode === 'free_deck_edit' ||
-          GameState.gameMode === 'online_deck_edit'
+          GameState.gameMode === 'online_deck_edit' ||
+          GameState.gameMode === 'tournament'
             ? '編成完了'
             : 'バトル開始！'}
         </button>

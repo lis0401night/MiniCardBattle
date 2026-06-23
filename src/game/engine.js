@@ -429,8 +429,6 @@ export function applyActiveSkillLogic(
           const card = board[i];
           if (card) {
             card.skills = [];
-            card.skill = 'none';
-            card.skillValue = 0;
             card.choices = [];
             card.choices2 = null;
             if ('summonId' in card) delete card.summonId;

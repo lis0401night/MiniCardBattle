@@ -114,7 +114,7 @@ export function generateDeck(owner, config, sessionId) {
         basePower: t.power,
         currentPower: t.power,
         isPremium: isPremium,
-        skills: t.skills ? t.skills.map((s) => ({ ...s })) : undefined,
+        skills: Array.isArray(t.skills) ? t.skills.map((s) => ({ ...s })) : [],
         choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
         choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
       };
@@ -138,7 +138,7 @@ export function generateDeck(owner, config, sessionId) {
         basePower: t.power,
         currentPower: t.power,
         isPremium: isPremium,
-        skills: t.skills ? t.skills.map((s) => ({ ...s })) : undefined,
+        skills: Array.isArray(t.skills) ? t.skills.map((s) => ({ ...s })) : [],
         choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
         choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
       };
@@ -230,7 +230,7 @@ export function generateDeck(owner, config, sessionId) {
         basePower: t.power,
         currentPower: p,
         isPremium: isPremium,
-        skills: t.skills ? t.skills.map((s) => ({ ...s })) : undefined,
+        skills: Array.isArray(t.skills) ? t.skills.map((s) => ({ ...s })) : [],
         choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
         choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
       });
