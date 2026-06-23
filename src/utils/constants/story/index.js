@@ -76,7 +76,7 @@ export function getFallbackStoryDialogue(
     } else if (enemyId === 'succubus') {
       enemyIntro = `ふふっ、私は隷属の女王ヴィオラよ。こんなところに迷い込むなんて、私に隷属したいのかしら？`;
     } else if (enemyId === 'warlock') {
-      enemyIntro = `フフフ……私はかつて大賢者と呼ばれ、今は邪教を支配する者、バルタザール。魔王の力すらも私の野望を果たすための道具に過ぎん。邪魔する愚か者どもめ、塵にしてくれよう。`;
+      enemyIntro = `フフフ……私はかつて大賢者と呼ばれたバルタザール。魔王の力すら我が道具に過ぎん。立ち塞がる者は塵にしてくれよう。`;
     } else if (enemyId === 'satan') {
       enemyIntro = `フハハハ！ 我こそは魔王サタン！ 世界を絶望と虚無の闇に沈める支配者なり！`;
     }

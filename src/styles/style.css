@@ -749,6 +749,7 @@ h2 {
 }
 
 .char-portrait {
+  display: block;
   height: 100%;
   max-width: 45%;
   object-fit: contain;
