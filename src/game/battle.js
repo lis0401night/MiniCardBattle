@@ -2634,6 +2634,10 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
 export async function triggerSplitSkill(owner, lane, card) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const sealedLanes =
+    owner === 'blue' ? GameState.playerSealedLanes : GameState.enemySealedLanes;
+  if (sealedLanes && sealedLanes[lane] > 0) return;
+
   const tokenId =
     card.summonId ||
     card.skills?.find((s) => s.id === 'split')?.summonId ||

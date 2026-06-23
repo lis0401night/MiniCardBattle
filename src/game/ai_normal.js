@@ -619,9 +619,7 @@ export function processActionSequence(
         // 【修正】装備カードが持っていた追加アクティブスキル（事前解決された選択スキル等含む）を順次実行シミュレートする
         addedSkills.forEach((sk) => {
           // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
-          if (
-            ['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(sk.id)
-          ) {
+          if (['clone', 'summon', 'puppet', 'resurrect'].includes(sk.id)) {
             return;
           }
           applyActiveSkillLogic(
@@ -1068,7 +1066,6 @@ export function getBestSimulatedMove() {
                       'reinforce',
                       'clone',
                       'summon',
-                      'split',
                       'puppet',
                       'leap',
                       'forge',
@@ -1107,7 +1104,6 @@ export function getBestSimulatedMove() {
               const isPlacementSkill = [
                 'clone',
                 'summon',
-                'split',
                 'puppet',
                 'resurrect',
               ].includes(sk.id);
@@ -1348,9 +1344,7 @@ export function getBestSimulatedMove() {
                 }
                 // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時に発動）のため、
                 //   召喚時のtoken_placementとしては扱わない。シミュレーション上は元のパワーのまま評価される。
-              } else if (
-                ['clone', 'summon', 'split', 'puppet'].includes(sk.id)
-              ) {
+              } else if (['clone', 'summon', 'puppet'].includes(sk.id)) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
                 // 同一レーンへの複数配置は武装カードへの装備等で有効な戦略のため、
@@ -2394,7 +2388,6 @@ export function evaluateAdhocTokenLanes(
     const isPlacementSkill = [
       'clone',
       'summon',
-      'split',
       'puppet',
       'resurrect',
     ].includes(sk.id);
@@ -2690,7 +2683,7 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
-    } else if (['clone', 'summon', 'split', 'puppet'].includes(sk.id)) {
+    } else if (['clone', 'summon', 'puppet'].includes(sk.id)) {
       const count = sk.id === 'clone' ? sk.value || 1 : 1;
       const generateLaneCombos = (remainingCount) => {
         if (remainingCount <= 0) return [[]];
@@ -2932,7 +2925,6 @@ export function evaluateAdhocTokenLanes(
                     'reinforce',
                     'clone',
                     'summon',
-                    'split',
                     'puppet',
                     'leap',
                     'forge',
@@ -3492,11 +3484,7 @@ export function simulateMove(
           consumeArmSelf(targetCard, playedCard);
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
-            if (
-              ['clone', 'summon', 'split', 'puppet', 'resurrect'].includes(
-                sk.id
-              )
-            ) {
+            if (['clone', 'summon', 'puppet', 'resurrect'].includes(sk.id)) {
               return;
             }
             applyActiveSkillLogic(

@@ -267,30 +267,36 @@ export function processDestructionTriggers(state, events) {
 
           // 分裂(split)
           if (hasSkill(deadCard, 'split')) {
-            const tokenId =
-              deadCard.summonId ||
-              deadCard.skills?.find((s) => s.id === 'split')?.summonId ||
-              'token_legs'; // 安全のためのフォールバック値
-            const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
-              name: 'トークン',
-              power: 1,
-            };
-            const val = getSkillValue(deadCard, 'split') || tL.power || 2;
+            const sealedLanes =
+              side === 'blue'
+                ? state.playerSealedLanes
+                : state.enemySealedLanes;
+            if (!sealedLanes || sealedLanes[i] === 0) {
+              const tokenId =
+                deadCard.summonId ||
+                deadCard.skills?.find((s) => s.id === 'split')?.summonId ||
+                'token_legs'; // 安全のためのフォールバック値
+              const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
+                name: 'トークン',
+                power: 1,
+              };
+              const val = getSkillValue(deadCard, 'split') || tL.power || 2;
 
-            tokensToSummonThisLoop.push({
-              side,
-              lane: i,
-              card: {
-                ...JSON.parse(JSON.stringify(tL)),
-                id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
-                owner: side,
-                imgUrl: `assets/cards/card_${tokenId}.jpg`,
-                power: val,
-                currentPower: val,
-                basePower: val,
-                rarity: tL.rarity || 1,
-              },
-            });
+              tokensToSummonThisLoop.push({
+                side,
+                lane: i,
+                card: {
+                  ...JSON.parse(JSON.stringify(tL)),
+                  id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
+                  owner: side,
+                  imgUrl: `assets/cards/card_${tokenId}.jpg`,
+                  power: val,
+                  currentPower: val,
+                  basePower: val,
+                  rarity: tL.rarity || 1,
+                },
+              });
+            }
           }
 
           // 誘爆(explode)
@@ -1021,7 +1027,7 @@ export function applyActiveSkillLogic(
       if (eB[l]) eB[l].stunTurns = (val || 1) + 1;
       break;
     case 'standby':
-      c.stunTurns = (val || 1) + 1;
+      c.stunTurns = val || 1;
       break;
     case 'freeze':
       [l - 1, l, l + 1].forEach((j) => {
