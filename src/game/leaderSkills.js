@@ -212,6 +212,14 @@ export async function executeLeaderSkillAction(
   forcedTargetIdx = null,
   forcedTargetUid = null
 ) {
+  // イベント再生中に正しい上書き・墓地送り演出を行うため、発動前の盤面状態を退避
+  const savedPlayerBoard = GameState.playerBoard.map((c) =>
+    c ? JSON.parse(JSON.stringify(c)) : null
+  );
+  const savedEnemyBoard = GameState.enemyBoard.map((c) =>
+    c ? JSON.parse(JSON.stringify(c)) : null
+  );
+
   let events = [];
 
   // UIの介入（対象の選択等）が必要なスキルは事前に処理
@@ -1343,6 +1351,7 @@ export async function executeLeaderSkillAction(
 
     // 2. その後、自分のカードが配置されている全てのレーンにデーモンを配置
     const targetLanes = [];
+    const daemonEvents = [];
     for (let l = 0; l < 3; l++) {
       // 自分のカードが存在し、かつ封印されていないレーン
       if (board[l] !== null && mySealedLanes[l] === 0) {
@@ -1373,7 +1382,7 @@ export async function executeLeaderSkillAction(
         // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
         board[l].skillTriggered = true;
 
-        events.push({
+        daemonEvents.push({
           type: 'summon_card',
           side: owner,
           lane: l,
@@ -1382,6 +1391,19 @@ export async function executeLeaderSkillAction(
         });
       }
     }
+
+    // ① スケルトン配置後、変化する各レーンに対してデーモン化のVFXイベントをプッシュ
+    targetLanes.forEach((lane) => {
+      events.push({
+        type: 'vfx_trigger',
+        vfxId: 'anm_dark_magic_self',
+        side: owner,
+        lane: lane,
+      });
+    });
+
+    // ② その後、デーモンへの上書き（変化）イベントをプッシュ
+    events.push(...daemonEvents);
 
     if (targetLanes.length > 0) {
       tokenLanes = targetLanes; // VFXの参照用に渡す
@@ -1588,17 +1610,6 @@ export async function executeLeaderSkillAction(
           window.triggerVfx('anm_seal_lanes', owner, lane)
         )
       );
-    } else if (
-      action === 'warlock_place_demons' &&
-      tokenLanes &&
-      tokenLanes.length > 0
-    ) {
-      await sleep(200);
-      await Promise.all(
-        tokenLanes.map((lane) =>
-          window.triggerVfx('anm_dark_magic_self', owner, lane)
-        )
-      );
     } else if (action === 'night_parade' && tokenLanes && tokenLanes.enemy) {
       await sleep(200);
       await Promise.all(
@@ -1641,6 +1652,11 @@ export async function executeLeaderSkillAction(
       }
     });
   }
+
+  // イベント再生を開始する前に、一時的に盤面をリーダースキル発動前の元の状態に戻す
+  // これにより、playEvents 内で正しい上書き・墓地送り演出が実行されるようになる
+  GameState.playerBoard = savedPlayerBoard;
+  GameState.enemyBoard = savedEnemyBoard;
 
   await playEvents(events);
   // リーダースキルによる演出が完了したので、配置したカードの保護フラグを解除

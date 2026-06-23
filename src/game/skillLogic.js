@@ -266,6 +266,8 @@ export async function resolveActiveSkillEffect(
       recurse: '再帰',
       replicate: '複製',
       hack: '改竄',
+      grant_deadly: '付与(必殺)',
+      grant_sturdy: '付与(頑丈)',
     };
     if (!EXCLUDE_POPUP_SKILLS.includes(skillId)) {
       if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
@@ -3305,7 +3307,7 @@ export async function resolveActiveSkillEffect(
             if (tEl) {
               createDamagePopup(
                 tEl,
-                targetSkill === 'deadly' ? '必殺付与' : '頑丈付与',
+                targetSkill === 'deadly' ? '必殺' : '頑丈',
                 '#c084fc'
               );
             }

@@ -235,7 +235,7 @@ export const CARD_MASTER = [
     name: '風の精霊',
     rarity: 1,
     power: 5,
-    skills: [{ id: 'brutal', value: 2 }, { id: 'move' }],
+    skills: [{ id: 'move' }, { id: 'brutal', value: 2 }],
     voiceCategory: 'stone',
     flavor:
       '高濃度の魔力で形成された風の精霊。戦場を縦横無尽に駆け巡り、荒れ狂う烈風となって瞬く間に敵陣を圧倒する。',
@@ -1422,8 +1422,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [
       { id: 'equip' },
-      { id: 'brutal', value: 2 },
       { id: 'choice', value: 1 },
+      { id: 'brutal', value: 2 },
     ],
     choices: [{ id: 'absorb' }, { id: 'soul_bind', value: 2 }],
     voiceCategory: 'sword',
