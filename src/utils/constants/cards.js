@@ -2538,7 +2538,7 @@ export const CARD_MASTER = [
     id: 'wurm',
     name: '文明喰らい',
     rarity: 4,
-    power: 8,
+    power: 7,
     skills: [
       { id: 'takeover' },
       { id: 'berserk', value: 4 },
