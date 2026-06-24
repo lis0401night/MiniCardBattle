@@ -635,7 +635,11 @@ export function processActionSequence(
         // 【修正】装備カードが持っていた追加アクティブスキル（事前解決された選択スキル等含む）を順次実行シミュレートする
         addedSkills.forEach((sk) => {
           // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
-          if (['clone', 'summon', 'puppet', 'resurrect'].includes(sk.id)) {
+          if (
+            ['clone', 'summon', 'puppet', 'resurrect', 'execute'].includes(
+              sk.id
+            )
+          ) {
             return;
           }
           applyActiveSkillLogic(
@@ -773,6 +777,7 @@ export function processActionSequence(
                 'clone',
                 'split',
                 'forge',
+                'execute',
               ].includes(sk.id)
             ) {
               applyActiveSkillLogic(
@@ -3670,7 +3675,11 @@ export function simulateMove(
           consumeArmSelf(targetCard, playedCard);
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
-            if (['clone', 'summon', 'puppet', 'resurrect'].includes(sk.id)) {
+            if (
+              ['clone', 'summon', 'puppet', 'resurrect', 'execute'].includes(
+                sk.id
+              )
+            ) {
               return;
             }
             applyActiveSkillLogic(

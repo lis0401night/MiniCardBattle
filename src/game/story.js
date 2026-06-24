@@ -82,6 +82,7 @@ export function initStoryMode(charId) {
         JSON.stringify(storyDeckSnapshot)
       );
     } catch (error) {
+      localStorage.removeItem('mini_card_battle_story_deck_obj');
       console.error('デッキスナップショットの保存に失敗しました:', error);
     }
   }
@@ -143,6 +144,7 @@ export function saveStoryProgress() {
       JSON.stringify(saveObj)
     );
   } catch (error) {
+    localStorage.removeItem('mini_card_battle_story_save');
     console.error('ストーリー進行状況の保存に失敗しました:', error);
   }
 }

@@ -169,8 +169,6 @@ export async function resolveActiveSkillEffect(
     'reinforce',
     'metamorph',
     'petrify',
-    'sacrifice',
-    'sacrifice_void',
   ];
 
   if (ACTIVE_SKILLS.includes(skillId)) {
@@ -1422,6 +1420,23 @@ export async function resolveActiveSkillEffect(
         isSkillResolving: true, // 保護フラグ
       };
 
+      if (
+        targetOriginal.equippedCards &&
+        targetOriginal.equippedCards.length > 0
+      ) {
+        statueToken.equippedCards = JSON.parse(
+          JSON.stringify(targetOriginal.equippedCards)
+        );
+      }
+      if (
+        targetOriginal.unionMaterials &&
+        targetOriginal.unionMaterials.length > 0
+      ) {
+        statueToken.unionMaterials = JSON.parse(
+          JSON.stringify(targetOriginal.unionMaterials)
+        );
+      }
+
       eB[l] = statueToken;
       renderBoard();
 
@@ -1534,7 +1549,7 @@ export async function resolveActiveSkillEffect(
 
       // ダメージポップアップと画面揺らし
       if (hpFill) {
-        const label = `${skillId === 'sacrifice_void' ? '代償(虚)' : '代償'} -${dmg}`;
+        const label = `-${dmg}`;
         createDamagePopup(hpFill, label, '#ef4444');
       }
 
@@ -3421,6 +3436,13 @@ export async function triggerStartTurnPassive(owner, lane) {
 
     if (sk.id === 'contract') {
       const val = sk.value || 3;
+      // 自分側にスキル発動のポップアップを出す
+      events.push({
+        type: 'skill_popup',
+        side: owner,
+        lane: lane,
+        skillName: '契約',
+      });
       // HP減少はRenderer側で実施されるためここでは行わない
       events.push({
         type: 'damage_player',

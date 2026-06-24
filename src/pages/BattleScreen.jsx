@@ -110,6 +110,7 @@ export default function BattleScreen({ showRulesModal }) {
     // マウント時にすでにバトルフェーズが進行している場合のフェイルセーフ
     if (GameState.battlePhase && GameState.battlePhase !== 'INIT') {
       GameState.isInitializing = false;
+      setRenderVersion((v) => v + 1);
     }
 
     // マウント完了と演出関数の準備が整ったことをバトル進行側に通知

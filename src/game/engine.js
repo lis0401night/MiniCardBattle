@@ -1978,10 +1978,7 @@ export function applyActiveSkillLogic(
                 card: targetCard,
               });
             } else {
-              const oppDiscard =
-                oppOwner === 'red' ? state.enemyDiscard : state.playerDiscard;
-              oppDiscard.push(targetCard);
-              eB[targetLane] = null;
+              quietDiscardFromBoard(state, oppOwner, targetLane);
               targets.push({
                 side: oppOwner,
                 lane: targetLane,
@@ -2069,10 +2066,7 @@ export function applyActiveSkillLogic(
               card: execCard,
             });
           } else {
-            const myDiscard =
-              owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-            myDiscard.push(execCard);
-            b[execLane] = null;
+            quietDiscardFromBoard(state, owner, execLane);
             events.push({
               type: 'destroy_cards',
               targets: [{ side: owner, lane: execLane, card: execCard }],

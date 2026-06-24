@@ -1951,16 +1951,16 @@ export async function waitPlayerDiscardSelection(
     }
     // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
     if (maxChoices > 1) {
-      const shuffled = [...validCards].sort(() => Math.random() - 0.5);
+      const shuffled = [...validCards].sort(() => getSeededRandom() - 0.5);
       return shuffled.slice(0, maxChoices);
     } else {
       // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
       if (title && title.includes('探索')) {
         const maxP = Math.max(...validCards.map((c) => c.power || 0));
         const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
-        return bestCards[Math.floor(Math.random() * bestCards.length)];
+        return bestCards[Math.floor(getSeededRandom() * bestCards.length)];
       }
-      const randomIndex = Math.floor(Math.random() * validCards.length);
+      const randomIndex = Math.floor(getSeededRandom() * validCards.length);
       return validCards[randomIndex];
     }
   }
@@ -4423,8 +4423,8 @@ export function endBattle() {
 
           if (window.showCardRewardReact && rewardCards.length > 0) {
             window.showCardRewardReact(rewardCards);
+            return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
           }
-          return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
         }
       }
     }

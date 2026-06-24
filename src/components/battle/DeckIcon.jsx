@@ -1,4 +1,13 @@
+import { useId } from 'react';
+
 const DeckIcon = ({ count, max = 20 }) => {
+  const uniqueId = useId();
+  // SVGのdefs定義IDがインスタンス間で競合して参照バグが発生するのを防ぐため、各IDを一意化する
+  const shadowId = `deck-shadow-${uniqueId}`;
+  const edgeGradientId = `edge-gradient-${uniqueId}`;
+  const bodyGradientId = `body-gradient-${uniqueId}`;
+  const cardBackPatternId = `card-back-pattern-${uniqueId}`;
+
   const displayCount = Math.min(Math.max(0, count), max);
 
   // SVGのサイズ
@@ -58,7 +67,7 @@ const DeckIcon = ({ count, max = 20 }) => {
         style={{ overflow: 'visible' }}
       >
         <defs>
-          <filter id="deck-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id={shadowId} x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow
               dx="0"
               dy="2"
@@ -67,12 +76,12 @@ const DeckIcon = ({ count, max = 20 }) => {
               floodOpacity="0.5"
             />
           </filter>
-          <linearGradient id="edge-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={edgeGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#c0c0c0" />
             <stop offset="100%" stopColor="#f0f0f0" />
           </linearGradient>
           <linearGradient
-            id="body-gradient"
+            id={bodyGradientId}
             x1="0%"
             y1="0%"
             x2="100%"
@@ -82,7 +91,7 @@ const DeckIcon = ({ count, max = 20 }) => {
             <stop offset="100%" stopColor="#cccccc" />
           </linearGradient>
           <pattern
-            id="card-back-pattern"
+            id={cardBackPatternId}
             patternUnits="userSpaceOnUse"
             width="40"
             height={TRAPEZOID_HEIGHT}
@@ -101,12 +110,12 @@ const DeckIcon = ({ count, max = 20 }) => {
         </defs>
 
         {displayCount > 0 ? (
-          <g filter="url(#deck-shadow)">
+          <g filter={`url(#${shadowId})`}>
             {/* 白系の土台（カードの厚み部分） */}
             <path
               d={`M 2,${baseY} L 42,${baseY} L 42,${STACK_BOTTOM - 2} Q 42,${STACK_BOTTOM} 40,${STACK_BOTTOM} L 4,${STACK_BOTTOM} Q 2,${STACK_BOTTOM} 2,${STACK_BOTTOM - 2} Z`}
-              fill="url(#body-gradient)"
-              stroke="url(#body-gradient)"
+              fill={`url(#${bodyGradientId})`}
+              stroke={`url(#${bodyGradientId})`}
               strokeWidth="2"
               strokeLinejoin="round"
             />
@@ -115,8 +124,8 @@ const DeckIcon = ({ count, max = 20 }) => {
             {/* 上部の台形 */}
             <path
               d={`M 8,${topY} L 36,${topY} L 42,${baseY} L 2,${baseY} Z`}
-              fill="url(#card-back-pattern)"
-              stroke="url(#edge-gradient)"
+              fill={`url(#${cardBackPatternId})`}
+              stroke={`url(#${edgeGradientId})`}
               strokeWidth="1.5"
               strokeLinejoin="round"
             />

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import { showAchievements, showCardList } from '../services/uiGallery.js';
@@ -8,7 +7,7 @@ import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
 
 export default function GalleryMenuScreen() {
   const images = UI_IMAGES || {};
-  const hasUnclaimed = useMemo(() => hasUnclaimedAchievements(), []);
+  const hasUnclaimed = hasUnclaimedAchievements();
 
   return (
     <ScreenLayout

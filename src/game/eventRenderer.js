@@ -248,8 +248,7 @@ export async function playEvents(events) {
 
         const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
         if (hpFill) {
-          let label = `-${ev.amount}`;
-          if (ev.source === 'contract') label = `契約 ${label}`;
+          const label = `-${ev.amount}`;
 
           // 連続するリーダーダメージのポップアップが重ならないようYオフセットを計算
           let yOffset = 0;
@@ -423,7 +422,18 @@ export async function playEvents(events) {
           board[ev.lane].uid !== ev.card?.uid &&
           discardCardRef
         ) {
-          await discardCardRef(ev.side, board[ev.lane], ev.lane, false);
+          // すでにそのカードが実データ上の墓地（GameState.playerDiscard / enemyDiscard）に存在している場合、
+          // リーダースキル側の処理などにより既に墓地送りが行われているため、二重の破棄処理をスキップする。
+          const discardList =
+            ev.side === 'blue'
+              ? GameState.playerDiscard
+              : GameState.enemyDiscard;
+          const alreadyDiscarded =
+            discardList &&
+            discardList.some((c) => c && c.uid === board[ev.lane].uid);
+          if (!alreadyDiscarded) {
+            await discardCardRef(ev.side, board[ev.lane], ev.lane, false);
+          }
         } else if (board[ev.lane] && board[ev.lane].uid !== ev.card?.uid) {
           console.warn(
             '[eventRenderer] discardCardRef not registered, existing card may not be properly discarded'
@@ -624,10 +634,11 @@ export async function playEvents(events) {
           createDamagePopup(cEl, ev.skillName, '#facc15');
           // 簒奪 (extort) の場合は専用のVFXを発火させる
           if (ev.skillName === '簒奪' && window.triggerVfx) {
-            window.triggerVfx('anm_skill_extort', ev.side, ev.lane);
+            await window.triggerVfx('anm_skill_extort', ev.side, ev.lane);
+          } else {
+            playSound(SOUNDS.seSkill);
+            await sleep(300);
           }
-          playSound(SOUNDS.seSkill);
-          await sleep(300);
         }
         break;
       }
