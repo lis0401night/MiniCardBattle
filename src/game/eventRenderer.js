@@ -139,7 +139,7 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
         if (cEl) {
-          createDamagePopup(cEl, '頑丈', '#64748b');
+          createDamagePopup(cEl, '頑丈', '#ffffff');
         }
         playSound(SOUNDS.seSkill);
         await sleep(200);
@@ -150,7 +150,7 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
         if (cEl) {
-          createDamagePopup(cEl, '連撃', '#fbbf24');
+          createDamagePopup(cEl, '連撃', '#ffffff');
         }
         playSound(SOUNDS.seSkill);
         await sleep(200);

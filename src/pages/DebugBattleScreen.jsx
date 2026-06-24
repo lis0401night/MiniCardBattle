@@ -374,6 +374,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>先攻</label>
               <select
+                id="select-first-player"
                 style={selectStyle}
                 value={firstPlayer}
                 onChange={(e) => setFirstPlayer(e.target.value)}
@@ -402,6 +403,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>プレイヤーHP</label>
               <input
+                id="input-player-hp"
                 style={inputStyle}
                 type="number"
                 value={playerHP}
@@ -412,6 +414,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>敵HP</label>
               <input
+                id="input-enemy-hp"
                 style={inputStyle}
                 type="number"
                 value={enemyHP}

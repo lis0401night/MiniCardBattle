@@ -169,6 +169,10 @@ export async function resolveActiveSkillEffect(
     'reinforce',
     'metamorph',
     'petrify',
+    'sacrifice',
+    'sacrifice_void',
+    'heal',
+    'heal_void',
   ];
 
   if (ACTIVE_SKILLS.includes(skillId)) {
@@ -1521,6 +1525,11 @@ export async function resolveActiveSkillEffect(
     const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
 
     let dmg = skillValue || 3;
+    if (cEl) {
+      const sacText = skillId === 'sacrifice_void' ? '代償(虚)' : '代償';
+      createDamagePopup(cEl, sacText, '#ef4444');
+      await sleep(200);
+    }
     if (skillId === 'sacrifice_void') {
       const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
       const voidCount = hand
@@ -1862,6 +1871,11 @@ export async function resolveActiveSkillEffect(
     checkWinCondition();
     await sleep(400);
   } else if (skillId === 'heal' || skillId === 'heal_void') {
+    if (cEl) {
+      const healText = skillId === 'heal_void' ? '回復(虚)' : '回復';
+      createDamagePopup(cEl, healText, '#4ade80');
+      await sleep(200);
+    }
     if (window.triggerVfx) {
       const vfxPromise = window.triggerVfx('anm_skill_heal', o); // 発動したプレイヤー側（o）に対して回復VFXを再生
       await sleep(150); // 演出開始の瞬間に合わせて回復処理へ移行
@@ -1877,7 +1891,7 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'loss') {
     playSound(SOUNDS.seSkill);
-    createDamagePopup(cEl, '喪失', '#991b1b');
+    createDamagePopup(cEl, '喪失', '#8b5cf6');
     const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     const g = o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
     const count = skillValue || 1;
@@ -2716,7 +2730,11 @@ export async function resolveActiveSkillEffect(
     const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     if (d.length > 0) {
       const topCard = d[d.length - 1];
-      if (cEl) createDamagePopup(cEl, `号令 (${topCard.name})`, '#facc15');
+      if (cEl) {
+        createDamagePopup(cEl, '号令', '#facc15');
+        await sleep(250);
+        createDamagePopup(cEl, topCard.name, '#fbbf24');
+      }
 
       if ((topCard.power || 0) <= (skillValue || 3)) {
         // デッキトップを取り出す
@@ -2913,7 +2931,11 @@ export async function resolveActiveSkillEffect(
         }
       } else {
         // 条件を満たさないため失敗
-        if (cEl) createDamagePopup(cEl, `不発 (${topCard.name})`, '#94a3b8');
+        if (cEl) {
+          createDamagePopup(cEl, '号令', '#94a3b8');
+          await sleep(250);
+          createDamagePopup(cEl, topCard.name, '#94a3b8');
+        }
         await sleep(500);
       }
     }
