@@ -2720,23 +2720,33 @@ export async function resolveActiveSkillEffect(
     }
     await sleep(300);
   } else if (skillId === 'call') {
-    // 【演出】号令スキルのVFXを再生
+    const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+    const hasTopCard = d.length > 0;
+    const topCard = hasTopCard ? d[d.length - 1] : null;
+    const isSuccess = hasTopCard && (topCard.power || 0) <= (skillValue || 3);
+
+    // 1. まず「号令」ポップアップを出す（成功時は黄色、不発時は灰色）
+    if (cEl) {
+      const popupColor = isSuccess ? '#facc15' : '#94a3b8';
+      createDamagePopup(cEl, '号令', popupColor);
+    }
+
+    // 2. 号令スキルのVFXを再生
     if (typeof window.triggerVfx === 'function') {
       await window.triggerVfx('anm_skill_call', o, l);
     } else {
       playSound(SOUNDS.seSkill);
+      await sleep(150);
     }
 
-    const d = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-    if (d.length > 0) {
-      const topCard = d[d.length - 1];
+    // 3. アニメーション完了後に、結果のカード名ポップアップを表示
+    if (hasTopCard) {
       if (cEl) {
-        createDamagePopup(cEl, '号令', '#facc15');
-        await sleep(250);
-        createDamagePopup(cEl, topCard.name, '#fbbf24');
+        const nameColor = isSuccess ? '#fbbf24' : '#94a3b8';
+        createDamagePopup(cEl, topCard.name, nameColor);
       }
 
-      if ((topCard.power || 0) <= (skillValue || 3)) {
+      if (isSuccess) {
         // デッキトップを取り出す
         d.pop();
         updateDeckDisplay(o);
@@ -2930,14 +2940,12 @@ export async function resolveActiveSkillEffect(
           updateDeckDisplay(o);
         }
       } else {
-        // 条件を満たさないため失敗
-        if (cEl) {
-          createDamagePopup(cEl, '号令', '#94a3b8');
-          await sleep(250);
-          createDamagePopup(cEl, topCard.name, '#94a3b8');
-        }
+        // 条件を満たさないため失敗時の待機
         await sleep(500);
       }
+    } else {
+      // デッキが空の場合の待機
+      await sleep(500);
     }
   } else if (skillId === 'dominate') {
     // 【支配】召喚時、相手の場のパワーval以下のカード1枚を選び、自分のレーンに移動する。
