@@ -228,6 +228,20 @@ export function processActionSequence(
         continue;
       }
 
+      if (action.type === 'execute') {
+        const tgtLane = action.targetLane;
+        if (tgtLane !== undefined && simState.enemyBoard[tgtLane] !== null) {
+          const execCard = simState.enemyBoard[tgtLane];
+          if (!hasSkill(execCard, 'immune')) {
+            if (!execCard.isToken) {
+              simState.enemyDiscard.push(execCard);
+            }
+            simState.enemyBoard[tgtLane] = null;
+          }
+        }
+        continue;
+      }
+
       const tIdx = action.targetIdx;
       const lIdx = action.laneIdx;
       let playedCard = null;
@@ -1071,6 +1085,7 @@ export function getBestSimulatedMove() {
                       'puppet',
                       'leap',
                       'forge',
+                      'execute',
                     ].includes(s.id)
                   )
                     effectiveSkills.push(s);
@@ -1094,7 +1109,7 @@ export function getBestSimulatedMove() {
               currentUsedHand,
               currentUsedDiscard,
               currentDepth,
-              currentDiscardedFromHand = []
+              currentDiscarded = []
             ) => {
               if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
 
@@ -1108,6 +1123,7 @@ export function getBestSimulatedMove() {
                 'summon',
                 'puppet',
                 'resurrect',
+                'execute', // 処刑は強制配置系（破壊対象選択）のため、自動キャンセルの対象外とする
               ].includes(sk.id);
               if (!isPlacementSkill) {
                 results.push(
@@ -1116,7 +1132,7 @@ export function getBestSimulatedMove() {
                     currentUsedHand,
                     currentUsedDiscard,
                     currentDepth,
-                    currentDiscardedFromHand
+                    currentDiscarded
                   )
                 );
               }
@@ -1143,7 +1159,7 @@ export function getBestSimulatedMove() {
                       [...currentUsedHand, i],
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscardedFromHand
+                      currentDiscarded
                     );
                     for (let nb of nextBranches) {
                       results.push([...cNode, ...nb]);
@@ -1175,7 +1191,7 @@ export function getBestSimulatedMove() {
                       [...currentUsedHand, i],
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscardedFromHand
+                      currentDiscarded
                     );
                     for (let nb of nextBranches) {
                       results.push([...cNode, ...nb]);
@@ -1219,7 +1235,7 @@ export function getBestSimulatedMove() {
                         [...currentUsedHand, i],
                         currentUsedDiscard,
                         currentDepth,
-                        currentDiscardedFromHand
+                        currentDiscarded
                       );
                       for (let nb of nextBranches) {
                         results.push([...cNode, ...nb]);
@@ -1234,7 +1250,7 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscardedFromHand
+                  currentDiscarded
                 );
                 for (let nb of nextBranches) {
                   results.push([
@@ -1250,17 +1266,14 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscardedFromHand
+                  currentDiscarded
                 );
                 for (let nb of leapBranch) {
                   results.push([{ type: 'leap' }, ...nb]);
                 }
               } else if (sk.id === 'resurrect') {
                 const maxP = sk.value || 1;
-                const candidates = [
-                  ...originalDiscard,
-                  ...currentDiscardedFromHand,
-                ];
+                const candidates = [...originalDiscard, ...currentDiscarded];
 
                 for (let i = 0; i < candidates.length; i++) {
                   if (currentUsedDiscard.includes(i)) continue;
@@ -1288,7 +1301,7 @@ export function getBestSimulatedMove() {
                       currentUsedHand,
                       [...currentUsedDiscard, i],
                       currentDepth,
-                      currentDiscardedFromHand
+                      currentDiscarded
                     );
                     for (let nb of nextBranches) {
                       results.push([resNode, ...nb]);
@@ -1307,11 +1320,76 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscardedFromHand
+                  currentDiscarded
                 );
                 for (let nb of cancelBranches) {
                   results.push([cancelNode, ...nb]);
                 }
+              } else if (sk.id === 'execute') {
+                // 【処刑】自分の通常カード1枚を選択して破壊する（トークンは除外）
+                let occupiedLanes = [];
+                for (let j = 0; j < 3; j++) {
+                  const simulatedBoardCard = j === lane ? card : myBoard[j];
+                  if (simulatedBoardCard !== null) {
+                    occupiedLanes.push(j);
+                  }
+                }
+
+                if (occupiedLanes.length > 0) {
+                  for (let tgtLane of occupiedLanes) {
+                    let execNode = {
+                      type: 'execute',
+                      targetLane: tgtLane,
+                    };
+                    const destroyedCard =
+                      tgtLane === lane ? card : myBoard[tgtLane];
+                    let newlyDiscarded = [...currentDiscarded];
+                    if (destroyedCard && !destroyedCard.isToken) {
+                      newlyDiscarded.push(destroyedCard);
+                    }
+                    let nextBranches = buildSkillBranch(
+                      remainingSkills,
+                      currentUsedHand,
+                      currentUsedDiscard,
+                      currentDepth,
+                      newlyDiscarded
+                    );
+                    for (let nb of nextBranches) {
+                      results.push([execNode, ...nb]);
+                    }
+                  }
+                } else {
+                  return buildSkillBranch(
+                    remainingSkills,
+                    currentUsedHand,
+                    currentUsedDiscard,
+                    currentDepth,
+                    currentDiscarded
+                  );
+                }
+              } else if (sk.id === 'berserk') {
+                // 【狂乱】隣接レーンの自分の通常カードが破壊されるかを予測し、バッファに追加
+                const bVal = sk.value || 2;
+                const adjLanes = lane === 1 ? [0, 2] : [1];
+                let newlyDiscarded = [...currentDiscarded];
+                adjLanes.forEach((j) => {
+                  const adjCard = myBoard[j];
+                  if (adjCard && !adjCard.isToken) {
+                    const isImmune = hasSkill(adjCard, 'immune');
+                    const currentP = adjCard.currentPower ?? adjCard.power ?? 0;
+                    if (!isImmune && currentP <= bVal) {
+                      newlyDiscarded.push(adjCard);
+                    }
+                  }
+                });
+
+                return buildSkillBranch(
+                  remainingSkills,
+                  currentUsedHand,
+                  currentUsedDiscard,
+                  currentDepth,
+                  newlyDiscarded
+                );
               } else if (
                 sk.id === 'convert' ||
                 sk.id === 'draw' ||
@@ -1337,7 +1415,7 @@ export function getBestSimulatedMove() {
                       [...currentUsedHand, ...combo],
                       currentUsedDiscard,
                       currentDepth,
-                      [...currentDiscardedFromHand, ...newlyDiscarded]
+                      [...currentDiscarded, ...newlyDiscarded]
                     );
                     for (let nb of nextBranches) {
                       results.push([...discardNodes, ...nb]);
@@ -1386,7 +1464,7 @@ export function getBestSimulatedMove() {
                     currentUsedHand,
                     currentUsedDiscard,
                     currentDepth,
-                    currentDiscardedFromHand
+                    currentDiscarded
                   );
                   for (let nb of nextBranches) {
                     results.push([tokenNode, ...nb]);
@@ -1416,7 +1494,7 @@ export function getBestSimulatedMove() {
                       currentUsedHand,
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscardedFromHand
+                      currentDiscarded
                     );
                     for (let nb of nextBranches) {
                       results.push([choiceNode, ...nb]);
@@ -1455,7 +1533,7 @@ export function getBestSimulatedMove() {
                       currentUsedHand,
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscardedFromHand
+                      currentDiscarded
                     );
                     for (let nb of nextBranches) {
                       results.push([forceNode, ...nb]);
@@ -1468,18 +1546,28 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscardedFromHand
+                  currentDiscarded
                 );
               }
               return results;
             };
 
             if (depth < 2 && effectiveSkills.length > 0) {
+              // 上書き配置されるカード（通常カードのみ）があれば、一時墓地バッファの初期値として渡す
+              let initialDiscarded = [];
+              if (
+                lane !== -1 &&
+                myBoard[lane] !== null &&
+                !myBoard[lane].isToken
+              ) {
+                initialDiscarded.push(myBoard[lane]);
+              }
               let skillChains = buildSkillBranch(
                 effectiveSkills,
                 usedHand,
                 usedDiscard,
-                depth
+                depth,
+                initialDiscarded
               );
               for (let chain of skillChains) {
                 branches.push([node, ...chain]);
@@ -2380,7 +2468,7 @@ export function evaluateAdhocTokenLanes(
     currentUsedHand,
     currentUsedDiscard,
     currentDepth,
-    currentDiscardedFromHand = [],
+    currentDiscard = [],
     laneIdx // めくれた親カードが置かれるレーン
   ) => {
     if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
@@ -2394,6 +2482,7 @@ export function evaluateAdhocTokenLanes(
       'summon',
       'puppet',
       'resurrect',
+      'execute', // 処刑を追加
     ].includes(sk.id);
     if (!isPlacementSkill) {
       // 配置系スキル以外は常に「このスキルをキャンセル/スキップする」選択肢を考慮する
@@ -2403,7 +2492,7 @@ export function evaluateAdhocTokenLanes(
           currentUsedHand,
           currentUsedDiscard,
           currentDepth,
-          currentDiscardedFromHand,
+          currentDiscard,
           laneIdx
         )
       );
@@ -2433,7 +2522,7 @@ export function evaluateAdhocTokenLanes(
             [...currentUsedHand, i],
             currentUsedDiscard,
             currentDepth,
-            currentDiscardedFromHand,
+            currentDiscard,
             laneIdx
           );
           for (let nb of nextBranches) {
@@ -2466,7 +2555,7 @@ export function evaluateAdhocTokenLanes(
             [...currentUsedHand, i],
             currentUsedDiscard,
             currentDepth,
-            currentDiscardedFromHand,
+            currentDiscard,
             laneIdx
           );
           for (let nb of nextBranches) {
@@ -2509,7 +2598,7 @@ export function evaluateAdhocTokenLanes(
               [...currentUsedHand, i],
               currentUsedDiscard,
               currentDepth,
-              currentDiscardedFromHand,
+              currentDiscard,
               laneIdx
             );
             for (let nb of nextBranches) {
@@ -2525,7 +2614,7 @@ export function evaluateAdhocTokenLanes(
         currentUsedHand,
         currentUsedDiscard,
         currentDepth,
-        currentDiscardedFromHand,
+        currentDiscard,
         laneIdx
       );
       for (let nb of nextBranches) {
@@ -2537,7 +2626,7 @@ export function evaluateAdhocTokenLanes(
         currentUsedHand,
         currentUsedDiscard,
         currentDepth,
-        currentDiscardedFromHand,
+        currentDiscard,
         laneIdx
       );
       for (let nb of leapBranch) {
@@ -2546,7 +2635,7 @@ export function evaluateAdhocTokenLanes(
     } else if (sk.id === 'resurrect') {
       const originalDiscard = GameState.enemyDiscard || [];
       const maxP = sk.value || 1;
-      const candidates = [...originalDiscard, ...currentDiscardedFromHand];
+      const candidates = [...originalDiscard, ...currentDiscard];
 
       for (let i = 0; i < candidates.length; i++) {
         if (currentUsedDiscard.includes(i)) continue;
@@ -2572,7 +2661,7 @@ export function evaluateAdhocTokenLanes(
             currentUsedHand,
             [...currentUsedDiscard, i],
             currentDepth,
-            currentDiscardedFromHand,
+            currentDiscard,
             laneIdx
           );
           for (let nb of nextBranches) {
@@ -2592,12 +2681,81 @@ export function evaluateAdhocTokenLanes(
         currentUsedHand,
         currentUsedDiscard,
         currentDepth,
-        currentDiscardedFromHand,
+        currentDiscard,
         laneIdx
       );
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
       }
+    } else if (sk.id === 'execute') {
+      // 【処刑】自分の通常カード1枚を選択して破壊する（トークンは除外）
+      let occupiedLanes = [];
+      for (let j = 0; j < 3; j++) {
+        const simulatedBoardCard =
+          j === laneIdx ? tokenCard : GameState.enemyBoard[j];
+        if (simulatedBoardCard !== null) {
+          occupiedLanes.push(j);
+        }
+      }
+
+      if (occupiedLanes.length > 0) {
+        for (let tgtLane of occupiedLanes) {
+          let execNode = {
+            type: 'execute',
+            targetLane: tgtLane,
+          };
+          const destroyedCard =
+            tgtLane === laneIdx ? tokenCard : GameState.enemyBoard[tgtLane];
+          let newlyDiscarded = [...currentDiscard];
+          if (destroyedCard && !destroyedCard.isToken) {
+            newlyDiscarded.push(destroyedCard);
+          }
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            currentUsedHand,
+            currentUsedDiscard,
+            currentDepth,
+            newlyDiscarded,
+            laneIdx
+          );
+          for (let nb of nextBranches) {
+            results.push([execNode, ...nb]);
+          }
+        }
+      } else {
+        return buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx
+        );
+      }
+    } else if (sk.id === 'berserk') {
+      // 【狂乱】隣接レーンの自分の通常カードが破壊されるかを予測し、バッファに追加
+      const bVal = sk.value || 2;
+      const adjLanes = laneIdx === 1 ? [0, 2] : [1];
+      let newlyDiscarded = [...currentDiscard];
+      adjLanes.forEach((j) => {
+        const adjCard = GameState.enemyBoard[j];
+        if (adjCard && !adjCard.isToken) {
+          const isImmune = hasSkill(adjCard, 'immune');
+          const currentP = adjCard.currentPower ?? adjCard.power ?? 0;
+          if (!isImmune && currentP <= bVal) {
+            newlyDiscarded.push(adjCard);
+          }
+        }
+      });
+
+      return buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        newlyDiscarded,
+        laneIdx
+      );
     } else if (sk.id === 'dominate') {
       const maxP = sk.value || 0;
       const oppBoard = GameState.playerBoard; // AI(自分)から見た相手は playerBoard
@@ -2627,7 +2785,7 @@ export function evaluateAdhocTokenLanes(
           currentUsedHand,
           currentUsedDiscard,
           currentDepth,
-          currentDiscardedFromHand,
+          currentDiscard,
           laneIdx
         );
         for (let nb of nextBranches) {
@@ -2647,7 +2805,7 @@ export function evaluateAdhocTokenLanes(
         currentUsedHand,
         currentUsedDiscard,
         currentDepth,
-        currentDiscardedFromHand,
+        currentDiscard,
         laneIdx
       );
       for (let nb of cancelBranches) {
@@ -2679,7 +2837,7 @@ export function evaluateAdhocTokenLanes(
             [...currentUsedHand, ...combo],
             currentUsedDiscard,
             currentDepth,
-            [...currentDiscardedFromHand, ...newlyDiscarded],
+            [...currentDiscard, ...newlyDiscarded],
             laneIdx
           );
           for (let nb of nextBranches) {
@@ -2722,7 +2880,7 @@ export function evaluateAdhocTokenLanes(
           currentUsedHand,
           currentUsedDiscard,
           currentDepth,
-          currentDiscardedFromHand,
+          currentDiscard,
           laneIdx
         );
         for (let nb of nextBranches) {
@@ -2749,7 +2907,7 @@ export function evaluateAdhocTokenLanes(
             currentUsedHand,
             currentUsedDiscard,
             currentDepth,
-            currentDiscardedFromHand,
+            currentDiscard,
             laneIdx
           );
           for (let nb of nextBranches) {
@@ -2777,7 +2935,7 @@ export function evaluateAdhocTokenLanes(
             currentUsedHand,
             currentUsedDiscard,
             currentDepth,
-            currentDiscardedFromHand,
+            currentDiscard,
             laneIdx
           );
           for (let nb of nextBranches) {
@@ -2791,7 +2949,7 @@ export function evaluateAdhocTokenLanes(
         currentUsedHand,
         currentUsedDiscard,
         currentDepth,
-        currentDiscardedFromHand,
+        currentDiscard,
         laneIdx
       );
     }
@@ -2950,12 +3108,21 @@ export function evaluateAdhocTokenLanes(
           }
 
           if (depth < 2 && effectiveSkills.length > 0) {
+            // 上書き配置されるカード（通常カードのみ）があれば、一時墓地バッファの初期値として渡す
+            let initialDiscarded = [];
+            if (
+              lane !== -1 &&
+              GameState.enemyBoard[lane] !== null &&
+              !GameState.enemyBoard[lane].isToken
+            ) {
+              initialDiscarded.push(GameState.enemyBoard[lane]);
+            }
             let skillChains = buildSkillBranchAdhoc(
               effectiveSkills,
               usedHand,
               usedDiscard,
               depth,
-              [],
+              initialDiscarded,
               lane
             );
             for (let chain of skillChains) {
@@ -3056,7 +3223,22 @@ export function evaluateAdhocTokenLanes(
         };
 
         // スキルブランチを展開
-        let skillChains = buildSkillBranchAdhoc(branchSkills, [], [], 0, [], l);
+        let initialDiscarded = [];
+        if (
+          l !== -1 &&
+          GameState.enemyBoard[l] !== null &&
+          !GameState.enemyBoard[l].isToken
+        ) {
+          initialDiscarded.push(GameState.enemyBoard[l]);
+        }
+        let skillChains = buildSkillBranchAdhoc(
+          branchSkills,
+          [],
+          [],
+          0,
+          initialDiscarded,
+          l
+        );
 
         for (let chain of skillChains) {
           const actionQueue = [playActionWithChoice, ...chain];
