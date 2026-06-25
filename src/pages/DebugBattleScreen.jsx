@@ -438,6 +438,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>敵SP</label>
               <input
+                id="input-enemy-sp"
                 style={inputStyle}
                 type="number"
                 value={enemySP}
@@ -448,6 +449,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>ターン数</label>
               <input
+                id="input-turn-count"
                 style={inputStyle}
                 type="number"
                 value={turnCount}
@@ -517,6 +519,7 @@ export default function DebugBattleScreen() {
           <div style={{ marginBottom: '4px' }}>
             <label style={labelStyle}>敵山札</label>
             <input
+              id="input-enemy-deck"
               style={inputStyle}
               value={enemyDeck}
               onChange={(e) => setEnemyDeck(e.target.value)}
@@ -526,6 +529,7 @@ export default function DebugBattleScreen() {
           <div style={{ marginBottom: '4px' }}>
             <label style={labelStyle}>プレイヤー墓地</label>
             <input
+              id="input-player-discard"
               style={inputStyle}
               value={playerDiscard}
               onChange={(e) => setPlayerDiscard(e.target.value)}
@@ -535,6 +539,7 @@ export default function DebugBattleScreen() {
           <div>
             <label style={labelStyle}>敵墓地</label>
             <input
+              id="input-enemy-discard"
               style={inputStyle}
               value={enemyDiscard}
               onChange={(e) => setEnemyDiscard(e.target.value)}
@@ -558,6 +563,7 @@ export default function DebugBattleScreen() {
           <div style={{ marginBottom: '4px' }}>
             <label style={labelStyle}>プレイヤーの場</label>
             <input
+              id="input-player-board"
               style={inputStyle}
               value={playerBoard}
               onChange={(e) => setPlayerBoard(e.target.value)}

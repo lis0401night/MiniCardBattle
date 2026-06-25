@@ -13,7 +13,8 @@ export function canTakeDamage(card, amount, isSkill = true) {
   if (!card) return false;
   if (isSkill && hasSkill(card, 'immune')) return false;
   const resVal = getSkillValue(card, 'dodge');
-  if (resVal > 0 && amount >= resVal) return false;
+  // 回避（dodge）: 指定値以上のダメージを無効化する。ただし、防御（defender）が付与されている場合は無効。
+  if (resVal > 0 && amount >= resVal && !hasSkill(card, 'defender')) return false;
   return true;
 }
 
