@@ -1596,7 +1596,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'choice', value: 1 }],
     choices: [
       { id: 'dominate', value: 2 },
-      { id: 'toxic', value: 3 },
+      { id: 'toxic', value: 2 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:

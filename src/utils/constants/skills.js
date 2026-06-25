@@ -283,7 +283,8 @@ export const SKILLS = {
   dodge: {
     name: '回避',
     icon: '💠',
-    desc: (val) => `${val}以上のダメージを無効化する。（防御が付与されている場合は無効）`,
+    desc: (val) =>
+      `${val}以上のダメージを無効化する。（防御が付与されている場合は無効）`,
   },
   fate: {
     name: '運命',
