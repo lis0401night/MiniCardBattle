@@ -728,10 +728,8 @@ export async function resolveActiveSkillEffect(
     );
 
     let choiceArray;
-    let executionOwner = o;
     if (skillId === 'force') {
       const oppOwner = o === 'blue' ? 'red' : 'blue';
-      executionOwner = oppOwner;
       choiceArray = await waitSkillChoice(
         choices,
         oppOwner,
@@ -797,7 +795,7 @@ export async function resolveActiveSkillEffect(
         }
         // 選択されたスキルを順に実行
         await resolveActiveSkillEffect(
-          executionOwner,
+          o,
           l,
           c,
           choice.id,

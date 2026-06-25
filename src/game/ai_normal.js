@@ -1522,9 +1522,7 @@ export function getBestSimulatedMove() {
                     const chosenSkills = combo
                       .map((idx) => {
                         const choiceSkill = fArr[idx];
-                        return choiceSkill
-                          ? { ...choiceSkill, owner: 'blue' }
-                          : null;
+                        return choiceSkill ? { ...choiceSkill } : null;
                       })
                       .filter(Boolean);
                     let nextSkills = [...chosenSkills, ...remainingSkills];

@@ -483,6 +483,7 @@ export default function DebugBattleScreen() {
           <div>
             <label style={labelStyle}>敵手札</label>
             <input
+              id="input-enemy-hand"
               style={inputStyle}
               value={enemyHand}
               onChange={(e) => setEnemyHand(e.target.value)}
@@ -506,6 +507,7 @@ export default function DebugBattleScreen() {
           <div style={{ marginBottom: '4px' }}>
             <label style={labelStyle}>プレイヤー山札</label>
             <input
+              id="input-player-deck"
               style={inputStyle}
               value={playerDeck}
               onChange={(e) => setPlayerDeck(e.target.value)}
