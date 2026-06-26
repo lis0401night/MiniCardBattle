@@ -774,6 +774,9 @@ export async function resolveActiveSkillEffect(
           console.log(
             `[AI Decision Branch Switch] Switched to branch key: ${branchKey}`
           );
+          console.log(
+            `[AI Decision Branch Switch] foundBranch details: ${JSON.stringify(foundBranch)}`
+          );
           GameState.aiDecision.actionQueue = JSON.parse(
             JSON.stringify(foundBranch.actionQueue)
           );
@@ -3498,11 +3501,14 @@ export async function triggerStartTurnPassive(owner, lane) {
       // 1. お互いの手札を全て捨てる
       for (const p of processOrder) {
         const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        const hCards = [...h]; // 手札のコピーを保持
-        h.length = 0; // 手札の配列を空にする
-
-        for (let i = 0; i < hCards.length; i++) {
-          await discardCard(p, hCards[i], undefined, false);
+        // 【システム解説】手札の末尾から1枚ずつ安全に取り出して捨てる。
+        // 配列を一括でクリア（h.length = 0）してから非同期で捨てると、タイミングによってReactやオンライン同期で不整合が生じるため、
+        // 1枚ずつ pop で取り出しながら破棄処理を await 実行します。
+        while (h.length > 0) {
+          const card = h.pop();
+          if (card) {
+            await discardCard(p, card, undefined, false);
+          }
         }
       }
 

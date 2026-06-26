@@ -2237,7 +2237,9 @@ export function getBestSimulatedMove() {
           }
         });
 
-        branchMap[key] = tempBranch;
+        if (!branchMap[key]) {
+          branchMap[key] = tempBranch;
+        }
       }
     });
     finalDecision.branches = branchMap;
