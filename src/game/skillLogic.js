@@ -3232,22 +3232,31 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        // AIの場合：最もパワーの低い自分のカードを自動選択（損失最小化）
-        const occupiedLanes = myBoard
-          .map((bc, i) => (bc !== null ? i : -1))
-          .filter((i) => i !== -1);
-        occupiedLanes.sort((a, b) => {
-          const aImmune = hasSkill(myBoard[a], 'immune');
-          const bImmune = hasSkill(myBoard[b], 'immune');
-          if (aImmune && !bImmune) return -1;
-          if (!aImmune && bImmune) return 1;
+        // AIの場合：アクションキューにあればそれを消費、なければ最もパワーの低い自分のカードを自動選択
+        const aiAction = consumeAIAction('execute');
+        if (
+          aiAction &&
+          aiAction.targetLane !== undefined &&
+          myBoard[aiAction.targetLane] !== null
+        ) {
+          selectedLanes = [aiAction.targetLane];
+        } else {
+          const occupiedLanes = myBoard
+            .map((bc, i) => (bc !== null ? i : -1))
+            .filter((i) => i !== -1);
+          occupiedLanes.sort((a, b) => {
+            const aImmune = hasSkill(myBoard[a], 'immune');
+            const bImmune = hasSkill(myBoard[b], 'immune');
+            if (aImmune && !bImmune) return -1;
+            if (!aImmune && bImmune) return 1;
 
-          const diff =
-            (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
-          if (diff !== 0) return diff;
-          return a - b;
-        });
-        selectedLanes = [occupiedLanes[0]];
+            const diff =
+              (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
+            if (diff !== 0) return diff;
+            return a - b;
+          });
+          selectedLanes = occupiedLanes.length > 0 ? [occupiedLanes[0]] : [];
+        }
         await sleep(AI_THINKING_DURATION);
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();

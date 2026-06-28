@@ -14,6 +14,7 @@ import {
   applyPassiveSkillLogic,
   calculateCombatPhase,
   isGraveKeeperActive,
+  quietDiscardFromBoard,
 } from './engine.js';
 import { GameState } from '../state/gameState.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
@@ -233,10 +234,7 @@ export function processActionSequence(
         if (tgtLane !== undefined && simState.enemyBoard[tgtLane] !== null) {
           const execCard = simState.enemyBoard[tgtLane];
           if (!hasSkill(execCard, 'immune')) {
-            if (!execCard.isToken) {
-              simState.enemyDiscard.push(execCard);
-            }
-            simState.enemyBoard[tgtLane] = null;
+            quietDiscardFromBoard(simState, 'red', tgtLane);
           }
         }
         continue;
@@ -689,6 +687,9 @@ export function processActionSequence(
           ) {
             playedCard.currentPower = playedCard.power || 0;
             playedCard.basePower = playedCard.power || 0;
+          }
+          if (simState.enemyBoard[lIdx] !== null) {
+            quietDiscardFromBoard(simState, 'red', lIdx);
           }
           simState.enemyBoard[lIdx] = playedCard;
         }

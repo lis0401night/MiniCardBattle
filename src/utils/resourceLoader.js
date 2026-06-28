@@ -1,5 +1,5 @@
 import { CARD_MASTER } from './constants/cards.js';
-import { AUDIO_INSTANCES, SE_PATHS } from './sounds.js';
+import { AUDIO_INSTANCES, SE_PATHS, shouldSkipAudioPreload } from './sounds.js';
 
 let isPreloaded = false;
 
@@ -26,11 +26,8 @@ export async function preloadAllGameResources(onProgress) {
   });
 
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
-    // bgmTitle 以外のすべてのBGMは起動時の同期プリロードから除外（必要時にロード）
-    const isBgm = key.startsWith('bgm');
-    const shouldSkipPreload = isBgm && key !== 'bgmTitle';
-
-    if (shouldSkipPreload) {
+    // 起動時に不要な音声は起動時の同期プリロードから除外（必要時にロード）
+    if (shouldSkipAudioPreload(key)) {
       return;
     }
 

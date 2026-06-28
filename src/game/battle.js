@@ -1951,7 +1951,11 @@ export async function waitPlayerDiscardSelection(
     }
     // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
     if (maxChoices > 1) {
-      const shuffled = [...validCards].sort(() => getSeededRandom() - 0.5);
+      const shuffled = [...validCards];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(getSeededRandom() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
       return shuffled.slice(0, maxChoices);
     } else {
       // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ

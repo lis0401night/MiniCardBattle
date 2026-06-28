@@ -126,6 +126,16 @@ export const AUDIO_INSTANCES = {
   seSkillCall: new Audio('assets/audio/se/se_skill_call.mp3'),
 };
 
+/**
+ * 特定の音声キー（特に起動時に不要なBGM）のプリロードをスキップすべきかを判定する
+ * @param {string} key - 音声リソースのキー名
+ * @returns {boolean} - スキップすべきなら true、プリロードすべきなら false
+ */
+export function shouldSkipAudioPreload(key) {
+  const isBgm = key.startsWith('bgm');
+  return isBgm && key !== 'bgmTitle';
+}
+
 // サウンドの初期設定
 Object.keys(AUDIO_INSTANCES).forEach((key) => {
   const audio = AUDIO_INSTANCES[key];
@@ -144,11 +154,8 @@ Object.keys(AUDIO_INSTANCES).forEach((key) => {
     // 一部のブラウザでは volume 設定時にエラーが発生する場合があるため無視
   }
 
-  // BGM（bgmから始まるキー）のうち、起動時に必要な bgmTitle 以外は初期ロードをスキップ（必要時にロード）
-  const isBgm = key.startsWith('bgm');
-  const shouldSkipPreload = isBgm && key !== 'bgmTitle';
-
-  if (!shouldSkipPreload) {
+  // 起動時に不要な音声は初期ロードをスキップ（必要時にロード）
+  if (!shouldSkipAudioPreload(key)) {
     audio.load(); // 事前ロード
   }
 });
