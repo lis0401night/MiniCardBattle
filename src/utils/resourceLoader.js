@@ -1,5 +1,10 @@
 import { CARD_MASTER } from './constants/cards.js';
 import { AUDIO_INSTANCES, SE_PATHS, shouldSkipAudioPreload } from './sounds.js';
+import {
+  getCardImgUrl,
+  VALID_PREMIUM_GIFS,
+  VALID_PREMIUM_JPGS,
+} from './gameUtils.js';
 
 let isPreloaded = false;
 
@@ -17,7 +22,17 @@ export async function preloadAllGameResources(onProgress) {
   // カード画像は非同期ロード（裏でゆっくりロードし、起動完了はブロックしない）
   const asyncUrlsToLoad = new Set();
   CARD_MASTER.forEach((card) => {
-    if (card.image) asyncUrlsToLoad.add(card.image);
+    // 通常版画像
+    const normalUrl = getCardImgUrl({ id: card.id, isPremium: false });
+    if (normalUrl) asyncUrlsToLoad.add(normalUrl);
+
+    // プレミアム画像（プレミアム版が存在する場合のみ追加）
+    const isPremiumGif = VALID_PREMIUM_GIFS.includes(card.id);
+    const isPremiumJpg = VALID_PREMIUM_JPGS.includes(card.id);
+    if (isPremiumGif || isPremiumJpg) {
+      const premiumUrl = getCardImgUrl({ id: card.id, isPremium: true });
+      if (premiumUrl) asyncUrlsToLoad.add(premiumUrl);
+    }
   });
 
   // BGM と SE

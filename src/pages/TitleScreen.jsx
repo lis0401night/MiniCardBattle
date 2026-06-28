@@ -50,7 +50,7 @@ export default function TitleScreen() {
       const master = getRandomCard();
       if (master) {
         // 画像のプリロードを行い、読み込み完了後にフェード切り替え
-        const imgUrl = getCardImgUrl(master);
+        const imgUrl = getCardImgUrl({ ...master, isPremium: false });
         const img = new Image();
         const updateCard = () => {
           setIsFading(true); // まずフェードアウト開始
@@ -150,7 +150,7 @@ export default function TitleScreen() {
               }}
             >
               <img
-                src={getCardImgUrl(currentCard)}
+                src={getCardImgUrl({ ...currentCard, isPremium: false })}
                 alt={currentCard.name}
                 style={{
                   width: '240px',
