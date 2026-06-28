@@ -1,5 +1,4 @@
 import { CARD_MASTER } from './constants/cards.js';
-import { CHARACTERS } from './constants/characters.js';
 import { AUDIO_INSTANCES, SE_PATHS } from './sounds.js';
 
 let isPreloaded = false;
@@ -21,34 +20,17 @@ export async function preloadAllGameResources(onProgress) {
     if (card.image) asyncUrlsToLoad.add(card.image);
   });
 
-  Object.values(CHARACTERS).forEach((char) => {
-    if (char.icon) urlsToLoad.add(char.icon);
-    if (char.image) urlsToLoad.add(char.image);
-    if (char.imageLose) urlsToLoad.add(char.imageLose);
-
-    if (char.skins) {
-      Object.values(char.skins).forEach((skin) => {
-        if (skin.icon) urlsToLoad.add(skin.icon);
-        if (skin.image) urlsToLoad.add(skin.image);
-        if (skin.imageLose) urlsToLoad.add(skin.imageLose);
-      });
-    }
-  });
-
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {
     urlsToLoad.add(path);
   });
 
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
-    // 戦闘用BGM（ステージBGM、通常バトル曲、ラストボス曲、トーナメント戦闘曲）は起動時の同期プリロードから除外
-    const isStageOrBattleBgm =
-      key.startsWith('bgmStage') ||
-      key === 'bgmBattle' ||
-      key === 'bgmLastBattle' ||
-      key === 'bgmTournament2';
+    // bgmTitle 以外のすべてのBGMは起動時の同期プリロードから除外（必要時にロード）
+    const isBgm = key.startsWith('bgm');
+    const shouldSkipPreload = isBgm && key !== 'bgmTitle';
 
-    if (isStageOrBattleBgm) {
+    if (shouldSkipPreload) {
       return;
     }
 

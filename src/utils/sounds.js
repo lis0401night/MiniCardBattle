@@ -144,14 +144,11 @@ Object.keys(AUDIO_INSTANCES).forEach((key) => {
     // 一部のブラウザでは volume 設定時にエラーが発生する場合があるため無視
   }
 
-  // 戦闘用BGM（ステージBGM、通常バトル曲、ラストボス曲、トーナメント戦闘曲）は初期ロードをスキップ
-  const isStageOrBattleBgm =
-    key.startsWith('bgmStage') ||
-    key === 'bgmBattle' ||
-    key === 'bgmLastBattle' ||
-    key === 'bgmTournament2';
+  // BGM（bgmから始まるキー）のうち、起動時に必要な bgmTitle 以外は初期ロードをスキップ（必要時にロード）
+  const isBgm = key.startsWith('bgm');
+  const shouldSkipPreload = isBgm && key !== 'bgmTitle';
 
-  if (!isStageOrBattleBgm) {
+  if (!shouldSkipPreload) {
     audio.load(); // 事前ロード
   }
 });
