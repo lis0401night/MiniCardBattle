@@ -481,7 +481,7 @@ export const VFX_DATA = {
     se: 'seSkillAdversity',
     position: 'lane',
     offsetY: 0,
-    scale: 1.0,
+    scale: 0.7,
     shake: false,
     targetSide: 'self',
   },

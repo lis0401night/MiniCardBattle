@@ -2938,6 +2938,11 @@ export async function handleMoveSkills(owner) {
     const bestMoves = evaluateAIMoves(GameState);
     if (bestMoves) {
       for (let move of bestMoves) {
+        const existingCard = b[move.to];
+        if (existingCard) {
+          // 移動先にすでにカードがある場合は墓地に送る
+          await discardCard(owner, existingCard, move.to, false);
+        }
         b[move.to] = b[move.from];
         b[move.from] = null;
         playSound(SOUNDS.seClick);

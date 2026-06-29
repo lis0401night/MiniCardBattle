@@ -6,7 +6,7 @@ import { unlockAudio } from '../utils/sounds.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl } from '../utils/gameUtils.js';
 
-const CARD_ROTATION_INTERVAL_MS = 10000; // カード切り替え間隔（ミリ秒）
+const CARD_ROTATION_INTERVAL_MS = 20000; // カード切り替え間隔（ミリ秒）
 
 export default function TitleScreen() {
   const [isStarting, setIsStarting] = useState(false);

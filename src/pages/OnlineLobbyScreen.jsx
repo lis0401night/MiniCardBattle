@@ -189,12 +189,13 @@ export default function OnlineLobbyScreen() {
             opData.leaderConfig.skin || 'default';
 
           // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
-          multiplayerCallbacks.onRoomClosed = () => {
+          multiplayerCallbacks.onRoomClosed = async () => {
             GameState.isBattleEnded = true;
             if (typeof window.setSlowMotionReact === 'function') {
               window.setSlowMotionReact(false);
             }
             if (typeof stopAllBGM === 'function') stopAllBGM();
+            await leaveRoom();
             showAlertModal('ルームが解散されました。', () => {
               showOnlineMenu?.();
             });
@@ -210,8 +211,9 @@ export default function OnlineLobbyScreen() {
       }
     };
 
-    multiplayerCallbacks.onRoomClosed = () => {
+    multiplayerCallbacks.onRoomClosed = async () => {
       setRoomData(null);
+      await leaveRoom();
       showAlertModal('ルームが解散されました。', () => {
         showOnlineMenu?.();
       });

@@ -351,20 +351,28 @@ export async function leaveRoom() {
 
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
 
-  // 正常退室のため、切断時の予約を解除
+  // 正常退室（または解散によるクリーンアップ）のため、切断時の予約を解除
   onDisconnect(roomRef)
     .cancel()
     .catch((e) => console.error(e));
 
-  if (isHost) {
-    // ホストが抜ける場合はルームごと削除
-    await remove(roomRef).catch((e) => console.error(e));
-  } else {
-    // クライアントが抜ける場合はステータスを waiting に戻し、自身を消す
-    await update(roomRef, {
-      status: 'waiting',
-      client: null,
-    }).catch((e) => console.error(e));
+  try {
+    // すでにルームが消滅しているかチェックし、存在する場合のみ更新・削除処理を行う
+    const snapshot = await get(roomRef);
+    if (snapshot.exists()) {
+      if (isHost) {
+        // ホストが抜ける場合はルームごと削除
+        await remove(roomRef).catch((e) => console.error(e));
+      } else {
+        // クライアントが抜ける場合はステータスを waiting に戻し、自身を消す
+        await update(roomRef, {
+          status: 'waiting',
+          client: null,
+        }).catch((e) => console.error(e));
+      }
+    }
+  } catch (e) {
+    console.error('Error during room check in leaveRoom:', e);
   }
 
   currentRoomId = null;
