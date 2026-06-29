@@ -1108,10 +1108,16 @@ function OpponentSelect() {
 }
 
 function RewardSelect() {
-  const uniqueCards = useMemo(
-    () => [...new Set(GameState.enemyConfig?.dungeonDeck || [])],
-    []
-  );
+  const uniqueCards = useMemo(() => {
+    let deck = GameState.enemyConfig?.dungeonDeck;
+    if (!deck || deck.length === 0) {
+      // 既に空デッキ(0枚)のセーブデータが書き込まれてしまっている場合の強力な救済・フェイルセーフ
+      const leaderId = GameState.enemyConfig?.leaderCardId || 'android';
+      const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
+      deck = Array.isArray(rawDeck) ? rawDeck : rawDeck.normal || [];
+    }
+    return [...new Set(deck || [])];
+  }, []);
 
   const handleSelect = (id) => {
     const c = CARD_MASTER.find((m) => m.id === id);

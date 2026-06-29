@@ -108,6 +108,13 @@ export function loadDungeonProgress() {
 
     if (data.enemyConfig) {
       GameState.enemyConfig = data.enemyConfig;
+      if (!GameState.enemyConfig.dungeonDeck || GameState.enemyConfig.dungeonDeck.length === 0) {
+        const leaderId = GameState.enemyConfig.leaderCardId || 'android';
+        const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
+        GameState.enemyConfig.dungeonDeck = Array.isArray(rawDeck)
+          ? [...rawDeck]
+          : [...(rawDeck.normal || [])];
+      }
       // 敵のスキンを同期
       syncEnemySkin(data.enemyConfig.id, data.enemyConfig.currentSkin);
     }
@@ -164,6 +171,14 @@ export function startDungeonBattle(enemyIndex) {
   playSound(SOUNDS.seClick);
   const enemy = GameState.dungeonOpponents[enemyIndex];
   if (!enemy) return;
+
+  if (!enemy.dungeonDeck || enemy.dungeonDeck.length === 0) {
+    const leaderId = enemy.leaderCardId || 'android';
+    const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
+    enemy.dungeonDeck = Array.isArray(rawDeck)
+      ? [...rawDeck]
+      : [...(rawDeck.normal || [])];
+  }
 
   // 敵の設定を反映
   GameState.enemyConfig = enemy;
