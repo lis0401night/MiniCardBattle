@@ -2475,9 +2475,14 @@ export function evaluateAdhocTokenLanes(
     currentUsedDiscard,
     currentDepth,
     currentDiscard = [],
-    laneIdx // めくれた親カードが置かれるレーン
+    laneIdx, // めくれた親カードが置かれるレーン
+    currentEnemyBoard = null,
+    currentPlayerBoard = null
   ) => {
     if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
+
+    const activeEnemyBoard = currentEnemyBoard || GameState.enemyBoard;
+    const activePlayerBoard = currentPlayerBoard || GameState.playerBoard;
 
     let sk = currentSkills[0];
     let remainingSkills = currentSkills.slice(1);
@@ -2499,7 +2504,9 @@ export function evaluateAdhocTokenLanes(
           currentUsedDiscard,
           currentDepth,
           currentDiscard,
-          laneIdx
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard
         )
       );
     }
@@ -2529,7 +2536,9 @@ export function evaluateAdhocTokenLanes(
             currentUsedDiscard,
             currentDepth,
             currentDiscard,
-            laneIdx
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([...cNode, ...nb]);
@@ -2562,7 +2571,9 @@ export function evaluateAdhocTokenLanes(
             currentUsedDiscard,
             currentDepth,
             currentDiscard,
-            laneIdx
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([...cNode, ...nb]);
@@ -2579,8 +2590,8 @@ export function evaluateAdhocTokenLanes(
         const isEquip = hasSkill(childCard, 'equip');
         let validLanes = [];
         for (let j = 0; j < 3; j++) {
-          if (GameState.enemyBoard[j] !== null) {
-            if (isEquip || hasSkill(GameState.enemyBoard[j], 'arm_self')) {
+          if (activeEnemyBoard[j] !== null) {
+            if (isEquip || hasSkill(activeEnemyBoard[j], 'arm_self')) {
               validLanes.push(j);
             }
           }
@@ -2605,7 +2616,9 @@ export function evaluateAdhocTokenLanes(
               currentUsedDiscard,
               currentDepth,
               currentDiscard,
-              laneIdx
+              laneIdx,
+              activeEnemyBoard,
+              activePlayerBoard
             );
             for (let nb of nextBranches) {
               results.push([...cNode, ...nb]);
@@ -2621,7 +2634,9 @@ export function evaluateAdhocTokenLanes(
         currentUsedDiscard,
         currentDepth,
         currentDiscard,
-        laneIdx
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard
       );
       for (let nb of nextBranches) {
         results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
@@ -2633,7 +2648,9 @@ export function evaluateAdhocTokenLanes(
         currentUsedDiscard,
         currentDepth,
         currentDiscard,
-        laneIdx
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard
       );
       for (let nb of leapBranch) {
         results.push([{ type: 'leap' }, ...nb]);
@@ -2668,7 +2685,9 @@ export function evaluateAdhocTokenLanes(
             [...currentUsedDiscard, i],
             currentDepth,
             currentDiscard,
-            laneIdx
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([resNode, ...nb]);
@@ -2688,7 +2707,9 @@ export function evaluateAdhocTokenLanes(
         currentUsedDiscard,
         currentDepth,
         currentDiscard,
-        laneIdx
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard
       );
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
@@ -2698,7 +2719,7 @@ export function evaluateAdhocTokenLanes(
       let occupiedLanes = [];
       for (let j = 0; j < 3; j++) {
         const simulatedBoardCard =
-          j === laneIdx ? tokenCard : GameState.enemyBoard[j];
+          j === laneIdx ? tokenCard : activeEnemyBoard[j];
         if (simulatedBoardCard !== null) {
           occupiedLanes.push(j);
         }
@@ -2711,18 +2732,29 @@ export function evaluateAdhocTokenLanes(
             targetLane: tgtLane,
           };
           const destroyedCard =
-            tgtLane === laneIdx ? tokenCard : GameState.enemyBoard[tgtLane];
+            tgtLane === laneIdx ? tokenCard : activeEnemyBoard[tgtLane];
           let newlyDiscarded = [...currentDiscard];
           if (destroyedCard && !destroyedCard.isToken) {
             newlyDiscarded.push(destroyedCard);
           }
+
+          // 破壊された後の盤面を生成して引き継ぐ
+          const nextEnemyBoard = activeEnemyBoard.map((c) =>
+            c ? { ...c } : null
+          );
+          if (tgtLane !== laneIdx) {
+            nextEnemyBoard[tgtLane] = null;
+          }
+
           let nextBranches = buildSkillBranchAdhoc(
             remainingSkills,
             currentUsedHand,
             currentUsedDiscard,
             currentDepth,
             newlyDiscarded,
-            laneIdx
+            laneIdx,
+            nextEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([execNode, ...nb]);
@@ -2735,7 +2767,9 @@ export function evaluateAdhocTokenLanes(
           currentUsedDiscard,
           currentDepth,
           currentDiscard,
-          laneIdx
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard
         );
       }
     } else if (sk.id === 'berserk') {
@@ -2744,7 +2778,7 @@ export function evaluateAdhocTokenLanes(
       const adjLanes = laneIdx === 1 ? [0, 2] : [1];
       let newlyDiscarded = [...currentDiscard];
       adjLanes.forEach((j) => {
-        const adjCard = GameState.enemyBoard[j];
+        const adjCard = activeEnemyBoard[j];
         if (adjCard && !adjCard.isToken) {
           const isImmune = hasSkill(adjCard, 'immune');
           const currentP = adjCard.currentPower ?? adjCard.power ?? 0;
@@ -2760,11 +2794,13 @@ export function evaluateAdhocTokenLanes(
         currentUsedDiscard,
         currentDepth,
         newlyDiscarded,
-        laneIdx
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard
       );
     } else if (sk.id === 'dominate') {
       const maxP = sk.value || 0;
-      const oppBoard = GameState.playerBoard; // AI(自分)から見た相手は playerBoard
+      const oppBoard = activePlayerBoard; // AI(自分)から見た相手は playerBoard
       let validOppLanes = [];
       for (let j = 0; j < 3; j++) {
         if (
@@ -2786,13 +2822,32 @@ export function evaluateAdhocTokenLanes(
           myLaneIdx: myL,
           maxP: maxP,
         };
+
+        // 支配（強奪）を反映した盤面を生成して引き継ぐ
+        const nextEnemyBoard = activeEnemyBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextPlayerBoard = activePlayerBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const stolenCard = nextPlayerBoard[i];
+        if (stolenCard) {
+          nextEnemyBoard[myL] = {
+            ...stolenCard,
+            owner: 'red', // 自分が奪ったので自分(red)のもの
+          };
+          nextPlayerBoard[i] = null;
+        }
+
         let nextBranches = buildSkillBranchAdhoc(
           remainingSkills,
           currentUsedHand,
           currentUsedDiscard,
           currentDepth,
           currentDiscard,
-          laneIdx
+          laneIdx,
+          nextEnemyBoard,
+          nextPlayerBoard
         );
         for (let nb of nextBranches) {
           results.push([domNode, ...nb]);
@@ -2812,7 +2867,9 @@ export function evaluateAdhocTokenLanes(
         currentUsedDiscard,
         currentDepth,
         currentDiscard,
-        laneIdx
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard
       );
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
@@ -2844,7 +2901,9 @@ export function evaluateAdhocTokenLanes(
             currentUsedDiscard,
             currentDepth,
             [...currentDiscard, ...newlyDiscarded],
-            laneIdx
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([...discardNodes, ...nb]);
@@ -2887,7 +2946,9 @@ export function evaluateAdhocTokenLanes(
           currentUsedDiscard,
           currentDepth,
           currentDiscard,
-          laneIdx
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard
         );
         for (let nb of nextBranches) {
           results.push([tokenNode, ...nb]);
@@ -2914,7 +2975,9 @@ export function evaluateAdhocTokenLanes(
             currentUsedDiscard,
             currentDepth,
             currentDiscard,
-            laneIdx
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([choiceNode, ...nb]);
@@ -2942,7 +3005,9 @@ export function evaluateAdhocTokenLanes(
             currentUsedDiscard,
             currentDepth,
             currentDiscard,
-            laneIdx
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard
           );
           for (let nb of nextBranches) {
             results.push([forceNode, ...nb]);
@@ -2956,7 +3021,9 @@ export function evaluateAdhocTokenLanes(
         currentUsedDiscard,
         currentDepth,
         currentDiscard,
-        laneIdx
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard
       );
     }
     return results;
@@ -3123,13 +3190,23 @@ export function evaluateAdhocTokenLanes(
             ) {
               initialDiscarded.push(GameState.enemyBoard[lane]);
             }
+            const nextEnemyBoard = GameState.enemyBoard.map((c) =>
+              c ? { ...c } : null
+            );
+            nextEnemyBoard[lane] = {
+              ...card,
+              owner: 'red',
+            };
+
             let skillChains = buildSkillBranchAdhoc(
               effectiveSkills,
               usedHand,
               usedDiscard,
               depth,
               initialDiscarded,
-              lane
+              lane,
+              nextEnemyBoard,
+              GameState.playerBoard
             );
             for (let chain of skillChains) {
               branches.push([node, ...chain]);
@@ -3237,13 +3314,23 @@ export function evaluateAdhocTokenLanes(
         ) {
           initialDiscarded.push(GameState.enemyBoard[l]);
         }
+        const nextEnemyBoard = GameState.enemyBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        nextEnemyBoard[l] = {
+          ...tokenCard,
+          owner: 'red',
+        };
+
         let skillChains = buildSkillBranchAdhoc(
           branchSkills,
           [],
           [],
           0,
           initialDiscarded,
-          l
+          l,
+          nextEnemyBoard,
+          GameState.playerBoard
         );
 
         for (let chain of skillChains) {
