@@ -14,6 +14,7 @@ import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
+import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {

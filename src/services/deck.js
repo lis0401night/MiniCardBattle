@@ -155,15 +155,17 @@ export function generateDeck(owner, config, sessionId) {
           ? enemyDeckData.premiumCards.includes(id)
           : false,
       }));
-    } else if (GameState.gameMode === 'battle_dungeon' && config.dungeonDeck && config.dungeonDeck.length > 0) {
+    } else if (
+      GameState.gameMode === 'battle_dungeon' &&
+      config.dungeonDeck &&
+      config.dungeonDeck.length > 0
+    ) {
       deckIds = config.dungeonDeck;
     } else if (GameState.gameMode === 'battle_dungeon') {
       // 既に空デッキ(0枚)のセーブデータが書き込まれてしまっている場合の強力な救済・フェイルセーフ
       const leaderId = config.leaderCardId || 'android';
       const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
-      deckIds = Array.isArray(rawDeck)
-        ? rawDeck
-        : rawDeck.normal || [];
+      deckIds = Array.isArray(rawDeck) ? rawDeck : rawDeck.normal || [];
     } else {
       let recipeId = config.id;
       if (GameState.gameMode === 'event_satan_high') recipeId = 'satan_high';

@@ -14,6 +14,7 @@ import {
 import { startBattleFlow } from '../services/deck.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 
 /**
@@ -108,7 +109,10 @@ export function loadDungeonProgress() {
 
     if (data.enemyConfig) {
       GameState.enemyConfig = data.enemyConfig;
-      if (!GameState.enemyConfig.dungeonDeck || GameState.enemyConfig.dungeonDeck.length === 0) {
+      if (
+        !GameState.enemyConfig.dungeonDeck ||
+        GameState.enemyConfig.dungeonDeck.length === 0
+      ) {
         const leaderId = GameState.enemyConfig.leaderCardId || 'android';
         const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
         GameState.enemyConfig.dungeonDeck = Array.isArray(rawDeck)
