@@ -11,6 +11,16 @@ const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
   'void',
   'succubus',
   'warlock',
+  'android_high',
+  'dragon_high',
+  'knight_high',
+  'elf_high',
+  'cleric_high',
+  'devilhunter_high',
+  'witch_high',
+  'oni_high',
+  'priest_high',
+  'cthulhu_high',
 ]);
 
 // 敵候補のカードリストを取得（golemからdicejugglerまで、トークン以外）
@@ -214,8 +224,10 @@ export const generateCharacterBossEnemy = (floorNum) => {
 
   // 30階までは中級、40階以降は上級
   const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
-  const deck =
-    ENEMY_DECKS[bossId][difficultyMode] || ENEMY_DECKS[bossId].normal || [];
+  const rawDeck = ENEMY_DECKS[bossId];
+  const deck = Array.isArray(rawDeck)
+    ? rawDeck
+    : rawDeck[difficultyMode] || rawDeck.normal || [];
 
   let bossData = {
     ...char,

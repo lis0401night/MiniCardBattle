@@ -3401,7 +3401,13 @@ export function applyLeaderSkillLogic(
     let power = 5;
     if (action === 'satan_avatar') power = 10;
     else if (action === 'dragon_summon') power = 7;
-    else if (action === 'dungeon_summon_leader') power = 6; // 一般的なリーダーを想定した強めの仮パワー設定
+    else if (action === 'dungeon_summon_leader') {
+      const config = isBlue ? state.playerConfig : state.enemyConfig;
+      const lc = config?.leaderCardId
+        ? CARD_MASTER.find((m) => m.id === config.leaderCardId)
+        : null;
+      power = lc ? lc.power || 0 : 6;
+    }
 
     let l = -1;
     if (tokenLanes && tokenLanes.length > 0) {
@@ -3418,10 +3424,20 @@ export function applyLeaderSkillLogic(
 
     if (l !== -1) {
       events.push({ type: 'leader_skill', skill: action, side: owner });
-      const tM = CARD_MASTER.find(
-        (m) =>
-          m.id === (action === 'satan_avatar' ? 'token_satan' : 'token_ignis')
-      );
+      let tM = null;
+      if (action === 'satan_avatar') {
+        tM = CARD_MASTER.find((m) => m.id === 'token_satan');
+      } else if (action === 'dragon_summon') {
+        tM = CARD_MASTER.find((m) => m.id === 'token_ignis');
+      } else if (action === 'dungeon_summon_leader') {
+        const config = isBlue ? state.playerConfig : state.enemyConfig;
+        if (config && config.leaderCardId) {
+          tM = CARD_MASTER.find((m) => m.id === config.leaderCardId);
+        }
+      }
+
+      if (!tM) return;
+
       const newToken = {
         ...JSON.parse(JSON.stringify(tM)),
         id: `tk_${Math.floor(getSeededRandom() * 1000000000)}`,
