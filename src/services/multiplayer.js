@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   onChildAdded,
   onDisconnect,
+  runTransaction,
 } from 'firebase/database';
 import { database } from '../utils/firebase.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
@@ -352,27 +353,27 @@ export async function leaveRoom() {
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
 
   // 正常退室（または解散によるクリーンアップ）のため、切断時の予約を解除
-  onDisconnect(roomRef)
-    .cancel()
-    .catch((e) => console.error(e));
+  await onDisconnect(roomRef).cancel();
 
   try {
-    // すでにルームが消滅しているかチェックし、存在する場合のみ更新・削除処理を行う
-    const snapshot = await get(roomRef);
-    if (snapshot.exists()) {
-      if (isHost) {
-        // ホストが抜ける場合はルームごと削除
-        await remove(roomRef).catch((e) => console.error(e));
-      } else {
-        // クライアントが抜ける場合はステータスを waiting に戻し、自身を消す
-        await update(roomRef, {
+    if (isHost) {
+      // ホストが抜ける場合はルームごと削除
+      await remove(roomRef);
+    } else {
+      // クライアントが抜ける場合は、他の操作との競合によるルームの再作成を防ぐため
+      // トランザクションを使用してデータが存在する間だけステータスとクライアントを更新する
+      await runTransaction(roomRef, (room) => {
+        if (!room) return room; // ルームが既に削除されている場合はそのまま終了
+        return {
+          ...room,
           status: 'waiting',
           client: null,
-        }).catch((e) => console.error(e));
-      }
+        };
+      });
     }
   } catch (e) {
-    console.error('Error during room check in leaveRoom:', e);
+    console.error('leaveRoom failed:', e);
+    throw e;
   }
 
   currentRoomId = null;

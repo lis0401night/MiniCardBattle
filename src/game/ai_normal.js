@@ -1115,9 +1115,14 @@ export function getBestSimulatedMove() {
               currentUsedHand,
               currentUsedDiscard,
               currentDepth,
-              currentDiscarded = []
+              currentDiscarded = [],
+              currentEnemyBoard = null,
+              currentPlayerBoard = null
             ) => {
               if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
+
+              const activeEnemyBoard = currentEnemyBoard || myBoard;
+              const activePlayerBoard = currentPlayerBoard || opBoard;
 
               let sk = currentSkills[0];
               let remainingSkills = currentSkills.slice(1);
@@ -1138,7 +1143,9 @@ export function getBestSimulatedMove() {
                     currentUsedHand,
                     currentUsedDiscard,
                     currentDepth,
-                    currentDiscarded
+                    currentDiscarded,
+                    activeEnemyBoard,
+                    activePlayerBoard
                   )
                 );
               }
@@ -1165,7 +1172,9 @@ export function getBestSimulatedMove() {
                       [...currentUsedHand, i],
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscarded
+                      currentDiscarded,
+                      activeEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([...cNode, ...nb]);
@@ -1197,7 +1206,9 @@ export function getBestSimulatedMove() {
                       [...currentUsedHand, i],
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscarded
+                      currentDiscarded,
+                      activeEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([...cNode, ...nb]);
@@ -1215,7 +1226,7 @@ export function getBestSimulatedMove() {
                     const isParentOnThisLane = j === lane;
                     const simulatedBoardCard = isParentOnThisLane
                       ? card
-                      : myBoard[j];
+                      : activeEnemyBoard[j];
                     if (simulatedBoardCard !== null) {
                       if (isEquip || hasSkill(simulatedBoardCard, 'arm_self')) {
                         validLanes.push(j);
@@ -1241,7 +1252,9 @@ export function getBestSimulatedMove() {
                         [...currentUsedHand, i],
                         currentUsedDiscard,
                         currentDepth,
-                        currentDiscarded
+                        currentDiscarded,
+                        activeEnemyBoard,
+                        activePlayerBoard
                       );
                       for (let nb of nextBranches) {
                         results.push([...cNode, ...nb]);
@@ -1256,7 +1269,9 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscarded
+                  currentDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard
                 );
                 for (let nb of nextBranches) {
                   results.push([
@@ -1272,7 +1287,9 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscarded
+                  currentDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard
                 );
                 for (let nb of leapBranch) {
                   results.push([{ type: 'leap' }, ...nb]);
@@ -1307,7 +1324,9 @@ export function getBestSimulatedMove() {
                       currentUsedHand,
                       [...currentUsedDiscard, i],
                       currentDepth,
-                      currentDiscarded
+                      currentDiscarded,
+                      activeEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([resNode, ...nb]);
@@ -1326,7 +1345,9 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscarded
+                  currentDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard
                 );
                 for (let nb of cancelBranches) {
                   results.push([cancelNode, ...nb]);
@@ -1335,7 +1356,8 @@ export function getBestSimulatedMove() {
                 // 【処刑】自分の通常カード1枚を選択して破壊する（トークンは除外）
                 let occupiedLanes = [];
                 for (let j = 0; j < 3; j++) {
-                  const simulatedBoardCard = j === lane ? card : myBoard[j];
+                  const simulatedBoardCard =
+                    j === lane ? card : activeEnemyBoard[j];
                   if (simulatedBoardCard !== null) {
                     occupiedLanes.push(j);
                   }
@@ -1348,17 +1370,26 @@ export function getBestSimulatedMove() {
                       targetLane: tgtLane,
                     };
                     const destroyedCard =
-                      tgtLane === lane ? card : myBoard[tgtLane];
+                      tgtLane === lane ? card : activeEnemyBoard[tgtLane];
                     let newlyDiscarded = [...currentDiscarded];
                     if (destroyedCard && !destroyedCard.isToken) {
                       newlyDiscarded.push(destroyedCard);
                     }
+
+                    // 破壊された後の盤面を生成して引き継ぐ
+                    const nextEnemyBoard = activeEnemyBoard.map((c) =>
+                      c ? { ...c } : null
+                    );
+                    nextEnemyBoard[tgtLane] = null; // ★自己処刑・他者処刑にかかわらず、対象レーンを確実にnullにする！
+
                     let nextBranches = buildSkillBranch(
                       remainingSkills,
                       currentUsedHand,
                       currentUsedDiscard,
                       currentDepth,
-                      newlyDiscarded
+                      newlyDiscarded,
+                      nextEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([execNode, ...nb]);
@@ -1370,7 +1401,9 @@ export function getBestSimulatedMove() {
                     currentUsedHand,
                     currentUsedDiscard,
                     currentDepth,
-                    currentDiscarded
+                    currentDiscarded,
+                    activeEnemyBoard,
+                    activePlayerBoard
                   );
                 }
               } else if (sk.id === 'berserk') {
@@ -1379,7 +1412,7 @@ export function getBestSimulatedMove() {
                 const adjLanes = lane === 1 ? [0, 2] : [1];
                 let newlyDiscarded = [...currentDiscarded];
                 adjLanes.forEach((j) => {
-                  const adjCard = myBoard[j];
+                  const adjCard = activeEnemyBoard[j];
                   if (adjCard && !adjCard.isToken) {
                     const isImmune = hasSkill(adjCard, 'immune');
                     const currentP = adjCard.currentPower ?? adjCard.power ?? 0;
@@ -1394,7 +1427,9 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  newlyDiscarded
+                  newlyDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard
                 );
               } else if (
                 sk.id === 'convert' ||
@@ -1421,7 +1456,9 @@ export function getBestSimulatedMove() {
                       [...currentUsedHand, ...combo],
                       currentUsedDiscard,
                       currentDepth,
-                      [...currentDiscarded, ...newlyDiscarded]
+                      [...currentDiscarded, ...newlyDiscarded],
+                      activeEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([...discardNodes, ...nb]);
@@ -1470,7 +1507,9 @@ export function getBestSimulatedMove() {
                     currentUsedHand,
                     currentUsedDiscard,
                     currentDepth,
-                    currentDiscarded
+                    currentDiscarded,
+                    activeEnemyBoard,
+                    activePlayerBoard
                   );
                   for (let nb of nextBranches) {
                     results.push([tokenNode, ...nb]);
@@ -1500,7 +1539,9 @@ export function getBestSimulatedMove() {
                       currentUsedHand,
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscarded
+                      currentDiscarded,
+                      activeEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([choiceNode, ...nb]);
@@ -1537,7 +1578,9 @@ export function getBestSimulatedMove() {
                       currentUsedHand,
                       currentUsedDiscard,
                       currentDepth,
-                      currentDiscarded
+                      currentDiscarded,
+                      activeEnemyBoard,
+                      activePlayerBoard
                     );
                     for (let nb of nextBranches) {
                       results.push([forceNode, ...nb]);
@@ -1550,7 +1593,9 @@ export function getBestSimulatedMove() {
                   currentUsedHand,
                   currentUsedDiscard,
                   currentDepth,
-                  currentDiscarded
+                  currentDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard
                 );
               }
               return results;
@@ -1566,12 +1611,20 @@ export function getBestSimulatedMove() {
               ) {
                 initialDiscarded.push(myBoard[lane]);
               }
+              const nextEnemyBoard = myBoard.map((c) => (c ? { ...c } : null));
+              nextEnemyBoard[lane] = {
+                ...card,
+                owner: 'red',
+              };
+
               let skillChains = buildSkillBranch(
                 effectiveSkills,
                 usedHand,
                 usedDiscard,
                 depth,
-                initialDiscarded
+                initialDiscarded,
+                nextEnemyBoard,
+                opBoard
               );
               for (let chain of skillChains) {
                 branches.push([node, ...chain]);
@@ -2742,9 +2795,7 @@ export function evaluateAdhocTokenLanes(
           const nextEnemyBoard = activeEnemyBoard.map((c) =>
             c ? { ...c } : null
           );
-          if (tgtLane !== laneIdx) {
-            nextEnemyBoard[tgtLane] = null;
-          }
+          nextEnemyBoard[tgtLane] = null;
 
           let nextBranches = buildSkillBranchAdhoc(
             remainingSkills,

@@ -422,15 +422,13 @@ export async function playEvents(events) {
           board[ev.lane].uid !== ev.card?.uid &&
           discardCardRef
         ) {
-          // すでにそのカードが実データ上の墓地（GameState.playerDiscard / enemyDiscard）に存在している場合、
-          // リーダースキル側の処理などにより既に墓地送りが行われているため、二重の破棄処理をスキップする。
-          const discardList =
-            ev.side === 'blue'
-              ? GameState.playerDiscard
-              : GameState.enemyDiscard;
+          const existingUid = board[ev.lane].uid;
           const alreadyDiscarded =
-            discardList &&
-            discardList.some((c) => c && c.uid === board[ev.lane].uid);
+            existingUid &&
+            [GameState.playerDiscard, GameState.enemyDiscard].some(
+              (discardList) =>
+                discardList?.some((c) => c && c.uid === existingUid)
+            );
           if (!alreadyDiscarded) {
             await discardCardRef(ev.side, board[ev.lane], ev.lane, false);
           }
