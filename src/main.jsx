@@ -15,3 +15,37 @@ if (container) {
 } else {
   console.error("ルート要素 'app-container' が見つかりませんでした");
 }
+
+// Service Worker の登録とストレージの永続化
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((registration) => {
+        console.log(
+          '[Service Worker] Registered with scope:',
+          registration.scope
+        );
+      })
+      .catch((error) => {
+        console.error('[Service Worker] Registration failed:', error);
+      });
+  });
+}
+
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage
+    .persist()
+    .then((persisted) => {
+      if (persisted) {
+        console.log('[Storage] Persistent storage granted.');
+      } else {
+        console.log(
+          '[Storage] Persistent storage not granted (auto-cleanup active).'
+        );
+      }
+    })
+    .catch((err) => {
+      console.error('[Storage] Persistent storage request error:', err);
+    });
+}
