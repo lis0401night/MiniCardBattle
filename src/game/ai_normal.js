@@ -73,6 +73,63 @@ function decayInvincibleSkills(board) {
 
 const cloneCard = (c) => (c ? structuredClone(c) : null);
 
+// リーダースキルが特定のレーンにトークン・カードを配置するかを判定するヘルパー
+function isLaneOccupiedByLeaderSkill(lane, context) {
+  if (!context || !context.tokenLanes) return false;
+  const action = context.action;
+
+  if (
+    [
+      'holy_march',
+      'evil_march',
+      'satan_avatar',
+      'dragon_summon',
+      'dragon_high_ritual',
+      'devilhunter_resurrect',
+      'dungeon_summon_leader',
+      'warlock_place_demons',
+    ].includes(action)
+  ) {
+    return context.tokenLanes.includes(lane);
+  }
+
+  if (action === 'night_parade') {
+    return (
+      context.tokenLanes.allied && context.tokenLanes.allied.includes(lane)
+    );
+  }
+
+  if (action === 'overdrive') {
+    return context.tokenLanes[0] === lane;
+  }
+
+  return false;
+}
+
+// リーダースキルで配置されるカードが「伝説」を持つかを判定するヘルパー
+function isLegendarySummonedByLeaderSkill(lane, context) {
+  if (!context || !context.tokenLanes) return false;
+  const action = context.action;
+
+  if (action === 'dungeon_summon_leader' && context.tokenLanes.includes(lane)) {
+    if (context.leaderCardId) {
+      const leaderCard = CARD_MASTER.find((c) => c.id === context.leaderCardId);
+      return leaderCard && hasSkill(leaderCard, 'legendary');
+    }
+  }
+
+  if (
+    (action === 'devilhunter_resurrect' && context.tokenLanes.includes(lane)) ||
+    (action === 'overdrive' && context.tokenLanes[0] === lane)
+  ) {
+    if (context.targetCard) {
+      return hasSkill(context.targetCard, 'legendary');
+    }
+  }
+
+  return false;
+}
+
 const getCombinations = (arr, k) => {
   if (k === 0) return [[]];
   if (arr.length < k) return [];
@@ -877,7 +934,8 @@ export function getBestSimulatedMove() {
     usedHand,
     usedDiscard,
     depth,
-    forcedLane = undefined
+    forcedLane = undefined,
+    leaderSkillContext = undefined
   ) {
     if (depth >= 2) return [[]];
 
@@ -918,17 +976,30 @@ export function getBestSimulatedMove() {
       // 生贄・頂点: invite時は親カードが同レーンに配置済みだがmyBoardには未反映のため、
       // プリフィルタをスキップしprocessActionSequenceの正確なsimStateチェックに委ねる
       if (sourceType !== 'invite' && sourceType !== 'chant') {
-        // 生贄: 既にカードが置かれているレーンのみ
+        // 生贄: 既にカードが置かれているレーン、またはリーダースキルで配置される予定のレーン
         if (hasSkill(card, 'takeover')) {
-          availableLanes = availableLanes.filter(
-            (l) => l === -1 || myBoard[l] !== null
-          );
+          availableLanes = availableLanes.filter((l) => {
+            if (l === -1) return true;
+            const hasExisting = myBoard[l] !== null;
+            const willBeSummoned = isLaneOccupiedByLeaderSkill(
+              l,
+              leaderSkillContext
+            );
+            return hasExisting || willBeSummoned;
+          });
         }
-        // 頂点: 自分の場に「伝説」を持つカードがいるレーンのみ
+        // 頂点: 自分の場に「伝説」を持つカードがいるレーン、またはリーダースキルで伝説が配置される予定のレーン
         if (hasSkill(card, 'apex')) {
-          availableLanes = availableLanes.filter(
-            (l) => l === -1 || (myBoard[l] && hasSkill(myBoard[l], 'legendary'))
-          );
+          availableLanes = availableLanes.filter((l) => {
+            if (l === -1) return true;
+            const hasLegendaryOnBoard =
+              myBoard[l] && hasSkill(myBoard[l], 'legendary');
+            const willLegendaryBeSummoned = isLegendarySummonedByLeaderSkill(
+              l,
+              leaderSkillContext
+            );
+            return hasLegendaryOnBoard || willLegendaryBeSummoned;
+          });
         }
       }
     }
@@ -1164,7 +1235,8 @@ export function getBestSimulatedMove() {
                     [...currentUsedHand, i],
                     currentUsedDiscard,
                     currentDepth + 1,
-                    lane
+                    lane,
+                    leaderSkillContext
                   );
                   for (let cNode of children) {
                     let nextBranches = buildSkillBranch(
@@ -1198,7 +1270,9 @@ export function getBestSimulatedMove() {
                     originalDiscard,
                     [...currentUsedHand, i],
                     currentUsedDiscard,
-                    currentDepth + 1
+                    currentDepth + 1,
+                    undefined,
+                    leaderSkillContext
                   );
                   for (let cNode of children) {
                     let nextBranches = buildSkillBranch(
@@ -1839,6 +1913,14 @@ export function getBestSimulatedMove() {
 
         for (let dIdxForTree of dIdxLoop) {
           if (isResurrectLeaderSkill && discard[dIdxForTree].isToken) continue;
+          let leaderSkillContext = {
+            action: action,
+            tokenLanes: tokenLanes,
+            leaderCardId: GameState.enemyConfig
+              ? GameState.enemyConfig.leaderCardId
+              : null,
+            targetCard: isResurrectLeaderSkill ? discard[dIdxForTree] : null,
+          };
           let qs = buildCardPlayTree(
             card,
             i,
@@ -1847,7 +1929,9 @@ export function getBestSimulatedMove() {
             discard,
             [i],
             isResurrectLeaderSkill ? [dIdxForTree] : [],
-            0
+            0,
+            undefined,
+            leaderSkillContext
           );
           for (let actionQ of qs) {
             if (actionQ.length === 0) continue;
@@ -2530,7 +2614,8 @@ export function evaluateAdhocTokenLanes(
     currentDiscard = [],
     laneIdx, // めくれた親カードが置かれるレーン
     currentEnemyBoard = null,
-    currentPlayerBoard = null
+    currentPlayerBoard = null,
+    leaderSkillContext = undefined
   ) => {
     if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
 
@@ -2559,7 +2644,8 @@ export function evaluateAdhocTokenLanes(
           currentDiscard,
           laneIdx,
           activeEnemyBoard,
-          activePlayerBoard
+          activePlayerBoard,
+          leaderSkillContext
         )
       );
     }
@@ -2591,7 +2677,8 @@ export function evaluateAdhocTokenLanes(
             currentDiscard,
             laneIdx,
             activeEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([...cNode, ...nb]);
@@ -2626,7 +2713,8 @@ export function evaluateAdhocTokenLanes(
             currentDiscard,
             laneIdx,
             activeEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([...cNode, ...nb]);
@@ -2671,7 +2759,8 @@ export function evaluateAdhocTokenLanes(
               currentDiscard,
               laneIdx,
               activeEnemyBoard,
-              activePlayerBoard
+              activePlayerBoard,
+              leaderSkillContext
             );
             for (let nb of nextBranches) {
               results.push([...cNode, ...nb]);
@@ -2689,7 +2778,8 @@ export function evaluateAdhocTokenLanes(
         currentDiscard,
         laneIdx,
         activeEnemyBoard,
-        activePlayerBoard
+        activePlayerBoard,
+        leaderSkillContext
       );
       for (let nb of nextBranches) {
         results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
@@ -2703,7 +2793,8 @@ export function evaluateAdhocTokenLanes(
         currentDiscard,
         laneIdx,
         activeEnemyBoard,
-        activePlayerBoard
+        activePlayerBoard,
+        leaderSkillContext
       );
       for (let nb of leapBranch) {
         results.push([{ type: 'leap' }, ...nb]);
@@ -2740,7 +2831,8 @@ export function evaluateAdhocTokenLanes(
             currentDiscard,
             laneIdx,
             activeEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([resNode, ...nb]);
@@ -2762,7 +2854,8 @@ export function evaluateAdhocTokenLanes(
         currentDiscard,
         laneIdx,
         activeEnemyBoard,
-        activePlayerBoard
+        activePlayerBoard,
+        leaderSkillContext
       );
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
@@ -2805,7 +2898,8 @@ export function evaluateAdhocTokenLanes(
             newlyDiscarded,
             laneIdx,
             nextEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([execNode, ...nb]);
@@ -2820,7 +2914,8 @@ export function evaluateAdhocTokenLanes(
           currentDiscard,
           laneIdx,
           activeEnemyBoard,
-          activePlayerBoard
+          activePlayerBoard,
+          leaderSkillContext
         );
       }
     } else if (sk.id === 'berserk') {
@@ -2847,7 +2942,8 @@ export function evaluateAdhocTokenLanes(
         newlyDiscarded,
         laneIdx,
         activeEnemyBoard,
-        activePlayerBoard
+        activePlayerBoard,
+        leaderSkillContext
       );
     } else if (sk.id === 'dominate') {
       const maxP = sk.value || 0;
@@ -2898,7 +2994,8 @@ export function evaluateAdhocTokenLanes(
           currentDiscard,
           laneIdx,
           nextEnemyBoard,
-          nextPlayerBoard
+          nextPlayerBoard,
+          leaderSkillContext
         );
         for (let nb of nextBranches) {
           results.push([domNode, ...nb]);
@@ -2920,7 +3017,8 @@ export function evaluateAdhocTokenLanes(
         currentDiscard,
         laneIdx,
         activeEnemyBoard,
-        activePlayerBoard
+        activePlayerBoard,
+        leaderSkillContext
       );
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
@@ -2954,7 +3052,8 @@ export function evaluateAdhocTokenLanes(
             [...currentDiscard, ...newlyDiscarded],
             laneIdx,
             activeEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([...discardNodes, ...nb]);
@@ -2999,7 +3098,8 @@ export function evaluateAdhocTokenLanes(
           currentDiscard,
           laneIdx,
           activeEnemyBoard,
-          activePlayerBoard
+          activePlayerBoard,
+          leaderSkillContext
         );
         for (let nb of nextBranches) {
           results.push([tokenNode, ...nb]);
@@ -3028,7 +3128,8 @@ export function evaluateAdhocTokenLanes(
             currentDiscard,
             laneIdx,
             activeEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([choiceNode, ...nb]);
@@ -3058,7 +3159,8 @@ export function evaluateAdhocTokenLanes(
             currentDiscard,
             laneIdx,
             activeEnemyBoard,
-            activePlayerBoard
+            activePlayerBoard,
+            leaderSkillContext
           );
           for (let nb of nextBranches) {
             results.push([forceNode, ...nb]);
@@ -3074,7 +3176,8 @@ export function evaluateAdhocTokenLanes(
         currentDiscard,
         laneIdx,
         activeEnemyBoard,
-        activePlayerBoard
+        activePlayerBoard,
+        leaderSkillContext
       );
     }
     return results;
@@ -3090,7 +3193,8 @@ export function evaluateAdhocTokenLanes(
     usedHand,
     usedDiscard,
     depth,
-    forcedLane = undefined
+    forcedLane = undefined,
+    leaderSkillContext = undefined
   ) {
     if (depth >= 2) return [[]];
 
@@ -3122,17 +3226,28 @@ export function evaluateAdhocTokenLanes(
       }
       if (sourceType !== 'invite' && sourceType !== 'chant') {
         if (hasSkill(card, 'takeover')) {
-          availableLanes = availableLanes.filter(
-            (l) => l === -1 || GameState.enemyBoard[l] !== null
-          );
+          availableLanes = availableLanes.filter((l) => {
+            if (l === -1) return true;
+            const hasExisting = GameState.enemyBoard[l] !== null;
+            const willBeSummoned = isLaneOccupiedByLeaderSkill(
+              l,
+              leaderSkillContext
+            );
+            return hasExisting || willBeSummoned;
+          });
         }
         if (hasSkill(card, 'apex')) {
-          availableLanes = availableLanes.filter(
-            (l) =>
-              l === -1 ||
-              (GameState.enemyBoard[l] &&
-                hasSkill(GameState.enemyBoard[l], 'legendary'))
-          );
+          availableLanes = availableLanes.filter((l) => {
+            if (l === -1) return true;
+            const hasLegendaryOnBoard =
+              GameState.enemyBoard[l] &&
+              hasSkill(GameState.enemyBoard[l], 'legendary');
+            const willLegendaryBeSummoned = isLegendarySummonedByLeaderSkill(
+              l,
+              leaderSkillContext
+            );
+            return hasLegendaryOnBoard || willLegendaryBeSummoned;
+          });
         }
       }
     }
