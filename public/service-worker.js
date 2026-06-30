@@ -2,10 +2,10 @@ const CACHE_NAME = 'mini-card-battle-v2';
 
 // プリキャッシュする基本リソース
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/apple-touch-icon.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
