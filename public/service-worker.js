@@ -105,24 +105,36 @@ self.addEventListener('fetch', (event) => {
 
   // JS, CSS, 画像, 音声などの静的アセットは「Cache-First」
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
-          return response;
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
 
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
+        return fetch(event.request)
+          .then((response) => {
+            if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
+              return response;
+            }
 
-        return response;
-      });
-    })
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+
+            return response;
+          })
+          .catch(() => {
+            // ネットワークエラー時の安全な代替レスポンス（503化の防止）
+            return new Response('Network fetch failed', { status: 480, statusText: 'Fetch Failed' });
+          });
+      })
+      .catch(() => {
+        // キャッシュマッチ自体のエラー時のセーフガード
+        return fetch(event.request).catch(() => {
+          return new Response('Network fetch failed', { status: 480, statusText: 'Fetch Failed' });
+        });
+      })
   );
 });
 

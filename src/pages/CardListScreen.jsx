@@ -290,10 +290,18 @@ export default function CardListScreen() {
                 }}
               >
                 <div className={`card blue${rarityClass}`} style={{ opacity }}>
-                  <div
+                  <img
                     className="card-bg"
-                    style={{ backgroundImage: `url('${imgUrl}')`, filter }}
-                  ></div>
+                    src={imgUrl}
+                    alt={template.name}
+                    loading="lazy"
+                    style={{
+                      filter,
+                      objectFit: 'cover',
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  />
 
                   {hasPremiumUnlocked && (
                     <div
