@@ -70,6 +70,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 音声・動画などの分割読み込み（Rangeリクエスト）の特別なハンドリング
+  const hasRangeHeader = event.request.headers.has('range');
+  if (hasRangeHeader) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            // キャッシュ済みの完全なデータから必要な範囲のみを切り出して返す
+            return createPartialResponse(event.request, cachedResponse);
+          }
+
+          // キャッシュがない場合、Rangeヘッダーを除外したフルGETで取得・一括キャッシュする
+          // これにより分割読み込みを「一括取得」に昇華し、キャッシュを蓄積させます
+          return fetch(event.request.url)
+            .then((response) => {
+              if (response && response.status === 200) {
+                const responseToCache = response.clone();
+                cache.put(event.request, responseToCache);
+                return createPartialResponse(event.request, response);
+              }
+              // 200以外の場合は通常の分割読み込みでフォールバック
+              return fetch(event.request);
+            })
+            .catch(() => {
+              // オフライン等のエラー時は通常のフェッチエラー
+              return fetch(event.request);
+            });
+        });
+      })
+    );
+    return;
+  }
+
   // JS, CSS, 画像, 音声などの静的アセットは「Cache-First」
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
@@ -92,3 +125,35 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+/**
+ * 200 (完全なレスポンス) から擬似的に 206 (Partial Content) レスポンスを生成する関数
+ * @param {Request} request - 元のRangeリクエスト
+ * @param {Response} response - キャッシュまたは取得された完全なレスポンス
+ */
+async function createPartialResponse(request, response) {
+  const responseBlob = await response.blob();
+  const rangeHeader = request.headers.get('range');
+  const matches = rangeHeader.match(/^bytes=(\d+)-(\d+)?$/);
+
+  if (!matches) {
+    return new Response(responseBlob, {
+      status: 200,
+      headers: response.headers
+    });
+  }
+
+  const start = parseInt(matches[1], 10);
+  const end = matches[2] ? parseInt(matches[2], 10) : responseBlob.size - 1;
+  const slicedBlob = responseBlob.slice(start, end + 1);
+
+  const headers = new Headers(response.headers);
+  headers.set('Content-Range', `bytes ${start}-${end}/${responseBlob.size}`);
+  headers.set('Content-Length', slicedBlob.size.toString());
+
+  return new Response(slicedBlob, {
+    status: 206,
+    statusText: 'Partial Content',
+    headers: headers
+  });
+}
