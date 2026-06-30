@@ -1,7 +1,7 @@
-const CACHE_NAME = 'card-battle-v2';
+const CACHE_NAME = 'mini-card-battle-v2';
 
-// プリキャッシュする最小限のアプリケーションシェル
-const PRECACHE_URLS = [
+// プリキャッシュする基本リソース
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
@@ -12,7 +12,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -36,14 +36,45 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // 外部オリジンのAPIやPOSTリクエストはキャッシュ除外
+  const url = new URL(event.request.url);
+
+  // POST/PUT/DELETEなどの非GETリクエストや、サーバー上のPHP API、別ドメインへの通信（Firebase等）はキャッシュ対象外
   if (
-    !event.request.url.startsWith(self.location.origin) ||
-    event.request.method !== 'GET'
+    event.request.method !== 'GET' ||
+    url.pathname.endsWith('.php') ||
+    !url.origin.startsWith(self.location.origin)
   ) {
     return;
   }
 
+  // index.html、ルート(/)、およびその他のHTMLファイルへのリクエストは「Network-First」
+  const isHtmlRequest =
+    url.pathname === '/' ||
+    url.pathname === '/index.html' ||
+    url.pathname.endsWith('.html');
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // ネットワーク取得に成功した場合はキャッシュを更新して返却
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // ネットワークエラー（オフライン等）の場合はキャッシュから返却
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // JS, CSS, 画像, 音声などの静的アセットは「Cache-First」
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -51,11 +82,14 @@ self.addEventListener('fetch', (event) => {
       }
 
       return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
+        if (
+          !response ||
+          response.status !== 200 ||
+          (response.type !== 'basic' && response.type !== 'cors')
+        ) {
           return response;
         }
 
-        // JS, CSS, 画像, 音声などの主要アセットを自動で動的キャッシュにプッシュ
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);

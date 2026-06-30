@@ -1,23 +1,21 @@
-const CACHE_NAME = 'mini-card-battle-v1';
+const CACHE_NAME = 'mini-card-battle-v2';
 
-// プレキャッシュ（インストール時にキャッシュする基本リソース）
+// プリキャッシュする基本リソース
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
+  '/manifest.json',
+  '/apple-touch-icon.png'
 ];
 
-// インストールイベント：基本的なページをプレキャッシュ
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(PRECACHE_ASSETS);
-      })
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
-// アクティベートイベント：古いキャッシュをクリア
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -33,7 +31,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// フェッチイベント：キャッシュ優先（Cache-First）で静的アセットを返却し、未キャッシュのものはネットワークから取得してキャッシュに格納
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -46,16 +43,41 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // index.html、ルート(/)、およびその他のHTMLファイルへのリクエストは「Network-First」
+  const isHtmlRequest =
+    url.pathname === '/' ||
+    url.pathname === '/index.html' ||
+    url.pathname.endsWith('.html');
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // ネットワーク取得に成功した場合はキャッシュを更新して返却
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // ネットワークエラー（オフライン等）の場合はキャッシュから返却
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // JS, CSS, 画像, 音声などの静的アセットは「Cache-First」
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      // キャッシュに存在する場合はそのまま返す（超高速）
       if (cachedResponse) {
         return cachedResponse;
       }
 
-      // キャッシュに存在しない場合はネットワークから取得し、キャッシュに追加する
       return fetch(event.request).then((response) => {
-        // レスポンスが正常でない場合はそのまま返す
         if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
           return response;
         }
