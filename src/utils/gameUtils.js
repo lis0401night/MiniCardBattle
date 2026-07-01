@@ -631,15 +631,22 @@ export const VALID_PREMIUM_GIFS = [
 export const VALID_PREMIUM_JPGS = [
   'dreadnought',
   'hammer',
+  'horse',
   'crusher',
   'shark',
+  'parasite',
   'shaman',
-  'light',
-  'plaguedoctor',
-  'ring',
-  'yukionna',
-  'kitepriest',
+  'darkelf',
   'doom',
+  'acolyte',
+  'plaguedoctor',
+  'servant',
+  'ring',
+  'battlemage',
+  'yukionna',
+  'muramasa',
+  'kitepriest',
+  'light',
 ];
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決

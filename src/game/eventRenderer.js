@@ -194,18 +194,8 @@ export async function playEvents(events) {
         if (ev.source === 'equip' && ev.card) {
           // 「武装」による重ね配置の演出（配置音＋重ねられたトークンカードの出現ボイス）
           playSound(SOUNDS.sePlace);
-          let voiceCat = ev.card.voiceCategory;
-          if (!voiceCat) {
-            const baseId = ev.card.baseId || ev.card.id;
-            const cMaster = CARD_MASTER.find(
-              (m) => m.id === baseId || m.name === ev.card.name
-            );
-            if (cMaster && cMaster.voiceCategory) {
-              voiceCat = cMaster.voiceCategory;
-            }
-          }
-          if (voiceCat) {
-            playCardVoice(voiceCat, 'play');
+          if (ev.card) {
+            playCardVoice(ev.card, 'play');
           }
         } else {
           // 通常のパワー変動（バフ等）
@@ -445,10 +435,7 @@ export async function playEvents(events) {
         renderBoard();
         playSound(SOUNDS.sePlace);
 
-        let voiceCat = ev.card ? ev.card.voiceCategory : null;
-        // 「号令」などの効果でカードを装備配置した場合（source: 'equip'）に、
-        // ボイスが装備される側の元のカードになってしまうバグを防ぐため、
-        // アタッチされた装備カード側のボイスカテゴリを優先して参照する
+        let targetCardForVoice = ev.card;
         if (
           ev.source === 'equip' &&
           ev.card &&
@@ -457,24 +444,22 @@ export async function playEvents(events) {
         ) {
           const lastEquip =
             ev.card.equippedCards[ev.card.equippedCards.length - 1];
-          if (lastEquip && lastEquip.voiceCategory) {
-            voiceCat = lastEquip.voiceCategory;
+          if (lastEquip) {
+            targetCardForVoice = lastEquip;
           }
         }
 
-        if (!voiceCat && ev.card) {
-          const baseId = ev.card.baseId || ev.card.id;
-          const cMaster = CARD_MASTER.find(
-            (m) => m.id === baseId || m.name === ev.card.name
-          );
-          if (cMaster && cMaster.voiceCategory) {
-            voiceCat = cMaster.voiceCategory;
-            ev.card.voiceCategory = voiceCat;
+        if (targetCardForVoice) {
+          if (!targetCardForVoice.voiceCategory) {
+            const baseId = targetCardForVoice.baseId || targetCardForVoice.id;
+            const cMaster = CARD_MASTER.find(
+              (m) => m.id === baseId || m.name === targetCardForVoice.name
+            );
+            if (cMaster && cMaster.voiceCategory) {
+              targetCardForVoice.voiceCategory = cMaster.voiceCategory;
+            }
           }
-        }
-
-        if (voiceCat) {
-          playCardVoice(voiceCat, 'play');
+          playCardVoice(targetCardForVoice, 'play');
         }
 
         setTimeout(() => {
@@ -727,7 +712,7 @@ export async function playEvents(events) {
               deadCard.voiceCategory &&
               !playedVoices.has(deadCard.voiceCategory)
             ) {
-              playCardVoice(deadCard.voiceCategory, 'death');
+              playCardVoice(deadCard, 'death');
               playedVoices.add(deadCard.voiceCategory);
             }
             anyValidTarget = true;

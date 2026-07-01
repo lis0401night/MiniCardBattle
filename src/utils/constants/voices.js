@@ -1,5 +1,6 @@
 import { audioCtx, voiceBuffers, loadAndDecodeAudio } from '../sounds.js';
 import { GameState } from '../../state/gameState.js';
+import { CARD_MASTER } from './cards.js';
 
 /**
  * Mini Card Battle - Voice Categories
@@ -162,7 +163,48 @@ export const VOICE_CATEGORIES = {
 // ボイス再生用の関数
 export const voiceAudioCache = {};
 
-export async function playCardVoice(category, situation = 'play') {
+// プレミアムカード用ボイスタイプ変更テーブル
+export const PREMIUM_VOICE_MAP = {
+  cleric: 'human_female_sexy',
+  golem: 'human_female_normal',
+  dancer: 'human_female_normal',
+  omyouji: 'human_female_normal',
+  mummy: 'human_female_normal',
+  sniper: 'human_female_cute',
+  shaman: 'human_male_ikemen',
+  necromancer: 'human_female_assassin',
+  dreadnought: 'machine_new',
+  battlemage: 'human_female_cool',
+  muramasa: 'human_male_warrior',
+};
+
+export async function playCardVoice(categoryOrCard, situation = 'play') {
+  let category = '';
+
+  if (categoryOrCard && typeof categoryOrCard === 'object') {
+    const card = categoryOrCard;
+    const lookupId = card.baseId || card.id;
+
+    // プレミアムカード判定
+    const isPremium =
+      card.isPremium === true ||
+      (card.owner !== 'red' &&
+        GameState.premiumCards &&
+        GameState.premiumCards.includes(lookupId));
+
+    if (isPremium && PREMIUM_VOICE_MAP[lookupId]) {
+      category = PREMIUM_VOICE_MAP[lookupId];
+    } else {
+      category = card.voiceCategory;
+      if (!category) {
+        const master = CARD_MASTER.find((m) => m.id === lookupId);
+        category = master ? master.voiceCategory : null;
+      }
+    }
+  } else {
+    category = categoryOrCard;
+  }
+
   if (
     !category ||
     !VOICE_CATEGORIES[category] ||

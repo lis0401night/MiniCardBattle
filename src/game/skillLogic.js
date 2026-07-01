@@ -112,7 +112,7 @@ async function executeGroupDestruction(targets) {
         createDamagePopup(tgtEl, '破壊', '#ef4444');
       }
       if (t.card.voiceCategory && !playedVoices.has(t.card.voiceCategory)) {
-        playCardVoice(t.card.voiceCategory, 'death');
+        playCardVoice(t.card, 'death');
         playedVoices.add(t.card.voiceCategory);
       }
       anyValidTarget = true;
@@ -1679,7 +1679,7 @@ export async function resolveActiveSkillEffect(
             targetCard.voiceCategory &&
             !playedVoices.has(targetCard.voiceCategory)
           ) {
-            playCardVoice(targetCard.voiceCategory, 'death');
+            playCardVoice(targetCard, 'death');
             playedVoices.add(targetCard.voiceCategory);
           }
           anyValidTarget = true;
@@ -2222,8 +2222,7 @@ export async function resolveActiveSkillEffect(
           if (canEquipCard(selectedCard, board[targetLane])) {
             voiceCard = selectedCard;
           }
-          if (voiceCard?.voiceCategory)
-            playCardVoice(voiceCard.voiceCategory, 'play');
+          if (voiceCard?.voiceCategory) playCardVoice(voiceCard, 'play');
           playSound(SOUNDS.sePlace);
           renderBoard();
           await sleep(PLACE_ANIMATION_DURATION);
@@ -2383,7 +2382,7 @@ export async function resolveActiveSkillEffect(
             consumeArmSelf(targetCard, selectedCard);
 
             if (selectedCard?.voiceCategory)
-              playCardVoice(selectedCard.voiceCategory, 'play');
+              playCardVoice(selectedCard, 'play');
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(PLACE_ANIMATION_DURATION);
@@ -2447,7 +2446,7 @@ export async function resolveActiveSkillEffect(
             }
 
             if (board[targetLane]?.voiceCategory)
-              playCardVoice(board[targetLane].voiceCategory, 'play');
+              playCardVoice(board[targetLane], 'play');
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(PLACE_ANIMATION_DURATION);
@@ -3090,7 +3089,7 @@ export async function resolveActiveSkillEffect(
           consumeArmSelf(targetCard, selectedCard);
 
           if (selectedCard?.voiceCategory) {
-            playCardVoice(selectedCard.voiceCategory, 'play');
+            playCardVoice(selectedCard, 'play');
           }
           playSound(SOUNDS.sePlace);
           renderBoard();
@@ -3117,7 +3116,7 @@ export async function resolveActiveSkillEffect(
           }
 
           if (board[targetLane]?.voiceCategory) {
-            playCardVoice(board[targetLane].voiceCategory, 'play');
+            playCardVoice(board[targetLane], 'play');
           }
           playSound(SOUNDS.sePlace);
           renderBoard();
@@ -3208,7 +3207,7 @@ export async function resolveActiveSkillEffect(
                 createDamagePopup(tgtEl, '破壊', '#991b1b');
               }
               if (targetCard.voiceCategory) {
-                playCardVoice(targetCard.voiceCategory, 'death');
+                playCardVoice(targetCard, 'death');
               }
               await sleep(300);
               // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
@@ -3296,7 +3295,7 @@ export async function resolveActiveSkillEffect(
               createDamagePopup(tgtEl, '破壊', '#991b1b');
             }
             if (targetCard.voiceCategory) {
-              playCardVoice(targetCard.voiceCategory, 'death');
+              playCardVoice(targetCard, 'death');
             }
             await sleep(300);
             // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
