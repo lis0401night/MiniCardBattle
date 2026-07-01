@@ -2595,6 +2595,8 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
       card.imgUrl = originalMaster.imgUrl;
       card.flavor = originalMaster.flavor;
       card.voiceCategory = originalMaster.voiceCategory;
+      card.id = originalMaster.id;
+      if (card.baseId) card.baseId = originalMaster.id;
       delete card.originalCardId;
     }
   }

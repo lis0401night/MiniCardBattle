@@ -29,6 +29,30 @@ function syncEnemySkin(enemyId, skinName) {
   }
 }
 
+/**
+ * 試練の宮殿（ダンジョン）用デッキを解決する共通ヘルパー
+ * データ破損時や未定義時のフォールバックとしても機能する
+ * @param {string} leaderCardId - リーダーカードID
+ * @param {string|number} aiLevelOrDiff - 難易度キー（'normal', 'hard'など）またはAIレベル
+ */
+export function resolveDungeonDeck(leaderCardId, aiLevelOrDiff = 'normal') {
+  const leaderId = leaderCardId || 'android';
+  const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
+  if (Array.isArray(rawDeck)) {
+    return [...rawDeck];
+  }
+
+  let diffKey = 'normal';
+  if (typeof aiLevelOrDiff === 'number') {
+    diffKey = aiLevelOrDiff > 3 ? 'hard' : 'normal';
+  } else if (typeof aiLevelOrDiff === 'string') {
+    diffKey = aiLevelOrDiff;
+  }
+
+  const resolved = rawDeck[diffKey] || rawDeck.normal || [];
+  return [...resolved];
+}
+
 export function initBattleDungeon() {
   playSound(SOUNDS.seClick);
   GameState.gameMode = 'battle_dungeon';
@@ -113,11 +137,10 @@ export function loadDungeonProgress() {
         !GameState.enemyConfig.dungeonDeck ||
         GameState.enemyConfig.dungeonDeck.length === 0
       ) {
-        const leaderId = GameState.enemyConfig.leaderCardId || 'android';
-        const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
-        GameState.enemyConfig.dungeonDeck = Array.isArray(rawDeck)
-          ? [...rawDeck]
-          : [...(rawDeck.normal || [])];
+        GameState.enemyConfig.dungeonDeck = resolveDungeonDeck(
+          GameState.enemyConfig.leaderCardId,
+          GameState.enemyConfig.fixedAiLevel || 3
+        );
       }
       // 敵のスキンを同期
       syncEnemySkin(data.enemyConfig.id, data.enemyConfig.currentSkin);
@@ -177,11 +200,10 @@ export function startDungeonBattle(enemyIndex) {
   if (!enemy) return;
 
   if (!enemy.dungeonDeck || enemy.dungeonDeck.length === 0) {
-    const leaderId = enemy.leaderCardId || 'android';
-    const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
-    enemy.dungeonDeck = Array.isArray(rawDeck)
-      ? [...rawDeck]
-      : [...(rawDeck.normal || [])];
+    enemy.dungeonDeck = resolveDungeonDeck(
+      enemy.leaderCardId,
+      enemy.fixedAiLevel || 3
+    );
   }
 
   // 敵の設定を反映

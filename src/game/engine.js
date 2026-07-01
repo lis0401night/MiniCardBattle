@@ -3192,6 +3192,7 @@ export function applyLeaderSkillLogic(
           const resurrectedCard = {
             ...selectedCard,
             id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+            baseId: selectedCard.baseId || selectedCard.id,
           };
           resurrectedCard.currentPower = resurrectedCard.power;
           resurrectedCard.skillTriggered = true;
@@ -3238,6 +3239,7 @@ export function applyLeaderSkillLogic(
       const resurrectedCard = {
         ...selectedCard,
         id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+        baseId: selectedCard.baseId || selectedCard.id,
       };
       resurrectedCard.currentPower = resurrectedCard.power;
       resurrectedCard.skillTriggered = true;
@@ -3273,6 +3275,7 @@ export function applyLeaderSkillLogic(
       const resurrectedCard = {
         ...forcedCard,
         id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+        baseId: forcedCard.baseId || forcedCard.id,
       };
       resurrectedCard.currentPower = resurrectedCard.power;
       resurrectedCard.skillTriggered = true;
@@ -3436,7 +3439,7 @@ export function applyLeaderSkillLogic(
         }
       }
 
-      if (!tM) return;
+      if (!tM) return events;
 
       const newToken = {
         ...JSON.parse(JSON.stringify(tM)),

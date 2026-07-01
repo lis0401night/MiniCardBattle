@@ -353,7 +353,11 @@ export async function leaveRoom() {
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
 
   // 正常退室（または解散によるクリーンアップ）のため、切断時の予約を解除
-  await onDisconnect(roomRef).cancel();
+  try {
+    await onDisconnect(roomRef).cancel();
+  } catch (e) {
+    console.warn('onDisconnect cancel failed:', e);
+  }
 
   try {
     if (isHost) {

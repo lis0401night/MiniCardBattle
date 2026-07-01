@@ -6,6 +6,7 @@ import {
   selectRentalDeck,
   selectRewardCard,
   startDungeonBattle,
+  resolveDungeonDeck,
 } from '../game/battleDungeon.js';
 import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
@@ -14,7 +15,6 @@ import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
-import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {
@@ -1113,9 +1113,10 @@ function RewardSelect() {
     let deck = GameState.enemyConfig?.dungeonDeck;
     if (!deck || deck.length === 0) {
       // 既に空デッキ(0枚)のセーブデータが書き込まれてしまっている場合の強力な救済・フェイルセーフ
-      const leaderId = GameState.enemyConfig?.leaderCardId || 'android';
-      const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
-      deck = Array.isArray(rawDeck) ? rawDeck : rawDeck.normal || [];
+      deck = resolveDungeonDeck(
+        GameState.enemyConfig?.leaderCardId,
+        GameState.enemyConfig?.fixedAiLevel || 3
+      );
     }
     return [...new Set(deck || [])];
   }, []);

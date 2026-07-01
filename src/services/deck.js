@@ -31,6 +31,7 @@ import {
   showOnlineLobby,
 } from './uiMainCore.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
+import { resolveDungeonDeck } from '../game/battleDungeon.js';
 
 // ==========================================
 // カードIDのマイグレーション（後方互換性維持用）
@@ -163,9 +164,10 @@ export function generateDeck(owner, config, sessionId) {
       deckIds = config.dungeonDeck;
     } else if (GameState.gameMode === 'battle_dungeon') {
       // 既に空デッキ(0枚)のセーブデータが書き込まれてしまっている場合の強力な救済・フェイルセーフ
-      const leaderId = config.leaderCardId || 'android';
-      const rawDeck = ENEMY_DECKS[leaderId] || ENEMY_DECKS.android;
-      deckIds = Array.isArray(rawDeck) ? rawDeck : rawDeck.normal || [];
+      deckIds = resolveDungeonDeck(
+        config.leaderCardId,
+        config.fixedAiLevel || 3
+      );
     } else {
       let recipeId = config.id;
       if (GameState.gameMode === 'event_satan_high') recipeId = 'satan_high';

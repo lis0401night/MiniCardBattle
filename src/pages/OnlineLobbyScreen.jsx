@@ -195,7 +195,11 @@ export default function OnlineLobbyScreen() {
               window.setSlowMotionReact(false);
             }
             if (typeof stopAllBGM === 'function') stopAllBGM();
-            await leaveRoom();
+            try {
+              await leaveRoom();
+            } catch (e) {
+              console.error('ルーム解散時の退室処理に失敗しました:', e);
+            }
             showAlertModal('ルームが解散されました。', () => {
               showOnlineMenu?.();
             });
@@ -213,7 +217,11 @@ export default function OnlineLobbyScreen() {
 
     multiplayerCallbacks.onRoomClosed = async () => {
       setRoomData(null);
-      await leaveRoom();
+      try {
+        await leaveRoom();
+      } catch (e) {
+        console.error('ルーム解散時の退室処理に失敗しました:', e);
+      }
       showAlertModal('ルームが解散されました。', () => {
         showOnlineMenu?.();
       });

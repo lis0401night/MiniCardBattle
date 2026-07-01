@@ -100,7 +100,9 @@ function isLaneOccupiedByLeaderSkill(lane, context) {
   }
 
   if (action === 'overdrive') {
-    return context.tokenLanes[0] === lane;
+    return (
+      Array.isArray(context.tokenLanes) && context.tokenLanes.includes(lane)
+    );
   }
 
   return false;
@@ -124,6 +126,18 @@ function isLegendarySummonedByLeaderSkill(lane, context) {
   ) {
     if (context.targetCard) {
       return hasSkill(context.targetCard, 'legendary');
+    }
+  }
+
+  if (action === 'overdrive' && context.tokenLanes[1] === lane) {
+    const oppDiscard = GameState.playerDiscard || [];
+    const validCards = oppDiscard.filter((c) => c && !c.isToken);
+    if (validCards.length > 0) {
+      const sorted = [...validCards].sort(
+        (a, b) => (b.power || 0) - (a.power || 0)
+      );
+      const targetOppCard = sorted[0];
+      return targetOppCard && hasSkill(targetOppCard, 'legendary');
     }
   }
 
@@ -4025,7 +4039,11 @@ export function simulateMove(
                   boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
                   boardCard.basePower = METAMORPH_ESTIMATED_POWER;
                 }
-              } else {
+              } else if (
+                !['clone', 'summon', 'puppet', 'resurrect', 'execute'].includes(
+                  sk.id
+                )
+              ) {
                 applyActiveSkillLogic(
                   simState,
                   'red',
