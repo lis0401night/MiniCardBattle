@@ -630,7 +630,9 @@ export const VALID_PREMIUM_GIFS = [
 ];
 export const VALID_PREMIUM_JPGS = [
   'dreadnought',
+  'armsuits',
   'hammer',
+  'berserker',
   'horse',
   'crusher',
   'shark',
@@ -646,6 +648,7 @@ export const VALID_PREMIUM_JPGS = [
   'yukionna',
   'muramasa',
   'kitepriest',
+  'snakepriest',
   'light',
 ];
 

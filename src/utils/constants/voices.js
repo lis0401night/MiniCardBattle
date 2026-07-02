@@ -176,6 +176,8 @@ export const PREMIUM_VOICE_MAP = {
   dreadnought: 'machine_new',
   battlemage: 'human_female_cool',
   muramasa: 'human_male_warrior',
+  armsuits: 'bird',
+  berserker: 'human_female_cool',
 };
 
 export async function playCardVoice(categoryOrCard, situation = 'play') {

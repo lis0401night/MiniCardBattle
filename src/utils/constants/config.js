@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.1.0';
+export const GAME_VERSION = '0.1.1';
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;
 export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
@@ -23,7 +23,9 @@ export const EXCHANGE_LINEUP = [
   { id: 'shogun', type: 'premium', cost: 20 },
   { id: 'pharaoh', type: 'premium', cost: 20 },
   { id: 'dreadnought', type: 'premium', cost: 10 },
+  { id: 'armsuits', type: 'premium', cost: 10 },
   { id: 'hammer', type: 'premium', cost: 10 },
+  { id: 'berserker', type: 'premium', cost: 10 },
   { id: 'horse', type: 'premium', cost: 10 },
   { id: 'crusher', type: 'premium', cost: 10 },
   { id: 'shark', type: 'premium', cost: 10 },
@@ -39,6 +41,7 @@ export const EXCHANGE_LINEUP = [
   { id: 'yukionna', type: 'premium', cost: 10 },
   { id: 'muramasa', type: 'premium', cost: 10 },
   { id: 'kitepriest', type: 'premium', cost: 10 },
+  { id: 'snakepriest', type: 'premium', cost: 10 },
   { id: 'badwolf', type: 'card', cost: 5 },
   { id: 'redhood', type: 'card', cost: 5 },
 ];
