@@ -50,6 +50,7 @@ import {
   executeSwitchScreen,
 } from './utils/gameUtils.js';
 import { SOUNDS } from './utils/sounds.js';
+import { GAME_VERSION } from './utils/constants/config.js';
 import {
   returnToTitle,
   endPlayerTurn,
@@ -168,6 +169,63 @@ export default function App() {
       delete window.updateLoadingTextReact;
     };
   }, []);
+
+  useEffect(() => {
+    // 起動時の自動バージョンチェック（キャッシュ回避付き）
+    const checkVersion = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3秒タイムアウト
+
+        const response = await fetch(`./version.json?t=${Date.now()}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          console.warn(
+            '[Version Checker] Server returned non-ok status. Skipping check.'
+          );
+          return;
+        }
+
+        const data = await response.json();
+        const currentVersion = GAME_VERSION;
+
+        if (data.version && data.version !== currentVersion) {
+          console.log(
+            '[Version Checker] New version detected:',
+            data.version,
+            'Current:',
+            currentVersion
+          );
+
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map((name) => caches.delete(name)));
+
+            if ('serviceWorker' in navigator) {
+              const registrations =
+                await navigator.serviceWorker.getRegistrations();
+              await Promise.all(
+                registrations.map((registration) => registration.unregister())
+              );
+            }
+            console.log('[Version Checker] Cache cleared. Reloading...');
+            location.reload();
+          }
+        }
+      } catch (err) {
+        console.warn(
+          '[Version Checker] Fetch failed or timed out. Offline mode? Skipping check.',
+          err
+        );
+      }
+    };
+
+    checkVersion();
+  }, []);
+
   const [rulesVisible, setRulesVisible] = useState(false);
   const [matchingState, setMatchingState] = useState({
     show: false,

@@ -175,7 +175,8 @@ export function processActionSequence(
   skillOrderTiming = 'before',
   leaderSkillTargetIdx = null,
   leaderSkillTargetUid = null,
-  initialSimState = null
+  initialSimState = null,
+  leaderSkillResurrectLane = null
 ) {
   const savedRNG = getCurrentRNG();
   try {
@@ -243,7 +244,8 @@ export function processActionSequence(
         leaderSkillTokenLanes,
         [],
         leaderSkillTargetIdx,
-        leaderSkillTargetUid
+        leaderSkillTargetUid,
+        leaderSkillResurrectLane
       );
       if (simState._actionQueue && simState._actionQueue.length > 0) {
         actionQueue.unshift(...simState._actionQueue);
@@ -1919,151 +1921,190 @@ export function getBestSimulatedMove() {
     for (let i = 0; i < hand.length; i++) {
       let card = hand[i];
       for (let tokenLanes of tokenLanePatterns) {
+        const config = GameState.enemyConfig;
+        const leaderCard =
+          action === 'dungeon_summon_leader' && config?.leaderCardId
+            ? CARD_MASTER.find((m) => m.id === config.leaderCardId)
+            : null;
+        const isDngResurrect =
+          leaderCard &&
+          leaderCard.skills &&
+          leaderCard.skills.some((s) => s.id === 'resurrect');
+
         let isResurrectLeaderSkill =
-          action === 'devilhunter_resurrect' || action === 'overdrive';
+          action === 'devilhunter_resurrect' ||
+          action === 'overdrive' ||
+          isDngResurrect;
+
         let dIdxLoop = isResurrectLeaderSkill
           ? discard.map((_, idx) => idx)
           : [-1];
 
+        const resLaneLoop = isDngResurrect ? [0, 1, 2] : [-1];
+
         for (let dIdxForTree of dIdxLoop) {
-          if (isResurrectLeaderSkill && discard[dIdxForTree].isToken) continue;
-          let leaderSkillContext = {
-            action: action,
-            tokenLanes: tokenLanes,
-            leaderCardId: GameState.enemyConfig
-              ? GameState.enemyConfig.leaderCardId
-              : null,
-            targetCard: isResurrectLeaderSkill ? discard[dIdxForTree] : null,
-          };
-          let qs = buildCardPlayTree(
-            card,
-            i,
-            'play',
-            hand,
-            discard,
-            [i],
-            isResurrectLeaderSkill ? [dIdxForTree] : [],
-            0,
-            undefined,
-            leaderSkillContext
-          );
-          for (let actionQ of qs) {
-            if (actionQ.length === 0) continue;
-            const fA = actionQ[0];
+          if (
+            isResurrectLeaderSkill &&
+            discard[dIdxForTree] &&
+            discard[dIdxForTree].isToken
+          )
+            continue;
 
-            // 配置レーンが重複している場合は避ける（他に空きがある場合）
-            let overlapLanes = [];
-            if (Array.isArray(tokenLanes)) overlapLanes = tokenLanes;
-            else if (tokenLanes && tokenLanes.allied)
-              overlapLanes = tokenLanes.allied;
+          for (let resLane of resLaneLoop) {
+            // 封印されているレーンへの復活はシミュレーション上スキップ
+            if (isDngResurrect && mySealedLanes[resLane] > 0) continue;
 
-            const isOverlap =
-              overlapLanes &&
-              overlapLanes.length > 0 &&
-              overlapLanes.includes(fA.laneIdx);
-            if (isOverlap) {
-              // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
-              const currentEmpty = myBoard.filter((l) => l === null).length;
-              const tokensFillingEmpty = overlapLanes.filter(
-                (l) => myBoard[l] === null
-              ).length;
-              const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
-              // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
-              if (effectiveEmptyCount >= 1) continue;
-            }
+            let leaderSkillContext = {
+              action: action,
+              tokenLanes: tokenLanes,
+              leaderCardId: config ? config.leaderCardId : null,
+              targetCard:
+                isResurrectLeaderSkill && dIdxForTree !== -1
+                  ? discard[dIdxForTree]
+                  : null,
+              resurrectLane: isDngResurrect ? resLane : null,
+            };
+            let qs = buildCardPlayTree(
+              card,
+              i,
+              'play',
+              hand,
+              discard,
+              [i],
+              isResurrectLeaderSkill && dIdxForTree !== -1 ? [dIdxForTree] : [],
+              0,
+              undefined,
+              leaderSkillContext
+            );
+            for (let actionQ of qs) {
+              if (actionQ.length === 0) continue;
+              const fA = actionQ[0];
 
-            if (action === 'devilhunter_resurrect' || action === 'overdrive') {
-              let dIdx = dIdxForTree;
-              let simState = processActionSequence(
-                actionQ,
-                true,
-                action,
-                tokenLanes,
-                'before',
-                dIdx
-              );
-              if (simState) {
-                let fChcs = [fA.choices, fA.choices2].filter(
-                  (x) => x !== undefined
-                );
-                const resTargetCard = discard[dIdx];
-                addCandidate(
-                  {
-                    index: i,
-                    lane: fA.laneIdx,
-                    isOverwrite: myBoard[fA.laneIdx] !== null,
-                    useSkill: true,
-                    tokenLanes,
-                    skillOrder: 'before',
-                    leaderSkillTargetIdx: dIdx,
-                    leaderSkillTargetUid:
-                      resTargetCard.baseId || resTargetCard.id,
-                    choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                    cardTokenLanes: fA.cardTokenLanes,
-                    actionQueue:
-                      actionQ.slice(1).length > 0
-                        ? actionQ.slice(1).map((act) => {
-                            let adjusted = { ...act };
-                            if (
-                              (adjusted.type === 'invite' ||
-                                adjusted.type === 'chant' ||
-                                adjusted.type === 'play' ||
-                                adjusted.type === 'discard') &&
-                              fA.type === 'play'
-                            ) {
-                              if (adjusted.targetIdx > fA.targetIdx)
-                                adjusted.targetIdx -= 1;
-                            }
-                            return adjusted;
-                          })
-                        : undefined,
-                  },
-                  simState
-                );
+              // 配置レーンが重複している場合は避ける（他に空きがある場合）
+              let overlapLanes = [];
+              if (Array.isArray(tokenLanes)) overlapLanes = tokenLanes;
+              else if (tokenLanes && tokenLanes.allied)
+                overlapLanes = tokenLanes.allied;
+
+              const isOverlap =
+                overlapLanes &&
+                overlapLanes.length > 0 &&
+                overlapLanes.includes(fA.laneIdx);
+              if (isOverlap) {
+                // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
+                const currentEmpty = myBoard.filter((l) => l === null).length;
+                const tokensFillingEmpty = overlapLanes.filter(
+                  (l) => myBoard[l] === null
+                ).length;
+                const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
+                // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
+                if (effectiveEmptyCount >= 1) continue;
               }
-            } else {
-              // その他（聖戦・邪戦・サタン・龍神等）
-              let simState = processActionSequence(
-                actionQ,
-                true,
-                action,
-                tokenLanes,
-                'before'
-              );
-              if (simState) {
-                let fChcs = [fA.choices, fA.choices2].filter(
-                  (x) => x !== undefined
+
+              if (
+                action === 'devilhunter_resurrect' ||
+                action === 'overdrive' ||
+                isDngResurrect
+              ) {
+                let dIdx = dIdxForTree;
+                let simState = processActionSequence(
+                  actionQ,
+                  true,
+                  action,
+                  tokenLanes,
+                  'before',
+                  dIdx,
+                  dIdx !== -1 && discard[dIdx] ? discard[dIdx].uid : null,
+                  null,
+                  resLane
                 );
-                addCandidate(
-                  {
-                    index: i,
-                    lane: fA.laneIdx,
-                    isOverwrite: myBoard[fA.laneIdx] !== null,
-                    useSkill: true,
-                    tokenLanes,
-                    skillOrder: 'before',
-                    choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                    cardTokenLanes: fA.cardTokenLanes,
-                    actionQueue:
-                      actionQ.slice(1).length > 0
-                        ? actionQ.slice(1).map((act) => {
-                            let adjusted = { ...act };
-                            if (
-                              (adjusted.type === 'invite' ||
-                                adjusted.type === 'chant' ||
-                                adjusted.type === 'play' ||
-                                adjusted.type === 'discard') &&
-                              fA.type === 'play'
-                            ) {
-                              if (adjusted.targetIdx > fA.targetIdx)
-                                adjusted.targetIdx -= 1;
-                            }
-                            return adjusted;
-                          })
+                if (simState) {
+                  let fChcs = [fA.choices, fA.choices2].filter(
+                    (x) => x !== undefined
+                  );
+                  const resTargetCard = discard[dIdx];
+                  addCandidate(
+                    {
+                      index: i,
+                      lane: fA.laneIdx,
+                      isOverwrite: myBoard[fA.laneIdx] !== null,
+                      useSkill: true,
+                      tokenLanes,
+                      skillOrder: 'before',
+                      leaderSkillTargetIdx: dIdx,
+                      leaderSkillTargetUid: resTargetCard
+                        ? resTargetCard.baseId || resTargetCard.id
+                        : null,
+                      leaderSkillResurrectLane: isDngResurrect
+                        ? resLane
                         : undefined,
-                  },
-                  simState
+                      choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                      cardTokenLanes: fA.cardTokenLanes,
+                      actionQueue:
+                        actionQ.slice(1).length > 0
+                          ? actionQ.slice(1).map((act) => {
+                              let adjusted = { ...act };
+                              if (
+                                (adjusted.type === 'invite' ||
+                                  adjusted.type === 'chant' ||
+                                  adjusted.type === 'play' ||
+                                  adjusted.type === 'discard') &&
+                                fA.type === 'play'
+                              ) {
+                                if (adjusted.targetIdx > fA.targetIdx)
+                                  adjusted.targetIdx -= 1;
+                              }
+                              return adjusted;
+                            })
+                          : undefined,
+                    },
+                    simState
+                  );
+                }
+              } else {
+                // その他（聖戦・邪戦・サタン・龍神等）
+                let simState = processActionSequence(
+                  actionQ,
+                  true,
+                  action,
+                  tokenLanes,
+                  'before'
                 );
+                if (simState) {
+                  let fChcs = [fA.choices, fA.choices2].filter(
+                    (x) => x !== undefined
+                  );
+                  addCandidate(
+                    {
+                      index: i,
+                      lane: fA.laneIdx,
+                      isOverwrite: myBoard[fA.laneIdx] !== null,
+                      useSkill: true,
+                      tokenLanes,
+                      skillOrder: 'before',
+                      choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                      cardTokenLanes: fA.cardTokenLanes,
+                      actionQueue:
+                        actionQ.slice(1).length > 0
+                          ? actionQ.slice(1).map((act) => {
+                              let adjusted = { ...act };
+                              if (
+                                (adjusted.type === 'invite' ||
+                                  adjusted.type === 'chant' ||
+                                  adjusted.type === 'play' ||
+                                  adjusted.type === 'discard') &&
+                                fA.type === 'play'
+                              ) {
+                                if (adjusted.targetIdx > fA.targetIdx)
+                                  adjusted.targetIdx -= 1;
+                              }
+                              return adjusted;
+                            })
+                          : undefined,
+                    },
+                    simState
+                  );
+                }
               }
             }
           }

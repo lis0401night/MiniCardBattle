@@ -8,6 +8,7 @@ import {
   mergeCardSkills,
   playSound,
   sleep,
+  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
@@ -171,6 +172,37 @@ export async function playEvents(events) {
           if (ev.source === 'holy_march') {
             board[ev.lane].power += ev.amount; // 永続バフとして記録
             board[ev.lane].basePower = board[ev.lane].power;
+          }
+
+          // 【バグ修正】復活装備アタッチ時のスキルマージ・装備品同期
+          if (ev.source === 'equip' && ev.card) {
+            const targetCard = board[ev.lane];
+            const equipCard = ev.card;
+
+            // スキルマージ（装備スキル自身は除外してマージ）
+            const equipSkills = [];
+            if (equipCard.skills) {
+              equipCard.skills.forEach((s) => {
+                if (s.id !== 'equip') equipSkills.push(s);
+              });
+            }
+            mergeCardSkills(targetCard, equipSkills);
+
+            // パワーとベースパワーの同期
+            targetCard.power = (targetCard.power || 0) + (equipCard.power || 0);
+            targetCard.basePower =
+              (targetCard.basePower || 0) + (equipCard.power || 0);
+
+            // 装備中リストへのアタッチ
+            targetCard.equippedCards = targetCard.equippedCards || [];
+            if (
+              !targetCard.equippedCards.some((ec) => ec.uid === equipCard.uid)
+            ) {
+              targetCard.equippedCards.push(equipCard);
+            }
+
+            // 武装（arm_self）の消費処理
+            consumeArmSelf(targetCard, equipCard);
           }
         }
 

@@ -2138,7 +2138,9 @@ export function applyLeaderSkillLogic(
   action,
   tokenLanes = null,
   events = [],
-  forcedTargetIdx = null
+  forcedTargetIdx = null,
+  forcedTargetUid = null,
+  simulatedResurrectLane = null
 ) {
   const isBlue = owner === 'blue';
   const board = isBlue ? state.playerBoard : state.enemyBoard;
@@ -3466,6 +3468,130 @@ export function applyLeaderSkillLogic(
           card: JSON.parse(JSON.stringify(newToken)),
           source: action,
         });
+
+        // 【全通りシミュレーション対応】召喚されたリーダーカードの召喚時復活スキルを評価
+        if (state._actionQueue && newToken.skills) {
+          newToken.skills.forEach((s) => {
+            if (s.id === 'resurrect') {
+              const simDiscard =
+                owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+
+              // シミュレータから指定されたカードとレーンで復活をシミュレート
+              if (
+                forcedTargetIdx !== null &&
+                forcedTargetIdx !== -1 &&
+                simDiscard[forcedTargetIdx] &&
+                simulatedResurrectLane !== null &&
+                simulatedResurrectLane !== -1
+              ) {
+                const simResCard = simDiscard[forcedTargetIdx];
+                const resLane = simulatedResurrectLane;
+
+                // 盤面への配置 (または合体/装備) の処理を適用
+                const existingCard = board[resLane];
+                const unionSkill =
+                  simResCard.skills &&
+                  simResCard.skills.find((us) => us.id === 'union');
+                const isUnion =
+                  unionSkill &&
+                  existingCard &&
+                  (existingCard.baseId === unionSkill.targetId ||
+                    existingCard.id === unionSkill.targetId);
+                const isEquip =
+                  hasSkill(simResCard, 'equip') ||
+                  (existingCard && hasSkill(existingCard, 'arm_self'));
+
+                if (isUnion) {
+                  const masterData =
+                    CARD_MASTER.find((m) => m.id === unionSkill.summonId) ||
+                    CARD_MASTER.find((m) => m.id === 'android');
+                  let unionCard = JSON.parse(JSON.stringify(masterData));
+                  unionCard.uid = `ls_un_sim_${Math.floor(getSeededRandom() * 1000000000)}`;
+                  unionCard.owner = owner;
+                  unionCard.baseId = unionCard.id;
+                  unionCard.basePower = unionCard.power;
+                  unionCard.currentPower = unionCard.power;
+                  unionCard.unionMaterials = [existingCard, simResCard];
+                  unionCard.skillTriggered = true; // 配置（復活）からの合体のため召喚時効果は不発
+                  unionCard.stunTurns = 0;
+                  unionCard.stunAppliedThisTurn = false;
+                  board[resLane] = unionCard;
+
+                  events.push({
+                    type: 'summon_card',
+                    side: owner,
+                    lane: resLane,
+                    card: unionCard,
+                    source: 'union',
+                  });
+                } else if (isEquip) {
+                  const targetCard = board[resLane];
+                  targetCard.basePower =
+                    (targetCard.basePower || 0) + (simResCard.power || 0);
+                  targetCard.currentPower =
+                    (targetCard.currentPower || 0) + (simResCard.power || 0);
+
+                  if (!targetCard.skills) targetCard.skills = [];
+                  const equipSkills = [];
+                  if (simResCard.skills) {
+                    simResCard.skills.forEach((sk) => {
+                      if (sk.id !== 'equip') equipSkills.push(sk);
+                    });
+                  }
+                  mergeCardSkills(targetCard, equipSkills);
+
+                  targetCard.equippedCards = targetCard.equippedCards || [];
+                  targetCard.equippedCards.push(simResCard);
+
+                  // 武装（arm_self）の消費処理
+                  consumeArmSelf(targetCard, simResCard);
+
+                  events.push({
+                    type: 'summon_card',
+                    side: owner,
+                    lane: resLane,
+                    card: targetCard,
+                    source: 'equip',
+                  });
+                } else {
+                  if (existingCard) {
+                    quietDiscardFromBoard(state, owner, resLane);
+                  }
+                  board[resLane] = {
+                    ...JSON.parse(JSON.stringify(simResCard)),
+                    id: `res_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    uid: `res_uid_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+                    owner: owner,
+                    skillTriggered: true,
+                    stunTurns: 0,
+                    stunAppliedThisTurn: false,
+                  };
+                  board[resLane].currentPower = board[resLane].power;
+
+                  events.push({
+                    type: 'summon_card',
+                    side: owner,
+                    lane: resLane,
+                    card: board[resLane],
+                    source: 'resurrect',
+                  });
+                }
+
+                // 墓地から削除
+                simDiscard.splice(forcedTargetIdx, 1);
+
+                // 【重要】実機での解決用に決定データをアクションキューに登録
+                state._actionQueue.push({
+                  type: 'resurrect',
+                  targetIdx: forcedTargetIdx,
+                  targetUid:
+                    forcedTargetUid || simResCard.baseId || simResCard.id,
+                  laneIdx: resLane,
+                });
+              }
+            }
+          });
+        }
       }
     }
   } else if (action === 'holy_march') {

@@ -38,10 +38,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // POST/PUT/DELETEなどの非GETリクエストや、サーバー上のPHP API、別ドメインへの通信（Firebase等）はキャッシュ対象外
+  // POST/PUT/DELETEなどの非GETリクエストや、サーバー上のPHP API、別ドメインへの通信（Firebase等）、およびバージョンチェック用JSONはキャッシュ対象外
   if (
     event.request.method !== 'GET' ||
     url.pathname.endsWith('.php') ||
+    url.pathname.includes('version.json') ||
     !url.origin.startsWith(self.location.origin)
   ) {
     return;

@@ -1,6 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
+export const GAME_VERSION = '0.1.0';
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;
 export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
