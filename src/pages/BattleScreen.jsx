@@ -20,6 +20,7 @@ import {
   playSound,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { DECK_SIZE } from '../utils/constants/config.js';
 
 import Board from '../components/battle/Board.jsx';
 import EnemyArea from '../components/battle/EnemyArea.jsx';
@@ -443,7 +444,7 @@ export default function BattleScreen({ showRulesModal }) {
         enemyHP={GameState.enemyHP}
         enemyMaxHP={GameState.enemyMaxHP === 0 ? 1 : GameState.enemyMaxHP}
         deckCount={GameState.enemyDeck.length}
-        maxDeckCount={GameState.initialEnemyDeckCount || 20}
+        maxDeckCount={GameState.initialEnemyDeckCount || DECK_SIZE}
         dropCount={GameState.enemyDiscard.length}
       />
 
@@ -515,7 +516,7 @@ export default function BattleScreen({ showRulesModal }) {
         playerHP={GameState.playerHP}
         playerMaxHP={GameState.playerMaxHP === 0 ? 1 : GameState.playerMaxHP}
         deckCount={GameState.playerDeck.length}
-        maxDeckCount={GameState.initialPlayerDeckCount || 20}
+        maxDeckCount={GameState.initialPlayerDeckCount || DECK_SIZE}
         dropCount={GameState.playerDiscard.length}
         spCount={GameState.playerSP}
         maxSpCount={

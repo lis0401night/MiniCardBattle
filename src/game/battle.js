@@ -2711,7 +2711,7 @@ export async function cleanupDestroyedCards(excludeCard = null) {
 
     // 演出: 死亡ボイス再生（揺れよりも先に開始）
     destroyedItems.forEach((item) => {
-      if (item.card && item.card.voiceCategory) {
+      if (item.card) {
         playCardVoice(item.card, 'death');
       }
     });
@@ -3033,9 +3033,7 @@ export async function handleMoveSkills(owner) {
                 movedIds.add(unionCard.uid);
 
                 playSound(SOUNDS.sePlace);
-                if (unionCard.voiceCategory) {
-                  playCardVoice(unionCard, 'play');
-                }
+                playCardVoice(unionCard, 'play');
                 renderBoard();
                 await sleep(PLACE_ANIMATION_DURATION);
 
@@ -3408,9 +3406,7 @@ export async function playCard(o, hI, l) {
       b[l] = unionCard;
 
       playSound(SOUNDS.sePlace);
-      if (unionCard.voiceCategory) {
-        playCardVoice(unionCard, 'play');
-      }
+      playCardVoice(unionCard, 'play');
 
       if (o === 'blue') {
         GameState.selectedCardIndex = null;
@@ -3484,7 +3480,7 @@ export async function playCard(o, hI, l) {
 
       // 配置音・ボイス
       playSound(SOUNDS.sePlace);
-      if (playingCard.voiceCategory) playCardVoice(playingCard, 'play');
+      playCardVoice(playingCard, 'play');
 
       if (o === 'blue') {
         GameState.selectedCardIndex = null;
@@ -3542,9 +3538,7 @@ export async function playCard(o, hI, l) {
 
   // 配置音とボイスの再生
   playSound(SOUNDS.sePlace);
-  if (c.voiceCategory) {
-    playCardVoice(c, 'play');
-  }
+  playCardVoice(c, 'play');
 
   if (o === 'blue') {
     GameState.selectedCardIndex = null;

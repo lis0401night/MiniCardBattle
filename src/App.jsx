@@ -44,6 +44,7 @@ import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
 import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
 import MatchingScreen from './components/battle/MatchingScreen.jsx';
 import {
+  clearCachesAndServiceWorkers,
   playSound,
   switchScreen,
   setSwitchScreenHook,
@@ -200,20 +201,20 @@ export default function App() {
             currentVersion
           );
 
-          if ('caches' in window) {
-            const names = await caches.keys();
-            await Promise.all(names.map((name) => caches.delete(name)));
-
-            if ('serviceWorker' in navigator) {
-              const registrations =
-                await navigator.serviceWorker.getRegistrations();
-              await Promise.all(
-                registrations.map((registration) => registration.unregister())
-              );
-            }
-            console.log('[Version Checker] Cache cleared. Reloading...');
-            location.reload();
+          // 無限リロードループ防止（同一バージョンへの再試行はセッション内で一度きりにする）
+          if (
+            sessionStorage.getItem('versionReloadAttempted') === data.version
+          ) {
+            console.warn(
+              '[Version Checker] Reload already attempted for this version. Skipping.'
+            );
+            return;
           }
+          sessionStorage.setItem('versionReloadAttempted', data.version);
+
+          await clearCachesAndServiceWorkers();
+          console.log('[Version Checker] Cache cleared. Reloading...');
+          location.reload();
         }
       } catch (err) {
         console.warn(

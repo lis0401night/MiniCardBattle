@@ -345,12 +345,15 @@ export async function sendChatMessage(text, senderName) {
 export async function leaveRoom() {
   if (!currentRoomId || !database) return;
 
+  const roomId = currentRoomId;
+  const wasHost = isHost;
+
   if (roomListenerUnsubscribe) {
     roomListenerUnsubscribe();
     roomListenerUnsubscribe = null;
   }
 
-  const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+  const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
 
   // 正常退室（または解散によるクリーンアップ）のため、切断時の予約を解除
   try {
@@ -360,7 +363,7 @@ export async function leaveRoom() {
   }
 
   try {
-    if (isHost) {
+    if (wasHost) {
       // ホストが抜ける場合はルームごと削除
       await remove(roomRef);
     } else {
@@ -378,12 +381,12 @@ export async function leaveRoom() {
   } catch (e) {
     console.error('leaveRoom failed:', e);
     throw e;
+  } finally {
+    currentRoomId = null;
+    isHost = false;
+    cachedRoomData = null;
+    stopListeningToRoomActions();
   }
-
-  currentRoomId = null;
-  isHost = false;
-  cachedRoomData = null;
-  stopListeningToRoomActions();
 }
 
 /**

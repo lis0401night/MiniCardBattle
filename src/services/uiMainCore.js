@@ -4,6 +4,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
+  clearCachesAndServiceWorkers,
   getDialogue,
   playSound,
   sleep,
@@ -243,33 +244,14 @@ export function reloadGame() {
   }
 
   // セーブデータ(LocalStorage)を保持したまま、キャッシュとサービスワーカーを完全にクリアして強制更新する
-  if ('caches' in window) {
-    caches
-      .keys()
-      .then((names) => {
-        return Promise.all(names.map((name) => caches.delete(name)));
-      })
-      .then(() => {
-        if ('serviceWorker' in navigator) {
-          return navigator.serviceWorker
-            .getRegistrations()
-            .then((registrations) => {
-              return Promise.all(
-                registrations.map((registration) => registration.unregister())
-              );
-            });
-        }
-      })
-      .then(() => {
-        location.reload();
-      })
-      .catch((err) => {
-        console.error('Failed to clear cache and reload:', err);
-        location.reload();
-      });
-  } else {
-    location.reload();
-  }
+  clearCachesAndServiceWorkers()
+    .then(() => {
+      location.reload();
+    })
+    .catch((err) => {
+      console.error('Failed to clear cache and reload:', err);
+      location.reload();
+    });
 }
 
 let rulesClickCount = 0;

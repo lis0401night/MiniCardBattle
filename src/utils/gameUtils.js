@@ -652,6 +652,16 @@ export const VALID_PREMIUM_JPGS = [
   'light',
 ];
 
+/**
+ * 指定されたカードIDがプレミアム版（GIFまたはJPGイラスト）を持っているか判定します。
+ * @param {string} id - カードID
+ * @returns {boolean}
+ */
+export function hasPremiumVariant(id) {
+  if (!id) return false;
+  return VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id);
+}
+
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
   if (!card) return 'assets/cards/card_default.jpg';
@@ -810,3 +820,51 @@ export function renderSkillTag(card, isBoard = false) {
 }
 window.renderSkillTag = renderSkillTag;
 window.stripEphemeralSkills = stripEphemeralSkills;
+
+/**
+ * セーブデータ(LocalStorage)を保持したまま、キャッシュとサービスワーカーを完全にクリアする。
+ * 完了時またはエラー時にPromiseを解決します。
+ * @returns {Promise<void>}
+ */
+export async function clearCachesAndServiceWorkers() {
+  if ('caches' in window) {
+    try {
+      const names = await caches.keys();
+      await Promise.all(names.map((name) => caches.delete(name)));
+
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          registrations.map((registration) => registration.unregister())
+        );
+      }
+    } catch (err) {
+      console.error('Failed to clear cache and service workers:', err);
+    }
+  }
+}
+
+/**
+ * 対象カードに装備カードをアタッチ・マージし、パワーとスキルを同期・消費する。
+ * 重複アタッチ防止チェックを含みます。
+ * @param {Object} targetCard - 装備される側のカード
+ * @param {Object} equipCard - 装備する（アタッチされる）側のカード
+ */
+export function applyEquipMerge(targetCard, equipCard) {
+  if (!targetCard || !equipCard) return;
+
+  const equipSkills = (equipCard.skills || []).filter((s) => s.id !== 'equip');
+  mergeCardSkills(targetCard, equipSkills);
+
+  targetCard.power = (targetCard.power || 0) + (equipCard.power || 0);
+  targetCard.basePower = (targetCard.basePower || 0) + (equipCard.power || 0);
+  targetCard.currentPower =
+    (targetCard.currentPower || 0) + (equipCard.power || 0);
+
+  targetCard.equippedCards = targetCard.equippedCards || [];
+  if (!targetCard.equippedCards.some((ec) => ec.uid === equipCard.uid)) {
+    targetCard.equippedCards.push(equipCard);
+  }
+
+  consumeArmSelf(targetCard, equipCard);
+}

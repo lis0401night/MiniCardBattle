@@ -1,10 +1,6 @@
 import { CARD_MASTER } from './constants/cards.js';
 import { AUDIO_INSTANCES, SE_PATHS, shouldSkipAudioPreload } from './sounds.js';
-import {
-  getCardImgUrl,
-  VALID_PREMIUM_GIFS,
-  VALID_PREMIUM_JPGS,
-} from './gameUtils.js';
+import { getCardImgUrl, hasPremiumVariant } from './gameUtils.js';
 
 let isPreloaded = false;
 
@@ -27,9 +23,7 @@ export async function preloadAllGameResources(onProgress) {
     if (normalUrl) asyncUrlsToLoad.add(normalUrl);
 
     // プレミアム画像（プレミアム版が存在する場合のみ追加）
-    const isPremiumGif = VALID_PREMIUM_GIFS.includes(card.id);
-    const isPremiumJpg = VALID_PREMIUM_JPGS.includes(card.id);
-    if (isPremiumGif || isPremiumJpg) {
+    if (hasPremiumVariant(card.id)) {
       const premiumUrl = getCardImgUrl({ id: card.id, isPremium: true });
       if (premiumUrl) asyncUrlsToLoad.add(premiumUrl);
     }

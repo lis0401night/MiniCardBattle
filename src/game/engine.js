@@ -3487,6 +3487,14 @@ export function applyLeaderSkillLogic(
                 const simResCard = simDiscard[forcedTargetIdx];
                 const resLane = simulatedResurrectLane;
 
+                // 復活対象の上限とトークン除外の検証
+                if (
+                  simResCard.isToken ||
+                  (simResCard.power || 0) > (s.value || 1)
+                ) {
+                  return;
+                }
+
                 // 盤面への配置 (または合体/装備) の処理を適用
                 const existingCard = board[resLane];
                 const unionSkill =
@@ -3500,6 +3508,13 @@ export function applyLeaderSkillLogic(
                 const isEquip =
                   hasSkill(simResCard, 'equip') ||
                   (existingCard && hasSkill(existingCard, 'arm_self'));
+                // 【憑依】：憑依・反射を持つカードには装備できない
+                const targetBlocksEquip =
+                  (existingCard &&
+                    (hasSkill(existingCard, 'possession') ||
+                      hasSkill(existingCard, 'reflect'))) ||
+                  hasSkill(simResCard, 'possession') ||
+                  hasSkill(simResCard, 'reflect');
 
                 if (isUnion) {
                   const masterData =
@@ -3524,8 +3539,10 @@ export function applyLeaderSkillLogic(
                     card: unionCard,
                     source: 'union',
                   });
-                } else if (isEquip) {
+                } else if (isEquip && existingCard && !targetBlocksEquip) {
                   const targetCard = board[resLane];
+                  targetCard.power =
+                    (targetCard.power || 0) + (simResCard.power || 0);
                   targetCard.basePower =
                     (targetCard.basePower || 0) + (simResCard.power || 0);
                   targetCard.currentPower =
@@ -3587,6 +3604,7 @@ export function applyLeaderSkillLogic(
                   targetUid:
                     forcedTargetUid || simResCard.baseId || simResCard.id,
                   laneIdx: resLane,
+                  simulated: true, // シミュレーション適用済みフラグ
                 });
               }
             }

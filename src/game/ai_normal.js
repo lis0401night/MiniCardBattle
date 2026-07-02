@@ -473,6 +473,11 @@ export function processActionSequence(
         }
         continue;
       } else if (action.type === 'resurrect') {
+        if (action.simulated) {
+          // すでに applyLeaderSkillLogic 内でシミュレーション盤面への適用・墓地削除が完了しているため
+          // シミュレーションでの二重解決はスキップする
+          continue;
+        }
         if (isGraveKeeperActive(simState)) return null;
         if (lIdx === -1) continue; // 明示的キャンセル
         // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
@@ -1461,8 +1466,14 @@ export function getBestSimulatedMove() {
                     };
                     const destroyedCard =
                       tgtLane === lane ? card : activeEnemyBoard[tgtLane];
+                    const isImmuneTarget =
+                      destroyedCard && hasSkill(destroyedCard, 'immune');
                     let newlyDiscarded = [...currentDiscarded];
-                    if (destroyedCard && !destroyedCard.isToken) {
+                    if (
+                      destroyedCard &&
+                      !destroyedCard.isToken &&
+                      !isImmuneTarget
+                    ) {
                       newlyDiscarded.push(destroyedCard);
                     }
 
@@ -1470,7 +1481,9 @@ export function getBestSimulatedMove() {
                     const nextEnemyBoard = activeEnemyBoard.map((c) =>
                       c ? { ...c } : null
                     );
-                    nextEnemyBoard[tgtLane] = null; // ★自己処刑・他者処刑にかかわらず、対象レーンを確実にnullにする！
+                    if (!isImmuneTarget) {
+                      nextEnemyBoard[tgtLane] = null; // ★自己処刑・他者処刑にかかわらず、対象レーンを確実にnullにする！（immuneを除く）
+                    }
 
                     let nextBranches = buildSkillBranch(
                       remainingSkills,
@@ -1936,23 +1949,24 @@ export function getBestSimulatedMove() {
           action === 'overdrive' ||
           isDngResurrect;
 
+        // 墓地が空、またはトークンしかない場合でもリーダー召喚自体は行えるように -1 を含める
+        const validResurrectIndices = discard
+          .map((card, idx) => ({ card, idx }))
+          .filter(({ card }) => card && !card.isToken)
+          .map(({ idx }) => idx);
         let dIdxLoop = isResurrectLeaderSkill
-          ? discard.map((_, idx) => idx)
+          ? [-1, ...validResurrectIndices]
           : [-1];
 
-        const resLaneLoop = isDngResurrect ? [0, 1, 2] : [-1];
-
         for (let dIdxForTree of dIdxLoop) {
-          if (
-            isResurrectLeaderSkill &&
-            discard[dIdxForTree] &&
-            discard[dIdxForTree].isToken
-          )
-            continue;
+          // 復活対象がない（dIdxForTree === -1）なら復活レーン指定は不要（-1）にする
+          const actualResLaneLoop =
+            isDngResurrect && dIdxForTree !== -1 ? [0, 1, 2] : [-1];
 
-          for (let resLane of resLaneLoop) {
+          for (let resLane of actualResLaneLoop) {
             // 封印されているレーンへの復活はシミュレーション上スキップ
-            if (isDngResurrect && mySealedLanes[resLane] > 0) continue;
+            if (isDngResurrect && resLane !== -1 && mySealedLanes[resLane] > 0)
+              continue;
 
             let leaderSkillContext = {
               action: action,
@@ -1962,7 +1976,10 @@ export function getBestSimulatedMove() {
                 isResurrectLeaderSkill && dIdxForTree !== -1
                   ? discard[dIdxForTree]
                   : null,
-              resurrectLane: isDngResurrect ? resLane : null,
+              resurrectLane:
+                isDngResurrect && dIdxForTree !== -1 && resLane !== -1
+                  ? resLane
+                  : null,
             };
             let qs = buildCardPlayTree(
               card,
@@ -2934,8 +2951,10 @@ export function evaluateAdhocTokenLanes(
           };
           const destroyedCard =
             tgtLane === laneIdx ? tokenCard : activeEnemyBoard[tgtLane];
+          const isImmuneTarget =
+            destroyedCard && hasSkill(destroyedCard, 'immune');
           let newlyDiscarded = [...currentDiscard];
-          if (destroyedCard && !destroyedCard.isToken) {
+          if (destroyedCard && !destroyedCard.isToken && !isImmuneTarget) {
             newlyDiscarded.push(destroyedCard);
           }
 
@@ -2943,7 +2962,9 @@ export function evaluateAdhocTokenLanes(
           const nextEnemyBoard = activeEnemyBoard.map((c) =>
             c ? { ...c } : null
           );
-          nextEnemyBoard[tgtLane] = null;
+          if (!isImmuneTarget) {
+            nextEnemyBoard[tgtLane] = null;
+          }
 
           let nextBranches = buildSkillBranchAdhoc(
             remainingSkills,

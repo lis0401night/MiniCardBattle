@@ -325,7 +325,7 @@ export async function executeLeaderSkillAction(
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
         consumeArmSelf(targetCard, tokenCard);
 
-        if (tokenCard?.voiceCategory) playCardVoice(tokenCard, 'play');
+        if (tokenCard) playCardVoice(tokenCard, 'play');
       } else {
         if (b[l]) {
           await discardCard(owner, b[l], l, false);
