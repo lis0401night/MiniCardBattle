@@ -39,9 +39,9 @@ import {
   playSound,
   stopAllBGM,
   togglePremiumCard,
-  GAME_VERSION,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { GAME_VERSION } from '../utils/constants/config.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 

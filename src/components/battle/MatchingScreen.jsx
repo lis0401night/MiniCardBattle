@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
-import { playSound, GAME_VERSION } from '../../utils/gameUtils.js';
+import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import { GAME_VERSION } from '../../utils/constants/config.js';
 import './MatchingScreen.css';
 
 const TIMING = {

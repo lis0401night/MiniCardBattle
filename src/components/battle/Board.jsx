@@ -1,7 +1,8 @@
 import { showAlertModal } from '../../services/uiModals.js';
 import { GameState } from '../../state/gameState.js';
 import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
-import { hasSkill, GAME_VERSION } from '../../utils/gameUtils.js';
+import { hasSkill } from '../../utils/gameUtils.js';
+import { GAME_VERSION } from '../../utils/constants/config.js';
 import Card from './Card.jsx';
 
 /**

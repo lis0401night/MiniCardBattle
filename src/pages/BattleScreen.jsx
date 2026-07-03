@@ -18,10 +18,9 @@ import {
   hasSkill,
   isTransitioning,
   playSound,
-  GAME_VERSION,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { DECK_SIZE } from '../utils/constants/config.js';
+import { DECK_SIZE, GAME_VERSION } from '../utils/constants/config.js';
 
 import Board from '../components/battle/Board.jsx';
 import EnemyArea from '../components/battle/EnemyArea.jsx';
