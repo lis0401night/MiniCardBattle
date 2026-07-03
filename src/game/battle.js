@@ -368,7 +368,9 @@ export function prepareBattle() {
   isBattleLoading = true;
 
   // 0. 最新のスキン情報でConfigを同期（対戦相手のスキンなどが確実に反映されるようにする）
+  // チュートリアル時は常にデフォルトスキンに固定するため適用をスキップする
   if (
+    GameState.gameMode !== 'tutorial' &&
     GameState.playerConfig &&
     GameState.playerSkins &&
     GameState.playerSkins[GameState.playerConfig.id]
@@ -389,6 +391,7 @@ export function prepareBattle() {
   }
 
   if (
+    GameState.gameMode !== 'tutorial' &&
     GameState.enemyConfig &&
     GameState.enemySkins &&
     GameState.enemySkins[GameState.enemyConfig.id]

@@ -67,6 +67,10 @@ export function initBattleDungeon() {
     GameState.playerDeckSelection = null; // デッキ状態をリセットしレンタル構成を優先
     delete GameState.dungeonPlayerHP; // HPをリセット（MAXから開始）
     GameState.dungeonState = 'select_rental_deck';
+
+    // 新規開始時はスキンとプレイマットIDを初期化
+    GameState.playerSkins = {};
+    GameState.selectedPlaymatId = null;
   }
   switchScreen('screen-battle-dungeon');
 }
@@ -84,6 +88,8 @@ export function saveDungeonProgress() {
       typeof GameState.dungeonPlayerHP !== 'undefined'
         ? GameState.dungeonPlayerHP
         : 20,
+    playerSkins: GameState.playerSkins || {}, // スキン設定を保存
+    selectedPlaymatId: GameState.selectedPlaymatId || null, // プレイマットIDを保存
     timestamp: Date.now(),
   };
   localStorage.setItem(
@@ -149,6 +155,10 @@ export function loadDungeonProgress() {
     GameState.dungeonState = data.dungeonState || 'select_opponent';
     if (data.playerHP !== undefined) GameState.dungeonPlayerHP = data.playerHP;
     GameState.gameMode = 'battle_dungeon';
+
+    // スキンとプレイマットを復元
+    GameState.playerSkins = data.playerSkins || {};
+    GameState.selectedPlaymatId = data.selectedPlaymatId || null;
 
     // 再描画を促す
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();

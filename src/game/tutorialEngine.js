@@ -1691,6 +1691,9 @@ export function startTutorial(tutorialId) {
   GameState.appState = 'battle';
   GameState.selectedStageId = config.stageId || 'practice';
 
+  // プレイマットやスキンの他モードからの残存キャッシュを初期化
+  GameState.selectedPlaymatId = null;
+
   // チュートリアル状態を初期化
   GameState.tutorial = {
     active: true,

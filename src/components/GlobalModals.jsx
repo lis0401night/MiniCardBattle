@@ -42,6 +42,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
+import { saveDungeonProgress } from '../game/battleDungeon.js';
 
 const syncPlayerConfigImages = (charDetailData, skinId) => {
   if (
@@ -1648,6 +1649,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   playSound?.(SOUNDS?.seClick);
                   GameState.selectedPlaymatId = null;
                   setSelectedPlaymatState(null);
+                  if (GameState.gameMode === 'battle_dungeon') {
+                    saveDungeonProgress();
+                  }
                 }}
               >
                 未選択
@@ -1677,6 +1681,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         playSound?.(SOUNDS?.seClick);
                         GameState.selectedPlaymatId = p.id;
                         setSelectedPlaymatState(p.id);
+                        if (GameState.gameMode === 'battle_dungeon') {
+                          saveDungeonProgress();
+                        }
                       }}
                     >
                       <div
@@ -1845,7 +1852,22 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           GameState.decks &&
                           GameState.decks[charDetailData.targetDeckIndex];
 
-                        if (hasTargetDeck) {
+                        if (GameState.gameMode === 'battle_dungeon') {
+                          // 試練の宮殿（ダンジョン）モード時は通常デッキの汚染を防ぐため分岐
+                          if (!GameState.playerSkins) {
+                            GameState.playerSkins = {};
+                          }
+                          GameState.playerSkins[charDetailData.id] = skinId;
+                          syncPlayerConfigImages(charDetailData, skinId);
+
+                          // 宮殿セーブデータを自動更新
+                          saveDungeonProgress();
+
+                          // 画面再描画
+                          if (typeof renderDeckEdit === 'function') {
+                            renderDeckEdit();
+                          }
+                        } else if (hasTargetDeck) {
                           const targetDeck =
                             GameState.decks[charDetailData.targetDeckIndex];
                           if (!targetDeck.playerSkins)
@@ -1866,11 +1888,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           if (GameState.gameMode === 'defense_register') {
                             localStorage.setItem(
                               'mini_card_battle_defense_deck_obj',
-                              JSON.stringify(targetDeck)
-                            );
-                          } else if (GameState.gameMode === 'battle_dungeon') {
-                            localStorage.setItem(
-                              'mini_card_battle_dungeon_deck_obj',
                               JSON.stringify(targetDeck)
                             );
                           } else {
