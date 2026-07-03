@@ -1,6 +1,6 @@
 import React from 'react';
 import BackButton from '../BackButton.jsx';
-import { GAME_VERSION } from '../../utils/constants/config.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 
 /**
  * 共通レイアウトページコンポーネント
@@ -41,7 +41,7 @@ export default function ScreenLayout({
     ...(backgroundImage && {
       backgroundImage: backgroundImage.includes('url')
         ? backgroundImage
-        : `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/${backgroundImage}?v=${GAME_VERSION}')`,
+        : `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }),

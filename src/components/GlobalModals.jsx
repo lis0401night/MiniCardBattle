@@ -41,7 +41,7 @@ import {
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { GAME_VERSION } from '../utils/constants/config.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 
@@ -1698,7 +1698,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         }}
                       >
                         <img
-                          src={`${p.image}?v=${GAME_VERSION}`}
+                          src={appendVersionQuery(p.image)}
                           style={{
                             width: '100%',
                             height: '100%',

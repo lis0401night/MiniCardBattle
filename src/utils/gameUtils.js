@@ -1,7 +1,7 @@
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from './constants/cards.js';
 import { getSkinImage } from './constants/characters.js';
-import { GAME_VERSION } from './constants/config.js';
+import { appendVersionQuery } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import {
   audioCtx,
@@ -727,15 +727,7 @@ export function getCardImgUrl(card) {
   };
 
   const rawUrl = getRawUrl();
-  if (
-    rawUrl &&
-    (rawUrl.startsWith('assets/') || rawUrl.startsWith('./assets/'))
-  ) {
-    // 既にクエリパラメータが含まれている場合はそのまま返す
-    if (rawUrl.includes('?v=')) return rawUrl;
-    return `${rawUrl}?v=${GAME_VERSION}`;
-  }
-  return rawUrl;
+  return appendVersionQuery(rawUrl);
 }
 
 // プレミアムカード設定の切り替え
@@ -841,21 +833,31 @@ window.stripEphemeralSkills = stripEphemeralSkills;
  * @returns {Promise<void>}
  */
 export async function clearCachesAndServiceWorkers() {
+  const tasks = [];
   if ('caches' in window) {
-    try {
-      const names = await caches.keys();
-      await Promise.all(names.map((name) => caches.delete(name)));
-
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(
-          registrations.map((registration) => registration.unregister())
-        );
-      }
-    } catch (err) {
-      console.error('Failed to clear cache and service workers:', err);
-    }
+    tasks.push(
+      caches
+        .keys()
+        .then((names) => Promise.all(names.map((name) => caches.delete(name))))
+    );
   }
+  if ('serviceWorker' in navigator) {
+    tasks.push(
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) =>
+          Promise.all(
+            registrations.map((registration) => registration.unregister())
+          )
+        )
+    );
+  }
+  const results = await Promise.allSettled(tasks);
+  results.forEach((r) => {
+    if (r.status === 'rejected') {
+      console.error('Failed to clear cache/service workers:', r.reason);
+    }
+  });
 }
 
 /**
@@ -867,6 +869,11 @@ export async function clearCachesAndServiceWorkers() {
 export function applyEquipMerge(targetCard, equipCard) {
   if (!targetCard || !equipCard) return;
 
+  targetCard.equippedCards = targetCard.equippedCards || [];
+  if (targetCard.equippedCards.some((ec) => ec.uid === equipCard.uid)) {
+    return; // 既に装備済みの場合は重複加算を防ぐ
+  }
+
   const equipSkills = (equipCard.skills || []).filter((s) => s.id !== 'equip');
   mergeCardSkills(targetCard, equipSkills);
 
@@ -875,10 +882,7 @@ export function applyEquipMerge(targetCard, equipCard) {
   targetCard.currentPower =
     (targetCard.currentPower || 0) + (equipCard.power || 0);
 
-  targetCard.equippedCards = targetCard.equippedCards || [];
-  if (!targetCard.equippedCards.some((ec) => ec.uid === equipCard.uid)) {
-    targetCard.equippedCards.push(equipCard);
-  }
+  targetCard.equippedCards.push(equipCard);
 
   consumeArmSelf(targetCard, equipCard);
 }

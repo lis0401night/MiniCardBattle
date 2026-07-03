@@ -3,7 +3,7 @@ import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { GAME_VERSION } from '../../utils/constants/config.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import './MatchingScreen.css';
 
 const TIMING = {
@@ -118,7 +118,7 @@ export default function MatchingScreen({
       <div
         className="matching-bg"
         style={{
-          backgroundImage: `url('assets/backgrounds/background_${stageId}.png?v=${GAME_VERSION}')`,
+          backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.png`)}')`,
           filter: 'brightness(0.5)', // キャラを目立たせるために少し暗くする
         }}
       ></div>

@@ -9,7 +9,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
   TOURNAMENT_EXCHANGE_LINEUP,
-  GAME_VERSION,
+  appendVersionQuery,
 } from '../utils/constants/config.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import {
@@ -323,14 +323,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
               imgUrl = `assets/characters/char_${item.id}.png`;
             }
 
-            if (
-              imgUrl &&
-              (imgUrl.startsWith('assets/') || imgUrl.startsWith('./assets/'))
-            ) {
-              if (!imgUrl.includes('?v=')) {
-                imgUrl = `${imgUrl}?v=${GAME_VERSION}`;
-              }
-            }
+            imgUrl = appendVersionQuery(imgUrl);
 
             const displayTypeLabel = isCard
               ? 'カード'

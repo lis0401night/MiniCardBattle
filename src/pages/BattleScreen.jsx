@@ -20,7 +20,7 @@ import {
   playSound,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { DECK_SIZE, GAME_VERSION } from '../utils/constants/config.js';
+import { DECK_SIZE, appendVersionQuery } from '../utils/constants/config.js';
 
 import Board from '../components/battle/Board.jsx';
 import EnemyArea from '../components/battle/EnemyArea.jsx';
@@ -410,7 +410,7 @@ export default function BattleScreen({ showRulesModal }) {
         : GameState.selectedStageId || 'android';
   const battleStyle = {
     backgroundColor: '#0f172a',
-    backgroundImage: `url('assets/backgrounds/background_${stageId}.png?v=${GAME_VERSION}')`,
+    backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.png`)}')`,
   };
 
   return (

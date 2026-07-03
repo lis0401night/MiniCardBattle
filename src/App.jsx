@@ -51,7 +51,10 @@ import {
   executeSwitchScreen,
 } from './utils/gameUtils.js';
 import { SOUNDS } from './utils/sounds.js';
-import { GAME_VERSION } from './utils/constants/config.js';
+import {
+  GAME_VERSION,
+  VERSION_CHECK_TIMEOUT_MS,
+} from './utils/constants/config.js';
 import {
   returnToTitle,
   endPlayerTurn,
@@ -176,7 +179,10 @@ export default function App() {
     const checkVersion = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3秒タイムアウト
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          VERSION_CHECK_TIMEOUT_MS
+        );
 
         const response = await fetch(`./version.json?t=${Date.now()}`, {
           signal: controller.signal,

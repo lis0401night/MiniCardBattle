@@ -254,9 +254,14 @@ export default function OnlineLobbyScreen() {
 
   const handleLeaveRoom = async () => {
     playSound(SOUNDS.seClick);
-    await leaveRoom();
-    setRoomData(null);
-    showOnlineMenu?.();
+    try {
+      await leaveRoom();
+    } catch (e) {
+      console.error('退室処理に失敗しました:', e);
+    } finally {
+      setRoomData(null);
+      showOnlineMenu?.();
+    }
   };
 
   const handleDeckEdit = () => {

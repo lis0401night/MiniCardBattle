@@ -2,7 +2,7 @@ import { showAlertModal } from '../../services/uiModals.js';
 import { GameState } from '../../state/gameState.js';
 import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
 import { hasSkill } from '../../utils/gameUtils.js';
-import { GAME_VERSION } from '../../utils/constants/config.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import Card from './Card.jsx';
 
 /**
@@ -69,7 +69,7 @@ export default function Board({
       : idOrUrl.startsWith('assets/')
         ? idOrUrl
         : `assets/playmats/playmat_${idOrUrl}.jpg`;
-    return `url('${rawPath}?v=${GAME_VERSION}')`;
+    return `url('${appendVersionQuery(rawPath)}')`;
   };
 
   return (

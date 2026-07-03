@@ -1,6 +1,6 @@
 import React from 'react';
 import BackButton from '../BackButton.jsx';
-import { GAME_VERSION } from '../../utils/constants/config.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 
 /**
  * カード一覧・交換所専用のコンパクトレイアウトコンポーネント
@@ -40,7 +40,7 @@ export default function CompactScreenLayout({
     ...(backgroundImage && {
       backgroundImage: backgroundImage.includes('url')
         ? backgroundImage
-        : `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/${backgroundImage}?v=${GAME_VERSION}')`,
+        : `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }),

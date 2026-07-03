@@ -4,7 +4,7 @@ import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { STAGES } from '../utils/constants/stages.js';
-import { GAME_VERSION } from '../utils/constants/config.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 export default function StageSelectScreen() {
   const [stages] = useState(() => {
@@ -90,7 +90,7 @@ export default function StageSelectScreen() {
                 key={stage.id}
                 className="char-card"
                 style={{
-                  backgroundImage: `url('assets/backgrounds/background_${stage.id}.png?v=${GAME_VERSION}')`,
+                  backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stage.id}.png`)}')`,
                 }}
                 onClick={() => handleSelect(stage.id)}
               >

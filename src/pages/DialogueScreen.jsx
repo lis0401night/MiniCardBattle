@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { showNextDialogue } from '../services/uiDialogue.js';
 import { GameState } from '../state/gameState.js';
-import { GAME_VERSION } from '../utils/constants/config.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 export default function DialogueScreen() {
   const [dialogueData, setDialogueData] = useState(
@@ -87,7 +87,7 @@ export default function DialogueScreen() {
       id="screen-dialogue"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/${bgName}?v=${GAME_VERSION}')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(`assets/backgrounds/${bgName}`)}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         position: 'relative',
