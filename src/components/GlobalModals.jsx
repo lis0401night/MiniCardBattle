@@ -39,6 +39,7 @@ import {
   playSound,
   stopAllBGM,
   togglePremiumCard,
+  GAME_VERSION,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
@@ -1697,7 +1698,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         }}
                       >
                         <img
-                          src={p.image}
+                          src={`${p.image}?v=${GAME_VERSION}`}
                           style={{
                             width: '100%',
                             height: '100%',

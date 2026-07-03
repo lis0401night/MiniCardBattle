@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
-import { playSound } from '../../utils/gameUtils.js';
+import { playSound, GAME_VERSION } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import './MatchingScreen.css';
 
@@ -117,7 +117,7 @@ export default function MatchingScreen({
       <div
         className="matching-bg"
         style={{
-          backgroundImage: `url('assets/backgrounds/background_${stageId}.png')`,
+          backgroundImage: `url('assets/backgrounds/background_${stageId}.png?v=${GAME_VERSION}')`,
           filter: 'brightness(0.5)', // キャラを目立たせるために少し暗くする
         }}
       ></div>

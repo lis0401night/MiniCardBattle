@@ -1,6 +1,7 @@
 import { CARD_MASTER } from './constants/cards.js';
 import { AUDIO_INSTANCES, SE_PATHS, shouldSkipAudioPreload } from './sounds.js';
 import { getCardImgUrl, hasPremiumVariant } from './gameUtils.js';
+import { GAME_VERSION } from './constants/config.js';
 
 let isPreloaded = false;
 
@@ -13,7 +14,7 @@ export async function preloadAllGameResources(onProgress) {
   const urlsToLoad = new Set();
 
   // タイトルなど起動直後に必要な画像は優先的に入れておく
-  urlsToLoad.add('assets/ui/title_img.jpg');
+  urlsToLoad.add(`assets/ui/title_img.jpg?v=${GAME_VERSION}`);
 
   // カード画像は非同期ロード（裏でゆっくりロードし、起動完了はブロックしない）
   const asyncUrlsToLoad = new Set();

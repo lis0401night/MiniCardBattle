@@ -13,6 +13,7 @@ import {
   getCardImgUrl,
   getOrCreateUUID,
   playSound,
+  GAME_VERSION,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -318,6 +319,15 @@ export default function TournamentExchangeScreen({ switchScreen }) {
             } else {
               // スキンの場合
               imgUrl = `assets/characters/char_${item.id}.png`;
+            }
+
+            if (
+              imgUrl &&
+              (imgUrl.startsWith('assets/') || imgUrl.startsWith('./assets/'))
+            ) {
+              if (!imgUrl.includes('?v=')) {
+                imgUrl = `${imgUrl}?v=${GAME_VERSION}`;
+              }
             }
 
             const displayTypeLabel = isCard

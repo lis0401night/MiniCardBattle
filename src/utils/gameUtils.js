@@ -1,6 +1,7 @@
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from './constants/cards.js';
 import { getSkinImage } from './constants/characters.js';
+import { GAME_VERSION } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import {
   audioCtx,
@@ -664,64 +665,77 @@ export function hasPremiumVariant(id) {
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
-  if (!card) return 'assets/cards/card_default.jpg';
-  if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
+  const getRawUrl = () => {
+    if (!card) return 'assets/cards/card_default.jpg';
+    if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
 
-  // 特定のトークンの例外処理（旧imgUrl設定の復元）
-  if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
-  if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
-    // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
-    // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照
-    const ownerSkins =
-      card.owner === 'red'
-        ? GameState.enemySkins || {}
-        : GameState.playerSkins || {};
-    const dragonSkin = ownerSkins['dragon'] || 'default';
-    return getSkinImage('dragon', dragonSkin, 'image');
-  }
-  if (card.id === 'token_satan' || card.baseId === 'token_satan')
-    return 'assets/cards/card_token_satan.jpg';
+    // 特定のトークンの例外処理（旧imgUrl設定の復元）
+    if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
+    if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
+      // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
+      // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照
+      const ownerSkins =
+        card.owner === 'red'
+          ? GameState.enemySkins || {}
+          : GameState.playerSkins || {};
+      const dragonSkin = ownerSkins['dragon'] || 'default';
+      return getSkinImage('dragon', dragonSkin, 'image');
+    }
+    if (card.id === 'token_satan' || card.baseId === 'token_satan')
+      return 'assets/cards/card_token_satan.jpg';
 
-  let lookupId = card.baseId || card.id;
-  if (!lookupId) return 'assets/cards/card_default.jpg';
+    let lookupId = card.baseId || card.id;
+    if (!lookupId) return 'assets/cards/card_default.jpg';
 
-  // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
-  if (
-    lookupId.includes('_') &&
-    !lookupId.startsWith('token_') &&
-    !lookupId.startsWith('cl_')
-  ) {
-    lookupId = lookupId.split('_')[0];
-  } else if (lookupId.startsWith('token_')) {
-    // token_xxx_123 などの場合はベースの token_xxx を使用
-    const parts = lookupId.split('_');
-    if (parts.length >= 3) lookupId = parts[0] + '_' + parts[1];
-  } else if (lookupId.startsWith('cl_')) {
-    lookupId = 'token_clone';
-  }
+    // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
+    if (
+      lookupId.includes('_') &&
+      !lookupId.startsWith('token_') &&
+      !lookupId.startsWith('cl_')
+    ) {
+      lookupId = lookupId.split('_')[0];
+    } else if (lookupId.startsWith('token_')) {
+      // token_xxx_123 などの場合はベースの token_xxx を使用
+      const parts = lookupId.split('_');
+      if (parts.length >= 3) lookupId = parts[0] + '_' + parts[1];
+    } else if (lookupId.startsWith('cl_')) {
+      lookupId = 'token_clone';
+    }
 
-  // isPremiumフラグが明示的に設定されている場合はそれを優先
-  if (card.isPremium === true) {
-    if (VALID_PREMIUM_GIFS.includes(lookupId))
-      return `assets/cards/card_${lookupId}_premium.gif`;
-    if (VALID_PREMIUM_JPGS.includes(lookupId))
-      return `assets/cards/card_${lookupId}_premium.jpg`;
-  } else if (card.isPremium === false) {
+    // isPremiumフラグが明示的に設定されている場合はそれを優先
+    if (card.isPremium === true) {
+      if (VALID_PREMIUM_GIFS.includes(lookupId))
+        return `assets/cards/card_${lookupId}_premium.gif`;
+      if (VALID_PREMIUM_JPGS.includes(lookupId))
+        return `assets/cards/card_${lookupId}_premium.jpg`;
+    } else if (card.isPremium === false) {
+      return `assets/cards/card_${lookupId}.jpg`;
+    }
+
+    // フラグがない場合は従来のグローバル設定を参照（ただし敵のカードと明示されている場合は除く）
+    if (
+      card.owner !== 'red' &&
+      GameState.premiumCards &&
+      GameState.premiumCards.includes(lookupId)
+    ) {
+      if (VALID_PREMIUM_GIFS.includes(lookupId))
+        return `assets/cards/card_${lookupId}_premium.gif`;
+      if (VALID_PREMIUM_JPGS.includes(lookupId))
+        return `assets/cards/card_${lookupId}_premium.jpg`;
+    }
     return `assets/cards/card_${lookupId}.jpg`;
-  }
+  };
 
-  // フラグがない場合は従来のグローバル設定を参照（ただし敵のカードと明示されている場合は除く）
+  const rawUrl = getRawUrl();
   if (
-    card.owner !== 'red' &&
-    GameState.premiumCards &&
-    GameState.premiumCards.includes(lookupId)
+    rawUrl &&
+    (rawUrl.startsWith('assets/') || rawUrl.startsWith('./assets/'))
   ) {
-    if (VALID_PREMIUM_GIFS.includes(lookupId))
-      return `assets/cards/card_${lookupId}_premium.gif`;
-    if (VALID_PREMIUM_JPGS.includes(lookupId))
-      return `assets/cards/card_${lookupId}_premium.jpg`;
+    // 既にクエリパラメータが含まれている場合はそのまま返す
+    if (rawUrl.includes('?v=')) return rawUrl;
+    return `${rawUrl}?v=${GAME_VERSION}`;
   }
-  return `assets/cards/card_${lookupId}.jpg`;
+  return rawUrl;
 }
 
 // プレミアムカード設定の切り替え

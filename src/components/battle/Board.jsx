@@ -1,7 +1,7 @@
 import { showAlertModal } from '../../services/uiModals.js';
 import { GameState } from '../../state/gameState.js';
 import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
-import { hasSkill } from '../../utils/gameUtils.js';
+import { hasSkill, GAME_VERSION } from '../../utils/gameUtils.js';
 import Card from './Card.jsx';
 
 /**
@@ -63,11 +63,12 @@ export default function Board({
   const getPlaymatUrl = (idOrUrl) => {
     if (!idOrUrl) return 'none';
     const pm = PLAYMAT_MASTER.find((p) => p.id === idOrUrl);
-    return pm
-      ? `url('${pm.image}')`
+    const rawPath = pm
+      ? pm.image
       : idOrUrl.startsWith('assets/')
-        ? `url('${idOrUrl}')`
-        : `url('assets/playmats/playmat_${idOrUrl}.jpg')`;
+        ? idOrUrl
+        : `assets/playmats/playmat_${idOrUrl}.jpg`;
+    return `url('${rawPath}?v=${GAME_VERSION}')`;
   };
 
   return (

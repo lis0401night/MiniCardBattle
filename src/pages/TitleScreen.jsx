@@ -5,6 +5,7 @@ import { preloadAllGameResources } from '../utils/resourceLoader.js';
 import { unlockAudio } from '../utils/sounds.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl } from '../utils/gameUtils.js';
+import { GAME_VERSION } from '../utils/constants/config.js';
 
 const CARD_ROTATION_INTERVAL_MS = 20000; // カード切り替え間隔（ミリ秒）
 
@@ -112,7 +113,7 @@ export default function TitleScreen() {
           src={
             isLoading
               ? 'assets/ui/title_loading.jpg'
-              : 'assets/ui/title_img.jpg'
+              : `assets/ui/title_img.jpg?v=${GAME_VERSION}`
           }
           alt="Key Visual"
           className="title-visual"

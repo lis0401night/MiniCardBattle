@@ -18,6 +18,7 @@ import {
   hasSkill,
   isTransitioning,
   playSound,
+  GAME_VERSION,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
@@ -410,7 +411,7 @@ export default function BattleScreen({ showRulesModal }) {
         : GameState.selectedStageId || 'android';
   const battleStyle = {
     backgroundColor: '#0f172a',
-    backgroundImage: `url('assets/backgrounds/background_${stageId}.png')`,
+    backgroundImage: `url('assets/backgrounds/background_${stageId}.png?v=${GAME_VERSION}')`,
   };
 
   return (

@@ -1,6 +1,7 @@
 /**
  * Mini Card Battle - Character Data
  */
+import { GAME_VERSION } from './config.js';
 
 export const CHARACTERS = {
   android: {
@@ -1539,9 +1540,19 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
   const char =
     typeof charIdOrObj === 'string' ? CHARACTERS[charIdOrObj] : charIdOrObj;
   if (!char) return '';
-  if (!char.skins) return char[type] || '';
-  const skin = char.skins[skinId] || char.skins['default'];
-  return skin[type] || char[type] || '';
+
+  const getRawPath = () => {
+    if (!char.skins) return char[type] || '';
+    const skin = char.skins[skinId] || char.skins['default'];
+    return skin[type] || char[type] || '';
+  };
+
+  const path = getRawPath();
+  if (path && (path.startsWith('assets/') || path.startsWith('./assets/'))) {
+    if (path.includes('?v=')) return path;
+    return `${path}?v=${GAME_VERSION}`;
+  }
+  return path;
 }
 
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
