@@ -22,26 +22,31 @@ export default function StageSelectScreen() {
   };
 
   const getBackgroundImage = () => {
-    // 新規デッキ作成中はgameModeが'create_deck'になるため、元のモードを参照する
+    // 新規デッキ作成時はgameModeが'create_deck'になるため、前回のモードを参照する
     const mode =
       GameState.gameMode === 'create_deck'
         ? GameState.prevGameModeForCreate || 'free_deck_edit'
         : GameState.gameMode;
 
-    if (mode === 'tournament') {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_tournament01.png')}')`;
-    } else if (mode === 'defense_register' || mode === 'defense_attack') {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_defense.png')}')`;
-    } else if (mode === 'battle_dungeon') {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_challenge.png')}')`;
-    } else if (mode === 'online_deck_edit') {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_online.png')}')`;
-    } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_highdifficulty.png')}')`;
-    } else if (mode && mode.startsWith('story')) {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_story01.png')}')`;
+    const MODE_BACKGROUND_FILES = {
+      tournament: 'assets/backgrounds/background_tournament01.png',
+      defense_register: 'assets/backgrounds/background_defense.png',
+      defense_attack: 'assets/backgrounds/background_defense.png',
+      battle_dungeon: 'assets/backgrounds/background_challenge.png',
+      online_deck_edit: 'assets/backgrounds/background_online.png',
+    };
+
+    let bgFile = MODE_BACKGROUND_FILES[mode];
+    if (!bgFile) {
+      if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
+        bgFile = 'assets/backgrounds/background_highdifficulty.png';
+      } else if (mode && mode.startsWith('story')) {
+        bgFile = 'assets/backgrounds/background_story01.png';
+      } else {
+        bgFile = 'assets/backgrounds/background_select.png';
+      }
     }
-    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.png')}')`;
+    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(bgFile)}')`;
   };
 
   return (

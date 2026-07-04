@@ -9,6 +9,15 @@ import {
 } from '../utils/constants/characters.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 
+const shuffleArray = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 export default function DefenseBattleListScreen() {
   const [players, setPlayers] = useState([]);
   const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error', 'empty'
@@ -94,15 +103,7 @@ export default function DefenseBattleListScreen() {
             const remaining = otherPlayers.filter(
               (p) => !chosenUuids.has(p.uuid)
             );
-            const shuffle = (arr) => {
-              const a = [...arr];
-              for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-              }
-              return a;
-            };
-            const shufRemaining = shuffle(remaining);
+            const shufRemaining = shuffleArray(remaining);
             const needed = 5 - selectedPlayers.length;
             for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
               selectedPlayers.push(shufRemaining[i]);
@@ -136,19 +137,9 @@ export default function DefenseBattleListScreen() {
               (p) => p.displayTotalPoints <= myTotalPoints
             );
 
-            // シャッフル用関数（Fisher-Yates）
-            const shuffle = (arr) => {
-              const a = [...arr];
-              for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-              }
-              return a;
-            };
-
-            const shuf5 = shuffle(group5);
-            const shuf3 = shuffle(group3);
-            const shuf1 = shuffle(group1);
+            const shuf5 = shuffleArray(group5);
+            const shuf3 = shuffleArray(group3);
+            const shuf1 = shuffleArray(group1);
 
             const picked = [];
             const chosenUuids = new Set();
@@ -179,7 +170,7 @@ export default function DefenseBattleListScreen() {
               const remaining = otherPlayers.filter(
                 (p) => !chosenUuids.has(p.uuid)
               );
-              const shufRemaining = shuffle(remaining);
+              const shufRemaining = shuffleArray(remaining);
               const needed = 5 - picked.length;
               for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
                 picked.push(shufRemaining[i]);

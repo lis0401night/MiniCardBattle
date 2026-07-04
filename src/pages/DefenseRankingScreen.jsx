@@ -116,9 +116,9 @@ export default function DefenseRankingScreen() {
               extraClass = 'legendary';
               borderColor = 'transparent';
             } else if (p.rankIndex === 1) {
-              borderColor = '#facc15';
-            } else if (p.rankIndex === 2) {
               borderColor = '#e2e8f0';
+            } else if (p.rankIndex === 2) {
+              borderColor = '#cd7f32';
             }
 
             return (

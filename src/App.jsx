@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { showConfirmModal } from './services/uiModals.js';
 import GlobalModals from './components/GlobalModals.jsx';
 import DamageOverlay from './components/common/DamageOverlay.jsx';
 import TitleScreen from './pages/TitleScreen.jsx';
@@ -181,8 +182,32 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // 起動時の自動バージョンチェック（キャッシュ回避付き）
+    // 起動時の新バージョンチェック（キャッシュ破棄）
     const checkVersion = async () => {
+      // 進行中のバトル、ダンジョン、対話中、またはGameState.isInBattleがtrueの場合は安全のためにチェックをスキップする
+      const battleScreens = [
+        'screen-battle',
+        'screen-battle-dungeon',
+        'screen-debug-battle',
+        'screen-dialogue',
+      ];
+      const isScreenActive = (id) => {
+        const el = document.getElementById(id);
+        return el && el.classList.contains('active');
+      };
+
+      const isInBattleScreen = battleScreens.some(isScreenActive);
+
+      if (
+        isInBattleScreen ||
+        (window.GameState && window.GameState.isInBattle)
+      ) {
+        console.log(
+          '[Version Checker] User is in battle or dialogue. Skipping check to prevent state loss.'
+        );
+        return;
+      }
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(
@@ -213,7 +238,7 @@ export default function App() {
             currentVersion
           );
 
-          // 無限リロードループ防止（同一バージョンへの再試行はセッション内で一度きりにする）
+          // リロードループ防止（新バージョンへの再試行はセッションで一度だけ）
           if (
             sessionStorage.getItem('versionReloadAttempted') === data.version
           ) {
@@ -222,11 +247,17 @@ export default function App() {
             );
             return;
           }
-          sessionStorage.setItem('versionReloadAttempted', data.version);
 
-          await clearCachesAndServiceWorkers();
-          console.log('[Version Checker] Cache cleared. Reloading...');
-          location.reload();
+          // ユーザーに確認ダイアログを表示して、OKの場合のみリロードを行う
+          showConfirmModal(
+            '新しいバージョンが検出されました。\n最新データへ更新するために、ゲームを再読み込みしますか？',
+            async () => {
+              sessionStorage.setItem('versionReloadAttempted', data.version);
+              await clearCachesAndServiceWorkers();
+              console.log('[Version Checker] Cache cleared. Reloading...');
+              location.reload();
+            }
+          );
         }
       } catch (err) {
         console.warn(

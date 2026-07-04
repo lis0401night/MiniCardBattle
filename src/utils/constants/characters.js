@@ -1584,6 +1584,6 @@ export function getPlayerIconFrame(charId) {
  * @returns {string} 画像パス
  */
 export function getIconFramePath(charId) {
-  const frame = RED_FRAME_CHARACTERS.includes(charId) ? 'red' : 'gold';
+  const frame = getPlayerIconFrame(charId);
   return appendVersionQuery(`assets/icons/iconframe_${frame}.png`);
 }

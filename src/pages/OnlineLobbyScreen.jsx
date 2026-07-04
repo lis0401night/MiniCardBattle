@@ -18,6 +18,14 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+async function safeLeaveRoom(errorMessage) {
+  try {
+    await leaveRoom();
+  } catch (e) {
+    console.error(errorMessage, e);
+  }
+}
+
 export default function OnlineLobbyScreen() {
   const [roomData, setRoomData] = useState(cachedRoomData || null);
   const [localReadyConfig, setLocalReadyConfig] = useState(null);
@@ -195,11 +203,7 @@ export default function OnlineLobbyScreen() {
               window.setSlowMotionReact(false);
             }
             if (typeof stopAllBGM === 'function') stopAllBGM();
-            try {
-              await leaveRoom();
-            } catch (e) {
-              console.error('ルーム解散時の退室処理に失敗しました:', e);
-            }
+            safeLeaveRoom('ルーム解散時の退室処理に失敗しました:');
             showAlertModal('ルームが解散されました。', () => {
               showOnlineMenu?.();
             });
@@ -217,11 +221,7 @@ export default function OnlineLobbyScreen() {
 
     multiplayerCallbacks.onRoomClosed = async () => {
       setRoomData(null);
-      try {
-        await leaveRoom();
-      } catch (e) {
-        console.error('ルーム解散時の退室処理に失敗しました:', e);
-      }
+      safeLeaveRoom('ルーム解散時の退室処理に失敗しました:');
       showAlertModal('ルームが解散されました。', () => {
         showOnlineMenu?.();
       });
@@ -254,14 +254,9 @@ export default function OnlineLobbyScreen() {
 
   const handleLeaveRoom = async () => {
     playSound(SOUNDS.seClick);
-    try {
-      await leaveRoom();
-    } catch (e) {
-      console.error('退室処理に失敗しました:', e);
-    } finally {
-      setRoomData(null);
-      showOnlineMenu?.();
-    }
+    await safeLeaveRoom('退室に失敗しました:');
+    setRoomData(null);
+    showOnlineMenu?.();
   };
 
   const handleDeckEdit = () => {

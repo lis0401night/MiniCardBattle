@@ -1,5 +1,6 @@
 import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
+import { DEFAULT_PLAYER_NAME } from '../utils/constants/config.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
@@ -253,12 +254,12 @@ export function reloadGame() {
   }
 
   // セーブデータ(LocalStorage)を保持したまま、キャッシュとサービスワーカーを完全にクリアして強制更新する
-  clearCachesAndServiceWorkers()
-    .then(() => {
-      location.reload();
-    })
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 5000));
+  Promise.race([clearCachesAndServiceWorkers(), timeoutPromise])
     .catch((err) => {
       console.error('Failed to clear cache and reload:', err);
+    })
+    .finally(() => {
       location.reload();
     });
 }
@@ -717,12 +718,12 @@ export function showDungeonRules() {
   switchScreen('screen-dungeon-rules');
 }
 
-export async function showDefenseBattleList() {
+export function showDefenseBattleList() {
   playSound(SOUNDS.seClick);
   switchScreen('screen-defense-battle-list');
 }
 
-export async function showDefenseRanking() {
+export function showDefenseRanking() {
   playSound(SOUNDS.seClick);
   switchScreen('screen-defense-ranking');
 }
@@ -810,7 +811,7 @@ export function startDefenseRegistration() {
 
   if (window.showPlayerNameModalState) {
     window.showPlayerNameModalState((name) => {
-      GameState.playerName = name || 'プレイヤー';
+      GameState.playerName = name || DEFAULT_PLAYER_NAME;
       GameState.appState = 'select_player';
       initSelectScreen(false);
       switchScreen('screen-select');
@@ -1047,8 +1048,8 @@ export function confirmStageSelect(stageId) {
   }
 
   if (GameState.gameMode === 'defense_register') {
-    // 防衛登録：プロフィール設定で保存されたプレイヤー名を使用して自動登録
-    const profileName = GameState.userProfile?.name || 'プレイヤー';
+    // 防衛登録：プロフィール設定で保存されたプレイヤー名を使って登録
+    const profileName = GameState.userProfile?.name || DEFAULT_PLAYER_NAME;
     if (window.submitDefenseDeckWrapper) {
       window.submitDefenseDeckWrapper(profileName);
     } else if (typeof window.submitDefenseDeck === 'function') {
