@@ -59,8 +59,114 @@ export default function DefenseBattleListScreen() {
             };
           });
 
-          setPlayers(activePlayers);
-          setStatus('success');
+          // 自分以外のプレイヤーのみを抽出
+          const otherPlayers = activePlayers.filter((p) => !p.isMe);
+
+          let selectedPlayers = [];
+          const cachedUuidsRaw = localStorage.getItem(
+            'mini_card_battle_defense_targets'
+          );
+
+          if (cachedUuidsRaw) {
+            try {
+              const cachedUuids = JSON.parse(cachedUuidsRaw);
+              if (Array.isArray(cachedUuids) && cachedUuids.length > 0) {
+                selectedPlayers = cachedUuids
+                  .map((uuid) => otherPlayers.find((p) => p.uuid === uuid))
+                  .filter(Boolean);
+              }
+            } catch (e) {
+              console.error('Failed to parse cached defense targets:', e);
+            }
+          }
+
+          // キャッシュがない、またはキャッシュ内のプレイヤーがサーバーからいなくなっている場合は新規に選出
+          if (selectedPlayers.length === 0) {
+            // グループ分け
+            // ① 自分より2倍以上（5ポイント獲得可能）
+            const group5 = otherPlayers.filter(
+              (p) =>
+                p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0
+            );
+            // ② 自分より上（3ポイント獲得可能）
+            const group3 = otherPlayers.filter(
+              (p) =>
+                p.displayTotalPoints > myTotalPoints &&
+                !(
+                  p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0
+                )
+            );
+            // ③ 自分より下・同等（1ポイント獲得可能）
+            const group1 = otherPlayers.filter(
+              (p) => p.displayTotalPoints <= myTotalPoints
+            );
+
+            // シャッフル用関数（Fisher-Yates）
+            const shuffle = (arr) => {
+              const a = [...arr];
+              for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+              }
+              return a;
+            };
+
+            const shuf5 = shuffle(group5);
+            const shuf3 = shuffle(group3);
+            const shuf1 = shuffle(group1);
+
+            const picked = [];
+            const chosenUuids = new Set();
+
+            // 1. 自分より2倍以上 × 1名
+            if (shuf5.length > 0) {
+              const p = shuf5[0];
+              picked.push(p);
+              chosenUuids.add(p.uuid);
+            }
+
+            // 2. 自分より上 × 2名
+            for (let i = 0; i < Math.min(2, shuf3.length); i++) {
+              const p = shuf3[i];
+              picked.push(p);
+              chosenUuids.add(p.uuid);
+            }
+
+            // 3. 自分より下・同等 × 2名
+            for (let i = 0; i < Math.min(2, shuf1.length); i++) {
+              const p = shuf1[i];
+              picked.push(p);
+              chosenUuids.add(p.uuid);
+            }
+
+            // 5名に満たない場合、残りのプールから補填する
+            if (picked.length < 5 && otherPlayers.length > picked.length) {
+              const remaining = otherPlayers.filter(
+                (p) => !chosenUuids.has(p.uuid)
+              );
+              const shufRemaining = shuffle(remaining);
+              const needed = 5 - picked.length;
+              for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
+                picked.push(shufRemaining[i]);
+              }
+            }
+
+            selectedPlayers = picked;
+
+            // キャッシュに保存
+            const uuids = selectedPlayers.map((p) => p.uuid);
+            localStorage.setItem(
+              'mini_card_battle_defense_targets',
+              JSON.stringify(uuids)
+            );
+          }
+
+          if (selectedPlayers.length === 0) {
+            setStatus('empty');
+          } else {
+            setPlayers(selectedPlayers);
+            setStatus('success');
+          }
         } else {
           throw new Error(result.error);
         }
@@ -144,23 +250,11 @@ export default function DefenseBattleListScreen() {
               (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
             if (!char) return null;
 
-            let borderColor = '#cd7f32';
-            let extraClass = '';
-            if (p.rankIndex === 0) {
-              extraClass = 'legendary';
-              borderColor = 'transparent';
-            } else if (p.rankIndex === 1) {
-              borderColor = '#facc15';
-            } else if (p.rankIndex === 2) {
-              borderColor = '#e2e8f0';
-            }
-
             return (
               <button
                 key={p.uuid}
-                className={`btn-banner ${extraClass}`}
+                className="btn-banner"
                 style={{
-                  borderColor,
                   flexShrink: 0,
                   ...(p.isMe ? { cursor: 'default', opacity: 0.9 } : {}),
                 }}
@@ -182,9 +276,11 @@ export default function DefenseBattleListScreen() {
                     <div className="banner-icon-wrapper">
                       <img
                         src={
-                          getSkinImage
-                            ? getSkinImage(char, p.skin || 'default', 'icon')
-                            : char.icon
+                          p.icon
+                            ? `assets/icons/icon_${p.icon}.png`
+                            : getSkinImage
+                              ? getSkinImage(char, p.skin || 'default', 'icon')
+                              : char.icon
                         }
                         className="banner-icon"
                         alt=""

@@ -4226,6 +4226,7 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'defense_attack') {
+      localStorage.removeItem('mini_card_battle_defense_targets');
       if (GameState.lastBattleResult === 'win') {
         // ポイント計算（総ポイント基準）
         const myCurrentPoints =

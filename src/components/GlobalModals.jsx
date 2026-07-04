@@ -28,8 +28,28 @@ import {
   setShowErrorModalHook,
   setShowPointAcquisitionModalHook,
   showAlertModal,
+  setShowProfileModalHook,
 } from '../services/uiModals.js';
-import { GameState } from '../state/gameState.js';
+import { GameState, saveUserProfile } from '../state/gameState.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
+
+const AVAILABLE_ICONS = [
+  { id: 'player', path: 'assets/icons/icon_player.png', name: 'デフォルト' },
+  { id: 'android', path: 'assets/icons/icon_android.png', name: 'アイギス' },
+  { id: 'dragon', path: 'assets/icons/icon_dragon.png', name: 'リンドブルム' },
+  { id: 'knight', path: 'assets/icons/icon_knight.png', name: 'ガウェイン' },
+  { id: 'cthulhu', path: 'assets/icons/icon_cthulhu.png', name: 'ルルイエ' },
+  { id: 'elf', path: 'assets/icons/icon_elf.png', name: 'エルウィン' },
+  { id: 'cleric', path: 'assets/icons/icon_cleric.png', name: 'テレーゼ' },
+  {
+    id: 'devilhunter',
+    path: 'assets/icons/icon_devilhunter.png',
+    name: 'ダンテ',
+  },
+  { id: 'witch', path: 'assets/icons/icon_witch.png', name: '魔女' },
+  { id: 'oni', path: 'assets/icons/icon_oni.png', name: 'イブキ' },
+  { id: 'priest', path: 'assets/icons/icon_priest.png', name: 'セト' },
+];
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { PLAYMAT_MASTER, ownedPlaymats } from '../utils/constants/playmats.js';
@@ -39,9 +59,9 @@ import {
   playSound,
   stopAllBGM,
   togglePremiumCard,
+  getOrCreateUUID,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 
@@ -99,6 +119,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [skinSelectionVisible, setSkinSelectionVisible] = useState(false);
   const [selectedSkinState, setSelectedSkinState] = useState(null);
   const [simpleImagePreview, setSimpleImagePreview] = useState(null);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [profileNameInput, setProfileNameInput] = useState('');
+  const [profileIconInput, setProfileIconInput] = useState('');
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
@@ -135,6 +158,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     setShowPointAcquisitionModalHook((data) => {
       playSound?.(SOUNDS?.seGet); // 獲得時の効果音（仮にseGetとするか、seSkill等）
       setPointAcquisitionData(data);
+    });
+
+    setShowProfileModalHook(() => {
+      playSound?.(SOUNDS?.seClick);
+      setProfileNameInput(GameState.userProfile?.name || 'プレイヤー');
+      setProfileIconInput(GameState.userProfile?.icon || 'player');
+      setProfileModalVisible(true);
     });
 
     window.showEnemyDeckModal = (deck, title, leaderSkill = null) => {
@@ -2781,6 +2811,311 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               setSimpleImagePreview(null);
             }}
           />
+        </div>
+      )}
+
+      {/* Profile Settings Modal */}
+      {profileModalVisible && (
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 90,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            setProfileModalVisible(false);
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              width: '90%',
+              maxWidth: '440px',
+              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+              borderRadius: '16px',
+              border: '2px solid #334155',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{
+                color: '#eab308',
+                marginBottom: '20px',
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+              }}
+            >
+              プロフィール設定
+            </h2>
+
+            {/* プレビュー */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                background: 'rgba(30, 41, 59, 0.6)',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                width: '100%',
+                marginBottom: '20px',
+              }}
+            >
+              <img
+                src={appendVersionQuery(
+                  AVAILABLE_ICONS.find((i) => i.id === profileIconInput)
+                    ?.path || 'assets/icons/icon_player.png'
+                )}
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #eab308',
+                  background: '#1e293b',
+                }}
+                alt="preview"
+              />
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: '#94a3b8',
+                    textAlign: 'left',
+                  }}
+                >
+                  プレビュー
+                </div>
+                <div
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    textAlign: 'left',
+                    marginTop: '2px',
+                  }}
+                >
+                  {profileNameInput || '名前を入力...'}
+                </div>
+              </div>
+            </div>
+
+            {/* プレイヤー名入力 */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                gap: '8px',
+                marginBottom: '20px',
+              }}
+            >
+              <label
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                  textAlign: 'left',
+                }}
+                htmlFor="modal-profile-name"
+              >
+                プレイヤー名（最大10文字）
+              </label>
+              <input
+                id="modal-profile-name"
+                type="text"
+                value={profileNameInput}
+                onChange={(e) =>
+                  setProfileNameInput(e.target.value.slice(0, 10))
+                }
+                placeholder="名前を入力..."
+                maxLength={10}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #334155',
+                  background: '#0f172a',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  textAlign: 'center',
+                }}
+              />
+            </div>
+
+            {/* アイコン選択 */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                gap: '8px',
+                marginBottom: '24px',
+              }}
+            >
+              <span
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                  textAlign: 'left',
+                }}
+              >
+                アイコン選択
+              </span>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 80px)',
+                  gap: '12px',
+                  justifyContent: 'center',
+                  width: '100%',
+                  background: 'rgba(15, 23, 42, 0.4)',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #1e293b',
+                  maxHeight: '270px',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                }}
+              >
+                {AVAILABLE_ICONS.map((icon) => (
+                  <div
+                    key={icon.id}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: `2px solid ${profileIconInput === icon.id ? '#eab308' : 'transparent'}`,
+                      boxShadow:
+                        profileIconInput === icon.id
+                          ? '0 0 8px rgba(234, 179, 8, 0.4)'
+                          : 'none',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s',
+                      background: '#1e293b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      transform:
+                        profileIconInput === icon.id ? 'scale(1.05)' : 'none',
+                    }}
+                    onClick={() => {
+                      playSound?.(SOUNDS?.seClick);
+                      setProfileIconInput(icon.id);
+                    }}
+                    title={icon.name}
+                  >
+                    <img
+                      src={appendVersionQuery(icon.path)}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                      alt={icon.name}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* アクションボタン */}
+            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+              <button
+                className="btn"
+                style={{
+                  flex: 1,
+                  background: '#475569',
+                  margin: 0,
+                  padding: '10px',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setProfileModalVisible(false);
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                className="btn"
+                style={{
+                  flex: 1,
+                  background: 'linear-gradient(45deg, #eab308, #ca8a04)',
+                  margin: 0,
+                  padding: '10px',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  const trimmed = profileNameInput.trim();
+                  if (!trimmed) {
+                    alert('プレイヤー名を入力してください。');
+                    return;
+                  }
+
+                  // 1. ローカルとGameStateへの保存
+                  saveUserProfile({
+                    name: trimmed,
+                    icon: profileIconInput,
+                  });
+
+                  // 2. サーバーへの同期送信
+                  const uuid = getOrCreateUUID();
+                  fetch('api/update_profile.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      uuid: uuid,
+                      name: trimmed,
+                      icon: profileIconInput,
+                    }),
+                  })
+                    .then((res) => {
+                      if (!res.ok)
+                        throw new Error('Network response was not ok');
+                      return res.json();
+                    })
+                    .then((result) => {
+                      if (result.success) {
+                        console.log('Profile successfully synced to server.');
+                      } else {
+                        console.warn(
+                          'Server failed to sync profile:',
+                          result.error
+                        );
+                      }
+                    })
+                    .catch((err) => {
+                      // 通信失敗時はローカルストレージのみ保存（エラーを警告にとどめ、画面進行はブロックしない）
+                      console.warn(
+                        'Failed to sync profile to server, saved locally only:',
+                        err
+                      );
+                    });
+
+                  setProfileModalVisible(false);
+                }}
+              >
+                保存
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

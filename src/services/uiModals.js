@@ -49,3 +49,12 @@ export function showPointAcquisitionModal(data) {
     'GlobalModals not mounted: showPointAcquisitionModal fallback missing'
   );
 }
+
+export let showProfileModalHook = null;
+export function setShowProfileModalHook(h) {
+  showProfileModalHook = h;
+}
+export function showProfileModal() {
+  if (showProfileModalHook) return showProfileModalHook();
+  console.warn('GlobalModals not mounted: showProfileModal fallback missing');
+}

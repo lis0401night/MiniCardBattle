@@ -5,6 +5,7 @@ import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import {
   showDefenseBattleList,
   showDefenseRules,
+  showDefenseRanking,
   showEventMenu,
   showExchangeScreen,
   startDefenseRegistration,
@@ -122,6 +123,12 @@ export default function DefenseMenuScreen() {
           label="ルール"
           variant="yellow"
           onClick={() => showDefenseRules?.()}
+        />
+        <MenuButton
+          label="ランキング"
+          variant="red"
+          style={{ color: '#ffffff' }}
+          onClick={() => showDefenseRanking?.()}
         />
         <MenuButton
           label="防衛デッキ登録"

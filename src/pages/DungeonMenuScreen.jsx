@@ -53,6 +53,12 @@ export default function DungeonMenuScreen() {
           }
         />
         <MenuButton
+          label="ランキング"
+          variant="red"
+          style={{ color: '#ffffff' }}
+          onClick={() => switchScreen('screen-challenge-ranking')}
+        />
+        <MenuButton
           label="挑戦"
           variant="purple"
           onClick={handleChallengeClick}

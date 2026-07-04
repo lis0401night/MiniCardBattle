@@ -7,6 +7,7 @@ import {
   showDeckEditMenu,
   showEventMenu,
   showOnlineMenu,
+  showProfileSettings,
 } from '../services/uiMainCore.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -19,15 +20,27 @@ export default function ModeSelectScreen() {
 
   return (
     <div id="screen-mode-select" className="screen active">
-      <button
-        className="btn-circle btn-gear"
-        onClick={() => {
-          playSound?.(SOUNDS?.seClick);
-          showOptions?.();
-        }}
-      >
-        ⚙
-      </button>
+      <div className="top-right-actions">
+        <button
+          className="btn-circle btn-profile-menu"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showProfileSettings?.();
+          }}
+        >
+          👤
+        </button>
+
+        <button
+          className="btn-circle btn-gear"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            showOptions?.();
+          }}
+        >
+          ⚙
+        </button>
+      </div>
 
       <NewsBanner />
 

@@ -12,7 +12,21 @@ const safeParseArray = (key) => {
   }
 };
 
+const loadUserProfile = () => {
+  try {
+    const name =
+      localStorage.getItem('mini_card_battle_player_name') || 'プレイヤー';
+    const icon =
+      localStorage.getItem('mini_card_battle_player_icon') || 'player';
+    return { name, icon };
+  } catch (e) {
+    console.error('Failed to load user profile:', e);
+  }
+  return { name: 'プレイヤー', icon: 'player' };
+};
+
 export const GameState = {
+  userProfile: loadUserProfile(),
   playerConfig: CHARACTERS.android,
   enemyConfig: CHARACTERS.dragon,
   isInitializing: false,
@@ -87,4 +101,19 @@ export const GameState = {
 // Global fallback for browser debugging
 if (typeof window !== 'undefined') {
   window.GameState = GameState;
+}
+
+/**
+ * プロフィール情報を保存・同期する
+ * @param {Object} profile - プロフィール情報 { name, icon }
+ */
+export function saveUserProfile(profile) {
+  if (!profile) return;
+  GameState.userProfile = profile;
+  try {
+    localStorage.setItem('mini_card_battle_player_name', profile.name);
+    localStorage.setItem('mini_card_battle_player_icon', profile.icon);
+  } catch (e) {
+    console.error('Failed to save user profile:', e);
+  }
 }

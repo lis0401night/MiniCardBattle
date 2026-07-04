@@ -1137,6 +1137,7 @@ export async function submitDefenseDeck(providedName = null) {
       body: JSON.stringify({
         uuid: getOrCreateUUID(),
         name: playerName,
+        icon: GameState.userProfile?.icon || 'player',
         character: GameState.playerConfig.id,
         stage: GameState.selectedStageId || 'plain',
         deck: GameState.playerDeckSelection.map((c) => ({

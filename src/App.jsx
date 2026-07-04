@@ -30,6 +30,9 @@ import DefenseExchangeScreen from './pages/DefenseExchangeScreen.jsx';
 import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
 import ChallengeUnlockScreen from './pages/ChallengeUnlockScreen.jsx';
 import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
+import DefenseRankingScreen from './pages/DefenseRankingScreen.jsx';
+import ChallengeRankingScreen from './pages/ChallengeRankingScreen.jsx';
+import TournamentRankingScreen from './pages/TournamentRankingScreen.jsx';
 import DeckEditorScreen from './pages/DeckEditorScreen.jsx';
 import DeckListScreen from './pages/DeckListScreen.jsx';
 import CharacterSelectScreen from './pages/CharacterSelectScreen.jsx';
@@ -127,6 +130,9 @@ const SCREEN_COMPONENTS = {
   'screen-challenge-exchange': ChallengeExchangeScreen,
   'screen-challenge-unlock': ChallengeUnlockScreen,
   'screen-defense-battle-list': DefenseBattleListScreen,
+  'screen-defense-ranking': DefenseRankingScreen,
+  'screen-challenge-ranking': ChallengeRankingScreen,
+  'screen-tournament-ranking': TournamentRankingScreen,
   'screen-dungeon-menu': DungeonMenuScreen,
   'screen-story-resume': StoryResumeScreen,
   'screen-dungeon-rules': DungeonRulesScreen,

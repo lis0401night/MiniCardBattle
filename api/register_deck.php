@@ -34,6 +34,7 @@ $character = preg_replace('/[^a-z0-9_]/', '', $data['character']);
 $deck = $data['deck'];
 $skin = isset($data['skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['skin']) : 'default';
 $playmat = isset($data['playmat']) ? preg_replace('/[^a-z0-9_]/', '', $data['playmat']) : null;
+$icon = isset($data['icon']) ? preg_replace('/[^a-z0-9_]/', '', $data['icon']) : 'player';
 
 // スキン情報全体の取得とサニタイズ（トークン画像の正しい表示に必要）
 $skins = [];
@@ -90,6 +91,7 @@ if (file_exists($filename)) {
 $player_data = [
     'uuid' => $uuid,
     'name' => $name,
+    'icon' => $icon,
     'character' => $character,
     'skin' => $skin,
     'playmat' => $playmat,

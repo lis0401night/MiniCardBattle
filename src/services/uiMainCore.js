@@ -23,7 +23,11 @@ import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { GameState } from '../state/gameState.js';
 import { setPlayerReadyOnly } from './multiplayer.js';
 import { setupDialogueScreen } from './uiDialogue.js';
-import { showAlertModal, showConfirmModal } from './uiModals.js';
+import {
+  showAlertModal,
+  showConfirmModal,
+  showProfileModal,
+} from './uiModals.js';
 
 const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
@@ -79,6 +83,11 @@ export function showOptions() {
   // スライダーの値同期待ちは OptionsScreen.jsx の React 側に一任する
   switchScreen('screen-options');
   window.dispatchEvent(new Event('optionsOpened'));
+}
+
+export function showProfileSettings() {
+  playSound(SOUNDS.seClick);
+  showProfileModal();
 }
 
 export function updateVolume(val) {
@@ -713,6 +722,11 @@ export async function showDefenseBattleList() {
   switchScreen('screen-defense-battle-list');
 }
 
+export async function showDefenseRanking() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-defense-ranking');
+}
+
 export async function startAttackBattle(enemyPlayerData) {
   playSound(SOUNDS.seClick);
 
@@ -1033,11 +1047,12 @@ export function confirmStageSelect(stageId) {
   }
 
   if (GameState.gameMode === 'defense_register') {
-    // 防衛登録：ステージ選択の後はデータ保存処理へ
+    // 防衛登録：プロフィール設定で保存されたプレイヤー名を使用して自動登録
+    const profileName = GameState.userProfile?.name || 'プレイヤー';
     if (window.submitDefenseDeckWrapper) {
-      window.submitDefenseDeckWrapper(GameState.playerName || 'プレイヤー');
+      window.submitDefenseDeckWrapper(profileName);
     } else if (typeof window.submitDefenseDeck === 'function') {
-      window.submitDefenseDeck(GameState.playerName || 'プレイヤー');
+      window.submitDefenseDeck(profileName);
     }
   } else if (GameState.gameMode === 'online_deck_edit') {
     // ステージ選択が完了したので最新状態をオンライン設定として保存

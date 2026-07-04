@@ -27,6 +27,12 @@ export default function TournamentMenuScreen() {
           onClick={() => switchScreen?.('screen-tournament-rules')}
         />
         <MenuButton
+          label="ランキング"
+          variant="red"
+          style={{ color: '#ffffff' }}
+          onClick={() => switchScreen?.('screen-tournament-ranking')}
+        />
+        <MenuButton
           label="挑戦"
           variant="blue"
           onClick={() => startGameMode?.('tournament')}
