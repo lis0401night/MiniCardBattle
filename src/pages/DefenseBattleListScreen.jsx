@@ -247,6 +247,10 @@ export default function DefenseBattleListScreen() {
           paddingTop: '10px',
           gap: '10px',
           overflowY: 'auto',
+          width: '100%',
+          maxWidth: '480px',
+          height: '450px',
+          flex: 'none',
         }}
       >
         {status === 'loading' && (
