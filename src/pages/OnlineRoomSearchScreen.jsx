@@ -5,12 +5,9 @@ import {
   joinRoom,
   listenToLobbyRooms,
 } from '../services/multiplayer.js';
-import {
-  closePlayerNameModal,
-  showOnlineLobby,
-  showOnlineMenu,
-} from '../services/uiMainCore.js';
+import { showOnlineLobby, showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -66,40 +63,37 @@ export default function OnlineRoomSearchScreen() {
 
   const handleJoinClick = (roomId) => {
     playSound?.(SOUNDS.seClick);
-    if (window.showPlayerNameModalState) {
-      window.showPlayerNameModalState(async (name) => {
-        if (!name.trim()) {
-          showAlertModal?.('プレイヤー名を入力してください！');
-          return;
+    const name = (
+      GameState.userProfile?.name ||
+      localStorage.getItem('mini_card_battle_player_name') ||
+      'プレイヤー'
+    ).trim();
+
+    setIsJoining(true);
+    joinRoom(roomId, name)
+      .then(() => {
+        if (isMountedRef.current) {
+          setIsJoining(false);
+          showOnlineLobby?.();
         }
-        closePlayerNameModal?.();
-        localStorage.setItem('mini_card_battle_player_name', name);
-        setIsJoining(true);
-        try {
-          await joinRoom(roomId, name);
-          if (isMountedRef.current) {
-            setIsJoining(false);
-            showOnlineLobby?.();
-          }
-        } catch (e) {
-          console.error(e);
-          if (isMountedRef.current) setIsJoining(false);
-          const msg = e?.message || '';
-          if (
-            e?.code === 'PERMISSION_DENIED' ||
-            msg.includes('Permission denied')
-          ) {
-            showAlertModal?.(
-              '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
-            );
-          } else {
-            showAlertModal?.(
-              'ルームへの入室に失敗しました（既に満員か解散された可能性があります）。'
-            );
-          }
+      })
+      .catch((e) => {
+        console.error(e);
+        if (isMountedRef.current) setIsJoining(false);
+        const msg = e?.message || '';
+        if (
+          e?.code === 'PERMISSION_DENIED' ||
+          msg.includes('Permission denied')
+        ) {
+          showAlertModal?.(
+            '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
+          );
+        } else {
+          showAlertModal?.(
+            'ルームへの入室に失敗しました（既に満員か解散された可能性があります）。'
+          );
         }
       });
-    }
   };
 
   return (

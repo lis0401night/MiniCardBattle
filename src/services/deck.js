@@ -1089,9 +1089,7 @@ export function finishDeckEdit() {
   saveDeck(); // ここでまとめて保存
 
   if (GameState.gameMode === 'defense_register') {
-    if (window.showPlayerNameModalState) {
-      window.showPlayerNameModalState();
-    }
+    submitDefenseDeck();
   } else if (GameState.gameMode === 'online_deck_edit') {
     GameState.appState = 'online';
     if (window.reloadOnlineLobbyConfig) window.reloadOnlineLobbyConfig();
@@ -1103,12 +1101,12 @@ export function finishDeckEdit() {
 }
 
 export async function submitDefenseDeck(providedName = null) {
-  const playerName = providedName ? providedName.trim() : '';
-
-  if (!playerName) {
-    showAlertModal('プレイヤーネームを入力してください。');
-    return;
-  }
+  const currentName =
+    providedName ||
+    GameState.userProfile?.name ||
+    localStorage.getItem('mini_card_battle_player_name') ||
+    'プレイヤー';
+  const playerName = currentName.trim();
 
   playSound(SOUNDS.seClick);
   localStorage.setItem('mini_card_battle_player_name', playerName);

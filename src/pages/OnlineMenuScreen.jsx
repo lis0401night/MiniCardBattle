@@ -3,13 +3,13 @@ import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
 import { createRoom } from '../services/multiplayer.js';
 import {
-  closePlayerNameModal,
   goToModeSelect,
   showOnlineLobby,
   showOnlineRules,
   showOnlineSearch,
 } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 
 /**
  * オンライン対戦メニュー画面
@@ -20,36 +20,33 @@ export default function OnlineMenuScreen() {
 
   const handleCreateRoomClick = () => {
     // クリック音は MenuButton 側で自動再生されるため、多重再生を防ぐためここでは明示的に呼び出さない
-    if (window.showPlayerNameModalState) {
-      window.showPlayerNameModalState(async (name) => {
-        if (!name.trim()) {
-          showAlertModal?.('プレイヤー名を入力してください！');
-          return;
-        }
-        closePlayerNameModal?.();
-        localStorage.setItem('mini_card_battle_player_name', name);
-        setIsMatching(true);
-        try {
-          await createRoom(name);
-          setIsMatching(false);
-          showOnlineLobby?.();
-        } catch (e) {
-          console.error(e);
-          setIsMatching(false);
-          const msg = e?.message || '';
-          if (
-            e?.code === 'PERMISSION_DENIED' ||
-            msg.includes('Permission denied')
-          ) {
-            showAlertModal?.(
-              '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
-            );
-          } else {
-            showAlertModal?.('ルーム作成に失敗しました。');
-          }
+    const name = (
+      GameState.userProfile?.name ||
+      localStorage.getItem('mini_card_battle_player_name') ||
+      'プレイヤー'
+    ).trim();
+
+    setIsMatching(true);
+    createRoom(name)
+      .then(() => {
+        setIsMatching(false);
+        showOnlineLobby?.();
+      })
+      .catch((e) => {
+        console.error(e);
+        setIsMatching(false);
+        const msg = e?.message || '';
+        if (
+          e?.code === 'PERMISSION_DENIED' ||
+          msg.includes('Permission denied')
+        ) {
+          showAlertModal?.(
+            '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
+          );
+        } else {
+          showAlertModal?.('ルーム作成に失敗しました。');
         }
       });
-    }
   };
 
   return (

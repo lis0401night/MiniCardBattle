@@ -808,19 +808,14 @@ export function startDefenseRegistration() {
   GameState.gameMode = 'defense_register';
   // 防衛デッキ新規登録時はプレイヤースキンをリセットし、デフォルト状態で選べるようにする
   GameState.playerSkins = {};
-
-  if (window.showPlayerNameModalState) {
-    window.showPlayerNameModalState((name) => {
-      GameState.playerName = name || DEFAULT_PLAYER_NAME;
-      GameState.appState = 'select_player';
-      initSelectScreen(false);
-      switchScreen('screen-select');
-    });
-  } else {
-    GameState.appState = 'select_player';
-    initSelectScreen(false);
-    switchScreen('screen-select');
-  }
+  GameState.playerName = (
+    GameState.userProfile?.name ||
+    localStorage.getItem('mini_card_battle_player_name') ||
+    DEFAULT_PLAYER_NAME
+  ).trim();
+  GameState.appState = 'select_player';
+  initSelectScreen(false);
+  switchScreen('screen-select');
 }
 
 export function closePlayerNameModal() {
