@@ -36,19 +36,19 @@ import { appendVersionQuery } from '../utils/constants/config.js';
 const AVAILABLE_ICONS = [
   { id: 'player', path: 'assets/icons/icon_player.png', name: 'デフォルト' },
   { id: 'android', path: 'assets/icons/icon_android.png', name: 'アイギス' },
-  { id: 'dragon', path: 'assets/icons/icon_dragon.png', name: 'リンドブルム' },
-  { id: 'knight', path: 'assets/icons/icon_knight.png', name: 'ガウェイン' },
-  { id: 'cthulhu', path: 'assets/icons/icon_cthulhu.png', name: 'ルルイエ' },
-  { id: 'elf', path: 'assets/icons/icon_elf.png', name: 'エルウィン' },
-  { id: 'cleric', path: 'assets/icons/icon_cleric.png', name: 'テレーゼ' },
+  { id: 'dragon', path: 'assets/icons/icon_dragon.png', name: 'イグニス' },
+  { id: 'knight', path: 'assets/icons/icon_knight.png', name: 'セレスティア' },
+  { id: 'cthulhu', path: 'assets/icons/icon_cthulhu.png', name: 'ナイア' },
+  { id: 'elf', path: 'assets/icons/icon_elf.png', name: 'リナ' },
+  { id: 'cleric', path: 'assets/icons/icon_cleric.png', name: 'エリシア' },
   {
     id: 'devilhunter',
     path: 'assets/icons/icon_devilhunter.png',
-    name: 'ダンテ',
+    name: 'マリア',
   },
-  { id: 'witch', path: 'assets/icons/icon_witch.png', name: '魔女' },
-  { id: 'oni', path: 'assets/icons/icon_oni.png', name: 'イブキ' },
-  { id: 'priest', path: 'assets/icons/icon_priest.png', name: 'セト' },
+  { id: 'witch', path: 'assets/icons/icon_witch.png', name: 'クロエ' },
+  { id: 'oni', path: 'assets/icons/icon_oni.png', name: 'カグラ' },
+  { id: 'priest', path: 'assets/icons/icon_priest.png', name: 'ネフティ' },
 ];
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
@@ -3065,7 +3065,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   playSound?.(SOUNDS?.seClick);
                   const trimmed = profileNameInput.trim();
                   if (!trimmed) {
-                    alert('プレイヤー名を入力してください。');
+                    showAlertModal?.('プレイヤー名を入力してください。');
                     return;
                   }
 

@@ -1552,3 +1552,38 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
 }
 
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
+
+export const RED_FRAME_CHARACTERS = ['satan', 'void', 'succubus', 'warlock'];
+
+/**
+ * プレイヤーのプロフィール画像パスを決定する共通関数
+ * @param {Object} player - プレイヤーデータ { icon, skin, ... }
+ * @param {Object} char - キャラクターオブジェクト
+ * @returns {string} 画像パス
+ */
+export function getPlayerIconPath(player, char) {
+  if (player && player.icon) {
+    return appendVersionQuery(`assets/icons/icon_${player.icon}.png`);
+  }
+  if (!char) return appendVersionQuery('assets/icons/icon_player.png');
+  return getSkinImage(char, player?.skin || 'default', 'icon');
+}
+
+/**
+ * プレイヤーのアイコン枠（赤/金）の種類を決定する共通関数
+ * @param {string} charId - キャラクターID
+ * @returns {string} 'red' または 'gold'
+ */
+export function getPlayerIconFrame(charId) {
+  return RED_FRAME_CHARACTERS.includes(charId) ? 'red' : 'gold';
+}
+
+/**
+ * プレイヤーのアイコン枠の画像パスを決定する共通関数（キャッシュバスティング対応）
+ * @param {string} charId - キャラクターID
+ * @returns {string} 画像パス
+ */
+export function getIconFramePath(charId) {
+  const frame = RED_FRAME_CHARACTERS.includes(charId) ? 'red' : 'gold';
+  return appendVersionQuery(`assets/icons/iconframe_${frame}.png`);
+}

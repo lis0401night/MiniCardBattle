@@ -1,6 +1,9 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { DECK_SIZE } from '../utils/constants/config.js';
 
+const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
+const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
+
 const safeParseArray = (key) => {
   try {
     const raw = localStorage.getItem(key);
@@ -14,10 +17,8 @@ const safeParseArray = (key) => {
 
 const loadUserProfile = () => {
   try {
-    const name =
-      localStorage.getItem('mini_card_battle_player_name') || 'プレイヤー';
-    const icon =
-      localStorage.getItem('mini_card_battle_player_icon') || 'player';
+    const name = localStorage.getItem(PROFILE_NAME_KEY) || 'プレイヤー';
+    const icon = localStorage.getItem(PROFILE_ICON_KEY) || 'player';
     return { name, icon };
   } catch (e) {
     console.error('Failed to load user profile:', e);
@@ -109,10 +110,20 @@ if (typeof window !== 'undefined') {
  */
 export function saveUserProfile(profile) {
   if (!profile) return;
-  GameState.userProfile = profile;
+  const merged = {
+    name:
+      typeof profile.name === 'string' && profile.name.trim()
+        ? profile.name
+        : GameState.userProfile.name,
+    icon:
+      typeof profile.icon === 'string' && profile.icon
+        ? profile.icon
+        : GameState.userProfile.icon,
+  };
+  GameState.userProfile = merged;
   try {
-    localStorage.setItem('mini_card_battle_player_name', profile.name);
-    localStorage.setItem('mini_card_battle_player_icon', profile.icon);
+    localStorage.setItem(PROFILE_NAME_KEY, merged.name);
+    localStorage.setItem(PROFILE_ICON_KEY, merged.icon);
   } catch (e) {
     console.error('Failed to save user profile:', e);
   }

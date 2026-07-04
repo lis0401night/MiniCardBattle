@@ -6,9 +6,9 @@ import { GameState } from '../state/gameState.js';
 import { confirmCharSelect, goBackFromSelect } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import {
-  BOSS_CHARACTER_IDS,
   CHARACTERS,
   getSkinImage,
+  getIconFramePath,
 } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -602,7 +602,7 @@ export default function DeckListScreen({ switchScreen }) {
                                 }}
                               />
                               <img
-                                src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.png`}
+                                src={getIconFramePath(char.id)}
                                 className="banner-icon-frame"
                                 alt="frame"
                               />
@@ -757,7 +757,7 @@ export default function DeckListScreen({ switchScreen }) {
                     alt=""
                   />
                   <img
-                    src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.png`}
+                    src={getIconFramePath(char.id)}
                     className="banner-icon-frame"
                     alt="frame"
                   />

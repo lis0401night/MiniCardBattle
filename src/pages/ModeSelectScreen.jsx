@@ -23,6 +23,7 @@ export default function ModeSelectScreen() {
       <div className="top-right-actions">
         <button
           className="btn-circle btn-profile-menu"
+          aria-label="プロフィール設定"
           onClick={() => {
             playSound?.(SOUNDS?.seClick);
             showProfileSettings?.();
@@ -33,6 +34,7 @@ export default function ModeSelectScreen() {
 
         <button
           className="btn-circle btn-gear"
+          aria-label="オプション"
           onClick={() => {
             playSound?.(SOUNDS?.seClick);
             showOptions?.();

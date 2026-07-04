@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getPlayerIconPath,
+  getIconFramePath,
+} from '../utils/constants/characters.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 
 export default function TournamentRankingScreen() {
@@ -11,7 +15,9 @@ export default function TournamentRankingScreen() {
     const fetchPlayers = async () => {
       setStatus('loading');
       try {
-        const response = await fetch('api/get_player_decks.php');
+        const response = await fetch(
+          `api/get_player_decks.php?t=${Date.now()}`
+        );
         const result = await response.json();
 
         if (result.success) {
@@ -106,7 +112,7 @@ export default function TournamentRankingScreen() {
               (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
             if (!char) return null;
 
-            let borderColor = '#cd7f32';
+            let borderColor = undefined;
             let extraClass = '';
             if (p.rankIndex === 0) {
               extraClass = 'legendary';
@@ -163,18 +169,12 @@ export default function TournamentRankingScreen() {
                     </div>
                     <div className="banner-icon-wrapper">
                       <img
-                        src={
-                          p.icon
-                            ? `assets/icons/icon_${p.icon}.png`
-                            : getSkinImage
-                              ? getSkinImage(char, p.skin || 'default', 'icon')
-                              : char.icon
-                        }
+                        src={getPlayerIconPath(p, char)}
                         className="banner-icon"
                         alt=""
                       />
                       <img
-                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus', 'warlock'].includes(char.id) ? 'red' : 'gold'}.png`}
+                        src={getIconFramePath(char.id)}
                         className="banner-icon-frame"
                         alt="frame"
                       />

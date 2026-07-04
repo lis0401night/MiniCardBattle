@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
 import { startAttackBattle } from '../services/uiMainCore.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getPlayerIconPath,
+  getIconFramePath,
+} from '../utils/constants/characters.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 
 export default function DefenseBattleListScreen() {
@@ -80,7 +84,38 @@ export default function DefenseBattleListScreen() {
             }
           }
 
-          // キャッシュがない、またはキャッシュ内のプレイヤーがサーバーからいなくなっている場合は新規に選出
+          // 部分的欠落時の補填処理
+          if (
+            selectedPlayers.length > 0 &&
+            selectedPlayers.length < 5 &&
+            selectedPlayers.length < otherPlayers.length
+          ) {
+            const chosenUuids = new Set(selectedPlayers.map((p) => p.uuid));
+            const remaining = otherPlayers.filter(
+              (p) => !chosenUuids.has(p.uuid)
+            );
+            const shuffle = (arr) => {
+              const a = [...arr];
+              for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+              }
+              return a;
+            };
+            const shufRemaining = shuffle(remaining);
+            const needed = 5 - selectedPlayers.length;
+            for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
+              selectedPlayers.push(shufRemaining[i]);
+            }
+            // キャッシュを更新
+            const uuids = selectedPlayers.map((p) => p.uuid);
+            localStorage.setItem(
+              'mini_card_battle_defense_targets',
+              JSON.stringify(uuids)
+            );
+          }
+
+          // キャッシュがない場合は新規に選出
           if (selectedPlayers.length === 0) {
             // グループ分け
             // ① 自分より2倍以上（5ポイント獲得可能）
@@ -275,18 +310,12 @@ export default function DefenseBattleListScreen() {
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div className="banner-icon-wrapper">
                       <img
-                        src={
-                          p.icon
-                            ? `assets/icons/icon_${p.icon}.png`
-                            : getSkinImage
-                              ? getSkinImage(char, p.skin || 'default', 'icon')
-                              : char.icon
-                        }
+                        src={getPlayerIconPath(p, char)}
                         className="banner-icon"
                         alt=""
                       />
                       <img
-                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus', 'warlock'].includes(char.id) ? 'red' : 'gold'}.png`}
+                        src={getIconFramePath(char.id)}
                         className="banner-icon-frame"
                         alt="frame"
                       />
