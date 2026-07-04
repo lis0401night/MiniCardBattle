@@ -38,6 +38,10 @@ export default function ChallengeExchangeScreen() {
     () =>
       JSON.parse(localStorage.getItem('mini_card_battle_owned_playmats')) || []
   );
+  const [unlockedIcons, setUnlockedIcons] = useState(
+    () =>
+      JSON.parse(localStorage.getItem('mini_card_battle_unlocked_icons')) || []
+  );
   const [inventory, setInventory] = useState(
     () => GameState.playerInventory || {}
   );
@@ -124,12 +128,15 @@ export default function ChallengeExchangeScreen() {
     // 最終ガード: 所持上限・アンロック済みのチェック
     const isCard = item.type === 'card';
     const isPlaymat = item.type === 'playmat';
+    const isIcon = item.type === 'icon';
     let isAlreadyUnlocked = false;
 
     if (isCard) {
       isAlreadyUnlocked = (inventory[item.id] || 0) >= 4;
     } else if (isPlaymat) {
       isAlreadyUnlocked = unlockedPlaymats.includes(item.id);
+    } else if (isIcon) {
+      isAlreadyUnlocked = unlockedIcons.includes(item.id);
     } else {
       isAlreadyUnlocked = unlockedSkins.includes(item.id);
     }
@@ -185,6 +192,17 @@ export default function ChallengeExchangeScreen() {
       setUnlockedPlaymats(newUnlocked);
       showAlertModal(
         `「${item.name}」を交換しました！\nデッキ編成画面等でプレイマットを変更できます。`
+      );
+    } else if (item.type === 'icon') {
+      const newUnlocked = [...unlockedIcons, item.id];
+      localStorage.setItem(
+        'mini_card_battle_unlocked_icons',
+        JSON.stringify(newUnlocked)
+      );
+      Object.assign(GameState, { unlockedIcons: newUnlocked });
+      setUnlockedIcons(newUnlocked);
+      showAlertModal(
+        `「${item.name}」を交換しました！\nプロフィール設定画面でアイコンを変更できます。`
       );
     } else {
       const newUnlocked = [...unlockedSkins, item.id];
@@ -267,11 +285,14 @@ export default function ChallengeExchangeScreen() {
           {CHALLENGE_EXCHANGE_LINEUP.map((item) => {
             const isCard = item.type === 'card';
             const isPlaymat = item.type === 'playmat';
+            const isIcon = item.type === 'icon';
             let isUnlocked = false;
             if (isCard) {
               isUnlocked = (inventory[item.id] || 0) >= 4;
             } else if (isPlaymat) {
               isUnlocked = unlockedPlaymats.includes(item.id);
+            } else if (isIcon) {
+              isUnlocked = unlockedIcons.includes(item.id);
             } else {
               isUnlocked = unlockedSkins.includes(item.id);
             }
@@ -308,6 +329,8 @@ export default function ChallengeExchangeScreen() {
                 masterClass.image ||
                 `assets/boards/board_${item.id.replace('pm_', '')}.png`;
               displayName = masterClass.name || item.name;
+            } else if (isIcon) {
+              imgUrl = `assets/icons/icon_${item.id}.png`;
             } else {
               // スキンの場合
               imgUrl = `assets/characters/char_${item.id}.png`;
@@ -319,7 +342,9 @@ export default function ChallengeExchangeScreen() {
               ? 'カード'
               : isPlaymat
                 ? 'プレイマット'
-                : 'スキン';
+                : isIcon
+                  ? 'アイコン'
+                  : 'スキン';
 
             return (
               <div
@@ -336,7 +361,7 @@ export default function ChallengeExchangeScreen() {
                       itemObj: isCard ? masterClass : {},
                       titleColor: isCard
                         ? null
-                        : isPlaymat
+                        : isPlaymat || isIcon
                           ? '#facc15'
                           : charObj
                             ? charObj.color
@@ -379,12 +404,13 @@ export default function ChallengeExchangeScreen() {
                       backgroundImage: `url('${imgUrl}')`,
                       backgroundSize: isCard
                         ? 'cover'
-                        : isPlaymat
+                        : isPlaymat || isIcon
                           ? 'contain'
                           : '200%',
                       backgroundRepeat: 'no-repeat',
-                      backgroundPosition: isPlaymat ? 'center' : 'top center',
-                      backgroundColor: isPlaymat ? '#000' : '',
+                      backgroundPosition:
+                        isPlaymat || isIcon ? 'center' : 'top center',
+                      backgroundColor: isPlaymat || isIcon ? '#0f172a' : '',
                     }}
                   ></div>
 

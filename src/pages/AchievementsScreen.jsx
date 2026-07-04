@@ -8,6 +8,7 @@ import {
   showPlaymatAcquisitionModal,
   showPremiumAcquisitionModal,
   showSkinAcquisitionModal,
+  showIconAcquisitionModal,
 } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import {
@@ -155,6 +156,8 @@ export default function AchievementsScreen() {
           showPremiumAcquisitionModal?.(result.rewardValue);
         } else if (result.rewardType === 'skin') {
           showSkinAcquisitionModal?.(result.rewardName, result.rewardValue);
+        } else if (result.rewardType === 'icon') {
+          showIconAcquisitionModal?.(result.rewardName, result.rewardValue);
         }
       }
       updateAchievements();
@@ -492,7 +495,9 @@ export default function AchievementsScreen() {
                               ? 'プレミアム'
                               : ach.reward.type === 'skin'
                                 ? 'スキン'
-                                : 'カード'}
+                                : ach.reward.type === 'icon'
+                                  ? 'アイコン'
+                                  : 'カード'}
                         </span>
                         {savedData.isRewarded ? (
                           <span style={{ color: '#94a3b8' }}>(取得済)</span>

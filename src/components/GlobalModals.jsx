@@ -15,6 +15,7 @@ import {
   setShowPlaymatAcquisitionModalHook,
   setShowPremiumAcquisitionModalHook,
   setShowSkinAcquisitionModalHook,
+  setShowIconAcquisitionModalHook,
 } from '../services/uiGallery.js';
 import {
   backupDataToXML,
@@ -50,6 +51,170 @@ const AVAILABLE_ICONS = [
   { id: 'oni', path: 'assets/icons/icon_oni.png', name: 'カグラ' },
   { id: 'priest', path: 'assets/icons/icon_priest.png', name: 'ネフティ' },
 ];
+
+const EXTRA_ICONS = [
+  // 高難易度
+  {
+    id: 'satan',
+    name: 'サタン',
+    path: 'assets/icons/icon_satan.png',
+  },
+  {
+    id: 'android_high',
+    name: 'フルアーマーユニット',
+    path: 'assets/icons/icon_android_high.png',
+  },
+  {
+    id: 'dragon_high',
+    name: '熱砂の客人',
+    path: 'assets/icons/icon_dragon_high.png',
+  },
+  {
+    id: 'knight_high',
+    name: '暗黒騎士',
+    path: 'assets/icons/icon_knight_high.png',
+  },
+  {
+    id: 'cthulhu_high',
+    name: '魔界の征服者',
+    path: 'assets/icons/icon_cthulhu_high.png',
+  },
+  {
+    id: 'elf_high',
+    name: 'リナ&ヴォイテク',
+    path: 'assets/icons/icon_elf_high.png',
+  },
+  {
+    id: 'cleric_high',
+    name: '断罪の執行者',
+    path: 'assets/icons/icon_cleric_high.png',
+  },
+  {
+    id: 'devilhunter_high',
+    name: 'ゴーストライダー',
+    path: 'assets/icons/icon_devilhunter_high.png',
+  },
+  {
+    id: 'witch_high',
+    name: '時空の探索者',
+    path: 'assets/icons/icon_witch_high.png',
+  },
+  {
+    id: 'oni_high',
+    name: '紅月ノ狂鬼',
+    path: 'assets/icons/icon_oni_high.png',
+  },
+  {
+    id: 'priest_high',
+    name: '前世の記憶',
+    path: 'assets/icons/icon_priest_high.png',
+  },
+
+  // 水着
+  {
+    id: 'android_summer',
+    name: 'アイギス（水着）',
+    path: 'assets/icons/icon_android_summer.png',
+  },
+  {
+    id: 'dragon_summer',
+    name: 'イグニス（水着）',
+    path: 'assets/icons/icon_dragon_summer.png',
+  },
+  {
+    id: 'knight_summer',
+    name: 'セレスティア（水着）',
+    path: 'assets/icons/icon_knight_summer.png',
+  },
+  {
+    id: 'cthulhu_summer',
+    name: 'ナイア（水着）',
+    path: 'assets/icons/icon_cthulhu_summer.png',
+  },
+  {
+    id: 'elf_summer',
+    name: 'リナ（水着）',
+    path: 'assets/icons/icon_elf_summer.png',
+  },
+  {
+    id: 'cleric_summer',
+    name: 'エリシア（水着）',
+    path: 'assets/icons/icon_cleric_summer.png',
+  },
+  {
+    id: 'devilhunter_summer',
+    name: 'マリア（水着）',
+    path: 'assets/icons/icon_devilhunter_summer.png',
+  },
+  {
+    id: 'witch_summer',
+    name: 'クロエ（水着）',
+    path: 'assets/icons/icon_witch_summer.png',
+  },
+  {
+    id: 'oni_summer',
+    name: 'カグラ（水着）',
+    path: 'assets/icons/icon_oni_summer.png',
+  },
+  {
+    id: 'priest_summer',
+    name: 'ネフティ（水着）',
+    path: 'assets/icons/icon_priest_summer.png',
+  },
+
+  // 学園
+  {
+    id: 'android_school',
+    name: 'アイギス（学園）',
+    path: 'assets/icons/icon_android_school.png',
+  },
+  {
+    id: 'dragon_school',
+    name: 'イグニス（学園）',
+    path: 'assets/icons/icon_dragon_school.png',
+  },
+  {
+    id: 'knight_school',
+    name: 'セレスティア（学園）',
+    path: 'assets/icons/icon_knight_school.png',
+  },
+  {
+    id: 'cthulhu_school',
+    name: 'ナイア（学園）',
+    path: 'assets/icons/icon_cthulhu_school.png',
+  },
+  {
+    id: 'elf_school',
+    name: 'リナ（学園）',
+    path: 'assets/icons/icon_elf_school.png',
+  },
+  {
+    id: 'cleric_school',
+    name: 'エリシア（学園）',
+    path: 'assets/icons/icon_cleric_school.png',
+  },
+  {
+    id: 'devilhunter_school',
+    name: 'マリア（学園）',
+    path: 'assets/icons/icon_devilhunter_school.png',
+  },
+  {
+    id: 'witch_school',
+    name: 'クロエ（学園）',
+    path: 'assets/icons/icon_witch_school.png',
+  },
+  {
+    id: 'oni_school',
+    name: 'カグラ（学園）',
+    path: 'assets/icons/icon_oni_school.png',
+  },
+  {
+    id: 'priest_school',
+    name: 'ネフティ（学園）',
+    path: 'assets/icons/icon_priest_school.png',
+  },
+];
+
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { PLAYMAT_MASTER, ownedPlaymats } from '../utils/constants/playmats.js';
@@ -258,6 +423,25 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       }
     });
 
+    setShowIconAcquisitionModalHook((name, id) => {
+      const img = `assets/icons/icon_${id}.png`;
+      playSound?.(SOUNDS?.seSkill);
+      setAcquisitionData({
+        type: 'icon',
+        name,
+        id,
+        image: img,
+        canClose: false,
+      });
+      setTimeout(
+        () =>
+          setAcquisitionData((prev) =>
+            prev ? { ...prev, canClose: true } : null
+          ),
+        500
+      );
+    });
+
     window.showCharDetailModal = (char) => {
       playSound?.(SOUNDS?.seClick);
       setCharDetailData(char);
@@ -297,14 +481,17 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             data.displayType ||
             (data.type === 'playmat'
               ? 'プレイマット'
-              : data.type === 'premium'
-                ? 'プレミアム'
-                : data.type === 'skin'
-                  ? 'スキン'
-                  : 'カード'),
+              : data.type === 'icon'
+                ? 'アイコン'
+                : data.type === 'premium'
+                  ? 'プレミアム'
+                  : data.type === 'skin'
+                    ? 'スキン'
+                    : 'カード'),
           imgUrl: autoImgUrl,
           isSkin: data.type === 'skin',
           isPlaymat: data.type === 'playmat',
+          isIcon: data.type === 'icon',
           flavorOverride: data.displayFlavor,
           showPreviewActions: false,
           showExchangeActions: true,
@@ -419,6 +606,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setShowPremiumAcquisitionModalHook(null);
       setShowPlaymatAcquisitionModalHook(null);
       setShowSkinAcquisitionModalHook(null);
+      setShowIconAcquisitionModalHook(null);
       setCloseEnemyDeckModalHook(null);
 
       delete window.showEnemyDeckModal;
@@ -1022,6 +1210,77 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 className="btn ok-button"
                 style={{
                   background: 'linear-gradient(45deg, #c084fc, #9333ea)',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  width: '110px',
+                  alignSelf: 'center',
+                  margin: 0,
+                  pointerEvents: acquisitionData.canClose ? 'auto' : 'none',
+                  opacity: acquisitionData.canClose ? 1 : 0.5,
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setAcquisitionData(null);
+                }}
+              >
+                OK
+              </button>
+            </div>
+          )}
+
+          {acquisitionData.type === 'icon' && (
+            <div
+              style={{
+                background: 'var(--panel-bg, #1e293b)',
+                border: '2px solid #eab308',
+                borderRadius: '12px',
+                padding: '20px',
+                width: '90%',
+                maxWidth: '400px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                boxShadow: '0 0 30px rgba(234, 179, 8, 0.5)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 style={{ color: '#eab308', marginBottom: '20px' }}>
+                アイコン獲得！
+              </h2>
+              <div
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  marginBottom: '20px',
+                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={acquisitionData.image}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  alt="Icon"
+                />
+              </div>
+              <p
+                style={{
+                  color: '#fff',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginBottom: '25px',
+                }}
+              >
+                アイコン「{acquisitionData.name}」を入手しました！
+              </p>
+              <button
+                className="btn ok-button"
+                style={{
+                  background: 'linear-gradient(45deg, #eab308, #ca8a04)',
                   color: '#fff',
                   fontWeight: 'bold',
                   width: '110px',
@@ -2840,6 +3099,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             style={{
               width: '90%',
               maxWidth: '440px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
               background: 'linear-gradient(135deg, #1e293b, #0f172a)',
               borderRadius: '16px',
               border: '2px solid #334155',
@@ -2979,26 +3240,30 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               </span>
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 80px)',
+                  display: 'flex',
+                  flexWrap: 'wrap',
                   gap: '12px',
                   justifyContent: 'center',
                   width: '100%',
                   background: 'rgba(15, 23, 42, 0.4)',
-                  padding: '12px',
+                  padding: '16px',
                   borderRadius: '12px',
                   border: '1px solid #1e293b',
-                  maxHeight: '270px',
+                  maxHeight: '180px',
                   overflowY: 'auto',
-                  overflowX: 'hidden',
                 }}
               >
-                {AVAILABLE_ICONS.map((icon) => (
+                {[
+                  ...AVAILABLE_ICONS,
+                  ...EXTRA_ICONS.filter((extra) =>
+                    (GameState.unlockedIcons || []).includes(extra.id)
+                  ),
+                ].map((icon) => (
                   <div
                     key={icon.id}
                     style={{
-                      width: '80px',
-                      height: '80px',
+                      width: '60px',
+                      height: '60px',
                       borderRadius: '50%',
                       overflow: 'hidden',
                       border: `2px solid ${profileIconInput === icon.id ? '#eab308' : 'transparent'}`,
@@ -3007,14 +3272,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           ? '0 0 8px rgba(234, 179, 8, 0.4)'
                           : 'none',
                       cursor: 'pointer',
-                      transition: 'transform 0.15s',
                       background: '#1e293b',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      transform:
-                        profileIconInput === icon.id ? 'scale(1.05)' : 'none',
                     }}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
@@ -3044,7 +3306,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   flex: 1,
                   background: '#475569',
                   margin: 0,
-                  padding: '10px',
+                  padding: '10px 4px',
+                  fontSize: '1rem',
+                  whiteSpace: 'nowrap',
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
@@ -3059,7 +3323,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   flex: 1,
                   background: 'linear-gradient(45deg, #eab308, #ca8a04)',
                   margin: 0,
-                  padding: '10px',
+                  padding: '10px 4px',
+                  fontSize: '1rem',
+                  whiteSpace: 'nowrap',
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);

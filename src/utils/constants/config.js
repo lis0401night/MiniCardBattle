@@ -225,6 +225,85 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
       '千年の眠りから覚め、海辺で静かに涼む墓守。水面に映る太陽の光を静かに見つめている。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
+  {
+    id: 'android_summer',
+    type: 'icon',
+    name: '水陸両用装備',
+    description: '研究所より支給された耐熱・耐水処理を施した特殊換装とのこと。',
+    cost: 5,
+  },
+  {
+    id: 'dragon_summer',
+    type: 'icon',
+    name: '真夏の焔竜姫',
+    description:
+      '太陽の熱よりも熱い竜 of 息吹。水辺でも彼女の炎が消えることは決してない。',
+    cost: 5,
+  },
+  {
+    id: 'knight_summer',
+    type: 'icon',
+    name: '波打ち際の騎士',
+    description:
+      '鎧を脱ぎ捨て、ひとときの休息を楽しむ騎士。その剣腕は水着姿でも少しも鈍らない。',
+    cost: 5,
+  },
+  {
+    id: 'cthulhu_summer',
+    type: 'icon',
+    name: '深海のサマースイム',
+    description:
+      '深淵から現れた名状しがたき水着姿。彼女が泳ぐたび、波間に狂気が蠢くという。',
+    cost: 5,
+  },
+  {
+    id: 'elf_summer',
+    type: 'icon',
+    name: '水辺の流浪者',
+    description:
+      '森を抜け出し、海辺にやってきた流浪のエルフ。波の音に耳を傾ける穏やかな時間。',
+    cost: 5,
+  },
+  {
+    id: 'cleric_summer',
+    type: 'icon',
+    name: '背徳のサマーバカンス',
+    description:
+      '神職の務めを忘れ、開放的な夏を満喫する聖職者。神の慈悲は海よりも広いらしい。',
+    cost: 5,
+  },
+  {
+    id: 'devilhunter_summer',
+    type: 'icon',
+    name: '渚の悪魔狩り',
+    description:
+      '悪魔を狩るのも夏休みが必要だ。ただし、銃の手入れだけは怠らない。',
+    cost: 5,
+  },
+  {
+    id: 'witch_summer',
+    type: 'icon',
+    name: '不機嫌なサマー・グリモワール',
+    description:
+      '無理矢理取らされた夏休み。慣れない水着と照りつける太陽のせいで、全く読書に集中できていないようだ。',
+    cost: 5,
+  },
+  {
+    id: 'oni_summer',
+    type: 'icon',
+    name: '涼み鬼の波打ち肌',
+    description:
+      '普段は和装の鬼娘も、たまには羽を伸ばして海辺で遊ぶ。しかしその圧倒的な力は健在である。',
+    cost: 5,
+  },
+  {
+    id: 'priest_summer',
+    type: 'icon',
+    name: '墓守の休息',
+    description:
+      '千年の眠りから覚め、海辺で静かに涼む墓守。水面に映る太陽の光を静かに見つめている。',
+    cost: 5,
+  },
   { id: 'queen', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'snowwhite', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
 ];
@@ -384,6 +463,78 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     name: 'プレイマット：ミステリアスな留学生',
     description: '遠い異国からやってきた留学生。いつも何かを調べているらしい。',
     cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'android_school',
+    type: 'icon',
+    name: '献身的な後輩',
+    description: 'いつも先輩の背中を追いかける、一途で献身的な後輩。',
+    cost: 5,
+  },
+  {
+    id: 'dragon_school',
+    type: 'icon',
+    name: '放課後ディストーション',
+    description:
+      '軽音部でギターをかき鳴らすサークルの姫。彼女のライブはいつも爆音。',
+    cost: 5,
+  },
+  {
+    id: 'knight_school',
+    type: 'icon',
+    name: '必勝の剣道部主将',
+    description: '剣道部を全国大会へ導く熱血主将。その竹刀の太刀筋は見えない。',
+    cost: 5,
+  },
+  {
+    id: 'cthulhu_school',
+    type: 'icon',
+    name: '妖しきオカ研部長',
+    description: '放課後の旧校舎で怪しげな儀式を行うオカルト研究部の部長。',
+    cost: 5,
+  },
+  {
+    id: 'elf_school',
+    type: 'icon',
+    name: '癒しの飼育委員',
+    description:
+      '動物をこよなく愛する飼育委員。彼女の周りには常に動物が集まる。',
+    cost: 5,
+  },
+  {
+    id: 'cleric_school',
+    type: 'icon',
+    name: '恐怖の特別指導',
+    description: '逆らう生徒には容赦しない、学園で最も恐れられるスパルタ教師。',
+    cost: 5,
+  },
+  {
+    id: 'devilhunter_school',
+    type: 'icon',
+    name: '孤高のスケバン',
+    description: '群れることを嫌う孤高のスケバン。喧嘩の強さは学園一との噂。',
+    cost: 5,
+  },
+  {
+    id: 'witch_school',
+    type: 'icon',
+    name: '気怠げな親友の妹',
+    description: '親友の妹で、いつも気怠げにしている。放課後は早く帰りたがる。',
+    cost: 5,
+  },
+  {
+    id: 'oni_school',
+    type: 'icon',
+    name: '鬼の風紀委員',
+    description: '校則違反を絶対に許さない風紀委員。その取り締まりはまさに鬼。',
+    cost: 5,
+  },
+  {
+    id: 'priest_school',
+    type: 'icon',
+    name: 'ミステリアスな留学生',
+    description: '遠い異国からやってきた留学生。いつも何かを調べているらしい。',
+    cost: 5,
   },
   { id: 'threebears', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'goldilocks', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },

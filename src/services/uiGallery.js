@@ -149,6 +149,15 @@ export function showSkinAcquisitionModal(name, id) {
     return showSkinAcquisitionModalHook(name, id);
 }
 
+let showIconAcquisitionModalHook = null;
+export function setShowIconAcquisitionModalHook(hook) {
+  showIconAcquisitionModalHook = hook;
+}
+export function showIconAcquisitionModal(name, id) {
+  if (showIconAcquisitionModalHook)
+    return showIconAcquisitionModalHook(name, id);
+}
+
 export function executePlaymatAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.
 }

@@ -407,6 +407,14 @@ export const ACHIEVEMENT_MASTER = [
     reward: { type: 'playmat', value: 'satan', name: 'サタン' },
   },
   {
+    id: 'event_satan_clear_icon',
+    title: '魔王の肖像',
+    description: '高難易度イベントでサタンを倒す',
+    type: 'event_clear',
+    targetValue: 'satan_high',
+    reward: { type: 'icon', value: 'satan', name: 'サタン' },
+  },
+  {
     id: 'event_android_high_clear_skin',
     title: '機巧の極致',
     description: '高難易度イベントでアイギスを倒す',
@@ -431,6 +439,18 @@ export const ACHIEVEMENT_MASTER = [
     },
   },
   {
+    id: 'event_android_high_clear_icon',
+    title: '機巧の肖像',
+    description: '高難易度イベントでアイギスを倒す',
+    type: 'event_clear',
+    targetValue: 'android_high',
+    reward: {
+      type: 'icon',
+      value: 'android_high',
+      name: 'フルアーマーユニット',
+    },
+  },
+  {
     id: 'event_dragon_high_clear_skin',
     title: '砂漠の宴の覇者',
     description: '高難易度イベントでイグニスを倒す',
@@ -445,6 +465,18 @@ export const ACHIEVEMENT_MASTER = [
     type: 'event_clear',
     targetValue: 'dragon_high',
     reward: { type: 'playmat', value: 'pm_dragon_high', name: '熱砂の客人' },
+  },
+  {
+    id: 'event_dragon_high_clear_icon',
+    title: '焔竜の紋章',
+    description: '高難易度イベントでイグニスを倒す',
+    type: 'event_clear',
+    targetValue: 'dragon_high',
+    reward: {
+      type: 'icon',
+      value: 'dragon_high',
+      name: '熱砂の客人',
+    },
   },
   {
     id: 'event_knight_high_clear_skin',
@@ -463,6 +495,18 @@ export const ACHIEVEMENT_MASTER = [
     reward: { type: 'playmat', value: 'pm_knight_high', name: '暗黒騎士' },
   },
   {
+    id: 'event_knight_high_clear_icon',
+    title: '魔剣の紋章',
+    description: '高難易度イベントでセレスティアを倒す',
+    type: 'event_clear',
+    targetValue: 'knight_high',
+    reward: {
+      type: 'icon',
+      value: 'knight_high',
+      name: '暗黒騎士',
+    },
+  },
+  {
     id: 'event_cthulhu_high_clear_skin',
     title: '魔界の征服者',
     description: '高難易度イベントでナイアを倒す',
@@ -477,6 +521,14 @@ export const ACHIEVEMENT_MASTER = [
     type: 'event_clear',
     targetValue: 'cthulhu_high',
     reward: { type: 'playmat', value: 'pm_cthulhu_high', name: '魔界の征服者' },
+  },
+  {
+    id: 'event_cthulhu_high_clear_icon',
+    title: '深淵の印章',
+    description: '高難易度イベントでナイアを倒す',
+    type: 'event_clear',
+    targetValue: 'cthulhu_high',
+    reward: { type: 'icon', value: 'cthulhu_high', name: '魔界の征服者' },
   },
   {
     id: 'event_elf_high_clear_skin',
@@ -495,6 +547,14 @@ export const ACHIEVEMENT_MASTER = [
     reward: { type: 'playmat', value: 'pm_elf_high', name: 'リナ&ヴォイテク' },
   },
   {
+    id: 'event_elf_high_clear_icon',
+    title: '流浪の印',
+    description: '高難易度イベントでリナを倒す',
+    type: 'event_clear',
+    targetValue: 'elf_high',
+    reward: { type: 'icon', value: 'elf_high', name: 'リナ&ヴォイテク' },
+  },
+  {
     id: 'event_cleric_high_clear_skin',
     title: '断罪の執行者',
     description: '高難易度イベントでエリシアを倒す',
@@ -509,6 +569,18 @@ export const ACHIEVEMENT_MASTER = [
     type: 'event_clear',
     targetValue: 'cleric_high',
     reward: { type: 'playmat', value: 'pm_cleric_high', name: '断罪の執行者' },
+  },
+  {
+    id: 'event_cleric_high_clear_icon',
+    title: '断罪の刻印',
+    description: '高難易度イベントでエリシアを倒す',
+    type: 'event_clear',
+    targetValue: 'cleric_high',
+    reward: {
+      type: 'icon',
+      value: 'cleric_high',
+      name: '断罪の執行者',
+    },
   },
   {
     id: 'event_devilhunter_high_clear_skin',
@@ -535,6 +607,18 @@ export const ACHIEVEMENT_MASTER = [
     },
   },
   {
+    id: 'event_devilhunter_high_clear_icon',
+    title: '棺の紋章',
+    description: '高難易度イベントでマリアを倒す',
+    type: 'event_clear',
+    targetValue: 'devilhunter_high',
+    reward: {
+      type: 'icon',
+      value: 'devilhunter_high',
+      name: 'ゴーストライダー',
+    },
+  },
+  {
     id: 'event_witch_high_clear_skin',
     title: '時空の探索者 クロエ',
     description: '高難易度イベントでクロエを倒す',
@@ -549,6 +633,14 @@ export const ACHIEVEMENT_MASTER = [
     type: 'event_clear',
     targetValue: 'witch_high',
     reward: { type: 'playmat', value: 'pm_witch_high', name: '時空の探索者' },
+  },
+  {
+    id: 'event_witch_high_clear_icon',
+    title: '時駆けの刻印',
+    description: '高難易度イベントでクロエを倒す',
+    type: 'event_clear',
+    targetValue: 'witch_high',
+    reward: { type: 'icon', value: 'witch_high', name: '時空の探索者' },
   },
   {
     id: 'event_oni_high_clear_skin',
@@ -567,6 +659,14 @@ export const ACHIEVEMENT_MASTER = [
     reward: { type: 'playmat', value: 'pm_oni_high', name: '紅月ノ狂鬼' },
   },
   {
+    id: 'event_oni_high_clear_icon',
+    title: '紅月の紋章',
+    description: '高難易度イベントでカグラを倒す',
+    type: 'event_clear',
+    targetValue: 'oni_high',
+    reward: { type: 'icon', value: 'oni_high', name: '紅月ノ狂鬼' },
+  },
+  {
     id: 'event_priest_high_clear_skin',
     title: '前世の記憶',
     description: '高難易度イベントでネフティを倒す',
@@ -581,6 +681,18 @@ export const ACHIEVEMENT_MASTER = [
     type: 'event_clear',
     targetValue: 'priest_high',
     reward: { type: 'playmat', value: 'pm_priest_high', name: '前世の記憶' },
+  },
+  {
+    id: 'event_priest_high_clear_icon',
+    title: '王墓の印章',
+    description: '高難易度イベントでネフティを倒す',
+    type: 'event_clear',
+    targetValue: 'priest_high',
+    reward: {
+      type: 'icon',
+      value: 'priest_high',
+      name: '前世の記憶',
+    },
   },
   // --- 防衛戦勝利数 ---
   {
@@ -1113,6 +1225,28 @@ export function claimAchievementReward(id) {
       rewardValue: skinId,
       rewardName: master.reward.name,
     };
+  } else if (master.reward.type === 'icon') {
+    const iconId = master.reward.value;
+    if (!GameState.unlockedIcons) {
+      GameState.unlockedIcons = [];
+    }
+    if (!GameState.unlockedIcons.includes(iconId)) {
+      GameState.unlockedIcons.push(iconId);
+    }
+    localStorage.setItem(
+      'mini_card_battle_unlocked_icons',
+      JSON.stringify(GameState.unlockedIcons)
+    );
+
+    ach.isRewarded = true;
+    saveAchievements();
+    saveDeck();
+    return {
+      success: true,
+      rewardType: 'icon',
+      rewardValue: iconId,
+      rewardName: master.reward.name,
+    };
   }
 
   ach.isRewarded = true;
@@ -1151,6 +1285,13 @@ export function checkAndFixMissingRewards() {
         data.isRewarded = false;
         needsSave = true;
         console.log(`[修正] スキン ${reward.value} を未受取に戻しました`);
+      }
+    } else if (reward.type === 'icon') {
+      const unlocked = GameState.unlockedIcons || [];
+      if (!unlocked.includes(reward.value)) {
+        data.isRewarded = false;
+        needsSave = true;
+        console.log(`[修正] アイコン ${reward.value} を未受取に戻しました`);
       }
     } else if (reward.type === 'card') {
       cardClaimedCounts[reward.value] =

@@ -155,13 +155,21 @@ export default function CardPreviewContent({
           <div
             style={{
               position: 'relative',
-              width: styleProps.isPlaymat ? '280px' : '180px',
-              height: styleProps.isPlaymat ? '140px' : '240px',
+              width: styleProps.isPlaymat
+                ? '280px'
+                : styleProps.isIcon
+                  ? '140px'
+                  : '180px',
+              height: styleProps.isPlaymat
+                ? '140px'
+                : styleProps.isIcon
+                  ? '140px'
+                  : '240px',
             }}
           >
             <div
               className={
-                styleProps.isPlaymat
+                styleProps.isPlaymat || styleProps.isIcon
                   ? ''
                   : `card blue${!isSkin ? rarityClass : ''}`
               }
@@ -178,14 +186,26 @@ export default function CardPreviewContent({
                       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.6)',
                       backgroundColor: '#000',
                     }
-                  : {
-                      width: '180px',
-                      height: '240px',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      backgroundColor: 'transparent',
-                    }
+                  : styleProps.isIcon
+                    ? {
+                        width: '140px',
+                        height: '140px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: '50%',
+                        boxShadow: 'none',
+                        backgroundColor: '#0f172a',
+                      }
+                    : {
+                        width: '180px',
+                        height: '240px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        backgroundColor: 'transparent',
+                      }
               }
               onClick={(e) => {
                 e.stopPropagation();
@@ -205,18 +225,21 @@ export default function CardPreviewContent({
                       filter: filter,
                       backgroundSize: isSkin ? 'contain' : 'cover',
                       backgroundRepeat:
-                        isSkin || styleProps.isPlaymat
+                        isSkin || styleProps.isPlaymat || styleProps.isIcon
                           ? 'no-repeat'
                           : 'inherit',
                       backgroundPosition: isSkin
                         ? 'top center'
-                        : styleProps.isPlaymat
+                        : styleProps.isPlaymat || styleProps.isIcon
                           ? 'center'
                           : 'center center',
-                      backgroundColor: styleProps.isPlaymat ? '#000' : '',
+                      backgroundColor:
+                        styleProps.isPlaymat || styleProps.isIcon
+                          ? '#0f172a'
+                          : '',
                     }}
                   ></div>
-                  {!isSkin && !styleProps.isPlaymat && (
+                  {!isSkin && !styleProps.isPlaymat && !styleProps.isIcon && (
                     <div
                       className="card-power"
                       style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}
@@ -226,9 +249,13 @@ export default function CardPreviewContent({
                         : card.power}
                     </div>
                   )}
-                  {!isSkin && !styleProps.isPlaymat && safeRenderSkillTag(card)}
                   {!isSkin &&
                     !styleProps.isPlaymat &&
+                    !styleProps.isIcon &&
+                    safeRenderSkillTag(card)}
+                  {!isSkin &&
+                    !styleProps.isPlaymat &&
+                    !styleProps.isIcon &&
                     card.equippedCards &&
                     card.equippedCards.length > 0 && (
                       <div
@@ -258,6 +285,7 @@ export default function CardPreviewContent({
             {isRevealed &&
               !isSkin &&
               !styleProps.isPlaymat &&
+              !styleProps.isIcon &&
               card.equippedCards &&
               card.equippedCards.length > 0 && (
                 <div
@@ -345,7 +373,7 @@ export default function CardPreviewContent({
           </h2>
 
           <div className="preview-scroll-area">
-            {!isSkin && !styleProps.isPlaymat && (
+            {!isSkin && !styleProps.isPlaymat && !styleProps.isIcon && (
               <div className="preview-skills-list">
                 {!isRevealed ? (
                   <p className="preview-skill-desc">クリックしてカードを公開</p>

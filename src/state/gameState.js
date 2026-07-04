@@ -33,6 +33,7 @@ export const GameState = {
   isInitializing: false,
   playerSkins: {},
   unlockedSkins: safeParseArray('mini_card_battle_unlocked_skins'),
+  unlockedIcons: safeParseArray('mini_card_battle_unlocked_icons'),
   decks: [], // 【追加】最大10個の別個デッキ
   currentDeckIndex: 0, // 【追加】現在操作中のデッキインデックス
   playerDeckSelection: [], // （旧）バトルや編集時の作業用として残す
