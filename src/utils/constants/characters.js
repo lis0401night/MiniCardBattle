@@ -1565,8 +1565,7 @@ export function getPlayerIconPath(player, char) {
   if (player && player.icon) {
     return appendVersionQuery(`assets/icons/icon_${player.icon}.png`);
   }
-  if (!char) return appendVersionQuery('assets/icons/icon_player.png');
-  return getSkinImage(char, player?.skin || 'default', 'icon');
+  return appendVersionQuery('assets/icons/icon_player.png');
 }
 
 /**
@@ -1586,4 +1585,21 @@ export function getPlayerIconFrame(charId) {
 export function getIconFramePath(charId) {
   const frame = getPlayerIconFrame(charId);
   return appendVersionQuery(`assets/icons/iconframe_${frame}.png`);
+}
+
+/**
+ * プレイヤーのアイコン画像からキャラクターを決定し、そのテーマカラーを取得する共通関数
+ * @param {Object} player - プレイヤーデータ { icon, character, ... }
+ * @param {Object} fallbackChar - フォールバック用のキャラクターオブジェクト
+ * @returns {string} カラーコード (e.g. '#38bdf8')
+ */
+export function getPlayerColor(player, fallbackChar) {
+  if (player && player.icon && player.icon !== 'player') {
+    const baseId = player.icon.split('_')[0];
+    const char = CHARACTERS[baseId];
+    if (char && char.color) {
+      return char.color;
+    }
+  }
+  return '#ffffff';
 }

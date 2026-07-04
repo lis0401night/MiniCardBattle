@@ -6,6 +6,7 @@ import {
   CHARACTERS,
   getPlayerIconPath,
   getIconFramePath,
+  getPlayerColor,
 } from '../utils/constants/characters.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 
@@ -313,7 +314,10 @@ export default function DefenseBattleListScreen() {
                     </div>
                     <span
                       className="banner-text"
-                      style={{ color: char.color, marginRight: '10px' }}
+                      style={{
+                        color: getPlayerColor(p, char),
+                        marginRight: '10px',
+                      }}
                     >
                       {p.name}
                     </span>
