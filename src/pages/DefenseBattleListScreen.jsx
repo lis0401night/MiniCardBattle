@@ -244,12 +244,10 @@ export default function DefenseBattleListScreen() {
         id="defense-player-list"
         style={{
           justifyContent: 'flex-start',
-          paddingTop: '10px',
-          gap: '10px',
           overflowY: 'auto',
           width: '100%',
           maxWidth: '480px',
-          height: '450px',
+          height: '492px',
           flex: 'none',
         }}
       >
