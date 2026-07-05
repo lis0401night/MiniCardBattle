@@ -1553,15 +1553,14 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
 
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
 
-export const RED_FRAME_CHARACTERS = ['satan', 'void', 'succubus', 'warlock'];
+export const RED_FRAME_CHARACTERS = BOSS_CHARACTER_IDS;
 
 /**
  * プレイヤーのプロフィール画像パスを決定する共通関数
  * @param {Object} player - プレイヤーデータ { icon, skin, ... }
- * @param {Object} char - キャラクターオブジェクト
  * @returns {string} 画像パス
  */
-export function getPlayerIconPath(player, _char) {
+export function getPlayerIconPath(player) {
   if (player && player.icon) {
     return appendVersionQuery(`assets/icons/icon_${player.icon}.png`);
   }
@@ -1590,10 +1589,9 @@ export function getIconFramePath(charId) {
 /**
  * プレイヤーのアイコン画像からキャラクターを決定し、そのテーマカラーを取得する共通関数
  * @param {Object} player - プレイヤーデータ { icon, character, ... }
- * @param {Object} fallbackChar - フォールバック用のキャラクターオブジェクト
  * @returns {string} カラーコード (e.g. '#38bdf8')
  */
-export function getPlayerColor(player, _fallbackChar) {
+export function getPlayerColor(player) {
   if (player && player.icon && player.icon !== 'player') {
     const baseId = player.icon.split('_')[0];
     const char = CHARACTERS[baseId];

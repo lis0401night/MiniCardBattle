@@ -1,6 +1,9 @@
 import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
-import { DEFAULT_PLAYER_NAME } from '../utils/constants/config.js';
+import {
+  DEFAULT_PLAYER_NAME,
+  RELOAD_CACHE_CLEAR_TIMEOUT_MS,
+} from '../utils/constants/config.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
@@ -254,7 +257,9 @@ export function reloadGame() {
   }
 
   // セーブデータ(LocalStorage)を保持したまま、キャッシュとサービスワーカーを完全にクリアして強制更新する
-  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 5000));
+  const timeoutPromise = new Promise((resolve) =>
+    setTimeout(resolve, RELOAD_CACHE_CLEAR_TIMEOUT_MS)
+  );
   Promise.race([clearCachesAndServiceWorkers(), timeoutPromise])
     .catch((err) => {
       console.error('Failed to clear cache and reload:', err);
@@ -1044,7 +1049,7 @@ export function confirmStageSelect(stageId) {
 
   if (GameState.gameMode === 'defense_register') {
     // 防衛登録：プロフィール設定で保存されたプレイヤー名を使って登録
-    const profileName = GameState.userProfile?.name || DEFAULT_PLAYER_NAME;
+    const profileName = GameState.playerName || DEFAULT_PLAYER_NAME;
     if (window.submitDefenseDeckWrapper) {
       window.submitDefenseDeckWrapper(profileName);
     } else if (typeof window.submitDefenseDeck === 'function') {

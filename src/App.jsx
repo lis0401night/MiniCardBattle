@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { showConfirmModal } from './services/uiModals.js';
 import GlobalModals from './components/GlobalModals.jsx';
 import DamageOverlay from './components/common/DamageOverlay.jsx';
@@ -172,6 +172,11 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
   const [loadingText, setLoadingText] = useState('LOADING...');
 
+  const currentScreenRef = useRef(currentScreen);
+  useEffect(() => {
+    currentScreenRef.current = currentScreen;
+  }, [currentScreen]);
+
   useEffect(() => {
     window.updateLoadingTextReact = (text) => {
       setLoadingText(text);
@@ -191,12 +196,7 @@ export default function App() {
         'screen-debug-battle',
         'screen-dialogue',
       ];
-      const isScreenActive = (id) => {
-        const el = document.getElementById(id);
-        return el && el.classList.contains('active');
-      };
-
-      const isInBattleScreen = battleScreens.some(isScreenActive);
+      const isInBattleScreen = battleScreens.includes(currentScreenRef.current);
 
       if (
         isInBattleScreen ||

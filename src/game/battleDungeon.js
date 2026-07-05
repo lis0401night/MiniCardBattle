@@ -44,7 +44,7 @@ export function resolveDungeonDeck(leaderCardId, aiLevelOrDiff = 'normal') {
 
   let diffKey = 'normal';
   if (typeof aiLevelOrDiff === 'number') {
-    diffKey = aiLevelOrDiff > 3 ? 'hard' : 'normal';
+    diffKey = aiLevelOrDiff >= 3 ? 'hard' : 'normal';
   } else if (typeof aiLevelOrDiff === 'string') {
     diffKey = aiLevelOrDiff;
   }

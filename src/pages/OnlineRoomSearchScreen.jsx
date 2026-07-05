@@ -7,8 +7,11 @@ import {
 } from '../services/multiplayer.js';
 import { showOnlineLobby, showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { GameState } from '../state/gameState.js';
-import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
+import {
+  getOrCreateUUID,
+  playSound,
+  resolvePlayerName,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
@@ -63,11 +66,7 @@ export default function OnlineRoomSearchScreen() {
 
   const handleJoinClick = (roomId) => {
     playSound?.(SOUNDS.seClick);
-    const name = (
-      GameState.userProfile?.name ||
-      localStorage.getItem('mini_card_battle_player_name') ||
-      'プレイヤー'
-    ).trim();
+    const name = resolvePlayerName();
 
     setIsJoining(true);
     joinRoom(roomId, name)

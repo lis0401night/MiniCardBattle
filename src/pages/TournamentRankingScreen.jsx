@@ -170,7 +170,7 @@ export default function TournamentRankingScreen() {
                     </div>
                     <div className="banner-icon-wrapper">
                       <img
-                        src={getPlayerIconPath(p, char)}
+                        src={getPlayerIconPath(p)}
                         className="banner-icon"
                         alt=""
                       />
@@ -183,7 +183,7 @@ export default function TournamentRankingScreen() {
                     <span
                       className="banner-text"
                       style={{
-                        color: getPlayerColor(p, char),
+                        color: getPlayerColor(p),
                         marginRight: '10px',
                       }}
                     >

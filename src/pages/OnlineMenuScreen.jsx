@@ -9,7 +9,7 @@ import {
   showOnlineSearch,
 } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
-import { GameState } from '../state/gameState.js';
+import { resolvePlayerName } from '../utils/gameUtils.js';
 
 /**
  * オンライン対戦メニュー画面
@@ -20,11 +20,7 @@ export default function OnlineMenuScreen() {
 
   const handleCreateRoomClick = () => {
     // クリック音は MenuButton 側で自動再生されるため、多重再生を防ぐためここでは明示的に呼び出さない
-    const name = (
-      GameState.userProfile?.name ||
-      localStorage.getItem('mini_card_battle_player_name') ||
-      'プレイヤー'
-    ).trim();
+    const name = resolvePlayerName();
 
     setIsMatching(true);
     createRoom(name)

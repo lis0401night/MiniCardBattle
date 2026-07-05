@@ -19,6 +19,7 @@ import {
   getCardImgUrl,
   getOrCreateUUID,
   playSound,
+  resolvePlayerName,
   shuffleArray,
   switchScreen,
   VALID_PREMIUM_GIFS,
@@ -1101,12 +1102,7 @@ export function finishDeckEdit() {
 }
 
 export async function submitDefenseDeck(providedName = null) {
-  const currentName =
-    providedName ||
-    GameState.userProfile?.name ||
-    localStorage.getItem('mini_card_battle_player_name') ||
-    'プレイヤー';
-  const playerName = currentName.trim();
+  const playerName = resolvePlayerName(providedName);
 
   playSound(SOUNDS.seClick);
   localStorage.setItem('mini_card_battle_player_name', playerName);

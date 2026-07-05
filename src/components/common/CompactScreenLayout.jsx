@@ -39,7 +39,10 @@ export default function CompactScreenLayout({
     overflowY: 'auto',
     ...(backgroundImage && {
       backgroundImage: backgroundImage.includes('url')
-        ? backgroundImage
+        ? backgroundImage.replace(
+            /url\(['"]?([^'")\s]+)['"]?\)/g,
+            (match, urlPath) => `url('${appendVersionQuery(urlPath)}')`
+          )
         : `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',

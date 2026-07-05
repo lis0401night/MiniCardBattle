@@ -11,6 +11,7 @@ export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
 export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の思考ウェイト時間 (ms)
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
+export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
 
 // 交換コストの定義（カテゴリ・レアリティ別）
 export const GOLD_PREMIUM_EXCHANGE_COST = 20; // ゴールド・プレミアムカード
@@ -556,3 +557,9 @@ export function appendVersionQuery(url) {
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}v=${GAME_VERSION}`;
 }
+
+// 防衛戦の選出ターゲット定数
+export const DEFENSE_TARGET_COUNT = 5;
+export const HIGH_TIER_PICK_COUNT = 1;
+export const MID_TIER_PICK_COUNT = 2;
+export const LOW_TIER_PICK_COUNT = 2;

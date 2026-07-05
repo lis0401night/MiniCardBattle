@@ -8,16 +8,7 @@ import {
   getIconFramePath,
   getPlayerColor,
 } from '../utils/constants/characters.js';
-import { getOrCreateUUID } from '../utils/gameUtils.js';
-
-const shuffleArray = (arr) => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
+import { getOrCreateUUID, selectDefenseTargets } from '../utils/gameUtils.js';
 
 export default function DefenseBattleListScreen() {
   const [players, setPlayers] = useState([]);
@@ -75,118 +66,10 @@ export default function DefenseBattleListScreen() {
 
           // 自分以外のプレイヤーのみを抽出
           const otherPlayers = activePlayers.filter((p) => !p.isMe);
-
-          let selectedPlayers = [];
-          const cachedUuidsRaw = localStorage.getItem(
-            'mini_card_battle_defense_targets'
+          const selectedPlayers = selectDefenseTargets(
+            otherPlayers,
+            myTotalPoints
           );
-
-          if (cachedUuidsRaw) {
-            try {
-              const cachedUuids = JSON.parse(cachedUuidsRaw);
-              if (Array.isArray(cachedUuids) && cachedUuids.length > 0) {
-                selectedPlayers = cachedUuids
-                  .map((uuid) => otherPlayers.find((p) => p.uuid === uuid))
-                  .filter(Boolean);
-              }
-            } catch (e) {
-              console.error('Failed to parse cached defense targets:', e);
-            }
-          }
-
-          // 部分的欠落時の補填処理
-          if (
-            selectedPlayers.length > 0 &&
-            selectedPlayers.length < 5 &&
-            selectedPlayers.length < otherPlayers.length
-          ) {
-            const chosenUuids = new Set(selectedPlayers.map((p) => p.uuid));
-            const remaining = otherPlayers.filter(
-              (p) => !chosenUuids.has(p.uuid)
-            );
-            const shufRemaining = shuffleArray(remaining);
-            const needed = 5 - selectedPlayers.length;
-            for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
-              selectedPlayers.push(shufRemaining[i]);
-            }
-            // キャッシュを更新
-            const uuids = selectedPlayers.map((p) => p.uuid);
-            localStorage.setItem(
-              'mini_card_battle_defense_targets',
-              JSON.stringify(uuids)
-            );
-          }
-
-          // キャッシュがない場合は新規に選出
-          if (selectedPlayers.length === 0) {
-            // グループ分け
-            // ① 自分より2倍以上（5ポイント獲得可能）
-            const group5 = otherPlayers.filter(
-              (p) =>
-                p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0
-            );
-            // ② 自分より上（3ポイント獲得可能）
-            const group3 = otherPlayers.filter(
-              (p) =>
-                p.displayTotalPoints > myTotalPoints &&
-                !(
-                  p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0
-                )
-            );
-            // ③ 自分より下・同等（1ポイント獲得可能）
-            const group1 = otherPlayers.filter(
-              (p) => p.displayTotalPoints <= myTotalPoints
-            );
-
-            const shuf5 = shuffleArray(group5);
-            const shuf3 = shuffleArray(group3);
-            const shuf1 = shuffleArray(group1);
-
-            const picked = [];
-            const chosenUuids = new Set();
-
-            // 1. 自分より2倍以上 × 1名
-            if (shuf5.length > 0) {
-              const p = shuf5[0];
-              picked.push(p);
-              chosenUuids.add(p.uuid);
-            }
-
-            // 2. 自分より上 × 2名
-            for (let i = 0; i < Math.min(2, shuf3.length); i++) {
-              const p = shuf3[i];
-              picked.push(p);
-              chosenUuids.add(p.uuid);
-            }
-
-            // 3. 自分より下・同等 × 2名
-            for (let i = 0; i < Math.min(2, shuf1.length); i++) {
-              const p = shuf1[i];
-              picked.push(p);
-              chosenUuids.add(p.uuid);
-            }
-
-            // 5名に満たない場合、残りのプールから補填する
-            if (picked.length < 5 && otherPlayers.length > picked.length) {
-              const remaining = otherPlayers.filter(
-                (p) => !chosenUuids.has(p.uuid)
-              );
-              const shufRemaining = shuffleArray(remaining);
-              const needed = 5 - picked.length;
-              for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
-                picked.push(shufRemaining[i]);
-              }
-            }
-
-            selectedPlayers = picked;
-
-            // キャッシュに保存
-            const uuids = selectedPlayers.map((p) => p.uuid);
-            localStorage.setItem(
-              'mini_card_battle_defense_targets',
-              JSON.stringify(uuids)
-            );
-          }
 
           if (selectedPlayers.length === 0) {
             setStatus('empty');
@@ -304,7 +187,7 @@ export default function DefenseBattleListScreen() {
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div className="banner-icon-wrapper">
                       <img
-                        src={getPlayerIconPath(p, char)}
+                        src={getPlayerIconPath(p)}
                         className="banner-icon"
                         alt=""
                       />
@@ -317,7 +200,7 @@ export default function DefenseBattleListScreen() {
                     <span
                       className="banner-text"
                       style={{
-                        color: getPlayerColor(p, char),
+                        color: getPlayerColor(p),
                         marginRight: '10px',
                       }}
                     >

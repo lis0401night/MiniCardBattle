@@ -168,7 +168,7 @@ export default function DefenseRankingScreen() {
                     </div>
                     <div className="banner-icon-wrapper">
                       <img
-                        src={getPlayerIconPath(p, char)}
+                        src={getPlayerIconPath(p)}
                         className="banner-icon"
                         alt=""
                       />
@@ -181,7 +181,7 @@ export default function DefenseRankingScreen() {
                     <span
                       className="banner-text"
                       style={{
-                        color: getPlayerColor(p, char),
+                        color: getPlayerColor(p),
                         marginRight: '10px',
                       }}
                     >

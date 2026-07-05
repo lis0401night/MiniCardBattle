@@ -245,7 +245,12 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     });
 
     setShowIconAcquisitionModalHook((name, id) => {
-      const img = appendVersionQuery(`assets/icons/icon_${id}.png`);
+      const iconDef = [...AVAILABLE_ICONS, ...EXTRA_ICONS].find(
+        (i) => i.id === id
+      );
+      const img = appendVersionQuery(
+        iconDef?.path || `assets/icons/icon_${id}.png`
+      );
       playSound?.(SOUNDS?.seSkill);
       setAcquisitionData({
         type: 'icon',
@@ -2916,19 +2921,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           }}
         >
           <div
-            className="modal-content"
+            className="modal-content profile-settings-container"
             style={{
-              width: '90%',
-              maxWidth: '440px',
               maxHeight: '90dvh',
               overflowY: 'auto',
               background: 'linear-gradient(135deg, #1e293b, #0f172a)',
               borderRadius: '16px',
               border: '2px solid #334155',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -2936,7 +2935,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             <h2
               style={{
                 color: '#eab308',
-                marginBottom: '20px',
+                marginBottom: '0px',
                 fontSize: '1.25rem',
                 fontWeight: 'bold',
               }}
@@ -2945,33 +2944,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             </h2>
 
             {/* プレビュー */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                background: 'rgba(30, 41, 59, 0.6)',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                width: '100%',
-                marginBottom: '20px',
-              }}
-            >
+            <div className="profile-current-preview" style={{ width: '100%' }}>
               <img
                 src={appendVersionQuery(
                   [...AVAILABLE_ICONS, ...EXTRA_ICONS].find(
                     (i) => i.id === profileIconInput
                   )?.path || 'assets/icons/icon_player.png'
                 )}
-                style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '2px solid #eab308',
-                  background: '#1e293b',
-                }}
                 alt="preview"
               />
               <div style={{ flex: 1 }}>
@@ -2999,82 +2978,27 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             </div>
 
             {/* プレイヤー名入力 */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                gap: '8px',
-                marginBottom: '20px',
-              }}
-            >
-              <label
-                style={{
-                  color: '#94a3b8',
-                  fontSize: '0.85rem',
-                  textAlign: 'left',
-                }}
-                htmlFor="modal-profile-name"
-              >
+            <div className="profile-input-group">
+              <label htmlFor="modal-profile-name">
                 プレイヤー名（最大10文字）
               </label>
               <input
                 id="modal-profile-name"
                 type="text"
+                className="profile-input"
                 value={profileNameInput}
                 onChange={(e) =>
                   setProfileNameInput(e.target.value.slice(0, 10))
                 }
                 placeholder="名前を入力..."
                 maxLength={10}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid #334155',
-                  background: '#0f172a',
-                  color: '#fff',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  textAlign: 'center',
-                }}
               />
             </div>
 
             {/* アイコン選択 */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                gap: '8px',
-                marginBottom: '24px',
-              }}
-            >
-              <span
-                style={{
-                  color: '#94a3b8',
-                  fontSize: '0.85rem',
-                  textAlign: 'left',
-                }}
-              >
-                アイコン選択
-              </span>
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '12px',
-                  justifyContent: 'center',
-                  width: '100%',
-                  background: 'rgba(15, 23, 42, 0.4)',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: '1px solid #1e293b',
-                  maxHeight: '180px',
-                  overflowY: 'auto',
-                }}
-              >
+            <div className="profile-icon-section">
+              <span className="profile-icon-section-label">アイコン選択</span>
+              <div className="profile-icon-grid" style={{ maxHeight: '180px' }}>
                 {[
                   ...AVAILABLE_ICONS,
                   ...EXTRA_ICONS.filter((extra) =>
@@ -3083,53 +3007,26 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 ].map((icon) => (
                   <div
                     key={icon.id}
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: `2px solid ${profileIconInput === icon.id ? '#eab308' : 'transparent'}`,
-                      boxShadow:
-                        profileIconInput === icon.id
-                          ? '0 0 8px rgba(234, 179, 8, 0.4)'
-                          : 'none',
-                      cursor: 'pointer',
-                      background: '#1e293b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
+                    className={`profile-icon-item${profileIconInput === icon.id ? ' selected' : ''}`}
                     onClick={() => {
                       playSound?.(SOUNDS?.seClick);
                       setProfileIconInput(icon.id);
                     }}
                     title={icon.name}
                   >
-                    <img
-                      src={appendVersionQuery(icon.path)}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                      }}
-                      alt={icon.name}
-                    />
+                    <img src={appendVersionQuery(icon.path)} alt={icon.name} />
                   </div>
                 ))}
               </div>
             </div>
 
             {/* アクションボタン */}
-            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+            <div className="profile-actions" style={{ marginTop: '0px' }}>
               <button
                 className="btn"
                 style={{
-                  flex: 1,
                   background: '#475569',
                   margin: 0,
-                  padding: '10px 4px',
-                  fontSize: '1rem',
                   whiteSpace: 'nowrap',
                 }}
                 onClick={() => {
@@ -3142,11 +3039,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               <button
                 className="btn"
                 style={{
-                  flex: 1,
                   background: 'linear-gradient(45deg, #eab308, #ca8a04)',
                   margin: 0,
-                  padding: '10px 4px',
-                  fontSize: '1rem',
                   whiteSpace: 'nowrap',
                 }}
                 onClick={() => {

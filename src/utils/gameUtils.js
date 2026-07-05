@@ -1,7 +1,14 @@
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from './constants/cards.js';
 import { getSkinImage } from './constants/characters.js';
-import { appendVersionQuery } from './constants/config.js';
+import {
+  appendVersionQuery,
+  DEFAULT_PLAYER_NAME,
+  DEFENSE_TARGET_COUNT,
+  HIGH_TIER_PICK_COUNT,
+  MID_TIER_PICK_COUNT,
+  LOW_TIER_PICK_COUNT,
+} from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import {
   audioCtx,
@@ -885,4 +892,146 @@ export function applyEquipMerge(targetCard, equipCard) {
   targetCard.equippedCards.push(equipCard);
 
   consumeArmSelf(targetCard, equipCard);
+}
+
+/**
+ * 防衛戦の選出キャッシュを保存する
+ * @param {Array} players - 選出されたプレイヤーのリスト
+ */
+export function saveCachedDefenseTargets(players) {
+  if (!players) return;
+  const uuids = players.map((p) => p.uuid);
+  localStorage.setItem(
+    'mini_card_battle_defense_targets',
+    JSON.stringify(uuids)
+  );
+}
+
+/**
+ * 防衛戦の対戦相手プレイヤーを選出する（キャッシュ考慮）
+ * @param {Array} otherPlayers - 自分以外の全プレイヤーリスト
+ * @param {number} myTotalPoints - 自分の総ポイント数
+ * @returns {Array} 選出されたプレイヤーリスト
+ */
+export function selectDefenseTargets(otherPlayers, myTotalPoints) {
+  let selectedPlayers = [];
+  const cachedUuidsRaw = localStorage.getItem(
+    'mini_card_battle_defense_targets'
+  );
+
+  if (cachedUuidsRaw) {
+    try {
+      const cachedUuids = JSON.parse(cachedUuidsRaw);
+      if (Array.isArray(cachedUuids) && cachedUuids.length > 0) {
+        selectedPlayers = cachedUuids
+          .map((uuid) => otherPlayers.find((p) => p.uuid === uuid))
+          .filter(Boolean);
+      }
+    } catch (e) {
+      console.error('Failed to parse cached defense targets:', e);
+    }
+  }
+
+  // 部分的欠落時の補填処理
+  if (
+    selectedPlayers.length > 0 &&
+    selectedPlayers.length < DEFENSE_TARGET_COUNT &&
+    selectedPlayers.length < otherPlayers.length
+  ) {
+    const chosenUuids = new Set(selectedPlayers.map((p) => p.uuid));
+    const remaining = otherPlayers.filter((p) => !chosenUuids.has(p.uuid));
+    const shufRemaining = shuffleArray(remaining);
+    const needed = DEFENSE_TARGET_COUNT - selectedPlayers.length;
+    for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
+      selectedPlayers.push(shufRemaining[i]);
+    }
+    // キャッシュを更新
+    saveCachedDefenseTargets(selectedPlayers);
+  }
+
+  // キャッシュがない場合は新規に選出
+  if (selectedPlayers.length === 0) {
+    // グループ分け
+    // ① 自分より2倍以上（5ポイント獲得可能）
+    const group5 = otherPlayers.filter(
+      (p) => p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0
+    );
+    // ② 自分より上（3ポイント獲得可能）
+    const group3 = otherPlayers.filter(
+      (p) =>
+        p.displayTotalPoints > myTotalPoints &&
+        !(p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0)
+    );
+    // ③ 自分より下・同等（1ポイント獲得可能）
+    const group1 = otherPlayers.filter(
+      (p) => p.displayTotalPoints <= myTotalPoints
+    );
+
+    const shuf5 = shuffleArray(group5);
+    const shuf3 = shuffleArray(group3);
+    const shuf1 = shuffleArray(group1);
+
+    const picked = [];
+    const chosenUuids = new Set();
+
+    // 1. 自分より2倍以上
+    for (let i = 0; i < Math.min(HIGH_TIER_PICK_COUNT, shuf5.length); i++) {
+      const p = shuf5[i];
+      picked.push(p);
+      chosenUuids.add(p.uuid);
+    }
+
+    // 2. 自分より上
+    for (let i = 0; i < Math.min(MID_TIER_PICK_COUNT, shuf3.length); i++) {
+      const p = shuf3[i];
+      picked.push(p);
+      chosenUuids.add(p.uuid);
+    }
+
+    // 3. 自分より下・同等
+    for (let i = 0; i < Math.min(LOW_TIER_PICK_COUNT, shuf1.length); i++) {
+      const p = shuf1[i];
+      picked.push(p);
+      chosenUuids.add(p.uuid);
+    }
+
+    // 5名に満たない場合、残りのプールから補填する
+    if (
+      picked.length < DEFENSE_TARGET_COUNT &&
+      otherPlayers.length > picked.length
+    ) {
+      const remaining = otherPlayers.filter((p) => !chosenUuids.has(p.uuid));
+      const shufRemaining = shuffleArray(remaining);
+      const needed = DEFENSE_TARGET_COUNT - picked.length;
+      for (let i = 0; i < Math.min(needed, shufRemaining.length); i++) {
+        picked.push(shufRemaining[i]);
+      }
+    }
+
+    selectedPlayers = picked;
+    // キャッシュに保存
+    saveCachedDefenseTargets(selectedPlayers);
+  }
+
+  return selectedPlayers;
+}
+
+/**
+ * プレイヤー名を解決する共通ユーティリティ（トリム・フォールバック対応）
+ * @param {string} [providedName] - 優先的に使用するプレイヤー名（手動入力など）
+ * @returns {string} 解決されたプレイヤー名
+ */
+export function resolvePlayerName(providedName = null) {
+  const fromProvided = providedName?.trim();
+  if (fromProvided) return fromProvided;
+
+  const fromProfile = GameState.userProfile?.name?.trim();
+  if (fromProfile) return fromProfile;
+
+  const fromStorage = localStorage
+    .getItem('mini_card_battle_player_name')
+    ?.trim();
+  if (fromStorage) return fromStorage;
+
+  return DEFAULT_PLAYER_NAME;
 }
