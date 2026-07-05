@@ -8,6 +8,7 @@ import {
   HIGH_TIER_PICK_COUNT,
   MID_TIER_PICK_COUNT,
   LOW_TIER_PICK_COUNT,
+  PROFILE_NAME_KEY,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import {
@@ -18,6 +19,9 @@ import {
   SOUNDS,
   unlockAudio,
 } from './sounds.js';
+
+// LocalStorageに保存する防衛戦選出キャッシュのキー
+const DEFENSE_TARGETS_STORAGE_KEY = 'mini_card_battle_defense_targets';
 
 // BGM再生の自動再生ブロック回避のためのグローバルなリトライ機構
 export let currentBgmAudio = null;
@@ -895,16 +899,29 @@ export function applyEquipMerge(targetCard, equipCard) {
 }
 
 /**
+ * 相手のポイントと自分のポイントを比較して獲得ポイント（ティア）を判定する
+ * @param {number} pTotalPoints - 相手の総ポイント数
+ * @param {number} myTotalPoints - 自分の総ポイント数
+ * @returns {number} 獲得ポイント（1 | 3 | 5）
+ */
+export function resolveWinTier(pTotalPoints, myTotalPoints) {
+  if (pTotalPoints > myTotalPoints) {
+    if (pTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
+      return 5;
+    }
+    return 3;
+  }
+  return 1;
+}
+
+/**
  * 防衛戦の選出キャッシュを保存する
  * @param {Array} players - 選出されたプレイヤーのリスト
  */
 export function saveCachedDefenseTargets(players) {
   if (!players) return;
   const uuids = players.map((p) => p.uuid);
-  localStorage.setItem(
-    'mini_card_battle_defense_targets',
-    JSON.stringify(uuids)
-  );
+  localStorage.setItem(DEFENSE_TARGETS_STORAGE_KEY, JSON.stringify(uuids));
 }
 
 /**
@@ -915,9 +932,7 @@ export function saveCachedDefenseTargets(players) {
  */
 export function selectDefenseTargets(otherPlayers, myTotalPoints) {
   let selectedPlayers = [];
-  const cachedUuidsRaw = localStorage.getItem(
-    'mini_card_battle_defense_targets'
-  );
+  const cachedUuidsRaw = localStorage.getItem(DEFENSE_TARGETS_STORAGE_KEY);
 
   if (cachedUuidsRaw) {
     try {
@@ -954,17 +969,15 @@ export function selectDefenseTargets(otherPlayers, myTotalPoints) {
     // グループ分け
     // ① 自分より2倍以上（5ポイント獲得可能）
     const group5 = otherPlayers.filter(
-      (p) => p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0
+      (p) => resolveWinTier(p.displayTotalPoints, myTotalPoints) === 5
     );
     // ② 自分より上（3ポイント獲得可能）
     const group3 = otherPlayers.filter(
-      (p) =>
-        p.displayTotalPoints > myTotalPoints &&
-        !(p.displayTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0)
+      (p) => resolveWinTier(p.displayTotalPoints, myTotalPoints) === 3
     );
     // ③ 自分より下・同等（1ポイント獲得可能）
     const group1 = otherPlayers.filter(
-      (p) => p.displayTotalPoints <= myTotalPoints
+      (p) => resolveWinTier(p.displayTotalPoints, myTotalPoints) === 1
     );
 
     const shuf5 = shuffleArray(group5);
@@ -1028,9 +1041,7 @@ export function resolvePlayerName(providedName = null) {
   const fromProfile = GameState.userProfile?.name?.trim();
   if (fromProfile) return fromProfile;
 
-  const fromStorage = localStorage
-    .getItem('mini_card_battle_player_name')
-    ?.trim();
+  const fromStorage = localStorage.getItem(PROFILE_NAME_KEY)?.trim();
   if (fromStorage) return fromStorage;
 
   return DEFAULT_PLAYER_NAME;

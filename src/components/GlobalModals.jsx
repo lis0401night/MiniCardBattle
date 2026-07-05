@@ -32,7 +32,10 @@ import {
   setShowProfileModalHook,
 } from '../services/uiModals.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  PROFILE_NAME_KEY,
+} from '../utils/constants/config.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
 
@@ -50,6 +53,78 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
+
+// 共通の獲得モーダルコンポーネント
+function AcquisitionModal({
+  title,
+  borderColor,
+  shadowColor,
+  imageSrc,
+  imageStyle,
+  itemName,
+  itemTypeName, // 'プレイマット', 'スキン', 'アイコン' などの日本語名
+  btnBg,
+  btnColor,
+  canClose,
+  onClose,
+}) {
+  return (
+    <div
+      style={{
+        background: 'var(--panel-bg, #1e293b)',
+        border: `2px solid ${borderColor}`,
+        borderRadius: '12px',
+        padding: '20px',
+        width: '90%',
+        maxWidth: '400px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        boxShadow: `0 0 30px ${shadowColor}`,
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h2 style={{ color: borderColor, marginBottom: '20px' }}>{title}</h2>
+      <div style={imageStyle}>
+        <img
+          src={imageSrc}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          alt={itemTypeName}
+        />
+      </div>
+      <p
+        style={{
+          color: '#fff',
+          fontSize: '1.1rem',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          marginBottom: '25px',
+        }}
+      >
+        {itemTypeName}「{itemName}」を入手しました！
+      </p>
+      <button
+        className="btn ok-button"
+        style={{
+          background: btnBg,
+          color: btnColor,
+          fontWeight: 'bold',
+          width: '110px',
+          alignSelf: 'center',
+          margin: 0,
+          pointerEvents: canClose ? 'auto' : 'none',
+          opacity: canClose ? 1 : 0.5,
+        }}
+        onClick={() => {
+          playSound?.(SOUNDS?.seClick);
+          onClose();
+        }}
+      >
+        OK
+      </button>
+    </div>
+  );
+}
 
 const syncPlayerConfigImages = (charDetailData, skinId) => {
   if (
@@ -349,7 +424,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
     window.showPlayerNameModalState = (callback) => {
       playSound?.(SOUNDS?.seClick);
-      const savedName = localStorage.getItem('mini_card_battle_player_name');
+      const savedName = localStorage.getItem(PROFILE_NAME_KEY);
       setPlayerNameInput(savedName || '');
       setPlayerNameCallback(() => callback);
       setPlayerNameVisible(true);
@@ -917,212 +992,77 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             )}
 
           {acquisitionData.type === 'playmat' && (
-            <div
-              style={{
-                background: 'var(--panel-bg, #1e293b)',
+            <AcquisitionModal
+              title="プレイマット獲得！"
+              borderColor="#facc15"
+              shadowColor="rgba(242, 201, 76, 0.5)"
+              imageSrc={acquisitionData.playmat.image}
+              imageStyle={{
+                width: '100%',
+                height: '160px',
+                borderRadius: '8px',
+                overflow: 'hidden',
                 border: '2px solid #facc15',
-                borderRadius: '12px',
-                padding: '20px',
-                width: '90%',
-                maxWidth: '400px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                boxShadow: '0 0 30px rgba(242, 201, 76, 0.5)',
+                marginBottom: '20px',
+                boxShadow: '0 0 15px rgba(242, 201, 76, 0.3)',
               }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ color: '#facc15', marginBottom: '20px' }}>
-                プレイマット獲得！
-              </h2>
-              <div
-                style={{
-                  width: '100%',
-                  height: '160px',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  border: '2px solid #facc15',
-                  marginBottom: '20px',
-                  boxShadow: '0 0 15px rgba(242, 201, 76, 0.3)',
-                }}
-              >
-                <img
-                  src={acquisitionData.playmat.image}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  alt="Playmat"
-                />
-              </div>
-              <p
-                style={{
-                  color: '#fff',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  marginBottom: '25px',
-                }}
-              >
-                プレイマット「{acquisitionData.name}」を入手しました！
-              </p>
-              <button
-                className="btn ok-button"
-                style={{
-                  background: 'linear-gradient(45deg, #facc15, #eab308)',
-                  color: '#000',
-                  fontWeight: 'bold',
-                  width: '110px',
-                  alignSelf: 'center',
-                  margin: 0,
-                  pointerEvents: acquisitionData.canClose ? 'auto' : 'none',
-                  opacity: acquisitionData.canClose ? 1 : 0.5,
-                }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setAcquisitionData(null);
-                }}
-              >
-                OK
-              </button>
-            </div>
+              itemName={acquisitionData.name}
+              itemTypeName="プレイマット"
+              btnBg="linear-gradient(45deg, #facc15, #eab308)"
+              btnColor="#000"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
           )}
 
           {acquisitionData.type === 'skin' && (
-            <div
-              style={{
-                background: 'var(--panel-bg, #1e293b)',
+            <AcquisitionModal
+              title="スキン獲得！"
+              borderColor="#c084fc"
+              shadowColor="rgba(192, 132, 252, 0.5)"
+              imageSrc={acquisitionData.image}
+              imageStyle={{
+                width: '160px',
+                height: '220px',
+                borderRadius: '8px',
+                overflow: 'hidden',
                 border: '2px solid #c084fc',
-                borderRadius: '12px',
-                padding: '20px',
-                width: '90%',
-                maxWidth: '400px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                boxShadow: '0 0 30px rgba(192, 132, 252, 0.5)',
+                marginBottom: '20px',
+                boxShadow: '0 0 15px rgba(192, 132, 252, 0.3)',
               }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ color: '#c084fc', marginBottom: '20px' }}>
-                スキン獲得！
-              </h2>
-              <div
-                style={{
-                  width: '160px',
-                  height: '220px',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  border: '2px solid #c084fc',
-                  marginBottom: '20px',
-                  boxShadow: '0 0 15px rgba(192, 132, 252, 0.3)',
-                }}
-              >
-                <img
-                  src={acquisitionData.image}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  alt="Skin"
-                />
-              </div>
-              <p
-                style={{
-                  color: '#fff',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  marginBottom: '25px',
-                }}
-              >
-                スキン「{acquisitionData.name}」を入手しました！
-              </p>
-              <button
-                className="btn ok-button"
-                style={{
-                  background: 'linear-gradient(45deg, #c084fc, #9333ea)',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  width: '110px',
-                  alignSelf: 'center',
-                  margin: 0,
-                  pointerEvents: acquisitionData.canClose ? 'auto' : 'none',
-                  opacity: acquisitionData.canClose ? 1 : 0.5,
-                }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setAcquisitionData(null);
-                }}
-              >
-                OK
-              </button>
-            </div>
+              itemName={acquisitionData.name}
+              itemTypeName="スキン"
+              btnBg="linear-gradient(45deg, #c084fc, #9333ea)"
+              btnColor="#fff"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
           )}
 
           {acquisitionData.type === 'icon' && (
-            <div
-              style={{
-                background: 'var(--panel-bg, #1e293b)',
-                border: '2px solid #eab308',
-                borderRadius: '12px',
-                padding: '20px',
-                width: '90%',
-                maxWidth: '400px',
+            <AcquisitionModal
+              title="アイコン獲得！"
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
+              imageSrc={acquisitionData.image}
+              imageStyle={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                marginBottom: '20px',
+                background: 'transparent',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                boxShadow: '0 0 30px rgba(234, 179, 8, 0.5)',
+                justifyContent: 'center',
               }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ color: '#eab308', marginBottom: '20px' }}>
-                アイコン獲得！
-              </h2>
-              <div
-                style={{
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  marginBottom: '20px',
-                  background: 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <img
-                  src={acquisitionData.image}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  alt="Icon"
-                />
-              </div>
-              <p
-                style={{
-                  color: '#fff',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  marginBottom: '25px',
-                }}
-              >
-                アイコン「{acquisitionData.name}」を入手しました！
-              </p>
-              <button
-                className="btn ok-button"
-                style={{
-                  background: 'linear-gradient(45deg, #eab308, #ca8a04)',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  width: '110px',
-                  alignSelf: 'center',
-                  margin: 0,
-                  pointerEvents: acquisitionData.canClose ? 'auto' : 'none',
-                  opacity: acquisitionData.canClose ? 1 : 0.5,
-                }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setAcquisitionData(null);
-                }}
-              >
-                OK
-              </button>
-            </div>
+              itemName={acquisitionData.name}
+              itemTypeName="アイコン"
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
+              btnColor="#fff"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
           )}
         </div>
       )}
@@ -1668,10 +1608,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 }}
                 onClick={() => {
                   if (playerNameInput) {
-                    localStorage.setItem(
-                      'mini_card_battle_player_name',
-                      playerNameInput
-                    );
+                    localStorage.setItem(PROFILE_NAME_KEY, playerNameInput);
                   }
                   if (playerNameCallback) {
                     playerNameCallback(playerNameInput);

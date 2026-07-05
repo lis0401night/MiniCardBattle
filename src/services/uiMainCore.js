@@ -3,6 +3,7 @@ import { initTournamentMode } from '../game/tournament.js';
 import {
   DEFAULT_PLAYER_NAME,
   RELOAD_CACHE_CLEAR_TIMEOUT_MS,
+  PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
@@ -815,7 +816,7 @@ export function startDefenseRegistration() {
   GameState.playerSkins = {};
   GameState.playerName = (
     GameState.userProfile?.name ||
-    localStorage.getItem('mini_card_battle_player_name') ||
+    localStorage.getItem(PROFILE_NAME_KEY) ||
     DEFAULT_PLAYER_NAME
   ).trim();
   GameState.appState = 'select_player';

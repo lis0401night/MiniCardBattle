@@ -378,14 +378,28 @@ export async function leaveRoom() {
         };
       });
     }
-  } catch (e) {
-    console.error('leaveRoom failed:', e);
-    throw e;
-  } finally {
+
+    // 成功時のみ状態をクリア
     currentRoomId = null;
     isHost = false;
     cachedRoomData = null;
     stopListeningToRoomActions();
+  } catch (e) {
+    console.error('leaveRoom failed:', e);
+    // 正常退室処理に失敗した場合は、切断時自動削除/初期化の予約を再設定してサーバーデータの孤立を防ぐ
+    try {
+      if (wasHost) {
+        await onDisconnect(roomRef).remove();
+      } else {
+        await onDisconnect(roomRef).update({
+          status: 'waiting',
+          client: null,
+        });
+      }
+    } catch (disconnectError) {
+      console.warn('Failed to re-register onDisconnect:', disconnectError);
+    }
+    throw e;
   }
 }
 

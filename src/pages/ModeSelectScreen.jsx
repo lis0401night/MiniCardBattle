@@ -13,7 +13,7 @@ import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import NewsBanner from '../components/common/NewsBanner.jsx';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
 
 export default function ModeSelectScreen() {
@@ -23,11 +23,9 @@ export default function ModeSelectScreen() {
     <div
       id="screen-mode-select"
       className="screen active"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.png')}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      style={getScreenBackgroundStyle(
+        'assets/backgrounds/background_select.png'
+      )}
     >
       <div className="top-right-actions">
         <button

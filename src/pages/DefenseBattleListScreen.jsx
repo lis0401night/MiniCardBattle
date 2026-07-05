@@ -8,7 +8,11 @@ import {
   getIconFramePath,
   getPlayerColor,
 } from '../utils/constants/characters.js';
-import { getOrCreateUUID, selectDefenseTargets } from '../utils/gameUtils.js';
+import {
+  getOrCreateUUID,
+  selectDefenseTargets,
+  resolveWinTier,
+} from '../utils/gameUtils.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
 
 export default function DefenseBattleListScreen() {
@@ -48,14 +52,7 @@ export default function DefenseBattleListScreen() {
           // 各プレイヤーに対する計算を追加
           activePlayers = activePlayers.map((p, index) => {
             const pTotalPoints = p.total_points || p.points || 0;
-            let winPoints = 1;
-            if (pTotalPoints > myTotalPoints) {
-              if (pTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
-                winPoints = 5;
-              } else {
-                winPoints = 3;
-              }
-            }
+            const winPoints = resolveWinTier(pTotalPoints, myTotalPoints);
             return {
               ...p,
               rankIndex: index,

@@ -35,6 +35,7 @@ export default function CardPreviewContent({
   const imgUrl =
     styleProps.imgUrl || (getCardImgUrl ? getCardImgUrl(card) : '');
   const isSkin = styleProps.isSkin || false;
+  const isStandardCard = !isSkin && !styleProps.isPlaymat && !styleProps.isIcon;
   const rarityClass = card.isToken
     ? ' rarity-0'
     : card.rarity !== undefined && card.rarity !== null
@@ -239,7 +240,7 @@ export default function CardPreviewContent({
                           : '',
                     }}
                   ></div>
-                  {!isSkin && !styleProps.isPlaymat && !styleProps.isIcon && (
+                  {isStandardCard && (
                     <div
                       className="card-power"
                       style={{ fontSize: '2.5rem', bottom: '0', right: '5px' }}
@@ -249,13 +250,8 @@ export default function CardPreviewContent({
                         : card.power}
                     </div>
                   )}
-                  {!isSkin &&
-                    !styleProps.isPlaymat &&
-                    !styleProps.isIcon &&
-                    safeRenderSkillTag(card)}
-                  {!isSkin &&
-                    !styleProps.isPlaymat &&
-                    !styleProps.isIcon &&
+                  {isStandardCard && safeRenderSkillTag(card)}
+                  {isStandardCard &&
                     card.equippedCards &&
                     card.equippedCards.length > 0 && (
                       <div
@@ -283,9 +279,7 @@ export default function CardPreviewContent({
               )}
             </div>
             {isRevealed &&
-              !isSkin &&
-              !styleProps.isPlaymat &&
-              !styleProps.isIcon &&
+              isStandardCard &&
               card.equippedCards &&
               card.equippedCards.length > 0 && (
                 <div
@@ -373,7 +367,7 @@ export default function CardPreviewContent({
           </h2>
 
           <div className="preview-scroll-area">
-            {!isSkin && !styleProps.isPlaymat && !styleProps.isIcon && (
+            {isStandardCard && (
               <div className="preview-skills-list">
                 {!isRevealed ? (
                   <p className="preview-skill-desc">クリックしてカードを公開</p>

@@ -1,7 +1,6 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { DECK_SIZE } from '../utils/constants/config.js';
+import { DECK_SIZE, PROFILE_NAME_KEY } from '../utils/constants/config.js';
 
-const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
 const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
 
 const safeParseArray = (key) => {

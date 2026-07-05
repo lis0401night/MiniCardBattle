@@ -226,8 +226,8 @@ export const generateCharacterBossEnemy = (floorNum) => {
   const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
   const rawDeck = ENEMY_DECKS[bossId];
   const deck = Array.isArray(rawDeck)
-    ? rawDeck
-    : rawDeck[difficultyMode] || rawDeck.normal || [];
+    ? [...rawDeck]
+    : [...(rawDeck[difficultyMode] || rawDeck.normal || [])];
 
   let bossData = {
     ...char,

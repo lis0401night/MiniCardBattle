@@ -1055,7 +1055,6 @@ export async function resolveActiveSkillEffect(
             lane: targetLane,
             amount: newToken.power,
             source: 'equip',
-            card: newToken, // 重ね配置したトークンカードの情報を追加して演出時に参照できるようにする
           });
         } else {
           if (board[targetLane]) {

@@ -17,7 +17,10 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  getScreenBackgroundStyle,
+  PROFILE_NAME_KEY,
+} from '../utils/constants/config.js';
 
 async function safeLeaveRoom(errorMessage) {
   try {
@@ -37,8 +40,7 @@ export default function OnlineLobbyScreen() {
   // Initial config extraction
   useEffect(() => {
     window.reloadOnlineLobbyConfig = () => {
-      const storedName =
-        localStorage.getItem('mini_card_battle_player_name') || 'Player';
+      const storedName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
 
       let selIndex = GameState.currentDeckIndex || 0;
       const decksSrc = localStorage.getItem('mini_card_battle_decks');
@@ -299,8 +301,7 @@ export default function OnlineLobbyScreen() {
     e.preventDefault();
     if (!chatInput.trim()) return;
     try {
-      const storedName =
-        localStorage.getItem('mini_card_battle_player_name') || 'Player';
+      const storedName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
       await sendChatMessage(chatInput, storedName);
       setChatInput('');
     } catch (err) {
@@ -332,7 +333,7 @@ export default function OnlineLobbyScreen() {
         'icon'
       )
     : '';
-  const myName = localStorage.getItem('mini_card_battle_player_name') || '自分';
+  const myName = localStorage.getItem(PROFILE_NAME_KEY) || '自分';
 
   return (
     <div
@@ -346,9 +347,7 @@ export default function OnlineLobbyScreen() {
         overflow: 'hidden',
         padding: '20px',
         boxSizing: 'border-box',
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_online.png')}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        ...getScreenBackgroundStyle('assets/backgrounds/background_online.png'),
       }}
     >
       <h2

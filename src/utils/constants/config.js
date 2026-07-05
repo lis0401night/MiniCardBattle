@@ -12,6 +12,7 @@ export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の�
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
+export const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
 
 // 交換コストの定義（カテゴリ・レアリティ別）
 export const GOLD_PREMIUM_EXCHANGE_COST = 20; // ゴールド・プレミアムカード
@@ -563,3 +564,16 @@ export const DEFENSE_TARGET_COUNT = 5;
 export const HIGH_TIER_PICK_COUNT = 1;
 export const MID_TIER_PICK_COUNT = 2;
 export const LOW_TIER_PICK_COUNT = 2;
+
+/**
+ * 共通の背景スタイルオブジェクトを生成します。
+ * @param {string} imagePath - 背景画像のアセットパス
+ * @returns {object} CSSスタイルオブジェクト
+ */
+export function getScreenBackgroundStyle(imagePath) {
+  return {
+    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(imagePath)}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  };
+}

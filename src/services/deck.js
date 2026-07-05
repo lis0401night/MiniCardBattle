@@ -6,7 +6,11 @@ import {
   CHARACTERS,
   getSkinImage,
 } from '../utils/constants/characters.js';
-import { DECK_SIZE, MAX_DECK_SLOTS } from '../utils/constants/config.js';
+import {
+  DECK_SIZE,
+  MAX_DECK_SLOTS,
+  PROFILE_NAME_KEY,
+} from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
@@ -1105,7 +1109,7 @@ export async function submitDefenseDeck(providedName = null) {
   const playerName = resolvePlayerName(providedName);
 
   playSound(SOUNDS.seClick);
-  localStorage.setItem('mini_card_battle_player_name', playerName);
+  localStorage.setItem(PROFILE_NAME_KEY, playerName);
 
   const uuid = getOrCreateUUID();
   const payload = {

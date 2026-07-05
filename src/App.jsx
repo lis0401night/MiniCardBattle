@@ -262,9 +262,17 @@ export default function App() {
             '新しいバージョンが検出されました。\n最新データへ更新するために、ゲームを再読み込みしますか？',
             async () => {
               sessionStorage.setItem('versionReloadAttempted', data.version);
-              await clearCachesAndServiceWorkers();
-              console.log('[Version Checker] Cache cleared. Reloading...');
-              location.reload();
+              try {
+                await clearCachesAndServiceWorkers();
+                console.log('[Version Checker] Cache cleared. Reloading...');
+              } catch (e) {
+                console.error(
+                  '[Version Checker] Cache clear failed. Reloading anyway.',
+                  e
+                );
+              } finally {
+                location.reload();
+              }
             }
           );
         }

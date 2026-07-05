@@ -3,12 +3,13 @@ import { saveDeck } from '../services/deck.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
+import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 export function useExchangeScreen({
-  pointsKey, // 'challenge' or 'tournament'
-  apiEndpoint, // 'update_challenge_points.php' or 'update_tournament_points.php'
+  pointsKey, // 'challenge'（試練の宮殿）または 'tournament'（闘技祭）
+  apiEndpoint, // 'update_challenge_points.php' または 'update_tournament_points.php' などのAPIエンドポイント
 }) {
   const pointsLocalKey = `mini_card_battle_${pointsKey}_points`;
   const pointsTotalLocalKey = `mini_card_battle_${pointsKey}_total_points`;
@@ -90,7 +91,7 @@ export function useExchangeScreen({
           }
         }
       } catch {
-        // ignore
+        // 例外は無視する
       }
     };
     fetchPoints();
@@ -159,6 +160,7 @@ export function useExchangeScreen({
         'mini_card_battle_owned_playmats',
         JSON.stringify(newUnlocked)
       );
+      setOwnedPlaymats(newUnlocked);
       setUnlockedPlaymats(newUnlocked);
       showAlertModal(
         `「${item.name}」を手に入れました！\nデッキ編成画面でプレイマットを変更できます。`

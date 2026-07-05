@@ -1,4 +1,5 @@
 import { getOrCreateUUID } from './gameUtils.js';
+import { PROFILE_NAME_KEY } from './constants/config.js';
 
 /**
  * プレイヤーのポイント情報をサーバーへ同期・送信します。
@@ -13,8 +14,7 @@ export function savePointsToServer(endpoint, points, totalPoints) {
     const uuid = getOrCreateUUID?.();
     if (!uuid) return Promise.resolve(false);
 
-    const playerName =
-      localStorage.getItem('mini_card_battle_player_name') || 'Player';
+    const playerName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);

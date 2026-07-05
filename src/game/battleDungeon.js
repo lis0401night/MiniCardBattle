@@ -1,5 +1,6 @@
 import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
 import { GameState } from '../state/gameState.js';
+import { PROFILE_NAME_KEY } from '../utils/constants/config.js';
 import {
   playSound,
   switchScreen,
@@ -334,8 +335,7 @@ export function retireDungeon() {
     });
 
     const uuid = getOrCreateUUID();
-    const playerName =
-      localStorage.getItem('mini_card_battle_player_name') || 'Player';
+    const playerName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
     const maxStreak = GameState.dungeonMaxWinStreak || currentStreak;
     fetch('api/update_challenge_points.php', {
       method: 'POST',
