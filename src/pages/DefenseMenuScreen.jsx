@@ -109,6 +109,7 @@ export default function DefenseMenuScreen() {
       id="screen-defense-menu"
       title="防衛戦"
       titleColor="#10b981"
+      backgroundImage="background_defense.png"
       onBackClick={() => showEventMenu?.()}
     >
       <div

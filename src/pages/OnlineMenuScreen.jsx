@@ -51,6 +51,7 @@ export default function OnlineMenuScreen() {
       title="オンライン対戦"
       titleColor="#38bdf8"
       titleGlow={true}
+      backgroundImage="background_online.png"
       // マッチング中は戻るボタンを無効化（クリックしても何もしない）にする
       onBackClick={isMatching ? undefined : () => goToModeSelect?.()}
       showBackButton={true}

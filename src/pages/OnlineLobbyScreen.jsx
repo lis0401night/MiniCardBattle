@@ -17,6 +17,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 async function safeLeaveRoom(errorMessage) {
   try {
@@ -345,6 +346,9 @@ export default function OnlineLobbyScreen() {
         overflow: 'hidden',
         padding: '20px',
         boxSizing: 'border-box',
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_online.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <h2

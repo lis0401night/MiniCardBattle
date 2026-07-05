@@ -14,6 +14,7 @@ export default function GalleryMenuScreen() {
       id="screen-gallery-menu"
       title="ギャラリー"
       titleColor="#facc15"
+      backgroundImage="background_gallery.png"
       onBackClick={() => goToModeSelect?.()}
       backHasBorder={true}
     >

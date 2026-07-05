@@ -58,6 +58,7 @@ import { SOUNDS } from './utils/sounds.js';
 import {
   GAME_VERSION,
   VERSION_CHECK_TIMEOUT_MS,
+  appendVersionQuery,
 } from './utils/constants/config.js';
 import {
   returnToTitle,
@@ -96,7 +97,15 @@ window.playSound = playSound;
 window.SOUNDS = SOUNDS;
 
 const LoadingScreen = ({ loadingText }) => (
-  <div id="screen-loading" className="screen active">
+  <div
+    id="screen-loading"
+    className="screen active"
+    style={{
+      backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.png')}')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }}
+  >
     <div className="loading-content">
       <div className="loading-spinner"></div>
       <span id="loading-text">{loadingText || 'LOADING...'}</span>

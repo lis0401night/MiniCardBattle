@@ -13,6 +13,7 @@ import {
   resolvePlayerName,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
@@ -106,6 +107,9 @@ export default function OnlineRoomSearchScreen() {
         width: '100%',
         overflow: 'hidden',
         boxSizing: 'border-box',
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_online.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <h2

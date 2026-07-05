@@ -206,6 +206,7 @@ export default function CardListScreen() {
       id="screen-card-list"
       title="カード一覧"
       titleColor="#facc15"
+      backgroundImage="background_gallery.png"
       onTitleClick={handleTitleClick}
       backTo="screen-gallery-menu"
     >

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 
-import BackButton from '../components/BackButton.jsx';
 import {
   setRenderAchievementsListHook,
   setRenderAchievementsStatsHook,
@@ -219,20 +219,15 @@ export default function AchievementsScreen() {
   };
 
   return (
-    <div id="screen-achievements" className="screen active">
-      <h2
-        style={{
-          color: '#facc15',
-          margin: '20px 0',
-          cursor: 'pointer',
-          userSelect: 'none',
-          flexShrink: 0,
-        }}
-        onClick={handleTitleClick}
-      >
-        実績
-      </h2>
-
+    <ScreenLayout
+      id="screen-achievements"
+      title="実績"
+      titleColor="#facc15"
+      backgroundImage="background_gallery.png"
+      onTitleClick={handleTitleClick}
+      backTo="screen-gallery-menu"
+      showBackButton={true}
+    >
       <div
         className="accordion-container"
         style={{ width: '100%', maxWidth: '400px', marginBottom: '15px' }}
@@ -542,19 +537,6 @@ export default function AchievementsScreen() {
           })}
         </div>
       </div>
-
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton to="screen-gallery-menu" />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

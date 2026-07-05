@@ -19,9 +19,9 @@ export default function OnlineRulesScreen() {
 
   const getBackgroundImage = () => {
     if (GameState.gameMode === 'tournament') {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`;
+      return 'background_tournament01.png';
     }
-    return undefined; // デフォルト背景を使用
+    return 'background_online.png';
   };
 
   return (

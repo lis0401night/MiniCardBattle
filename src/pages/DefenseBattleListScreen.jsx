@@ -9,6 +9,7 @@ import {
   getPlayerColor,
 } from '../utils/constants/characters.js';
 import { getOrCreateUUID, selectDefenseTargets } from '../utils/gameUtils.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 export default function DefenseBattleListScreen() {
   const [players, setPlayers] = useState([]);
@@ -100,7 +101,15 @@ export default function DefenseBattleListScreen() {
   };
 
   return (
-    <div id="screen-defense-battle-list" className="screen active">
+    <div
+      id="screen-defense-battle-list"
+      className="screen active"
+      style={{
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_defense.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <h2
         style={{
           color: '#10b981',

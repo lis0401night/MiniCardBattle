@@ -90,9 +90,6 @@ body {
 #screen-battle-dungeon,
 #modal-player-name {
   background-color: #0f172a;
-  background-image:
-    linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)),
-    url('/assets/backgrounds/background_select.png');
   background-size: cover;
   background-position: center;
 }
@@ -101,9 +98,6 @@ body {
 #screen-card-list,
 #screen-achievements {
   background-color: #0f172a;
-  background-image:
-    linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)),
-    url('/assets/backgrounds/background_gallery.png');
   background-size: cover;
   background-position: center;
 }
@@ -113,9 +107,6 @@ body {
 #screen-online-search,
 #screen-online-lobby {
   background-color: #0f172a;
-  background-image:
-    linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)),
-    url('/assets/backgrounds/background_online.png');
   background-size: cover;
   background-position: center;
 }
@@ -125,9 +116,6 @@ body {
 #screen-defense-rules,
 #screen-exchange {
   background-color: #0f172a;
-  background-image:
-    linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)),
-    url('/assets/backgrounds/background_defense.png');
   background-size: cover;
   background-position: center;
 }
