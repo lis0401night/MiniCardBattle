@@ -189,10 +189,11 @@ export async function playCardVoice(categoryOrCard, situation = 'play') {
 
     // プレミアムカード判定
     const isPremium =
-      card.isPremium === true ||
-      (card.owner !== 'red' &&
-        GameState.premiumCards &&
-        GameState.premiumCards.includes(lookupId));
+      card.isPremium !== undefined
+        ? card.isPremium
+        : card.owner !== 'red' &&
+          GameState.premiumCards &&
+          GameState.premiumCards.includes(lookupId);
 
     if (isPremium && PREMIUM_VOICE_MAP[lookupId]) {
       category = PREMIUM_VOICE_MAP[lookupId];

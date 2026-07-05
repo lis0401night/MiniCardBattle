@@ -184,6 +184,7 @@ export async function resolveActiveSkillEffect(
         'toxic',
         'freeze',
         'bind',
+        'seal',
         'snipe',
         'snipe_void',
         'spread',
@@ -1084,12 +1085,14 @@ export async function resolveActiveSkillEffect(
     // スキルの引き継ぎ（分身含む全スキル）
     // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
     let inheritedSkills = Array.isArray(c.skills) ? [...c.skills] : [];
+    const stunTurns = c.stunTurns || 0;
 
     const simulatedToken = {
       ...tC,
       power: c.power,
       currentPower: c.currentPower,
       skills: inheritedSkills,
+      stunTurns: stunTurns,
     };
     // AIの場合：actionQueueのtoken_placementからclone用のレーン指定を取り出す
     let clonePredefinedLanes = null;
@@ -1188,6 +1191,7 @@ export async function resolveActiveSkillEffect(
         voiceCategory: c.voiceCategory,
         skills: JSON.parse(JSON.stringify(inheritedSkills)), // スキルを引き継ぐ
         skillTriggered: true, // 配置扱いのため、引き継いだ召喚時スキルのバッジを表示しない
+        stunTurns: stunTurns,
       };
       const existingCard = board[targetLane];
       if (

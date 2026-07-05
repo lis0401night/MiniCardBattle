@@ -1561,7 +1561,7 @@ export const RED_FRAME_CHARACTERS = ['satan', 'void', 'succubus', 'warlock'];
  * @param {Object} char - キャラクターオブジェクト
  * @returns {string} 画像パス
  */
-export function getPlayerIconPath(player, char) {
+export function getPlayerIconPath(player, _char) {
   if (player && player.icon) {
     return appendVersionQuery(`assets/icons/icon_${player.icon}.png`);
   }
@@ -1593,7 +1593,7 @@ export function getIconFramePath(charId) {
  * @param {Object} fallbackChar - フォールバック用のキャラクターオブジェクト
  * @returns {string} カラーコード (e.g. '#38bdf8')
  */
-export function getPlayerColor(player, fallbackChar) {
+export function getPlayerColor(player, _fallbackChar) {
   if (player && player.icon && player.icon !== 'player') {
     const baseId = player.icon.split('_')[0];
     const char = CHARACTERS[baseId];

@@ -223,6 +223,7 @@ export function processPlacementOrEquip(
       lane: lane,
       amount: newCard.power,
       source: 'equip',
+      card: newCard,
     });
   } else {
     if (existingCard) quietDiscardFromBoard(state, owner, lane);
@@ -1634,6 +1635,7 @@ export function applyActiveSkillLogic(
               lane: targetLaneRes,
               amount: simResCard.power,
               source: 'equip',
+              card: simResCard,
             });
           } else {
             if (existingCard)
@@ -1820,6 +1822,8 @@ export function applyActiveSkillLogic(
                 c.currentPower !== undefined ? c.currentPower : c.power || 1,
               skills: JSON.parse(JSON.stringify(inheritedSkills)),
               voiceCategory: c.voiceCategory || 'sword',
+              stunTurns: c.stunTurns || 0,
+              skillTriggered: true,
             };
             processPlacementOrEquip(
               state,
@@ -3184,6 +3188,7 @@ export function applyLeaderSkillLogic(
             lane: l,
             amount: selectedCard.power,
             source: 'equip',
+            card: selectedCard,
           });
         } else {
           if (existingCard) {
