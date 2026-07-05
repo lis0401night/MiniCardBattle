@@ -1025,6 +1025,8 @@ export async function resolveActiveSkillEffect(
             (existingCard.power || 0) + (newToken.power || 0);
           existingCard.basePower =
             (existingCard.basePower || 0) + (newToken.power || 0);
+          existingCard.currentPower =
+            (existingCard.currentPower || 0) + (newToken.power || 0);
 
           const equipSkills = [];
           if (
@@ -1205,6 +1207,8 @@ export async function resolveActiveSkillEffect(
         existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
         existingCard.basePower =
           (existingCard.basePower || 0) + (newToken.power || 0);
+        existingCard.currentPower =
+          (existingCard.currentPower || 0) + (newToken.power || 0);
 
         const equipSkills = [];
         if (

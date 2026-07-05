@@ -538,6 +538,8 @@ export function processActionSequence(
                 hasSkill(board[myL], 'arm_self'))
             ) {
               const targetCard = board[myL];
+              targetCard.power =
+                (targetCard.power || 0) + (selectedCard.power || 0);
               targetCard.basePower =
                 (targetCard.basePower || 0) + (selectedCard.power || 0);
               targetCard.currentPower =
