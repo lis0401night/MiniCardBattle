@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState } from '../state/gameState.js';
 import { executeContinue, executeGameOver } from '../services/uiDialogue.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 export default function ContinueScreen() {
   const [count, setCount] = useState(9);
@@ -81,6 +82,9 @@ export default function ContinueScreen() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <h1

@@ -17,6 +17,7 @@ export default function EventMenuScreen() {
       id="screen-event-menu"
       title="イベント"
       titleColor="#facc15"
+      backgroundImage="background_select.png"
       backTo="screen-mode-select"
       backHasBorder={true}
     >

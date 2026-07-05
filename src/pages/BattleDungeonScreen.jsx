@@ -12,6 +12,7 @@ import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
@@ -151,7 +152,7 @@ export default function BattleDungeonScreen() {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_challenge.png')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

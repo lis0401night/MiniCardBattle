@@ -6,6 +6,7 @@ import {
 } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 export default function HighDifficultyScreen() {
   // サタンを先頭に表示するため、satanを優先ソート
@@ -18,7 +19,7 @@ export default function HighDifficultyScreen() {
       id="screen-high-difficulty"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_highdifficulty.png')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

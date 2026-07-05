@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 import {
   confirmDifficulty,
   goBackFromDifficulty,
@@ -42,14 +43,18 @@ export default function DifficultySelectScreen() {
     confirmDifficulty?.(level);
   };
 
-  // 高難易度イベント用の背景スタイル
+  // 高難易度イベントおよび通常難易度選択用の背景スタイル
   const highDiffBgStyle = isHighDiffMode
     ? {
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_highdifficulty.png')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }
-    : {};
+    : {
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
 
   return (
     <div
