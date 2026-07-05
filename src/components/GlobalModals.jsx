@@ -2923,6 +2923,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           <div
             className="modal-content profile-settings-container"
             style={{
+              width: '90%',
+              maxWidth: '440px',
               maxHeight: '90dvh',
               overflowY: 'auto',
               background: 'linear-gradient(135deg, #1e293b, #0f172a)',
