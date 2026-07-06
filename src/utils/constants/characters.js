@@ -953,7 +953,7 @@ export const CHARACTERS = {
     hp: 30,
     stageId: 'satan',
     name: '闇の総帥 バルタザール',
-    desc: 'サタンの幹部であり、邪悪な教団の支配者の魔術師。冷酷極まりない性格の白髪の老人。',
+    desc: '魔王軍の幹部であり、邪悪な教団の支配者の魔術師。冷酷極まりない性格の白髪の老人。',
     filter: 'none',
     image: 'assets/characters/char_warlock.png',
     imageLose: 'assets/characters/char_warlock_lose.png',
