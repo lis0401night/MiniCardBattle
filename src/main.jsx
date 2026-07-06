@@ -1,3 +1,19 @@
+// URLの末尾スラッシュ補正（PWAでのホーム画面追加時の階層ズレバグ対策）
+// 例: /MiniCardBattle のようにスラッシュなしでアクセスされた場合、末尾にスラッシュを付与してリダイレクトします
+if (
+  typeof window !== 'undefined' &&
+  window.location.pathname &&
+  !window.location.pathname.endsWith('/') &&
+  !window.location.pathname.endsWith('.html')
+) {
+  window.location.replace(
+    window.location.pathname +
+      '/' +
+      window.location.search +
+      window.location.hash
+  );
+}
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';

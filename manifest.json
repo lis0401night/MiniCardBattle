@@ -1,7 +1,7 @@
 {
   "name": "Members Card Battle",
   "short_name": "CardBattle",
-  "start_url": "./",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#222222",
   "theme_color": "#0055ff",

@@ -1,3 +1,6 @@
+# ====================================================================
+# 1. 既存のキャッシュ無効化設定（アップデートを即時反映させるため維持）
+# ====================================================================
 <FilesMatch "\.(js|css|html)$">
     FileETag None
     <IfModule mod_headers.c>
@@ -6,3 +9,25 @@
         Header set Expires "0"
     </IfModule>
 </FilesMatch>
+
+# ====================================================================
+# 2. 403 Forbidden 対策：フォルダ直アクセス時に自動で index.html を開く
+# ====================================================================
+DirectoryIndex index.html
+
+# ====================================================================
+# 3. 404エラー ＆ PWA起動エラー対策
+# ====================================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 物理的なフォルダが存在し、かつ末尾にスラッシュが無い場合にスラッシュを付与してリダイレクト
+    # 例: /MiniCardBattle -> /MiniCardBattle/
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(.*[^/])$ /$1/ [L,R=301]
+
+    # 【SPA対策】直接ページパス（.../dungeonなど）を叩かれた際、404にせずindex.htmlに転送する
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . index.html [L]
+</IfModule>
