@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.1.6';
+export const GAME_VERSION = '0.1.7';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const VERSION_CHECK_TIMEOUT_MS = 3000; // バージョン自動チェック時のAbortタイムアウト時間 (ms)
 export const MAX_HP = 20;
