@@ -27,11 +27,6 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-// 4桁-4桁-4桁-4桁の書式チェック
-if (!preg_match('/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/', $code)) {
-    echo json_encode(['success' => false, 'error' => 'invalid_format']);
-    exit;
-}
 
 $dir = __DIR__ . '/decks/players';
 if (!is_dir($dir)) {

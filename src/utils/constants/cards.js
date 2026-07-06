@@ -868,7 +868,7 @@ export const CARD_MASTER = [
     id: 'cop',
     name: 'ボーダー・エンフォーサー',
     rarity: 2,
-    power: 5,
+    power: 4,
     skills: [
       { id: 'challenge' },
       { id: 'bind', value: 1 },

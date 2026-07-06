@@ -46,17 +46,6 @@ export default function OptionsScreen() {
   const handleSerialSubmit = async (code) => {
     const formattedCode = code.trim().toUpperCase();
 
-    // 4桁-4桁-4桁-4桁の正規表現チェック
-    const formatRegex = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
-    if (!formatRegex.test(formattedCode)) {
-      if (typeof showAlertModal === 'function') {
-        showAlertModal(
-          '入力形式が正しくありません。\n(XXXX-XXXX-XXXX-XXXX の形式で入力してください)'
-        );
-      }
-      return;
-    }
-
     try {
       const uuid = getOrCreateUUID ? getOrCreateUUID() : null;
       if (!uuid) {

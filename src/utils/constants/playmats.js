@@ -4,6 +4,11 @@
 
 export const PLAYMAT_MASTER = [
   {
+    id: 'pm_lanedefenders',
+    name: 'LANE DEFENDERS',
+    image: 'assets/boards/board_lanedefenders.png',
+  },
+  {
     id: 'android',
     name: 'アイギス',
     image: 'assets/boards/board_android.png',
