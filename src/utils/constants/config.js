@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.1.9';
+export const GAME_VERSION = '0.1.10';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const VERSION_CHECK_TIMEOUT_MS = 3000; // バージョン自動チェック時のAbortタイムアウト時間 (ms)
 export const MAX_HP = 20;
@@ -596,13 +596,24 @@ export function getVersionedBackgroundStyle(
   op2 = 0.9
 ) {
   if (!backgroundImage) return {};
+  const isUrl = backgroundImage.includes('url');
+  if (isUrl) {
+    return {
+      backgroundImage: backgroundImage.replace(
+        /url\(['"]?([^'")\s]+)['"]?\)/g,
+        (match, urlPath) => `url('${appendVersionQuery(urlPath)}')`
+      ),
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    };
+  }
+
+  const finalPath = backgroundImage.includes('assets/')
+    ? backgroundImage
+    : `assets/backgrounds/${backgroundImage}`;
+
   return {
-    backgroundImage: backgroundImage.includes('url')
-      ? backgroundImage.replace(
-          /url\(['"]?([^'")\s]+)['"]?\)/g,
-          (match, urlPath) => `url('${appendVersionQuery(urlPath)}')`
-        )
-      : `linear-gradient(rgba(15, 23, 42, ${op1}), rgba(15, 23, 42, ${op2})), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
+    backgroundImage: `linear-gradient(rgba(15, 23, 42, ${op1}), rgba(15, 23, 42, ${op2})), url('${appendVersionQuery(finalPath)}')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   };
