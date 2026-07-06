@@ -1,3 +1,5 @@
+import { GAME_VERSION } from '../../utils/constants/config.js';
+
 export default function CreditModal({ visible, onClose }) {
   if (!visible) return null;
 
@@ -75,7 +77,7 @@ export default function CreditModal({ visible, onClose }) {
               MiniCardBattle
             </div>
             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-              ver0.1.6
+              ver{GAME_VERSION}
             </div>
           </div>
 

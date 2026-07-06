@@ -3,6 +3,7 @@ import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from './cards.js';
 import { INITIAL_PLAYER_CARD } from './initial_cards.js';
 import { ownedPlaymats } from './playmats.js';
+import { UNLOCKED_SKINS_KEY, UNLOCKED_ICONS_KEY } from './config.js';
 
 /**
  * Mini Card Battle - Achievements Data
@@ -1137,6 +1138,15 @@ function checkTotalAchievementUnlocks() {
   });
 }
 
+// 汎用: リストに未登録なら追加し、localStorageへ保存する
+function unlockUniqueReward(list, storageKey, value) {
+  if (!list.includes(value)) {
+    list.push(value);
+  }
+  localStorage.setItem(storageKey, JSON.stringify(list));
+  return list;
+}
+
 // 報酬の受け取り処理（将来用）
 export function claimAchievementReward(id) {
   const ach = achievementData.achievements[id];
@@ -1208,13 +1218,10 @@ export function claimAchievementReward(id) {
     };
   } else if (master.reward.type === 'skin') {
     const skinId = master.reward.value;
-    if (!GameState.unlockedSkins.includes(skinId)) {
-      GameState.unlockedSkins.push(skinId);
+    if (!GameState.unlockedSkins) {
+      GameState.unlockedSkins = [];
     }
-    localStorage.setItem(
-      'mini_card_battle_unlocked_skins',
-      JSON.stringify(GameState.unlockedSkins)
-    );
+    unlockUniqueReward(GameState.unlockedSkins, UNLOCKED_SKINS_KEY, skinId);
 
     ach.isRewarded = true;
     saveAchievements();
@@ -1230,13 +1237,7 @@ export function claimAchievementReward(id) {
     if (!GameState.unlockedIcons) {
       GameState.unlockedIcons = [];
     }
-    if (!GameState.unlockedIcons.includes(iconId)) {
-      GameState.unlockedIcons.push(iconId);
-    }
-    localStorage.setItem(
-      'mini_card_battle_unlocked_icons',
-      JSON.stringify(GameState.unlockedIcons)
-    );
+    unlockUniqueReward(GameState.unlockedIcons, UNLOCKED_ICONS_KEY, iconId);
 
     ach.isRewarded = true;
     saveAchievements();

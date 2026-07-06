@@ -3,7 +3,6 @@ import { initTournamentMode } from '../game/tournament.js';
 import {
   DEFAULT_PLAYER_NAME,
   RELOAD_CACHE_CLEAR_TIMEOUT_MS,
-  PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
@@ -12,6 +11,7 @@ import {
   clearCachesAndServiceWorkers,
   getDialogue,
   playSound,
+  resolvePlayerName,
   sleep,
   switchScreen,
 } from '../utils/gameUtils.js';
@@ -814,11 +814,7 @@ export function startDefenseRegistration() {
   GameState.gameMode = 'defense_register';
   // 防衛デッキ新規登録時はプレイヤースキンをリセットし、デフォルト状態で選べるようにする
   GameState.playerSkins = {};
-  GameState.playerName = (
-    GameState.userProfile?.name ||
-    localStorage.getItem(PROFILE_NAME_KEY) ||
-    DEFAULT_PLAYER_NAME
-  ).trim();
+  GameState.playerName = resolvePlayerName();
   GameState.appState = 'select_player';
   initSelectScreen(false);
   switchScreen('screen-select');

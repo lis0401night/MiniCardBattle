@@ -14,6 +14,7 @@ import {
   resolveWinTier,
 } from '../utils/gameUtils.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import { fetchPlayerDecks } from '../utils/apiUtils.js';
 
 export default function DefenseBattleListScreen() {
   const [players, setPlayers] = useState([]);
@@ -23,8 +24,7 @@ export default function DefenseBattleListScreen() {
     const fetchPlayers = async () => {
       setStatus('loading');
       try {
-        const response = await fetch('api/get_player_decks.php');
-        const result = await response.json();
+        const result = await fetchPlayerDecks();
 
         if (result.success) {
           const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
@@ -62,8 +62,10 @@ export default function DefenseBattleListScreen() {
             };
           });
 
-          // 自分以外のプレイヤーのみを抽出
-          const otherPlayers = activePlayers.filter((p) => !p.isMe);
+          // 自分以外、かつ「防衛デッキが正しく登録されている」プレイヤーのみを抽出
+          const otherPlayers = activePlayers.filter(
+            (p) => !p.isMe && p.has_defense_deck === true
+          );
           const selectedPlayers = selectDefenseTargets(
             otherPlayers,
             myTotalPoints
@@ -174,12 +176,9 @@ export default function DefenseBattleListScreen() {
                 className="btn-banner"
                 style={{
                   flexShrink: 0,
-                  ...(p.isMe ? { cursor: 'default', opacity: 0.9 } : {}),
                 }}
                 onClick={() => {
-                  if (!p.isMe) {
-                    handlePlayerSelect(p);
-                  }
+                  handlePlayerSelect(p);
                 }}
               >
                 <div
@@ -216,28 +215,15 @@ export default function DefenseBattleListScreen() {
                       (Pt: {p.displayTotalPoints})
                     </span>
                   </div>
-                  {p.isMe ? (
-                    <div
-                      style={{
-                        color: 'var(--color-blue)',
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                        textShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
-                      }}
-                    >
-                      YOU
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        color: '#10b981',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      Win +{p.calculatedWinPoints}
-                    </div>
-                  )}
+                  <div
+                    style={{
+                      color: '#10b981',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    Win +{p.calculatedWinPoints}
+                  </div>
                 </div>
               </button>
             );

@@ -348,14 +348,21 @@ export async function leaveRoom() {
   const roomId = currentRoomId;
   const wasHost = isHost;
 
+  // 1. ローカルの状態クリアは「最初」に無条件で安全に実行します
+  // （これによりサーバー通信の成否にかかわらず、クライアントのローカル状態はクリーンになりロビーへ戻れます）
   if (roomListenerUnsubscribe) {
     roomListenerUnsubscribe();
     roomListenerUnsubscribe = null;
   }
+  stopListeningToRoomActions();
+
+  currentRoomId = null;
+  isHost = false;
+  cachedRoomData = null;
 
   const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
 
-  // 正常退室（または解散によるクリーンアップ）のため、切断時の予約を解除
+  // 正常退室のための切断時予約の解除
   try {
     await onDisconnect(roomRef).cancel();
   } catch (e) {
@@ -378,23 +385,13 @@ export async function leaveRoom() {
         };
       });
     }
-
-    // 成功時のみ状態をクリア
-    currentRoomId = null;
-    isHost = false;
-    cachedRoomData = null;
-    stopListeningToRoomActions();
   } catch (e) {
     console.error('leaveRoom failed:', e);
-    // 正常退室処理に失敗した場合は、切断時自動削除/初期化の予約を再設定してサーバーデータの孤立を防ぐ
+    // 正常退室処理に失敗した場合は、ホストの場合のみ切断時自動削除の予約を再設定します
+    // （クライアント側での onDisconnect().update は削除済みルームの再生成・ゾンビルーム化を招くため行いません）
     try {
       if (wasHost) {
         await onDisconnect(roomRef).remove();
-      } else {
-        await onDisconnect(roomRef).update({
-          status: 'waiting',
-          client: null,
-        });
       }
     } catch (disconnectError) {
       console.warn('Failed to re-register onDisconnect:', disconnectError);

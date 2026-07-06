@@ -1,5 +1,4 @@
-import { getOrCreateUUID } from './gameUtils.js';
-import { PROFILE_NAME_KEY } from './constants/config.js';
+import { getOrCreateUUID, resolvePlayerName } from './gameUtils.js';
 
 /**
  * プレイヤーのポイント情報をサーバーへ同期・送信します。
@@ -19,7 +18,7 @@ export function savePointsToServer(
     const uuid = getOrCreateUUID?.();
     if (!uuid) return Promise.resolve(false);
 
-    const playerName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
+    const playerName = resolvePlayerName();
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -69,4 +68,16 @@ export function savePointsToServer(
     console.error('サーバーへのポイント同期処理で例外が発生しました:', e);
     return Promise.resolve(false);
   }
+}
+
+/**
+ * 全プレイヤーのデッキ・プロフィールデータをサーバーから取得します（キャッシュ対策パラメータ付き）。
+ * @returns {Promise<Object>} APIレスポンスオブジェクト
+ */
+export async function fetchPlayerDecks() {
+  const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch player decks. Status: ${response.status}`);
+  }
+  return response.json();
 }

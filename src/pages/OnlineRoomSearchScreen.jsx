@@ -79,7 +79,8 @@ export default function OnlineRoomSearchScreen() {
       })
       .catch((e) => {
         console.error(e);
-        if (isMountedRef.current) setIsJoining(false);
+        if (!isMountedRef.current) return;
+        setIsJoining(false);
         const msg = e?.message || '';
         if (
           e?.code === 'PERMISSION_DENIED' ||

@@ -7,6 +7,22 @@ import {
   getPlayerColor,
 } from '../../utils/constants/characters.js';
 import { getOrCreateUUID } from '../../utils/gameUtils.js';
+import { savePointsToServer, fetchPlayerDecks } from '../../utils/apiUtils.js';
+
+const RANK_ACCENTS = {
+  0: {
+    extraClass: 'legendary',
+    borderColor: 'transparent',
+    textColor: '#facc15',
+  },
+  1: { extraClass: '', borderColor: '#e2e8f0', textColor: '#94a3b8' },
+  2: { extraClass: '', borderColor: '#cd7f32', textColor: '#cd7f32' },
+};
+const DEFAULT_RANK_ACCENT = {
+  extraClass: '',
+  borderColor: undefined,
+  textColor: '#94a3b8',
+};
 
 export default function RankingScreen({
   id,
@@ -23,30 +39,183 @@ export default function RankingScreen({
     const fetchPlayers = async () => {
       setStatus('loading');
       try {
-        const response = await fetch(
-          `api/get_player_decks.php?t=${Date.now()}`
-        );
-        const result = await response.json();
+        const result = await fetchPlayerDecks();
 
         if (result.success) {
           const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
           let activePlayers = result.players;
+
+          // 自分のローカルストレージの最新データをサーバーに自動同期（交換所を介さない自動リカバリー）
+          if (myUuid) {
+            const myData = activePlayers.find((p) => p.uuid === myUuid);
+
+            const challengePts =
+              parseInt(
+                localStorage.getItem('mini_card_battle_challenge_points'),
+                10
+              ) || 0;
+            const challengeTotalPts =
+              parseInt(
+                localStorage.getItem('mini_card_battle_challenge_total_points'),
+                10
+              ) || 0;
+            const maxStreak =
+              parseInt(
+                localStorage.getItem('mini_card_battle_dungeon_max_streak'),
+                10
+              ) || 0;
+
+            const tournamentPts =
+              parseInt(
+                localStorage.getItem('mini_card_battle_tournament_points'),
+                10
+              ) || 0;
+            const tournamentTotalPts =
+              parseInt(
+                localStorage.getItem(
+                  'mini_card_battle_tournament_total_points'
+                ),
+                10
+              ) || 0;
+
+            const defensePts =
+              parseInt(
+                localStorage.getItem('mini_card_battle_defense_points'),
+                10
+              ) || 0;
+            const defenseTotalPts =
+              parseInt(
+                localStorage.getItem('mini_card_battle_defense_total_points'),
+                10
+              ) || 0;
+            const defenseWins =
+              parseInt(
+                localStorage.getItem('mini_card_battle_defense_wins'),
+                10
+              ) || 0;
+
+            if (myData) {
+              const sChallengePts = myData.challenge_points || 0;
+              const sChallengeTotalPts = myData.challenge_total_points || 0;
+
+              const sTournamentPts = myData.tournament_points || 0;
+              const sTournamentTotalPts = myData.tournament_total_points || 0;
+
+              const sDefensePts = myData.points || 0;
+              const sDefenseTotalPts = myData.total_points || 0;
+
+              if (
+                challengeTotalPts > sChallengeTotalPts ||
+                challengePts > sChallengePts
+              ) {
+                savePointsToServer(
+                  'update_challenge_points.php',
+                  challengePts,
+                  challengeTotalPts,
+                  { max_streak: maxStreak }
+                );
+                myData.challenge_points = challengePts;
+                myData.challenge_total_points = challengeTotalPts;
+              }
+              if (
+                tournamentTotalPts > sTournamentTotalPts ||
+                tournamentPts > sTournamentPts
+              ) {
+                savePointsToServer(
+                  'update_tournament_points.php',
+                  tournamentPts,
+                  tournamentTotalPts
+                );
+                myData.tournament_points = tournamentPts;
+                myData.tournament_total_points = tournamentTotalPts;
+              }
+              if (
+                defenseTotalPts > sDefenseTotalPts ||
+                defensePts > sDefensePts
+              ) {
+                savePointsToServer(
+                  'update_points.php',
+                  defensePts,
+                  defenseTotalPts,
+                  { defense_wins: defenseWins }
+                );
+                myData.points = defensePts;
+                myData.total_points = defenseTotalPts;
+              }
+            } else {
+              // サーバー上にまだアカウントファイルが存在しない新規ユーザーの場合、ここで作成同期する
+              let hasCreated = false;
+              if (challengeTotalPts > 0) {
+                savePointsToServer(
+                  'update_challenge_points.php',
+                  challengePts,
+                  challengeTotalPts,
+                  { max_streak: maxStreak }
+                );
+                hasCreated = true;
+              }
+              if (tournamentTotalPts > 0) {
+                savePointsToServer(
+                  'update_tournament_points.php',
+                  tournamentPts,
+                  tournamentTotalPts
+                );
+                hasCreated = true;
+              }
+              if (defenseTotalPts > 0) {
+                savePointsToServer(
+                  'update_points.php',
+                  defensePts,
+                  defenseTotalPts,
+                  { defense_wins: defenseWins }
+                );
+                hasCreated = true;
+              }
+
+              // 初回のみ仮想的な自分のレコードをソート用に追加（再読み込みを不要にするため）
+              if (hasCreated) {
+                const playerName =
+                  localStorage.getItem('mini_card_battle_player_name') ||
+                  'Player';
+                const virtualPlayer = {
+                  uuid: myUuid,
+                  name: playerName,
+                  icon: 'android',
+                  character: 'oni',
+                  skin: 'default',
+                  playmat: null,
+                  stage: 'oni',
+                  challenge_points: challengePts,
+                  challenge_total_points: challengeTotalPts,
+                  challenge_max_streak: maxStreak,
+                  tournament_points: tournamentPts,
+                  tournament_total_points: tournamentTotalPts,
+                  points: defensePts,
+                  total_points: defenseTotalPts,
+                  defense_wins: defenseWins,
+                };
+                activePlayers.push(virtualPlayer);
+              }
+            }
+          }
 
           if (activePlayers.length === 0) {
             setStatus('empty');
             return;
           }
 
+          // pointField が明示的に0の場合でも正しく現在の値を使うためのヘルパー
+          const getPoints = (p) =>
+            p[pointField] !== undefined && p[pointField] !== null
+              ? p[pointField]
+              : p[fallbackPointField] || 0;
+
           // ランキングソート (指定ポイントフィールドの降順)
-          activePlayers.sort(
-            (a, b) =>
-              (b[pointField] || b[fallbackPointField] || 0) -
-              (a[pointField] || a[fallbackPointField] || 0)
-          );
+          activePlayers.sort((a, b) => getPoints(b) - getPoints(a));
 
           // 各プレイヤーに対する計算を追加
           activePlayers = activePlayers.map((p, index) => {
-            const pTotalPoints = p[pointField] || p[fallbackPointField] || 0;
+            const pTotalPoints = getPoints(p);
             return {
               ...p,
               rankIndex: index,
@@ -118,16 +287,8 @@ export default function RankingScreen({
               (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
             if (!char) return null;
 
-            let borderColor = undefined;
-            let extraClass = '';
-            if (p.rankIndex === 0) {
-              extraClass = 'legendary';
-              borderColor = 'transparent';
-            } else if (p.rankIndex === 1) {
-              borderColor = '#e2e8f0';
-            } else if (p.rankIndex === 2) {
-              borderColor = '#cd7f32';
-            }
+            const { extraClass, borderColor, textColor } =
+              RANK_ACCENTS[p.rankIndex] || DEFAULT_RANK_ACCENT;
 
             return (
               <div
@@ -159,14 +320,7 @@ export default function RankingScreen({
                         marginRight: '12px',
                         fontSize: '1rem',
                         fontWeight: 'bold',
-                        color:
-                          p.rankIndex === 0
-                            ? '#facc15'
-                            : p.rankIndex === 1
-                              ? '#94a3b8'
-                              : p.rankIndex === 2
-                                ? '#cd7f32'
-                                : '#94a3b8',
+                        color: textColor,
                         width: '40px',
                         textAlign: 'center',
                       }}

@@ -19,6 +19,9 @@ if (is_dir($dir)) {
             $uuid = $matches[1];
             $data = json_decode($matches[2], true);
             if ($data) {
+                // 防衛デッキが正しく登録されている（20枚）かどうかを判定するフラグを付与
+                $data['has_defense_deck'] = (isset($data['deck']) && is_array($data['deck']) && count($data['deck']) === 20);
+
                 // デッキの中身は一覧表示には不要なので除外して軽量化
                 unset($data['deck']);
                 $players[] = $data;

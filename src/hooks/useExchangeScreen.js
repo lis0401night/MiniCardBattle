@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { saveDeck } from '../services/deck.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
+import { savePointsToServer, fetchPlayerDecks } from '../utils/apiUtils.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -37,6 +37,7 @@ export function useExchangeScreen({
     () => GameState.playerInventory || {}
   );
   const [pointsUpdated, setPointsUpdated] = useState(false);
+  const isExchangingRef = useRef(false);
 
   useEffect(() => {
     const currentPts = parseInt(localStorage.getItem(pointsLocalKey), 10) || 0;
@@ -45,15 +46,7 @@ export function useExchangeScreen({
 
     const fetchPoints = async () => {
       try {
-        const response = await fetch(
-          `api/get_player_decks.php?t=${Date.now()}`
-        );
-        if (!response.ok) return;
-
-        const text = await response.text();
-        if (text.trim().startsWith('<')) return;
-
-        const result = JSON.parse(text);
+        const result = await fetchPlayerDecks();
         if (result.success && getOrCreateUUID) {
           const myUuid = getOrCreateUUID();
           const myData = result.players.find((p) => p.uuid === myUuid);
@@ -102,6 +95,7 @@ export function useExchangeScreen({
   ]);
 
   const handleExchange = async (item) => {
+    if (isExchangingRef.current) return;
     const isCard = item.type === 'card';
     const isPlaymat = item.type === 'playmat';
     const isIcon = item.type === 'icon';
@@ -127,6 +121,7 @@ export function useExchangeScreen({
       return;
     }
 
+    isExchangingRef.current = true;
     playSound(SOUNDS?.seCardPlace);
 
     const newPts = points.current - item.cost;
@@ -138,6 +133,7 @@ export function useExchangeScreen({
       showAlertModal(
         'ポイントの同期に失敗しました。通信環境を確認して再度お試しください。'
       );
+      isExchangingRef.current = false;
       return;
     }
 
@@ -187,6 +183,7 @@ export function useExchangeScreen({
     }
 
     setPointsUpdated((prev) => !prev);
+    isExchangingRef.current = false;
   };
 
   return {

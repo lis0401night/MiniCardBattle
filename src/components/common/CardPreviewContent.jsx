@@ -83,6 +83,12 @@ export default function CardPreviewContent({
     return null;
   };
 
+  const cardDims = styleProps.isPlaymat
+    ? { width: 280, height: 140 }
+    : styleProps.isIcon
+      ? { width: 140, height: 140 }
+      : { width: 180, height: 240 };
+
   const renderDescContent = (descContent) => {
     if (Array.isArray(descContent)) {
       return descContent.map((seg, i) => {
@@ -156,16 +162,8 @@ export default function CardPreviewContent({
           <div
             style={{
               position: 'relative',
-              width: styleProps.isPlaymat
-                ? '280px'
-                : styleProps.isIcon
-                  ? '140px'
-                  : '180px',
-              height: styleProps.isPlaymat
-                ? '140px'
-                : styleProps.isIcon
-                  ? '140px'
-                  : '240px',
+              width: `${cardDims.width}px`,
+              height: `${cardDims.height}px`,
             }}
           >
             <div
@@ -177,8 +175,8 @@ export default function CardPreviewContent({
               style={
                 styleProps.isPlaymat
                   ? {
-                      width: '280px',
-                      height: '140px',
+                      width: `${cardDims.width}px`,
+                      height: `${cardDims.height}px`,
                       position: 'relative',
                       overflow: 'hidden',
                       cursor: 'pointer',
@@ -189,8 +187,8 @@ export default function CardPreviewContent({
                     }
                   : styleProps.isIcon
                     ? {
-                        width: '140px',
-                        height: '140px',
+                        width: `${cardDims.width}px`,
+                        height: `${cardDims.height}px`,
                         position: 'relative',
                         overflow: 'hidden',
                         cursor: 'pointer',
@@ -200,8 +198,8 @@ export default function CardPreviewContent({
                         backgroundColor: '#0f172a',
                       }
                     : {
-                        width: '180px',
-                        height: '240px',
+                        width: `${cardDims.width}px`,
+                        height: `${cardDims.height}px`,
                         position: 'relative',
                         overflow: 'hidden',
                         cursor: 'pointer',

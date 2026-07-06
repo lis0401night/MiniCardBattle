@@ -1,5 +1,10 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { DECK_SIZE, PROFILE_NAME_KEY } from '../utils/constants/config.js';
+import {
+  DECK_SIZE,
+  PROFILE_NAME_KEY,
+  UNLOCKED_SKINS_KEY,
+  UNLOCKED_ICONS_KEY,
+} from '../utils/constants/config.js';
 
 const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
 
@@ -31,8 +36,8 @@ export const GameState = {
   enemyConfig: CHARACTERS.dragon,
   isInitializing: false,
   playerSkins: {},
-  unlockedSkins: safeParseArray('mini_card_battle_unlocked_skins'),
-  unlockedIcons: safeParseArray('mini_card_battle_unlocked_icons'),
+  unlockedSkins: safeParseArray(UNLOCKED_SKINS_KEY),
+  unlockedIcons: safeParseArray(UNLOCKED_ICONS_KEY),
   decks: [], // 【追加】最大10個の別個デッキ
   currentDeckIndex: 0, // 【追加】現在操作中のデッキインデックス
   playerDeckSelection: [], // （旧）バトルや編集時の作業用として残す
@@ -113,7 +118,7 @@ export function saveUserProfile(profile) {
   const merged = {
     name:
       typeof profile.name === 'string' && profile.name.trim()
-        ? profile.name
+        ? profile.name.trim()
         : GameState.userProfile.name,
     icon:
       typeof profile.icon === 'string' && profile.icon

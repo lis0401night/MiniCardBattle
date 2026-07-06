@@ -12,7 +12,7 @@ import {
 } from '../services/uiMainCore.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
+import { savePointsToServer, fetchPlayerDecks } from '../utils/apiUtils.js';
 
 export default function DefenseMenuScreen() {
   // 初期値でLocalStorageの登録状態を判定（useEffect内での同期的setState回避）
@@ -27,10 +27,7 @@ export default function DefenseMenuScreen() {
       // APIからデータを取得してポイントなどを更新するロジック（そのまま移植）
       const fetchPoints = async () => {
         try {
-          const response = await fetch(
-            `api/get_player_decks.php?t=${Date.now()}`
-          );
-          const result = await response.json();
+          const result = await fetchPlayerDecks();
           if (result.success && getOrCreateUUID) {
             const myUuid = getOrCreateUUID();
             const myData = result.players.find((p) => p.uuid === myUuid);

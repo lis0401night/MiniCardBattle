@@ -13,6 +13,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
+import { DEFAULT_DUNGEON_AI_LEVEL } from '../utils/constants/config.js';
 
 /**
  * 敵のスキンを GameState.enemySkins に同期する
@@ -41,7 +42,7 @@ export function resolveDungeonDeck(leaderCardId, aiLevelOrDiff = 'normal') {
 
   let diffKey = 'normal';
   if (typeof aiLevelOrDiff === 'number') {
-    diffKey = aiLevelOrDiff >= 3 ? 'hard' : 'normal';
+    diffKey = aiLevelOrDiff >= DEFAULT_DUNGEON_AI_LEVEL ? 'hard' : 'normal';
   } else if (typeof aiLevelOrDiff === 'string') {
     diffKey = aiLevelOrDiff;
   }

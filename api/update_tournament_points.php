@@ -32,36 +32,54 @@ $dir = __DIR__ . '/decks/players';
 $filename = "{$dir}/{$uuid}.js";
 
 if (!file_exists($filename)) {
-    echo json_encode(['success' => false, 'error' => 'Player deck not found. Register a deck first.']);
-    exit;
+    $playerName = isset($data['name']) ? $data['name'] : 'Player';
+    $playerData = [
+        'uuid' => $uuid,
+        'name' => $playerName,
+        'icon' => 'android',
+        'character' => 'oni',
+        'skin' => 'default',
+        'playmat' => null,
+        'stage' => 'oni',
+        'deck' => [],
+        'challenge_points' => 0,
+        'challenge_total_points' => 0,
+        'challenge_max_streak' => 0,
+        'tournament_points' => 0,
+        'tournament_total_points' => 0,
+        'points' => 0,
+        'total_points' => 0,
+        'defense_wins' => 0
+    ];
+} else {
+    $content = file_get_contents($filename);
+    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+        $playerData = json_decode($matches[2], true);
+    } else {
+        $playerData = null;
+    }
 }
 
-$content = file_get_contents($filename);
+if ($playerData) {
+    $playerData['tournament_points'] = $points;
+    $playerData['tournament_total_points'] = $total_points;
+    $playerData['timestamp'] = time();
 
-if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
-    $playerData = json_decode($matches[2], true);
-    if ($playerData) {
-        $playerData['tournament_points'] = $points;
-        $playerData['tournament_total_points'] = $total_points;
-        $playerData['timestamp'] = time();
-
-        $data_json = json_encode($playerData);
-        $js_content = <<<EOT
+    $data_json = json_encode($playerData);
+    $js_content = <<<EOT
 if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
 PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
-        
-        if (file_put_contents($filename, $js_content)) {
-            echo json_encode([
-                'success' => true,
-                'tournament_points' => $playerData['tournament_points'],
-                'tournament_total_points' => $playerData['tournament_total_points']
-            ]);
-            exit;
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to save updated file']);
-            exit;
-        }
+    
+    if (file_put_contents($filename, $js_content)) {
+        echo json_encode([
+            'success' => true,
+            'tournament_points' => $playerData['tournament_points'],
+            'tournament_total_points' => $playerData['tournament_total_points']
+        ]);
+        exit;
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Failed to save updated file']);
+        exit;
     }
 }
-echo json_encode(['success' => false, 'error' => 'Failed to parse existing deck data']);

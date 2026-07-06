@@ -12,7 +12,10 @@ import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  DEFAULT_DUNGEON_AI_LEVEL,
+} from '../utils/constants/config.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
@@ -1116,7 +1119,7 @@ function RewardSelect() {
       // 既に空デッキ(0枚)のセーブデータが書き込まれてしまっている場合の強力な救済・フェイルセーフ
       deck = resolveDungeonDeck(
         GameState.enemyConfig?.leaderCardId,
-        GameState.enemyConfig?.fixedAiLevel || 3
+        GameState.enemyConfig?.fixedAiLevel || DEFAULT_DUNGEON_AI_LEVEL
       );
     }
     return [...new Set(deck || [])];

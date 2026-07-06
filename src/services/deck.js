@@ -1,5 +1,5 @@
 import { prepareBattle } from '../game/battle.js';
-import { GameState } from '../state/gameState.js';
+import { GameState, saveUserProfile } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
@@ -9,7 +9,7 @@ import {
 import {
   DECK_SIZE,
   MAX_DECK_SLOTS,
-  PROFILE_NAME_KEY,
+  DEFAULT_DUNGEON_AI_LEVEL,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
@@ -171,7 +171,7 @@ export function generateDeck(owner, config, sessionId) {
       // 既に空デッキ(0枚)のセーブデータが書き込まれてしまっている場合の強力な救済・フェイルセーフ
       deckIds = resolveDungeonDeck(
         config.leaderCardId,
-        config.fixedAiLevel || 3
+        config.fixedAiLevel || DEFAULT_DUNGEON_AI_LEVEL
       );
     } else {
       let recipeId = config.id;
@@ -1109,7 +1109,7 @@ export async function submitDefenseDeck(providedName = null) {
   const playerName = resolvePlayerName(providedName);
 
   playSound(SOUNDS.seClick);
-  localStorage.setItem(PROFILE_NAME_KEY, playerName);
+  saveUserProfile({ name: playerName });
 
   const uuid = getOrCreateUUID();
   const payload = {

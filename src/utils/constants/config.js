@@ -13,6 +13,11 @@ export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出�
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
 export const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
+export const UNLOCKED_SKINS_KEY = 'mini_card_battle_unlocked_skins';
+export const UNLOCKED_ICONS_KEY = 'mini_card_battle_unlocked_icons';
+export const OWNED_PLAYMATS_KEY = 'mini_card_battle_owned_playmats';
+export const UNLOCKED_PREMIUM_CARDS_KEY =
+  'mini_card_battle_unlocked_premium_cards';
 
 // 交換コストの定義（カテゴリ・レアリティ別）
 export const GOLD_PREMIUM_EXCHANGE_COST = 20; // ゴールド・プレミアムカード
@@ -554,7 +559,7 @@ export function appendVersionQuery(url) {
   if (!url.includes('assets/')) {
     return url;
   }
-  if (url.includes('?v=')) return url;
+  if (/[?&]v=/.test(url)) return url;
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}v=${GAME_VERSION}`;
 }
@@ -577,3 +582,5 @@ export function getScreenBackgroundStyle(imagePath) {
     backgroundPosition: 'center',
   };
 }
+
+export const DEFAULT_DUNGEON_AI_LEVEL = 3;

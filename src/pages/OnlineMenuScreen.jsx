@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
 import { createRoom } from '../services/multiplayer.js';
@@ -17,6 +17,14 @@ import { resolvePlayerName } from '../utils/gameUtils.js';
  */
 export default function OnlineMenuScreen() {
   const [isMatching, setIsMatching] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleCreateRoomClick = () => {
     // クリック音は MenuButton 側で自動再生されるため、多重再生を防ぐためここでは明示的に呼び出さない
@@ -25,12 +33,16 @@ export default function OnlineMenuScreen() {
     setIsMatching(true);
     createRoom(name)
       .then(() => {
-        setIsMatching(false);
-        showOnlineLobby?.();
+        if (isMountedRef.current) {
+          setIsMatching(false);
+          showOnlineLobby?.();
+        }
       })
       .catch((e) => {
         console.error(e);
-        setIsMatching(false);
+        if (isMountedRef.current) {
+          setIsMatching(false);
+        }
         const msg = e?.message || '';
         if (
           e?.code === 'PERMISSION_DENIED' ||

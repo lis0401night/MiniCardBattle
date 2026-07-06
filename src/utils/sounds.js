@@ -131,15 +131,18 @@ export const AUDIO_INSTANCES = {
  * @param {string} key - 音声リソースのキー名
  * @returns {boolean} - スキップすべきなら true、プリロードすべきなら false
  */
+const BGM_KEY_PREFIX = 'bgm';
+const TITLE_BGM_KEY = 'bgmTitle';
+
 export function shouldSkipAudioPreload(key) {
-  const isBgm = key.startsWith('bgm');
-  return isBgm && key !== 'bgmTitle';
+  const isBgm = key.startsWith(BGM_KEY_PREFIX);
+  return isBgm && key !== TITLE_BGM_KEY;
 }
 
 // サウンドの初期設定
 Object.keys(AUDIO_INSTANCES).forEach((key) => {
   const audio = AUDIO_INSTANCES[key];
-  if (key.startsWith('bgm')) {
+  if (key.startsWith(BGM_KEY_PREFIX)) {
     audio.loop = true;
     // BGMのみ、各所での参照互換性（SOUNDS.bgmTitle等）を保つためマージ
     SOUNDS[key] = audio;
@@ -189,7 +192,7 @@ export async function loadSE(key, url) {
 export function updateBgmGainNodes(vol) {
   // BGMはHTML5 Audioのvolumeを直接変更
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
-    if (key.startsWith('bgm')) {
+    if (key.startsWith(BGM_KEY_PREFIX)) {
       const audio = AUDIO_INSTANCES[key];
       if (audio) {
         try {
