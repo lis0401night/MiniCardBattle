@@ -1,12 +1,8 @@
 import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
 import { GameState } from '../state/gameState.js';
-import { PROFILE_NAME_KEY } from '../utils/constants/config.js';
-import {
-  playSound,
-  switchScreen,
-  getOrCreateUUID,
-} from '../utils/gameUtils.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
   showDungeonMenu,
@@ -322,6 +318,13 @@ export function retireDungeon() {
     localStorage.setItem('mini_card_battle_challenge_points', currentPts);
     localStorage.setItem('mini_card_battle_challenge_total_points', totalPts);
 
+    const maxStreak = GameState.dungeonMaxWinStreak || currentStreak;
+
+    // サーバーへの同期処理を走らせる（keepalive: true により画面遷移しても裏で最後まで送信されます）
+    savePointsToServer('update_challenge_points.php', currentPts, totalPts, {
+      max_streak: maxStreak,
+    });
+
     showPointAcquisitionModal({
       title: '試練終了',
       message: `ダンジョンの挑戦が終了しました。\n到達階層: ${currentStreak + 1}階（クリア: ${currentStreak}階）\n試練ポイントを ${earnedPoints} Pt 獲得しました！`,
@@ -333,21 +336,6 @@ export function retireDungeon() {
         showDungeonMenu();
       },
     });
-
-    const uuid = getOrCreateUUID();
-    const playerName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
-    const maxStreak = GameState.dungeonMaxWinStreak || currentStreak;
-    fetch('api/update_challenge_points.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uuid: uuid,
-        name: playerName,
-        points: currentPts,
-        total_points: totalPts,
-        max_streak: maxStreak,
-      }),
-    }).catch((err) => console.error('Failed to save challenge points:', err));
   } else {
     showDungeonMenu(); // ダンジョンメニューに戻る
   }

@@ -89,7 +89,7 @@ export default function TournamentBracketScreen() {
           totalPts
         );
 
-        // サーバーにポイントを同期 (DRY原則を適用し、共通のsavePointsToServerを使用)
+        // サーバーにポイントを同期（keepalive: true により画面遷移しても裏で最後まで送信されます）
         savePointsToServer(
           'update_tournament_points.php',
           currentPts,

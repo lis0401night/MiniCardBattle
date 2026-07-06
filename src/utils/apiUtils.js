@@ -9,7 +9,12 @@ import { PROFILE_NAME_KEY } from './constants/config.js';
  * @param {number} points - 現在の所持ポイント
  * @param {number} totalPoints - 累計獲得ポイント
  */
-export function savePointsToServer(endpoint, points, totalPoints) {
+export function savePointsToServer(
+  endpoint,
+  points,
+  totalPoints,
+  extraBody = {}
+) {
   try {
     const uuid = getOrCreateUUID?.();
     if (!uuid) return Promise.resolve(false);
@@ -17,7 +22,7 @@ export function savePointsToServer(endpoint, points, totalPoints) {
     const playerName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     return fetch(`api/${endpoint}`, {
       method: 'POST',
@@ -27,7 +32,9 @@ export function savePointsToServer(endpoint, points, totalPoints) {
         name: playerName,
         points: points,
         total_points: totalPoints,
+        ...extraBody,
       }),
+      keepalive: true, // 画面遷移やアンマウント後も通信を裏で維持する
       signal: controller.signal,
     })
       .then((res) => {

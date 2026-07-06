@@ -12,6 +12,7 @@ import {
 } from '../services/uiMainCore.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 
 export default function DefenseMenuScreen() {
   // 初期値でLocalStorageの登録状態を判定（useEffect内での同期的setState回避）
@@ -76,22 +77,16 @@ export default function DefenseMenuScreen() {
               );
               localStorage.setItem('mini_card_battle_defense_wins', wins);
 
-              // サーバーが未初期化(0)でローカルにデータがある場合は、サーバーにアップロードしてマスタを正す
-              if (pts === 0 && localPts > 0) {
-                fetch('api/update_points.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    uuid: myUuid,
-                    points: finalPts,
-                    total_points: finalTotalPts,
-                  }),
-                }).catch((error) => {
-                  console.error(
-                    '防衛ポイントのサーバー更新に失敗しました:',
-                    error
-                  );
-                });
+              // 新しく防衛に成功してポイントが増えた場合、無条件で最新のポイントをサーバーへ同期します（keepalive対応）
+              if (newWinsCount > 0) {
+                savePointsToServer(
+                  'update_points.php',
+                  finalPts,
+                  finalTotalPts,
+                  {
+                    defense_wins: wins,
+                  }
+                );
               }
             }
           }

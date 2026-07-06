@@ -76,16 +76,13 @@ export function useExchangeScreen({
               localStorage.setItem(pointsLocalKey, finalPts);
               localStorage.setItem(pointsTotalLocalKey, finalTotalPts);
 
-              if (pts === 0 && currentPts > 0) {
-                fetch(`api/${apiEndpoint}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    uuid: myUuid,
-                    points: finalPts,
-                    total_points: finalTotalPts,
-                  }),
-                }).catch(() => {});
+              // ローカルのデータがサーバーより新しく進んでいる場合、サーバーへ同期してマスタを更新します
+              if (
+                currentPts > pts ||
+                totalPts > tPts ||
+                (pts === 0 && currentPts > 0)
+              ) {
+                savePointsToServer(apiEndpoint, finalPts, finalTotalPts);
               }
             }
           }

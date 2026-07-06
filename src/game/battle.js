@@ -4278,6 +4278,7 @@ export function endBattle() {
             points: newCurrentPoints,
             total_points: newTotalPoints,
           }),
+          keepalive: true,
         }).catch((err) => console.error('Failed to update points:', err));
 
         // 自身が攻撃して勝利した場合も実績「防衛戦勝利数」としてカウントする
@@ -4308,6 +4309,7 @@ export function endBattle() {
               increment: true,
               defense_wins: 1,
             }),
+            keepalive: true,
           }).catch((err) =>
             console.error('Failed to update enemy points:', err)
           );
