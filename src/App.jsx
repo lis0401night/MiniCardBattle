@@ -249,6 +249,7 @@ export default function App() {
 
           // リロードループ防止（新バージョンへの再試行はセッションで一度だけ）
           const reloadAttemptKey = `${currentVersion}->${data.version}`;
+          /* 一時的にテストのため無効化
           if (
             sessionStorage.getItem('versionReloadAttempted') ===
             reloadAttemptKey
@@ -258,6 +259,7 @@ export default function App() {
             );
             return;
           }
+          */
 
           // ユーザーに確認ダイアログを表示して、OKの場合のみリロードを行う
           showConfirmModal(
