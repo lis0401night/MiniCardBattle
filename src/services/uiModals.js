@@ -17,7 +17,13 @@ export function showConfirmModal(
 ) {
   if (showConfirmModalHook)
     return showConfirmModalHook(message, onConfirm, onCancel, isAlert);
-  console.warn('GlobalModals not mounted: showConfirmModal fallback missing');
+  console.warn('GlobalModals not mounted: using window.confirm fallback');
+  const result = window.confirm(message);
+  if (result) {
+    if (onConfirm) onConfirm();
+  } else {
+    if (onCancel) onCancel();
+  }
 }
 
 export let showAlertModalHook = null;

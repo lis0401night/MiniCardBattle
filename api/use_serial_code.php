@@ -70,7 +70,7 @@ if (in_array($code, $player_data['used_serials'])) {
 }
 
 // 定数ファイル（serials.json）からシリアルコード一覧をロード
-$json_path = dirname(__DIR__) . '/src/utils/constants/serials.json';
+$json_path = __DIR__ . '/serials.json';
 if (!file_exists($json_path)) {
     echo json_encode(['success' => false, 'error' => 'config_missing']);
     exit;

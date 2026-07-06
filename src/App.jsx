@@ -226,6 +226,7 @@ export default function App() {
 
         const response = await fetch(`./version.json?t=${Date.now()}`, {
           signal: controller.signal,
+          cache: 'no-store'
         });
         clearTimeout(timeoutId);
 
