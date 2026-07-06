@@ -204,6 +204,13 @@ export default function NewsBanner() {
     switchScreen(shortcut);
   };
 
+  const closeNewsModal = () => {
+    try {
+      playSound?.(SOUNDS?.seClick);
+    } catch {}
+    setSelectedNews(null);
+  };
+
   return (
     <>
       <div
@@ -283,7 +290,7 @@ export default function NewsBanner() {
       {/* お知らせ詳細ポップアップ */}
       {selectedNews && (
         <div
-          onClick={() => setSelectedNews(null)}
+          onClick={closeNewsModal}
           style={{
             position: 'fixed',
             top: 0,
@@ -411,7 +418,7 @@ export default function NewsBanner() {
               <button
                 className="btn"
                 style={{ backgroundColor: '#475569' }}
-                onClick={() => setSelectedNews(null)}
+                onClick={closeNewsModal}
               >
                 閉じる
               </button>
