@@ -63,12 +63,6 @@ if (!isset($player_data['icon'])) {
     $player_data['icon'] = 'player';
 }
 
-// すでに使用済みかチェック
-if (in_array($code, $player_data['used_serials'])) {
-    echo json_encode(['success' => false, 'error' => 'already_used']);
-    exit;
-}
-
 // 定数ファイル（serials.json）からシリアルコード一覧をロード
 $json_path = __DIR__ . '/serials.json';
 if (!file_exists($json_path)) {
@@ -87,6 +81,18 @@ if (isset($serials_config[$code])) {
     $reward = $serials_config[$code];
     $rewardType = $reward['rewardType'];
     $rewardValue = $reward['rewardValue'];
+
+    // すでに使用済みかチェック（巻き戻しバグ救済のための自己修復ロジック）
+    if (in_array($code, $player_data['used_serials'])) {
+        echo json_encode([
+            'success' => true,
+            'reward' => $rewardValue,
+            'rewardType' => $rewardType,
+            'rewardName' => $reward['rewardName'] ?? '',
+            'recovered' => true
+        ]);
+        exit;
+    }
 
     if ($rewardType === 'premium') {
         if (!isset($player_data['unlocked_premium_cards']) || !is_array($player_data['unlocked_premium_cards'])) {

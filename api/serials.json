@@ -3,5 +3,10 @@
     "rewardType": "playmat",
     "rewardValue": "pm_lanedefenders",
     "rewardName": "LANE DEFENDERS"
+  },
+  "LANEDEFENDERS_RETRY": {
+    "rewardType": "playmat",
+    "rewardValue": "pm_lanedefenders",
+    "rewardName": "LANE DEFENDERS"
   }
 }

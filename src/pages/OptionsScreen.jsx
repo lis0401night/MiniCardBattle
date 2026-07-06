@@ -26,6 +26,7 @@ import {
   showSkinAcquisitionModal,
   showIconAcquisitionModal,
 } from '../services/uiGallery.js';
+import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 
 export default function OptionsScreen() {
   const [volume, setVolume] = useState(0.5);
@@ -130,6 +131,9 @@ export default function OptionsScreen() {
             'mini_card_battle_owned_playmats',
             JSON.stringify(ownedPlaymats)
           );
+          if (typeof setOwnedPlaymats === 'function') {
+            setOwnedPlaymats(ownedPlaymats);
+          }
 
           if (typeof saveDeck === 'function') {
             saveDeck();
@@ -159,6 +163,7 @@ export default function OptionsScreen() {
             'mini_card_battle_unlocked_skins',
             JSON.stringify(unlockedSkins)
           );
+          GameState.unlockedSkins = unlockedSkins;
 
           setSerialVisible(false);
 
@@ -184,6 +189,7 @@ export default function OptionsScreen() {
             'mini_card_battle_unlocked_icons',
             JSON.stringify(unlockedIcons)
           );
+          GameState.unlockedIcons = unlockedIcons;
 
           setSerialVisible(false);
 
