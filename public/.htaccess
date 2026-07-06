@@ -1,7 +1,7 @@
 # ====================================================================
 # 1. 既存のキャッシュ無効化設定（アップデートを即時反映させるため維持）
 # ====================================================================
-<FilesMatch "\.(js|css|html)$">
+<FilesMatch "\.(js|css|html|json)$">
     FileETag None
     <IfModule mod_headers.c>
         Header set Cache-Control "no-cache, no-store, must-revalidate"
