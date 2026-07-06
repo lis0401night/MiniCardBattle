@@ -13,11 +13,23 @@ export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出�
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
 export const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
+export const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
 export const UNLOCKED_SKINS_KEY = 'mini_card_battle_unlocked_skins';
 export const UNLOCKED_ICONS_KEY = 'mini_card_battle_unlocked_icons';
 export const OWNED_PLAYMATS_KEY = 'mini_card_battle_owned_playmats';
 export const UNLOCKED_PREMIUM_CARDS_KEY =
   'mini_card_battle_unlocked_premium_cards';
+
+export const CHALLENGE_POINTS_KEY = 'mini_card_battle_challenge_points';
+export const CHALLENGE_TOTAL_POINTS_KEY =
+  'mini_card_battle_challenge_total_points';
+export const TOURNAMENT_POINTS_KEY = 'mini_card_battle_tournament_points';
+export const TOURNAMENT_TOTAL_POINTS_KEY =
+  'mini_card_battle_tournament_total_points';
+export const DEFENSE_POINTS_KEY = 'mini_card_battle_defense_points';
+export const DEFENSE_TOTAL_POINTS_KEY = 'mini_card_battle_defense_total_points';
+export const DEFENSE_WINS_KEY = 'mini_card_battle_defense_wins';
+export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';
 
 // 交換コストの定義（カテゴリ・レアリティ別）
 export const GOLD_PREMIUM_EXCHANGE_COST = 20; // ゴールド・プレミアムカード
@@ -571,16 +583,38 @@ export const MID_TIER_PICK_COUNT = 2;
 export const LOW_TIER_PICK_COUNT = 2;
 
 /**
+ * バージョン付きの背景スタイルオブジェクトを生成します。
+ *
+ * @param {string} backgroundImage - 背景画像名（例: 'background_select.png'）または url(...) 指定
+ * @param {number} [op1=0.7] - グラデーション開始時の不透明度
+ * @param {number} [op2=0.9] - グラデーション終了時の不透明度
+ * @returns {object} CSSスタイルオブジェクト
+ */
+export function getVersionedBackgroundStyle(
+  backgroundImage,
+  op1 = 0.7,
+  op2 = 0.9
+) {
+  if (!backgroundImage) return {};
+  return {
+    backgroundImage: backgroundImage.includes('url')
+      ? backgroundImage.replace(
+          /url\(['"]?([^'")\s]+)['"]?\)/g,
+          (match, urlPath) => `url('${appendVersionQuery(urlPath)}')`
+        )
+      : `linear-gradient(rgba(15, 23, 42, ${op1}), rgba(15, 23, 42, ${op2})), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  };
+}
+
+/**
  * 共通の背景スタイルオブジェクトを生成します。
  * @param {string} imagePath - 背景画像のアセットパス
  * @returns {object} CSSスタイルオブジェクト
  */
 export function getScreenBackgroundStyle(imagePath) {
-  return {
-    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(imagePath)}')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-  };
+  return getVersionedBackgroundStyle(imagePath, 0.7, 0.9);
 }
 
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;

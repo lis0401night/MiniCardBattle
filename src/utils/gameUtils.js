@@ -845,11 +845,22 @@ window.stripEphemeralSkills = stripEphemeralSkills;
  */
 export async function clearCachesAndServiceWorkers() {
   const tasks = [];
+  const appScope = new URL(
+    import.meta.env.BASE_URL || '/',
+    window.location.origin
+  ).href;
+
   if ('caches' in window) {
     tasks.push(
       caches
         .keys()
-        .then((names) => Promise.all(names.map((name) => caches.delete(name))))
+        .then((names) =>
+          Promise.all(
+            names
+              .filter((name) => name.startsWith('mini-card-battle-'))
+              .map((name) => caches.delete(name))
+          )
+        )
     );
   }
   if ('serviceWorker' in navigator) {
@@ -858,7 +869,9 @@ export async function clearCachesAndServiceWorkers() {
         .getRegistrations()
         .then((registrations) =>
           Promise.all(
-            registrations.map((registration) => registration.unregister())
+            registrations
+              .filter((registration) => registration.scope.startsWith(appScope))
+              .map((registration) => registration.unregister())
           )
         )
     );

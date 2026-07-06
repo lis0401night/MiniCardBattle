@@ -103,6 +103,7 @@ export default function OnlineLobbyScreen() {
           playmat: activeDeck.playmatId || null,
           skin: selSkin || null,
           stage: selStage,
+          icon: GameState.userProfile?.icon || 'player',
         });
       } else {
         setLocalReadyConfig({
@@ -112,6 +113,7 @@ export default function OnlineLobbyScreen() {
           playmat: null,
           skin: null,
           stage: selStage,
+          icon: GameState.userProfile?.icon || 'player',
         });
       }
     };
@@ -163,6 +165,11 @@ export default function OnlineLobbyScreen() {
               opData.leaderConfig.skin;
           }
 
+          const getProfileIconUrl = (iconId) => {
+            if (!iconId) return 'assets/icons/icon_player.png';
+            return `assets/icons/icon_${iconId}.png`;
+          };
+
           GameState.playerConfig.image = getSkinImage(
             GameState.playerConfig,
             meData.leaderConfig.skin || 'default',
@@ -173,11 +180,20 @@ export default function OnlineLobbyScreen() {
             meData.leaderConfig.skin || 'default',
             'imageLose'
           );
-          GameState.playerConfig.icon = getSkinImage(
-            GameState.playerConfig,
-            meData.leaderConfig.skin || 'default',
-            'icon'
-          );
+          GameState.playerConfig.icon = meData.leaderConfig.icon
+            ? getProfileIconUrl(meData.leaderConfig.icon)
+            : getSkinImage(
+                GameState.playerConfig,
+                meData.leaderConfig.skin || 'default',
+                'icon'
+              );
+          GameState.playerConfig.iconDamage = meData.leaderConfig.icon
+            ? getProfileIconUrl(meData.leaderConfig.icon)
+            : getSkinImage(
+                GameState.playerConfig,
+                meData.leaderConfig.skin || 'default',
+                'iconDamage'
+              ) || GameState.playerConfig.icon;
 
           GameState.enemyConfig.image = getSkinImage(
             GameState.enemyConfig,
@@ -189,11 +205,20 @@ export default function OnlineLobbyScreen() {
             opData.leaderConfig.skin || 'default',
             'imageLose'
           );
-          GameState.enemyConfig.icon = getSkinImage(
-            GameState.enemyConfig,
-            opData.leaderConfig.skin || 'default',
-            'icon'
-          );
+          GameState.enemyConfig.icon = opData.leaderConfig.icon
+            ? getProfileIconUrl(opData.leaderConfig.icon)
+            : getSkinImage(
+                GameState.enemyConfig,
+                opData.leaderConfig.skin || 'default',
+                'icon'
+              );
+          GameState.enemyConfig.iconDamage = opData.leaderConfig.icon
+            ? getProfileIconUrl(opData.leaderConfig.icon)
+            : getSkinImage(
+                GameState.enemyConfig,
+                opData.leaderConfig.skin || 'default',
+                'iconDamage'
+              ) || GameState.enemyConfig.icon;
 
           // enemySkins は上で既にリセット・設定済み
           GameState.enemySkins[GameState.enemyConfig.id] =
@@ -319,20 +344,30 @@ export default function OnlineLobbyScreen() {
     ? Object.values(roomData.chat).sort((a, b) => a.timestamp - b.timestamp)
     : [];
 
-  const myIcon = myData?.leaderConfig?.leaderConfig
-    ? getSkinImage(
-        myData.leaderConfig.leaderConfig,
-        myData.leaderConfig.skin,
-        'icon'
-      )
-    : '';
-  const opIcon = opData?.leaderConfig?.leaderConfig
-    ? getSkinImage(
-        opData.leaderConfig.leaderConfig,
-        opData.leaderConfig.skin,
-        'icon'
-      )
-    : '';
+  const getProfileIconUrl = (iconId) => {
+    if (!iconId) return 'assets/icons/icon_player.png';
+    return `assets/icons/icon_${iconId}.png`;
+  };
+
+  const myIcon = myData?.leaderConfig?.icon
+    ? getProfileIconUrl(myData.leaderConfig.icon)
+    : myData?.leaderConfig?.leaderConfig
+      ? getSkinImage(
+          myData.leaderConfig.leaderConfig,
+          myData.leaderConfig.skin,
+          'icon'
+        )
+      : '';
+
+  const opIcon = opData?.leaderConfig?.icon
+    ? getProfileIconUrl(opData.leaderConfig.icon)
+    : opData?.leaderConfig?.leaderConfig
+      ? getSkinImage(
+          opData.leaderConfig.leaderConfig,
+          opData.leaderConfig.skin,
+          'icon'
+        )
+      : '';
   const myName = localStorage.getItem(PROFILE_NAME_KEY) || '自分';
 
   return (

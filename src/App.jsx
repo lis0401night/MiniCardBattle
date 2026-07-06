@@ -248,20 +248,25 @@ export default function App() {
           );
 
           // リロードループ防止（新バージョンへの再試行はセッションで一度だけ）
+          const reloadAttemptKey = `${currentVersion}->${data.version}`;
           if (
-            sessionStorage.getItem('versionReloadAttempted') === data.version
+            sessionStorage.getItem('versionReloadAttempted') ===
+            reloadAttemptKey
           ) {
             console.warn(
-              '[Version Checker] Reload already attempted for this version. Skipping.'
+              '[Version Checker] Previous reload did not update the bundle. Allowing retry.'
             );
-            return;
+            sessionStorage.removeItem('versionReloadAttempted');
           }
 
           // ユーザーに確認ダイアログを表示して、OKの場合のみリロードを行う
           showConfirmModal(
             '新しいバージョンが検出されました。\n最新データへ更新するために、ゲームを再読み込みしますか？',
             async () => {
-              sessionStorage.setItem('versionReloadAttempted', data.version);
+              sessionStorage.setItem(
+                'versionReloadAttempted',
+                reloadAttemptKey
+              );
               try {
                 await clearCachesAndServiceWorkers();
                 console.log('[Version Checker] Cache cleared. Reloading...');

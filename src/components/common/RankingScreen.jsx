@@ -6,8 +6,18 @@ import {
   getIconFramePath,
   getPlayerColor,
 } from '../../utils/constants/characters.js';
-import { getOrCreateUUID } from '../../utils/gameUtils.js';
-import { savePointsToServer, fetchPlayerDecks } from '../../utils/apiUtils.js';
+import { getOrCreateUUID, resolvePlayerName } from '../../utils/gameUtils.js';
+import { fetchPlayerDecks, syncModePoints } from '../../utils/apiUtils.js';
+import {
+  CHALLENGE_POINTS_KEY,
+  CHALLENGE_TOTAL_POINTS_KEY,
+  DUNGEON_MAX_STREAK_KEY,
+  TOURNAMENT_POINTS_KEY,
+  TOURNAMENT_TOTAL_POINTS_KEY,
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  DEFENSE_WINS_KEY,
+} from '../../utils/constants/config.js';
 
 const RANK_ACCENTS = {
   0: {
@@ -49,134 +59,80 @@ export default function RankingScreen({
           if (myUuid) {
             const myData = activePlayers.find((p) => p.uuid === myUuid);
 
-            const challengePts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_challenge_points'),
-                10
-              ) || 0;
-            const challengeTotalPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_challenge_total_points'),
-                10
-              ) || 0;
-            const maxStreak =
-              parseInt(
-                localStorage.getItem('mini_card_battle_dungeon_max_streak'),
-                10
-              ) || 0;
+            // pointField に応じて同期するモードを決定 (必要なモードのみ同期して無駄な通信を排除)
+            let syncMode = '';
+            if (pointField.includes('challenge')) {
+              syncMode = 'challenge';
+            } else if (pointField.includes('tournament')) {
+              syncMode = 'tournament';
+            } else if (
+              pointField.includes('defense') ||
+              pointField === 'points' ||
+              pointField === 'total_points'
+            ) {
+              syncMode = 'defense';
+            }
 
-            const tournamentPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_tournament_points'),
-                10
-              ) || 0;
-            const tournamentTotalPts =
-              parseInt(
-                localStorage.getItem(
-                  'mini_card_battle_tournament_total_points'
-                ),
-                10
-              ) || 0;
-
-            const defensePts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_defense_points'),
-                10
-              ) || 0;
-            const defenseTotalPts =
-              parseInt(
-                localStorage.getItem('mini_card_battle_defense_total_points'),
-                10
-              ) || 0;
-            const defenseWins =
-              parseInt(
-                localStorage.getItem('mini_card_battle_defense_wins'),
-                10
-              ) || 0;
-
-            if (myData) {
-              const sChallengePts = myData.challenge_points || 0;
-              const sChallengeTotalPts = myData.challenge_total_points || 0;
-
-              const sTournamentPts = myData.tournament_points || 0;
-              const sTournamentTotalPts = myData.tournament_total_points || 0;
-
-              const sDefensePts = myData.points || 0;
-              const sDefenseTotalPts = myData.total_points || 0;
-
-              if (
-                challengeTotalPts > sChallengeTotalPts ||
-                challengePts > sChallengePts
-              ) {
-                savePointsToServer(
-                  'update_challenge_points.php',
-                  challengePts,
-                  challengeTotalPts,
-                  { max_streak: maxStreak }
-                );
-                myData.challenge_points = challengePts;
-                myData.challenge_total_points = challengeTotalPts;
+            if (syncMode) {
+              const syncResult = await syncModePoints(syncMode, myData);
+              if (syncResult && myData) {
+                // ローカル側の変更が適用されてサーバーへ同期した場合、ローカルの最新データに更新
+                if (syncMode === 'challenge') {
+                  myData.challenge_points = syncResult.points;
+                  myData.challenge_total_points = syncResult.totalPoints;
+                } else if (syncMode === 'tournament') {
+                  myData.tournament_points = syncResult.points;
+                  myData.tournament_total_points = syncResult.totalPoints;
+                } else if (syncMode === 'defense') {
+                  myData.points = syncResult.points;
+                  myData.total_points = syncResult.totalPoints;
+                }
               }
-              if (
-                tournamentTotalPts > sTournamentTotalPts ||
-                tournamentPts > sTournamentPts
-              ) {
-                savePointsToServer(
-                  'update_tournament_points.php',
-                  tournamentPts,
-                  tournamentTotalPts
-                );
-                myData.tournament_points = tournamentPts;
-                myData.tournament_total_points = tournamentTotalPts;
-              }
-              if (
-                defenseTotalPts > sDefenseTotalPts ||
-                defensePts > sDefensePts
-              ) {
-                savePointsToServer(
-                  'update_points.php',
-                  defensePts,
-                  defenseTotalPts,
-                  { defense_wins: defenseWins }
-                );
-                myData.points = defensePts;
-                myData.total_points = defenseTotalPts;
-              }
-            } else {
-              // サーバー上にまだアカウントファイルが存在しない新規ユーザーの場合、ここで作成同期する
+            }
+
+            if (!myData) {
+              // サーバー上にまだアカウントファイルが存在しない新規ユーザーの場合、表示中のモードデータがあれば作成同期する
+              const challengePts =
+                parseInt(localStorage.getItem(CHALLENGE_POINTS_KEY), 10) || 0;
+              const challengeTotalPts =
+                parseInt(
+                  localStorage.getItem(CHALLENGE_TOTAL_POINTS_KEY),
+                  10
+                ) || 0;
+              const maxStreak =
+                parseInt(localStorage.getItem(DUNGEON_MAX_STREAK_KEY), 10) || 0;
+
+              const tournamentPts =
+                parseInt(localStorage.getItem(TOURNAMENT_POINTS_KEY), 10) || 0;
+              const tournamentTotalPts =
+                parseInt(
+                  localStorage.getItem(TOURNAMENT_TOTAL_POINTS_KEY),
+                  10
+                ) || 0;
+
+              const defensePts =
+                parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
+              const defenseTotalPts =
+                parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) ||
+                0;
+              const defenseWins =
+                parseInt(localStorage.getItem(DEFENSE_WINS_KEY), 10) || 0;
+
               let hasCreated = false;
-              if (challengeTotalPts > 0) {
-                savePointsToServer(
-                  'update_challenge_points.php',
-                  challengePts,
-                  challengeTotalPts,
-                  { max_streak: maxStreak }
-                );
+              if (syncMode === 'challenge' && challengeTotalPts > 0) {
+                await syncModePoints('challenge', null);
                 hasCreated = true;
-              }
-              if (tournamentTotalPts > 0) {
-                savePointsToServer(
-                  'update_tournament_points.php',
-                  tournamentPts,
-                  tournamentTotalPts
-                );
+              } else if (syncMode === 'tournament' && tournamentTotalPts > 0) {
+                await syncModePoints('tournament', null);
                 hasCreated = true;
-              }
-              if (defenseTotalPts > 0) {
-                savePointsToServer(
-                  'update_points.php',
-                  defensePts,
-                  defenseTotalPts,
-                  { defense_wins: defenseWins }
-                );
+              } else if (syncMode === 'defense' && defenseTotalPts > 0) {
+                await syncModePoints('defense', null);
                 hasCreated = true;
               }
 
               // 初回のみ仮想的な自分のレコードをソート用に追加（再読み込みを不要にするため）
               if (hasCreated) {
-                const playerName =
-                  localStorage.getItem('mini_card_battle_player_name') ||
-                  'Player';
+                const playerName = resolvePlayerName();
                 const virtualPlayer = {
                   uuid: myUuid,
                   name: playerName,

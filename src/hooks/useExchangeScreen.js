@@ -7,6 +7,17 @@ import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+const readStringArrayFromStorage = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export function useExchangeScreen({
   pointsKey, // 'challenge'（試練の宮殿）または 'tournament'（闘技祭）
   apiEndpoint, // 'update_challenge_points.php' または 'update_tournament_points.php' などのAPIエンドポイント
@@ -21,17 +32,14 @@ export function useExchangeScreen({
     total: parseInt(localStorage.getItem(pointsTotalLocalKey), 10) || 0,
   }));
 
-  const [unlockedSkins, setUnlockedSkins] = useState(
-    () =>
-      JSON.parse(localStorage.getItem('mini_card_battle_unlocked_skins')) || []
+  const [unlockedSkins, setUnlockedSkins] = useState(() =>
+    readStringArrayFromStorage('mini_card_battle_unlocked_skins')
   );
-  const [unlockedPlaymats, setUnlockedPlaymats] = useState(
-    () =>
-      JSON.parse(localStorage.getItem('mini_card_battle_owned_playmats')) || []
+  const [unlockedPlaymats, setUnlockedPlaymats] = useState(() =>
+    readStringArrayFromStorage('mini_card_battle_owned_playmats')
   );
-  const [unlockedIcons, setUnlockedIcons] = useState(
-    () =>
-      JSON.parse(localStorage.getItem('mini_card_battle_unlocked_icons')) || []
+  const [unlockedIcons, setUnlockedIcons] = useState(() =>
+    readStringArrayFromStorage('mini_card_battle_unlocked_icons')
   );
   const [inventory, setInventory] = useState(
     () => GameState.playerInventory || {}
@@ -122,68 +130,67 @@ export function useExchangeScreen({
     }
 
     isExchangingRef.current = true;
-    playSound(SOUNDS?.seCardPlace);
-
-    const newPts = points.current - item.cost;
 
     try {
+      playSound(SOUNDS?.seCardPlace);
+      const newPts = points.current - item.cost;
+
       await savePointsToServer(apiEndpoint, newPts, points.total);
+
+      localStorage.setItem(pointsLocalKey, newPts);
+      setPoints((prev) => ({ ...prev, current: newPts }));
+
+      if (item.type === 'card') {
+        const currentCount = inventory[item.id] || 0;
+        const newInventory = { ...inventory, [item.id]: currentCount + 1 };
+        setInventory(newInventory);
+        Object.assign(GameState, { playerInventory: newInventory });
+        if (typeof saveDeck === 'function') saveDeck();
+        showAlertModal(`「${item.displayName || item.id}」を手に入れました！`);
+      } else if (item.type === 'playmat') {
+        const newUnlocked = [...unlockedPlaymats, item.id];
+        localStorage.setItem(
+          'mini_card_battle_owned_playmats',
+          JSON.stringify(newUnlocked)
+        );
+        setOwnedPlaymats(newUnlocked);
+        setUnlockedPlaymats(newUnlocked);
+        showAlertModal(
+          `「${item.name}」を手に入れました！\nデッキ編成画面でプレイマットを変更できます。`
+        );
+      } else if (item.type === 'icon') {
+        const newUnlocked = [...unlockedIcons, item.id];
+        localStorage.setItem(
+          'mini_card_battle_unlocked_icons',
+          JSON.stringify(newUnlocked)
+        );
+        Object.assign(GameState, { unlockedIcons: newUnlocked });
+        setUnlockedIcons(newUnlocked);
+        showAlertModal(
+          `「${item.name}」を手に入れました！\nプロフィール設定画面でアイコンを変更できます。`
+        );
+      } else {
+        const newUnlocked = [...unlockedSkins, item.id];
+        localStorage.setItem(
+          'mini_card_battle_unlocked_skins',
+          JSON.stringify(newUnlocked)
+        );
+        Object.assign(GameState, { unlockedSkins: newUnlocked });
+        setUnlockedSkins(newUnlocked);
+        showAlertModal(
+          `「${item.name}」を手に入れました！\nキャラクター選択画面でスキンを変更できます。`
+        );
+      }
+
+      setPointsUpdated((prev) => !prev);
     } catch (e) {
       console.error('Failed to sync points to server:', e);
       showAlertModal(
         'ポイントの同期に失敗しました。通信環境を確認して再度お試しください。'
       );
+    } finally {
       isExchangingRef.current = false;
-      return;
     }
-
-    localStorage.setItem(pointsLocalKey, newPts);
-    setPoints((prev) => ({ ...prev, current: newPts }));
-
-    if (item.type === 'card') {
-      const currentCount = inventory[item.id] || 0;
-      const newInventory = { ...inventory, [item.id]: currentCount + 1 };
-      setInventory(newInventory);
-      Object.assign(GameState, { playerInventory: newInventory });
-      if (typeof saveDeck === 'function') saveDeck();
-      showAlertModal(`「${item.displayName || item.id}」を手に入れました！`);
-    } else if (item.type === 'playmat') {
-      const newUnlocked = [...unlockedPlaymats, item.id];
-      localStorage.setItem(
-        'mini_card_battle_owned_playmats',
-        JSON.stringify(newUnlocked)
-      );
-      setOwnedPlaymats(newUnlocked);
-      setUnlockedPlaymats(newUnlocked);
-      showAlertModal(
-        `「${item.name}」を手に入れました！\nデッキ編成画面でプレイマットを変更できます。`
-      );
-    } else if (item.type === 'icon') {
-      const newUnlocked = [...unlockedIcons, item.id];
-      localStorage.setItem(
-        'mini_card_battle_unlocked_icons',
-        JSON.stringify(newUnlocked)
-      );
-      Object.assign(GameState, { unlockedIcons: newUnlocked });
-      setUnlockedIcons(newUnlocked);
-      showAlertModal(
-        `「${item.name}」を手に入れました！\nプロフィール設定画面でアイコンを変更できます。`
-      );
-    } else {
-      const newUnlocked = [...unlockedSkins, item.id];
-      localStorage.setItem(
-        'mini_card_battle_unlocked_skins',
-        JSON.stringify(newUnlocked)
-      );
-      Object.assign(GameState, { unlockedSkins: newUnlocked });
-      setUnlockedSkins(newUnlocked);
-      showAlertModal(
-        `「${item.name}」を手に入れました！\nキャラクター選択画面でスキンを変更できます。`
-      );
-    }
-
-    setPointsUpdated((prev) => !prev);
-    isExchangingRef.current = false;
   };
 
   return {

@@ -1,6 +1,6 @@
 import React from 'react';
 import BackButton from '../BackButton.jsx';
-import { appendVersionQuery } from '../../utils/constants/config.js';
+import { getVersionedBackgroundStyle } from '../../utils/constants/config.js';
 
 /**
  * 共通レイアウトページコンポーネント
@@ -38,16 +38,7 @@ export default function ScreenLayout({
     alignItems: 'center',
     padding: '20px 0',
     overflowY: 'auto',
-    ...(backgroundImage && {
-      backgroundImage: backgroundImage.includes('url')
-        ? backgroundImage.replace(
-            /url\(['"]?([^'")\s]+)['"]?\)/g,
-            (match, urlPath) => `url('${appendVersionQuery(urlPath)}')`
-          )
-        : `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    }),
+    ...getVersionedBackgroundStyle(backgroundImage, 0.7, 0.9),
   };
 
   const titleStyle = {

@@ -377,7 +377,7 @@ export async function leaveRoom() {
       // クライアントが抜ける場合は、他の操作との競合によるルームの再作成を防ぐため
       // トランザクションを使用してデータが存在する間だけステータスとクライアントを更新する
       await runTransaction(roomRef, (room) => {
-        if (!room) return room; // ルームが既に削除されている場合はそのまま終了
+        if (!room) return undefined; // ルームが既に削除されている場合は書き込みせず中断
         return {
           ...room,
           status: 'waiting',

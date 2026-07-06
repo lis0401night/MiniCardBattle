@@ -1,6 +1,6 @@
 import React from 'react';
 import BackButton from '../BackButton.jsx';
-import { appendVersionQuery } from '../../utils/constants/config.js';
+import { getVersionedBackgroundStyle } from '../../utils/constants/config.js';
 
 /**
  * カード一覧・交換所専用のコンパクトレイアウトコンポーネント
@@ -37,16 +37,7 @@ export default function CompactScreenLayout({
     alignItems: 'center',
     padding: '20px 0',
     overflowY: 'auto',
-    ...(backgroundImage && {
-      backgroundImage: backgroundImage.includes('url')
-        ? backgroundImage.replace(
-            /url\(['"]?([^'")\s]+)['"]?\)/g,
-            (match, urlPath) => `url('${appendVersionQuery(urlPath)}')`
-          )
-        : `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('${appendVersionQuery(`assets/backgrounds/${backgroundImage}`)}')`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    }),
+    ...getVersionedBackgroundStyle(backgroundImage, 0.85, 0.95),
   };
 
   const titleStyle = {

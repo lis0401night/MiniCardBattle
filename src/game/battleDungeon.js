@@ -13,7 +13,11 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
-import { DEFAULT_DUNGEON_AI_LEVEL } from '../utils/constants/config.js';
+import {
+  DEFAULT_DUNGEON_AI_LEVEL,
+  CHALLENGE_POINTS_KEY,
+  CHALLENGE_TOTAL_POINTS_KEY,
+} from '../utils/constants/config.js';
 
 /**
  * 敵のスキンを GameState.enemySkins に同期する
@@ -143,7 +147,7 @@ export function loadDungeonProgress() {
       ) {
         GameState.enemyConfig.dungeonDeck = resolveDungeonDeck(
           GameState.enemyConfig.leaderCardId,
-          GameState.enemyConfig.fixedAiLevel || 3
+          GameState.enemyConfig.fixedAiLevel || DEFAULT_DUNGEON_AI_LEVEL
         );
       }
       // 敵のスキンを同期
@@ -210,13 +214,13 @@ export function startDungeonBattle(enemyIndex) {
   if (!enemy.dungeonDeck || enemy.dungeonDeck.length === 0) {
     enemy.dungeonDeck = resolveDungeonDeck(
       enemy.leaderCardId,
-      enemy.fixedAiLevel || 3
+      enemy.fixedAiLevel || DEFAULT_DUNGEON_AI_LEVEL
     );
   }
 
   // 敵の設定を反映
   GameState.enemyConfig = enemy;
-  GameState.aiLevel = enemy.fixedAiLevel || 3;
+  GameState.aiLevel = enemy.fixedAiLevel || DEFAULT_DUNGEON_AI_LEVEL;
   GameState.dungeonState = 'battle';
   GameState.selectedStageId = 'dungeon';
 
@@ -308,18 +312,18 @@ export function retireDungeon() {
   clearDungeonSave();
 
   if (earnedPoints > 0) {
-    let currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_challenge_points')) || 0;
+    let currentPts = parseInt(localStorage.getItem(CHALLENGE_POINTS_KEY)) || 0;
     let totalPts =
-      parseInt(
-        localStorage.getItem('mini_card_battle_challenge_total_points')
-      ) || 0;
+      parseInt(localStorage.getItem(CHALLENGE_TOTAL_POINTS_KEY)) || 0;
     currentPts += earnedPoints;
     totalPts += earnedPoints;
-    localStorage.setItem('mini_card_battle_challenge_points', currentPts);
-    localStorage.setItem('mini_card_battle_challenge_total_points', totalPts);
+    localStorage.setItem(CHALLENGE_POINTS_KEY, currentPts);
+    localStorage.setItem(CHALLENGE_TOTAL_POINTS_KEY, totalPts);
 
-    const maxStreak = GameState.dungeonMaxWinStreak || currentStreak;
+    const maxStreak = Math.max(
+      GameState.dungeonMaxWinStreak || 0,
+      currentStreak
+    );
 
     // サーバーへの同期処理を走らせる（keepalive: true により画面遷移しても裏で最後まで送信されます）
     savePointsToServer('update_challenge_points.php', currentPts, totalPts, {

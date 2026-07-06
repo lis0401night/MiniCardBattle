@@ -12,7 +12,12 @@ import {
 } from '../services/uiMainCore.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
-import { savePointsToServer, fetchPlayerDecks } from '../utils/apiUtils.js';
+import { fetchPlayerDecks, syncModePoints } from '../utils/apiUtils.js';
+import {
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  DEFENSE_WINS_KEY,
+} from '../utils/constants/config.js';
 
 export default function DefenseMenuScreen() {
   // 初期値でLocalStorageの登録状態を判定（useEffect内での同期的setState回避）
@@ -37,17 +42,12 @@ export default function DefenseMenuScreen() {
               const totalPts = myData.total_points || pts;
 
               const localPts =
-                parseInt(
-                  localStorage.getItem('mini_card_battle_defense_points')
-                ) || 0;
+                parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
               const localTotalPts =
-                parseInt(
-                  localStorage.getItem('mini_card_battle_defense_total_points')
-                ) || 0;
+                parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) ||
+                0;
               const lastWins =
-                parseInt(
-                  localStorage.getItem('mini_card_battle_defense_wins')
-                ) || 0;
+                parseInt(localStorage.getItem(DEFENSE_WINS_KEY), 10) || 0;
 
               // サーバーの値が0でローカルに値がある場合は、サーバーの初期化ミスと判断して上書きを避ける
               const finalPts = pts === 0 && localPts > 0 ? localPts : pts;
@@ -67,24 +67,18 @@ export default function DefenseMenuScreen() {
                   onClose: () => {},
                 });
               }
-              localStorage.setItem('mini_card_battle_defense_points', finalPts);
-              localStorage.setItem(
-                'mini_card_battle_defense_total_points',
-                finalTotalPts
-              );
-              localStorage.setItem('mini_card_battle_defense_wins', wins);
 
-              // 新しく防衛に成功してポイントが増えた場合、無条件で最新のポイントをサーバーへ同期します（keepalive対応）
-              if (newWinsCount > 0) {
-                savePointsToServer(
-                  'update_points.php',
-                  finalPts,
-                  finalTotalPts,
-                  {
-                    defense_wins: wins,
-                  }
-                );
-              }
+              localStorage.setItem(DEFENSE_POINTS_KEY, finalPts);
+              localStorage.setItem(DEFENSE_TOTAL_POINTS_KEY, finalTotalPts);
+              localStorage.setItem(DEFENSE_WINS_KEY, wins);
+
+              // 共通同期ユーティリティを使用 (防衛結果の同期)
+              await syncModePoints('defense', {
+                ...myData,
+                points: finalPts,
+                total_points: finalTotalPts,
+                defense_wins: wins,
+              });
             }
           }
         } catch (e) {

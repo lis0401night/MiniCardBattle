@@ -2,11 +2,10 @@ import { CHARACTERS } from '../utils/constants/characters.js';
 import {
   DECK_SIZE,
   PROFILE_NAME_KEY,
+  PROFILE_ICON_KEY,
   UNLOCKED_SKINS_KEY,
   UNLOCKED_ICONS_KEY,
 } from '../utils/constants/config.js';
-
-const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
 
 const safeParseArray = (key) => {
   try {

@@ -112,7 +112,7 @@ export default function TitleScreen() {
         <img
           src={
             isLoading
-              ? 'assets/ui/title_loading.jpg'
+              ? appendVersionQuery('assets/ui/title_loading.jpg')
               : appendVersionQuery('assets/ui/title_img.jpg')
           }
           alt="Key Visual"

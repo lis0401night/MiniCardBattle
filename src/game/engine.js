@@ -3492,6 +3492,15 @@ export function applyLeaderSkillLogic(
                 const simResCard = simDiscard[forcedTargetIdx];
                 const resLane = simulatedResurrectLane;
 
+                // 封印されているレーンへの復活（配置）をブロック
+                const sealedLanes =
+                  owner === 'blue'
+                    ? state.playerSealedLanes
+                    : state.enemySealedLanes;
+                if (sealedLanes && sealedLanes[resLane] > 0) {
+                  return;
+                }
+
                 // 復活対象の上限とトークン除外の検証
                 if (
                   simResCard.isToken ||
