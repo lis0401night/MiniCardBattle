@@ -45,9 +45,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   // index.html、ルート(/)、およびその他のHTMLファイルへのリクエストは「Network-First」
+  // サブディレクトリ配置に対応するため、末尾がスラッシュで終わる場合も含めて判定します
   const isHtmlRequest =
-    url.pathname === '/' ||
-    url.pathname === '/index.html' ||
+    url.pathname.endsWith('/') ||
+    url.pathname.endsWith('/index.html') ||
     url.pathname.endsWith('.html');
 
   if (isHtmlRequest) {
