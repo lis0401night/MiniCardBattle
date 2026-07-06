@@ -254,9 +254,9 @@ export default function App() {
             reloadAttemptKey
           ) {
             console.warn(
-              '[Version Checker] Previous reload did not update the bundle. Allowing retry.'
+              '[Version Checker] Reload already attempted for this version. Skipping.'
             );
-            sessionStorage.removeItem('versionReloadAttempted');
+            return;
           }
 
           // ユーザーに確認ダイアログを表示して、OKの場合のみリロードを行う

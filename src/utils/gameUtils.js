@@ -854,13 +854,7 @@ export async function clearCachesAndServiceWorkers() {
     tasks.push(
       caches
         .keys()
-        .then((names) =>
-          Promise.all(
-            names
-              .filter((name) => name.startsWith('mini-card-battle-'))
-              .map((name) => caches.delete(name))
-          )
-        )
+        .then((names) => Promise.all(names.map((name) => caches.delete(name))))
     );
   }
   if ('serviceWorker' in navigator) {
