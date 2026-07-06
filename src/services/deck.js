@@ -573,7 +573,6 @@ export function loadDeck() {
   } else {
     setOwnedPlaymats([]);
   }
-
   // 3. デッキのロードと固有設定の適用
 
   if (GameState.gameMode === 'defense_register') {

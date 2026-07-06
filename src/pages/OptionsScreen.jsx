@@ -9,13 +9,221 @@ import {
   showSyncDataModal,
   updateVolume,
 } from '../services/uiMainCore.js';
-import { playSound, forceSoundReload } from '../utils/gameUtils.js';
+import {
+  playSound,
+  forceSoundReload,
+  getOrCreateUUID,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CreditModal from '../components/common/CreditModal.jsx';
+import SerialCodeModal from '../components/common/SerialCodeModal.jsx';
+import { showAlertModal } from '../services/uiModals.js';
+import { saveDeck } from '../services/deck.js';
+import {
+  showPlaymatAcquisitionModal,
+  showCardAcquisitionModal,
+  showPremiumAcquisitionModal,
+  showSkinAcquisitionModal,
+  showIconAcquisitionModal,
+} from '../services/uiGallery.js';
 
 export default function OptionsScreen() {
   const [volume, setVolume] = useState(0.5);
   const [creditVisible, setCreditVisible] = useState(false);
+  const [serialVisible, setSerialVisible] = useState(false);
+
+  const handleOpenSerial = () => {
+    if (typeof playSound === 'function') {
+      playSound(SOUNDS.seClick);
+    }
+    setSerialVisible(true);
+  };
+
+  const handleCloseSerial = () => {
+    setSerialVisible(false);
+  };
+
+  const handleSerialSubmit = async (code) => {
+    const formattedCode = code.trim().toUpperCase();
+
+    // 4桁-4桁-4桁-4桁の正規表現チェック
+    const formatRegex = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+    if (!formatRegex.test(formattedCode)) {
+      if (typeof showAlertModal === 'function') {
+        showAlertModal(
+          '入力形式が正しくありません。\n(XXXX-XXXX-XXXX-XXXX の形式で入力してください)'
+        );
+      }
+      return;
+    }
+
+    try {
+      const uuid = getOrCreateUUID ? getOrCreateUUID() : null;
+      if (!uuid) {
+        if (typeof showAlertModal === 'function') {
+          showAlertModal('プレイヤーIDが取得できませんでした。');
+        }
+        return;
+      }
+
+      const res = await fetch('api/use_serial_code.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid, code: formattedCode }),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        const rewardId = result.reward;
+        const rewardType = result.rewardType || 'premium';
+        const rewardName = result.rewardName || '';
+
+        if (rewardType === 'premium') {
+          if (!GameState.unlockedPremiumCards) {
+            GameState.unlockedPremiumCards = [];
+          }
+          if (!GameState.unlockedPremiumCards.includes(rewardId)) {
+            GameState.unlockedPremiumCards.push(rewardId);
+          }
+
+          if (!GameState.premiumCards) {
+            GameState.premiumCards = [];
+          }
+          if (!GameState.premiumCards.includes(rewardId)) {
+            GameState.premiumCards.push(rewardId);
+          }
+          localStorage.setItem(
+            'mini_card_battle_premium_cards',
+            JSON.stringify(GameState.premiumCards)
+          );
+
+          if (typeof saveDeck === 'function') {
+            saveDeck();
+          }
+
+          setSerialVisible(false);
+
+          if (typeof showPremiumAcquisitionModal === 'function') {
+            showPremiumAcquisitionModal(rewardId);
+          }
+        } else if (rewardType === 'card') {
+          if (!GameState.playerInventory) {
+            GameState.playerInventory = {};
+          }
+          GameState.playerInventory[rewardId] =
+            (GameState.playerInventory[rewardId] || 0) + 1;
+
+          if (typeof saveDeck === 'function') {
+            saveDeck();
+          }
+
+          setSerialVisible(false);
+
+          if (typeof showCardAcquisitionModal === 'function') {
+            showCardAcquisitionModal(rewardId);
+          }
+        } else if (rewardType === 'playmat') {
+          const playmatsSaved = localStorage.getItem(
+            'mini_card_battle_owned_playmats'
+          );
+          let ownedPlaymats = [];
+          if (playmatsSaved) {
+            try {
+              ownedPlaymats = JSON.parse(playmatsSaved);
+            } catch {
+              ownedPlaymats = [];
+            }
+          }
+          if (!ownedPlaymats.includes(rewardId)) {
+            ownedPlaymats.push(rewardId);
+          }
+          localStorage.setItem(
+            'mini_card_battle_owned_playmats',
+            JSON.stringify(ownedPlaymats)
+          );
+
+          if (typeof saveDeck === 'function') {
+            saveDeck();
+          }
+
+          setSerialVisible(false);
+
+          if (typeof showPlaymatAcquisitionModal === 'function') {
+            showPlaymatAcquisitionModal(rewardName, rewardId);
+          }
+        } else if (rewardType === 'skin') {
+          const skinsSaved = localStorage.getItem(
+            'mini_card_battle_unlocked_skins'
+          );
+          let unlockedSkins = [];
+          if (skinsSaved) {
+            try {
+              unlockedSkins = JSON.parse(skinsSaved);
+            } catch {
+              unlockedSkins = [];
+            }
+          }
+          if (!unlockedSkins.includes(rewardId)) {
+            unlockedSkins.push(rewardId);
+          }
+          localStorage.setItem(
+            'mini_card_battle_unlocked_skins',
+            JSON.stringify(unlockedSkins)
+          );
+
+          setSerialVisible(false);
+
+          if (typeof showSkinAcquisitionModal === 'function') {
+            showSkinAcquisitionModal(rewardName, rewardId);
+          }
+        } else if (rewardType === 'icon') {
+          const iconsSaved = localStorage.getItem(
+            'mini_card_battle_unlocked_icons'
+          );
+          let unlockedIcons = [];
+          if (iconsSaved) {
+            try {
+              unlockedIcons = JSON.parse(iconsSaved);
+            } catch {
+              unlockedIcons = [];
+            }
+          }
+          if (!unlockedIcons.includes(rewardId)) {
+            unlockedIcons.push(rewardId);
+          }
+          localStorage.setItem(
+            'mini_card_battle_unlocked_icons',
+            JSON.stringify(unlockedIcons)
+          );
+
+          setSerialVisible(false);
+
+          if (typeof showIconAcquisitionModal === 'function') {
+            showIconAcquisitionModal(rewardName, rewardId);
+          }
+        }
+      } else {
+        if (typeof showAlertModal === 'function') {
+          if (result.error === 'already_used') {
+            showAlertModal('このシリアルコードはすでに使用されています。');
+          } else if (result.error === 'invalid_code') {
+            showAlertModal('無効なシリアルコードです。');
+          } else if (result.error === 'invalid_format') {
+            showAlertModal('シリアルコードの形式が正しくありません。');
+          } else {
+            showAlertModal('シリアルコードの適用に失敗しました。');
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Serial Code Error:', e);
+      if (typeof showAlertModal === 'function') {
+        showAlertModal(
+          '通信エラーが発生しました。インターネット接続を確認してください。'
+        );
+      }
+    }
+  };
 
   // クレジット表示時のハンドラ（SE再生）
   const handleOpenCredit = () => {
@@ -77,7 +285,10 @@ export default function OptionsScreen() {
           padding: '20px',
           borderRadius: '12px',
           border: '1px solid #334155',
-          marginBottom: '30px',
+          marginBottom: '20px',
+          maxHeight: 'calc(100dvh - 230px)',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
         }}
       >
         {/* 音量調整 */}
@@ -189,6 +400,39 @@ export default function OptionsScreen() {
           </p>
         </div>
 
+        {/* シリアルコード (データ管理とクレジットの間に追加) */}
+        <div
+          style={{
+            borderTop: '1px solid #334155',
+            paddingTop: '20px',
+            marginTop: '20px',
+          }}
+        >
+          <label
+            style={{
+              display: 'block',
+              marginBottom: '10px',
+              color: '#cbd5e1',
+              fontSize: '0.9rem',
+            }}
+          >
+            シリアルコード
+          </label>
+          <button
+            className="btn"
+            style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              width: '100%',
+              marginTop: '0',
+              fontSize: '0.9rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+            onClick={handleOpenSerial}
+          >
+            シリアルコード入力
+          </button>
+        </div>
+
         {/* クレジット (データ管理と更新の間に追加) */}
         <div
           style={{
@@ -270,6 +514,13 @@ export default function OptionsScreen() {
 
       {/* クレジットモーダル */}
       <CreditModal visible={creditVisible} onClose={handleCloseCredit} />
+
+      {/* シリアルコード入力モーダル */}
+      <SerialCodeModal
+        visible={serialVisible}
+        onClose={handleCloseSerial}
+        onSubmit={handleSerialSubmit}
+      />
     </div>
   );
 }
