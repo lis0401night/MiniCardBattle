@@ -27,6 +27,28 @@ import {
   showIconAcquisitionModal,
 } from '../services/uiGallery.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
+import {
+  OWNED_PLAYMATS_KEY,
+  UNLOCKED_SKINS_KEY,
+  UNLOCKED_ICONS_KEY,
+} from '../utils/constants/config.js';
+
+function addUnlockedLocalItem(storageKey, rewardId) {
+  const saved = localStorage.getItem(storageKey);
+  let items = [];
+  if (saved) {
+    try {
+      items = JSON.parse(saved);
+    } catch {
+      items = [];
+    }
+  }
+  if (!items.includes(rewardId)) {
+    items.push(rewardId);
+  }
+  localStorage.setItem(storageKey, JSON.stringify(items));
+  return items;
+}
 
 export default function OptionsScreen() {
   const [volume, setVolume] = useState(0.5);
@@ -113,23 +135,9 @@ export default function OptionsScreen() {
             showCardAcquisitionModal(rewardId);
           }
         } else if (rewardType === 'playmat') {
-          const playmatsSaved = localStorage.getItem(
-            'mini_card_battle_owned_playmats'
-          );
-          let ownedPlaymats = [];
-          if (playmatsSaved) {
-            try {
-              ownedPlaymats = JSON.parse(playmatsSaved);
-            } catch {
-              ownedPlaymats = [];
-            }
-          }
-          if (!ownedPlaymats.includes(rewardId)) {
-            ownedPlaymats.push(rewardId);
-          }
-          localStorage.setItem(
-            'mini_card_battle_owned_playmats',
-            JSON.stringify(ownedPlaymats)
+          const ownedPlaymats = addUnlockedLocalItem(
+            OWNED_PLAYMATS_KEY,
+            rewardId
           );
           if (typeof setOwnedPlaymats === 'function') {
             setOwnedPlaymats(ownedPlaymats);
@@ -145,23 +153,9 @@ export default function OptionsScreen() {
             showPlaymatAcquisitionModal(rewardName, rewardId);
           }
         } else if (rewardType === 'skin') {
-          const skinsSaved = localStorage.getItem(
-            'mini_card_battle_unlocked_skins'
-          );
-          let unlockedSkins = [];
-          if (skinsSaved) {
-            try {
-              unlockedSkins = JSON.parse(skinsSaved);
-            } catch {
-              unlockedSkins = [];
-            }
-          }
-          if (!unlockedSkins.includes(rewardId)) {
-            unlockedSkins.push(rewardId);
-          }
-          localStorage.setItem(
-            'mini_card_battle_unlocked_skins',
-            JSON.stringify(unlockedSkins)
+          const unlockedSkins = addUnlockedLocalItem(
+            UNLOCKED_SKINS_KEY,
+            rewardId
           );
           GameState.unlockedSkins = unlockedSkins;
 
@@ -171,23 +165,9 @@ export default function OptionsScreen() {
             showSkinAcquisitionModal(rewardName, rewardId);
           }
         } else if (rewardType === 'icon') {
-          const iconsSaved = localStorage.getItem(
-            'mini_card_battle_unlocked_icons'
-          );
-          let unlockedIcons = [];
-          if (iconsSaved) {
-            try {
-              unlockedIcons = JSON.parse(iconsSaved);
-            } catch {
-              unlockedIcons = [];
-            }
-          }
-          if (!unlockedIcons.includes(rewardId)) {
-            unlockedIcons.push(rewardId);
-          }
-          localStorage.setItem(
-            'mini_card_battle_unlocked_icons',
-            JSON.stringify(unlockedIcons)
+          const unlockedIcons = addUnlockedLocalItem(
+            UNLOCKED_ICONS_KEY,
+            rewardId
           );
           GameState.unlockedIcons = unlockedIcons;
 

@@ -124,6 +124,10 @@ export function useExchangeScreen({
       return;
     }
 
+    if (!Number.isFinite(item.cost) || item.cost < 0) {
+      showAlertModal('交換情報が不正です。');
+      return;
+    }
     if (points.current < item.cost) {
       showAlertModal('ポイントが不足しています。');
       return;

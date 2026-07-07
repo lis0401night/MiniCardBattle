@@ -5,6 +5,8 @@ import {
   PROFILE_ICON_KEY,
   UNLOCKED_SKINS_KEY,
   UNLOCKED_ICONS_KEY,
+  DEFAULT_PLAYER_NAME,
+  DEFAULT_PLAYER_ICON,
 } from '../utils/constants/config.js';
 
 const safeParseArray = (key) => {
@@ -20,13 +22,13 @@ const safeParseArray = (key) => {
 
 const loadUserProfile = () => {
   try {
-    const name = localStorage.getItem(PROFILE_NAME_KEY) || 'プレイヤー';
-    const icon = localStorage.getItem(PROFILE_ICON_KEY) || 'player';
+    const name = localStorage.getItem(PROFILE_NAME_KEY) || DEFAULT_PLAYER_NAME;
+    const icon = localStorage.getItem(PROFILE_ICON_KEY) || DEFAULT_PLAYER_ICON;
     return { name, icon };
   } catch (e) {
     console.error('Failed to load user profile:', e);
   }
-  return { name: 'プレイヤー', icon: 'player' };
+  return { name: DEFAULT_PLAYER_NAME, icon: DEFAULT_PLAYER_ICON };
 };
 
 export const GameState = {

@@ -1,19 +1,21 @@
+const iconPath = (id) => `assets/icons/icon_${id}.png`;
+
 export const AVAILABLE_ICONS = [
-  { id: 'player', path: 'assets/icons/icon_player.png', name: 'デフォルト' },
-  { id: 'android', path: 'assets/icons/icon_android.png', name: 'アイギス' },
-  { id: 'dragon', path: 'assets/icons/icon_dragon.png', name: 'イグニス' },
-  { id: 'knight', path: 'assets/icons/icon_knight.png', name: 'セレスティア' },
-  { id: 'cthulhu', path: 'assets/icons/icon_cthulhu.png', name: 'ナイア' },
-  { id: 'elf', path: 'assets/icons/icon_elf.png', name: 'リナ' },
-  { id: 'cleric', path: 'assets/icons/icon_cleric.png', name: 'エリシア' },
+  { id: 'player', path: iconPath('player'), name: 'デフォルト' },
+  { id: 'android', path: iconPath('android'), name: 'アイギス' },
+  { id: 'dragon', path: iconPath('dragon'), name: 'イグニス' },
+  { id: 'knight', path: iconPath('knight'), name: 'セレスティア' },
+  { id: 'cthulhu', path: iconPath('cthulhu'), name: 'ナイア' },
+  { id: 'elf', path: iconPath('elf'), name: 'リナ' },
+  { id: 'cleric', path: iconPath('cleric'), name: 'エリシア' },
   {
     id: 'devilhunter',
-    path: 'assets/icons/icon_devilhunter.png',
+    path: iconPath('devilhunter'),
     name: 'マリア',
   },
-  { id: 'witch', path: 'assets/icons/icon_witch.png', name: 'クロエ' },
-  { id: 'oni', path: 'assets/icons/icon_oni.png', name: 'カグラ' },
-  { id: 'priest', path: 'assets/icons/icon_priest.png', name: 'ネフティ' },
+  { id: 'witch', path: iconPath('witch'), name: 'クロエ' },
+  { id: 'oni', path: iconPath('oni'), name: 'カグラ' },
+  { id: 'priest', path: iconPath('priest'), name: 'ネフティ' },
 ];
 
 export const EXTRA_ICONS = [
@@ -21,160 +23,160 @@ export const EXTRA_ICONS = [
   {
     id: 'satan',
     name: 'サタン',
-    path: 'assets/icons/icon_satan.png',
+    path: iconPath('satan'),
   },
   {
     id: 'android_high',
     name: 'フルアーマーユニット',
-    path: 'assets/icons/icon_android_high.png',
+    path: iconPath('android_high'),
   },
   {
     id: 'dragon_high',
     name: '熱砂の客人',
-    path: 'assets/icons/icon_dragon_high.png',
+    path: iconPath('dragon_high'),
   },
   {
     id: 'knight_high',
     name: '暗黒騎士',
-    path: 'assets/icons/icon_knight_high.png',
+    path: iconPath('knight_high'),
   },
   {
     id: 'cthulhu_high',
     name: '魔界の征服者',
-    path: 'assets/icons/icon_cthulhu_high.png',
+    path: iconPath('cthulhu_high'),
   },
   {
     id: 'elf_high',
     name: 'リナ&ヴォイテク',
-    path: 'assets/icons/icon_elf_high.png',
+    path: iconPath('elf_high'),
   },
   {
     id: 'cleric_high',
     name: '断罪の執行者',
-    path: 'assets/icons/icon_cleric_high.png',
+    path: iconPath('cleric_high'),
   },
   {
     id: 'devilhunter_high',
     name: 'ゴーストライダー',
-    path: 'assets/icons/icon_devilhunter_high.png',
+    path: iconPath('devilhunter_high'),
   },
   {
     id: 'witch_high',
     name: '時空の探索者',
-    path: 'assets/icons/icon_witch_high.png',
+    path: iconPath('witch_high'),
   },
   {
     id: 'oni_high',
     name: '紅月ノ狂鬼',
-    path: 'assets/icons/icon_oni_high.png',
+    path: iconPath('oni_high'),
   },
   {
     id: 'priest_high',
     name: '前世の記憶',
-    path: 'assets/icons/icon_priest_high.png',
+    path: iconPath('priest_high'),
   },
 
   // 水着
   {
     id: 'android_summer',
     name: '水陸両用装備',
-    path: 'assets/icons/icon_android_summer.png',
+    path: iconPath('android_summer'),
   },
   {
     id: 'dragon_summer',
     name: '真夏の焔竜姫',
-    path: 'assets/icons/icon_dragon_summer.png',
+    path: iconPath('dragon_summer'),
   },
   {
     id: 'knight_summer',
     name: '波打ち際の騎士',
-    path: 'assets/icons/icon_knight_summer.png',
+    path: iconPath('knight_summer'),
   },
   {
     id: 'cthulhu_summer',
     name: '深海のサマースイム',
-    path: 'assets/icons/icon_cthulhu_summer.png',
+    path: iconPath('cthulhu_summer'),
   },
   {
     id: 'elf_summer',
     name: '水辺の流浪者',
-    path: 'assets/icons/icon_elf_summer.png',
+    path: iconPath('elf_summer'),
   },
   {
     id: 'cleric_summer',
     name: '背徳のサマーバカンス',
-    path: 'assets/icons/icon_cleric_summer.png',
+    path: iconPath('cleric_summer'),
   },
   {
     id: 'devilhunter_summer',
     name: '渚の悪魔狩り',
-    path: 'assets/icons/icon_devilhunter_summer.png',
+    path: iconPath('devilhunter_summer'),
   },
   {
     id: 'witch_summer',
     name: '不機嫌なサマー・グリモワール',
-    path: 'assets/icons/icon_witch_summer.png',
+    path: iconPath('witch_summer'),
   },
   {
     id: 'oni_summer',
     name: '涼み鬼の波打ち肌',
-    path: 'assets/icons/icon_oni_summer.png',
+    path: iconPath('oni_summer'),
   },
   {
     id: 'priest_summer',
     name: '墓守の休息',
-    path: 'assets/icons/icon_priest_summer.png',
+    path: iconPath('priest_summer'),
   },
 
   // 学園
   {
     id: 'android_school',
     name: '献身的な後輩',
-    path: 'assets/icons/icon_android_school.png',
+    path: iconPath('android_school'),
   },
   {
     id: 'dragon_school',
     name: '放課後ディストーション',
-    path: 'assets/icons/icon_dragon_school.png',
+    path: iconPath('dragon_school'),
   },
   {
     id: 'knight_school',
     name: '必勝の剣道部主将',
-    path: 'assets/icons/icon_knight_school.png',
+    path: iconPath('knight_school'),
   },
   {
     id: 'cthulhu_school',
     name: '妖しきオカ研部長',
-    path: 'assets/icons/icon_cthulhu_school.png',
+    path: iconPath('cthulhu_school'),
   },
   {
     id: 'elf_school',
     name: '癒しの飼育委員',
-    path: 'assets/icons/icon_elf_school.png',
+    path: iconPath('elf_school'),
   },
   {
     id: 'cleric_school',
     name: '恐怖の特別指導',
-    path: 'assets/icons/icon_cleric_school.png',
+    path: iconPath('cleric_school'),
   },
   {
     id: 'devilhunter_school',
     name: '孤高のスケバン',
-    path: 'assets/icons/icon_devilhunter_school.png',
+    path: iconPath('devilhunter_school'),
   },
   {
     id: 'witch_school',
     name: '気怠げな親友の妹',
-    path: 'assets/icons/icon_witch_school.png',
+    path: iconPath('witch_school'),
   },
   {
     id: 'oni_school',
     name: '鬼の風紀委員',
-    path: 'assets/icons/icon_oni_school.png',
+    path: iconPath('oni_school'),
   },
   {
     id: 'priest_school',
     name: 'ミステリアスな留学生',
-    path: 'assets/icons/icon_priest_school.png',
+    path: iconPath('priest_school'),
   },
 ];

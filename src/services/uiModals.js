@@ -17,12 +17,17 @@ export function showConfirmModal(
 ) {
   if (showConfirmModalHook)
     return showConfirmModalHook(message, onConfirm, onCancel, isAlert);
-  console.warn('GlobalModals not mounted: using window.confirm fallback');
-  const result = window.confirm(message);
-  if (result) {
+  console.warn('GlobalModals not mounted: using window.confirm/alert fallback');
+  if (isAlert) {
+    window.alert(message);
     if (onConfirm) onConfirm();
   } else {
-    if (onCancel) onCancel();
+    const result = window.confirm(message);
+    if (result) {
+      if (onConfirm) onConfirm();
+    } else {
+      if (onCancel) onCancel();
+    }
   }
 }
 

@@ -3,6 +3,7 @@
  */
 export const GAME_VERSION = '0.1.11';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
+export const DEFAULT_PLAYER_ICON = 'player';
 export const VERSION_CHECK_TIMEOUT_MS = 3000; // バージョン自動チェック時のAbortタイムアウト時間 (ms)
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;

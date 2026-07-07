@@ -73,9 +73,9 @@ export default function RankingScreen({
               syncMode = 'defense';
             }
 
-            if (syncMode) {
+            if (syncMode && myData) {
               const syncResult = await syncModePoints(syncMode, myData);
-              if (syncResult && myData) {
+              if (syncResult) {
                 // ローカル側の変更が適用されてサーバーへ同期した場合、ローカルの最新データに更新
                 if (syncMode === 'challenge') {
                   myData.challenge_points = syncResult.points;

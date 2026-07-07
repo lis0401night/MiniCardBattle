@@ -22,6 +22,7 @@ import {
   confirmCharSelect,
   importDataFromXML,
   setCloseEnemyDeckModalHook,
+  reloadGame,
 } from '../services/uiMainCore.js';
 import {
   setShowAlertModalHook,
@@ -35,6 +36,8 @@ import { GameState, saveUserProfile } from '../state/gameState.js';
 import {
   appendVersionQuery,
   PROFILE_NAME_KEY,
+  DEFAULT_PLAYER_NAME,
+  DEFAULT_PLAYER_ICON,
 } from '../utils/constants/config.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
@@ -53,6 +56,14 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
+import { syncUserProfile } from '../utils/apiUtils.js';
+
+const EXCHANGE_DISPLAY_TYPE_LABELS = {
+  playmat: 'プレイマット',
+  icon: 'アイコン',
+  premium: 'プレミアム',
+  skin: 'スキン',
+};
 
 // 共通の獲得モーダルコンポーネント
 function AcquisitionModal({
@@ -223,8 +234,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
     setShowProfileModalHook(() => {
       playSound?.(SOUNDS?.seClick);
-      setProfileNameInput(GameState.userProfile?.name || 'プレイヤー');
-      setProfileIconInput(GameState.userProfile?.icon || 'player');
+      setProfileNameInput(GameState.userProfile?.name || DEFAULT_PLAYER_NAME);
+      setProfileIconInput(GameState.userProfile?.icon || DEFAULT_PLAYER_ICON);
       setProfileModalVisible(true);
     });
 
@@ -380,15 +391,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           titleName: data.titleName || data.itemObj?.name || data.id,
           displayType:
             data.displayType ||
-            (data.type === 'playmat'
-              ? 'プレイマット'
-              : data.type === 'icon'
-                ? 'アイコン'
-                : data.type === 'premium'
-                  ? 'プレミアム'
-                  : data.type === 'skin'
-                    ? 'スキン'
-                    : 'カード'),
+            EXCHANGE_DISPLAY_TYPE_LABELS[data.type] ||
+            'カード',
           imgUrl: autoImgUrl,
           isSkin: data.type === 'skin',
           isPlaymat: data.type === 'playmat',
@@ -543,9 +547,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     if (cb) cb();
   };
 
-  const reloadGame = () => {
-    window.location.reload();
-  };
+  // reloadGame is now imported from uiMainCore.js to ensure cache is cleared
 
   const handleTogglePremium = (e, cardId) => {
     e.stopPropagation();
@@ -2998,37 +3000,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
                   // 2. サーバーへの同期送信
                   const uuid = getOrCreateUUID();
-                  fetch('api/update_profile.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      uuid: uuid,
-                      name: trimmed,
-                      icon: profileIconInput,
-                    }),
-                  })
-                    .then((res) => {
-                      if (!res.ok)
-                        throw new Error('Network response was not ok');
-                      return res.json();
-                    })
-                    .then((result) => {
-                      if (result.success) {
-                        console.log('Profile successfully synced to server.');
-                      } else {
-                        console.warn(
-                          'Server failed to sync profile:',
-                          result.error
-                        );
-                      }
-                    })
-                    .catch((err) => {
-                      // 通信失敗時はローカルストレージのみ保存（エラーを警告にとどめ、画面進行はブロックしない）
-                      console.warn(
-                        'Failed to sync profile to server, saved locally only:',
-                        err
-                      );
-                    });
+                  syncUserProfile(uuid, trimmed, profileIconInput);
 
                   setProfileModalVisible(false);
                 }}

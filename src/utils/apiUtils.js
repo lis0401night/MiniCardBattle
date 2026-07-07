@@ -85,11 +85,22 @@ export function savePointsToServer(
  * @returns {Promise<Object>} APIレスポンスオブジェクト
  */
 export async function fetchPlayerDecks() {
-  const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch player decks. Status: ${response.status}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`, {
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch player decks. Status: ${response.status}`
+      );
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return response.json();
 }
 
 /**
@@ -169,4 +180,59 @@ export async function syncModePoints(mode, serverPlayerData = null) {
     console.error(`Failed to sync points for mode ${mode}:`, e);
   }
   return null;
+}
+
+/**
+ * プロフィール（名前・アイコンなど）をサーバーと同期します。
+ *
+ * @param {string} uuid - プレイヤーのUUID
+ * @param {string} name - プレイヤー名
+ * @param {string} icon - アイコンID
+ * @param {string} character - 選択キャラクターID (オプション)
+ * @returns {Promise<boolean>} 成功したかどうか
+ */
+export async function syncUserProfile(uuid, name, icon, character = null) {
+  if (!uuid) return false;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    const response = await fetch('api/update_profile.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uuid,
+        name,
+        icon,
+        character,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      console.error(`Profile sync failed. Status: ${response.status}`);
+      return false;
+    }
+    const result = await response.json();
+    if (result.success) {
+      console.log('Profile successfully synced to server.');
+      return true;
+    } else {
+      console.warn('Server failed to sync profile:', result.error);
+      return false;
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.error('Profile sync timed out.');
+    } else {
+      console.warn(
+        'Failed to sync profile to server, saved locally only:',
+        err
+      );
+    }
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
