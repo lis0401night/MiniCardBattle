@@ -662,6 +662,7 @@ export const VALID_PREMIUM_JPGS = [
   'kitepriest',
   'snakepriest',
   'light',
+  'cheetah',
 ];
 
 /**
