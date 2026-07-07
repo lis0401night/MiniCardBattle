@@ -1,7 +1,14 @@
 <?php
 /**
  * Mini Card Battle - Use Serial Code API
- * Validates and saves used serial codes to player data on the server.
+ * 
+ * シリアルコードを検証し、プレイヤーがそのコードを使用したことをサーバーに記録します。
+ * すでに使用済みの場合はエラーを返します。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param string $code 入力されたシリアルコード
+ * @return json 処理結果(success: true/false) およびエラーメッセージ
  */
 
 header('Content-Type: application/json');

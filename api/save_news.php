@@ -1,4 +1,13 @@
 <?php
+/**
+ * Mini Card Battle - Save News API
+ * 
+ * 管理画面などから送信されたお知らせデータを news.json に保存します。
+ * 
+ * @method POST
+ * @param array $news 更新するニュースデータの配列
+ * @return json 処理結果(success: true/false)
+ */
 header('Content-Type: application/json; charset=utf-8');
 
 // POSTリクエストのみ受け付ける

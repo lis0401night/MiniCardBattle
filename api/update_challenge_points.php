@@ -1,7 +1,15 @@
 <?php
 /**
  * Mini Card Battle - Update Challenge Points API
- * Updates a player's challenge points in the master data.
+ * 
+ * プレイヤーのチャレンジモード（試練の宮殿）の進行状況とポイントを更新・保存します。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param int $challenge_points 現在の所持チャレンジポイント (オプション)
+ * @param int $challenge_total_points 累計チャレンジポイント (オプション)
+ * @param int $challenge_max_streak 最高到達階層 (オプション)
+ * @return json 処理結果および更新後のポイント情報
  */
 
 header('Content-Type: application/json');

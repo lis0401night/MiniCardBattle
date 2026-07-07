@@ -1,7 +1,11 @@
 <?php
 /**
  * Mini Card Battle - Get Player Decks API
- * Returns list of registered player decks.
+ * 
+ * サーバーに登録されている全プレイヤーのデッキ・ポイント情報を取得します。
+ * 
+ * @method GET|POST
+ * @return json 全プレイヤーのデータを含む配列
  */
 
 header('Content-Type: application/json');

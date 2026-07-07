@@ -1,7 +1,21 @@
 <?php
 /**
  * Mini Card Battle - Deck Registration API
- * Saves player deck data as a JS file.
+ * 
+ * プレイヤーの防衛デッキおよび基本情報をJSファイルとしてサーバーに保存します。
+ * 既存データがある場合は、各ゲームモードのポイント実績を引き継いで上書きします。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param string $name プレイヤー名
+ * @param string $character 使用キャラクターID
+ * @param array $deck デッキのカード配列
+ * @param string $stage 防衛ステージ (オプション)
+ * @param string $skin 使用スキン (オプション)
+ * @param array $skins 所持スキン一覧 (オプション)
+ * @param string $icon アイコン画像 (オプション)
+ * @param string $playmat 使用プレイマット (オプション)
+ * @return json 処理結果(success: true/false)
  */
 
 header('Content-Type: application/json');
@@ -80,6 +94,8 @@ if (file_exists($filename)) {
             $existing_challenge_points = $existing_data['challenge_points'] ?? 0;
             $existing_challenge_total_points = $existing_data['challenge_total_points'] ?? 0;
             $existing_challenge_max_streak = $existing_data['challenge_max_streak'] ?? 0;
+            $existing_tournament_points = $existing_data['tournament_points'] ?? 0;
+            $existing_tournament_total_points = $existing_data['tournament_total_points'] ?? 0;
             $existing_high_difficulty_points = $existing_data['high_difficulty_points'] ?? 0;
             $existing_high_difficulty_total_points = $existing_data['high_difficulty_total_points'] ?? 0;
         }
@@ -104,6 +120,8 @@ $player_data = [
     'challenge_points' => $existing_challenge_points,
     'challenge_total_points' => $existing_challenge_total_points,
     'challenge_max_streak' => $existing_challenge_max_streak,
+    'tournament_points' => $existing_tournament_points ?? 0,
+    'tournament_total_points' => $existing_tournament_total_points ?? 0,
     'high_difficulty_points' => $existing_high_difficulty_points,
     'high_difficulty_total_points' => $existing_high_difficulty_total_points,
     'timestamp' => $timestamp

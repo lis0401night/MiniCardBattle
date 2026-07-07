@@ -1,7 +1,15 @@
 <?php
 /**
  * Mini Card Battle - Profile Update API
- * Updates player name and icon inside the registered deck JS file.
+ * 
+ * プレイヤーの名前とアイコン画像を更新します。
+ * デッキやポイントなどの他のデータは維持されます。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param string $name 新しいプレイヤー名
+ * @param string $icon 新しいアイコン画像ID
+ * @return json 処理結果(success: true/false)
  */
 
 header('Content-Type: application/json');

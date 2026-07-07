@@ -1,7 +1,14 @@
 <?php
 /**
  * Mini Card Battle - Update High Difficulty Points API
- * Updates a player's high difficulty points in the master data.
+ * 
+ * プレイヤーの高難易度モードのポイントを更新・保存します。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param int $high_difficulty_points 現在の所持ポイント (オプション)
+ * @param int $high_difficulty_total_points 累計ポイント (オプション)
+ * @return json 処理結果および更新後のポイント情報
  */
 
 header('Content-Type: application/json');

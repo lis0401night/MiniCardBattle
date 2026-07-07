@@ -1,4 +1,12 @@
 <?php
+/**
+ * Mini Card Battle - Get News API
+ * 
+ * サーバーに保存されているお知らせ(news.json)のリストを取得します。
+ * 
+ * @method GET|POST
+ * @return json ニュースの配列、またはデフォルトのダミーニュース
+ */
 header('Content-Type: application/json; charset=utf-8');
 
 $file = __DIR__ . '/news.json';

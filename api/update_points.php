@@ -1,7 +1,17 @@
 <?php
 /**
  * Mini Card Battle - Update Points API
- * Updates a player's defense points.
+ * 
+ * プレイヤーの防衛戦ポイントおよび防衛勝利数を更新・保存します。
+ * `increment`フラグがtrueの場合、現在の値に加算します。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param int $points 現在の所持防衛ポイント
+ * @param int $total_points 累計防衛ポイント (オプション)
+ * @param bool $increment trueなら加算、falseなら上書き (オプション)
+ * @param int $defense_wins 加算する防衛勝利数 (オプション)
+ * @return json 処理結果および更新後のポイント情報
  */
 
 header('Content-Type: application/json');

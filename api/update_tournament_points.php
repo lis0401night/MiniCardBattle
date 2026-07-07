@@ -1,7 +1,14 @@
 <?php
 /**
  * Mini Card Battle - Update Tournament Points API
- * Updates a player's tournament points in the master data.
+ * 
+ * プレイヤーのトーナメントモードのポイントを更新・保存します。
+ * 
+ * @method POST
+ * @param string $uuid プレイヤーのUUID
+ * @param int $points 現在の所持ポイント (オプション)
+ * @param int $total_points 累計ポイント (オプション)
+ * @return json 処理結果および更新後のポイント情報
  */
 
 header('Content-Type: application/json');
