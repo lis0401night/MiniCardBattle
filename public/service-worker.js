@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mini-card-battle-v0.1.11';
+const CACHE_NAME = 'mini-card-battle-v0.1.13';
 
 // プリキャッシュする基本リソース
 const PRECACHE_ASSETS = [
@@ -53,20 +53,24 @@ self.addEventListener('fetch', (event) => {
 
   if (isHtmlRequest) {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // ネットワーク取得に成功した場合はキャッシュを更新して返却
-          if (response && response.status === 200) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+      caches.match(event.request)
+        .then((cachedResponse) => {
+          // キャッシュがあればそれを返し、無ければネットワークへ行く (Cache-First)
+          if (cachedResponse) {
+            return cachedResponse;
           }
-          return response;
+          return fetch(event.request).then((response) => {
+            if (response && response.status === 200) {
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return response;
+          });
         })
         .catch(() => {
-          // ネットワークエラー（オフライン等）の場合はキャッシュから返却
-          return caches.match(event.request);
+          return fetch(event.request);
         })
     );
     return;

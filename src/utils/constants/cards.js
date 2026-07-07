@@ -3271,4 +3271,6 @@ export const PREMIUM_CARD_IDS = [
   'yukionna',
   'kitepriest',
   'doom',
+  // --- その他 ---
+  'cheetah',
 ];

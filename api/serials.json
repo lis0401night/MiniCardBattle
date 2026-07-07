@@ -8,5 +8,10 @@
     "rewardType": "playmat",
     "rewardValue": "pm_lanedefenders",
     "rewardName": "LANE DEFENDERS"
+  },
+  "T8K4-P9X2-R5M1-L7D3": {
+    "rewardType": "premium",
+    "rewardValue": "cheetah",
+    "rewardName": "稲妻の猟豹"
   }
 }
