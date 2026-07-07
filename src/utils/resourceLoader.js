@@ -14,7 +14,11 @@ export async function preloadAllGameResources(onProgress) {
   const urlsToLoad = new Set();
 
   // タイトルなど起動直後に必要な画像は優先的に入れておく
-  urlsToLoad.add(appendVersionQuery('assets/ui/title_img.jpg'));
+  urlsToLoad.add(appendVersionQuery('assets/ui/title_logo.png'));
+  const MAX_TITLE_BGS = 3;
+  for (let i = 1; i <= MAX_TITLE_BGS; i++) {
+    urlsToLoad.add(appendVersionQuery(`assets/ui/title_img_${String(i).padStart(3, '0')}.png`));
+  }
 
   // カード画像は非同期ロード（裏でゆっくりロードし、起動完了はブロックしない）
   const asyncUrlsToLoad = new Set();

@@ -6,6 +6,7 @@ import { unlockAudio } from '../utils/sounds.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl } from '../utils/gameUtils.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import TitleParticles from '../components/common/TitleParticles.jsx';
 
 const CARD_ROTATION_INTERVAL_MS = 20000; // カード切り替え間隔（ミリ秒）
 
@@ -16,8 +17,13 @@ export default function TitleScreen() {
   const [imgError, setImgError] = useState(false);
   const [currentCard, setCurrentCard] = useState(null);
   const [isFading, setIsFading] = useState(false);
+  const [bgIndex, setBgIndex] = useState(1);
 
   useEffect(() => {
+    // 1〜3のランダムな背景画像をセット（今後増える場合はこのMAX値を変更）
+    const MAX_TITLE_BGS = 3;
+    setBgIndex(Math.floor(Math.random() * MAX_TITLE_BGS) + 1);
+
     // 【タイトル画面カード表示】プレイヤーの所持カードからランダムに選んで10秒ごとに切り替える
     let candidateIds = [];
     try {
@@ -108,18 +114,50 @@ export default function TitleScreen() {
 
   return (
     <div id="screen-title" className="screen active" onClick={handleStart}>
-      {!imgError ? (
+      {!imgError && (
         <img
           src={
             isLoading
               ? appendVersionQuery('assets/ui/title_loading.jpg')
-              : appendVersionQuery('assets/ui/title_img.jpg')
+              : appendVersionQuery(
+                  `assets/ui/title_img_${String(bgIndex).padStart(3, '0')}.png`
+                )
           }
           alt="Key Visual"
           className="title-visual"
           onError={() => setImgError(true)}
         />
-      ) : (
+      )}
+
+      {/* キラキラしたパーティクルエフェクト */}
+      {!isLoading && <TitleParticles />}
+
+      {/* タイトルロゴ（画面上部） */}
+      {!isLoading && !imgError && (
+        <img
+          src={appendVersionQuery('assets/ui/title_logo.png')}
+          alt="LANE DEFENDERS"
+          style={{
+            position: 'absolute',
+            top: '3%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '85%',
+            maxWidth: '650px',
+            filter:
+              'drop-shadow(0px 8px 12px rgba(0,0,0,0.8)) drop-shadow(0px 0px 20px rgba(255,255,255,0.4))',
+            zIndex: 10,
+            pointerEvents: 'none',
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            setImgError(true);
+          }}
+        />
+      )}
+
+      {/* 画像読み込みエラー時のフォールバック */}
+      {imgError && (
         <h1 className="game-title">
           LANE
           <br />
