@@ -1812,6 +1812,28 @@ export async function runTutorialFlow() {
         await waitForStepAdvance(GameState.tutorial.stepIndex);
         if (!GameState.tutorial) break;
         GameState.tutorial.waitingForInput = false;
+
+        // 分身などの追加配置（nextPlacementTargetLane）がある場合、その完了を待つ
+        if (
+          GameState.tutorial.placementTargetLane !== undefined &&
+          GameState.tutorial.placementTargetLane !== null
+        ) {
+          await new Promise((resolve) => {
+            const checkPlacement = () => {
+              if (
+                !GameState.tutorial ||
+                GameState.tutorial.placementTargetLane === null ||
+                GameState.tutorial.placementTargetLane === undefined
+              ) {
+                resolve();
+              } else {
+                setTimeout(checkPlacement, 100);
+              }
+            };
+            checkPlacement();
+          });
+        }
+
         // バトル処理完了まで待機（敵ターン前 or 攻撃フェーズ前の一時停止を検出）
         await waitForTutorialPause();
         if (!GameState.tutorial) break;
