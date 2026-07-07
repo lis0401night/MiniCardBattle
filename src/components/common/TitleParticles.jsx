@@ -7,7 +7,7 @@ export default function TitleParticles() {
     // 40個のパーティクルを生成（火の粉と妖精の粒子をミックス）
     const particleCount = 40;
     const newParticles = [];
-    
+
     for (let i = 0; i < particleCount; i++) {
       const size = Math.random() * 8 + 3; // 3px 〜 11px
       const left = Math.random() * 100; // 横幅の 0% 〜 100%
@@ -15,8 +15,8 @@ export default function TitleParticles() {
       const delay = Math.random() * 5; // アニメーション開始までの遅延 0s 〜 5s
       const durationSway = Math.random() * 3 + 2; // 揺れる速度 2s 〜 5s
       const isFairy = Math.random() > 0.5; // 半分は青白い妖精の粒子に、半分はオレンジの火の粉に
-      
-      const color = isFairy 
+
+      const color = isFairy
         ? 'radial-gradient(circle, rgba(180,230,255,0.9) 0%, rgba(100,180,255,0) 70%)'
         : 'radial-gradient(circle, rgba(255,215,0,0.9) 0%, rgba(255,80,0,0) 70%)';
 
@@ -27,24 +27,26 @@ export default function TitleParticles() {
         durationFloat,
         durationSway,
         delay,
-        color
+        color,
       });
     }
     setParticles(newParticles);
   }, []);
 
   return (
-    <div style={{
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      overflow: 'hidden',
-      pointerEvents: 'none',
-      zIndex: 5
-    }}>
-      {particles.map(p => (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 5,
+      }}
+    >
+      {particles.map((p) => (
         <div
           key={p.id}
           style={{
@@ -58,15 +60,17 @@ export default function TitleParticles() {
           }}
         >
           {/* 内部のdivで横揺れ（sway）を担当 */}
-          <div style={{
-            width: '100%',
-            height: '100%',
-            background: p.color,
-            borderRadius: '50%',
-            mixBlendMode: 'screen',
-            filter: 'blur(1px)',
-            animation: `particle-sway ${p.durationSway}s ease-in-out infinite alternate`,
-          }} />
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: p.color,
+              borderRadius: '50%',
+              mixBlendMode: 'screen',
+              filter: 'blur(1px)',
+              animation: `particle-sway ${p.durationSway}s ease-in-out infinite alternate`,
+            }}
+          />
         </div>
       ))}
     </div>
