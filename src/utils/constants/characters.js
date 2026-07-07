@@ -1548,7 +1548,7 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
   };
 
   const path = getRawPath();
-  return appendVersionQuery(path);
+  return path ? appendVersionQuery(path) : '';
 }
 
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];

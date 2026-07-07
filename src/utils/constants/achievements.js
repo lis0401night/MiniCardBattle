@@ -1164,17 +1164,17 @@ export function claimAchievementReward(id) {
   if (master.reward.type === 'playmat') {
     if (!ownedPlaymats.includes(master.reward.value)) {
       ownedPlaymats.push(master.reward.value);
-      // プレイマット獲得アニメーション/演出用フラグを返す
-      ach.isRewarded = true;
-      saveAchievements();
-      saveDeck(); // ownedPlaymats を保存するために呼ぶ
-      return {
-        success: true,
-        rewardType: 'playmat',
-        rewardValue: master.reward.value,
-        rewardName: master.reward.name,
-      };
     }
+    // プレイマット獲得アニメーション/演出用フラグを返す
+    ach.isRewarded = true;
+    saveAchievements();
+    saveDeck(); // ownedPlaymats を保存するために呼ぶ
+    return {
+      success: true,
+      rewardType: 'playmat',
+      rewardValue: master.reward.value,
+      rewardName: master.reward.name,
+    };
   } else if (master.reward.type === 'card') {
     const cardId = master.reward.value;
     if (!GameState.playerInventory) GameState.playerInventory = {};

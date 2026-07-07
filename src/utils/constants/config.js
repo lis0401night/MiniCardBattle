@@ -629,4 +629,14 @@ export function getScreenBackgroundStyle(imagePath) {
   return getVersionedBackgroundStyle(imagePath, 0.7, 0.9);
 }
 
+/**
+ * ステージ用の背景スタイルオブジェクトを生成します。
+ * @param {string} stageId - ステージID
+ * @returns {object} CSSスタイルオブジェクト
+ */
+export function getStageBackgroundStyle(stageId) {
+  return {
+    backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.png`)}')`,
+  };
+}
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;

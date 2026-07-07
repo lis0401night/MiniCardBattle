@@ -14,7 +14,11 @@ import { showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  getPlayerIconPath,
+} from '../utils/constants/characters.js';
 import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -165,11 +169,6 @@ export default function OnlineLobbyScreen() {
               opData.leaderConfig.skin;
           }
 
-          const getProfileIconUrl = (iconId) => {
-            if (!iconId) return 'assets/icons/icon_player.png';
-            return `assets/icons/icon_${iconId}.png`;
-          };
-
           GameState.playerConfig.image = getSkinImage(
             GameState.playerConfig,
             meData.leaderConfig.skin || 'default',
@@ -181,14 +180,14 @@ export default function OnlineLobbyScreen() {
             'imageLose'
           );
           GameState.playerConfig.icon = meData.leaderConfig.icon
-            ? getProfileIconUrl(meData.leaderConfig.icon)
+            ? getPlayerIconPath({ icon: meData.leaderConfig.icon })
             : getSkinImage(
                 GameState.playerConfig,
                 meData.leaderConfig.skin || 'default',
                 'icon'
               );
           GameState.playerConfig.iconDamage = meData.leaderConfig.icon
-            ? getProfileIconUrl(meData.leaderConfig.icon)
+            ? getPlayerIconPath({ icon: meData.leaderConfig.icon })
             : getSkinImage(
                 GameState.playerConfig,
                 meData.leaderConfig.skin || 'default',
@@ -206,14 +205,14 @@ export default function OnlineLobbyScreen() {
             'imageLose'
           );
           GameState.enemyConfig.icon = opData.leaderConfig.icon
-            ? getProfileIconUrl(opData.leaderConfig.icon)
+            ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
             : getSkinImage(
                 GameState.enemyConfig,
                 opData.leaderConfig.skin || 'default',
                 'icon'
               );
           GameState.enemyConfig.iconDamage = opData.leaderConfig.icon
-            ? getProfileIconUrl(opData.leaderConfig.icon)
+            ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
             : getSkinImage(
                 GameState.enemyConfig,
                 opData.leaderConfig.skin || 'default',
@@ -344,30 +343,27 @@ export default function OnlineLobbyScreen() {
     ? Object.values(roomData.chat).sort((a, b) => a.timestamp - b.timestamp)
     : [];
 
-  const getProfileIconUrl = (iconId) => {
-    if (!iconId) return 'assets/icons/icon_player.png';
-    return `assets/icons/icon_${iconId}.png`;
-  };
-
-  const myIcon = myData?.leaderConfig?.icon
-    ? getProfileIconUrl(myData.leaderConfig.icon)
+  const myIconId = myData?.leaderConfig?.icon || myData?.icon;
+  const myIcon = myIconId
+    ? getPlayerIconPath({ icon: myIconId })
     : myData?.leaderConfig?.leaderConfig
       ? getSkinImage(
           myData.leaderConfig.leaderConfig,
           myData.leaderConfig.skin,
           'icon'
         )
-      : '';
+      : getPlayerIconPath({});
 
-  const opIcon = opData?.leaderConfig?.icon
-    ? getProfileIconUrl(opData.leaderConfig.icon)
+  const opIconId = opData?.leaderConfig?.icon || opData?.icon;
+  const opIcon = opIconId
+    ? getPlayerIconPath({ icon: opIconId })
     : opData?.leaderConfig?.leaderConfig
       ? getSkinImage(
           opData.leaderConfig.leaderConfig,
           opData.leaderConfig.skin,
           'icon'
         )
-      : '';
+      : getPlayerIconPath({});
   const myName = localStorage.getItem(PROFILE_NAME_KEY) || '自分';
 
   return (
