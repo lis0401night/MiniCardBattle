@@ -15,6 +15,7 @@ import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
 import {
   appendVersionQuery,
   DEFAULT_DUNGEON_AI_LEVEL,
+  DEFAULT_PLAYER_NAME,
 } from '../utils/constants/config.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
@@ -262,7 +263,7 @@ function ResumeSelect() {
     }
   }, []);
   const pConf = saveData?.playerConfig || {
-    name: 'Player',
+    name: DEFAULT_PLAYER_NAME,
     rarity: 4,
     icon: '',
   };
@@ -890,7 +891,7 @@ function OpponentSelect() {
   };
 
   const pConf = GameState.playerConfig || {
-    name: 'Player',
+    name: DEFAULT_PLAYER_NAME,
     rarity: 4,
     icon: '',
   };

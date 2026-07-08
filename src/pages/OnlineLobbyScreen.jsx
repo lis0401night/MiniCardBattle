@@ -24,6 +24,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import {
   getScreenBackgroundStyle,
   PROFILE_NAME_KEY,
+  DEFAULT_PLAYER_NAME,
 } from '../utils/constants/config.js';
 
 async function safeLeaveRoom(errorMessage) {
@@ -44,7 +45,8 @@ export default function OnlineLobbyScreen() {
   // Initial config extraction
   useEffect(() => {
     window.reloadOnlineLobbyConfig = () => {
-      const storedName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
+      const storedName =
+        localStorage.getItem(PROFILE_NAME_KEY) || DEFAULT_PLAYER_NAME;
 
       let selIndex = GameState.currentDeckIndex || 0;
       const decksSrc = localStorage.getItem('mini_card_battle_decks');
@@ -325,7 +327,8 @@ export default function OnlineLobbyScreen() {
     e.preventDefault();
     if (!chatInput.trim()) return;
     try {
-      const storedName = localStorage.getItem(PROFILE_NAME_KEY) || 'Player';
+      const storedName =
+        localStorage.getItem(PROFILE_NAME_KEY) || DEFAULT_PLAYER_NAME;
       await sendChatMessage(chatInput, storedName);
       setChatInput('');
     } catch (err) {

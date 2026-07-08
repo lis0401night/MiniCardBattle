@@ -41,7 +41,7 @@ $dir = __DIR__ . '/decks/players';
 $filename = "{$dir}/{$uuid}.js";
 
 if (!file_exists($filename)) {
-    $playerName = isset($data['name']) ? $data['name'] : 'Player';
+    $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
     $playerData = [
         'uuid' => $uuid,
         'name' => $playerName,

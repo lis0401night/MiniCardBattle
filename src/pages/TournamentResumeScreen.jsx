@@ -9,6 +9,7 @@ import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { DEFAULT_PLAYER_NAME } from '../utils/constants/config.js';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {
@@ -40,7 +41,7 @@ export default function TournamentResumeScreen() {
 
   const tState = saveData?.tournament;
   const pConf = saveData?.playerConfig || {
-    name: 'Player',
+    name: DEFAULT_PLAYER_NAME,
     rarity: 4,
     icon: CHARACTERS.android.icon,
   };

@@ -64,7 +64,7 @@ if (!isset($player_data['uuid'])) {
     $player_data['uuid'] = $uuid;
 }
 if (!isset($player_data['name'])) {
-    $player_data['name'] = 'Player';
+    $player_data['name'] = 'プレイヤー';
 }
 if (!isset($player_data['icon'])) {
     $player_data['icon'] = 'player';
