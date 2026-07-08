@@ -1,10 +1,10 @@
 import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
   DEFAULT_PLAYER_NAME,
   RELOAD_CACHE_CLEAR_TIMEOUT_MS,
 } from '../utils/constants/config.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
@@ -38,7 +38,6 @@ const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)
- * VERSION: 1.2
  */
 
 // 初期ロード時に音量を復元
@@ -59,7 +58,6 @@ const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
   }, 100);
 })();
 
-console.log('!!! uiMainCore.js Version 1.2 Loaded !!!');
 
 export function goToModeSelect() {
   playSound(SOUNDS.seClick);
