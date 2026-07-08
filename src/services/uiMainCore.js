@@ -58,7 +58,6 @@ const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
   }, 100);
 })();
 
-
 export function goToModeSelect() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmTitle);
