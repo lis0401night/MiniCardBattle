@@ -95,42 +95,49 @@
     // ※アイギス(android)は厳密には14枚が専用カードとなっています
     const exclusiveCards = {
       "all (全カード)": ["golem","clone","sniper","falcon","cleric","diviner","dinosaur","cheetah","scorpion","mercenary","wall","leech","fighter","tortoise","spider","airship","hedgehog","bandit","snake","butcher","crenellatedwall","fireatronach","iceatronach","windatronach","lightningatronach","mantis","titan","cyberman","mechanic","lizardman","goblin","twister","dancer","commander","nobleknight","lightpaladin","hero","jellyfish","fish","eye","slime","bard","charger","pray","bear","incinerator","instructor","flagellant","charity","shade","prisoner","cook","necromancer","beginnermagic","shapeshifter","dragonfire","iceblast","ogre","ninja","tengu","omyouji","drifter","crocodile","mummy","treasurehunter","voidbraver","voidcleric","voidsniper","voidcommander","harpy","goat","siren","baphomet","minion","skeleton","skeletondefender","ritual","largemouth","fly","hand","devil","bigeye","scavenger","dreadnought","cop","armsuits","gladiator","dragonewt","babydragon","hammer","wyvern","berserker","drake","horse","minotaur","crusher","elephant","sergeant","lion","seaslug","prince","shark","sahagin","parasite","ghostship","splite","bird","shaman","centaur","darkelf","ranger","flak","pegasus","doom","acolyte","angelstatue","monk","specter","bat","franken","plaguedoctor","servant","undeadking","cat","mage","ring","battlemage","gargoyle","wizard","gashadokuro","samurai","yukionna","muramasa","biwa","nurikabe","camel","manticore","kitepriest","griffin","snakepriest","sentinel","dealer","daemonarmor","killermachine","bountyhunter","voiddog","traveler","priestess","alraune","incubus","enchanter","metalworker","skeletonlord","cavalry","warlock","wendigo","cyborgninja","booster","hacker","cyberdragon","egg","dragoon","phoenix","dragon","admiral","assassin","kingslayer","champion","octopus","hound","horseshoecrab","oldgod","highelf","thief","caller","wolf","fire","punisher","carousel","empress","vampire","graverobber","beast","collector","book","basilisk","witch","djinn","fox","kasha","orochi","shogun","stormpriest","goldship","jackalpriest","pharaoh","daemon","juggernaut","great","voidwalker","succubus","samael","spy","dread","bahamut","darkgeneral","badwolf","redhood","queen","snowwhite","threebears","goldilocks","whiterider","redrider","blackrider","palerider","gearA","gearB","tank","scientist","avenger","wurm","valkyrie","hellkite","darkpaladin","elite","guildmaster","duelist","starfish","trapezohedron","shoggoth","cthulhu","piper","cuchulainn","rampage","elfking","father","punishment","spirit","goddess","dragonzombie","grimreaper","puppeteer","doll","student","archmage","philosopher","gorgon","kunoichi","benkei","ippondatara","seimei","highwayman","sphinx","uroboros","cleopatra","light","baldanders","shuffler","crown","scarecrow","invader","dicejuggler","homunculus","bell","token_knight","token_dragon","token_ignis","token_satan","token_clone","token_reinforce","token_legs","token_void","token_ent","token_statue","token_drone","token_golem","token_phoenix","token_soul","token_gearC","token_reinforceddrone","token_polarbear","token_daemon","token_angel","token_whitewolf","token_skeleton"],
-      "android (アイギス)": [
-        "scavenger", "bigeye", "titan", "mantis", "cyborgninja", "booster", 
-        "gladiator", "dreadnought", "cop", "cyberman", "mechanic", "cyberdragon", 
-        "hacker", "armsuits"
+      "android": [
+        "scavenger", "bigeye", "titan", "mantis", "cyborgninja",
+        "booster", "gladiator", "dreadnought", "cop",  "hacker",
+        "mechanic", "cyberdragon", "cyberman", "armsuits",
       ],
       "cleric": [
-        "pegasus", "flak", "instructor", "incinerator", "fire", "punisher", 
-        "monk", "doom", "acolyte", "flagellant", "charity", "empress", "carousel", "angelstatue"
+        "charity", "empress",, "instructor", "pegasus", "fire",
+        "punisher",  "monk", "flak", "acolyte", "angelstatue",
+        "incinerator", "doom", "carousel", "flagellant",
       ],
       "cthulhu": [
         "prince", "seaslug", "fish", "jellyfish", "octopus", "hound", 
         "ghostship", "shark", "sahagin", "eye", "slime", "oldgod", "horseshoecrab", "parasite"
       ],
       "devilhunter": [
-        "specter", "bat", "prisoner", "shade", "vampire", "graverobber", 
-        "undeadking", "plaguedoctor", "franken", "cook", "necromancer", "collector", "beast", "servant"
+        "prisoner", "plaguedoctor", "franken", "shade", "beast", 
+        "graverobber", "undeadking", "specter", "bat", "cook",
+        "necromancer", "collector", "vampire", "servant"
       ],
-      "dragon (イグニス)": [
-        "babydragon", "dragonewt", "lizardman", "goblin", "egg", "dragoon", 
-        "drake", "hammer", "wyvern", "twister", "dancer", "dragon", "phoenix", "berserker"
+      "dragon": [
+        "babydragon", "dragonewt", "berserker", "goblin", "egg",
+        "drake", "dragoon",  "hammer", "wyvern", "phoenix",
+        "dragon", "dancer", "twister", "lizardman",
       ],
       "elf": [
-        "bird", "splite", "charger", "bard", "thief", "highelf", 
-        "ranger", "shaman", "centaur", "pray", "bear", "wolf", "caller", "darkelf"
+        "centaur", "splite", "charger", "bard", "bird",
+        "highelf", "shaman", "pray", "ranger", "thief",
+        "wolf", "caller", "bear", "darkelf"
       ],
       "knight": [
-        "horse", "minotaur", "nobleknight", "commander", "admiral", "assassin", 
-        "lion", "crusher", "elephant", "lightpaladin", "hero", "champion", "kingslayer", "sergeant"
+        "horse", "minotaur", "nobleknight", "commander", "admiral",
+        "assassin", "lion", "crusher", "elephant", "lightpaladin",
+        "hero", "champion", "kingslayer", "sergeant"
       ],
       "oni": [
-        "gashadokuro", "samurai", "ogre", "omyouji", "fox", "kasha", 
-        "nurikabe", "yukionna", "muramasa", "ninja", "tengu", "shogun", "orochi", "biwa"
+        "gashadokuro", "samurai", "fox", "ogre", "omyouji",
+        "kasha", "nurikabe", "shogun", "muramasa", "ninja",
+        "tengu", "orochi", "biwa", "yukionna",
       ],
       "priest": [
-        "camel", "manticore", "crocodile", "drifter", "stormpriest", "goldship", 
-        "sentinel", "kitepriest", "griffin", "treasurehunter", "mummy", "pharaoh", "jackalpriest", "snakepriest"
+        "camel", "goldship", "griffin", "crocodile", "drifter",
+        "manticore", "jackalpriest",  "pharaoh", "sentinel", "treasurehunter",
+        "mummy", "kitepriest", "snakepriest", "stormpriest",
       ],
       "satan": [
         "fly", "largemouth", "bahamut", "wendigo", "cavalry", "devil", 
@@ -149,8 +156,9 @@
         "skeletondefender", "dread", "metalworker"
       ],
       "witch": [
-        "cat", "mage", "shapeshifter", "beginnermagic", "book", "witch", 
-        "wizard", "ring", "battlemage", "dragonfire", "iceblast", "djinn", "basilisk", "gargoyle"
+        "cat", "shapeshifter", "dragonfire", "mage", "book",
+        "witch", "wizard", "djinn", "beginnermagic", "iceblast", 
+        "battlemage", "basilisk", "gargoyle", "ring", 
       ]
     };
 
@@ -182,8 +190,8 @@
       });
       
       // 初期表示はアイギス
-      selectEl.value = "android (アイギス)";
-      renderCards("android (アイギス)");
+      selectEl.value = "android";
+      renderCards("android");
     }
 
     function renderCards(leader) {

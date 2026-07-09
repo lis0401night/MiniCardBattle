@@ -171,6 +171,7 @@ export default function CreditModal({ visible, onClose }) {
               }}
             >
               <div>・Google AI Pro</div>
+              <div>・ChatGPT</div>
               <div>
                 ・ぴぽや
                 <br />
