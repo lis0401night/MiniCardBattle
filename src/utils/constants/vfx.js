@@ -14,7 +14,7 @@ export const VFX_DATA = {
     position: 'fill', // 配置タイプ ('fill' は盤面全体、他は個別設定可)
     offsetY: -10, // 中心位置からの上下オフセット（%指定、マイナスで上へ）
     scale: 1.0, // サイズ倍率
-    shake: true, // 画面を揺らす
+    shake: false, // 画面を揺らす
     targetSide: 'enemy', // ターゲット (enemy: 相手陣地, self: 自分陣地)
   },
   // クロエSPスキル
@@ -73,7 +73,7 @@ export const VFX_DATA = {
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 1,
-    shake: true,
+    shake: false,
     flipOnEnemy: false,
     targetSide: 'enemy', // 相手のレーンがターゲット
   },
@@ -90,7 +90,7 @@ export const VFX_DATA = {
     position: 'lane',
     offsetY: 0,
     scale: 1,
-    shake: true,
+    shake: false,
     flipOnEnemy: false,
     targetSide: 'self', // 自分のレーンがターゲット
   },
@@ -107,7 +107,7 @@ export const VFX_DATA = {
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 1.0,
-    shake: true,
+    shake: false,
     targetSide: 'self', // 自陣に召喚
   },
 
@@ -123,7 +123,7 @@ export const VFX_DATA = {
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 1.0,
-    shake: true,
+    shake: false,
     targetSide: 'self', // 自陣に召喚
   },
 
@@ -171,7 +171,7 @@ export const VFX_DATA = {
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
     scale: 1.5,
-    shake: true,
+    shake: false,
     targetSide: 'enemy', // 基本は相手のHPがターゲット
   },
 
@@ -203,7 +203,7 @@ export const VFX_DATA = {
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
     scale: 0.6,
-    shake: true,
+    shake: false,
     targetSide: 'enemy', // 相手のレーンがターゲット
   },
 

@@ -1064,13 +1064,6 @@ export async function executeLeaderSkillAction(
       }
       playSound(SOUNDS.seDamage);
 
-      const boardEl = document.getElementById('battle-screen');
-      if (boardEl) {
-        boardEl.classList.remove('anim-shake-screen');
-        void boardEl.offsetWidth;
-        boardEl.classList.add('anim-shake-screen');
-      }
-
       updateHPBar();
       showSpeechBubble(opId);
       checkWinCondition();
