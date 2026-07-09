@@ -77,6 +77,7 @@ import {
   handleTutorialEnd,
   isTutorialMode,
   runTutorialFlow,
+  notifyCardPlaced,
 } from './tutorialEngine.js';
 import {
   closeSkillConfirm,
@@ -177,6 +178,15 @@ export async function processActionQueue() {
         );
         if (played) {
           if (checkWinCondition()) break;
+          if (isTutorialMode()) {
+            const playedCard =
+              action.owner === 'blue'
+                ? GameState.playerBoard[action.lane]
+                : GameState.enemyBoard[action.lane];
+            if (playedCard) {
+              notifyCardPlaced(playedCard.baseId || playedCard.id, action.lane);
+            }
+          }
           GameState.selectedCardIndex = null;
           if (window.updateCardDetail) window.updateCardDetail(null);
           await sleep(PLACE_ANIMATION_DURATION);

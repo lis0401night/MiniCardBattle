@@ -1469,13 +1469,6 @@ export function filterLaneClick(lane, side) {
     }
 
     if (isLaneAllowed) {
-      if (step.nextPlacementTargetLane !== undefined) {
-        GameState.tutorial.placementTargetLane = step.nextPlacementTargetLane;
-        GameState.tutorial.placementBlockMessage =
-          step.nextPlacementBlockMessage;
-      }
-      // 正しいレーン → ステップ進行
-      advanceStep();
       return false;
     } else {
       showBlockMessage(step.blockMessage);
@@ -1486,6 +1479,41 @@ export function filterLaneClick(lane, side) {
   // 配置ステップ以外ではレーン操作をブロック
   showBlockMessage(step.blockMessage || '今はカードを置けないよ！');
   return true;
+}
+
+/**
+ * 実際にカードが配置されたことをチュートリアルエンジンに通知する
+ */
+export function notifyCardPlaced(cardId, lane) {
+  if (!isTutorialMode()) return;
+  const step = getCurrentTutorialStep();
+  if (step && step.type === 'placeCard') {
+    const isCorrectCard =
+      cardId === step.targetCardId ||
+      CARD_MASTER.find((c) => c.id === cardId)?.baseId === step.targetCardId;
+
+    const hasTargetLane = step.targetLane != null;
+    const hasTargetLanes =
+      Array.isArray(step.targetLanes) && step.targetLanes.length > 0;
+
+    let isLaneAllowed = false;
+    if (!hasTargetLane && !hasTargetLanes) {
+      isLaneAllowed = true;
+    } else if (hasTargetLane && lane === step.targetLane) {
+      isLaneAllowed = true;
+    } else if (hasTargetLanes && step.targetLanes.includes(lane)) {
+      isLaneAllowed = true;
+    }
+
+    if (isCorrectCard && isLaneAllowed) {
+      if (step.nextPlacementTargetLane !== undefined) {
+        GameState.tutorial.placementTargetLane = step.nextPlacementTargetLane;
+        GameState.tutorial.placementBlockMessage =
+          step.nextPlacementBlockMessage;
+      }
+      advanceStep();
+    }
+  }
 }
 
 /**
