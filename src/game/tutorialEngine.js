@@ -1818,20 +1818,14 @@ export async function runTutorialFlow() {
           GameState.tutorial.placementTargetLane !== undefined &&
           GameState.tutorial.placementTargetLane !== null
         ) {
-          await new Promise((resolve) => {
-            const checkPlacement = () => {
-              if (
-                !GameState.tutorial ||
-                GameState.tutorial.placementTargetLane === null ||
-                GameState.tutorial.placementTargetLane === undefined
-              ) {
-                resolve();
-              } else {
-                setTimeout(checkPlacement, 100);
-              }
-            };
-            checkPlacement();
-          });
+          await waitUntilTutorialCondition(
+            () =>
+              !GameState.tutorial ||
+              GameState.tutorial.placementTargetLane === null ||
+              GameState.tutorial.placementTargetLane === undefined,
+            100,
+            10000 // 無限待機を防ぐための最大待機時間（10秒）
+          );
         }
 
         // バトル処理完了まで待機（敵ターン前 or 攻撃フェーズ前の一時停止を検出）
@@ -1876,21 +1870,14 @@ export async function runTutorialFlow() {
         }
         const initialSP = GameState.playerSP;
         GameState.tutorial.waitingForInput = true;
-        await new Promise((resolve) => {
-          const check = () => {
-            if (!GameState.tutorial) {
-              resolve();
-              return;
-            }
-            // SPが減った＝スキルが実際に使用された
-            if (GameState.playerSP < initialSP) {
-              resolve();
-              return;
-            }
-            setTimeout(check, 200);
-          };
-          check();
-        });
+        await waitUntilTutorialCondition(
+          () => {
+            if (!GameState.tutorial) return true;
+            return GameState.playerSP < initialSP;
+          },
+          200,
+          null // ユーザーの操作待ちのためタイムアウトガードは設定しない
+        );
         if (!GameState.tutorial) break;
         GameState.tutorial.waitingForInput = false;
         GameState.tutorial.stepIndex++;
@@ -1970,17 +1957,41 @@ export async function runTutorialFlow() {
 /**
  * 特定のステップインデックスが変わるまで待機するユーティリティ
  */
-function waitForStepAdvance(currentIndex) {
+const TUTORIAL_POLL_INTERVAL_MS = 100;
+
+/**
+ * 共通のポーリング用待機ヘルパー関数
+ */
+function waitUntilTutorialCondition(
+  predicate,
+  intervalMs = TUTORIAL_POLL_INTERVAL_MS,
+  maxWaitMs = null
+) {
   return new Promise((resolve) => {
+    const startTime = Date.now();
     const check = () => {
-      if (!isTutorialMode() || GameState.tutorial.stepIndex !== currentIndex) {
+      if (predicate()) {
+        resolve();
+      } else if (maxWaitMs !== null && Date.now() - startTime >= maxWaitMs) {
+        console.warn('waitUntilTutorialCondition がタイムアウトしました');
         resolve();
       } else {
-        setTimeout(check, 100);
+        setTimeout(check, intervalMs);
       }
     };
     check();
   });
+}
+
+/**
+ * 特定のステップインデックスが変わるまで待機するユーティリティ
+ */
+function waitForStepAdvance(currentIndex) {
+  return waitUntilTutorialCondition(
+    () => !isTutorialMode() || GameState.tutorial.stepIndex !== currentIndex,
+    100,
+    null // ユーザーの操作待ちのためタイムアウトガードは設定しない
+  );
 }
 
 /**
@@ -1989,16 +2000,14 @@ function waitForStepAdvance(currentIndex) {
  */
 function waitForTutorialPause() {
   return new Promise((resolve) => {
-    const check = () => {
-      // isProcessing=falseなら、敵ターン前 or 攻撃フェーズ前の一時停止に到達している
-      if (!GameState.isProcessing) {
-        resolve();
-      } else {
-        setTimeout(check, 200);
-      }
-    };
     // 少し待ってからチェック開始（dispatchActionが処理キューに入る時間を確保）
-    setTimeout(check, 500);
+    setTimeout(() => {
+      waitUntilTutorialCondition(
+        () => !GameState.isProcessing,
+        200,
+        null // 連鎖処理等に対応するため、タイムアウトは設定しない
+      ).then(resolve);
+    }, 500);
   });
 }
 

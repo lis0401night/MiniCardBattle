@@ -3852,7 +3852,7 @@ body.vfx-shake {
     opacity: 0.8;
   }
   100% {
-    transform: translateY(-80vh);
+    transform: translateY(-80dvh);
     opacity: 0;
   }
 }
