@@ -644,7 +644,7 @@ export async function executeLeaderSkillAction(
 
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
         consumeArmSelf(targetCard, selectedCard);
-        renderBoard();
+        if (owner === 'blue') renderBoard();
         events.push({
           type: 'power_change',
           side: owner,
@@ -675,16 +675,25 @@ export async function executeLeaderSkillAction(
           type: 'summon_card',
           side: owner,
           lane: targetLane,
-          card: resurrectedCard,
-          source: 'devilhunter_resurrect',
+          card: JSON.parse(JSON.stringify(resurrectedCard)),
+          source: 'overdrive',
         });
-        renderBoard();
+        if (owner === 'blue') renderBoard();
       }
 
       // VFX
       if (window.triggerVfx && tLanes.length > 0) {
-        await sleep(200);
-        await window.triggerVfx('anm_summon_maria', owner, tLanes[0]);
+        if (owner === 'blue') {
+          await sleep(200);
+          await window.triggerVfx('anm_summon_maria', owner, tLanes[0]);
+        } else {
+          events.push({
+            type: 'vfx_trigger',
+            vfxId: 'anm_summon_maria',
+            side: owner,
+            lane: tLanes[0],
+          });
+        }
       }
     };
 
@@ -836,7 +845,7 @@ export async function executeLeaderSkillAction(
         // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
         consumeArmSelf(targetCard, selectedCard);
 
-        renderBoard(); // 反映を確実にする
+        if (owner === 'blue') renderBoard(); // 反映を確実にする
         events.push({
           type: 'power_change',
           side: owner,
@@ -866,10 +875,10 @@ export async function executeLeaderSkillAction(
           type: 'summon_card',
           side: owner,
           lane: targetLane,
-          card: resurrectedCard,
+          card: JSON.parse(JSON.stringify(resurrectedCard)),
           source: 'devilhunter_resurrect',
         });
-        renderBoard(); // 反映を確実にする
+        if (owner === 'blue') renderBoard(); // 反映を確実にする
       }
     } else {
       return; // 復活対象や空きがない

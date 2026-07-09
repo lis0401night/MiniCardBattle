@@ -211,7 +211,7 @@ export const CARD_MASTER = [
     id: 'fireatronach',
     name: '炎の精霊',
     rarity: 1,
-    power: 3,
+    power: 2,
     skills: [
       { id: 'berserk', value: 3 },
       { id: 'snipe', value: 5 },
@@ -410,7 +410,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bard',
-    name: '森の歌うたい',
+    name: '陽気な歌うたい',
     rarity: 1,
     power: 2,
     skills: [

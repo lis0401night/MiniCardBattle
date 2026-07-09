@@ -374,7 +374,7 @@ export function processActionSequence(
         const sourceCard = targetBoard[sourceL];
         // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
         // summonId が分かっているなら直接トークンを生成する
-        if (['summon', 'clone', 'split', 'puppet'].includes(action.skillId)) {
+        if (['summon', 'clone', 'split'].includes(action.skillId)) {
           let tokenPower = action.skillValue || 1;
           if (action.skillId === 'clone' && sourceCard) {
             tokenPower =
@@ -384,9 +384,7 @@ export function processActionSequence(
           }
           let tokenId = action.summonId;
           if (!tokenId) {
-            if (action.skillId === 'puppet') {
-              tokenId = 'token_doll';
-            } else if (action.skillId === 'clone') {
+            if (action.skillId === 'clone') {
               tokenId = 'token_clone';
             } else {
               // summon / split のフォールバック（summonIdが未指定の場合）
@@ -472,7 +470,7 @@ export function processActionSequence(
           );
         }
         continue;
-      } else if (action.type === 'resurrect') {
+      } else if (action.type === 'resurrect' || action.type === 'puppet') {
         if (action.simulated) {
           // すでに applyLeaderSkillLogic 内でシミュレーション盤面への適用・墓地削除が完了しているため
           // シミュレーションでの二重解決はスキップする
@@ -480,10 +478,14 @@ export function processActionSequence(
         }
         if (isGraveKeeperActive(simState)) return null;
         if (lIdx === -1) continue; // 明示的キャンセル
+        const targetDiscardPile =
+          action.type === 'puppet'
+            ? simState.playerDiscard
+            : simState.enemyDiscard;
         // 【重要】UID優先照合: リーダースキルのspliceでインデックスがずれる問題を回避
         let resIdx = -1;
         if (action.targetUid) {
-          resIdx = simState.enemyDiscard.findIndex(
+          resIdx = targetDiscardPile.findIndex(
             (c) =>
               c && (c.baseId === action.targetUid || c.id === action.targetUid)
           );
@@ -491,8 +493,13 @@ export function processActionSequence(
         if (resIdx === -1 && action.targetIdx !== undefined) {
           resIdx = action.targetIdx;
         }
-        if (resIdx === -1 || !simState.enemyDiscard[resIdx]) return null;
-        playedCard = cloneCard(simState.enemyDiscard[resIdx]);
+        if (resIdx === -1 || !targetDiscardPile[resIdx]) return null;
+        playedCard = cloneCard(targetDiscardPile[resIdx]);
+        if (action.type === 'puppet') {
+          playedCard.owner = 'red';
+          playedCard.puppetOriginalOwner =
+            playedCard.puppetOriginalOwner || 'blue';
+        }
         simState.lastPlayedLane = lIdx;
         if (playedCard && action.maxP !== undefined) {
           const master = CARD_MASTER.find(
@@ -504,7 +511,7 @@ export function processActionSequence(
         checkConstraints = false;
         triggerSkills = false;
         if (playedCard) playedCard.skillTriggered = true;
-        simState.enemyDiscard[resIdx] = null;
+        targetDiscardPile[resIdx] = null;
       } else if (action.type === 'dominate') {
         const oppL = action.oppLaneIdx;
         const myL = action.myLaneIdx;
@@ -1572,7 +1579,7 @@ export function getBestSimulatedMove() {
                 }
                 // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時に発動）のため、
                 //   召喚時のtoken_placementとしては扱わない。シミュレーション上は元のパワーのまま評価される。
-              } else if (['clone', 'summon', 'puppet'].includes(sk.id)) {
+              } else if (['clone', 'summon'].includes(sk.id)) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
                 // 同一レーンへの複数配置は武装カードへの装備等で有効な戦略のため、
@@ -1619,6 +1626,64 @@ export function getBestSimulatedMove() {
                   for (let nb of nextBranches) {
                     results.push([tokenNode, ...nb]);
                   }
+                }
+              } else if (sk.id === 'puppet') {
+                const maxP = sk.value || 1;
+                // 傀儡：相手の墓地（GameState.playerDiscard）から選択
+                const candidates = GameState.playerDiscard || [];
+
+                for (let i = 0; i < candidates.length; i++) {
+                  let resCard = candidates[i];
+                  if (!resCard || resCard.isToken) continue;
+
+                  const master = CARD_MASTER.find(
+                    (m) => m.id === resCard.id || m.id === resCard.baseId
+                  );
+                  const baseP = master ? master.power : resCard.power || 0;
+                  if (baseP > maxP) continue;
+
+                  for (let j = 0; j < 3; j++) {
+                    if (mySealedLanes[j] > 0) continue;
+                    let puppetNode = {
+                      type: 'puppet',
+                      targetIdx: i,
+                      targetUid: resCard.baseId || resCard.id,
+                      laneIdx: j,
+                      maxP: maxP,
+                    };
+                    let nextBranches = buildSkillBranch(
+                      remainingSkills,
+                      currentUsedHand,
+                      currentUsedDiscard,
+                      currentDepth,
+                      currentDiscarded,
+                      activeEnemyBoard,
+                      activePlayerBoard
+                    );
+                    for (let nb of nextBranches) {
+                      results.push([puppetNode, ...nb]);
+                    }
+                  }
+                }
+
+                // 傀儡の明示的なキャンセル分岐
+                let cancelNode = {
+                  type: 'puppet',
+                  targetIdx: -1,
+                  laneIdx: -1,
+                  maxP: maxP,
+                };
+                let cancelBranches = buildSkillBranch(
+                  remainingSkills,
+                  currentUsedHand,
+                  currentUsedDiscard,
+                  currentDepth,
+                  currentDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard
+                );
+                for (let nb of cancelBranches) {
+                  results.push([cancelNode, ...nb]);
                 }
               } else if (sk.id === 'choice') {
                 const cc = sk.value || 1;
@@ -3138,7 +3203,7 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
-    } else if (['clone', 'summon', 'puppet'].includes(sk.id)) {
+    } else if (['clone', 'summon'].includes(sk.id)) {
       const count = sk.id === 'clone' ? sk.value || 1 : 1;
       const generateLaneCombos = (remainingCount) => {
         if (remainingCount <= 0) return [[]];
@@ -3182,6 +3247,68 @@ export function evaluateAdhocTokenLanes(
         for (let nb of nextBranches) {
           results.push([tokenNode, ...nb]);
         }
+      }
+    } else if (sk.id === 'puppet') {
+      const originalDiscard = GameState.playerDiscard || []; // 相手の墓地
+      const maxP = sk.value || 1;
+      const candidates = [...originalDiscard];
+
+      for (let i = 0; i < candidates.length; i++) {
+        let resCard = candidates[i];
+        if (!resCard || resCard.isToken) continue;
+
+        const master = CARD_MASTER.find(
+          (m) => m.id === resCard.id || m.id === resCard.baseId
+        );
+        const baseP = master ? master.power : resCard.power || 0;
+        if (baseP > maxP) continue;
+
+        for (let j = 0; j < 3; j++) {
+          if (sealedLanes[j] > 0) continue;
+          let puppetNode = {
+            type: 'puppet',
+            targetIdx: i,
+            targetUid: resCard.baseId || resCard.id,
+            laneIdx: j,
+            maxP: maxP,
+          };
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            currentUsedHand,
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscard,
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard,
+            leaderSkillContext
+          );
+          for (let nb of nextBranches) {
+            results.push([puppetNode, ...nb]);
+          }
+        }
+      }
+
+      // 傀儡のキャンセル分岐
+      let cancelNode = {
+        type: 'puppet',
+        targetIdx: -1,
+        laneIdx: -1,
+        maxP: maxP,
+      };
+      let cancelBranches = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard,
+        leaderSkillContext
+      );
+      for (let nb of cancelBranches) {
+        results.push([cancelNode, ...nb]);
       }
     } else if (sk.id === 'choice') {
       const cc = sk.value || 1;

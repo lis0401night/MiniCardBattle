@@ -196,7 +196,7 @@ export default function CardListScreen() {
         c.choices.forEach((ch) => cardSkills.push(ch.id));
       if (Array.isArray(c.choices2))
         c.choices2.forEach((ch) => cardSkills.push(ch.id));
-      if (!filters.skills.every((sk) => cardSkills.includes(sk))) return false;
+      if (!filters.skills.some((sk) => cardSkills.includes(sk))) return false;
     }
     return true;
   });
