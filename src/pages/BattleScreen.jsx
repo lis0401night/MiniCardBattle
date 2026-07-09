@@ -42,6 +42,7 @@ import {
   notifyTutorialHandLongPress,
   notifyTutorialLongPress,
   setTutorialMessageCallback,
+  notifyCardPlaced,
 } from '../game/tutorialEngine.js';
 import { openCardPreview } from '../services/uiGallery.js';
 
@@ -306,6 +307,10 @@ export default function BattleScreen({ showRulesModal }) {
       const targetHandIndex = GameState.selectedCardIndex;
       GameState.selectedCardIndex = null;
       if (window.updateCardDetail) window.updateCardDetail(null);
+
+      if (isTutorialMode()) {
+        notifyCardPlaced(newCard.baseId || newCard.id, lane);
+      }
 
       dispatchBattleAction({
         type: 'playCard',
