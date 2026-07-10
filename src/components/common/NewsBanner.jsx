@@ -3,6 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { playSound, switchScreen } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
+// リンクを常に新しいタブ(外部ブラウザ)で開くようにDOMPurifyを設定
+DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+  if (node.tagName === 'A') {
+    node.setAttribute('target', '_blank');
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
+
 const NEWS_API_ENDPOINT = 'api/get_news.php';
 const CAROUSEL_INTERVAL_MS = 4000;
 const SWIPE_THRESHOLD_PX = 50;
@@ -94,7 +102,7 @@ export default function NewsBanner() {
                 id: 1,
                 title: 'ローカルテスト表示：お知らせ機能',
                 content:
-                  '<p>これはローカル環境用の一時的な表示です。</p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
+                  '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
                 color1: '#3b82f6',
                 color2: '#1d4ed8',
                 icon: '✨',
