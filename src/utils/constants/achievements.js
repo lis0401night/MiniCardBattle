@@ -74,8 +74,8 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 'android',
     reward: {
       type: 'premium',
-      value: 'golem',
-      name: '大理石のゴーレム',
+      value: 'cyberman',
+      name: 'ライオット・キーパー',
       isPremiumUnlock: true,
     },
   },
@@ -116,8 +116,8 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 'knight',
     reward: {
       type: 'premium',
-      value: 'clone',
-      name: '鏡の戦士',
+      value: 'commander',
+      name: '前線の司令官',
       isPremiumUnlock: true,
     },
   },
@@ -137,8 +137,8 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 'cthulhu',
     reward: {
       type: 'premium',
-      value: 'diviner',
-      name: '星詠みの占術士',
+      value: 'eye',
+      name: '虚無の目覚め',
       isPremiumUnlock: true,
     },
   },
@@ -158,8 +158,8 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 'elf',
     reward: {
       type: 'premium',
-      value: 'sniper',
-      name: '森の射手',
+      value: 'pray',
+      name: '森の祈り',
       isPremiumUnlock: true,
     },
   },

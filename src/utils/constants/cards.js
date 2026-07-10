@@ -211,9 +211,9 @@ export const CARD_MASTER = [
     id: 'fireatronach',
     name: '炎の精霊',
     rarity: 1,
-    power: 2,
+    power: 3,
     skills: [
-      { id: 'berserk', value: 3 },
+      { id: 'sacrifice', value: 2 },
       { id: 'snipe', value: 5 },
     ],
     voiceCategory: 'stone',
@@ -274,7 +274,7 @@ export const CARD_MASTER = [
     id: 'cyberman',
     name: 'ライオット・キーパー',
     rarity: 1,
-    power: 6,
+    power: 7,
     skills: [{ id: 'spend', value: 1 }],
     voiceCategory: 'machine_new',
     flavor:
