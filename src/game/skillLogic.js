@@ -2260,36 +2260,38 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        // AIの場合：actionQueueのtoken_placement(puppet)からレーン指定を取り出す（cloneと同パターン）
-        if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
-          const tpIdx = GameState.aiDecision.actionQueue.findIndex(
-            (a) => a.type === 'token_placement' && a.skillId === 'puppet'
-          );
-          if (tpIdx !== -1) {
-            const tpAction = GameState.aiDecision.actionQueue.splice(
-              tpIdx,
-              1
-            )[0];
-            if (Array.isArray(tpAction.lanes)) {
-              tokenLanes = [...tpAction.lanes];
-            } else {
-              tokenLanes = [];
-            }
+        // AIの場合：actionQueueのpuppetアクションから指定カードとレーンを取り出す
+        const aiAction = consumeAIAction('puppet');
+        if (aiAction) {
+          tokenLanes = [];
+          if (aiAction.targetUid) {
+            selectedCard =
+              validCards.find(
+                (c) =>
+                  c.uid === aiAction.targetUid ||
+                  c.id === aiAction.targetUid ||
+                  c.baseId === aiAction.targetUid
+              ) || null;
+          }
+          if (!selectedCard && aiAction.targetIdx !== undefined) {
+            selectedCard =
+              validCards[aiAction.targetIdx] ||
+              oppDiscard[aiAction.targetIdx] ||
+              null;
+          }
+          if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
+        } else {
+          if (GameState.aiLevel === 1) {
+            // Easy AI: 最強カードをフォールバック選択
+            const sortedPuppet = [...validCards].sort(
+              (a, b) => (b.power || 0) - (a.power || 0)
+            );
+            selectedCard = sortedPuppet[0] || null;
           } else {
-            // actionQueueにpuppetがない場合 → 配置しない（フォールバック防止）
+            // Normal以上: アクションがない場合は配置しない
             tokenLanes = [];
           }
-        } else if (GameState.aiLevel !== 1) {
-          // actionQueueなし かつ Normal以上 → 配置しない（フォールバック防止）
-          // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
-          tokenLanes = [];
         }
-        // actionQueueに情報がなくてもフォールバックとして最強カードを選択
-        // （シミュレーションと同じロジック：パワー降順ソートの最強カード）
-        const sortedPuppet = [...validCards].sort(
-          (a, b) => (b.power || 0) - (a.power || 0)
-        );
-        selectedCard = sortedPuppet[0] || null;
         // AIの思考時間を演出
         await sleep(AI_THINKING_DURATION);
       } else {

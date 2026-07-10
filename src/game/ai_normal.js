@@ -1419,7 +1419,7 @@ export function getBestSimulatedMove() {
                     let resNode = {
                       type: 'resurrect',
                       targetIdx: i,
-                      targetUid: resCard.baseId || resCard.id,
+                      targetUid: resCard.uid,
                       laneIdx: j,
                       maxP: maxP,
                     };
@@ -1647,7 +1647,7 @@ export function getBestSimulatedMove() {
                     let puppetNode = {
                       type: 'puppet',
                       targetIdx: i,
-                      targetUid: resCard.baseId || resCard.id,
+                      targetUid: resCard.uid,
                       laneIdx: j,
                       maxP: maxP,
                     };
@@ -2117,7 +2117,7 @@ export function getBestSimulatedMove() {
                       skillOrder: 'before',
                       leaderSkillTargetIdx: dIdx,
                       leaderSkillTargetUid: resTargetCard
-                        ? resTargetCard.baseId || resTargetCard.id
+                        ? resTargetCard.uid
                         : null,
                       leaderSkillResurrectLane: isDngResurrect
                         ? resLane
@@ -2219,7 +2219,7 @@ export function getBestSimulatedMove() {
                 tokenLanes,
                 skillOrder: 'before',
                 leaderSkillTargetIdx: dIdx,
-                leaderSkillTargetUid: resTargetCard.baseId || resTargetCard.id,
+                leaderSkillTargetUid: resTargetCard.uid,
               },
               simState
             );
@@ -2958,7 +2958,7 @@ export function evaluateAdhocTokenLanes(
           let resNode = {
             type: 'resurrect',
             targetIdx: i,
-            targetUid: resCard.baseId || resCard.id,
+            targetUid: resCard.uid,
             laneIdx: j,
             maxP: maxP,
           };
@@ -3268,7 +3268,7 @@ export function evaluateAdhocTokenLanes(
           let puppetNode = {
             type: 'puppet',
             targetIdx: i,
-            targetUid: resCard.baseId || resCard.id,
+            targetUid: resCard.uid,
             laneIdx: j,
             maxP: maxP,
           };

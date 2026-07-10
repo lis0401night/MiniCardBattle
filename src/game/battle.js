@@ -1924,6 +1924,7 @@ export async function waitPlayerDiscardSelection(
       'call',
       'salvage',
       'choice',
+      'puppet',
     ]);
     if (aiAction) {
       if (maxChoices > 1) {

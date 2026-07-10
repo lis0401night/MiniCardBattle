@@ -3231,9 +3231,12 @@ export function applyLeaderSkillLogic(
       ? state.playerSealedLanes
       : state.enemySealedLanes;
 
+    let mySelectedCard = null;
+    let oppSelectedCard = null;
+
     const placeFromDiscard = (discard, laneIdx) => {
       const validCards = discard.filter((c) => c && !c.isToken);
-      if (validCards.length === 0 || laneIdx === -1) return;
+      if (validCards.length === 0 || laneIdx === -1) return null;
       const sorted = [...validCards].sort(
         (a, b) => (b.power || 0) - (a.power || 0)
       );
@@ -3261,6 +3264,7 @@ export function applyLeaderSkillLogic(
       });
       const removeIdx = discard.findIndex((x) => x && x.id === selectedCard.id);
       if (removeIdx !== -1) discard.splice(removeIdx, 1);
+      return selectedCard;
     };
 
     // 自分の墓地 → tokenLanes[0] (forcedTargetIdx が指定されている場合はその優先)
@@ -3295,9 +3299,10 @@ export function applyLeaderSkillLogic(
         card: JSON.parse(JSON.stringify(resurrectedCard)),
         source: 'overdrive',
       });
+      mySelectedCard = forcedCard;
       myDiscard.splice(forcedTargetIdx, 1);
     } else {
-      placeFromDiscard(myDiscard, lane1);
+      mySelectedCard = placeFromDiscard(myDiscard, lane1);
     }
 
     // 相手の墓地 → tokenLanes[1]
@@ -3311,7 +3316,26 @@ export function applyLeaderSkillLogic(
       );
       lane2 = emptyLanes.length > 0 ? emptyLanes[0] : lane1 !== 0 ? 0 : 1;
     }
-    placeFromDiscard(oppDiscard, lane2);
+    oppSelectedCard = placeFromDiscard(oppDiscard, lane2);
+
+    // AIのアクションキューに決定した復活カード情報を登録（実際のゲームで正しく選択されるようにする）
+    if (!state._actionQueue) state._actionQueue = [];
+    if (mySelectedCard) {
+      state._actionQueue.push({
+        type: 'overdrive',
+        targetIdx: myDiscard.indexOf(mySelectedCard), // すでに splice されている可能性を考慮するが、基本的には UID 照合を優先するため UID を渡す
+        targetUid: mySelectedCard.uid,
+        laneIdx: lane1,
+      });
+    }
+    if (oppSelectedCard) {
+      state._actionQueue.push({
+        type: 'overdrive',
+        targetIdx: oppDiscard.indexOf(oppSelectedCard),
+        targetUid: oppSelectedCard.uid,
+        laneIdx: lane2,
+      });
+    }
   } else if (action === 'warlock_place_demons') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
 
