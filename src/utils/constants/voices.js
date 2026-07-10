@@ -166,11 +166,13 @@ export const voiceAudioCache = {};
 // プレミアムカード用ボイスタイプ変更テーブル
 export const PREMIUM_VOICE_MAP = {
   cleric: 'human_female_sexy',
-  golem: 'human_female_normal',
+  cyberman: 'human_female_normal',
   dancer: 'human_female_normal',
   omyouji: 'human_female_normal',
   mummy: 'human_female_normal',
-  sniper: 'human_female_cute',
+  commander: 'human_female_cool',
+  eye: 'human_female_sexy',
+  pray: 'human_female_cute',
   shaman: 'human_male_ikemen',
   necromancer: 'human_female_assassin',
   dreadnought: 'machine_new',
