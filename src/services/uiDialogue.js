@@ -19,6 +19,11 @@ import {
   STORY_DIALOGUES,
   STORY_NARRATIONS,
   STORY_ENDINGS,
+  STORY_TOTAL_BATTLES,
+  STORY_BGM_CHANGE_BATTLE,
+  STORY_LATE_DIALOGUE_BATTLE,
+  STORY_SATAN_CASTLE_BATTLE,
+  STILL_EFFECT_SATAN_CASTLE,
   getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 
@@ -71,7 +76,7 @@ export function startNextBattleSequence() {
   if (GameState.gameMode !== 'story') return;
   GameState.isSimplifiedDialogue = false;
   saveStoryProgress();
-  if (GameState.battleCount > 10) {
+  if (GameState.battleCount > STORY_TOTAL_BATTLES) {
     startEndingSequence();
     return;
   }
@@ -101,7 +106,7 @@ export function startNextBattleSequence() {
 
   // 戦闘前会話（両者2回ずつの掛け合い、計4行）の取得
   let dialogLines = [];
-  const isLate = battleCount >= 5;
+  const isLate = battleCount >= STORY_LATE_DIALOGUE_BATTLE;
   if (STORY_DIALOGUES[playerId] && STORY_DIALOGUES[playerId][enemyId]) {
     const dialogueSource = isLate
       ? STORY_DIALOGUES[playerId][enemyId].late
@@ -187,7 +192,7 @@ export function setupDialogueScreen() {
     GameState.appState !== 'ending_dialogue'
   ) {
     const targetBgm =
-      GameState.battleCount >= 4
+      GameState.battleCount >= STORY_BGM_CHANGE_BATTLE
         ? AUDIO_INSTANCES.bgmStory02
         : AUDIO_INSTANCES.bgmStory01;
 
@@ -575,29 +580,29 @@ export function startSatanCastleStillTest(charId) {
     {
       speaker: 'narrator',
       text: 'そしてついに——禍々しい瘴気に包まれた「魔王城」の門前に到着した。',
-      stillEffect: 'satan_castle',
+      stillEffect: STILL_EFFECT_SATAN_CASTLE,
       stillStep: 0,
     },
     {
       isStillScroll: true,
-      stillEffect: 'satan_castle',
+      stillEffect: STILL_EFFECT_SATAN_CASTLE,
     },
     {
       speaker: 'narrator',
       text: '見上げるほどの巨城が、天を衝くようにそびえ立っている。',
-      stillEffect: 'satan_castle',
+      stillEffect: STILL_EFFECT_SATAN_CASTLE,
       stillStep: 1,
     },
     {
       speaker: 'narrator',
       text: '門の奥からは、かつてない強大な魔力の波動が、波のように押し寄せてくる。',
-      stillEffect: 'satan_castle',
+      stillEffect: STILL_EFFECT_SATAN_CASTLE,
       stillStep: 1,
     },
     {
       speaker: 'narrator',
       text: '世界の運命を決める突入が、今果たされる。',
-      stillEffect: 'satan_castle',
+      stillEffect: STILL_EFFECT_SATAN_CASTLE,
       stillStep: 1,
     },
   ];
@@ -641,9 +646,9 @@ export function skipStoryDialogue() {
     GameState.lastBattleResult === 'win'
   ) {
     // 6戦目の勝利後会話で、スチル演出が含まれている場合
-    if (GameState.battleCount === 6) {
+    if (GameState.battleCount === STORY_SATAN_CASTLE_BATTLE) {
       const stillIndex = GameState.dialogueQueue.findIndex(
-        (node) => node.stillEffect === 'satan_castle'
+        (node) => node.stillEffect === STILL_EFFECT_SATAN_CASTLE
       );
       if (stillIndex !== -1 && stillIndex >= GameState.currentDialogueIndex) {
         // スチル演出のノードまでスキップする
@@ -660,7 +665,7 @@ export function skipStoryDialogue() {
   }
 
   // 10戦（サタン撃破）を超えていたらエンディングへ
-  if (targetBattleCount > 10) {
+  if (targetBattleCount > STORY_TOTAL_BATTLES) {
     startEndingSequence();
     return;
   }

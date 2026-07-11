@@ -1,6 +1,13 @@
 // Mini Card Battle - Story Mode Dialogue Database Index
 import { CHARACTERS } from '../characters.js';
-import { STORY_NARRATIONS } from './narrations.js';
+import {
+  STORY_NARRATIONS,
+  STORY_TOTAL_BATTLES,
+  STORY_BGM_CHANGE_BATTLE,
+  STORY_LATE_DIALOGUE_BATTLE,
+  STORY_SATAN_CASTLE_BATTLE,
+  STILL_EFFECT_SATAN_CASTLE,
+} from './narrations.js';
 
 // 各キャラクターデータの個別インポート
 import * as android from './android.js';
@@ -28,7 +35,14 @@ const charModules = {
 };
 
 // 再エクスポート用の結合オブジェクト構築
-export { STORY_NARRATIONS };
+export {
+  STORY_NARRATIONS,
+  STORY_TOTAL_BATTLES,
+  STORY_BGM_CHANGE_BATTLE,
+  STORY_LATE_DIALOGUE_BATTLE,
+  STORY_SATAN_CASTLE_BATTLE,
+  STILL_EFFECT_SATAN_CASTLE,
+};
 
 export const STORY_INTROS = {};
 export const PLAYER_TALKS = {};

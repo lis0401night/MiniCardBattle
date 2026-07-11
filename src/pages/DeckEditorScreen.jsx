@@ -84,6 +84,8 @@ export default function DeckEditorScreen({ switchScreen }) {
   const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
+  // battle_dungeon中はデッキ自体にleaderIdが保存されないため、
+  // プレイヤーの現在の設定（playerConfig）からリーダーを取得する
   const leaderId =
     GameState.gameMode === 'battle_dungeon'
       ? GameState.playerConfig?.id || 'android'

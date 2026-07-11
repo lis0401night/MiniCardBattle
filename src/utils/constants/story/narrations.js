@@ -1,14 +1,25 @@
 // ストーリーモード - メインナレーション（各ステージの導入・結末テキスト）
+
+// ストーリー進行の節目を表す定数
+/** ストーリーモードの総戦闘数 */
+export const STORY_TOTAL_BATTLES = 10;
+/** BGMが後半曲に切り替わる戦闘番号 */
+export const STORY_BGM_CHANGE_BATTLE = 4;
+/** 会話テキストがlate版に切り替わる戦闘番号 */
+export const STORY_LATE_DIALOGUE_BATTLE = 5;
+/** サタンの城到着スチル演出が発生する戦闘番号 */
+export const STORY_SATAN_CASTLE_BATTLE = 6;
+/** サタンの城スチル演出ID */
+export const STILL_EFFECT_SATAN_CASTLE = 'satan_castle';
+
 export const STORY_NARRATIONS = {
   1: {
     pre: [
-      '見知らぬ場所の静寂の中で、あなたは目を覚ます。',
-      '記憶は失われ、自分が何者かすら分からない。',
       '彷徨うあなたの前に現れた一人の存在——',
       'その奇妙な出会いが、静かに運命を動かし始める。',
     ],
     post: [
-      '予期せぬ最初の衝突を乗り越え、あなたと同行者は互いの実力を認め合う。',
+      '予期せぬ最初の対決を乗り越え、あなたと同行者は互いの実力を認め合う。',
       '穏やかな風が吹き抜ける広大な世界へと、二人の旅路は静かに続いていく。',
     ],
   },
@@ -68,29 +79,29 @@ export const STORY_NARRATIONS = {
       {
         speaker: 'narrator',
         text: 'そしてついに——禍々しい瘴気に包まれた「魔王城」の門前に到着した。',
-        stillEffect: 'satan_castle',
+        stillEffect: STILL_EFFECT_SATAN_CASTLE,
         stillStep: 0,
       },
       {
         isStillScroll: true,
-        stillEffect: 'satan_castle',
+        stillEffect: STILL_EFFECT_SATAN_CASTLE,
       },
       {
         speaker: 'narrator',
         text: '見上げるほどの巨城が、天を衝くようにそびえ立っている。',
-        stillEffect: 'satan_castle',
+        stillEffect: STILL_EFFECT_SATAN_CASTLE,
         stillStep: 1,
       },
       {
         speaker: 'narrator',
         text: '門の奥からは、かつてない強大な魔力の波動が、波のように押し寄せてくる。',
-        stillEffect: 'satan_castle',
+        stillEffect: STILL_EFFECT_SATAN_CASTLE,
         stillStep: 1,
       },
       {
         speaker: 'narrator',
         text: '世界の運命を決める突入が、今果たされる。',
-        stillEffect: 'satan_castle',
+        stillEffect: STILL_EFFECT_SATAN_CASTLE,
         stillStep: 1,
       },
     ],

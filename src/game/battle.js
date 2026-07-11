@@ -17,6 +17,8 @@ import {
   STORY_DIALOGUES,
   STORY_NARRATIONS,
   PLAYER_TALKS,
+  STORY_BGM_CHANGE_BATTLE,
+  STORY_LATE_DIALOGUE_BATTLE,
   getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 import {
@@ -4073,7 +4075,7 @@ export function endBattle() {
       playSound(AUDIO_INSTANCES.bgmTournament1);
     } else if (GameState.gameMode === 'story') {
       const targetBgm =
-        GameState.battleCount >= 4
+        GameState.battleCount >= STORY_BGM_CHANGE_BATTLE
           ? AUDIO_INSTANCES.bgmStory02
           : AUDIO_INSTANCES.bgmStory01;
       playSound(targetBgm);
@@ -4101,7 +4103,7 @@ export function endBattle() {
 
       // 敗絶掛け合い4行の取得
       let postDialogs = [];
-      const isLate = battleCount >= 5;
+      const isLate = battleCount >= STORY_LATE_DIALOGUE_BATTLE;
       if (STORY_DIALOGUES[playerId] && STORY_DIALOGUES[playerId][enemyId]) {
         const dialogueSource = isLate
           ? STORY_DIALOGUES[playerId][enemyId].late

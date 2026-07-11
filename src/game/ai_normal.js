@@ -489,7 +489,10 @@ export function processActionSequence(
         if (action.targetUid) {
           resIdx = targetDiscardPile.findIndex(
             (c) =>
-              c && (c.baseId === action.targetUid || c.id === action.targetUid)
+              c &&
+              (c.uid === action.targetUid ||
+                c.baseId === action.targetUid ||
+                c.id === action.targetUid)
           );
         }
         if (resIdx === -1 && action.targetIdx !== undefined) {
@@ -2277,7 +2280,7 @@ export function getBestSimulatedMove() {
               tokenLanes,
               'before',
               dIdx,
-              resTargetCard.baseId || resTargetCard.id,
+              resTargetCard.uid,
               null,
               null,
               oppDIdx !== -1 ? oppDIdx : null
