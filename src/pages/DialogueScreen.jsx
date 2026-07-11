@@ -33,13 +33,13 @@ export default function DialogueScreen() {
   useEffect(() => {
     if (isSatanCastleStill) {
       const charId = GameState.playerConfig?.id || 'knight';
-      setBackviewSrc(`assets/still/backview_${charId}.png`);
+      setBackviewSrc(`assets/still/backview_${charId}.webp`);
     }
   }, [isSatanCastleStill]);
 
   const handleBackviewError = () => {
-    if (backviewSrc && backviewSrc !== 'assets/still/backview_knight.png') {
-      setBackviewSrc('assets/still/backview_knight.png');
+    if (backviewSrc && backviewSrc !== 'assets/still/backview_knight.webp') {
+      setBackviewSrc('assets/still/backview_knight.webp');
     }
   };
 
@@ -147,7 +147,7 @@ export default function DialogueScreen() {
             left: 0,
             width: '100%',
             height: '100%',
-            backgroundImage: `url('assets/still/still_satancastle.png')`,
+            backgroundImage: `url('assets/still/still_satancastle.webp')`,
             backgroundSize: '150% auto',
             backgroundPosition: `center ${stillStep === 0 ? '100%' : '0%'}`,
             transition:
