@@ -1,4 +1,4 @@
-const iconPath = (id) => `assets/icons/icon_${id}.png`;
+const iconPath = (id) => `assets/icons/icon_${id}.webp`;
 
 export const AVAILABLE_ICONS = [
   { id: 'player', path: iconPath('player'), name: 'デフォルト' },

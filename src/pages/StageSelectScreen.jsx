@@ -95,7 +95,7 @@ export default function StageSelectScreen() {
                 key={stage.id}
                 className="char-card"
                 style={{
-                  backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stage.id}.png`)}')`,
+                  backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stage.id}.webp`)}')`,
                 }}
                 onClick={() => handleSelect(stage.id)}
               >

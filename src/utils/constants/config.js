@@ -636,7 +636,7 @@ export function getScreenBackgroundStyle(imagePath) {
  */
 export function getStageBackgroundStyle(stageId) {
   return {
-    backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.png`)}')`,
+    backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.webp`)}')`,
   };
 }
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;

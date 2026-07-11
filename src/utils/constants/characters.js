@@ -1100,23 +1100,23 @@ Object.values(CHARACTERS).forEach((char) => {
       image: char.image,
       imageLose: char.imageLose,
       icon: char.icon,
-      iconDamage: char.icon.replace('.png', '_damage.png'),
+      iconDamage: char.icon.replace('.webp', '_damage.webp'),
     },
     summer: {
       id: 'summer',
       name: SKIN_NAMES[char.id] || '水着スキン',
-      image: `assets/characters/char_${char.id}_summer.png`,
-      imageLose: `assets/characters/char_${char.id}_summer_lose.png`,
-      icon: `assets/icons/icon_${char.id}_summer.png`,
-      iconDamage: `assets/icons/icon_${char.id}_summer_damage.png`,
+      image: `assets/characters/char_${char.id}_summer.webp`,
+      imageLose: `assets/characters/char_${char.id}_summer_lose.webp`,
+      icon: `assets/icons/icon_${char.id}_summer.webp`,
+      iconDamage: `assets/icons/icon_${char.id}_summer_damage.webp`,
     },
     school: {
       id: 'school',
       name: SCHOOL_SKIN_NAMES[char.id] || '学園スキン',
-      image: `assets/characters/char_${char.id}_school.png`,
-      imageLose: `assets/characters/char_${char.id}_school_lose.png`,
-      icon: `assets/icons/icon_${char.id}_school.png`,
-      iconDamage: `assets/icons/icon_${char.id}_school_damage.png`,
+      image: `assets/characters/char_${char.id}_school.webp`,
+      imageLose: `assets/characters/char_${char.id}_school_lose.webp`,
+      icon: `assets/icons/icon_${char.id}_school.webp`,
+      iconDamage: `assets/icons/icon_${char.id}_school_damage.webp`,
       unlockCondition: 'イベント報酬',
     },
   };
@@ -1126,10 +1126,10 @@ Object.values(CHARACTERS).forEach((char) => {
     char.skins[`${char.id}_high`] = {
       id: `${char.id}_high`,
       name: HIGH_SKIN_NAMES[char.id],
-      image: `assets/characters/char_${char.id}_high.png`,
-      imageLose: `assets/characters/char_${char.id}_high_lose.png`,
-      icon: `assets/icons/icon_${char.id}_high.png`,
-      iconDamage: `assets/icons/icon_${char.id}_high_damage.png`,
+      image: `assets/characters/char_${char.id}_high.webp`,
+      imageLose: `assets/characters/char_${char.id}_high_lose.webp`,
+      icon: `assets/icons/icon_${char.id}_high.webp`,
+      iconDamage: `assets/icons/icon_${char.id}_high_damage.webp`,
       unlockCondition: '実績達成で入手',
     };
   }
@@ -1561,7 +1561,7 @@ export const RED_FRAME_CHARACTERS = BOSS_CHARACTER_IDS;
  */
 export function getPlayerIconPath(player) {
   if (player && player.icon) {
-    return appendVersionQuery(`assets/icons/icon_${player.icon}.png`);
+    return appendVersionQuery(`assets/icons/icon_${player.icon}.webp`);
   }
   return appendVersionQuery('assets/icons/icon_player.webp');
 }
