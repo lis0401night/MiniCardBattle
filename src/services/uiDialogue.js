@@ -51,6 +51,22 @@ export function handleDialogueChoice(choiceIndex) {
 // Reactから呼び出せるようにグローバルにも登録
 window.handleDialogueChoice = handleDialogueChoice;
 
+/**
+ * ストーリーモードの敵リーダー情報を構築して GameState.enemyConfig に適用する
+ * @param {string} enemyId - 敵ID ('shadow' または キャラクターID)
+ */
+export function applyStoryEnemyConfig(enemyId) {
+  if (enemyId === 'shadow') {
+    GameState.enemyConfig = { ...GameState.playerConfig };
+    GameState.enemyConfig.isShadow = true;
+    GameState.enemyConfig.name = `影の${GameState.playerConfig.name}`;
+  } else {
+    const charId = enemyId || 'android';
+    GameState.enemyConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig.isShadow = false;
+  }
+}
+
 export function startNextBattleSequence() {
   if (GameState.gameMode !== 'story') return;
   GameState.isSimplifiedDialogue = false;
@@ -59,18 +75,9 @@ export function startNextBattleSequence() {
     startEndingSequence();
     return;
   }
-  let nextEnemyId = GameState.storyQueue[GameState.battleCount - 1];
-  let isShadow = false;
-  if (nextEnemyId === 'shadow') {
-    isShadow = true;
-    GameState.enemyConfig = { ...GameState.playerConfig };
-    GameState.enemyConfig.isShadow = true;
-    GameState.enemyConfig.name = `影の${GameState.playerConfig.name}`;
-  } else {
-    const charId = nextEnemyId || 'android';
-    GameState.enemyConfig = { ...CHARACTERS[charId] };
-    GameState.enemyConfig.isShadow = false;
-  }
+  const nextEnemyId = GameState.storyQueue[GameState.battleCount - 1];
+  applyStoryEnemyConfig(nextEnemyId);
+
   if (GameState.gameMode === 'story') {
     GameState.aiLevel = GameState.storyDifficulty;
     console.log(
@@ -79,8 +86,8 @@ export function startNextBattleSequence() {
   }
   GameState.appState = 'pre_dialogue';
 
-  // --- ストーリー豪華ダイアログシステム：戦闘前の構築 ---
   const playerId = GameState.playerConfig.id;
+  const isShadow = GameState.enemyConfig.isShadow;
   const enemyId = isShadow ? 'shadow' : GameState.enemyConfig.id;
   const battleCount = GameState.battleCount;
 
@@ -663,15 +670,7 @@ export function skipStoryDialogue() {
 
   // 対戦相手の設定
   const nextEnemyId = GameState.storyQueue[targetBattleCount - 1];
-  if (nextEnemyId === 'shadow') {
-    GameState.enemyConfig = { ...GameState.playerConfig };
-    GameState.enemyConfig.isShadow = true;
-    GameState.enemyConfig.name = `影の${GameState.playerConfig.name}`;
-  } else {
-    const charId = nextEnemyId || 'android';
-    GameState.enemyConfig = { ...CHARACTERS[charId] };
-    GameState.enemyConfig.isShadow = false;
-  }
+  applyStoryEnemyConfig(nextEnemyId);
 
   GameState.aiLevel = GameState.storyDifficulty;
   GameState.appState = 'pre_dialogue';

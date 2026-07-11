@@ -1011,7 +1011,7 @@ export const storyDialogues = {
         {
           speaker: 'enemy',
           charData: { id: 'shadow' },
-          text: 'グ、アアッ……！ 喜ぶのは早い……！ 我は魔王サタンの魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！',
+          text: 'グ、アアッ……！ ククク……喜ぶのは早いぞ。我は魔王サタンの魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！',
         },
         {
           speaker: 'player',
