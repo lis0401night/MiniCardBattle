@@ -218,18 +218,30 @@ export default function TournamentExchangeScreen({ switchScreen }) {
                   <div
                     className="card-bg"
                     style={{
-                      backgroundImage: `url('${imgUrl}')`,
-                      backgroundSize: isCard
-                        ? 'cover'
-                        : isPlaymat || isIcon
-                          ? 'contain'
-                          : '200%',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition:
-                        isPlaymat || isIcon ? 'center' : 'top center',
+                      width: '100%',
+                      height: '100%',
+                      position: 'relative',
                       backgroundColor: isPlaymat || isIcon ? '#0f172a' : '',
                     }}
-                  ></div>
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={displayName}
+                      loading="lazy"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: isCard
+                          ? 'cover'
+                          : isPlaymat || isIcon
+                            ? 'contain'
+                            : 'cover',
+                        objectPosition:
+                          isPlaymat || isIcon ? 'center' : 'top center',
+                        display: 'block',
+                      }}
+                    />
+                  </div>
 
                   {isCard && (
                     <>

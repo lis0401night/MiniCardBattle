@@ -279,8 +279,25 @@ export default function DefenseExchangeScreen() {
                 >
                   <div
                     className="card-bg"
-                    style={{ backgroundImage: `url('${imgUrl}')` }}
-                  ></div>
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      position: 'relative',
+                    }}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={itemObj.name}
+                      loading="lazy"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'top center',
+                        display: 'block',
+                      }}
+                    />
+                  </div>
 
                   {itemInfo.type === 'card' && (
                     <div
