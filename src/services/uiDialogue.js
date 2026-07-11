@@ -514,14 +514,12 @@ export function executeContinue() {
     } else {
       GameState.appState = 'pre_dialogue';
       let introText =
-        (GameState.enemyConfig.preBattleLine || '次は私がお相手よ。') +
-        '\n' +
         getDialogue(
           GameState.enemyConfig,
           GameState.playerConfig,
           'intro',
           'enemy'
-        );
+        ) || '・・・・';
       if (GameState.enemyConfig.isShadow) introText = '・・・・';
       GameState.dialogueQueue = [
         { speaker: 'enemy', text: introText },
@@ -686,14 +684,12 @@ export function skipStoryDialogue() {
 
   // 簡易戦闘前会話（フリーバトル形式）の構築
   let introText =
-    (GameState.enemyConfig.preBattleLine || '次は私がお相手よ。') +
-    '\n' +
     getDialogue(
       GameState.enemyConfig,
       GameState.playerConfig,
       'intro',
       'enemy'
-    );
+    ) || '・・・・';
   if (GameState.enemyConfig.isShadow) introText = '・・・・';
 
   const playerIntroText = GameState.enemyConfig.isShadow
