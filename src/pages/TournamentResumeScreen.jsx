@@ -7,9 +7,9 @@ import {
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { DEFAULT_PLAYER_NAME } from '../utils/constants/config.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { DEFAULT_PLAYER_NAME } from '../utils/constants/config.js';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {
@@ -40,11 +40,22 @@ export default function TournamentResumeScreen() {
   }, []);
 
   const tState = saveData?.tournament;
-  const pConf = saveData?.playerConfig || {
-    name: DEFAULT_PLAYER_NAME,
-    rarity: 4,
-    icon: CHARACTERS.android.icon,
-  };
+  const pConf = useMemo(() => {
+    const rawConf = saveData?.playerConfig || {
+      name: DEFAULT_PLAYER_NAME,
+      rarity: 4,
+      icon: CHARACTERS.android.icon,
+    };
+    return {
+      ...rawConf,
+      icon: rawConf.icon
+        ? rawConf.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+        : null,
+      image: rawConf.image
+        ? rawConf.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+        : null,
+    };
+  }, [saveData]);
   const currentRound = tState?.round || 1;
 
   const handleResume = () => {

@@ -267,7 +267,10 @@ export default function CardListScreen() {
         </button>
       </div>
 
-      <div className="card-list-container">
+      <div
+        className="card-list-container"
+        style={{ flex: 1, minHeight: 0, maxHeight: '500px' }}
+      >
         <div id="gallery-card-grid" className="card-list-grid-3col">
           {filteredMasterCards.map((template) => {
             const ownedCount = inventory[template.id] || 0;

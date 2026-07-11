@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 
+import TitleParticles from '../components/common/TitleParticles.jsx';
 import { goToModeSelect } from '../services/uiMainCore.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
+import { getCardImgUrl } from '../utils/gameUtils.js';
 import { preloadAllGameResources } from '../utils/resourceLoader.js';
 import { unlockAudio } from '../utils/sounds.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { getCardImgUrl } from '../utils/gameUtils.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
-import TitleParticles from '../components/common/TitleParticles.jsx';
 
 const CARD_ROTATION_INTERVAL_MS = 20000; // カード切り替え間隔（ミリ秒）
 
@@ -118,7 +118,7 @@ export default function TitleScreen() {
         <img
           src={
             isLoading
-              ? appendVersionQuery('assets/ui/title_loading.jpg')
+              ? appendVersionQuery('assets/ui/title_loading.png')
               : appendVersionQuery(
                   `assets/ui/title_img_${String(bgIndex).padStart(3, '0')}.png`
                 )

@@ -1,23 +1,23 @@
-import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
-import { GameState } from '../state/gameState.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
-import { showPointAcquisitionModal } from '../services/uiModals.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
-import {
-  showDungeonMenu,
-  performFadeTransition,
-} from '../services/uiMainCore.js';
 import { startBattleFlow } from '../services/deck.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
-import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 import {
-  DEFAULT_DUNGEON_AI_LEVEL,
+  performFadeTransition,
+  showDungeonMenu,
+} from '../services/uiMainCore.js';
+import { showPointAcquisitionModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
+import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS } from '../utils/constants/characters.js';
+import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
+  DEFAULT_DUNGEON_AI_LEVEL,
 } from '../utils/constants/config.js';
+import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 /**
  * 敵のスキンを GameState.enemySkins に同期する
@@ -132,7 +132,27 @@ export function loadDungeonProgress() {
 
     // プレイヤーコンフィグを直接復元（無い場合は従来のleaderIdもしくはandroidでフォールバック）
     if (data.playerConfig) {
-      GameState.playerConfig = data.playerConfig;
+      GameState.playerConfig = {
+        ...data.playerConfig,
+        icon: data.playerConfig.icon
+          ? data.playerConfig.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+          : data.playerConfig.icon,
+        image: data.playerConfig.image
+          ? data.playerConfig.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+          : data.playerConfig.image,
+        imageLose: data.playerConfig.imageLose
+          ? data.playerConfig.imageLose.replace(
+              /\.(png|jpg|jpeg|gif)$/i,
+              '.webp'
+            )
+          : data.playerConfig.imageLose,
+        imageEnding: data.playerConfig.imageEnding
+          ? data.playerConfig.imageEnding.replace(
+              /\.(png|jpg|jpeg|gif)$/i,
+              '.webp'
+            )
+          : data.playerConfig.imageEnding,
+      };
     } else if (data.leaderId) {
       GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
     } else {

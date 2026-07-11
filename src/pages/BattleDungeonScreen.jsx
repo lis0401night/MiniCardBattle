@@ -1,23 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   loadDungeonProgress,
+  resolveDungeonDeck,
   retireDungeon,
   saveDungeonProgress,
   selectRentalDeck,
   selectRewardCard,
   startDungeonBattle,
-  resolveDungeonDeck,
 } from '../game/battleDungeon.js';
 import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
+import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   appendVersionQuery,
   DEFAULT_DUNGEON_AI_LEVEL,
   DEFAULT_PLAYER_NAME,
 } from '../utils/constants/config.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 
@@ -262,11 +262,22 @@ function ResumeSelect() {
       }
     }
   }, []);
-  const pConf = saveData?.playerConfig || {
-    name: DEFAULT_PLAYER_NAME,
-    rarity: 4,
-    icon: '',
-  };
+  const pConf = useMemo(() => {
+    const rawConf = saveData?.playerConfig || {
+      name: DEFAULT_PLAYER_NAME,
+      rarity: 4,
+      icon: '',
+    };
+    return {
+      ...rawConf,
+      icon: rawConf.icon
+        ? rawConf.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+        : '',
+      image: rawConf.image
+        ? rawConf.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+        : null,
+    };
+  }, [saveData]);
   const pCurrentHp = saveData?.playerHP !== undefined ? saveData.playerHP : 20;
 
   const handleResume = () => {

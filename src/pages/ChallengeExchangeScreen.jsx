@@ -87,7 +87,10 @@ export default function ChallengeExchangeScreen() {
         {challengePoints.total}
       </div>
 
-      <div className="card-list-container">
+      <div
+        className="card-list-container"
+        style={{ flex: 1, minHeight: 0, maxHeight: '500px' }}
+      >
         <div id="exchange-item-grid" className="card-list-grid-3col">
           {CHALLENGE_EXCHANGE_LINEUP.map((item) => {
             const isCard = item.type === 'card';

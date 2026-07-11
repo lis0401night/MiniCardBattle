@@ -182,7 +182,10 @@ export default function DefenseExchangeScreen() {
         所持ポイント: {points.current} / 総ポイント: {points.total}
       </div>
 
-      <div className="card-list-container">
+      <div
+        className="card-list-container"
+        style={{ flex: 1, minHeight: 0, maxHeight: '500px' }}
+      >
         <div id="exchange-item-grid" className="card-list-grid-3col">
           {exchangeItems.map((itemInfo, index) => {
             const cardMaster = CARD_MASTER || [];

@@ -464,20 +464,6 @@ h2 {
   scrollbar-color: #475569 rgba(255, 255, 255, 0.05);
 }
 
-.card-list-container {
-  width: 95%;
-  max-width: 440px;
-  height: 400px;
-
-  overflow-y: auto;
-  background: rgba(15, 23, 42, 1);
-  border-radius: 12px;
-  border: 1px solid #334155;
-  padding: 10px 5px;
-  box-sizing: border-box;
-  margin-bottom: 10px;
-}
-
 .card-list-grid-3col {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3161,10 +3147,10 @@ h2 {
 }
 
 #to-card-1 {
-  background-image: url('/assets/ui/first_player.jpg');
+  background-image: url('/assets/ui/first_player.png');
 }
 #to-card-2 {
-  background-image: url('/assets/ui/second_player.jpg');
+  background-image: url('/assets/ui/second_player.png');
 }
 
 .to-result-label {

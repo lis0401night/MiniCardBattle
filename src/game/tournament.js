@@ -1,3 +1,7 @@
+import { loadDeck } from '../services/deck.js';
+import { setupDialogueScreen } from '../services/uiDialogue.js';
+import { performFadeTransition } from '../services/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
   TOURNAMENT_INTRO_DIALOGUE,
@@ -8,10 +12,6 @@ import {
 } from '../utils/constants/eventTournamentDialogues.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { loadDeck } from '../services/deck.js';
-import { GameState } from '../state/gameState.js';
-import { setupDialogueScreen } from '../services/uiDialogue.js';
-import { performFadeTransition } from '../services/uiMainCore.js';
 
 /**
  * トーナメント用キャラクター名を生成する
@@ -266,7 +266,37 @@ export function loadTournamentProgress() {
     try {
       const saveData = JSON.parse(json);
       GameState.tournament = saveData.tournament;
-      GameState.playerConfig = saveData.playerConfig;
+      if (saveData.playerConfig) {
+        GameState.playerConfig = {
+          ...saveData.playerConfig,
+          icon: saveData.playerConfig.icon
+            ? saveData.playerConfig.icon.replace(
+                /\.(png|jpg|jpeg|gif)$/i,
+                '.webp'
+              )
+            : saveData.playerConfig.icon,
+          image: saveData.playerConfig.image
+            ? saveData.playerConfig.image.replace(
+                /\.(png|jpg|jpeg|gif)$/i,
+                '.webp'
+              )
+            : saveData.playerConfig.image,
+          imageLose: saveData.playerConfig.imageLose
+            ? saveData.playerConfig.imageLose.replace(
+                /\.(png|jpg|jpeg|gif)$/i,
+                '.webp'
+              )
+            : saveData.playerConfig.imageLose,
+          imageEnding: saveData.playerConfig.imageEnding
+            ? saveData.playerConfig.imageEnding.replace(
+                /\.(png|jpg|jpeg|gif)$/i,
+                '.webp'
+              )
+            : saveData.playerConfig.imageEnding,
+        };
+      } else {
+        GameState.playerConfig = null;
+      }
       if (saveData.playerHP !== undefined) {
         GameState.playerHP = saveData.playerHP;
       }

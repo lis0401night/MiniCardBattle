@@ -357,12 +357,12 @@ export function showSpeechBubble(target) {
     // アイコンをダメージ画像に変更
     if (iconEl && iconEl.src) {
       const originalSrc = iconEl.src;
-      if (!originalSrc.includes('_damage.png')) {
-        iconEl.src = originalSrc.replace('.png', '_damage.png');
+      if (!originalSrc.includes('_damage.webp')) {
+        iconEl.src = originalSrc.replace('.webp', '_damage.webp');
         setTimeout(() => {
           const currentHP =
             target === 'blue' ? GameState.playerHP : GameState.enemyHP;
-          if (currentHP > 0 && iconEl.src.includes('_damage.png')) {
+          if (currentHP > 0 && iconEl.src.includes('_damage.webp')) {
             iconEl.src = originalSrc;
           }
         }, 1500);
