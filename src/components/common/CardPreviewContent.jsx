@@ -220,24 +220,37 @@ export default function CardPreviewContent({
                   <div
                     className="card-bg"
                     style={{
-                      backgroundImage: `url('${imgUrl}')`,
-                      filter: filter,
-                      backgroundSize: isSkin ? 'contain' : 'cover',
-                      backgroundRepeat:
-                        isSkin || styleProps.isPlaymat || styleProps.isIcon
-                          ? 'no-repeat'
-                          : 'inherit',
-                      backgroundPosition: isSkin
-                        ? 'top center'
-                        : styleProps.isPlaymat || styleProps.isIcon
-                          ? 'center'
-                          : 'center center',
+                      width: '100%',
+                      height: '100%',
+                      position: 'relative',
                       backgroundColor:
                         styleProps.isPlaymat || styleProps.isIcon
                           ? '#0f172a'
                           : '',
                     }}
-                  ></div>
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={card.name}
+                      decoding="sync"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: isSkin
+                          ? 'contain'
+                          : styleProps.isPlaymat || styleProps.isIcon
+                            ? 'contain'
+                            : 'cover',
+                        objectPosition: isSkin
+                          ? 'top center'
+                          : styleProps.isPlaymat || styleProps.isIcon
+                            ? 'center'
+                            : 'center center',
+                        filter: filter,
+                        display: 'block',
+                      }}
+                    />
+                  </div>
                   {isStandardCard && (
                     <div
                       className="card-power"
