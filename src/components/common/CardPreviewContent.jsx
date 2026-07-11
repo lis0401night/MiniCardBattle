@@ -774,6 +774,7 @@ export default function CardPreviewContent({
         >
           <img
             src={imgUrl}
+            decoding="sync"
             style={{
               width: 'min(95vw, calc(95vh * 2 / 3))',
               height: 'min(95vh, calc(95vw * 3 / 2))',
