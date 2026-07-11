@@ -11,6 +11,8 @@ reviews:
     - '!node_modules/**'
     - '!dist/**'
     - '!package-lock.json'
+    - '!public/assets/**'
+    - '!**/*.{webp,png,jpg,jpeg,gif}'
     - 'src/**/*.js'
     - 'src/**/*.jsx'
     - 'src/**/*.css'
