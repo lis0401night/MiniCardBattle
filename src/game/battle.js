@@ -3846,11 +3846,12 @@ export async function startMulliganPhase() {
   GameState.placementMessage = null;
   if (updateBattleUIHook) updateBattleUIHook();
 
+  const orderPrefix = GameState.firstPlayer === 'blue' ? '先攻：' : '後攻：';
   let playerPromise = waitPlayerHandSelection(
     3,
     'blue',
     false,
-    '引き直すカードを3枚まで選んでください'
+    `${orderPrefix}引き直すカードを3枚まで選んでください`
   );
   let enemyPromise;
 

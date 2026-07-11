@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { showNextDialogue } from '../services/uiDialogue.js';
+import { showNextDialogue, skipStoryDialogue } from '../services/uiDialogue.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
 
@@ -12,6 +12,21 @@ export default function DialogueScreen() {
   const d = dialogueData;
   const isSatanCastleStill = d.stillEffect === 'satan_castle';
   const stillStep = d.stillStep !== undefined ? d.stillStep : 0;
+
+  const isStoryMode = GameState.gameMode === 'story';
+  const isStillShowing = !!(isSatanCastleStill || d.stillEffect || d.hideBox);
+  const isValidState =
+    GameState.appState === 'story_intro' ||
+    (GameState.appState === 'pre_dialogue' &&
+      !GameState.isSimplifiedDialogue) ||
+    (GameState.appState === 'post_dialogue' &&
+      GameState.lastBattleResult === 'win');
+  const isAfterSatanDefeated =
+    GameState.battleCount >= 10 &&
+    GameState.appState === 'post_dialogue' &&
+    GameState.lastBattleResult === 'win';
+  const showSkipButton =
+    isStoryMode && !isStillShowing && isValidState && !isAfterSatanDefeated;
 
   const [backviewSrc, setBackviewSrc] = useState('');
 
@@ -94,6 +109,35 @@ export default function DialogueScreen() {
         overflow: 'hidden',
       }}
     >
+      {/* ストーリー会話スキップボタン */}
+      {showSkipButton && (
+        <div
+          id="dialogue-skip-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            skipStoryDialogue();
+          }}
+          style={{
+            position: 'absolute',
+            top: '24px',
+            right: '24px',
+            color: '#ffffff',
+            fontSize: '1.25rem',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            zIndex: 1000,
+            animation: 'blink 1.5s infinite',
+            textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+            userSelect: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          SKIP►
+        </div>
+      )}
+
       {/* 魔王城スチル演出用レイヤー */}
       {isSatanCastleStill && (
         <div

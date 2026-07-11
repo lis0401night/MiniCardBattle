@@ -84,7 +84,10 @@ export default function DeckEditorScreen({ switchScreen }) {
   const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
-  const leaderId = deck.leaderId || GameState.playerConfig?.id || 'android';
+  const leaderId =
+    GameState.gameMode === 'battle_dungeon'
+      ? GameState.playerConfig?.id || 'android'
+      : deck.leaderId || GameState.playerConfig?.id || 'android';
 
   // グローバルからの再描画用コールバック（外部からsetRenderDeckEditHook経由で呼ばれる）
   const updateDeckEditor = React.useCallback(() => {
@@ -559,7 +562,8 @@ export default function DeckEditorScreen({ switchScreen }) {
           {leaderId &&
             leaderId !== 'player' &&
             leaderId !== 'unknown' &&
-            leaderId !== 'npc' && (
+            leaderId !== 'npc' &&
+            CHARACTERS[leaderId] && (
               <div
                 className="banner-icon-wrapper"
                 style={{

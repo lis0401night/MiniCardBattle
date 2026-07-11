@@ -314,6 +314,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>プレイヤー</label>
               <select
+                id="select-player-char"
                 style={selectStyle}
                 value={playerCharId}
                 onChange={(e) => setPlayerCharId(e.target.value)}
@@ -328,6 +329,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>敵</label>
               <select
+                id="select-enemy-char"
                 style={selectStyle}
                 value={enemyCharId}
                 onChange={(e) => setEnemyCharId(e.target.value)}
@@ -344,6 +346,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>ゲームモード</label>
               <select
+                id="select-game-mode"
                 style={selectStyle}
                 value={gameMode}
                 onChange={(e) => setGameMode(e.target.value)}
@@ -358,6 +361,7 @@ export default function DebugBattleScreen() {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>AI難易度</label>
               <select
+                id="select-ai-level"
                 style={selectStyle}
                 value={aiLevel}
                 onChange={(e) => setAiLevel(Number(e.target.value))}

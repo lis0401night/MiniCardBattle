@@ -538,7 +538,7 @@ export const storyDialogues = {
       post: [
         {
           speaker: 'enemy',
-          text: 'ハァ……やれやれ。銃を引く力も残ってねえか……。今回の獲物は諦めるしかなさそうだね',
+          text: 'ハァ……やれやれ。銃を引く力も残ってないか……。今回の獲物は諦めるしかなさそうだね',
         },
         {
           speaker: 'player',
@@ -887,7 +887,7 @@ export const storyDialogues = {
         {
           speaker: 'enemy',
           charData: { id: 'shadow' },
-          text: 'グ、アアッ……！ クスクス……喜ぶのは早いぞ。我は魔王の魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！',
+          text: 'グ、アアッ……！ クスクス……喜ぶのは早いぞ。我は魔王サタンの魔力の残滓、その暗黒の意志が形を成した「配下の化身」に過ぎん……！',
         },
         {
           speaker: 'player',
@@ -896,7 +896,7 @@ export const storyDialogues = {
         {
           speaker: 'enemy',
           charData: { id: 'shadow' },
-          text: '魔王はすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！',
+          text: '魔王サタンはすでに本格的な復活を遂げ、魔王城の最深部にて、世界のすべてを絶望と虚無の闇に沈める準備を終えているのだ……！',
         },
       ],
     },

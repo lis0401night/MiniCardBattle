@@ -1377,46 +1377,83 @@ export function getCurrentTutorialStep() {
  */
 export function filterHandCardClick(cardIndex) {
   if (!isTutorialMode()) return false;
+
   const step = getCurrentTutorialStep();
   if (!step) return false;
 
-  if (step.type === 'selectCard') {
+  // 1. 手札破棄モード（リーダースキル等の解決）中
+  if (GameState.isDiscardingMode) {
+    const discardTarget = GameState.tutorial?.discardTargetCardId;
+    if (discardTarget) {
+      const card = GameState.playerHand[cardIndex];
+      if (card && card.id !== discardTarget && card.baseId !== discardTarget) {
+        showBlockMessage(
+          '「' +
+            (CARD_MASTER.find((c) => c.id === discardTarget)?.name ||
+              discardTarget) +
+            '」を選んでね！'
+        );
+        return true; // 間違ったカードなのでブロック
+      }
+    }
+    return false; // 破棄モード中で条件を満たしていれば許可
+  }
+
+  // 2. カード選択ステップ (selectCard) または配置ステップ (placeCard) での対象カード選択
+  if (step.type === 'selectCard' || step.type === 'placeCard') {
     const card = GameState.playerHand[cardIndex];
-    if (
+    const isTargetCard =
       card &&
-      (card.id === step.targetCardId || card.baseId === step.targetCardId)
-    ) {
-      // 正しいカードが選択された → 少し遅延してステップ進行
-      // handleHandCardClickの後続処理（selectedCardIndex設定）が完了してから進行させる
-      setTimeout(() => advanceStep(), 50);
-      return false; // ブロックしない（選択を許可）
+      (card.id === step.targetCardId || card.baseId === step.targetCardId);
+
+    if (isTargetCard) {
+      // すでにこのカードが選択状態にある場合、チュートリアル中での「選択解除」を禁止（選択状態を維持）
+      if (GameState.selectedCardIndex === cardIndex) {
+        return true;
+      }
+      return false; // 正しいカードなので許可
     } else {
-      // 間違ったカード
       showBlockMessage(step.blockMessage);
-      return true;
+      return true; // 間違ったカードなのでブロック
     }
   }
 
-  // selectCard以外のステップでは手札操作をブロック
-  // ただし手札破棄モード（リーダースキル等）中は許可する
-  if (step.type !== 'placeCard' && !GameState.isDiscardingMode) {
-    showBlockMessage(step.blockMessage || 'まだカードを選べないよ！');
-    return true;
-  }
+  // selectCard ステップおよび DiscardingMode 以外では、手札のクリックは一切禁止（選択切り替えや解除を防ぐ）
+  showBlockMessage(step.blockMessage || 'まだカードを選べないよ！');
+  return true;
+}
 
-  // 手札破棄モード中: discardTargetCardIdが指定されている場合、そのカード以外をブロック
-  const discardTarget = GameState.tutorial?.discardTargetCardId;
-  if (GameState.isDiscardingMode && discardTarget) {
-    const card = GameState.playerHand[cardIndex];
-    if (card && card.id !== discardTarget && card.baseId !== discardTarget) {
-      showBlockMessage(
-        '「' +
-          (CARD_MASTER.find((c) => c.id === discardTarget)?.name ||
-            discardTarget) +
-          '」を選んでね！'
-      );
-      return true;
-    }
+/**
+ * チュートリアル用のカード配置ステップの条件（カードID/baseId、レーン）が一致しているかを判定する共通ヘルパー
+ * @param {string} cardId - カードのID
+ * @param {string} baseId - カードのベースID (プレミアム/進化前ID)
+ * @param {number} lane - 配置されたレーン
+ * @param {object} step - 現在のチュートリアルステップ
+ * @returns {boolean} 条件を満たしていれば true
+ */
+function evaluatePlaceCardStep(cardId, baseId, lane, step) {
+  if (!step || step.type !== 'placeCard') return false;
+
+  // 1. カードの一致判定 (IDまたはbaseIdのいずれかがtargetCardIdと一致しているか)
+  const isCorrectCard =
+    (cardId && cardId === step.targetCardId) ||
+    (baseId && baseId === step.targetCardId);
+
+  if (!isCorrectCard) return false;
+
+  // 2. レーンの一致判定
+  const hasTargetLane = step.targetLane != null;
+  const hasTargetLanes =
+    Array.isArray(step.targetLanes) && step.targetLanes.length > 0;
+
+  if (!hasTargetLane && !hasTargetLanes) {
+    return true; // どちらも指定されていない場合は自由配置
+  }
+  if (hasTargetLane && lane === step.targetLane) {
+    return true; // 指定された単一レーンと一致
+  }
+  if (hasTargetLanes && step.targetLanes.includes(lane)) {
+    return true; // 指定された複数レーンのいずれかと一致
   }
 
   return false;
@@ -1428,6 +1465,7 @@ export function filterHandCardClick(cardIndex) {
  */
 export function filterLaneClick(lane, side) {
   if (!isTutorialMode()) return false;
+
   const step = getCurrentTutorialStep();
   if (!step) return false;
 
@@ -1438,11 +1476,15 @@ export function filterLaneClick(lane, side) {
         ? GameState.playerHand[GameState.selectedCardIndex]
         : null;
 
+    if (!selectedCard) {
+      showBlockMessage('今はカードを置けないよ！');
+      return true;
+    }
+
     // 2. 選択されているカードが、指定された targetCardId と一致しているか判定
     const isCorrectCard =
-      selectedCard &&
-      (selectedCard.id === step.targetCardId ||
-        selectedCard.baseId === step.targetCardId);
+      selectedCard.id === step.targetCardId ||
+      selectedCard.baseId === step.targetCardId;
 
     if (!isCorrectCard) {
       // 指定外のカードが選択されている場合は配置を完全にブロックし、警告を表示
@@ -1453,26 +1495,19 @@ export function filterLaneClick(lane, side) {
       return true;
     }
 
-    // targetLane および targetLanes のいずれかが設定されている場合はその条件に従い、
-    // どちらも設定されていない場合のみ自由配置（どのレーンでもOK）とする
-    const hasTargetLane = step.targetLane != null;
-    const hasTargetLanes =
-      Array.isArray(step.targetLanes) && step.targetLanes.length > 0;
+    // 3. 共通ヘルパーでレーン制限を含めてチェック
+    const isAllowed = evaluatePlaceCardStep(
+      selectedCard.id,
+      selectedCard.baseId,
+      lane,
+      step
+    );
 
-    let isLaneAllowed = false;
-    if (!hasTargetLane && !hasTargetLanes) {
-      isLaneAllowed = true; // どちらも指定されていない場合は自由配置
-    } else if (hasTargetLane && lane === step.targetLane) {
-      isLaneAllowed = true; // 指定された単一レーンと一致
-    } else if (hasTargetLanes && step.targetLanes.includes(lane)) {
-      isLaneAllowed = true; // 指定された複数レーンのいずれかと一致
-    }
-
-    if (isLaneAllowed) {
-      return false;
+    if (isAllowed) {
+      return false; // 配置を許可
     } else {
       showBlockMessage(step.blockMessage);
-      return true;
+      return true; // 配置をブロック
     }
   }
 
@@ -1484,34 +1519,20 @@ export function filterLaneClick(lane, side) {
 /**
  * 実際にカードが配置されたことをチュートリアルエンジンに通知する
  */
-export function notifyCardPlaced(cardId, lane) {
+export function notifyCardPlaced(cardId, baseId, lane) {
   if (!isTutorialMode()) return;
   const step = getCurrentTutorialStep();
   if (step && step.type === 'placeCard') {
-    const isCorrectCard =
-      cardId === step.targetCardId ||
-      CARD_MASTER.find((c) => c.id === cardId)?.baseId === step.targetCardId;
+    const isAllowed = evaluatePlaceCardStep(cardId, baseId, lane, step);
 
-    const hasTargetLane = step.targetLane != null;
-    const hasTargetLanes =
-      Array.isArray(step.targetLanes) && step.targetLanes.length > 0;
-
-    let isLaneAllowed = false;
-    if (!hasTargetLane && !hasTargetLanes) {
-      isLaneAllowed = true;
-    } else if (hasTargetLane && lane === step.targetLane) {
-      isLaneAllowed = true;
-    } else if (hasTargetLanes && step.targetLanes.includes(lane)) {
-      isLaneAllowed = true;
-    }
-
-    if (isCorrectCard && isLaneAllowed) {
+    if (isAllowed) {
       if (step.nextPlacementTargetLane !== undefined) {
         GameState.tutorial.placementTargetLane = step.nextPlacementTargetLane;
+      }
+      if (step.nextPlacementBlockMessage !== undefined) {
         GameState.tutorial.placementBlockMessage =
           step.nextPlacementBlockMessage;
       }
-      advanceStep();
     }
   }
 }
@@ -1814,18 +1835,32 @@ export async function runTutorialFlow() {
         break;
 
       case 'selectCard':
-        // プレイヤーの手札カード選択操作を待つ
-        // filterHandCardClick 内で stepIndex が進む
+        // プレイヤーの手札カード選択操作を待つ (状態を直接監視)
         GameState.tutorial.waitingForInput = true;
-        await waitForStepAdvance(GameState.tutorial.stepIndex);
+        await waitUntilTutorialCondition(
+          () => {
+            if (!GameState.tutorial) return true;
+            const selectedCard =
+              GameState.selectedCardIndex !== null
+                ? GameState.playerHand[GameState.selectedCardIndex]
+                : null;
+            return (
+              selectedCard &&
+              (selectedCard.id === step.targetCardId ||
+                selectedCard.baseId === step.targetCardId)
+            );
+          },
+          TUTORIAL_POLL_INTERVAL_MS,
+          null
+        );
         if (!GameState.tutorial) break;
         GameState.tutorial.waitingForInput = false;
         await sleep(200);
+        advanceStep();
         break;
 
       case 'placeCard':
-        // プレイヤーのレーン選択操作を待つ
-        // filterLaneClick 内で stepIndex が進む
+        // プレイヤーのレーン選択操作を待つ (盤面状態を直接監視)
         if (step.targetDiscardId !== undefined) {
           GameState.tutorial.targetDiscardId = step.targetDiscardId;
           GameState.tutorial.discardBlockMessage = step.discardBlockMessage;
@@ -1837,7 +1872,41 @@ export async function runTutorialFlow() {
           GameState.tutorial.pauseBeforeEnemyTurn = true;
         }
         GameState.tutorial.waitingForInput = true;
-        await waitForStepAdvance(GameState.tutorial.stepIndex);
+        await waitUntilTutorialCondition(
+          () => {
+            if (!GameState.tutorial) return true;
+            const hasTargetLane = step.targetLane != null;
+            const hasTargetLanes =
+              Array.isArray(step.targetLanes) && step.targetLanes.length > 0;
+
+            if (hasTargetLane) {
+              const card = GameState.playerBoard[step.targetLane];
+              return (
+                card &&
+                (card.id === step.targetCardId ||
+                  card.baseId === step.targetCardId)
+              );
+            } else if (hasTargetLanes) {
+              return step.targetLanes.some((lane) => {
+                const card = GameState.playerBoard[lane];
+                return (
+                  card &&
+                  (card.id === step.targetCardId ||
+                    card.baseId === step.targetCardId)
+                );
+              });
+            } else {
+              return GameState.playerBoard.some(
+                (card) =>
+                  card &&
+                  (card.id === step.targetCardId ||
+                    card.baseId === step.targetCardId)
+              );
+            }
+          },
+          TUTORIAL_POLL_INTERVAL_MS,
+          null
+        );
         if (!GameState.tutorial) break;
         GameState.tutorial.waitingForInput = false;
 
@@ -1851,8 +1920,8 @@ export async function runTutorialFlow() {
               !GameState.tutorial ||
               GameState.tutorial.placementTargetLane === null ||
               GameState.tutorial.placementTargetLane === undefined,
-            100,
-            10000 // 無限待機を防ぐための最大待機時間（10秒）
+            TUTORIAL_POLL_INTERVAL_MS,
+            TUTORIAL_PLACEMENT_WAIT_TIMEOUT_MS // 無限待機を防ぐための最大待機時間（10秒）
           );
         }
 
@@ -1861,6 +1930,7 @@ export async function runTutorialFlow() {
         if (!GameState.tutorial) break;
         // 召喚アニメーション等の演出完了を待ってから次のメッセージへ
         await sleep(500);
+        advanceStep();
         break;
 
       case 'useLeaderSkill': {
@@ -1903,16 +1973,16 @@ export async function runTutorialFlow() {
             if (!GameState.tutorial) return true;
             return GameState.playerSP < initialSP;
           },
-          200,
+          TUTORIAL_LEADER_SKILL_POLL_INTERVAL_MS,
           null // ユーザーの操作待ちのためタイムアウトガードは設定しない
         );
         if (!GameState.tutorial) break;
         GameState.tutorial.waitingForInput = false;
-        GameState.tutorial.stepIndex++;
         // リーダースキルの演出完了を待機
         await waitForTutorialPause();
         if (!GameState.tutorial) break;
         await sleep(500);
+        advanceStep();
         break;
       }
 
@@ -1930,10 +2000,11 @@ export async function runTutorialFlow() {
           result.side === step.targetSide &&
           result.lane === step.targetLane
         ) {
-          GameState.tutorial.stepIndex++;
+          await sleep(800);
+          advanceStep();
+        } else {
+          await sleep(800);
         }
-        // カードプレビューを閉じるまで少し待機
-        await sleep(800);
         break;
       }
 
@@ -1950,9 +2021,11 @@ export async function runTutorialFlow() {
           result.cardId === step.targetCardId ||
           result.baseId === step.targetCardId
         ) {
-          GameState.tutorial.stepIndex++;
+          await sleep(800);
+          advanceStep();
+        } else {
+          await sleep(800);
         }
-        await sleep(800);
         break;
       }
 
@@ -1963,8 +2036,8 @@ export async function runTutorialFlow() {
         // 戦闘フェーズが完了して、次のターン開始時の一時停止に到達するまで待機
         await waitForTutorialPause();
         if (!GameState.tutorial) break;
-        GameState.tutorial.stepIndex++;
         await sleep(500);
+        advanceStep();
         break;
 
       case 'end':
@@ -1985,7 +2058,12 @@ export async function runTutorialFlow() {
 /**
  * 特定のステップインデックスが変わるまで待機するユーティリティ
  */
+// チュートリアル用の各種タイミングおよびポーリング間隔定数 (マジックナンバー排除)
 const TUTORIAL_POLL_INTERVAL_MS = 100;
+const TUTORIAL_LEADER_SKILL_POLL_INTERVAL_MS = 200;
+const TUTORIAL_PLACEMENT_WAIT_TIMEOUT_MS = 10000;
+const TUTORIAL_PAUSE_INITIAL_DELAY_MS = 500;
+const TUTORIAL_PAUSE_POLL_INTERVAL_MS = 200;
 
 /**
  * 共通のポーリング用待機ヘルパー関数
@@ -2012,17 +2090,6 @@ function waitUntilTutorialCondition(
 }
 
 /**
- * 特定のステップインデックスが変わるまで待機するユーティリティ
- */
-function waitForStepAdvance(currentIndex) {
-  return waitUntilTutorialCondition(
-    () => !isTutorialMode() || GameState.tutorial.stepIndex !== currentIndex,
-    100,
-    null // ユーザーの操作待ちのためタイムアウトガードは設定しない
-  );
-}
-
-/**
  * チュートリアルの一時停止（pauseBeforeEnemyTurn or pauseBeforeCombat）を待機するユーティリティ
  * カード配置後のバトル処理が一時停止するまで待つ
  */
@@ -2032,10 +2099,10 @@ function waitForTutorialPause() {
     setTimeout(() => {
       waitUntilTutorialCondition(
         () => !GameState.isProcessing,
-        200,
+        TUTORIAL_PAUSE_POLL_INTERVAL_MS,
         null // 連鎖処理等に対応するため、タイムアウトは設定しない
       ).then(resolve);
-    }, 500);
+    }, TUTORIAL_PAUSE_INITIAL_DELAY_MS);
   });
 }
 

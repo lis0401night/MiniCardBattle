@@ -265,33 +265,33 @@ h2 {
   position: relative;
   width: 60px;
   height: 60px;
-  aspect-ratio: 1 / 1; /* 親要素のいかなる微小な歪みに対しても完璧な1:1の真円を死守*/
+  aspect-ratio: 1 / 1; /* 隕ｪ隕∫ｴ縺ｮ縺・°縺ｪ繧句ｾｮ蟆上↑豁ｪ縺ｿ縺ｫ蟇ｾ縺励※繧ょｮ檎挑縺ｪ1:1縺ｮ逵溷・繧呈ｭｻ螳・*/
   margin-right: 15px;
   flex-shrink: 0;
 }
 
 .banner-icon {
-  position: absolute; /* 位置ズレを解消するため絶対配置に設定*/
-  top: 1%; /* アセット物理直径差を中央にアライン */
-  left: 1%; /* アセット物理直径差を中央にアライン */
-  width: 98%; /* キャラクター画像を199pxから195px相当へ極小縮小し、ゴールド枠の裏側に完全に隠す*/
+  position: absolute; /* 菴咲ｽｮ繧ｺ繝ｬ繧定ｧ｣豸医☆繧九◆繧∫ｵｶ蟇ｾ驟咲ｽｮ縺ｫ險ｭ螳・*/
+  top: 1%; /* 繧｢繧ｻ繝・ヨ迚ｩ逅・峩蠕・ｷｮ繧剃ｸｭ螟ｮ縺ｫ繧｢繝ｩ繧､繝ｳ */
+  left: 1%; /* 繧｢繧ｻ繝・ヨ迚ｩ逅・峩蠕・ｷｮ繧剃ｸｭ螟ｮ縺ｫ繧｢繝ｩ繧､繝ｳ */
+  width: 98%; /* 繧ｭ繝｣繝ｩ繧ｯ繧ｿ繝ｼ逕ｻ蜒上ｒ199px縺九ｉ195px逶ｸ蠖薙∈讌ｵ蟆冗ｸｮ蟆上＠縲√ざ繝ｼ繝ｫ繝画棧縺ｮ陬丞・縺ｫ螳悟・縺ｫ髫縺・*/
   height: 98%;
-  object-fit: cover; /* cover にすることで画像境界と border-radius を完全に一致させ、四隅の汚れを確実にクリップ */
-  border-radius: 50%; /* アセット画像のフチを丸く綺麗にクリップ */
+  object-fit: cover; /* cover 縺ｫ縺吶ｋ縺薙→縺ｧ逕ｻ蜒丞｢・阜縺ｨ border-radius 繧貞ｮ悟・縺ｫ荳閾ｴ縺輔○縲∝屁髫・・豎壹ｌ繧堤｢ｺ螳溘↓繧ｯ繝ｪ繝・・ */
+  border-radius: 50%; /* 繧｢繧ｻ繝・ヨ逕ｻ蜒上・繝輔メ繧剃ｸｸ縺冗ｶｺ鮗励↓繧ｯ繝ｪ繝・・ */
 }
 
 .banner-icon-frame {
   position: absolute;
-  top: 0; /* 画像と完全に同じ位置に重ねる*/
+  top: 0; /* 逕ｻ蜒上→螳悟・縺ｫ蜷後§菴咲ｽｮ縺ｫ驥阪・繧・*/
   left: 0;
-  width: 100%; /* 画像と完全に同じ100%サイズに維持（大きくも小さくもしない）*/
+  width: 100%; /* 逕ｻ蜒上→螳悟・縺ｫ蜷後§100%繧ｵ繧､繧ｺ縺ｫ邯ｭ謖・ｼ亥､ｧ縺阪￥繧ょｰ上＆縺上ｂ縺励↑縺・ｼ・*/
   height: 100%;
-  object-fit: cover; /* 画像と object-fit を cover で統一し、ブラウザの端数歪みによるズレ・はみ出しを完全に防止 */
+  object-fit: cover; /* 逕ｻ蜒上→ object-fit 繧・cover 縺ｧ邨ｱ荳縺励√ヶ繝ｩ繧ｦ繧ｶ縺ｮ遶ｯ謨ｰ豁ｪ縺ｿ縺ｫ繧医ｋ繧ｺ繝ｬ繝ｻ縺ｯ縺ｿ蜃ｺ縺励ｒ螳悟・縺ｫ髦ｲ豁｢ */
   pointer-events: none;
   z-index: 3;
   filter: drop-shadow(
     0 0 5px rgba(0, 0, 0, 0.5)
-  ); /* 円形のフレーム外周に美しいシャドウを適用 */
+  ); /* 蜀・ｽ｢縺ｮ繝輔Ξ繝ｼ繝螟門捉縺ｫ鄒弱＠縺・す繝｣繝峨え繧帝←逕ｨ */
 }
 
 .banner-text {
@@ -833,10 +833,10 @@ h2 {
   font-size: 1.1rem;
   line-height: 1.5;
   flex-grow: 1;
-  overflow-y: auto; /* 長文テキストがボックスからはみ出さないようスクロール可能にする */
+  overflow-y: auto; /* 髟ｷ譁・ユ繧ｭ繧ｹ繝医′繝懊ャ繧ｯ繧ｹ縺九ｉ縺ｯ縺ｿ蜃ｺ縺輔↑縺・ｈ縺・せ繧ｯ繝ｭ繝ｼ繝ｫ蜿ｯ閭ｽ縺ｫ縺吶ｋ */
 }
 
-/* スマホ縦画面での見切れ防止: フォント・余白を縮小して表示行数を確保*/
+/* 繧ｹ繝槭・邵ｦ逕ｻ髱｢縺ｧ縺ｮ隕句・繧碁亟豁｢: 繝輔か繝ｳ繝医・菴咏區繧堤ｸｮ蟆上＠縺ｦ陦ｨ遉ｺ陦梧焚繧堤｢ｺ菫・*/
 @media (max-height: 700px) {
   #dialogue-text {
     font-size: 1rem;
@@ -1125,15 +1125,15 @@ h2 {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  overflow: hidden; /* 子要素（画像と背景）を絶対に完璧な真円にクリップし、はみ出しを完全根絶 */
+  overflow: hidden; /* 蟄占ｦ∫ｴ・育判蜒上→閭梧勹・峨ｒ邨ｶ蟇ｾ縺ｫ螳檎挑縺ｪ逵溷・縺ｫ繧ｯ繝ｪ繝・・縺励√・縺ｿ蜃ｺ縺励ｒ螳悟・譬ｹ邨ｶ */
   z-index: 2;
   box-sizing: border-box;
-  padding: 5px; /* アセット外周の余白 */
+  padding: 5px; /* 繧｢繧ｻ繝・ヨ螟門捉縺ｮ菴咏區 */
 
   transition: all 0.3s;
   transform: scale(
     0.88
-  ); /* ゴールドフレーム(scale 0.9)の裏側に完全に隠すための極小アライメント*/
+  ); /* 繧ｴ繝ｼ繝ｫ繝峨ヵ繝ｬ繝ｼ繝(scale 0.9)縺ｮ陬丞・縺ｫ螳悟・縺ｫ髫縺吶◆繧√・讌ｵ蟆上い繝ｩ繧､繝｡繝ｳ繝・*/
   transform-origin: center;
 }
 
@@ -1165,7 +1165,7 @@ h2 {
   padding: 0;
 }
 
-/* キャラクターアイコンの背景グラデーション用レイヤー */
+/* 繧ｭ繝｣繝ｩ繧ｯ繧ｿ繝ｼ繧｢繧､繧ｳ繝ｳ縺ｮ閭梧勹繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ逕ｨ繝ｬ繧､繝､繝ｼ */
 .char-icon-bg {
   position: absolute;
   top: 0;
@@ -1179,15 +1179,15 @@ h2 {
 }
 
 .char-icon-bg.blue {
-  background: #0ea5e9; /* HPバーの左端色と同化させる単色 */
+  background: #0ea5e9; /* HP繝舌・縺ｮ蟾ｦ遶ｯ濶ｲ縺ｨ蜷悟喧縺輔○繧句腰濶ｲ */
 }
 
 .char-icon-bg.red {
-  background: #e11d48; /* HPバーの左端色と同化させる単色 */
+  background: #e11d48; /* HP繝舌・縺ｮ蟾ｦ遶ｯ濶ｲ縺ｨ蜷悟喧縺輔○繧句腰濶ｲ */
 }
 
 .char-icon-bg.dead {
-  background: #334155; /* HPバー背景と同化させる単色 */
+  background: #334155; /* HP繝舌・閭梧勹縺ｨ蜷悟喧縺輔○繧句腰濶ｲ */
 }
 
 .icon-frame {
@@ -1700,8 +1700,8 @@ h2 {
   align-items: flex-end;
   flex-shrink: 0;
   box-sizing: border-box;
-  /* justify-content: center だと溢れた際に左端にスクロールできないため、
-       flex-start + margin: auto (擬似要素) で中央寄せとスクロールを両立する*/
+  /* justify-content: center 縺縺ｨ貅｢繧後◆髫帙↓蟾ｦ遶ｯ縺ｫ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｧ縺阪↑縺・◆繧√・
+       flex-start + margin: auto (謫ｬ莨ｼ隕∫ｴ) 縺ｧ荳ｭ螟ｮ蟇・○縺ｨ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧剃ｸ｡遶九☆繧・*/
   justify-content: flex-start;
 }
 
@@ -2566,7 +2566,7 @@ h2 {
     padding: 3px 10px;
   }
 
-  /* フレーム導入に伴い、サイズ指定を .icon-wrapper に統合*/
+  /* 繝輔Ξ繝ｼ繝蟆主・縺ｫ莨ｴ縺・√し繧､繧ｺ謖・ｮ壹ｒ .icon-wrapper 縺ｫ邨ｱ蜷・*/
   .icon-wrapper {
     width: 80px;
     height: 80px;
@@ -2727,7 +2727,7 @@ h2 {
     height: auto;
   }
 
-  /* フレーム導入に伴い、サイズ指定を .icon-wrapper に統合*/
+  /* 繝輔Ξ繝ｼ繝蟆主・縺ｫ莨ｴ縺・√し繧､繧ｺ謖・ｮ壹ｒ .icon-wrapper 縺ｫ邨ｱ蜷・*/
   .icon-wrapper {
     width: 70px;
     height: 70px;
@@ -2834,7 +2834,7 @@ h2 {
 }
 
 /* ==========================================
-   ニュースバナー
+   繝九Η繝ｼ繧ｹ繝舌リ繝ｼ
    ========================================== */
 .news-banner-container {
   width: 90%;
@@ -3284,7 +3284,7 @@ h2 {
    ========================================== */
 
 .vfx-overlay {
-  position: absolute; /* fixedからabsoluteに変更し、body(480px制限)を基準にする */
+  position: absolute; /* fixed縺九ｉabsolute縺ｫ螟画峩縺励｜ody(480px蛻ｶ髯・繧貞渕貅悶↓縺吶ｋ */
   top: 0;
   left: 0;
   width: 100%;
@@ -3293,18 +3293,18 @@ h2 {
   z-index: 1000;
 }
 
-/* 殲滅光線 (Annihilation Beam) */
+/* 谿ｲ貊・・邱・(Annihilation Beam) */
 .vfx-overlay.annihilation {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 相手の盤面（画面上半分）をターゲットにする */
+/* 逶ｸ謇九・逶､髱｢・育判髱｢荳雁濠蛻・ｼ峨ｒ繧ｿ繝ｼ繧ｲ繝・ヨ縺ｫ縺吶ｋ */
 .vfx-overlay.annihilation.blue .beam-container {
   top: 25%;
 }
-/* プレイヤーの盤面（画面下半分）をターゲットにする */
+/* 繝励Ξ繧､繝､繝ｼ縺ｮ逶､髱｢・育判髱｢荳句濠蛻・ｼ峨ｒ繧ｿ繝ｼ繧ｲ繝・ヨ縺ｫ縺吶ｋ */
 .vfx-overlay.annihilation.red .beam-container {
   top: 75%;
 }
@@ -3434,28 +3434,28 @@ body.vfx-shake {
 
 /* Sprite Animation System */
 .vfx-sprite-container {
-  position: relative; /* absoluteから変更し、Flexboxでの中央制御を容易にする */
+  position: relative; /* absolute縺九ｉ螟画峩縺励：lexbox縺ｧ縺ｮ荳ｭ螟ｮ蛻ｶ蠕｡繧貞ｮｹ譏薙↓縺吶ｋ */
   width: 320px;
   height: 320px;
-  max-width: 100%; /* 親の幅（480pxまたは画面幅）を超えないようにする */
+  max-width: 100%; /* 隕ｪ縺ｮ蟷・ｼ・80px縺ｾ縺溘・逕ｻ髱｢蟷・ｼ峨ｒ雜・∴縺ｪ縺・ｈ縺・↓縺吶ｋ */
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   z-index: 1001;
   pointer-events: none;
-  /* transform: translate(-50%, -50%);  <- Flexboxで制御するため削除 */
+  /* transform: translate(-50%, -50%);  <- Flexbox縺ｧ蛻ｶ蠕｡縺吶ｋ縺溘ａ蜑企勁 */
 }
 
-/* 盤面全体を覆うタイプのエフェクト用 */
+/* 逶､髱｢蜈ｨ菴薙ｒ隕・≧繧ｿ繧､繝励・繧ｨ繝輔ぉ繧ｯ繝育畑 */
 .vfx-overlay.fill .vfx-sprite-container {
-  width: 100%; /* 600px固定をやめ、ゲーム画面幅に合わせる */
+  width: 100%; /* 600px蝗ｺ螳壹ｒ繧・ａ縲√ご繝ｼ繝逕ｻ髱｢蟷・↓蜷医ｏ縺帙ｋ */
   height: auto;
   aspect-ratio: 1 / 1;
   max-width: 480px;
 }
 
-/* 位置はコンポーネント側から --vfx-top で制御 */
+/* 菴咲ｽｮ縺ｯ繧ｳ繝ｳ繝昴・繝阪Φ繝亥・縺九ｉ --vfx-top 縺ｧ蛻ｶ蠕｡ */
 
-/* 召喚アニメーション用 */
+/* 蜿ｬ蝟壹い繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ逕ｨ */
 .summon-anim-overlay {
   position: absolute;
   top: 0;
@@ -3543,10 +3543,10 @@ body.vfx-shake {
 }
 
 /* ============================
-   チュートリアルUI
+   繝√Η繝ｼ繝医Μ繧｢繝ｫUI
    ============================ */
 
-/* チュートリアルオーバーレイ（画面全体を覆って操作を制御）*/
+/* 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧ｪ繝ｼ繝舌・繝ｬ繧､・育判髱｢蜈ｨ菴薙ｒ隕・▲縺ｦ謫堺ｽ懊ｒ蛻ｶ蠕｡・・*/
 .tutorial-overlay {
   position: absolute;
   inset: 0;
@@ -3558,7 +3558,7 @@ body.vfx-shake {
   animation: tutorialFadeIn 0.3s ease-out;
 }
 
-/* チュートリアルメッセージボックス */
+/* 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝｡繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ */
 .tutorial-message-box {
   position: relative;
   width: 90%;
@@ -3577,7 +3577,7 @@ body.vfx-shake {
   animation: tutorialBoxAppear 0.4s ease-out;
 }
 
-/* チュートリアルアイコン（icon_light）*/
+/* 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧｢繧､繧ｳ繝ｳ・・con_light・・*/
 .tutorial-icon-wrapper {
   position: absolute;
   top: -40px;
@@ -3602,7 +3602,7 @@ body.vfx-shake {
   filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.5));
 }
 
-/* チュートリアルテキスト*/
+/* 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝・く繧ｹ繝・*/
 .tutorial-text {
   color: #e2e8f0;
   font-size: 14px;
@@ -3611,7 +3611,7 @@ body.vfx-shake {
   font-weight: 500;
 }
 
-/* タップで次へヒント*/
+/* 繧ｿ繝・・縺ｧ谺｡縺ｸ繝偵Φ繝・*/
 .tutorial-tap-hint {
   text-align: center;
   color: rgba(250, 204, 21, 0.7);
@@ -3620,7 +3620,7 @@ body.vfx-shake {
   animation: tutorialHintBlink 1.5s ease-in-out infinite;
 }
 
-/* アニメーション */
+/* 繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ */
 @keyframes tutorialFadeIn {
   from {
     opacity: 0;
@@ -3661,7 +3661,7 @@ body.vfx-shake {
   }
 }
 
-/* ジョーカーVFXアニメーション */
+/* 繧ｸ繝ｧ繝ｼ繧ｫ繝ｼVFX繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ */
 @keyframes vfxJokerBlur {
   0% {
     transform: scale(1);
@@ -3710,7 +3710,7 @@ body.vfx-shake {
 }
 
 /* ==========================================================================
-   ユーザープロフィール設定画面のスタイル
+   繝ｦ繝ｼ繧ｶ繝ｼ繝励Ο繝輔ぅ繝ｼ繝ｫ險ｭ螳夂判髱｢縺ｮ繧ｹ繧ｿ繧､繝ｫ
    ========================================================================== */
 .profile-settings-container {
   display: flex;

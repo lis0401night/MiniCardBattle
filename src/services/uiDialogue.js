@@ -14,6 +14,7 @@ import { setupEventConfrontation } from '../game/events.js';
 import { GameState } from '../state/gameState.js';
 import { saveStoryProgress } from '../game/story.js';
 import { handleProgressionNextStep } from '../game/progression.js';
+import { performFadeTransition } from './uiMainCore.js';
 import {
   STORY_DIALOGUES,
   STORY_NARRATIONS,
@@ -52,6 +53,7 @@ window.handleDialogueChoice = handleDialogueChoice;
 
 export function startNextBattleSequence() {
   if (GameState.gameMode !== 'story') return;
+  GameState.isSimplifiedDialogue = false;
   saveStoryProgress();
   if (GameState.battleCount > 10) {
     startEndingSequence();
@@ -605,4 +607,119 @@ export function startSatanCastleStillTest(charId) {
 
   switchScreen('screen-dialogue');
   showNextDialogue(true);
+}
+
+/**
+ * ストーリーモードの会話をスキップし、次のバトル前会話（簡易会話形式）に進む
+ */
+export function skipStoryDialogue() {
+  if (GameState.gameMode !== 'story') return;
+
+  // クリックSEを再生
+  playSound(SOUNDS.seClick);
+
+  // ダイアログ処理中フラグをリセット
+  GameState.isProcessing = false;
+
+  let targetBattleCount = GameState.battleCount;
+
+  if (GameState.appState === 'story_intro') {
+    // ストーリーイントロからのスキップは、1戦目の簡易戦闘前会話へ
+    targetBattleCount = 1;
+  } else if (GameState.appState === 'pre_dialogue') {
+    // 通常の戦闘前会話からのスキップは、現在の戦闘の簡易戦闘前会話へ
+    targetBattleCount = GameState.battleCount;
+  } else if (
+    GameState.appState === 'post_dialogue' &&
+    GameState.lastBattleResult === 'win'
+  ) {
+    // 6戦目の勝利後会話で、スチル演出が含まれている場合
+    if (GameState.battleCount === 6) {
+      const stillIndex = GameState.dialogueQueue.findIndex(
+        (node) => node.stillEffect === 'satan_castle'
+      );
+      if (stillIndex !== -1 && stillIndex >= GameState.currentDialogueIndex) {
+        // スチル演出のノードまでスキップする
+        GameState.currentDialogueIndex = stillIndex;
+        // 表示を更新
+        showNextDialogue(true);
+        return;
+      }
+    }
+    // 勝利後会話からのスキップは、次の戦闘の簡易戦闘前会話へ
+    targetBattleCount = GameState.battleCount + 1;
+  } else {
+    return;
+  }
+
+  // 10戦（サタン撃破）を超えていたらエンディングへ
+  if (targetBattleCount > 10) {
+    startEndingSequence();
+    return;
+  }
+
+  // battleCount を更新
+  GameState.battleCount = targetBattleCount;
+
+  // 対戦相手の設定
+  const nextEnemyId = GameState.storyQueue[targetBattleCount - 1];
+  if (nextEnemyId === 'shadow') {
+    GameState.enemyConfig = { ...GameState.playerConfig };
+    GameState.enemyConfig.isShadow = true;
+    GameState.enemyConfig.name = `影の${GameState.playerConfig.name}`;
+  } else {
+    const charId = nextEnemyId || 'android';
+    GameState.enemyConfig = { ...CHARACTERS[charId] };
+    GameState.enemyConfig.isShadow = false;
+  }
+
+  GameState.aiLevel = GameState.storyDifficulty;
+  GameState.appState = 'pre_dialogue';
+  GameState.isSimplifiedDialogue = true;
+
+  // セーブデータの保存
+  saveStoryProgress();
+
+  // 簡易戦闘前会話（フリーバトル形式）の構築
+  let introText =
+    (GameState.enemyConfig.preBattleLine || '次は私がお相手よ。') +
+    '\n' +
+    getDialogue(
+      GameState.enemyConfig,
+      GameState.playerConfig,
+      'intro',
+      'enemy'
+    );
+  if (GameState.enemyConfig.isShadow) introText = '・・・・';
+
+  const playerIntroText = GameState.enemyConfig.isShadow
+    ? GameState.playerConfig.mirrorIntro || 'なっ、自分自身だと……！？'
+    : getDialogue(
+        GameState.playerConfig,
+        GameState.enemyConfig,
+        'intro',
+        'player'
+      );
+
+  if (GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow) {
+    introText =
+      '……よくぞここまで辿り着いたな。' +
+      getDialogue(
+        GameState.enemyConfig,
+        GameState.playerConfig,
+        'intro',
+        'enemy'
+      );
+  }
+
+  // dialogueQueueに簡易会話をセット
+  GameState.dialogueQueue = [
+    { speaker: 'enemy', text: introText },
+    { speaker: 'player', text: playerIntroText },
+  ];
+
+  // 画面のフェード遷移と会話画面のセットアップ
+  performFadeTransition(() => {
+    setupDialogueScreen();
+  });
 }

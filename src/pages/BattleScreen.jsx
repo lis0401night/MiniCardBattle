@@ -309,7 +309,7 @@ export default function BattleScreen({ showRulesModal }) {
       if (window.updateCardDetail) window.updateCardDetail(null);
 
       if (isTutorialMode()) {
-        notifyCardPlaced(newCard.baseId || newCard.id, lane);
+        notifyCardPlaced(newCard.id, newCard.baseId, lane);
       }
 
       dispatchBattleAction({
@@ -548,7 +548,7 @@ export default function BattleScreen({ showRulesModal }) {
             __html:
               cardDetailHtml ||
               (GameState.isDiscardingMode
-                ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === 'MULLIGAN' ? '引き直すカードを' : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
+                ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === 'MULLIGAN' ? `${GameState.firstPlayer === 'blue' ? '先攻' : '後攻'}：引き直すカードを` : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
                 : ''),
           }}
         ></div>

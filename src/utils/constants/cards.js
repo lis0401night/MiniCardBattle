@@ -3237,27 +3237,27 @@ export const CARD_MASTER = [
 
 // プレミアムカードとして解放可能なすべてのカードIDのリスト (網羅性を保証し、DRY原則を適用)
 export const PREMIUM_CARD_IDS = [
-  // --- 元々のデバッグ解放対象（11種） ---
-  'empress',
-  'assassin',
-  'cyberdragon',
-  'dragon',
-  'oldgod',
-  'wolf',
-  'cleric',
-  'necromancer', // 正確なID
-  'vampire',
-  'beginnermagic',
-  'djinn',
-  // --- 実績報酬（追加分：7種） ---
-  'golem',
+  // --- 実績 ---
+  'cyberman',
   'dancer',
-  'clone',
-  'diviner',
-  'sniper',
+  'commander',
+  'eye',
+  'pray',
+  'cleric',
+  'necromancer',
+  'beginnermagic',
   'omyouji',
   'mummy',
-  // --- 交換所（追加分：13種） ---
+  'light',
+  // --- 防衛戦：交換所 ---
+  'cyberdragon',
+  'dragon',
+  'assassin',
+  'oldgod',
+  'wolf',
+  'empress',
+  'vampire',
+  'djinn',
   'shogun',
   'pharaoh',
   'dreadnought',
@@ -3265,12 +3265,21 @@ export const PREMIUM_CARD_IDS = [
   'crusher',
   'shark',
   'shaman',
-  'light',
   'plaguedoctor',
   'ring',
   'yukionna',
   'kitepriest',
   'doom',
-  // --- その他 ---
+  'armsuits',
+  'berserker',
+  'horse',
+  'parasite',
+  'darkelf',
+  'acolyte',
+  'servant',
+  'battlemage',
+  'muramasa',
+  'snakepriest',
+  // --- シリアルコード ---
   'cheetah',
 ];
