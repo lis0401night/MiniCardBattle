@@ -7,7 +7,7 @@ export default function TournamentMenuScreen() {
   return (
     <ScreenLayout
       id="screen-tournament-menu"
-      backgroundImage="background_tournament01.png"
+      backgroundImage="background_tournament01.webp"
       title="夢幻の闘技祭"
       titleColor="#60a5fa"
       titleGlow={true}

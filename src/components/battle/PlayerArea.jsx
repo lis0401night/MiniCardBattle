@@ -52,7 +52,7 @@ export default function PlayerArea({
           </div>
           {/* 敵対勢力（魔族）のリーダーは赤フレーム、それ以外は金フレームを使用 */}
           <img
-            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(playerConfig.id) ? 'red' : 'gold'}.png`}
+            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(playerConfig.id) ? 'red' : 'gold'}.webp`}
             className="icon-frame"
             alt="frame"
           />

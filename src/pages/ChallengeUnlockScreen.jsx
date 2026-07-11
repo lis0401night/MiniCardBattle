@@ -46,7 +46,7 @@ export default function ChallengeUnlockScreen() {
       id="screen-challenge-unlock"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_challenge.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_challenge.webp')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',

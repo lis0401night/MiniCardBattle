@@ -282,7 +282,7 @@ export async function executeLeaderSkillAction(
       const l = selectedLanes[0];
       const imgUrl =
         getCardImgUrl({ ...tokenCard, owner }) ||
-        `assets/cards/card_${tokenCard.id}.jpg`;
+        `assets/cards/card_${tokenCard.id}.webp`;
 
       if (
         b[l] &&
@@ -1344,7 +1344,7 @@ export async function executeLeaderSkillAction(
       const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
       const skImg =
         getCardImgUrl({ ...skeletonTpl, owner }) ||
-        `assets/cards/card_${skeletonTpl.id}.jpg`;
+        `assets/cards/card_${skeletonTpl.id}.webp`;
 
       board[l] = {
         ...deepClonedSk,
@@ -1386,7 +1386,7 @@ export async function executeLeaderSkillAction(
 
         const imgUrl =
           getCardImgUrl({ ...daemonTpl, owner }) ||
-          `assets/cards/card_${daemonTpl.id}.jpg`;
+          `assets/cards/card_${daemonTpl.id}.webp`;
 
         board[l] = {
           ...deepClonedToken,

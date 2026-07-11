@@ -586,7 +586,7 @@ export const LOW_TIER_PICK_COUNT = 2;
 /**
  * バージョン付きの背景スタイルオブジェクトを生成します。
  *
- * @param {string} backgroundImage - 背景画像名（例: 'background_select.png'）または url(...) 指定
+ * @param {string} backgroundImage - 背景画像名（例: 'background_select.webp'）または url(...) 指定
  * @param {number} [op1=0.7] - グラデーション開始時の不透明度
  * @param {number} [op2=0.9] - グラデーション終了時の不透明度
  * @returns {object} CSSスタイルオブジェクト

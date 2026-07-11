@@ -19,7 +19,7 @@ export default function HighDifficultyScreen() {
       id="screen-high-difficulty"
       className="screen active"
       style={getScreenBackgroundStyle(
-        'assets/backgrounds/background_highdifficulty.png'
+        'assets/backgrounds/background_highdifficulty.webp'
       )}
     >
       <h2
@@ -57,7 +57,7 @@ export default function HighDifficultyScreen() {
             >
               <div className="banner-icon-wrapper">
                 <img
-                  src={`assets/icons/icon_${eventConf.id}.png`}
+                  src={`assets/icons/icon_${eventConf.id}.webp`}
                   onError={(e) => {
                     e.target.src = char.icon;
                   }}
@@ -65,7 +65,7 @@ export default function HighDifficultyScreen() {
                   alt=""
                 />
                 <img
-                  src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.png`}
+                  src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`}
                   className="banner-icon-frame"
                   alt="frame"
                 />

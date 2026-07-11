@@ -72,7 +72,7 @@ export default function ChallengeExchangeScreen() {
   return (
     <CompactScreenLayout
       id="screen-challenge-exchange"
-      backgroundImage="background_challenge.png"
+      backgroundImage="background_challenge.webp"
       title="交換所"
       titleColor="#c084fc"
       titleGlow={true}
@@ -128,19 +128,19 @@ export default function ChallengeExchangeScreen() {
                 masterClass.imgUrl ||
                 (typeof getCardImgUrl === 'function'
                   ? getCardImgUrl(masterClass)
-                  : `assets/cards/card_${masterClass.id || item.id}.jpg`);
+                  : `assets/cards/card_${masterClass.id || item.id}.webp`);
               displayName = masterClass.name || item.name;
               displayDesc = masterClass.flavor || item.description;
             } else if (isPlaymat) {
               imgUrl =
                 masterClass.image ||
-                `assets/boards/board_${item.id.replace('pm_', '')}.png`;
+                `assets/boards/board_${item.id.replace('pm_', '')}.webp`;
               displayName = masterClass.name || item.name;
             } else if (isIcon) {
-              imgUrl = `assets/icons/icon_${item.id}.png`;
+              imgUrl = `assets/icons/icon_${item.id}.webp`;
             } else {
               // スキンの場合
-              imgUrl = `assets/characters/char_${item.id}.png`;
+              imgUrl = `assets/characters/char_${item.id}.webp`;
             }
 
             imgUrl = appendVersionQuery(imgUrl);

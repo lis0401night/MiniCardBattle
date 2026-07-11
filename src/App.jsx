@@ -101,7 +101,7 @@ const LoadingScreen = ({ loadingText }) => (
     id="screen-loading"
     className="screen active"
     style={{
-      backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.png')}')`,
+      backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.webp')}')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}

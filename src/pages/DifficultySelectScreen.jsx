@@ -46,8 +46,8 @@ export default function DifficultySelectScreen() {
   // 高難易度イベントおよび通常難易度選択用の背景スタイル
   const highDiffBgStyle = getScreenBackgroundStyle(
     isHighDiffMode
-      ? 'assets/backgrounds/background_highdifficulty.png'
-      : 'assets/backgrounds/background_select.png'
+      ? 'assets/backgrounds/background_highdifficulty.webp'
+      : 'assets/backgrounds/background_select.webp'
   );
 
   return (

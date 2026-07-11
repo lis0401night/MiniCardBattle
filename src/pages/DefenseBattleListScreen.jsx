@@ -104,7 +104,7 @@ export default function DefenseBattleListScreen() {
       id="screen-defense-battle-list"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_defense.png')}')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_defense.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

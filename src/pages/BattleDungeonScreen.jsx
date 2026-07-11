@@ -156,7 +156,7 @@ export default function BattleDungeonScreen() {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_challenge.png')}')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_challenge.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -633,7 +633,7 @@ function RentalDeckSelect() {
                         alt={opt.name}
                       />
                       <img
-                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus', 'warlock'].includes(opt.leaderId) ? 'red' : 'gold'}.png`}
+                        src={`assets/icons/iconframe_${['satan', 'void', 'succubus', 'warlock'].includes(opt.leaderId) ? 'red' : 'gold'}.webp`}
                         className="banner-icon-frame"
                         alt="frame"
                       />

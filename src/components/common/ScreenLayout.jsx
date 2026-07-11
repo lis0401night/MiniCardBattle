@@ -7,7 +7,7 @@ import { getVersionedBackgroundStyle } from '../../utils/constants/config.js';
  *
  * @param {string} id - スクリーン用のID
  * @param {string} [className] - 追加のクラス名
- * @param {string} [backgroundImage] - 背景画像名（例: 'background_select.png'）またはグラデーション付きスタイル
+ * @param {string} [backgroundImage] - 背景画像名（例: 'background_select.webp'）またはグラデーション付きスタイル
  * @param {string} title - 画面タイトル
  * @param {string} [titleColor='#facc15'] - タイトルの文字色
  * @param {boolean} [titleGlow=false] - タイトルに光彩（シャドウ）を当てるか

@@ -11,10 +11,10 @@ export const CHARACTERS = {
     desc: '最新鋭のAIを搭載した戦闘用アンドロイド。感情を持たないが、マスターへの忠誠心は絶対的。',
     easeOfUse: 3,
     filter: 'none',
-    image: 'assets/characters/char_android.png',
-    imageLose: 'assets/characters/char_android_lose.png',
-    icon: 'assets/icons/icon_android.png',
-    imageEnding: 'assets/characters/char_android_ending.png',
+    image: 'assets/characters/char_android.webp',
+    imageLose: 'assets/characters/char_android_lose.webp',
+    icon: 'assets/icons/icon_android.webp',
+    imageEnding: 'assets/characters/char_android_ending.webp',
     color: '#38bdf8',
     leaderSkill: {
       name: '殲滅光線',
@@ -95,10 +95,10 @@ export const CHARACTERS = {
     desc: '火山地帯を縄張りとする竜族の姫。圧倒的な炎の力とワガママな性格で敵を焼き尽くす。',
     easeOfUse: 3,
     filter: 'none',
-    image: 'assets/characters/char_dragon.png',
-    imageLose: 'assets/characters/char_dragon_lose.png',
-    icon: 'assets/icons/icon_dragon.png',
-    imageEnding: 'assets/characters/char_dragon_ending.png',
+    image: 'assets/characters/char_dragon.webp',
+    imageLose: 'assets/characters/char_dragon_lose.webp',
+    icon: 'assets/icons/icon_dragon.webp',
+    imageEnding: 'assets/characters/char_dragon_ending.webp',
     color: '#fb7185',
     leaderSkill: {
       name: '竜王の降臨',
@@ -181,10 +181,10 @@ export const CHARACTERS = {
     desc: '王国騎士団を率いる誇り高き騎士。聖なる加護と鉄壁の防御で仲間を守り抜く。',
     easeOfUse: 3,
     filter: 'none',
-    image: 'assets/characters/char_knight.png',
-    imageLose: 'assets/characters/char_knight_lose.png',
-    icon: 'assets/icons/icon_knight.png',
-    imageEnding: 'assets/characters/char_knight_ending.png',
+    image: 'assets/characters/char_knight.webp',
+    imageLose: 'assets/characters/char_knight_lose.webp',
+    icon: 'assets/icons/icon_knight.webp',
+    imageEnding: 'assets/characters/char_knight_ending.webp',
     color: '#facc15',
     leaderSkill: {
       name: '聖なる進軍',
@@ -260,10 +260,10 @@ export const CHARACTERS = {
     desc: '深き海より来たりし名状しがたき存在の眷属。相手の精神を削り、狂気へと誘う。',
     easeOfUse: 2,
     filter: 'none',
-    image: 'assets/characters/char_cthulhu.png',
-    imageLose: 'assets/characters/char_cthulhu_lose.png',
-    icon: 'assets/icons/icon_cthulhu.png',
-    imageEnding: 'assets/characters/char_cthulhu_ending.png',
+    image: 'assets/characters/char_cthulhu.webp',
+    imageLose: 'assets/characters/char_cthulhu_lose.webp',
+    icon: 'assets/icons/icon_cthulhu.webp',
+    imageEnding: 'assets/characters/char_cthulhu_ending.webp',
     color: '#c084fc',
     leaderSkill: {
       name: '深淵の儀式',
@@ -342,10 +342,10 @@ export const CHARACTERS = {
     desc: '記憶を失い、銀の弓と共に旅を続けるエルフの少女。その静かな佇まいには、隠しきれない高潔さが漂う。',
     easeOfUse: 2,
     filter: 'none',
-    image: 'assets/characters/char_elf.png',
-    imageLose: 'assets/characters/char_elf_lose.png',
-    icon: 'assets/icons/icon_elf.png',
-    imageEnding: 'assets/characters/char_elf_ending.png',
+    image: 'assets/characters/char_elf.webp',
+    imageLose: 'assets/characters/char_elf_lose.webp',
+    icon: 'assets/icons/icon_elf.webp',
+    imageEnding: 'assets/characters/char_elf_ending.webp',
     color: '#4ade80',
     leaderSkill: {
       name: '星墜ちの矢',
@@ -423,10 +423,10 @@ export const CHARACTERS = {
     desc: '聖職者の皮を被った傲慢な女。自らを神の代行者と称し、異端者を嘲笑いながら排除する。',
     easeOfUse: 1,
     filter: 'none',
-    image: 'assets/characters/char_cleric.png',
-    imageLose: 'assets/characters/char_cleric_lose.png',
-    icon: 'assets/icons/icon_cleric.png',
-    imageEnding: 'assets/characters/char_cleric_ending.png',
+    image: 'assets/characters/char_cleric.webp',
+    imageLose: 'assets/characters/char_cleric_lose.webp',
+    icon: 'assets/icons/icon_cleric.webp',
+    imageEnding: 'assets/characters/char_cleric_ending.webp',
     color: '#94a3b8',
     leaderSkill: {
       name: '神炎の審判',
@@ -506,10 +506,10 @@ export const CHARACTERS = {
     desc: '悪魔狩り生業とする女性。背中の棺桶には、倒した悪魔の魂が封じ込められている。',
     easeOfUse: 2,
     filter: 'none',
-    image: 'assets/characters/char_devilhunter.png',
-    imageLose: 'assets/characters/char_devilhunter_lose.png',
-    icon: 'assets/icons/icon_devilhunter.png',
-    imageEnding: 'assets/characters/char_devilhunter_ending.png',
+    image: 'assets/characters/char_devilhunter.webp',
+    imageLose: 'assets/characters/char_devilhunter_lose.webp',
+    icon: 'assets/icons/icon_devilhunter.webp',
+    imageEnding: 'assets/characters/char_devilhunter_ending.webp',
     color: '#64748b',
     leaderSkill: {
       name: '棺の解放',
@@ -585,10 +585,10 @@ export const CHARACTERS = {
     desc: '魔導アカデミーの生徒。自身の強大すぎる魔力が暴走すると別の時間軸へ飛ばされてしまう特異体質。',
     easeOfUse: 1,
     filter: 'none',
-    image: 'assets/characters/char_witch.png',
-    imageLose: 'assets/characters/char_witch_lose.png',
-    icon: 'assets/icons/icon_witch.png',
-    imageEnding: 'assets/characters/char_witch_ending.png',
+    image: 'assets/characters/char_witch.webp',
+    imageLose: 'assets/characters/char_witch_lose.webp',
+    icon: 'assets/icons/icon_witch.webp',
+    imageEnding: 'assets/characters/char_witch_ending.webp',
     color: '#db2777',
     leaderSkill: {
       name: '因果律の掌握',
@@ -672,10 +672,10 @@ export const CHARACTERS = {
     desc: '鬼の血を引く異端の陰陽師。封印術を用いて敵の行動を完全に封じる。',
     easeOfUse: 2,
     filter: 'none',
-    image: 'assets/characters/char_oni.png',
-    imageLose: 'assets/characters/char_oni_lose.png',
-    icon: 'assets/icons/icon_oni.png',
-    imageEnding: 'assets/characters/char_oni_ending.png',
+    image: 'assets/characters/char_oni.webp',
+    imageLose: 'assets/characters/char_oni_lose.webp',
+    icon: 'assets/icons/icon_oni.webp',
+    imageEnding: 'assets/characters/char_oni_ending.webp',
     color: '#9333ea',
     leaderSkill: {
       name: '急急如律令',
@@ -758,10 +758,10 @@ export const CHARACTERS = {
     desc: '王家の墓を守る寡黙な少女。冷たい表情の裏に、侵入者を絶対に許さないという冷酷な意思を秘めている。',
     easeOfUse: 1,
     filter: 'none',
-    image: 'assets/characters/char_priest.png',
-    imageLose: 'assets/characters/char_priest_lose.png',
-    icon: 'assets/icons/icon_priest.png',
-    imageEnding: 'assets/characters/char_priest_ending.png',
+    image: 'assets/characters/char_priest.webp',
+    imageLose: 'assets/characters/char_priest_lose.webp',
+    icon: 'assets/icons/icon_priest.webp',
+    imageEnding: 'assets/characters/char_priest_ending.webp',
     color: '#f59e0b',
     leaderSkill: {
       name: '王墓の呪縛',
@@ -845,9 +845,9 @@ export const CHARACTERS = {
     name: '虚空の騎士 ゼノン',
     desc: '虚空の力を操る謎の騎士。その心は空虚に包まれ、一切の感情や言葉を失っている。',
     filter: 'none',
-    image: 'assets/characters/char_void.png',
-    imageLose: 'assets/characters/char_void_lose.png',
-    icon: 'assets/icons/icon_void.png',
+    image: 'assets/characters/char_void.webp',
+    imageLose: 'assets/characters/char_void_lose.webp',
+    icon: 'assets/icons/icon_void.webp',
     color: '#ddd6fe',
     leaderSkill: {
       name: 'ゼロの理',
@@ -877,9 +877,9 @@ export const CHARACTERS = {
     name: '隷属の女王 ヴィオラ',
     desc: '魔王サタンに絶対の忠誠を誓い、その傍らに侍るサキュバスの女王。尊大で残忍な性格。',
     filter: 'none',
-    image: 'assets/characters/char_succubus.png',
-    imageLose: 'assets/characters/char_succubus_lose.png',
-    icon: 'assets/icons/icon_succubus.png',
+    image: 'assets/characters/char_succubus.webp',
+    imageLose: 'assets/characters/char_succubus_lose.webp',
+    icon: 'assets/icons/icon_succubus.webp',
     color: '#22d3ee',
     leaderSkill: {
       name: '服従の刻印',
@@ -954,9 +954,9 @@ export const CHARACTERS = {
     name: '闇の総帥 バルタザール',
     desc: '魔王軍の幹部であり、邪悪な教団の支配者の魔術師。冷酷極まりない性格の白髪の老人。',
     filter: 'none',
-    image: 'assets/characters/char_warlock.png',
-    imageLose: 'assets/characters/char_warlock_lose.png',
-    icon: 'assets/icons/icon_warlock.png',
+    image: 'assets/characters/char_warlock.webp',
+    imageLose: 'assets/characters/char_warlock_lose.webp',
+    icon: 'assets/icons/icon_warlock.webp',
     color: '#8b5cf6',
     leaderSkill: {
       name: '魔宴の儀',
@@ -987,9 +987,9 @@ export const CHARACTERS = {
     name: '魔王 サタン',
     desc: '魔界を統べる絶対的な恐怖の象徴。すべてを無に帰す圧倒的な力を持つ。',
     filter: 'none',
-    image: 'assets/characters/char_satan.png',
-    imageLose: 'assets/characters/char_satan_lose.png',
-    icon: 'assets/icons/icon_satan.png',
+    image: 'assets/characters/char_satan.webp',
+    imageLose: 'assets/characters/char_satan_lose.webp',
+    icon: 'assets/icons/icon_satan.webp',
     color: '#dc2626',
     leaderSkill: {
       name: '魔王の化身',
@@ -1563,7 +1563,7 @@ export function getPlayerIconPath(player) {
   if (player && player.icon) {
     return appendVersionQuery(`assets/icons/icon_${player.icon}.png`);
   }
-  return appendVersionQuery('assets/icons/icon_player.png');
+  return appendVersionQuery('assets/icons/icon_player.webp');
 }
 
 /**
@@ -1582,7 +1582,7 @@ export function getPlayerIconFrame(charId) {
  */
 export function getIconFramePath(charId) {
   const frame = getPlayerIconFrame(charId);
-  return appendVersionQuery(`assets/icons/iconframe_${frame}.png`);
+  return appendVersionQuery(`assets/icons/iconframe_${frame}.webp`);
 }
 
 /**

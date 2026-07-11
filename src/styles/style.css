@@ -1363,7 +1363,7 @@ h2 {
   bottom: 0;
   border-radius: 0 0 16px 16px;
 
-  background-image: url('/assets/boards/board_android.png');
+  background-image: url('/assets/boards/board_android.webp');
 }
 
 .lane-row {

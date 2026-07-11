@@ -8,7 +8,7 @@ export default function DefenseRulesScreen() {
   return (
     <ScreenLayout
       id="screen-defense-rules"
-      backgroundImage="background_defense.png"
+      backgroundImage="background_defense.webp"
       title="ルール"
       titleColor="#10b981"
       titleGlow={true}

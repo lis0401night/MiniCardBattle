@@ -223,7 +223,7 @@ export default function AchievementsScreen() {
       id="screen-achievements"
       title="実績"
       titleColor="#facc15"
-      backgroundImage="background_gallery.png"
+      backgroundImage="background_gallery.webp"
       onTitleClick={handleTitleClick}
       backTo="screen-gallery-menu"
       showBackButton={true}

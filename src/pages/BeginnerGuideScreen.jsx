@@ -18,7 +18,7 @@ export default function BeginnerGuideScreen() {
   return (
     <ScreenLayout
       id="screen-beginner-guide"
-      backgroundImage="background_select.png"
+      backgroundImage="background_select.webp"
       title="遊び方"
       titleColor="#facc15"
       onBackClick={() => goToModeSelect?.()}

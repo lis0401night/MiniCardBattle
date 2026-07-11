@@ -194,7 +194,7 @@ export default function TutorialSelectScreen() {
       id="screen-tutorial-select"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.webp')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',
@@ -290,7 +290,7 @@ export default function TutorialSelectScreen() {
                         }}
                       >
                         <img
-                          src="assets/icons/icon_light.png"
+                          src="assets/icons/icon_light.webp"
                           alt=""
                           style={{
                             width: '100%',

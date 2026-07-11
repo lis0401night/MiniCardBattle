@@ -168,7 +168,7 @@ export default function DefenseExchangeScreen() {
   return (
     <CompactScreenLayout
       id="screen-exchange"
-      backgroundImage="background_defense.png"
+      backgroundImage="background_defense.webp"
       title="交換所"
       titleColor="#10b981"
       titleGlow={true}

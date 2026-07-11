@@ -335,7 +335,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         (i) => i.id === id
       );
       const img = appendVersionQuery(
-        iconDef?.path || `assets/icons/icon_${id}.png`
+        iconDef?.path || `assets/icons/icon_${id}.webp`
       );
       playSound?.(SOUNDS?.seSkill);
       setAcquisitionData({
@@ -2890,7 +2890,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 src={appendVersionQuery(
                   [...AVAILABLE_ICONS, ...EXTRA_ICONS].find(
                     (i) => i.id === profileIconInput
-                  )?.path || 'assets/icons/icon_player.png'
+                  )?.path || 'assets/icons/icon_player.webp'
                 )}
                 alt="preview"
               />

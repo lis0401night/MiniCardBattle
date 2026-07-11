@@ -8,7 +8,7 @@ export default function DungeonRulesScreen() {
   return (
     <ScreenLayout
       id="screen-dungeon-rules"
-      backgroundImage="background_challenge.png"
+      backgroundImage="background_challenge.webp"
       title="ルール"
       titleColor="#c084fc"
       titleGlow={true}

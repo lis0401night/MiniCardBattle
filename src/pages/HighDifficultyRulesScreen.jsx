@@ -8,7 +8,7 @@ export default function HighDifficultyRulesScreen() {
   return (
     <ScreenLayout
       id="screen-high-difficulty-rules"
-      backgroundImage="background_highdifficulty.png"
+      backgroundImage="background_highdifficulty.webp"
       title="ルール"
       titleColor="#ef4444"
       titleGlow={true}

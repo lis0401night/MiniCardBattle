@@ -45,7 +45,7 @@ export default function EnemyArea({
             />
           </div>
           <img
-            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(enemyConfig.id) ? 'red' : 'gold'}.png`}
+            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(enemyConfig.id) ? 'red' : 'gold'}.webp`}
             className="icon-frame"
             alt="frame"
           />

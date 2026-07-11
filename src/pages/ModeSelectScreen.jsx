@@ -24,7 +24,7 @@ export default function ModeSelectScreen() {
       id="screen-mode-select"
       className="screen active"
       style={getScreenBackgroundStyle(
-        'assets/backgrounds/background_select.png'
+        'assets/backgrounds/background_select.webp'
       )}
     >
       <div className="top-right-actions">

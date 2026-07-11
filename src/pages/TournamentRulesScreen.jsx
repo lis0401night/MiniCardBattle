@@ -8,7 +8,7 @@ export default function TournamentRulesScreen() {
   return (
     <ScreenLayout
       id="screen-tournament-rules"
-      backgroundImage="background_tournament01.png"
+      backgroundImage="background_tournament01.webp"
       title="ルール"
       titleColor="#60a5fa"
       titleGlow={true}

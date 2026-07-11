@@ -181,7 +181,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
   let hp = 20; // 敵のHPはデフォルト20
 
   const imagePath =
-    leaderCard.image || `assets/cards/card_${leaderCard.id}.jpg`;
+    leaderCard.image || `assets/cards/card_${leaderCard.id}.webp`;
   const dialogueData = getDungeonCharacterDialogue(leaderCard.id);
 
   // 試練の宮殿の汎用リーダースキルはレア度に関わらず一律4ターン（SP:4）に固定

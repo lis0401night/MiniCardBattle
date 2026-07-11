@@ -99,7 +99,7 @@ export default function StoryResumeScreen() {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_story01.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_story01.webp')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: '#fff',

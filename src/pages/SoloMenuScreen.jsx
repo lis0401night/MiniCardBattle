@@ -12,7 +12,7 @@ export default function SoloMenuScreen() {
   return (
     <ScreenLayout
       id="screen-solo-menu"
-      backgroundImage="background_select.png"
+      backgroundImage="background_select.webp"
       title="ソロモード"
       titleColor="#facc15"
       onBackClick={() => goToModeSelect?.()}

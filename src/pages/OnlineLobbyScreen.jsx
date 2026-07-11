@@ -381,7 +381,9 @@ export default function OnlineLobbyScreen() {
         overflow: 'hidden',
         padding: '20px',
         boxSizing: 'border-box',
-        ...getScreenBackgroundStyle('assets/backgrounds/background_online.png'),
+        ...getScreenBackgroundStyle(
+          'assets/backgrounds/background_online.webp'
+        ),
       }}
     >
       <h2

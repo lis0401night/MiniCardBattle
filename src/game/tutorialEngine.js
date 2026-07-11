@@ -1048,9 +1048,9 @@ const TUTORIAL_CONFIGS = {
       playerSP: 4,
       enemySP: 0,
       enemyBoard: [
-        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.jpg' },
+        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.webp' },
         'lizardman',
-        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.jpg' },
+        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.webp' },
       ],
     },
     clearMessage: 'チュートリアル「リーダー：アイギス」をクリアしました！',
@@ -1075,7 +1075,7 @@ const TUTORIAL_CONFIGS = {
       enemyBoard: [
         'clone',
         null,
-        { id: 'token_clone', power: 3, imgUrl: 'assets/cards/card_clone.jpg' },
+        { id: 'token_clone', power: 3, imgUrl: 'assets/cards/card_clone.webp' },
       ],
     },
     clearMessage: 'チュートリアル「リーダー：イグニス」をクリアしました！',
@@ -1100,7 +1100,7 @@ const TUTORIAL_CONFIGS = {
       enemyBoard: [
         'lizardman',
         null,
-        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.jpg' },
+        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.webp' },
       ],
     },
     clearMessage: 'チュートリアル「リーダー：セレスティア」をクリアしました！',
@@ -1124,7 +1124,7 @@ const TUTORIAL_CONFIGS = {
       enemySP: 0,
       playerBoard: [null, 'golem', null],
       enemyBoard: [
-        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.jpg' },
+        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.webp' },
         'sniper',
         'lizardman',
       ],
@@ -1236,7 +1236,7 @@ const TUTORIAL_CONFIGS = {
       enemyBoard: [
         'lizardman',
         null,
-        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.jpg' },
+        { id: 'token_reinforce', imgUrl: 'assets/cards/card_lizardman.webp' },
       ],
     },
     clearMessage: 'チュートリアル「リーダー：カグラ」をクリアしました！',

@@ -26,8 +26,7 @@ import {
   resolvePlayerName,
   shuffleArray,
   switchScreen,
-  VALID_PREMIUM_GIFS,
-  VALID_PREMIUM_JPGS,
+  VALID_PREMIUM_CARDS,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -534,9 +533,8 @@ export function loadDeck() {
   const premiumSaved = localStorage.getItem(premiumKey);
   if (premiumSaved) {
     try {
-      GameState.premiumCards = JSON.parse(premiumSaved).filter(
-        (id) =>
-          VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)
+      GameState.premiumCards = JSON.parse(premiumSaved).filter((id) =>
+        VALID_PREMIUM_CARDS.includes(id)
       );
     } catch {
       GameState.premiumCards = [];
@@ -551,8 +549,7 @@ export function loadDeck() {
   if (unlockedPremiumSaved) {
     try {
       GameState.unlockedPremiumCards = JSON.parse(unlockedPremiumSaved).filter(
-        (id) =>
-          VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)
+        (id) => VALID_PREMIUM_CARDS.includes(id)
       );
     } catch {
       GameState.unlockedPremiumCards = [];
@@ -870,9 +867,8 @@ export function createNewDeck(leaderId) {
     'mini_card_battle_premium_cards'
   );
   const globalPremiumCards = globalPremiumSrc
-    ? JSON.parse(globalPremiumSrc).filter(
-        (id) =>
-          VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id)
+    ? JSON.parse(globalPremiumSrc).filter((id) =>
+        VALID_PREMIUM_CARDS.includes(id)
       )
     : [];
 

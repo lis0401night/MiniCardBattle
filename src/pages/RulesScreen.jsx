@@ -19,7 +19,7 @@ export default function RulesScreen() {
       id="screen-rules"
       title="ルール"
       titleColor="#facc15"
-      backgroundImage="background_select.png"
+      backgroundImage="background_select.webp"
       onTitleClick={handleTitleClick}
       backTo="screen-beginner-guide"
     >

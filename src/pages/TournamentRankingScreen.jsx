@@ -4,7 +4,7 @@ export default function TournamentRankingScreen() {
   return (
     <RankingScreen
       id="screen-tournament-ranking"
-      backgroundImage="background_tournament01.png"
+      backgroundImage="background_tournament01.webp"
       titleColor="#60a5fa"
       backTo="screen-tournament-menu"
       pointField="tournament_total_points"

@@ -412,7 +412,7 @@ export function processActionSequence(
               isToken: true,
               rarity: 1,
               owner: side,
-              imgUrl: `assets/cards/card_${tokenId}.jpg`,
+              imgUrl: `assets/cards/card_${tokenId}.webp`,
               power: tokenPower,
               basePower: tokenPower,
               currentPower: tokenPower,

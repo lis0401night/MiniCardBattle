@@ -142,7 +142,7 @@ export default function RewardOverlay() {
   // 対戦相手の画像を取得(フォールバック付き)
   const enemyId = GameState.enemyConfig?.id || 'android';
   const enemyImg =
-    GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.png`;
+    GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.webp`;
 
   // 難易度に応じた発光色を判定
   const getGlowColorClass = () => {

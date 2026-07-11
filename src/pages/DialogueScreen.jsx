@@ -64,20 +64,20 @@ export default function DialogueScreen() {
     }
   };
 
-  let bgName = 'background_select.png';
+  let bgName = 'background_select.webp';
   if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_dialogue') {
-      bgName = 'background_tournament01.png';
+      bgName = 'background_tournament01.webp';
     } else {
-      bgName = 'background_tournament02.png';
+      bgName = 'background_tournament02.webp';
     }
   } else if (
     GameState.gameMode === 'battle_dungeon' ||
     GameState.gameMode === 'dungeon'
   ) {
-    bgName = 'background_challenge.png';
+    bgName = 'background_challenge.webp';
   } else if (GameState.gameMode === 'event_satan_high') {
-    bgName = 'background_satan.png';
+    bgName = 'background_satan.webp';
     // 高難易度モード（通常・イベント）用の背景
   } else if (
     GameState.gameMode === 'high_difficulty' ||
@@ -85,15 +85,15 @@ export default function DialogueScreen() {
       GameState.gameMode.startsWith('event_') &&
       GameState.gameMode.endsWith('_high'))
   ) {
-    bgName = 'background_highdifficulty.png';
+    bgName = 'background_highdifficulty.webp';
   } else if (GameState.gameMode === 'defense_attack') {
-    bgName = 'background_defense.png';
+    bgName = 'background_defense.webp';
   } else if (GameState.gameMode && GameState.gameMode.startsWith('story')) {
-    // 魔王城到着後（第6戦の勝利後、すなわち第7戦ゼノン以降）は background_story02.png を使用
+    // 魔王城到着後（第6戦の勝利後、すなわち第7戦ゼノン以降）は background_story02.webp を使用
     if (GameState.battleCount >= 7) {
-      bgName = 'background_story02.png';
+      bgName = 'background_story02.webp';
     } else {
-      bgName = 'background_story01.png';
+      bgName = 'background_story01.webp';
     }
   }
 

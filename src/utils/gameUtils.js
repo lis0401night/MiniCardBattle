@@ -618,7 +618,7 @@ export function stripEphemeralSkills(card) {
   }
 }
 
-export const VALID_PREMIUM_GIFS = [
+export const VALID_PREMIUM_CARDS = [
   'assassin',
   'cleric',
   'commander',
@@ -639,8 +639,6 @@ export const VALID_PREMIUM_GIFS = [
   'omyouji',
   'mummy',
   'pharaoh',
-];
-export const VALID_PREMIUM_JPGS = [
   'dreadnought',
   'armsuits',
   'hammer',
@@ -666,23 +664,24 @@ export const VALID_PREMIUM_JPGS = [
 ];
 
 /**
- * 指定されたカードIDがプレミアム版（GIFまたはJPGイラスト）を持っているか判定します。
+ * 指定されたカードIDがプレミアム版（WebPまたはJPGイラスト）を持っているか判定します。
  * @param {string} id - カードID
  * @returns {boolean}
  */
 export function hasPremiumVariant(id) {
   if (!id) return false;
-  return VALID_PREMIUM_GIFS.includes(id) || VALID_PREMIUM_JPGS.includes(id);
+  return VALID_PREMIUM_CARDS.includes(id);
 }
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
 export function getCardImgUrl(card) {
   const getRawUrl = () => {
-    if (!card) return 'assets/cards/card_default.jpg';
+    if (!card) return 'assets/cards/card_default.webp';
     if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
 
     // 特定のトークンの例外処理（旧imgUrl設定の復元）
-    if (card.id === 'token_knight') return 'assets/cards/card_token_knight.jpg';
+    if (card.id === 'token_knight')
+      return 'assets/cards/card_token_knight.webp';
     if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
       // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
       // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照
@@ -694,10 +693,10 @@ export function getCardImgUrl(card) {
       return getSkinImage('dragon', dragonSkin, 'image');
     }
     if (card.id === 'token_satan' || card.baseId === 'token_satan')
-      return 'assets/cards/card_token_satan.jpg';
+      return 'assets/cards/card_token_satan.webp';
 
     let lookupId = card.baseId || card.id;
-    if (!lookupId) return 'assets/cards/card_default.jpg';
+    if (!lookupId) return 'assets/cards/card_default.webp';
 
     // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する
     if (
@@ -716,12 +715,10 @@ export function getCardImgUrl(card) {
 
     // isPremiumフラグが明示的に設定されている場合はそれを優先
     if (card.isPremium === true) {
-      if (VALID_PREMIUM_GIFS.includes(lookupId))
-        return `assets/cards/card_${lookupId}_premium.gif`;
-      if (VALID_PREMIUM_JPGS.includes(lookupId))
-        return `assets/cards/card_${lookupId}_premium.jpg`;
+      if (VALID_PREMIUM_CARDS.includes(lookupId))
+        return `assets/cards/card_${lookupId}_premium.webp`;
     } else if (card.isPremium === false) {
-      return `assets/cards/card_${lookupId}.jpg`;
+      return `assets/cards/card_${lookupId}.webp`;
     }
 
     // フラグがない場合は従来のグローバル設定を参照（ただし敵のカードと明示されている場合は除く）
@@ -730,12 +727,10 @@ export function getCardImgUrl(card) {
       GameState.premiumCards &&
       GameState.premiumCards.includes(lookupId)
     ) {
-      if (VALID_PREMIUM_GIFS.includes(lookupId))
-        return `assets/cards/card_${lookupId}_premium.gif`;
-      if (VALID_PREMIUM_JPGS.includes(lookupId))
-        return `assets/cards/card_${lookupId}_premium.jpg`;
+      if (VALID_PREMIUM_CARDS.includes(lookupId))
+        return `assets/cards/card_${lookupId}_premium.webp`;
     }
-    return `assets/cards/card_${lookupId}.jpg`;
+    return `assets/cards/card_${lookupId}.webp`;
   };
 
   const rawUrl = getRawUrl();

@@ -344,7 +344,7 @@ export default function TournamentBracketScreen() {
       id="screen-tournament-bracket"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)), url('assets/backgrounds/background_tournament02.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)), url('assets/backgrounds/background_tournament02.webp')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

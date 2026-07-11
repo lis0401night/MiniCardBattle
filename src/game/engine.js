@@ -292,7 +292,7 @@ export function processDestructionTriggers(state, events) {
                   ...JSON.parse(JSON.stringify(tL)),
                   id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
                   owner: side,
-                  imgUrl: `assets/cards/card_${tokenId}.jpg`,
+                  imgUrl: `assets/cards/card_${tokenId}.webp`,
                   power: val,
                   currentPower: val,
                   basePower: val,
@@ -1468,7 +1468,7 @@ export function applyActiveSkillLogic(
             baseId: tIdEngine,
             owner,
             isPremium: c.isPremium,
-            imgUrl: `assets/cards/card_${tIdEngine}.jpg`,
+            imgUrl: `assets/cards/card_${tIdEngine}.webp`,
             power: summonTargetPower,
             basePower: summonTargetPower,
             currentPower: summonTargetPower,
@@ -1507,7 +1507,7 @@ export function applyActiveSkillLogic(
         currentPower: awakeVal,
         isToken: true,
         baseId: awakeTid,
-        imgUrl: `assets/cards/card_${awakeTid}.jpg`,
+        imgUrl: `assets/cards/card_${awakeTid}.webp`,
         skills: [], // トークンは能力を持たない
       };
 
@@ -3412,7 +3412,7 @@ export function applyLeaderSkillLogic(
         owner,
         currentPower: skeletonTpl.power,
         rarity: skeletonTpl.rarity || 1,
-        imgUrl: 'assets/cards/card_token_skeleton.jpg',
+        imgUrl: 'assets/cards/card_token_skeleton.webp',
         isToken: true,
       };
       // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
@@ -3443,7 +3443,7 @@ export function applyLeaderSkillLogic(
           owner,
           currentPower: daemonTpl.power,
           rarity: daemonTpl.rarity || 1,
-          imgUrl: 'assets/cards/card_token_daemon.jpg',
+          imgUrl: 'assets/cards/card_token_daemon.webp',
           isToken: true,
         };
         // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
@@ -3514,7 +3514,7 @@ export function applyLeaderSkillLogic(
       };
       // satan_avatarのみimgUrlを固定設定；dragon系はgetCardImgUrlがスキンを参照して解決する
       if (action === 'satan_avatar')
-        newToken.imgUrl = 'assets/cards/card_token_satan.jpg';
+        newToken.imgUrl = 'assets/cards/card_token_satan.webp';
 
       if (!tryEquipToken(board, l, newToken, owner, events)) {
         if (board[l] !== null) {
@@ -3694,7 +3694,7 @@ export function applyLeaderSkillLogic(
         owner,
         currentPower: tK.power,
         rarity: tK.rarity || 1,
-        imgUrl: 'assets/cards/card_token_knight.jpg',
+        imgUrl: 'assets/cards/card_token_knight.webp',
       };
       board[lane] = tk;
       // 後続のループで tk自身が +2 されるため、イベントに積むcardは追加時点のものをディープコピーしておく
@@ -3717,7 +3717,7 @@ export function applyLeaderSkillLogic(
           owner,
           currentPower: tK.power,
           rarity: tK.rarity || 1,
-          imgUrl: 'assets/cards/card_token_knight.jpg',
+          imgUrl: 'assets/cards/card_token_knight.webp',
           isToken: true,
         };
 

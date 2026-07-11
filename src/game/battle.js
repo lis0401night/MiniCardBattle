@@ -2669,7 +2669,7 @@ export async function triggerSplitSkill(owner, lane, card) {
     ...JSON.parse(JSON.stringify(tL)),
     id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
     owner,
-    imgUrl: `assets/cards/card_${tokenId}.jpg`,
+    imgUrl: `assets/cards/card_${tokenId}.webp`,
     power: val,
     currentPower: val,
     basePower: val,

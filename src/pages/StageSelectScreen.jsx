@@ -29,21 +29,21 @@ export default function StageSelectScreen() {
         : GameState.gameMode;
 
     const MODE_BACKGROUND_FILES = {
-      tournament: 'assets/backgrounds/background_tournament01.png',
-      defense_register: 'assets/backgrounds/background_defense.png',
-      defense_attack: 'assets/backgrounds/background_defense.png',
-      battle_dungeon: 'assets/backgrounds/background_challenge.png',
-      online_deck_edit: 'assets/backgrounds/background_online.png',
+      tournament: 'assets/backgrounds/background_tournament01.webp',
+      defense_register: 'assets/backgrounds/background_defense.webp',
+      defense_attack: 'assets/backgrounds/background_defense.webp',
+      battle_dungeon: 'assets/backgrounds/background_challenge.webp',
+      online_deck_edit: 'assets/backgrounds/background_online.webp',
     };
 
     let bgFile = MODE_BACKGROUND_FILES[mode];
     if (!bgFile) {
       if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
-        bgFile = 'assets/backgrounds/background_highdifficulty.png';
+        bgFile = 'assets/backgrounds/background_highdifficulty.webp';
       } else if (mode && mode.startsWith('story')) {
-        bgFile = 'assets/backgrounds/background_story01.png';
+        bgFile = 'assets/backgrounds/background_story01.webp';
       } else {
-        bgFile = 'assets/backgrounds/background_select.png';
+        bgFile = 'assets/backgrounds/background_select.webp';
       }
     }
     return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(bgFile)}')`;

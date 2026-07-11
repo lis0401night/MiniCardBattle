@@ -674,7 +674,7 @@ export async function resolveActiveSkillEffect(
     let imgUrl = randomMaster.imgUrl;
     if (!imgUrl) {
       if (randomMaster.id === 'token_knight')
-        imgUrl = 'assets/cards/card_token_knight.jpg';
+        imgUrl = 'assets/cards/card_token_knight.webp';
       else if (randomMaster.id === 'token_ignis') {
         // オーナーがイグニス（dragon）をリーダーとして使用している場合のみスキン画像を参照する
         // イグニス以外のリーダー使用時はスキン情報が存在しないため、デフォルト画像にフォールバック
@@ -690,13 +690,13 @@ export async function resolveActiveSkillEffect(
               : GameState.enemySkins?.['dragon'] || 'default';
           imgUrl =
             getSkinImage(dragonConfig, skinId, 'image') ||
-            'assets/characters/char_dragon.png';
+            'assets/characters/char_dragon.webp';
         } else {
-          imgUrl = 'assets/characters/char_dragon.png';
+          imgUrl = 'assets/characters/char_dragon.webp';
         }
       } else if (randomMaster.id === 'token_satan')
-        imgUrl = 'assets/characters/char_satan.png';
-      else imgUrl = `assets/cards/card_${randomMaster.id}.jpg`;
+        imgUrl = 'assets/characters/char_satan.webp';
+      else imgUrl = `assets/cards/card_${randomMaster.id}.webp`;
     }
     c.imgUrl = imgUrl;
 
@@ -1002,7 +1002,7 @@ export async function resolveActiveSkillEffect(
           imgUrl:
             typeof getCardImgUrl === 'function' && tC.imgUrl === undefined
               ? getCardImgUrl(tC)
-              : tC.imgUrl || `assets/cards/card_${tId}.jpg`,
+              : tC.imgUrl || `assets/cards/card_${tId}.webp`,
           filter: c.filter,
           power: pValue,
           currentPower: pValue,

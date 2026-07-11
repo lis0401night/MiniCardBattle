@@ -108,7 +108,9 @@ export default function OnlineRoomSearchScreen() {
         width: '100%',
         overflow: 'hidden',
         boxSizing: 'border-box',
-        ...getScreenBackgroundStyle('assets/backgrounds/background_online.png'),
+        ...getScreenBackgroundStyle(
+          'assets/backgrounds/background_online.webp'
+        ),
       }}
     >
       <h2

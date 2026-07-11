@@ -150,7 +150,7 @@ export default function TournamentResumeScreen() {
       id="screen-tournament-resume"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.png')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_tournament01.webp')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',

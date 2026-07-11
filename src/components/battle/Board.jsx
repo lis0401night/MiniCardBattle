@@ -68,7 +68,7 @@ export default function Board({
       ? pm.image
       : idOrUrl.startsWith('assets/')
         ? idOrUrl
-        : `assets/playmats/playmat_${idOrUrl}.jpg`;
+        : `assets/playmats/playmat_${idOrUrl}.webp`;
     return `url('${appendVersionQuery(rawPath)}')`;
   };
 

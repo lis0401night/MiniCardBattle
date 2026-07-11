@@ -19,9 +19,9 @@ export default function OnlineRulesScreen() {
 
   const getBackgroundImage = () => {
     if (GameState.gameMode === 'tournament') {
-      return 'background_tournament01.png';
+      return 'background_tournament01.webp';
     }
-    return 'background_online.png';
+    return 'background_online.webp';
   };
 
   return (

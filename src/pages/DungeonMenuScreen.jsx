@@ -29,7 +29,7 @@ export default function DungeonMenuScreen() {
   return (
     <ScreenLayout
       id="screen-dungeon-menu"
-      backgroundImage="background_challenge.png"
+      backgroundImage="background_challenge.webp"
       title="試練の宮殿"
       titleColor="#c084fc"
       titleGlow={true}

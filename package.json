@@ -8,7 +8,7 @@
     "dev": "npm run sync-version && vite",
     "build": "npm run sync-version && vite build",
     "preview": "vite preview",
-    "format": "eslint --fix . && prettier --write .",
+    "format": "node scripts/convert_assets_to_webp.js && eslint --fix . && prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -18,7 +18,8 @@
     "pngjs": "^7.0.0",
     "puppeteer": "^24.38.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

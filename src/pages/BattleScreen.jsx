@@ -780,7 +780,7 @@ export default function BattleScreen({ showRulesModal }) {
           <div className="tutorial-message-box">
             <div className="tutorial-icon-wrapper">
               <img
-                src="assets/icons/icon_light.png"
+                src="assets/icons/icon_light.webp"
                 alt=""
                 className="tutorial-icon"
               />

@@ -14,7 +14,7 @@ export default function HighDifficultyMenuScreen() {
   return (
     <ScreenLayout
       id="screen-high-difficulty-menu"
-      backgroundImage="background_highdifficulty.png"
+      backgroundImage="background_highdifficulty.webp"
       title="高難易度"
       titleColor="#ef4444"
       titleGlow={true}
