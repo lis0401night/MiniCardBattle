@@ -11,16 +11,8 @@ reviews:
     - '!node_modules/**'
     - '!dist/**'
     - '!package-lock.json'
-    - '!public/assets/**'
-    - '!**/public/assets/**'
-    - '!**/*.webp'
-    - '!**/*.png'
-    - '!**/*.jpg'
-    - '!**/*.jpeg'
-    - '!**/*.gif'
-    - 'src/**/*.js'
-    - 'src/**/*.jsx'
-    - 'src/**/*.css'
+    - '!public/**'
+    - 'src/**'
   path_instructions:
     - path: '**/*.{js,jsx,css}'
       instructions: |
