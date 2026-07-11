@@ -1,12 +1,14 @@
+import { GameState } from '../state/gameState.js';
 import { AI_SKILL_UTILITY } from '../utils/constants/aiSkillValues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
+  consumeArmSelf,
+  getCurrentRNG,
   getSeededRandom,
   hasSkill,
   mergeCardSkills,
-  getCurrentRNG,
   setCurrentRNG,
-  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import {
   applyActiveSkillLogic,
@@ -16,8 +18,6 @@ import {
   isGraveKeeperActive,
   quietDiscardFromBoard,
 } from './engine.js';
-import { GameState } from '../state/gameState.js';
-import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）
 function hasActiveSkill(c) {
@@ -176,7 +176,8 @@ export function processActionSequence(
   leaderSkillTargetIdx = null,
   leaderSkillTargetUid = null,
   initialSimState = null,
-  leaderSkillResurrectLane = null
+  leaderSkillResurrectLane = null,
+  leaderSkillOppTargetIdx = null
 ) {
   const savedRNG = getCurrentRNG();
   try {
@@ -245,7 +246,8 @@ export function processActionSequence(
         [],
         leaderSkillTargetIdx,
         leaderSkillTargetUid,
-        leaderSkillResurrectLane
+        leaderSkillResurrectLane,
+        leaderSkillOppTargetIdx
       );
       if (simState._actionQueue && simState._actionQueue.length > 0) {
         actionQueue.unshift(...simState._actionQueue);
@@ -598,6 +600,7 @@ export function processActionSequence(
         continue; // 盤面には出さない
       } else if (
         action.type === 'devilhunter_resurrect' ||
+        action.type === 'overdrive' ||
         action.type === 'targeted_destruction' ||
         action.type === 'tomb_guard' ||
         action.type === 'death_judgment' ||
@@ -2021,9 +2024,35 @@ export function getBestSimulatedMove() {
           .map((card, idx) => ({ card, idx }))
           .filter(({ card }) => card && !card.isToken)
           .map(({ idx }) => idx);
-        let dIdxLoop = isResurrectLeaderSkill
-          ? [-1, ...validResurrectIndices]
-          : [-1];
+        // overdriveでは-1（自動選択）を含めない: 全カードを明示インデックスで試し、
+        // leaderSkillTargetUidが確実に設定されるようにする（-1だとnullになりランダムフォールバックに落ちる）
+        // 墓地が空の場合のみ-1を使用（相手墓地からの復活だけでも機能するため）
+        let dIdxLoop;
+        if (action === 'overdrive') {
+          dIdxLoop =
+            validResurrectIndices.length > 0 ? validResurrectIndices : [-1];
+        } else {
+          dIdxLoop = isResurrectLeaderSkill
+            ? [-1, ...validResurrectIndices]
+            : [-1];
+        }
+
+        // オーバードライブ用: 相手墓地のカードも全通りシミュレーションする
+        const oppDiscard = GameState.playerDiscard
+          ? GameState.playerDiscard.map(cloneCard)
+          : [];
+        const validOppResurrectIndices =
+          action === 'overdrive'
+            ? oppDiscard
+                .map((card, idx) => ({ card, idx }))
+                .filter(({ card }) => card && !card.isToken)
+                .map(({ idx }) => idx)
+            : [];
+        // overdriveでは-1を含めない（同理由: leaderSkillOppTargetUidがnullになるのを防ぐ）
+        const oppDIdxLoop =
+          action === 'overdrive' && validOppResurrectIndices.length > 0
+            ? validOppResurrectIndices
+            : [-1];
 
         for (let dIdxForTree of dIdxLoop) {
           // 復活対象がない（dIdxForTree === -1）なら復活レーン指定は不要（-1）にする
@@ -2091,59 +2120,80 @@ export function getBestSimulatedMove() {
                 isDngResurrect
               ) {
                 let dIdx = dIdxForTree;
-                let simState = processActionSequence(
-                  actionQ,
-                  true,
-                  action,
-                  tokenLanes,
-                  'before',
-                  dIdx,
-                  dIdx !== -1 && discard[dIdx] ? discard[dIdx].uid : null,
-                  null,
-                  resLane
-                );
-                if (simState) {
-                  let fChcs = [fA.choices, fA.choices2].filter(
-                    (x) => x !== undefined
+                // overdriveの場合は相手墓地カードも全通りシミュレーションする
+                const currentOppDIdxLoop =
+                  action === 'overdrive' ? oppDIdxLoop : [-1];
+                for (let oppDIdx of currentOppDIdxLoop) {
+                  let simState = processActionSequence(
+                    actionQ,
+                    true,
+                    action,
+                    tokenLanes,
+                    'before',
+                    dIdx,
+                    dIdx !== -1 && discard[dIdx] ? discard[dIdx].uid : null,
+                    null,
+                    resLane,
+                    oppDIdx !== -1 ? oppDIdx : null
                   );
-                  const resTargetCard = discard[dIdx];
-                  addCandidate(
-                    {
-                      index: i,
-                      lane: fA.laneIdx,
-                      isOverwrite: myBoard[fA.laneIdx] !== null,
-                      useSkill: true,
-                      tokenLanes,
-                      skillOrder: 'before',
-                      leaderSkillTargetIdx: dIdx,
-                      leaderSkillTargetUid: resTargetCard
-                        ? resTargetCard.uid
-                        : null,
-                      leaderSkillResurrectLane: isDngResurrect
-                        ? resLane
-                        : undefined,
-                      choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                      cardTokenLanes: fA.cardTokenLanes,
-                      actionQueue:
-                        actionQ.slice(1).length > 0
-                          ? actionQ.slice(1).map((act) => {
-                              let adjusted = { ...act };
-                              if (
-                                (adjusted.type === 'invite' ||
-                                  adjusted.type === 'chant' ||
-                                  adjusted.type === 'play' ||
-                                  adjusted.type === 'discard') &&
-                                fA.type === 'play'
-                              ) {
-                                if (adjusted.targetIdx > fA.targetIdx)
-                                  adjusted.targetIdx -= 1;
-                              }
-                              return adjusted;
-                            })
+                  if (simState) {
+                    let fChcs = [fA.choices, fA.choices2].filter(
+                      (x) => x !== undefined
+                    );
+                    const resTargetCard = discard[dIdx];
+                    // overdriveの相手墓地ターゲットUID（実行時の直接選択に使用）
+                    const oppTargetCard =
+                      oppDIdx !== -1 && oppDiscard[oppDIdx]
+                        ? oppDiscard[oppDIdx]
+                        : null;
+                    addCandidate(
+                      {
+                        index: i,
+                        lane: fA.laneIdx,
+                        isOverwrite: myBoard[fA.laneIdx] !== null,
+                        useSkill: true,
+                        tokenLanes,
+                        skillOrder: 'before',
+                        leaderSkillTargetIdx: dIdx,
+                        leaderSkillTargetUid: resTargetCard
+                          ? resTargetCard.uid
+                          : null,
+                        leaderSkillOppTargetUid: oppTargetCard
+                          ? oppTargetCard.uid
                           : undefined,
-                    },
-                    simState
-                  );
+                        leaderSkillResurrectLane: isDngResurrect
+                          ? resLane
+                          : undefined,
+                        choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                        cardTokenLanes: fA.cardTokenLanes,
+                        actionQueue:
+                          actionQ.slice(1).length > 0
+                            ? actionQ
+                                .slice(1)
+                                .filter(
+                                  (act) =>
+                                    act.type !== 'overdrive' &&
+                                    act.type !== 'devilhunter_resurrect'
+                                )
+                                .map((act) => {
+                                  let adjusted = { ...act };
+                                  if (
+                                    (adjusted.type === 'invite' ||
+                                      adjusted.type === 'chant' ||
+                                      adjusted.type === 'play' ||
+                                      adjusted.type === 'discard') &&
+                                    fA.type === 'play'
+                                  ) {
+                                    if (adjusted.targetIdx > fA.targetIdx)
+                                      adjusted.targetIdx -= 1;
+                                  }
+                                  return adjusted;
+                                })
+                            : undefined,
+                      },
+                      simState
+                    );
+                  }
                 }
               } else {
                 // その他（聖戦・邪戦・サタン・龍神等）
@@ -2197,32 +2247,64 @@ export function getBestSimulatedMove() {
     }
     for (let tokenLanes of tokenLanePatterns) {
       if (action === 'devilhunter_resurrect' || action === 'overdrive') {
+        // overdriveの場合は相手墓地カードも全通りシミュレーションする
+        const oppDiscardPass = GameState.playerDiscard
+          ? GameState.playerDiscard.map(cloneCard)
+          : [];
+        const validOppIndicesPass =
+          action === 'overdrive'
+            ? oppDiscardPass
+                .map((card, idx) => ({ card, idx }))
+                .filter(({ card }) => card && !card.isToken)
+                .map(({ idx }) => idx)
+            : [];
+        const oppDIdxLoopPass =
+          action === 'overdrive' && validOppIndicesPass.length > 0
+            ? validOppIndicesPass
+            : [-1];
+
         for (let dIdx = 0; dIdx < discard.length; dIdx++) {
           if (discard[dIdx].isToken) continue;
           const resTargetCard = discard[dIdx];
-          let simState = processActionSequence(
-            [{ type: 'pass' }],
-            true,
-            action,
-            tokenLanes,
-            'before',
-            dIdx,
-            resTargetCard.baseId || resTargetCard.id
-          );
-          if (simState) {
-            addCandidate(
-              {
-                index: -1,
-                lane: -1,
-                isOverwrite: false,
-                useSkill: true,
-                tokenLanes,
-                skillOrder: 'before',
-                leaderSkillTargetIdx: dIdx,
-                leaderSkillTargetUid: resTargetCard.uid,
-              },
-              simState
+          // overdriveの場合は相手墓地カードも全通りシミュレーションする
+          const currentOppDIdxLoop =
+            action === 'overdrive' ? oppDIdxLoopPass : [-1];
+          for (let oppDIdx of currentOppDIdxLoop) {
+            let simState = processActionSequence(
+              [{ type: 'pass' }],
+              true,
+              action,
+              tokenLanes,
+              'before',
+              dIdx,
+              resTargetCard.baseId || resTargetCard.id,
+              null,
+              null,
+              oppDIdx !== -1 ? oppDIdx : null
             );
+            if (simState) {
+              // overdriveの相手墓地ターゲットUID（実行時の直接選択に使用）
+              const oppTargetCardPass =
+                oppDIdx !== -1 && oppDiscardPass[oppDIdx]
+                  ? oppDiscardPass[oppDIdx]
+                  : null;
+              addCandidate(
+                {
+                  index: -1,
+                  lane: -1,
+                  isOverwrite: false,
+                  useSkill: true,
+                  tokenLanes,
+                  skillOrder: 'before',
+                  leaderSkillTargetIdx: dIdx,
+                  leaderSkillTargetUid: resTargetCard.uid,
+                  leaderSkillOppTargetUid: oppTargetCardPass
+                    ? oppTargetCardPass.uid
+                    : undefined,
+                },
+                simState
+              );
+            }
           }
         }
       } else {

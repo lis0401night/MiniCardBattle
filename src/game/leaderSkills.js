@@ -521,21 +521,34 @@ export async function executeLeaderSkillAction(
     const board = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
     // isOppDiscard: 相手の墓地から取得する場合はtrue（破壊時の墓地返却先を制御するため）
+    // forcedUid: AIがシミュレーションで決定したカードのUID（直接選択用）
     const performResurrect = async (
       discard,
       srcLabel,
-      isOppDiscard = false
+      isOppDiscard = false,
+      forcedUid = null
     ) => {
       const validCards = discard.filter((c) => !c.isToken);
       if (validCards.length === 0) return;
 
-      const selectedCard = await waitPlayerDiscardSelection(
-        validCards,
-        999,
-        owner,
-        `${srcLabel}からカードを選択`,
-        'カードを1枚自分のレーンに出します。'
-      );
+      let selectedCard = null;
+
+      // AI: シミュレーションで決定したカードをUID優先で直接選択（devilhunter_resurrectと同じ方式）
+      if (owner === 'red' && forcedUid) {
+        selectedCard = discard.find(
+          (c) => c && !c.isToken && c.uid === forcedUid
+        );
+      }
+      // フォールバック: プレイヤー手動選択 / AIランダム選択
+      if (!selectedCard) {
+        selectedCard = await waitPlayerDiscardSelection(
+          validCards,
+          999,
+          owner,
+          `${srcLabel}からカードを選択`,
+          'カードを1枚自分のレーンに出します。'
+        );
+      }
       if (!selectedCard) return;
 
       // AI の場合: aiDecision.tokenLanes から配置先を取得（フリーズ防止）
@@ -697,10 +710,14 @@ export async function executeLeaderSkillAction(
       }
     };
 
-    // パート1: 自分の墓地から（isOppDiscard=false）
-    await performResurrect(myDiscard, '自分の墓地', false);
-    // パート2: 相手の墓地から（isOppDiscard=true → 破壊時に自分の墓地へ戻す）
-    await performResurrect(oppDiscard, '相手の墓地', true);
+    // パート1: 自分の墓地から（forcedTargetUidで直接選択）
+    await performResurrect(myDiscard, '自分の墓地', false, forcedTargetUid);
+    // パート2: 相手の墓地から（aiDecisionの相手墓地ターゲットUIDで直接選択）
+    const oppForcedUid =
+      owner === 'red' && GameState.aiDecision
+        ? GameState.aiDecision.leaderSkillOppTargetUid
+        : null;
+    await performResurrect(oppDiscard, '相手の墓地', true, oppForcedUid);
     // overdrive は手動でイベント処理済みのため、Engine呼び出しをスキップする
   } else if (action === 'devilhunter_resurrect') {
     if (await triggerGraveKeeperEffect()) return;

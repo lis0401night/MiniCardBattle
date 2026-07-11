@@ -2144,7 +2144,8 @@ export function applyLeaderSkillLogic(
   events = [],
   forcedTargetIdx = null,
   forcedTargetUid = null,
-  simulatedResurrectLane = null
+  simulatedResurrectLane = null,
+  forcedOppTargetIdx = null
 ) {
   const isBlue = owner === 'blue';
   const board = isBlue ? state.playerBoard : state.enemyBoard;
@@ -3316,7 +3317,38 @@ export function applyLeaderSkillLogic(
       );
       lane2 = emptyLanes.length > 0 ? emptyLanes[0] : lane1 !== 0 ? 0 : 1;
     }
-    oppSelectedCard = placeFromDiscard(oppDiscard, lane2);
+    // 相手墓地のカード選択: forcedOppTargetIdx が指定されている場合はその優先
+    if (
+      forcedOppTargetIdx !== null &&
+      oppDiscard[forcedOppTargetIdx] &&
+      !oppDiscard[forcedOppTargetIdx].isToken
+    ) {
+      const forcedOppCard = oppDiscard[forcedOppTargetIdx];
+      const existingCard2 = board[lane2];
+      if (existingCard2) {
+        myDiscard.push(existingCard2);
+      }
+      const resurrectedOppCard = {
+        ...forcedOppCard,
+        id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+        baseId: forcedOppCard.baseId || forcedOppCard.id,
+      };
+      resurrectedOppCard.currentPower = resurrectedOppCard.power;
+      resurrectedOppCard.skillTriggered = true;
+      resurrectedOppCard.stunTurns = 0;
+      board[lane2] = resurrectedOppCard;
+      events.push({
+        type: 'summon_card',
+        side: owner,
+        lane: lane2,
+        card: JSON.parse(JSON.stringify(resurrectedOppCard)),
+        source: 'overdrive',
+      });
+      oppSelectedCard = forcedOppCard;
+      oppDiscard.splice(forcedOppTargetIdx, 1);
+    } else {
+      oppSelectedCard = placeFromDiscard(oppDiscard, lane2);
+    }
 
     // AIのアクションキューに決定した復活カード情報を登録（実際のゲームで正しく選択されるようにする）
     if (!state._actionQueue) state._actionQueue = [];
