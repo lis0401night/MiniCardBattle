@@ -15,7 +15,12 @@ import { appendVersionQuery } from '../utils/constants/config.js';
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, iconError: false, buttonHover: false };
+    this.state = {
+      hasError: false,
+      error: null,
+      iconError: false,
+      buttonHover: false,
+    };
   }
 
   static getDerivedStateFromError(error) {
@@ -99,7 +104,11 @@ export default class ErrorBoundary extends Component {
             {/* 復帰ボタン */}
             <button
               onClick={this.handleReturnToTitle}
-              style={this.state.buttonHover ? { ...styles.button, ...styles.buttonHover } : styles.button}
+              style={
+                this.state.buttonHover
+                  ? { ...styles.button, ...styles.buttonHover }
+                  : styles.button
+              }
               onMouseEnter={() => this.setState({ buttonHover: true })}
               onMouseLeave={() => this.setState({ buttonHover: false })}
             >
