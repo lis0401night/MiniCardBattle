@@ -2269,6 +2269,7 @@ h2 {
   overflow-y: hidden;
   padding: 20px 0;
   box-sizing: border-box;
+  animation: fadeIn 0.25s ease-out;
 }
 
 .modal-content {
