@@ -6,8 +6,8 @@ import {
   DEFAULT_PLAYER_NAME,
   DEFENSE_TARGET_COUNT,
   HIGH_TIER_PICK_COUNT,
-  MID_TIER_PICK_COUNT,
   LOW_TIER_PICK_COUNT,
+  MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
@@ -15,6 +15,7 @@ import {
   audioCtx,
   isAudioUnlocked,
   loadAndDecodeAudio,
+  recreateAudioSystem,
   seBuffers,
   SOUNDS,
   unlockAudio,
@@ -365,18 +366,31 @@ export function stopAllBGM() {
   });
 }
 
-export function forceSoundReload() {
-  if (typeof unlockAudio === 'function' && !isAudioUnlocked) {
-    unlockAudio();
+export async function forceSoundReload() {
+  if (typeof recreateAudioSystem === 'function') {
+    await recreateAudioSystem();
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
-  }
+
+  // BGM用のデコードバッファキャッシュもクリア
+  Object.keys(decodedBgms).forEach((key) => {
+    delete decodedBgms[key];
+  });
+
+  // 現在再生中のBGMがあった場合、それを再起動
   if (currentBgmAudio) {
     const bgm = currentBgmAudio;
     currentBgmAudio = null;
-    playSound(bgm);
+
+    // 短いディレイ（アセットロード時間考慮）を挟んで再起動
+    setTimeout(() => {
+      playSound(bgm);
+    }, 150);
   }
+
+  // 復旧のフィードバックとして、テスト用SE（クリック音）を鳴らす
+  setTimeout(() => {
+    playSound('seClick');
+  }, 300);
 }
 export const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 

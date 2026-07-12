@@ -347,6 +347,63 @@ export function playSkillSound(skillId) {
   }
 }
 
+/**
+ * オーディオコンテキストを強制的に再作成し、すべてのSEやBGMのデコードデータを再ロードする
+ */
+export async function recreateAudioSystem() {
+  console.log('[Sound] サウンドシステムの強制再構築を開始します...');
+
+  // 1. 既存の AudioContext の破棄
+  if (audioCtx) {
+    try {
+      if (typeof audioCtx.close === 'function') {
+        await audioCtx.close();
+      }
+    } catch (e) {
+      console.warn('[Sound] 既存の AudioContext のクローズに失敗しました:', e);
+    }
+    audioCtx = null;
+  }
+
+  // 2. 状態変数のリセット
+  isAudioUnlocked = false;
+
+  // 3. キャッシュ（SE / BGM / ボイスバッファ）の完全初期化
+  Object.keys(seBuffers).forEach((key) => {
+    delete seBuffers[key];
+  });
+  Object.keys(voiceBuffers).forEach((key) => {
+    delete voiceBuffers[key];
+  });
+
+  // 4. 新規 AudioContext の作成とアンロック処理の開始
+  try {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioCtxClass();
+    console.log('[Sound] 新しい AudioContext を作成しました。');
+  } catch (e) {
+    console.error('[Sound] 新規 AudioContext の作成に失敗しました:', e);
+    return;
+  }
+
+  // アンロックを実行（SEアセットの再読み込み＆デコードも内部で走る）
+  await unlockAudio();
+
+  // 5. HTML5 Audio (AUDIO_INSTANCES) の強制リロード
+  Object.keys(AUDIO_INSTANCES).forEach((key) => {
+    const audio = AUDIO_INSTANCES[key];
+    if (audio instanceof Audio) {
+      try {
+        audio.load(); // 再読み込みをブラウザに命じる
+      } catch (e) {
+        console.warn(`[Sound] HTML5 Audio load failed: ${key}`, e);
+      }
+    }
+  });
+
+  console.log('[Sound] サウンドシステムの強制再構築が完了しました。');
+}
+
 // 確実なオーディアンロックのためのネイティブDOMイベント監視 (React合成イベントの外側で処理)
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   const unlockHandler = () => {
