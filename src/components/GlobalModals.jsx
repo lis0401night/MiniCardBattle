@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import {
@@ -12,51 +12,51 @@ import {
   setCloseCardPreviewHook,
   setOpenCardPreviewHook,
   setShowCardAcquisitionModalHook,
+  setShowIconAcquisitionModalHook,
   setShowPlaymatAcquisitionModalHook,
   setShowPremiumAcquisitionModalHook,
   setShowSkinAcquisitionModalHook,
-  setShowIconAcquisitionModalHook,
 } from '../services/uiGallery.js';
 import {
   backupDataToXML,
   confirmCharSelect,
   importDataFromXML,
-  setCloseEnemyDeckModalHook,
   reloadGame,
+  setCloseEnemyDeckModalHook,
 } from '../services/uiMainCore.js';
 import {
   setShowAlertModalHook,
   setShowConfirmModalHook,
   setShowErrorModalHook,
   setShowPointAcquisitionModalHook,
-  showAlertModal,
   setShowProfileModalHook,
+  showAlertModal,
 } from '../services/uiModals.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import {
   appendVersionQuery,
-  PROFILE_NAME_KEY,
-  DEFAULT_PLAYER_NAME,
   DEFAULT_PLAYER_ICON,
+  DEFAULT_PLAYER_NAME,
+  PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
 
+import { saveDungeonProgress } from '../game/battleDungeon.js';
+import { syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { PLAYMAT_MASTER, ownedPlaymats } from '../utils/constants/playmats.js';
+import { ownedPlaymats, PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
+  getOrCreateUUID,
   playSound,
   stopAllBGM,
   togglePremiumCard,
-  getOrCreateUUID,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
-import { saveDungeonProgress } from '../game/battleDungeon.js';
-import { syncUserProfile } from '../utils/apiUtils.js';
 
 const EXCHANGE_DISPLAY_TYPE_LABELS = {
   playmat: 'プレイマット',
@@ -965,7 +965,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             zIndex: 3000,
             display: 'flex',
             background: 'rgba(0,0,0,0.9)',
-            backdropFilter: 'blur(8px)',
             animation: 'fadeIn 0.4s',
           }}
         >
@@ -1077,7 +1076,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             zIndex: 3200,
             display: 'flex',
             background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(5px)',
             animation: 'fadeIn 0.3s',
           }}
           onClick={() =>

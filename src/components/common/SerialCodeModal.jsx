@@ -37,8 +37,6 @@ export default function SerialCodeModal({ visible, onClose, onSubmit }) {
         width: '100%',
         height: '100%',
         background: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
         zIndex: 5000,
         display: 'flex',
         alignItems: 'center',

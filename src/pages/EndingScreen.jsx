@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../state/gameState.js';
+import { STORY_ROMANTIC_TALKS } from '../utils/constants/storyDialogues.js';
 import { playSound, stopAllBGM, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
-import { STORY_ROMANTIC_TALKS } from '../utils/constants/storyDialogues.js';
 
 export default function EndingScreen() {
   const [opacity, setOpacity] = useState(0);
@@ -141,7 +141,6 @@ export default function EndingScreen() {
                 '0 10px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)',
               opacity: textOpacity * opacity,
               transition: 'opacity 0.5s ease-in-out',
-              backdropFilter: 'blur(8px)',
             }}
           >
             {/* キャラクター名 */}

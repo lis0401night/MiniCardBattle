@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { SKILLS } from '../../utils/constants/skills.js';
-import { SOUNDS } from '../../utils/sounds.js';
 import { getCardImgUrl, playSound } from '../../utils/gameUtils.js';
+import { SOUNDS } from '../../utils/sounds.js';
 
 export default function CardPreviewContent({
   card,
@@ -718,7 +718,6 @@ export default function CardPreviewContent({
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 20,
-              backdropFilter: 'blur(4px)',
               cursor: 'pointer',
             }}
             onClick={(e) => {
