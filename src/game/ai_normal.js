@@ -2031,7 +2031,7 @@ export function getBestSimulatedMove() {
         // leaderSkillTargetUidが確実に設定されるようにする（-1だとnullになりランダムフォールバックに落ちる）
         // 墓地が空の場合のみ-1を使用（相手墓地からの復活だけでも機能するため）
         let dIdxLoop;
-        if (action === 'overdrive') {
+        if (action === 'overdrive' || action === 'devilhunter_resurrect') {
           dIdxLoop =
             validResurrectIndices.length > 0 ? validResurrectIndices : [-1];
         } else {
