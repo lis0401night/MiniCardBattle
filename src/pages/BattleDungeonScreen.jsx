@@ -382,6 +382,7 @@ function ResumeSelect() {
                   borderRadius: '50%',
                   overflow: 'hidden',
                   border: `2px solid ${getRarityColor(pConf.rarity)}`,
+                  flexShrink: 0,
                 }}
               >
                 <img

@@ -457,6 +457,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     };
 
     window.closeSkillConfirmModalReact = () => {
+      playSound?.(SOUNDS?.seClick);
       setSkillConfirmData(null);
     };
 
