@@ -4,9 +4,22 @@
 import { GameState } from '../state/gameState.js';
 
 // Web Audio API Context
-export let audioCtx = null;
+export let audioCtx = (() => {
+  if (typeof window !== 'undefined') {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtxClass) {
+      try {
+        return new AudioCtxClass();
+      } catch (e) {
+        console.warn('Failed to create AudioContext early:', e);
+      }
+    }
+  }
+  return null;
+})();
 export const seBuffers = {};
 export const voiceBuffers = {};
+export const decodedBgms = {};
 export let isAudioUnlocked = false;
 
 export const SE_PATHS = {
@@ -170,8 +183,18 @@ export async function loadAndDecodeAudio(url) {
   if (!audioCtx) return null;
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const arrayBuffer = await response.arrayBuffer();
-    return await audioCtx.decodeAudioData(arrayBuffer);
+    return await new Promise((resolve) => {
+      audioCtx.decodeAudioData(
+        arrayBuffer,
+        (buffer) => resolve(buffer),
+        (e) => {
+          console.warn(`decodeAudioData failed for: ${url}`, e);
+          resolve(null);
+        }
+      );
+    });
   } catch (e) {
     console.warn(`Failed to load/decode audio: ${url}`, e);
     return null;
@@ -182,10 +205,33 @@ export async function loadAndDecodeAudio(url) {
  * 特定のSEをロードしてデコード
  */
 export async function loadSE(key, url) {
-  const buffer = await loadAndDecodeAudio(url);
-  if (buffer) {
-    seBuffers[key] = buffer;
-    seBuffers[url] = buffer; // 文字列パスでも引けるようにする
+  try {
+    const buffer = await loadAndDecodeAudio(url);
+    if (buffer) {
+      seBuffers[key] = buffer;
+      seBuffers[url] = buffer; // 文字列パスでも引けるようにする
+    }
+  } catch (e) {
+    console.warn(`Failed to loadSE: ${key} (${url})`, e);
+  }
+}
+
+/**
+ * 特定のBGMをロードしてデコード（事前デコード用）
+ */
+export async function loadBgm(key, url) {
+  try {
+    const buffer = await loadAndDecodeAudio(url);
+    if (buffer) {
+      decodedBgms[url] = buffer;
+      let relativePath = url;
+      if (url.includes('assets/audio/bgm/')) {
+        relativePath = url.substring(url.indexOf('assets/audio/bgm/'));
+      }
+      decodedBgms[relativePath] = buffer;
+    }
+  } catch (e) {
+    console.warn(`Failed to loadBgm: ${key} (${url})`, e);
   }
 }
 
@@ -220,17 +266,27 @@ export async function unlockAudio() {
   try {
     // AudioContext の初期化
     if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) {
+        audioCtx = new AudioCtxClass();
+      }
     }
 
-    // 全てのSEを非同期でロード開始
-    Object.entries(SE_PATHS).forEach(([key, url]) => {
-      loadSE(key, url);
+    // 同期的に resume() を呼び出す（ブラウザのユーザージェスチャー制限対策）
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch((e) => console.warn(e));
+    }
+
+    // まだロードされていないSEのみ非同期でロード開始
+    const promises = Object.entries(SE_PATHS).map(([key, url]) => {
+      if (!seBuffers[key]) {
+        return loadSE(key, url);
+      }
+      return Promise.resolve();
     });
 
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
+    // 全てのSEロードの完了を待機（エラーハンドリングは各Promise内で解決済み）
+    await Promise.all(promises);
 
     const baseVol =
       typeof GameState !== 'undefined' &&
@@ -241,17 +297,19 @@ export async function unlockAudio() {
     // BGM volume sync
     updateBgmGainNodes(baseVol);
 
-    // ダミー再生（念のため）
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    gain.gain.value = 0;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(0);
-    osc.stop(0.1);
+    // ダミー再生（サスペンドからの確実な復帰用）
+    if (audioCtx) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(0);
+      osc.stop(0.1);
+    }
 
     isAudioUnlocked = true;
-    console.log('Web Audio Context Unlocked and SE Buffers Loading...');
+    console.log('Web Audio Context Unlocked and SE Buffers Loading completed.');
 
     // バックグラウンド・フォアグラウンド移行時の音声バグ対策 (iOS/Android Safari, Chrome)
     if (typeof document !== 'undefined') {
@@ -351,7 +409,7 @@ export function playSkillSound(skillId) {
  * オーディオコンテキストを強制的に再作成し、すべてのSEやBGMのデコードデータを再ロードする
  */
 export async function recreateAudioSystem() {
-  console.log('[Sound] サウンドシステムの強制再構築を開始します...');
+  console.log('[Sound] サウンドシステムの再構築を開始します...');
 
   // 1. 既存の AudioContext の破棄
   if (audioCtx) {
@@ -365,18 +423,10 @@ export async function recreateAudioSystem() {
     audioCtx = null;
   }
 
-  // 2. 状態変数のリセット
+  // 2. 状態変数のリセット（デコード済みの seBuffers や decodedBgms は新しいコンテキストでも再利用できるため破棄しない）
   isAudioUnlocked = false;
 
-  // 3. キャッシュ（SE / BGM / ボイスバッファ）の完全初期化
-  Object.keys(seBuffers).forEach((key) => {
-    delete seBuffers[key];
-  });
-  Object.keys(voiceBuffers).forEach((key) => {
-    delete voiceBuffers[key];
-  });
-
-  // 4. 新規 AudioContext の作成とアンロック処理の開始
+  // 3. 新規 AudioContext の作成とアンロック処理の開始
   try {
     const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioCtxClass();
@@ -386,10 +436,15 @@ export async function recreateAudioSystem() {
     return;
   }
 
-  // アンロックを実行（SEアセットの再読み込み＆デコードも内部で走る）
+  // 同期的に一度 resume() を実行
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+
+  // アンロックを実行（すでにバッファはあるので、単にアンロックするだけ）
   await unlockAudio();
 
-  // 5. HTML5 Audio (AUDIO_INSTANCES) の強制リロード
+  // 4. HTML5 Audio (AUDIO_INSTANCES) の強制リロード
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
     const audio = AUDIO_INSTANCES[key];
     if (audio instanceof Audio) {
@@ -401,7 +456,7 @@ export async function recreateAudioSystem() {
     }
   });
 
-  console.log('[Sound] サウンドシステムの強制再構築が完了しました。');
+  console.log('[Sound] サウンドシステムの再構築が完了しました。');
 }
 
 // 確実なオーディアンロックのためのネイティブDOMイベント監視 (React合成イベントの外側で処理)

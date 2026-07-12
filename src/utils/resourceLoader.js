@@ -1,5 +1,12 @@
 import { CARD_MASTER } from './constants/cards.js';
-import { AUDIO_INSTANCES, SE_PATHS, shouldSkipAudioPreload } from './sounds.js';
+import {
+  AUDIO_INSTANCES,
+  SE_PATHS,
+  shouldSkipAudioPreload,
+  loadSE,
+  loadBgm,
+  audioCtx,
+} from './sounds.js';
 import { getCardImgUrl, hasPremiumVariant } from './gameUtils.js';
 import { appendVersionQuery } from './constants/config.js';
 
@@ -66,13 +73,47 @@ export async function preloadAllGameResources(onProgress) {
   const loadPromise = (url) => {
     return new Promise((resolve) => {
       if (url.match(/\.(mp3|wav|ogg|m4a)$/i)) {
-        // 音声ファイルのキャッシュ
-        const a = new Audio();
-        a.oncanplaythrough = resolve;
-        a.onerror = resolve;
-        a.src = url;
-        a.load();
-        preloadedAudios.push(a);
+        // SEかBGMかを判定
+        const isSE = Object.values(SE_PATHS).includes(url);
+        if (isSE) {
+          // 効果音（SE）の場合は Web Audio API で事前デコードしてキャッシュする
+          const key = Object.keys(SE_PATHS).find((k) => SE_PATHS[k] === url);
+          if (key) {
+            loadSE(key, url).then(resolve).catch(resolve);
+          } else {
+            resolve();
+          }
+        } else {
+          // BGM（タイトルBGMなど）の場合は、Web Audio API での事前デコードと HTML5 Audio 双方をロードする
+          const bgmKey = Object.keys(AUDIO_INSTANCES).find((k) => {
+            const audio = AUDIO_INSTANCES[k];
+            if (audio && audio.src) {
+              try {
+                const pathname = new URL(audio.src, window.location.href)
+                  .pathname;
+                return pathname === url || audio.src.includes(url);
+              } catch {
+                return audio.src.includes(url);
+              }
+            }
+            return false;
+          });
+
+          const p1 = bgmKey ? loadBgm(bgmKey, url) : Promise.resolve();
+          // Web Audio APIが使えない環境（audioCtxがnull）の場合のみ、HTML5 Audioとしてもプリロードする
+          const p2 = !audioCtx
+            ? new Promise((res) => {
+                const a = new Audio();
+                a.oncanplaythrough = res;
+                a.onerror = res;
+                a.src = url;
+                a.load();
+                preloadedAudios.push(a);
+              })
+            : Promise.resolve();
+
+          Promise.all([p1, p2]).then(resolve).catch(resolve);
+        }
       } else {
         // 画像ファイルのキャッシュ
         const img = new Image();

@@ -19,6 +19,7 @@ import {
   seBuffers,
   SOUNDS,
   unlockAudio,
+  decodedBgms,
 } from './sounds.js';
 import { setCurrentScreen } from './errorReporter.js';
 
@@ -29,7 +30,7 @@ const DEFENSE_TARGETS_STORAGE_KEY = 'mini_card_battle_defense_targets';
 export let currentBgmAudio = null;
 export let currentWebAudioBgmSource = null;
 export let currentWebAudioBgmGain = null;
-export const decodedBgms = {};
+export { decodedBgms };
 
 export const retryPlayBgm = () => {
   // WebAudioが使える場合はHTML5 Audioのplay()は実行しない（二重再生防止）
