@@ -44,23 +44,45 @@ export const retryPlayBgm = () => {
     }
   }
   if (audioCtx) {
+    const startBgmIfPossible = () => {
+      document.removeEventListener('click', retryPlayBgm, true);
+      document.removeEventListener('touchstart', retryPlayBgm, true);
+
+      if (currentBgmAudio) {
+        let fetchUrl = currentBgmAudio.src;
+        if (fetchUrl.includes('assets/audio/bgm/')) {
+          fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
+        }
+        const buffer = decodedBgms[fetchUrl];
+        const baseVol =
+          typeof GameState !== 'undefined' &&
+          typeof GameState.gameVolume !== 'undefined'
+            ? GameState.gameVolume
+            : 0.3;
+
+        if (buffer) {
+          startWebAudioBgm(buffer, baseVol);
+        } else {
+          // デコードされていない場合はここでデコードして再生
+          loadAndDecodeAudio(currentBgmAudio.src)
+            .then((buf) => {
+              if (buf && currentBgmAudio && currentBgmAudio.src.includes(fetchUrl)) {
+                decodedBgms[fetchUrl] = buf;
+                startWebAudioBgm(buf, baseVol);
+              }
+            })
+            .catch((e) => console.warn('Failed to decode BGM on retry', e));
+        }
+      }
+    };
+
     if (audioCtx.state === 'suspended') {
       audioCtx
         .resume()
-        .then(() => {
-          document.removeEventListener('click', retryPlayBgm, true);
-          document.removeEventListener('touchstart', retryPlayBgm, true);
-          if (currentWebAudioBgmGain) {
-            currentWebAudioBgmGain.gain.value =
-              typeof GameState.gameVolume !== 'undefined'
-                ? GameState.gameVolume
-                : 0.3;
-          }
-        })
+        .then(startBgmIfPossible)
         .catch(() => {});
     } else if (audioCtx.state === 'running') {
-      document.removeEventListener('click', retryPlayBgm, true);
-      document.removeEventListener('touchstart', retryPlayBgm, true);
+      startBgmIfPossible();
     }
   }
 };
