@@ -108,7 +108,10 @@ export default function TitleScreen() {
             }
           })
           .catch((e) => {
-            console.warn('[Title] unlockAudio failed, fallback to transition:', e);
+            console.warn(
+              '[Title] unlockAudio failed, fallback to transition:',
+              e
+            );
             if (typeof goToModeSelect === 'function') {
               goToModeSelect();
             }

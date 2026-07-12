@@ -66,7 +66,11 @@ export const retryPlayBgm = () => {
           // デコードされていない場合はここでデコードして再生
           loadAndDecodeAudio(currentBgmAudio.src)
             .then((buf) => {
-              if (buf && currentBgmAudio && currentBgmAudio.src.includes(fetchUrl)) {
+              if (
+                buf &&
+                currentBgmAudio &&
+                currentBgmAudio.src.includes(fetchUrl)
+              ) {
                 decodedBgms[fetchUrl] = buf;
                 startWebAudioBgm(buf, baseVol);
               }
@@ -296,7 +300,8 @@ export async function playSound(audioOrKey) {
             });
 
             // resume() の完了（running状態）を確実に待ってから再生を開始する
-            audioCtx.resume()
+            audioCtx
+              .resume()
               .then(playWebAudioBgm)
               .catch(() => {
                 // resume失敗時は次回のインタラクションイベント(retryPlayBgm)を待つ
