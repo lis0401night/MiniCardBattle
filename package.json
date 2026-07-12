@@ -4,7 +4,7 @@
   "version": "0.1.20",
   "type": "module",
   "scripts": {
-    "sync-version": "node sync_version.js && node scripts/generate_card_thumbnails.js",
+    "sync-version": "node sync_version.js && node scripts/generate_card_thumbnails.js && node scripts/compress_audio_all.js",
     "dev": "npm run sync-version && vite",
     "build": "npm run sync-version && vite build",
     "preview": "vite preview",
