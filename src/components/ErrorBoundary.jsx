@@ -15,7 +15,7 @@ import { appendVersionQuery } from '../utils/constants/config.js';
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, iconError: false, buttonHover: false };
   }
 
   static getDerivedStateFromError(error) {
@@ -70,14 +70,14 @@ export default class ErrorBoundary extends Component {
           <div style={styles.card}>
             {/* アイコン */}
             <div style={styles.iconWrapper}>
-              <img
-                src={appendVersionQuery('assets/icons/icon_exclamation.webp')}
-                alt="エラー"
-                style={styles.icon}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+              {!this.state.iconError && (
+                <img
+                  src={appendVersionQuery('assets/icons/icon_exclamation.webp')}
+                  alt="エラー"
+                  style={styles.icon}
+                  onError={() => this.setState({ iconError: true })}
+                />
+              )}
             </div>
 
             {/* タイトル */}
@@ -99,19 +99,9 @@ export default class ErrorBoundary extends Component {
             {/* 復帰ボタン */}
             <button
               onClick={this.handleReturnToTitle}
-              style={styles.button}
-              onMouseEnter={(e) => {
-                e.target.style.background =
-                  'linear-gradient(135deg, #f59e0b, #d97706)';
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background =
-                  'linear-gradient(135deg, #eab308, #ca8a04)';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 15px rgba(234, 179, 8, 0.3)';
-              }}
+              style={this.state.buttonHover ? { ...styles.button, ...styles.buttonHover } : styles.button}
+              onMouseEnter={() => this.setState({ buttonHover: true })}
+              onMouseLeave={() => this.setState({ buttonHover: false })}
             >
               タイトルに戻る
             </button>
@@ -206,5 +196,10 @@ const styles = {
     letterSpacing: '1px',
     transition: 'all 0.2s ease',
     boxShadow: '0 4px 15px rgba(234, 179, 8, 0.3)',
+  },
+  buttonHover: {
+    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 6px 20px rgba(245, 158, 11, 0.4)',
   },
 };

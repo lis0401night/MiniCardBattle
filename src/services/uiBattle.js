@@ -354,10 +354,11 @@ export function showSpeechBubble(target) {
     bubble.innerText = msg;
     bubble.classList.add('active');
 
-    // アイコンをダメージ画像に変更
+    // アイコンをダメージ画像に変更（キャラクターアイコンのみ。カード画像の特殊リーダーはダメージ版が存在しないためスキップ）
     if (iconEl && iconEl.src) {
       const originalSrc = iconEl.src;
-      if (!originalSrc.includes('_damage.webp')) {
+      const hasCharacterIcon = originalSrc.includes('/icons/');
+      if (hasCharacterIcon && !originalSrc.includes('_damage.webp')) {
         iconEl.src = originalSrc.replace('.webp', '_damage.webp');
         setTimeout(() => {
           const currentHP =

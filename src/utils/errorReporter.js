@@ -23,16 +23,24 @@ let reportCount = 0;
 /** 重複抑制用: メッセージ → 最終送信時刻 */
 const recentMessages = new Map();
 
+/** switchScreenから通知される現在の画面ID */
+let currentScreenId = 'unknown';
+
+/**
+ * switchScreen側から現在の画面IDを通知するための関数。
+ * gameUtils.js の switchScreen から呼び出される。
+ * @param {string} screenId - 画面ID（例: 'screen-battle'）
+ */
+export function setCurrentScreen(screenId) {
+  currentScreenId = screenId;
+}
+
 /**
  * 現在の画面IDを取得する。
- * React側の switchScreen で管理されている画面名を取得する。
- * @returns {string} 画面ID（例: 'screen-battle'）
+ * @returns {string} 画面ID
  */
 function getCurrentScreen() {
-  // App.jsxの画面管理から現在の画面を取得
-  const activeScreen = document.querySelector('.screen.active');
-  if (activeScreen && activeScreen.id) return activeScreen.id;
-  return 'unknown';
+  return currentScreenId;
 }
 
 /**
@@ -99,8 +107,8 @@ export function reportError(type, message, stack = '', extra = {}) {
       keepalive: true, // 画面遷移やアンマウント後も送信を完了させる
       signal: controller.signal,
     })
-      .then(() => clearTimeout(timeoutId))
-      .catch(() => clearTimeout(timeoutId));
+      .catch(() => {})
+      .finally(() => clearTimeout(timeoutId));
   } catch {
     // エラーレポーター自体のエラーは完全に無視する（二次障害防止）
   }

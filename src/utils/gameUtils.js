@@ -20,6 +20,7 @@ import {
   SOUNDS,
   unlockAudio,
 } from './sounds.js';
+import { setCurrentScreen } from './errorReporter.js';
 
 // LocalStorageに保存する防衛戦選出キャッシュのキー
 const DEFENSE_TARGETS_STORAGE_KEY = 'mini_card_battle_defense_targets';
@@ -464,6 +465,9 @@ export function setSwitchScreenHook(hook) {
 
 export function switchScreen(id) {
   if (isTransitioning) return;
+
+  // エラーレポーター用に現在の画面IDを更新
+  setCurrentScreen(id);
 
   if (switchScreenHook) {
     switchScreenHook(id);

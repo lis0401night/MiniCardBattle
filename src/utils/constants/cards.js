@@ -2237,7 +2237,7 @@ export const CARD_MASTER = [
     name: 'ジャガーノート',
     rarity: 3,
     power: 10,
-    skills: [{ id: 'takeover' }, { id: 'spend', value: 2 }],
+    skills: [{ id: 'takeover' }, { id: 'spend', value: 1 }],
     voiceCategory: 'machine_new',
     flavor:
       '圧倒的な質量と装甲で全てを蹂躙する超大型兵器。臨界まで充填されたエネルギーの解放を伴う突撃は、いかなる軍勢をも粉砕する。',

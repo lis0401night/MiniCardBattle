@@ -23,7 +23,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$input = file_get_contents('php://input');
+// Origin/Refererチェック（外部サイトからの不正送信を防止）
+$allowedHost = $_SERVER['HTTP_HOST'] ?? '';
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$referer = $_SERVER['HTTP_REFERER'] ?? '';
+if ($origin && parse_url($origin, PHP_URL_HOST) !== $allowedHost) {
+    echo json_encode(['success' => false, 'error' => 'Invalid origin']);
+    exit;
+}
+if (!$origin && $referer && parse_url($referer, PHP_URL_HOST) !== $allowedHost) {
+    echo json_encode(['success' => false, 'error' => 'Invalid referer']);
+    exit;
+}
+
+// リクエストサイズ上限チェック（200KB）
+$maxRequestBytes = 200 * 1024;
+if (isset($_SERVER['CONTENT_LENGTH']) && (int) $_SERVER['CONTENT_LENGTH'] > $maxRequestBytes) {
+    echo json_encode(['success' => false, 'error' => 'Payload too large']);
+    exit;
+}
+
+$input = file_get_contents('php://input', false, null, 0, $maxRequestBytes);
 $data = json_decode($input, true);
 
 if (!$data || !isset($data['type']) || !isset($data['message'])) {
@@ -45,7 +65,15 @@ if (!file_exists($logDir)) {
 // .htaccess でWebアクセスを遮断（初回のみ作成）
 $htaccessPath = __DIR__ . '/../logs/.htaccess';
 if (!file_exists($htaccessPath)) {
-    file_put_contents($htaccessPath, "Deny from all\n");
+    // Apache 2.4系（mod_authz_core）と2.2系（mod_access）の両方に対応
+    $htaccessContent = "<IfModule mod_authz_core.c>\n"
+        . "    Require all denied\n"
+        . "</IfModule>\n"
+        . "<IfModule !mod_authz_core.c>\n"
+        . "    Order Deny,Allow\n"
+        . "    Deny from all\n"
+        . "</IfModule>\n";
+    file_put_contents($htaccessPath, $htaccessContent);
 }
 
 // 日別ログファイル
@@ -76,7 +104,7 @@ $logEntry = [
     'type'      => $sanitize($data['type'], 50),
     'message'   => $sanitize($data['message']),
     'stack'     => $sanitize($data['stack'] ?? '', 3000),
-    'uuid'      => preg_replace('/[^a-z0-9\-]/', '', $data['uuid'] ?? ''),
+    'uuid'      => substr(preg_replace('/[^a-z0-9\-]/', '', $data['uuid'] ?? ''), 0, 64),
     'screen'    => $sanitize($data['screen'] ?? '', 100),
     'version'   => $sanitize($data['gameVersion'] ?? '', 20),
     'userAgent' => $sanitize($data['userAgent'] ?? '', 300),
