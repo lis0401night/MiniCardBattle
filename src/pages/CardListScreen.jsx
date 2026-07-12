@@ -279,7 +279,7 @@ export default function CardListScreen() {
             const rarityClass = template.rarity
               ? ` rarity-${template.rarity}`
               : '';
-            const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
+            const imgUrl = getCardImgUrl ? getCardImgUrl(template, true) : '';
             const filter = template.filter || 'none';
 
             const hasPremiumUnlocked = unlockedPremium.includes(template.id);

@@ -29,7 +29,7 @@ export default function Card({
   const filter = cardObj.filter;
   // シャドウ化の特殊処理（敵側のみ）は削除
 
-  const imgUrl = getCardImgUrl(cardObj);
+  const imgUrl = getCardImgUrl(cardObj, true);
 
   // スキルタグのHTML生成（Reactレンダー内に安全に埋め込み）
   const skillTagHtml = renderSkillTag(cardObj, isBoard);

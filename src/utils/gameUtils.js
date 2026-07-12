@@ -688,7 +688,7 @@ export function hasPremiumVariant(id) {
 }
 
 // カードの画像URLを取得（プレミアム設定を考慮）// IDからの自動解決
-export function getCardImgUrl(card) {
+export function getCardImgUrl(card, useThumb = false) {
   const getRawUrl = () => {
     if (!card) return 'assets/cards/card_default.webp';
     if (card.imgUrl) return card.imgUrl; // トークン等で直接焼き付けられたURLがある場合は最優先
@@ -704,7 +704,8 @@ export function getCardImgUrl(card) {
           ? GameState.enemySkins || {}
           : GameState.playerSkins || {};
       const dragonSkin = ownerSkins['dragon'] || 'default';
-      return getSkinImage('dragon', dragonSkin, 'image');
+      const fullPath = getSkinImage('dragon', dragonSkin, 'image');
+      return fullPath.split('?')[0]; // 後続のサムネイル置換を通すため、バージョンクエリなしの生パスを返す
     }
     if (card.id === 'token_satan' || card.baseId === 'token_satan')
       return 'assets/cards/card_token_satan.webp';
@@ -747,7 +748,18 @@ export function getCardImgUrl(card) {
     return `assets/cards/card_${lookupId}.webp`;
   };
 
-  const rawUrl = getRawUrl();
+  let rawUrl = getRawUrl();
+
+  // useThumbがtrueで、カード画像またはキャラクター画像で、まだ_thumbが付いていない場合のみ置換
+  if (
+    useThumb &&
+    (rawUrl.includes('assets/cards/') ||
+      rawUrl.includes('assets/characters/')) &&
+    !rawUrl.includes('_thumb.webp')
+  ) {
+    rawUrl = rawUrl.replace('.webp', '_thumb.webp');
+  }
+
   return appendVersionQuery(rawUrl);
 }
 

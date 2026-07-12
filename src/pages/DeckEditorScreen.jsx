@@ -660,7 +660,7 @@ export default function DeckEditorScreen({ switchScreen }) {
             {Object.keys(groupedDeck).map((id) => {
               const { card, count } = groupedDeck[id];
               const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-              const imgUrl = getCardImgUrl ? getCardImgUrl(card) : '';
+              const imgUrl = getCardImgUrl ? getCardImgUrl(card, true) : '';
               const isPremUnlocked = unlockedPremium.includes(card.id);
               const isPremActive = (GameState.premiumCards || []).includes(
                 card.id
@@ -827,7 +827,7 @@ export default function DeckEditorScreen({ switchScreen }) {
               const rarityClass = template.rarity
                 ? ` rarity-${template.rarity}`
                 : '';
-              const imgUrl = getCardImgUrl ? getCardImgUrl(template) : '';
+              const imgUrl = getCardImgUrl ? getCardImgUrl(template, true) : '';
               const isPremUnlocked = unlockedPremium.includes(template.id);
               const isPremActive = (GameState.premiumCards || []).includes(
                 template.id

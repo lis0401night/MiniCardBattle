@@ -818,7 +818,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     };
 
                     const imgUrl = getCardImgUrl
-                      ? getCardImgUrl(displayCard)
+                      ? getCardImgUrl(displayCard, true)
                       : '';
                     const rarityClass = displayCard.rarity
                       ? ` rarity-${displayCard.rarity}`

@@ -123,6 +123,7 @@ export default function ChallengeExchangeScreen() {
                 : '';
 
             let imgUrl = '';
+            let originalImgUrl = '';
             let displayName = item.name;
             let displayDesc = item.description;
 
@@ -130,7 +131,12 @@ export default function ChallengeExchangeScreen() {
               imgUrl =
                 masterClass.imgUrl ||
                 (typeof getCardImgUrl === 'function'
-                  ? getCardImgUrl(masterClass)
+                  ? getCardImgUrl(masterClass, true)
+                  : `assets/cards/card_${masterClass.id || item.id}_thumb.webp`);
+              originalImgUrl =
+                masterClass.imgUrl ||
+                (typeof getCardImgUrl === 'function'
+                  ? getCardImgUrl(masterClass, false)
                   : `assets/cards/card_${masterClass.id || item.id}.webp`);
               displayName = masterClass.name || item.name;
               displayDesc = masterClass.flavor || item.description;
@@ -138,15 +144,19 @@ export default function ChallengeExchangeScreen() {
               imgUrl =
                 masterClass.image ||
                 `assets/boards/board_${item.id.replace('pm_', '')}.webp`;
+              originalImgUrl = imgUrl;
               displayName = masterClass.name || item.name;
             } else if (isIcon) {
               imgUrl = `assets/icons/icon_${item.id}.webp`;
+              originalImgUrl = imgUrl;
             } else {
               // スキンの場合
               imgUrl = `assets/characters/char_${item.id}.webp`;
+              originalImgUrl = imgUrl;
             }
 
             imgUrl = appendVersionQuery(imgUrl);
+            originalImgUrl = appendVersionQuery(originalImgUrl);
 
             const displayTypeLabel = isCard
               ? 'カード'
@@ -181,13 +191,13 @@ export default function ChallengeExchangeScreen() {
                       titleName: displayName,
                       displayType: displayTypeLabel,
                       displayFlavor: displayDesc,
-                      imgUrl: imgUrl,
+                      imgUrl: originalImgUrl,
                       onConfirm: () => {
                         handleExchange({
                           ...item,
                           isUnlocked,
                           canAfford,
-                          imgUrl,
+                          imgUrl: originalImgUrl,
                           displayName,
                           displayDesc,
                           itemObj: masterClass,

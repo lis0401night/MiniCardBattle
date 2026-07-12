@@ -1,14 +1,14 @@
 {
   "name": "mini-card-battle",
   "private": true,
-  "version": "0.1.18",
+  "version": "0.1.19",
   "type": "module",
   "scripts": {
-    "sync-version": "node sync_version.js",
+    "sync-version": "node sync_version.js && node scripts/generate_card_thumbnails.js",
     "dev": "npm run sync-version && vite",
     "build": "npm run sync-version && vite build",
     "preview": "vite preview",
-    "format": "node scripts/convert_assets_to_webp.js && eslint --fix . && prettier --write .",
+    "format": "node scripts/convert_assets_to_webp.js && node scripts/generate_card_thumbnails.js && eslint --fix . && prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

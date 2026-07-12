@@ -224,7 +224,17 @@ export default function DefenseExchangeScreen() {
               ? getCardImgUrl(
                   itemInfo.type === 'premium'
                     ? { ...itemObj, isPremium: true }
-                    : itemObj
+                    : itemObj,
+                  true
+                )
+              : '';
+
+            let originalImgUrl = getCardImgUrl
+              ? getCardImgUrl(
+                  itemInfo.type === 'premium'
+                    ? { ...itemObj, isPremium: true }
+                    : itemObj,
+                  false
                 )
               : '';
 
@@ -253,13 +263,13 @@ export default function DefenseExchangeScreen() {
                           ? 'プレミアム特典'
                           : 'カード',
                       displayFlavor: itemObj.flavor,
-                      imgUrl: imgUrl,
+                      imgUrl: originalImgUrl,
                       onConfirm: () => {
                         handleExchange({
                           ...itemInfo,
                           isMaxed,
                           canExchange,
-                          imgUrl,
+                          imgUrl: originalImgUrl,
                         });
                         window.closeExchangeDetailModal?.();
                       },

@@ -306,7 +306,9 @@ export default function CardPreviewContent({
                   }}
                 >
                   {card.equippedCards.map((eqCard, idx) => {
-                    const eqImgUrl = getCardImgUrl ? getCardImgUrl(eqCard) : '';
+                    const eqImgUrl = getCardImgUrl
+                      ? getCardImgUrl(eqCard, true)
+                      : '';
                     return (
                       <div
                         key={idx}
