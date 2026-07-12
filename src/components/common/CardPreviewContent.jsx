@@ -238,9 +238,11 @@ export default function CardPreviewContent({
                         height: '100%',
                         objectFit: isSkin
                           ? 'contain'
-                          : styleProps.isPlaymat || styleProps.isIcon
-                            ? 'contain'
-                            : 'cover',
+                          : styleProps.isPlaymat
+                            ? 'cover'
+                            : styleProps.isIcon
+                              ? 'contain'
+                              : 'cover',
                         objectPosition: isSkin
                           ? 'top center'
                           : styleProps.isPlaymat || styleProps.isIcon
