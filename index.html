@@ -42,9 +42,49 @@
     <!-- Android等でのPWA完全対応用マニフェスト -->
     <link rel="manifest" href="./manifest.json" />
     <script>
+      // エラーログをサーバーに送信する軽量関数（モジュール読み込み前でも動作）
+      // モジュール側の reportError が利用可能になったらそちらに委譲する
+      var __errorLogCount = 0;
+      function _sendErrorLog(type, message, stack) {
+        try {
+          // モジュール側のレートリミット付き関数が利用可能ならそちらを使う
+          if (window.__reportError) {
+            window.__reportError(type, message, stack);
+            return;
+          }
+          // モジュール読み込み前のフォールバック: 直接fetchで送信（最大3件）
+          if (__errorLogCount >= 3) return;
+          __errorLogCount++;
+          var uuid = '';
+          try {
+            uuid = localStorage.getItem('mini_card_battle_uuid') || '';
+          } catch (e) {}
+          fetch('api/log_error.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: type,
+              message: String(message).substring(0, 2000),
+              stack: String(stack || '').substring(0, 3000),
+              uuid: uuid,
+              screen: 'pre-module',
+              userAgent: navigator.userAgent || '',
+            }),
+            keepalive: true,
+          }).catch(function () {});
+        } catch (e) {}
+      }
+
       window.onerror = function (msg, url, line, col, error) {
         // Safariの共有メニューやブラウザ拡張機能などが引き起こす、ゲームと無関係なクロスオリジンエラーを無視する
         if (msg === 'Script error.' && line === 0) return true;
+
+        // エラーログをサーバーに送信
+        _sendErrorLog(
+          'unhandled_error',
+          msg,
+          error ? error.stack : 'Line:' + line + ' URL:' + url
+        );
 
         if (typeof showErrorModal === 'function') {
           showErrorModal(msg + '\nLine: ' + line + '\nURL: ' + url);
@@ -53,6 +93,11 @@
         }
       };
       window.addEventListener('unhandledrejection', function (event) {
+        // エラーログをサーバーに送信
+        var reason = event.reason;
+        var stack = reason && reason.stack ? reason.stack : '';
+        _sendErrorLog('unhandled_rejection', String(reason), stack);
+
         alert('Unhandled Promise Rejection: ' + event.reason);
       });
       const origConsoleError = console.error;

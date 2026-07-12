@@ -17,7 +17,12 @@ if (
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+import { installGlobalErrorReporter } from './utils/errorReporter.js';
 import './styles/style.css';
+
+// グローバルエラーレポーターをインストール（index.htmlのインラインスクリプトから利用可能にする）
+installGlobalErrorReporter();
 
 // 既存のコンテナ内で React アプリを初期化
 const container = document.getElementById('app-container');
@@ -25,7 +30,9 @@ if (container) {
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 } else {
