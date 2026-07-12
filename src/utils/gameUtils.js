@@ -265,14 +265,6 @@ export async function playSound(audioOrKey) {
           if (currentBgmAudio) stopSound(currentBgmAudio);
           currentBgmAudio = audio; // 互換性維持
 
-          if (audioCtx.state === 'suspended') {
-            audioCtx.resume().catch(() => {});
-            document.addEventListener('click', retryPlayBgm, { capture: true });
-            document.addEventListener('touchstart', retryPlayBgm, {
-              capture: true,
-            });
-          }
-
           let fetchUrl = audio.src;
           // ローカルパス変換ロジック
           if (fetchUrl.includes('assets/audio/bgm/')) {
@@ -281,18 +273,37 @@ export async function playSound(audioOrKey) {
             );
           }
 
-          if (!decodedBgms[fetchUrl]) {
-            // 初回再生時はデコードを待つ（iOS Safariで確実な音量操作を行うための代償）
-            loadAndDecodeAudio(fetchUrl)
-              .then((buffer) => {
-                if (buffer && currentBgmAudio === audio) {
-                  decodedBgms[fetchUrl] = buffer;
-                  startWebAudioBgm(buffer, baseVol);
-                }
-              })
-              .catch((e) => console.warn('Failed to decode BGM', e));
+          const playWebAudioBgm = () => {
+            const buffer = decodedBgms[fetchUrl];
+            if (buffer) {
+              startWebAudioBgm(buffer, baseVol);
+            } else {
+              loadAndDecodeAudio(audio.src)
+                .then((buf) => {
+                  if (buf && currentBgmAudio === audio) {
+                    decodedBgms[fetchUrl] = buf;
+                    startWebAudioBgm(buf, baseVol);
+                  }
+                })
+                .catch((e) => console.warn('Failed to decode BGM:', e));
+            }
+          };
+
+          if (audioCtx.state === 'suspended') {
+            document.addEventListener('click', retryPlayBgm, { capture: true });
+            document.addEventListener('touchstart', retryPlayBgm, {
+              capture: true,
+            });
+
+            // resume() の完了（running状態）を確実に待ってから再生を開始する
+            audioCtx.resume()
+              .then(playWebAudioBgm)
+              .catch(() => {
+                // resume失敗時は次回のインタラクションイベント(retryPlayBgm)を待つ
+              });
           } else {
-            startWebAudioBgm(decodedBgms[fetchUrl], baseVol);
+            // すでに running 状態なら即座に再生
+            playWebAudioBgm();
           }
         } else {
           // HTML5 Audio Fallback (PC or very legacy)

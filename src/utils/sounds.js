@@ -272,9 +272,14 @@ export async function unlockAudio() {
       }
     }
 
-    // 同期的に resume() を呼び出す（ブラウザのユーザージェスチャー制限対策）
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().catch((e) => console.warn(e));
+    // 同期的に resume() を呼び出し、その完了を確実に await 待機する
+    // （リロード後等に発生する、見かけ上 running だが消音されているブラウザバグへの対策）
+    if (audioCtx) {
+      try {
+        await audioCtx.resume();
+      } catch (e) {
+        console.warn('[Sound] AudioContext resume failed:', e);
+      }
     }
 
     // まだロードされていないSEのみ非同期でロード開始
@@ -409,7 +414,7 @@ export function playSkillSound(skillId) {
  * オーディオコンテキストを強制的に再作成し、すべてのSEやBGMのデコードデータを再ロードする
  */
 export async function recreateAudioSystem() {
-  console.log('[Sound] サウンドシステムの再構築を開始します...');
+  console.log('[Sound] サウンドシステムの強制再構築を開始します...');
 
   // 1. 既存の AudioContext の破棄
   if (audioCtx) {
@@ -423,10 +428,22 @@ export async function recreateAudioSystem() {
     audioCtx = null;
   }
 
-  // 2. 状態変数のリセット（デコード済みの seBuffers や decodedBgms は新しいコンテキストでも再利用できるため破棄しない）
+  // 2. 状態変数のリセット
   isAudioUnlocked = false;
 
-  // 3. 新規 AudioContext の作成とアンロック処理の開始
+  // 3. キャッシュ（SE / BGM / ボイスバッファ）の完全初期化
+  // (AudioBufferは古いAudioContextに紐づいているため、新しいコンテキスト再生成時は全て破棄・再デコードが必要)
+  Object.keys(seBuffers).forEach((key) => {
+    delete seBuffers[key];
+  });
+  Object.keys(decodedBgms).forEach((key) => {
+    delete decodedBgms[key];
+  });
+  Object.keys(voiceBuffers).forEach((key) => {
+    delete voiceBuffers[key];
+  });
+
+  // 4. 新規 AudioContext の作成とアンロック処理の開始
   try {
     const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioCtxClass();
@@ -436,12 +453,7 @@ export async function recreateAudioSystem() {
     return;
   }
 
-  // 同期的に一度 resume() を実行
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
-  }
-
-  // アンロックを実行（すでにバッファはあるので、単にアンロックするだけ）
+  // アンロックを実行（SEアセットの再読み込み＆デコードも内部で走る）
   await unlockAudio();
 
   // 4. HTML5 Audio (AUDIO_INSTANCES) の強制リロード

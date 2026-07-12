@@ -101,10 +101,22 @@ export default function TitleScreen() {
 
     try {
       if (typeof unlockAudio === 'function') {
-        unlockAudio().catch((e) => console.warn(e));
-      }
-      if (typeof goToModeSelect === 'function') {
-        goToModeSelect();
+        unlockAudio()
+          .then(() => {
+            if (typeof goToModeSelect === 'function') {
+              goToModeSelect();
+            }
+          })
+          .catch((e) => {
+            console.warn('[Title] unlockAudio failed, fallback to transition:', e);
+            if (typeof goToModeSelect === 'function') {
+              goToModeSelect();
+            }
+          });
+      } else {
+        if (typeof goToModeSelect === 'function') {
+          goToModeSelect();
+        }
       }
     } catch (e) {
       console.error('Failed to start:', e);
