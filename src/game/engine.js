@@ -3709,7 +3709,9 @@ export function applyLeaderSkillLogic(
     };
 
     if (tokenLanes !== null) {
+      // 多重防御: UI側の連打バグ等で3レーン以上が渡されても最大2体に制限
       for (let l of tokenLanes) {
+        if (count >= 2) break;
         const tK = CARD_MASTER.find((m) => m.id === 'token_knight');
         const tk = {
           ...JSON.parse(JSON.stringify(tK)),

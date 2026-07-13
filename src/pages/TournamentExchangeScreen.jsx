@@ -175,7 +175,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
 
             return (
               <div
-                key={item.id}
+                key={`${item.type}_${item.id}`}
                 className="deck-card-item"
                 style={{ opacity, cursor: 'pointer' }}
                 onClick={() => {

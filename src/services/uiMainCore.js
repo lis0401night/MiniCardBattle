@@ -220,6 +220,15 @@ export function importDataFromXML() {
         showConfirmModal(
           'データを上書きしてよろしいですか？\n取り込んだデータで現在の進行状況が上書きされ、自動的にリロードされます。',
           () => {
+            // 現在のすべての game データをクリア（不要データ残留防止）
+            const keys = Object.keys(localStorage);
+            keys.forEach((k) => {
+              if (k.startsWith('mini_card_battle_')) {
+                localStorage.removeItem(k);
+              }
+            });
+
+            // バックアップデータからインポート
             for (let i = 0; i < entries.length; i++) {
               const key = entries[i].getAttribute('key');
               const val = entries[i].textContent;

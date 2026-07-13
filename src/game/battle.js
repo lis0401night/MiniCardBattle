@@ -1246,6 +1246,8 @@ export async function waitPlayerLaneSelection(
     };
 
     window.handlePlacementLaneClick = async (laneIndex) => {
+      // 連打防止: count分のレーンが既に選択済みなら追加クリックを無視
+      if (GameState.placementSelectedLanes.length >= count) return;
       if (GameState.placementSelectedLanes.includes(laneIndex)) return;
       if (sealedLanes[laneIndex] > 0) {
         playSound(SOUNDS.seDamage);
@@ -1551,6 +1553,8 @@ export async function waitPlayerEnemyLaneSelection(
     }
 
     window.handleEnemyLaneClick = (laneIndex) => {
+      // 連打防止: count分のレーンが既に選択済みなら追加クリックを無視
+      if (GameState.targetSelectedLanes.length >= count) return;
       if (!validLanes.includes(laneIndex)) {
         playSound(SOUNDS.seDamage);
         return;
