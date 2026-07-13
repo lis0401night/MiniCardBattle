@@ -236,10 +236,12 @@ export default function RankingScreen({
           justifyContent: 'flex-start',
           paddingTop: '10px',
           gap: '10px',
-          overflowY: 'auto',
           width: '100%',
           maxWidth: '480px',
           flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
         {/* タブUI */}
@@ -310,103 +312,116 @@ export default function RankingScreen({
           </div>
         )}
 
-        {status === 'success' &&
-          players.map((p) => {
-            const char =
-              (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
-            if (!char) return null;
+        {status === 'success' && (
+          <div
+            style={{
+              overflowY: 'auto',
+              width: '100%',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              paddingRight: '2px',
+            }}
+          >
+            {players.map((p) => {
+              const char =
+                (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
+              if (!char) return null;
 
-            const { extraClass, borderColor, textColor } =
-              RANK_ACCENTS[p.rankIndex] || DEFAULT_RANK_ACCENT;
+              const { extraClass, borderColor, textColor } =
+                RANK_ACCENTS[p.rankIndex] || DEFAULT_RANK_ACCENT;
 
-            return (
-              <div
-                key={p.uuid}
-                className={`btn-banner ${extraClass}`}
-                style={{
-                  borderColor,
-                  flexShrink: 0,
-                  cursor: 'default',
-                  opacity: 0.9,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '10px 15px',
-                  boxSizing: 'border-box',
-                  width: '100%',
-                }}
-              >
+              return (
                 <div
+                  key={p.uuid}
+                  className={`btn-banner ${extraClass}`}
                   style={{
+                    borderColor,
+                    flexShrink: 0,
+                    cursor: 'default',
+                    opacity: 0.9,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    padding: '10px 15px',
+                    boxSizing: 'border-box',
                     width: '100%',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div
-                      style={{
-                        marginRight: '12px',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        color: textColor,
-                        width: '40px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {p.rankIndex + 1}位
-                    </div>
-                    <div className="banner-icon-wrapper">
-                      <img
-                        src={getPlayerIconPath(p)}
-                        className="banner-icon"
-                        alt=""
-                      />
-                      <img
-                        src={getIconFramePath(char.id)}
-                        className="banner-icon-frame"
-                        alt="frame"
-                      />
-                    </div>
-                    <span
-                      className="banner-text"
-                      style={{
-                        color: getPlayerColor(p),
-                        marginRight: '10px',
-                      }}
-                    >
-                      {p.name}
-                    </span>
-                    {p.isMe && (
-                      <span
-                        style={{
-                          color: 'var(--color-blue)',
-                          fontWeight: 'bold',
-                          fontSize: '0.85rem',
-                          textShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
-                          marginLeft: '5px',
-                        }}
-                      >
-                        (YOU)
-                      </span>
-                    )}
-                  </div>
                   <div
                     style={{
-                      color: '#cbd5e1',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
                     }}
                   >
-                    {p.displayTotalPoints}
-                    {/^[A-Za-z]+$/.test(currentUnit)
-                      ? ` ${currentUnit}`
-                      : currentUnit}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          marginRight: '12px',
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          color: textColor,
+                          width: '40px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {p.rankIndex + 1}位
+                      </div>
+                      <div className="banner-icon-wrapper">
+                        <img
+                          src={getPlayerIconPath(p)}
+                          className="banner-icon"
+                          alt=""
+                        />
+                        <img
+                          src={getIconFramePath(char.id)}
+                          className="banner-icon-frame"
+                          alt="frame"
+                        />
+                      </div>
+                      <span
+                        className="banner-text"
+                        style={{
+                          color: getPlayerColor(p),
+                          marginRight: '10px',
+                        }}
+                      >
+                        {p.name}
+                      </span>
+                      {p.isMe && (
+                        <span
+                          style={{
+                            color: 'var(--color-blue)',
+                            fontWeight: 'bold',
+                            fontSize: '0.85rem',
+                            textShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
+                            marginLeft: '5px',
+                          }}
+                        >
+                          (YOU)
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        color: '#cbd5e1',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {p.displayTotalPoints}
+                      {/^[A-Za-z]+$/.test(currentUnit)
+                        ? ` ${currentUnit}`
+                        : currentUnit}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        )}
       </div>
     </ScreenLayout>
   );
