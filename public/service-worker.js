@@ -77,11 +77,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 音声・動画などの分割読み込み（Rangeリクエスト）の特別なハンドリング
+  // iOS Safari は音声再生時に複数の Range リクエスト（bytes=0-1, bytes=32768- など）を送信する。
+  // キャッシュキーに Range ヘッダー付きの request をそのまま使うと、Range 値ごとに別エントリとして
+  // 保存されてしまい、同じファイルのフルダウンロード＆書き込みが何度も繰り返される。
+  // これを防ぐため、URL のみのクリーンな Request をキャッシュキーとして使用する。
   const hasRangeHeader = event.request.headers.has('range');
   if (hasRangeHeader) {
+    // Range ヘッダーを含まない一意のキャッシュキーを作成
+    const cacheKey = new Request(event.request.url);
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(event.request).then((cachedResponse) => {
+        return cache.match(cacheKey).then((cachedResponse) => {
           if (cachedResponse) {
             // キャッシュ済みの完全なデータから必要な範囲のみを切り出して返す
             return createPartialResponse(event.request, cachedResponse);
@@ -89,11 +95,11 @@ self.addEventListener('fetch', (event) => {
 
           // キャッシュがない場合、Rangeヘッダーを除外したフルGETで取得・一括キャッシュする
           // これにより分割読み込みを「一括取得」に昇華し、キャッシュを蓄積させます
-          return fetch(event.request.url)
+          return fetch(cacheKey)
             .then((response) => {
               if (response && response.status === 200) {
                 const responseToCache = response.clone();
-                cache.put(event.request, responseToCache);
+                cache.put(cacheKey, responseToCache);
                 return createPartialResponse(event.request, response);
               }
               // 200以外の場合は通常の分割読み込みでフォールバック
