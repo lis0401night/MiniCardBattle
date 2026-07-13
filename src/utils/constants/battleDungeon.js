@@ -216,44 +216,97 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
 
 // 指定したキャラクターのボス用敵を階層に応じて生成する
 export const generateCharacterBossEnemy = (floorNum) => {
-  const leaderIds = Object.keys(ENEMY_DECKS).filter(
-    (id) => !DUNGEON_EXCLUDED_LEADER_IDS.has(id)
-  );
-  const bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
-  const char = CHARACTERS[bossId] || CHARACTERS.android; // 未定義の場合に android でフォールバック
+  // 50階の倍数（50, 100, 150...）は高難易度ボスを生成
+  const isHighBoss = floorNum % 50 === 0;
 
-  // 30階までは中級、40階以降は上級
-  const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
-  const rawDeck = ENEMY_DECKS[bossId];
-  const deck = Array.isArray(rawDeck)
-    ? [...rawDeck]
-    : [...(rawDeck[difficultyMode] || rawDeck.normal || [])];
+  let bossId;
+  let char;
+  let deck;
+
+  if (isHighBoss) {
+    // 高難易度ボス: event_high を持ち、除外リストに含まれないキャラクターから選出
+    const highLeaderIds = Object.keys(CHARACTERS).filter(
+      (id) =>
+        !DUNGEON_EXCLUDED_LEADER_IDS.has(id) &&
+        CHARACTERS[id].event_high &&
+        ENEMY_DECKS[`${id}_high`]
+    );
+    if (highLeaderIds.length > 0) {
+      bossId = highLeaderIds[Math.floor(Math.random() * highLeaderIds.length)];
+    } else {
+      // フォールバック: 通常ボスとして生成
+      bossId = 'android';
+    }
+    char = CHARACTERS[bossId] || CHARACTERS.android;
+    // 高難易度専用デッキを使用
+    const highDeck = ENEMY_DECKS[`${bossId}_high`];
+    deck = highDeck ? [...highDeck] : [];
+  } else {
+    // 通常ボス: 除外リストにないキャラクターから選出
+    const leaderIds = Object.keys(ENEMY_DECKS).filter(
+      (id) => !DUNGEON_EXCLUDED_LEADER_IDS.has(id)
+    );
+    bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
+    char = CHARACTERS[bossId] || CHARACTERS.android;
+    // 30階までは中級、40階以降は上級
+    const difficultyMode = floorNum >= 40 ? 'hard' : 'normal';
+    const rawDeck = ENEMY_DECKS[bossId];
+    deck = Array.isArray(rawDeck)
+      ? [...rawDeck]
+      : [...(rawDeck[difficultyMode] || rawDeck.normal || [])];
+  }
 
   let bossData = {
     ...char,
     id: `dungeon_boss_${bossId}_${Date.now()}`,
     isDungeonEnemy: true,
     fixedAiLevel: 3,
-    hp: char.hp || 20,
+    hp: 20, // ダンジョンボスのHPは一律20
     dungeonDeck: deck,
   };
 
-  // 水着スキンがあれば適用する
-  if (char.skins && char.skins.summer) {
-    const skin = char.skins.summer;
-    bossData = {
-      ...bossData,
-      // ボスのIDや名前は維持し、画像関連のプロパティのみスキンで上書きする
-      image: skin.image || bossData.image,
-      imageLose: skin.imageLose || bossData.imageLose,
-      icon: skin.icon || bossData.icon,
-      iconDamage: skin.iconDamage || bossData.iconDamage,
-      currentSkin: 'summer',
-    };
-    if (skin.dialogue) {
-      bossData.dialogue = { ...char.dialogue, ...skin.dialogue };
-      if (typeof skin.dialogue.intro === 'string') {
-        bossData.preBattleLine = skin.dialogue.intro;
+  // 高難易度ボス: event_high のリーダースキル・名前・スキンを適用
+  if (isHighBoss && char.event_high) {
+    const highConfig = char.event_high;
+    bossData.name = highConfig.name || bossData.name;
+    bossData.leaderSkill = highConfig.leaderSkill || bossData.leaderSkill;
+
+    // 高難易度スキン（画像・台詞）を適用
+    const highSkinId = `${bossId}_high`;
+    const highSkin = char.skins && char.skins[highSkinId];
+    if (highSkin) {
+      bossData = {
+        ...bossData,
+        image: highSkin.image || bossData.image,
+        imageLose: highSkin.imageLose || bossData.imageLose,
+        icon: highSkin.icon || bossData.icon,
+        iconDamage: highSkin.iconDamage || bossData.iconDamage,
+        currentSkin: highSkinId,
+      };
+      if (highSkin.dialogue) {
+        bossData.dialogue = { ...char.dialogue, ...highSkin.dialogue };
+        if (typeof highSkin.dialogue.intro === 'string') {
+          bossData.preBattleLine = highSkin.dialogue.intro;
+        }
+      }
+    }
+  } else {
+    // 通常ボス: 水着スキンがあれば適用する
+    if (char.skins && char.skins.summer) {
+      const skin = char.skins.summer;
+      bossData = {
+        ...bossData,
+        image: skin.image || bossData.image,
+        imageLose: skin.imageLose || bossData.imageLose,
+        icon: skin.icon || bossData.icon,
+        iconDamage: skin.iconDamage || bossData.iconDamage,
+        currentSkin: 'summer',
+      };
+      if (skin.dialogue) {
+        bossData.dialogue = { ...char.dialogue, ...skin.dialogue };
+        if (typeof skin.dialogue.intro === 'string') {
+          bossData.preBattleLine = skin.dialogue.intro;
+        }
       }
     }
   }

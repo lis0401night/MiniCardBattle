@@ -314,7 +314,10 @@ export function calculateDungeonPoints(winStreak) {
   else if (remainder === 6 || remainder === 7) remainderPoints = 4;
   else if (remainder === 8 || remainder === 9) remainderPoints = 5;
 
-  return basePoints + remainderPoints;
+  // 50階ごとの高難易度ボス撃破ボーナス (+10pt/回)
+  const highBossBonus = Math.floor(winStreak / 50) * 10;
+
+  return basePoints + remainderPoints + highBossBonus;
 }
 
 export function retireDungeon() {

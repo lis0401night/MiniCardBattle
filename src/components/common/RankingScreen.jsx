@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ScreenLayout from './ScreenLayout.jsx';
 import {
   CHARACTERS,
@@ -6,8 +6,13 @@ import {
   getIconFramePath,
   getPlayerColor,
 } from '../../utils/constants/characters.js';
-import { getOrCreateUUID, resolvePlayerName } from '../../utils/gameUtils.js';
+import {
+  getOrCreateUUID,
+  playSound,
+  resolvePlayerName,
+} from '../../utils/gameUtils.js';
 import { fetchPlayerDecks, syncModePoints } from '../../utils/apiUtils.js';
+import { SOUNDS } from '../../utils/sounds.js';
 import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
@@ -34,6 +39,12 @@ const DEFAULT_RANK_ACCENT = {
   textColor: '#94a3b8',
 };
 
+/**
+ * ランキング画面コンポーネント
+ *
+ * @param {Array} tabs - タブ定義の配列（省略時は従来のpointField/fallbackPointFieldで動作）
+ *   各要素: { label: 'タブ表示名', pointField: 'ソートフィールド', fallbackPointField: 'フォールバック', unit: '単位' }
+ */
 export default function RankingScreen({
   id,
   backgroundImage,
@@ -41,9 +52,20 @@ export default function RankingScreen({
   backTo,
   pointField, // 'challenge_total_points', 'defense_total_points', 'tournament_total_points' など
   fallbackPointField, // 'challenge_points' など（以前の古いフィールド用）
+  tabs, // タブ定義の配列（省略可能）
 }) {
-  const [players, setPlayers] = useState([]);
+  const [rawPlayers, setRawPlayers] = useState([]);
   const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error', 'empty'
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+
+  // タブが定義されている場合、現在のタブの設定を使用する
+  const currentPointField = tabs
+    ? tabs[activeTabIndex]?.pointField
+    : pointField;
+  const currentFallbackField = tabs
+    ? tabs[activeTabIndex]?.fallbackPointField
+    : fallbackPointField;
+  const currentUnit = tabs ? tabs[activeTabIndex]?.unit || 'Pt' : 'Pt';
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -60,15 +82,17 @@ export default function RankingScreen({
             const myData = activePlayers.find((p) => p.uuid === myUuid);
 
             // pointField に応じて同期するモードを決定 (必要なモードのみ同期して無駄な通信を排除)
+            // タブがある場合は最初のタブのpointFieldで判定する
+            const baseField = tabs ? tabs[0]?.pointField : pointField;
             let syncMode = '';
-            if (pointField.includes('challenge')) {
+            if (baseField?.includes('challenge')) {
               syncMode = 'challenge';
-            } else if (pointField.includes('tournament')) {
+            } else if (baseField?.includes('tournament')) {
               syncMode = 'tournament';
             } else if (
-              pointField.includes('defense') ||
-              pointField === 'points' ||
-              pointField === 'total_points'
+              baseField?.includes('defense') ||
+              baseField === 'points' ||
+              baseField === 'total_points'
             ) {
               syncMode = 'defense';
             }
@@ -160,27 +184,7 @@ export default function RankingScreen({
             return;
           }
 
-          // pointField が明示的に0の場合でも正しく現在の値を使うためのヘルパー
-          const getPoints = (p) =>
-            p[pointField] !== undefined && p[pointField] !== null
-              ? p[pointField]
-              : p[fallbackPointField] || 0;
-
-          // ランキングソート (指定ポイントフィールドの降順)
-          activePlayers.sort((a, b) => getPoints(b) - getPoints(a));
-
-          // 各プレイヤーに対する計算を追加
-          activePlayers = activePlayers.map((p, index) => {
-            const pTotalPoints = getPoints(p);
-            return {
-              ...p,
-              rankIndex: index,
-              displayTotalPoints: pTotalPoints,
-              isMe: p.uuid === myUuid,
-            };
-          });
-
-          setPlayers(activePlayers);
+          setRawPlayers(activePlayers);
           setStatus('success');
         } else {
           throw new Error(result.error);
@@ -192,7 +196,30 @@ export default function RankingScreen({
     };
 
     fetchPlayers();
-  }, [pointField, fallbackPointField]);
+    // タブが定義されていても、データフェッチはpointFieldの変更に依存しない（初回のみ）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // タブ切り替え時にソート結果を再計算する
+  const players = useMemo(() => {
+    if (rawPlayers.length === 0) return [];
+
+    const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
+    const field = currentPointField;
+    const fallback = currentFallbackField;
+
+    const getPoints = (p) =>
+      p[field] !== undefined && p[field] !== null ? p[field] : p[fallback] || 0;
+
+    const sorted = [...rawPlayers].sort((a, b) => getPoints(b) - getPoints(a));
+
+    return sorted.map((p, index) => ({
+      ...p,
+      rankIndex: index,
+      displayTotalPoints: getPoints(p),
+      isMe: p.uuid === myUuid,
+    }));
+  }, [rawPlayers, currentPointField, currentFallbackField]);
 
   return (
     <ScreenLayout
@@ -215,6 +242,52 @@ export default function RankingScreen({
           flex: 1,
         }}
       >
+        {/* タブUI */}
+        {tabs && tabs.length > 1 && (
+          <div
+            style={{
+              display: 'flex',
+              width: '100%',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: '1px solid rgba(148, 163, 184, 0.3)',
+              flexShrink: 0,
+            }}
+          >
+            {tabs.map((tab, i) => (
+              <button
+                key={tab.label}
+                onClick={() => {
+                  if (activeTabIndex !== i) {
+                    playSound(SOUNDS.seClick);
+                    setActiveTabIndex(i);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s ease',
+                  background:
+                    activeTabIndex === i
+                      ? `linear-gradient(135deg, ${titleColor}dd, ${titleColor}88)`
+                      : 'rgba(30, 41, 59, 0.8)',
+                  color: activeTabIndex === i ? '#fff' : '#94a3b8',
+                  borderBottom:
+                    activeTabIndex === i
+                      ? `2px solid ${titleColor}`
+                      : '2px solid transparent',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {status === 'loading' && (
           <div
             style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}
@@ -325,7 +398,7 @@ export default function RankingScreen({
                       fontSize: '0.9rem',
                     }}
                   >
-                    {p.displayTotalPoints} Pt
+                    {p.displayTotalPoints} {currentUnit}
                   </div>
                 </div>
               </div>

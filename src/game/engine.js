@@ -2072,7 +2072,73 @@ export function applyActiveSkillLogic(
               card: execCard,
             });
           } else {
-            quietDiscardFromBoard(state, owner, execLane);
+            // 分裂(split): 墓地送りの代わりにトークンを配置する
+            if (hasSkill(execCard, 'split')) {
+              const sealedLanes =
+                owner === 'blue'
+                  ? state.playerSealedLanes
+                  : state.enemySealedLanes;
+              if (!sealedLanes || sealedLanes[execLane] === 0) {
+                const tokenId =
+                  execCard.summonId ||
+                  execCard.skills?.find((s) => s.id === 'split')?.summonId ||
+                  'token_legs';
+                const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
+                  name: 'トークン',
+                  power: 1,
+                };
+                const val = getSkillValue(execCard, 'split') || tL.power || 2;
+                b[execLane] = {
+                  ...JSON.parse(JSON.stringify(tL)),
+                  id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${execLane}_${getSeededRandom().toString(36).substr(2, 5)}`,
+                  owner,
+                  imgUrl: `assets/cards/card_${tokenId}.webp`,
+                  power: val,
+                  currentPower: val,
+                  basePower: val,
+                  rarity: tL.rarity || 1,
+                };
+                events.push({
+                  type: 'summon_token',
+                  side: owner,
+                  lane: execLane,
+                  card: JSON.parse(JSON.stringify(b[execLane])),
+                  source: 'split',
+                });
+              } else {
+                // 封印されたレーンでは分裂できないので通常の墓地送り
+                quietDiscardFromBoard(state, owner, execLane);
+              }
+            } else {
+              quietDiscardFromBoard(state, owner, execLane);
+            }
+
+            // 誘爆(explode): 隣接カードにダメージを与える
+            if (hasSkill(execCard, 'explode')) {
+              const dmg = getSkillValue(execCard, 'explode') || 3;
+              [execLane - 1, execLane + 1].forEach((adj) => {
+                if (adj >= 0 && adj < 3 && b[adj]) {
+                  if (canTakeDamage(b[adj], dmg)) {
+                    b[adj].currentPower -= dmg;
+                    events.push({
+                      type: 'damage_card',
+                      side: owner,
+                      lane: adj,
+                      amount: dmg,
+                      source: 'explode',
+                    });
+                  } else {
+                    events.push({
+                      type: 'immune_block',
+                      side: owner,
+                      lane: adj,
+                      source: 'explode',
+                    });
+                  }
+                }
+              });
+            }
+
             events.push({
               type: 'destroy_cards',
               targets: [{ side: owner, lane: execLane, card: execCard }],

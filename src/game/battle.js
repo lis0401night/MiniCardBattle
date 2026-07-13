@@ -2569,6 +2569,10 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
         await triggerSplitSkill(owner, lane, card);
         return true; // 分裂した場合は墓地に行かず場に残る
       }
+      // 誘爆(explode) — 隣接カードにダメージを与える（カード自体は通常通り墓地へ）
+      if (sk.id === 'explode' && lane !== undefined) {
+        await triggerExplodeSkill(owner, lane, card);
+      }
     }
   }
 
