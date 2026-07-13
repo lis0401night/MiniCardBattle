@@ -8,7 +8,7 @@
  * @param string $uuid プレイヤーのUUID
  * @param int $challenge_points 現在の所持チャレンジポイント (オプション)
  * @param int $challenge_total_points 累計チャレンジポイント (オプション)
- * @param int $challenge_max_streak 最高到達階層 (オプション)
+ * @param int $challenge_max_streak 最高到達階 (オプション)
  * @return json 処理結果および更新後のポイント情報
  */
 

@@ -15,7 +15,7 @@ export default function ChallengeRankingScreen() {
           unit: 'Pt',
         },
         {
-          label: '最高到達階層',
+          label: '最高到達階',
           pointField: 'challenge_max_streak',
           fallbackPointField: 'challenge_max_streak',
           unit: '階',
