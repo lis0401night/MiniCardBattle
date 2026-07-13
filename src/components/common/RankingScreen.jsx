@@ -398,7 +398,10 @@ export default function RankingScreen({
                       fontSize: '0.9rem',
                     }}
                   >
-                    {p.displayTotalPoints} {currentUnit}
+                    {p.displayTotalPoints}
+                    {/^[A-Za-z]+$/.test(currentUnit)
+                      ? ` ${currentUnit}`
+                      : currentUnit}
                   </div>
                 </div>
               </div>

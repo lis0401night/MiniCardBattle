@@ -54,6 +54,7 @@ import {
   applyActiveSkillLogic,
   applySingleCombat,
   calculateCombatPhase,
+  canTakeDamage,
 } from './engine.js';
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
 import { simulateTournamentRound } from './tournament.js';
@@ -2789,20 +2790,30 @@ export async function triggerExplodeSkill(owner, lane, card) {
   }
 
   let targetsFound = false;
+  const damagedLanes = [];
+  const blockedLanes = [];
+
   adj.forEach((j) => {
     if (board[j]) {
-      board[j].currentPower -= val;
       targetsFound = true;
+      if (canTakeDamage(board[j], val)) {
+        board[j].currentPower -= val;
+        damagedLanes.push(j);
+      } else {
+        blockedLanes.push(j);
+      }
     }
   });
 
   if (targetsFound) {
     playSound(SOUNDS.seDamage);
     // renderBoard(); // アニメーションを壊すため避ける
-    adj.forEach((j) => updateCardPowerOnly(j, side));
 
-    // 描画更新後の新しいDOM要素に対して演出をかける
-    adj.forEach((j) => {
+    // ダメージを受けたカードのみパワー描画を更新
+    damagedLanes.forEach((j) => updateCardPowerOnly(j, side));
+
+    // ダメージを受けたカードの演出
+    damagedLanes.forEach((j) => {
       const cEl = document.querySelector(
         `#${side}-lanes .cell[data-lane="${j}"] .card`
       );
@@ -2813,6 +2824,16 @@ export async function triggerExplodeSkill(owner, lane, card) {
           cEl.classList.add('anim-shake');
         });
         createDamagePopup(cEl, `誘爆 -${val}`, '#ef4444');
+      }
+    });
+
+    // ダメージを無効化したカードの演出
+    blockedLanes.forEach((j) => {
+      const cEl = document.querySelector(
+        `#${side}-lanes .cell[data-lane="${j}"] .card`
+      );
+      if (cEl) {
+        createDamagePopup(cEl, '無効', '#94a3b8');
       }
     });
 

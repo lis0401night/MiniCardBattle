@@ -240,7 +240,15 @@ export const generateCharacterBossEnemy = (floorNum) => {
     char = CHARACTERS[bossId] || CHARACTERS.android;
     // 高難易度専用デッキを使用
     const highDeck = ENEMY_DECKS[`${bossId}_high`];
-    deck = highDeck ? [...highDeck] : [];
+    if (highDeck) {
+      deck = [...highDeck];
+    } else {
+      // 万が一高難易度用データが取得できなかった場合のセーフティフォールバック（通常の android デッキを使用）
+      const fallbackDeck = ENEMY_DECKS.android;
+      deck = Array.isArray(fallbackDeck)
+        ? [...fallbackDeck]
+        : [...(fallbackDeck?.hard || fallbackDeck?.normal || [])];
+    }
   } else {
     // 通常ボス: 除外リストにないキャラクターから選出
     const leaderIds = Object.keys(ENEMY_DECKS).filter(

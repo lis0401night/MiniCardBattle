@@ -220,23 +220,46 @@ export function importDataFromXML() {
         showConfirmModal(
           'データを上書きしてよろしいですか？\n取り込んだデータで現在の進行状況が上書きされ、自動的にリロードされます。',
           () => {
-            // 現在のすべての game データをクリア（不要データ残留防止）
-            const keys = Object.keys(localStorage);
-            keys.forEach((k) => {
-              if (k.startsWith('mini_card_battle_')) {
-                localStorage.removeItem(k);
-              }
-            });
+            try {
+              // 全エントリを先に検証・ステージングし、適用失敗時は旧データを復元する
+              const previousData = Object.keys(localStorage)
+                .filter((key) => key.startsWith('mini_card_battle_'))
+                .map((key) => [key, localStorage.getItem(key)]);
 
-            // バックアップデータからインポート
-            for (let i = 0; i < entries.length; i++) {
-              const key = entries[i].getAttribute('key');
-              const val = entries[i].textContent;
-              if (key && key.startsWith('mini_card_battle_')) {
-                localStorage.setItem(key, val);
+              const importedData = [];
+              for (let i = 0; i < entries.length; i++) {
+                const key = entries[i].getAttribute('key');
+                if (!key || !key.startsWith('mini_card_battle_')) {
+                  throw new Error(
+                    '無効なバックアップエントリが含まれています。'
+                  );
+                }
+                importedData.push([key, entries[i].textContent ?? '']);
               }
+
+              try {
+                previousData.forEach(([key]) => localStorage.removeItem(key));
+                importedData.forEach(([key, val]) =>
+                  localStorage.setItem(key, val)
+                );
+              } catch (err) {
+                // ロールバック
+                Object.keys(localStorage)
+                  .filter((key) => key.startsWith('mini_card_battle_'))
+                  .forEach((key) => localStorage.removeItem(key));
+                previousData.forEach(([key, val]) =>
+                  localStorage.setItem(key, val)
+                );
+                throw err;
+              }
+
+              location.reload();
+            } catch (err) {
+              console.error('Import error:', err);
+              showAlertModal(
+                `インポートに失敗しました。\nエラー: ${err.message || err}`
+              );
             }
-            location.reload();
           }
         );
       } catch (err) {
