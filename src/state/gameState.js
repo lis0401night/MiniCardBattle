@@ -11,7 +11,10 @@ import {
 
 const safeParseArray = (key) => {
   try {
-    const raw = localStorage.getItem(key);
+    let raw = localStorage.getItem(key);
+    if (raw && typeof raw === 'string') {
+      raw = raw.replace(/[\u200B-\u200D]/g, '');
+    }
     const parsed = raw ? JSON.parse(raw) : null;
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {

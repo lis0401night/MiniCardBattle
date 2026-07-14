@@ -15,6 +15,40 @@ export function showConfirmModal(
   onCancel = null,
   isAlert = false
 ) {
+  // 【デバッグ用】更新またはアップデート関連の確認の際、現在の localStorage データを全送信する
+  if (
+    message &&
+    (message.includes('更新') ||
+      message.includes('アップデート') ||
+      message.includes('バージョン') ||
+      message.includes('新'))
+  ) {
+    try {
+      const backup = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('mini_card_battle_')) {
+          backup[k] = localStorage.getItem(k);
+        }
+      }
+      fetch('api/log_error.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'pwa_update_debug_localStorage',
+          message: 'User confirmed PWA update (React modal). Current localStorage snapshot.',
+          stack: JSON.stringify(backup),
+          uuid: localStorage.getItem('mini_card_battle_uuid') || '',
+          screen: 'pwa-update-react',
+          userAgent: navigator.userAgent || '',
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) {
+      console.warn('Failed to send debug backup:', e);
+    }
+  }
+
   if (showConfirmModalHook)
     return showConfirmModalHook(message, onConfirm, onCancel, isAlert);
   console.warn('GlobalModals not mounted: using window.confirm/alert fallback');

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mini-card-battle-v0.1.21';
+const CACHE_NAME = 'mini-card-battle-v0.1.22.22';
 
 // プリキャッシュする基本リソース
 const PRECACHE_ASSETS = [
@@ -34,11 +34,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // POST/PUT/DELETEなどの非GETリクエストや、サーバー上のPHP API、別ドメインへの通信（Firebase等）、およびバージョンチェック用JSONはキャッシュ対象外
+  // POST/PUT/DELETEなどの非GETリクエストや、サーバー上のPHP API、別ドメインへの通信（Firebase等）、バージョンチェック用JSON、およびサービスワーカー自身はキャッシュ対象外
   if (
     event.request.method !== 'GET' ||
     url.pathname.endsWith('.php') ||
     url.pathname.includes('version.json') ||
+    url.pathname.includes('service-worker.js') ||
     !url.origin.startsWith(self.location.origin)
   ) {
     return;
@@ -53,24 +54,18 @@ self.addEventListener('fetch', (event) => {
 
   if (isHtmlRequest) {
     event.respondWith(
-      caches.match(event.request)
-        .then((cachedResponse) => {
-          // キャッシュがあればそれを返し、無ければネットワークへ行く (Cache-First)
-          if (cachedResponse) {
-            return cachedResponse;
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-          return fetch(event.request).then((response) => {
-            if (response && response.status === 200) {
-              const responseToCache = response.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-            }
-            return response;
-          });
+          return response;
         })
         .catch(() => {
-          return fetch(event.request);
+          return caches.match(event.request);
         })
     );
     return;

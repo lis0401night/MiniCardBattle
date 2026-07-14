@@ -909,38 +909,50 @@ window.stripEphemeralSkills = stripEphemeralSkills;
  * @returns {Promise<void>}
  */
 export async function clearCachesAndServiceWorkers() {
-  const tasks = [];
   const appScope = new URL(
     import.meta.env.BASE_URL || '/',
     window.location.origin
   ).href;
 
-  if ('caches' in window) {
-    tasks.push(
-      caches
-        .keys()
-        .then((names) => Promise.all(names.map((name) => caches.delete(name))))
-    );
-  }
-  if ('serviceWorker' in navigator) {
-    tasks.push(
-      navigator.serviceWorker
-        .getRegistrations()
-        .then((registrations) =>
-          Promise.all(
-            registrations
-              .filter((registration) => registration.scope.startsWith(appScope))
-              .map((registration) => registration.unregister())
-          )
-        )
-    );
-  }
-  const results = await Promise.allSettled(tasks);
-  results.forEach((r) => {
-    if (r.status === 'rejected') {
-      console.error('Failed to clear cache/service workers:', r.reason);
+  // iOS Safariの getRegistrations ハングバグを完全に回避するため、
+  // 登録解除およびキャッシュ削除の Promise は await せず、即座にリロードへ進むためのタイムアウトを設定する。
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 150));
+
+  const cleanPromise = (async () => {
+    try {
+      // 1. ready から直接解除 (最速・高信頼)
+      if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then((reg) => {
+          if (reg && reg.unregister) reg.unregister();
+        }).catch(() => {});
+      }
+
+      // 2. getRegistrations による全解除 (バックグラウンド非同期)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((reg) => {
+            if (reg.scope && reg.scope.startsWith(appScope)) {
+              reg.unregister().catch(() => {});
+            }
+          });
+        }).catch(() => {});
+      }
+
+      // 3. Cache Storage の削除 (バックグラウンド非同期)
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            caches.delete(name).catch(() => {});
+          });
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('[CacheClear] Error during async purge', e);
     }
-  });
+  })();
+
+  // 150ms 経過するか、または削除が完了したら即座に完了とする
+  await Promise.race([cleanPromise, timeoutPromise]);
 }
 
 /**

@@ -1,33 +1,13 @@
-# ====================================================================
-# 1. 既存のキャッシュ無効化設定（アップデートを即時反映させるため維持）
-# ====================================================================
-<FilesMatch "\.(js|css|html|json)$">
-    FileETag None
-    <IfModule mod_headers.c>
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
-        Header set Pragma "no-cache"
-        Header set Expires "0"
-    </IfModule>
-</FilesMatch>
+# サービスワーカーファイルのキャッシュを完全に無効化する（即時更新を強制）
+<Files "service-worker.js">
+  Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+</Files>
 
-# ====================================================================
-# 2. 403 Forbidden 対策：フォルダ直アクセス時に自動で index.html を開く
-# ====================================================================
-DirectoryIndex index.html
-
-# ====================================================================
-# 3. 404エラー ＆ PWA起動エラー対策
-# ====================================================================
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-
-    # 物理的なフォルダが存在し、かつ末尾にスラッシュが無い場合にスラッシュを付与してリダイレクト
-    # 例: /MiniCardBattle -> /MiniCardBattle/
-    RewriteCond %{REQUEST_FILENAME} -d
-    RewriteRule ^(.*[^/])$ /$1/ [L,R=301]
-
-    # 【SPA対策】直接ページパス（.../dungeonなど）を叩かれた際、404にせずindex.htmlに転送する
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . index.html [L]
-</IfModule>
+# index.htmlのキャッシュも無効化（新しいJSへの参照を即時反映）
+<Files "index.html">
+  Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+</Files>

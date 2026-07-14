@@ -866,11 +866,17 @@ export function createNewDeck(leaderId) {
   const globalPremiumSrc = localStorage.getItem(
     'mini_card_battle_premium_cards'
   );
-  const globalPremiumCards = globalPremiumSrc
-    ? JSON.parse(globalPremiumSrc).filter((id) =>
+  let globalPremiumCards = [];
+  if (globalPremiumSrc) {
+    try {
+      globalPremiumCards = JSON.parse(globalPremiumSrc).filter((id) =>
         VALID_PREMIUM_CARDS.includes(id)
-      )
-    : [];
+      );
+    } catch (e) {
+      console.error('Failed to parse global premium cards in createNewDeck:', e);
+      globalPremiumCards = [];
+    }
+  }
 
   const newDeck = {
     id: `deck_${Date.now()}_${GameState.decks.length}`,

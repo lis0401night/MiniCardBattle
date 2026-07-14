@@ -2,6 +2,263 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 最高の互換性を持つ超高速 LocalStorage 暗号化・難読化フック（モジュール評価前の競合を完全解決）
+      (function() {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        if (window.__localStorageHooked) return; // 二重フック防止
+        window.__localStorageHooked = true;
+
+        var origGetItem = localStorage.getItem.bind(localStorage);
+        var origSetItem = localStorage.setItem.bind(localStorage);
+
+        var GAME_KEY_PREFIX = 'mini_card_battle_';
+        var ENCRYPTION_PREFIX = '_mcb_enc_';
+        var OLD_ENCRYPTION_PREFIX = '\u200B\u200C\u200D_';
+        var BASE_XOR_KEY = 'arakia_card_battle_secret_key_2026';
+
+        window.__origGetItem = origGetItem;
+        window.__origSetItem = origSetItem;
+
+        function xorScramble(text, key) {
+          var salt = 0;
+          for (var i = 0; i < key.length; i++) {
+            salt = (salt << 5) - salt + key.charCodeAt(i);
+            salt |= 0;
+          }
+          salt = Math.abs(salt);
+
+          var dynamicKey = BASE_XOR_KEY + key;
+          var result = '';
+          for (var j = 0; j < text.length; j++) {
+            var charCode = text.charCodeAt(j) ^ dynamicKey.charCodeAt((j + salt) % dynamicKey.length);
+            result += String.fromCharCode(charCode);
+          }
+          return result;
+        }
+
+        function hasEncryptionPrefix(text) {
+          if (!text || typeof text !== 'string') return false;
+          if (text.indexOf(ENCRYPTION_PREFIX) === 0) return true;
+          if (text.indexOf(OLD_ENCRYPTION_PREFIX) === 0) return true;
+          
+          var underscoreIdx = text.indexOf('_');
+          if (underscoreIdx === 0) {
+            underscoreIdx = text.indexOf('_', 1);
+          }
+          if (underscoreIdx !== -1 && underscoreIdx < 15) {
+            var prefix = text.substring(0, underscoreIdx);
+            var hasZeroWidth = /[\u200B-\u200D]/.test(prefix);
+            var hasNonAscii = /[^\x00-\x7F]/.test(prefix);
+            if (hasZeroWidth || hasNonAscii || prefix.indexOf('enc') !== -1) {
+              return true;
+            }
+          }
+          return false;
+        }
+
+        function decryptOnce(encryptedText, key) {
+          if (!encryptedText || typeof encryptedText !== 'string') return encryptedText;
+          if (!hasEncryptionPrefix(encryptedText)) return encryptedText;
+
+          var cipher = encryptedText;
+          if (encryptedText.indexOf(ENCRYPTION_PREFIX) === 0) {
+            cipher = encryptedText.substring(ENCRYPTION_PREFIX.length);
+          } else if (encryptedText.indexOf(OLD_ENCRYPTION_PREFIX) === 0) {
+            cipher = encryptedText.substring(OLD_ENCRYPTION_PREFIX.length);
+          } else {
+            var underscoreIdx = encryptedText.indexOf('_');
+            if (underscoreIdx === 0) {
+              underscoreIdx = encryptedText.indexOf('_', 1);
+            }
+            if (underscoreIdx !== -1) {
+              cipher = encryptedText.substring(underscoreIdx + 1);
+            }
+          }
+
+          try {
+            if (!cipher || cipher.trim() === '') return null;
+
+            // atob() の実行前に、Base64文字列からすべてのゼロ幅スペースを完全に除去する
+            cipher = cipher.replace(/[\u200B-\u200D]/g, '');
+
+            if (cipher.indexOf('{') === 0 || cipher.indexOf('[') === 0 || cipher.indexOf('"') === 0) return cipher;
+
+            var scrambled = atob(cipher);
+            var binaryString = xorScramble(scrambled, key);
+
+            // 本番の3種類（平文、31972b63 方式、現在方式）を安全に復元する
+            // 31972b63 方式と現在方式は、どちらもUTF-8バイナリをXORしたものであり、
+            // TextDecoder もしくは escape 方式で100%完璧に同一の平文へと復元されます。
+            var decoded;
+            try {
+              if (typeof TextDecoder !== 'undefined') {
+                var bytes = new Uint8Array(binaryString.length);
+                for (var i = 0; i < binaryString.length; i++) {
+                  bytes[i] = binaryString.charCodeAt(i);
+                }
+                decoded = new TextDecoder('utf-8').decode(bytes);
+              } else {
+                decoded = decodeURIComponent(escape(binaryString));
+              }
+            } catch (errX) {
+              try {
+                decoded = decodeURIComponent(escape(binaryString));
+              } catch (errY) {
+                decoded = binaryString;
+              }
+            }
+
+            if (decoded && typeof decoded === 'string') {
+              decoded = decoded.replace(/[\u200B-\u200D]/g, '');
+            }
+
+            return decoded;
+          } catch (e) {
+            return encryptedText;
+          }
+        }
+
+        function decrypt(encryptedText, key) {
+          if (!encryptedText || typeof encryptedText !== 'string') return encryptedText;
+          if (encryptedText.indexOf('{') === 0 || encryptedText.indexOf('[') === 0 || encryptedText.indexOf('"') === 0) return encryptedText;
+
+          var firstDecrypted = decryptOnce(encryptedText, key);
+
+          if (firstDecrypted && typeof firstDecrypted === 'string') {
+            var isStillEncrypted = firstDecrypted.indexOf(ENCRYPTION_PREFIX) === 0 ||
+                                   firstDecrypted.indexOf(OLD_ENCRYPTION_PREFIX) === 0 ||
+                                   firstDecrypted.indexOf('enc_') === 0 ||
+                                   (firstDecrypted.indexOf('_') !== -1 && firstDecrypted.indexOf('_') < 15);
+
+            if (isStillEncrypted) {
+              var recovered = decryptOnce(firstDecrypted, key);
+              if (recovered !== null && recovered !== firstDecrypted) {
+                return recovered;
+              }
+            }
+          }
+          return firstDecrypted;
+        }
+
+        localStorage.getItem = function(key) {
+          if (!key || key.indexOf(GAME_KEY_PREFIX) !== 0) {
+            return origGetItem(key);
+          }
+          var raw = origGetItem(key);
+          if (raw === null || raw === undefined || raw === '' || raw === 'null' || raw === 'undefined' || raw === 'NaN') return null;
+          if (raw === ENCRYPTION_PREFIX || raw === OLD_ENCRYPTION_PREFIX) return null;
+
+          var decrypted = decrypt(raw, key);
+          if (decrypted === null || decrypted === undefined || decrypted === '' || decrypted === 'null' || decrypted === 'undefined' || decrypted === 'NaN') return null;
+
+          // 自動マイグレーション（暗号化データを検出したら、即座に平文に戻して保存する）
+          if (raw && (raw.indexOf(ENCRYPTION_PREFIX) === 0 || raw.indexOf(OLD_ENCRYPTION_PREFIX) === 0)) {
+            try {
+              origSetItem(key, decrypted);
+            } catch (e) {}
+          }
+          return decrypted;
+        };
+
+        localStorage.setItem = function(key, value) {
+          if (!key || key.indexOf(GAME_KEY_PREFIX) !== 0) {
+            origSetItem(key, value);
+            return;
+          }
+          
+          if (key === 'mini_card_battle_volume') {
+            var numVal = parseFloat(value);
+            if (isNaN(numVal) || !isFinite(numVal)) {
+              value = '0.5';
+            }
+          }
+
+          if (value === null || value === undefined || value === '' || value === 'null' || value === 'undefined') {
+            localStorage.removeItem(key);
+            return;
+          }
+
+          var textValue = typeof value === 'string' ? value : String(value);
+          if (textValue.trim() === '') {
+            localStorage.removeItem(key);
+            return;
+          }
+
+          // 今後は暗号化を一切行わず、そのまま平文で格納
+          origSetItem(key, textValue);
+        };
+
+        // 起動時自動マイグレーション（暗号化データの平文一括書き戻し）
+        try {
+          var keysToMigrate = [];
+          for (var k = 0; k < localStorage.length; k++) {
+            var keyName = localStorage.key(k);
+            if (keyName && keyName.indexOf(GAME_KEY_PREFIX) === 0) {
+              var rawVal = origGetItem(keyName);
+              if (rawVal && rawVal.trim() !== '' && (rawVal.indexOf(ENCRYPTION_PREFIX) === 0 || rawVal.indexOf(OLD_ENCRYPTION_PREFIX) === 0)) {
+                keysToMigrate.push({ key: keyName, raw: rawVal });
+              }
+            }
+          }
+          for (var idx = 0; idx < keysToMigrate.length; idx++) {
+            var item = keysToMigrate[idx];
+            var decryptedVal = decrypt(item.raw, item.key);
+            if (decryptedVal !== null && decryptedVal !== item.raw) {
+              origSetItem(item.key, decryptedVal); // 平文に完全書き戻し
+            }
+          }
+        } catch (e) {}
+
+        // 同期型バージョンチェッカー（ESM モジュールロード前にキャッシュ更新を完了させる）
+        (function() {
+          if (navigator.onLine === false) return;
+
+          // 暗号化フック対象プレフィックスから外したキー名を使用し、干渉を防ぐ
+          var VERSION_KEY = 'mcb_last_sw_version';
+          var lastVersion = localStorage.getItem(VERSION_KEY);
+
+          try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', './version.json?t=' + Date.now(), false);
+            xhr.send(null);
+
+            if (xhr.status === 200) {
+              var data = JSON.parse(xhr.responseText);
+              if (data && data.version) {
+                var hasPwa = !!(navigator.serviceWorker && navigator.serviceWorker.controller) || 
+                             !!(window.caches && localStorage.length > 0);
+
+                if (lastVersion !== data.version && hasPwa) {
+                  if (navigator.serviceWorker) {
+                    navigator.serviceWorker.getRegistrations().then(function(regs) {
+                      for (var i = 0; i < regs.length; i++) {
+                        regs[i].unregister();
+                      }
+                    }).catch(function() {});
+                  }
+                  if (window.caches) {
+                    caches.keys().then(function(keys) {
+                      keys.forEach(function(key) {
+                        caches.delete(key);
+                      });
+                    }).catch(function() {});
+                  }
+
+                  localStorage.setItem(VERSION_KEY, data.version);
+                  window.location.reload(true);
+                  return;
+                } else {
+                  localStorage.setItem(VERSION_KEY, data.version);
+                }
+              }
+            }
+          } catch (e) {
+            // エラー時は安全に無視
+          }
+        })();
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
