@@ -1608,7 +1608,13 @@ export async function waitPlayerEnemyLaneSelection(
 }
 
 /**
- * 自分の場のカードを選択させるユーティリティ（強化スキル用など）
+ * 自分のボード上のカードやレーンを選択させる処理（非同期ユーティリティ）
+ * 主に「分身」「転向」「鍛造」「跳躍」などの、自分のカードまたはレーンを選択して発動するアクティブスキルの解決時に呼び出される。
+ *
+ * @param {number} count - 選択させるカードやレーンの目標数
+ * @param {string} owner - 誰が選択を行うか ('blue': プレイヤー, 'red': 敵/AI)
+ * @param {boolean} [canCancel=false] - 選択キャンセルが許容されるか
+ * @returns {Promise<number[]>} 選択された自陣のレーンインデックス（0〜2）の配列を返す Promise
  */
 export async function waitPlayerAlliedLaneSelection(
   count,
@@ -1616,23 +1622,25 @@ export async function waitPlayerAlliedLaneSelection(
   canCancel = false
 ) {
   const isBlue = owner === 'blue';
+  // 選択を行う側の盤面（自陣ボード）を取得する
   const targetBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
-  // ターゲット可能なレーン（配置されている場所）を取得
+  // すでにカードが配置されているレーン（ターゲット候補となるインデックス）を取得
   const occupiedLanes = targetBoard
     .map((c, i) => (c !== null ? i : -1))
     .filter((i) => i !== -1);
 
+  // 味方の盤面に1枚もカードがなければ、選択の余地がないため即座に空配列を返す
   if (occupiedLanes.length === 0) return [];
 
-  // Check for Remote Choice Wait
+  // 【フェーズ 1】オンライン対戦かつ相手プレイヤーの選択待ちの場合
   if (GameState.gameMode === 'online' && owner === 'red') {
     const rawVal = await new Promise((resolve) => {
       if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
         resolve(GameState.pendingChoices.shift());
       else pendingChoiceResolver = resolve;
     });
-    // number[] に正規化
+    // 受信データを数値配列 [laneIndex] に正規化する
     let parsedLanes = [];
     if (
       rawVal !== null &&
@@ -1653,8 +1661,10 @@ export async function waitPlayerAlliedLaneSelection(
     }
 
     parsedLanes = Array.from(new Set(parsedLanes));
+    // 実際にカードが存在するレーンのみを抽出
     const resultLanes = parsedLanes.filter((i) => occupiedLanes.includes(i));
 
+    // キャンセル不可の設定なのにデータが空だった場合はエラーとする
     if (resultLanes.length === 0 && !canCancel) {
       throw new Error(
         'Invalid online action: Empty allied lane selection not allowed when cancel is disabled.'
@@ -1664,49 +1674,70 @@ export async function waitPlayerAlliedLaneSelection(
     return resultLanes.slice(0, count);
   }
 
-  // AIの場合：パワーが最も高いカード優先
+  // 【フェーズ 2】AI（敵またはシミュレーション）が選択を行う場合
   if (owner === 'red') {
+    // ターゲット可能なレーンの中で、現在のパワーが最も高いカードを優先して選択する
     const sortedLanes = [...occupiedLanes].sort((a, b) => {
       const diff = targetBoard[b].currentPower - targetBoard[a].currentPower;
       if (diff !== 0) return diff;
-      return a - b;
+      return a - b; // パワーが同じなら左側（インデックス小）を優先
     });
     return sortedLanes.slice(0, count);
   }
 
+  // 【フェーズ 3】プレイヤーが画面上で手動選択を行う場合
   return new Promise((resolve) => {
+    // グローバル状態に自分のカード/レーン選択モードであることを設定する
     GameState.isAlliedTargetMode = true;
     GameState.targetMaxCount = count;
     GameState.targetSelectedLanes = [];
     GameState.isTargetCancelable = canCancel;
     updateCardDetail(null);
 
+    /**
+     * 自分のカードやレーンがクリックされた時のイベントハンドラ
+     * @param {number} laneIndex - クリックされたレーンインデックス
+     */
     window.handleAlliedLaneClick = (laneIndex) => {
+      // 対象レーンにカードがない場合は処理をスキップ
       if (targetBoard[laneIndex] === null) return;
       playSound(SOUNDS.seClick);
 
+      // まだ選択されていないレーンであれば選択リストに追加する
       if (!GameState.targetSelectedLanes.includes(laneIndex)) {
         GameState.targetSelectedLanes.push(laneIndex);
-        if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
+        if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライトのUI表示を更新
 
+        // 規定枚数（目標数）の選択が完了した場合
         if (GameState.targetSelectedLanes.length >= count) {
+          // タップ決定演出のために300ms待ってから、非同期で決定処理（finishAlliedSelection）を呼び出す
+          // ※【多重タップ防止】
+          // 300msの待機中にプレイヤーが連打（ダブルクリック等）した場合、タイマーが重複して走り、
+          // 1回目のタイマーで null クリアされた window.finishAlliedSelection が2回目で呼び出され、
+          // TypeError クラッシュを引き起こすため、必ず存在判定のif文ガードを挟む。
           setTimeout(() => {
-            window.finishAlliedSelection();
+            if (window.finishAlliedSelection) window.finishAlliedSelection();
           }, 300);
         }
       }
     };
 
+    /**
+     * 選択処理を確定させ、画面上の選択モードを解除するクリーンアップ兼決定関数
+     */
     window.finishAlliedSelection = async () => {
       playSound(SOUNDS.seClick);
       GameState.isAlliedTargetMode = false;
       const result = [...GameState.targetSelectedLanes];
+
+      // 選択状態のクリーンアップ
       GameState.targetSelectedLanes = [];
       GameState.targetMaxCount = 0;
       window.handleAlliedLaneClick = null;
-      window.finishAlliedSelection = null;
+      window.finishAlliedSelection = null; // 多重実行を避けるため自身を即座に破棄する
       updateCardDetail(null);
 
+      // オンライン対戦の場合は、選択決定データを同期送信する
       if (GameState.gameMode === 'online') {
         await sendOnlineAction({
           type: 'submitChoice',
@@ -1715,8 +1746,8 @@ export async function waitPlayerAlliedLaneSelection(
         });
       }
 
-      if (updateBattleUIHook) updateBattleUIHook();
-      resolve(result);
+      if (updateBattleUIHook) updateBattleUIHook(); // UIハイライト等の状態更新をトリガー
+      resolve(result); // 非同期の呼び出し元へ選択結果配列を返却する
     };
 
     if (updateBattleUIHook) updateBattleUIHook();
