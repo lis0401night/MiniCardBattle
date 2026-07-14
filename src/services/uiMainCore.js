@@ -3,6 +3,7 @@ import { initTournamentMode } from '../game/tournament.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
   DEFAULT_PLAYER_NAME,
+  GAME_KEY_PREFIX,
   RELOAD_CACHE_CLEAR_TIMEOUT_MS,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
@@ -121,7 +122,7 @@ export function resetGameData() {
     () => {
       const keys = Object.keys(localStorage);
       keys.forEach((key) => {
-        if (key.startsWith('mini_card_battle_')) {
+        if (key.startsWith(GAME_KEY_PREFIX)) {
           localStorage.removeItem(key);
         }
       });
@@ -159,7 +160,7 @@ export function backupDataToXML() {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<GameData>\n';
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('mini_card_battle_')) {
+    if (key && key.startsWith(GAME_KEY_PREFIX)) {
       const val = window.__origGetItem
         ? window.__origGetItem(key)
         : localStorage.getItem(key);
@@ -225,13 +226,13 @@ export function importDataFromXML() {
             try {
               // 全エントリを先に検証・ステージングし、適用失敗時は旧データを復元する
               const previousData = Object.keys(localStorage)
-                .filter((key) => key.startsWith('mini_card_battle_'))
+                .filter((key) => key.startsWith(GAME_KEY_PREFIX))
                 .map((key) => [key, localStorage.getItem(key)]);
 
               const importedData = [];
               for (let i = 0; i < entries.length; i++) {
                 const key = entries[i].getAttribute('key');
-                if (!key || !key.startsWith('mini_card_battle_')) {
+                if (!key || !key.startsWith(GAME_KEY_PREFIX)) {
                   throw new Error(
                     '無効なバックアップエントリが含まれています。'
                   );
@@ -249,7 +250,7 @@ export function importDataFromXML() {
               } catch (err) {
                 // ロールバック
                 Object.keys(localStorage)
-                  .filter((key) => key.startsWith('mini_card_battle_'))
+                  .filter((key) => key.startsWith(GAME_KEY_PREFIX))
                   .forEach((key) => localStorage.removeItem(key));
                 previousData.forEach(([key, val]) => origSet(key, val));
                 throw err;

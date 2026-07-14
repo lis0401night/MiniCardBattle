@@ -8,16 +8,19 @@
 // 暗号学的な機密性・完全性の保証ではない。
 //
 // ESMのインポート順序バグを防ぐため、他のどのインポートよりも先にロードされる必要があります。
+import { GAME_KEY_PREFIX } from './constants/config.js';
 
 (function () {
-  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+  } catch {
+    // サンドボックス化されたiframe等でlocalStorageアクセスがブロックされている場合は安全に終了
+    return;
+  }
 
   const origGetItem = localStorage.getItem.bind(localStorage);
   const origSetItem = localStorage.setItem.bind(localStorage);
 
-  // 難読化済みデータの識別プレフィックス
-  // XMLでも安全かつ、キーボード入力からは入力されないゼロ幅特殊文字を使用
-  // ※ 変数名は ENCRYPTION_ だが、実態は難読化である（API互換性のため名称維持）
   const ENCRYPTION_PREFIX = '\u200B\u200C\u200D_';
 
   // 難読化用の固定キー（クライアント同梱のため秘密ではない）
@@ -47,17 +50,21 @@
     return result;
   }
 
-  // 難読化エンコード: encodeURIComponent → XORスクランブル → Base64 → プレフィックス付与
+  // 難読化エンコード: TextEncoderによるUTF-8バイト列化 → XORスクランブル → Base64 → プレフィックス付与
   function encrypt(text, key) {
     try {
-      const scrambled = xorScramble(encodeURIComponent(text), key);
+      const bytes = new TextEncoder().encode(text);
+      const binaryString = Array.from(bytes, (byte) =>
+        String.fromCharCode(byte)
+      ).join('');
+      const scrambled = xorScramble(binaryString, key);
       return ENCRYPTION_PREFIX + btoa(scrambled);
-    } catch (_e) {
+    } catch {
       return text;
     }
   }
 
-  // 難読化デコード: プレフィックス除去 → Base64デコード → XORスクランブル → decodeURIComponent
+  // 難読化デコード: プレフィックス除去 → Base64デコード → XORスクランブル → TextDecoderによる復元
   // デコード失敗時はnullを返す（呼び出し元のデフォルト値フォールバックでプレイ続行可能にする）
   function decrypt(encryptedText, key) {
     if (!encryptedText || typeof encryptedText !== 'string')
@@ -66,7 +73,12 @@
 
     try {
       const cipher = encryptedText.substring(ENCRYPTION_PREFIX.length);
-      return decodeURIComponent(xorScramble(atob(cipher), key));
+      const scrambled = atob(cipher);
+      const binaryString = xorScramble(scrambled, key);
+      const bytes = new Uint8Array(
+        Array.from(binaryString, (char) => char.charCodeAt(0))
+      );
+      return new TextDecoder().decode(bytes);
     } catch (_e) {
       console.error(
         `[Storage] 難読化データのデコードに失敗しました (key: ${key})`,
@@ -77,6 +89,9 @@
   }
 
   localStorage.getItem = function (key) {
+    if (!key || !key.startsWith(GAME_KEY_PREFIX)) {
+      return origGetItem(key);
+    }
     const raw = origGetItem(key);
     if (raw === null) return null;
     const decrypted = decrypt(raw, key);
@@ -93,6 +108,10 @@
   };
 
   localStorage.setItem = function (key, value) {
+    if (!key || !key.startsWith(GAME_KEY_PREFIX)) {
+      origSetItem(key, value);
+      return;
+    }
     const textValue = typeof value === 'string' ? value : String(value);
 
     // 既に難読化済みのデータはそのまま格納（二重エンコード防止）
