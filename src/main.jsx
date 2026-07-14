@@ -1,3 +1,5 @@
+import './utils/storageHook.js';
+
 // URLの末尾スラッシュ補正（PWAでのホーム画面追加時の階層ズレバグ対策）
 // 例: /MiniCardBattle のようにスラッシュなしでアクセスされた場合、末尾にスラッシュを付与してリダイレクトします
 if (

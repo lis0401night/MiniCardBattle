@@ -160,8 +160,10 @@ export function backupDataToXML() {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && key.startsWith('mini_card_battle_')) {
-      const val = localStorage.getItem(key);
-      const escapedVal = val
+      const val = window.__origGetItem
+        ? window.__origGetItem(key)
+        : localStorage.getItem(key);
+      const escapedVal = (val || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -237,19 +239,19 @@ export function importDataFromXML() {
                 importedData.push([key, entries[i].textContent ?? '']);
               }
 
+              // バックアップXMLには暗号化済みデータが格納されているため、
+              // フック(localStorage.setItem)を通さずorigSetItemで直接書き込む（二重暗号化防止）
+              const origSet =
+                window.__origSetItem || localStorage.setItem.bind(localStorage);
               try {
                 previousData.forEach(([key]) => localStorage.removeItem(key));
-                importedData.forEach(([key, val]) =>
-                  localStorage.setItem(key, val)
-                );
+                importedData.forEach(([key, val]) => origSet(key, val));
               } catch (err) {
                 // ロールバック
                 Object.keys(localStorage)
                   .filter((key) => key.startsWith('mini_card_battle_'))
                   .forEach((key) => localStorage.removeItem(key));
-                previousData.forEach(([key, val]) =>
-                  localStorage.setItem(key, val)
-                );
+                previousData.forEach(([key, val]) => origSet(key, val));
                 throw err;
               }
 

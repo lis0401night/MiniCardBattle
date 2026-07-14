@@ -2250,11 +2250,9 @@ export async function waitSkillChoice(
     // カードオーナー（プレイヤー）がforceカードを出し、AIがどのスキルを発動させるか決定する
     if (isForce) {
       await sleep(AI_THINKING_DURATION);
-      const localAiLevel =
-        parseInt(localStorage.getItem('storyDifficulty')) || 2;
 
-      // Easy AI: ランダム選択（既存の挙動を維持）
-      if (localAiLevel <= 1) {
+      // Easy AI: ランダム選択
+      if (GameState.aiLevel <= 1) {
         const shuffled = shuffleArray([...choices]);
         return shuffled.slice(0, Math.min(maxChoices, choices.length));
       }
@@ -2366,8 +2364,8 @@ export async function waitSkillChoice(
       return indices.map((i) => choices[i]);
     }
 
-    // 2. 意思決定時に決定していない場合（Easy or 特殊な呼び出し）
-    if (localAiLevel <= 1) {
+    // 2. 意思決定時に決定していない場合（Easy or フォールバック）
+    if (GameState.aiLevel <= 1) {
       // Easy: ランダム
       const shuffled = shuffleArray([...choices]);
       return shuffled.slice(0, Math.min(maxChoices, choices.length));

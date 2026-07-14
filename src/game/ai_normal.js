@@ -177,7 +177,8 @@ export function processActionSequence(
   leaderSkillTargetUid = null,
   initialSimState = null,
   leaderSkillResurrectLane = null,
-  leaderSkillOppTargetIdx = null
+  leaderSkillOppTargetIdx = null,
+  leaderCardSkillActions = null
 ) {
   const savedRNG = getCurrentRNG();
   try {
@@ -212,6 +213,13 @@ export function processActionSequence(
         enemyDeck: GameState.enemyDeck
           ? GameState.enemyDeck.map(cloneCard)
           : [],
+        playerConfig: GameState.playerConfig
+          ? JSON.parse(JSON.stringify(GameState.playerConfig))
+          : null,
+        enemyConfig: GameState.enemyConfig
+          ? JSON.parse(JSON.stringify(GameState.enemyConfig))
+          : null,
+        turnCount: GameState.turnCount || 0,
         extraTurnCount: GameState.extraTurnCount || 0,
         attackSkipCount: GameState.attackSkipCount || 0,
         combatDamageTaken: 0,
@@ -263,6 +271,95 @@ export function processActionSequence(
           simState.playerBoard[i] = null;
         if (simState.enemyBoard[i] && simState.enemyBoard[i].currentPower <= 0)
           simState.enemyBoard[i] = null;
+      }
+
+      // 【リーダーカードのスキルシミュレーション】
+      // buildSkillBranchで生成されたアクション（resurrect, summon, clone等）をactionQueueに追加
+      if (leaderCardSkillActions && leaderCardSkillActions.length > 0) {
+        actionQueue.unshift(...leaderCardSkillActions);
+      }
+
+      // リーダーカードの非分岐系スキル（call, heal等）を手札カードと同じ近似処理でシミュレート
+      if (
+        leaderSkillActionStr === 'dungeon_summon_leader' &&
+        leaderSkillTokenLanes &&
+        leaderSkillTokenLanes.length > 0
+      ) {
+        const leaderLane = leaderSkillTokenLanes[0];
+        const boardCard = simState.enemyBoard[leaderLane];
+        if (boardCard && !boardCard.skillTriggered) {
+          const lCardConfig = GameState.enemyConfig;
+          const lCardMaster = lCardConfig?.leaderCardId
+            ? CARD_MASTER.find((m) => m.id === lCardConfig.leaderCardId)
+            : null;
+          if (lCardMaster && lCardMaster.skills) {
+            lCardMaster.skills.forEach((sk) => {
+              // 1. ユーティリティボーナス系スキル (手札プレイ時と同等)
+              if (
+                ['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
+              ) {
+                simState.actionUtilityBonus =
+                  (simState.actionUtilityBonus || 0) +
+                  (AI_SKILL_UTILITY[sk.id] || 0);
+              }
+
+              // 2. leap（追加ターン）のボーナス処理
+              if (sk.id === 'leap') {
+                simState.extraTurnCount = (simState.extraTurnCount || 0) + 1;
+                simState.attackSkipCount = (simState.attackSkipCount || 0) + 1;
+              }
+
+              // 3. すでに buildSkillBranch で分岐アクションとして登録されている（またはパッシブな）ものはシミュレーション処理から除外
+              if (
+                [
+                  'resurrect',
+                  'summon',
+                  'invite',
+                  'chant',
+                  'clone',
+                  'puppet',
+                  'forge',
+                  'execute',
+                  'convert',
+                  'draw',
+                  'reinforce',
+                  'leap',
+                ].includes(sk.id)
+              )
+                return;
+              // 号令: デッキトップからカードを出す動的スキルのため、パワーボーナスで近似
+              if (sk.id === 'call') {
+                const callBonus = sk.value || 3;
+                boardCard.currentPower =
+                  (boardCard.currentPower || 0) + callBonus;
+                boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+              } else if (sk.id === 'metamorph') {
+                boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
+                boardCard.basePower = METAMORPH_ESTIMATED_POWER;
+              } else if (
+                ['heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
+              ) {
+                // ユーティリティボーナス系スキル
+                simState.actionUtilityBonus =
+                  (simState.actionUtilityBonus || 0) +
+                  (AI_SKILL_UTILITY[sk.id] || 0);
+              } else {
+                // その他のスキル: applyActiveSkillLogicで直接シミュレート
+                applyActiveSkillLogic(
+                  simState,
+                  'red',
+                  leaderLane,
+                  sk.id,
+                  sk.value,
+                  [],
+                  null,
+                  undefined
+                );
+              }
+            });
+            boardCard.skillTriggered = true;
+          }
+        }
       }
     }
 
@@ -1179,6 +1276,7 @@ export function getBestSimulatedMove() {
               'invite',
               'chant',
               'forge',
+              'dungeon_summon_leader', // 【試練の宮殿】敵リーダースキルによるカード配置時のスキルシミュレーション用
             ].includes(sourceType);
             if (isSummonAction) {
               // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時発動）のため、ここには含めない
@@ -2034,6 +2132,9 @@ export function getBestSimulatedMove() {
         if (action === 'overdrive' || action === 'devilhunter_resurrect') {
           dIdxLoop =
             validResurrectIndices.length > 0 ? validResurrectIndices : [-1];
+        } else if (isDngResurrect) {
+          // dungeon_summon_leader の resurrect は buildSkillBranch で処理するため外側ループでは [-1] のみ
+          dIdxLoop = [-1];
         } else {
           dIdxLoop = isResurrectLeaderSkill
             ? [-1, ...validResurrectIndices]
@@ -2057,8 +2158,69 @@ export function getBestSimulatedMove() {
             ? validOppResurrectIndices
             : [-1];
 
+        // 【試練の宮殿（Trial Palace）敵リーダースキル専用】
+        // 敵リーダーカードが配置される際のアクティブスキル分岐（召喚・復活・分身・傀儡等）を手札カードと同一のスコープ/条件でシミュレートするため、
+        // buildCardPlayTree をダミー実行し、最初のアクション（dungeon_summon_leader）を切り落としてアクティブスキルの子アクションチェーンのみを抽出する。
+        let leaderCardSkillBranches = [[]]; // デフォルト: スキル分岐なし（アクション空配列）
+        if (
+          leaderCard &&
+          leaderCard.skills &&
+          action === 'dungeon_summon_leader'
+        ) {
+          const hasActiveSkills = leaderCard.skills.some((s) =>
+            [
+              'invite',
+              'chant',
+              'resurrect',
+              'convert',
+              'draw',
+              'reinforce',
+              'clone',
+              'summon',
+              'puppet',
+              'leap',
+              'forge',
+              'execute',
+            ].includes(s.id)
+          );
+          if (hasActiveSkills) {
+            // リーダーカードの配置レーンを推定（tokenLanes[0]、またはデフォルトの空きレーン）
+            const leaderLane =
+              tokenLanes && Array.isArray(tokenLanes) && tokenLanes.length > 0
+                ? tokenLanes[0]
+                : ([0, 2, 1].find(
+                    (l) => mySealedLanes[l] === 0 && myBoard[l] === null
+                  ) ?? 1);
+
+            const trialPalaceLeaderSkillContext = {
+              action: action,
+              tokenLanes: tokenLanes,
+              leaderCardId: config ? config.leaderCardId : null,
+            };
+            const trialPalaceDummyQueues = buildCardPlayTree(
+              leaderCard,
+              -1,
+              'dungeon_summon_leader',
+              hand,
+              discard,
+              [i],
+              [],
+              0,
+              leaderLane,
+              trialPalaceLeaderSkillContext
+            );
+            const branches = trialPalaceDummyQueues
+              .map((q) => q.slice(1))
+              .filter((q) => q.length > 0);
+            if (branches.length > 0) {
+              leaderCardSkillBranches = branches;
+            }
+          }
+        }
+
         for (let dIdxForTree of dIdxLoop) {
           // 復活対象がない（dIdxForTree === -1）なら復活レーン指定は不要（-1）にする
+          // devilhunter_resurrect/overdrive 用のレーンループ（dungeon_summon_leader では不要）
           const actualResLaneLoop =
             isDngResurrect && dIdxForTree !== -1 ? [0, 1, 2] : [-1];
 
@@ -2067,88 +2229,169 @@ export function getBestSimulatedMove() {
             if (isDngResurrect && resLane !== -1 && mySealedLanes[resLane] > 0)
               continue;
 
-            let leaderSkillContext = {
-              action: action,
-              tokenLanes: tokenLanes,
-              leaderCardId: config ? config.leaderCardId : null,
-              targetCard:
+            // 【リーダーカードスキル分岐ループ】buildSkillBranch で生成された全分岐を反復
+            for (let leaderSkillChain of leaderCardSkillBranches) {
+              // leaderSkillContext: 手札カードの制約チェック用（生贄・頂点等）
+              // buildSkillBranch のチェーンから resurrect 情報を抽出して leaderSkillContext に反映
+              const resAction = leaderSkillChain.find(
+                (a) => a.type === 'resurrect' && a.laneIdx >= 0
+              );
+              let leaderSkillContext = {
+                action: action,
+                tokenLanes: tokenLanes,
+                leaderCardId: config ? config.leaderCardId : null,
+                targetCard:
+                  isResurrectLeaderSkill && dIdxForTree !== -1
+                    ? discard[dIdxForTree]
+                    : resAction
+                      ? discard[resAction.targetIdx]
+                      : null,
+                resurrectLane:
+                  isDngResurrect && resAction
+                    ? resAction.laneIdx
+                    : isDngResurrect && dIdxForTree !== -1 && resLane !== -1
+                      ? resLane
+                      : null,
+              };
+              let qs = buildCardPlayTree(
+                card,
+                i,
+                'play',
+                hand,
+                discard,
+                [i],
                 isResurrectLeaderSkill && dIdxForTree !== -1
-                  ? discard[dIdxForTree]
-                  : null,
-              resurrectLane:
-                isDngResurrect && dIdxForTree !== -1 && resLane !== -1
-                  ? resLane
-                  : null,
-            };
-            let qs = buildCardPlayTree(
-              card,
-              i,
-              'play',
-              hand,
-              discard,
-              [i],
-              isResurrectLeaderSkill && dIdxForTree !== -1 ? [dIdxForTree] : [],
-              0,
-              undefined,
-              leaderSkillContext
-            );
-            for (let actionQ of qs) {
-              if (actionQ.length === 0) continue;
-              const fA = actionQ[0];
+                  ? [dIdxForTree]
+                  : [],
+                0,
+                undefined,
+                leaderSkillContext
+              );
+              for (let actionQ of qs) {
+                if (actionQ.length === 0) continue;
+                const fA = actionQ[0];
 
-              // 配置レーンが重複している場合は避ける（他に空きがある場合）
-              let overlapLanes = [];
-              if (Array.isArray(tokenLanes)) overlapLanes = tokenLanes;
-              else if (tokenLanes && tokenLanes.allied)
-                overlapLanes = tokenLanes.allied;
+                // 配置レーンが重複している場合は避ける（他に空きがある場合）
+                let overlapLanes = [];
+                if (Array.isArray(tokenLanes)) overlapLanes = tokenLanes;
+                else if (tokenLanes && tokenLanes.allied)
+                  overlapLanes = tokenLanes.allied;
 
-              const isOverlap =
-                overlapLanes &&
-                overlapLanes.length > 0 &&
-                overlapLanes.includes(fA.laneIdx);
-              if (isOverlap) {
-                // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
-                const currentEmpty = myBoard.filter((l) => l === null).length;
-                const tokensFillingEmpty = overlapLanes.filter(
-                  (l) => myBoard[l] === null
-                ).length;
-                const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
-                // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
-                if (effectiveEmptyCount >= 1) continue;
-              }
+                const isOverlap =
+                  overlapLanes &&
+                  overlapLanes.length > 0 &&
+                  overlapLanes.includes(fA.laneIdx);
+                if (isOverlap) {
+                  // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
+                  const currentEmpty = myBoard.filter((l) => l === null).length;
+                  const tokensFillingEmpty = overlapLanes.filter(
+                    (l) => myBoard[l] === null
+                  ).length;
+                  const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
+                  // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
+                  if (effectiveEmptyCount >= 1) continue;
+                }
 
-              if (
-                action === 'devilhunter_resurrect' ||
-                action === 'overdrive' ||
-                isDngResurrect
-              ) {
-                let dIdx = dIdxForTree;
-                // overdriveの場合は相手墓地カードも全通りシミュレーションする
-                const currentOppDIdxLoop =
-                  action === 'overdrive' ? oppDIdxLoop : [-1];
-                for (let oppDIdx of currentOppDIdxLoop) {
+                if (
+                  action === 'devilhunter_resurrect' ||
+                  action === 'overdrive'
+                ) {
+                  let dIdx = dIdxForTree;
+                  // overdriveの場合は相手墓地カードも全通りシミュレーションする
+                  const currentOppDIdxLoop =
+                    action === 'overdrive' ? oppDIdxLoop : [-1];
+                  for (let oppDIdx of currentOppDIdxLoop) {
+                    let simState = processActionSequence(
+                      actionQ,
+                      true,
+                      action,
+                      tokenLanes,
+                      'before',
+                      dIdx,
+                      dIdx !== -1 && discard[dIdx] ? discard[dIdx].uid : null,
+                      null,
+                      resLane,
+                      oppDIdx !== -1 ? oppDIdx : null
+                    );
+                    if (simState) {
+                      let fChcs = [fA.choices, fA.choices2].filter(
+                        (x) => x !== undefined
+                      );
+                      const resTargetCard = discard[dIdx];
+                      // overdriveの相手墓地ターゲットUID（実行時の直接選択に使用）
+                      const oppTargetCard =
+                        oppDIdx !== -1 && oppDiscard[oppDIdx]
+                          ? oppDiscard[oppDIdx]
+                          : null;
+                      addCandidate(
+                        {
+                          index: i,
+                          lane: fA.laneIdx,
+                          isOverwrite: myBoard[fA.laneIdx] !== null,
+                          useSkill: true,
+                          tokenLanes,
+                          skillOrder: 'before',
+                          leaderSkillTargetIdx: dIdx,
+                          leaderSkillTargetUid: resTargetCard
+                            ? resTargetCard.uid
+                            : null,
+                          leaderSkillOppTargetUid: oppTargetCard
+                            ? oppTargetCard.uid
+                            : undefined,
+                          leaderSkillResurrectLane: isDngResurrect
+                            ? resLane
+                            : undefined,
+                          choiceIndexQueue:
+                            fChcs.length > 0 ? fChcs : undefined,
+                          cardTokenLanes: fA.cardTokenLanes,
+                          actionQueue:
+                            actionQ.slice(1).length > 0
+                              ? actionQ
+                                  .slice(1)
+                                  .filter(
+                                    (act) =>
+                                      act.type !== 'overdrive' &&
+                                      act.type !== 'devilhunter_resurrect'
+                                  )
+                                  .map((act) => {
+                                    let adjusted = { ...act };
+                                    if (
+                                      (adjusted.type === 'invite' ||
+                                        adjusted.type === 'chant' ||
+                                        adjusted.type === 'play' ||
+                                        adjusted.type === 'discard') &&
+                                      fA.type === 'play'
+                                    ) {
+                                      if (adjusted.targetIdx > fA.targetIdx)
+                                        adjusted.targetIdx -= 1;
+                                    }
+                                    return adjusted;
+                                  })
+                              : undefined,
+                        },
+                        simState
+                      );
+                    }
+                  }
+                } else {
+                  // その他（聖なる軍勢・魔王の化身・世界の再構築・百鬼夜行・試練の宮殿リーダー召喚等）
                   let simState = processActionSequence(
                     actionQ,
                     true,
                     action,
                     tokenLanes,
                     'before',
-                    dIdx,
-                    dIdx !== -1 && discard[dIdx] ? discard[dIdx].uid : null,
                     null,
-                    resLane,
-                    oppDIdx !== -1 ? oppDIdx : null
+                    null,
+                    null,
+                    null,
+                    null,
+                    leaderSkillChain.length > 0 ? leaderSkillChain : null
                   );
                   if (simState) {
                     let fChcs = [fA.choices, fA.choices2].filter(
                       (x) => x !== undefined
                     );
-                    const resTargetCard = discard[dIdx];
-                    // overdriveの相手墓地ターゲットUID（実行時の直接選択に使用）
-                    const oppTargetCard =
-                      oppDIdx !== -1 && oppDiscard[oppDIdx]
-                        ? oppDiscard[oppDIdx]
-                        : null;
                     addCandidate(
                       {
                         index: i,
@@ -2157,94 +2400,38 @@ export function getBestSimulatedMove() {
                         useSkill: true,
                         tokenLanes,
                         skillOrder: 'before',
-                        leaderSkillTargetIdx: dIdx,
-                        leaderSkillTargetUid: resTargetCard
-                          ? resTargetCard.uid
-                          : null,
-                        leaderSkillOppTargetUid: oppTargetCard
-                          ? oppTargetCard.uid
-                          : undefined,
-                        leaderSkillResurrectLane: isDngResurrect
-                          ? resLane
-                          : undefined,
                         choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
+                        // リーダーカードスキルの分岐情報を保存（実行時にactionQueueに登録する）
+                        leaderCardSkillActions:
+                          leaderSkillChain.length > 0
+                            ? leaderSkillChain
+                            : undefined,
                         cardTokenLanes: fA.cardTokenLanes,
                         actionQueue:
                           actionQ.slice(1).length > 0
-                            ? actionQ
-                                .slice(1)
-                                .filter(
-                                  (act) =>
-                                    act.type !== 'overdrive' &&
-                                    act.type !== 'devilhunter_resurrect'
-                                )
-                                .map((act) => {
-                                  let adjusted = { ...act };
-                                  if (
-                                    (adjusted.type === 'invite' ||
-                                      adjusted.type === 'chant' ||
-                                      adjusted.type === 'play' ||
-                                      adjusted.type === 'discard') &&
-                                    fA.type === 'play'
-                                  ) {
-                                    if (adjusted.targetIdx > fA.targetIdx)
-                                      adjusted.targetIdx -= 1;
-                                  }
-                                  return adjusted;
-                                })
+                            ? actionQ.slice(1).map((act) => {
+                                let adjusted = { ...act };
+                                if (
+                                  (adjusted.type === 'invite' ||
+                                    adjusted.type === 'chant' ||
+                                    adjusted.type === 'play' ||
+                                    adjusted.type === 'discard') &&
+                                  fA.type === 'play'
+                                ) {
+                                  if (adjusted.targetIdx > fA.targetIdx)
+                                    adjusted.targetIdx -= 1;
+                                }
+                                return adjusted;
+                              })
                             : undefined,
                       },
                       simState
                     );
                   }
                 }
-              } else {
-                // その他（聖戦・邪戦・サタン・龍神等）
-                let simState = processActionSequence(
-                  actionQ,
-                  true,
-                  action,
-                  tokenLanes,
-                  'before'
-                );
-                if (simState) {
-                  let fChcs = [fA.choices, fA.choices2].filter(
-                    (x) => x !== undefined
-                  );
-                  addCandidate(
-                    {
-                      index: i,
-                      lane: fA.laneIdx,
-                      isOverwrite: myBoard[fA.laneIdx] !== null,
-                      useSkill: true,
-                      tokenLanes,
-                      skillOrder: 'before',
-                      choiceIndexQueue: fChcs.length > 0 ? fChcs : undefined,
-                      cardTokenLanes: fA.cardTokenLanes,
-                      actionQueue:
-                        actionQ.slice(1).length > 0
-                          ? actionQ.slice(1).map((act) => {
-                              let adjusted = { ...act };
-                              if (
-                                (adjusted.type === 'invite' ||
-                                  adjusted.type === 'chant' ||
-                                  adjusted.type === 'play' ||
-                                  adjusted.type === 'discard') &&
-                                fA.type === 'play'
-                              ) {
-                                if (adjusted.targetIdx > fA.targetIdx)
-                                  adjusted.targetIdx -= 1;
-                              }
-                              return adjusted;
-                            })
-                          : undefined,
-                    },
-                    simState
-                  );
-                }
               }
-            }
-          }
+            } // End of leaderSkillChain loop
+          } // End of resLane loop
         } // End of dIdxForTree loop
       }
     }

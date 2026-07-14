@@ -137,6 +137,21 @@ export async function executeEnemyAI() {
 
       // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
       if (decision.useSkill) {
+        // 【リーダーカードスキルのアクションキュー事前登録】
+        // buildSkillBranchで生成された全スキルアクションを一括でactionQueueに登録する
+        if (skill.action === 'dungeon_summon_leader') {
+          if (!GameState.aiDecision.actionQueue) {
+            GameState.aiDecision.actionQueue = [];
+          }
+          if (
+            decision.leaderCardSkillActions &&
+            decision.leaderCardSkillActions.length > 0
+          ) {
+            GameState.aiDecision.actionQueue.unshift(
+              ...decision.leaderCardSkillActions
+            );
+          }
+        }
         // シミュレーションで決定した tokenLanes, leaderSkillTargetIdx を渡す
         await activateLeaderSkill(
           'red',
