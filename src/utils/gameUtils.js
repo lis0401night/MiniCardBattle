@@ -922,29 +922,37 @@ export async function clearCachesAndServiceWorkers() {
     try {
       // 1. ready から直接解除 (最速・高信頼)
       if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-        navigator.serviceWorker.ready.then((reg) => {
-          if (reg && reg.unregister) reg.unregister();
-        }).catch(() => {});
+        navigator.serviceWorker.ready
+          .then((reg) => {
+            if (reg && reg.unregister) reg.unregister();
+          })
+          .catch(() => {});
       }
 
       // 2. getRegistrations による全解除 (バックグラウンド非同期)
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((reg) => {
-            if (reg.scope && reg.scope.startsWith(appScope)) {
-              reg.unregister().catch(() => {});
-            }
-          });
-        }).catch(() => {});
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) => {
+            registrations.forEach((reg) => {
+              if (reg.scope && reg.scope.startsWith(appScope)) {
+                reg.unregister().catch(() => {});
+              }
+            });
+          })
+          .catch(() => {});
       }
 
       // 3. Cache Storage の削除 (バックグラウンド非同期)
       if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => {
-            caches.delete(name).catch(() => {});
-          });
-        }).catch(() => {});
+        caches
+          .keys()
+          .then((names) => {
+            names.forEach((name) => {
+              caches.delete(name).catch(() => {});
+            });
+          })
+          .catch(() => {});
       }
     } catch (e) {
       console.warn('[CacheClear] Error during async purge', e);

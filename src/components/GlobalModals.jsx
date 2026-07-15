@@ -250,9 +250,12 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
     setCloseEnemyDeckModalHook(closeEnemyDeckModal);
 
-    setOpenCardPreviewHook((card) => {
+    setOpenCardPreviewHook((card, styleProps = {}) => {
       playSound?.(SOUNDS?.seClick);
-      setCardPreviewData({ card });
+      setCardPreviewData({
+        card,
+        styleProps: { ...styleProps, showPreviewActions: true },
+      });
     });
 
     setCloseCardPreviewHook(handleCloseCardPreview);

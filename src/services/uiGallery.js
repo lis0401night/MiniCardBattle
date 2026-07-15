@@ -305,8 +305,8 @@ export let openCardPreviewHook = null;
 export function setOpenCardPreviewHook(h) {
   openCardPreviewHook = h;
 }
-export function openCardPreview(card) {
-  if (openCardPreviewHook) return openCardPreviewHook(card);
+export function openCardPreview(card, styleProps = {}) {
+  if (openCardPreviewHook) return openCardPreviewHook(card, styleProps);
   executeOpenCardPreview(card);
 }
 // プレビューをどこからでも呼べるようグローバルに登録

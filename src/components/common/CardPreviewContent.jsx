@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
+import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import { getCardImgUrl, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -538,6 +539,26 @@ export default function CardPreviewContent({
             {isRevealed && (
               <p className="preview-flavor-text" style={{ display: 'block' }}>
                 {styleProps.flavorOverride || card.flavor || '...'}
+              </p>
+            )}
+            {isRevealed && styleProps.fromCardList && (
+              <p
+                className="preview-obtain-info"
+                style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  color: '#eab308',
+                  marginTop: '10px',
+                  padding: '6px 10px',
+                  background: 'rgba(234, 179, 8, 0.08)',
+                  borderRadius: '4px',
+                  borderLeft: '3px solid #eab308',
+                  textAlign: 'left',
+                  lineHeight: '1.4',
+                }}
+              >
+                <strong style={{ color: '#facc15' }}>入手方法：</strong>{' '}
+                {getObtainMethodsText(card.obtain, card.isToken)}
               </p>
             )}
           </div>

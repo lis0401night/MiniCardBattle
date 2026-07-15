@@ -21,6 +21,6 @@ export default [
   'bahamut',
   'daemon',
   'daemon',
-  'succubus',
-  'succubus',
+  'cavalry',
+  'cavalry',
 ];

@@ -4,6 +4,7 @@
 export const CARD_MASTER = [
   {
     id: 'golem',
+    obtain: ['initial'],
     name: '大理石のゴーレム',
     rarity: 1,
     power: 5,
@@ -13,6 +14,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'clone',
+    obtain: ['initial', 'cthulhu_easy', 'knight_easy'],
     name: '鏡の戦士',
     rarity: 1,
     power: 3,
@@ -23,6 +25,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sniper',
+    obtain: ['initial', 'elf_easy', 'witch_easy'],
     name: '森の射手',
     rarity: 1,
     power: 2,
@@ -33,6 +36,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'falcon',
+    obtain: ['initial', 'elf_easy', 'priest_easy'],
     name: '急襲する隼',
     rarity: 1,
     power: 3,
@@ -43,6 +47,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cleric',
+    obtain: ['initial', 'cleric_easy', 'witch_easy'],
     name: '見習い修道女',
     rarity: 1,
     power: 3,
@@ -53,6 +58,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'diviner',
+    obtain: ['initial', 'cthulhu_easy', 'devilhunter_easy'],
     name: '星詠みの占術士',
     rarity: 1,
     power: 4,
@@ -62,6 +68,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dinosaur',
+    obtain: ['initial', 'dragon_easy', 'priest_easy'],
     name: '古代の大蜥蜴',
     rarity: 1,
     power: 8,
@@ -72,6 +79,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cheetah',
+    obtain: ['initial', 'android_easy', 'elf_easy'],
     name: '稲妻の猟豹',
     rarity: 1,
     power: 3,
@@ -81,6 +89,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'scorpion',
+    obtain: ['initial', 'cleric_easy', 'devilhunter_easy'],
     name: '黒サソリ',
     rarity: 1,
     power: 3,
@@ -90,6 +99,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mercenary',
+    obtain: ['initial', 'dragon_easy', 'knight_easy'],
     name: '傭兵',
     rarity: 1,
     power: 6,
@@ -99,6 +109,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'wall',
+    obtain: ['initial', 'cleric_easy', 'knight_easy'],
     name: '城壁',
     rarity: 1,
     power: 10,
@@ -109,6 +120,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'leech',
+    obtain: ['initial', 'witch_easy', 'oni_easy'],
     name: '巨大ヒル',
     rarity: 1,
     power: 4,
@@ -119,6 +131,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'fighter',
+    obtain: ['initial', 'dragon_easy', 'oni_easy'],
     name: 'アリーナの新入り',
     rarity: 1,
     power: 4,
@@ -129,6 +142,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'tortoise',
+    obtain: ['initial', 'android_easy', 'cthulhu_easy'],
     name: '鉄亀',
     rarity: 1,
     power: 4,
@@ -139,6 +153,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'spider',
+    obtain: ['initial', 'cthulhu_easy', 'devilhunter_easy'],
     name: 'スパイダー',
     rarity: 1,
     power: 4,
@@ -149,6 +164,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'airship',
+    obtain: ['initial', 'android_easy', 'priest_easy'],
     name: 'セレスタリアのサルベージ船',
     rarity: 1,
     power: 4,
@@ -159,6 +175,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hedgehog',
+    obtain: ['initial', 'devilhunter_easy', 'oni_easy'],
     name: '威嚇する針鼠',
     rarity: 1,
     power: 3,
@@ -169,6 +186,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bandit',
+    obtain: ['initial', 'elf_easy', 'oni_easy'],
     name: '山賊',
     rarity: 1,
     power: 4,
@@ -179,6 +197,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'snake',
+    obtain: ['initial', 'witch_easy', 'priest_easy'],
     name: '猛毒コブラ',
     rarity: 1,
     power: 3,
@@ -189,6 +208,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'butcher',
+    obtain: ['initial', 'android_easy', 'dragon_easy'],
     name: '大斧の処刑人',
     rarity: 1,
     power: 8,
@@ -199,6 +219,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'crenellatedwall',
+    obtain: ['initial', 'cleric_easy', 'knight_easy'],
     name: '民兵団の射手',
     rarity: 1,
     power: 8,
@@ -209,6 +230,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'fireatronach',
+    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
     name: '炎の精霊',
     rarity: 1,
     power: 3,
@@ -222,6 +244,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'iceatronach',
+    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
     name: '氷の精霊',
     rarity: 1,
     power: 5,
@@ -232,6 +255,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'windatronach',
+    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
     name: '風の精霊',
     rarity: 1,
     power: 5,
@@ -242,6 +266,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'lightningatronach',
+    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
     name: '雷の精霊',
     rarity: 1,
     power: 7,
@@ -252,6 +277,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mantis',
+    obtain: ['android_easy', 'android_normal'],
     name: '旧式マンティス',
     rarity: 1,
     power: 4,
@@ -262,6 +288,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'titan',
+    obtain: ['android_easy'],
     name: '旧式タイタン',
     rarity: 1,
     power: 8,
@@ -272,6 +299,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cyberman',
+    obtain: ['android_normal'],
     name: 'ライオット・キーパー',
     rarity: 1,
     power: 7,
@@ -282,6 +310,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mechanic',
+    obtain: ['android_normal', 'android_hard', 'android_high'],
     name: 'ダクト街の技師',
     rarity: 1,
     power: 4,
@@ -292,6 +321,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'lizardman',
+    obtain: ['dragon_easy'],
     name: '竜人族の斥候',
     rarity: 1,
     power: 4,
@@ -302,6 +332,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'goblin',
+    obtain: ['dragon_easy', 'dragon_normal'],
     name: 'ゴブリンの司令官',
     rarity: 1,
     power: 6,
@@ -312,6 +343,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'twister',
+    obtain: ['dragon_normal'],
     name: '竜巻',
     rarity: 1,
     power: 7,
@@ -322,6 +354,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dancer',
+    obtain: ['dragon_normal', 'dragon_hard'],
     name: '魅惑の踊り子',
     rarity: 1,
     power: 2,
@@ -332,6 +365,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'commander',
+    obtain: ['knight_easy', 'knight_normal'],
     name: '前線の司令官',
     rarity: 1,
     power: 3,
@@ -342,6 +376,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'nobleknight',
+    obtain: ['knight_easy'],
     name: '従者持ちの騎士',
     rarity: 1,
     power: 3,
@@ -352,6 +387,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'lightpaladin',
+    obtain: ['knight_normal'],
     name: '光の聖騎士',
     rarity: 1,
     power: 5,
@@ -362,6 +398,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hero',
+    obtain: ['knight_normal', 'knight_hard'],
     name: '若き勇士',
     rarity: 1,
     power: 4,
@@ -372,6 +409,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'jellyfish',
+    obtain: ['cthulhu_easy', 'cthulhu_normal'],
     name: '発光するクラゲ',
     rarity: 1,
     power: 3,
@@ -381,6 +419,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'fish',
+    obtain: ['cthulhu_easy'],
     name: '魚群の壁',
     rarity: 1,
     power: 6,
@@ -390,6 +429,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'eye',
+    obtain: ['cthulhu_normal'],
     name: '虚無の目覚め',
     rarity: 1,
     power: 4,
@@ -400,6 +440,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'slime',
+    obtain: ['cthulhu_normal', 'cthulhu_hard'],
     name: '這い寄るスライム',
     rarity: 1,
     power: 5,
@@ -410,6 +451,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bard',
+    obtain: ['elf_easy', 'elf_normal'],
     name: '陽気な歌うたい',
     rarity: 1,
     power: 2,
@@ -423,6 +465,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'charger',
+    obtain: ['elf_easy'],
     name: '虹ハチドリ',
     rarity: 1,
     power: 2,
@@ -432,6 +475,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'pray',
+    obtain: ['elf_normal', 'elf_high'],
     name: '森の祈り',
     rarity: 1,
     power: 0,
@@ -446,6 +490,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bear',
+    obtain: ['elf_normal', 'elf_hard'],
     name: '森の恐怖',
     rarity: 1,
     power: 3,
@@ -456,6 +501,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'incinerator',
+    obtain: ['cleric_easy', 'cleric_normal'],
     name: 'インシネレーター',
     rarity: 1,
     power: 4,
@@ -466,6 +512,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'instructor',
+    obtain: ['cleric_easy'],
     name: '熱心な教導師',
     rarity: 1,
     power: 4,
@@ -475,6 +522,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'flagellant',
+    obtain: ['cleric_normal'],
     name: '鎖の殉教者',
     rarity: 1,
     power: 5,
@@ -485,6 +533,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'charity',
+    obtain: ['cleric_normal', 'cleric_hard'],
     name: '慈愛',
     rarity: 1,
     power: 3,
@@ -495,6 +544,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shade',
+    obtain: ['devilhunter_easy', 'devilhunter_normal'],
     name: '墓の亡霊',
     rarity: 1,
     power: 4,
@@ -505,6 +555,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'prisoner',
+    obtain: ['devilhunter_easy'],
     name: '鉄面の監獄破り',
     rarity: 1,
     power: 6,
@@ -515,6 +566,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cook',
+    obtain: ['devilhunter_normal'],
     name: '恐怖の調理長',
     rarity: 1,
     power: 5,
@@ -525,6 +577,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'necromancer',
+    obtain: ['devilhunter_normal', 'devilhunter_hard'],
     name: 'ヴィス・ガルドの背教者',
     rarity: 1,
     power: 1,
@@ -535,6 +588,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'beginnermagic',
+    obtain: ['witch_easy', 'witch_normal', 'witch_high'],
     name: '初級魔術',
     rarity: 1,
     power: 0,
@@ -548,6 +602,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shapeshifter',
+    obtain: ['witch_easy'],
     name: '変身魔導士',
     rarity: 1,
     power: 4,
@@ -558,6 +613,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dragonfire',
+    obtain: ['witch_normal', 'witch_high'],
     name: 'ドラゴンファイア',
     rarity: 1,
     power: 0,
@@ -572,6 +628,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'iceblast',
+    obtain: ['witch_normal', 'witch_hard'],
     name: 'アイスブラスト',
     rarity: 1,
     power: 0,
@@ -585,6 +642,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ogre',
+    obtain: ['oni_easy'],
     name: '鬼',
     rarity: 1,
     power: 7,
@@ -595,6 +653,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ninja',
+    obtain: ['oni_normal'],
     name: '忍者',
     rarity: 1,
     power: 4,
@@ -605,6 +664,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'tengu',
+    obtain: ['oni_normal', 'oni_hard'],
     name: '武芸の師範',
     rarity: 1,
     power: 4,
@@ -615,6 +675,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'omyouji',
+    obtain: ['oni_easy', 'oni_normal'],
     name: '漆黒の除霊師',
     rarity: 1,
     power: 4,
@@ -625,6 +686,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'drifter',
+    obtain: ['priest_easy', 'priest_normal'],
     name: 'アッシュランドの放浪者',
     rarity: 1,
     power: 4,
@@ -635,6 +697,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'crocodile',
+    obtain: ['priest_easy'],
     name: 'クロコダイル',
     rarity: 1,
     power: 6,
@@ -645,6 +708,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mummy',
+    obtain: ['priest_normal', 'priest_hard'],
     name: '王墓の番人',
     rarity: 1,
     power: 4,
@@ -655,6 +719,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'treasurehunter',
+    obtain: ['priest_normal'],
     name: 'アッシュランドの冒険家',
     rarity: 1,
     power: 5,
@@ -665,6 +730,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'voidbraver',
+    obtain: ['void_easy'],
     name: 'ホロウ・ブレイバー',
     rarity: 1,
     power: 3,
@@ -675,6 +741,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'voidcleric',
+    obtain: ['void_easy', 'void_normal'],
     name: 'ホロウ・クレリック',
     rarity: 1,
     power: 3,
@@ -685,6 +752,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'voidsniper',
+    obtain: ['void_normal', 'void_hard'],
     name: 'ホロウ・スナイパー',
     rarity: 1,
     power: 2,
@@ -695,6 +763,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'voidcommander',
+    obtain: ['void_normal'],
     name: 'ホロウ・コマンダー',
     rarity: 1,
     power: 3,
@@ -705,6 +774,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'harpy',
+    obtain: ['succubus_easy', 'succubus_normal'],
     name: '荒ぶるハーピー',
     rarity: 1,
     power: 4,
@@ -714,6 +784,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'goat',
+    obtain: ['succubus_easy'],
     name: 'スケープゴート',
     rarity: 1,
     power: 3,
@@ -727,6 +798,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'siren',
+    obtain: ['succubus_normal', 'succubus_hard'],
     name: '幻惑の歌姫',
     rarity: 1,
     power: 1,
@@ -737,6 +809,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'baphomet',
+    obtain: ['succubus_normal'],
     name: '集会の主',
     rarity: 1,
     power: 7,
@@ -747,6 +820,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'minion',
+    obtain: ['warlock_easy'],
     name: '魔王のしもべ',
     rarity: 1,
     power: 2,
@@ -756,6 +830,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'skeleton',
+    obtain: ['warlock_easy', 'warlock_normal'],
     name: 'スケルトン・ソルジャー',
     rarity: 1,
     power: 3,
@@ -766,6 +841,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'skeletondefender',
+    obtain: ['warlock_normal', 'warlock_hard'],
     name: 'スケルトン・ウォリアー',
     rarity: 1,
     power: 6,
@@ -779,6 +855,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ritual',
+    obtain: ['warlock_normal'],
     name: '教団の儀式',
     rarity: 1,
     power: 0,
@@ -792,6 +869,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'largemouth',
+    obtain: ['satan_easy', 'satan_normal'],
     name: '肉裂き大口',
     rarity: 1,
     power: 6,
@@ -801,6 +879,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'fly',
+    obtain: ['satan_easy'],
     name: '死蠅の大群',
     rarity: 1,
     power: 1,
@@ -811,6 +890,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hand',
+    obtain: ['satan_normal', 'satan_hard'],
     name: '悪魔の手',
     rarity: 1,
     power: 2,
@@ -821,12 +901,13 @@ export const CARD_MASTER = [
   },
   {
     id: 'devil',
+    obtain: ['satan_normal'],
     name: '地獄の放火魔',
     rarity: 1,
-    power: 2,
+    power: 3,
     skills: [
-      { id: 'spread', value: 3 },
-      { id: 'explode', value: 3 },
+      { id: 'artillery', value: 2 },
+      { id: 'explode', value: 2 },
     ],
     voiceCategory: 'devil',
     flavor:
@@ -834,6 +915,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bigeye',
+    obtain: ['android_easy', 'android_normal', 'android_hard'],
     name: 'サイクロプス Mk-II',
     rarity: 2,
     power: 3,
@@ -846,6 +928,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'scavenger',
+    obtain: ['android_easy'],
     name: 'スカベンジャー',
     rarity: 2,
     power: 3,
@@ -856,6 +939,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dreadnought',
+    obtain: ['android_normal'],
     name: 'ドラゴン・ドレッドノート',
     rarity: 2,
     power: 10,
@@ -866,6 +950,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cop',
+    obtain: ['android_normal', 'android_hard'],
     name: 'ボーダー・エンフォーサー',
     rarity: 2,
     power: 4,
@@ -880,6 +965,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'armsuits',
+    obtain: ['android_hard'],
     name: '強化外骨格',
     rarity: 2,
     power: 3,
@@ -890,6 +976,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gladiator',
+    obtain: ['android_tutorial', 'android_normal', 'android_hard'],
     name: '違法リングの闘士',
     rarity: 2,
     power: 7,
@@ -900,6 +987,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dragonewt',
+    obtain: ['dragon_easy', 'dragon_normal', 'dragon_hard', 'dragon_high'],
     name: '竜人族の騎兵',
     rarity: 2,
     power: 4,
@@ -910,6 +998,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'babydragon',
+    obtain: ['dragon_easy'],
     name: 'ドラゴンの雛',
     rarity: 2,
     power: 3,
@@ -920,6 +1009,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hammer',
+    obtain: ['dragon_normal'],
     name: '雷神の鎚',
     rarity: 2,
     power: 2,
@@ -934,6 +1024,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'wyvern',
+    obtain: ['dragon_normal', 'dragon_hard'],
     name: '群れのワイヴァーン',
     rarity: 2,
     power: 7,
@@ -944,6 +1035,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'berserker',
+    obtain: ['dragon_hard', 'dragon_high'],
     name: '狂戦士',
     rarity: 2,
     power: 7,
@@ -954,6 +1046,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'drake',
+    obtain: ['dragon_tutorial', 'dragon_normal', 'dragon_hard'],
     name: '熱砂地帯のドレイク',
     rarity: 2,
     power: 5,
@@ -964,6 +1057,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'horse',
+    obtain: ['knight_easy', 'knight_high'],
     name: 'セレスタリアン・チャージャー',
     rarity: 2,
     power: 4,
@@ -974,6 +1068,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'minotaur',
+    obtain: ['knight_easy', 'knight_normal', 'knight_hard'],
     name: 'ミノタウロスの傭兵',
     rarity: 2,
     power: 6,
@@ -988,6 +1083,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'crusher',
+    obtain: ['knight_normal'],
     name: '豪腕の破壊者',
     rarity: 2,
     power: 5,
@@ -998,6 +1094,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'elephant',
+    obtain: ['knight_normal', 'knight_hard'],
     name: '攻城エレファント',
     rarity: 2,
     power: 6,
@@ -1008,6 +1105,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sergeant',
+    obtain: ['knight_hard'],
     name: '鉄血の教官',
     rarity: 2,
     power: 4,
@@ -1025,6 +1123,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'lion',
+    obtain: ['knight_tutorial', 'knight_normal', 'knight_hard', 'knight_high'],
     name: '王家のライオン',
     rarity: 2,
     power: 5,
@@ -1035,6 +1134,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'seaslug',
+    obtain: ['cthulhu_easy', 'cthulhu_normal', 'cthulhu_hard'],
     name: 'ブルー・ドラゴン',
     rarity: 2,
     power: 1,
@@ -1045,6 +1145,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'prince',
+    obtain: ['cthulhu_easy'],
     name: '星の王子',
     rarity: 2,
     power: 2,
@@ -1055,6 +1156,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shark',
+    obtain: ['cthulhu_normal'],
     name: 'メガロドン',
     rarity: 2,
     power: 6,
@@ -1068,6 +1170,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sahagin',
+    obtain: ['cthulhu_normal', 'cthulhu_hard'],
     name: 'アビス・ガーディアン',
     rarity: 2,
     power: 6,
@@ -1082,6 +1185,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'parasite',
+    obtain: ['cthulhu_hard'],
     name: '招かれざる来訪者',
     rarity: 2,
     power: 1,
@@ -1092,6 +1196,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ghostship',
+    obtain: ['cthulhu_tutorial', 'cthulhu_normal', 'cthulhu_hard'],
     name: 'ファントムポートの幽霊船',
     rarity: 2,
     power: 6,
@@ -1102,6 +1207,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'splite',
+    obtain: ['elf_easy', 'elf_normal', 'elf_hard'],
     name: 'スプライトの冒険者',
     rarity: 2,
     power: 2,
@@ -1112,6 +1218,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bird',
+    obtain: ['elf_easy'],
     name: '新緑の導き鳥',
     rarity: 2,
     power: 1,
@@ -1121,6 +1228,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shaman',
+    obtain: ['elf_normal'],
     name: '樫族のシャーマン',
     rarity: 2,
     power: 5,
@@ -1131,6 +1239,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'centaur',
+    obtain: ['elf_normal', 'elf_hard'],
     name: 'ヴェルドールの狩猟者',
     rarity: 2,
     power: 2,
@@ -1141,6 +1250,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'darkelf',
+    obtain: ['elf_hard'],
     name: 'ダンジョン・シーカー',
     rarity: 2,
     power: 2,
@@ -1154,6 +1264,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ranger',
+    obtain: ['elf_tutorial', 'elf_normal', 'elf_hard'],
     name: 'ルーン辿りのレインジャー',
     rarity: 2,
     power: 4,
@@ -1164,6 +1275,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'flak',
+    obtain: ['cleric_easy', 'cleric_normal', 'cleric_hard'],
     name: 'ミスリルの高射砲',
     rarity: 2,
     power: 7,
@@ -1173,6 +1285,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'pegasus',
+    obtain: ['cleric_easy'],
     name: '聖なるペガサス',
     rarity: 2,
     power: 2,
@@ -1187,6 +1300,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'doom',
+    obtain: ['cleric_normal'],
     name: '破滅',
     rarity: 2,
     power: 3,
@@ -1201,6 +1315,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'acolyte',
+    obtain: ['cleric_normal', 'cleric_hard'],
     name: '天球のアコライト',
     rarity: 2,
     power: 2,
@@ -1214,6 +1329,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'angelstatue',
+    obtain: ['cleric_hard'],
     name: '天使の像',
     rarity: 2,
     power: 4,
@@ -1228,6 +1344,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'monk',
+    obtain: ['cleric_tutorial', 'cleric_normal', 'cleric_hard'],
     name: '夜明けの番人',
     rarity: 2,
     power: 5,
@@ -1238,6 +1355,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'specter',
+    obtain: ['devilhunter_easy'],
     name: '魂の徴税人',
     rarity: 2,
     power: 7,
@@ -1248,6 +1366,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bat',
+    obtain: ['devilhunter_easy', 'devilhunter_normal', 'devilhunter_hard'],
     name: '吸血コウモリ',
     rarity: 2,
     power: 2,
@@ -1258,6 +1377,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'franken',
+    obtain: ['devilhunter_normal', 'devilhunter_hard'],
     name: 'オールドヘイヴンの怪物',
     rarity: 2,
     power: 8,
@@ -1268,6 +1388,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'plaguedoctor',
+    obtain: ['devilhunter_normal', 'devilhunter_high'],
     name: '烏羽の医師',
     rarity: 2,
     power: 3,
@@ -1285,16 +1406,18 @@ export const CARD_MASTER = [
   },
   {
     id: 'servant',
+    obtain: ['devilhunter_hard'],
     name: '吸血鬼の従者',
     rarity: 2,
-    power: 2,
-    skills: [{ id: 'equip' }, { id: 'soul_bind', value: 3 }],
+    power: 3,
+    skills: [{ id: 'equip' }, { id: 'soul_bind', value: 2 }],
     voiceCategory: 'human_female_sexy',
     flavor:
       '「どうか私を、貴方様の傍に」自らの弱さを知る妖艶な吸血鬼は、永遠の夜を生き抜くため、強き者の腕へとすり寄る。',
   },
   {
     id: 'undeadking',
+    obtain: ['devilhunter_tutorial', 'devilhunter_normal', 'devilhunter_hard'],
     name: '亡国のデス・ロード',
     rarity: 2,
     power: 2,
@@ -1309,6 +1432,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cat',
+    obtain: ['witch_easy'],
     name: '食糧庫のコソ泥',
     rarity: 2,
     power: 2,
@@ -1319,6 +1443,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mage',
+    obtain: ['witch_easy', 'witch_normal', 'witch_hard'],
     name: '未熟な拡散魔導士',
     rarity: 2,
     power: 1,
@@ -1329,6 +1454,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ring',
+    obtain: ['witch_normal'],
     name: '願いの指輪',
     rarity: 2,
     power: 1,
@@ -1351,6 +1477,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'battlemage',
+    obtain: ['witch_normal', 'witch_hard'],
     name: 'ギルドの戦闘魔導士',
     rarity: 2,
     power: 4,
@@ -1364,6 +1491,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gargoyle',
+    obtain: ['witch_hard'],
     name: 'ガーゴイル',
     rarity: 2,
     power: 6,
@@ -1374,6 +1502,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'wizard',
+    obtain: ['witch_tutorial', 'witch_normal', 'witch_hard'],
     name: 'アカデミーの大魔導士',
     rarity: 2,
     power: 2,
@@ -1387,6 +1516,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gashadokuro',
+    obtain: ['oni_easy'],
     name: '餓者髑髏',
     rarity: 2,
     power: 9,
@@ -1397,6 +1527,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'samurai',
+    obtain: ['oni_easy', 'oni_normal', 'oni_hard'],
     name: '山道の人斬り',
     rarity: 2,
     power: 7,
@@ -1407,6 +1538,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'yukionna',
+    obtain: ['oni_normal'],
     name: '薄氷の乙女',
     rarity: 2,
     power: 3,
@@ -1417,6 +1549,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'muramasa',
+    obtain: ['oni_normal', 'oni_hard', 'oni_high'],
     name: '無銘の妖刀',
     rarity: 2,
     power: 4,
@@ -1432,6 +1565,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'biwa',
+    obtain: ['oni_hard'],
     name: '盲目の怪僧',
     rarity: 2,
     power: 3,
@@ -1445,6 +1579,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'nurikabe',
+    obtain: ['oni_tutorial', 'oni_normal', 'oni_hard'],
     name: '見下ろす巨顔',
     rarity: 2,
     power: 13,
@@ -1455,6 +1590,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'camel',
+    obtain: ['priest_easy'],
     name: '駄載ラクダ',
     rarity: 2,
     power: 3,
@@ -1465,6 +1601,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'manticore',
+    obtain: ['priest_easy', 'priest_normal', 'priest_hard'],
     name: '鋼のマンティコア',
     rarity: 2,
     power: 4,
@@ -1479,6 +1616,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'kitepriest',
+    obtain: ['priest_normal'],
     name: '鳶の神官',
     rarity: 2,
     power: 4,
@@ -1489,6 +1627,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'griffin',
+    obtain: ['priest_normal', 'priest_hard'],
     name: 'グリフィン',
     rarity: 2,
     power: 7,
@@ -1499,6 +1638,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'snakepriest',
+    obtain: ['priest_hard'],
     name: '蛇の神官',
     rarity: 2,
     power: 4,
@@ -1509,6 +1649,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sentinel',
+    obtain: ['priest_tutorial', 'priest_normal', 'priest_hard'],
     name: '黄金の歩哨',
     rarity: 2,
     power: 5,
@@ -1519,6 +1660,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dealer',
+    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
     name: 'デビル・ディーラー',
     rarity: 2,
     power: 5,
@@ -1531,6 +1673,20 @@ export const CARD_MASTER = [
   },
   {
     id: 'daemonarmor',
+    obtain: [
+      'satan_easy',
+      'satan_normal',
+      'satan_hard',
+      'void_easy',
+      'void_normal',
+      'void_hard',
+      'succubus_easy',
+      'succubus_normal',
+      'succubus_hard',
+      'warlock_easy',
+      'warlock_normal',
+      'warlock_hard',
+    ],
     name: '悪魔の鎧',
     rarity: 2,
     power: 5,
@@ -1541,6 +1697,16 @@ export const CARD_MASTER = [
   },
   {
     id: 'killermachine',
+    obtain: [
+      'satan_normal',
+      'satan_hard',
+      'void_normal',
+      'void_hard',
+      'succubus_normal',
+      'succubus_hard',
+      'warlock_normal',
+      'warlock_hard',
+    ],
     name: '殺戮歩行機械',
     rarity: 2,
     power: 6,
@@ -1551,6 +1717,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bountyhunter',
+    obtain: ['void_normal'],
     name: '賞金稼ぎ',
     rarity: 2,
     power: 7,
@@ -1561,6 +1728,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'voiddog',
+    obtain: ['void_hard'],
     name: '虚無の捕食者',
     rarity: 2,
     power: 2,
@@ -1571,6 +1739,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'traveler',
+    obtain: ['void_normal', 'void_hard'],
     name: '追放された旅人',
     rarity: 2,
     power: 5,
@@ -1581,6 +1750,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'priestess',
+    obtain: ['succubus_normal'],
     name: '聖餐の司祭',
     rarity: 2,
     power: 4,
@@ -1590,6 +1760,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'alraune',
+    obtain: ['succubus_hard'],
     name: '茨の妖精',
     rarity: 2,
     power: 2,
@@ -1604,6 +1775,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'incubus',
+    obtain: ['succubus_normal', 'succubus_hard'],
     name: '夜の貴公子',
     rarity: 2,
     power: 6,
@@ -1614,6 +1786,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'enchanter',
+    obtain: ['warlock_normal'],
     name: 'ダーク・エンチャンター',
     rarity: 2,
     power: 4,
@@ -1624,6 +1797,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'metalworker',
+    obtain: ['warlock_hard'],
     name: '教団の職工',
     rarity: 2,
     power: 4,
@@ -1634,6 +1808,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'skeletonlord',
+    obtain: ['warlock_normal', 'warlock_hard'],
     name: 'スケルトン・ロード',
     rarity: 2,
     power: 5,
@@ -1647,6 +1822,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cavalry',
+    obtain: ['satan_normal', 'satan_high'],
     name: '煉獄侯爵の先陣',
     rarity: 2,
     power: 5,
@@ -1657,6 +1833,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'warlock',
+    obtain: ['satan_hard'],
     name: '煉獄の拷問官',
     rarity: 2,
     power: 4,
@@ -1671,6 +1848,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'wendigo',
+    obtain: ['satan_normal', 'satan_hard'],
     name: '吹雪の悪霊',
     rarity: 2,
     power: 7,
@@ -1685,6 +1863,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cyborgninja',
+    obtain: ['android_normal', 'android_hard'],
     name: '光刃の追跡者',
     rarity: 3,
     power: 3,
@@ -1703,6 +1882,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'booster',
+    obtain: ['android_normal', 'android_hard', 'android_high'],
     name: 'イーグルブースター',
     rarity: 3,
     power: 1,
@@ -1713,6 +1893,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hacker',
+    obtain: ['android_hard'],
     name: '未来都市のハッカー',
     rarity: 3,
     power: 5,
@@ -1723,6 +1904,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cyberdragon',
+    obtain: ['android_hard', 'android_high'],
     name: '試作型ドラグーン',
     rarity: 3,
     power: 5,
@@ -1736,6 +1918,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'egg',
+    obtain: ['dragon_normal', 'dragon_hard'],
     name: 'ドラゴンの卵',
     rarity: 3,
     power: 3,
@@ -1750,6 +1933,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dragoon',
+    obtain: ['dragon_normal', 'dragon_hard'],
     name: '覇道のドラグーン',
     rarity: 3,
     power: 3,
@@ -1763,6 +1947,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'phoenix',
+    obtain: ['dragon_hard', 'dragon_high'],
     name: 'カラドのフェニックス',
     rarity: 3,
     power: 6,
@@ -1778,6 +1963,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dragon',
+    obtain: ['dragon_hard', 'dragon_high'],
     name: 'ファイア・ドラゴン',
     rarity: 3,
     power: 6,
@@ -1792,6 +1978,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'admiral',
+    obtain: ['knight_normal', 'knight_hard'],
     name: '慈悲なき提督',
     rarity: 3,
     power: 5,
@@ -1806,6 +1993,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'assassin',
+    obtain: ['knight_normal', 'knight_hard', 'knight_high'],
     name: 'ギルドの暗殺者',
     rarity: 3,
     power: 1,
@@ -1815,6 +2003,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'kingslayer',
+    obtain: ['knight_hard'],
     name: 'キングスレイヤー',
     rarity: 3,
     power: 5,
@@ -1825,6 +2014,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'champion',
+    obtain: ['knight_hard'],
     name: 'アリーナのチャンピオン',
     rarity: 3,
     power: 4,
@@ -1834,6 +2024,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'octopus',
+    obtain: ['cthulhu_normal', 'cthulhu_hard', 'cthulhu_high'],
     name: '深海の魔物',
     rarity: 3,
     power: 4,
@@ -1844,6 +2035,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hound',
+    obtain: ['cthulhu_normal', 'cthulhu_hard'],
     name: '破片の猟犬',
     rarity: 3,
     power: 5,
@@ -1854,6 +2046,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'horseshoecrab',
+    obtain: ['cthulhu_hard'],
     name: '太古のカブトガニ',
     rarity: 3,
     power: 1,
@@ -1864,6 +2057,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'oldgod',
+    obtain: ['cthulhu_hard', 'cthulhu_high'],
     name: '古の神',
     rarity: 3,
     power: 9,
@@ -1878,6 +2072,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'highelf',
+    obtain: ['elf_normal', 'elf_hard'],
     name: 'ロストレイルの精鋭パトロール',
     rarity: 3,
     power: 2,
@@ -1893,6 +2088,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'thief',
+    obtain: ['elf_normal', 'elf_hard'],
     name: 'ギルドの錠前破り',
     rarity: 3,
     power: 3,
@@ -1904,6 +2100,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'caller',
+    obtain: ['elf_hard', 'elf_high'],
     name: '魔琴の奏者',
     rarity: 3,
     power: 3,
@@ -1914,6 +2111,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'wolf',
+    obtain: ['elf_hard', 'elf_high'],
     name: '真夜中の狩人',
     rarity: 3,
     power: 3,
@@ -1924,6 +2122,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'fire',
+    obtain: ['cleric_normal', 'cleric_hard', 'cleric_high'],
     name: '浄化の炎',
     rarity: 3,
     power: 6,
@@ -1938,6 +2137,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'punisher',
+    obtain: ['cleric_normal', 'cleric_hard', 'cleric_high'],
     name: 'パニッシャー',
     rarity: 3,
     power: 4,
@@ -1955,6 +2155,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'carousel',
+    obtain: ['cleric_hard'],
     name: 'カルーセル',
     rarity: 3,
     power: 7,
@@ -1970,6 +2171,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'empress',
+    obtain: ['cleric_hard', 'cleric_high'],
     name: '蒼穹の審判者',
     rarity: 3,
     power: 3,
@@ -1983,6 +2185,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'vampire',
+    obtain: ['devilhunter_normal', 'devilhunter_hard', 'devilhunter_high'],
     name: '渇きの王',
     rarity: 3,
     power: 5,
@@ -1997,6 +2200,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'graverobber',
+    obtain: ['devilhunter_normal', 'devilhunter_hard'],
     name: '優雅な墓荒らし',
     rarity: 3,
     power: 4,
@@ -2014,6 +2218,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'beast',
+    obtain: ['devilhunter_hard', 'devilhunter_high'],
     name: '廃教会の獣',
     rarity: 3,
     power: 7,
@@ -2024,6 +2229,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'collector',
+    obtain: ['devilhunter_hard', 'devilhunter_high'],
     name: 'ヘッドコレクター',
     rarity: 3,
     power: 1,
@@ -2039,6 +2245,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'book',
+    obtain: ['witch_normal', 'witch_hard'],
     name: '禁書目録',
     rarity: 3,
     power: 0,
@@ -2056,6 +2263,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'basilisk',
+    obtain: ['witch_hard'],
     name: 'バジリスク',
     rarity: 3,
     power: 5,
@@ -2066,6 +2274,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'witch',
+    obtain: ['witch_normal', 'witch_hard'],
     name: '闇の森の魔女',
     rarity: 3,
     power: 3,
@@ -2087,6 +2296,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'djinn',
+    obtain: ['witch_hard', 'witch_high'],
     name: '願いの魔神',
     rarity: 3,
     power: 1,
@@ -2109,6 +2319,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'fox',
+    obtain: ['oni_normal', 'oni_hard', 'oni_high'],
     name: '魂喰いの狐',
     rarity: 3,
     power: 4,
@@ -2128,6 +2339,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'kasha',
+    obtain: ['oni_normal', 'oni_hard', 'oni_high'],
     name: '双輪の炎龍',
     rarity: 3,
     power: 6,
@@ -2143,6 +2355,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'orochi',
+    obtain: ['oni_hard'],
     name: '神々の宿敵',
     rarity: 3,
     power: 6,
@@ -2157,6 +2370,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shogun',
+    obtain: ['oni_hard', 'oni_high'],
     name: '暁の大将軍',
     rarity: 3,
     power: 9,
@@ -2167,6 +2381,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'stormpriest',
+    obtain: ['priest_normal', 'priest_hard', 'priest_high'],
     name: '嵐の神官',
     rarity: 3,
     power: 2,
@@ -2181,6 +2396,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'goldship',
+    obtain: ['priest_normal', 'priest_hard', 'priest_high'],
     name: '太陽の船',
     rarity: 3,
     power: 8,
@@ -2200,6 +2416,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'jackalpriest',
+    obtain: ['priest_hard'],
     name: 'ジャッカルの神官',
     rarity: 3,
     power: 5,
@@ -2210,6 +2427,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'pharaoh',
+    obtain: ['priest_hard', 'priest_high'],
     name: '不朽のファラオ',
     rarity: 3,
     power: 7,
@@ -2224,6 +2442,17 @@ export const CARD_MASTER = [
   },
   {
     id: 'daemon',
+    obtain: [
+      'satan_normal',
+      'satan_hard',
+      'satan_high',
+      'void_normal',
+      'void_hard',
+      'succubus_normal',
+      'succubus_hard',
+      'warlock_normal',
+      'warlock_hard',
+    ],
     name: '魔界の尖兵',
     rarity: 3,
     power: 7,
@@ -2234,6 +2463,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'juggernaut',
+    obtain: ['satan_hard', 'void_hard', 'succubus_hard', 'warlock_hard'],
     name: 'ジャガーノート',
     rarity: 3,
     power: 10,
@@ -2244,6 +2474,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'great',
+    obtain: ['void_normal', 'void_hard'],
     name: '忘れられた英雄',
     rarity: 3,
     power: 8,
@@ -2254,6 +2485,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'voidwalker',
+    obtain: ['void_hard'],
     name: '虚空歩き',
     rarity: 3,
     power: 5,
@@ -2263,6 +2495,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'succubus',
+    obtain: ['succubus_normal', 'succubus_hard'],
     name: '大鎌の夢魔',
     rarity: 3,
     power: 4,
@@ -2278,6 +2511,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'samael',
+    obtain: ['succubus_hard'],
     name: '囁く蛇',
     rarity: 3,
     power: 3,
@@ -2292,6 +2526,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'spy',
+    obtain: ['warlock_normal', 'warlock_hard'],
     name: '悪魔の密偵',
     rarity: 3,
     power: 5,
@@ -2305,6 +2540,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dread',
+    obtain: ['warlock_hard'],
     name: '戦慄の先導者',
     rarity: 3,
     power: 5,
@@ -2321,6 +2557,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bahamut',
+    obtain: ['satan_normal', 'satan_hard', 'satan_high'],
     name: '終焉の双頭竜',
     rarity: 3,
     power: 8,
@@ -2336,6 +2573,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'darkgeneral',
+    obtain: ['satan_hard', 'satan_high'],
     name: '蒼炎の魔将軍',
     rarity: 3,
     power: 7,
@@ -2352,6 +2590,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'badwolf',
+    obtain: ['exchange_defense'],
     name: '幻影の狼',
     rarity: 3,
     power: 2,
@@ -2366,6 +2605,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'redhood',
+    obtain: ['exchange_defense'],
     name: 'レッドフード',
     rarity: 3,
     power: 3,
@@ -2380,6 +2620,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'queen',
+    obtain: ['exchange_challenge'],
     name: '嫉妬の女王',
     rarity: 3,
     power: 4,
@@ -2390,6 +2631,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'snowwhite',
+    obtain: ['exchange_challenge'],
     name: 'スノウホワイト',
     rarity: 3,
     power: 6,
@@ -2400,6 +2642,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'threebears',
+    obtain: ['exchange_tournament'],
     name: '荒熊山賊団',
     rarity: 3,
     power: 6,
@@ -2410,6 +2653,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'goldilocks',
+    obtain: ['exchange_tournament'],
     name: 'ゴールデンロックス',
     rarity: 3,
     power: 6,
@@ -2420,6 +2664,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'whiterider',
+    obtain: ['satan_high'],
     name: '征服の使徒',
     rarity: 4,
     power: 5,
@@ -2434,6 +2679,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'redrider',
+    obtain: ['satan_high'],
     name: '戦争の使徒',
     rarity: 4,
     power: 5,
@@ -2444,6 +2690,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'blackrider',
+    obtain: ['satan_high'],
     name: '飢餓の使徒',
     rarity: 4,
     power: 5,
@@ -2458,6 +2705,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'palerider',
+    obtain: ['satan_high'],
     name: '死の使徒',
     rarity: 4,
     power: 5,
@@ -2471,6 +2719,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gearA',
+    obtain: ['android_high'],
     name: 'ストライクギア',
     rarity: 4,
     power: 2,
@@ -2483,6 +2732,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gearB',
+    obtain: ['android_high'],
     name: 'グランドギア',
     rarity: 4,
     power: 8,
@@ -2497,6 +2747,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'tank',
+    obtain: ['android_high'],
     name: '自律戦車',
     rarity: 4,
     power: 4,
@@ -2513,6 +2764,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'scientist',
+    obtain: ['android_high'],
     name: '世紀の天才科学者',
     rarity: 4,
     power: 5,
@@ -2527,6 +2779,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'avenger',
+    obtain: ['dragon_high'],
     name: '竜人族の復讐者',
     rarity: 4,
     power: 4,
@@ -2536,6 +2789,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'wurm',
+    obtain: ['dragon_high'],
     name: '文明喰らい',
     rarity: 4,
     power: 7,
@@ -2551,6 +2805,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'valkyrie',
+    obtain: ['dragon_high'],
     name: '焦熱の戦乙女',
     rarity: 4,
     power: 3,
@@ -2566,6 +2821,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'hellkite',
+    obtain: ['dragon_high'],
     name: 'ヘルカイトの君主',
     rarity: 4,
     power: 10,
@@ -2581,6 +2837,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'darkpaladin',
+    obtain: ['knight_high'],
     name: '闇の聖騎士',
     rarity: 4,
     power: 5,
@@ -2591,6 +2848,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'elite',
+    obtain: ['knight_high'],
     name: 'ギルドの特級剣士',
     rarity: 4,
     power: 4,
@@ -2601,6 +2859,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'guildmaster',
+    obtain: ['knight_high'],
     name: 'ギルドの支配人',
     rarity: 4,
     power: 1,
@@ -2614,6 +2873,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'duelist',
+    obtain: ['knight_high'],
     name: '血濡れの決闘者',
     rarity: 4,
     power: 4,
@@ -2629,6 +2889,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'starfish',
+    obtain: ['cthulhu_high'],
     name: '旧世界からの使者',
     rarity: 4,
     power: 5,
@@ -2642,6 +2903,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'trapezohedron',
+    obtain: ['cthulhu_high'],
     name: 'トラペゾヘドロン',
     rarity: 4,
     power: 0,
@@ -2652,6 +2914,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shoggoth',
+    obtain: ['cthulhu_high'],
     name: '蠢く泥塊',
     rarity: 4,
     power: 2,
@@ -2662,6 +2925,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cthulhu',
+    obtain: ['cthulhu_high'],
     name: '大いなる支配者',
     rarity: 4,
     power: 2,
@@ -2682,6 +2946,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'piper',
+    obtain: ['elf_high'],
     name: 'サテュロスの笛吹き',
     rarity: 4,
     power: 3,
@@ -2692,6 +2957,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cuchulainn',
+    obtain: ['elf_high'],
     name: '追憶の魔槍使い',
     rarity: 4,
     power: 3,
@@ -2706,6 +2972,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'rampage',
+    obtain: ['elf_high'],
     name: 'ランペイジ',
     rarity: 4,
     power: 0,
@@ -2719,6 +2986,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'elfking',
+    obtain: ['elf_high'],
     name: 'エルフの王',
     rarity: 4,
     power: 4,
@@ -2729,6 +2997,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'father',
+    obtain: ['cleric_high'],
     name: '銀弾の神父',
     rarity: 4,
     power: 2,
@@ -2745,6 +3014,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'punishment',
+    obtain: ['cleric_high'],
     name: '神罰',
     rarity: 4,
     power: 0,
@@ -2761,6 +3031,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'spirit',
+    obtain: ['cleric_high'],
     name: 'ブラザー・オブ・オース',
     rarity: 4,
     power: 5,
@@ -2771,6 +3042,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'goddess',
+    obtain: ['cleric_high'],
     name: '勝利の女神',
     rarity: 4,
     power: 6,
@@ -2781,6 +3053,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dragonzombie',
+    obtain: ['devilhunter_high'],
     name: '継ぎ接ぎの擬竜',
     rarity: 4,
     power: 8,
@@ -2791,6 +3064,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'grimreaper',
+    obtain: ['devilhunter_high'],
     name: '死神',
     rarity: 4,
     power: 6,
@@ -2801,6 +3075,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'puppeteer',
+    obtain: ['devilhunter_high'],
     name: '放浪傀儡師',
     rarity: 4,
     power: 2,
@@ -2811,6 +3086,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'doll',
+    obtain: ['devilhunter_high'],
     name: '人形館の主',
     rarity: 4,
     power: 2,
@@ -2826,6 +3102,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'student',
+    obtain: ['witch_high'],
     name: '勤勉な留学生',
     rarity: 4,
     power: 3,
@@ -2836,6 +3113,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'archmage',
+    obtain: ['witch_high'],
     name: '異端のアークメイジ',
     rarity: 4,
     power: 4,
@@ -2849,6 +3127,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'philosopher',
+    obtain: ['witch_high'],
     name: '賢者の石',
     rarity: 4,
     power: 0,
@@ -2859,6 +3138,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gorgon',
+    obtain: ['witch_high'],
     name: '魔眼の勇者',
     rarity: 4,
     power: 6,
@@ -2869,6 +3149,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'kunoichi',
+    obtain: ['oni_high'],
     name: '双牙衆の刺客',
     rarity: 4,
     power: 3,
@@ -2884,6 +3165,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'benkei',
+    obtain: ['oni_high'],
     name: '刀狩りの豪傑',
     rarity: 4,
     power: 4,
@@ -2894,6 +3176,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ippondatara',
+    obtain: ['oni_high'],
     name: '異形の刀鍛冶',
     rarity: 4,
     power: 4,
@@ -2904,6 +3187,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'seimei',
+    obtain: ['oni_high'],
     name: '天眼の陰陽師',
     rarity: 4,
     power: 6,
@@ -2918,6 +3202,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'highwayman',
+    obtain: ['priest_high'],
     name: '裏切りの相棒',
     rarity: 4,
     power: 4,
@@ -2932,6 +3217,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sphinx',
+    obtain: ['priest_high'],
     name: '難題の問い手',
     rarity: 4,
     power: 4,
@@ -2946,6 +3232,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'uroboros',
+    obtain: ['priest_high'],
     name: '白銀の円環',
     rarity: 4,
     power: 5,
@@ -2956,6 +3243,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cleopatra',
+    obtain: ['priest_high'],
     name: '最後の女王',
     rarity: 4,
     power: 4,
@@ -2970,6 +3258,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'light',
+    obtain: ['achievement'],
     name: '無垢の光',
     rarity: 4,
     power: 5,
@@ -2980,6 +3269,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'baldanders',
+    obtain: ['achievement'],
     name: 'バルトアンデルス',
     rarity: 4,
     power: 0,
@@ -2990,6 +3280,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shuffler',
+    obtain: ['achievement'],
     name: 'シャッフラー',
     rarity: 4,
     power: 5,
@@ -3000,6 +3291,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'crown',
+    obtain: ['achievement'],
     name: '道化師',
     rarity: 4,
     power: 5,
@@ -3010,6 +3302,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'scarecrow',
+    obtain: ['achievement'],
     name: '呪いの案山子',
     power: 1,
     rarity: 4,
@@ -3020,6 +3313,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'invader',
+    obtain: ['achievement'],
     name: '彼方からの侵略者',
     rarity: 4,
     power: 0,
@@ -3030,6 +3324,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dicejuggler',
+    obtain: ['achievement'],
     name: 'ダイスジャグラー',
     rarity: 4,
     power: 5,
@@ -3039,6 +3334,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'homunculus',
+    obtain: ['achievement'],
     name: 'ホムンクルスの実験体',
     power: 0,
     skills: [{ id: 'replicate' }],
@@ -3049,6 +3345,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bell',
+    obtain: ['achievement'],
     name: '葬送の鐘',
     rarity: 4,
     power: 0,
@@ -3060,6 +3357,7 @@ export const CARD_MASTER = [
   // トークンカード
   {
     id: 'token_knight',
+    obtain: ['token'],
     name: '騎士',
     power: 2,
     isToken: true,
@@ -3068,6 +3366,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_dragon',
+    obtain: ['token'],
     name: 'ドラゴン',
     power: 6,
     isToken: true,
@@ -3076,6 +3375,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_ignis',
+    obtain: ['token'],
     name: 'イグニス',
     power: 7,
     isToken: true,
@@ -3084,6 +3384,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_satan',
+    obtain: ['token'],
     name: '魔王の化身',
     power: 10,
     isToken: true,
@@ -3091,6 +3392,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_clone',
+    obtain: ['token'],
     name: '分身',
     power: 1,
     isToken: true,
@@ -3098,6 +3400,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_reinforce',
+    obtain: ['token'],
     name: '増援',
     power: 4,
     isToken: true,
@@ -3105,6 +3408,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_legs',
+    obtain: ['token'],
     name: '蛸足',
     power: 2,
     isToken: true,
@@ -3112,6 +3416,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_void',
+    obtain: ['token'],
     name: '虚空',
     power: 0,
     isToken: true,
@@ -3121,6 +3426,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_ent',
+    obtain: ['token'],
     name: 'エント',
     power: 5,
     isToken: true,
@@ -3130,6 +3436,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_statue',
+    obtain: ['token'],
     name: '石像',
     power: 5,
     isToken: true,
@@ -3139,6 +3446,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_drone',
+    obtain: ['token'],
     name: 'ドローン',
     power: 1,
     isToken: true,
@@ -3147,6 +3455,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_golem',
+    obtain: ['token'],
     name: 'ゴーレム',
     power: 5,
     isToken: true,
@@ -3155,6 +3464,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_phoenix',
+    obtain: ['token'],
     name: 'フェニックス',
     power: 6,
     isToken: true,
@@ -3163,6 +3473,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_soul',
+    obtain: ['token'],
     name: '人魂',
     power: 1,
     isToken: true,
@@ -3171,6 +3482,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_gearC',
+    obtain: ['token'],
     name: '機神プロメテウス',
     power: 10,
     isToken: true,
@@ -3185,6 +3497,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_reinforceddrone',
+    obtain: ['token'],
     name: '強化ドローン',
     power: 5,
     isToken: true,
@@ -3194,6 +3507,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_polarbear',
+    obtain: ['token'],
     name: 'ヴォイテク',
     power: 4,
     isToken: true,
@@ -3203,6 +3517,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_daemon',
+    obtain: ['token'],
     name: 'デーモン',
     power: 7,
     isToken: true,
@@ -3211,6 +3526,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_angel',
+    obtain: ['token'],
     name: '天使',
     power: 7,
     isToken: true,
@@ -3219,6 +3535,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_whitewolf',
+    obtain: ['token'],
     name: '白狼',
     power: 3,
     isToken: true,
@@ -3227,6 +3544,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'token_skeleton',
+    obtain: ['token'],
     name: 'スケルトン',
     power: 3,
     isToken: true,

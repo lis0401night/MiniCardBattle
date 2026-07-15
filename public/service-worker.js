@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mini-card-battle-v0.1.22.22';
+const CACHE_NAME = 'mini-card-battle-v0.1.23';
 
 // プリキャッシュする基本リソース
 const PRECACHE_ASSETS = [

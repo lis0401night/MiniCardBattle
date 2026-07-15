@@ -36,7 +36,8 @@ export function showConfirmModal(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'pwa_update_debug_localStorage',
-          message: 'User confirmed PWA update (React modal). Current localStorage snapshot.',
+          message:
+            'User confirmed PWA update (React modal). Current localStorage snapshot.',
           stack: JSON.stringify(backup),
           uuid: localStorage.getItem('mini_card_battle_uuid') || '',
           screen: 'pwa-update-react',

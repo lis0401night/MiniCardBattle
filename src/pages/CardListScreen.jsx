@@ -290,7 +290,9 @@ export default function CardListScreen() {
                 key={template.id}
                 className="deck-card-item gallery-card-wrapper"
                 onClick={() => {
-                  if (!isTransitioning) openCardPreview?.(template);
+                  if (!isTransitioning) {
+                    openCardPreview?.(template, { fromCardList: true });
+                  }
                 }}
               >
                 <div className={`card blue${rarityClass}`} style={{ opacity }}>

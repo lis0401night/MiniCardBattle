@@ -1,87 +1,81 @@
-import { useState, useEffect, useRef } from 'react';
-import { showConfirmModal } from './services/uiModals.js';
+import { useEffect, useRef, useState } from 'react';
+
 import GlobalModals from './components/GlobalModals.jsx';
 import DamageOverlay from './components/common/DamageOverlay.jsx';
-import TitleScreen from './pages/TitleScreen.jsx';
-import ModeSelectScreen from './pages/ModeSelectScreen.jsx';
-import SoloMenuScreen from './pages/SoloMenuScreen.jsx';
-import RulesScreen from './pages/RulesScreen.jsx';
 import BeginnerGuideScreen from './pages/BeginnerGuideScreen.jsx';
-import TutorialSelectScreen from './pages/TutorialSelectScreen.jsx';
-import OptionsScreen from './pages/OptionsScreen.jsx';
-import GalleryMenuScreen from './pages/GalleryMenuScreen.jsx';
-import EventMenuScreen from './pages/EventMenuScreen.jsx';
-import TournamentMenuScreen from './pages/TournamentMenuScreen.jsx';
-import TournamentResumeScreen from './pages/TournamentResumeScreen.jsx';
-import TournamentExchangeScreen from './pages/TournamentExchangeScreen.jsx';
-import TournamentRulesScreen from './pages/TournamentRulesScreen.jsx';
-import TournamentBracketScreen from './pages/TournamentBracketScreen.jsx';
 import DefenseMenuScreen from './pages/DefenseMenuScreen.jsx';
 import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
-import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
+import EventMenuScreen from './pages/EventMenuScreen.jsx';
+import GalleryMenuScreen from './pages/GalleryMenuScreen.jsx';
 import HighDifficultyMenuScreen from './pages/HighDifficultyMenuScreen.jsx';
 import HighDifficultyRulesScreen from './pages/HighDifficultyRulesScreen.jsx';
+import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
+import ModeSelectScreen from './pages/ModeSelectScreen.jsx';
+import OptionsScreen from './pages/OptionsScreen.jsx';
+import RulesScreen from './pages/RulesScreen.jsx';
+import SoloMenuScreen from './pages/SoloMenuScreen.jsx';
+import TitleScreen from './pages/TitleScreen.jsx';
+import TournamentBracketScreen from './pages/TournamentBracketScreen.jsx';
+import TournamentExchangeScreen from './pages/TournamentExchangeScreen.jsx';
+import TournamentMenuScreen from './pages/TournamentMenuScreen.jsx';
+import TournamentResumeScreen from './pages/TournamentResumeScreen.jsx';
+import TournamentRulesScreen from './pages/TournamentRulesScreen.jsx';
+import TutorialSelectScreen from './pages/TutorialSelectScreen.jsx';
 
-import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
-import StoryResumeScreen from './pages/StoryResumeScreen.jsx';
-import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
-import CardListScreen from './pages/CardListScreen.jsx';
-import AchievementsScreen from './pages/AchievementsScreen.jsx';
-import DefenseExchangeScreen from './pages/DefenseExchangeScreen.jsx';
-import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
-import ChallengeUnlockScreen from './pages/ChallengeUnlockScreen.jsx';
-import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
-import DefenseRankingScreen from './pages/DefenseRankingScreen.jsx';
-import ChallengeRankingScreen from './pages/ChallengeRankingScreen.jsx';
-import TournamentRankingScreen from './pages/TournamentRankingScreen.jsx';
-import DeckEditorScreen from './pages/DeckEditorScreen.jsx';
-import DeckListScreen from './pages/DeckListScreen.jsx';
-import CharacterSelectScreen from './pages/CharacterSelectScreen.jsx';
-import DifficultySelectScreen from './pages/DifficultySelectScreen.jsx';
-import StageSelectScreen from './pages/StageSelectScreen.jsx';
-import DialogueScreen from './pages/DialogueScreen.jsx';
-import BattleScreen from './pages/BattleScreen.jsx';
-import BattleDungeonScreen from './pages/BattleDungeonScreen.jsx';
-import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
-import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
-import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
-import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
+import CutinOverlay from './components/battle/CutinOverlay.jsx';
 import MatchingScreen from './components/battle/MatchingScreen.jsx';
+import RewardOverlay from './components/battle/RewardOverlay.jsx';
+import VfxOverlay from './components/battle/VfxOverlay.jsx';
 import {
-  clearCachesAndServiceWorkers,
-  playSound,
-  switchScreen,
-  setSwitchScreenHook,
-  executeSwitchScreen,
-} from './utils/gameUtils.js';
-import { SOUNDS } from './utils/sounds.js';
-import {
-  GAME_VERSION,
-  VERSION_CHECK_TIMEOUT_MS,
-  appendVersionQuery,
-} from './utils/constants/config.js';
-import {
-  returnToTitle,
   endPlayerTurn,
   executeSkillFromConfirm,
+  returnToTitle,
 } from './game/battle.js';
+import AchievementsScreen from './pages/AchievementsScreen.jsx';
+import BattleDungeonScreen from './pages/BattleDungeonScreen.jsx';
+import BattleScreen from './pages/BattleScreen.jsx';
+import CardListScreen from './pages/CardListScreen.jsx';
+import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
+import ChallengeRankingScreen from './pages/ChallengeRankingScreen.jsx';
+import ChallengeUnlockScreen from './pages/ChallengeUnlockScreen.jsx';
+import CharacterSelectScreen from './pages/CharacterSelectScreen.jsx';
+import ContinueScreen from './pages/ContinueScreen.jsx';
+import DebugBattleScreen from './pages/DebugBattleScreen.jsx';
+import DeckEditorScreen from './pages/DeckEditorScreen.jsx';
+import DeckListScreen from './pages/DeckListScreen.jsx';
+import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
+import DefenseExchangeScreen from './pages/DefenseExchangeScreen.jsx';
+import DefenseRankingScreen from './pages/DefenseRankingScreen.jsx';
+import DialogueScreen from './pages/DialogueScreen.jsx';
+import DifficultySelectScreen from './pages/DifficultySelectScreen.jsx';
+import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
+import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
+import EndingScreen from './pages/EndingScreen.jsx';
+import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
+import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
+import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
+import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
+import StageSelectScreen from './pages/StageSelectScreen.jsx';
+import StoryResumeScreen from './pages/StoryResumeScreen.jsx';
+import TournamentRankingScreen from './pages/TournamentRankingScreen.jsx';
+import { loadDeck, submitDefenseDeck } from './services/deck.js';
 import {
   showEnemySkillConfirm,
   showSkillConfirm,
 } from './services/uiBattle.js';
-import { loadDeck } from './services/deck.js';
-import ContinueScreen from './pages/ContinueScreen.jsx';
-import EndingScreen from './pages/EndingScreen.jsx';
-import DebugBattleScreen from './pages/DebugBattleScreen.jsx';
-import RewardOverlay from './components/battle/RewardOverlay.jsx';
-import CutinOverlay from './components/battle/CutinOverlay.jsx';
-import VfxOverlay from './components/battle/VfxOverlay.jsx';
 import {
-  showNextDialogue,
   executeContinue,
   executeGameOver,
+  showNextDialogue,
 } from './services/uiDialogue.js';
-import { submitDefenseDeck } from './services/deck.js';
+import { appendVersionQuery } from './utils/constants/config.js';
+import {
+  executeSwitchScreen,
+  playSound,
+  setSwitchScreenHook,
+  switchScreen,
+} from './utils/gameUtils.js';
+import { SOUNDS } from './utils/sounds.js';
 // TODO: レガシーコードからのReact完全移行後に、このwindowグローバルへの公開ブロックを段階的に縮小・撤廃する予定。
 // レガシーUI用に関数をグローバルに公開
 window.returnToTitle = returnToTitle;
@@ -193,104 +187,6 @@ export default function App() {
     return () => {
       delete window.updateLoadingTextReact;
     };
-  }, []);
-
-  useEffect(() => {
-    // 起動時の新バージョンチェック（キャッシュ破棄）
-    const checkVersion = async () => {
-      // 進行中のバトル、ダンジョン、対話中、またはGameState.isInBattleがtrueの場合は安全のためにチェックをスキップする
-      const battleScreens = [
-        'screen-battle',
-        'screen-battle-dungeon',
-        'screen-debug-battle',
-        'screen-dialogue',
-      ];
-      const isInBattleScreen = battleScreens.includes(currentScreenRef.current);
-
-      if (
-        isInBattleScreen ||
-        (window.GameState && window.GameState.isInBattle)
-      ) {
-        console.log(
-          '[Version Checker] User is in battle or dialogue. Skipping check to prevent state loss.'
-        );
-        return;
-      }
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(
-          () => controller.abort(),
-          VERSION_CHECK_TIMEOUT_MS
-        );
-
-        const response = await fetch(`./version.json?t=${Date.now()}`, {
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          console.warn(
-            '[Version Checker] Server returned non-ok status. Skipping check.'
-          );
-          return;
-        }
-
-        const data = await response.json();
-        const currentVersion = GAME_VERSION;
-
-        if (data.version && data.version !== currentVersion) {
-          console.log(
-            '[Version Checker] New version detected:',
-            data.version,
-            'Current:',
-            currentVersion
-          );
-
-          // リロードループ防止（新バージョンへの再試行はセッションで一度だけ）
-          const reloadAttemptKey = `${currentVersion}->${data.version}`;
-          if (
-            sessionStorage.getItem('versionReloadAttempted') ===
-            reloadAttemptKey
-          ) {
-            console.warn(
-              '[Version Checker] Reload already attempted for this version. Skipping.'
-            );
-            return;
-          }
-
-          // ユーザーに確認ダイアログを表示して、OKの場合のみリロードを行う
-          showConfirmModal(
-            '新しいバージョンが検出されました。\n最新データへ更新するために、ゲームを再読み込みしますか？',
-            async () => {
-              sessionStorage.setItem(
-                'versionReloadAttempted',
-                reloadAttemptKey
-              );
-              try {
-                await clearCachesAndServiceWorkers();
-                console.log('[Version Checker] Cache cleared. Reloading...');
-              } catch (e) {
-                console.error(
-                  '[Version Checker] Cache clear failed. Reloading anyway.',
-                  e
-                );
-              } finally {
-                location.reload();
-              }
-            }
-          );
-        }
-      } catch (err) {
-        console.warn(
-          '[Version Checker] Fetch failed or timed out. Offline mode? Skipping check.',
-          err
-        );
-      }
-    };
-
-    checkVersion();
   }, []);
 
   const [rulesVisible, setRulesVisible] = useState(false);

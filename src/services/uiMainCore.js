@@ -205,9 +205,9 @@ export function importDataFromXML() {
           stack: JSON.stringify(details || {}),
           uuid: localStorage.getItem('mini_card_battle_uuid') || '',
           screen: 'import-debug',
-          userAgent: navigator.userAgent || ''
+          userAgent: navigator.userAgent || '',
         }),
-        keepalive: true
+        keepalive: true,
       }).catch(() => {});
     } catch {}
   };
@@ -222,18 +222,22 @@ export function importDataFromXML() {
     sendDebugLog('import_start', 'User selected a file for import.', {
       name: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
     });
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target.result || '';
-        
-        sendDebugLog('import_file_loaded', 'File loaded successfully, parsing...', {
-          length: content.length,
-          snippet: content.substring(0, 150)
-        });
+
+        sendDebugLog(
+          'import_file_loaded',
+          'File loaded successfully, parsing...',
+          {
+            length: content.length,
+            snippet: content.substring(0, 150),
+          }
+        );
 
         // HTMLエンティティの手動デコード
         const unescapeHtml = (text) => {
@@ -246,13 +250,14 @@ export function importDataFromXML() {
         };
 
         const importedData = [];
-        const entryRegex = /<[Ee]ntry\s+key=["']([^"']+)["']\s*>([\s\S]*?)<\/[Ee]ntry>/g;
+        const entryRegex =
+          /<[Ee]ntry\s+key=["']([^"']+)["']\s*>([\s\S]*?)<\/[Ee]ntry>/g;
         let match;
-        
+
         while ((match = entryRegex.exec(content)) !== null) {
           const key = match[1];
           const rawVal = match[2];
-          
+
           if (!key || !key.startsWith(GAME_KEY_PREFIX)) {
             throw new Error(
               `無効なバックアップエントリが含まれています。key: ${key}`
@@ -263,11 +268,15 @@ export function importDataFromXML() {
 
         sendDebugLog('import_parsed', 'XML parsed successfully.', {
           entriesCount: importedData.length,
-          keys: importedData.map(([k]) => k)
+          keys: importedData.map(([k]) => k),
         });
 
         if (importedData.length === 0) {
-          sendDebugLog('import_error_no_entries', 'No valid entries found in XML.', {});
+          sendDebugLog(
+            'import_error_no_entries',
+            'No valid entries found in XML.',
+            {}
+          );
           showAlertModal('有効なバックアップデータが見つかりませんでした。');
           return;
         }
@@ -276,65 +285,91 @@ export function importDataFromXML() {
           'データを上書きしてよろしいですか？\n取り込んだデータで現在の進行状況が上書きされ、自動的にリロードされます。',
           () => {
             try {
-              sendDebugLog('import_confirm_ok', 'User confirmed overwrite. Staging previous data...', {});
+              sendDebugLog(
+                'import_confirm_ok',
+                'User confirmed overwrite. Staging previous data...',
+                {}
+              );
 
               // 全エントリを先に検証・ステージングし、適用失敗時は旧データを復元する
               const previousData = Object.keys(localStorage)
                 .filter((key) => key.startsWith(GAME_KEY_PREFIX))
                 .map((key) => [key, localStorage.getItem(key)]);
 
-              sendDebugLog('import_staging', 'Staged previous data, starting write...', {
-                previousCount: previousData.length,
-                previousKeys: previousData.map(([k]) => k)
-              });
+              sendDebugLog(
+                'import_staging',
+                'Staged previous data, starting write...',
+                {
+                  previousCount: previousData.length,
+                  previousKeys: previousData.map(([k]) => k),
+                }
+              );
 
               try {
                 // 古いデータを削除
                 previousData.forEach(([key]) => {
                   localStorage.removeItem(key);
                 });
-                
+
                 // 新しいデータを書き込み
                 importedData.forEach(([key, val]) => {
                   localStorage.setItem(key, val);
                 });
 
                 // iOS / Safari PWA のSQLiteデータベースへ強制コミット・フラッシュを促すためのダミーI/O
-                localStorage.setItem('mini_card_battle_last_write_t', String(Date.now()));
+                localStorage.setItem(
+                  'mini_card_battle_last_write_t',
+                  String(Date.now())
+                );
                 localStorage.getItem('mini_card_battle_last_write_t');
                 localStorage.removeItem('mini_card_battle_last_write_t');
 
-                sendDebugLog('import_write_success', 'All imported entries written to localStorage successfully.', {
-                  writtenCount: importedData.length,
-                  verification: importedData.map(([k]) => {
-                    const saved = localStorage.getItem(k);
-                    return {
-                      key: k,
-                      savedLength: saved ? saved.length : 0,
-                      savedSnippet: saved ? saved.substring(0, 50) : null
-                    };
-                  })
-                });
-
+                sendDebugLog(
+                  'import_write_success',
+                  'All imported entries written to localStorage successfully.',
+                  {
+                    writtenCount: importedData.length,
+                    verification: importedData.map(([k]) => {
+                      const saved = localStorage.getItem(k);
+                      return {
+                        key: k,
+                        savedLength: saved ? saved.length : 0,
+                        savedSnippet: saved ? saved.substring(0, 50) : null,
+                      };
+                    }),
+                  }
+                );
               } catch (err) {
-                sendDebugLog('import_write_error', 'Failed writing to localStorage. Rolling back...', {
-                  error: err.toString(),
-                  stack: err.stack
-                });
+                sendDebugLog(
+                  'import_write_error',
+                  'Failed writing to localStorage. Rolling back...',
+                  {
+                    error: err.toString(),
+                    stack: err.stack,
+                  }
+                );
 
                 // ロールバック
                 Object.keys(localStorage)
                   .filter((key) => key.startsWith(GAME_KEY_PREFIX))
                   .forEach((key) => localStorage.removeItem(key));
-                previousData.forEach(([key, val]) => localStorage.setItem(key, val));
+                previousData.forEach(([key, val]) =>
+                  localStorage.setItem(key, val)
+                );
                 throw err;
               }
 
-              sendDebugLog('import_success_noreload', 'State reloaded without page refresh.', {});
+              sendDebugLog(
+                'import_success_noreload',
+                'State reloaded without page refresh.',
+                {}
+              );
 
               // ユーザーに書き込み中であることを伝え、待機中のタスクキルを防止する
               if (typeof showAlertModal === 'function') {
-                showAlertModal('バックアップデータを書き込み中ファイルに同期しています...\n完了メッセージが出るまでアプリを閉じずにお待ちください。');
+                showAlertModal(
+                  'バックアップデータを書き込み中ファイルに同期しています...\n完了メッセージが出るまでアプリを閉じずにお待ちください。'
+                );
               }
 
               // iOS / Safari PWA のI/Oスレッドにディスクへの書き出し（フラッシュ）を物理的に完了させるため、
@@ -342,38 +377,59 @@ export function importDataFromXML() {
               setTimeout(() => {
                 try {
                   // プロフィールの再ロード
-                  const profileName = localStorage.getItem('mini_card_battle_profile_name') || 'プレイヤー';
-                  const profileIcon = localStorage.getItem('mini_card_battle_profile_icon') || 'android';
-                  GameState.userProfile = { name: profileName, icon: profileIcon };
+                  const profileName =
+                    localStorage.getItem('mini_card_battle_profile_name') ||
+                    'プレイヤー';
+                  const profileIcon =
+                    localStorage.getItem('mini_card_battle_profile_icon') ||
+                    'android';
+                  GameState.userProfile = {
+                    name: profileName,
+                    icon: profileIcon,
+                  };
 
                   // 解放スキンの再ロード
                   try {
-                    const skinsRaw = localStorage.getItem('mini_card_battle_unlocked_skins');
+                    const skinsRaw = localStorage.getItem(
+                      'mini_card_battle_unlocked_skins'
+                    );
                     const skinsParsed = skinsRaw ? JSON.parse(skinsRaw) : null;
-                    GameState.unlockedSkins = Array.isArray(skinsParsed) ? skinsParsed : [];
+                    GameState.unlockedSkins = Array.isArray(skinsParsed)
+                      ? skinsParsed
+                      : [];
                   } catch {
                     GameState.unlockedSkins = [];
                   }
 
                   // 解放アイコンの再ロード
                   try {
-                    const iconsRaw = localStorage.getItem('mini_card_battle_unlocked_icons');
+                    const iconsRaw = localStorage.getItem(
+                      'mini_card_battle_unlocked_icons'
+                    );
                     const iconsParsed = iconsRaw ? JSON.parse(iconsRaw) : null;
-                    GameState.unlockedIcons = Array.isArray(iconsParsed) ? iconsParsed : [];
+                    GameState.unlockedIcons = Array.isArray(iconsParsed)
+                      ? iconsParsed
+                      : [];
                   } catch {
                     GameState.unlockedIcons = [];
                   }
 
                   // プレミアムカードの再ロード
                   try {
-                    const premiumSaved = localStorage.getItem('mini_card_battle_premium_cards');
-                    GameState.premiumCards = premiumSaved ? JSON.parse(premiumSaved) : [];
+                    const premiumSaved = localStorage.getItem(
+                      'mini_card_battle_premium_cards'
+                    );
+                    GameState.premiumCards = premiumSaved
+                      ? JSON.parse(premiumSaved)
+                      : [];
                   } catch {
                     GameState.premiumCards = [];
                   }
 
                   // 音量
-                  const volSaved = localStorage.getItem('mini_card_battle_volume');
+                  const volSaved = localStorage.getItem(
+                    'mini_card_battle_volume'
+                  );
                   const volFloat = parseFloat(volSaved);
                   GameState.gameVolume = isNaN(volFloat) ? 0.5 : volFloat;
 
@@ -387,21 +443,29 @@ export function importDataFromXML() {
 
                   // ユーザーにインポート完了の完了ダイアログを表示
                   if (typeof showAlertModal === 'function') {
-                    showAlertModal('バックアップデータの取り込みが完了しました！');
+                    showAlertModal(
+                      'バックアップデータの取り込みが完了しました！'
+                    );
                   }
                 } catch (applyErr) {
                   console.error('Failed to apply imported state:', applyErr);
                   if (typeof showAlertModal === 'function') {
-                    showAlertModal('インポートデータの適用中にエラーが発生しました。');
+                    showAlertModal(
+                      'インポートデータの適用中にエラーが発生しました。'
+                    );
                   }
                 }
               }, 150);
             } catch (err) {
               console.error('Import error:', err);
-              sendDebugLog('import_callback_error', 'Error in confirm callback.', {
-                error: err.toString(),
-                stack: err.stack
-              });
+              sendDebugLog(
+                'import_callback_error',
+                'Error in confirm callback.',
+                {
+                  error: err.toString(),
+                  stack: err.stack,
+                }
+              );
               showAlertModal(
                 `インポートに失敗しました。\nエラー: ${err.message || err}`
               );
@@ -410,10 +474,14 @@ export function importDataFromXML() {
         );
       } catch (err) {
         console.error('Import error:', err);
-        sendDebugLog('import_outer_catch', 'Outer catch error in file load/parse.', {
-          error: err.toString(),
-          stack: err.stack
-        });
+        sendDebugLog(
+          'import_outer_catch',
+          'Outer catch error in file load/parse.',
+          {
+            error: err.toString(),
+            stack: err.stack,
+          }
+        );
         showAlertModal(
           `ファイルのパースに失敗しました。エラー: ${err.message || err}`
         );

@@ -873,7 +873,10 @@ export function createNewDeck(leaderId) {
         VALID_PREMIUM_CARDS.includes(id)
       );
     } catch (e) {
-      console.error('Failed to parse global premium cards in createNewDeck:', e);
+      console.error(
+        'Failed to parse global premium cards in createNewDeck:',
+        e
+      );
       globalPremiumCards = [];
     }
   }

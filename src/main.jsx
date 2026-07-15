@@ -1,4 +1,3 @@
-
 // URLの末尾スラッシュ補正（PWAでのホーム画面追加時の階層ズレバグ対策）
 // 例: /MiniCardBattle のようにスラッシュなしでアクセスされた場合、末尾にスラッシュを付与してリダイレクトします
 if (
@@ -19,8 +18,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { installGlobalErrorReporter } from './utils/errorReporter.js';
 import './styles/style.css';
+import { installGlobalErrorReporter } from './utils/errorReporter.js';
 
 // グローバルエラーレポーターをインストール（index.htmlのインラインスクリプトから利用可能にする）
 installGlobalErrorReporter();
