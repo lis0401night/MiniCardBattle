@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { initBattleDungeon } from '../game/battleDungeon.js';
-import { GameState } from '../state/gameState.js';
 import { showDungeonRules, showEventMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { switchScreen } from '../utils/gameUtils.js';
 
 export default function DungeonMenuScreen() {
@@ -55,16 +55,11 @@ export default function DungeonMenuScreen() {
         />
         <MenuButton
           label="ランキング"
-          variant="red"
-          style={{ color: '#ffffff' }}
+          variant="blue"
           onClick={() => switchScreen('screen-challenge-ranking')}
         />
-        <MenuButton
-          label="挑戦"
-          variant="purple"
-          onClick={handleChallengeClick}
-        />
-        <MenuButton label="開放" variant="blue" onClick={handleUnlockClick} />
+        <MenuButton label="挑戦" variant="red" onClick={handleChallengeClick} />
+        <MenuButton label="開放" variant="purple" onClick={handleUnlockClick} />
         <MenuButton
           label="交換所"
           variant="orange"

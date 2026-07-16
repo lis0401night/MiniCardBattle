@@ -11,17 +11,17 @@ import {
   PROFILE_NAME_KEY,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
+import { setCurrentScreen } from './errorReporter.js';
 import {
   audioCtx,
+  decodedBgms,
   isAudioUnlocked,
   loadAndDecodeAudio,
   recreateAudioSystem,
   seBuffers,
   SOUNDS,
   unlockAudio,
-  decodedBgms,
 } from './sounds.js';
-import { setCurrentScreen } from './errorReporter.js';
 
 // LocalStorageに保存する防衛戦選出キャッシュのキー
 const DEFENSE_TARGETS_STORAGE_KEY = 'mini_card_battle_defense_targets';
@@ -718,6 +718,7 @@ export const VALID_PREMIUM_CARDS = [
   'snakepriest',
   'light',
   'cheetah',
+  'tortoise',
 ];
 
 /**

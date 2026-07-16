@@ -4,20 +4,20 @@ import MenuButton from '../components/common/MenuButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import {
   showDefenseBattleList,
-  showDefenseRules,
   showDefenseRanking,
+  showDefenseRules,
   showEventMenu,
   showExchangeScreen,
   startDefenseRegistration,
 } from '../services/uiMainCore.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
-import { getOrCreateUUID } from '../utils/gameUtils.js';
 import { fetchPlayerDecks, syncModePoints } from '../utils/apiUtils.js';
 import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
   DEFENSE_WINS_KEY,
 } from '../utils/constants/config.js';
+import { getOrCreateUUID } from '../utils/gameUtils.js';
 
 export default function DefenseMenuScreen() {
   // 初期値でLocalStorageの登録状態を判定（useEffect内での同期的setState回避）
@@ -114,8 +114,7 @@ export default function DefenseMenuScreen() {
         />
         <MenuButton
           label="ランキング"
-          variant="red"
-          style={{ color: '#ffffff' }}
+          variant="blue"
           onClick={() => showDefenseRanking?.()}
         />
         <MenuButton
@@ -125,7 +124,7 @@ export default function DefenseMenuScreen() {
         />
         <MenuButton
           label={hasRegistered ? '攻撃開始' : '攻撃開始（未登録）'}
-          variant="blue"
+          variant="red"
           onClick={() => showDefenseBattleList?.()}
           disabled={!hasRegistered}
         />

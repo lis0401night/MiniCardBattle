@@ -1,5 +1,5 @@
-import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { showEventMenu, startGameMode } from '../services/uiMainCore.js';
 import { switchScreen } from '../utils/gameUtils.js';
 
@@ -29,13 +29,12 @@ export default function TournamentMenuScreen() {
         />
         <MenuButton
           label="ランキング"
-          variant="red"
-          style={{ color: '#ffffff' }}
+          variant="blue"
           onClick={() => switchScreen?.('screen-tournament-ranking')}
         />
         <MenuButton
           label="挑戦"
-          variant="blue"
+          variant="red"
           onClick={() => startGameMode?.('tournament')}
         />
         <MenuButton

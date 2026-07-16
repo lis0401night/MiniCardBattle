@@ -3600,4 +3600,5 @@ export const PREMIUM_CARD_IDS = [
   'snakepriest',
   // --- シリアルコード ---
   'cheetah',
+  'tortoise',
 ];
