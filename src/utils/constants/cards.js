@@ -1668,6 +1668,7 @@ export const CARD_MASTER = [
       { id: 'sacrifice', value: 2 },
       { id: 'draw', value: 3 },
     ],
+    voiceCategory: 'devil',
     flavor:
       '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。',
   },
