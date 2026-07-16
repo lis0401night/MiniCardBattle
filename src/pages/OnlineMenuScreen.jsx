@@ -75,15 +75,7 @@ export default function OnlineMenuScreen() {
           <h3 style={{ color: '#fff' }}>ルームを作成しています...</h3>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '15px',
-            width: '250px',
-            marginBottom: '20px',
-          }}
-        >
+        <div className="menu-button-container">
           <MenuButton
             label="ルール"
             variant="yellow"

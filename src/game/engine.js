@@ -416,7 +416,21 @@ export function applyActiveSkillLogic(
   const eB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
   const oppOwner = owner === 'blue' ? 'red' : 'blue';
   const c = b[l];
-  if (!c) return events;
+  // 自身（カードオブジェクト）が盤面に存在しないと解決できない（自己バフや自己付与の）スキル一覧
+  const requiresCard = [
+    'double_power',
+    'decay',
+    'hero',
+    'adversity',
+    'lone_wolf',
+    'invade',
+    'replicate',
+    'standby',
+    'stealth',
+    'invincible',
+    'sublimation',
+  ];
+  if (!c && requiresCard.includes(sid)) return events;
 
   switch (sid) {
     case 'choice':

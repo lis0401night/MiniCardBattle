@@ -32,6 +32,7 @@ export default function MenuButton({
   return (
     <button
       id={id}
+      type="button"
       className={btnClassName}
       style={btnStyle}
       onClick={handleClick}

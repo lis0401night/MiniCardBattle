@@ -373,89 +373,17 @@ export function importDataFromXML() {
               }
 
               // iOS / Safari PWA のI/Oスレッドにディスクへの書き出し（フラッシュ）を物理的に完了させるため、
-              // 1200ms（1.2秒）の十分な非同期ウェイトを挟んでからメモリ状態の更新と画面遷移を実行する。
+              // 1200ms（1.2秒）の十分な非同期ウェイトを挟んでからアプリを再起動する。
               setTimeout(() => {
-                try {
-                  // プロフィールの再ロード
-                  const profileName =
-                    localStorage.getItem('mini_card_battle_profile_name') ||
-                    'プレイヤー';
-                  const profileIcon =
-                    localStorage.getItem('mini_card_battle_profile_icon') ||
-                    'android';
-                  GameState.userProfile = {
-                    name: profileName,
-                    icon: profileIcon,
-                  };
-
-                  // 解放スキンの再ロード
-                  try {
-                    const skinsRaw = localStorage.getItem(
-                      'mini_card_battle_unlocked_skins'
-                    );
-                    const skinsParsed = skinsRaw ? JSON.parse(skinsRaw) : null;
-                    GameState.unlockedSkins = Array.isArray(skinsParsed)
-                      ? skinsParsed
-                      : [];
-                  } catch {
-                    GameState.unlockedSkins = [];
-                  }
-
-                  // 解放アイコンの再ロード
-                  try {
-                    const iconsRaw = localStorage.getItem(
-                      'mini_card_battle_unlocked_icons'
-                    );
-                    const iconsParsed = iconsRaw ? JSON.parse(iconsRaw) : null;
-                    GameState.unlockedIcons = Array.isArray(iconsParsed)
-                      ? iconsParsed
-                      : [];
-                  } catch {
-                    GameState.unlockedIcons = [];
-                  }
-
-                  // プレミアムカードの再ロード
-                  try {
-                    const premiumSaved = localStorage.getItem(
-                      'mini_card_battle_premium_cards'
-                    );
-                    GameState.premiumCards = premiumSaved
-                      ? JSON.parse(premiumSaved)
-                      : [];
-                  } catch {
-                    GameState.premiumCards = [];
-                  }
-
-                  // 音量
-                  const volSaved = localStorage.getItem(
-                    'mini_card_battle_volume'
+                if (typeof showAlertModal === 'function') {
+                  showAlertModal(
+                    'バックアップデータの取り込みが完了しました！\nアプリを再起動します。'
                   );
-                  const volFloat = parseFloat(volSaved);
-                  GameState.gameVolume = isNaN(volFloat) ? 0.5 : volFloat;
-
-                  // デッキの再ロード
-                  if (typeof loadDeck === 'function') {
-                    loadDeck();
-                  }
-
-                  // 画面をタイトルへ戻す
-                  GameState.appState = 'title';
-
-                  // ユーザーにインポート完了の完了ダイアログを表示
-                  if (typeof showAlertModal === 'function') {
-                    showAlertModal(
-                      'バックアップデータの取り込みが完了しました！'
-                    );
-                  }
-                } catch (applyErr) {
-                  console.error('Failed to apply imported state:', applyErr);
-                  if (typeof showAlertModal === 'function') {
-                    showAlertModal(
-                      'インポートデータの適用中にエラーが発生しました。'
-                    );
-                  }
                 }
-              }, 150);
+                setTimeout(() => {
+                  location.reload();
+                }, 800);
+              }, 1200);
             } catch (err) {
               console.error('Import error:', err);
               sendDebugLog(

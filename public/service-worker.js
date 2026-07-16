@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mini-card-battle-v0.1.24';
+const CACHE_NAME = 'mini-card-battle-v0.1.24.1';
 
 // プリキャッシュする基本リソース
 const PRECACHE_ASSETS = [
@@ -58,9 +58,11 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response && response.status === 200) {
             const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => {
+                return cache.put(event.request, responseToCache);
+              })
+            );
           }
           return response;
         })
@@ -94,7 +96,7 @@ self.addEventListener('fetch', (event) => {
             .then((response) => {
               if (response && response.status === 200) {
                 const responseToCache = response.clone();
-                cache.put(cacheKey, responseToCache);
+                event.waitUntil(cache.put(cacheKey, responseToCache));
                 return createPartialResponse(event.request, response);
               }
               // 200以外の場合は通常の分割読み込みでフォールバック
@@ -125,9 +127,11 @@ self.addEventListener('fetch', (event) => {
             }
 
             const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => {
+                return cache.put(event.request, responseToCache);
+              })
+            );
 
             return response;
           })

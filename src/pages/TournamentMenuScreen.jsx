@@ -13,15 +13,7 @@ export default function TournamentMenuScreen() {
       titleGlow={true}
       onBackClick={() => showEventMenu?.()}
     >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '15px',
-          width: '250px',
-          marginBottom: '20px',
-        }}
-      >
+      <div className="menu-button-container">
         <MenuButton
           label="ルール"
           variant="yellow"

@@ -206,12 +206,10 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   const handleFinish = () => {
     if (deckSelection.length !== DECK_SIZE) {
-      playSound?.(SOUNDS?.seClick);
       showAlertModal?.(`デッキを${DECK_SIZE}枚にしてください！`);
       return;
     }
 
-    playSound?.(SOUNDS?.seClick);
     // グローバルなsaveDeckを呼び出し
     if (typeof saveDeck === 'function') {
       saveDeck();

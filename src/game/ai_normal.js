@@ -180,6 +180,7 @@ export function processActionSequence(
   leaderSkillOppTargetIdx = null,
   leaderCardSkillActions = null
 ) {
+  actionQueue = [...actionQueue];
   const savedRNG = getCurrentRNG();
   try {
     let simState = initialSimState;
@@ -295,9 +296,7 @@ export function processActionSequence(
           if (lCardMaster && lCardMaster.skills) {
             lCardMaster.skills.forEach((sk) => {
               // 1. ユーティリティボーナス系スキル (手札プレイ時と同等)
-              if (
-                ['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
-              ) {
+              if (sk.id === 'draw') {
                 simState.actionUtilityBonus =
                   (simState.actionUtilityBonus || 0) +
                   (AI_SKILL_UTILITY[sk.id] || 0);
@@ -2181,6 +2180,8 @@ export function getBestSimulatedMove() {
               'leap',
               'forge',
               'execute',
+              'choice',
+              'force',
             ].includes(s.id)
           );
           if (hasActiveSkills) {
@@ -2209,9 +2210,24 @@ export function getBestSimulatedMove() {
               leaderLane,
               trialPalaceLeaderSkillContext
             );
-            const branches = trialPalaceDummyQueues
-              .map((q) => q.slice(1))
-              .filter((q) => q.length > 0);
+            const branches = [];
+            for (let q of trialPalaceDummyQueues) {
+              let childQ = q.slice(1);
+              if (
+                q[0] &&
+                (q[0].choices !== undefined || q[0].choices2 !== undefined)
+              ) {
+                childQ = [
+                  {
+                    type: 'choice',
+                    choices: q[0].choices,
+                    choices2: q[0].choices2,
+                  },
+                  ...childQ,
+                ];
+              }
+              branches.push(childQ);
+            }
             if (branches.length > 0) {
               leaderCardSkillBranches = branches;
             }

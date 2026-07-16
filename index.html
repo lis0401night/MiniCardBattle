@@ -258,7 +258,12 @@
           }
         } catch (e) {}
 
-        // 同期型バージョンチェッカー（ESM モジュールロード前にキャッシュ更新を完了させる）
+        // 同期型バージョンチェッカー
+        // 【重要設計意図】
+        // 後続の ESM モジュール（React/Vite）がロードされて起動する前に、古いキャッシュ破棄と
+        // リロードを100%確実に完了させ、新旧コードの競合によるクラッシュ（ゾンビキャッシュ）を
+        // 防止するために、意図的に同期 XMLHttpRequest（xhr.open の第3引数を false）を使用しています。
+        // ※ navigator.onLine === false（オフライン時）は即座に回避するセーフガードが入っています。
         (function () {
           if (navigator.onLine === false) return;
 
@@ -281,29 +286,53 @@
                   ) || !!(window.caches && localStorage.length > 0);
 
                 if (lastVersion !== data.version && hasPwa) {
+                  var promises = [];
+
                   if (navigator.serviceWorker) {
-                    navigator.serviceWorker
+                    var swPromise = navigator.serviceWorker
                       .getRegistrations()
                       .then(function (regs) {
+                        var swTasks = [];
                         for (var i = 0; i < regs.length; i++) {
-                          regs[i].unregister();
+                          swTasks.push(
+                            regs[i].unregister().catch(function () {})
+                          );
                         }
+                        return Promise.all(swTasks);
                       })
                       .catch(function () {});
-                  }
-                  if (window.caches) {
-                    caches
-                      .keys()
-                      .then(function (keys) {
-                        keys.forEach(function (key) {
-                          caches.delete(key);
-                        });
-                      })
-                      .catch(function () {});
+                    promises.push(swPromise);
                   }
 
-                  localStorage.setItem(VERSION_KEY, data.version);
-                  window.location.reload(true);
+                  if (window.caches) {
+                    var cachePromise = caches
+                      .keys()
+                      .then(function (keys) {
+                        var cacheTasks = [];
+                        keys.forEach(function (key) {
+                          cacheTasks.push(
+                            caches.delete(key).catch(function () {})
+                          );
+                        });
+                        return Promise.all(cacheTasks);
+                      })
+                      .catch(function () {});
+                    promises.push(cachePromise);
+                  }
+
+                  // タイムアウト用Promise (最大1200ms待つ)
+                  var timeoutPromise = new Promise(function (resolve) {
+                    setTimeout(resolve, 1200);
+                  });
+
+                  // すべて完了するか、タイムアウトしたらバージョンを確定してリロード
+                  Promise.race([Promise.all(promises), timeoutPromise]).then(
+                    function () {
+                      localStorage.setItem(VERSION_KEY, data.version);
+                      window.location.reload(true);
+                    }
+                  );
+
                   return;
                 } else {
                   localStorage.setItem(VERSION_KEY, data.version);

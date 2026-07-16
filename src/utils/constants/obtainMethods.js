@@ -1,5 +1,5 @@
 /**
- * Mini Card Battle - Obtain Methods Mapping constants and helpers
+ * Mini Card Battle - 入手方法の表示定数と変換ヘルパー
  */
 import { CHARACTERS } from './characters.js';
 

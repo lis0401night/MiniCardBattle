@@ -920,41 +920,53 @@ export async function clearCachesAndServiceWorkers() {
   const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 150));
 
   const cleanPromise = (async () => {
+    const tasks = [];
     try {
       // 1. ready から直接解除 (最速・高信頼)
       if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-        navigator.serviceWorker.ready
-          .then((reg) => {
-            if (reg && reg.unregister) reg.unregister();
-          })
-          .catch(() => {});
+        tasks.push(
+          navigator.serviceWorker.ready
+            .then((reg) => {
+              if (reg && reg.unregister) return reg.unregister();
+            })
+            .catch(() => {})
+        );
       }
 
-      // 2. getRegistrations による全解除 (バックグラウンド非同期)
+      // 2. getRegistrations による全解除
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker
-          .getRegistrations()
-          .then((registrations) => {
-            registrations.forEach((reg) => {
-              if (reg.scope && reg.scope.startsWith(appScope)) {
-                reg.unregister().catch(() => {});
-              }
-            });
-          })
-          .catch(() => {});
+        tasks.push(
+          navigator.serviceWorker
+            .getRegistrations()
+            .then((registrations) => {
+              const unregPromises = registrations.map((reg) => {
+                if (reg.scope && reg.scope.startsWith(appScope)) {
+                  return reg.unregister().catch(() => {});
+                }
+              });
+              return Promise.all(unregPromises.filter(Boolean));
+            })
+            .catch(() => {})
+        );
       }
 
-      // 3. Cache Storage の削除 (バックグラウンド非同期)
+      // 3. Cache Storage の削除
       if ('caches' in window) {
-        caches
-          .keys()
-          .then((names) => {
-            names.forEach((name) => {
-              caches.delete(name).catch(() => {});
-            });
-          })
-          .catch(() => {});
+        tasks.push(
+          caches
+            .keys()
+            .then((names) => {
+              const delPromises = names.map((name) => {
+                return caches.delete(name).catch(() => {});
+              });
+              return Promise.all(delPromises);
+            })
+            .catch(() => {})
+        );
       }
+
+      // すべての削除タスクが完了（成功または失敗）するのを待つ
+      await Promise.allSettled(tasks);
     } catch (e) {
       console.warn('[CacheClear] Error during async purge', e);
     }
