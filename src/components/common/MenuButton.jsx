@@ -12,6 +12,7 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {boolean} [disabled] - 無効化状態
  */
 export default function MenuButton({
+  id,
   label,
   onClick,
   variant = 'default',
@@ -25,42 +26,21 @@ export default function MenuButton({
     if (onClick) onClick(e);
   };
 
-  const getVariantStyle = () => {
-    if (disabled) {
-      return {
-        background: '#475569',
-        opacity: 0.5,
-        cursor: 'not-allowed',
-      };
-    }
-
-    switch (variant) {
-      case 'purple':
-        return { background: 'linear-gradient(45deg, #a855f7, #7e22ce)' };
-      case 'blue':
-        return { background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)' };
-      case 'orange':
-        return { background: 'linear-gradient(45deg, #f97316, #ea580c)' };
-      case 'red':
-        return { background: 'linear-gradient(45deg, #ef4444, #b91c1c)' };
-      case 'emerald':
-        return { background: 'linear-gradient(45deg, #10b981, #059669)' };
-      default:
-        return {};
-    }
-  };
-
-  const btnClassName = `btn ${variant === 'yellow' && !disabled ? 'btn-yellow' : ''} ${className}`;
-  const btnStyle = { ...getVariantStyle(), ...style };
+  const btnClassName = `btn btn-fantasy ${disabled ? 'btn-disabled' : `btn-variant-${variant}`} ${className}`;
+  const btnStyle = { ...style };
 
   return (
     <button
+      id={id}
       className={btnClassName}
       style={btnStyle}
       onClick={handleClick}
       disabled={disabled}
     >
-      {label}
+      <div className="btn-particles"></div>
+      <div className="btn-ornament btn-ornament-tl"></div>
+      <div className="btn-ornament btn-ornament-br"></div>
+      <span style={{ position: 'relative', zIndex: 1 }}>{label}</span>
     </button>
   );
 }

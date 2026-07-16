@@ -104,6 +104,7 @@ export default function DefenseMenuScreen() {
           flexDirection: 'column',
           gap: '15px',
           width: '250px',
+          marginBottom: '20px',
         }}
       >
         <MenuButton

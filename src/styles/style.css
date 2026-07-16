@@ -152,7 +152,6 @@ h2 {
   font-family: 'Outfit', 'Noto Sans JP', sans-serif;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,7 +165,6 @@ h2 {
     box-shadow:
       0 8px 25px rgba(0, 0, 0, 0.7),
       0 0 15px rgba(139, 92, 246, 0.4);
-    border-color: rgba(255, 255, 255, 0.6);
   }
 }
 
@@ -174,11 +172,148 @@ h2 {
   transform: scale(0.96);
 }
 
-.btn-yellow {
-  background: linear-gradient(135deg, #facc15, #eab308);
-  color: #1e293b;
-  text-shadow: none;
-  font-weight: 900;
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.btn-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.15) 1.5px, transparent 4px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 1px, transparent 3px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.15) 2px, transparent 5px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.05) 1px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 2px, transparent 6px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 1.5px, transparent 4px);
+  background-size: 23px 37px, 31px 43px, 41px 53px, 47px 59px, 59px 71px, 67px 79px;
+  background-position: 5px 13px, 17px 29px, 31px 41px, 3px 53px, 43px 11px, 59px 61px;
+  z-index: 0;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  filter: blur(0.7px);
+  opacity: 0.5;
+}
+
+.btn-ornament {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background-image: url('/assets/ui/ui_btn_ornament.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.btn-ornament-tl {
+  top: -2px;
+  left: -2px;
+  background-position: top left;
+}
+
+.btn-ornament-br {
+  bottom: -11px;
+  right: -2px;
+  background-position: bottom right;
+  transform: rotate(180deg);
+}
+
+.btn-fantasy {
+  border-color: #cea255 !important;
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.6),
+    inset 0 0 10px rgba(212, 175, 55, 0.4) !important;
+}
+
+/* --- Fantasy Button Variants --- */
+.btn-variant-blue {
+  background: linear-gradient(to bottom, #1e3c72 0%, #2a5298 50%, #152b52 100%);
+}
+
+.btn-variant-blue:hover {
+  box-shadow: 0 6px 30px rgba(42, 82, 152, 0.8), inset 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.btn-variant-red {
+  background: linear-gradient(to bottom, #8a2387 0%, #e94057 50%, #63051a 100%);
+}
+
+.btn-variant-red:hover {
+  box-shadow: 0 6px 30px rgba(233, 64, 87, 0.8), inset 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.btn-variant-emerald {
+  background: linear-gradient(to bottom, #0f3443 0%, #34e89e 50%, #0a232d 100%);
+}
+
+.btn-variant-emerald:hover {
+  box-shadow: 0 6px 30px rgba(52, 232, 158, 0.8), inset 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.btn-variant-purple {
+  background: linear-gradient(to bottom, #2b1055 0%, #753a88 50%, #1d0a38 100%);
+}
+
+.btn-variant-purple:hover {
+  box-shadow: 0 6px 30px rgba(117, 58, 136, 0.8), inset 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.btn-variant-orange {
+  background: linear-gradient(to bottom, #b45309 0%, #ea580c 50%, #7c2d12 100%);
+}
+
+.btn-variant-orange:hover {
+  box-shadow: 0 6px 30px rgba(234, 88, 12, 0.8), inset 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.btn-variant-yellow {
+  background: linear-gradient(to bottom, #854d0e 0%, #eab308 50%, #422006 100%);
+  color: #fff;
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.btn-variant-yellow:hover {
+  box-shadow: 0 6px 30px rgba(234, 179, 8, 0.8), inset 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.btn-variant-default {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+.btn-disabled {
+  background: #475569 !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
+.btn-disabled .btn-particles {
+  display: none;
+}
+
+.btn-disabled .btn-ornament {
+  filter: grayscale(100%) opacity(30%);
+}
+
+.btn-disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .banner-container {
@@ -210,17 +345,14 @@ h2 {
   border: 2px solid transparent;
   background:
     linear-gradient(rgba(30, 41, 59, 0.8), rgba(30, 41, 59, 0.8)) padding-box,
-    linear-gradient(
-        45deg,
-        #ff0000,
-        #ff7f00,
-        #ffff00,
-        #00ff00,
-        #0000ff,
-        #4b0082,
-        #8b00ff
-      )
-      border-box;
+    linear-gradient(45deg,
+      #ff0000,
+      #ff7f00,
+      #ffff00,
+      #00ff00,
+      #0000ff,
+      #4b0082,
+      #8b00ff) border-box;
   background-size:
     100% 100%,
     300% 300%;
@@ -265,33 +397,42 @@ h2 {
   position: relative;
   width: 60px;
   height: 60px;
-  aspect-ratio: 1 / 1; /* 親要素のいかなる微小な歪みに対しても完璧な1:1の真円を死守*/
+  aspect-ratio: 1 / 1;
+  /* 親要素のいかなる微小な歪みに対しても完璧な1:1の真円を死守*/
   margin-right: 15px;
   flex-shrink: 0;
 }
 
 .banner-icon {
-  position: absolute; /* 位置ズレを解消するため絶対配置に設定*/
-  top: 1%; /* アセット物理直径差を中央にアライン */
-  left: 1%; /* アセット物理直径差を中央にアライン */
-  width: 98%; /* キャラクター画像を199pxから195px相当へ極小縮小し、ゴールド枠の裏側に完全に隠す*/
+  position: absolute;
+  /* 位置ズレを解消するため絶対配置に設定*/
+  top: 1%;
+  /* アセット物理直径差を中央にアライン */
+  left: 1%;
+  /* アセット物理直径差を中央にアライン */
+  width: 98%;
+  /* キャラクター画像を199pxから195px相当へ極小縮小し、ゴールド枠の裏側に完全に隠す*/
   height: 98%;
-  object-fit: cover; /* cover にすることで画像境界と border-radius を完全に一致させ、四隅の汚れを確実にクリップ */
-  border-radius: 50%; /* アセット画像のフチを丸く綺麗にクリップ */
+  object-fit: cover;
+  /* cover にすることで画像境界と border-radius を完全に一致させ、四隅の汚れを確実にクリップ */
+  border-radius: 50%;
+  /* アセット画像のフチを丸く綺麗にクリップ */
 }
 
 .banner-icon-frame {
   position: absolute;
-  top: 0; /* 画像と完全に同じ位置に重ねる*/
+  top: 0;
+  /* 画像と完全に同じ位置に重ねる*/
   left: 0;
-  width: 100%; /* 画像と完全に同じ100%サイズに維持（大きくも小さくもしない）*/
+  width: 100%;
+  /* 画像と完全に同じ100%サイズに維持（大きくも小さくもしない）*/
   height: 100%;
-  object-fit: cover; /* 画像と object-fit を cover で統一し、ブラウザの端数歪みによるズレ・はみ出しを完全に防止 */
+  object-fit: cover;
+  /* 画像と object-fit を cover で統一し、ブラウザの端数歪みによるズレ・はみ出しを完全に防止 */
   pointer-events: none;
   z-index: 3;
-  filter: drop-shadow(
-    0 0 5px rgba(0, 0, 0, 0.5)
-  ); /* 円形のフレーム外周に美しいシャドウを適用 */
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+  /* 円形のフレーム外周に美しいシャドウを適用 */
 }
 
 .banner-text {
@@ -539,6 +680,7 @@ h2 {
 }
 
 @keyframes blink {
+
   0%,
   100% {
     opacity: 1;
@@ -702,6 +844,7 @@ h2 {
     z-index: 10;
   }
 }
+
 .char-card:active {
   transform: scale(1.05);
   border-color: #facc15;
@@ -819,7 +962,8 @@ h2 {
   font-size: 1.1rem;
   line-height: 1.5;
   flex-grow: 1;
-  overflow-y: auto; /* 長文テキストがボックスからはみ出さないようスクロール可能にする */
+  overflow-y: auto;
+  /* 長文テキストがボックスからはみ出さないようスクロール可能にする */
 }
 
 /* スマホ縦画面での見切れ防止: フォント・余白を縮小して表示行数を確保*/
@@ -828,6 +972,7 @@ h2 {
     font-size: 1rem;
     line-height: 1.4;
   }
+
   #speaker-name {
     font-size: 1.1rem;
     margin-bottom: 5px;
@@ -1063,15 +1208,16 @@ h2 {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  overflow: hidden; /* 子要素（画像と背景）を絶対に完璧な真円にクリップし、はみ出しを完全根絶 */
+  overflow: hidden;
+  /* 子要素（画像と背景）を絶対に完璧な真円にクリップし、はみ出しを完全根絶 */
   z-index: 2;
   box-sizing: border-box;
-  padding: 5px; /* アセット外周の余白 */
+  padding: 5px;
+  /* アセット外周の余白 */
 
   transition: all 0.3s;
-  transform: scale(
-    0.88
-  ); /* ゴールドフレーム(scale 0.9)の裏側に完全に隠すための極小アライメント*/
+  transform: scale(0.88);
+  /* ゴールドフレーム(scale 0.9)の裏側に完全に隠すための極小アライメント*/
   transform-origin: center;
 }
 
@@ -1080,8 +1226,7 @@ h2 {
 }
 
 .char-icon-container.shadow-icon {
-  filter: grayscale(1) brightness(0.25) contrast(1.2)
-    drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+  filter: grayscale(1) brightness(0.25) contrast(1.2) drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
 }
 
 .char-icon {
@@ -1117,15 +1262,18 @@ h2 {
 }
 
 .char-icon-bg.blue {
-  background: #0ea5e9; /* HPバーの左端色と同化させる単色 */
+  background: #0ea5e9;
+  /* HPバーの左端色と同化させる単色 */
 }
 
 .char-icon-bg.red {
-  background: #e11d48; /* HPバーの左端色と同化させる単色 */
+  background: #e11d48;
+  /* HPバーの左端色と同化させる単色 */
 }
 
 .char-icon-bg.dead {
-  background: #334155; /* HPバー背景と同化させる単色 */
+  background: #334155;
+  /* HPバー背景と同化させる単色 */
 }
 
 .icon-frame {
@@ -1384,11 +1532,9 @@ h2 {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0) 65%,
-    rgba(0, 0, 0, 0.7) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 65%,
+      rgba(0, 0, 0, 0.7) 100%);
   z-index: 1;
   pointer-events: none;
 }
@@ -1444,17 +1590,14 @@ h2 {
   border: 2px solid transparent;
   background:
     linear-gradient(#334155, #334155) padding-box,
-    linear-gradient(
-        45deg,
-        #ff0000,
-        #ff7f00,
-        #ffff00,
-        #00ff00,
-        #0000ff,
-        #4b0082,
-        #8b00ff
-      )
-      border-box;
+    linear-gradient(45deg,
+      #ff0000,
+      #ff7f00,
+      #ffff00,
+      #00ff00,
+      #0000ff,
+      #4b0082,
+      #8b00ff) border-box;
   background-size:
     100% 100%,
     300% 300%;
@@ -1463,16 +1606,14 @@ h2 {
 }
 
 .rarity-4-text {
-  background-image: linear-gradient(
-    45deg,
-    #ff0000,
-    #ff7f00,
-    #ffff00,
-    #00ff00,
-    #0000ff,
-    #4b0082,
-    #8b00ff
-  ) !important;
+  background-image: linear-gradient(45deg,
+      #ff0000,
+      #ff7f00,
+      #ffff00,
+      #00ff00,
+      #0000ff,
+      #4b0082,
+      #8b00ff) !important;
   background-size: 300% 300% !important;
   animation: rainbow-move-text 4s linear infinite !important;
   -webkit-background-clip: text !important;
@@ -1484,16 +1625,14 @@ h2 {
   border: 2px solid transparent !important;
   background-image:
     linear-gradient(var(--panel-bg, #1e293b), var(--panel-bg, #1e293b)),
-    linear-gradient(
-      45deg,
+    linear-gradient(45deg,
       #ff0000,
       #ff7f00,
       #ffff00,
       #00ff00,
       #0000ff,
       #4b0082,
-      #8b00ff
-    ) !important;
+      #8b00ff) !important;
   background-clip: padding-box, border-box !important;
   background-origin: padding-box, border-box !important;
   background-size:
@@ -1507,9 +1646,11 @@ h2 {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -1891,15 +2032,19 @@ h2 {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
   }
+
   30% {
     transform: translate3d(0, 12px, 0) scale(0.92);
   }
+
   50% {
     transform: translate3d(0, -38px, 0) scale(1.15);
   }
+
   80% {
     transform: translate3d(0, -38px, 0) scale(1.15);
   }
+
   100% {
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -1909,15 +2054,19 @@ h2 {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
   }
+
   30% {
     transform: translate3d(0, -12px, 0) scale(0.92);
   }
+
   50% {
     transform: translate3d(0, 38px, 0) scale(1.15);
   }
+
   80% {
     transform: translate3d(0, 38px, 0) scale(1.15);
   }
+
   100% {
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -1933,11 +2082,13 @@ h2 {
     filter: brightness(1) drop-shadow(0 0 0 #ef4444);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.1);
     filter: brightness(1.5) drop-shadow(0 0 15px #ef4444);
     opacity: 0.8;
   }
+
   100% {
     transform: scale(0.5);
     filter: brightness(2) drop-shadow(0 0 30px #ef4444);
@@ -1951,6 +2102,7 @@ h2 {
 }
 
 @keyframes shake {
+
   10%,
   90% {
     transform: translate3d(-2px, 0, 0);
@@ -1979,6 +2131,7 @@ h2 {
 }
 
 @keyframes mega-shake {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
@@ -2751,6 +2904,7 @@ h2 {
 }
 
 @media (hover: hover) {
+
   .choice-accordion:hover .preview-skill-badge,
   .choice-accordion:hover .card-skill-tag {
     filter: brightness(1.2);
@@ -2803,11 +2957,9 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 100%);
   pointer-events: none;
 }
 
@@ -2870,9 +3022,11 @@ h2 {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -3087,6 +3241,7 @@ h2 {
 #to-card-1 {
   background-image: url('/assets/ui/first_player.png');
 }
+
 #to-card-2 {
   background-image: url('/assets/ui/second_player.png');
 }
@@ -3119,10 +3274,12 @@ h2 {
     transform: translateX(-80px) rotate(-5deg);
     z-index: 1005;
   }
+
   50% {
     transform: translateX(80px) rotate(5deg);
     z-index: 1000;
   }
+
   100% {
     transform: translateX(-80px) rotate(-5deg);
     z-index: 1005;
@@ -3134,10 +3291,12 @@ h2 {
     transform: translateX(80px) rotate(5deg);
     z-index: 1000;
   }
+
   50% {
     transform: translateX(-80px) rotate(-5deg);
     z-index: 1005;
   }
+
   100% {
     transform: translateX(80px) rotate(5deg);
     z-index: 1000;
@@ -3147,6 +3306,7 @@ h2 {
 .anim-shuffle-left {
   animation: toShuffleLeft 0.35s ease-in-out infinite;
 }
+
 .anim-shuffle-right {
   animation: toShuffleRight 0.35s ease-in-out infinite;
 }
@@ -3161,6 +3321,7 @@ h2 {
     box-shadow: 0 0 5px #facc15;
     border-color: #eab308;
   }
+
   100% {
     box-shadow: 0 0 20px #fef08a;
     border-color: #fde047;
@@ -3171,6 +3332,7 @@ h2 {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -3183,12 +3345,14 @@ h2 {
       inset 0 0 10px rgba(242, 201, 76, 0.2);
     border-color: #facc15;
   }
+
   50% {
     box-shadow:
       0 0 40px rgba(242, 201, 76, 0.8),
       inset 0 0 20px rgba(242, 201, 76, 0.4);
     border-color: #fef08a;
   }
+
   100% {
     box-shadow:
       0 0 20px rgba(242, 201, 76, 0.4),
@@ -3208,7 +3372,8 @@ h2 {
    ========================================== */
 
 .vfx-overlay {
-  position: absolute; /* fixedからabsoluteに変更し、body(480px制限)を基準にする */
+  position: absolute;
+  /* fixedからabsoluteに変更し、body(480px制限)を基準にする */
   top: 0;
   left: 0;
   width: 100%;
@@ -3228,6 +3393,7 @@ h2 {
 .vfx-overlay.annihilation.blue .beam-container {
   top: 25%;
 }
+
 /* プレイヤーの盤面（画面下半分）をターゲットにする */
 .vfx-overlay.annihilation.red .beam-container {
   top: 75%;
@@ -3261,12 +3427,10 @@ h2 {
   position: absolute;
   width: 100%;
   height: 80px;
-  background: linear-gradient(
-    to bottom,
-    rgba(56, 189, 248, 0),
-    rgba(56, 189, 248, 0.4),
-    rgba(56, 189, 248, 0)
-  );
+  background: linear-gradient(to bottom,
+      rgba(56, 189, 248, 0),
+      rgba(56, 189, 248, 0.4),
+      rgba(56, 189, 248, 0));
   filter: blur(10px);
 }
 
@@ -3285,12 +3449,15 @@ h2 {
     left: -150%;
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 1;
   }
+
   100% {
     left: 50%;
     opacity: 0;
@@ -3301,6 +3468,7 @@ h2 {
   from {
     transform: scaleY(0.8);
   }
+
   to {
     transform: scaleY(1.2);
   }
@@ -3319,16 +3487,20 @@ h2 {
 }
 
 @keyframes fieldFlash {
+
   0%,
   20% {
     background: rgba(255, 255, 255, 0);
   }
+
   30% {
     background: rgba(56, 189, 248, 0.3);
   }
+
   50% {
     background: rgba(56, 189, 248, 0.1);
   }
+
   100% {
     background: rgba(255, 255, 255, 0);
   }
@@ -3342,15 +3514,19 @@ body.vfx-shake {
   0% {
     transform: translate(0, 0);
   }
+
   25% {
     transform: translate(5px, -5px);
   }
+
   50% {
     transform: translate(-5px, 5px);
   }
+
   75% {
     transform: translate(5px, 5px);
   }
+
   100% {
     transform: translate(0, 0);
   }
@@ -3358,10 +3534,12 @@ body.vfx-shake {
 
 /* Sprite Animation System */
 .vfx-sprite-container {
-  position: relative; /* absoluteから変更し、Flexboxでの中央制御を容易にする */
+  position: relative;
+  /* absoluteから変更し、Flexboxでの中央制御を容易にする */
   width: 320px;
   height: 320px;
-  max-width: 100%; /* 親の幅（480pxまたは画面幅）を超えないようにする */
+  max-width: 100%;
+  /* 親の幅（480pxまたは画面幅）を超えないようにする */
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   z-index: 1001;
@@ -3371,7 +3549,8 @@ body.vfx-shake {
 
 /* 盤面全体を覆うタイプのエフェクト用 */
 .vfx-overlay.fill .vfx-sprite-container {
-  width: 100%; /* 600px固定をやめ、ゲーム画面幅に合わせる */
+  width: 100%;
+  /* 600px固定をやめ、ゲーム画面幅に合わせる */
   height: auto;
   aspect-ratio: 1 / 1;
   max-width: 480px;
@@ -3393,6 +3572,7 @@ body.vfx-shake {
   justify-content: center;
   align-items: center;
 }
+
 .summon-anim-card {
   position: relative;
   width: 240px;
@@ -3403,62 +3583,74 @@ body.vfx-shake {
     0 0 20px rgba(250, 204, 21, 0.8),
     0 0 40px rgba(250, 204, 21, 0.4);
 }
+
 .summon-anim-card img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
+
 .summon-anim-card.from-bottom {
-  animation: summonSlideFromBottom 1.1s cubic-bezier(0.34, 1.1, 0.64, 1)
-    forwards;
+  animation: summonSlideFromBottom 1.1s cubic-bezier(0.34, 1.1, 0.64, 1) forwards;
 }
+
 .summon-anim-card.from-top {
   animation: summonSlideFromTop 1.1s cubic-bezier(0.34, 1.1, 0.64, 1) forwards;
 }
+
 @keyframes summonSlideFromBottom {
   0% {
     transform: translateY(120%) scale(0.6);
     opacity: 0;
   }
+
   25% {
     transform: translateY(-5%) scale(1.05);
     opacity: 1;
   }
+
   45% {
     transform: translateY(0) scale(1);
     opacity: 1;
     filter: brightness(1);
   }
+
   75% {
     transform: translateY(0) scale(1);
     opacity: 1;
     filter: brightness(1.2);
   }
+
   100% {
     transform: translateY(0) scale(1.1);
     opacity: 0;
     filter: brightness(2);
   }
 }
+
 @keyframes summonSlideFromTop {
   0% {
     transform: translateY(-120%) scale(0.6);
     opacity: 0;
   }
+
   25% {
     transform: translateY(5%) scale(1.05);
     opacity: 1;
   }
+
   45% {
     transform: translateY(0) scale(1);
     opacity: 1;
     filter: brightness(1);
   }
+
   75% {
     transform: translateY(0) scale(1);
     opacity: 1;
     filter: brightness(1.2);
   }
+
   100% {
     transform: translateY(0) scale(1.1);
     opacity: 0;
@@ -3487,11 +3679,9 @@ body.vfx-shake {
   position: relative;
   width: 90%;
   max-width: 380px;
-  background: linear-gradient(
-    135deg,
-    rgba(30, 41, 70, 0.97),
-    rgba(20, 28, 55, 0.97)
-  );
+  background: linear-gradient(135deg,
+      rgba(30, 41, 70, 0.97),
+      rgba(20, 28, 55, 0.97));
   border: 2px solid rgba(250, 204, 21, 0.5);
   border-radius: 16px;
   padding: 55px 20px 20px;
@@ -3549,6 +3739,7 @@ body.vfx-shake {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -3559,6 +3750,7 @@ body.vfx-shake {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -3566,20 +3758,24 @@ body.vfx-shake {
 }
 
 @keyframes tutorialIconPulse {
+
   0%,
   100% {
     box-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(250, 204, 21, 0.6);
   }
 }
 
 @keyframes tutorialHintBlink {
+
   0%,
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
@@ -3592,43 +3788,52 @@ body.vfx-shake {
     opacity: 0;
     filter: blur(4px);
   }
+
   30% {
     transform: scale(1.6);
     opacity: 0.8;
     filter: blur(8px) drop-shadow(0 0 20px red);
   }
+
   70% {
     transform: scale(1.2);
     opacity: 0.5;
     filter: blur(4px) drop-shadow(0 0 10px red);
   }
+
   100% {
     transform: scale(2.2);
     opacity: 0;
     filter: blur(12px);
   }
 }
+
 @keyframes vfxJokerMain {
   0% {
     transform: scale(0.5);
     opacity: 0;
   }
+
   30% {
     transform: scale(1.1);
     opacity: 1;
   }
+
   70% {
     transform: scale(1);
     opacity: 1;
   }
+
   100% {
     transform: scale(1.8);
     opacity: 0;
   }
 }
+
 .vfx-joker-blur {
   animation: vfxJokerBlur 1.2s ease-in-out forwards;
 }
+
 .vfx-joker-main {
   animation: vfxJokerMain 1.2s ease-in-out forwards;
 }
@@ -3769,12 +3974,15 @@ body.vfx-shake {
     transform: translateY(0);
     opacity: 0;
   }
+
   20% {
     opacity: 1;
   }
+
   80% {
     opacity: 0.8;
   }
+
   100% {
     transform: translateY(-80dvh);
     opacity: 0;
@@ -3785,6 +3993,7 @@ body.vfx-shake {
   0% {
     transform: translateX(-30px);
   }
+
   100% {
     transform: translateX(30px);
   }

@@ -7,6 +7,7 @@ import {
   goBackFromDifficulty,
   openEnemyDeckPreview,
 } from '../services/uiMainCore.js';
+import MenuButton from '../components/common/MenuButton.jsx';
 
 // 難易度レベル定数
 const DIFFICULTY = {
@@ -83,13 +84,11 @@ export default function DifficultySelectScreen() {
         {/* 高難易度イベントモードでは「超級」のみ表示 */}
         {isHighDiffMode ? (
           <div className="difficulty-button-row">
-            <button
-              className="btn"
-              style={{ background: '#9333ea' }}
+            <MenuButton
+              label="超級"
+              variant="purple"
               onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
-            >
-              超級
-            </button>
+            />
             <button
               className="btn-check-deck"
               style={{ display: 'flex' }}
@@ -102,13 +101,11 @@ export default function DifficultySelectScreen() {
         ) : (
           <>
             <div className="difficulty-button-row">
-              <button
-                className="btn"
-                style={{ background: '#22c55e' }}
+              <MenuButton
+                label="初級"
+                variant="emerald"
                 onClick={() => handleSelect(DIFFICULTY.BEGINNER)}
-              >
-                初級
-              </button>
+              />
               {isFreeMode && (
                 <button
                   className="btn-check-deck"
@@ -121,13 +118,11 @@ export default function DifficultySelectScreen() {
               )}
             </div>
             <div className="difficulty-button-row">
-              <button
-                className="btn"
-                style={{ background: '#eab308' }}
+              <MenuButton
+                label="中級"
+                variant="yellow"
                 onClick={() => handleSelect(DIFFICULTY.INTERMEDIATE)}
-              >
-                中級
-              </button>
+              />
               {isFreeMode && (
                 <button
                   className="btn-check-deck"
@@ -142,13 +137,11 @@ export default function DifficultySelectScreen() {
               )}
             </div>
             <div className="difficulty-button-row">
-              <button
-                className="btn"
-                style={{ background: '#ef4444' }}
+              <MenuButton
+                label="上級"
+                variant="red"
                 onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
-              >
-                上級
-              </button>
+              />
               {isFreeMode && (
                 <button
                   className="btn-check-deck"

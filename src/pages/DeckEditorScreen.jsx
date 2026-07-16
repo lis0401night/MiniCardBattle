@@ -22,6 +22,7 @@ import {
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
+import MenuButton from '../components/common/MenuButton.jsx';
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -937,24 +938,25 @@ export default function DeckEditorScreen({ switchScreen }) {
           </div>
         </div>
 
-        <button
+        <MenuButton
           id="btn-finish-deck"
-          className="btn"
+          variant="blue"
           style={{
             marginTop: '10px',
             width: '100%',
             opacity: deckSelection.length === DECK_SIZE ? 1 : 0.5,
           }}
           onClick={handleFinish}
-        >
-          {isDefenseConfig ||
-          GameState.gameMode === 'create_deck' ||
-          GameState.gameMode === 'free_deck_edit' ||
-          GameState.gameMode === 'online_deck_edit' ||
-          GameState.gameMode === 'tournament'
-            ? '編成完了'
-            : 'バトル開始！'}
-        </button>
+          label={
+            isDefenseConfig ||
+            GameState.gameMode === 'create_deck' ||
+            GameState.gameMode === 'free_deck_edit' ||
+            GameState.gameMode === 'online_deck_edit' ||
+            GameState.gameMode === 'tournament'
+              ? '編成完了'
+              : 'バトル開始！'
+          }
+        />
       </div>
 
       <div
