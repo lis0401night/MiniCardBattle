@@ -185,7 +185,7 @@ h2 {
   pointer-events: none;
 }
 
-.btn-particles {
+.btn-watermark {
   position: absolute;
   top: 0;
   left: 0;
@@ -193,19 +193,13 @@ h2 {
   height: 100%;
   border-radius: inherit;
   overflow: hidden;
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.15) 1.5px, transparent 4px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 1px, transparent 3px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.15) 2px, transparent 5px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.05) 1px, transparent 2.5px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 2px, transparent 6px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 1.5px, transparent 4px);
-  background-size: 23px 37px, 31px 43px, 41px 53px, 47px 59px, 59px 71px, 67px 79px;
-  background-position: 5px 13px, 17px 29px, 31px 41px, 3px 53px, 43px 11px, 59px 61px;
   z-index: 0;
-  mix-blend-mode: overlay;
   pointer-events: none;
-  filter: blur(0.7px);
+  background-image: url('/assets/ui/ui_btn_watermark.png');
+  background-position: right center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  mix-blend-mode: overlay;
   opacity: 0.5;
 }
 
@@ -303,7 +297,7 @@ h2 {
   cursor: not-allowed !important;
 }
 
-.btn-disabled .btn-particles {
+.btn-disabled .btn-watermark {
   display: none;
 }
 

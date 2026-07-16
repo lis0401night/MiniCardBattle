@@ -37,7 +37,7 @@ export default function MenuButton({
       onClick={handleClick}
       disabled={disabled}
     >
-      <div className="btn-particles"></div>
+      <div className="btn-watermark"></div>
       <div className="btn-ornament btn-ornament-tl"></div>
       <div className="btn-ornament btn-ornament-br"></div>
       <span style={{ position: 'relative', zIndex: 1 }}>{label}</span>
