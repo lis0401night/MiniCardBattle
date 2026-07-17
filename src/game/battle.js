@@ -802,6 +802,7 @@ export function initBattleState() {
     GameState.enemySealedLanes = [0, 0, 0];
     GameState.actionQueue = [];
     GameState.pendingChoices = [];
+    isQueueProcessing = false;
     GameState.isProcessing = false;
     GameState.isBattleEnded = false;
     GameState.lastBattleResult = null;
