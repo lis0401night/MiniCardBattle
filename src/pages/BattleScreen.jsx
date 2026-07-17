@@ -11,6 +11,8 @@ import {
   showEnemySkillConfirm,
   showSkillConfirm,
 } from '../services/uiBattle.js';
+import MissionResultOverlay from '../components/battle/MissionResultOverlay.jsx';
+import MissionListModal from '../components/battle/MissionListModal.jsx';
 import { showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
@@ -56,6 +58,11 @@ export default function BattleScreen({ showRulesModal }) {
   const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
+  const [showMissions, setShowMissions] = useState(false);
+  // チャレンジミッションはストーリー・フリー対戦でのみ機能する
+  const showMissionButton =
+    !!GameState.enemyConfig &&
+    (GameState.gameMode === 'story' || GameState.gameMode === 'free');
   const isInitializing = GameState.isInitializing;
   const [startTurnOrderAnim, setStartTurnOrderAnim] = useState({
     active: false,
@@ -537,6 +544,14 @@ export default function BattleScreen({ showRulesModal }) {
           if (isTutorialMode() && filterLeaderSkill()) return;
           showSkillConfirm();
         }}
+        onMissionClick={
+          showMissionButton
+            ? () => {
+                playSound(SOUNDS.seClick);
+                setShowMissions(true);
+              }
+            : null
+        }
       />
 
       <div className="card-detail-wrapper">
@@ -798,12 +813,14 @@ export default function BattleScreen({ showRulesModal }) {
         </div>
       )}
 
-      {/* リーダースキルカットイン用DOM（レガシー互換） */}
       <div id="screen-cutin" style={{ display: 'none' }}>
         <div id="cutin-bg" className="cutin-bg"></div>
         <img id="cutin-char-img" className="cutin-char" alt="cutin" />
         <div id="cutin-text" className="cutin-text-img"></div>
       </div>
+
+      <MissionResultOverlay />
+      {showMissions && <MissionListModal onClose={() => setShowMissions(false)} />}
     </div>
   );
 }

@@ -42,6 +42,7 @@ import {
   decodedBgms,
   consumeArmSelf,
 } from '../utils/gameUtils.js';
+import { trackMissionSacrifice, trackMissionPower } from './missionLogic.js';
 import {
   AUDIO_INSTANCES,
   SOUNDS,
@@ -798,6 +799,11 @@ export function initBattleState() {
     GameState.initialEnemyDeckCount = GameState.enemyDeck.length;
     GameState.playerBoard = [null, null, null];
     GameState.enemyBoard = [null, null, null];
+    GameState.missionProgress = {
+      damage_5_single: false,
+      sacrifice_count: 0,
+      power_10: false,
+    };
     GameState.playerSealedLanes = [0, 0, 0];
     GameState.enemySealedLanes = [0, 0, 0];
     GameState.actionQueue = [];
@@ -3411,6 +3417,8 @@ export async function playCard(o, hI, l) {
   const playingCard = h[hI];
   if (!playingCard) return false;
 
+  trackMissionSacrifice(GameState, o, playingCard);
+
   const sealedLanes =
     o === 'blue'
       ? GameState.playerSealedLanes || [0, 0, 0]
@@ -3610,6 +3618,8 @@ export async function playCard(o, hI, l) {
   }
   renderHand();
   renderBoard();
+
+  trackMissionPower(GameState);
 
   // 出現時スキルの発動（単一または複数）
   if (hasActiveSkill(c)) {
@@ -4081,6 +4091,8 @@ export async function executeCombatPhase(atk) {
   // 整合性を取るために最終的な盤面状態を描画
   renderBoard();
 
+  trackMissionPower(GameState);
+
   // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
   await cleanupDestroyedCards();
 
@@ -4472,8 +4484,8 @@ export function endBattle() {
         });
 
         if (availableCards.length > 0) {
-          const rewardCount = GameState.gameMode === 'story' ? 2 : 1;
-          const rewardCards = [];
+          const rewardCount = 1; // ストーリーモードのデフォルト報酬+1キャンペーンは終了
+          const baseCards = [];
           const tempInventory = { ...GameState.playerInventory };
 
           for (let i = 0; i < rewardCount; i++) {
@@ -4487,15 +4499,26 @@ export function endBattle() {
                 currentAvailable[
                   Math.floor(getSeededRandom() * currentAvailable.length)
                 ];
-              rewardCards.push(rewardCardId);
+              baseCards.push(rewardCardId);
               tempInventory[rewardCardId] =
                 (tempInventory[rewardCardId] || 0) + 1;
             }
           }
 
-          if (window.showCardRewardReact && rewardCards.length > 0) {
-            window.showCardRewardReact(rewardCards);
-            return; // 報酬画面が表示されたらここで一旦終了（OK押下後に setupDialogueScreen が呼ばれる）
+          // チャレンジミッションはストーリー・フリー対戦でのみ機能する
+          const isMissionEligible =
+            GameState.gameMode === 'story' || GameState.gameMode === 'free';
+
+          if (
+            isMissionEligible &&
+            window.showMissionResultReact &&
+            baseCards.length > 0
+          ) {
+            window.showMissionResultReact(baseCards, uniqueCards);
+            return;
+          } else if (window.showCardRewardReact && baseCards.length > 0) {
+            window.showCardRewardReact(baseCards);
+            return;
           }
         }
       }

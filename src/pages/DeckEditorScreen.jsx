@@ -23,6 +23,7 @@ import {
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import MenuButton from '../components/common/MenuButton.jsx';
+import MissionListModal from '../components/battle/MissionListModal.jsx';
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -63,6 +64,12 @@ export default function DeckEditorScreen({ switchScreen }) {
   const [isDefenseConfig, setIsDefenseConfig] = useState(
     () => GameState.gameMode === 'defense_register'
   );
+  const [showMissions, setShowMissions] = useState(false);
+
+  // チャレンジミッションはストーリー・フリー対戦でのみ機能する
+  const showMissionButton =
+    !!GameState.enemyConfig &&
+    (GameState.gameMode === 'story' || GameState.gameMode === 'free');
   const [, setRenderVersion] = useState(0);
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -379,6 +386,42 @@ export default function DeckEditorScreen({ switchScreen }) {
           minHeight: '60px',
         }}
       >
+        {/* 画面左上のアイコン群 (ミッション確認など) */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            display: 'flex',
+            gap: '6px',
+            zIndex: 10,
+          }}
+        >
+          {showMissionButton && (
+            <button
+              className="btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '38px',
+                fontSize: '0.6rem',
+                padding: '0 12px',
+                margin: 0,
+                background: 'rgba(30, 41, 59, 0.8)',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                color: '#cbd5e1'
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                playSound(SOUNDS.seClick);
+                setShowMissions(true);
+              }}
+            >
+              ミッション確認
+            </button>
+          )}
+        </div>
         {/* 中央揃えのタイトル・デッキ名 */}
         <div
           style={{
@@ -590,10 +633,10 @@ export default function DeckEditorScreen({ switchScreen }) {
                   src={
                     (getSkinImage && CHARACTERS[leaderId]
                       ? getSkinImage(
-                          CHARACTERS[leaderId],
-                          deck?.playerSkins?.[leaderId] || 'default',
-                          'icon'
-                        )
+                        CHARACTERS[leaderId],
+                        deck?.playerSkins?.[leaderId] || 'default',
+                        'icon'
+                      )
                       : undefined) || undefined
                   }
                   className="banner-icon"
@@ -788,16 +831,16 @@ export default function DeckEditorScreen({ switchScreen }) {
                 fontSize: '0.9rem',
                 background:
                   filters.rarity.length > 0 ||
-                  filters.power.length > 0 ||
-                  filters.skills.length > 0 ||
-                  !!filters.name
+                    filters.power.length > 0 ||
+                    filters.skills.length > 0 ||
+                    !!filters.name
                     ? 'rgba(250, 204, 21, 0.3)'
                     : '#334155',
                 border:
                   filters.rarity.length > 0 ||
-                  filters.power.length > 0 ||
-                  filters.skills.length > 0 ||
-                  !!filters.name
+                    filters.power.length > 0 ||
+                    filters.skills.length > 0 ||
+                    !!filters.name
                     ? '1px solid #facc15'
                     : '1px solid #475569',
                 color: '#facc15',
@@ -947,10 +990,10 @@ export default function DeckEditorScreen({ switchScreen }) {
           onClick={handleFinish}
           label={
             isDefenseConfig ||
-            GameState.gameMode === 'create_deck' ||
-            GameState.gameMode === 'free_deck_edit' ||
-            GameState.gameMode === 'online_deck_edit' ||
-            GameState.gameMode === 'tournament'
+              GameState.gameMode === 'create_deck' ||
+              GameState.gameMode === 'free_deck_edit' ||
+              GameState.gameMode === 'online_deck_edit' ||
+              GameState.gameMode === 'tournament'
               ? '編成完了'
               : 'バトル開始！'
           }
@@ -1417,6 +1460,8 @@ export default function DeckEditorScreen({ switchScreen }) {
           </div>
         </div>
       )}
+
+      {showMissions && <MissionListModal onClose={() => setShowMissions(false)} />}
     </div>
   );
 }

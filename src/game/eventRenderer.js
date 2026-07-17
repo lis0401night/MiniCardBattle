@@ -12,6 +12,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
+import { scanMissionEvents } from './missionLogic.js';
 import { PLACE_ANIMATION_DURATION } from '../utils/constants/config.js';
 import {
   renderBoard,
@@ -64,6 +65,9 @@ export function registerDiscardCard(fn) {
  */
 export async function playEvents(events) {
   if (!events || !Array.isArray(events) || events.length === 0) return;
+
+  // ミッション用にイベントをスキャン
+  scanMissionEvents(GameState, events);
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];

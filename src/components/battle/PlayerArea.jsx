@@ -19,11 +19,24 @@ export default function PlayerArea({
   spCount,
   maxSpCount,
   onLeaderSkillClick,
+  onMissionClick,
 }) {
   if (!playerConfig) return null;
 
   return (
     <div className="hp-area">
+      {onMissionClick && (
+        <button
+          className="btn-circle btn-battle-missions"
+          style={{ position: 'absolute', right: '20px', transform: 'translateY(-30px)', zIndex: 100 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMissionClick();
+          }}
+        >
+          📋
+        </button>
+      )}
       <div className="status-container">
         <div
           className="icon-wrapper"
