@@ -13,7 +13,10 @@ import {
 } from '../services/uiBattle.js';
 import MissionResultOverlay from '../components/battle/MissionResultOverlay.jsx';
 import MissionListModal from '../components/battle/MissionListModal.jsx';
-import { CHALLENGE_MISSIONS } from '../utils/constants/missions.js';
+import {
+  CHALLENGE_MISSIONS,
+  MISSION_MAX_SCORE,
+} from '../utils/constants/missions.js';
 import { evaluateMission } from '../game/missionLogic.js';
 import { showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
@@ -66,7 +69,10 @@ export default function BattleScreen() {
         return evaluateMission(m.id, GameState) ? sum + (m.points || 1) : sum;
       }, 0)
     : 0;
-  const missionGaugePercent = Math.min((missionScore / 6) * 100, 100);
+  const missionGaugePercent = Math.min(
+    (missionScore / MISSION_MAX_SCORE) * 100,
+    100
+  );
   const isInitializing = GameState.isInitializing;
   const [startTurnOrderAnim, setStartTurnOrderAnim] = useState({
     active: false,
@@ -443,6 +449,7 @@ export default function BattleScreen() {
         >
           <button
             className="btn-circle btn-battle-missions"
+            aria-label="バトルボーナスを確認"
             onClick={(e) => {
               e.stopPropagation();
               playSound(SOUNDS.seClick);
@@ -825,7 +832,9 @@ export default function BattleScreen() {
       </div>
 
       <MissionResultOverlay />
-      {showMissions && <MissionListModal onClose={() => setShowMissions(false)} />}
+      {showMissions && (
+        <MissionListModal onClose={() => setShowMissions(false)} />
+      )}
     </div>
   );
 }

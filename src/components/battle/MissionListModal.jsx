@@ -1,5 +1,9 @@
 import { GameState } from '../../state/gameState.js';
-import { CHALLENGE_MISSIONS } from '../../utils/constants/missions.js';
+import {
+  CHALLENGE_MISSIONS,
+  MISSION_POINTS_PER_PACK,
+  MISSION_MAX_PACKS,
+} from '../../utils/constants/missions.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { evaluateMission } from '../../game/missionLogic.js';
@@ -50,24 +54,19 @@ export default function MissionListModal({ onClose }) {
                       <span className="mission-clear-text">CLEAR!</span>
                     )}
                   </div>
-                  <span className="mission-row-points">
-                    +{m.points || 1}点
-                  </span>
+                  <span className="mission-row-points">+{m.points || 1}点</span>
                 </div>
               </div>
             ))}
         </div>
 
         <div className="mission-list-note">
-          スコア2点につき+1パック貰えます
+          スコア{MISSION_POINTS_PER_PACK}点につき+1パック貰えます
           <br />
-          （最大: 3パック）
+          （最大: {MISSION_MAX_PACKS}パック）
         </div>
 
-        <button
-          className="btn mission-list-close-btn"
-          onClick={handleClose}
-        >
+        <button className="btn mission-list-close-btn" onClick={handleClose}>
           閉じる
         </button>
       </div>
@@ -88,7 +87,7 @@ export default function MissionListModal({ onClose }) {
           flex-direction: column;
           gap: 8px;
           width: 100%;
-          height: 60vh;
+          height: 60dvh;
           max-height: 500px;
           padding-right: 5px;
         }

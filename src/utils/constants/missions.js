@@ -67,3 +67,7 @@ export const CHALLENGE_MISSIONS = [
     timing: 'instant',
   },
 ];
+
+export const MISSION_POINTS_PER_PACK = 2;
+export const MISSION_MAX_PACKS = 3;
+export const MISSION_MAX_SCORE = MISSION_POINTS_PER_PACK * MISSION_MAX_PACKS;
