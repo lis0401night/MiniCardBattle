@@ -81,17 +81,18 @@ export const VFX_DATA = {
   // バルタザールSPスキル「魔宴の儀」用VFX（自陣がターゲット）
   anm_dark_magic_self: {
     type: 'sprite',
-    src: 'assets/vfx/hujimiyaeffect_shadowattack.png', // 暗黒魔法エフェクト
-    columns: 6,
-    rows: 5,
-    frameCount: 30,
-    duration: 800,
-    se: 'seSkillCharge',
+    src: 'assets/vfx/vfx_dark_magic.png', // 暗黒魔法エフェクト
+    columns: 4,
+    rows: 3,
+    frameCount: 12,
+    duration: 900,
+    se: 'seSkillSacrifice', // 再生する効果音、SOUNDSのキーを指定
     position: 'lane',
     offsetY: 0,
-    scale: 1,
+    scale: 0.5,
     shake: false,
     flipOnEnemy: false,
+    blendMode: 'screen', // 黒背景を透過させる
     targetSide: 'self', // 自分のレーンがターゲット
   },
 
