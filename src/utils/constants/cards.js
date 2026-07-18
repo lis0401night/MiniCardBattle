@@ -3355,6 +3355,39 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
+  {
+    id: 'liberator',
+    obtain: ['achievement'],
+    name: '革命軍の解放者',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '',
+  },
+  {
+    id: 'detective',
+    obtain: ['achievement'],
+    name: '捜査官',
+    rarity: 2,
+    power: 6,
+    skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }, { id: 'execute' }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '',
+  },
+  {
+    id: 'agent',
+    obtain: ['achievement'],
+    name: '革命軍のエージェント',
+    rarity: 3,
+    power: 5,
+    skills: [{ id: 'legendary' }, { id: 'ambush', value: 1, summonId: 'token_automata' }, { id: 'ambush', value: 1, summonId: 'token_automata' }],
+    voiceCategory: 'human_female_assassin',
+    flavor:
+      '',
+  },
   // トークンカード
   {
     id: 'token_knight',
@@ -3551,6 +3584,15 @@ export const CARD_MASTER = [
     isToken: true,
     voiceCategory: 'undead',
     flavor: '再生したスケルトン',
+  },
+  {
+    id: 'token_automata',
+    obtain: ['token'],
+    name: 'オートマタ',
+    power: 3,
+    isToken: true,
+    voiceCategory: 'machine_new',
+    flavor: '自律人形',
   },
 ];
 

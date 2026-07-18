@@ -275,6 +275,29 @@ export const SKILLS = {
       return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。`;
     },
   },
+  ambush: {
+    name: '奇襲',
+    icon: '✨',
+    desc: (val, sk) => {
+      const summonId =
+        sk?.summonId || sk?.skills?.find((s) => s.id === 'ambush')?.summonId;
+      const summonCard = summonId
+        ? CARD_MASTER.find((c) => c.id === summonId)
+        : null;
+      if (summonCard) {
+        return [
+          { type: 'text', value: '召喚時、自分のレーンに、' },
+          {
+            type: 'link',
+            value: `「${summonCard.name}（パワー${val}）」`,
+            targetId: summonId,
+          },
+          { type: 'text', value: 'を配置する。その後、ただちに攻撃させる。' },
+        ];
+      }
+      return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。その後、ただちに攻撃させる。`;
+    },
+  },
   immune: {
     name: '無効',
     icon: '🚫',
@@ -771,6 +794,7 @@ export const ACTIVE_SKILLS = [
   'decree',
   'shuffle',
   'summon',
+  'ambush',
   'fate',
   'salvage',
   'reinforce',
@@ -878,6 +902,7 @@ export const SKILL_CATEGORIES = [
         name: '召喚・配置',
         skills: [
           'summon',
+          'ambush',
           'clone',
           'resurrect',
           'puppet',

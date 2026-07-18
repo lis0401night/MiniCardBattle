@@ -893,7 +893,7 @@ export async function resolveActiveSkillEffect(
     updateDeckDisplay('red');
     renderHand();
     await sleep(600);
-  } else if (skillId === 'summon') {
+  } else if (skillId === 'summon' || skillId === 'ambush') {
     // 【重要仕様】「召喚 X」において X (pValue) はトークンのパワーを指す。
     // 個数は常に 1体 であるため、レーン選択数には 1 を指定する。
     const pValue = skillValue || 1;
@@ -942,7 +942,9 @@ export async function resolveActiveSkillEffect(
     ) {
       if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
         const tpIdx = GameState.aiDecision.actionQueue.findIndex(
-          (a) => a.type === 'token_placement' && a.skillId === 'summon'
+          (a) =>
+            a.type === 'token_placement' &&
+            (a.skillId === 'summon' || a.skillId === 'ambush')
         );
         if (tpIdx !== -1) {
           const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
@@ -1067,7 +1069,7 @@ export async function resolveActiveSkillEffect(
             side: o,
             lane: targetLane,
             card: newToken,
-            source: 'summon',
+            source: skillId,
           });
         }
       }
@@ -1077,6 +1079,20 @@ export async function resolveActiveSkillEffect(
         if (ev.card) ev.card.isSkillResolving = false;
       }
       await cleanupDestroyedCards(c);
+
+      // 奇襲（ambush）の場合、配置したレーンでただちに攻撃させる
+      if (skillId === 'ambush') {
+        for (let i = 0; i < selectedLanes.length; i++) {
+          const targetLane = selectedLanes[i];
+          const board =
+            o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+          // トークンがそのレーンに正しく配置されているかチェック
+          if (board[targetLane] && board[targetLane].baseId === tId) {
+            await sleep(400); // 攻撃演出の前に少し待つ
+            await executeSingleCombat(o, targetLane);
+          }
+        }
+      }
     }
   } else if (skillId === 'clone') {
     // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
