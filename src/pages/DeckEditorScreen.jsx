@@ -597,10 +597,10 @@ export default function DeckEditorScreen({ switchScreen }) {
                   src={
                     (getSkinImage && CHARACTERS[leaderId]
                       ? getSkinImage(
-                        CHARACTERS[leaderId],
-                        deck?.playerSkins?.[leaderId] || 'default',
-                        'icon'
-                      )
+                          CHARACTERS[leaderId],
+                          deck?.playerSkins?.[leaderId] || 'default',
+                          'icon'
+                        )
                       : undefined) || undefined
                   }
                   className="banner-icon"
@@ -795,16 +795,16 @@ export default function DeckEditorScreen({ switchScreen }) {
                 fontSize: '0.9rem',
                 background:
                   filters.rarity.length > 0 ||
-                    filters.power.length > 0 ||
-                    filters.skills.length > 0 ||
-                    !!filters.name
+                  filters.power.length > 0 ||
+                  filters.skills.length > 0 ||
+                  !!filters.name
                     ? 'rgba(250, 204, 21, 0.3)'
                     : '#334155',
                 border:
                   filters.rarity.length > 0 ||
-                    filters.power.length > 0 ||
-                    filters.skills.length > 0 ||
-                    !!filters.name
+                  filters.power.length > 0 ||
+                  filters.skills.length > 0 ||
+                  !!filters.name
                     ? '1px solid #facc15'
                     : '1px solid #475569',
                 color: '#facc15',
@@ -954,10 +954,10 @@ export default function DeckEditorScreen({ switchScreen }) {
           onClick={handleFinish}
           label={
             isDefenseConfig ||
-              GameState.gameMode === 'create_deck' ||
-              GameState.gameMode === 'free_deck_edit' ||
-              GameState.gameMode === 'online_deck_edit' ||
-              GameState.gameMode === 'tournament'
+            GameState.gameMode === 'create_deck' ||
+            GameState.gameMode === 'free_deck_edit' ||
+            GameState.gameMode === 'online_deck_edit' ||
+            GameState.gameMode === 'tournament'
               ? '編成完了'
               : 'バトル開始！'
           }
@@ -1449,7 +1449,9 @@ export default function DeckEditorScreen({ switchScreen }) {
         </div>
       )}
 
-      {showMissions && <MissionListModal onClose={() => setShowMissions(false)} />}
+      {showMissions && (
+        <MissionListModal onClose={() => setShowMissions(false)} />
+      )}
     </div>
   );
 }

@@ -9,7 +9,8 @@ export function trackMissionSacrifice(state, side, playingCard) {
   if (side === 'blue') {
     if (!state.missionProgress) state.missionProgress = {};
     if (hasSkill(playingCard, 'takeover') || hasSkill(playingCard, 'apex')) {
-      state.missionProgress.sacrifice_count = (state.missionProgress.sacrifice_count || 0) + 1;
+      state.missionProgress.sacrifice_count =
+        (state.missionProgress.sacrifice_count || 0) + 1;
     }
     const cardId = playingCard.baseId || playingCard.id;
     if (cardId === 'golem') {
@@ -29,13 +30,26 @@ export function trackMissionPower(state) {
 // イベント配列からボーナス関連の情報をスキャンする
 export function scanMissionEvents(state, events) {
   if (!state.missionProgress) state.missionProgress = {};
-  
+
+  // スキャン開始時の敵の仮想HP
+  let virtualEnemyHP = state.enemyHP;
+  let fatalDamageLogged = false;
+
   for (const ev of events) {
     if (ev.type === 'damage_player' && ev.side === 'red') {
       if (ev.amount >= 5) {
         state.missionProgress.damage_5_single = true;
       }
-      state.missionProgress.lastDamageSource = ev.source === 'direct_attack' ? 'attack' : 'skill';
+
+      // 仮想HPからダメージを減算
+      virtualEnemyHP -= ev.amount;
+
+      // 初めて敵HPが0以下になった（致死ダメージ）タイミングで、その発生源を記録
+      if (virtualEnemyHP <= 0 && !fatalDamageLogged) {
+        state.missionProgress.lastDamageSource =
+          ev.source === 'direct_attack' ? 'attack' : 'skill';
+        fatalDamageLogged = true;
+      }
     }
   }
 }
@@ -49,7 +63,9 @@ export function scanMissionEvents(state, events) {
 export function evaluateMission(missionId, state) {
   switch (missionId) {
     case 'turn_10': {
-      const playerTurnCount = Math.floor((state.turnCount + (state.firstPlayer === 'blue' ? 1 : 0)) / 2);
+      const playerTurnCount = Math.floor(
+        (state.turnCount + (state.firstPlayer === 'blue' ? 1 : 0)) / 2
+      );
       return playerTurnCount <= 10;
     }
     case 'hp_20':

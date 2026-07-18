@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
-import { CHALLENGE_MISSIONS } from '../../utils/constants/missions.js';
+import {
+  CHALLENGE_MISSIONS,
+  MISSION_POINTS_PER_PACK,
+  MISSION_MAX_PACKS,
+  MISSION_MAX_SCORE,
+} from '../../utils/constants/missions.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
 import { getSeededRandom, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -22,7 +27,7 @@ export default function MissionResultOverlay() {
     window.showMissionResultReact = (bCards, uCards) => {
       setBaseCards(bCards);
 
-      // Evaluate missions
+      // 試練（ミッション）の評価
       const results = [];
       let totalPoints = 0;
 
@@ -33,7 +38,7 @@ export default function MissionResultOverlay() {
         if (isAchieved) totalPoints += mission.points || 1;
       });
 
-      // Sort results: achieved missions first
+      // 結果のソート：達成した試練を優先
       results.sort((a, b) => {
         if (a.isAchieved && !b.isAchieved) return -1;
         if (!a.isAchieved && b.isAchieved) return 1;
@@ -43,10 +48,10 @@ export default function MissionResultOverlay() {
       setMissionResults(results);
 
       // ボーナスカードの抽選
-      const cappedPoints = Math.min(totalPoints, 6);
-      const expectedBonus = Math.floor(cappedPoints / 2);
+      const cappedPoints = Math.min(totalPoints, MISSION_MAX_SCORE);
+      const expectedBonus = Math.floor(cappedPoints / MISSION_POINTS_PER_PACK);
 
-      const maxBonus = Math.min(expectedBonus, 3);
+      const maxBonus = Math.min(expectedBonus, MISSION_MAX_PACKS);
       const bCardsDrawn = [];
       const tempInventory = { ...GameState.playerInventory };
       // ベースカード分を仮インベントリに追加
@@ -61,7 +66,10 @@ export default function MissionResultOverlay() {
         });
 
         if (currentAvailable.length > 0) {
-          const rewardCardId = currentAvailable[Math.floor(getSeededRandom() * currentAvailable.length)];
+          const rewardCardId =
+            currentAvailable[
+              Math.floor(getSeededRandom() * currentAvailable.length)
+            ];
           bCardsDrawn.push(rewardCardId);
           tempInventory[rewardCardId] = (tempInventory[rewardCardId] || 0) + 1;
         }
@@ -86,12 +94,18 @@ export default function MissionResultOverlay() {
         const currentMission = missionResults[revealedCount];
         setRevealedCount((prev) => prev + 1);
         if (currentMission.isAchieved) {
-          setAnimatedScore((prev) => Math.min(prev + (currentMission.points || 1), 6));
+          setAnimatedScore((prev) =>
+            Math.min(prev + (currentMission.points || 1), MISSION_MAX_SCORE)
+          );
           playSound(SOUNDS.seClick);
         }
       }, 300);
       return () => clearTimeout(timer);
-    } else if (isVisible && revealedCount === missionResults.length && missionResults.length > 0) {
+    } else if (
+      isVisible &&
+      revealedCount === missionResults.length &&
+      missionResults.length > 0
+    ) {
       playSound(SOUNDS.seSkill); // 全部表示完了
     }
   }, [isVisible, revealedCount, missionResults]);
@@ -111,14 +125,19 @@ export default function MissionResultOverlay() {
 
   if (!isVisible) return null;
 
-  const enemyImg = getSkinImage(
-    GameState.enemyConfig,
-    GameState.enemySkins?.[GameState.enemyConfig?.id],
-    'main'
-  ) || GameState.enemyConfig?.image;
+  const enemyImg =
+    getSkinImage(
+      GameState.enemyConfig,
+      GameState.enemySkins?.[GameState.enemyConfig?.id],
+      'main'
+    ) || GameState.enemyConfig?.image;
 
-  const bonusCount = Math.min(Math.floor(animatedScore / 2), bonusCards.length);
-  const isCardCapped = Math.floor(animatedScore / 2) > bonusCards.length;
+  const bonusCount = Math.min(
+    Math.floor(animatedScore / MISSION_POINTS_PER_PACK),
+    bonusCards.length
+  );
+  const isCardCapped =
+    Math.floor(animatedScore / MISSION_POINTS_PER_PACK) > bonusCards.length;
   const isAllRevealed = revealedCount >= missionResults.length;
 
   return (
@@ -155,33 +174,47 @@ export default function MissionResultOverlay() {
                     <span className="mission-result-badge-text">CLEAR!</span>
                   )}
                 </div>
-                <div className="mission-result-points">
-                  +{m.points || 1}点
-                </div>
+                <div className="mission-result-points">+{m.points || 1}点</div>
               </div>
             </div>
           ))}
         </div>
 
         <div className="mission-result-bottom">
-          {/* Progress Bar */}
+          {/* プログレスバー */}
           <div className="mission-result-progress-wrap">
             <div className="mission-result-score-label">
-              スコア: <span className="mission-result-score-value">{animatedScore}</span> / 6
+              スコア:{' '}
+              <span className="mission-result-score-value">
+                {animatedScore}
+              </span>{' '}
+              / {MISSION_MAX_SCORE}
             </div>
             <div className="mission-result-bar-track">
               <div
                 className="mission-result-bar-fill"
-                style={{ width: `${(animatedScore / 6) * 100}%` }}
+                style={{
+                  width: `${(animatedScore / MISSION_MAX_SCORE) * 100}%`,
+                }}
               />
-              {/* Dividers at 2, 4 (最大値6は固定なので位置も固定) */}
-              <div className="mission-result-bar-divider at-2" />
-              <div className="mission-result-bar-divider at-4" />
+              {/* 定数から動的に算出する区切り線 */}
+              {Array.from({ length: MISSION_MAX_PACKS - 1 }, (_, i) => {
+                const val = (i + 1) * MISSION_POINTS_PER_PACK;
+                const pct = (val / MISSION_MAX_SCORE) * 100;
+                return (
+                  <div
+                    key={val}
+                    className="mission-result-bar-divider"
+                    style={{ left: `${pct}%` }}
+                  />
+                );
+              })}
             </div>
           </div>
 
           <div className="mission-result-bonus-label">
-            ボーナスパック獲得: <span className="mission-result-bonus-value">{bonusCount}</span>
+            ボーナスパック獲得:{' '}
+            <span className="mission-result-bonus-value">{bonusCount}</span>
           </div>
 
           {/* 上限メッセージ */}
@@ -192,7 +225,7 @@ export default function MissionResultOverlay() {
           )}
 
           <div className="mission-result-pack-row">
-            {[0, 1, 2].map((i) => {
+            {Array.from({ length: MISSION_MAX_PACKS }, (_, i) => i).map((i) => {
               const isActive = i < bonusCount;
               return (
                 <div
@@ -253,7 +286,7 @@ export default function MissionResultOverlay() {
           padding: 30px 20px;
           width: 100%;
           max-width: 400px;
-          max-height: 95vh;
+          max-height: 95dvh;
           box-shadow: 0 0 30px rgba(234, 179, 8, 0.3);
           display: flex;
           flex-direction: column;
