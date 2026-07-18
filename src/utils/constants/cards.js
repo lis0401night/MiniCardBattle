@@ -3363,8 +3363,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
     voiceCategory: 'human_male_normal',
-    flavor:
-      '',
+    flavor: '',
   },
   {
     id: 'detective',
@@ -3372,10 +3371,12 @@ export const CARD_MASTER = [
     name: '捜査官',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }, { id: 'execute' }],
+    skills: [
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+      { id: 'execute' },
+    ],
     voiceCategory: 'human_male_normal',
-    flavor:
-      '',
+    flavor: '',
   },
   {
     id: 'agent',
@@ -3383,10 +3384,13 @@ export const CARD_MASTER = [
     name: '革命軍のエージェント',
     rarity: 3,
     power: 5,
-    skills: [{ id: 'legendary' }, { id: 'ambush', value: 1, summonId: 'token_automata' }, { id: 'ambush', value: 1, summonId: 'token_automata' }],
+    skills: [
+      { id: 'legendary' },
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+    ],
     voiceCategory: 'human_female_assassin',
-    flavor:
-      '',
+    flavor: '',
   },
   // トークンカード
   {
@@ -3591,6 +3595,7 @@ export const CARD_MASTER = [
     name: 'オートマタ',
     power: 3,
     isToken: true,
+    imgUrl: 'assets/cards/card_token_automata.webp',
     voiceCategory: 'machine_new',
     flavor: '自律人形',
   },
