@@ -1,48 +1,48 @@
+import { generateDeck } from '../services/deck.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
-  MAX_HP,
   AI_THINKING_DURATION,
+  MAX_HP,
   PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
-import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  STORY_DIALOGUES,
-  STORY_NARRATIONS,
   PLAYER_TALKS,
   STORY_BGM_CHANGE_BATTLE,
+  STORY_DIALOGUES,
   STORY_LATE_DIALOGUE_BATTLE,
+  STORY_NARRATIONS,
   getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  consumeArmSelf,
   createDamagePopup,
+  decodedBgms,
   getCardImgUrl,
+  getCurrentRNG,
   getDialogue,
   getOrCreateUUID,
   getSeededRandom,
-  getCurrentRNG,
-  setCurrentRNG,
   getSkillValue,
   hasSkill,
   mergeCardSkills,
   playSound,
+  setCurrentRNG,
   setRNGSeed,
   shuffleArray,
   sleep,
   stopAllBGM,
   switchScreen,
   triggerGraveKeeperEffect,
-  decodedBgms,
-  consumeArmSelf,
 } from '../utils/gameUtils.js';
-import { trackMissionSacrifice, trackMissionPower } from './missionLogic.js';
 import {
   AUDIO_INSTANCES,
   SOUNDS,
@@ -50,7 +50,6 @@ import {
 } from '../utils/sounds.js';
 import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
-import { generateDeck } from '../services/deck.js';
 import {
   applyActiveSkillLogic,
   applySingleCombat,
@@ -58,30 +57,18 @@ import {
   canTakeDamage,
 } from './engine.js';
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
+import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
 import { simulateTournamentRound } from './tournament.js';
 
-import { GameState } from '../state/gameState.js';
-import { activateLeaderSkill } from './leaderSkills.js';
 import {
   cachedRoomData,
   clearActionQueueAndRegenerateSeed,
   getIsHost,
   listenToRoomActions,
+  multiplayerCallbacks,
   sendOnlineAction,
   setPlayerReadyOnly,
-  multiplayerCallbacks,
 } from '../services/multiplayer.js';
-import {
-  resolveActiveSkillEffect,
-  triggerStartTurnPassive,
-} from './skillLogic.js';
-import {
-  cleanupTutorial,
-  filterPlacementLaneClick,
-  handleTutorialEnd,
-  isTutorialMode,
-  runTutorialFlow,
-} from './tutorialEngine.js';
 import {
   closeSkillConfirm,
   playSummonAnimation,
@@ -103,6 +90,19 @@ import {
   showOnlineLobby,
 } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { activateLeaderSkill } from './leaderSkills.js';
+import {
+  resolveActiveSkillEffect,
+  triggerStartTurnPassive,
+} from './skillLogic.js';
+import {
+  cleanupTutorial,
+  filterPlacementLaneClick,
+  handleTutorialEnd,
+  isTutorialMode,
+  runTutorialFlow,
+} from './tutorialEngine.js';
 
 export let pendingChoiceResolver = null;
 
@@ -1394,7 +1394,7 @@ export async function confirmOverwrittenLane(
   if (existingCard && hasSkill(existingCard, 'startup')) {
     const confirmed = await new Promise((res) => {
       showConfirmModal(
-        `「${tokenName}」を消費して「${existingCard.name}」を起動しますか？`,
+        `「${tokenName}」で「${existingCard.name}」を起動しますか？`,
         () => res(true),
         () => res(false)
       );

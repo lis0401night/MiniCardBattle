@@ -3396,7 +3396,7 @@ export const CARD_MASTER = [
     id: 'scrapper',
     obtain: ['achievement'],
     name: '暴走する解体者',
-    rarity: 3,
+    rarity: 2,
     power: 8,
     skills: [{ id: 'startup' }],
     voiceCategory: 'machine_new',

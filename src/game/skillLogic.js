@@ -226,6 +226,7 @@ export async function resolveActiveSkillEffect(
       standby: '待機',
       resurrect: '復活',
       summon: '召喚',
+      ambush: '奇襲',
       clone: '分身',
       salvage: '回収',
       dispel: '解除',
@@ -1086,8 +1087,8 @@ export async function resolveActiveSkillEffect(
           const targetLane = selectedLanes[i];
           const board =
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-          // トークンがそのレーンに正しく配置されているかチェック
-          if (board[targetLane] && board[targetLane].baseId === tId) {
+          // 配置先にカードが存在すれば攻撃を誘発
+          if (board[targetLane]) {
             await sleep(400); // 攻撃演出の前に少し待つ
             await executeSingleCombat(o, targetLane);
           }
