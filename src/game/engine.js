@@ -4167,6 +4167,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   let dP =
     dC_counter &&
     !hasSkill(dC_counter, 'defender') &&
+    !hasSkill(dC_counter, 'startup') &&
     !(dC_counter.stunTurns > 0)
       ? Number(dC_counter.currentPower ?? dC_counter.power ?? 0) || 0
       : 0;
