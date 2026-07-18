@@ -3358,7 +3358,7 @@ export const CARD_MASTER = [
   {
     id: 'liberator',
     obtain: ['achievement'],
-    name: '革命軍の解放者',
+    name: '革命派の解放者',
     rarity: 1,
     power: 4,
     skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
@@ -3368,7 +3368,7 @@ export const CARD_MASTER = [
   {
     id: 'detective',
     obtain: ['achievement'],
-    name: '捜査官',
+    name: '不屈の捜査官',
     rarity: 2,
     power: 6,
     skills: [
@@ -3381,7 +3381,7 @@ export const CARD_MASTER = [
   {
     id: 'agent',
     obtain: ['achievement'],
-    name: '革命軍のエージェント',
+    name: '革命派のエージェント',
     rarity: 3,
     power: 5,
     skills: [
@@ -3405,7 +3405,7 @@ export const CARD_MASTER = [
   {
     id: 'motorcycle',
     obtain: ['achievement'],
-    name: '`ナイトランナー`',
+    name: '”ナイトランナー”',
     rarity: 3,
     power: 6,
     skills: [{ id: 'startup' }, { id: 'stealth', value: 1 }, { id: 'move' }],
@@ -3617,7 +3617,7 @@ export const CARD_MASTER = [
     isToken: true,
     imgUrl: 'assets/cards/card_token_automata.webp',
     voiceCategory: 'machine_new',
-    flavor: '自律人形',
+    flavor: '暴走した自律人形',
   },
 ];
 

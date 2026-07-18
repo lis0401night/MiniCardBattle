@@ -2393,8 +2393,6 @@ export async function waitSkillChoice(
       return aiAction.choices.map((i) => choices[i]);
     }
 
-    const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
-
     // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
     if (
       typeof GameState.aiDecision !== 'undefined' &&

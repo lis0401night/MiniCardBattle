@@ -292,10 +292,14 @@ export const SKILLS = {
             value: `「${summonCard.name}（パワー${val}）」`,
             targetId: summonId,
           },
-          { type: 'text', value: 'を配置する。その後、ただちに攻撃させる。' },
+          {
+            type: 'text',
+            value:
+              'を配置する。その後、そのレーンのカードをただちに攻撃させる。',
+          },
         ];
       }
-      return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。その後、ただちに攻撃させる。`;
+      return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。その後、そのレーンのカードをただちに攻撃させる。`;
     },
   },
   startup: {
