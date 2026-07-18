@@ -197,7 +197,32 @@ export function processPlacementOrEquip(
     hasSkill(newCard, 'possession') ||
     hasSkill(newCard, 'reflect');
 
-  if (isEquip && existingCard && !targetBlocksEquip) {
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    // 1. 元のカードから 'startup' を除去（消滅）させる
+    existingCard.skills = existingCard.skills.filter((s) => s.id !== 'startup');
+
+    // 2. プレイしようとしていたカードは墓地に送る
+    const discardPile =
+      owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+    discardPile.push(newCard);
+
+    // 3. 起動消滅のイベントを追加する
+    events.push({
+      type: 'skill_popup',
+      side: owner,
+      lane: lane,
+      skillName: '起動消滅',
+      card: existingCard,
+    });
+    events.push({
+      type: 'power_change',
+      side: owner,
+      lane: lane,
+      amount: 0,
+      source: 'startup_fade',
+      card: newCard,
+    });
+  } else if (isEquip && existingCard && !targetBlocksEquip) {
     existingCard.power = (existingCard.power || 0) + (newCard.power || 0);
     existingCard.basePower =
       (existingCard.basePower || 0) + (newCard.power || 0);
@@ -3981,7 +4006,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   const defSide = attackerSide === 'blue' ? 'red' : 'blue';
 
   const aC = atkBoard[l];
-  if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0) return events;
+  if (
+    !aC ||
+    hasSkill(aC, 'defender') ||
+    hasSkill(aC, 'startup') ||
+    aC.stunTurns > 0
+  )
+    return events;
 
   const aHasPhase = hasSkill(aC, 'phase');
 

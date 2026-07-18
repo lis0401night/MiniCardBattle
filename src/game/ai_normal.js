@@ -785,14 +785,21 @@ export function processActionSequence(
         playedCard.skills = newSkillsArr;
       }
 
+      const existingCard = simState.enemyBoard[lIdx];
       let skillWasHandledByEquip = false;
-      if (
+      if (existingCard && hasSkill(existingCard, 'startup')) {
+        skillWasHandledByEquip = true;
+        existingCard.skills = existingCard.skills.filter(
+          (s) => s.id !== 'startup'
+        );
+        simState.enemyDiscard.push(playedCard);
+      } else if (
         (hasSkill(playedCard, 'equip') ||
-          hasSkill(simState.enemyBoard[lIdx], 'arm_self')) &&
-        simState.enemyBoard[lIdx]
+          (existingCard && hasSkill(existingCard, 'arm_self'))) &&
+        existingCard
       ) {
         skillWasHandledByEquip = true;
-        const targetCard = simState.enemyBoard[lIdx];
+        const targetCard = existingCard;
         targetCard.basePower =
           (targetCard.basePower || 0) + (playedCard.power || 0);
         targetCard.currentPower =
@@ -4417,12 +4424,18 @@ export function simulateMove(
       }
 
       if (playedCard) {
-        if (
+        const existingCard = simState.enemyBoard[laneIdx];
+        if (existingCard && hasSkill(existingCard, 'startup')) {
+          existingCard.skills = existingCard.skills.filter(
+            (s) => s.id !== 'startup'
+          );
+          simState.enemyDiscard.push(playedCard);
+        } else if (
           (hasSkill(playedCard, 'equip') ||
-            hasSkill(simState.enemyBoard[laneIdx], 'arm_self')) &&
-          simState.enemyBoard[laneIdx]
+            (existingCard && hasSkill(existingCard, 'arm_self'))) &&
+          existingCard
         ) {
-          const targetCard = simState.enemyBoard[laneIdx];
+          const targetCard = existingCard;
           targetCard.basePower =
             (targetCard.basePower || 0) + (playedCard.power || 0);
           targetCard.currentPower =

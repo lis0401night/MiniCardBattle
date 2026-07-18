@@ -3392,6 +3392,26 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_assassin',
     flavor: '',
   },
+  {
+    id: 'scrapper',
+    obtain: ['achievement'],
+    name: '暴走する解体者',
+    rarity: 3,
+    power: 8,
+    skills: [{ id: 'startup' }],
+    voiceCategory: 'machine_new',
+    flavor: '',
+  },
+  {
+    id: 'motorcycle',
+    obtain: ['achievement'],
+    name: '`ナイトランナー`',
+    rarity: 3,
+    power: 6,
+    skills: [{ id: 'startup' }, { id: 'stealth', value: 1 }, { id: 'move' }],
+    voiceCategory: 'machine_new',
+    flavor: '',
+  },
   // トークンカード
   {
     id: 'token_knight',

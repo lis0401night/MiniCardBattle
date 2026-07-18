@@ -1347,8 +1347,11 @@ export function canEquipCard(playingCard, targetCard) {
   if (!playingCard || !targetCard) return false;
 
   // 1. 基本的な装備スキル/武装スキルの所持チェック
+  // 盤面のカードが startup スキルを持つ場合は、手札のカードが何であれ重ねることができる
   const hasEquipAbility =
-    hasSkill(playingCard, 'equip') || hasSkill(targetCard, 'arm_self');
+    hasSkill(playingCard, 'equip') ||
+    hasSkill(targetCard, 'arm_self') ||
+    hasSkill(targetCard, 'startup');
   if (!hasEquipAbility) return false;
 
   // 2. 装備禁止（憑依・反射）のチェック
@@ -1384,6 +1387,19 @@ export async function confirmOverwrittenLane(
 
   // AI（owner !== 'blue'）の場合は、確認モーダルを出さずに自動的に承諾したものとして進行する
   if (owner !== 'blue') {
+    return true;
+  }
+
+  // 0. 起動の判定 (合体や装備に優先して処理される)
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    const confirmed = await new Promise((res) => {
+      showConfirmModal(
+        `「${tokenName}」を消費して「${existingCard.name}」を起動しますか？`,
+        () => res(true),
+        () => res(false)
+      );
+    });
+    if (!confirmed) return false;
     return true;
   }
 

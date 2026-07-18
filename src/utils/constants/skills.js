@@ -298,6 +298,12 @@ export const SKILLS = {
       return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。その後、ただちに攻撃させる。`;
     },
   },
+  startup: {
+    name: '起動',
+    icon: '🏍',
+    desc: () =>
+      '攻撃せず、敵にダメージを与えない。1回まで自身の上にカードを配置するとき、自身の起動を消滅させる。',
+  },
   immune: {
     name: '無効',
     icon: '🚫',
@@ -872,6 +878,7 @@ export const PASSIVE_SKILLS = [
   'arm_self',
   'grave_keeper',
   'awake',
+  'startup',
   'intercept',
   'teleport',
   'samsara',
@@ -1015,7 +1022,14 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '盤面影響・その他',
-        skills: ['phase', 'equip', 'arm_self', 'union', 'grave_keeper'],
+        skills: [
+          'phase',
+          'equip',
+          'arm_self',
+          'startup',
+          'union',
+          'grave_keeper',
+        ],
       },
       {
         name: 'デメリット',
