@@ -1,5 +1,5 @@
 /**
- * チャレンジミッションの定義
+ * バトルボーナスの定義
  * 実際の判定ロジックは src/game/missionLogic.js に分離されています。
  */
 export const CHALLENGE_MISSIONS = [
@@ -47,8 +47,8 @@ export const CHALLENGE_MISSIONS = [
   },
   {
     id: 'play_golem',
-    name: '「大理石のゴーレム」をプレイ',
-    desc: '「大理石のゴーレム」をプレイする',
+    name: '「大理石のゴーレム」を召喚',
+    desc: '「大理石のゴーレム」を召喚する',
     points: 1,
     timing: 'instant',
   },

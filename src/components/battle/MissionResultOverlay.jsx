@@ -140,7 +140,7 @@ export default function MissionResultOverlay() {
       }}
     >
       <div className="mission-result-modal">
-        <h2 className="mission-result-title">ミッション評価</h2>
+        <h2 className="mission-result-title">ボーナス評価</h2>
 
         <div className="mission-result-list">
           {missionResults.map((m, idx) => (

@@ -21,7 +21,7 @@ const newFunctionContent = `export function getFallbackStoryDialogue(playerId, e
   // 10キャラクターの基本口調に基づくセリフプール (前半：early)
   const preLinesEarly = {
     android: [
-      \`前方に対象：\\\${eName}を捕捉。論理プロトコルを起動し、排除ミッションを開始します。\`,
+      \`前方に対象：\\\${eName}を捕捉。論理プロトコルを起動し、排除ボーナスを開始します。\`,
       \`これより前方の進行ルートを確保します。武装解除および退去を要求します。\`
     ],
     dragon: [
@@ -65,7 +65,7 @@ const newFunctionContent = `export function getFallbackStoryDialogue(playerId, e
   // 10キャラクターの基本口調に基づくセリフプール (後半：late)
   const preLinesLate = {
     android: [
-      \`前方に対象：\\\${eName}を捕捉。論理プロトコルを起動し、排除ミッションを開始します。\`,
+      \`前方に対象：\\\${eName}を捕捉。論理プロトコルを起動し、排除ボーナスを開始します。\`,
       \`これよりサタン討伐への進行ルートを確保します。武装解除および退去を要求します。\`
     ],
     dragon: [

@@ -13,6 +13,8 @@ import {
 } from '../services/uiBattle.js';
 import MissionResultOverlay from '../components/battle/MissionResultOverlay.jsx';
 import MissionListModal from '../components/battle/MissionListModal.jsx';
+import { CHALLENGE_MISSIONS } from '../utils/constants/missions.js';
+import { evaluateMission } from '../game/missionLogic.js';
 import { showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
@@ -48,21 +50,23 @@ import {
 } from '../game/tutorialEngine.js';
 import { openCardPreview } from '../services/uiGallery.js';
 
-export default function BattleScreen({ showRulesModal }) {
-  const openRulesModal = () => {
-    if (typeof showRulesModal === 'function') return showRulesModal();
-    if (typeof window.showRulesModal === 'function')
-      return window.showRulesModal();
-  };
-
+export default function BattleScreen() {
   const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
   const [showMissions, setShowMissions] = useState(false);
-  // チャレンジミッションはストーリー・フリー対戦でのみ機能する
+  // バトルボーナスはストーリー・フリー対戦でのみ機能する
   const showMissionButton =
     !!GameState.enemyConfig &&
     (GameState.gameMode === 'story' || GameState.gameMode === 'free');
+  // バトル中に判定可能な（timing: 'instant'の）ボーナスの現在スコアを集計
+  const missionScore = showMissionButton
+    ? CHALLENGE_MISSIONS.reduce((sum, m) => {
+        if (m.timing !== 'instant') return sum;
+        return evaluateMission(m.id, GameState) ? sum + (m.points || 1) : sum;
+      }, 0)
+    : 0;
+  const missionGaugePercent = Math.min((missionScore / 6) * 100, 100);
   const isInitializing = GameState.isInitializing;
   const [startTurnOrderAnim, setStartTurnOrderAnim] = useState({
     active: false,
@@ -430,16 +434,25 @@ export default function BattleScreen({ showRulesModal }) {
 
   return (
     <div id="screen-battle" className="screen active" style={battleStyle}>
-      <button
-        className="btn-circle btn-battle-help"
-        onClick={(e) => {
-          e.stopPropagation();
-          playSound(SOUNDS.seClick);
-          openRulesModal();
-        }}
-      >
-        ？
-      </button>
+      {showMissionButton && (
+        <div
+          className="mission-gauge-ring btn-battle-mission-ring"
+          style={{
+            background: `conic-gradient(#22c55e ${missionGaugePercent}%, #000 ${missionGaugePercent}%)`,
+          }}
+        >
+          <button
+            className="btn-circle btn-battle-missions"
+            onClick={(e) => {
+              e.stopPropagation();
+              playSound(SOUNDS.seClick);
+              setShowMissions(true);
+            }}
+          >
+            📋
+          </button>
+        </div>
+      )}
       <button
         className={`btn-circle btn-battle-retire ${GameState.lastBattleResult ? 'disabled' : ''}`}
         onClick={(e) => {
@@ -544,14 +557,6 @@ export default function BattleScreen({ showRulesModal }) {
           if (isTutorialMode() && filterLeaderSkill()) return;
           showSkillConfirm();
         }}
-        onMissionClick={
-          showMissionButton
-            ? () => {
-                playSound(SOUNDS.seClick);
-                setShowMissions(true);
-              }
-            : null
-        }
       />
 
       <div className="card-detail-wrapper">

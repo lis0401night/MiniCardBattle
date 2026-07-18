@@ -131,7 +131,7 @@ export default function BattleDungeonScreen() {
           style={{ background: '#475569' }}
           onClick={handleSuspendAction}
         >
-          一時中断して戻る
+          一時中断
         </button>
       );
     }

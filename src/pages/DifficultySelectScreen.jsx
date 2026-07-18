@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
@@ -8,9 +8,6 @@ import {
   openEnemyDeckPreview,
 } from '../services/uiMainCore.js';
 import MenuButton from '../components/common/MenuButton.jsx';
-import MissionListModal from '../components/battle/MissionListModal.jsx';
-import { SOUNDS } from '../utils/sounds.js';
-import { playSound } from '../utils/gameUtils.js';
 
 // 難易度レベル定数
 const DIFFICULTY = {
@@ -21,7 +18,6 @@ const DIFFICULTY = {
 
 export default function DifficultySelectScreen() {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const [showMissions, setShowMissions] = useState(false);
 
   const isFreeMode =
     typeof GameState !== 'undefined' && GameState.gameMode === 'free';
@@ -31,11 +27,6 @@ export default function DifficultySelectScreen() {
     typeof GameState !== 'undefined' &&
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_high');
-
-  // チャレンジミッションはストーリー・フリー対戦でのみ機能する
-  const showMissionButton =
-    typeof GameState !== 'undefined' &&
-    (GameState.gameMode === 'story' || GameState.gameMode === 'free');
 
   useEffect(() => {
     const originalInit = window.initDifficultySelectScreenReact;
@@ -52,22 +43,6 @@ export default function DifficultySelectScreen() {
   const handleSelect = (level) => {
     confirmDifficulty?.(level);
   };
-
-  const renderMissionButton = () =>
-    showMissionButton && (
-      <button
-        className="btn-check-deck"
-        style={{ display: 'flex', left: 'calc(50% - 148px)' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          playSound(SOUNDS.seClick);
-          setShowMissions(true);
-        }}
-        title="ミッション確認"
-      >
-        📋
-      </button>
-    );
 
   // 高難易度イベントおよび通常難易度選択用の背景スタイル
   const highDiffBgStyle = getScreenBackgroundStyle(
@@ -141,7 +116,6 @@ export default function DifficultySelectScreen() {
                   🔍
                 </button>
               )}
-              {renderMissionButton()}
             </div>
             <div className="difficulty-button-row">
               <MenuButton
@@ -161,7 +135,6 @@ export default function DifficultySelectScreen() {
                   🔍
                 </button>
               )}
-              {renderMissionButton()}
             </div>
             <div className="difficulty-button-row">
               <MenuButton
@@ -179,7 +152,6 @@ export default function DifficultySelectScreen() {
                   🔍
                 </button>
               )}
-              {renderMissionButton()}
             </div>
           </>
         )}
@@ -199,8 +171,6 @@ export default function DifficultySelectScreen() {
           style={{ margin: 0 }}
         />
       </div>
-
-      {showMissions && <MissionListModal onClose={() => setShowMissions(false)} />}
     </div>
   );
 }

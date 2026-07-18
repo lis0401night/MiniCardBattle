@@ -66,7 +66,7 @@ export default function DeckEditorScreen({ switchScreen }) {
   );
   const [showMissions, setShowMissions] = useState(false);
 
-  // チャレンジミッションはストーリー・フリー対戦でのみ機能する
+  // バトルボーナスはストーリー・フリー対戦でのみ機能する
   const showMissionButton =
     !!GameState.enemyConfig &&
     (GameState.gameMode === 'story' || GameState.gameMode === 'free');
@@ -386,42 +386,6 @@ export default function DeckEditorScreen({ switchScreen }) {
           minHeight: '60px',
         }}
       >
-        {/* 画面左上のアイコン群 (ミッション確認など) */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            display: 'flex',
-            gap: '6px',
-            zIndex: 10,
-          }}
-        >
-          {showMissionButton && (
-            <button
-              className="btn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '38px',
-                fontSize: '0.6rem',
-                padding: '0 12px',
-                margin: 0,
-                background: 'rgba(30, 41, 59, 0.8)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
-                color: '#cbd5e1'
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                playSound(SOUNDS.seClick);
-                setShowMissions(true);
-              }}
-            >
-              ミッション確認
-            </button>
-          )}
-        </div>
         {/* 中央揃えのタイトル・デッキ名 */}
         <div
           style={{
@@ -1002,71 +966,95 @@ export default function DeckEditorScreen({ switchScreen }) {
 
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
           marginTop: '20px',
           marginBottom: '20px',
-          padding: '0 20px',
+          padding: '0 10px',
           width: '100%',
           boxSizing: 'border-box',
         }}
       >
         {/* 左下：全削除ボタン */}
-        <button
-          className="action-btn"
-          style={{
-            background: '#7f1d1d',
-            fontSize: '0.8rem',
-            padding: '8px 15px',
-            margin: 0,
-            flexShrink: 0,
-          }}
-          onClick={clearDeck}
-        >
-          全削除
-        </button>
-
-        {/* 中央：戻るボタン */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ justifySelf: 'start' }}>
           <button
             className="btn"
             style={{
-              background: '#475569',
+              background: '#7f1d1d',
               margin: 0,
               whiteSpace: 'nowrap',
-              padding: '10px 20px',
-              fontSize: '1rem',
+              padding: '8px 15px',
+              fontSize: '0.8rem',
               width: 'auto',
-              minWidth: '120px',
+              flexShrink: 0,
             }}
-            onClick={() => {
-              playSound?.(SOUNDS?.seClick);
-              if (GameState.gameMode === 'story') {
-                showConfirmModal?.(
-                  '一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）',
-                  () => {
-                    playSound?.(SOUNDS?.seClick);
-                    if (typeof stopAllBGM === 'function') stopAllBGM();
-                    if (AUDIO_INSTANCES?.bgmTitle)
-                      playSound(AUDIO_INSTANCES.bgmTitle);
-                    if (typeof switchScreen === 'function')
-                      switchScreen('screen-solo-menu');
-                  }
-                );
-              } else {
-                if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
-                if (typeof goBackFromDeckEdit === 'function')
-                  goBackFromDeckEdit(true);
-              }
-            }}
+            onClick={clearDeck}
           >
-            {GameState.gameMode === 'story' ? '一時中断して戻る' : '戻る'}
+            全削除
           </button>
         </div>
 
-        {/* スペーサー：右側のバランス取り */}
-        <div style={{ width: '60px', flexShrink: 0 }}></div>
+        {/* 中央：戻るボタン */}
+        <button
+          className="btn"
+          style={{
+            background: '#475569',
+            margin: 0,
+            whiteSpace: 'nowrap',
+            padding: '10px 20px',
+            fontSize: '1rem',
+            width: 'auto',
+            minWidth: '120px',
+          }}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            if (GameState.gameMode === 'story') {
+              showConfirmModal?.(
+                '一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）',
+                () => {
+                  playSound?.(SOUNDS?.seClick);
+                  if (typeof stopAllBGM === 'function') stopAllBGM();
+                  if (AUDIO_INSTANCES?.bgmTitle)
+                    playSound(AUDIO_INSTANCES.bgmTitle);
+                  if (typeof switchScreen === 'function')
+                    switchScreen('screen-solo-menu');
+                }
+              );
+            } else {
+              if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
+              if (typeof goBackFromDeckEdit === 'function')
+                goBackFromDeckEdit(true);
+            }
+          }}
+        >
+          {GameState.gameMode === 'story' ? '一時中断' : '戻る'}
+        </button>
+
+        {/* 右下：ボーナス確認ボタン（全削除ボタンと対になる配置） */}
+        <div style={{ justifySelf: 'end' }}>
+          {showMissionButton && (
+            <button
+              className="btn"
+              style={{
+                background: '#0f3443',
+                margin: 0,
+                whiteSpace: 'nowrap',
+                padding: '8px 15px',
+                fontSize: '0.8rem',
+                width: 'auto',
+                flexShrink: 0,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                playSound(SOUNDS.seClick);
+                setShowMissions(true);
+              }}
+            >
+              ボーナス
+            </button>
+          )}
+        </div>
       </div>
 
       {/* フィルターダイアログ */}
@@ -1397,7 +1385,7 @@ export default function DeckEditorScreen({ switchScreen }) {
               }}
             >
               <button
-                className="action-btn"
+                className="btn"
                 style={{
                   background: '#7f1d1d',
                   margin: 0,

@@ -66,7 +66,7 @@ export function registerDiscardCard(fn) {
 export async function playEvents(events) {
   if (!events || !Array.isArray(events) || events.length === 0) return;
 
-  // ミッション用にイベントをスキャン
+  // ボーナス用にイベントをスキャン
   scanMissionEvents(GameState, events);
 
   for (let i = 0; i < events.length; i++) {

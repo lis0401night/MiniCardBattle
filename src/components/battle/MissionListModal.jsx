@@ -27,24 +27,26 @@ export default function MissionListModal({ onClose }) {
         className="skill-modal-box modal-pop-animation mission-list-box"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mission-list-title">チャレンジミッション</h2>
+        <h2 className="mission-list-title">バトルボーナス</h2>
 
         <div className="card-list-container mission-list-scroll">
-          {CHALLENGE_MISSIONS.map((m) => {
-            const isAchieved =
+          {CHALLENGE_MISSIONS.map((m) => ({
+            ...m,
+            isAchieved:
               isInBattle &&
               m.timing === 'instant' &&
-              evaluateMission(m.id, GameState);
-
-            return (
+              evaluateMission(m.id, GameState),
+          }))
+            .sort((a, b) => (b.isAchieved ? 1 : 0) - (a.isAchieved ? 1 : 0))
+            .map((m) => (
               <div
                 key={m.id}
-                className={`mission-row${isAchieved ? ' achieved' : ''}`}
+                className={`mission-row${m.isAchieved ? ' achieved' : ''}`}
               >
                 <span className="mission-row-name">{m.name}</span>
                 <div className="mission-row-status">
                   <div className="mission-clear-badge-wrap">
-                    {isAchieved && (
+                    {m.isAchieved && (
                       <span className="mission-clear-text">CLEAR!</span>
                     )}
                   </div>
@@ -53,14 +55,13 @@ export default function MissionListModal({ onClose }) {
                   </span>
                 </div>
               </div>
-            );
-          })}
+            ))}
         </div>
 
         <div className="mission-list-note">
-          ミッション達成のスコア2点につきパックが+1つボーナスで貰えます
+          スコア2点につき+1パック貰えます
           <br />
-          （最大ボーナス: 3パック）
+          （最大: 3パック）
         </div>
 
         <button

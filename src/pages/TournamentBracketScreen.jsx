@@ -442,7 +442,7 @@ export default function TournamentBracketScreen() {
             }}
             onClick={handleSuspend}
           >
-            一時中断して戻る
+            一時中断
           </button>
         )}
       </div>

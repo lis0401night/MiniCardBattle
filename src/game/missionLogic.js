@@ -1,7 +1,7 @@
 import { hasSkill } from '../utils/gameUtils.js';
 
 /**
- * ミッションの進捗をトラッキングするためのイベントハンドラ
+ * ボーナスの進捗をトラッキングするためのイベントハンドラ
  */
 
 // カードプレイ時のトラッキング
@@ -26,7 +26,7 @@ export function trackMissionPower(state) {
   }
 }
 
-// イベント配列からミッション関連の情報をスキャンする
+// イベント配列からボーナス関連の情報をスキャンする
 export function scanMissionEvents(state, events) {
   if (!state.missionProgress) state.missionProgress = {};
   
@@ -41,8 +41,8 @@ export function scanMissionEvents(state, events) {
 }
 
 /**
- * ミッションの達成状況を評価する
- * @param {string} missionId - 評価するミッションのID
+ * ボーナスの達成状況を評価する
+ * @param {string} missionId - 評価するボーナスのID
  * @param {object} state - 現在のGameState
  * @returns {boolean} - 達成していればtrue
  */

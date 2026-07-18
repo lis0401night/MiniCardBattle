@@ -504,16 +504,37 @@ h2 {
   }
 }
 
-.btn-battle-help {
-  position: absolute;
-  top: 20px;
-  right: 74px;
-}
-
 .btn-battle-retire {
   position: absolute;
   top: 20px;
   right: 20px;
+}
+
+/* ボーナス確認ボタンの円形スコアゲージ（conic-gradientをbutton要素周りのリングとして表示） */
+/* フチを含めた全体のサイズが .btn-circle 単体（リタイアボタン等）と同じ44pxになるようにする */
+.mission-gauge-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+}
+
+.mission-gauge-ring .btn-circle {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.btn-battle-mission-ring {
+  position: absolute;
+  top: 20px;
+  right: 74px;
+  z-index: 10;
 }
 
 .rules-modal-overlay {

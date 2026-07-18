@@ -401,33 +401,44 @@ export default function RewardOverlay() {
 
       {phase !== 'reveal' ? (
         <div className="reward-pack-wrapper">
-          {/* 背後の待機パック（複数ある場合） */}
-          {rewardQueue.length > 1 && (
-            <div className="stacked-pack">
-              <img
-                className="pack-image"
-                src="assets/ui/packimg01.png"
-                alt="Booster Pack"
-              />
-              <div className="enemy-portrait-frame">
+          {/* 背後の待機パック（残り枚数分だけ奥へ重ねて表示。多すぎると見づらいので最大3枚まで） */}
+          {Array.from({ length: Math.min(rewardQueue.length - 1, 3) })
+            .map((_, i) => i)
+            .reverse()
+            .map((i) => (
+              <div
+                key={i}
+                className="stacked-pack"
+                style={{
+                  top: `${-15 - i * 12}px`,
+                  right: `${-25 - i * 12}px`,
+                  filter: `brightness(${Math.max(0.55, 0.85 - i * 0.12)})`,
+                }}
+              >
                 <img
-                  className="enemy-portrait-img"
-                  src={enemyImg}
-                  alt="Enemy Key Visual"
+                  className="pack-image"
+                  src="assets/ui/packimg01.png"
+                  alt="Booster Pack"
+                />
+                <div className="enemy-portrait-frame">
+                  <img
+                    className="enemy-portrait-img"
+                    src={enemyImg}
+                    alt="Enemy Key Visual"
+                  />
+                </div>
+                <img
+                  className="pack-image specular"
+                  src="assets/ui/packimg01.png"
+                  alt="Booster Pack Specular"
+                />
+                <img
+                  className="pack-text-image"
+                  src="assets/ui/packtextimg01.png"
+                  alt="Pack Text"
                 />
               </div>
-              <img
-                className="pack-image specular"
-                src="assets/ui/packimg01.png"
-                alt="Booster Pack Specular"
-              />
-              <img
-                className="pack-text-image"
-                src="assets/ui/packtextimg01.png"
-                alt="Pack Text"
-              />
-            </div>
-          )}
+            ))}
 
           {/* 飛び出すカード(パックの後ろに描画) */}
           {phase === 'animating' && <div className="shooting-card" />}

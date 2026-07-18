@@ -4506,7 +4506,7 @@ export function endBattle() {
             }
           }
 
-          // チャレンジミッションはストーリー・フリー対戦でのみ機能する
+          // バトルボーナスはストーリー・フリー対戦でのみ機能する
           const isMissionEligible =
             GameState.gameMode === 'story' || GameState.gameMode === 'free';
 
