@@ -188,6 +188,8 @@ export function generateDeck(owner, config, sessionId) {
       if (GameState.gameMode === 'event_witch_high') recipeId = 'witch_high'; // クロエ高難易度
       if (GameState.gameMode === 'event_oni_high') recipeId = 'oni_high'; // カグラ高難易度
       if (GameState.gameMode === 'event_priest_high') recipeId = 'priest_high'; // ネフティ高難易度
+      if (GameState.gameMode === 'event_automata_fortune')
+        recipeId = 'automata_fortune'; // マキナ運命の邂逅
       if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
 
       let recipe;

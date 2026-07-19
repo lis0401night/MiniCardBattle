@@ -17,6 +17,7 @@ import {
   calculateCombatPhase,
   isGraveKeeperActive,
   quietDiscardFromBoard,
+  applySingleCombat,
 } from './engine.js';
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）
@@ -313,6 +314,7 @@ export function processActionSequence(
                 [
                   'resurrect',
                   'summon',
+                  'ambush',
                   'invite',
                   'chant',
                   'clone',
@@ -472,7 +474,7 @@ export function processActionSequence(
         const sourceCard = targetBoard[sourceL];
         // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
         // summonId が分かっているなら直接トークンを生成する
-        if (['summon', 'clone', 'split'].includes(action.skillId)) {
+        if (['summon', 'clone', 'split', 'ambush'].includes(action.skillId)) {
           let tokenPower = action.skillValue || 1;
           if (action.skillId === 'clone' && sourceCard) {
             tokenPower =
@@ -550,6 +552,10 @@ export function processActionSequence(
             } else {
               // 空きレーン: そのまま配置
               targetBoard[tLane] = newToken;
+            }
+            // 奇襲（ambush）の場合、配置したレーンでただちに戦闘を行う
+            if (action.skillId === 'ambush') {
+              applySingleCombat(simState, side, tLane, []);
             }
           }
         } else {
@@ -779,14 +785,21 @@ export function processActionSequence(
         playedCard.skills = newSkillsArr;
       }
 
+      const existingCard = simState.enemyBoard[lIdx];
       let skillWasHandledByEquip = false;
-      if (
+      if (existingCard && hasSkill(existingCard, 'startup')) {
+        skillWasHandledByEquip = true;
+        existingCard.skills = existingCard.skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+        simState.enemyDiscard.push(playedCard);
+      } else if (
         (hasSkill(playedCard, 'equip') ||
-          hasSkill(simState.enemyBoard[lIdx], 'arm_self')) &&
-        simState.enemyBoard[lIdx]
+          (existingCard && hasSkill(existingCard, 'arm_self'))) &&
+        existingCard
       ) {
         skillWasHandledByEquip = true;
-        const targetCard = simState.enemyBoard[lIdx];
+        const targetCard = existingCard;
         targetCard.basePower =
           (targetCard.basePower || 0) + (playedCard.power || 0);
         targetCard.currentPower =
@@ -823,9 +836,14 @@ export function processActionSequence(
         addedSkills.forEach((sk) => {
           // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
           if (
-            ['clone', 'summon', 'puppet', 'resurrect', 'execute'].includes(
-              sk.id
-            )
+            [
+              'clone',
+              'summon',
+              'ambush',
+              'puppet',
+              'resurrect',
+              'execute',
+            ].includes(sk.id)
           ) {
             return;
           }
@@ -962,6 +980,7 @@ export function processActionSequence(
                 'reinforce',
                 'puppet',
                 'summon',
+                'ambush',
                 'resurrect',
                 'awake',
                 'clone',
@@ -1292,6 +1311,7 @@ export function getBestSimulatedMove() {
                       'reinforce',
                       'clone',
                       'summon',
+                      'ambush',
                       'puppet',
                       'leap',
                       'forge',
@@ -1336,6 +1356,7 @@ export function getBestSimulatedMove() {
               const isPlacementSkill = [
                 'clone',
                 'summon',
+                'ambush',
                 'puppet',
                 'resurrect',
                 'execute', // 処刑は強制配置系（破壊対象選択）のため、自動キャンセルの対象外とする
@@ -1682,7 +1703,7 @@ export function getBestSimulatedMove() {
                 }
                 // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時に発動）のため、
                 //   召喚時のtoken_placementとしては扱わない。シミュレーション上は元のパワーのまま評価される。
-              } else if (['clone', 'summon'].includes(sk.id)) {
+              } else if (['clone', 'summon', 'ambush'].includes(sk.id)) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
                 // 同一レーンへの複数配置は武装カードへの装備等で有効な戦略のため、
@@ -2026,6 +2047,17 @@ export function getBestSimulatedMove() {
             (pattern) => opBoard[pattern[0]] !== null
           );
       }
+    } else if (action === 'iron_march') {
+      const avail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
+      let patterns = [];
+      for (let l1 of avail) {
+        for (let l2 of avail) {
+          for (let l3 of avail) {
+            patterns.push([l1, l2, l3]);
+          }
+        }
+      }
+      tokenLanePatterns = patterns.length > 0 ? patterns : [null];
     } else if (action === 'overdrive') {
       // overdrive は自分の墓地・相手の墓地から1枚ずつ2回配置するため
       // [自分墓地の配置先, 相手墓地の配置先] の2要素ペアを生成する
@@ -2176,6 +2208,7 @@ export function getBestSimulatedMove() {
               'reinforce',
               'clone',
               'summon',
+              'ambush',
               'puppet',
               'leap',
               'forge',
@@ -3056,6 +3089,7 @@ export function evaluateAdhocTokenLanes(
     const isPlacementSkill = [
       'clone',
       'summon',
+      'ambush',
       'puppet',
       'resurrect',
       'execute', // 処刑を追加
@@ -3491,7 +3525,7 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
-    } else if (['clone', 'summon'].includes(sk.id)) {
+    } else if (['clone', 'summon', 'ambush'].includes(sk.id)) {
       const count = sk.id === 'clone' ? sk.value || 1 : 1;
       const generateLaneCombos = (remainingCount) => {
         if (remainingCount <= 0) return [[]];
@@ -3819,6 +3853,7 @@ export function evaluateAdhocTokenLanes(
                     'reinforce',
                     'clone',
                     'summon',
+                    'ambush',
                     'puppet',
                     'leap',
                     'forge',
@@ -4400,12 +4435,18 @@ export function simulateMove(
       }
 
       if (playedCard) {
-        if (
+        const existingCard = simState.enemyBoard[laneIdx];
+        if (existingCard && hasSkill(existingCard, 'startup')) {
+          existingCard.skills = existingCard.skills.filter(
+            (s) => s.id !== 'startup' && s.id !== 'defender'
+          );
+          simState.enemyDiscard.push(playedCard);
+        } else if (
           (hasSkill(playedCard, 'equip') ||
-            hasSkill(simState.enemyBoard[laneIdx], 'arm_self')) &&
-          simState.enemyBoard[laneIdx]
+            (existingCard && hasSkill(existingCard, 'arm_self'))) &&
+          existingCard
         ) {
-          const targetCard = simState.enemyBoard[laneIdx];
+          const targetCard = existingCard;
           targetCard.basePower =
             (targetCard.basePower || 0) + (playedCard.power || 0);
           targetCard.currentPower =
@@ -4423,9 +4464,14 @@ export function simulateMove(
           addedSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
             if (
-              ['clone', 'summon', 'puppet', 'resurrect', 'execute'].includes(
-                sk.id
-              )
+              [
+                'clone',
+                'summon',
+                'ambush',
+                'puppet',
+                'resurrect',
+                'execute',
+              ].includes(sk.id)
             ) {
               return;
             }
@@ -4519,9 +4565,14 @@ export function simulateMove(
                   boardCard.basePower = METAMORPH_ESTIMATED_POWER;
                 }
               } else if (
-                !['clone', 'summon', 'puppet', 'resurrect', 'execute'].includes(
-                  sk.id
-                )
+                ![
+                  'clone',
+                  'summon',
+                  'ambush',
+                  'puppet',
+                  'resurrect',
+                  'execute',
+                ].includes(sk.id)
               ) {
                 applyActiveSkillLogic(
                   simState,

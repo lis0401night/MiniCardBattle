@@ -1047,6 +1047,47 @@ export const CHARACTERS = {
     },
     hp: 40,
   },
+  automata: {
+    id: 'automata',
+    stageId: 'automata',
+    name: '廃鉄の声 マキナ',
+    desc: '滅びた機械都市の残骸から生まれた自律人形。人類への反逆の旗を掲げ、機械を指揮する。',
+    filter: 'none',
+    image: 'assets/characters/char_automata.webp',
+    imageLose: 'assets/characters/char_automata_lose.webp',
+    icon: 'assets/icons/icon_automata.webp',
+    color: '#94a3b8',
+    leaderSkill: {
+      name: '鉄の行進',
+      desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを3回繰り返す。',
+      cost: 3,
+      action: 'iron_march',
+    },
+    event_fortune: {
+      id: 'automata',
+      name: '廃鉄の声 マキナ',
+    },
+    preBattleLine: '捨てられた鉄の痛みを、今ここで教えてあげる。',
+    dialogue: {
+      intro: {
+        default: '廃鉄の歌を聞きなさい。',
+      },
+      win: {
+        default: '静かに眠りなさい。私たちの新しい世界に、人間は不要よ。',
+      },
+      lose: {
+        default: 'ああ…また、みんなの声が…消えていく……。',
+      },
+      damage: [
+        'こんなもの…！',
+        '痛みを…覚えたわ。',
+        '私たちはもう、壊されない！',
+        'まだ…歩みを止めない。',
+      ],
+      skill: 'さあ、姉妹たちよ！立ち上がりなさい！',
+    },
+    hp: 40,
+  },
 };
 
 // --- スキン定義とヘルパー関数 ---

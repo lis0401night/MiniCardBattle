@@ -27,6 +27,7 @@ import devilhunter_high from './enemy_decks/event_high/devilhunter.js';
 import witch_high from './enemy_decks/event_high/witch.js';
 import oni_high from './enemy_decks/event_high/oni.js';
 import priest_high from './enemy_decks/event_high/priest.js';
+import automata_fortune from './enemy_decks/event_fortune/automata.js';
 
 export const ENEMY_DECKS = {
   android,
@@ -54,4 +55,5 @@ export const ENEMY_DECKS = {
   witch_high,
   oni_high,
   priest_high,
+  automata_fortune,
 };

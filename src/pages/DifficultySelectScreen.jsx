@@ -8,6 +8,9 @@ import {
   openEnemyDeckPreview,
 } from '../services/uiMainCore.js';
 import MenuButton from '../components/common/MenuButton.jsx';
+import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
+import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 
 // 難易度レベル定数
 const DIFFICULTY = {
@@ -28,6 +31,24 @@ export default function DifficultySelectScreen() {
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_high');
 
+  // 運命の邂逅イベントモードかどうかの判定
+  const isFortuneMode =
+    typeof GameState !== 'undefined' &&
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune');
+
+  const enemyCharId =
+    typeof GameState !== 'undefined' &&
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune')
+      ? GameState.gameMode.replace('event_', '').replace('_fortune', '')
+      : null;
+
+  const hasFortuneHandicaps =
+    enemyCharId &&
+    CHAR_FORTUNE_HANDICAPS[enemyCharId] &&
+    CHAR_FORTUNE_HANDICAPS[enemyCharId].length > 0;
+
   useEffect(() => {
     const originalInit = window.initDifficultySelectScreenReact;
     window.initDifficultySelectScreenReact = () => {
@@ -44,9 +65,9 @@ export default function DifficultySelectScreen() {
     confirmDifficulty?.(level);
   };
 
-  // 高難易度イベントおよび通常難易度選択用の背景スタイル
+  // 高難易度イベント、運命の邂逅および通常難易度選択用の背景スタイル
   const highDiffBgStyle = getScreenBackgroundStyle(
-    isHighDiffMode
+    isHighDiffMode || isFortuneMode
       ? 'assets/backgrounds/background_highdifficulty.webp'
       : 'assets/backgrounds/background_select.webp'
   );
@@ -67,7 +88,12 @@ export default function DifficultySelectScreen() {
                 color: '#ef4444',
                 textShadow: '0 0 15px rgba(239, 68, 68, 0.6)',
               }
-            : {}),
+            : isFortuneMode
+              ? {
+                  color: '#f97316',
+                  textShadow: '0 0 15px rgba(249, 115, 22, 0.6)',
+                }
+              : {}),
         }}
       >
         難易度
@@ -81,22 +107,52 @@ export default function DifficultySelectScreen() {
           alignItems: 'center',
         }}
       >
-        {/* 高難易度イベントモードでは「超級」のみ表示 */}
-        {isHighDiffMode ? (
-          <div className="difficulty-button-row">
-            <MenuButton
-              label="超級"
-              variant="purple"
-              onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
-            />
-            <button
-              className="btn-check-deck"
-              style={{ display: 'flex' }}
-              onClick={() => openEnemyDeckPreview?.('high')}
-              title="デッキ確認"
-            >
-              🔍
-            </button>
+        {/* 高難易度（超級）または運命の邂逅（特級）は難易度を1つだけ表示 */}
+        {isHighDiffMode || isFortuneMode ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '15px',
+            }}
+          >
+            {hasFortuneHandicaps && (
+              <div className="difficulty-button-row" style={{ margin: 0 }}>
+                <MenuButton
+                  label="特級目標"
+                  variant="red"
+                  onClick={() => {
+                    playSound(SOUNDS?.seClick);
+                    switchScreen('screen-fortune-handicap');
+                  }}
+                />
+                {/* 位置・サイズを下の行と完全に揃えるためのプレースホルダー（非表示） */}
+                <button
+                  className="btn-check-deck"
+                  style={{ display: 'flex', visibility: 'hidden' }}
+                >
+                  🔍
+                </button>
+              </div>
+            )}
+            <div className="difficulty-button-row" style={{ margin: 0 }}>
+              <MenuButton
+                label={isFortuneMode ? '特級' : '超級'}
+                variant={isFortuneMode ? 'orange' : 'purple'}
+                onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
+              />
+              <button
+                className="btn-check-deck"
+                style={{ display: 'flex' }}
+                onClick={() =>
+                  openEnemyDeckPreview?.(isFortuneMode ? 'fortune' : 'high')
+                }
+                title="デッキ確認"
+              >
+                🔍
+              </button>
+            </div>
           </div>
         ) : (
           <>

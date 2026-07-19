@@ -76,7 +76,8 @@ export function handleProgressionNextStep() {
     }
   } else if (
     GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_high')
+    (GameState.gameMode?.endsWith('_high') ||
+      GameState.gameMode?.endsWith('_fortune'))
   ) {
     if (typeof handleEventProgression === 'function') {
       handleEventProgression();

@@ -97,6 +97,7 @@ export const AUDIO_INSTANCES = {
   bgmStageSatan: new Audio('assets/audio/bgm/bgm_stage_satan01.mp3'),
   bgmStageDungeon: new Audio('assets/audio/bgm/bgm_stage_dungeon01.mp3'),
   bgmStagePractice: new Audio('assets/audio/bgm/bgm_stage_practice01.mp3'),
+  bgmStageAutomata: new Audio('assets/audio/bgm/bgm_stage_automata01.mp3'),
   bgmStageHighDifficulty: new Audio(
     'assets/audio/bgm/bgm_stage_high_difficulty.mp3'
   ),

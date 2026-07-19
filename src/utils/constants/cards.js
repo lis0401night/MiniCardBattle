@@ -3355,6 +3355,73 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
+  {
+    id: 'liberator',
+    obtain: ['achievement'],
+    name: '革命派の解放者',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '退屈な日常は彼女との出会いで終わった。今や彼は、抑圧された者たちを導く革命の炎である。',
+  },
+  {
+    id: 'detective',
+    obtain: ['achievement'],
+    name: '復讐に燃える捜査官',
+    rarity: 2,
+    power: 6,
+    skills: [
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+      { id: 'execute' },
+    ],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '機械の暴走事故でに娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
+  },
+  {
+    id: 'agent',
+    obtain: ['achievement'],
+    name: '革命派のエージェント',
+    rarity: 3,
+    power: 5,
+    skills: [
+      { id: 'legendary' },
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+    ],
+    voiceCategory: 'human_female_assassin',
+    flavor:
+      '夜の街を自在に駆け抜ける凄腕のエージェント。その鋭い刃は、腐敗した体制を容赦なく切り裂く。',
+  },
+  {
+    id: 'scrapper',
+    obtain: ['achievement'],
+    name: '暴走する解体者',
+    rarity: 2,
+    power: 9,
+    skills: [{ id: 'defender' }, { id: 'startup' }],
+    voiceCategory: 'machine_new',
+    flavor:
+      '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
+  },
+  {
+    id: 'motorcycle',
+    obtain: ['achievement'],
+    name: '”ナイトランナー”',
+    rarity: 3,
+    power: 6,
+    skills: [
+      { id: 'defender' },
+      { id: 'startup' },
+      { id: 'stealth', value: 2 },
+      { id: 'move' },
+    ],
+    voiceCategory: 'machine_new',
+    flavor:
+      'エージェントが駆るカスタムバイク。闇夜を滑るように疾走する姿から、いつしかその愛称が定着した。',
+  },
   // トークンカード
   {
     id: 'token_knight',
@@ -3551,6 +3618,15 @@ export const CARD_MASTER = [
     isToken: true,
     voiceCategory: 'undead',
     flavor: '再生したスケルトン',
+  },
+  {
+    id: 'token_automata',
+    obtain: ['token'],
+    name: 'オートマタ',
+    power: 1,
+    isToken: true,
+    voiceCategory: 'machine_new',
+    flavor: '暴走した自律人形',
   },
 ];
 

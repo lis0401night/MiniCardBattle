@@ -1,48 +1,52 @@
+import { generateDeck } from '../services/deck.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
-  MAX_HP,
   AI_THINKING_DURATION,
+  MAX_HP,
   PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
-import { STAGES } from '../utils/constants/stages.js';
-import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  STORY_DIALOGUES,
-  STORY_NARRATIONS,
+  CHAR_FORTUNE_HANDICAPS,
+  HANDICAP_TYPES,
+} from '../utils/constants/fortuneHandicaps.js';
+import { STAGES } from '../utils/constants/stages.js';
+import {
   PLAYER_TALKS,
   STORY_BGM_CHANGE_BATTLE,
+  STORY_DIALOGUES,
   STORY_LATE_DIALOGUE_BATTLE,
+  STORY_NARRATIONS,
   getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
+import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  consumeArmSelf,
   createDamagePopup,
+  decodedBgms,
   getCardImgUrl,
+  getCurrentRNG,
   getDialogue,
   getOrCreateUUID,
   getSeededRandom,
-  getCurrentRNG,
-  setCurrentRNG,
   getSkillValue,
   hasSkill,
   mergeCardSkills,
   playSound,
+  setCurrentRNG,
   setRNGSeed,
   shuffleArray,
   sleep,
   stopAllBGM,
   switchScreen,
   triggerGraveKeeperEffect,
-  decodedBgms,
-  consumeArmSelf,
 } from '../utils/gameUtils.js';
-import { trackMissionSacrifice, trackMissionPower } from './missionLogic.js';
 import {
   AUDIO_INSTANCES,
   SOUNDS,
@@ -50,7 +54,6 @@ import {
 } from '../utils/sounds.js';
 import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
-import { generateDeck } from '../services/deck.js';
 import {
   applyActiveSkillLogic,
   applySingleCombat,
@@ -58,30 +61,18 @@ import {
   canTakeDamage,
 } from './engine.js';
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
+import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
 import { simulateTournamentRound } from './tournament.js';
 
-import { GameState } from '../state/gameState.js';
-import { activateLeaderSkill } from './leaderSkills.js';
 import {
   cachedRoomData,
   clearActionQueueAndRegenerateSeed,
   getIsHost,
   listenToRoomActions,
+  multiplayerCallbacks,
   sendOnlineAction,
   setPlayerReadyOnly,
-  multiplayerCallbacks,
 } from '../services/multiplayer.js';
-import {
-  resolveActiveSkillEffect,
-  triggerStartTurnPassive,
-} from './skillLogic.js';
-import {
-  cleanupTutorial,
-  filterPlacementLaneClick,
-  handleTutorialEnd,
-  isTutorialMode,
-  runTutorialFlow,
-} from './tutorialEngine.js';
 import {
   closeSkillConfirm,
   playSummonAnimation,
@@ -103,6 +94,19 @@ import {
   showOnlineLobby,
 } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
+import { activateLeaderSkill } from './leaderSkills.js';
+import {
+  resolveActiveSkillEffect,
+  triggerStartTurnPassive,
+} from './skillLogic.js';
+import {
+  cleanupTutorial,
+  filterPlacementLaneClick,
+  handleTutorialEnd,
+  isTutorialMode,
+  runTutorialFlow,
+} from './tutorialEngine.js';
 
 export let pendingChoiceResolver = null;
 
@@ -711,14 +715,92 @@ export function initBattleState() {
       bgmKey = 'bgmStageHighDifficulty';
     }
     playSound(SOUNDS[bgmKey]);
-    GameState.playerMaxHP = MAX_HP;
+
+    // 既存のplayerConfig/enemyConfigをベースキャラクター定義からディープコピーして初期化する（コンティニュー時の二重適用バグ対策）
+    if (
+      GameState.playerConfig &&
+      GameState.playerConfig.id &&
+      CHARACTERS[GameState.playerConfig.id]
+    ) {
+      GameState.playerConfig = JSON.parse(
+        JSON.stringify(CHARACTERS[GameState.playerConfig.id])
+      );
+    }
+    if (
+      GameState.enemyConfig &&
+      GameState.enemyConfig.id &&
+      CHARACTERS[GameState.enemyConfig.id]
+    ) {
+      GameState.enemyConfig = JSON.parse(
+        JSON.stringify(CHARACTERS[GameState.enemyConfig.id])
+      );
+    }
+
+    let fortuneHPPlayerMod = 0;
+    let fortuneHPEnemyMod = 0;
+
+    const isFortuneMode =
+      GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_fortune');
+
+    if (isFortuneMode && GameState.fortuneHandicaps) {
+      const enemyCharId = GameState.gameMode
+        .replace('event_', '')
+        .replace('_fortune', '');
+      const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
+
+      handicapsList.forEach((h) => {
+        if (!GameState.fortuneHandicaps[h.id]) return;
+
+        if (h.type === HANDICAP_TYPES.PLAYER_HP) {
+          fortuneHPPlayerMod += h.value;
+        } else if (h.type === HANDICAP_TYPES.ENEMY_HP) {
+          fortuneHPEnemyMod += h.value;
+        } else if (h.type === HANDICAP_TYPES.PLAYER_SP) {
+          if (GameState.playerConfig.leaderSkill) {
+            const nextCost = GameState.playerConfig.leaderSkill.cost + h.value;
+            GameState.playerConfig = {
+              ...GameState.playerConfig,
+              leaderSkill: {
+                ...GameState.playerConfig.leaderSkill,
+                cost: nextCost,
+                desc: GameState.playerConfig.leaderSkill.desc?.replace(
+                  /\(SP:\d+\)/,
+                  `(SP:${nextCost})`
+                ),
+              },
+            };
+          }
+        } else if (h.type === HANDICAP_TYPES.ENEMY_SP) {
+          if (GameState.enemyConfig.leaderSkill) {
+            const nextCost = Math.max(
+              1,
+              GameState.enemyConfig.leaderSkill.cost + h.value
+            );
+            GameState.enemyConfig = {
+              ...GameState.enemyConfig,
+              leaderSkill: {
+                ...GameState.enemyConfig.leaderSkill,
+                cost: nextCost,
+                desc: GameState.enemyConfig.leaderSkill.desc?.replace(
+                  /\(SP:\d+\)/,
+                  `(SP:${nextCost})`
+                ),
+              },
+            };
+          }
+        }
+      });
+    }
+
+    GameState.playerMaxHP = MAX_HP + fortuneHPPlayerMod;
     GameState.enemyMaxHP =
-      GameState.enemyConfig.hp ||
-      (GameState.enemyConfig.id === 'satan'
-        ? 40
-        : ['void', 'succubus', 'warlock'].includes(GameState.enemyConfig.id)
-          ? 30
-          : MAX_HP);
+      (GameState.enemyConfig.hp ||
+        (GameState.enemyConfig.id === 'satan'
+          ? 40
+          : ['void', 'succubus', 'warlock'].includes(GameState.enemyConfig.id)
+            ? 30
+            : MAX_HP)) + fortuneHPEnemyMod;
 
     if (
       GameState.gameMode.startsWith('event_') &&
@@ -799,6 +881,39 @@ export function initBattleState() {
     GameState.initialEnemyDeckCount = GameState.enemyDeck.length;
     GameState.playerBoard = [null, null, null];
     GameState.enemyBoard = [null, null, null];
+
+    // 運命の邂逅ハンディキャップ：敵陣への初期カード配置
+    if (isFortuneMode && GameState.fortuneHandicaps) {
+      const enemyCharId = GameState.gameMode
+        .replace('event_', '')
+        .replace('_fortune', '');
+      const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
+
+      const spawnRules = handicapsList.filter(
+        (h) =>
+          h.type === HANDICAP_TYPES.SPAWN_ENEMY &&
+          GameState.fortuneHandicaps[h.id]
+      );
+
+      spawnRules.forEach((rule) => {
+        const template = CARD_MASTER.find((c) => c.id === rule.cardId);
+        if (template) {
+          GameState.enemyBoard[rule.lane] = {
+            id: template.id,
+            baseId: template.id,
+            name: template.name,
+            power: template.power,
+            basePower: template.power,
+            currentPower: template.power,
+            skills: template.skills || [],
+            owner: 'red',
+            uid: getOrCreateUUID(null),
+            isToken: true, // 破壊された場合に墓地には送られないトークン扱い
+            stunTurns: 2, // 初回ターン攻撃禁止（スタン効果。ターン開始時の減衰を考慮して2を設定）
+          };
+        }
+      });
+    }
     GameState.missionProgress = {
       damage_5_single: false,
       sacrifice_count: 0,
@@ -1384,6 +1499,19 @@ export async function confirmOverwrittenLane(
 
   // AI（owner !== 'blue'）の場合は、確認モーダルを出さずに自動的に承諾したものとして進行する
   if (owner !== 'blue') {
+    return true;
+  }
+
+  // 0. 起動の判定 (合体や装備に優先して処理される)
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    const confirmed = await new Promise((res) => {
+      showConfirmModal(
+        `「${tokenName}」で「${existingCard.name}」を起動しますか？`,
+        () => res(true),
+        () => res(false)
+      );
+    });
+    if (!confirmed) return false;
     return true;
   }
 
@@ -2377,8 +2505,6 @@ export async function waitSkillChoice(
       return aiAction.choices.map((i) => choices[i]);
     }
 
-    const localAiLevel = parseInt(localStorage.getItem('storyDifficulty')) || 2;
-
     // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
     if (
       typeof GameState.aiDecision !== 'undefined' &&
@@ -3012,12 +3138,32 @@ export async function handleMoveSkills(owner) {
     if (bestMoves) {
       for (let move of bestMoves) {
         const existingCard = b[move.to];
-        if (existingCard) {
-          // 移動先にすでにカードがある場合は墓地に送る
-          await discardCard(owner, existingCard, move.to, false);
+        if (existingCard && hasSkill(existingCard, 'startup')) {
+          // 起動消滅の特別処理
+          existingCard.skills = existingCard.skills.filter(
+            (s) => s.id !== 'startup' && s.id !== 'defender'
+          );
+
+          // 移動しようとしたカードを墓地に送る
+          const movingCard = b[move.from];
+          await discardCard(owner, movingCard, move.from, false);
+
+          const targetEl = document.querySelector(
+            `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${move.to}"] .card`
+          );
+          if (targetEl) {
+            createDamagePopup(targetEl, '起動', '#38bdf8');
+          }
+
+          b[move.from] = null;
+        } else {
+          if (existingCard) {
+            // 移動先にすでにカードがある場合は墓地に送る
+            await discardCard(owner, existingCard, move.to, false);
+          }
+          b[move.to] = b[move.from];
+          b[move.from] = null;
         }
-        b[move.to] = b[move.from];
-        b[move.from] = null;
         playSound(SOUNDS.seClick);
         await sleep(PLACE_ANIMATION_DURATION);
         renderBoard();
@@ -3162,16 +3308,39 @@ export async function handleMoveSkills(owner) {
 
           // 3. 通常の破棄配置の処理
           if (!didUnion && !didEquip) {
-            if (b[target]) {
-              if (!(await discardCard(owner, b[target], target, false)))
-                b[target] = null;
+            if (b[target] && hasSkill(b[target], 'startup')) {
+              // 起動消滅の特別処理
+              const existingCard = b[target];
+              existingCard.skills = existingCard.skills.filter(
+                (s) => s.id !== 'startup' && s.id !== 'defender'
+              );
+
+              // 移動しようとしたカードを墓地に送る
+              await discardCard(owner, c, i, false);
+
+              const targetEl = document.querySelector(
+                `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${target}"] .card`
+              );
+              if (targetEl) {
+                createDamagePopup(targetEl, '起動', '#38bdf8');
+              }
+
+              b[i] = null;
+              playSound(SOUNDS.sePlace);
+              renderBoard();
+              await sleep(PLACE_ANIMATION_DURATION);
+            } else {
+              if (b[target]) {
+                if (!(await discardCard(owner, b[target], target, false)))
+                  b[target] = null;
+              }
+              movedIds.add(c.uid || c.id);
+              b[target] = c;
+              b[i] = null;
+              playSound(SOUNDS.sePlace);
+              renderBoard();
+              await sleep(PLACE_ANIMATION_DURATION);
             }
-            movedIds.add(c.uid || c.id);
-            b[target] = c;
-            b[i] = null;
-            playSound(SOUNDS.sePlace);
-            renderBoard();
-            await sleep(PLACE_ANIMATION_DURATION);
           }
           successMove = true;
         } else {
@@ -3418,6 +3587,42 @@ export async function playCard(o, hI, l) {
   const playingCard = h[hI];
   if (!playingCard) return false;
 
+  // 特級目標によるカードプレイ制限（プレイヤーのみ）
+  const isFortuneMode =
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune');
+
+  if (o === 'blue' && isFortuneMode && GameState.fortuneHandicaps) {
+    const enemyCharId = GameState.gameMode
+      .replace('event_', '')
+      .replace('_fortune', '');
+    const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
+
+    const activeBanRules = handicapsList.filter(
+      (h) =>
+        h.type === HANDICAP_TYPES.BAN_SKILL && GameState.fortuneHandicaps[h.id]
+    );
+
+    if (activeBanRules.length > 0) {
+      const hasSkillOrChoice = (card, skillId) => {
+        if (hasSkill(card, skillId)) return true;
+        if ((card.choices || []).some((s) => s.id === skillId)) return true;
+        return false;
+      };
+
+      for (const rule of activeBanRules) {
+        if (hasSkillOrChoice(playingCard, rule.skillId)) {
+          if (window.showAlertModalHook) {
+            window.showAlertModalHook(
+              `特級目標により「${rule.name.replace('使用禁止', '')}」カードは使用できません。`
+            );
+          }
+          return false;
+        }
+      }
+    }
+  }
+
   trackMissionSacrifice(GameState, o, playingCard);
 
   const sealedLanes =
@@ -3454,6 +3659,40 @@ export async function playCard(o, hI, l) {
   await playSummonAnimation(playingCard, o);
 
   if (b[l]) {
+    // 0. 起動（startup）の特別処理（合体や装備に優先して処理される）
+    if (hasSkill(b[l], 'startup')) {
+      const existingCard = b[l];
+      // 起動消滅の特別処理：起動と防御を剥ぎ取る
+      existingCard.skills = existingCard.skills.filter(
+        (s) => s.id !== 'startup' && s.id !== 'defender'
+      );
+
+      // 手札から重ねようとしたカード（playingCard）を消費して直接墓地に送る
+      const consumedCard = h.splice(hI, 1)[0];
+      await discardCard(o, consumedCard, null, false);
+
+      // ポップアップエフェクト
+      const targetEl = document.querySelector(
+        `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
+      );
+      if (targetEl) {
+        createDamagePopup(targetEl, '起動', '#38bdf8');
+      }
+
+      playSound(SOUNDS.sePlace);
+
+      if (o === 'blue') {
+        GameState.selectedCardIndex = null;
+        updateCardDetail(null);
+      }
+      renderHand();
+      renderBoard();
+
+      await sleep(PLACE_ANIMATION_DURATION);
+      await cleanupDestroyedCards();
+      return true; // 起動処理完了
+    }
+
     // 合体（Union）の判定
     const unionSkill =
       playingCard.skills && playingCard.skills.find((s) => s.id === 'union');
@@ -4442,14 +4681,18 @@ export function endBattle() {
 
       // --- カードドロップ抽選・表示処理 ---
       let recipeId = GameState.enemyConfig.id;
-      if (
-        GameState.gameMode.startsWith('event_') &&
-        GameState.gameMode.endsWith('_high')
-      ) {
-        const charId = GameState.gameMode
-          .replace('event_', '')
-          .replace('_high', '');
-        if (recipeId === charId) recipeId = `${charId}_high`;
+      if (GameState.gameMode.startsWith('event_')) {
+        if (GameState.gameMode.endsWith('_high')) {
+          const charId = GameState.gameMode
+            .replace('event_', '')
+            .replace('_high', '');
+          if (recipeId === charId) recipeId = `${charId}_high`;
+        } else if (GameState.gameMode.endsWith('_fortune')) {
+          const charId = GameState.gameMode
+            .replace('event_', '')
+            .replace('_fortune', '');
+          if (recipeId === charId) recipeId = `${charId}_fortune`;
+        }
       }
       const diffKey =
         GameState.aiLevel === 1

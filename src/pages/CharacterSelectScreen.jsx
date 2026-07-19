@@ -28,6 +28,7 @@ const getFilteredCharacters = () => {
   const isWarlockUnlocked = (achievementData.stats?.warlockDefeated || 0) >= 1;
 
   return Object.values(charsObj).filter((c) => {
+    // if (c.id === 'automata') return false; // マキナはイベント専用のため除外
     if (BOSS_CHARACTER_IDS.includes(c.id)) {
       if (!isEnemySelect) return false;
       if (c.id === 'satan') return hasStoryClear;

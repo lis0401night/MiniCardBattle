@@ -1,4 +1,8 @@
-import { initHighDifficultyEventMode, loadPlayerDeck } from '../game/events.js';
+import {
+  initHighDifficultyEventMode,
+  initFortuneEventMode,
+  loadPlayerDeck,
+} from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
@@ -797,6 +801,38 @@ export function showEventMenu() {
   switchScreen('screen-event-menu');
 }
 
+export function showFortuneMenu() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmTitle);
+  switchScreen('screen-fortune-menu');
+}
+
+export function showFortune() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-fortune');
+}
+
+/**
+ * 運命の邂逅：キャラ選択後に難易度選択画面へ遷移する（プレースホルダー）
+ */
+export function selectFortuneTarget(enemyCharId) {
+  GameState.lastBattleResult = null;
+  GameState.gameMode = `event_${enemyCharId}_fortune`;
+  GameState.enemySkins = {};
+
+  // 対戦相手専用の特級目標設定をロードして適用
+  try {
+    const storageKey = `mini_card_battle_fortune_handicaps_${enemyCharId}`;
+    const saved = localStorage.getItem(storageKey);
+    GameState.fortuneHandicaps = saved ? JSON.parse(saved) : {};
+  } catch {
+    GameState.fortuneHandicaps = {};
+  }
+
+  GameState.appState = 'select_difficulty';
+  switchScreen('screen-difficulty');
+}
+
 export function startHighDifficulty() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmHighDifficulty);
@@ -1194,11 +1230,18 @@ export function confirmDifficulty(level) {
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_high')
   ) {
-    // 高難易度イベント：難易度確定後、キャラ選択画面（デッキ一覧）へ
+    // 高難易度イベント：難易度確定後、デッキ一覧へ
     GameState.appState = 'select_deck';
     if (typeof window.loadDeck === 'function') window.loadDeck();
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune')
+  ) {
+    // 運命の邂逅イベント：難易度確定後、対峙ダイアログへ
+    const enemyCharId = GameState.gameMode.split('_')[1];
+    initFortuneEventMode(GameState.playerConfig.id, enemyCharId);
   } else {
     GameState.appState = 'select_stage';
     initStageSelectScreen();
@@ -1331,6 +1374,32 @@ export function openEnemyDeckPreview(level) {
     const titleText = `${eventName} [超級]`;
     // 高難易度専用リーダースキルをモーダルに渡す
     const leaderSkill = charConfig?.event_high?.leaderSkill || null;
+    if (window.showEnemyDeckModal) {
+      window.showEnemyDeckModal(deckIds, titleText, leaderSkill);
+    }
+    return;
+  }
+
+  // 運命の邂逅イベントのデッキ確認
+  if (level === 'fortune') {
+    const enemyCharId = GameState.gameMode
+      ?.replace('event_', '')
+      ?.replace('_fortune', '');
+    const fortuneDeckKey = `${enemyCharId}_fortune`;
+    const deckIds = ENEMY_DECKS[fortuneDeckKey];
+    if (!deckIds || deckIds.length === 0) {
+      if (window.showAlertModalHook)
+        window.showAlertModalHook(
+          'このキャラクターのデッキデータが見つかりません。'
+        );
+      return;
+    }
+    const charConfig = CHARACTERS[enemyCharId];
+    const eventName = charConfig?.event_fortune?.name || enemyCharId;
+    const titleText = `${eventName} [特級]`;
+    // 運命の邂逅のリーダースキルをモーダルに渡す
+    const leaderSkill =
+      charConfig?.event_fortune?.leaderSkill || charConfig?.leaderSkill || null;
     if (window.showEnemyDeckModal) {
       window.showEnemyDeckModal(deckIds, titleText, leaderSkill);
     }

@@ -17,6 +17,9 @@ import SoloMenuScreen from './pages/SoloMenuScreen.jsx';
 import TitleScreen from './pages/TitleScreen.jsx';
 import TournamentBracketScreen from './pages/TournamentBracketScreen.jsx';
 import TournamentExchangeScreen from './pages/TournamentExchangeScreen.jsx';
+import FortuneMenuScreen from './pages/FortuneMenuScreen.jsx';
+import FortuneScreen from './pages/FortuneScreen.jsx';
+import FortuneHandicapScreen from './pages/FortuneHandicapScreen.jsx';
 import TournamentMenuScreen from './pages/TournamentMenuScreen.jsx';
 import TournamentResumeScreen from './pages/TournamentResumeScreen.jsx';
 import TournamentRulesScreen from './pages/TournamentRulesScreen.jsx';
@@ -118,6 +121,9 @@ const SCREEN_COMPONENTS = {
   'screen-options': OptionsScreen,
   'screen-gallery-menu': GalleryMenuScreen,
   'screen-event-menu': EventMenuScreen,
+  'screen-fortune-menu': FortuneMenuScreen,
+  'screen-fortune': FortuneScreen,
+  'screen-fortune-handicap': FortuneHandicapScreen,
   'screen-tournament-menu': TournamentMenuScreen,
   'screen-tournament-resume': TournamentResumeScreen,
   'screen-tournament-exchange': TournamentExchangeScreen,

@@ -1,13 +1,23 @@
+import { getIsHost } from '../services/multiplayer.js';
+import {
+  playSummonAnimation,
+  renderBoard,
+  renderHand,
+  showSpeechBubble,
+  updateDeckDisplay,
+  updateHPBar,
+} from '../services/uiBattle.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
 import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
+import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  consumeArmSelf,
   createDamagePopup,
   getCardImgUrl,
   getOrCreateUUID,
@@ -20,13 +30,12 @@ import {
   sleep,
   triggerGraveKeeperEffect,
   unmergeCardSkills,
-  consumeArmSelf,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
+  canEquipCard,
   checkWinCondition,
   cleanupDestroyedCards,
-  canEquipCard,
   confirmOverwrittenLane, // 【追加】根本的リファクタリング用
   consumeAIAction,
   discardCard,
@@ -45,16 +54,7 @@ import {
 } from './battle.js';
 import { applyActiveSkillLogic, canTakeDamage } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { getIsHost } from '../services/multiplayer.js';
-import { showMessage, hideMessage } from './tutorialEngine.js';
-import {
-  playSummonAnimation,
-  renderBoard,
-  renderHand,
-  showSpeechBubble,
-  updateDeckDisplay,
-  updateHPBar,
-} from '../services/uiBattle.js';
+import { hideMessage, showMessage } from './tutorialEngine.js';
 
 /**
  * Mini Card Battle - Skill Implementation Logic
@@ -226,6 +226,7 @@ export async function resolveActiveSkillEffect(
       standby: '待機',
       resurrect: '復活',
       summon: '召喚',
+      ambush: '奇襲',
       clone: '分身',
       salvage: '回収',
       dispel: '解除',
@@ -893,7 +894,7 @@ export async function resolveActiveSkillEffect(
     updateDeckDisplay('red');
     renderHand();
     await sleep(600);
-  } else if (skillId === 'summon') {
+  } else if (skillId === 'summon' || skillId === 'ambush') {
     // 【重要仕様】「召喚 X」において X (pValue) はトークンのパワーを指す。
     // 個数は常に 1体 であるため、レーン選択数には 1 を指定する。
     const pValue = skillValue || 1;
@@ -942,7 +943,9 @@ export async function resolveActiveSkillEffect(
     ) {
       if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
         const tpIdx = GameState.aiDecision.actionQueue.findIndex(
-          (a) => a.type === 'token_placement' && a.skillId === 'summon'
+          (a) =>
+            a.type === 'token_placement' &&
+            (a.skillId === 'summon' || a.skillId === 'ambush')
         );
         if (tpIdx !== -1) {
           const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
@@ -974,6 +977,7 @@ export async function resolveActiveSkillEffect(
       if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
       let events = [];
+      const successfullyPlacedLanes = [];
       for (let i = 0; i < selectedLanes.length; i++) {
         const targetLane = selectedLanes[i];
 
@@ -1013,7 +1017,21 @@ export async function resolveActiveSkillEffect(
           skills: [],
         };
         const existingCard = board[targetLane];
-        if (
+        if (existingCard && hasSkill(existingCard, 'startup')) {
+          // 起動消滅の特別処理
+          existingCard.skills = existingCard.skills.filter(
+            (s) => s.id !== 'startup' && s.id !== 'defender'
+          );
+          const discardPile =
+            o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+          discardPile.push(newToken);
+
+          // 起動消滅のVFX/SE再生
+          if (cEl) {
+            createDamagePopup(cEl, '起動', '#facc15');
+            playSound(SOUNDS.seSkill);
+          }
+        } else if (
           existingCard &&
           (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) &&
           !hasSkill(existingCard, 'possession') &&
@@ -1067,9 +1085,10 @@ export async function resolveActiveSkillEffect(
             side: o,
             lane: targetLane,
             card: newToken,
-            source: 'summon',
+            source: skillId,
           });
         }
+        successfullyPlacedLanes.push(targetLane);
       }
       await playEvents(events);
       // 配置演出が完了したので保護フラグを解除
@@ -1077,6 +1096,20 @@ export async function resolveActiveSkillEffect(
         if (ev.card) ev.card.isSkillResolving = false;
       }
       await cleanupDestroyedCards(c);
+
+      // 奇襲（ambush）の場合、配置したレーンでただちに攻撃させる
+      if (skillId === 'ambush') {
+        for (let i = 0; i < successfullyPlacedLanes.length; i++) {
+          const targetLane = successfullyPlacedLanes[i];
+          const board =
+            o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+          // 配置先にカードが存在すれば攻撃を誘発
+          if (board[targetLane]) {
+            await sleep(400); // 攻撃演出の前に少し待つ
+            await executeSingleCombat(o, targetLane);
+          }
+        }
+      }
     }
   } else if (skillId === 'clone') {
     // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
@@ -1195,7 +1228,21 @@ export async function resolveActiveSkillEffect(
         stunTurns: stunTurns,
       };
       const existingCard = board[targetLane];
-      if (
+      if (existingCard && hasSkill(existingCard, 'startup')) {
+        // 起動消滅の特別処理
+        existingCard.skills = existingCard.skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+        const discardPile =
+          o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        discardPile.push(newToken);
+
+        // 起動消滅のVFX/SE再生
+        if (cEl) {
+          createDamagePopup(cEl, '起動', '#facc15');
+          playSound(SOUNDS.seSkill);
+        }
+      } else if (
         existingCard &&
         (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) &&
         !hasSkill(existingCard, 'possession') &&
@@ -2139,7 +2186,25 @@ export async function resolveActiveSkillEffect(
 
           const board =
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-          if (canEquipCard(selectedCard, board[targetLane])) {
+          const existingCard = board[targetLane];
+          if (existingCard && hasSkill(existingCard, 'startup')) {
+            // 起動消滅の特別処理
+            existingCard.skills = existingCard.skills.filter(
+              (s) => s.id !== 'startup' && s.id !== 'defender'
+            );
+            // 復活させようとしていたカードは墓地に戻す
+            const discardPile =
+              o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+            discardPile.push(selectedCard);
+
+            const cEl = document.querySelector(
+              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (cEl) {
+              createDamagePopup(cEl, '起動', '#facc15');
+              playSound(SOUNDS.seSkill);
+            }
+          } else if (canEquipCard(selectedCard, board[targetLane])) {
             const targetCard = board[targetLane];
             // 装備によるパワー加算
             targetCard.power =
@@ -2346,7 +2411,26 @@ export async function resolveActiveSkillEffect(
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           const existingCard = board[targetLane];
 
-          if (canEquipCard(selectedCard, existingCard)) {
+          if (existingCard && hasSkill(existingCard, 'startup')) {
+            // 起動消滅の特別処理
+            existingCard.skills = existingCard.skills.filter(
+              (s) => s.id !== 'startup' && s.id !== 'defender'
+            );
+            // 傀儡で出そうとしたカードは元の持ち主の墓地に戻す
+            const oppDiscardPile =
+              oppOwner === 'blue'
+                ? GameState.playerDiscard
+                : GameState.enemyDiscard;
+            oppDiscardPile.push(selectedCard);
+
+            const cEl = document.querySelector(
+              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (cEl) {
+              createDamagePopup(cEl, '起動', '#facc15');
+              playSound(SOUNDS.seSkill);
+            }
+          } else if (canEquipCard(selectedCard, existingCard)) {
             // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
             const targetCard = existingCard;
 
@@ -2808,7 +2892,25 @@ export async function resolveActiveSkillEffect(
           // 演出：号令による召喚の場合もアニメーションを再生
           await playSummonAnimation(topCard, o);
 
-          if (canEquipCard(topCard, board[targetLane])) {
+          const existingCard = board[targetLane];
+          if (existingCard && hasSkill(existingCard, 'startup')) {
+            // 起動消滅の特別処理
+            existingCard.skills = existingCard.skills.filter(
+              (s) => s.id !== 'startup' && s.id !== 'defender'
+            );
+            // デッキから出そうとしたカードは墓地に送る
+            const discardPile =
+              o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+            discardPile.push(topCard);
+
+            const cEl = document.querySelector(
+              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (cEl) {
+              createDamagePopup(cEl, '起動', '#facc15');
+              playSound(SOUNDS.seSkill);
+            }
+          } else if (canEquipCard(topCard, board[targetLane])) {
             const targetCard = board[targetLane];
 
             targetCard.power = (targetCard.power || 0) + (topCard.power || 0);

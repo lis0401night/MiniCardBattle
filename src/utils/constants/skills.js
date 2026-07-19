@@ -275,6 +275,39 @@ export const SKILLS = {
       return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。`;
     },
   },
+  ambush: {
+    name: '奇襲',
+    icon: '✨',
+    desc: (val, sk) => {
+      const summonId =
+        sk?.summonId || sk?.skills?.find((s) => s.id === 'ambush')?.summonId;
+      const summonCard = summonId
+        ? CARD_MASTER.find((c) => c.id === summonId)
+        : null;
+      if (summonCard) {
+        return [
+          { type: 'text', value: '召喚時、自分のレーンに、' },
+          {
+            type: 'link',
+            value: `「${summonCard.name}（パワー${val}）」`,
+            targetId: summonId,
+          },
+          {
+            type: 'text',
+            value:
+              'を配置する。その後、そのレーンのカードをただちに攻撃させる。',
+          },
+        ];
+      }
+      return `召喚時、自分のレーンに、パワー${val}のトークンを配置する。その後、そのレーンのカードをただちに攻撃させる。`;
+    },
+  },
+  startup: {
+    name: '起動',
+    icon: '🏍',
+    desc: () =>
+      '1回まで自身の上にカードを配置するとき、代わりに防御を失う。(重ねたカードは墓地に送られる)',
+  },
   immune: {
     name: '無効',
     icon: '🚫',
@@ -771,6 +804,7 @@ export const ACTIVE_SKILLS = [
   'decree',
   'shuffle',
   'summon',
+  'ambush',
   'fate',
   'salvage',
   'reinforce',
@@ -848,6 +882,7 @@ export const PASSIVE_SKILLS = [
   'arm_self',
   'grave_keeper',
   'awake',
+  'startup',
   'intercept',
   'teleport',
   'samsara',
@@ -878,6 +913,7 @@ export const SKILL_CATEGORIES = [
         name: '召喚・配置',
         skills: [
           'summon',
+          'ambush',
           'clone',
           'resurrect',
           'puppet',
@@ -990,7 +1026,14 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '盤面影響・その他',
-        skills: ['phase', 'equip', 'arm_self', 'union', 'grave_keeper'],
+        skills: [
+          'phase',
+          'equip',
+          'arm_self',
+          'startup',
+          'union',
+          'grave_keeper',
+        ],
       },
       {
         name: 'デメリット',

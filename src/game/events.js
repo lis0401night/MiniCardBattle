@@ -1,6 +1,7 @@
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
+import { EVENT_FORTUNE_DIALOGUES } from '../utils/constants/eventFortuneDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
 import { startBattleFlow, migrateCardId } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
@@ -72,6 +73,48 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
 }
 
 /**
+ * 汎用：運命の邂逅イベントの初期化
+ */
+export function initFortuneEventMode(playerCharId, enemyCharId) {
+  const eventConfig = CHARACTERS[enemyCharId]?.event_fortune;
+  if (!eventConfig) {
+    console.error('Fortune event config not found for', enemyCharId);
+    return;
+  }
+
+  GameState.playerConfig = { ...CHARACTERS[playerCharId] };
+  GameState.enemyConfig = {
+    ...CHARACTERS[enemyCharId],
+    hp: CHARACTERS[enemyCharId].hp || 40,
+    name: eventConfig.name,
+  };
+
+  const modeKey = `event_${enemyCharId}_fortune`;
+  GameState.gameMode = modeKey;
+  GameState.battleCount = 7;
+  GameState.selectedStageId = CHARACTERS[enemyCharId].stageId || enemyCharId;
+
+  GameState.enemySkins[enemyCharId] = 'default';
+
+  GameState.appState = 'story_intro';
+
+  const dialogues =
+    EVENT_FORTUNE_DIALOGUES[modeKey]?.[playerCharId] ||
+    EVENT_FORTUNE_DIALOGUES[modeKey]?.['default'] ||
+    [];
+
+  if (dialogues.length >= 3) {
+    GameState.dialogueQueue = [dialogues[0], dialogues[1], dialogues[2]];
+  } else {
+    GameState.dialogueQueue = dialogues;
+  }
+
+  performFadeTransition(() => {
+    setupDialogueScreen();
+  });
+}
+
+/**
  * イベントモード進行管理
  */
 export function handleEventProgression() {
@@ -107,7 +150,9 @@ export function handleEventProgression() {
 export function setupEventConfrontation() {
   GameState.appState = 'pre_dialogue';
   const charId = GameState.playerConfig.id;
-  const modeDialogues = EVENT_DIALOGUES[GameState.gameMode] || {};
+  const isFortune = GameState.gameMode?.endsWith('_fortune');
+  const dialoguesSource = isFortune ? EVENT_FORTUNE_DIALOGUES : EVENT_DIALOGUES;
+  const modeDialogues = dialoguesSource[GameState.gameMode] || {};
   const dialogs = modeDialogues[charId] || modeDialogues['default'] || [];
 
   let confrontationLines = [];

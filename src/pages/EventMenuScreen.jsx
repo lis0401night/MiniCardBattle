@@ -1,7 +1,8 @@
-import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import {
   showDefenseMenu,
+  showFortuneMenu,
   startGameMode,
   startHighDifficulty,
 } from '../services/uiMainCore.js';
@@ -45,6 +46,12 @@ export default function EventMenuScreen() {
             playSound?.(AUDIO_INSTANCES?.bgmTournament1);
             switchScreen?.('screen-tournament-menu');
           }}
+        />
+        <MenuImageButton
+          label="運命の邂逅"
+          image={images.EVENT_FORTUNE}
+          onClick={() => showFortuneMenu?.()}
+          badgeText="勝利でカードGET"
         />
       </div>
     </ScreenLayout>

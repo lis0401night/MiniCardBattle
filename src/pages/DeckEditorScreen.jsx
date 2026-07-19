@@ -9,6 +9,7 @@ import { showPlaymatModal } from '../services/uiPlaymat.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import {
   DECK_SIZE,
   MAX_CARD_COPIES,
@@ -143,7 +144,42 @@ export default function DeckEditorScreen({ switchScreen }) {
     setDeckSelection(newSelection);
   };
 
+  const isFortuneMode =
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune');
+
+  const isCardBannedByFortune = (template) => {
+    if (!isFortuneMode || !GameState.fortuneHandicaps) return false;
+
+    const enemyCharId = GameState.gameMode
+      .replace('event_', '')
+      .replace('_fortune', '');
+    const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
+
+    const activeBanRules = handicapsList.filter(
+      (h) => h.type === 'ban_skill' && GameState.fortuneHandicaps[h.id]
+    );
+
+    if (activeBanRules.length === 0) return false;
+
+    const hasSkillLocal = (c, skillId) => {
+      const inSkills = (c.skills || []).some((s) => s.id === skillId);
+      if (inSkills) return true;
+      const inChoices = (c.choices || []).some((s) => s.id === skillId);
+      if (inChoices) return true;
+      return false;
+    };
+
+    return activeBanRules.some((rule) => hasSkillLocal(template, rule.skillId));
+  };
+
   const addCard = (template) => {
+    if (isCardBannedByFortune(template)) {
+      if (showAlertModal) {
+        showAlertModal('特級目標で使用禁止のカードは追加できません。');
+      }
+      return;
+    }
     if (deckSelection.length >= DECK_SIZE) return;
     const inDeckCount = deckSelection.filter(
       (c) => c.id === template.id
@@ -214,6 +250,12 @@ export default function DeckEditorScreen({ switchScreen }) {
   const handleFinish = () => {
     if (deckSelection.length !== DECK_SIZE) {
       showAlertModal?.(`デッキを${DECK_SIZE}枚にしてください！`);
+      return;
+    }
+
+    const hasBannedCard = deckSelection.some((c) => isCardBannedByFortune(c));
+    if (hasBannedCard) {
+      showAlertModal?.('特級目標で使用禁止のカードがデッキに含まれています！');
       return;
     }
 
@@ -695,8 +737,37 @@ export default function DeckEditorScreen({ switchScreen }) {
                       display: 'block',
                       overflow: 'hidden',
                       padding: 0,
+                      opacity: isCardBannedByFortune(card) ? '0.4' : '1',
+                      border: isCardBannedByFortune(card)
+                        ? '3px solid #ef4444'
+                        : undefined,
+                      boxShadow: isCardBannedByFortune(card)
+                        ? '0 0 10px #ef4444'
+                        : undefined,
                     }}
                   >
+                    {isCardBannedByFortune(card) && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#ef4444',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                          zIndex: 10,
+                          textShadow: '0 0 5px #000',
+                        }}
+                      >
+                        使用不可
+                      </div>
+                    )}
                     <div
                       className="card-bg"
                       style={{
@@ -829,7 +900,8 @@ export default function DeckEditorScreen({ switchScreen }) {
               const remaining = ownedCount - inDeckCount;
               const canAdd = remaining > 0 && inDeckCount < MAX_CARD_COPIES;
 
-              const opacity = !canAdd ? '0.4' : '1';
+              const isBanned = isCardBannedByFortune(template);
+              const opacity = !canAdd || isBanned ? '0.4' : '1';
               const rarityClass = template.rarity
                 ? ` rarity-${template.rarity}`
                 : '';
@@ -863,8 +935,32 @@ export default function DeckEditorScreen({ switchScreen }) {
                       opacity,
                       overflow: 'hidden',
                       padding: 0,
+                      border: isBanned ? '3px solid #ef4444' : undefined,
+                      boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
                     }}
                   >
+                    {isBanned && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#ef4444',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                          zIndex: 10,
+                          textShadow: '0 0 5px #000',
+                        }}
+                      >
+                        使用不可
+                      </div>
+                    )}
                     <div
                       className="card-bg"
                       style={{
@@ -946,10 +1042,18 @@ export default function DeckEditorScreen({ switchScreen }) {
         <MenuButton
           id="btn-finish-deck"
           variant="blue"
+          disabled={
+            deckSelection.length !== DECK_SIZE ||
+            deckSelection.some((c) => isCardBannedByFortune(c))
+          }
           style={{
             marginTop: '10px',
             width: '100%',
-            opacity: deckSelection.length === DECK_SIZE ? 1 : 0.5,
+            opacity:
+              deckSelection.length === DECK_SIZE &&
+              !deckSelection.some((c) => isCardBannedByFortune(c))
+                ? 1
+                : 0.5,
           }}
           onClick={handleFinish}
           label={
