@@ -1819,6 +1819,14 @@ export async function executeLeaderSkillAction(
         // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
         currentBoard[targetLane].skillTriggered = true;
 
+        // マキナ「鉄の行進」用VFX：オートマタが出現する前にレーンへ演出を再生する
+        stepEvents.push({
+          type: 'vfx_trigger',
+          vfxId: 'anm_march_of_iron',
+          side: owner,
+          lane: targetLane,
+        });
+
         // 配置（召喚扱い）イベントを追加
         stepEvents.push({
           type: 'summon_card',

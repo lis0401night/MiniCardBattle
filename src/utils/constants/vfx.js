@@ -241,6 +241,22 @@ export const VFX_DATA = {
     targetSide: 'self', // スキル処理から両方を指定するためselfベースにする
   },
 
+  // マキナスキル「鉄の行進」用VFX
+  anm_march_of_iron: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_march_of_iron.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 28,
+    duration: 700,
+    se: 'seMetalBlast',
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 2,
+    scale: 0.4,
+    shake: false,
+    targetSide: 'self', // 自陣に召喚
+  },
+
   // 有毒スキル用VFX
   anm_skill_toxic: {
     type: 'sprite',
