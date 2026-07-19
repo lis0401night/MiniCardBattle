@@ -254,11 +254,11 @@ export default function FortuneAchievementScreen() {
                     style={{
                       color: '#10b981',
                       fontWeight: 'bold',
-                      fontSize: '0.9rem',
+                      fontSize: '0.95rem',
                       marginRight: '12px',
                     }}
                   >
-                    +{item.cost}pt
+                    +{item.cost * 3}pt
                   </div>
                   <span
                     style={{

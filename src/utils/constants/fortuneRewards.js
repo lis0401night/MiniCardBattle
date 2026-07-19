@@ -51,9 +51,10 @@ export function calculateFortuneRewards(
     if (!handicaps[h.id]) return; // 今回ONにしていない
     if (newClearedHandicaps[h.id]) return; // 既に達成済み
 
-    // 初回達成：コストと同じポイントを付与
+    // 初回達成：コストの3倍のポイントを付与 (獲得ポイント = コスト * 3)
     const master = HANDICAP_MASTER[h.id] || h;
-    const earned = master.cost || 0;
+    const cost = master.cost || 0;
+    const earned = cost * 3;
     totalEarned += earned;
     newClearedHandicaps[h.id] = true;
     breakdown.push({
@@ -76,21 +77,7 @@ export function calculateFortuneRewards(
   const currentLevel = getGradeLevel(totalCost);
   const previousLevel = clearedMaxGradeLevel;
 
-  // 今回達成したレベルが過去の最大レベルを超えている場合、差分レベル数分のボーナスを付与
-  if (currentLevel > previousLevel) {
-    for (let lv = previousLevel + 1; lv <= currentLevel; lv++) {
-      const threshold = FORTUNE_GRADE_THRESHOLDS[lv];
-      if (threshold) {
-        totalEarned += threshold.bonus;
-        breakdown.push({
-          type: 'grade',
-          level: lv,
-          label: `Lv.${lv}(${threshold.min}～${threshold.max}pt)`,
-          points: threshold.bonus,
-        });
-      }
-    }
-  }
+  // 最大達成レベルの判定のみ行い、クリア時の獲得ポイントには加算しない
 
   return {
     totalEarned,

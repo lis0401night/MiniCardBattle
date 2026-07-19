@@ -3147,6 +3147,7 @@ export async function handleMoveSkills(owner) {
         );
         if (originalEl) {
           createDamagePopup(originalEl, '神出', '#facc15');
+          await sleep(250);
         }
         playSound(SOUNDS.sePlace);
 
@@ -3168,6 +3169,15 @@ export async function handleMoveSkills(owner) {
     const bestMoves = evaluateAIMoves(GameState);
     if (bestMoves) {
       for (let move of bestMoves) {
+        // 演出（元の位置でポップアップ表示）
+        const fromEl = document.querySelector(
+          `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${move.from}"] .card`
+        );
+        if (fromEl) {
+          createDamagePopup(fromEl, '移動', '#facc15');
+          await sleep(250);
+        }
+
         const existingCard = b[move.to];
         if (existingCard && hasSkill(existingCard, 'startup')) {
           // 起動消滅の特別処理
@@ -3252,6 +3262,16 @@ export async function handleMoveSkills(owner) {
             await sleep(200);
             continue; // キャンセルされた場合はレーン選択からやり直す
           }
+
+          // 演出（元の位置でポップアップ表示）
+          const fromEl = document.querySelector(
+            `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`
+          );
+          if (fromEl) {
+            createDamagePopup(fromEl, '移動', '#facc15');
+            await sleep(250);
+          }
+
           let didUnion = false;
           let didEquip = false;
           const existingCard = b[target];
@@ -4802,6 +4822,22 @@ export function endBattle() {
             result.newClearedHandicaps,
             result.newMaxGradeLevel
           );
+
+          // サーバーにも現在のポイント情報と共に達成情報を同期
+          let currentPts =
+            parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
+          let totalPts =
+            parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
+          savePointsToServer(
+            'update_fortune_points.php',
+            currentPts,
+            totalPts,
+            {
+              fortune_max_grade: result.newMaxGradeLevel,
+              fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+            }
+          );
+
           // 運命の邂逅イベントではカード報酬はドロップせず直接会話画面へ
           GameState.appState = 'post_dialogue';
           setupDialogueScreen();
