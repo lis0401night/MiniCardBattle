@@ -35,6 +35,8 @@ export default function DeckListScreen({ switchScreen }) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_online.webp')`;
     } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.webp')`;
+    } else if (mode?.startsWith('event_') && mode?.endsWith('_fortune')) {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_fortune01.webp')`;
     }
     return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.webp')`;
   };

@@ -138,7 +138,9 @@ export default function DefenseBattleListScreen() {
           overflowY: 'auto',
           width: '100%',
           maxWidth: '480px',
-          height: '492px',
+          minHeight: '492px',
+          maxHeight: '492px',
+          height: 'auto',
           flex: 'none',
         }}
       >

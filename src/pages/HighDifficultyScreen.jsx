@@ -41,6 +41,8 @@ export default function HighDifficultyScreen() {
           paddingTop: '10px',
           gap: '10px',
           overflowY: 'auto',
+          height: 'auto',
+          minHeight: '492px',
         }}
       >
         {highEventChars.map((char) => {

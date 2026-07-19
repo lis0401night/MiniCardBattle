@@ -38,6 +38,8 @@ export default function FortuneScreen() {
           paddingTop: '10px',
           gap: '10px',
           overflowY: 'auto',
+          height: 'auto',
+          minHeight: '492px',
         }}
       >
         {fortuneEventChars.map((char) => {
