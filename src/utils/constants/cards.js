@@ -920,7 +920,7 @@ export const CARD_MASTER = [
     rarity: 1,
     power: 4,
     skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
-    voiceCategory: 'human_male_normal',
+    voiceCategory: 'human_male_ikemen',
     flavor:
       '退屈な日常は彼女との出会いで終わった。今や彼は、抑圧された者たちを導く革命の炎である。',
   },
@@ -930,7 +930,7 @@ export const CARD_MASTER = [
     name: '暴走する解体者',
     rarity: 1,
     power: 8,
-    skills: [{ id: 'defender' }, { id: 'startup' }],
+    skills: [{ id: 'defender' }, { id: 'startup' }, { id: 'pierce' }],
     voiceCategory: 'machine_new',
     flavor:
       '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
@@ -1910,7 +1910,7 @@ export const CARD_MASTER = [
       { id: 'ambush', value: 1, summonId: 'token_automata' },
       { id: 'execute' },
     ],
-    voiceCategory: 'human_male_normal',
+    voiceCategory: 'human_male_warrior',
     flavor:
       '機械の暴走事故で娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
   },

@@ -182,9 +182,41 @@ export function startEndingSequence() {
   showNextDialogue(true);
 }
 
+/**
+ * [next] マーカーが含まれるダイアログテキストを、同一話者の複数ダイアログへ展開する
+ * @param {Array} queue - ダイアログキュー
+ * @returns {Array} 展開後のダイアログキュー
+ */
+function expandDialogueQueue(queue) {
+  if (!Array.isArray(queue)) return queue;
+  const newQueue = [];
+  queue.forEach((item) => {
+    if (item.text && item.text.includes('[next]')) {
+      const parts = item.text.split('[next]');
+      parts.forEach((partText) => {
+        // [next] で分割した結果の前後の余分な改行コード等を取り除く
+        const trimmedText = partText.replace(/^\n+|\n+$/g, '');
+        if (trimmedText) {
+          newQueue.push({
+            ...item,
+            text: trimmedText,
+          });
+        }
+      });
+    } else {
+      newQueue.push(item);
+    }
+  });
+  return newQueue;
+}
+
 export function setupDialogueScreen() {
   GameState.isProcessing = false;
   GameState.currentDialogueIndex = 0;
+
+  if (GameState.dialogueQueue) {
+    GameState.dialogueQueue = expandDialogueQueue(GameState.dialogueQueue);
+  }
 
   // ストーリーモード専用BGMの再生と切り替え
   if (
