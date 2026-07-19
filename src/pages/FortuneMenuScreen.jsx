@@ -1,16 +1,18 @@
 import MenuButton from '../components/common/MenuButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import { switchScreen } from '../utils/gameUtils.js';
 import {
   showEventMenu,
   showFortune,
   showFortuneExchange,
+  showFortuneRules,
 } from '../services/uiMainCore.js';
 
 export default function FortuneMenuScreen() {
   return (
     <ScreenLayout
       id="screen-fortune-menu"
-      backgroundImage=""
+      backgroundImage="background_fortune01.webp"
       title="運命の邂逅"
       titleColor="#f97316"
       titleGlow={true}
@@ -20,16 +22,12 @@ export default function FortuneMenuScreen() {
         <MenuButton
           label="ルール"
           variant="yellow"
-          onClick={() => {
-            // TODO: ルール画面の実装
-          }}
+          onClick={() => showFortuneRules?.()}
         />
         <MenuButton
           label="ランキング"
           variant="blue"
-          onClick={() => {
-            // TODO: ランキング画面の実装
-          }}
+          onClick={() => switchScreen?.('screen-fortune-ranking')}
         />
         <MenuButton
           label="挑戦"

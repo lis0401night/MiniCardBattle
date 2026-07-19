@@ -644,10 +644,12 @@ export function getStageBackgroundStyle(stageId) {
 }
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;
 
-// 運命の邂逅 交換所ラインナップ（商品は将来追加予定）
+// 運命の邂逅 交換所ラインナップ
 export const FORTUNE_EXCHANGE_LINEUP = [
+  // マキナのカード
   { id: 'agent', type: 'card', cost: 5 },
   { id: 'motorcycle', type: 'card', cost: 5 },
+  { id: 'employee', type: 'card', cost: 3 },
   { id: 'detective', type: 'card', cost: 3 },
   { id: 'scrapper', type: 'card', cost: 1 },
   { id: 'liberator', type: 'card', cost: 1 },

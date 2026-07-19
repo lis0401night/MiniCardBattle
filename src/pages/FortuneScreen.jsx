@@ -17,7 +17,7 @@ export default function FortuneScreen() {
     <div
       id="screen-fortune"
       className="screen active"
-      style={getScreenBackgroundStyle('')}
+      style={getScreenBackgroundStyle('assets/backgrounds/background_fortune01.webp')}
     >
       <h2
         style={{

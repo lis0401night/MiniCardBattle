@@ -165,8 +165,11 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       localPts = parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
+      const maxGrade =
+        parseInt(localStorage.getItem('mini_card_battle_fortune_grade_automata'), 10) || -1;
 
       endpoint = 'update_fortune_points.php';
+      extraData = { fortune_max_grade: maxGrade };
 
       if (serverPlayerData) {
         sPts = serverPlayerData.fortune_points || 0;

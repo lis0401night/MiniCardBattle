@@ -70,7 +70,7 @@ export default function FortuneExchangeScreen() {
   return (
     <CompactScreenLayout
       id="screen-fortune-exchange"
-      backgroundImage=""
+      backgroundImage="background_fortune01.webp"
       title="交換所"
       titleColor="#f97316"
       titleGlow={true}

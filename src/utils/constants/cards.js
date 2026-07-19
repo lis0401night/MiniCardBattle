@@ -1884,10 +1884,9 @@ export const CARD_MASTER = [
     flavor:
       '死の嵐の中で、それは永遠の飢えを満たそうと彷徨う。すべてを喰らい、すべてを凍らせ、後には静寂な雪原だけが残される。',
   },
-
   {
     id: 'employee',
-    obtain: ['achievement'],
+    obtain: ['exchange_fortune'],
     name: '真面目な使用人',
     rarity: 2,
     power: 2,

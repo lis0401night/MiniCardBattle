@@ -273,7 +273,8 @@ export default function FortuneAchievementScreen() {
         {/* 合計達成レベルの枠 */}
         <div
           style={{
-            flex: 1,
+            flex: 'none',
+            height: '310px',
             width: 'calc(90% + 30px)',
             maxWidth: '530px',
             display: 'flex',
@@ -283,7 +284,6 @@ export default function FortuneAchievementScreen() {
             borderRadius: '12px',
             padding: '12px 15px',
             boxSizing: 'border-box',
-            minHeight: 0,
           }}
         >
           <div
@@ -307,7 +307,7 @@ export default function FortuneAchievementScreen() {
               paddingRight: '4px',
             }}
           >
-            {FORTUNE_GRADE_THRESHOLDS.map((threshold) => {
+            {FORTUNE_GRADE_THRESHOLDS.filter((t) => t.level !== 0).map((threshold) => {
               const isCleared = clearedData.maxGradeLevel >= threshold.level;
               return (
                 <div
