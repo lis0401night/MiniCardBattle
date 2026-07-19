@@ -165,7 +165,8 @@ export default function FortuneHandicapScreen() {
                     background: gradeColor,
                     borderRadius: '4px',
                     transition: 'width 0.3s ease, background 0.3s ease',
-                    boxShadow: totalPoints > 0 ? `0 0 6px ${gradeColor}` : 'none',
+                    boxShadow:
+                      totalPoints > 0 ? `0 0 6px ${gradeColor}` : 'none',
                   }}
                 />
               </div>

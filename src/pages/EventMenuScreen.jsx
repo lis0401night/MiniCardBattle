@@ -51,7 +51,6 @@ export default function EventMenuScreen() {
           label="運命の邂逅"
           image={images.EVENT_FORTUNE}
           onClick={() => showFortuneMenu?.()}
-          badgeText="勝利でカードGET"
         />
       </div>
     </ScreenLayout>

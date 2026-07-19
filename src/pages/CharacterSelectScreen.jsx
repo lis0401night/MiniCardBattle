@@ -30,8 +30,12 @@ const getFilteredCharacters = () => {
   return Object.values(charsObj).filter((c) => {
     if (c.id === 'automata') {
       if (isEnemySelect) return false;
-      const unlockedCharsRaw = localStorage.getItem('mini_card_battle_unlocked_characters');
-      const unlockedChars = unlockedCharsRaw ? JSON.parse(unlockedCharsRaw) : [];
+      const unlockedCharsRaw = localStorage.getItem(
+        'mini_card_battle_unlocked_characters'
+      );
+      const unlockedChars = unlockedCharsRaw
+        ? JSON.parse(unlockedCharsRaw)
+        : [];
       return unlockedChars.includes('automata');
     }
     if (BOSS_CHARACTER_IDS.includes(c.id)) {

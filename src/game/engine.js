@@ -4256,7 +4256,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   const defSide = attackerSide === 'blue' ? 'red' : 'blue';
 
   const aC = atkBoard[l];
-  if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0 || aC.cantAttackTurns > 0) return events;
+  if (
+    !aC ||
+    hasSkill(aC, 'defender') ||
+    aC.stunTurns > 0 ||
+    aC.cantAttackTurns > 0
+  )
+    return events;
 
   const aHasPhase = hasSkill(aC, 'phase');
 

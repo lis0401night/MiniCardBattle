@@ -1,5 +1,8 @@
+import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { useExchangeScreen } from '../hooks/useExchangeScreen.js';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
@@ -13,6 +16,7 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function FortuneExchangeScreen() {
   const {
     points: fortunePoints,
+    setPoints: setFortunePoints,
     unlockedSkins,
     unlockedPlaymats,
     unlockedIcons,
@@ -23,6 +27,46 @@ export default function FortuneExchangeScreen() {
     apiEndpoint: 'update_fortune_points.php',
   });
 
+  // タイトルを10回クリックで運命の邂逅ポイントを100Pt獲得するイースターエッグ
+  const handleTitleClick = useEasterEgg(() => {
+    if (showConfirmModal) {
+      showConfirmModal(
+        'デバッグモードを起動して運命の邂逅ポイントを100Pt獲得しますか？',
+        () => {
+          playSound(SOUNDS?.seSkill);
+          const currentPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_fortune_points'),
+              10
+            ) || 0;
+          const totalPts =
+            parseInt(
+              localStorage.getItem('mini_card_battle_fortune_total_points'),
+              10
+            ) || 0;
+          const newPts = currentPts + 100;
+          const newTotalPts = totalPts + 100;
+
+          localStorage.setItem('mini_card_battle_fortune_points', newPts);
+          localStorage.setItem(
+            'mini_card_battle_fortune_total_points',
+            newTotalPts
+          );
+          setFortunePoints({ current: newPts, total: newTotalPts });
+
+          // 共通APIユーティリティを介してサーバーと同期
+          savePointsToServer('update_fortune_points.php', newPts, newTotalPts);
+
+          if (showAlertModal) {
+            showAlertModal(
+              '【デバッグ】運命の邂逅ポイントを100Pt獲得しました！'
+            );
+          }
+        }
+      );
+    }
+  });
+
   return (
     <CompactScreenLayout
       id="screen-fortune-exchange"
@@ -30,6 +74,7 @@ export default function FortuneExchangeScreen() {
       title="交換所"
       titleColor="#f97316"
       titleGlow={true}
+      onTitleClick={handleTitleClick}
       backTo="screen-fortune-menu"
     >
       <div
@@ -70,7 +115,8 @@ export default function FortuneExchangeScreen() {
               if (isCard)
                 masterClass = CARD_MASTER.find((c) => c.id === item.id) || {};
               if (isPlaymat)
-                masterClass = PLAYMAT_MASTER.find((p) => p.id === item.id) || {};
+                masterClass =
+                  PLAYMAT_MASTER.find((p) => p.id === item.id) || {};
               const rarityClass =
                 isCard && masterClass.rarity
                   ? ` rarity-${masterClass.rarity}`
@@ -221,7 +267,11 @@ export default function FortuneExchangeScreen() {
                         </div>
                         <div
                           className="card-power"
-                          style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
+                          style={{
+                            fontSize: '1.4rem',
+                            bottom: 0,
+                            right: '4px',
+                          }}
                         >
                           {masterClass.power}
                         </div>

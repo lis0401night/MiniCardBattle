@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
-import {
-  CHAR_FORTUNE_HANDICAPS,
-} from '../utils/constants/fortuneHandicaps.js';
+import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import {
   loadFortuneClearedData,
   FORTUNE_GRADE_THRESHOLDS,
@@ -34,7 +32,9 @@ export default function FortuneAchievementScreen() {
 
   const [claimedLevels, setClaimedLevels] = useState(() => {
     try {
-      const saved = localStorage.getItem('mini_card_battle_fortune_claimed_levels');
+      const saved = localStorage.getItem(
+        'mini_card_battle_fortune_claimed_levels'
+      );
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -45,31 +45,51 @@ export default function FortuneAchievementScreen() {
     if (claimedLevels.includes(level)) return;
 
     if (level === 1) {
-      const current = JSON.parse(localStorage.getItem('mini_card_battle_unlocked_characters') || '[]');
+      const current = JSON.parse(
+        localStorage.getItem('mini_card_battle_unlocked_characters') || '[]'
+      );
       if (!current.includes('automata')) {
         current.push('automata');
-        localStorage.setItem('mini_card_battle_unlocked_characters', JSON.stringify(current));
+        localStorage.setItem(
+          'mini_card_battle_unlocked_characters',
+          JSON.stringify(current)
+        );
       }
       showCharacterAcquisitionModal('廃鉄の声 マキナ', 'automata');
     } else if (level === 2) {
-      const current = JSON.parse(localStorage.getItem('mini_card_battle_unlocked_stages') || '[]');
+      const current = JSON.parse(
+        localStorage.getItem('mini_card_battle_unlocked_stages') || '[]'
+      );
       if (!current.includes('automata')) {
         current.push('automata');
-        localStorage.setItem('mini_card_battle_unlocked_stages', JSON.stringify(current));
+        localStorage.setItem(
+          'mini_card_battle_unlocked_stages',
+          JSON.stringify(current)
+        );
       }
       showStageAcquisitionModal('鋼の墓標', 'automata');
     } else if (level === 3) {
-      const current = JSON.parse(localStorage.getItem('mini_card_battle_unlocked_icons') || '[]');
+      const current = JSON.parse(
+        localStorage.getItem('mini_card_battle_unlocked_icons') || '[]'
+      );
       if (!current.includes('automata')) {
         current.push('automata');
-        localStorage.setItem('mini_card_battle_unlocked_icons', JSON.stringify(current));
+        localStorage.setItem(
+          'mini_card_battle_unlocked_icons',
+          JSON.stringify(current)
+        );
       }
       showIconAcquisitionModal('マキナ', 'automata');
     } else if (level === 4) {
-      const current = JSON.parse(localStorage.getItem('mini_card_battle_owned_playmats') || '[]');
+      const current = JSON.parse(
+        localStorage.getItem('mini_card_battle_owned_playmats') || '[]'
+      );
       if (!current.includes('automata')) {
         current.push('automata');
-        localStorage.setItem('mini_card_battle_owned_playmats', JSON.stringify(current));
+        localStorage.setItem(
+          'mini_card_battle_owned_playmats',
+          JSON.stringify(current)
+        );
       }
       showPlaymatAcquisitionModal('マキナ', 'automata');
     } else if (level === 5) {
@@ -78,7 +98,10 @@ export default function FortuneAchievementScreen() {
 
     const nextClaimed = [...claimedLevels, level];
     setClaimedLevels(nextClaimed);
-    localStorage.setItem('mini_card_battle_fortune_claimed_levels', JSON.stringify(nextClaimed));
+    localStorage.setItem(
+      'mini_card_battle_fortune_claimed_levels',
+      JSON.stringify(nextClaimed)
+    );
   };
 
   const getRewardName = (lv) => {
@@ -178,7 +201,9 @@ export default function FortuneAchievementScreen() {
                   style={{
                     background: 'rgba(30, 41, 59, 0.9)',
                     border: `1px solid ${isCleared ? '#f97316' : '#334155'}`,
-                    boxShadow: isCleared ? '0 0 10px rgba(249, 115, 22, 0.2)' : 'none',
+                    boxShadow: isCleared
+                      ? '0 0 10px rgba(249, 115, 22, 0.2)'
+                      : 'none',
                     borderRadius: '8px',
                     padding: '12px 15px',
                     display: 'flex',
@@ -188,7 +213,13 @@ export default function FortuneAchievementScreen() {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <span style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                    <span
+                      style={{
+                        color: '#f8fafc',
+                        fontWeight: 'bold',
+                        fontSize: '0.95rem',
+                      }}
+                    >
                       {item.name}
                     </span>
                   </div>
@@ -263,7 +294,9 @@ export default function FortuneAchievementScreen() {
                   style={{
                     background: 'rgba(30, 41, 59, 0.9)',
                     border: `1px solid ${isCleared ? '#f97316' : '#334155'}`,
-                    boxShadow: isCleared ? '0 0 10px rgba(249, 115, 22, 0.2)' : 'none',
+                    boxShadow: isCleared
+                      ? '0 0 10px rgba(249, 115, 22, 0.2)'
+                      : 'none',
                     borderRadius: '8px',
                     padding: '12px 15px',
                     display: 'flex',
@@ -273,7 +306,13 @@ export default function FortuneAchievementScreen() {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <span style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                    <span
+                      style={{
+                        color: '#f8fafc',
+                        fontWeight: 'bold',
+                        fontSize: '0.95rem',
+                      }}
+                    >
                       Lv.{threshold.level} ({threshold.min}～{threshold.max}pt)
                     </span>
                   </div>
@@ -310,7 +349,8 @@ export default function FortuneAchievementScreen() {
                         className="btn"
                         onClick={() => handleClaimReward(threshold.level)}
                         style={{
-                          background: 'linear-gradient(45deg, #f97316, #ea580c)',
+                          background:
+                            'linear-gradient(45deg, #f97316, #ea580c)',
                           color: '#fff',
                           border: 'none',
                           borderRadius: '6px',

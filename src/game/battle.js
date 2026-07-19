@@ -4784,8 +4784,9 @@ export function endBattle() {
             color: '#f97316',
             darkColor: '#ea580c',
             onClose: () => {
-              // モーダルを閉じた後、カードドロップ処理へ移行
-              processFortuneCardDrop();
+              // 運命の邂逅イベントではカード報酬はドロップせず直接会話画面へ
+              GameState.appState = 'post_dialogue';
+              setupDialogueScreen();
             },
           });
           return;
@@ -4796,6 +4797,10 @@ export function endBattle() {
             result.newClearedHandicaps,
             result.newMaxGradeLevel
           );
+          // 運命の邂逅イベントではカード報酬はドロップせず直接会話画面へ
+          GameState.appState = 'post_dialogue';
+          setupDialogueScreen();
+          return;
         }
       }
 
@@ -4932,77 +4937,6 @@ export function returnToTitle() {
   showConfirmModal('バトルを諦めますか？', () => {
     dispatchBattleAction({ type: 'retire', owner: 'blue' });
   });
-}
-
-/**
- * 運命の邂逅ポイントモーダル後のカードドロップ処理
- * showPointAcquisitionModal の onClose から呼ばれる
- */
-function processFortuneCardDrop() {
-  const recipeId = (() => {
-    const charId = GameState.gameMode
-      .replace('event_', '')
-      .replace('_fortune', '');
-    return GameState.enemyConfig.id === charId
-      ? `${charId}_fortune`
-      : GameState.enemyConfig.id;
-  })();
-
-  const diffKey =
-    GameState.aiLevel === 1
-      ? 'easy'
-      : GameState.aiLevel === 3
-        ? 'hard'
-        : 'normal';
-
-  let deckList = [];
-  if (Array.isArray(ENEMY_DECKS[recipeId])) {
-    deckList = ENEMY_DECKS[recipeId];
-  } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
-    deckList = ENEMY_DECKS[recipeId][diffKey];
-  } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
-    deckList = ENEMY_DECKS[recipeId]['normal'];
-  }
-
-  if (deckList.length > 0) {
-    const uniqueCards = [
-      ...new Set(
-        deckList
-          .map((item) => (typeof item === 'string' ? item : item && item.id))
-          .filter(Boolean)
-      ),
-    ];
-    const availableCards = uniqueCards.filter((cid) => {
-      const count = GameState.playerInventory[cid] || 0;
-      return count < 4;
-    });
-
-    if (availableCards.length > 0) {
-      const baseCards = [];
-      const tempInventory = { ...GameState.playerInventory };
-      const currentAvailable = uniqueCards.filter((cid) => {
-        const count = tempInventory[cid] || 0;
-        return count < 4;
-      });
-
-      if (currentAvailable.length > 0) {
-        const rewardCardId =
-          currentAvailable[
-            Math.floor(getSeededRandom() * currentAvailable.length)
-          ];
-        baseCards.push(rewardCardId);
-      }
-
-      if (window.showCardRewardReact && baseCards.length > 0) {
-        window.showCardRewardReact(baseCards);
-        return;
-      }
-    }
-  }
-
-  // カードドロップがない場合はダイアログ画面へ
-  GameState.appState = 'post_dialogue';
-  setupDialogueScreen();
 }
 
 // eventRenderer.jsへ、循環参照を回避しつつ discardCard 関数への参照を注入
