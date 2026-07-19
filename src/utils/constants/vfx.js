@@ -147,15 +147,15 @@ export const VFX_DATA = {
   // マリア召喚用VFX
   anm_summon_maria: {
     type: 'sprite',
-    src: 'assets/vfx/pipo-btleffect050t.png',
-    columns: 10,
-    rows: 1,
-    frameCount: 10,
-    duration: 600,
+    src: 'assets/vfx/vfx_coffin.png',
+    columns: 5,
+    rows: 4,
+    frameCount: 20,
+    duration: 800,
     se: 'seFire',
     position: 'lane', // ターゲットのレーンに合わせて表示
-    offsetY: -10,
-    scale: 1.0,
+    offsetY: 0,
+    scale: 0.7,
     shake: false,
     targetSide: 'self', // 自陣に召喚
   },
@@ -179,15 +179,15 @@ export const VFX_DATA = {
   // ナイアSPスキル「深淵の儀式」用VFX
   anm_abyss_ritual: {
     type: 'sprite',
-    src: 'assets/vfx/pipo-mapeffect016_320.png',
-    columns: 4,
-    rows: 5,
-    frameCount: 20,
-    duration: 1000,
+    src: 'assets/vfx/vfx_cthulhu_book.png',
+    columns: 6,
+    rows: 6,
+    frameCount: 36,
+    duration: 1300,
     se: 'seSkillCharge',
     position: 'hp', // HPゲージの高さに合わせて表示
     offsetY: 0,
-    scale: 1.5,
+    scale: 1,
     shake: false,
     targetSide: 'self', // 手札入れ替え(自分への効果)のため、自分のHPゲージ位置
   },
