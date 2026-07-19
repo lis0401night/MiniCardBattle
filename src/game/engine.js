@@ -1,4 +1,5 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   getSeededRandom,
@@ -2202,7 +2203,7 @@ export function applyActiveSkillLogic(
 /**
  * 盤面への装備（武装）を試み、成功した場合はtrueを返すヘルパー
  */
-function tryEquipToken(board, lane, newToken, owner, events) {
+function tryEquipToken(state, board, lane, newToken, owner, events) {
   let boardCard = board[lane];
   if (
     (hasSkill(newToken, 'equip') ||
@@ -2237,6 +2238,22 @@ function tryEquipToken(board, lane, newToken, owner, events) {
         lane: lane,
         card: JSON.parse(JSON.stringify(newToken)),
       });
+
+      // 装備カードが持っていたアクティブスキルを即時発動させるシミュレート
+      addedSkills.forEach((sk) => {
+        if (ACTIVE_SKILLS.includes(sk.id)) {
+          applyActiveSkillLogic(
+            state,
+            owner,
+            lane,
+            sk.id,
+            sk.value,
+            events,
+            newToken.cardTokenLanes || null
+          );
+        }
+      });
+
       return true;
     }
   }
@@ -2742,7 +2759,7 @@ export function applyLeaderSkillLogic(
         skillTriggered: true, // 配置なので召喚時スキルは発動させない
       };
 
-      if (!tryEquipToken(board, lane, newToken, owner, events)) {
+      if (!tryEquipToken(state, board, lane, newToken, owner, events)) {
         if (board[lane] !== null) {
           quietDiscardFromBoard(state, owner, lane);
         }
@@ -2890,7 +2907,16 @@ export function applyLeaderSkillLogic(
           rarity: tM.rarity || 1,
           // imgUrl は getCardImgUrl がスキンを参照して解決する
         };
-        if (!tryEquipToken(board, dragonRitualLane, newToken, owner, events)) {
+        if (
+          !tryEquipToken(
+            state,
+            board,
+            dragonRitualLane,
+            newToken,
+            owner,
+            events
+          )
+        ) {
           if (board[dragonRitualLane] !== null) {
             quietDiscardFromBoard(state, owner, dragonRitualLane);
           }
@@ -2951,7 +2977,7 @@ export function applyLeaderSkillLogic(
         skills: [{ id: 'deadly' }, { id: 'guardian' }],
       };
 
-      if (!tryEquipToken(board, lane, newToken, owner, events)) {
+      if (!tryEquipToken(state, board, lane, newToken, owner, events)) {
         if (board[lane] !== null) {
           quietDiscardFromBoard(state, owner, lane);
         }
@@ -3843,7 +3869,7 @@ export function applyLeaderSkillLogic(
       if (action === 'satan_avatar')
         newToken.imgUrl = 'assets/cards/card_token_satan.webp';
 
-      if (!tryEquipToken(board, l, newToken, owner, events)) {
+      if (!tryEquipToken(state, board, l, newToken, owner, events)) {
         if (board[l] !== null && hasSkill(board[l], 'startup')) {
           // 起動消滅の特別処理
           board[l].skills = board[l].skills.filter(
@@ -4078,7 +4104,7 @@ export function applyLeaderSkillLogic(
           isToken: true,
         };
 
-        if (!tryEquipToken(board, l, tk, owner, events)) {
+        if (!tryEquipToken(state, board, l, tk, owner, events)) {
           if (board[l] !== null) {
             quietDiscardFromBoard(state, owner, l);
           }

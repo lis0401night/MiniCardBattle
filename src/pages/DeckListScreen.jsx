@@ -12,7 +12,10 @@ import {
 } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { MAX_DECK_SLOTS } from '../utils/constants/config.js';
+import {
+  MAX_DECK_SLOTS,
+  STORY_BANNED_LEADER_IDS,
+} from '../utils/constants/config.js';
 
 export default function DeckListScreen({ switchScreen }) {
   const [, setRenderVersion] = useState(0);
@@ -514,6 +517,9 @@ export default function DeckListScreen({ switchScreen }) {
                   const char = CHARACTERS[deck.leaderId] || CHARACTERS.android;
                   const isDraggingThis = dragIndex === idx;
                   const isHoveringThis = hoverIndex === idx;
+                  const isLeaderBanned =
+                    GameState.gameMode === 'story' &&
+                    STORY_BANNED_LEADER_IDS.includes(deck.leaderId);
 
                   return (
                     <div
@@ -526,28 +532,45 @@ export default function DeckListScreen({ switchScreen }) {
                         borderRadius: '8px',
                         flexShrink: 0,
                         opacity: isDraggingThis ? 0.3 : 1,
-                        transform: isHoveringThis ? 'scale(1.02)' : 'none',
+                        transform:
+                          !isLeaderBanned && isHoveringThis
+                            ? 'scale(1.02)'
+                            : 'none',
                         transition: 'transform 0.2s',
-                        boxShadow: isHoveringThis
-                          ? `0 0 15px ${char.color}`
-                          : 'none',
+                        boxShadow:
+                          !isLeaderBanned && isHoveringThis
+                            ? `0 0 15px ${char.color}`
+                            : 'none',
+                        pointerEvents: isLeaderBanned ? 'none' : 'auto',
                       }}
-                      onPointerDown={(e) =>
-                        handleBannerPointerDown(e, idx, 'deck')
-                      }
-                      onTouchStart={(e) =>
-                        handleBannerPointerDown(e, idx, 'deck')
-                      }
+                      onPointerDown={(e) => {
+                        if (isLeaderBanned) return;
+                        handleBannerPointerDown(e, idx, 'deck');
+                      }}
+                      onTouchStart={(e) => {
+                        if (isLeaderBanned) return;
+                        handleBannerPointerDown(e, idx, 'deck');
+                      }}
                     >
                       <button
                         className={`btn-banner no-transition`}
                         style={{
                           margin: 0,
-                          borderColor: char.color,
+                          borderColor: isLeaderBanned ? '#475569' : char.color,
                           width: '100%',
-                          pointerEvents: dragIndex !== null ? 'none' : 'auto',
+                          pointerEvents:
+                            isLeaderBanned || dragIndex !== null
+                              ? 'none'
+                              : 'auto',
+                          background: isLeaderBanned
+                            ? 'rgba(0, 0, 0, 0.5)'
+                            : undefined,
                         }}
                         onClick={(e) => {
+                          if (isLeaderBanned) {
+                            e.preventDefault();
+                            return;
+                          }
                           // DnD中はクリック発火させない
                           if (isSwipingRef.current || isDraggingRef.current) {
                             e.preventDefault();
@@ -618,6 +641,29 @@ export default function DeckListScreen({ switchScreen }) {
                           </div>
                         </div>
                       </button>
+                      {isLeaderBanned && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            background: 'rgba(0, 0, 0, 0.65)',
+                            color: '#ef4444',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            fontWeight: 'bold',
+                            fontSize: '1rem',
+                            zIndex: 10,
+                            textShadow: '0 0 5px #000',
+                            borderRadius: '8px',
+                          }}
+                        >
+                          このキャラクターは使用できません
+                        </div>
+                      )}
                     </div>
                   );
                 })}

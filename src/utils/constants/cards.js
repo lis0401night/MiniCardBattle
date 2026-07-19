@@ -2193,7 +2193,7 @@ export const CARD_MASTER = [
     obtain: ['cleric_normal', 'cleric_hard', 'cleric_high'],
     name: 'パニッシャー',
     rarity: 3,
-    power: 4,
+    power: 3,
     skills: [
       { id: 'choice', value: 1 },
       { id: 'explode', value: 4 },
@@ -2599,7 +2599,7 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'legendary' },
-      { id: 'sacrifice', value: 2 },
+      { id: 'sacrifice', value: 3 },
       { id: 'summon', value: 3, summonId: 'token_skeleton' },
       { id: 'choice', value: 1 },
     ],
