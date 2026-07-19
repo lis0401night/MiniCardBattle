@@ -28,7 +28,11 @@ import {
   waitPlayerLaneSelection,
   confirmOverwrittenLane,
 } from './battle.js';
-import { applyLeaderSkillLogic, processDestructionTriggers } from './engine.js';
+import {
+  applyLeaderSkillLogic,
+  processDestructionTriggers,
+  applySingleCombat,
+} from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { GameState } from '../state/gameState.js';
 import { AI_THINKING_DURATION } from '../utils/constants/config.js';
@@ -326,6 +330,44 @@ export async function executeLeaderSkillAction(
         consumeArmSelf(targetCard, tokenCard);
 
         if (tokenCard) playCardVoice(tokenCard, 'play');
+      } else if (b[l] && hasSkill(b[l], 'startup')) {
+        // 起動消滅の特別処理
+        b[l].skills = b[l].skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+
+        // 配置しようとしていたサタンの化身/召喚トークンは墓地に送る
+        const discardPile =
+          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        const deepClonedToken = JSON.parse(JSON.stringify(tokenCard));
+        const deadToken = {
+          ...deepClonedToken,
+          id: `dng_tk_${Math.floor(getSeededRandom() * 1000000000)}`,
+          owner,
+          imgUrl,
+          filter: 'none',
+          currentPower: tokenCard.power,
+          rarity: tokenCard.rarity || 1,
+          isToken: true,
+        };
+        discardPile.push(deadToken);
+
+        events.push({ type: 'leader_skill', skill: action, side: owner });
+        events.push({
+          type: 'skill_popup',
+          side: owner,
+          lane: l,
+          skillName: '起動',
+          card: b[l],
+        });
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: l,
+          amount: 0,
+          source: 'startup_fade',
+          card: deadToken,
+        });
       } else {
         if (b[l]) {
           await discardCard(owner, b[l], l, false);
@@ -666,6 +708,39 @@ export async function executeLeaderSkillAction(
           source: 'equip',
           card: JSON.parse(JSON.stringify(selectedCard)),
         });
+      } else if (existingCard && hasSkill(existingCard, 'startup')) {
+        // 起動消滅の特別処理
+        existingCard.skills = existingCard.skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+
+        // 配置しようとしていた（復活させた）カードは墓地に戻す
+        const discardPile =
+          owner === 'blue'
+            ? isOppDiscard
+              ? GameState.enemyDiscard
+              : GameState.playerDiscard
+            : isOppDiscard
+              ? GameState.playerDiscard
+              : GameState.enemyDiscard;
+        discardPile.push(selectedCard);
+
+        // 起動消滅の演出イベントを追加
+        events.push({
+          type: 'skill_popup',
+          side: owner,
+          lane: targetLane,
+          skillName: '起動',
+          card: existingCard,
+        });
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: targetLane,
+          amount: 0,
+          source: 'startup_fade',
+          card: JSON.parse(JSON.stringify(selectedCard)),
+        });
       } else {
         const resurrectedCard = {
           ...selectedCard,
@@ -872,6 +947,34 @@ export async function executeLeaderSkillAction(
           card: JSON.parse(JSON.stringify(selectedCard)),
         });
         resurrectedCard = targetCard; // 後のスキル解決フラグ用
+      } else if (existingCard && hasSkill(existingCard, 'startup')) {
+        // 起動消滅の特別処理
+        existingCard.skills = existingCard.skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+
+        // 配置しようとしていた（復活させた）カードは墓地に戻す
+        const discardPile =
+          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        discardPile.push(selectedCard);
+
+        // 起動消滅の演出イベントを追加
+        events.push({
+          type: 'skill_popup',
+          side: owner,
+          lane: targetLane,
+          skillName: '起動',
+          card: existingCard,
+        });
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: targetLane,
+          amount: 0,
+          source: 'startup_fade',
+          card: JSON.parse(JSON.stringify(selectedCard)),
+        });
+        resurrectedCard = existingCard;
       } else {
         resurrectedCard = {
           ...selectedCard,
@@ -1264,6 +1367,36 @@ export async function executeLeaderSkillAction(
             card: JSON.parse(JSON.stringify(selectedCard)),
             stealFromLane: selectedOppLane, // 奪い元のレーンを指定
           });
+        } else if (
+          board[targetLane] &&
+          hasSkill(board[targetLane], 'startup')
+        ) {
+          // 起動消滅の特別処理
+          const existingCard = board[targetLane];
+          existingCard.skills = existingCard.skills.filter(
+            (s) => s.id !== 'startup' && s.id !== 'defender'
+          );
+
+          // 奪ってきたカードは墓地に送る
+          const discardPile =
+            owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+          discardPile.push(selectedCard);
+
+          events.push({
+            type: 'skill_popup',
+            side: owner,
+            lane: targetLane,
+            skillName: '起動',
+            card: existingCard,
+          });
+          events.push({
+            type: 'power_change',
+            side: owner,
+            lane: targetLane,
+            amount: 0,
+            source: 'startup_fade',
+            card: JSON.parse(JSON.stringify(selectedCard)),
+          });
         } else {
           const existingCard = board[targetLane];
           if (existingCard) {
@@ -1337,37 +1470,81 @@ export async function executeLeaderSkillAction(
     if (tokenLanes && tokenLanes.length > 0) {
       const l = tokenLanes[0];
       if (mySealedLanes && mySealedLanes[l] > 0) return;
-      if (board[l]) {
-        await discardCard(owner, board[l], l, false);
+      if (board[l] && hasSkill(board[l], 'startup')) {
+        // 起動消滅の特別処理
+        board[l].skills = board[l].skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+
+        // 配置しようとしていたスケルトンは墓地に送る
+        const discardPile =
+          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
+        const skImg =
+          getCardImgUrl({ ...skeletonTpl, owner }) ||
+          `assets/cards/card_${skeletonTpl.id}.webp`;
+        const deadToken = {
+          ...deepClonedSk,
+          id: `warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          uid: `${owner}_warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          baseId: skeletonTpl.id,
+          owner,
+          imgUrl: skImg,
+          filter: 'none',
+          currentPower: skeletonTpl.power,
+          rarity: skeletonTpl.rarity || 1,
+          isToken: true,
+        };
+        discardPile.push(deadToken);
+
+        events.push({
+          type: 'skill_popup',
+          side: owner,
+          lane: l,
+          skillName: '起動',
+          card: board[l],
+        });
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: l,
+          amount: 0,
+          source: 'startup_fade',
+          card: deadToken,
+        });
+      } else {
+        if (board[l]) {
+          await discardCard(owner, board[l], l, false);
+        }
+
+        const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
+        const skImg =
+          getCardImgUrl({ ...skeletonTpl, owner }) ||
+          `assets/cards/card_${skeletonTpl.id}.webp`;
+
+        board[l] = {
+          ...deepClonedSk,
+          id: `warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          uid: `${owner}_warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+          baseId: skeletonTpl.id,
+          owner,
+          imgUrl: skImg,
+          filter: 'none',
+          currentPower: skeletonTpl.power,
+          rarity: skeletonTpl.rarity || 1,
+          isToken: true,
+        };
+        // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+        board[l].skillTriggered = true;
+
+        events.push({
+          type: 'summon_card',
+          side: owner,
+          lane: l,
+          card: board[l],
+          source: 'warlock_place_demons',
+        });
       }
-
-      const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
-      const skImg =
-        getCardImgUrl({ ...skeletonTpl, owner }) ||
-        `assets/cards/card_${skeletonTpl.id}.webp`;
-
-      board[l] = {
-        ...deepClonedSk,
-        id: `warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-        uid: `${owner}_warlock_sk_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-        baseId: skeletonTpl.id,
-        owner,
-        imgUrl: skImg,
-        filter: 'none',
-        currentPower: skeletonTpl.power,
-        rarity: skeletonTpl.rarity || 1,
-        isToken: true,
-      };
-      // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
-      board[l].skillTriggered = true;
-
-      events.push({
-        type: 'summon_card',
-        side: owner,
-        lane: l,
-        card: board[l],
-        source: 'warlock_place_demons',
-      });
     }
 
     // 2. その後、自分のカードが配置されている全てのレーンにデーモンを配置
@@ -1376,40 +1553,84 @@ export async function executeLeaderSkillAction(
     for (let l = 0; l < 3; l++) {
       // 自分のカードが存在し、かつ封印されていないレーン
       if (board[l] !== null && mySealedLanes[l] === 0) {
-        targetLanes.push(l);
+        if (hasSkill(board[l], 'startup')) {
+          // 起動消滅の特別処理
+          board[l].skills = board[l].skills.filter(
+            (s) => s.id !== 'startup' && s.id !== 'defender'
+          );
 
-        // 既存のカードを墓地へ送る（「配置」に伴う上書き）
-        await discardCard(owner, board[l], l, false);
+          // デーモンは配置されずに墓地へ送る
+          const discardPile =
+            owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+          const deepClonedToken = JSON.parse(JSON.stringify(daemonTpl));
+          const imgUrl =
+            getCardImgUrl({ ...daemonTpl, owner }) ||
+            `assets/cards/card_${daemonTpl.id}.webp`;
+          const deadToken = {
+            ...deepClonedToken,
+            id: `warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+            uid: `${owner}_warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+            baseId: daemonTpl.id,
+            owner,
+            imgUrl,
+            filter: 'none',
+            currentPower: daemonTpl.power,
+            rarity: daemonTpl.rarity || 1,
+            isToken: true,
+          };
+          discardPile.push(deadToken);
 
-        // トークンのディープコピーを作成して配置する
-        const deepClonedToken = JSON.parse(JSON.stringify(daemonTpl));
+          daemonEvents.push({
+            type: 'skill_popup',
+            side: owner,
+            lane: l,
+            skillName: '起動',
+            card: board[l],
+          });
+          daemonEvents.push({
+            type: 'power_change',
+            side: owner,
+            lane: l,
+            amount: 0,
+            source: 'startup_fade',
+            card: deadToken,
+          });
+        } else {
+          targetLanes.push(l);
 
-        const imgUrl =
-          getCardImgUrl({ ...daemonTpl, owner }) ||
-          `assets/cards/card_${daemonTpl.id}.webp`;
+          // 既存のカードを墓地へ送る（「配置」に伴う上書き）
+          await discardCard(owner, board[l], l, false);
 
-        board[l] = {
-          ...deepClonedToken,
-          id: `warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-          uid: `${owner}_warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-          baseId: daemonTpl.id,
-          owner,
-          imgUrl,
-          filter: 'none',
-          currentPower: daemonTpl.power,
-          rarity: daemonTpl.rarity || 1,
-          isToken: true, // トークン属性を付与
-        };
-        // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
-        board[l].skillTriggered = true;
+          // トークンのディープコピーを作成して配置する
+          const deepClonedToken = JSON.parse(JSON.stringify(daemonTpl));
 
-        daemonEvents.push({
-          type: 'summon_card',
-          side: owner,
-          lane: l,
-          card: board[l],
-          source: 'warlock_place_demons',
-        });
+          const imgUrl =
+            getCardImgUrl({ ...daemonTpl, owner }) ||
+            `assets/cards/card_${daemonTpl.id}.webp`;
+
+          board[l] = {
+            ...deepClonedToken,
+            id: `warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+            uid: `${owner}_warlock_daemon_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
+            baseId: daemonTpl.id,
+            owner,
+            imgUrl,
+            filter: 'none',
+            currentPower: daemonTpl.power,
+            rarity: daemonTpl.rarity || 1,
+            isToken: true, // トークン属性を付与
+          };
+          // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+          board[l].skillTriggered = true;
+
+          daemonEvents.push({
+            type: 'summon_card',
+            side: owner,
+            lane: l,
+            card: board[l],
+            source: 'warlock_place_demons',
+          });
+        }
       }
     }
 
@@ -1428,6 +1649,187 @@ export async function executeLeaderSkillAction(
 
     if (targetLanes.length > 0) {
       tokenLanes = targetLanes; // VFXの参照用に渡す
+    }
+  } else if (action === 'iron_march') {
+    const tA = CARD_MASTER.find((m) => m.id === 'token_automata');
+
+    // スキルのカットイン等のために、開始イベントをプッシュして再生
+    await playEvents([{ type: 'leader_skill', skill: action, side: owner }]);
+
+    let currentTokenLanes = tokenLanes;
+
+    for (let i = 0; i < 3; i++) {
+      if (GameState.isBattleEnded) break;
+
+      let targetLane = -1;
+
+      // ループ内で毎回配置するレーンを選択する
+      if (currentTokenLanes && currentTokenLanes[i] !== undefined) {
+        targetLane = currentTokenLanes[i];
+      } else {
+        // プレイヤーの入力待ち
+        let successSatan = false;
+        while (!successSatan) {
+          const selection = await waitPlayerLaneSelection(
+            1,
+            owner,
+            tA,
+            false, // 配置なので制約なし
+            null, // 毎回新規選択
+            false
+          );
+          if (!selection || selection.length === 0) return; // キャンセルされた場合
+          const l = selection[0];
+          const proceed = await confirmOverwrittenLane(owner, tA, l, false);
+          if (!proceed) {
+            await sleep(200);
+            continue;
+          }
+          targetLane = l;
+          successSatan = true;
+        }
+      }
+
+      if (targetLane === -1) break;
+
+      // このループ開始時のHPとボードを退避 (ディープコピー)
+      const startPlayerHP = GameState.playerHP;
+      const startEnemyHP = GameState.enemyHP;
+      const startPlayerBoard = GameState.playerBoard.map((c) =>
+        c ? JSON.parse(JSON.stringify(c)) : null
+      );
+      const startEnemyBoard = GameState.enemyBoard.map((c) =>
+        c ? JSON.parse(JSON.stringify(c)) : null
+      );
+
+      const stepEvents = [];
+
+      // 毎ループ開始時に最新のボード参照を取得する
+      const currentBoard = isBlue
+        ? GameState.playerBoard
+        : GameState.enemyBoard;
+
+      // 1. オートマタ(P:1)の配置 or 起動消滅
+      const existing = currentBoard[targetLane];
+      if (existing && hasSkill(existing, 'startup')) {
+        // 起動消滅の特別処理
+        existing.skills = existing.skills.filter(
+          (s) => s.id !== 'startup' && s.id !== 'defender'
+        );
+
+        // 配置しようとしていたオートマタは墓地に送る
+        const discardPile =
+          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+
+        const imgUrl =
+          getCardImgUrl({ ...tA, owner }) || `assets/cards/card_${tA.id}.webp`;
+        const deepClonedToken = JSON.parse(JSON.stringify(tA));
+        const deadToken = {
+          ...deepClonedToken,
+          id: `automata_p1_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}_${i}`,
+          uid: `${owner}_automata_p1_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}_${i}`,
+          baseId: tA.id,
+          owner,
+          imgUrl,
+          filter: 'none',
+          power: 1, // パワーを1に設定
+          currentPower: 1, // 現在のパワーを1に設定
+          rarity: tA.rarity || 1,
+          isToken: true,
+        };
+        discardPile.push(deadToken);
+
+        // 起動消滅の演出イベントを追加
+        stepEvents.push({
+          type: 'skill_popup',
+          side: owner,
+          lane: targetLane,
+          skillName: '起動',
+          card: existing,
+        });
+        stepEvents.push({
+          type: 'power_change',
+          side: owner,
+          lane: targetLane,
+          amount: 0,
+          source: 'startup_fade',
+          card: deadToken,
+        });
+      } else {
+        // 通常の配置処理 (既存カードがあれば上書き墓地送り)
+        if (existing) {
+          await discardCard(owner, existing, targetLane, false);
+        }
+
+        const imgUrl =
+          getCardImgUrl({ ...tA, owner }) || `assets/cards/card_${tA.id}.webp`;
+        const deepClonedToken = JSON.parse(JSON.stringify(tA));
+        currentBoard[targetLane] = {
+          ...deepClonedToken,
+          id: `automata_p1_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}_${i}`,
+          uid: `${owner}_automata_p1_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}_${i}`,
+          baseId: tA.id,
+          owner,
+          imgUrl,
+          filter: 'none',
+          power: 1, // パワーを1に設定
+          currentPower: 1, // 現在のパワーを1に設定
+          rarity: tA.rarity || 1,
+          isToken: true,
+        };
+        // 【絶対厳守ルール】「配置」なので、召喚時のアクティブスキルは発動させない
+        currentBoard[targetLane].skillTriggered = true;
+
+        // 配置（召喚扱い）イベントを追加
+        stepEvents.push({
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: JSON.parse(JSON.stringify(currentBoard[targetLane])),
+          source: 'iron_march',
+        });
+      }
+
+      // 2. そのレーンのカードをただちに攻撃させる
+      applySingleCombat(GameState, owner, targetLane, stepEvents);
+
+      // 戦闘による破壊処理 (戦闘フェーズ中に破壊されたカードがあれば processDestructionTriggers で墓地へ送る)
+      processDestructionTriggers(GameState, stepEvents);
+
+      // --- 演出開始前のボードとHPの復元 ---
+      // ロジックが完了した更新後のボードとHPを退避 (ディープコピー)
+      const nextPlayerBoard = GameState.playerBoard.map((c) =>
+        c ? JSON.parse(JSON.stringify(c)) : null
+      );
+      const nextEnemyBoard = GameState.enemyBoard.map((c) =>
+        c ? JSON.parse(JSON.stringify(c)) : null
+      );
+      const nextPlayerHP = GameState.playerHP;
+      const nextEnemyHP = GameState.enemyHP;
+
+      // 演出再生のために、盤面とHPを「このループの開始時点（オートマタを配置する前）」に戻す
+      GameState.playerBoard = startPlayerBoard;
+      GameState.enemyBoard = startEnemyBoard;
+      GameState.playerHP = startPlayerHP;
+      GameState.enemyHP = startEnemyHP;
+
+      // 演出を再生
+      await playEvents(stepEvents);
+
+      // 演出完了後、ボードとHPを更新後の状態（戦闘解決後）に戻す
+      GameState.playerBoard = nextPlayerBoard;
+      GameState.enemyBoard = nextEnemyBoard;
+      GameState.playerHP = nextPlayerHP;
+      GameState.enemyHP = nextEnemyHP;
+
+      renderBoard();
+      updateHPBar();
+
+      // 勝敗チェック
+      if (GameState.playerHP <= 0 || GameState.enemyHP <= 0) {
+        checkWinCondition();
+        break;
+      }
     }
   }
 
@@ -1465,7 +1867,8 @@ export async function executeLeaderSkillAction(
     action !== 'overdrive' &&
     action !== 'dungeon_summon_leader' &&
     action !== 'world_reconstruct' &&
-    action !== 'warlock_place_demons'
+    action !== 'warlock_place_demons' &&
+    action !== 'iron_march'
   ) {
     // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
     // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
@@ -1674,21 +2077,26 @@ export async function executeLeaderSkillAction(
     });
   }
 
-  // イベント再生を開始する前に、一時的に盤面をリーダースキル発動前の元の状態に戻す
-  // これにより、playEvents 内で正しい上書き・墓地送り演出が実行されるようになる
-  GameState.playerBoard = savedPlayerBoard;
-  GameState.enemyBoard = savedEnemyBoard;
+  if (action !== 'iron_march') {
+    // イベント再生を開始する前に、一時的に盤面をリーダースキル発動前の元の状態に戻す
+    // これにより、playEvents 内で正しい上書き・墓地送り演出が実行されるようになる
+    GameState.playerBoard = savedPlayerBoard;
+    GameState.enemyBoard = savedEnemyBoard;
 
-  await playEvents(events);
-  // リーダースキルによる演出が完了したので、配置したカードの保護フラグを解除
-  events.forEach((ev) => {
-    if ((ev.type === 'summon_token' || ev.type === 'summon_card') && ev.card) {
-      ev.card.isSkillResolving = false;
-    }
-  });
+    await playEvents(events);
+    // リーダースキルによる演出が完了したので、配置したカードの保護フラグを解除
+    events.forEach((ev) => {
+      if (
+        (ev.type === 'summon_token' || ev.type === 'summon_card') &&
+        ev.card
+      ) {
+        ev.card.isSkillResolving = false;
+      }
+    });
 
-  // 再描画
-  renderBoard();
+    // 再描画
+    renderBoard();
+  }
 
   // 召喚時スキル（アクティブスキル）を持つカードが今回召喚されていた場合、事後発動する
   const targetBoard =

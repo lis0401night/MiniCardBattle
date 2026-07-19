@@ -53,100 +53,126 @@ export default function ChallengeUnlockScreen() {
         flexDirection: 'column',
         alignItems: 'center',
         padding: '20px 0',
-        overflowY: 'auto',
+        height: '100%',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
-      <h2
-        style={{
-          color: '#c084fc',
-          marginBottom: '5px',
-          textShadow: '0 0 15px rgba(192, 132, 252, 0.6)',
-        }}
-      >
-        開放
-      </h2>
-      <div
-        style={{ fontSize: '0.9rem', marginBottom: '20px', color: '#cbd5e1' }}
-      >
-        総試練ポイント: {totalPoints}
+      <div style={{ textAlign: 'center', flexShrink: 0, marginBottom: '10px' }}>
+        <h2
+          style={{
+            color: '#c084fc',
+            marginBottom: '5px',
+            textShadow: '0 0 15px rgba(192, 132, 252, 0.6)',
+          }}
+        >
+          開放
+        </h2>
+        <div style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+          総試練ポイント: {totalPoints}
+        </div>
       </div>
 
       <div
         style={{
+          flex: 1,
+          width: '100%',
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: '15px',
-          width: '90%',
-          maxWidth: '500px',
+          alignItems: 'center',
+          padding: '10px 0',
+          boxSizing: 'border-box',
         }}
       >
-        {UNLOCK_ITEMS.map((item) => {
-          const isUnlocked = totalPoints >= item.cost;
-          const isON = !!unlocks[item.id];
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '15px',
+            width: '90%',
+            maxWidth: '500px',
+            paddingBottom: '20px',
+          }}
+        >
+          {UNLOCK_ITEMS.map((item) => {
+            const isUnlocked = totalPoints >= item.cost;
+            const isON = !!unlocks[item.id];
 
-          return (
-            <div
-              key={item.id}
-              style={{
-                background: isUnlocked
-                  ? 'rgba(30, 41, 59, 0.9)'
-                  : 'rgba(15, 23, 42, 0.6)',
-                border: `1px solid ${isUnlocked ? '#64748b' : '#334155'}`,
-                borderRadius: '8px',
-                padding: '15px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    color: isUnlocked ? '#f8fafc' : '#64748b',
-                    fontWeight: 'bold',
-                    fontSize: '1rem',
-                    marginBottom: '4px',
-                  }}
-                >
-                  {item.name}
-                </div>
-                {!isUnlocked && (
-                  <div style={{ color: '#ef4444', fontSize: '0.8rem' }}>
-                    未開放（必要な総試練ポイント：{item.cost}）
+            return (
+              <div
+                key={item.id}
+                style={{
+                  background: isUnlocked
+                    ? 'rgba(30, 41, 59, 0.9)'
+                    : 'rgba(15, 23, 42, 0.6)',
+                  border: `1px solid ${isUnlocked ? '#64748b' : '#334155'}`,
+                  borderRadius: '8px',
+                  padding: '15px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      color: isUnlocked ? '#f8fafc' : '#64748b',
+                      fontWeight: 'bold',
+                      fontSize: '1rem',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    {item.name}
                   </div>
+                  {!isUnlocked && (
+                    <div style={{ color: '#ef4444', fontSize: '0.8rem' }}>
+                      未開放（必要な総試練ポイント：{item.cost}）
+                    </div>
+                  )}
+                </div>
+
+                {isUnlocked && (
+                  <button
+                    onClick={() => toggleUnlock(item.id)}
+                    className="btn"
+                    style={{
+                      width: '80px',
+                      height: '36px',
+                      padding: '0',
+                      margin: '0',
+                      background: isON
+                        ? 'linear-gradient(45deg, #10b981, #059669)'
+                        : '#475569',
+                      color: isON ? '#fff' : '#94a3b8',
+                      border: isON ? '2px solid #34d399' : '2px solid #64748b',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {isON ? 'ON' : 'OFF'}
+                  </button>
                 )}
               </div>
-
-              {isUnlocked && (
-                <button
-                  onClick={() => toggleUnlock(item.id)}
-                  className="btn"
-                  style={{
-                    width: '80px',
-                    height: '36px',
-                    padding: '0',
-                    margin: '0',
-                    background: isON
-                      ? 'linear-gradient(45deg, #10b981, #059669)'
-                      : '#475569',
-                    color: isON ? '#fff' : '#94a3b8',
-                    border: isON ? '2px solid #34d399' : '2px solid #64748b',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  {isON ? 'ON' : 'OFF'}
-                </button>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <BackButton
-        to="screen-dungeon-menu"
-        style={{ padding: '10px 40px', marginTop: '25px' }}
-      />
+      <div
+        style={{
+          flexShrink: 0,
+          marginTop: '15px',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        <BackButton
+          to="screen-dungeon-menu"
+          style={{ padding: '10px 40px', margin: 0 }}
+        />
+      </div>
     </div>
   );
 }

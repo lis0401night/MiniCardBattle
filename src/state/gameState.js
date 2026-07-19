@@ -71,6 +71,14 @@ export const GameState = {
   storyDifficulty: 1,
   isProcessing: false,
   selectedCardIndex: null,
+  fortuneHandicaps: (() => {
+    try {
+      const saved = localStorage.getItem('mini_card_battle_fortune_handicaps');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  })(),
   isBattleEnded: false,
   firstPlayer: 'blue',
   turnCount: 0,

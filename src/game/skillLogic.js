@@ -1020,7 +1020,7 @@ export async function resolveActiveSkillEffect(
         if (existingCard && hasSkill(existingCard, 'startup')) {
           // 起動消滅の特別処理
           existingCard.skills = existingCard.skills.filter(
-            (s) => s.id !== 'startup'
+            (s) => s.id !== 'startup' && s.id !== 'defender'
           );
           const discardPile =
             o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -1231,7 +1231,7 @@ export async function resolveActiveSkillEffect(
       if (existingCard && hasSkill(existingCard, 'startup')) {
         // 起動消滅の特別処理
         existingCard.skills = existingCard.skills.filter(
-          (s) => s.id !== 'startup'
+          (s) => s.id !== 'startup' && s.id !== 'defender'
         );
         const discardPile =
           o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -1239,7 +1239,7 @@ export async function resolveActiveSkillEffect(
 
         // 起動消滅のVFX/SE再生
         if (cEl) {
-          createDamagePopup(cEl, '起動消滅', '#facc15');
+          createDamagePopup(cEl, '起動', '#facc15');
           playSound(SOUNDS.seSkill);
         }
       } else if (
@@ -2190,7 +2190,7 @@ export async function resolveActiveSkillEffect(
           if (existingCard && hasSkill(existingCard, 'startup')) {
             // 起動消滅の特別処理
             existingCard.skills = existingCard.skills.filter(
-              (s) => s.id !== 'startup'
+              (s) => s.id !== 'startup' && s.id !== 'defender'
             );
             // 復活させようとしていたカードは墓地に戻す
             const discardPile =
@@ -2201,7 +2201,7 @@ export async function resolveActiveSkillEffect(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
             if (cEl) {
-              createDamagePopup(cEl, '起動消滅', '#facc15');
+              createDamagePopup(cEl, '起動', '#facc15');
               playSound(SOUNDS.seSkill);
             }
           } else if (canEquipCard(selectedCard, board[targetLane])) {
@@ -2414,7 +2414,7 @@ export async function resolveActiveSkillEffect(
           if (existingCard && hasSkill(existingCard, 'startup')) {
             // 起動消滅の特別処理
             existingCard.skills = existingCard.skills.filter(
-              (s) => s.id !== 'startup'
+              (s) => s.id !== 'startup' && s.id !== 'defender'
             );
             // 傀儡で出そうとしたカードは元の持ち主の墓地に戻す
             const oppDiscardPile =
@@ -2427,7 +2427,7 @@ export async function resolveActiveSkillEffect(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
             if (cEl) {
-              createDamagePopup(cEl, '起動消滅', '#facc15');
+              createDamagePopup(cEl, '起動', '#facc15');
               playSound(SOUNDS.seSkill);
             }
           } else if (canEquipCard(selectedCard, existingCard)) {
@@ -2896,7 +2896,7 @@ export async function resolveActiveSkillEffect(
           if (existingCard && hasSkill(existingCard, 'startup')) {
             // 起動消滅の特別処理
             existingCard.skills = existingCard.skills.filter(
-              (s) => s.id !== 'startup'
+              (s) => s.id !== 'startup' && s.id !== 'defender'
             );
             // デッキから出そうとしたカードは墓地に送る
             const discardPile =
@@ -2907,7 +2907,7 @@ export async function resolveActiveSkillEffect(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
             if (cEl) {
-              createDamagePopup(cEl, '起動消滅', '#facc15');
+              createDamagePopup(cEl, '起動', '#facc15');
               playSound(SOUNDS.seSkill);
             }
           } else if (canEquipCard(topCard, board[targetLane])) {

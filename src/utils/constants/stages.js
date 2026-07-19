@@ -19,4 +19,5 @@ export const STAGES = {
   priest: { id: 'priest', name: '千年の王墓', bgm: 'bgmStagePriest' },
   satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' },
   dungeon: { id: 'dungeon', name: '試練の宮殿', bgm: 'bgmStageDungeon' },
+  automata: { id: 'automata', name: '鋼の墓標', bgm: 'bgmStageAutomata' },
 };

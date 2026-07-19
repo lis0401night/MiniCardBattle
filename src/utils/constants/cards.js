@@ -3363,12 +3363,13 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
     voiceCategory: 'human_male_normal',
-    flavor: '',
+    flavor:
+      '退屈な日常は彼女との出会いで終わった。今や彼は、抑圧された者たちを導く革命の炎である。',
   },
   {
     id: 'detective',
     obtain: ['achievement'],
-    name: '不屈の捜査官',
+    name: '復讐に燃える捜査官',
     rarity: 2,
     power: 6,
     skills: [
@@ -3376,7 +3377,8 @@ export const CARD_MASTER = [
       { id: 'execute' },
     ],
     voiceCategory: 'human_male_normal',
-    flavor: '',
+    flavor:
+      '機械の暴走事故でに娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
   },
   {
     id: 'agent',
@@ -3390,17 +3392,19 @@ export const CARD_MASTER = [
       { id: 'ambush', value: 1, summonId: 'token_automata' },
     ],
     voiceCategory: 'human_female_assassin',
-    flavor: '',
+    flavor:
+      '夜の街を自在に駆け抜ける凄腕のエージェント。その鋭い刃は、腐敗した体制を容赦なく切り裂く。',
   },
   {
     id: 'scrapper',
     obtain: ['achievement'],
     name: '暴走する解体者',
     rarity: 2,
-    power: 8,
-    skills: [{ id: 'startup' }],
+    power: 9,
+    skills: [{ id: 'defender' }, { id: 'startup' }],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
   },
   {
     id: 'motorcycle',
@@ -3408,9 +3412,15 @@ export const CARD_MASTER = [
     name: '”ナイトランナー”',
     rarity: 3,
     power: 6,
-    skills: [{ id: 'startup' }, { id: 'stealth', value: 1 }, { id: 'move' }],
+    skills: [
+      { id: 'defender' },
+      { id: 'startup' },
+      { id: 'stealth', value: 2 },
+      { id: 'move' },
+    ],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      'エージェントが駆るカスタムバイク。闇夜を滑るように疾走する姿から、いつしかその愛称が定着した。',
   },
   // トークンカード
   {
@@ -3613,9 +3623,8 @@ export const CARD_MASTER = [
     id: 'token_automata',
     obtain: ['token'],
     name: 'オートマタ',
-    power: 3,
+    power: 1,
     isToken: true,
-    imgUrl: 'assets/cards/card_token_automata.webp',
     voiceCategory: 'machine_new',
     flavor: '暴走した自律人形',
   },

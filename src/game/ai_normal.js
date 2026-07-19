@@ -790,7 +790,7 @@ export function processActionSequence(
       if (existingCard && hasSkill(existingCard, 'startup')) {
         skillWasHandledByEquip = true;
         existingCard.skills = existingCard.skills.filter(
-          (s) => s.id !== 'startup'
+          (s) => s.id !== 'startup' && s.id !== 'defender'
         );
         simState.enemyDiscard.push(playedCard);
       } else if (
@@ -2047,6 +2047,17 @@ export function getBestSimulatedMove() {
             (pattern) => opBoard[pattern[0]] !== null
           );
       }
+    } else if (action === 'iron_march') {
+      const avail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
+      let patterns = [];
+      for (let l1 of avail) {
+        for (let l2 of avail) {
+          for (let l3 of avail) {
+            patterns.push([l1, l2, l3]);
+          }
+        }
+      }
+      tokenLanePatterns = patterns.length > 0 ? patterns : [null];
     } else if (action === 'overdrive') {
       // overdrive は自分の墓地・相手の墓地から1枚ずつ2回配置するため
       // [自分墓地の配置先, 相手墓地の配置先] の2要素ペアを生成する
@@ -4427,7 +4438,7 @@ export function simulateMove(
         const existingCard = simState.enemyBoard[laneIdx];
         if (existingCard && hasSkill(existingCard, 'startup')) {
           existingCard.skills = existingCard.skills.filter(
-            (s) => s.id !== 'startup'
+            (s) => s.id !== 'startup' && s.id !== 'defender'
           );
           simState.enemyDiscard.push(playedCard);
         } else if (
