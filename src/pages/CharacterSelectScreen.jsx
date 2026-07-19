@@ -28,7 +28,12 @@ const getFilteredCharacters = () => {
   const isWarlockUnlocked = (achievementData.stats?.warlockDefeated || 0) >= 1;
 
   return Object.values(charsObj).filter((c) => {
-    // if (c.id === 'automata') return false; // マキナはイベント専用のため除外
+    if (c.id === 'automata') {
+      if (isEnemySelect) return false;
+      const unlockedCharsRaw = localStorage.getItem('mini_card_battle_unlocked_characters');
+      const unlockedChars = unlockedCharsRaw ? JSON.parse(unlockedCharsRaw) : [];
+      return unlockedChars.includes('automata');
+    }
     if (BOSS_CHARACTER_IDS.includes(c.id)) {
       if (!isEnemySelect) return false;
       if (c.id === 'satan') return hasStoryClear;

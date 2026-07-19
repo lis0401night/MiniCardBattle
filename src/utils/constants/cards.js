@@ -3367,6 +3367,17 @@ export const CARD_MASTER = [
       '退屈な日常は彼女との出会いで終わった。今や彼は、抑圧された者たちを導く革命の炎である。',
   },
   {
+    id: 'scrapper',
+    obtain: ['achievement'],
+    name: '暴走する解体者',
+    rarity: 1,
+    power: 8,
+    skills: [{ id: 'defender' }, { id: 'startup' }],
+    voiceCategory: 'machine_new',
+    flavor:
+      '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
+  },
+  {
     id: 'detective',
     obtain: ['achievement'],
     name: '復讐に燃える捜査官',
@@ -3378,7 +3389,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_normal',
     flavor:
-      '機械の暴走事故でに娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
+      '機械の暴走事故で娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
   },
   {
     id: 'agent',
@@ -3396,17 +3407,6 @@ export const CARD_MASTER = [
       '夜の街を自在に駆け抜ける凄腕のエージェント。その鋭い刃は、腐敗した体制を容赦なく切り裂く。',
   },
   {
-    id: 'scrapper',
-    obtain: ['achievement'],
-    name: '暴走する解体者',
-    rarity: 2,
-    power: 9,
-    skills: [{ id: 'defender' }, { id: 'startup' }],
-    voiceCategory: 'machine_new',
-    flavor:
-      '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
-  },
-  {
     id: 'motorcycle',
     obtain: ['achievement'],
     name: '”ナイトランナー”',
@@ -3420,7 +3420,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'machine_new',
     flavor:
-      'エージェントが駆るカスタムバイク。闇夜を滑るように疾走する姿から、いつしかその愛称が定着した。',
+      '極限までチューンアップされた駆動系と、排気音すら闇に溶かす規格外の静音機構。闇夜を滑るように疾走する姿から、いつしかその愛称が定着した。',
   },
   // トークンカード
   {

@@ -94,7 +94,18 @@ import {
   showOnlineLobby,
 } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
+import {
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
+} from '../utils/constants/config.js';
+import {
+  calculateFortuneRewards,
+  loadFortuneClearedData,
+  saveFortuneClearedData,
+} from '../utils/constants/fortuneRewards.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import {
   resolveActiveSkillEffect,
@@ -749,6 +760,26 @@ export function initBattleState() {
         .replace('_fortune', '');
       const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
+      // 1. 最優先でリーダースキル変更を適用
+      handicapsList.forEach((h) => {
+        if (!GameState.fortuneHandicaps[h.id]) return;
+
+        if (h.type === HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE) {
+          if (GameState.enemyConfig.id === 'automata') {
+            GameState.enemyConfig = {
+              ...GameState.enemyConfig,
+              leaderSkill: {
+                name: 'ラスト・バタリオン',
+                desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
+                cost: 3,
+                action: 'last_battalion',
+              },
+            };
+          }
+        }
+      });
+
+      // 2. その他の変更（SP・HP等）を適用
       handicapsList.forEach((h) => {
         if (!GameState.fortuneHandicaps[h.id]) return;
 
@@ -909,7 +940,7 @@ export function initBattleState() {
             owner: 'red',
             uid: getOrCreateUUID(null),
             isToken: true, // 破壊された場合に墓地には送られないトークン扱い
-            stunTurns: 2, // 初回ターン攻撃禁止（スタン効果。ターン開始時の減衰を考慮して2を設定）
+            cantAttackTurns: 2, // 初回ターン攻撃禁止（攻撃不能効果。ターン開始時の減衰を考慮して2を設定）
           };
         }
       });
@@ -3363,6 +3394,9 @@ export async function startTurn(owner) {
     if (c && c.stunTurns > 0) {
       c.stunTurns--;
     }
+    if (c && c.cantAttackTurns > 0) {
+      c.cantAttackTurns--;
+    }
   });
 
   GameState.currentTurn = owner === 'blue' ? 'player' : 'enemy';
@@ -4679,6 +4713,92 @@ export function endBattle() {
         incrementStat('eventClear', `${charId}_high`);
       }
 
+      // --- 運命の邂逅：特級目標ポイント付与処理 ---
+      if (
+        GameState.gameMode.startsWith('event_') &&
+        GameState.gameMode.endsWith('_fortune') &&
+        GameState.fortuneHandicaps
+      ) {
+        const fortuneCharId = GameState.gameMode
+          .replace('event_', '')
+          .replace('_fortune', '');
+
+        // 達成済み情報を読み込み
+        const { clearedHandicaps, maxGradeLevel } =
+          loadFortuneClearedData(fortuneCharId);
+
+        // ポイント計算
+        const result = calculateFortuneRewards(
+          fortuneCharId,
+          GameState.fortuneHandicaps,
+          clearedHandicaps,
+          maxGradeLevel
+        );
+
+        if (result.totalEarned > 0) {
+          // ポイントをローカルストレージに保存
+          let currentPts =
+            parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
+          let totalPts =
+            parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
+          currentPts += result.totalEarned;
+          totalPts += result.totalEarned;
+          localStorage.setItem(FORTUNE_POINTS_KEY, String(currentPts));
+          localStorage.setItem(FORTUNE_TOTAL_POINTS_KEY, String(totalPts));
+
+          // 達成済み情報と最大等級をローカルストレージに保存
+          saveFortuneClearedData(
+            fortuneCharId,
+            result.newClearedHandicaps,
+            result.newMaxGradeLevel
+          );
+
+          // サーバーへポイントと達成情報を同期
+          savePointsToServer(
+            'update_fortune_points.php',
+            currentPts,
+            totalPts,
+            {
+              fortune_max_grade: result.newMaxGradeLevel,
+              fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+            }
+          );
+
+          // ポイント内訳メッセージを構築
+          let breakdownText = '';
+          result.breakdown.forEach((item) => {
+            if (item.type === 'handicap') {
+              breakdownText += `\n  ${item.name}: +${item.points}pt`;
+            } else if (item.type === 'grade') {
+              breakdownText += `\n  達成レベル ${item.label}: +${item.points}pt`;
+            }
+          });
+
+          // ポイント取得モーダルを表示
+          playSound(SOUNDS.seSkill);
+          showPointAcquisitionModal({
+            title: '特級目標達成',
+            message: `特級目標ポイントを ${result.totalEarned} Pt 獲得しました！${breakdownText}`,
+            points: result.totalEarned,
+            totalPoints: totalPts,
+            color: '#f97316',
+            darkColor: '#ea580c',
+            onClose: () => {
+              // モーダルを閉じた後、カードドロップ処理へ移行
+              processFortuneCardDrop();
+            },
+          });
+          return;
+        } else {
+          // ポイント0でも達成情報は更新する
+          saveFortuneClearedData(
+            fortuneCharId,
+            result.newClearedHandicaps,
+            result.newMaxGradeLevel
+          );
+        }
+      }
+
       // --- カードドロップ抽選・表示処理 ---
       let recipeId = GameState.enemyConfig.id;
       if (GameState.gameMode.startsWith('event_')) {
@@ -4812,6 +4932,77 @@ export function returnToTitle() {
   showConfirmModal('バトルを諦めますか？', () => {
     dispatchBattleAction({ type: 'retire', owner: 'blue' });
   });
+}
+
+/**
+ * 運命の邂逅ポイントモーダル後のカードドロップ処理
+ * showPointAcquisitionModal の onClose から呼ばれる
+ */
+function processFortuneCardDrop() {
+  const recipeId = (() => {
+    const charId = GameState.gameMode
+      .replace('event_', '')
+      .replace('_fortune', '');
+    return GameState.enemyConfig.id === charId
+      ? `${charId}_fortune`
+      : GameState.enemyConfig.id;
+  })();
+
+  const diffKey =
+    GameState.aiLevel === 1
+      ? 'easy'
+      : GameState.aiLevel === 3
+        ? 'hard'
+        : 'normal';
+
+  let deckList = [];
+  if (Array.isArray(ENEMY_DECKS[recipeId])) {
+    deckList = ENEMY_DECKS[recipeId];
+  } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId][diffKey]) {
+    deckList = ENEMY_DECKS[recipeId][diffKey];
+  } else if (ENEMY_DECKS[recipeId] && ENEMY_DECKS[recipeId]['normal']) {
+    deckList = ENEMY_DECKS[recipeId]['normal'];
+  }
+
+  if (deckList.length > 0) {
+    const uniqueCards = [
+      ...new Set(
+        deckList
+          .map((item) => (typeof item === 'string' ? item : item && item.id))
+          .filter(Boolean)
+      ),
+    ];
+    const availableCards = uniqueCards.filter((cid) => {
+      const count = GameState.playerInventory[cid] || 0;
+      return count < 4;
+    });
+
+    if (availableCards.length > 0) {
+      const baseCards = [];
+      const tempInventory = { ...GameState.playerInventory };
+      const currentAvailable = uniqueCards.filter((cid) => {
+        const count = tempInventory[cid] || 0;
+        return count < 4;
+      });
+
+      if (currentAvailable.length > 0) {
+        const rewardCardId =
+          currentAvailable[
+            Math.floor(getSeededRandom() * currentAvailable.length)
+          ];
+        baseCards.push(rewardCardId);
+      }
+
+      if (window.showCardRewardReact && baseCards.length > 0) {
+        window.showCardRewardReact(baseCards);
+        return;
+      }
+    }
+  }
+
+  // カードドロップがない場合はダイアログ画面へ
+  GameState.appState = 'post_dialogue';
+  setupDialogueScreen();
 }
 
 // eventRenderer.jsへ、循環参照を回避しつつ discardCard 関数への参照を注入

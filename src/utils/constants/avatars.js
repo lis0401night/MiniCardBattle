@@ -179,4 +179,9 @@ export const EXTRA_ICONS = [
     name: 'ミステリアスな留学生',
     path: iconPath('priest_school'),
   },
+  {
+    id: 'automata',
+    name: 'マキナ',
+    path: iconPath('automata'),
+  },
 ];

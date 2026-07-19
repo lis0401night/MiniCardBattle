@@ -16,5 +16,5 @@ export const UI_IMAGES = {
   EVENT_TOURNAMENT: 'assets/ui/ui_event_tournament01.png',
   GUIDE_RULES: 'assets/ui/ui_Instructionsbutton01.png',
   GUIDE_TUTORIAL: 'assets/ui/ui_tutorialbutton01.png',
-  EVENT_FORTUNE: '',
+  EVENT_FORTUNE: 'assets/ui/ui_event_fortunebutton01.png',
 };

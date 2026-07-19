@@ -136,6 +136,24 @@ export default function DifficultySelectScreen() {
                 </button>
               </div>
             )}
+            {hasFortuneHandicaps && (
+              <div className="difficulty-button-row" style={{ margin: 0 }}>
+                <MenuButton
+                  label="達成状況"
+                  variant="yellow"
+                  onClick={() => {
+                    playSound(SOUNDS?.seClick);
+                    switchScreen('screen-fortune-achievement');
+                  }}
+                />
+                <button
+                  className="btn-check-deck"
+                  style={{ display: 'flex', visibility: 'hidden' }}
+                >
+                  🔍
+                </button>
+              </div>
+            )}
             <div className="difficulty-button-row" style={{ margin: 0 }}>
               <MenuButton
                 label={isFortuneMode ? '特級' : '超級'}

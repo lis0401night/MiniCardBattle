@@ -20,6 +20,8 @@ import TournamentExchangeScreen from './pages/TournamentExchangeScreen.jsx';
 import FortuneMenuScreen from './pages/FortuneMenuScreen.jsx';
 import FortuneScreen from './pages/FortuneScreen.jsx';
 import FortuneHandicapScreen from './pages/FortuneHandicapScreen.jsx';
+import FortuneExchangeScreen from './pages/FortuneExchangeScreen.jsx';
+import FortuneAchievementScreen from './pages/FortuneAchievementScreen.jsx';
 import TournamentMenuScreen from './pages/TournamentMenuScreen.jsx';
 import TournamentResumeScreen from './pages/TournamentResumeScreen.jsx';
 import TournamentRulesScreen from './pages/TournamentRulesScreen.jsx';
@@ -124,6 +126,8 @@ const SCREEN_COMPONENTS = {
   'screen-fortune-menu': FortuneMenuScreen,
   'screen-fortune': FortuneScreen,
   'screen-fortune-handicap': FortuneHandicapScreen,
+  'screen-fortune-exchange': FortuneExchangeScreen,
+  'screen-fortune-achievement': FortuneAchievementScreen,
   'screen-tournament-menu': TournamentMenuScreen,
   'screen-tournament-resume': TournamentResumeScreen,
   'screen-tournament-exchange': TournamentExchangeScreen,

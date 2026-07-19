@@ -1086,7 +1086,7 @@ export const CHARACTERS = {
       ],
       skill: 'さあ、姉妹たちよ！立ち上がりなさい！',
     },
-    hp: 40,
+    hp: 20,
   },
 };
 

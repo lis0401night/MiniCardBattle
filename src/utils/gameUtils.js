@@ -898,6 +898,13 @@ export function renderSkillTag(card, isBoard = false) {
     );
   }
 
+  // 攻撃不能状態バッジ（絵文字なし）
+  if (card.cantAttackTurns > 0) {
+    badges.push(
+      `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">攻撃不能${card.cantAttackTurns}</div>`
+    );
+  }
+
   if (badges.length === 0) return '';
   return `<div class="card-skill-container">${badges.join('')}</div>`;
 }

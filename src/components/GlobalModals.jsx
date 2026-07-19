@@ -16,6 +16,8 @@ import {
   setShowPlaymatAcquisitionModalHook,
   setShowPremiumAcquisitionModalHook,
   setShowSkinAcquisitionModalHook,
+  setShowCharacterAcquisitionModalHook,
+  setShowStageAcquisitionModalHook,
 } from '../services/uiGallery.js';
 import {
   backupDataToXML,
@@ -41,6 +43,7 @@ import {
 } from '../utils/constants/config.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
+import { STAGES } from '../utils/constants/stages.js';
 
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { syncUserProfile } from '../utils/apiUtils.js';
@@ -357,6 +360,48 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       );
     });
 
+    setShowCharacterAcquisitionModalHook((name, id) => {
+      const char = CHARACTERS[id];
+      if (char) {
+        playSound?.(SOUNDS?.seSkill);
+        setAcquisitionData({
+          type: 'character',
+          name,
+          id,
+          image: char.image,
+          canClose: false,
+        });
+        setTimeout(
+          () =>
+            setAcquisitionData((prev) =>
+              prev ? { ...prev, canClose: true } : null
+            ),
+          500
+        );
+      }
+    });
+
+    setShowStageAcquisitionModalHook((name, id) => {
+      const stage = STAGES[id];
+      if (stage) {
+        playSound?.(SOUNDS?.seSkill);
+        setAcquisitionData({
+          type: 'stage',
+          name,
+          id,
+          image: `assets/backgrounds/background_${id}.webp`,
+          canClose: false,
+        });
+        setTimeout(
+          () =>
+            setAcquisitionData((prev) =>
+              prev ? { ...prev, canClose: true } : null
+            ),
+          500
+        );
+      }
+    });
+
     window.showCharDetailModal = (char) => {
       playSound?.(SOUNDS?.seClick);
       setCharDetailData(char);
@@ -516,6 +561,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setShowPlaymatAcquisitionModalHook(null);
       setShowSkinAcquisitionModalHook(null);
       setShowIconAcquisitionModalHook(null);
+      setShowCharacterAcquisitionModalHook(null);
+      setShowStageAcquisitionModalHook(null);
       setCloseEnemyDeckModalHook(null);
 
       delete window.showEnemyDeckModal;
@@ -999,22 +1046,22 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           {acquisitionData.type === 'playmat' && (
             <AcquisitionModal
               title="プレイマット獲得！"
-              borderColor="#facc15"
-              shadowColor="rgba(242, 201, 76, 0.5)"
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
               imageSrc={acquisitionData.playmat.image}
               imageStyle={{
                 width: '100%',
                 height: '160px',
                 borderRadius: '8px',
                 overflow: 'hidden',
-                border: '2px solid #facc15',
+                border: '2px solid #eab308',
                 marginBottom: '20px',
-                boxShadow: '0 0 15px rgba(242, 201, 76, 0.3)',
+                boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
               }}
               itemName={acquisitionData.name}
               itemTypeName="プレイマット"
-              btnBg="linear-gradient(45deg, #facc15, #eab308)"
-              btnColor="#000"
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
+              btnColor="#fff"
               canClose={acquisitionData.canClose}
               onClose={() => setAcquisitionData(null)}
             />
@@ -1023,21 +1070,21 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           {acquisitionData.type === 'skin' && (
             <AcquisitionModal
               title="スキン獲得！"
-              borderColor="#c084fc"
-              shadowColor="rgba(192, 132, 252, 0.5)"
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
               imageSrc={acquisitionData.image}
               imageStyle={{
                 width: '160px',
                 height: '220px',
                 borderRadius: '8px',
                 overflow: 'hidden',
-                border: '2px solid #c084fc',
+                border: '2px solid #eab308',
                 marginBottom: '20px',
-                boxShadow: '0 0 15px rgba(192, 132, 252, 0.3)',
+                boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
               }}
               itemName={acquisitionData.name}
               itemTypeName="スキン"
-              btnBg="linear-gradient(45deg, #c084fc, #9333ea)"
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
               btnColor="#fff"
               canClose={acquisitionData.canClose}
               onClose={() => setAcquisitionData(null)}
@@ -1063,6 +1110,54 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               }}
               itemName={acquisitionData.name}
               itemTypeName="アイコン"
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
+              btnColor="#fff"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
+          )}
+
+          {acquisitionData.type === 'character' && (
+            <AcquisitionModal
+              title="キャラクター獲得！"
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
+              imageSrc={acquisitionData.image}
+              imageStyle={{
+                width: '160px',
+                height: '220px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                border: '2px solid #eab308',
+                marginBottom: '20px',
+                boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
+              }}
+              itemName={acquisitionData.name}
+              itemTypeName="キャラクター"
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
+              btnColor="#fff"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
+          )}
+
+          {acquisitionData.type === 'stage' && (
+            <AcquisitionModal
+              title="ステージ獲得！"
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
+              imageSrc={acquisitionData.image}
+              imageStyle={{
+                width: '100%',
+                height: '160px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                border: '2px solid #eab308',
+                marginBottom: '20px',
+                boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
+              }}
+              itemName={acquisitionData.name}
+              itemTypeName="ステージ"
               btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
               btnColor="#fff"
               canClose={acquisitionData.canClose}

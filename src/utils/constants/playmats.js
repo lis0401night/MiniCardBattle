@@ -224,6 +224,12 @@ export const PLAYMAT_MASTER = [
     name: '前世の記憶',
     image: 'assets/boards/board_priest_high.webp',
   },
+  {
+    id: 'automata',
+    name: 'マキナ',
+    image: 'assets/boards/board_automata.webp',
+    targetCharacter: 'automata',
+  },
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
 export let ownedPlaymats = []; // ['android', 'dragon', ...]
