@@ -430,8 +430,8 @@ export const CHARACTERS = {
     color: '#94a3b8',
     leaderSkill: {
       name: '神炎の審判',
-      desc: '(SP:3) 相手リーダーに3ダメージを与え、自身のHPを3回復する。',
-      cost: 3,
+      desc: '(SP:4) 相手リーダーに3ダメージを与え、自身のHPを3回復する。',
+      cost: 4,
       action: 'god_flame',
     },
     preBattleLine: 'あら、私に逆らうなんて。身の程をわきまえなさい。',

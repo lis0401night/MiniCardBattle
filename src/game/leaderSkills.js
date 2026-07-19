@@ -1,4 +1,5 @@
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { getSkinImage } from '../utils/constants/characters.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
@@ -28,6 +29,7 @@ import {
   waitPlayerLaneSelection,
   confirmOverwrittenLane,
 } from './battle.js';
+import { resolveActiveSkillEffect } from './skillLogic.js';
 import {
   applyLeaderSkillLogic,
   processDestructionTriggers,
@@ -318,6 +320,26 @@ export async function executeLeaderSkillAction(
         });
         // 召喚扱いではないためアクティブスキルは発動させない
         targetCard.skillTriggered = true;
+
+        // 装備カードが持っていたアクティブスキルを即時発動させる
+        for (const sk of equipSkills) {
+          if (ACTIVE_SKILLS.includes(sk.id)) {
+            await sleep(50);
+            const enhancedSk = {
+              ...sk,
+              _sourceChoices: tokenCard.choices,
+              _sourceChoices2: tokenCard.choices2,
+            };
+            await resolveActiveSkillEffect(
+              owner,
+              l,
+              targetCard,
+              sk.id,
+              sk.value,
+              enhancedSk
+            );
+          }
+        }
 
         // リーダースキルで生成した装備カードを対象にアタッチ
         const eqToken = JSON.parse(JSON.stringify(tokenCard));

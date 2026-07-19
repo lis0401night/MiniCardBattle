@@ -180,6 +180,7 @@ export const PREMIUM_VOICE_MAP = {
   muramasa: 'human_male_warrior',
   armsuits: 'bird',
   berserker: 'human_female_cool',
+  liberator: 'human_female_cool',
 };
 
 export async function playCardVoice(categoryOrCard, situation = 'play') {

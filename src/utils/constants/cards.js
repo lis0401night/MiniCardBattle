@@ -2193,7 +2193,7 @@ export const CARD_MASTER = [
     obtain: ['cleric_normal', 'cleric_hard', 'cleric_high'],
     name: 'パニッシャー',
     rarity: 3,
-    power: 4,
+    power: 3,
     skills: [
       { id: 'choice', value: 1 },
       { id: 'explode', value: 4 },

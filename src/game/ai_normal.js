@@ -2604,40 +2604,44 @@ export function getBestSimulatedMove() {
     return 0;
   };
   candidates.forEach((c) => {
+    c.tieBreaker = 0;
     // レーン優先順位を加味 (左 0=3点, 右 2=2点, 中央 1=1点)
     let pri = 0;
     if (c.lane === 0) pri = 3;
     else if (c.lane === 2) pri = 2;
     else if (c.lane === 1) pri = 1;
     c.lanePriority = pri;
-    // スコアに僅かな優先度ボーナスを乗せ、同点時に「左→右→中央」を選びやすくする
-    c.score += pri * 0.01;
+    // タイブレークに僅かな優先度ボーナスを乗せ、同点時に「左→右→中央」を選びやすくする
+    c.tieBreaker += pri * 0.01;
 
     // トークンやリーダースキルの配置先にもタイブレークを適用（同点時に左を優先）
     if (c.cardTokenLanes && Array.isArray(c.cardTokenLanes)) {
-      c.cardTokenLanes.forEach((l) => (c.score += getLanePri(l) * 0.001));
+      c.cardTokenLanes.forEach((l) => (c.tieBreaker += getLanePri(l) * 0.001));
     }
     if (c.tokenLanes && Array.isArray(c.tokenLanes)) {
-      c.tokenLanes.forEach((l) => (c.score += getLanePri(l) * 0.001));
+      c.tokenLanes.forEach((l) => (c.tieBreaker += getLanePri(l) * 0.001));
     }
     if (c.actionQueue) {
       c.actionQueue.forEach((a) => {
         if (a.lanes && Array.isArray(a.lanes)) {
-          a.lanes.forEach((l) => (c.score += getLanePri(l) * 0.0001));
+          a.lanes.forEach((l) => (c.tieBreaker += getLanePri(l) * 0.0001));
         } else if (a.laneIdx !== undefined && a.laneIdx !== -1) {
-          c.score += getLanePri(a.laneIdx) * 0.0001;
+          c.tieBreaker += getLanePri(a.laneIdx) * 0.0001;
         }
       });
-      // 【手数ペナルティ】アクション数（手数）が増えるごとにスコアを微小減点する
+      // 【手数ペナルティ】アクション数（手数）が増えるごとにタイブレークを微小減点する
       // （不要な中間プレイによるタイブレーク加点を防ぎ、最短手数を選択させる）
-      c.score -= c.actionQueue.length * 0.002;
+      c.tieBreaker -= c.actionQueue.length * 0.002;
     }
   });
 
-  // スコア順、次いでリーダースキル不使用優先、最後にアクションの短さ順でソート（不要なスキル消費を避ける）
+  // スコア順、次いでリーダースキル不使用優先、タイブレーク順、最後にアクションの短さ順でソート（不要なスキル消費を避ける）
   candidates.sort((a, b) => {
     if (Math.abs(a.score - b.score) > 0.00001) return b.score - a.score;
     if (a.useSkill !== b.useSkill) return a.useSkill ? 1 : -1;
+    if (Math.abs((a.tieBreaker || 0) - (b.tieBreaker || 0)) > 0.00001) {
+      return (b.tieBreaker || 0) - (a.tieBreaker || 0);
+    }
     const aLen = a.actionQueue ? a.actionQueue.length : 0;
     const bLen = b.actionQueue ? b.actionQueue.length : 0;
     return aLen - bLen;
@@ -2645,18 +2649,25 @@ export function getBestSimulatedMove() {
 
   if (candidates.length === 0) return { index: -1, lane: -1, useSkill: false };
 
+  // 1. 本質的な評価スコアが最善のもののみを抽出
   const bestScore = candidates[0].score;
   let bestGroup = candidates.filter(
     (c) => Math.abs(c.score - bestScore) < 0.00001
   );
 
-  // 同スコア候補の中で、リーダースキルを使用しない選択肢があればそれを優先する
+  // 2. その中で、リーダースキルを使用しない選択肢があればそれを優先する
   const hasNoSkill = bestGroup.some((c) => !c.useSkill);
   if (hasNoSkill) {
     bestGroup = bestGroup.filter((c) => !c.useSkill);
   }
 
-  // 同スコア候補の中で最短のアクション数のものだけを残す（不要なスキル消費を避ける）
+  // 3. その中で、タイブレークスコアが最善のもののみを抽出（バグ修正：不要なスキル使用を防止）
+  const maxTieBreaker = Math.max(...bestGroup.map((c) => c.tieBreaker || 0));
+  bestGroup = bestGroup.filter(
+    (c) => Math.abs((c.tieBreaker || 0) - maxTieBreaker) < 0.00001
+  );
+
+  // 4. その中で最短のアクション数のものだけを残す（不要なスキル消費を避ける）
   const minActionLen = Math.min(
     ...bestGroup.map((c) => (c.actionQueue ? c.actionQueue.length : 0))
   );
