@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 import { prepareBattle } from '../game/battle.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
@@ -148,30 +148,37 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   const isFortuneMode = checkIsFortuneMode(GameState.gameMode);
 
-  const isCardBannedByFortune = (template) => {
-    if (!isFortuneMode || !GameState.fortuneHandicaps) return false;
+  const activeBannedSkillIds = useMemo(() => {
+    if (!isFortuneMode || !GameState.fortuneHandicaps) return [];
 
     const enemyCharId = getEventEnemyCharId(GameState.gameMode);
     const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
-    const activeBanRules = handicapsList.filter(
-      (h) => h.type === 'ban_skill' && GameState.fortuneHandicaps[h.id]
-    );
+    return handicapsList
+      .filter((h) => h.type === 'ban_skill' && GameState.fortuneHandicaps[h.id])
+      .map((rule) => rule.skillId);
+  }, [isFortuneMode]);
 
-    if (activeBanRules.length === 0) return false;
+  const isCardBannedByFortune = useCallback(
+    (template) => {
+      if (activeBannedSkillIds.length === 0) return false;
 
-    const hasSkillLocal = (c, skillId) => {
-      const inSkills = (c.skills || []).some((s) => s.id === skillId);
-      if (inSkills) return true;
-      const inChoices = (c.choices || []).some((s) => s.id === skillId);
-      if (inChoices) return true;
-      const inChoices2 = (c.choices2 || []).some((s) => s.id === skillId);
-      if (inChoices2) return true;
-      return false;
-    };
+      const hasSkillLocal = (c, skillId) => {
+        const inSkills = (c.skills || []).some((s) => s.id === skillId);
+        if (inSkills) return true;
+        const inChoices = (c.choices || []).some((s) => s.id === skillId);
+        if (inChoices) return true;
+        const inChoices2 = (c.choices2 || []).some((s) => s.id === skillId);
+        if (inChoices2) return true;
+        return false;
+      };
 
-    return activeBanRules.some((rule) => hasSkillLocal(template, rule.skillId));
-  };
+      return activeBannedSkillIds.some((skillId) =>
+        hasSkillLocal(template, skillId)
+      );
+    },
+    [activeBannedSkillIds]
+  );
 
   const addCard = (template) => {
     if (isCardBannedByFortune(template)) {
@@ -709,6 +716,7 @@ export default function DeckEditorScreen({ switchScreen }) {
           <div id="deck-current-list" className="deck-list-horizontal">
             {Object.keys(groupedDeck).map((id) => {
               const { card, count } = groupedDeck[id];
+              const isBanned = isCardBannedByFortune(card);
               const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
               const imgUrl = getCardImgUrl ? getCardImgUrl(card, true) : '';
               const isPremUnlocked = unlockedPremium.includes(card.id);
@@ -739,37 +747,12 @@ export default function DeckEditorScreen({ switchScreen }) {
                       display: 'block',
                       overflow: 'hidden',
                       padding: 0,
-                      opacity: isCardBannedByFortune(card) ? '0.4' : '1',
-                      border: isCardBannedByFortune(card)
-                        ? '3px solid #ef4444'
-                        : undefined,
-                      boxShadow: isCardBannedByFortune(card)
-                        ? '0 0 10px #ef4444'
-                        : undefined,
+                      opacity: isBanned ? '0.4' : '1',
+                      border: isBanned ? '3px solid #ef4444' : undefined,
+                      boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
                     }}
                   >
-                    {isCardBannedByFortune(card) && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          background: 'rgba(0,0,0,0.6)',
-                          color: '#ef4444',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          fontWeight: 'bold',
-                          fontSize: '0.9rem',
-                          zIndex: 10,
-                          textShadow: '0 0 5px #000',
-                        }}
-                      >
-                        使用不可
-                      </div>
-                    )}
+                    {isBanned && <BannedOverlay />}
                     <div
                       className="card-bg"
                       style={{
@@ -941,28 +924,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                       boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
                     }}
                   >
-                    {isBanned && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          background: 'rgba(0,0,0,0.6)',
-                          color: '#ef4444',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          fontWeight: 'bold',
-                          fontSize: '0.9rem',
-                          zIndex: 10,
-                          textShadow: '0 0 5px #000',
-                        }}
-                      >
-                        使用不可
-                      </div>
-                    )}
+                    {isBanned && <BannedOverlay />}
                     <div
                       className="card-bg"
                       style={{
@@ -1558,6 +1520,31 @@ export default function DeckEditorScreen({ switchScreen }) {
       {showMissions && (
         <MissionListModal onClose={() => setShowMissions(false)} />
       )}
+    </div>
+  );
+}
+
+function BannedOverlay() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        background: 'rgba(0,0,0,0.6)',
+        color: '#ef4444',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontWeight: 'bold',
+        fontSize: '0.9rem',
+        zIndex: 10,
+        textShadow: '0 0 5px #000',
+      }}
+    >
+      使用不可
     </div>
   );
 }

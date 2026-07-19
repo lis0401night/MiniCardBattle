@@ -1024,11 +1024,16 @@ export async function resolveActiveSkillEffect(
           );
           const discardPile =
             o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-          discardPile.push(newToken);
+          if (!newToken.isToken) {
+            discardPile.push(newToken);
+          }
 
           // 起動消滅のVFX/SE再生
-          if (cEl) {
-            createDamagePopup(cEl, '起動', '#facc15');
+          const targetEl = document.querySelector(
+            `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+          );
+          if (targetEl) {
+            createDamagePopup(targetEl, '起動', '#facc15');
             playSound(SOUNDS.seSkill);
           }
         } else if (
@@ -1235,11 +1240,16 @@ export async function resolveActiveSkillEffect(
         );
         const discardPile =
           o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-        discardPile.push(newToken);
+        if (!newToken.isToken) {
+          discardPile.push(newToken);
+        }
 
         // 起動消滅のVFX/SE再生
-        if (cEl) {
-          createDamagePopup(cEl, '起動', '#facc15');
+        const targetEl = document.querySelector(
+          `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+        );
+        if (targetEl) {
+          createDamagePopup(targetEl, '起動', '#facc15');
           playSound(SOUNDS.seSkill);
         }
       } else if (

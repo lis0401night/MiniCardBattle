@@ -156,7 +156,7 @@ export default function RankingScreen({
                 parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) ||
                 0;
               const clearedData = loadFortuneClearedData('automata');
-              const fortuneMaxGrade = clearedData.maxGradeLevel || 0;
+              const fortuneMaxGrade = Math.max(clearedData.maxGradeLevel, 0);
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {

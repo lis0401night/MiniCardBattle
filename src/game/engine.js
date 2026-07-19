@@ -204,10 +204,11 @@ export function processPlacementOrEquip(
       (s) => s.id !== 'startup' && s.id !== 'defender'
     );
 
-    // 2. プレイしようとしていたカードは墓地に送る
     const discardPile =
       owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-    discardPile.push(newCard);
+    if (!newCard.isToken) {
+      discardPile.push(newCard);
+    }
 
     // 3. 起動消滅のイベントを追加する
     events.push({
@@ -2311,7 +2312,9 @@ export function applyLeaderSkillLogic(
             rarity: automataTpl.rarity || 1,
             isToken: true,
           };
-          discardPile.push(deadToken);
+          if (!deadToken.isToken) {
+            discardPile.push(deadToken);
+          }
 
           events.push({
             type: 'skill_popup',
@@ -3214,7 +3217,9 @@ export function applyLeaderSkillLogic(
         // 配置しようとした白熊は墓地へ送る
         const discardPile =
           owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-        discardPile.push(bearCard);
+        if (!bearCard.isToken) {
+          discardPile.push(bearCard);
+        }
 
         events.push({
           type: 'skill_popup',
@@ -3448,6 +3453,10 @@ export function applyLeaderSkillLogic(
           );
 
           // 復活させようとしていたカードは墓地に戻す
+          if (!selectedCard.isToken) {
+            discard.push(selectedCard);
+          }
+
           events.push({
             type: 'skill_popup',
             side: owner,
@@ -3696,7 +3705,9 @@ export function applyLeaderSkillLogic(
           imgUrl: 'assets/cards/card_token_skeleton.webp',
           isToken: true,
         };
-        discardPile.push(newSkeleton);
+        if (!newSkeleton.isToken) {
+          discardPile.push(newSkeleton);
+        }
 
         events.push({
           type: 'skill_popup',
@@ -3766,7 +3777,9 @@ export function applyLeaderSkillLogic(
             imgUrl: 'assets/cards/card_token_daemon.webp',
             isToken: true,
           };
-          discardPile.push(newDaemon);
+          if (!newDaemon.isToken) {
+            discardPile.push(newDaemon);
+          }
 
           events.push({
             type: 'skill_popup',
@@ -3879,7 +3892,9 @@ export function applyLeaderSkillLogic(
           // トークンは墓地に送る
           const discardPile =
             owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-          discardPile.push(newToken);
+          if (!newToken.isToken) {
+            discardPile.push(newToken);
+          }
 
           events.push({
             type: 'skill_popup',

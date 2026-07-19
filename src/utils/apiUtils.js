@@ -167,7 +167,7 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       localTotal =
         parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
       const clearedData = loadFortuneClearedData('automata');
-      const maxGrade = clearedData.maxGradeLevel || 0;
+      const maxGrade = Math.max(clearedData.maxGradeLevel, 0);
 
       endpoint = 'update_fortune_points.php';
       extraData = { fortune_max_grade: maxGrade };

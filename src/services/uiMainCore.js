@@ -1,6 +1,6 @@
 import {
-  initHighDifficultyEventMode,
   initFortuneEventMode,
+  initHighDifficultyEventMode,
   loadPlayerDeck,
 } from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
@@ -15,11 +15,11 @@ import { STAGES } from '../utils/constants/stages.js';
 import {
   clearCachesAndServiceWorkers,
   getDialogue,
+  getFortuneHandicapsStorageKey,
   playSound,
   resolvePlayerName,
   sleep,
   switchScreen,
-  getFortuneHandicapsStorageKey,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import {
@@ -817,7 +817,7 @@ export function showEventMenu() {
 
 export function showFortuneMenu() {
   playSound(SOUNDS.seClick);
-  playSound(AUDIO_INSTANCES.bgmTitle);
+  playSound(AUDIO_INSTANCES.bgmFortune1);
   switchScreen('screen-fortune-menu');
 }
 
@@ -837,7 +837,7 @@ export function showFortuneRules() {
 }
 
 /**
- * 運命の邂逅：キャラ選択後に難易度選択画面へ遷移する（プレースホルダー）
+ * 運命の邂逅：キャラ選択後に難易度選択画面へ遷移する
  */
 export function selectFortuneTarget(enemyCharId) {
   GameState.lastBattleResult = null;

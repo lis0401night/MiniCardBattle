@@ -263,18 +263,32 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
     setCloseCardPreviewHook(handleCloseCardPreview);
 
+    const triggerCloseTimer = (type, uniqueId) => {
+      setTimeout(() => {
+        setAcquisitionData((prev) => {
+          if (!prev) return null;
+          let currentId;
+          if (prev.type === 'card' || prev.type === 'premium') {
+            currentId = prev.card?.id;
+          } else if (prev.type === 'playmat') {
+            currentId = prev.playmat?.id;
+          } else {
+            currentId = prev.id;
+          }
+          if (prev.type === type && currentId === uniqueId) {
+            return { ...prev, canClose: true };
+          }
+          return prev;
+        });
+      }, 500);
+    };
+
     setShowCardAcquisitionModalHook((cardId, onClose) => {
       const card = CARD_MASTER?.find((c) => c.id === cardId);
       if (card) {
         playSound?.(SOUNDS?.seSkill);
         setAcquisitionData({ type: 'card', card, canClose: false, onClose });
-        setTimeout(
-          () =>
-            setAcquisitionData((prev) =>
-              prev ? { ...prev, canClose: true } : null
-            ),
-          500
-        );
+        triggerCloseTimer('card', cardId);
       }
     });
 
@@ -287,13 +301,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           card: { ...card, isPremium: true },
           canClose: false,
         });
-        setTimeout(
-          () =>
-            setAcquisitionData((prev) =>
-              prev ? { ...prev, canClose: true } : null
-            ),
-          500
-        );
+        triggerCloseTimer('premium', cardId);
       }
     });
 
@@ -302,13 +310,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       if (playmat) {
         playSound?.(SOUNDS?.seSkill);
         setAcquisitionData({ type: 'playmat', name, playmat, canClose: false });
-        setTimeout(
-          () =>
-            setAcquisitionData((prev) =>
-              prev ? { ...prev, canClose: true } : null
-            ),
-          500
-        );
+        triggerCloseTimer('playmat', id);
       }
     });
 
@@ -326,13 +328,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           image: img,
           canClose: false,
         });
-        setTimeout(
-          () =>
-            setAcquisitionData((prev) =>
-              prev ? { ...prev, canClose: true } : null
-            ),
-          500
-        );
+        triggerCloseTimer('skin', id);
       }
     });
 
@@ -351,13 +347,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         image: img,
         canClose: false,
       });
-      setTimeout(
-        () =>
-          setAcquisitionData((prev) =>
-            prev ? { ...prev, canClose: true } : null
-          ),
-        500
-      );
+      triggerCloseTimer('icon', id);
     });
 
     setShowCharacterAcquisitionModalHook((name, id) => {
@@ -371,13 +361,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           image: char.image,
           canClose: false,
         });
-        setTimeout(
-          () =>
-            setAcquisitionData((prev) =>
-              prev ? { ...prev, canClose: true } : null
-            ),
-          500
-        );
+        triggerCloseTimer('character', id);
       }
     });
 
@@ -392,13 +376,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           image: `assets/backgrounds/background_${id}.webp`,
           canClose: false,
         });
-        setTimeout(
-          () =>
-            setAcquisitionData((prev) =>
-              prev ? { ...prev, canClose: true } : null
-            ),
-          500
-        );
+        triggerCloseTimer('stage', id);
       }
     });
 

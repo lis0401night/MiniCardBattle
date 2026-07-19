@@ -4413,6 +4413,11 @@ export function endBattle() {
       playSound(AUDIO_INSTANCES.bgmChallenge);
     } else if (GameState.gameMode === 'defense_attack') {
       playSound(AUDIO_INSTANCES.bgmDefense);
+    } else if (
+      GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_fortune')
+    ) {
+      playSound(AUDIO_INSTANCES.bgmFortune1);
     } else if (GameState.gameMode === 'high_difficulty') {
       playSound(AUDIO_INSTANCES.bgmHighDifficulty);
     } else if (GameState.gameMode === 'tournament') {
