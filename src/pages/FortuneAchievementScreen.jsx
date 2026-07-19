@@ -131,6 +131,15 @@ export default function FortuneAchievementScreen() {
     return '';
   };
 
+  let maxEarnedPoints = 0;
+  let totalPossiblePoints = 0;
+  fortuneHandicapsList.forEach((h) => {
+    totalPossiblePoints += h.cost || 0;
+    if (clearedData.clearedHandicaps && clearedData.clearedHandicaps[h.id]) {
+      maxEarnedPoints += h.cost || 0;
+    }
+  });
+
   const bgStyle = getScreenBackgroundStyle(
     'assets/backgrounds/background_fortune01.webp'
   );
@@ -285,14 +294,26 @@ export default function FortuneAchievementScreen() {
         >
           <div
             style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               color: '#cbd5e1',
               fontWeight: 'bold',
               fontSize: '0.95rem',
-              marginBottom: '8px',
+              marginBottom: '10px',
               flexShrink: 0,
             }}
           >
-            合計達成レベル
+            <span>合計達成レベル</span>
+            <span
+              style={{
+                fontSize: '1.2rem',
+                color: '#facc15',
+                textShadow: '0 0 10px rgba(250, 204, 21, 0.4)',
+              }}
+            >
+              {maxEarnedPoints} / {totalPossiblePoints}
+            </span>
           </div>
           <div
             style={{
@@ -307,51 +328,84 @@ export default function FortuneAchievementScreen() {
             {FORTUNE_GRADE_THRESHOLDS.filter((t) => t.level !== 0).map(
               (threshold) => {
                 const isCleared = clearedData.maxGradeLevel >= threshold.level;
+                const percentage = isCleared ? 100 : 0;
+
+                const bgColor = isCleared
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : 'rgba(0, 0, 0, 0.5)';
+                const borderColor = isCleared ? '#10b981' : '#475569';
+                const titleColor = isCleared ? '#34d399' : '#f8fafc';
+
                 return (
                   <div
                     key={threshold.level}
                     style={{
-                      background: 'rgba(30, 41, 59, 0.9)',
-                      border: `1px solid ${isCleared ? '#f97316' : '#334155'}`,
-                      boxShadow: isCleared
-                        ? '0 0 10px rgba(249, 115, 22, 0.2)'
-                        : 'none',
+                      background: bgColor,
+                      border: `1px solid ${borderColor}`,
                       borderRadius: '8px',
-                      padding: '12px 15px',
+                      padding: '10px 15px',
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
                       flexShrink: 0,
                     }}
                   >
-                    <div style={{ flex: 1 }}>
-                      <span
-                        style={{
-                          color: '#f8fafc',
-                          fontWeight: 'bold',
-                          fontSize: '0.95rem',
-                        }}
-                      >
-                        Lv.{threshold.level} ({threshold.min}～{threshold.max}
-                        pt)
-                      </span>
-                    </div>
                     <div
                       style={{
                         display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        gap: '10px',
+                        marginBottom: '6px',
                       }}
                     >
                       <span
                         style={{
-                          fontSize: '0.8rem',
-                          color: '#facc15',
-                          whiteSpace: 'nowrap',
+                          color: titleColor,
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
                         }}
                       >
+                        Lv.{threshold.level} ({threshold.min}～{threshold.max})
+                      </span>
+                      <span style={{ fontSize: '0.8rem', color: '#facc15' }}>
                         報酬: {getRewardName(threshold.level)}
                       </span>
+                    </div>
+
+                    {/* 実績画面と統一したプログレスバー */}
+                    <div
+                      style={{
+                        width: '100%',
+                        background: '#0f172a',
+                        borderRadius: '4px',
+                        height: '12px',
+                        marginBottom: '4px',
+                        overflow: 'hidden',
+                        border: '1px solid #334155',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${percentage}%`,
+                          height: '100%',
+                          background: isCleared ? '#10b981' : '#3b82f6',
+                          transition: 'width 0.3s ease',
+                        }}
+                      ></div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: '2px',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                        {isCleared ? '1 / 1' : '0 / 1'}
+                      </span>
+
                       {claimedLevels.includes(threshold.level) ? (
                         <span
                           style={{
