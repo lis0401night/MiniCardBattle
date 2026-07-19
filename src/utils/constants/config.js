@@ -31,6 +31,9 @@ export const TOURNAMENT_TOTAL_POINTS_KEY =
 export const DEFENSE_POINTS_KEY = 'mini_card_battle_defense_points';
 export const DEFENSE_TOTAL_POINTS_KEY = 'mini_card_battle_defense_total_points';
 export const DEFENSE_WINS_KEY = 'mini_card_battle_defense_wins';
+export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';
+export const FORTUNE_TOTAL_POINTS_KEY =
+  'mini_card_battle_fortune_total_points';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';
 
 // 交換コストの定義（カテゴリ・レアリティ別）
@@ -641,3 +644,6 @@ export function getStageBackgroundStyle(stageId) {
   };
 }
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;
+
+// 運命の邂逅 交換所ラインナップ（商品は将来追加予定）
+export const FORTUNE_EXCHANGE_LINEUP = [];

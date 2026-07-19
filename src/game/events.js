@@ -85,7 +85,7 @@ export function initFortuneEventMode(playerCharId, enemyCharId) {
   GameState.playerConfig = { ...CHARACTERS[playerCharId] };
   GameState.enemyConfig = {
     ...CHARACTERS[enemyCharId],
-    hp: CHARACTERS[enemyCharId].hp || 40,
+    hp: CHARACTERS[enemyCharId].hp || 20,
     name: eventConfig.name,
   };
 

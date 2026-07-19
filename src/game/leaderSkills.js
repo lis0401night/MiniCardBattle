@@ -1666,15 +1666,16 @@ export async function executeLeaderSkillAction(
     if (targetLanes.length > 0) {
       tokenLanes = targetLanes; // VFXの参照用に渡す
     }
-  } else if (action === 'iron_march') {
+  } else if (action === 'iron_march' || action === 'last_battalion') {
     const tA = CARD_MASTER.find((m) => m.id === 'token_automata');
 
     // スキルのカットイン等のために、開始イベントをプッシュして再生
     await playEvents([{ type: 'leader_skill', skill: action, side: owner }]);
 
     let currentTokenLanes = tokenLanes;
+    const repeatCount = action === 'last_battalion' ? 5 : 3;
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < repeatCount; i++) {
       if (GameState.isBattleEnded) break;
 
       let targetLane = -1;
@@ -1802,7 +1803,7 @@ export async function executeLeaderSkillAction(
           side: owner,
           lane: targetLane,
           card: JSON.parse(JSON.stringify(currentBoard[targetLane])),
-          source: 'iron_march',
+          source: action,
         });
       }
 
@@ -1884,7 +1885,8 @@ export async function executeLeaderSkillAction(
     action !== 'dungeon_summon_leader' &&
     action !== 'world_reconstruct' &&
     action !== 'warlock_place_demons' &&
-    action !== 'iron_march'
+    action !== 'iron_march' &&
+    action !== 'last_battalion'
   ) {
     // targeted_destruction のためだけに Engine 側を少し書き換える必要があるので、シミュレートできるように引数 tokenLanes に対象レーンを渡す
     // が、Engineを再書き換えするよりは、直接ここから applyLeaderSkillLogic を呼ぶ
@@ -2086,7 +2088,7 @@ export async function executeLeaderSkillAction(
     });
   }
 
-  if (action !== 'iron_march') {
+  if (action !== 'iron_march' && action !== 'last_battalion') {
     // イベント再生を開始する前に、一時的に盤面をリーダースキル発動前の元の状態に戻す
     // これにより、playEvents 内で正しい上書き・墓地送り演出が実行されるようになる
     GameState.playerBoard = savedPlayerBoard;

@@ -2259,13 +2259,16 @@ export function applyLeaderSkillLogic(
   const eBoard = isBlue ? state.enemyBoard : state.playerBoard;
   const oppOwner = isBlue ? 'red' : 'blue';
 
-  if (action === 'iron_march') {
+  if (action === 'iron_march' || action === 'last_battalion') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
-    const targetLane = tokenLanes ? tokenLanes[0] : 0;
     const automataTpl = CARD_MASTER.find((m) => m.id === 'token_automata');
     if (automataTpl) {
-      for (let i = 0; i < 3; i++) {
+      const repeatCount = action === 'last_battalion' ? 5 : 3;
+      for (let i = 0; i < repeatCount; i++) {
         if (state.playerHP <= 0 || state.enemyHP <= 0) break;
+
+        const targetLane =
+          tokenLanes && tokenLanes[i] !== undefined ? tokenLanes[i] : 0;
 
         // 1. オートマタの配置 or 起動消滅
         const existing = board[targetLane];
@@ -2333,7 +2336,7 @@ export function applyLeaderSkillLogic(
             side: owner,
             lane: targetLane,
             card: JSON.parse(JSON.stringify(board[targetLane])),
-            source: 'iron_march',
+            source: action,
           });
         }
 

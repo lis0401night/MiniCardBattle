@@ -517,9 +517,15 @@ export function processActionSequence(
               voiceCategory: baseMaster?.voiceCategory || 'monster',
               skills: inheritedSkills,
             };
-            // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
+            // 【起動(startup)】起動カードの上にトークンを配置する場合の特別処理
+            // トークンは墓地に送られ、起動カードからstartupとdefenderが除去されて盤面に残る
             const existingCard = targetBoard[tLane];
-            if (
+            if (existingCard && hasSkill(existingCard, 'startup')) {
+              existingCard.skills = existingCard.skills.filter(
+                (s) => s.id !== 'startup' && s.id !== 'defender'
+              );
+              targetDiscard.push(newToken);
+            } else if (
               existingCard &&
               (hasSkill(newToken, 'equip') ||
                 hasSkill(existingCard, 'arm_self')) &&
@@ -528,7 +534,7 @@ export function processActionSequence(
               !hasSkill(existingCard, 'reflect') &&
               !hasSkill(newToken, 'reflect')
             ) {
-              // 装備合体: パワー加算 + スキル統合
+              // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
               existingCard.basePower =
                 (existingCard.basePower || 0) + (newToken.currentPower || 0);
               existingCard.currentPower =
@@ -793,6 +799,7 @@ export function processActionSequence(
           (s) => s.id !== 'startup' && s.id !== 'defender'
         );
         simState.enemyDiscard.push(playedCard);
+        actionQueue.length = 0; // 起動消滅したため、このカードによる後続の連鎖アクションをすべてキャンセル
       } else if (
         (hasSkill(playedCard, 'equip') ||
           (existingCard && hasSkill(existingCard, 'arm_self'))) &&
@@ -2047,13 +2054,28 @@ export function getBestSimulatedMove() {
             (pattern) => opBoard[pattern[0]] !== null
           );
       }
-    } else if (action === 'iron_march') {
+    } else if (action === 'iron_march' || action === 'last_battalion') {
       const avail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
       let patterns = [];
-      for (let l1 of avail) {
-        for (let l2 of avail) {
-          for (let l3 of avail) {
-            patterns.push([l1, l2, l3]);
+      const repeatCount = action === 'last_battalion' ? 5 : 3;
+      if (repeatCount === 3) {
+        for (let l1 of avail) {
+          for (let l2 of avail) {
+            for (let l3 of avail) {
+              patterns.push([l1, l2, l3]);
+            }
+          }
+        }
+      } else if (repeatCount === 5) {
+        for (let l1 of avail) {
+          for (let l2 of avail) {
+            for (let l3 of avail) {
+              for (let l4 of avail) {
+                for (let l5 of avail) {
+                  patterns.push([l1, l2, l3, l4, l5]);
+                }
+              }
+            }
           }
         }
       }

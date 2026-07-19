@@ -7,6 +7,8 @@ import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
   DEFENSE_WINS_KEY,
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
   DUNGEON_MAX_STREAK_KEY,
 } from './constants/config.js';
 
@@ -158,6 +160,17 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       if (serverPlayerData) {
         sPts = serverPlayerData.points || 0;
         sTotal = serverPlayerData.total_points || 0;
+      }
+    } else if (mode === 'fortune') {
+      localPts = parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
+      localTotal =
+        parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
+
+      endpoint = 'update_fortune_points.php';
+
+      if (serverPlayerData) {
+        sPts = serverPlayerData.fortune_points || 0;
+        sTotal = serverPlayerData.fortune_total_points || 0;
       }
     } else {
       return null;

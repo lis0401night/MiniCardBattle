@@ -522,6 +522,13 @@ export function goBackFromSelect() {
       // 新規挑戦前やリタイア後はメニューに戻る
       switchScreen('screen-tournament-menu');
     }
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune')
+  ) {
+    // 運命の邂逅：難易度選択画面に戻る
+    GameState.appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
   } else {
     // デッキ選択のフローから抜ける際にページネーションをリセット
     GameState.deckListPage = 0;
@@ -552,6 +559,12 @@ export function goBackFromDifficulty() {
   ) {
     // 高難易度イベント：高難易度キャラ選択画面に戻る
     switchScreen('screen-high-difficulty');
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune')
+  ) {
+    // 運命の邂逅：キャラ選択画面に戻る
+    switchScreen('screen-fortune');
   } else {
     GameState.appState = 'select_enemy';
     initSelectScreen(false);
@@ -810,6 +823,11 @@ export function showFortuneMenu() {
 export function showFortune() {
   playSound(SOUNDS.seClick);
   switchScreen('screen-fortune');
+}
+
+export function showFortuneExchange() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-fortune-exchange');
 }
 
 /**
@@ -1090,6 +1108,14 @@ export function confirmCharSelect() {
         .replace('event_', '')
         .replace('_high', '');
       initHighDifficultyEventMode(GameState.pendingCharId, enemyCharId);
+    } else if (
+      GameState.gameMode.startsWith('event_') &&
+      GameState.gameMode.endsWith('_fortune')
+    ) {
+      const enemyCharId = GameState.gameMode
+        .replace('event_', '')
+        .replace('_fortune', '');
+      initFortuneEventMode(GameState.pendingCharId, enemyCharId);
     } else if (GameState.gameMode === 'tournament') {
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
       initTournamentMode();
@@ -1239,9 +1265,11 @@ export function confirmDifficulty(level) {
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_fortune')
   ) {
-    // 運命の邂逅イベント：難易度確定後、対峙ダイアログへ
-    const enemyCharId = GameState.gameMode.split('_')[1];
-    initFortuneEventMode(GameState.playerConfig.id, enemyCharId);
+    // 運命の邂逅イベント：デッキ選択画面へ（高難易度と同じフロー）
+    GameState.appState = 'select_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
   } else {
     GameState.appState = 'select_stage';
     initStageSelectScreen();
