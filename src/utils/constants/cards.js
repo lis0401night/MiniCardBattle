@@ -2599,7 +2599,7 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'legendary' },
-      { id: 'sacrifice', value: 2 },
+      { id: 'sacrifice', value: 3 },
       { id: 'summon', value: 3, summonId: 'token_skeleton' },
       { id: 'choice', value: 1 },
     ],
