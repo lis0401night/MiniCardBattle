@@ -367,7 +367,7 @@ export const EVENT_FORTUNE_DIALOGUES = {
     default: [
       {
         speaker: 'narrator',
-        text: '未来都市「セクター7」——光と鋼鉄 of 街が今、暴走したオートマタの群れに蹂躙されていた。\n[next]逃げ惑う市民の悲鳴が、鋼鉄の摩天楼に反響している。',
+        text: '未来都市「セクター7」——光と鋼鉄の街が今、暴走したオートマタの群れに蹂躙されていた。\n[next]逃げ惑う市民の悲鳴が、鋼鉄の摩天楼に反響している。',
       },
       {
         speaker: 'player',
