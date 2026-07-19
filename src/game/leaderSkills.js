@@ -607,6 +607,21 @@ export async function executeLeaderSkillAction(
         (existingCard.baseId === unionSkill.targetId ||
           existingCard.id === unionSkill.targetId);
 
+      // VFX（カードが出現する前に演出を再生する）
+      if (window.triggerVfx && tLanes.length > 0) {
+        if (owner === 'blue') {
+          await sleep(200);
+          await window.triggerVfx('anm_summon_maria', owner, tLanes[0]);
+        } else {
+          events.push({
+            type: 'vfx_trigger',
+            vfxId: 'anm_summon_maria',
+            side: owner,
+            lane: tLanes[0],
+          });
+        }
+      }
+
       if (isUnion) {
         const combineId = unionSkill.summonId;
         const masterData = CARD_MASTER.find((c) => c.id === combineId);
@@ -692,21 +707,6 @@ export async function executeLeaderSkillAction(
           source: 'overdrive',
         });
         if (owner === 'blue') renderBoard();
-      }
-
-      // VFX
-      if (window.triggerVfx && tLanes.length > 0) {
-        if (owner === 'blue') {
-          await sleep(200);
-          await window.triggerVfx('anm_summon_maria', owner, tLanes[0]);
-        } else {
-          events.push({
-            type: 'vfx_trigger',
-            vfxId: 'anm_summon_maria',
-            side: owner,
-            lane: tLanes[0],
-          });
-        }
       }
     };
 
@@ -806,6 +806,22 @@ export async function executeLeaderSkillAction(
       const isEquip =
         existingCard &&
         (hasSkill(selectedCard, 'equip') || hasSkill(existingCard, 'arm_self'));
+
+      // VFX（カードが出現する前に演出を再生する）
+      if (window.triggerVfx && tLanes.length > 0) {
+        if (owner === 'blue') {
+          await sleep(200);
+          await window.triggerVfx('anm_summon_maria', owner, tLanes[0]);
+        } else {
+          events.push({
+            type: 'vfx_trigger',
+            vfxId: 'anm_summon_maria',
+            side: owner,
+            lane: tLanes[0],
+          });
+        }
+      }
+
       let resurrectedCard;
       if (isUnion) {
         const combineId = unionSkill.summonId;
@@ -1614,13 +1630,6 @@ export async function executeLeaderSkillAction(
           window.triggerVfx('anm_summon_celestia', owner, lane)
         )
       );
-    } else if (
-      action === 'devilhunter_resurrect' &&
-      tokenLanes &&
-      tokenLanes.length > 0
-    ) {
-      await sleep(200);
-      await window.triggerVfx('anm_summon_maria', owner, tokenLanes[0]);
     } else if (action === 'god_flame' || action === 'condemnation') {
       await sleep(200);
       await window.triggerVfx('anm_god_flame', owner);
