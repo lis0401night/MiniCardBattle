@@ -43,17 +43,41 @@ if (!is_dir($dir)) {
 }
 
 $filename = "{$dir}/{$uuid}.js";
+
+$fp = fopen($filename, 'c+');
+if (!$fp) {
+    echo json_encode(['success' => false, 'error' => 'Failed to open player file']);
+    exit;
+}
+
+flock($fp, LOCK_EX);
+
+clearstatcache(true, $filename);
+$fileSize = filesize($filename);
+$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
+
 $player_data = [];
+$parseFailed = false;
 
 // 既存のデータを読み込んで引き継ぐ
-if (file_exists($filename)) {
-    $content = file_get_contents($filename);
+if ($fileSize > 0) {
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
         $existing = json_decode($matches[2], true);
         if ($existing) {
             $player_data = $existing;
+        } else {
+            $parseFailed = true;
         }
+    } else {
+        $parseFailed = true;
     }
+}
+
+if ($parseFailed) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
+    exit;
 }
 
 // プロフィール情報を更新
@@ -68,7 +92,16 @@ if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
 PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
 
-if (file_put_contents($filename, $js_content)) {
+ftruncate($fp, 0);
+rewind($fp);
+
+$writeSuccess = fwrite($fp, $js_content);
+fflush($fp);
+
+flock($fp, LOCK_UN);
+fclose($fp);
+
+if ($writeSuccess !== false) {
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Failed to save profile']);

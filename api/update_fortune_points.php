@@ -48,7 +48,21 @@ if ($clearedDecoded === null && $fortune_cleared !== '{}') {
 $dir = __DIR__ . '/decks/players';
 $filename = "{$dir}/{$uuid}.js";
 
-if (!file_exists($filename)) {
+$fp = fopen($filename, 'c+');
+if (!$fp) {
+    echo json_encode(['success' => false, 'error' => 'Failed to open player file']);
+    exit;
+}
+
+flock($fp, LOCK_EX);
+
+clearstatcache(true, $filename);
+$fileSize = filesize($filename);
+$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
+
+$playerData = null;
+
+if ($fileSize === 0) {
     $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
     $playerData = [
         'uuid' => $uuid,
@@ -73,11 +87,8 @@ if (!file_exists($filename)) {
         'fortune_cleared' => '{}'
     ];
 } else {
-    $content = file_get_contents($filename);
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
         $playerData = json_decode($matches[2], true);
-    } else {
-        $playerData = null;
     }
 }
 
@@ -106,7 +117,16 @@ if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
 PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
     
-    if (file_put_contents($filename, $js_content)) {
+    ftruncate($fp, 0);
+    rewind($fp);
+    
+    $writeSuccess = fwrite($fp, $js_content);
+    fflush($fp);
+    
+    flock($fp, LOCK_UN);
+    fclose($fp);
+
+    if ($writeSuccess !== false) {
         echo json_encode([
             'success' => true,
             'fortune_points' => $playerData['fortune_points'],
@@ -118,4 +138,9 @@ EOT;
         echo json_encode(['success' => false, 'error' => 'Failed to save updated file']);
         exit;
     }
+} else {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
+    exit;
 }

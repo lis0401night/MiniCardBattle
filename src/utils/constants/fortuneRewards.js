@@ -13,9 +13,9 @@ export const FORTUNE_GRADE_THRESHOLDS = [
 ];
 
 /**
- * 合計目標値からレベル（0～4）を判定する
+ * 合計目標値からレベル（0～5）を判定する
  * @param {number} totalCost - 特級目標の合計コスト
- * @returns {number} 該当するレベル（0～4）
+ * @returns {number} 該当するレベル（0～5）
  */
 export function getGradeLevel(totalCost) {
   for (let i = FORTUNE_GRADE_THRESHOLDS.length - 1; i >= 0; i--) {
@@ -108,15 +108,18 @@ export function calculateFortuneRewards(
  */
 export function loadFortuneClearedData(charId) {
   try {
-    const clearedKey = `mini_card_battle_fortune_cleared_${charId}`;
-    const gradeKey = `mini_card_battle_fortune_max_grade_${charId}`;
-    const clearedRaw = localStorage.getItem(clearedKey);
-    const gradeRaw = localStorage.getItem(gradeKey);
-
-    return {
-      clearedHandicaps: clearedRaw ? JSON.parse(clearedRaw) : {},
-      maxGradeLevel: gradeRaw !== null ? parseInt(gradeRaw, 10) : -1,
-    };
+    const dataKey = `mini_card_battle_fortune_cleared_data_${charId}`;
+    const raw = localStorage.getItem(dataKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        const clearedHandicaps = parsed.clearedHandicaps || {};
+        let maxGradeLevel = parseInt(parsed.maxGradeLevel, 10);
+        if (isNaN(maxGradeLevel)) maxGradeLevel = -1;
+        return { clearedHandicaps, maxGradeLevel };
+      }
+    }
+    return { clearedHandicaps: {}, maxGradeLevel: -1 };
   } catch {
     return { clearedHandicaps: {}, maxGradeLevel: -1 };
   }
@@ -133,8 +136,14 @@ export function saveFortuneClearedData(
   clearedHandicaps,
   maxGradeLevel
 ) {
-  const clearedKey = `mini_card_battle_fortune_cleared_${charId}`;
-  const gradeKey = `mini_card_battle_fortune_max_grade_${charId}`;
-  localStorage.setItem(clearedKey, JSON.stringify(clearedHandicaps));
-  localStorage.setItem(gradeKey, String(maxGradeLevel));
+  try {
+    const dataKey = `mini_card_battle_fortune_cleared_data_${charId}`;
+    const dataToSave = {
+      clearedHandicaps: clearedHandicaps || {},
+      maxGradeLevel: typeof maxGradeLevel === 'number' ? maxGradeLevel : -1,
+    };
+    localStorage.setItem(dataKey, JSON.stringify(dataToSave));
+  } catch (e) {
+    console.error('Failed to save fortune cleared data:', e);
+  }
 }

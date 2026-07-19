@@ -8,7 +8,13 @@ import {
   openEnemyDeckPreview,
 } from '../services/uiMainCore.js';
 import MenuButton from '../components/common/MenuButton.jsx';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import {
+  playSound,
+  switchScreen,
+  getEventEnemyCharId,
+  checkIsFortuneMode,
+  checkIsHighDiffMode,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 
@@ -27,22 +33,15 @@ export default function DifficultySelectScreen() {
 
   // 高難易度イベントモードかどうかの判定
   const isHighDiffMode =
-    typeof GameState !== 'undefined' &&
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_high');
+    typeof GameState !== 'undefined' && checkIsHighDiffMode(GameState.gameMode);
 
   // 運命の邂逅イベントモードかどうかの判定
   const isFortuneMode =
-    typeof GameState !== 'undefined' &&
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune');
+    typeof GameState !== 'undefined' && checkIsFortuneMode(GameState.gameMode);
 
-  const enemyCharId =
-    typeof GameState !== 'undefined' &&
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune')
-      ? GameState.gameMode.replace('event_', '').replace('_fortune', '')
-      : null;
+  const enemyCharId = isFortuneMode
+    ? getEventEnemyCharId(GameState.gameMode) || null
+    : null;
 
   const hasFortuneHandicaps =
     enemyCharId &&

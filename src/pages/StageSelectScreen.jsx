@@ -9,12 +9,17 @@ import { appendVersionQuery } from '../utils/constants/config.js';
 export default function StageSelectScreen() {
   const [stages] = useState(() => {
     const stagesObj = STAGES || {};
-    const unlockedStagesRaw = localStorage.getItem(
-      'mini_card_battle_unlocked_stages'
-    );
-    const unlockedStages = unlockedStagesRaw
-      ? JSON.parse(unlockedStagesRaw)
-      : [];
+    let unlockedStages = [];
+    try {
+      const unlockedStagesRaw = localStorage.getItem(
+        'mini_card_battle_unlocked_stages'
+      );
+      const parsed = unlockedStagesRaw ? JSON.parse(unlockedStagesRaw) : [];
+      unlockedStages = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Failed to parse unlocked stages:', e);
+      unlockedStages = [];
+    }
 
     return Object.keys(stagesObj)
       .filter((id) => {

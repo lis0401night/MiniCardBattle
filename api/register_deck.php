@@ -73,69 +73,89 @@ if (!is_dir($dir)) {
     mkdir($dir, 0777, true);
 }
 
-// 既存のデータを引き継ぐ（あれば）
-$existing_points = $initial_points;
-$existing_total_points = $initial_total_points;
-$existing_defense_wins = 0;
-$existing_challenge_points = 0;
-$existing_challenge_total_points = 0;
-$existing_challenge_max_streak = 0;
-$existing_high_difficulty_points = 0;
-$existing_high_difficulty_total_points = 0;
 $filename = "{$dir}/{$uuid}.js";
-if (file_exists($filename)) {
-    $content = file_get_contents($filename);
+
+$fp = fopen($filename, 'c+');
+if (!$fp) {
+    echo json_encode(['success' => false, 'error' => 'Failed to open deck file']);
+    exit;
+}
+
+flock($fp, LOCK_EX);
+
+clearstatcache(true, $filename);
+$fileSize = filesize($filename);
+$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
+
+$player_data = [];
+$parseFailed = false;
+
+if ($fileSize > 0) {
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
         $existing_data = json_decode($matches[2], true);
         if ($existing_data) {
-            $existing_points = isset($existing_data['points']) ? intval($existing_data['points']) : $initial_points;
-            $existing_total_points = isset($existing_data['total_points']) ? intval($existing_data['total_points']) : (isset($existing_data['points']) ? intval($existing_data['points']) : $initial_total_points);
-            $existing_defense_wins = $existing_data['defense_wins'] ?? 0;
-            $existing_challenge_points = $existing_data['challenge_points'] ?? 0;
-            $existing_challenge_total_points = $existing_data['challenge_total_points'] ?? 0;
-            $existing_challenge_max_streak = $existing_data['challenge_max_streak'] ?? 0;
-            $existing_tournament_points = $existing_data['tournament_points'] ?? 0;
-            $existing_tournament_total_points = $existing_data['tournament_total_points'] ?? 0;
-            $existing_high_difficulty_points = $existing_data['high_difficulty_points'] ?? 0;
-            $existing_high_difficulty_total_points = $existing_data['high_difficulty_total_points'] ?? 0;
+            $player_data = $existing_data;
+        } else {
+            $parseFailed = true;
         }
+    } else {
+        $parseFailed = true;
     }
 }
 
-// JSファイルの内容を生成
-// PLAYER_DECKS グローバルオブジェクトにデータを追加する形式
-$player_data = [
-    'uuid' => $uuid,
-    'name' => $name,
-    'icon' => $icon,
-    'character' => $character,
-    'skin' => $skin,
-    'playmat' => $playmat,
-    'stage' => $stage,
-    'deck' => $deck,
-    'skins' => $skins,
-    'points' => $existing_points,
-    'total_points' => $existing_total_points,
-    'defense_wins' => $existing_defense_wins,
-    'challenge_points' => $existing_challenge_points,
-    'challenge_total_points' => $existing_challenge_total_points,
-    'challenge_max_streak' => $existing_challenge_max_streak,
-    'tournament_points' => $existing_tournament_points ?? 0,
-    'tournament_total_points' => $existing_tournament_total_points ?? 0,
-    'high_difficulty_points' => $existing_high_difficulty_points,
-    'high_difficulty_total_points' => $existing_high_difficulty_total_points,
-    'timestamp' => $timestamp
-];
-$data_json = json_encode($player_data);
+if ($parseFailed) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Player data corrupt']);
+    exit;
+}
 
+if (empty($player_data)) {
+    $player_data = [
+        'uuid' => $uuid,
+        'points' => $initial_points,
+        'total_points' => $initial_total_points,
+        'defense_wins' => 0,
+        'challenge_points' => 0,
+        'challenge_total_points' => 0,
+        'challenge_max_streak' => 0,
+        'tournament_points' => 0,
+        'tournament_total_points' => 0,
+        'high_difficulty_points' => 0,
+        'high_difficulty_total_points' => 0,
+        'fortune_points' => 0,
+        'fortune_total_points' => 0,
+        'fortune_max_grade' => -1,
+        'fortune_cleared' => '{}'
+    ];
+}
+
+$player_data['name'] = $name;
+$player_data['icon'] = $icon;
+$player_data['character'] = $character;
+$player_data['skin'] = $skin;
+$player_data['playmat'] = $playmat;
+$player_data['stage'] = $stage;
+$player_data['deck'] = $deck;
+$player_data['skins'] = $skins;
+$player_data['timestamp'] = $timestamp;
+
+$data_json = json_encode($player_data);
 $js_content = <<<EOT
 if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
 PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
 
-// ファイル保存
-$filename = "{$dir}/{$uuid}.js";
-if (file_put_contents($filename, $js_content)) {
+ftruncate($fp, 0);
+rewind($fp);
+
+$writeSuccess = fwrite($fp, $js_content);
+fflush($fp);
+
+flock($fp, LOCK_UN);
+fclose($fp);
+
+if ($writeSuccess !== false) {
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Failed to save deck file']);

@@ -19,6 +19,7 @@ import {
   resolvePlayerName,
   sleep,
   switchScreen,
+  getFortuneHandicapsStorageKey,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import {
@@ -845,7 +846,7 @@ export function selectFortuneTarget(enemyCharId) {
 
   // 対戦相手専用の特級目標設定をロードして適用
   try {
-    const storageKey = `mini_card_battle_fortune_handicaps_${enemyCharId}`;
+    const storageKey = getFortuneHandicapsStorageKey(enemyCharId);
     const saved = localStorage.getItem(storageKey);
     GameState.fortuneHandicaps = saved ? JSON.parse(saved) : {};
   } catch {

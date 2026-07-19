@@ -1159,3 +1159,45 @@ export function resolvePlayerName(providedName = null) {
 
   return DEFAULT_PLAYER_NAME;
 }
+
+/**
+ * イベントのゲームモード名から敵キャラクターIDを抽出します。
+ * @param {string} gameMode - ゲームモード名 (例: 'event_automata_fortune', 'event_oni_high')
+ * @returns {string} 敵キャラクターID (例: 'automata', 'oni')
+ */
+export function getEventEnemyCharId(gameMode) {
+  if (!gameMode || !gameMode.startsWith('event_')) return '';
+  return gameMode
+    .replace('event_', '')
+    .replace('_fortune', '')
+    .replace('_high', '');
+}
+
+/**
+ * 指定されたゲームモードが運命の邂逅（_fortune）モードであるかどうかを判定します。
+ * @param {string} gameMode - ゲームモード名
+ * @returns {boolean} 運命の邂逅モードであるか
+ */
+export function checkIsFortuneMode(gameMode) {
+  if (!gameMode) return false;
+  return gameMode.startsWith('event_') && gameMode.endsWith('_fortune');
+}
+
+/**
+ * 指定されたゲームモードが高難易度（_high）モードであるかどうかを判定します。
+ * @param {string} gameMode - ゲームモード名
+ * @returns {boolean} 高難易度モードであるか
+ */
+export function checkIsHighDiffMode(gameMode) {
+  if (!gameMode) return false;
+  return gameMode.startsWith('event_') && gameMode.endsWith('_high');
+}
+
+/**
+ * 特級目標（ハンディキャップ）のローカルストレージ保存キーを生成します。
+ * @param {string} enemyCharId - 敵キャラクターID
+ * @returns {string} 保存キー名
+ */
+export function getFortuneHandicapsStorageKey(enemyCharId) {
+  return `mini_card_battle_fortune_handicaps_${enemyCharId}`;
+}

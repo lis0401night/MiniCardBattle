@@ -9,6 +9,7 @@ import {
 import { getSkinImage } from '../../utils/constants/characters.js';
 import { getSeededRandom, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import { MAX_CARD_COPIES } from '../../utils/constants/config.js';
 import MenuButton from '../common/MenuButton.jsx';
 import { evaluateMission } from '../../game/missionLogic.js';
 
@@ -62,7 +63,7 @@ export default function MissionResultOverlay() {
       for (let i = 0; i < maxBonus; i++) {
         const currentAvailable = uCards.filter((cid) => {
           const count = tempInventory[cid] || 0;
-          return count < 4;
+          return count < MAX_CARD_COPIES;
         });
 
         if (currentAvailable.length > 0) {

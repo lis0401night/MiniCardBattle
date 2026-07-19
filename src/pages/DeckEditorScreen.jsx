@@ -21,6 +21,8 @@ import {
   playSound,
   stopAllBGM,
   togglePremiumCard,
+  getEventEnemyCharId,
+  checkIsFortuneMode,
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import MenuButton from '../components/common/MenuButton.jsx';
@@ -144,16 +146,12 @@ export default function DeckEditorScreen({ switchScreen }) {
     setDeckSelection(newSelection);
   };
 
-  const isFortuneMode =
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune');
+  const isFortuneMode = checkIsFortuneMode(GameState.gameMode);
 
   const isCardBannedByFortune = (template) => {
     if (!isFortuneMode || !GameState.fortuneHandicaps) return false;
 
-    const enemyCharId = GameState.gameMode
-      .replace('event_', '')
-      .replace('_fortune', '');
+    const enemyCharId = getEventEnemyCharId(GameState.gameMode);
     const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
     const activeBanRules = handicapsList.filter(
@@ -167,6 +165,8 @@ export default function DeckEditorScreen({ switchScreen }) {
       if (inSkills) return true;
       const inChoices = (c.choices || []).some((s) => s.id === skillId);
       if (inChoices) return true;
+      const inChoices2 = (c.choices2 || []).some((s) => s.id === skillId);
+      if (inChoices2) return true;
       return false;
     };
 

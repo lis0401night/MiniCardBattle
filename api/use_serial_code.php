@@ -41,17 +41,41 @@ if (!is_dir($dir)) {
 }
 
 $filename = "{$dir}/{$uuid}.js";
+
+$fp = fopen($filename, 'c+');
+if (!$fp) {
+    echo json_encode(['success' => false, 'error' => 'failed_to_open_player_file']);
+    exit;
+}
+
+flock($fp, LOCK_EX);
+
+clearstatcache(true, $filename);
+$fileSize = filesize($filename);
+$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
+
 $player_data = [];
+$parseFailed = false;
 
 // 既存のデータを読み込んで引き継ぐ
-if (file_exists($filename)) {
-    $content = file_get_contents($filename);
+if ($fileSize > 0) {
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
         $existing = json_decode($matches[2], true);
         if ($existing) {
             $player_data = $existing;
+        } else {
+            $parseFailed = true;
         }
+    } else {
+        $parseFailed = true;
     }
+}
+
+if ($parseFailed) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'player_data_corrupt']);
+    exit;
 }
 
 // used_serials が存在しなければ初期化
@@ -73,12 +97,16 @@ if (!isset($player_data['icon'])) {
 // 定数ファイル（serials.json）からシリアルコード一覧をロード
 $json_path = __DIR__ . '/serials.json';
 if (!file_exists($json_path)) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
     echo json_encode(['success' => false, 'error' => 'config_missing']);
     exit;
 }
 
 $serials_config = json_decode(file_get_contents($json_path), true);
 if (!$serials_config) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
     echo json_encode(['success' => false, 'error' => 'config_corrupt']);
     exit;
 }
@@ -91,6 +119,8 @@ if (isset($serials_config[$code])) {
 
     // すでに使用済みかチェック（巻き戻しバグ救済のための自己修復ロジック）
     if (in_array($code, $player_data['used_serials'])) {
+        flock($fp, LOCK_UN);
+        fclose($fp);
         echo json_encode([
             'success' => true,
             'reward' => $rewardValue,
@@ -147,7 +177,16 @@ if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
 PLAYER_DECKS['{$uuid}'] = {$data_json};
 EOT;
 
-    if (file_put_contents($filename, $js_content)) {
+    ftruncate($fp, 0);
+    rewind($fp);
+
+    $writeSuccess = fwrite($fp, $js_content);
+    fflush($fp);
+
+    flock($fp, LOCK_UN);
+    fclose($fp);
+
+    if ($writeSuccess !== false) {
         echo json_encode([
             'success' => true,
             'reward' => $rewardValue,
@@ -158,6 +197,8 @@ EOT;
         echo json_encode(['success' => false, 'error' => 'failed_to_save']);
     }
 } else {
+    flock($fp, LOCK_UN);
+    fclose($fp);
     echo json_encode(['success' => false, 'error' => 'invalid_code']);
 }
 

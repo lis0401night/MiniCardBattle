@@ -87,6 +87,7 @@ export function initFortuneEventMode(playerCharId, enemyCharId) {
     ...CHARACTERS[enemyCharId],
     hp: CHARACTERS[enemyCharId].hp || 20,
     name: eventConfig.name,
+    leaderSkill: eventConfig.leaderSkill ?? CHARACTERS[enemyCharId].leaderSkill,
   };
 
   const modeKey = `event_${enemyCharId}_fortune`;

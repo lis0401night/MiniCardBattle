@@ -17,8 +17,12 @@ export default function FortuneRulesScreen() {
       <div className="rule-box">
         <ul>
           <li>特別な対戦相手と戦うモードです。</li>
-          <li>様々な制限（特級目標）を有効にして勝利することで、運命ポイントを獲得できます。</li>
-          <li>有効にした「合計目標値」に応じて、限定の報酬を受け取ることができます。</li>
+          <li>
+            様々な制限（特級目標）を有効にして勝利することで、運命ポイントを獲得できます。
+          </li>
+          <li>
+            有効にした「合計目標値」に応じて、限定の報酬を受け取ることができます。
+          </li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}
           >

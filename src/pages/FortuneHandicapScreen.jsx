@@ -2,20 +2,24 @@ import { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
-import { playSound } from '../utils/gameUtils.js';
+import {
+  playSound,
+  getEventEnemyCharId,
+  getFortuneHandicapsStorageKey,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+
+const MAX_TOTAL_HANDICAP_POINTS = 24;
 
 export default function FortuneHandicapScreen() {
   const enemyCharId =
-    typeof GameState !== 'undefined' &&
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune')
-      ? GameState.gameMode.replace('event_', '').replace('_fortune', '')
+    typeof GameState !== 'undefined' && GameState.gameMode
+      ? getEventEnemyCharId(GameState.gameMode) || 'automata'
       : 'automata';
 
   const fortuneHandicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
-  const storageKey = `mini_card_battle_fortune_handicaps_${enemyCharId}`;
+  const storageKey = getFortuneHandicapsStorageKey(enemyCharId);
 
   const [handicaps, setHandicaps] = useState(() => {
     try {
@@ -37,14 +41,16 @@ export default function FortuneHandicapScreen() {
 
   const toggleHandicap = (id, cost) => {
     const isON = !!handicaps[id];
-    if (!isON && totalPoints + cost > 24) {
+    if (!isON && totalPoints + cost > MAX_TOTAL_HANDICAP_POINTS) {
       playSound(SOUNDS?.seError || SOUNDS?.seClick);
       if (window.showAlertModalHook) {
         window.showAlertModalHook(
-          '特級目標の合計ポイントは最大24ポイントまでです。'
+          `特級目標の合計ポイントは最大${MAX_TOTAL_HANDICAP_POINTS}ポイントまでです。`
         );
       } else {
-        alert('特級目標の合計ポイントは最大24ポイントまでです。');
+        alert(
+          `特級目標の合計ポイントは最大${MAX_TOTAL_HANDICAP_POINTS}ポイントまでです。`
+        );
       }
       return;
     }
@@ -114,8 +120,7 @@ export default function FortuneHandicapScreen() {
                   : totalPoints <= 19
                     ? '0 0 10px rgba(249, 115, 22, 0.4)'
                     : '0 0 10px rgba(239, 68, 68, 0.4)';
-        const MAX_TOTAL = 24;
-        const barPercent = (totalPoints / MAX_TOTAL) * 100;
+        const barPercent = (totalPoints / MAX_TOTAL_HANDICAP_POINTS) * 100;
 
         return (
           <div
@@ -137,7 +142,7 @@ export default function FortuneHandicapScreen() {
                 marginBottom: '6px',
               }}
             >
-              合計目標値: {totalPoints} / {MAX_TOTAL}
+              合計目標値: {totalPoints} / {MAX_TOTAL_HANDICAP_POINTS}
             </div>
             {/* ゲージバー（目盛り付き） */}
             <div
@@ -176,7 +181,7 @@ export default function FortuneHandicapScreen() {
                   key={value}
                   style={{
                     position: 'absolute',
-                    left: `${(value / MAX_TOTAL) * 100}%`,
+                    left: `${(value / MAX_TOTAL_HANDICAP_POINTS) * 100}%`,
                     top: 0,
                     width: '1px',
                     height: '10px',

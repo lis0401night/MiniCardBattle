@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
+import { getEventEnemyCharId } from '../utils/gameUtils.js';
 import { GameState } from '../state/gameState.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import {
@@ -15,16 +16,32 @@ import {
   showPremiumAcquisitionModal,
 } from '../services/uiGallery.js';
 
+const unlockAndShowAcquisition = (
+  storageKey,
+  targetId,
+  modalFn,
+  displayName
+) => {
+  try {
+    const current = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    if (!current.includes(targetId)) {
+      current.push(targetId);
+      localStorage.setItem(storageKey, JSON.stringify(current));
+    }
+  } catch (e) {
+    console.error(`Failed to unlock ${targetId} in ${storageKey}:`, e);
+  }
+  modalFn(displayName, targetId);
+};
+
 /**
  * 運命の邂逅：特級目標の達成状況画面
  * 各特級目標の達成済み/未達成と、合計達成レベルの一覧を表示する
  */
 export default function FortuneAchievementScreen() {
   const enemyCharId =
-    typeof GameState !== 'undefined' &&
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune')
-      ? GameState.gameMode.replace('event_', '').replace('_fortune', '')
+    typeof GameState !== 'undefined' && GameState.gameMode
+      ? getEventEnemyCharId(GameState.gameMode) || 'automata'
       : 'automata';
 
   const fortuneHandicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
@@ -45,53 +62,33 @@ export default function FortuneAchievementScreen() {
     if (claimedLevels.includes(level)) return;
 
     if (level === 1) {
-      const current = JSON.parse(
-        localStorage.getItem('mini_card_battle_unlocked_characters') || '[]'
+      unlockAndShowAcquisition(
+        'mini_card_battle_unlocked_characters',
+        'automata',
+        showCharacterAcquisitionModal,
+        '廃鉄の声 マキナ'
       );
-      if (!current.includes('automata')) {
-        current.push('automata');
-        localStorage.setItem(
-          'mini_card_battle_unlocked_characters',
-          JSON.stringify(current)
-        );
-      }
-      showCharacterAcquisitionModal('廃鉄の声 マキナ', 'automata');
     } else if (level === 2) {
-      const current = JSON.parse(
-        localStorage.getItem('mini_card_battle_unlocked_stages') || '[]'
+      unlockAndShowAcquisition(
+        'mini_card_battle_unlocked_stages',
+        'automata',
+        showStageAcquisitionModal,
+        '鋼の墓標'
       );
-      if (!current.includes('automata')) {
-        current.push('automata');
-        localStorage.setItem(
-          'mini_card_battle_unlocked_stages',
-          JSON.stringify(current)
-        );
-      }
-      showStageAcquisitionModal('鋼の墓標', 'automata');
     } else if (level === 3) {
-      const current = JSON.parse(
-        localStorage.getItem('mini_card_battle_unlocked_icons') || '[]'
+      unlockAndShowAcquisition(
+        'mini_card_battle_unlocked_icons',
+        'automata',
+        showIconAcquisitionModal,
+        'マキナ'
       );
-      if (!current.includes('automata')) {
-        current.push('automata');
-        localStorage.setItem(
-          'mini_card_battle_unlocked_icons',
-          JSON.stringify(current)
-        );
-      }
-      showIconAcquisitionModal('マキナ', 'automata');
     } else if (level === 4) {
-      const current = JSON.parse(
-        localStorage.getItem('mini_card_battle_owned_playmats') || '[]'
+      unlockAndShowAcquisition(
+        'mini_card_battle_owned_playmats',
+        'automata',
+        showPlaymatAcquisitionModal,
+        'マキナ'
       );
-      if (!current.includes('automata')) {
-        current.push('automata');
-        localStorage.setItem(
-          'mini_card_battle_owned_playmats',
-          JSON.stringify(current)
-        );
-      }
-      showPlaymatAcquisitionModal('マキナ', 'automata');
     } else if (level === 5) {
       // プレミアムカードのアンロック処理
       if (!GameState.unlockedPremiumCards) {
@@ -307,85 +304,90 @@ export default function FortuneAchievementScreen() {
               paddingRight: '4px',
             }}
           >
-            {FORTUNE_GRADE_THRESHOLDS.filter((t) => t.level !== 0).map((threshold) => {
-              const isCleared = clearedData.maxGradeLevel >= threshold.level;
-              return (
-                <div
-                  key={threshold.level}
-                  style={{
-                    background: 'rgba(30, 41, 59, 0.9)',
-                    border: `1px solid ${isCleared ? '#f97316' : '#334155'}`,
-                    boxShadow: isCleared
-                      ? '0 0 10px rgba(249, 115, 22, 0.2)'
-                      : 'none',
-                    borderRadius: '8px',
-                    padding: '12px 15px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <span
-                      style={{
-                        color: '#f8fafc',
-                        fontWeight: 'bold',
-                        fontSize: '0.95rem',
-                      }}
-                    >
-                      Lv.{threshold.level} ({threshold.min}～{threshold.max}pt)
-                    </span>
-                  </div>
+            {FORTUNE_GRADE_THRESHOLDS.filter((t) => t.level !== 0).map(
+              (threshold) => {
+                const isCleared = clearedData.maxGradeLevel >= threshold.level;
+                return (
                   <div
+                    key={threshold.level}
                     style={{
+                      background: 'rgba(30, 41, 59, 0.9)',
+                      border: `1px solid ${isCleared ? '#f97316' : '#334155'}`,
+                      boxShadow: isCleared
+                        ? '0 0 10px rgba(249, 115, 22, 0.2)'
+                        : 'none',
+                      borderRadius: '8px',
+                      padding: '12px 15px',
                       display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      gap: '10px',
+                      flexShrink: 0,
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: '0.8rem',
-                        color: '#facc15',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      報酬: {getRewardName(threshold.level)}
-                    </span>
-                    {claimedLevels.includes(threshold.level) ? (
+                    <div style={{ flex: 1 }}>
                       <span
                         style={{
-                          color: '#94a3b8',
-                          fontSize: '0.8rem',
-                          whiteSpace: 'nowrap',
+                          color: '#f8fafc',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
                         }}
                       >
-                        (取得済)
+                        Lv.{threshold.level} ({threshold.min}～{threshold.max}
+                        pt)
                       </span>
-                    ) : (
-                      <button
-                        className="btn"
-                        disabled={!isCleared}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <span
                         style={{
-                          padding: '2px 8px',
-                          fontSize: '0.7rem',
-                          minHeight: '20px',
-                          margin: 0,
-                          background: isCleared ? '' : '#475569',
-                          opacity: isCleared ? '1' : '0.6',
-                          cursor: isCleared ? 'pointer' : 'not-allowed',
+                          fontSize: '0.8rem',
+                          color: '#facc15',
                           whiteSpace: 'nowrap',
                         }}
-                        onClick={() => isCleared && handleClaimReward(threshold.level)}
                       >
-                        受け取る
-                      </button>
-                    )}
+                        報酬: {getRewardName(threshold.level)}
+                      </span>
+                      {claimedLevels.includes(threshold.level) ? (
+                        <span
+                          style={{
+                            color: '#94a3b8',
+                            fontSize: '0.8rem',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          (取得済)
+                        </span>
+                      ) : (
+                        <button
+                          className="btn"
+                          disabled={!isCleared}
+                          style={{
+                            padding: '2px 8px',
+                            fontSize: '0.7rem',
+                            minHeight: '20px',
+                            margin: 0,
+                            background: isCleared ? '' : '#475569',
+                            opacity: isCleared ? '1' : '0.6',
+                            cursor: isCleared ? 'pointer' : 'not-allowed',
+                            whiteSpace: 'nowrap',
+                          }}
+                          onClick={() =>
+                            isCleared && handleClaimReward(threshold.level)
+                          }
+                        >
+                          受け取る
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }
+            )}
           </div>
         </div>
       </div>

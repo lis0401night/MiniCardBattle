@@ -1,4 +1,5 @@
 import { getOrCreateUUID, resolvePlayerName } from './gameUtils.js';
+import { loadFortuneClearedData } from './constants/fortuneRewards.js';
 import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
@@ -165,8 +166,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       localPts = parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
-      const maxGrade =
-        parseInt(localStorage.getItem('mini_card_battle_fortune_grade_automata'), 10) || -1;
+      const clearedData = loadFortuneClearedData('automata');
+      const maxGrade = clearedData.maxGradeLevel || 0;
 
       endpoint = 'update_fortune_points.php';
       extraData = { fortune_max_grade: maxGrade };

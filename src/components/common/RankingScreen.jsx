@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { loadFortuneClearedData } from '../../utils/constants/fortuneRewards.js';
 import ScreenLayout from './ScreenLayout.jsx';
 import {
   CHARACTERS,
@@ -154,8 +155,8 @@ export default function RankingScreen({
               const fortuneTotalPts =
                 parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) ||
                 0;
-              const fortuneMaxGrade =
-                parseInt(localStorage.getItem('mini_card_battle_fortune_grade_automata'), 10) || -1;
+              const clearedData = loadFortuneClearedData('automata');
+              const fortuneMaxGrade = clearedData.maxGradeLevel || 0;
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
