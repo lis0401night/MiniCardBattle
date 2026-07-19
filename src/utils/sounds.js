@@ -62,6 +62,7 @@ export const SE_PATHS = {
   seSkillExecute: 'assets/audio/se/se_skill_execute.mp3',
   seSkillStealth: 'assets/audio/se/se_skill_stealth.mp3',
   seSkillCall: 'assets/audio/se/se_skill_call.mp3',
+  seSkillIgnis: 'assets/audio/se/se_summon_ignis.mp3',
 };
 
 export const SOUNDS = {
@@ -139,6 +140,7 @@ export const AUDIO_INSTANCES = {
   seSkillExecute: new Audio('assets/audio/se/se_skill_execute.mp3'),
   seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
   seSkillCall: new Audio('assets/audio/se/se_skill_call.mp3'),
+  seSkillIgnis: new Audio('assets/audio/se/se_summon_ignis.mp3'),
 };
 
 /**

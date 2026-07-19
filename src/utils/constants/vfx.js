@@ -99,15 +99,15 @@ export const VFX_DATA = {
   // イグニス召喚用VFX
   anm_summon_ignis: {
     type: 'sprite',
-    src: 'assets/vfx/hujimiyaeffect_framecircle.png',
-    columns: 7,
-    rows: 10,
-    frameCount: 70,
+    src: 'assets/vfx/vfx_axe_flame.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 28,
     duration: 1000,
-    se: 'seSkillCharge',
+    se: 'seSkillIgnis',
     position: 'lane', // ターゲットのレーンに合わせて表示
-    offsetY: 0,
-    scale: 1.0,
+    offsetY: -2,
+    scale: 0.7,
     shake: false,
     targetSide: 'self', // 自陣に召喚
   },
@@ -195,10 +195,10 @@ export const VFX_DATA = {
   // カグラSPスキル「封印の儀」用VFX
   anm_seal_lanes: {
     type: 'sprite',
-    src: 'assets/vfx/pipofm-horroreffect05_192.png',
-    columns: 5,
-    rows: 3,
-    frameCount: 15,
+    src: 'assets/vfx/vfx_sealed.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 30,
     duration: 800,
     se: 'seHyoushigi',
     position: 'lane', // ターゲットのレーンに合わせて表示
