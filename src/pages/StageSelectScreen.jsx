@@ -9,10 +9,20 @@ import { appendVersionQuery } from '../utils/constants/config.js';
 export default function StageSelectScreen() {
   const [stages] = useState(() => {
     const stagesObj = STAGES || {};
-    return Object.keys(stagesObj).map((id) => ({
-      id,
-      ...stagesObj[id],
-    }));
+    const unlockedStagesRaw = localStorage.getItem('mini_card_battle_unlocked_stages');
+    const unlockedStages = unlockedStagesRaw ? JSON.parse(unlockedStagesRaw) : [];
+
+    return Object.keys(stagesObj)
+      .filter((id) => {
+        if (id === 'automata' && !unlockedStages.includes('automata')) {
+          return false;
+        }
+        return true;
+      })
+      .map((id) => ({
+        id,
+        ...stagesObj[id],
+      }));
   });
 
   const handleSelect = (stageId) => {

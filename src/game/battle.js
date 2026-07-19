@@ -760,6 +760,26 @@ export function initBattleState() {
         .replace('_fortune', '');
       const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
+      // 1. 最優先でリーダースキル変更を適用
+      handicapsList.forEach((h) => {
+        if (!GameState.fortuneHandicaps[h.id]) return;
+
+        if (h.type === HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE) {
+          if (GameState.enemyConfig.id === 'automata') {
+            GameState.enemyConfig = {
+              ...GameState.enemyConfig,
+              leaderSkill: {
+                name: 'ラスト・バタリオン',
+                desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
+                cost: 3,
+                action: 'last_battalion',
+              },
+            };
+          }
+        }
+      });
+
+      // 2. その他の変更（SP・HP等）を適用
       handicapsList.forEach((h) => {
         if (!GameState.fortuneHandicaps[h.id]) return;
 
@@ -797,18 +817,6 @@ export function initBattleState() {
                   /\(SP:\d+\)/,
                   `(SP:${nextCost})`
                 ),
-              },
-            };
-          }
-        } else if (h.type === HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE) {
-          if (GameState.enemyConfig.id === 'automata') {
-            GameState.enemyConfig = {
-              ...GameState.enemyConfig,
-              leaderSkill: {
-                name: 'ラスト・バタリオン',
-                desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
-                cost: 3,
-                action: 'last_battalion',
               },
             };
           }
@@ -932,7 +940,7 @@ export function initBattleState() {
             owner: 'red',
             uid: getOrCreateUUID(null),
             isToken: true, // 破壊された場合に墓地には送られないトークン扱い
-            stunTurns: 2, // 初回ターン攻撃禁止（スタン効果。ターン開始時の減衰を考慮して2を設定）
+            cantAttackTurns: 2, // 初回ターン攻撃禁止（攻撃不能効果。ターン開始時の減衰を考慮して2を設定）
           };
         }
       });
@@ -3385,6 +3393,9 @@ export async function startTurn(owner) {
   myBoard.forEach((c) => {
     if (c && c.stunTurns > 0) {
       c.stunTurns--;
+    }
+    if (c && c.cantAttackTurns > 0) {
+      c.cantAttackTurns--;
     }
   });
 

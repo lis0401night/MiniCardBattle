@@ -1048,6 +1048,7 @@ export function processActionSequence(
       applyPassiveSkillLogic(simState, 'blue');
       simState.playerBoard.forEach((c) => {
         if (c && c.stunTurns > 0) c.stunTurns--;
+        if (c && c.cantAttackTurns > 0) c.cantAttackTurns--;
       });
       calculateCombatPhase(simState, 'blue');
       simState.combatDamageTaken = Math.max(
@@ -4641,6 +4642,7 @@ export function simulateMove(
     applyPassiveSkillLogic(simState, 'blue');
     simState.playerBoard.forEach((c) => {
       if (c && c.stunTurns > 0) c.stunTurns--;
+      if (c && c.cantAttackTurns > 0) c.cantAttackTurns--;
     });
     calculateCombatPhase(simState, 'blue');
     simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);

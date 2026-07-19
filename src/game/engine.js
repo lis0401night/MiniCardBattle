@@ -4256,7 +4256,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   const defSide = attackerSide === 'blue' ? 'red' : 'blue';
 
   const aC = atkBoard[l];
-  if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0) return events;
+  if (!aC || hasSkill(aC, 'defender') || aC.stunTurns > 0 || aC.cantAttackTurns > 0) return events;
 
   const aHasPhase = hasSkill(aC, 'phase');
 
@@ -4407,11 +4407,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
   // 反撃ダメージを与えるカードは、守護や身代わりに関わらず「常に正面の相手」
   let dC_counter = originalTarget;
-  // 防御（および拘束・待機）状態でなく、位相が一致している場合のみ反撃が発生
+  // 防御（および拘束・待機、攻撃不能）状態でなく、位相が一致している場合のみ反撃が発生
   let dP =
     dC_counter &&
     !hasSkill(dC_counter, 'defender') &&
-    !(dC_counter.stunTurns > 0)
+    !(dC_counter.stunTurns > 0) &&
+    !(dC_counter.cantAttackTurns > 0)
       ? Number(dC_counter.currentPower ?? dC_counter.power ?? 0) || 0
       : 0;
 

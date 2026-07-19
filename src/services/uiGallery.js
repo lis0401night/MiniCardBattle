@@ -158,6 +158,24 @@ export function showIconAcquisitionModal(name, id) {
     return showIconAcquisitionModalHook(name, id);
 }
 
+let showCharacterAcquisitionModalHook = null;
+export function setShowCharacterAcquisitionModalHook(hook) {
+  showCharacterAcquisitionModalHook = hook;
+}
+export function showCharacterAcquisitionModal(name, id) {
+  if (showCharacterAcquisitionModalHook)
+    return showCharacterAcquisitionModalHook(name, id);
+}
+
+let showStageAcquisitionModalHook = null;
+export function setShowStageAcquisitionModalHook(hook) {
+  showStageAcquisitionModalHook = hook;
+}
+export function showStageAcquisitionModal(name, id) {
+  if (showStageAcquisitionModalHook)
+    return showStageAcquisitionModalHook(name, id);
+}
+
 export function executePlaymatAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.
 }
