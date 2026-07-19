@@ -1,8 +1,5 @@
 // 運命の邂逅：特級目標ポイント報酬の計算ロジック
-import {
-  CHAR_FORTUNE_HANDICAPS,
-  HANDICAP_MASTER,
-} from './fortuneHandicaps.js';
+import { CHAR_FORTUNE_HANDICAPS, HANDICAP_MASTER } from './fortuneHandicaps.js';
 
 // 合計達成レベルの閾値とボーナス定義
 // 各レベルにつき1回のみボーナスポイントが貰える
@@ -131,7 +128,11 @@ export function loadFortuneClearedData(charId) {
  * @param {Object} clearedHandicaps - 達成済み特級目標
  * @param {number} maxGradeLevel - 最大達成レベル
  */
-export function saveFortuneClearedData(charId, clearedHandicaps, maxGradeLevel) {
+export function saveFortuneClearedData(
+  charId,
+  clearedHandicaps,
+  maxGradeLevel
+) {
   const clearedKey = `mini_card_battle_fortune_cleared_${charId}`;
   const gradeKey = `mini_card_battle_fortune_max_grade_${charId}`;
   localStorage.setItem(clearedKey, JSON.stringify(clearedHandicaps));

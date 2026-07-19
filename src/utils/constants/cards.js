@@ -3378,6 +3378,22 @@ export const CARD_MASTER = [
       '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
   },
   {
+    id: 'employee',
+    obtain: ['achievement'],
+    name: '真面目な使用人',
+    rarity: 2,
+    power: 2,
+    skills: [
+      { id: 'snipe', value: 1 },
+      { id: 'snipe', value: 1 },
+      { id: 'snipe', value: 1 },
+      { id: 'split', value: 1, summonId: 'token_automata' },
+    ],
+    voiceCategory: 'machine_new',
+    flavor:
+      '「お掃除、お洗濯、そして侵入者の排除。当社の新モデルです！今なら旧式は無料で引き取ります！」',
+  },
+  {
     id: 'detective',
     obtain: ['achievement'],
     name: '復讐に燃える捜査官',

@@ -4939,7 +4939,5 @@ export function returnToTitle() {
   });
 }
 
-
-
 // eventRenderer.jsへ、循環参照を回避しつつ discardCard 関数への参照を注入
 registerDiscardCard(discardCard);
