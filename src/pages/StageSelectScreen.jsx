@@ -54,6 +54,8 @@ export default function StageSelectScreen() {
     if (!bgFile) {
       if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
         bgFile = 'assets/backgrounds/background_highdifficulty.webp';
+      } else if (mode?.startsWith('event_') && mode?.endsWith('_fortune')) {
+        bgFile = 'assets/backgrounds/background_fortune01.webp';
       } else if (mode && mode.startsWith('story')) {
         bgFile = 'assets/backgrounds/background_story01.webp';
       } else {

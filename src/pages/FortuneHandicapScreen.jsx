@@ -63,7 +63,7 @@ export default function FortuneHandicapScreen() {
       id="screen-fortune-handicap"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_highdifficulty.webp')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_fortune01.webp')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',

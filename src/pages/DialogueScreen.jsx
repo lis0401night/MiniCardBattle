@@ -86,6 +86,12 @@ export default function DialogueScreen() {
       GameState.gameMode.endsWith('_high'))
   ) {
     bgName = 'background_highdifficulty.webp';
+  } else if (
+    GameState.gameMode &&
+    GameState.gameMode.startsWith('event_') &&
+    GameState.gameMode.endsWith('_fortune')
+  ) {
+    bgName = 'background_fortune01.webp';
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.webp';
   } else if (GameState.gameMode && GameState.gameMode.startsWith('story')) {

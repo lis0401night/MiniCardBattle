@@ -22,6 +22,8 @@ import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
   DEFENSE_WINS_KEY,
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
 } from '../../utils/constants/config.js';
 
 const RANK_ACCENTS = {
@@ -95,6 +97,8 @@ export default function RankingScreen({
               baseField === 'total_points'
             ) {
               syncMode = 'defense';
+            } else if (baseField?.includes('fortune')) {
+              syncMode = 'fortune';
             }
 
             if (syncMode && myData) {
@@ -110,6 +114,9 @@ export default function RankingScreen({
                 } else if (syncMode === 'defense') {
                   myData.points = syncResult.points;
                   myData.total_points = syncResult.totalPoints;
+                } else if (syncMode === 'fortune') {
+                  myData.fortune_points = syncResult.points;
+                  myData.fortune_total_points = syncResult.totalPoints;
                 }
               }
             }
@@ -142,6 +149,14 @@ export default function RankingScreen({
               const defenseWins =
                 parseInt(localStorage.getItem(DEFENSE_WINS_KEY), 10) || 0;
 
+              const fortunePts =
+                parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
+              const fortuneTotalPts =
+                parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) ||
+                0;
+              const fortuneMaxGrade =
+                parseInt(localStorage.getItem('mini_card_battle_fortune_grade_automata'), 10) || -1;
+
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
                 await syncModePoints('challenge', null);
@@ -151,6 +166,9 @@ export default function RankingScreen({
                 hasCreated = true;
               } else if (syncMode === 'defense' && defenseTotalPts > 0) {
                 await syncModePoints('defense', null);
+                hasCreated = true;
+              } else if (syncMode === 'fortune' && fortuneTotalPts > 0) {
+                await syncModePoints('fortune', null);
                 hasCreated = true;
               }
 
@@ -173,6 +191,9 @@ export default function RankingScreen({
                   points: defensePts,
                   total_points: defenseTotalPts,
                   defense_wins: defenseWins,
+                  fortune_points: fortunePts,
+                  fortune_total_points: fortuneTotalPts,
+                  fortune_max_grade: fortuneMaxGrade,
                 };
                 activePlayers.push(virtualPlayer);
               }

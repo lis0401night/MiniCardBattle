@@ -12,8 +12,8 @@ import {
   showStageAcquisitionModal,
   showIconAcquisitionModal,
   showPlaymatAcquisitionModal,
+  showPremiumAcquisitionModal,
 } from '../services/uiGallery.js';
-import { showAlertModal } from '../services/uiModals.js';
 
 /**
  * 運命の邂逅：特級目標の達成状況画面
@@ -93,7 +93,28 @@ export default function FortuneAchievementScreen() {
       }
       showPlaymatAcquisitionModal('マキナ', 'automata');
     } else if (level === 5) {
-      showAlertModal('完全制覇！\n(完全制覇特典を受け取りました)');
+      // プレミアムカードのアンロック処理
+      if (!GameState.unlockedPremiumCards) {
+        GameState.unlockedPremiumCards = [];
+      }
+      if (!GameState.premiumCards) {
+        GameState.premiumCards = [];
+      }
+      if (!GameState.unlockedPremiumCards.includes('liberator')) {
+        GameState.unlockedPremiumCards.push('liberator');
+      }
+      if (!GameState.premiumCards.includes('liberator')) {
+        GameState.premiumCards.push('liberator');
+      }
+      localStorage.setItem(
+        'mini_card_battle_unlocked_premium',
+        JSON.stringify(GameState.unlockedPremiumCards)
+      );
+      localStorage.setItem(
+        'mini_card_battle_premium_cards',
+        JSON.stringify(GameState.premiumCards)
+      );
+      showPremiumAcquisitionModal('liberator');
     }
 
     const nextClaimed = [...claimedLevels, level];
@@ -105,16 +126,16 @@ export default function FortuneAchievementScreen() {
   };
 
   const getRewardName = (lv) => {
-    if (lv === 1) return 'キャラクター解放';
-    if (lv === 2) return 'ステージ解放';
-    if (lv === 3) return 'アイコン解放';
-    if (lv === 4) return 'プレイマット解放';
-    if (lv === 5) return '完全制覇特典';
+    if (lv === 1) return 'キャラクター';
+    if (lv === 2) return 'ステージ';
+    if (lv === 3) return 'アイコン';
+    if (lv === 4) return 'プレイマット';
+    if (lv === 5) return 'プレミアム';
     return '';
   };
 
   const bgStyle = getScreenBackgroundStyle(
-    'assets/backgrounds/background_highdifficulty.webp'
+    'assets/backgrounds/background_fortune01.webp'
   );
 
   return (
@@ -252,7 +273,8 @@ export default function FortuneAchievementScreen() {
         {/* 合計達成レベルの枠 */}
         <div
           style={{
-            flex: 1,
+            flex: 'none',
+            height: '310px',
             width: 'calc(90% + 30px)',
             maxWidth: '530px',
             display: 'flex',
@@ -262,7 +284,6 @@ export default function FortuneAchievementScreen() {
             borderRadius: '12px',
             padding: '12px 15px',
             boxSizing: 'border-box',
-            minHeight: 0,
           }}
         >
           <div
@@ -286,7 +307,7 @@ export default function FortuneAchievementScreen() {
               paddingRight: '4px',
             }}
           >
-            {FORTUNE_GRADE_THRESHOLDS.map((threshold) => {
+            {FORTUNE_GRADE_THRESHOLDS.filter((t) => t.level !== 0).map((threshold) => {
               const isCleared = clearedData.maxGradeLevel >= threshold.level;
               return (
                 <div
@@ -318,71 +339,50 @@ export default function FortuneAchievementScreen() {
                   </div>
                   <div
                     style={{
-                      color: '#94a3b8',
-                      fontSize: '0.85rem',
-                      marginRight: '12px',
-                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
                     }}
                   >
-                    {getRewardName(threshold.level)}
-                  </div>
-                  {isCleared ? (
-                    claimedLevels.includes(threshold.level) ? (
-                      <button
-                        disabled
-                        style={{
-                          background: '#334155',
-                          color: '#94a3b8',
-                          border: '1px solid #475569',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '0.8rem',
-                          fontWeight: 'bold',
-                          cursor: 'not-allowed',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        受け取り済み
-                      </button>
-                    ) : (
-                      <button
-                        className="btn"
-                        onClick={() => handleClaimReward(threshold.level)}
-                        style={{
-                          background:
-                            'linear-gradient(45deg, #f97316, #ea580c)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '0.8rem',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        受け取る
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      disabled
+                    <span
                       style={{
-                        background: '#1e293b',
-                        color: '#475569',
-                        border: '1px solid #334155',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
                         fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        cursor: 'not-allowed',
+                        color: '#facc15',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      未達成
-                    </button>
-                  )}
+                      報酬: {getRewardName(threshold.level)}
+                    </span>
+                    {claimedLevels.includes(threshold.level) ? (
+                      <span
+                        style={{
+                          color: '#94a3b8',
+                          fontSize: '0.8rem',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        (取得済)
+                      </span>
+                    ) : (
+                      <button
+                        className="btn"
+                        disabled={!isCleared}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '0.7rem',
+                          minHeight: '20px',
+                          margin: 0,
+                          background: isCleared ? '' : '#475569',
+                          opacity: isCleared ? '1' : '0.6',
+                          cursor: isCleared ? 'pointer' : 'not-allowed',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onClick={() => isCleared && handleClaimReward(threshold.level)}
+                      >
+                        受け取る
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

@@ -17,7 +17,7 @@ export default function FortuneScreen() {
     <div
       id="screen-fortune"
       className="screen active"
-      style={getScreenBackgroundStyle('')}
+      style={getScreenBackgroundStyle('assets/backgrounds/background_fortune01.webp')}
     >
       <h2
         style={{
@@ -38,6 +38,8 @@ export default function FortuneScreen() {
           paddingTop: '10px',
           gap: '10px',
           overflowY: 'auto',
+          height: 'auto',
+          minHeight: '492px',
         }}
       >
         {fortuneEventChars.map((char) => {

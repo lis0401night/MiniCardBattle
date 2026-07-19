@@ -914,6 +914,28 @@ export const CARD_MASTER = [
       '背中のタンクには地獄の業火が詰まっている。初めて武器を与えられた小悪魔は、その焦熱を振り撒くことに至上の喜びを感じていた。',
   },
   {
+    id: 'liberator',
+    obtain: ['exchange_fortune'],
+    name: '革命派の解放者',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '退屈な日常は彼女との出会いで終わった。今や彼は、抑圧された者たちを導く革命の炎である。',
+  },
+  {
+    id: 'scrapper',
+    obtain: ['exchange_fortune'],
+    name: '暴走する解体者',
+    rarity: 1,
+    power: 8,
+    skills: [{ id: 'defender' }, { id: 'startup' }],
+    voiceCategory: 'machine_new',
+    flavor:
+      '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
+  },
+  {
     id: 'bigeye',
     obtain: ['android_easy', 'android_normal', 'android_hard'],
     name: 'サイクロプス Mk-II',
@@ -1863,6 +1885,36 @@ export const CARD_MASTER = [
       '死の嵐の中で、それは永遠の飢えを満たそうと彷徨う。すべてを喰らい、すべてを凍らせ、後には静寂な雪原だけが残される。',
   },
   {
+    id: 'employee',
+    obtain: ['exchange_fortune'],
+    name: '真面目な使用人',
+    rarity: 2,
+    power: 2,
+    skills: [
+      { id: 'snipe', value: 1 },
+      { id: 'snipe', value: 1 },
+      { id: 'snipe', value: 1 },
+      { id: 'split', value: 1, summonId: 'token_automata' },
+    ],
+    voiceCategory: 'machine_new',
+    flavor:
+      '「お掃除、お洗濯、そして侵入者の排除。当社の新モデルです！今なら旧式は無料で引き取ります！」',
+  },
+  {
+    id: 'detective',
+    obtain: ['exchange_fortune'],
+    name: '復讐に燃える捜査官',
+    rarity: 2,
+    power: 6,
+    skills: [
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+      { id: 'execute' },
+    ],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '機械の暴走事故で娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
+  },
+  {
     id: 'cyborgninja',
     obtain: ['android_normal', 'android_hard'],
     name: '光刃の追跡者',
@@ -2588,6 +2640,37 @@ export const CARD_MASTER = [
     voiceCategory: 'horse',
     flavor:
       '冥界より喚び出された不死の軍勢を率いる将軍。彼の通った跡には、青き炎に灼かれた骸と、永遠に続く夜だけが残される。',
+  },
+  {
+    id: 'motorcycle',
+    obtain: ['exchange_fortune'],
+    name: '”ナイトランナー”',
+    rarity: 3,
+    power: 6,
+    skills: [
+      { id: 'defender' },
+      { id: 'startup' },
+      { id: 'stealth', value: 2 },
+      { id: 'move' },
+    ],
+    voiceCategory: 'machine_new',
+    flavor:
+      '極限までチューンアップされた駆動系と、排気音すら闇に溶かす規格外の静音機構。闇夜を滑るように疾走する姿から、いつしかその愛称が定着した。',
+  },
+  {
+    id: 'agent',
+    obtain: ['exchange_fortune'],
+    name: '革命派のエージェント',
+    rarity: 3,
+    power: 5,
+    skills: [
+      { id: 'legendary' },
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+      { id: 'ambush', value: 1, summonId: 'token_automata' },
+    ],
+    voiceCategory: 'human_female_assassin',
+    flavor:
+      '夜の街を自在に駆け抜ける凄腕のエージェント。その鋭い刃は、腐敗した体制を容赦なく切り裂く。',
   },
   {
     id: 'badwolf',
@@ -3355,89 +3438,6 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
-  {
-    id: 'liberator',
-    obtain: ['achievement'],
-    name: '革命派の解放者',
-    rarity: 1,
-    power: 4,
-    skills: [{ id: 'ambush', value: 1, summonId: 'token_automata' }],
-    voiceCategory: 'human_male_normal',
-    flavor:
-      '退屈な日常は彼女との出会いで終わった。今や彼は、抑圧された者たちを導く革命の炎である。',
-  },
-  {
-    id: 'scrapper',
-    obtain: ['achievement'],
-    name: '暴走する解体者',
-    rarity: 1,
-    power: 8,
-    skills: [{ id: 'defender' }, { id: 'startup' }],
-    voiceCategory: 'machine_new',
-    flavor:
-      '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
-  },
-  {
-    id: 'employee',
-    obtain: ['achievement'],
-    name: '真面目な使用人',
-    rarity: 2,
-    power: 2,
-    skills: [
-      { id: 'snipe', value: 1 },
-      { id: 'snipe', value: 1 },
-      { id: 'snipe', value: 1 },
-      { id: 'split', value: 1, summonId: 'token_automata' },
-    ],
-    voiceCategory: 'machine_new',
-    flavor:
-      '「お掃除、お洗濯、そして侵入者の排除。当社の新モデルです！今なら旧式は無料で引き取ります！」',
-  },
-  {
-    id: 'detective',
-    obtain: ['achievement'],
-    name: '復讐に燃える捜査官',
-    rarity: 2,
-    power: 6,
-    skills: [
-      { id: 'ambush', value: 1, summonId: 'token_automata' },
-      { id: 'execute' },
-    ],
-    voiceCategory: 'human_male_normal',
-    flavor:
-      '機械の暴走事故で娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
-  },
-  {
-    id: 'agent',
-    obtain: ['achievement'],
-    name: '革命派のエージェント',
-    rarity: 3,
-    power: 5,
-    skills: [
-      { id: 'legendary' },
-      { id: 'ambush', value: 1, summonId: 'token_automata' },
-      { id: 'ambush', value: 1, summonId: 'token_automata' },
-    ],
-    voiceCategory: 'human_female_assassin',
-    flavor:
-      '夜の街を自在に駆け抜ける凄腕のエージェント。その鋭い刃は、腐敗した体制を容赦なく切り裂く。',
-  },
-  {
-    id: 'motorcycle',
-    obtain: ['achievement'],
-    name: '”ナイトランナー”',
-    rarity: 3,
-    power: 6,
-    skills: [
-      { id: 'defender' },
-      { id: 'startup' },
-      { id: 'stealth', value: 2 },
-      { id: 'move' },
-    ],
-    voiceCategory: 'machine_new',
-    flavor:
-      '極限までチューンアップされた駆動系と、排気音すら闇に溶かす規格外の静音機構。闇夜を滑るように疾走する姿から、いつしかその愛称が定着した。',
-  },
   // トークンカード
   {
     id: 'token_knight',
@@ -3694,4 +3694,5 @@ export const PREMIUM_CARD_IDS = [
   // --- シリアルコード ---
   'cheetah',
   'tortoise',
+  'liberator',
 ];

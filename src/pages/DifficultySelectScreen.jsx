@@ -67,9 +67,11 @@ export default function DifficultySelectScreen() {
 
   // 高難易度イベント、運命の邂逅および通常難易度選択用の背景スタイル
   const highDiffBgStyle = getScreenBackgroundStyle(
-    isHighDiffMode || isFortuneMode
-      ? 'assets/backgrounds/background_highdifficulty.webp'
-      : 'assets/backgrounds/background_select.webp'
+    isFortuneMode
+      ? 'assets/backgrounds/background_fortune01.webp'
+      : isHighDiffMode
+        ? 'assets/backgrounds/background_highdifficulty.webp'
+        : 'assets/backgrounds/background_select.webp'
   );
 
   return (

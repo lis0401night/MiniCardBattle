@@ -830,6 +830,11 @@ export function showFortuneExchange() {
   switchScreen('screen-fortune-exchange');
 }
 
+export function showFortuneRules() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-fortune-rules');
+}
+
 /**
  * 運命の邂逅：キャラ選択後に難易度選択画面へ遷移する（プレースホルダー）
  */
@@ -1425,9 +1430,24 @@ export function openEnemyDeckPreview(level) {
     const charConfig = CHARACTERS[enemyCharId];
     const eventName = charConfig?.event_fortune?.name || enemyCharId;
     const titleText = `${eventName} [特級]`;
+
     // 運命の邂逅のリーダースキルをモーダルに渡す
-    const leaderSkill =
+    let leaderSkill =
       charConfig?.event_fortune?.leaderSkill || charConfig?.leaderSkill || null;
+
+    // 特級目標「相手のリーダースキル変更」が有効な場合、変更後のスキルを表示
+    const isLeaderSkillChanged =
+      GameState.fortuneHandicaps &&
+      GameState.fortuneHandicaps.enemy_leader_skill_change;
+    if (isLeaderSkillChanged && enemyCharId === 'automata') {
+      leaderSkill = {
+        name: 'ラスト・バタリオン',
+        desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
+        cost: 3,
+        action: 'last_battalion',
+      };
+    }
+
     if (window.showEnemyDeckModal) {
       window.showEnemyDeckModal(deckIds, titleText, leaderSkill);
     }
