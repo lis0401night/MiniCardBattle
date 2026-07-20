@@ -13,6 +13,7 @@
  */
 
 header('Content-Type: application/json');
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Invalid request method']);
@@ -50,7 +51,11 @@ if (!$fp) {
     exit;
 }
 
-flock($fp, LOCK_EX);
+if (!flock($fp, LOCK_EX)) {
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Failed to lock player file']);
+    exit;
+}
 
 clearstatcache(true, $filename);
 $fileSize = filesize($filename);
@@ -66,18 +71,15 @@ if ($fileSize > 0) {
         if ($existing) {
             $player_data = $existing;
         } else {
-            $parseFailed = true;
+            $player_data = [];
         }
     } else {
-        $parseFailed = true;
+        $player_data = [];
     }
 }
 
-if ($parseFailed) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
-    exit;
+if (empty($player_data)) {
+    $player_data = createDefaultPlayerData($uuid, $name);
 }
 
 // プロフィール情報を更新
@@ -101,8 +103,8 @@ fflush($fp);
 flock($fp, LOCK_UN);
 fclose($fp);
 
-if ($writeSuccess !== false) {
+if ($writeSuccess === strlen($js_content)) {
     echo json_encode(['success' => true]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to save profile']);
+    echo json_encode(['success' => false, 'error' => 'Failed to save profile completely']);
 }

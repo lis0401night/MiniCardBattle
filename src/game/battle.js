@@ -742,9 +742,21 @@ export function initBattleState() {
       GameState.enemyConfig.id &&
       CHARACTERS[GameState.enemyConfig.id]
     ) {
+      // 防衛戦の対戦相手の固有情報（ポイントや計算された勝利ポイント等）を退避
+      const savedDefenseProps = {
+        playerName: GameState.enemyConfig.playerName,
+        uuid: GameState.enemyConfig.uuid,
+        points: GameState.enemyConfig.points,
+        total_points: GameState.enemyConfig.total_points,
+        calculatedWinPoints: GameState.enemyConfig.calculatedWinPoints,
+      };
+
       GameState.enemyConfig = JSON.parse(
         JSON.stringify(CHARACTERS[GameState.enemyConfig.id])
       );
+
+      // 退避した防衛情報を復元
+      Object.assign(GameState.enemyConfig, savedDefenseProps);
     }
 
     let fortuneHPPlayerMod = 0;
@@ -3661,6 +3673,7 @@ export async function playCard(o, hI, l) {
       const hasSkillOrChoice = (card, skillId) => {
         if (hasSkill(card, skillId)) return true;
         if ((card.choices || []).some((s) => s.id === skillId)) return true;
+        if ((card.choices2 || []).some((s) => s.id === skillId)) return true;
         return false;
       };
 

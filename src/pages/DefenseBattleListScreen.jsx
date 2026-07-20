@@ -30,12 +30,17 @@ export default function DefenseBattleListScreen() {
           const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
           let activePlayers = result.players;
 
-          // 自分のポイントを取得
-          const myTotalPoints =
+          // 自分のポイントを取得（total_pointsが無い場合はpointsにフォールバックして整合）
+          const myCurrentPoints =
+            parseInt(
+              localStorage.getItem('mini_card_battle_defense_points'),
+              10
+            ) || 0;
+          const myTotalPointsVal =
             parseInt(
               localStorage.getItem('mini_card_battle_defense_total_points'),
               10
-            ) || 0;
+            ) || myCurrentPoints;
 
           if (activePlayers.length === 0) {
             setStatus('empty');
@@ -52,7 +57,7 @@ export default function DefenseBattleListScreen() {
           // 各プレイヤーに対する計算を追加
           activePlayers = activePlayers.map((p, index) => {
             const pTotalPoints = p.total_points || p.points || 0;
-            const winPoints = resolveWinTier(pTotalPoints, myTotalPoints);
+            const winPoints = resolveWinTier(pTotalPoints, myTotalPointsVal);
             return {
               ...p,
               rankIndex: index,
@@ -68,7 +73,7 @@ export default function DefenseBattleListScreen() {
           );
           const selectedPlayers = selectDefenseTargets(
             otherPlayers,
-            myTotalPoints
+            myTotalPointsVal
           );
 
           if (selectedPlayers.length === 0) {

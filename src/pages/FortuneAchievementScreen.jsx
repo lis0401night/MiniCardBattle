@@ -135,7 +135,7 @@ export default function FortuneAchievementScreen() {
   let totalPossiblePoints = 0;
   fortuneHandicapsList.forEach((h) => {
     totalPossiblePoints += h.cost || 0;
-    if (clearedData.clearedHandicaps && clearedData.clearedHandicaps[h.id]) {
+    if (clearedData.clearedHandicaps?.[h.id]) {
       maxEarnedPoints += h.cost || 0;
     }
   });
@@ -221,7 +221,7 @@ export default function FortuneAchievementScreen() {
             }}
           >
             {fortuneHandicapsList.map((item) => {
-              const isCleared = !!clearedData.clearedHandicaps[item.id];
+              const isCleared = !!clearedData.clearedHandicaps?.[item.id];
               return (
                 <div
                   key={item.id}

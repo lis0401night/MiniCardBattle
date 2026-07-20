@@ -19,6 +19,7 @@
  */
 
 header('Content-Type: application/json');
+require_once __DIR__ . '/helpers.php';
 
 // POSTリクエストのみ許可
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -81,14 +82,17 @@ if (!$fp) {
     exit;
 }
 
-flock($fp, LOCK_EX);
+if (!flock($fp, LOCK_EX)) {
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Failed to lock deck file']);
+    exit;
+}
 
 clearstatcache(true, $filename);
 $fileSize = filesize($filename);
 $content = $fileSize > 0 ? fread($fp, $fileSize) : '';
 
 $player_data = [];
-$parseFailed = false;
 
 if ($fileSize > 0) {
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
@@ -96,38 +100,17 @@ if ($fileSize > 0) {
         if ($existing_data) {
             $player_data = $existing_data;
         } else {
-            $parseFailed = true;
+            // データ破損時は空配列として扱い、上書き保存による復旧を許可する
+            $player_data = [];
         }
     } else {
-        $parseFailed = true;
+        // フォーマット異常時も同様に上書き保存による復旧を許可する
+        $player_data = [];
     }
 }
 
-if ($parseFailed) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Player data corrupt']);
-    exit;
-}
-
 if (empty($player_data)) {
-    $player_data = [
-        'uuid' => $uuid,
-        'points' => $initial_points,
-        'total_points' => $initial_total_points,
-        'defense_wins' => 0,
-        'challenge_points' => 0,
-        'challenge_total_points' => 0,
-        'challenge_max_streak' => 0,
-        'tournament_points' => 0,
-        'tournament_total_points' => 0,
-        'high_difficulty_points' => 0,
-        'high_difficulty_total_points' => 0,
-        'fortune_points' => 0,
-        'fortune_total_points' => 0,
-        'fortune_max_grade' => -1,
-        'fortune_cleared' => '{}'
-    ];
+    $player_data = createDefaultPlayerData($uuid, $name, $initial_points, $initial_total_points);
 }
 
 $player_data['name'] = $name;
@@ -155,8 +138,8 @@ fflush($fp);
 flock($fp, LOCK_UN);
 fclose($fp);
 
-if ($writeSuccess !== false) {
+if ($writeSuccess === strlen($js_content)) {
     echo json_encode(['success' => true]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to save deck file']);
+    echo json_encode(['success' => false, 'error' => 'Failed to save deck file completely']);
 }

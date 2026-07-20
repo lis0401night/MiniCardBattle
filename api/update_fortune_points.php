@@ -14,6 +14,7 @@
  */
 
 header('Content-Type: application/json');
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Invalid request method']);
@@ -54,7 +55,11 @@ if (!$fp) {
     exit;
 }
 
-flock($fp, LOCK_EX);
+if (!flock($fp, LOCK_EX)) {
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Failed to lock player file']);
+    exit;
+}
 
 clearstatcache(true, $filename);
 $fileSize = filesize($filename);
@@ -64,28 +69,7 @@ $playerData = null;
 
 if ($fileSize === 0) {
     $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
-    $playerData = [
-        'uuid' => $uuid,
-        'name' => $playerName,
-        'icon' => 'android',
-        'character' => 'oni',
-        'skin' => 'default',
-        'playmat' => null,
-        'stage' => 'oni',
-        'deck' => [],
-        'challenge_points' => 0,
-        'challenge_total_points' => 0,
-        'challenge_max_streak' => 0,
-        'tournament_points' => 0,
-        'tournament_total_points' => 0,
-        'points' => 0,
-        'total_points' => 0,
-        'defense_wins' => 0,
-        'fortune_points' => 0,
-        'fortune_total_points' => 0,
-        'fortune_max_grade' => -1,
-        'fortune_cleared' => '{}'
-    ];
+    $playerData = createDefaultPlayerData($uuid, $playerName);
 } else {
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
         $playerData = json_decode($matches[2], true);
@@ -102,11 +86,14 @@ if ($playerData) {
         $playerData['fortune_max_grade'] = $fortune_max_grade;
     }
 
-    // 達成済み情報はマージする（一度達成した目標は消えない）
+    // 達成済み情報はマージする（一度達成した目標は消えないように論理和でマージ）
     $existingCleared = isset($playerData['fortune_cleared']) ? json_decode($playerData['fortune_cleared'], true) : [];
     if (!is_array($existingCleared)) $existingCleared = [];
-    $newCleared = $clearedDecoded !== null ? $clearedDecoded : [];
-    $mergedCleared = array_merge($existingCleared, $newCleared);
+    $newCleared = is_array($clearedDecoded) ? $clearedDecoded : [];
+    $mergedCleared = $existingCleared;
+    foreach ($newCleared as $key => $val) {
+        $mergedCleared[$key] = ($mergedCleared[$key] ?? false) || (bool)$val;
+    }
     $playerData['fortune_cleared'] = json_encode($mergedCleared);
 
     $playerData['timestamp'] = time();
@@ -126,7 +113,7 @@ EOT;
     flock($fp, LOCK_UN);
     fclose($fp);
 
-    if ($writeSuccess !== false) {
+    if ($writeSuccess === strlen($js_content)) {
         echo json_encode([
             'success' => true,
             'fortune_points' => $playerData['fortune_points'],
@@ -135,7 +122,7 @@ EOT;
         ]);
         exit;
     } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to save updated file']);
+        echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
         exit;
     }
 } else {

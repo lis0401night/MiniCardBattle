@@ -15,6 +15,7 @@ import { STAGES } from '../utils/constants/stages.js';
 import {
   clearCachesAndServiceWorkers,
   getDialogue,
+  getEventEnemyCharId,
   getFortuneHandicapsStorageKey,
   playSound,
   resolvePlayerName,
@@ -1110,17 +1111,13 @@ export function confirmCharSelect() {
       GameState.gameMode.startsWith('event_') &&
       GameState.gameMode.endsWith('_high')
     ) {
-      const enemyCharId = GameState.gameMode
-        .replace('event_', '')
-        .replace('_high', '');
+      const enemyCharId = getEventEnemyCharId(GameState.gameMode);
       initHighDifficultyEventMode(GameState.pendingCharId, enemyCharId);
     } else if (
       GameState.gameMode.startsWith('event_') &&
       GameState.gameMode.endsWith('_fortune')
     ) {
-      const enemyCharId = GameState.gameMode
-        .replace('event_', '')
-        .replace('_fortune', '');
+      const enemyCharId = getEventEnemyCharId(GameState.gameMode);
       initFortuneEventMode(GameState.pendingCharId, enemyCharId);
     } else if (GameState.gameMode === 'tournament') {
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
@@ -1391,9 +1388,7 @@ export function openEnemyDeckPreview(level) {
 
   // 高難易度イベントのデッキ確認
   if (level === 'high') {
-    const enemyCharId = GameState.gameMode
-      ?.replace('event_', '')
-      ?.replace('_high', '');
+    const enemyCharId = getEventEnemyCharId(GameState.gameMode);
     const highDeckKey = `${enemyCharId}_high`;
     const deckIds = ENEMY_DECKS[highDeckKey];
     if (!deckIds || deckIds.length === 0) {
@@ -1416,9 +1411,7 @@ export function openEnemyDeckPreview(level) {
 
   // 運命の邂逅イベントのデッキ確認
   if (level === 'fortune') {
-    const enemyCharId = GameState.gameMode
-      ?.replace('event_', '')
-      ?.replace('_fortune', '');
+    const enemyCharId = getEventEnemyCharId(GameState.gameMode);
     const fortuneDeckKey = `${enemyCharId}_fortune`;
     const deckIds = ENEMY_DECKS[fortuneDeckKey];
     if (!deckIds || deckIds.length === 0) {
