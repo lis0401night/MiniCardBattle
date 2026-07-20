@@ -3733,13 +3733,17 @@ export async function playCard(o, hI, l) {
       };
 
       for (const rule of activeBanRules) {
-        if (hasSkillOrChoice(playingCard, rule.skillId)) {
-          if (window.showAlertModalHook) {
-            window.showAlertModalHook(
-              `特級目標により「${rule.name.replace('使用禁止', '')}」カードは使用できません。`
-            );
+        // skillIds配列内のいずれかのスキルを持っていれば使用禁止
+        const forbiddenIds = rule.skillIds || [rule.skillId]; // 互換性のためskillIdも考慮
+        for (const fId of forbiddenIds) {
+          if (fId && hasSkillOrChoice(playingCard, fId)) {
+            if (window.showAlertModalHook) {
+              window.showAlertModalHook(
+                `特級目標により「${rule.name.replace(/使用禁止/g, '')}」カードは使用できません。`
+              );
+            }
+            return false;
           }
-          return false;
         }
       }
     }

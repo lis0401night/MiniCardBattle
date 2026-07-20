@@ -146,18 +146,22 @@ export default function DeckEditorScreen({ switchScreen }) {
     setDeckSelection(newSelection);
   };
 
-  const isFortuneMode = checkIsFortuneMode(GameState.gameMode);
+  const effectiveMode = GameState.gameMode === 'create_deck' 
+    ? GameState.prevGameModeForCreate || 'free_deck_edit' 
+    : GameState.gameMode;
+  
+  const isFortuneMode = checkIsFortuneMode(effectiveMode);
 
   const activeBannedSkillIds = useMemo(() => {
     if (!isFortuneMode || !GameState.fortuneHandicaps) return [];
 
-    const enemyCharId = getEventEnemyCharId(GameState.gameMode);
+    const enemyCharId = getEventEnemyCharId(effectiveMode);
     const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
     return handicapsList
       .filter((h) => h.type === 'ban_skill' && GameState.fortuneHandicaps[h.id])
-      .map((rule) => rule.skillId);
-  }, [isFortuneMode]);
+      .flatMap((rule) => rule.skillIds || [rule.skillId]);
+  }, [isFortuneMode, effectiveMode]);
 
   const isCardBannedByFortune = useCallback(
     (template) => {

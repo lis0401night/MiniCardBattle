@@ -14,22 +14,22 @@ export const HANDICAP_MASTER = {
   ban_legend: {
     id: 'ban_legend',
     type: HANDICAP_TYPES.BAN_SKILL,
-    skillId: 'legendary',
+    skillIds: ['legendary'],
     name: '「伝説」使用禁止',
     cost: 2,
   },
   ban_snipe: {
     id: 'ban_snipe',
     type: HANDICAP_TYPES.BAN_SKILL,
-    skillId: 'snipe',
-    name: '「狙撃」使用禁止',
+    skillIds: ['snipe', 'snipe_void'],
+    name: '「狙撃」「狙撃(虚)」使用禁止',
     cost: 2,
   },
   ban_heal: {
     id: 'ban_heal',
     type: HANDICAP_TYPES.BAN_SKILL,
-    skillId: 'heal',
-    name: '「回復」使用禁止',
+    skillIds: ['heal', 'heal_void'],
+    name: '「回復」「回復(虚)」使用禁止',
     cost: 2,
   },
   hp_minus_3: {
