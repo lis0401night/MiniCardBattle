@@ -733,17 +733,33 @@ export function initBattleState() {
       GameState.playerConfig.id &&
       CHARACTERS[GameState.playerConfig.id]
     ) {
+      // 各モード固有のカスタム設定（闘技祭での学園名、宮殿でのHP/スキル、オンラインのプレイマットなど）を退避
+      const savedPlayerProps = {
+        name: GameState.playerConfig.name,
+        hp: GameState.playerConfig.hp,
+        leaderSkill: GameState.playerConfig.leaderSkill,
+        playmat: GameState.playerConfig.playmat,
+      };
+
       GameState.playerConfig = JSON.parse(
         JSON.stringify(CHARACTERS[GameState.playerConfig.id])
       );
+
+      // 退避した情報を復元
+      Object.assign(GameState.playerConfig, savedPlayerProps);
     }
     if (
       GameState.enemyConfig &&
       GameState.enemyConfig.id &&
       CHARACTERS[GameState.enemyConfig.id]
     ) {
-      // 防衛戦の対戦相手の固有情報（ポイントや計算された勝利ポイント等）を退避
-      const savedDefenseProps = {
+      // 各モード固有のカスタム設定（高難易度のHP/スキル、防衛戦情報、影戦フラグ、闘技祭での学園名など）を退避
+      const savedEnemyProps = {
+        name: GameState.enemyConfig.name,
+        hp: GameState.enemyConfig.hp,
+        leaderSkill: GameState.enemyConfig.leaderSkill,
+        isShadow: GameState.enemyConfig.isShadow,
+        playmat: GameState.enemyConfig.playmat,
         playerName: GameState.enemyConfig.playerName,
         uuid: GameState.enemyConfig.uuid,
         points: GameState.enemyConfig.points,
@@ -755,8 +771,46 @@ export function initBattleState() {
         JSON.stringify(CHARACTERS[GameState.enemyConfig.id])
       );
 
-      // 退避した防衛情報を復元
-      Object.assign(GameState.enemyConfig, savedDefenseProps);
+      // 退避した情報を復元
+      Object.assign(GameState.enemyConfig, savedEnemyProps);
+    }
+
+    // --- JSON.stringifyによる初期化リセット後のスキン再適用（一瞬初期スキン画像に戻るチラつきを防止） ---
+    if (
+      GameState.playerConfig &&
+      GameState.playerSkins &&
+      GameState.playerSkins[GameState.playerConfig.id]
+    ) {
+      const selSkin = GameState.playerSkins[GameState.playerConfig.id];
+      const charObj = CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
+      if (typeof getSkinImage === 'function') {
+        GameState.playerConfig.image =
+          getSkinImage(charObj, selSkin, 'image') || charObj.image;
+        GameState.playerConfig.imageLose =
+          getSkinImage(charObj, selSkin, 'imageLose') ||
+          charObj.imageLose ||
+          charObj.image;
+        GameState.playerConfig.icon =
+          getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
+      }
+    }
+    if (
+      GameState.enemyConfig &&
+      GameState.enemySkins &&
+      GameState.enemySkins[GameState.enemyConfig.id]
+    ) {
+      const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
+      const charObj = CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
+      if (typeof getSkinImage === 'function') {
+        GameState.enemyConfig.image =
+          getSkinImage(charObj, selSkin, 'image') || charObj.image;
+        GameState.enemyConfig.imageLose =
+          getSkinImage(charObj, selSkin, 'imageLose') ||
+          charObj.imageLose ||
+          charObj.image;
+        GameState.enemyConfig.icon =
+          getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
+      }
     }
 
     let fortuneHPPlayerMod = 0;
