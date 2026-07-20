@@ -34,6 +34,7 @@ $points = isset($data['points']) ? intval($data['points']) : 0;
 $total_points = isset($data['total_points']) ? intval($data['total_points']) : 0;
 $fortune_max_grade = isset($data['fortune_max_grade']) ? intval($data['fortune_max_grade']) : -1;
 $fortune_cleared = isset($data['fortune_cleared']) ? $data['fortune_cleared'] : '{}';
+$fortune_max_total_cost = isset($data['fortune_max_total_cost']) ? intval($data['fortune_max_total_cost']) : 0;
 
 if (strlen($uuid) < 10) {
     echo json_encode(['success' => false, 'error' => 'Invalid uuid format']);
@@ -95,6 +96,12 @@ if ($playerData) {
         $mergedCleared[$key] = ($mergedCleared[$key] ?? false) || (bool)$val;
     }
     $playerData['fortune_cleared'] = json_encode($mergedCleared);
+
+    // 一度に有効化した合計目標値の最大値を保持する（サーバー既存値より大きい場合のみ更新）
+    $existingMaxTotalCost = isset($playerData['fortune_max_total_cost']) ? intval($playerData['fortune_max_total_cost']) : 0;
+    if ($fortune_max_total_cost > $existingMaxTotalCost) {
+        $playerData['fortune_max_total_cost'] = $fortune_max_total_cost;
+    }
 
     $playerData['timestamp'] = time();
 

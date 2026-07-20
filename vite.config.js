@@ -25,6 +25,7 @@ export default defineConfig({
       input: {
         main: './index.html',
         cardscore: './cardscore.html',
+        playerdata: './playerdata.html',
       },
       output: {
         manualChunks: {

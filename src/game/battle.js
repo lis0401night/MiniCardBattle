@@ -14,6 +14,7 @@ import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournam
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
   CHAR_FORTUNE_HANDICAPS,
+  HANDICAP_MASTER,
   HANDICAP_TYPES,
 } from '../utils/constants/fortuneHandicaps.js';
 import { STAGES } from '../utils/constants/stages.js';
@@ -4816,7 +4817,7 @@ export function endBattle() {
           .replace('_fortune', '');
 
         // 達成済み情報を読み込み
-        const { clearedHandicaps, maxGradeLevel } =
+        const { clearedHandicaps, maxGradeLevel, maxTotalCost } =
           loadFortuneClearedData(fortuneCharId);
 
         // ポイント計算
@@ -4824,7 +4825,8 @@ export function endBattle() {
           fortuneCharId,
           GameState.fortuneHandicaps,
           clearedHandicaps,
-          maxGradeLevel
+          maxGradeLevel,
+          maxTotalCost
         );
 
         if (result.totalEarned > 0) {
@@ -4842,7 +4844,8 @@ export function endBattle() {
           saveFortuneClearedData(
             fortuneCharId,
             result.newClearedHandicaps,
-            result.newMaxGradeLevel
+            result.newMaxGradeLevel,
+            result.newMaxTotalCost
           );
 
           // サーバーへポイントと達成情報を同期
@@ -4853,6 +4856,7 @@ export function endBattle() {
             {
               fortune_max_grade: result.newMaxGradeLevel,
               fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+              fortune_max_total_cost: result.newMaxTotalCost,
             }
           );
 
@@ -4887,7 +4891,8 @@ export function endBattle() {
           saveFortuneClearedData(
             fortuneCharId,
             result.newClearedHandicaps,
-            result.newMaxGradeLevel
+            result.newMaxGradeLevel,
+            result.newMaxTotalCost
           );
 
           // サーバーにも現在のポイント情報と共に達成情報を同期
@@ -4895,6 +4900,7 @@ export function endBattle() {
             parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
           let totalPts =
             parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
+
           savePointsToServer(
             'update_fortune_points.php',
             currentPts,
@@ -4902,6 +4908,7 @@ export function endBattle() {
             {
               fortune_max_grade: result.newMaxGradeLevel,
               fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+              fortune_max_total_cost: result.newMaxTotalCost,
             }
           );
 

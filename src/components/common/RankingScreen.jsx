@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadFortuneClearedData } from '../../utils/constants/fortuneRewards.js';
-import { HANDICAP_MASTER } from '../../utils/constants/fortuneHandicaps.js';
+
 import ScreenLayout from './ScreenLayout.jsx';
 import {
   CHARACTERS,
@@ -84,30 +84,10 @@ export default function RankingScreen({
         if (result.success) {
           const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
           let activePlayers = result.players.map((p) => {
-            let totalCost = 0;
-            if (p.fortune_cleared) {
-              try {
-                const cleared =
-                  typeof p.fortune_cleared === 'string'
-                    ? JSON.parse(p.fortune_cleared)
-                    : p.fortune_cleared;
-                if (cleared && typeof cleared === 'object') {
-                  Object.keys(cleared).forEach((handicapId) => {
-                    if (cleared[handicapId]) {
-                      const master = HANDICAP_MASTER[handicapId];
-                      if (master) {
-                        totalCost += master.cost || 0;
-                      }
-                    }
-                  });
-                }
-              } catch (e) {
-                console.error('Failed to parse player fortune_cleared:', e);
-              }
-            }
             return {
               ...p,
-              fortune_total_cost: totalCost,
+              // サーバーに保存された「一度に有効化した合計目標値の最大値」を使用
+              fortune_total_cost: p.fortune_max_total_cost || 0,
             };
           });
 
@@ -188,17 +168,7 @@ export default function RankingScreen({
                 0;
               const clearedData = loadFortuneClearedData('automata');
               const fortuneMaxGrade = Math.max(clearedData.maxGradeLevel, 0);
-              let fortuneTotalCost = 0;
-              if (clearedData.clearedHandicaps) {
-                Object.keys(clearedData.clearedHandicaps).forEach((id) => {
-                  if (clearedData.clearedHandicaps[id]) {
-                    const master = HANDICAP_MASTER[id];
-                    if (master) {
-                      fortuneTotalCost += master.cost || 0;
-                    }
-                  }
-                });
-              }
+              const fortuneTotalCost = clearedData.maxTotalCost || 0;
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {

@@ -1,7 +1,7 @@
 // 運命の邂逅：特級目標ポイント報酬の計算ロジック
 import { CHAR_FORTUNE_HANDICAPS, HANDICAP_MASTER } from './fortuneHandicaps.js';
 
-// 合計達成レベルの閾値とボーナス定義
+// 達成レベルの閾値とボーナス定義
 // 各レベルにつき1回のみボーナスポイントが貰える
 export const FORTUNE_GRADE_THRESHOLDS = [
   { level: 0, min: 0, max: 0, bonus: 3 },
@@ -39,7 +39,8 @@ export function calculateFortuneRewards(
   charId,
   handicaps,
   clearedHandicaps,
-  clearedMaxGradeLevel
+  clearedMaxGradeLevel,
+  clearedMaxTotalCost = 0
 ) {
   const handicapList = CHAR_FORTUNE_HANDICAPS[charId] || [];
   let totalEarned = 0;
@@ -64,8 +65,7 @@ export function calculateFortuneRewards(
       points: earned,
     });
   });
-
-  // 2. 合計達成レベル報酬: 今回の合計コストから該当レベルを判定
+  // 2. 達成レベル報酬: 今回の合計コストから該当レベルを判定
   let totalCost = 0;
   handicapList.forEach((h) => {
     if (handicaps[h.id]) {
@@ -83,6 +83,7 @@ export function calculateFortuneRewards(
     totalEarned,
     newClearedHandicaps,
     newMaxGradeLevel: Math.max(currentLevel, previousLevel),
+    newMaxTotalCost: Math.max(totalCost, clearedMaxTotalCost),
     currentTotalCost: totalCost,
     breakdown,
   };
@@ -103,12 +104,14 @@ export function loadFortuneClearedData(charId) {
         const clearedHandicaps = parsed.clearedHandicaps || {};
         let maxGradeLevel = parseInt(parsed.maxGradeLevel, 10);
         if (isNaN(maxGradeLevel)) maxGradeLevel = -1;
-        return { clearedHandicaps, maxGradeLevel };
+        let maxTotalCost = parseInt(parsed.maxTotalCost, 10);
+        if (isNaN(maxTotalCost)) maxTotalCost = 0;
+        return { clearedHandicaps, maxGradeLevel, maxTotalCost };
       }
     }
-    return { clearedHandicaps: {}, maxGradeLevel: -1 };
+    return { clearedHandicaps: {}, maxGradeLevel: -1, maxTotalCost: 0 };
   } catch {
-    return { clearedHandicaps: {}, maxGradeLevel: -1 };
+    return { clearedHandicaps: {}, maxGradeLevel: -1, maxTotalCost: 0 };
   }
 }
 
@@ -121,13 +124,15 @@ export function loadFortuneClearedData(charId) {
 export function saveFortuneClearedData(
   charId,
   clearedHandicaps,
-  maxGradeLevel
+  maxGradeLevel,
+  maxTotalCost = 0
 ) {
   try {
     const dataKey = `mini_card_battle_fortune_cleared_data_${charId}`;
     const dataToSave = {
       clearedHandicaps: clearedHandicaps || {},
       maxGradeLevel: typeof maxGradeLevel === 'number' ? maxGradeLevel : -1,
+      maxTotalCost: typeof maxTotalCost === 'number' ? maxTotalCost : 0,
     };
     localStorage.setItem(dataKey, JSON.stringify(dataToSave));
   } catch (e) {

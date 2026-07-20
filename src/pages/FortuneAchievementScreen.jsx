@@ -36,7 +36,7 @@ const unlockAndShowAcquisition = (
 
 /**
  * 運命の邂逅：特級目標の達成状況画面
- * 各特級目標の達成済み/未達成と、合計達成レベルの一覧を表示する
+ * 各特級目標の達成済み/未達成と、達成レベルの一覧を表示する
  */
 export default function FortuneAchievementScreen() {
   const enemyCharId =
@@ -131,13 +131,10 @@ export default function FortuneAchievementScreen() {
     return '';
   };
 
-  let maxEarnedPoints = 0;
+  let maxEarnedPoints = clearedData.maxTotalCost || 0;
   let totalPossiblePoints = 0;
   fortuneHandicapsList.forEach((h) => {
     totalPossiblePoints += h.cost || 0;
-    if (clearedData.clearedHandicaps?.[h.id]) {
-      maxEarnedPoints += h.cost || 0;
-    }
   });
 
   const bgStyle = getScreenBackgroundStyle(
@@ -276,7 +273,7 @@ export default function FortuneAchievementScreen() {
           </div>
         </div>
 
-        {/* 合計達成レベルの枠 */}
+        {/* 達成レベルの枠 */}
         <div
           style={{
             flex: 'none',
@@ -304,7 +301,7 @@ export default function FortuneAchievementScreen() {
               flexShrink: 0,
             }}
           >
-            <span>合計達成レベル</span>
+            <span>達成レベル</span>
             <span
               style={{
                 fontSize: '1.2rem',
