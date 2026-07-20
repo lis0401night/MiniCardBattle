@@ -552,7 +552,7 @@
           document.getElementById('tab-players').className = 'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
           document.getElementById('tab-cards').className = 'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
           
-          if (!document.getElementById('cards-grid').innerHTML.trim()) {
+          if (document.getElementById('cards-grid').children.length === 0) {
             renderCardList();
           }
         }
