@@ -1201,3 +1201,40 @@ export function checkIsHighDiffMode(gameMode) {
 export function getFortuneHandicapsStorageKey(enemyCharId) {
   return `mini_card_battle_fortune_handicaps_${enemyCharId}`;
 }
+
+/**
+ * 起動(startup)スキルを持つ既存カードへの上書き失敗時の共通処理
+ * 対象カードのstartup/defenderを消費し、演出イベントを積む
+ * @param {string} owner - プレイヤー ('blue' | 'red')
+ * @param {object} existingCard - 盤面の既存カード
+ * @param {number} lane - 対象レーン (0 | 1 | 2)
+ * @param {object} popupSourceCard - フェードイン/アウト表示する新しいカードオブジェクト
+ * @param {Array} events - 追加先イベント配列
+ */
+export function resolveStartupFade(
+  owner,
+  existingCard,
+  lane,
+  popupSourceCard,
+  events
+) {
+  existingCard.skills = existingCard.skills.filter(
+    (s) => s.id !== 'startup' && s.id !== 'defender'
+  );
+  existingCard.stunTurns = 0;
+  events.push({
+    type: 'skill_popup',
+    side: owner,
+    lane,
+    skillName: '起動',
+    card: existingCard,
+  });
+  events.push({
+    type: 'power_change',
+    side: owner,
+    lane,
+    amount: 0,
+    source: 'startup_fade',
+    card: popupSourceCard,
+  });
+}

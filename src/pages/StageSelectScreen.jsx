@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../state/gameState.js';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
-import { STAGES } from '../utils/constants/stages.js';
+import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import { STAGES } from '../utils/constants/stages.js';
 
 export default function StageSelectScreen() {
   const [stages] = useState(() => {
@@ -23,6 +23,7 @@ export default function StageSelectScreen() {
 
     return Object.keys(stagesObj)
       .filter((id) => {
+        // 'automata'（Fortuneイベントの特殊ステージ）は明示的にアンロックされていない限り表示しない
         if (id === 'automata' && !unlockedStages.includes('automata')) {
           return false;
         }

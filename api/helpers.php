@@ -36,6 +36,7 @@ function createDefaultPlayerData($uuid, $name = 'プレイヤー', $points = 0, 
         'fortune_points' => 0,
         'fortune_total_points' => 0,
         'fortune_max_grade' => -1,
+        'fortune_max_total_cost' => 0,
         'fortune_cleared' => '{}'
     ];
 }

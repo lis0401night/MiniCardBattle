@@ -195,7 +195,7 @@ function expandDialogueQueue(queue) {
       const parts = item.text.split('[next]');
       parts.forEach((partText) => {
         // [next] で分割した結果の前後の余分な改行コード等を取り除く
-        const trimmedText = partText.replace(/^\n+|\n+$/g, '');
+        const trimmedText = partText.replace(/^(?:\r?\n)+|(?:\r?\n)+$/g, '');
         if (trimmedText) {
           newQueue.push({
             ...item,

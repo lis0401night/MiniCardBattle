@@ -3750,8 +3750,6 @@ export async function playCard(o, hI, l) {
     }
   }
 
-  trackMissionSacrifice(GameState, o, playingCard);
-
   const sealedLanes =
     o === 'blue'
       ? GameState.playerSealedLanes || [0, 0, 0]
@@ -3781,6 +3779,8 @@ export async function playCard(o, hI, l) {
       return false;
     }
   }
+
+  trackMissionSacrifice(GameState, o, playingCard);
 
   // 手札からのプレイ（召喚・合体・装備含む）時にアニメーションを再生
   await playSummonAnimation(playingCard, o);

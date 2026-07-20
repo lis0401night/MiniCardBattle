@@ -13,6 +13,7 @@ import {
   triggerGraveKeeperEffect,
   consumeArmSelf,
   createDamagePopup,
+  resolveStartupFade,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -358,9 +359,7 @@ export async function executeLeaderSkillAction(
           (s) => s.id !== 'startup' && s.id !== 'defender'
         );
 
-        // 配置しようとしていたサタンの化身/召喚トークンは墓地に送る
-        const discardPile =
-          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+        events.push({ type: 'leader_skill', skill: action, side: owner });
         const deepClonedToken = JSON.parse(JSON.stringify(tokenCard));
         const deadToken = {
           ...deepClonedToken,
@@ -372,26 +371,7 @@ export async function executeLeaderSkillAction(
           rarity: tokenCard.rarity || 1,
           isToken: true,
         };
-        if (!deadToken.isToken) {
-          discardPile.push(deadToken);
-        }
-
-        events.push({ type: 'leader_skill', skill: action, side: owner });
-        events.push({
-          type: 'skill_popup',
-          side: owner,
-          lane: l,
-          skillName: '起動',
-          card: b[l],
-        });
-        events.push({
-          type: 'power_change',
-          side: owner,
-          lane: l,
-          amount: 0,
-          source: 'startup_fade',
-          card: deadToken,
-        });
+        resolveStartupFade(owner, b[l], l, deadToken, events);
       } else {
         if (b[l]) {
           await discardCard(owner, b[l], l, false);
@@ -748,11 +728,6 @@ export async function executeLeaderSkillAction(
           card: JSON.parse(JSON.stringify(selectedCard)),
         });
       } else if (existingCard && hasSkill(existingCard, 'startup')) {
-        // 起動消滅の特別処理
-        existingCard.skills = existingCard.skills.filter(
-          (s) => s.id !== 'startup' && s.id !== 'defender'
-        );
-
         // 配置しようとしていた（復活させた）カードは墓地に戻す
         const discardPile =
           owner === 'blue'
@@ -765,23 +740,13 @@ export async function executeLeaderSkillAction(
         if (!selectedCard.isToken) {
           discardPile.push(selectedCard);
         }
-
-        // 起動消滅の演出イベントを追加
-        events.push({
-          type: 'skill_popup',
-          side: owner,
-          lane: targetLane,
-          skillName: '起動',
-          card: existingCard,
-        });
-        events.push({
-          type: 'power_change',
-          side: owner,
-          lane: targetLane,
-          amount: 0,
-          source: 'startup_fade',
-          card: JSON.parse(JSON.stringify(selectedCard)),
-        });
+        resolveStartupFade(
+          owner,
+          existingCard,
+          targetLane,
+          JSON.parse(JSON.stringify(selectedCard)),
+          events
+        );
       } else {
         const resurrectedCard = {
           ...selectedCard,
@@ -990,34 +955,19 @@ export async function executeLeaderSkillAction(
         });
         resurrectedCard = targetCard; // 後のスキル解決フラグ用
       } else if (existingCard && hasSkill(existingCard, 'startup')) {
-        // 起動消滅の特別処理
-        existingCard.skills = existingCard.skills.filter(
-          (s) => s.id !== 'startup' && s.id !== 'defender'
-        );
-
         // 配置しようとしていた（復活させた）カードは墓地に戻す
         const discardPile =
           owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         if (!selectedCard.isToken) {
           discardPile.push(selectedCard);
         }
-
-        // 起動消滅の演出イベントを追加
-        events.push({
-          type: 'skill_popup',
-          side: owner,
-          lane: targetLane,
-          skillName: '起動',
-          card: existingCard,
-        });
-        events.push({
-          type: 'power_change',
-          side: owner,
-          lane: targetLane,
-          amount: 0,
-          source: 'startup_fade',
-          card: JSON.parse(JSON.stringify(selectedCard)),
-        });
+        resolveStartupFade(
+          owner,
+          existingCard,
+          targetLane,
+          JSON.parse(JSON.stringify(selectedCard)),
+          events
+        );
         resurrectedCard = existingCard;
       } else {
         resurrectedCard = {
@@ -1415,34 +1365,21 @@ export async function executeLeaderSkillAction(
           board[targetLane] &&
           hasSkill(board[targetLane], 'startup')
         ) {
-          // 起動消滅の特別処理
           const existingCard = board[targetLane];
-          existingCard.skills = existingCard.skills.filter(
-            (s) => s.id !== 'startup' && s.id !== 'defender'
-          );
-
           // 奪ってきたカードは墓地に送る
-          const discardPile =
-            owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
           if (!selectedCard.isToken) {
-            discardPile.push(selectedCard);
+            (owner === 'blue'
+              ? GameState.playerDiscard
+              : GameState.enemyDiscard
+            ).push(selectedCard);
           }
-
-          events.push({
-            type: 'skill_popup',
-            side: owner,
-            lane: targetLane,
-            skillName: '起動',
-            card: existingCard,
-          });
-          events.push({
-            type: 'power_change',
-            side: owner,
-            lane: targetLane,
-            amount: 0,
-            source: 'startup_fade',
-            card: JSON.parse(JSON.stringify(selectedCard)),
-          });
+          resolveStartupFade(
+            owner,
+            existingCard,
+            targetLane,
+            JSON.parse(JSON.stringify(selectedCard)),
+            events
+          );
         } else {
           const existingCard = board[targetLane];
           if (existingCard) {
@@ -1522,9 +1459,6 @@ export async function executeLeaderSkillAction(
           (s) => s.id !== 'startup' && s.id !== 'defender'
         );
 
-        // 配置しようとしていたスケルトンは墓地に送る
-        const discardPile =
-          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
         const skImg =
           getCardImgUrl({ ...skeletonTpl, owner }) ||
@@ -1541,25 +1475,7 @@ export async function executeLeaderSkillAction(
           rarity: skeletonTpl.rarity || 1,
           isToken: true,
         };
-        if (!deadToken.isToken) {
-          discardPile.push(deadToken);
-        }
-
-        events.push({
-          type: 'skill_popup',
-          side: owner,
-          lane: l,
-          skillName: '起動',
-          card: board[l],
-        });
-        events.push({
-          type: 'power_change',
-          side: owner,
-          lane: l,
-          amount: 0,
-          source: 'startup_fade',
-          card: deadToken,
-        });
+        resolveStartupFade(owner, board[l], l, deadToken, events);
       } else {
         if (board[l]) {
           await discardCard(owner, board[l], l, false);
@@ -1607,9 +1523,6 @@ export async function executeLeaderSkillAction(
             (s) => s.id !== 'startup' && s.id !== 'defender'
           );
 
-          // デーモンは配置されずに墓地へ送る
-          const discardPile =
-            owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
           const deepClonedToken = JSON.parse(JSON.stringify(daemonTpl));
           const imgUrl =
             getCardImgUrl({ ...daemonTpl, owner }) ||
@@ -1626,25 +1539,7 @@ export async function executeLeaderSkillAction(
             rarity: daemonTpl.rarity || 1,
             isToken: true,
           };
-          if (!deadToken.isToken) {
-            discardPile.push(deadToken);
-          }
-
-          daemonEvents.push({
-            type: 'skill_popup',
-            side: owner,
-            lane: l,
-            skillName: '起動',
-            card: board[l],
-          });
-          daemonEvents.push({
-            type: 'power_change',
-            side: owner,
-            lane: l,
-            amount: 0,
-            source: 'startup_fade',
-            card: deadToken,
-          });
+          resolveStartupFade(owner, board[l], l, deadToken, daemonEvents);
         } else {
           targetLanes.push(l);
 
@@ -1714,9 +1609,17 @@ export async function executeLeaderSkillAction(
 
       let targetLane = -1;
 
+      const mySealedLanes =
+        owner === 'blue'
+          ? GameState.playerSealedLanes
+          : GameState.enemySealedLanes;
+
       // ループ内で毎回配置するレーンを選択する
       if (currentTokenLanes && currentTokenLanes[i] !== undefined) {
-        targetLane = currentTokenLanes[i];
+        const candidate = currentTokenLanes[i];
+        // 【封印強制ブロック】事前決定レーンでも必ず再検証する
+        targetLane =
+          mySealedLanes && mySealedLanes[candidate] > 0 ? -1 : candidate;
       } else {
         // プレイヤーの入力待ち
         let successSatan = false;
@@ -1763,15 +1666,6 @@ export async function executeLeaderSkillAction(
       // 1. オートマタ(P:1)の配置 or 起動消滅
       const existing = currentBoard[targetLane];
       if (existing && hasSkill(existing, 'startup')) {
-        // 起動消滅の特別処理
-        existing.skills = existing.skills.filter(
-          (s) => s.id !== 'startup' && s.id !== 'defender'
-        );
-
-        // 配置しようとしていたオートマタは墓地に送る
-        const discardPile =
-          owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-
         const imgUrl =
           getCardImgUrl({ ...tA, owner }) || `assets/cards/card_${tA.id}.webp`;
         const deepClonedToken = JSON.parse(JSON.stringify(tA));
@@ -1788,26 +1682,7 @@ export async function executeLeaderSkillAction(
           rarity: tA.rarity || 1,
           isToken: true,
         };
-        if (!deadToken.isToken) {
-          discardPile.push(deadToken);
-        }
-
-        // 起動消滅の演出イベントを追加
-        stepEvents.push({
-          type: 'skill_popup',
-          side: owner,
-          lane: targetLane,
-          skillName: '起動',
-          card: existing,
-        });
-        stepEvents.push({
-          type: 'power_change',
-          side: owner,
-          lane: targetLane,
-          amount: 0,
-          source: 'startup_fade',
-          card: deadToken,
-        });
+        resolveStartupFade(owner, existing, targetLane, deadToken, stepEvents);
       } else {
         // 通常の配置処理 (既存カードがあれば上書き墓地送り)
         if (existing) {

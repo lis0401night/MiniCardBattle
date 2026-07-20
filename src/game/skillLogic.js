@@ -1022,6 +1022,7 @@ export async function resolveActiveSkillEffect(
           existingCard.skills = existingCard.skills.filter(
             (s) => s.id !== 'startup' && s.id !== 'defender'
           );
+          existingCard.stunTurns = 0;
           const discardPile =
             o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
           if (!newToken.isToken) {
@@ -1103,6 +1104,9 @@ export async function resolveActiveSkillEffect(
       await cleanupDestroyedCards(c);
 
       // 奇襲（ambush）の場合、配置したレーンでただちに攻撃させる
+      // ※仕様（CodeRabbit指摘に対する注記）：
+      // 「起動(startup)」スキルを持つカードの上に奇襲トークンを出して配置が失敗（消滅）した場合であっても、
+      // successfullyPlacedLanesにレーンが記録され、そのレーンの既存のカードがそのまま奇襲攻撃を行うのは仕様通りの意図した挙動です。
       if (skillId === 'ambush') {
         for (let i = 0; i < successfullyPlacedLanes.length; i++) {
           const targetLane = successfullyPlacedLanes[i];
@@ -1238,6 +1242,7 @@ export async function resolveActiveSkillEffect(
         existingCard.skills = existingCard.skills.filter(
           (s) => s.id !== 'startup' && s.id !== 'defender'
         );
+        existingCard.stunTurns = 0;
         const discardPile =
           o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         if (!newToken.isToken) {
@@ -2202,6 +2207,7 @@ export async function resolveActiveSkillEffect(
             existingCard.skills = existingCard.skills.filter(
               (s) => s.id !== 'startup' && s.id !== 'defender'
             );
+            existingCard.stunTurns = 0;
             // 復活させようとしていたカードは墓地に戻す
             const discardPile =
               o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -2426,6 +2432,7 @@ export async function resolveActiveSkillEffect(
             existingCard.skills = existingCard.skills.filter(
               (s) => s.id !== 'startup' && s.id !== 'defender'
             );
+            existingCard.stunTurns = 0;
             // 傀儡で出そうとしたカードは元の持ち主の墓地に戻す
             const oppDiscardPile =
               oppOwner === 'blue'
@@ -2908,6 +2915,7 @@ export async function resolveActiveSkillEffect(
             existingCard.skills = existingCard.skills.filter(
               (s) => s.id !== 'startup' && s.id !== 'defender'
             );
+            existingCard.stunTurns = 0;
             // デッキから出そうとしたカードは墓地に送る
             const discardPile =
               o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
