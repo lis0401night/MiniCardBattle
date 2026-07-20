@@ -15,6 +15,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import {
   MAX_DECK_SLOTS,
   STORY_BANNED_LEADER_IDS,
+  TOURNAMENT_BANNED_LEADER_IDS,
 } from '../utils/constants/config.js';
 
 export default function DeckListScreen({ switchScreen }) {
@@ -518,8 +519,10 @@ export default function DeckListScreen({ switchScreen }) {
                   const isDraggingThis = dragIndex === idx;
                   const isHoveringThis = hoverIndex === idx;
                   const isLeaderBanned =
-                    GameState.gameMode === 'story' &&
-                    STORY_BANNED_LEADER_IDS.includes(deck.leaderId);
+                    (GameState.gameMode === 'story' &&
+                      STORY_BANNED_LEADER_IDS.includes(deck.leaderId)) ||
+                    (GameState.gameMode === 'tournament' &&
+                      TOURNAMENT_BANNED_LEADER_IDS.includes(deck.leaderId));
 
                   return (
                     <div

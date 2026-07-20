@@ -9,7 +9,11 @@ import {
   getSkinImage,
   BOSS_CHARACTER_IDS,
 } from '../utils/constants/characters.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  STORY_BANNED_LEADER_IDS,
+  TOURNAMENT_BANNED_LEADER_IDS,
+} from '../utils/constants/config.js';
 
 // キャラクターフィルタリングの共通処理 (DRY原則を保ちます)
 const getFilteredCharacters = () => {
@@ -27,7 +31,16 @@ const getFilteredCharacters = () => {
     (achievementData.stats?.succubusDefeated || 0) >= 1;
   const isWarlockUnlocked = (achievementData.stats?.warlockDefeated || 0) >= 1;
 
+  const mode =
+    GameState.gameMode === 'create_deck'
+      ? GameState.prevGameModeForCreate || 'free'
+      : GameState.gameMode;
+
   return Object.values(charsObj).filter((c) => {
+    if (mode === 'story' && STORY_BANNED_LEADER_IDS.includes(c.id))
+      return false;
+    if (mode === 'tournament' && TOURNAMENT_BANNED_LEADER_IDS.includes(c.id))
+      return false;
     if (c.id === 'automata') {
       if (isEnemySelect) return false;
       try {

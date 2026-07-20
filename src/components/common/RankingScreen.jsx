@@ -311,6 +311,19 @@ export default function RankingScreen({
       titleGlow={true}
       backTo={backTo}
     >
+      {status === 'success' && (
+        <div
+          style={{
+            fontSize: '0.9rem',
+            color: '#cbd5e1',
+            textAlign: 'center',
+            marginBottom: '10px',
+            flexShrink: 0,
+          }}
+        >
+          総プレイヤー数: {players.length}人
+        </div>
+      )}
       <div
         className="deck-edit-container"
         style={{
