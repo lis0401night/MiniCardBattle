@@ -372,7 +372,9 @@ export async function executeLeaderSkillAction(
           rarity: tokenCard.rarity || 1,
           isToken: true,
         };
-        discardPile.push(deadToken);
+        if (!deadToken.isToken) {
+          discardPile.push(deadToken);
+        }
 
         events.push({ type: 'leader_skill', skill: action, side: owner });
         events.push({
@@ -760,7 +762,9 @@ export async function executeLeaderSkillAction(
             : isOppDiscard
               ? GameState.playerDiscard
               : GameState.enemyDiscard;
-        discardPile.push(selectedCard);
+        if (!selectedCard.isToken) {
+          discardPile.push(selectedCard);
+        }
 
         // 起動消滅の演出イベントを追加
         events.push({
@@ -994,7 +998,9 @@ export async function executeLeaderSkillAction(
         // 配置しようとしていた（復活させた）カードは墓地に戻す
         const discardPile =
           owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-        discardPile.push(selectedCard);
+        if (!selectedCard.isToken) {
+          discardPile.push(selectedCard);
+        }
 
         // 起動消滅の演出イベントを追加
         events.push({
@@ -1418,7 +1424,9 @@ export async function executeLeaderSkillAction(
           // 奪ってきたカードは墓地に送る
           const discardPile =
             owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-          discardPile.push(selectedCard);
+          if (!selectedCard.isToken) {
+            discardPile.push(selectedCard);
+          }
 
           events.push({
             type: 'skill_popup',
@@ -1533,7 +1541,9 @@ export async function executeLeaderSkillAction(
           rarity: skeletonTpl.rarity || 1,
           isToken: true,
         };
-        discardPile.push(deadToken);
+        if (!deadToken.isToken) {
+          discardPile.push(deadToken);
+        }
 
         events.push({
           type: 'skill_popup',
@@ -1616,7 +1626,9 @@ export async function executeLeaderSkillAction(
             rarity: daemonTpl.rarity || 1,
             isToken: true,
           };
-          discardPile.push(deadToken);
+          if (!deadToken.isToken) {
+            discardPile.push(deadToken);
+          }
 
           daemonEvents.push({
             type: 'skill_popup',
@@ -1776,7 +1788,9 @@ export async function executeLeaderSkillAction(
           rarity: tA.rarity || 1,
           isToken: true,
         };
-        discardPile.push(deadToken);
+        if (!deadToken.isToken) {
+          discardPile.push(deadToken);
+        }
 
         // 起動消滅の演出イベントを追加
         stepEvents.push({
