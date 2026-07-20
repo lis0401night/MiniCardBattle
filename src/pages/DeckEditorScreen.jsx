@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { prepareBattle } from '../game/battle.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
@@ -153,7 +153,8 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   const isFortuneMode = checkIsFortuneMode(effectiveMode);
 
-  const activeBannedSkillIds = useMemo(() => {
+  // 特級目標（fortuneハンディキャップ）で有効な禁止スキルID一覧を毎回算出する
+  const activeBannedSkillIds = (() => {
     if (!isFortuneMode || !GameState.fortuneHandicaps) return [];
 
     const enemyCharId = getEventEnemyCharId(effectiveMode);
@@ -162,30 +163,29 @@ export default function DeckEditorScreen({ switchScreen }) {
     return handicapsList
       .filter((h) => h.type === 'ban_skill' && GameState.fortuneHandicaps[h.id])
       .flatMap((rule) => rule.skillIds || [rule.skillId]);
-  }, [isFortuneMode, effectiveMode]);
+  })();
 
-  const isCardBannedByFortune = useCallback(
-    (template) => {
-      if (activeBannedSkillIds.length === 0) return false;
+  // カードが特級目標（fortuneハンディキャップ）によって禁止されているか判定する
+  const isCardBannedByFortune = (template) => {
+    if (activeBannedSkillIds.length === 0) return false;
 
-      const hasSkillLocal = (c, skillId) => {
-        const inSkills = (c.skills || []).some((s) => s.id === skillId);
-        if (inSkills) return true;
-        const inChoices = (c.choices || []).some((s) => s.id === skillId);
-        if (inChoices) return true;
-        const inChoices2 = (c.choices2 || []).some((s) => s.id === skillId);
-        if (inChoices2) return true;
-        return false;
-      };
+    const hasSkillLocal = (c, skillId) => {
+      const inSkills = (c.skills || []).some((s) => s.id === skillId);
+      if (inSkills) return true;
+      const inChoices = (c.choices || []).some((s) => s.id === skillId);
+      if (inChoices) return true;
+      const inChoices2 = (c.choices2 || []).some((s) => s.id === skillId);
+      if (inChoices2) return true;
+      return false;
+    };
 
-      return activeBannedSkillIds.some((skillId) =>
-        hasSkillLocal(template, skillId)
-      );
-    },
-    [activeBannedSkillIds]
-  );
+    return activeBannedSkillIds.some((skillId) =>
+      hasSkillLocal(template, skillId)
+    );
+  };
 
   const addCard = (template) => {
+    // 特級目標で禁止されているカードは追加できないようにブロックする
     if (isCardBannedByFortune(template)) {
       if (showAlertModal) {
         showAlertModal('特級目標で使用禁止のカードは追加できません。');
@@ -259,13 +259,14 @@ export default function DeckEditorScreen({ switchScreen }) {
   };
   // ---------------------------------
 
+  const hasBannedCard = deckSelection.some((c) => isCardBannedByFortune(c));
+
   const handleFinish = () => {
     if (deckSelection.length !== DECK_SIZE) {
       showAlertModal?.(`デッキを${DECK_SIZE}枚にしてください！`);
       return;
     }
 
-    const hasBannedCard = deckSelection.some((c) => isCardBannedByFortune(c));
     if (hasBannedCard) {
       showAlertModal?.('特級目標で使用禁止のカードがデッキに含まれています！');
       return;
@@ -340,11 +341,7 @@ export default function DeckEditorScreen({ switchScreen }) {
   });
 
   const getBackgroundImage = () => {
-    // 新規デッキ作成中はgameModeが'create_deck'になるため、元のモードを参照する
-    const mode =
-      GameState.gameMode === 'create_deck'
-        ? GameState.prevGameModeForCreate || 'free_deck_edit'
-        : GameState.gameMode;
+    const mode = effectiveMode;
 
     if (mode === 'tournament') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_tournament01.webp')}')`;
@@ -1011,18 +1008,12 @@ export default function DeckEditorScreen({ switchScreen }) {
         <MenuButton
           id="btn-finish-deck"
           variant="blue"
-          disabled={
-            deckSelection.length !== DECK_SIZE ||
-            deckSelection.some((c) => isCardBannedByFortune(c))
-          }
+          disabled={deckSelection.length !== DECK_SIZE || hasBannedCard}
           style={{
             marginTop: '10px',
             width: '100%',
             opacity:
-              deckSelection.length === DECK_SIZE &&
-              !deckSelection.some((c) => isCardBannedByFortune(c))
-                ? 1
-                : 0.5,
+              deckSelection.length === DECK_SIZE && !hasBannedCard ? 1 : 0.5,
           }}
           onClick={handleFinish}
           label={

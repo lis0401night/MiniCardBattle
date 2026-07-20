@@ -71,11 +71,18 @@ if ($fileSize > 0) {
         if ($existing) {
             $player_data = $existing;
         } else {
-            $player_data = [];
+            $parseFailed = true;
         }
     } else {
-        $player_data = [];
+        $parseFailed = true;
     }
+}
+
+if ($parseFailed) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
+    exit;
 }
 
 if (empty($player_data)) {
