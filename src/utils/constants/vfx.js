@@ -47,15 +47,15 @@ export const VFX_DATA = {
   // リナSPスキル（サンプル）
   anm_elf_arts: {
     type: 'sprite',
-    src: 'assets/vfx/hujimiyaeffect_snipe.png', // 適宜書き換えてください
-    columns: 7,
-    rows: 7,
-    frameCount: 49,
+    src: 'assets/vfx/vfx_magic_arrow.png', // 適宜書き換えてください
+    columns: 6,
+    rows: 6,
+    frameCount: 33,
     duration: 1200,
     se: 'seSkillCharge', // 再生する効果音、SOUNDSのキーを指定
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
-    scale: 1,
+    scale: 0.6,
     shake: false,
     flipOnEnemy: false, // 敵が使用した際に上下反転させる
     targetSide: 'enemy', // 相手のレーンがターゲット
@@ -131,15 +131,15 @@ export const VFX_DATA = {
   // セレスティア召喚用VFX
   anm_summon_celestia: {
     type: 'sprite',
-    src: 'assets/vfx/hujimiyaeffect_attackburst.png',
-    columns: 7,
-    rows: 7,
-    frameCount: 49,
-    duration: 500,
+    src: 'assets/vfx/vfx_summon_knight.png',
+    columns: 5,
+    rows: 4,
+    frameCount: 17,
+    duration: 800,
     se: 'seMetalBlast',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
-    scale: 0.6,
+    scale: 0.5,
     shake: false,
     targetSide: 'self', // 自陣に召喚
   },
