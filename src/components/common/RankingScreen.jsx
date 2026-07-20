@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadFortuneClearedData } from '../../utils/constants/fortuneRewards.js';
+import { HANDICAP_MASTER } from '../../utils/constants/fortuneHandicaps.js';
 import ScreenLayout from './ScreenLayout.jsx';
 import {
   CHARACTERS,
@@ -68,7 +69,11 @@ export default function RankingScreen({
   const currentFallbackField = tabs
     ? tabs[activeTabIndex]?.fallbackPointField
     : fallbackPointField;
-  const currentUnit = tabs ? tabs[activeTabIndex]?.unit || 'Pt' : 'Pt';
+  const currentUnit = tabs
+    ? tabs[activeTabIndex]?.unit !== undefined
+      ? tabs[activeTabIndex].unit
+      : 'Pt'
+    : 'Pt';
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -78,7 +83,33 @@ export default function RankingScreen({
 
         if (result.success) {
           const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
-          let activePlayers = result.players;
+          let activePlayers = result.players.map((p) => {
+            let totalCost = 0;
+            if (p.fortune_cleared) {
+              try {
+                const cleared =
+                  typeof p.fortune_cleared === 'string'
+                    ? JSON.parse(p.fortune_cleared)
+                    : p.fortune_cleared;
+                if (cleared && typeof cleared === 'object') {
+                  Object.keys(cleared).forEach((handicapId) => {
+                    if (cleared[handicapId]) {
+                      const master = HANDICAP_MASTER[handicapId];
+                      if (master) {
+                        totalCost += master.cost || 0;
+                      }
+                    }
+                  });
+                }
+              } catch (e) {
+                console.error('Failed to parse player fortune_cleared:', e);
+              }
+            }
+            return {
+              ...p,
+              fortune_total_cost: totalCost,
+            };
+          });
 
           // 自分のローカルストレージの最新データをサーバーに自動同期（交換所を介さない自動リカバリー）
           if (myUuid) {
@@ -157,6 +188,17 @@ export default function RankingScreen({
                 0;
               const clearedData = loadFortuneClearedData('automata');
               const fortuneMaxGrade = Math.max(clearedData.maxGradeLevel, 0);
+              let fortuneTotalCost = 0;
+              if (clearedData.clearedHandicaps) {
+                Object.keys(clearedData.clearedHandicaps).forEach((id) => {
+                  if (clearedData.clearedHandicaps[id]) {
+                    const master = HANDICAP_MASTER[id];
+                    if (master) {
+                      fortuneTotalCost += master.cost || 0;
+                    }
+                  }
+                });
+              }
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
@@ -195,6 +237,7 @@ export default function RankingScreen({
                   fortune_points: fortunePts,
                   fortune_total_points: fortuneTotalPts,
                   fortune_max_grade: fortuneMaxGrade,
+                  fortune_total_cost: fortuneTotalCost,
                 };
                 activePlayers.push(virtualPlayer);
               }
@@ -235,12 +278,28 @@ export default function RankingScreen({
 
     const sorted = [...rawPlayers].sort((a, b) => getPoints(b) - getPoints(a));
 
-    return sorted.map((p, index) => ({
-      ...p,
-      rankIndex: index,
-      displayTotalPoints: getPoints(p),
-      isMe: p.uuid === myUuid,
-    }));
+    let lastPoints = null;
+    let lastRank = 0;
+
+    return sorted.map((p, index) => {
+      const currentPoints = getPoints(p);
+      let displayRank = index + 1;
+
+      if (lastPoints !== null && currentPoints === lastPoints) {
+        displayRank = lastRank;
+      } else {
+        lastRank = displayRank;
+      }
+      lastPoints = currentPoints;
+
+      return {
+        ...p,
+        rankIndex: index,
+        displayRank,
+        displayTotalPoints: currentPoints,
+        isMe: p.uuid === myUuid,
+      };
+    });
   }, [rawPlayers, currentPointField, currentFallbackField]);
 
   return (
@@ -351,8 +410,9 @@ export default function RankingScreen({
                 (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
               if (!char) return null;
 
+              const rankForAccent = p.displayRank - 1;
               const { extraClass, borderColor, textColor } =
-                RANK_ACCENTS[p.rankIndex] || DEFAULT_RANK_ACCENT;
+                RANK_ACCENTS[rankForAccent] || DEFAULT_RANK_ACCENT;
 
               return (
                 <div
@@ -389,7 +449,7 @@ export default function RankingScreen({
                           textAlign: 'center',
                         }}
                       >
-                        {p.rankIndex + 1}位
+                        {p.displayRank}位
                       </div>
                       <div className="banner-icon-wrapper">
                         <img

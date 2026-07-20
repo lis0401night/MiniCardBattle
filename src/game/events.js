@@ -137,9 +137,16 @@ export function handleEventProgression() {
       // 敗北時はコンテニュー画面へ
       showContinueScreen();
     } else {
-      // 勝利時の処理：メニューへ（ポイント付与は既に完了している）
+      // 勝利時の処理：運命の邂逅時は fortune-menu、高難易度は high-difficulty-menu へ戻る
+      let targetScreen = 'screen-event-menu';
+      if (GameState.gameMode?.endsWith('_fortune')) {
+        targetScreen = 'screen-fortune-menu';
+      } else if (GameState.gameMode?.endsWith('_high')) {
+        targetScreen = 'screen-high-difficulty-menu';
+      }
+
       performFadeTransition(() => {
-        switchScreen('screen-event-menu');
+        switchScreen(targetScreen);
       });
     }
   }

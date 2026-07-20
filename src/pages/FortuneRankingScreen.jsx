@@ -15,13 +15,13 @@ export default function FortuneRankingScreen() {
           label: '総運命ポイント',
           pointField: 'fortune_total_points',
           fallbackPointField: 'fortune_points',
-          unit: 'Pt',
+          unit: '',
         },
         {
           label: '合計目標値（マキナ）',
-          pointField: 'fortune_max_grade',
-          fallbackPointField: 'fortune_max_grade',
-          unit: 'Lv',
+          pointField: 'fortune_total_cost',
+          fallbackPointField: 'fortune_total_cost',
+          unit: '',
         },
       ]}
     />
