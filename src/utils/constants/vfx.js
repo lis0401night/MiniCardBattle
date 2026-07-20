@@ -203,7 +203,7 @@ export const VFX_DATA = {
     se: 'seHyoushigi',
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 0,
-    scale: 0.6,
+    scale: 0.4,
     shake: false,
     targetSide: 'enemy', // 相手のレーンがターゲット
   },

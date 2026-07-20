@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import { getCardImgUrl, playSound } from '../../utils/gameUtils.js';
@@ -254,6 +255,22 @@ export default function CardPreviewContent({
                       }}
                     />
                   </div>
+                  {styleProps.isIcon && (
+                    <img
+                      src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                      alt=""
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                      }}
+                    />
+                  )}
                   {isStandardCard && (
                     <div
                       className="card-power"
