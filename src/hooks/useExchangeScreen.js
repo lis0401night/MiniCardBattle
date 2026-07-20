@@ -157,6 +157,7 @@ export function useExchangeScreen({
           'mini_card_battle_owned_playmats',
           JSON.stringify(newUnlocked)
         );
+        Object.assign(GameState, { ownedPlaymats: newUnlocked });
         setOwnedPlaymats(newUnlocked);
         setUnlockedPlaymats(newUnlocked);
         showAlertModal(

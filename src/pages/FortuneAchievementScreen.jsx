@@ -27,6 +27,25 @@ const unlockAndShowAcquisition = (
     if (!current.includes(targetId)) {
       current.push(targetId);
       localStorage.setItem(storageKey, JSON.stringify(current));
+
+      // ゲーム再起動なしで直ちに反映させるため、GameStateの該当配列も更新する
+      if (storageKey === 'mini_card_battle_unlocked_icons') {
+        if (!GameState.unlockedIcons) GameState.unlockedIcons = [];
+        if (!GameState.unlockedIcons.includes(targetId))
+          GameState.unlockedIcons.push(targetId);
+      } else if (storageKey === 'mini_card_battle_unlocked_characters') {
+        if (!GameState.unlockedCharacters) GameState.unlockedCharacters = [];
+        if (!GameState.unlockedCharacters.includes(targetId))
+          GameState.unlockedCharacters.push(targetId);
+      } else if (storageKey === 'mini_card_battle_unlocked_stages') {
+        if (!GameState.unlockedStages) GameState.unlockedStages = [];
+        if (!GameState.unlockedStages.includes(targetId))
+          GameState.unlockedStages.push(targetId);
+      } else if (storageKey === 'mini_card_battle_owned_playmats') {
+        if (!GameState.ownedPlaymats) GameState.ownedPlaymats = [];
+        if (!GameState.ownedPlaymats.includes(targetId))
+          GameState.ownedPlaymats.push(targetId);
+      }
     }
   } catch (e) {
     console.error(`Failed to unlock ${targetId} in ${storageKey}:`, e);

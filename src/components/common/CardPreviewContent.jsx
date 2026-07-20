@@ -257,7 +257,9 @@ export default function CardPreviewContent({
                   </div>
                   {styleProps.isIcon && (
                     <img
-                      src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                      src={appendVersionQuery(
+                        'assets/icons/iconframe_gold.webp'
+                      )}
                       alt=""
                       style={{
                         position: 'absolute',

@@ -14,7 +14,6 @@ import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournam
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
   CHAR_FORTUNE_HANDICAPS,
-  HANDICAP_MASTER,
   HANDICAP_TYPES,
 } from '../utils/constants/fortuneHandicaps.js';
 import { STAGES } from '../utils/constants/stages.js';
@@ -783,7 +782,8 @@ export function initBattleState() {
       GameState.playerSkins[GameState.playerConfig.id]
     ) {
       const selSkin = GameState.playerSkins[GameState.playerConfig.id];
-      const charObj = CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
+      const charObj =
+        CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
       if (typeof getSkinImage === 'function') {
         GameState.playerConfig.image =
           getSkinImage(charObj, selSkin, 'image') || charObj.image;
@@ -801,7 +801,8 @@ export function initBattleState() {
       GameState.enemySkins[GameState.enemyConfig.id]
     ) {
       const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
-      const charObj = CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
+      const charObj =
+        CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
       if (typeof getSkinImage === 'function') {
         GameState.enemyConfig.image =
           getSkinImage(charObj, selSkin, 'image') || charObj.image;

@@ -255,7 +255,9 @@ export default function TournamentExchangeScreen({ switchScreen }) {
 
                   {isIcon && (
                     <img
-                      src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                      src={appendVersionQuery(
+                        'assets/icons/iconframe_gold.webp'
+                      )}
                       alt=""
                       style={{
                         position: 'absolute',

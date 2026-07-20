@@ -248,7 +248,9 @@ export default function ChallengeExchangeScreen() {
 
                   {isIcon && (
                     <img
-                      src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                      src={appendVersionQuery(
+                        'assets/icons/iconframe_gold.webp'
+                      )}
                       alt=""
                       style={{
                         position: 'absolute',

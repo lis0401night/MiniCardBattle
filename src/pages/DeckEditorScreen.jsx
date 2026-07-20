@@ -146,10 +146,11 @@ export default function DeckEditorScreen({ switchScreen }) {
     setDeckSelection(newSelection);
   };
 
-  const effectiveMode = GameState.gameMode === 'create_deck' 
-    ? GameState.prevGameModeForCreate || 'free_deck_edit' 
-    : GameState.gameMode;
-  
+  const effectiveMode =
+    GameState.gameMode === 'create_deck'
+      ? GameState.prevGameModeForCreate || 'free_deck_edit'
+      : GameState.gameMode;
+
   const isFortuneMode = checkIsFortuneMode(effectiveMode);
 
   const activeBannedSkillIds = useMemo(() => {

@@ -159,8 +159,20 @@
             />
           </div>
           <div class="flex bg-slate-800 rounded-lg p-1 gap-1 ml-2">
-            <button id="tab-players" class="px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors" onclick="window.switchTab('players')">プレイヤー一覧</button>
-            <button id="tab-cards" class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" onclick="window.switchTab('cards')">全カード一覧</button>
+            <button
+              id="tab-players"
+              class="px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors"
+              onclick="window.switchTab('players')"
+            >
+              プレイヤー一覧
+            </button>
+            <button
+              id="tab-cards"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('cards')"
+            >
+              全カード一覧
+            </button>
           </div>
           <div class="hidden md:block h-8 w-px bg-slate-700 mx-2"></div>
           <div
@@ -217,35 +229,49 @@
               >
                 <tr>
                   <th class="p-2 md:p-3 w-10 text-center">#</th>
-                  <th class="p-2 md:p-3" style="min-width:140px">プレイヤー</th>
-                  <th class="p-2 md:p-3 text-center" style="min-width:110px">リーダー</th>
+                  <th class="p-2 md:p-3" style="min-width: 140px">
+                    プレイヤー
+                  </th>
+                  <th class="p-2 md:p-3 text-center" style="min-width: 110px">
+                    リーダー
+                  </th>
                   <th
-                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors" style="min-width:80px"
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 80px"
                     onclick="window.sortBy('defense')"
                   >
                     防衛ポイント
                   </th>
-                  <th class="p-2 md:p-3 text-center" style="min-width:60px">防衛成功数</th>
+                  <th class="p-2 md:p-3 text-center" style="min-width: 60px">
+                    防衛成功数
+                  </th>
                   <th
-                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors" style="min-width:80px"
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 80px"
                     onclick="window.sortBy('challenge')"
                   >
                     試練ポイント
                   </th>
                   <th
-                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors" style="min-width:80px"
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 80px"
                     onclick="window.sortBy('tournament')"
                   >
                     大会ポイント
                   </th>
                   <th
-                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors" style="min-width:80px"
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 80px"
                     onclick="window.sortBy('fortune')"
                   >
                     邂逅ポイント
                   </th>
-                  <th class="p-2 md:p-3 text-center" style="min-width:70px">等級（マキナ）</th>
-                  <th class="p-2 md:p-3 text-center" style="min-width:50px">デッキ</th>
+                  <th class="p-2 md:p-3 text-center" style="min-width: 70px">
+                    等級（マキナ）
+                  </th>
+                  <th class="p-2 md:p-3 text-center" style="min-width: 50px">
+                    デッキ
+                  </th>
                 </tr>
               </thead>
               <tbody id="player-table-body" class="divide-y divide-slate-100">
@@ -274,10 +300,7 @@
             </div>
           </div>
 
-          <div
-            id="detail-panel"
-            class="panel-scroll scroll-custom p-4 md:p-6"
-          >
+          <div id="detail-panel" class="panel-scroll scroll-custom p-4 md:p-6">
             <!-- 未選択時のプレースホルダー -->
             <div
               id="detail-placeholder"
@@ -323,14 +346,25 @@
       </div>
 
       <!-- 全カード一覧ビュー -->
-      <div id="view-cards" class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden">
-        <div class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+      <div
+        id="view-cards"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2"
+        >
           <div>
-            <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
               データベース
             </h2>
             <div class="text-xl font-black text-slate-800 tracking-tight">
-              全カード一覧 <span id="cards-count" class="text-sm font-bold text-slate-500 ml-2"></span>
+              全カード一覧
+              <span
+                id="cards-count"
+                class="text-sm font-bold text-slate-500 ml-2"
+              ></span>
             </div>
           </div>
         </div>
@@ -401,7 +435,8 @@
         if (skinId.endsWith('_high')) {
           const baseChar = skinId.replace('_high', '');
           const charData = CHARACTERS[baseChar];
-          if (charData?.skins?.[skinId]?.name) return charData.skins[skinId].name;
+          if (charData?.skins?.[skinId]?.name)
+            return charData.skins[skinId].name;
           return `高難易度 (${getCharName(baseChar)})`;
         }
         return skinId;
@@ -438,7 +473,9 @@
        * @returns {string} 日本語名
        */
       function getCharName(charId) {
-        return CHARACTERS[charId]?.name || STAGE_NAME_MAP[charId] || charId || '不明';
+        return (
+          CHARACTERS[charId]?.name || STAGE_NAME_MAP[charId] || charId || '不明'
+        );
       }
 
       /**
@@ -477,34 +514,53 @@
             const cardsModule = await import('./src/utils/constants/cards.js');
             CARD_MASTER = cardsModule.CARD_MASTER || [];
           } catch (e) {
-            console.warn('cards.js の読み込みに失敗。カード名は生IDで表示されます。', e);
+            console.warn(
+              'cards.js の読み込みに失敗。カード名は生IDで表示されます。',
+              e
+            );
           }
           try {
-            const charactersModule = await import('./src/utils/constants/characters.js');
+            const charactersModule =
+              await import('./src/utils/constants/characters.js');
             CHARACTERS = charactersModule.CHARACTERS || {};
           } catch (e) {
-            console.warn('characters.js の読み込みに失敗。キャラクター名は生IDで表示されます。', e);
+            console.warn(
+              'characters.js の読み込みに失敗。キャラクター名は生IDで表示されます。',
+              e
+            );
           }
           try {
-            const playmatsModule = await import('./src/utils/constants/playmats.js');
+            const playmatsModule =
+              await import('./src/utils/constants/playmats.js');
             PLAYMAT_MASTER = playmatsModule.PLAYMAT_MASTER || [];
           } catch (e) {
-            console.warn('playmats.js の読み込みに失敗。プレイマット名は生IDで表示されます。', e);
+            console.warn(
+              'playmats.js の読み込みに失敗。プレイマット名は生IDで表示されます。',
+              e
+            );
           }
           try {
-            const avatarsModule = await import('./src/utils/constants/avatars.js');
+            const avatarsModule =
+              await import('./src/utils/constants/avatars.js');
             ALL_ICONS = [
               ...(avatarsModule.AVAILABLE_ICONS || []),
               ...(avatarsModule.EXTRA_ICONS || []),
             ];
           } catch (e) {
-            console.warn('avatars.js の読み込みに失敗。アイコン名は生IDで表示されます。', e);
+            console.warn(
+              'avatars.js の読み込みに失敗。アイコン名は生IDで表示されます。',
+              e
+            );
           }
           try {
-            const skillsModule = await import('./src/utils/constants/skills.js');
+            const skillsModule =
+              await import('./src/utils/constants/skills.js');
             SKILLS = skillsModule.SKILLS || {};
           } catch (e) {
-            console.warn('skills.js の読み込みに失敗。スキル名はIDで表示されます。', e);
+            console.warn(
+              'skills.js の読み込みに失敗。スキル名はIDで表示されます。',
+              e
+            );
           }
 
           // プレイヤーデータをAPIから取得
@@ -544,14 +600,18 @@
         if (tab === 'players') {
           document.getElementById('view-main').classList.remove('hidden');
           document.getElementById('view-cards').classList.add('hidden');
-          document.getElementById('tab-players').className = 'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
-          document.getElementById('tab-cards').className = 'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
+          document.getElementById('tab-players').className =
+            'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
+          document.getElementById('tab-cards').className =
+            'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
         } else {
           document.getElementById('view-main').classList.add('hidden');
           document.getElementById('view-cards').classList.remove('hidden');
-          document.getElementById('tab-players').className = 'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
-          document.getElementById('tab-cards').className = 'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
-          
+          document.getElementById('tab-players').className =
+            'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
+          document.getElementById('tab-cards').className =
+            'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
+
           if (document.getElementById('cards-grid').children.length === 0) {
             renderCardList();
           }
@@ -716,7 +776,9 @@
                 🎮 ${escapeHtml(charName)}
               </span>
               ${
-                p.is_premium || (p.unlocked_premium_cards && p.unlocked_premium_cards.length > 0)
+                p.is_premium ||
+                (p.unlocked_premium_cards &&
+                  p.unlocked_premium_cards.length > 0)
                   ? '<span class="text-[10px] font-black px-3 py-1 rounded-full bg-amber-600/20 text-amber-300 border border-amber-500/30">⭐ プレミアム</span>'
                   : ''
               }
@@ -802,8 +864,6 @@
         `;
       }
 
-
-
       // =============================
       // デッキセクション
       // =============================
@@ -886,9 +946,10 @@
                   .map(({ card: c, count }) => {
                     const rarityColor = RARITY_COLORS[c.rarity] || 'slate';
                     const rarityLabel = RARITY_LABELS[c.rarity] || '?';
-                    const countBadge = count > 1
-                      ? `<span class="text-[8px] font-black text-indigo-300 bg-indigo-950/50 px-1 rounded">×${count}</span>`
-                      : '';
+                    const countBadge =
+                      count > 1
+                        ? `<span class="text-[8px] font-black text-indigo-300 bg-indigo-950/50 px-1 rounded">×${count}</span>`
+                        : '';
                     return `
                     <div class="flex justify-between items-center text-[10px] bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 hover:border-indigo-500/30 transition-all">
                       <div class="flex items-center gap-2 truncate">
@@ -911,13 +972,15 @@
       // =============================
       function renderCardList() {
         // トークンを除外
-        const cards = CARD_MASTER.filter(c => !String(c.id).startsWith('token_'));
+        const cards = CARD_MASTER.filter(
+          (c) => !String(c.id).startsWith('token_')
+        );
 
         // 使用回数を集計
         const usageCounts = {};
-        allPlayers.forEach(p => {
+        allPlayers.forEach((p) => {
           if (p.has_defense_deck && Array.isArray(p.deck)) {
-            p.deck.forEach(entry => {
+            p.deck.forEach((entry) => {
               const cId = resolveCardId(entry);
               usageCounts[cId] = (usageCounts[cId] || 0) + 1;
             });
@@ -933,23 +996,33 @@
           return String(a.id).localeCompare(String(b.id));
         });
 
-        document.getElementById('cards-count').innerText = `(${cards.length}種)`;
+        document.getElementById('cards-count').innerText =
+          `(${cards.length}種)`;
 
-        const RARITY_COLORS = { 1: 'slate', 2: 'blue', 3: 'purple', 4: 'amber', 5: 'red' };
+        const RARITY_COLORS = {
+          1: 'slate',
+          2: 'blue',
+          3: 'purple',
+          4: 'amber',
+          5: 'red',
+        };
         const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
 
-        const gridHtml = cards.map(c => {
-          const count = usageCounts[c.id] || 0;
-          const rarityColor = RARITY_COLORS[c.rarity] || 'slate';
-          const rarityLabel = RARITY_LABELS[c.rarity] || '?';
-          const isZero = count === 0;
+        const gridHtml = cards
+          .map((c) => {
+            const count = usageCounts[c.id] || 0;
+            const rarityColor = RARITY_COLORS[c.rarity] || 'slate';
+            const rarityLabel = RARITY_LABELS[c.rarity] || '?';
+            const isZero = count === 0;
 
-          const skillsHtml = (c.skills || []).map(sk => {
-            const skillName = SKILLS[sk.id]?.name || sk.id;
-            return `<div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">${escapeHtml(skillName)}</span>: ${sk.value}</div>`;
-          }).join('');
+            const skillsHtml = (c.skills || [])
+              .map((sk) => {
+                const skillName = SKILLS[sk.id]?.name || sk.id;
+                return `<div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">${escapeHtml(skillName)}</span>: ${sk.value}</div>`;
+              })
+              .join('');
 
-          return `
+            return `
             <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-xl p-3 flex flex-col shadow-sm hover:shadow-md transition-shadow">
               <div class="flex gap-3 mb-3">
                 <img src="assets/cards/card_${c.id}_thumb.webp" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.src='assets/icons/icon_player.webp'" />
@@ -971,9 +1044,11 @@
               </div>
             </div>
           `;
-        }).join('');
+          })
+          .join('');
 
-        document.getElementById('cards-grid').innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">${gridHtml}</div>`;
+        document.getElementById('cards-grid').innerHTML =
+          `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">${gridHtml}</div>`;
       }
 
       // =============================
