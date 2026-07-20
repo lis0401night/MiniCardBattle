@@ -239,6 +239,23 @@ export default function FortuneExchangeScreen() {
                       />
                     </div>
 
+                    {isIcon && (
+                      <img
+                        src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                        alt=""
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          pointerEvents: 'none',
+                          zIndex: 5,
+                        }}
+                      />
+                    )}
+
                     {isCard && (
                       <>
                         <div
