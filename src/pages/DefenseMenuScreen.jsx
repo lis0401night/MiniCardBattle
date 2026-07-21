@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import MenuButton from '../components/common/MenuButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import {
+  showDefenseBattleHistory,
   showDefenseBattleList,
   showDefenseRanking,
   showDefenseRules,
@@ -119,6 +120,11 @@ export default function DefenseMenuScreen() {
           variant="red"
           onClick={() => showDefenseBattleList?.()}
           disabled={!hasRegistered}
+        />
+        <MenuButton
+          label="防衛履歴"
+          variant="purple"
+          onClick={() => showDefenseBattleHistory?.()}
         />
         <MenuButton
           label="交換所"

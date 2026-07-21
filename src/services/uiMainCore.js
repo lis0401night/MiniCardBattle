@@ -965,6 +965,11 @@ export function showDefenseBattleList() {
   switchScreen('screen-defense-battle-list');
 }
 
+export function showDefenseBattleHistory() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-defense-battle-history');
+}
+
 export function showDefenseRanking() {
   playSound(SOUNDS.seClick);
   switchScreen('screen-defense-ranking');

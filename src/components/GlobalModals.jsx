@@ -814,7 +814,15 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             style={{ width: '95%', maxWidth: '440px', padding: '20px' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ color: '#facc15', marginBottom: '15px' }}>
+            <h2
+              style={{
+                color: '#facc15',
+                fontSize: '1.1rem',
+                marginBottom: '12px',
+                textAlign: 'center',
+                wordBreak: 'break-word',
+              }}
+            >
               {enemyDeckData.title}
             </h2>
             <div className="card-list-container">

@@ -51,6 +51,7 @@ import DebugBattleScreen from './pages/DebugBattleScreen.jsx';
 import DeckEditorScreen from './pages/DeckEditorScreen.jsx';
 import DeckListScreen from './pages/DeckListScreen.jsx';
 import DefenseBattleListScreen from './pages/DefenseBattleListScreen.jsx';
+import DefenseBattleHistoryScreen from './pages/DefenseBattleHistoryScreen.jsx';
 import DefenseExchangeScreen from './pages/DefenseExchangeScreen.jsx';
 import DefenseRankingScreen from './pages/DefenseRankingScreen.jsx';
 import DialogueScreen from './pages/DialogueScreen.jsx';
@@ -148,6 +149,7 @@ const SCREEN_COMPONENTS = {
   'screen-challenge-exchange': ChallengeExchangeScreen,
   'screen-challenge-unlock': ChallengeUnlockScreen,
   'screen-defense-battle-list': DefenseBattleListScreen,
+  'screen-defense-battle-history': DefenseBattleHistoryScreen,
   'screen-defense-ranking': DefenseRankingScreen,
   'screen-challenge-ranking': ChallengeRankingScreen,
   'screen-tournament-ranking': TournamentRankingScreen,

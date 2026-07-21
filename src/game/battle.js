@@ -43,6 +43,7 @@ import {
   setRNGSeed,
   shuffleArray,
   sleep,
+  resolvePlayerName,
   stopAllBGM,
   switchScreen,
   triggerGraveKeeperEffect,
@@ -96,7 +97,10 @@ import {
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
+import {
+  savePointsToServer,
+  recordDefenseBattleToServer,
+} from '../utils/apiUtils.js';
 import {
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
@@ -4673,6 +4677,40 @@ export function endBattle() {
 
     if (GameState.gameMode === 'defense_attack') {
       localStorage.removeItem('mini_card_battle_defense_targets');
+
+      // 対象の防衛者宛に防衛履歴（勝敗、攻撃者情報、攻撃デッキ）を送信
+      const enemyUuid = GameState.enemyConfig?.uuid;
+      if (enemyUuid) {
+        const attackerDeckIds = Array.isArray(GameState.decks?.[0]?.cards)
+          ? GameState.decks[0].cards.map((c) =>
+              typeof c === 'string' ? c : c?.id || c
+            )
+          : [];
+        const attackerName = resolvePlayerName();
+        const attackerCharacter =
+          GameState.playerConfig?.character ||
+          GameState.selectedCharacter ||
+          'android';
+        const attackerSkin =
+          GameState.playerConfig?.skin || GameState.selectedSkin || 'default';
+        const attackerTotalPoints =
+          parseInt(
+            localStorage.getItem('mini_card_battle_defense_total_points'),
+            10
+          ) || 0;
+
+        recordDefenseBattleToServer(enemyUuid, {
+          attackerName,
+          attackerCharacter,
+          attackerSkin,
+          attackerTotalPoints,
+          attackerDeck: attackerDeckIds,
+          result: GameState.lastBattleResult,
+        }).catch((err) =>
+          console.error('Failed to record defense battle:', err)
+        );
+      }
+
       if (GameState.lastBattleResult === 'win') {
         // ポイント計算（総ポイント基準）
         const myCurrentPoints =

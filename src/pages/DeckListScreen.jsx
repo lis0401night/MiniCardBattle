@@ -401,11 +401,21 @@ export default function DeckListScreen({ switchScreen }) {
       onPointerUp={handleGlobalPointerUp}
       onPointerCancel={handleGlobalPointerUp}
     >
-      <h2 style={{ color: '#facc15', marginBottom: '15px' }}>
+      <h2 style={{ color: '#facc15', marginBottom: '5px' }}>
         {GameState.appState === 'select_enemy_deck'
           ? '相手のデッキ'
           : 'デッキ一覧'}
       </h2>
+      <div
+        style={{
+          fontSize: '0.85rem',
+          marginBottom: '15px',
+          color: '#cbd5e1',
+          textAlign: 'center',
+        }}
+      >
+        長押しで移動
+      </div>
 
       <div
         style={{
@@ -586,9 +596,10 @@ export default function DeckListScreen({ switchScreen }) {
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'flex-start',
+                            justifyContent: 'space-between',
                             width: '100%',
                             paddingLeft: '10px',
+                            paddingRight: '10px',
                           }}
                         >
                           <div
@@ -641,6 +652,44 @@ export default function DeckListScreen({ switchScreen }) {
                             >
                               {deck.name || `デッキ${idx + 1}`}
                             </span>
+                          </div>
+
+                          {/* 虫眼鏡アイコン (自分のデッキ構成確認モーダル) */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              background: 'rgba(15, 23, 42, 0.6)',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                              fontSize: '1rem',
+                              cursor: 'pointer',
+                              zIndex: 5,
+                              flexShrink: 0,
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              if (isSwipingRef.current || isDraggingRef.current)
+                                return;
+
+                              playSound?.(SOUNDS?.seClick);
+                              if (window.showEnemyDeckModal) {
+                                const deckTitle =
+                                  deck.name || `デッキ${idx + 1}`;
+                                window.showEnemyDeckModal(
+                                  deck.cards || [],
+                                  deckTitle
+                                );
+                              }
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                          >
+                            🔍
                           </div>
                         </div>
                       </button>
