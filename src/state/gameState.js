@@ -3,35 +3,34 @@ import {
   DECK_SIZE,
   PROFILE_NAME_KEY,
   PROFILE_ICON_KEY,
+  FAVORITE_CARD_KEY,
   UNLOCKED_SKINS_KEY,
   UNLOCKED_ICONS_KEY,
   DEFAULT_PLAYER_NAME,
   DEFAULT_PLAYER_ICON,
+  safeParseArray,
 } from '../utils/constants/config.js';
-
-const safeParseArray = (key) => {
-  try {
-    let raw = localStorage.getItem(key);
-    if (raw && typeof raw === 'string') {
-      raw = raw.replace(/[\u200B-\u200D]/g, '');
-    }
-    const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    console.error(`Failed to parse localStorage key "${key}":`, e);
-    return [];
-  }
-};
 
 const loadUserProfile = () => {
   try {
     const name = localStorage.getItem(PROFILE_NAME_KEY) || DEFAULT_PLAYER_NAME;
     const icon = localStorage.getItem(PROFILE_ICON_KEY) || DEFAULT_PLAYER_ICON;
-    return { name, icon };
+    let favoriteCard = null;
+    try {
+      const rawFav = localStorage.getItem(FAVORITE_CARD_KEY);
+      favoriteCard = rawFav ? JSON.parse(rawFav) : null;
+    } catch (e) {
+      console.error('Failed to parse favorite card:', e);
+    }
+    return { name, icon, favoriteCard };
   } catch (e) {
     console.error('Failed to load user profile:', e);
   }
-  return { name: DEFAULT_PLAYER_NAME, icon: DEFAULT_PLAYER_ICON };
+  return {
+    name: DEFAULT_PLAYER_NAME,
+    icon: DEFAULT_PLAYER_ICON,
+    favoriteCard: null,
+  };
 };
 
 export const GameState = {
@@ -74,7 +73,12 @@ export const GameState = {
   fortuneHandicaps: (() => {
     try {
       const saved = localStorage.getItem('mini_card_battle_fortune_handicaps');
-      return saved ? JSON.parse(saved) : {};
+      const parsed = saved ? JSON.parse(saved) : {};
+      return parsed !== null &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed)
+        ? parsed
+        : {};
     } catch {
       return {};
     }
@@ -141,11 +145,23 @@ export function saveUserProfile(profile) {
       typeof profile.icon === 'string' && profile.icon
         ? profile.icon
         : GameState.userProfile.icon,
+    favoriteCard:
+      profile.favoriteCard !== undefined
+        ? profile.favoriteCard
+        : GameState.userProfile.favoriteCard || null,
   };
   GameState.userProfile = merged;
   try {
     localStorage.setItem(PROFILE_NAME_KEY, merged.name);
     localStorage.setItem(PROFILE_ICON_KEY, merged.icon);
+    if (merged.favoriteCard !== null && merged.favoriteCard !== undefined) {
+      localStorage.setItem(
+        FAVORITE_CARD_KEY,
+        JSON.stringify(merged.favoriteCard)
+      );
+    } else {
+      localStorage.removeItem(FAVORITE_CARD_KEY);
+    }
   } catch (e) {
     console.error('Failed to save user profile:', e);
   }

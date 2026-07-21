@@ -6,17 +6,7 @@ import { savePointsToServer, fetchPlayerDecks } from '../utils/apiUtils.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-
-const readStringArrayFromStorage = (key) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
+import { safeParseArray } from '../utils/constants/config.js';
 
 export function useExchangeScreen({
   pointsKey, // 'challenge'（試練の宮殿）または 'tournament'（闘技祭）
@@ -33,13 +23,13 @@ export function useExchangeScreen({
   }));
 
   const [unlockedSkins, setUnlockedSkins] = useState(() =>
-    readStringArrayFromStorage('mini_card_battle_unlocked_skins')
+    safeParseArray('mini_card_battle_unlocked_skins')
   );
   const [unlockedPlaymats, setUnlockedPlaymats] = useState(() =>
-    readStringArrayFromStorage('mini_card_battle_owned_playmats')
+    safeParseArray('mini_card_battle_owned_playmats')
   );
   const [unlockedIcons, setUnlockedIcons] = useState(() =>
-    readStringArrayFromStorage('mini_card_battle_unlocked_icons')
+    safeParseArray('mini_card_battle_unlocked_icons')
   );
   const [inventory, setInventory] = useState(
     () => GameState.playerInventory || {}

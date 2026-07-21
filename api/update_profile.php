@@ -66,7 +66,7 @@ $parseFailed = false;
 
 // 既存のデータを読み込んで引き継ぐ
 if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
         $existing = json_decode($matches[2], true);
         if ($existing) {
             $player_data = $existing;
@@ -93,6 +93,9 @@ if (empty($player_data)) {
 $player_data['uuid'] = $uuid;
 $player_data['name'] = $name;
 $player_data['icon'] = $icon;
+if (isset($data['favoriteCard'])) {
+    $player_data['favorite_card'] = $data['favoriteCard'];
+}
 $player_data['timestamp'] = $timestamp;
 
 $data_json = json_encode($player_data);

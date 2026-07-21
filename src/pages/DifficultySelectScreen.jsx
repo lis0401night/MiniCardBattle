@@ -118,43 +118,40 @@ export default function DifficultySelectScreen() {
               gap: '15px',
             }}
           >
-            {hasFortuneHandicaps && (
-              <div className="difficulty-button-row" style={{ margin: 0 }}>
-                <MenuButton
-                  label="特級目標"
-                  variant="red"
-                  onClick={() => {
-                    playSound(SOUNDS?.seClick);
-                    switchScreen('screen-fortune-handicap');
-                  }}
-                />
-                {/* 位置・サイズを下の行と完全に揃えるためのプレースホルダー（非表示） */}
-                <button
-                  className="btn-check-deck"
-                  style={{ display: 'flex', visibility: 'hidden' }}
+            {hasFortuneHandicaps &&
+              [
+                {
+                  label: '特級目標',
+                  variant: 'red',
+                  screen: 'screen-fortune-handicap',
+                },
+                {
+                  label: '達成状況',
+                  variant: 'yellow',
+                  screen: 'screen-fortune-achievement',
+                },
+              ].map((row) => (
+                <div
+                  key={row.screen}
+                  className="difficulty-button-row"
+                  style={{ margin: 0 }}
                 >
-                  🔍
-                </button>
-              </div>
-            )}
-            {hasFortuneHandicaps && (
-              <div className="difficulty-button-row" style={{ margin: 0 }}>
-                <MenuButton
-                  label="達成状況"
-                  variant="yellow"
-                  onClick={() => {
-                    playSound(SOUNDS?.seClick);
-                    switchScreen('screen-fortune-achievement');
-                  }}
-                />
-                <button
-                  className="btn-check-deck"
-                  style={{ display: 'flex', visibility: 'hidden' }}
-                >
-                  🔍
-                </button>
-              </div>
-            )}
+                  <MenuButton
+                    label={row.label}
+                    variant={row.variant}
+                    onClick={() => {
+                      playSound(SOUNDS?.seClick);
+                      switchScreen(row.screen);
+                    }}
+                  />
+                  <button
+                    className="btn-check-deck"
+                    style={{ display: 'flex', visibility: 'hidden' }}
+                  >
+                    🔍
+                  </button>
+                </div>
+              ))}
             <div className="difficulty-button-row" style={{ margin: 0 }}>
               <MenuButton
                 label={isFortuneMode ? '特級' : '超級'}

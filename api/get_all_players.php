@@ -20,7 +20,7 @@ if (is_dir($dir)) {
         $content = file_get_contents($file);
         // JSファイルからPlayerDataを抽出するための同期パース
         // 形式: PLAYER_DECKS['uuid'] = { ... };
-        if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+        if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
             $uuid = $matches[1];
             $data = json_decode($matches[2], true);
             if ($data) {

@@ -95,7 +95,7 @@ $content = $fileSize > 0 ? fread($fp, $fileSize) : '';
 $player_data = [];
 
 if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
         $existing_data = json_decode($matches[2], true);
         if ($existing_data) {
             $player_data = $existing_data;

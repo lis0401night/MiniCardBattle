@@ -1,4 +1,5 @@
 import { getOrCreateUUID, resolvePlayerName } from './gameUtils.js';
+import { GameState } from '../state/gameState.js';
 import { loadFortuneClearedData } from './constants/fortuneRewards.js';
 import {
   CHALLENGE_POINTS_KEY,
@@ -208,13 +209,22 @@ export async function syncModePoints(mode, serverPlayerData = null) {
  * @param {string} character - 選択キャラクターID (オプション)
  * @returns {Promise<boolean>} 成功したかどうか
  */
-export async function syncUserProfile(uuid, name, icon, character = null) {
+export async function syncUserProfile(
+  uuid,
+  name,
+  icon,
+  character = null,
+  favoriteCard = null
+) {
   if (!uuid) return false;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 3000);
 
   try {
+    const favCardToSync =
+      favoriteCard || GameState.userProfile?.favoriteCard || null;
+
     const response = await fetch('api/update_profile.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -223,6 +233,7 @@ export async function syncUserProfile(uuid, name, icon, character = null) {
         name,
         icon,
         character,
+        favoriteCard: favCardToSync,
       }),
       signal: controller.signal,
     });

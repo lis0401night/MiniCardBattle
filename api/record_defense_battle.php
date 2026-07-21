@@ -72,7 +72,7 @@ $fileSize = filesize($filename);
 $content = $fileSize > 0 ? fread($fp, $fileSize) : '';
 
 $playerData = null;
-if ($fileSize > 0 && preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+if ($fileSize > 0 && preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
     $playerData = json_decode($matches[2], true);
 }
 

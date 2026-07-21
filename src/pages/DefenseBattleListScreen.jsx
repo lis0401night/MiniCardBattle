@@ -13,7 +13,11 @@ import {
   selectDefenseTargets,
   resolveWinTier,
 } from '../utils/gameUtils.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+} from '../utils/constants/config.js';
 import { fetchPlayerDecks } from '../utils/apiUtils.js';
 
 export default function DefenseBattleListScreen() {
@@ -32,15 +36,10 @@ export default function DefenseBattleListScreen() {
 
           // 自分のポイントを取得（total_pointsが無い場合はpointsにフォールバックして整合）
           const myCurrentPoints =
-            parseInt(
-              localStorage.getItem('mini_card_battle_defense_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
           const myTotalPointsVal =
-            parseInt(
-              localStorage.getItem('mini_card_battle_defense_total_points'),
-              10
-            ) || myCurrentPoints;
+            parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) ||
+            myCurrentPoints;
 
           if (activePlayers.length === 0) {
             setStatus('empty');

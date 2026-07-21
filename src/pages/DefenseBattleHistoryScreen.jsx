@@ -25,6 +25,7 @@ export default function DefenseBattleHistoryScreen() {
       try {
         const myUuid = getOrCreateUUID ? getOrCreateUUID() : null;
         let history = [];
+        let serverFetchSucceeded = false;
 
         // サーバーから自身のプレイヤーデータを取得して防衛履歴を同期・復元
         const result = await fetchPlayerDecks();
@@ -33,11 +34,12 @@ export default function DefenseBattleHistoryScreen() {
           if (myData && Array.isArray(myData.defense_history)) {
             history = myData.defense_history;
             localStorage.setItem(DEFENSE_HISTORY_KEY, JSON.stringify(history));
+            serverFetchSucceeded = true;
           }
         }
 
-        // サーバーから取得できなかった場合、LocalStorageからのフォールバック
-        if (history.length === 0) {
+        // サーバーから取得できなかった場合のみ、LocalStorageからのフォールバック
+        if (!serverFetchSucceeded && history.length === 0) {
           const raw = localStorage.getItem(DEFENSE_HISTORY_KEY);
           if (raw) {
             try {

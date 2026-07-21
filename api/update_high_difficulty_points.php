@@ -45,7 +45,7 @@ if (!file_exists($filename)) {
 
 $content = file_get_contents($filename);
 
-if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
     $playerData = json_decode($matches[2], true);
     if ($playerData) {
         $playerData['high_difficulty_points'] = $points;

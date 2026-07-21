@@ -13,6 +13,7 @@ import {
   appendVersionQuery,
   STORY_BANNED_LEADER_IDS,
   TOURNAMENT_BANNED_LEADER_IDS,
+  safeParseArray,
 } from '../utils/constants/config.js';
 
 // キャラクターフィルタリングの共通処理 (DRY原則を保ちます)
@@ -43,20 +44,10 @@ const getFilteredCharacters = () => {
       return false;
     if (c.id === 'automata') {
       if (isEnemySelect) return false;
-      try {
-        const unlockedCharsRaw = localStorage.getItem(
-          'mini_card_battle_unlocked_characters'
-        );
-        const unlockedChars = unlockedCharsRaw
-          ? JSON.parse(unlockedCharsRaw)
-          : [];
-        return (
-          Array.isArray(unlockedChars) && unlockedChars.includes('automata')
-        );
-      } catch (e) {
-        console.error('Failed to parse unlocked characters:', e);
-        return false;
-      }
+      const unlockedChars = safeParseArray(
+        'mini_card_battle_unlocked_characters'
+      );
+      return unlockedChars.includes('automata');
     }
     if (BOSS_CHARACTER_IDS.includes(c.id)) {
       if (!isEnemySelect) return false;

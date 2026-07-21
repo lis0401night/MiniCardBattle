@@ -48,7 +48,11 @@ import { STAGES } from '../utils/constants/stages.js';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  getPlayerIconPath,
+} from '../utils/constants/characters.js';
 import { ownedPlaymats, PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
@@ -57,6 +61,7 @@ import {
   playSound,
   stopAllBGM,
   togglePremiumCard,
+  resolvePlayerName,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
@@ -197,6 +202,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState('');
   const [profileIconInput, setProfileIconInput] = useState('');
+  const [favoriteCardState, setFavoriteCardState] = useState(null);
+  const [iconSelectModalOpen, setIconSelectModalOpen] = useState(false);
+  const [favCardModalOpen, setFavCardModalOpen] = useState(false);
+  const [favCardPremiumMap, setFavCardPremiumMap] = useState({});
+  const [viewProfileData, setViewProfileData] = useState(null);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
@@ -239,8 +249,14 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       playSound?.(SOUNDS?.seClick);
       setProfileNameInput(GameState.userProfile?.name || DEFAULT_PLAYER_NAME);
       setProfileIconInput(GameState.userProfile?.icon || DEFAULT_PLAYER_ICON);
+      setFavoriteCardState(GameState.userProfile?.favoriteCard || null);
       setProfileModalVisible(true);
     });
+
+    window.showPlayerProfileModal = (playerData) => {
+      playSound?.(SOUNDS?.seClick);
+      setViewProfileData(playerData || null);
+    };
 
     window.showEnemyDeckModal = (deck, title, leaderSkill = null) => {
       playSound?.(SOUNDS?.seClick);
@@ -1601,7 +1617,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           className="screen"
           style={{
             background: 'rgba(0,0,0,0.85)',
-            zIndex: 100,
+            zIndex: 2200,
             display: 'flex',
             position: 'fixed',
             top: 0,
@@ -2922,136 +2938,266 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       )}
 
       {/* Profile Settings Modal */}
+      {/* Profile Modal */}
       {profileModalVisible && (
         <div
-          className="screen"
-          style={{
-            background: 'rgba(0,0,0,0.85)',
-            zIndex: 90,
-            display: 'flex',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            setProfileModalVisible(false);
-          }}
+          className="modal-overlay"
+          style={{ zIndex: 2000, display: 'flex' }}
+          onClick={() => setProfileModalVisible(false)}
         >
           <div
-            className="modal-content profile-settings-container"
+            className="skill-modal-box modal-pop-animation"
             style={{
               width: '90%',
-              maxWidth: '440px',
+              maxWidth: '400px',
+              padding: '24px 20px',
               maxHeight: '90dvh',
               overflowY: 'auto',
               background: 'linear-gradient(135deg, #1e293b, #0f172a)',
               borderRadius: '16px',
               border: '2px solid #334155',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '18px',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2
               style={{
                 color: '#eab308',
-                marginBottom: '0px',
-                fontSize: '1.25rem',
+                margin: '0',
+                fontSize: '1.3rem',
                 fontWeight: 'bold',
+                textAlign: 'center',
               }}
             >
-              プロフィール設定
+              プロフィール
             </h2>
 
-            {/* プレビュー */}
-            <div className="profile-current-preview" style={{ width: '100%' }}>
-              <img
-                src={appendVersionQuery(
-                  [...AVAILABLE_ICONS, ...EXTRA_ICONS].find(
-                    (i) => i.id === profileIconInput
-                  )?.path || 'assets/icons/icon_player.webp'
-                )}
-                alt="preview"
-              />
-              <div style={{ flex: 1 }}>
-                <div
+            {/* アバター & プレイヤー名メイン表示 (横並び) */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px',
+                width: '100%',
+                padding: '4px 0',
+              }}
+            >
+              {/* アイコン（タップで専用アイコンモーダルを起動） */}
+              <div
+                style={{
+                  position: 'relative',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setIconSelectModalOpen(true);
+                }}
+              >
+                <img
+                  src={appendVersionQuery(
+                    [...AVAILABLE_ICONS, ...EXTRA_ICONS].find(
+                      (i) => i.id === profileIconInput
+                    )?.path || 'assets/icons/icon_player.webp'
+                  )}
+                  alt="icon"
                   style={{
-                    fontSize: '0.75rem',
-                    color: '#94a3b8',
-                    textAlign: 'left',
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '50%',
+                    border: '3px solid #eab308',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    objectFit: 'cover',
                   }}
-                >
-                  プレビュー
-                </div>
+                />
                 <div
                   style={{
-                    fontSize: '1.15rem',
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    background: '#eab308',
+                    color: '#0f172a',
+                    borderRadius: '50%',
+                    width: '22px',
+                    height: '22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#fff',
-                    textAlign: 'left',
-                    marginTop: '2px',
+                    border: '2px solid #1e293b',
                   }}
                 >
-                  {profileNameInput || '名前を入力...'}
+                  📷
                 </div>
               </div>
-            </div>
 
-            {/* プレイヤー名入力 */}
-            <div className="profile-input-group">
-              <label htmlFor="modal-profile-name">
-                プレイヤー名（最大10文字）
-              </label>
-              <input
-                id="modal-profile-name"
-                type="text"
-                className="profile-input"
-                value={profileNameInput}
-                onChange={(e) =>
-                  setProfileNameInput(e.target.value.slice(0, 10))
-                }
-                placeholder="名前を入力..."
-                maxLength={10}
-              />
-            </div>
-
-            {/* アイコン選択 */}
-            <div className="profile-icon-section">
-              <span className="profile-icon-section-label">アイコン選択</span>
-              <div className="profile-icon-grid" style={{ maxHeight: '180px' }}>
-                {[
-                  ...AVAILABLE_ICONS,
-                  ...EXTRA_ICONS.filter((extra) =>
-                    (GameState.unlockedIcons || []).includes(extra.id)
-                  ),
-                ].map((icon) => (
-                  <div
-                    key={icon.id}
-                    className={`profile-icon-item${profileIconInput === icon.id ? ' selected' : ''}`}
-                    onClick={() => {
-                      playSound?.(SOUNDS?.seClick);
-                      setProfileIconInput(icon.id);
-                    }}
-                    title={icon.name}
-                  >
-                    <img src={appendVersionQuery(icon.path)} alt={icon.name} />
-                  </div>
-                ))}
+              {/* プレイヤー名（タップで名前入力ダイアログを起動） */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  maxWidth: '220px',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  if (window.showPlayerNameModalState) {
+                    window.showPlayerNameModalState((newName) => {
+                      if (newName && newName.trim()) {
+                        setProfileNameInput(newName.trim());
+                      }
+                    });
+                  }
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    color: '#ffffff',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {profileNameInput || DEFAULT_PLAYER_NAME}
+                </span>
+                <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>✏️</span>
               </div>
             </div>
 
-            {/* アクションボタン */}
-            <div className="profile-actions" style={{ marginTop: '0px' }}>
+            {/* お気に入りカード（下部中央） */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px',
+                background: 'rgba(15, 23, 42, 0.5)',
+                padding: '16px 10px',
+                borderRadius: '12px',
+                border: '1px solid #334155',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.9rem',
+                  color: '#94a3b8',
+                  fontWeight: 'bold',
+                }}
+              >
+                お気に入りカード
+              </span>
+
+              <div
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setFavCardModalOpen(true);
+                }}
+              >
+                {favoriteCardState && favoriteCardState.cardId ? (
+                  (() => {
+                    const masterCard = (CARD_MASTER || []).find(
+                      (c) => c.id === favoriteCardState.cardId
+                    );
+                    const rarityClass = masterCard?.rarity
+                      ? ` rarity-${masterCard.rarity}`
+                      : '';
+                    const isPremium = !!favoriteCardState.isPremium;
+
+                    return (
+                      <div
+                        className="deck-card-item"
+                        style={{
+                          width: '140px',
+                          height: '210px',
+                          position: 'relative',
+                        }}
+                      >
+                        <div
+                          className={`card blue${rarityClass}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'relative',
+                          }}
+                        >
+                          <img
+                            className="card-bg"
+                            src={getCardImgUrl({
+                              id: favoriteCardState.cardId,
+                              isPremium: isPremium,
+                            })}
+                            alt="Favorite Card"
+                            style={{
+                              objectFit: 'cover',
+                              width: '100%',
+                              height: '100%',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div
+                    style={{
+                      width: '140px',
+                      height: '210px',
+                      borderRadius: '8px',
+                      border: '2px dashed #64748b',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#94a3b8',
+                      fontSize: '0.85rem',
+                      gap: '8px',
+                      background: 'rgba(0,0,0,0.2)',
+                      padding: '10px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <span style={{ fontSize: '2.2rem' }}>+</span>
+                    <span>タップしてカードを選択</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* アクションボタン（キャンセル / 保存して閉じる） */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '12px',
+              }}
+            >
               <button
                 className="btn"
                 style={{
                   background: '#475569',
                   margin: 0,
-                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  maxWidth: '140px',
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
@@ -3065,30 +3211,561 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 style={{
                   background: 'linear-gradient(45deg, #eab308, #ca8a04)',
                   margin: 0,
-                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  maxWidth: '160px',
                 }}
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
-                  const trimmed = profileNameInput.trim();
+                  const trimmed = (profileNameInput || '').trim();
                   if (!trimmed) {
                     showAlertModal?.('プレイヤー名を入力してください。');
                     return;
                   }
 
-                  // 1. ローカルとGameStateへの保存
+                  // 1. ローカルおよびGameStateへの保存
                   saveUserProfile({
                     name: trimmed,
                     icon: profileIconInput,
+                    favoriteCard: favoriteCardState,
                   });
 
                   // 2. サーバーへの同期送信
                   const uuid = getOrCreateUUID();
-                  syncUserProfile(uuid, trimmed, profileIconInput);
+                  syncUserProfile(
+                    uuid,
+                    trimmed,
+                    profileIconInput,
+                    null,
+                    favoriteCardState
+                  );
 
                   setProfileModalVisible(false);
                 }}
               >
-                保存
+                保存して閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Icon Selection Modal */}
+      {iconSelectModalOpen && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 2100, display: 'flex' }}
+          onClick={() => setIconSelectModalOpen(false)}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{
+              width: '95%',
+              maxWidth: '400px',
+              padding: '20px',
+              background: '#1e293b',
+              borderRadius: '16px',
+              border: '2px solid #334155',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                color: '#eab308',
+                margin: '0 0 15px 0',
+                fontSize: '1.15rem',
+                textAlign: 'center',
+              }}
+            >
+              アイコン選択
+            </h3>
+
+            <div
+              className="profile-icon-grid"
+              style={{ maxHeight: '260px', overflowY: 'auto' }}
+            >
+              {[
+                ...AVAILABLE_ICONS,
+                ...EXTRA_ICONS.filter((extra) =>
+                  (GameState.unlockedIcons || []).includes(extra.id)
+                ),
+              ].map((icon) => (
+                <div
+                  key={icon.id}
+                  className={`profile-icon-item${profileIconInput === icon.id ? ' selected' : ''}`}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    setProfileIconInput(icon.id);
+                    setIconSelectModalOpen(false);
+                  }}
+                  title={icon.name}
+                >
+                  <img src={appendVersionQuery(icon.path)} alt={icon.name} />
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                marginTop: '15px',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                className="btn"
+                style={{ background: '#475569', margin: 0 }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setIconSelectModalOpen(false);
+                }}
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Favorite Card Selection Modal */}
+      {favCardModalOpen && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 2100, display: 'flex' }}
+          onClick={() => setFavCardModalOpen(false)}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{
+              width: '95%',
+              maxWidth: '440px',
+              padding: '20px',
+              maxHeight: '85dvh',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#1e293b',
+              borderRadius: '16px',
+              border: '2px solid #334155',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                color: '#eab308',
+                margin: '0 0 15px 0',
+                fontSize: '1.15rem',
+                textAlign: 'center',
+              }}
+            >
+              お気に入りカード選択
+            </h3>
+
+            {/* カード一覧グリッド */}
+            <div
+              className="card-list-container"
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                maxHeight: '380px',
+                padding: '5px',
+              }}
+            >
+              <div className="card-list-grid-3col">
+                {/* 未設定（解除）選択枠 */}
+                <div
+                  key="none"
+                  className="deck-card-item gallery-card-wrapper"
+                  style={{
+                    position: 'relative',
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    border:
+                      !favoriteCardState || !favoriteCardState.cardId
+                        ? '3px solid #eab308'
+                        : 'none',
+                    boxShadow:
+                      !favoriteCardState || !favoriteCardState.cardId
+                        ? '0 0 12px #eab308'
+                        : 'none',
+                    transform:
+                      !favoriteCardState || !favoriteCardState.cardId
+                        ? 'scale(1.03)'
+                        : 'none',
+                    transition: 'transform 0.15s',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    setFavoriteCardState(null);
+                    setFavCardModalOpen(false);
+                  }}
+                >
+                  <div
+                    className="card blue"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.85)',
+                      position: 'relative',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        color: '#cbd5e1',
+                        textAlign: 'center',
+                        width: '100%',
+                        lineHeight: '1',
+                        margin: 0,
+                        padding: 0,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      未設定
+                    </span>
+                  </div>
+                </div>
+
+                {(CARD_MASTER || [])
+                  .filter(
+                    (c) =>
+                      !c.isToken &&
+                      ((GameState.playerInventory || {})[c.id] || 0) > 0
+                  )
+                  .map((card) => {
+                    const unlockedPremiumList =
+                      GameState.unlockedPremiumCards || [];
+                    const hasPremiumUnlocked = unlockedPremiumList.includes(
+                      card.id
+                    );
+
+                    // 解禁されていない場合は常に通常版 (false)
+                    const isCardPremium = hasPremiumUnlocked
+                      ? favCardPremiumMap[card.id] !== undefined
+                        ? !!favCardPremiumMap[card.id]
+                        : favoriteCardState?.cardId === card.id
+                          ? !!favoriteCardState?.isPremium
+                          : (GameState.premiumCards || []).includes(card.id)
+                      : false;
+
+                    const isSelected =
+                      favoriteCardState?.cardId === card.id &&
+                      !!favoriteCardState?.isPremium === isCardPremium;
+
+                    const rarityClass = card.rarity
+                      ? ` rarity-${card.rarity}`
+                      : '';
+
+                    return (
+                      <div
+                        key={card.id}
+                        className="deck-card-item gallery-card-wrapper"
+                        style={{
+                          position: 'relative',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          border: isSelected ? '3px solid #eab308' : 'none',
+                          boxShadow: isSelected ? '0 0 12px #eab308' : 'none',
+                          transform: isSelected ? 'scale(1.03)' : 'none',
+                          transition: 'transform 0.15s',
+                        }}
+                        onClick={() => {
+                          playSound?.(SOUNDS?.seClick);
+                          const newFav = {
+                            cardId: card.id,
+                            isPremium: isCardPremium,
+                          };
+                          setFavoriteCardState(newFav);
+                          setFavCardModalOpen(false);
+                        }}
+                      >
+                        <div className={`card blue${rarityClass}`}>
+                          <img
+                            className="card-bg"
+                            src={getCardImgUrl({
+                              ...card,
+                              isPremium: isCardPremium,
+                            })}
+                            alt={card.name}
+                            style={{
+                              objectFit: 'cover',
+                              width: '100%',
+                              height: '100%',
+                            }}
+                          />
+
+                          {/* プレミアム版が解禁されているカードのみ切り替えボタンを表示 */}
+                          {hasPremiumUnlocked && (
+                            <div
+                              className="premium-toggle-icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playSound?.(SOUNDS?.seClick);
+                                setFavCardPremiumMap((prev) => ({
+                                  ...prev,
+                                  [card.id]: !isCardPremium,
+                                }));
+                              }}
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                left: '4px',
+                                background: 'rgba(0,0,0,0.85)',
+                                color: isCardPremium ? '#d946ef' : '#94a3b8',
+                                padding: '2px 6px',
+                                borderRadius: '10px',
+                                fontSize: '0.8rem',
+                                zIndex: 7,
+                                border: `1px solid ${isCardPremium ? '#d946ef' : '#475569'}`,
+                                cursor: 'pointer',
+                              }}
+                              title={
+                                isCardPremium
+                                  ? '通常版に切り替え'
+                                  : 'プレミアム版に切り替え'
+                              }
+                            >
+                              ✨
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: '15px',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                className="btn"
+                style={{ background: '#475569', margin: 0 }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setFavCardModalOpen(false);
+                }}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 他プレイヤー閲覧専用プロフィールモーダル */}
+      {viewProfileData && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 2000, display: 'flex' }}
+          onClick={() => setViewProfileData(null)}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{
+              width: '90%',
+              maxWidth: '400px',
+              padding: '24px 20px',
+              maxHeight: '90dvh',
+              overflowY: 'auto',
+              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+              borderRadius: '16px',
+              border: '2px solid #334155',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '18px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{
+                color: '#eab308',
+                margin: '0',
+                fontSize: '1.3rem',
+                fontWeight: 'bold',
+                textAlign: 'center',
+              }}
+            >
+              プロフィール
+            </h2>
+
+            {/* アバター & プレイヤー名（横並び・編集不可） */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px',
+                width: '100%',
+                padding: '4px 0',
+              }}
+            >
+              {/* アイコン */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <img
+                  src={getPlayerIconPath(viewProfileData)}
+                  alt="icon"
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '50%',
+                    border: '3px solid #eab308',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+
+              {/* プレイヤー名 */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  maxWidth: '220px',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    color: '#ffffff',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {resolvePlayerName(viewProfileData)}
+                </span>
+              </div>
+            </div>
+
+            {/* お気に入りカード（編集不可） */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px',
+                background: 'rgba(15, 23, 42, 0.5)',
+                padding: '16px 10px',
+                borderRadius: '12px',
+                border: '1px solid #334155',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.9rem',
+                  color: '#94a3b8',
+                  fontWeight: 'bold',
+                }}
+              >
+                お気に入りカード
+              </span>
+
+              {(() => {
+                const fav =
+                  viewProfileData.favorite_card || viewProfileData.favoriteCard;
+                if (fav && fav.cardId) {
+                  const masterCard = (CARD_MASTER || []).find(
+                    (c) => c.id === fav.cardId
+                  );
+                  const rarityClass = masterCard?.rarity
+                    ? ` rarity-${masterCard.rarity}`
+                    : '';
+                  const isPremium = !!fav.isPremium;
+
+                  return (
+                    <div
+                      className="deck-card-item"
+                      style={{
+                        width: '140px',
+                        height: '210px',
+                        position: 'relative',
+                      }}
+                    >
+                      <div
+                        className={`card blue${rarityClass}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          position: 'relative',
+                        }}
+                      >
+                        <img
+                          className="card-bg"
+                          src={getCardImgUrl({
+                            id: fav.cardId,
+                            isPremium: isPremium,
+                          })}
+                          alt="Favorite Card"
+                          style={{
+                            objectFit: 'cover',
+                            width: '100%',
+                            height: '100%',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    style={{
+                      width: '140px',
+                      height: '210px',
+                      borderRadius: '8px',
+                      border: '1px dashed #475569',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#64748b',
+                      fontSize: '0.85rem',
+                      background: 'rgba(0,0,0,0.2)',
+                      padding: '10px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    未設定
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 閉じるボタン */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                className="btn"
+                style={{
+                  background: 'linear-gradient(45deg, #eab308, #ca8a04)',
+                  margin: 0,
+                  width: '100%',
+                  maxWidth: '180px',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setViewProfileData(null);
+                }}
+              >
+                閉じる
               </button>
             </div>
           </div>

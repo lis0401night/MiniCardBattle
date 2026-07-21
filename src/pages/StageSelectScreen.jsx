@@ -3,23 +3,16 @@ import { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  safeParseArray,
+} from '../utils/constants/config.js';
 import { STAGES } from '../utils/constants/stages.js';
 
 export default function StageSelectScreen() {
   const [stages] = useState(() => {
     const stagesObj = STAGES || {};
-    let unlockedStages = [];
-    try {
-      const unlockedStagesRaw = localStorage.getItem(
-        'mini_card_battle_unlocked_stages'
-      );
-      const parsed = unlockedStagesRaw ? JSON.parse(unlockedStagesRaw) : [];
-      unlockedStages = Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      console.error('Failed to parse unlocked stages:', e);
-      unlockedStages = [];
-    }
+    const unlockedStages = safeParseArray('mini_card_battle_unlocked_stages');
 
     return Object.keys(stagesObj)
       .filter((id) => {

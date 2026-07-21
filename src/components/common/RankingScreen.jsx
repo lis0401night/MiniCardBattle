@@ -404,13 +404,19 @@ export default function RankingScreen({
                   style={{
                     borderColor,
                     flexShrink: 0,
-                    cursor: 'default',
+                    cursor: 'pointer',
                     opacity: 0.9,
                     display: 'flex',
                     alignItems: 'center',
                     padding: '10px 15px',
                     boxSizing: 'border-box',
                     width: '100%',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    if (window.showPlayerProfileModal) {
+                      window.showPlayerProfileModal(p);
+                    }
                   }}
                 >
                   <div

@@ -66,7 +66,7 @@ if ($fileSize === 0) {
     $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
     $playerData = createDefaultPlayerData($uuid, $playerName);
 } else {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
         $playerData = json_decode($matches[2], true);
     }
 }

@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.2.0.6';
+export const GAME_VERSION = '0.2.1';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -18,6 +18,7 @@ export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全�
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
 export const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
 export const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
+export const FAVORITE_CARD_KEY = 'mini_card_battle_favorite_card';
 export const UNLOCKED_SKINS_KEY = 'mini_card_battle_unlocked_skins';
 export const UNLOCKED_ICONS_KEY = 'mini_card_battle_unlocked_icons';
 export const OWNED_PLAYMATS_KEY = 'mini_card_battle_owned_playmats';
@@ -655,5 +656,23 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'employee', type: 'card', cost: 3 },
   { id: 'detective', type: 'card', cost: 3 },
   { id: 'scrapper', type: 'card', cost: 1 },
-  { id: 'liberator', type: 'card', cost: 1 },
 ];
+
+/**
+ * LocalStorageから安全にJSON配列をパースして読み込む共通ヘルパー
+ * @param {string} key LocalStorageのキー
+ * @returns {Array} パースされた配列（失敗時は空配列）
+ */
+export function safeParseArray(key) {
+  try {
+    let raw = localStorage.getItem(key);
+    if (raw && typeof raw === 'string') {
+      raw = raw.replace(/[\u200B-\u200D]/g, '');
+    }
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error(`Failed to parse localStorage key "${key}":`, e);
+    return [];
+  }
+}

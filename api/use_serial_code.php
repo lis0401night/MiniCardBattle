@@ -48,7 +48,11 @@ if (!$fp) {
     exit;
 }
 
-flock($fp, LOCK_EX);
+if (!flock($fp, LOCK_EX)) {
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'failed_to_lock_player_file']);
+    exit;
+}
 
 clearstatcache(true, $filename);
 $fileSize = filesize($filename);
@@ -59,7 +63,7 @@ $parseFailed = false;
 
 // 既存のデータを読み込んで引き継ぐ
 if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*?});/s', $content, $matches)) {
+    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
         $existing = json_decode($matches[2], true);
         if ($existing) {
             $player_data = $existing;
@@ -186,7 +190,7 @@ EOT;
     flock($fp, LOCK_UN);
     fclose($fp);
 
-    if ($writeSuccess !== false) {
+    if ($writeSuccess === strlen($js_content)) {
         echo json_encode([
             'success' => true,
             'reward' => $rewardValue,
