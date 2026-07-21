@@ -4689,13 +4689,10 @@ export function endBattle() {
             )
           : [];
         const attackerName = resolvePlayerName();
-        const attackerCharacter =
-          GameState.selectedCharacter ||
-          GameState.playerConfig?.character ||
-          'android';
+        const playerCharId = GameState.playerConfig?.id || 'android';
+        const attackerCharacter = playerCharId;
         const attackerSkin =
-          GameState.selectedSkin ||
-          GameState.playerConfig?.skin ||
+          (GameState.playerSkins && GameState.playerSkins[playerCharId]) ||
           'default';
         const attackerTotalPoints =
           parseInt(
