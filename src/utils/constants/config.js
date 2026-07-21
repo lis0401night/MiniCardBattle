@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.2.1';
+export const GAME_VERSION = '0.2.1.1';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';

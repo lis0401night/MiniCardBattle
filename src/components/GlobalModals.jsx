@@ -3644,7 +3644,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     wordBreak: 'break-all',
                   }}
                 >
-                  {resolvePlayerName(viewProfileData)}
+                  {resolvePlayerName(viewProfileData.name)}
                 </span>
               </div>
             </div>
