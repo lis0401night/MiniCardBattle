@@ -20,7 +20,6 @@ import {
   consumeArmSelf,
   createDamagePopup,
   getCardImgUrl,
-  getOrCreateUUID,
   getSeededRandom,
   getSkillValue,
   hasSkill,
@@ -2266,7 +2265,7 @@ export async function resolveActiveSkillEffect(
               const combineId = unionSkill.summonId;
               const masterData = CARD_MASTER.find((c) => c.id === combineId);
               let unionCard = JSON.parse(JSON.stringify(masterData));
-              unionCard.uid = getOrCreateUUID(null);
+              unionCard.uid = `union_${existingCard.uid}_${selectedCard.uid}`;
               unionCard.owner = o;
               unionCard.isPremium =
                 (existingCard && existingCard.isPremium) ||
@@ -2514,7 +2513,7 @@ export async function resolveActiveSkillEffect(
               const combineId = unionSkill.summonId;
               const masterData = CARD_MASTER.find((cd) => cd.id === combineId);
               let unionCard = JSON.parse(JSON.stringify(masterData));
-              unionCard.uid = getOrCreateUUID(null);
+              unionCard.uid = `union_${existingCard2.uid}_${selectedCard.uid}`;
               unionCard.owner = o;
               unionCard.isPremium =
                 (existingCard2 && existingCard2.isPremium) ||

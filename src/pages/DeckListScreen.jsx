@@ -364,7 +364,7 @@ export default function DeckListScreen({ switchScreen }) {
 
       setTimeout(() => {
         isSwipingRef.current = false;
-      }, 50);
+      }, 300);
       return;
     }
 
@@ -382,7 +382,7 @@ export default function DeckListScreen({ switchScreen }) {
 
     setTimeout(() => {
       isSwipingRef.current = false;
-    }, 50);
+    }, 300);
   };
 
   return (
@@ -686,8 +686,6 @@ export default function DeckListScreen({ switchScreen }) {
                                 );
                               }
                             }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onTouchStart={(e) => e.stopPropagation()}
                           >
                             🔍
                           </div>

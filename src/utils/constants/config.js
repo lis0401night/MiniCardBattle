@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.2.1.4';
+export const GAME_VERSION = '0.2.1.5';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -656,6 +656,7 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'employee', type: 'card', cost: 3 },
   { id: 'detective', type: 'card', cost: 3 },
   { id: 'scrapper', type: 'card', cost: 1 },
+  { id: 'liberator', type: 'card', cost: 1 },
 ];
 
 /**

@@ -93,7 +93,11 @@ export default function DefenseBattleHistoryScreen() {
     const leaderSkill = charData?.leaderSkill || null;
 
     if (window.showEnemyDeckModal) {
-      window.showEnemyDeckModal(deckCards, `${attackerName} の攻撃デッキ`, leaderSkill);
+      window.showEnemyDeckModal(
+        deckCards,
+        `${attackerName} の攻撃デッキ`,
+        leaderSkill
+      );
     }
   };
 

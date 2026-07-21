@@ -462,17 +462,17 @@ export function prepareBattle() {
           ? GameState.enemyConfig
           : GameState.playerConfig;
 
-        // オンライン時はホスト -> クライアントの順でデッキを生成し、乱数消費順を世界共通に固定する
-        const hostDeck = generateDeck(
-          isHost ? 'blue' : 'red',
-          hostConfig,
-          sessionId
-        );
-        const clientDeck = generateDeck(
-          isHost ? 'red' : 'blue',
-          clientConfig,
-          sessionId
-        );
+        // オンライン時はホスト -> クライアントの順で客観的ロール名（'host'/'client'）をキーにしてデッキを生成し、UIDとIDの決定論的一致を保証する。
+        const hostDeck = generateDeck('host', hostConfig, sessionId);
+        const clientDeck = generateDeck('client', clientConfig, sessionId);
+
+        // 生成完了後、各カードのownerプロパティをそれぞれのプレイヤー視点（自分='blue'、相手='red'）に補正して適用する
+        hostDeck.forEach((c) => {
+          c.owner = isHost ? 'blue' : 'red';
+        });
+        clientDeck.forEach((c) => {
+          c.owner = isHost ? 'red' : 'blue';
+        });
 
         GameState.playerDeck = isHost ? hostDeck : clientDeck;
         GameState.enemyDeck = isHost ? clientDeck : hostDeck;
@@ -2491,16 +2491,8 @@ export async function waitSkillChoice(
       parseItem(rawVal);
     }
 
-    // 重複除去
-    const uniqueResults = [];
-    const seenKeys = new Set();
-    results.forEach((item) => {
-      const key = choiceKey(item);
-      if (item && !seenKeys.has(key)) {
-        seenKeys.add(key);
-        uniqueResults.push(item);
-      }
-    });
+    // 意図的な重複選択（拡散と拡散など）を許容するため、SeenKeyによる一律の重複除去を廃止
+    const uniqueResults = results.filter(Boolean);
 
     if (uniqueResults.length === 0 && choices.length > 0) {
       if (isForce) {
@@ -3839,7 +3831,7 @@ export async function playCard(o, hI, l) {
       const consumedCard = h.splice(hI, 1)[0];
       const masterData = CARD_MASTER.find((c) => c.id === combineId);
       let unionCard = JSON.parse(JSON.stringify(masterData));
-      unionCard.uid = getOrCreateUUID(null);
+      unionCard.uid = `union_${targetCard.uid}_${consumedCard.uid}`;
       unionCard.owner = o;
       unionCard.baseId = unionCard.id;
       unionCard.basePower = unionCard.power;
@@ -4682,7 +4674,8 @@ export function endBattle() {
       const enemyUuid = GameState.enemyConfig?.uuid;
       if (enemyUuid) {
         const activeDeckIdx = GameState.currentDeckIndex || 0;
-        const activeDeck = GameState.decks?.[activeDeckIdx] || GameState.decks?.[0];
+        const activeDeck =
+          GameState.decks?.[activeDeckIdx] || GameState.decks?.[0];
         const attackerDeckIds = Array.isArray(activeDeck?.cards)
           ? activeDeck.cards.map((c) =>
               typeof c === 'string' ? c : c?.id || c
