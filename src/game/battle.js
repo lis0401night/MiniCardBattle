@@ -4681,8 +4681,10 @@ export function endBattle() {
       // 対象の防衛者宛に防衛履歴（勝敗、攻撃者情報、攻撃デッキ）を送信
       const enemyUuid = GameState.enemyConfig?.uuid;
       if (enemyUuid) {
-        const attackerDeckIds = Array.isArray(GameState.decks?.[0]?.cards)
-          ? GameState.decks[0].cards.map((c) =>
+        const activeDeckIdx = GameState.currentDeckIndex || 0;
+        const activeDeck = GameState.decks?.[activeDeckIdx] || GameState.decks?.[0];
+        const attackerDeckIds = Array.isArray(activeDeck?.cards)
+          ? activeDeck.cards.map((c) =>
               typeof c === 'string' ? c : c?.id || c
             )
           : [];
