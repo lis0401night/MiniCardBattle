@@ -88,8 +88,12 @@ export default function DefenseBattleHistoryScreen() {
     const deckCards = Array.isArray(item.attackerDeck) ? item.attackerDeck : [];
     const attackerName = item.attackerName || '挑戦者';
 
+    const charKey = item.attackerCharacter || 'android';
+    const charData = CHARACTERS?.[charKey] || CHARACTERS?.android;
+    const leaderSkill = charData?.leaderSkill || null;
+
     if (window.showEnemyDeckModal) {
-      window.showEnemyDeckModal(deckCards, `${attackerName} の攻撃デッキ`);
+      window.showEnemyDeckModal(deckCards, `${attackerName} の攻撃デッキ`, leaderSkill);
     }
   };
 

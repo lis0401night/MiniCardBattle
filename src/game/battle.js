@@ -4690,11 +4690,13 @@ export function endBattle() {
           : [];
         const attackerName = resolvePlayerName();
         const attackerCharacter =
-          GameState.playerConfig?.character ||
           GameState.selectedCharacter ||
+          GameState.playerConfig?.character ||
           'android';
         const attackerSkin =
-          GameState.playerConfig?.skin || GameState.selectedSkin || 'default';
+          GameState.selectedSkin ||
+          GameState.playerConfig?.skin ||
+          'default';
         const attackerTotalPoints =
           parseInt(
             localStorage.getItem('mini_card_battle_defense_total_points'),
