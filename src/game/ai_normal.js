@@ -524,7 +524,9 @@ export function processActionSequence(
               existingCard.skills = existingCard.skills.filter(
                 (s) => s.id !== 'startup' && s.id !== 'defender'
               );
-              targetDiscard.push(newToken);
+              if (!newToken.isToken) {
+                targetDiscard.push(newToken);
+              }
             } else if (
               existingCard &&
               (hasSkill(newToken, 'equip') ||
@@ -553,7 +555,9 @@ export function processActionSequence(
               consumeArmSelf(existingCard, newToken);
             } else if (existingCard) {
               // 装備不可: 既存カードを墓地に移動して上書き
-              targetDiscard.push(existingCard);
+              if (!existingCard.isToken) {
+                targetDiscard.push(existingCard);
+              }
               targetBoard[tLane] = newToken;
             } else {
               // 空きレーン: そのまま配置

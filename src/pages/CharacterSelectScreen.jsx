@@ -15,6 +15,7 @@ import {
   TOURNAMENT_BANNED_LEADER_IDS,
   safeParseArray,
 } from '../utils/constants/config.js';
+import { checkIsFortuneMode } from '../utils/gameUtils.js';
 
 // キャラクターフィルタリングの共通処理 (DRY原則を保ちます)
 const getFilteredCharacters = () => {
@@ -134,7 +135,7 @@ export default function CharacterSelectScreen() {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_tournament01.webp')}')`;
     } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_highdifficulty.webp')}')`;
-    } else if (mode?.startsWith('event_') && mode?.endsWith('_fortune')) {
+    } else if (checkIsFortuneMode(mode)) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_fortune01.webp')}')`;
     } else if (mode === 'defense_register' || mode === 'defense_attack') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_defense.webp')}')`;

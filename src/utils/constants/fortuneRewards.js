@@ -1,15 +1,14 @@
 // 運命の邂逅：特級目標ポイント報酬の計算ロジック
 import { CHAR_FORTUNE_HANDICAPS, HANDICAP_MASTER } from './fortuneHandicaps.js';
 
-// 達成レベルの閾値とボーナス定義
-// 各レベルにつき1回のみボーナスポイントが貰える
+// 達成レベルの閾値定義
 export const FORTUNE_GRADE_THRESHOLDS = [
-  { level: 0, min: 0, max: 0, bonus: 3 },
-  { level: 1, min: 1, max: 4, bonus: 3 },
-  { level: 2, min: 5, max: 9, bonus: 3 },
-  { level: 3, min: 10, max: 14, bonus: 3 },
-  { level: 4, min: 15, max: 19, bonus: 3 },
-  { level: 5, min: 20, max: 24, bonus: 3 },
+  { level: 0, min: 0, max: 0 },
+  { level: 1, min: 1, max: 4 },
+  { level: 2, min: 5, max: 9 },
+  { level: 3, min: 10, max: 14 },
+  { level: 4, min: 15, max: 19 },
+  { level: 5, min: 20, max: 24 },
 ];
 
 /**
@@ -77,7 +76,7 @@ export function calculateFortuneRewards(
   const currentLevel = getGradeLevel(totalCost);
   const previousLevel = clearedMaxGradeLevel;
 
-  // 最大達成レベルの判定のみ行い、クリア時の獲得ポイントには加算しない
+  // 最大達成レベルの判定のみ行い、クリア時の獲得ポイントには加算しない（レベルボーナスポイントは仕様上存在しない）
 
   return {
     totalEarned,

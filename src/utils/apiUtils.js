@@ -269,7 +269,7 @@ export async function syncUserProfile(
  * 防衛戦の対戦結果を防衛対象者(targetUuid)のサーバー防衛履歴へ送信します。
  *
  * @param {string} targetUuid - 防衛者のUUID
- * @param {Object} data - { attackerName, attackerCharacter, attackerTotalPoints, attackerDeck, result }
+ * @param {Object} data - { attackerName, attackerCharacter, attackerSkin, attackerTotalPoints, attackerDeck, result }
  * @returns {Promise<boolean>} 成功したかどうか
  */
 export async function recordDefenseBattleToServer(targetUuid, data) {

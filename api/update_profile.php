@@ -94,7 +94,7 @@ $player_data['uuid'] = $uuid;
 $player_data['name'] = $name;
 $player_data['icon'] = $icon;
 if (isset($data['favoriteCard'])) {
-    $player_data['favorite_card'] = $data['favoriteCard'];
+    $player_data['favorite_card'] = preg_replace('/[^a-z0-9_]/', '', $data['favoriteCard']);
 }
 $player_data['timestamp'] = $timestamp;
 

@@ -174,7 +174,14 @@ const SCREEN_COMPONENTS = {
       }
     },
   },
-  'screen-stage-select': StageSelectScreen,
+  'screen-stage-select': {
+    component: StageSelectScreen,
+    initHook: () => {
+      if (typeof window.initStageSelectScreenReact === 'function') {
+        window.initStageSelectScreenReact();
+      }
+    },
+  },
   'screen-dialogue': DialogueScreen,
   'screen-battle': BattleScreen,
   'screen-battle-dungeon': BattleDungeonScreen,

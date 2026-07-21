@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
@@ -8,9 +8,10 @@ import {
   safeParseArray,
 } from '../utils/constants/config.js';
 import { STAGES } from '../utils/constants/stages.js';
+import { checkIsFortuneMode } from '../utils/gameUtils.js';
 
 export default function StageSelectScreen() {
-  const [stages] = useState(() => {
+  const getStages = () => {
     const stagesObj = STAGES || {};
     const unlockedStages = safeParseArray('mini_card_battle_unlocked_stages');
 
@@ -26,7 +27,19 @@ export default function StageSelectScreen() {
         id,
         ...stagesObj[id],
       }));
-  });
+  };
+
+  const [stages, setStages] = useState(getStages);
+
+  useEffect(() => {
+    const originalInit = window.initStageSelectScreenReact;
+    window.initStageSelectScreenReact = () => {
+      setStages(getStages());
+    };
+    return () => {
+      window.initStageSelectScreenReact = originalInit;
+    };
+  }, []);
 
   const handleSelect = (stageId) => {
     if (confirmStageSelect) {
@@ -53,7 +66,7 @@ export default function StageSelectScreen() {
     if (!bgFile) {
       if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
         bgFile = 'assets/backgrounds/background_highdifficulty.webp';
-      } else if (mode?.startsWith('event_') && mode?.endsWith('_fortune')) {
+      } else if (checkIsFortuneMode(mode)) {
         bgFile = 'assets/backgrounds/background_fortune01.webp';
       } else if (mode && mode.startsWith('story')) {
         bgFile = 'assets/backgrounds/background_story01.webp';
