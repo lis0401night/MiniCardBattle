@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
-import { getScreenBackgroundStyle } from '../utils/constants/config.js';
+import { getScreenBackgroundStyle, MAX_CARD_COPIES } from '../utils/constants/config.js';
 import {
   confirmDifficulty,
   goBackFromDifficulty,
@@ -94,12 +94,12 @@ export default function DifficultySelectScreen() {
     confirmDifficulty?.(level);
   };
 
-  // デッキの所持コンプリートチェック（プレイヤーがデッキの全カードを1枚以上持っているか）
+  // デッキの所持コンプリートチェック（プレイヤーがデッキの全カードを4枚以上持っているか）
   const checkIsDeckComplete = (deckCardIds) => {
     if (!deckCardIds || !Array.isArray(deckCardIds) || deckCardIds.length === 0)
       return false;
     const inv = GameState.playerInventory || {};
-    return deckCardIds.every((cardId) => (inv[cardId] || 0) > 0);
+    return deckCardIds.every((cardId) => (inv[cardId] || 0) >= MAX_CARD_COPIES);
   };
 
   // フリーバトル用コンプリート判定
