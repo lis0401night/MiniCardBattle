@@ -17,6 +17,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
+import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 
 // 難易度レベル定数
 const DIFFICULTY = {
@@ -24,6 +25,35 @@ const DIFFICULTY = {
   INTERMEDIATE: 2, // 中級
   ADVANCED: 3, // 上級
 };
+
+function CompleteBadge() {
+  return (
+    <span
+      style={{
+        position: 'absolute',
+        bottom: '-5px',
+        left: '-5px',
+        background: '#1e293b',
+        color: '#facc15',
+        fontSize: '0.65rem',
+        fontWeight: 'bold',
+        padding: '1px 6px',
+        borderRadius: '4px',
+        border: '1.5px solid #facc15',
+        boxShadow:
+          '0 2px 5px rgba(0, 0, 0, 0.6), 0 0 8px rgba(250, 204, 21, 0.4)',
+        zIndex: 10,
+        pointerEvents: 'none',
+        textShadow: '1px 1px 2px #000',
+        letterSpacing: '0.5px',
+        lineHeight: '1.2',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      COMPLETE!
+    </span>
+  );
+}
 
 export default function DifficultySelectScreen() {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -63,6 +93,44 @@ export default function DifficultySelectScreen() {
   const handleSelect = (level) => {
     confirmDifficulty?.(level);
   };
+
+  // デッキの所持コンプリートチェック（プレイヤーがデッキの全カードを1枚以上持っているか）
+  const checkIsDeckComplete = (deckCardIds) => {
+    if (!deckCardIds || !Array.isArray(deckCardIds) || deckCardIds.length === 0)
+      return false;
+    const inv = GameState.playerInventory || {};
+    return deckCardIds.every((cardId) => (inv[cardId] || 0) > 0);
+  };
+
+  // フリーバトル用コンプリート判定
+  const enemyId = GameState.enemyConfig?.id;
+  const isBeginnerComplete =
+    isFreeMode &&
+    enemyId &&
+    ENEMY_DECKS[enemyId]?.easy &&
+    checkIsDeckComplete(ENEMY_DECKS[enemyId].easy);
+
+  const isIntermediateComplete =
+    isFreeMode &&
+    enemyId &&
+    ENEMY_DECKS[enemyId]?.normal &&
+    checkIsDeckComplete(ENEMY_DECKS[enemyId].normal);
+
+  const isAdvancedComplete =
+    isFreeMode &&
+    enemyId &&
+    ENEMY_DECKS[enemyId]?.hard &&
+    checkIsDeckComplete(ENEMY_DECKS[enemyId].hard);
+
+  // 高難易度イベント用コンプリート判定
+  const highEnemyCharId = isHighDiffMode
+    ? getEventEnemyCharId(GameState.gameMode)
+    : null;
+  const isHighComplete =
+    isHighDiffMode &&
+    highEnemyCharId &&
+    ENEMY_DECKS[`${highEnemyCharId}_high`] &&
+    checkIsDeckComplete(ENEMY_DECKS[`${highEnemyCharId}_high`]);
 
   // 高難易度イベント、運命の邂逅および通常難易度選択用の背景スタイル
   const highDiffBgStyle = getScreenBackgroundStyle(
@@ -153,6 +221,7 @@ export default function DifficultySelectScreen() {
                 </div>
               ))}
             <div className="difficulty-button-row" style={{ margin: 0 }}>
+              {isHighComplete && <CompleteBadge />}
               <MenuButton
                 label={isFortuneMode ? '特級' : '超級'}
                 variant={isFortuneMode ? 'orange' : 'purple'}
@@ -177,7 +246,9 @@ export default function DifficultySelectScreen() {
                 label="初級"
                 variant="emerald"
                 onClick={() => handleSelect(DIFFICULTY.BEGINNER)}
-              />
+              >
+                {isBeginnerComplete && <CompleteBadge />}
+              </MenuButton>
               {isFreeMode && (
                 <button
                   className="btn-check-deck"
@@ -194,7 +265,9 @@ export default function DifficultySelectScreen() {
                 label="中級"
                 variant="yellow"
                 onClick={() => handleSelect(DIFFICULTY.INTERMEDIATE)}
-              />
+              >
+                {isIntermediateComplete && <CompleteBadge />}
+              </MenuButton>
               {isFreeMode && (
                 <button
                   className="btn-check-deck"
@@ -213,7 +286,9 @@ export default function DifficultySelectScreen() {
                 label="上級"
                 variant="red"
                 onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
-              />
+              >
+                {isAdvancedComplete && <CompleteBadge />}
+              </MenuButton>
               {isFreeMode && (
                 <button
                   className="btn-check-deck"

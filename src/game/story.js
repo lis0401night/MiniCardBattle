@@ -1,7 +1,7 @@
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { STORY_INTROS } from '../utils/constants/storyDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
-import { startBattleFlow, loadDeck } from '../services/deck.js';
+import { loadDeck } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import {
   startNextBattleSequence,
@@ -73,19 +73,6 @@ export function initStoryMode(charId) {
     }
   }
 
-  // ストーリー開始時に現在選択されているデッキのスナップショットを保存
-  if (GameState.decks && GameState.decks[GameState.currentDeckIndex]) {
-    const storyDeckSnapshot = GameState.decks[GameState.currentDeckIndex];
-    try {
-      localStorage.setItem(
-        'mini_card_battle_story_deck_obj',
-        JSON.stringify(storyDeckSnapshot)
-      );
-    } catch (error) {
-      console.error('デッキスナップショットの保存に失敗しました:', error);
-    }
-  }
-
   performFadeTransition(() => {
     setupDialogueScreen();
   });
@@ -96,7 +83,10 @@ export function initStoryMode(charId) {
  */
 export function handleStoryProgression() {
   if (GameState.appState === 'pre_dialogue') {
-    startBattleFlow();
+    GameState.appState = 'select_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
   } else if (GameState.appState === 'post_dialogue') {
     if (GameState.lastBattleResult === 'lose') {
       showContinueScreen();
@@ -169,10 +159,7 @@ export function resumeStoryProgress(savedData) {
 
   GameState.playerConfig = CHARACTERS[savedData.pendingCharId];
 
-  // 【設計仕様解説】
-  // ストーリー専用デッキスナップショット（mini_card_battle_story_deck_obj）は、
-  // この後呼び出される loadDeck() 内部において、GameState.gameMode === 'story' を検知して
-  // 自動的かつ一元的にロード・適用される仕様になっているため、ここで直接の読み込みは不要です。
+  // 保存されているデッキインデックスの最新デッキをロードする
   if (typeof window.loadDeck === 'function') {
     window.loadDeck();
   } else {

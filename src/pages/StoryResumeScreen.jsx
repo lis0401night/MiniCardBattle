@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { clearStoryProgress, resumeStoryProgress } from '../game/story';
 import { goBackFromSelect } from '../services/uiMainCore';
-import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -67,27 +67,6 @@ export default function StoryResumeScreen() {
         goBackFromSelect(); // Returns to solo menu, or previous context
       }
     );
-  };
-
-  const handleCheckDeck = () => {
-    playSound?.(SOUNDS?.seClick);
-    if (window.showEnemyDeckModal) {
-      let deck = null;
-      const savedStr = localStorage.getItem('mini_card_battle_story_deck_obj');
-      if (savedStr) {
-        try {
-          deck = JSON.parse(savedStr);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      if (deck && deck.cards && deck.cards.length > 0) {
-        window.showEnemyDeckModal(deck.cards, 'デッキ確認');
-      } else {
-        showAlertModal?.('デッキ情報のプレビューは再開後に可能です。');
-      }
-    }
   };
 
   return (
@@ -211,30 +190,6 @@ export default function StoryResumeScreen() {
                       {pConf.name}
                     </div>
                   </div>
-                </div>
-
-                {/* デッキ確認ボタン */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '10px',
-                    justifyContent: 'center',
-                    marginTop: '15px',
-                  }}
-                >
-                  <button
-                    className="btn"
-                    style={{
-                      fontSize: '0.8rem',
-                      padding: '10px 12px',
-                      width: 'auto',
-                      margin: 0,
-                      background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)',
-                    }}
-                    onClick={handleCheckDeck}
-                  >
-                    デッキ確認
-                  </button>
                 </div>
               </div>
             )}

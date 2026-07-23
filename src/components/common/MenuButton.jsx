@@ -19,6 +19,7 @@ export default function MenuButton({
   className = '',
   style = {},
   disabled = false,
+  children,
 }) {
   const handleClick = (e) => {
     if (disabled) return;
@@ -27,7 +28,7 @@ export default function MenuButton({
   };
 
   const btnClassName = `btn btn-fantasy ${disabled ? 'btn-disabled' : `btn-variant-${variant}`} ${className}`;
-  const btnStyle = { ...style };
+  const btnStyle = { position: 'relative', ...style };
 
   return (
     <button
@@ -42,6 +43,7 @@ export default function MenuButton({
       <div className="btn-ornament btn-ornament-tl"></div>
       <div className="btn-ornament btn-ornament-br"></div>
       <span style={{ position: 'relative', zIndex: 1 }}>{label}</span>
+      {children}
     </button>
   );
 }

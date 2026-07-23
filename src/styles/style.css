@@ -3047,6 +3047,49 @@ h2 {
   padding-bottom: 30px;
 }
 
+#screen-options {
+  overflow-y: auto;
+  justify-content: flex-start !important;
+  padding-top: 20px;
+  padding-bottom: 30px;
+}
+
+/* 低画面高度（iPhone SE等）での見切れ防止・スクロールゼロ対応 */
+/* ボタンのサイズ・比率（1:1正方形）・配置・間隔（360px幅/gap 25px）は1ピクセルも変更せず100%保持 */
+@media (max-height: 700px) {
+  .screen.active {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .screen-layout-title {
+    margin: 4px 0 !important;
+    font-size: 1.25rem !important;
+  }
+
+  .menu-btn-grid {
+    margin-top: 0 !important;
+  }
+
+  .back-button-footer {
+    margin-top: 5px !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+}
+
+.back-button-footer {
+  margin-top: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  border-top: 1px solid #334155;
+  box-sizing: border-box;
+}
+
 .menu-btn-grid {
   display: flex;
   flex-wrap: wrap;
@@ -3969,33 +4012,33 @@ body.vfx-shake {
 }
 
 .profile-icon-item {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
   background: #1e293b;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .profile-icon-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .profile-icon-item:hover {
-  transform: scale(1.05);
-  border-color: #facc15;
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.6));
 }
 
 .profile-icon-item.selected {
-  border-color: #facc15;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.4);
-  transform: scale(1.05);
+  filter: drop-shadow(0 0 10px #facc15);
+  transform: scale(1.08);
 }
 
 .profile-actions {

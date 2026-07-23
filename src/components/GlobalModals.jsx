@@ -2992,6 +2992,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               <div
                 style={{
                   position: 'relative',
+                  width: '76px',
+                  height: '76px',
                   cursor: 'pointer',
                   flexShrink: 0,
                 }}
@@ -3008,12 +3010,23 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   )}
                   alt="icon"
                   style={{
-                    width: '72px',
-                    height: '72px',
+                    width: '100%',
+                    height: '100%',
                     borderRadius: '50%',
-                    border: '3px solid #eab308',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                     objectFit: 'cover',
+                  }}
+                />
+                <img
+                  src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 5,
                   }}
                 />
                 <div
@@ -3032,6 +3045,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
                     border: '2px solid #1e293b',
+                    zIndex: 6,
                   }}
                 >
                   📷
@@ -3292,6 +3306,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 <div
                   key={icon.id}
                   className={`profile-icon-item${profileIconInput === icon.id ? ' selected' : ''}`}
+                  style={{ position: 'relative' }}
                   onClick={() => {
                     playSound?.(SOUNDS?.seClick);
                     setProfileIconInput(icon.id);
@@ -3300,6 +3315,19 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   title={icon.name}
                 >
                   <img src={appendVersionQuery(icon.path)} alt={icon.name} />
+                  <img
+                    src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      pointerEvents: 'none',
+                      zIndex: 5,
+                    }}
+                  />
                 </div>
               ))}
             </div>

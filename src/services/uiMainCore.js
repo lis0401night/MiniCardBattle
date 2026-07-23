@@ -486,7 +486,22 @@ export function goBackFromSelect() {
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_high')
   ) {
-    switchScreen('screen-high-difficulty');
+    if (GameState.appState === 'select_deck') {
+      GameState.appState = 'select_difficulty';
+      switchScreen('screen-difficulty');
+    } else {
+      switchScreen('screen-high-difficulty');
+    }
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune')
+  ) {
+    if (GameState.appState === 'select_deck') {
+      GameState.appState = 'select_difficulty';
+      switchScreen('screen-difficulty');
+    } else {
+      switchScreen('screen-fortune');
+    }
   } else if (GameState.appState === 'create_deck_select_char') {
     // 新規作成のキャラ選択画面からキャンセルして戻る場合、
     // gameModeを元のモードに復帰させてからデッキ一覧に戻す
@@ -498,6 +513,22 @@ export function goBackFromSelect() {
     }
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
+  } else if (
+    GameState.gameMode === 'story' &&
+    GameState.appState === 'select_player'
+  ) {
+    switchScreen('screen-solo-menu');
+  } else if (
+    GameState.gameMode === 'free' &&
+    GameState.appState === 'select_enemy'
+  ) {
+    switchScreen('screen-solo-menu');
+  } else if (
+    GameState.gameMode === 'free' &&
+    GameState.appState === 'select_deck'
+  ) {
+    GameState.appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
   } else if (GameState.appState === 'select_enemy') {
     GameState.appState = 'select_deck';
     if (typeof window.loadDeck === 'function') window.loadDeck();
@@ -524,13 +555,6 @@ export function goBackFromSelect() {
       // 新規挑戦前やリタイア後はメニューに戻る
       switchScreen('screen-tournament-menu');
     }
-  } else if (
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune')
-  ) {
-    // 運命の邂逅：難易度選択画面に戻る
-    GameState.appState = 'select_difficulty';
-    switchScreen('screen-difficulty');
   } else {
     // デッキ選択のフローから抜ける際にページネーションをリセット
     GameState.deckListPage = 0;
@@ -567,6 +591,10 @@ export function goBackFromDifficulty() {
   ) {
     // 運命の邂逅：キャラ選択画面に戻る
     switchScreen('screen-fortune');
+  } else if (GameState.gameMode === 'free') {
+    GameState.appState = 'select_enemy';
+    initSelectScreen(false);
+    switchScreen('screen-select');
   } else {
     GameState.appState = 'select_enemy';
     initSelectScreen(false);
@@ -584,6 +612,11 @@ export function goBackFromStage() {
     switchScreen('screen-deck-edit');
   } else if (GameState.gameMode === 'practice') {
     GameState.appState = 'select_enemy_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
+  } else if (GameState.gameMode === 'free') {
+    GameState.appState = 'select_deck';
     if (typeof window.loadDeck === 'function') window.loadDeck();
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
@@ -656,12 +689,16 @@ export function goBackFromDeckEdit(isCancel = false) {
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
   } else if (
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_high')
+    (GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_high')) ||
+    (GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_fortune'))
   ) {
-    // 高難易度：難易度選択画面に戻る（デッキ確認が可能）
-    GameState.appState = 'select_difficulty';
-    switchScreen('screen-difficulty');
+    // 高難易度/運命の邂逅：デッキ一覧画面に戻る
+    GameState.appState = 'select_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
   } else if (GameState.gameMode === 'battle_dungeon') {
     GameState.dungeonState = 'select_opponent';
     switchScreen('screen-battle-dungeon');
@@ -722,6 +759,10 @@ export function startGameMode(mode) {
         clearStoryProgress();
       }
     }
+    GameState.appState = 'select_player';
+    initSelectScreen(true);
+    switchScreen('screen-select');
+    return;
   }
 
   if (mode === 'tournament') {
@@ -733,6 +774,13 @@ export function startGameMode(mode) {
       switchScreen('screen-tournament-resume');
       return;
     }
+  }
+
+  if (mode === 'free') {
+    GameState.appState = 'select_enemy';
+    initSelectScreen(false);
+    switchScreen('screen-select');
+    return;
   }
 
   // 以下はストーリー/トーナメント（再開なし）/ダンジョン以外の処理
@@ -1107,8 +1155,21 @@ export function confirmCharSelect() {
       if (window.forceUpdateDeckList) window.forceUpdateDeckList();
       return;
     } else if (GameState.gameMode === 'story') {
-      GameState.appState = 'select_difficulty';
-      switchScreen('screen-difficulty');
+      const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
+      if (savedStoryStr) {
+        try {
+          const savedData = JSON.parse(savedStoryStr);
+          if (savedData && savedData.charId === GameState.pendingCharId) {
+            GameState.appState = 'story_resume';
+            switchScreen('screen-story-resume');
+            return;
+          }
+        } catch (e) {
+          console.error('Save data parse error', e);
+        }
+      }
+      initStoryMode(GameState.pendingCharId);
+      return;
     } else if (GameState.gameMode === 'event_satan') {
       // 高難易度サタン戦（旧互換パス：通常はevent_satan_highで来る）
       initHighDifficultyEventMode(GameState.pendingCharId, 'satan');
@@ -1203,6 +1264,11 @@ export function confirmCharSelect() {
       // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
       startBattleFlow();
+    } else if (GameState.gameMode === 'free') {
+      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+      GameState.appState = 'select_stage';
+      initStageSelectScreen();
+      switchScreen('screen-stage-select');
     } else {
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
       GameState.appState = 'select_enemy';
@@ -1256,6 +1322,12 @@ export function confirmDifficulty(level) {
   GameState.storyDifficulty = level;
   if (GameState.gameMode === 'story') {
     initStoryMode(GameState.pendingCharId);
+  } else if (GameState.gameMode === 'free') {
+    // フリーバトル：難易度選択確定後、デッキ一覧へ
+    GameState.appState = 'select_deck';
+    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+    switchScreen('screen-deck-list');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：難易度選択の後はステージを敵の設定からロード（またはランダム）
     GameState.selectedStageId = GameState.enemyConfig.stageId || 'plain';

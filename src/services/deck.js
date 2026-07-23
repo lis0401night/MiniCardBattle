@@ -767,35 +767,6 @@ export function loadDeck() {
   if (GameState.decks.length > 0) {
     let activeDeck = GameState.decks[GameState.currentDeckIndex];
 
-    // ストーリーモード進行中で専用スナップショットが存在する場合、アクティブデッキをそのスナップショットに差し替える
-    const storySaved = localStorage.getItem('mini_card_battle_story_deck_obj');
-    if (GameState.gameMode === 'story' && storySaved) {
-      try {
-        const parsedDeck = JSON.parse(storySaved);
-        const isValidStoryDeck =
-          parsedDeck &&
-          typeof parsedDeck.leaderId === 'string' &&
-          Array.isArray(parsedDeck.cards) &&
-          parsedDeck.cards.length === DECK_SIZE &&
-          parsedDeck.cards.every((item) => {
-            const id = typeof item === 'string' ? item : item?.id;
-            return (
-              typeof id === 'string' && CARD_MASTER.some((c) => c.id === id)
-            );
-          });
-        if (isValidStoryDeck) {
-          activeDeck = parsedDeck;
-        } else {
-          // 【CodeRabbit指摘反映・データ整合性保護】スナップショットデータが不完全な場合は警告を出し、現在の通常デッキで安全にフォールバック代替する
-          console.warn(
-            'Invalid story deck snapshot. Fallback to current deck.'
-          );
-        }
-      } catch {
-        console.error('Failed to parse story deck snapshot');
-      }
-    }
-
     const templateChar = CHARACTERS[activeDeck.leaderId] || CHARACTERS.android;
     if (!GameState.playerConfig || GameState.appState !== 'select_player') {
       // トーナメント進行中はstartTournamentMatchで設定済みのplayerConfig（名前・スキン設定）を保持する
@@ -906,50 +877,6 @@ export function createNewDeck(leaderId) {
 }
 
 export function saveCurrentEditDeck() {
-  // ストーリーモードでは通常デッキを汚染しないよう、ストーリー専用のスナップショットデッキのみを更新して保存する
-  if (GameState.gameMode === 'story') {
-    let activeDeck = null;
-    const storySaved = localStorage.getItem('mini_card_battle_story_deck_obj');
-    if (storySaved) {
-      try {
-        activeDeck = JSON.parse(storySaved);
-      } catch (e) {
-        console.error('Failed to parse story deck snapshot during save:', e);
-      }
-    }
-    if (
-      !activeDeck &&
-      GameState.decks &&
-      GameState.decks.length > GameState.currentDeckIndex
-    ) {
-      activeDeck = { ...GameState.decks[GameState.currentDeckIndex] };
-    }
-    if (!activeDeck) {
-      activeDeck = {
-        id: 'story_deck',
-        name: 'ストーリーデッキ',
-        leaderId: GameState.playerConfig?.id || 'android',
-        playmatId: null,
-        playerSkins: {},
-        premiumCards: [...GameState.premiumCards],
-        cards: [],
-      };
-    }
-
-    activeDeck.playmatId = GameState.selectedPlaymatId;
-    activeDeck.playerSkins = { ...GameState.playerSkins };
-    activeDeck.premiumCards = [...GameState.premiumCards];
-    activeDeck.cards = GameState.playerDeckSelection.map((c) =>
-      typeof c === 'string' ? c : c.baseId || c.id
-    );
-
-    localStorage.setItem(
-      'mini_card_battle_story_deck_obj',
-      JSON.stringify(activeDeck)
-    );
-    return;
-  }
-
   if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
     const activeDeck = GameState.decks[GameState.currentDeckIndex];
 
@@ -1053,7 +980,6 @@ export function executeRenderDeckEdit() {
 }
 
 export function addCardToDeck(template) {
-  if (GameState.playerDeckSelection.length >= DECK_SIZE) return;
   const inDeckCount = GameState.playerDeckSelection.filter(
     (c) => c.id === template.id
   ).length;

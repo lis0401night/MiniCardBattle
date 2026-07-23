@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { loadDeck } from '../services/deck.js';
+import { loadDeck, startBattleFlow } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import { confirmCharSelect, goBackFromSelect } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
@@ -10,12 +10,13 @@ import {
   getSkinImage,
   getIconFramePath,
 } from '../utils/constants/characters.js';
-import { playSound } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { playSound, stopAllBGM } from '../utils/gameUtils.js';
+import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import {
   MAX_DECK_SLOTS,
   STORY_BANNED_LEADER_IDS,
   TOURNAMENT_BANNED_LEADER_IDS,
+  appendVersionQuery,
 } from '../utils/constants/config.js';
 
 export default function DeckListScreen({ switchScreen }) {
@@ -40,9 +41,11 @@ export default function DeckListScreen({ switchScreen }) {
     } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.webp')`;
     } else if (mode?.startsWith('event_') && mode?.endsWith('_fortune')) {
-      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_fortune01.webp')`;
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_fortune01.webp')}')`;
+    } else if (mode === 'story') {
+      return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_story01.webp')}')`;
     }
-    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.webp')`;
+    return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.webp')}')`;
   };
 
   // ページ位置のグローバル保存
@@ -55,6 +58,7 @@ export default function DeckListScreen({ switchScreen }) {
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [hoverIndex, setHoverIndex] = useState(null);
   const [isHoveringTrash, setIsHoveringTrash] = useState(false);
+  const [activeEdgeZone, setActiveEdgeZone] = useState(null); // 'left' | 'right' | null
 
   // Refs
   const pointerStartX = React.useRef(0);
@@ -135,6 +139,11 @@ export default function DeckListScreen({ switchScreen }) {
     loadDeck();
 
     if (GameState.appState === 'select_deck') {
+      if (GameState.gameMode === 'story') {
+        GameState.pendingCharId = GameState.decks[index].leaderId;
+        startBattleFlow();
+        return;
+      }
       if (GameState.gameMode === 'practice') {
         GameState.practicePlayerDeckIndex = index;
       }
@@ -194,7 +203,21 @@ export default function DeckListScreen({ switchScreen }) {
   };
 
   const handleBack = () => {
-    goBackFromSelect?.();
+    playSound?.(SOUNDS?.seClick);
+    if (GameState.gameMode === 'story') {
+      showConfirmModal?.(
+        '一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）',
+        () => {
+          playSound?.(SOUNDS?.seClick);
+          if (typeof stopAllBGM === 'function') stopAllBGM();
+          if (AUDIO_INSTANCES?.bgmTitle) playSound(AUDIO_INSTANCES.bgmTitle);
+          if (typeof switchScreen === 'function')
+            switchScreen('screen-solo-menu');
+        }
+      );
+    } else {
+      goBackFromSelect?.();
+    }
   };
 
   // --- Events ---
@@ -284,23 +307,40 @@ export default function DeckListScreen({ switchScreen }) {
       }
 
       // Auto pagination
-      if (clientX < 60) {
-        if (!autoScrollTimer.current && currentPage > 0) {
-          autoScrollTimer.current = setTimeout(() => {
-            setCurrentPage((p) => p - 1);
-            playSound?.(SOUNDS?.seClick);
-            autoScrollTimer.current = null;
-          }, 500);
+      const containerEl =
+        document.getElementById('app-container') || document.body;
+      const containerRect = containerEl.getBoundingClientRect();
+      const relativeX = clientX - containerRect.left;
+      const containerWidth = containerRect.width;
+
+      if (relativeX < 60) {
+        if (currentPage > 0) {
+          setActiveEdgeZone('left');
+          if (!autoScrollTimer.current) {
+            autoScrollTimer.current = setTimeout(() => {
+              setCurrentPage((p) => p - 1);
+              playSound?.(SOUNDS?.seClick);
+              autoScrollTimer.current = null;
+            }, 500);
+          }
+        } else {
+          setActiveEdgeZone(null);
         }
-      } else if (clientX > window.innerWidth - 60) {
-        if (!autoScrollTimer.current && currentPage < totalPages - 1) {
-          autoScrollTimer.current = setTimeout(() => {
-            setCurrentPage((p) => p + 1);
-            playSound?.(SOUNDS?.seClick);
-            autoScrollTimer.current = null;
-          }, 500);
+      } else if (relativeX > containerWidth - 60) {
+        if (currentPage < totalPages - 1) {
+          setActiveEdgeZone('right');
+          if (!autoScrollTimer.current) {
+            autoScrollTimer.current = setTimeout(() => {
+              setCurrentPage((p) => p + 1);
+              playSound?.(SOUNDS?.seClick);
+              autoScrollTimer.current = null;
+            }, 500);
+          }
+        } else {
+          setActiveEdgeZone(null);
         }
       } else {
+        setActiveEdgeZone(null);
         if (autoScrollTimer.current) {
           clearTimeout(autoScrollTimer.current);
           autoScrollTimer.current = null;
@@ -310,6 +350,7 @@ export default function DeckListScreen({ switchScreen }) {
   };
 
   const handleGlobalPointerUp = (e) => {
+    setActiveEdgeZone(null);
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
@@ -431,14 +472,26 @@ export default function DeckListScreen({ switchScreen }) {
             style={{
               position: 'absolute',
               left: '-5px',
-              zIndex: 10,
+              zIndex: activeEdgeZone === 'left' ? 101 : 10,
               fontSize: '3rem',
               fontWeight: 'bold',
               color: '#facc15',
               cursor: 'pointer',
-              opacity: 0.5,
-              transform: 'scaleX(0.5)',
-              textShadow: '0 0 5px rgba(0,0,0,0.5)',
+              opacity:
+                activeEdgeZone === 'left' ? 1 : dragIndex !== null ? 0.9 : 0.5,
+              transform:
+                activeEdgeZone === 'left'
+                  ? 'scaleX(0.7) scaleY(1.3)'
+                  : dragIndex !== null
+                    ? 'scaleX(0.6) scaleY(1.1)'
+                    : 'scaleX(0.5)',
+              textShadow:
+                activeEdgeZone === 'left'
+                  ? '0 0 15px #facc15, 0 0 25px #facc15'
+                  : dragIndex !== null
+                    ? '0 0 10px #facc15'
+                    : '0 0 5px rgba(0,0,0,0.5)',
+              transition: 'all 0.2s ease',
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -528,9 +581,13 @@ export default function DeckListScreen({ switchScreen }) {
                   const char = CHARACTERS[deck.leaderId] || CHARACTERS.android;
                   const isDraggingThis = dragIndex === idx;
                   const isHoveringThis = hoverIndex === idx;
+                  const currentLeaderId =
+                    GameState.pendingCharId || GameState.playerConfig?.id;
                   const isLeaderBanned =
                     (GameState.gameMode === 'story' &&
-                      STORY_BANNED_LEADER_IDS.includes(deck.leaderId)) ||
+                      (STORY_BANNED_LEADER_IDS.includes(deck.leaderId) ||
+                        (currentLeaderId &&
+                          deck.leaderId !== currentLeaderId))) ||
                     (GameState.gameMode === 'tournament' &&
                       TOURNAMENT_BANNED_LEADER_IDS.includes(deck.leaderId));
 
@@ -742,14 +799,26 @@ export default function DeckListScreen({ switchScreen }) {
             style={{
               position: 'absolute',
               right: '-5px',
-              zIndex: 10,
+              zIndex: activeEdgeZone === 'right' ? 101 : 10,
               fontSize: '3rem',
               fontWeight: 'bold',
               color: '#facc15',
               cursor: 'pointer',
-              opacity: 0.5,
-              transform: 'scaleX(0.5)',
-              textShadow: '0 0 5px rgba(0,0,0,0.5)',
+              opacity:
+                activeEdgeZone === 'right' ? 1 : dragIndex !== null ? 0.9 : 0.5,
+              transform:
+                activeEdgeZone === 'right'
+                  ? 'scaleX(0.7) scaleY(1.3)'
+                  : dragIndex !== null
+                    ? 'scaleX(0.6) scaleY(1.1)'
+                    : 'scaleX(0.5)',
+              textShadow:
+                activeEdgeZone === 'right'
+                  ? '0 0 15px #facc15, 0 0 25px #facc15'
+                  : dragIndex !== null
+                    ? '0 0 10px #facc15'
+                    : '0 0 5px rgba(0,0,0,0.5)',
+              transition: 'all 0.2s ease',
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -776,7 +845,11 @@ export default function DeckListScreen({ switchScreen }) {
           boxSizing: 'border-box',
         }}
       >
-        <BackButton onClick={handleBack} style={{ margin: 0 }} />
+        <BackButton
+          onClick={handleBack}
+          label={GameState.gameMode === 'story' ? '一時中断' : '戻る'}
+          style={{ margin: 0 }}
+        />
 
         {/* ゴミ箱 (DnD削除ゾーン / 常時表示) */}
         <div
@@ -874,6 +947,51 @@ export default function DeckListScreen({ switchScreen }) {
             </div>
           );
         })()}
+
+      {/* ドラッグ中の左右ページ切り替え案内エリア */}
+      {dragIndex !== null && (
+        <>
+          {/* 左端ガイド */}
+          {currentPage > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '60px',
+                background:
+                  activeEdgeZone === 'left'
+                    ? 'linear-gradient(to right, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.05))'
+                    : 'linear-gradient(to right, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02))',
+                zIndex: 90,
+                pointerEvents: 'none',
+                transition: 'all 0.2s ease',
+              }}
+            />
+          )}
+
+          {/* 右端ガイド */}
+          {currentPage < totalPages - 1 && (
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: '60px',
+                background:
+                  activeEdgeZone === 'right'
+                    ? 'linear-gradient(to left, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.05))'
+                    : 'linear-gradient(to left, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02))',
+                zIndex: 90,
+                pointerEvents: 'none',
+                transition: 'all 0.2s ease',
+              }}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

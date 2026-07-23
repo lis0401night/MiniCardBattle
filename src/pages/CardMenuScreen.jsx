@@ -1,5 +1,5 @@
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
-import BackButton from '../components/BackButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { showCardList } from '../services/uiGallery.js';
 import { goToModeSelect, showDeckEditMenu } from '../services/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
@@ -8,10 +8,14 @@ export default function CardMenuScreen() {
   const images = UI_IMAGES || {};
 
   return (
-    <div id="screen-card-menu" className="screen active">
-      <h2 style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}>
-        カード
-      </h2>
+    <ScreenLayout
+      id="screen-card-menu"
+      title="カード"
+      titleColor="#facc15"
+      backgroundImage="background_select.webp"
+      onBackClick={() => goToModeSelect?.()}
+      backHasBorder={true}
+    >
       <div className="menu-btn-grid">
         <MenuImageButton
           label="デッキ編成"
@@ -24,19 +28,6 @@ export default function CardMenuScreen() {
           onClick={() => showCardList?.()}
         />
       </div>
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          borderTop: '1px solid #334155',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
-        <BackButton onClick={() => goToModeSelect?.()} style={{ margin: 0 }} />
-      </div>
-    </div>
+    </ScreenLayout>
   );
 }

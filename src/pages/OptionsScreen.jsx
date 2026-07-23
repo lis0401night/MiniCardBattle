@@ -245,7 +245,11 @@ export default function OptionsScreen() {
   };
 
   return (
-    <div id="screen-options" className="screen active">
+    <div
+      id="screen-options"
+      className="screen active"
+      style={{ padding: '20px 0 30px 0', overflowY: 'auto' }}
+    >
       <h2
         style={{ color: '#facc15', margin: '20px 0', textAlign: 'center' }}
         onClick={() => handleOptionsTitleClick?.()}
@@ -474,16 +478,7 @@ export default function OptionsScreen() {
         </div>
       </div>
 
-      <div
-        style={{
-          padding: '15px 0 20px 0',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: 'transparent',
-        }}
-      >
+      <div className="back-button-footer">
         <BackButton to="screen-mode-select" style={{ margin: 0 }} />
       </div>
 

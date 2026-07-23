@@ -73,7 +73,10 @@ export default function ScreenLayout({
       </h2>
       {children}
       {showBackButton && (
-        <div style={footerStyle}>
+        <div
+          className={backHasBorder ? 'back-button-footer' : ''}
+          style={backHasBorder ? {} : footerStyle}
+        >
           <BackButton onClick={onBackClick} to={backTo} style={{ margin: 0 }} />
         </div>
       )}

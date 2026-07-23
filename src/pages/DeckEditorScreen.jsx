@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
+import MissionListModal from '../components/battle/MissionListModal.jsx';
+import MenuButton from '../components/common/MenuButton.jsx';
 import { prepareBattle } from '../game/battle.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
 import { openCardPreview } from '../services/uiGallery.js';
@@ -9,24 +11,21 @@ import { showPlaymatModal } from '../services/uiPlaymat.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
-import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import {
   DECK_SIZE,
   MAX_CARD_COPIES,
   appendVersionQuery,
 } from '../utils/constants/config.js';
+import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import { SKILLS, SKILL_CATEGORIES } from '../utils/constants/skills.js';
 import {
-  getCardImgUrl,
-  playSound,
-  stopAllBGM,
-  togglePremiumCard,
-  getEventEnemyCharId,
   checkIsFortuneMode,
+  getCardImgUrl,
+  getEventEnemyCharId,
+  playSound,
+  togglePremiumCard,
 } from '../utils/gameUtils.js';
-import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
-import MenuButton from '../components/common/MenuButton.jsx';
-import MissionListModal from '../components/battle/MissionListModal.jsx';
+import { SOUNDS } from '../utils/sounds.js';
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -80,16 +79,23 @@ export default function DeckEditorScreen({ switchScreen }) {
   const [tempDeckName, setTempDeckName] = useState('');
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
+  const [sortMode, setSortMode] = useState('rarity_asc');
+  const [tempSortMode, setTempSortMode] = useState('rarity_asc');
+  const modalContentRef = useRef(null);
+  const skillAccordionRef = useRef(null);
   const [filters, setFilters] = useState({
     rarity: [],
     power: [],
     skills: [],
+    excludeSkills: [],
     name: '',
   });
   const [tempFilters, setTempFilters] = useState({
     rarity: [],
     power: [],
     skills: [],
+    excludeSkills: [],
     name: '',
   });
   const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
@@ -192,7 +198,6 @@ export default function DeckEditorScreen({ switchScreen }) {
       }
       return;
     }
-    if (deckSelection.length >= DECK_SIZE) return;
     const inDeckCount = deckSelection.filter(
       (c) => c.id === template.id
     ).length;
@@ -256,6 +261,12 @@ export default function DeckEditorScreen({ switchScreen }) {
   const handleClick = (card, clickAction) => {
     if (hasLongPressedRef.current) return;
     clickAction(card);
+  };
+
+  const handleHorizontalWheel = (e) => {
+    if (e.deltaY !== 0) {
+      e.currentTarget.scrollLeft += e.deltaY;
+    }
   };
   // ---------------------------------
 
@@ -333,6 +344,35 @@ export default function DeckEditorScreen({ switchScreen }) {
     });
   };
 
+  const toggleTempSkillFilter = (sk) => {
+    playSound?.(SOUNDS?.seClick);
+    setTempFilters((prev) => {
+      const isIncluded = (prev.skills || []).includes(sk);
+      const isExcluded = (prev.excludeSkills || []).includes(sk);
+
+      let nextSkills = [...(prev.skills || [])];
+      let nextExclude = [...(prev.excludeSkills || [])];
+
+      if (!isIncluded && !isExcluded) {
+        // 未選択 -> 指定（含む）
+        nextSkills.push(sk);
+      } else if (isIncluded) {
+        // 指定 -> 除外
+        nextSkills = nextSkills.filter((x) => x !== sk);
+        nextExclude.push(sk);
+      } else {
+        // 除外 -> 未選択
+        nextExclude = nextExclude.filter((x) => x !== sk);
+      }
+
+      return {
+        ...prev,
+        skills: nextSkills,
+        excludeSkills: nextExclude,
+      };
+    });
+  };
+
   // デッキ内のカードをIDでグループ化してカウント
   const groupedDeck = {};
   deckSelection.forEach((card) => {
@@ -406,17 +446,48 @@ export default function DeckEditorScreen({ switchScreen }) {
       return false;
     if (filters.power.length > 0 && !filters.power.includes(c.power))
       return false;
-    if (filters.skills.length > 0) {
-      let cardSkills = [];
-      if (Array.isArray(c.skills))
-        c.skills.forEach((sk) => cardSkills.push(sk.id));
-      if (Array.isArray(c.choices))
-        c.choices.forEach((ch) => cardSkills.push(ch.id));
-      if (Array.isArray(c.choices2))
-        c.choices2.forEach((ch) => cardSkills.push(ch.id));
+
+    let cardSkills = [];
+    if (Array.isArray(c.skills))
+      c.skills.forEach((sk) => cardSkills.push(sk.id));
+    if (Array.isArray(c.choices))
+      c.choices.forEach((ch) => cardSkills.push(ch.id));
+    if (Array.isArray(c.choices2))
+      c.choices2.forEach((ch) => cardSkills.push(ch.id));
+
+    if (filters.skills && filters.skills.length > 0) {
       if (!filters.skills.some((sk) => cardSkills.includes(sk))) return false;
     }
+
+    if (filters.excludeSkills && filters.excludeSkills.length > 0) {
+      if (filters.excludeSkills.some((sk) => cardSkills.includes(sk)))
+        return false;
+    }
+
     return true;
+  });
+
+  // カードのソート処理
+  const sortedMasterCards = [...filteredMasterCards].sort((a, b) => {
+    const rarityA = a.rarity ?? 0;
+    const rarityB = b.rarity ?? 0;
+    const powerA = a.power ?? 0;
+    const powerB = b.power ?? 0;
+
+    if (sortMode === 'rarity_asc') {
+      if (rarityA !== rarityB) return rarityA - rarityB;
+      if (powerA !== powerB) return powerA - powerB;
+    } else if (sortMode === 'rarity_desc') {
+      if (rarityA !== rarityB) return rarityB - rarityA;
+      if (powerA !== powerB) return powerB - powerA;
+    } else if (sortMode === 'power_asc') {
+      if (powerA !== powerB) return powerA - powerB;
+      if (rarityA !== rarityB) return rarityA - rarityB;
+    } else if (sortMode === 'power_desc') {
+      if (powerA !== powerB) return powerB - powerA;
+      if (rarityA !== rarityB) return rarityA - rarityB;
+    }
+    return 0;
   });
 
   return (
@@ -694,7 +765,7 @@ export default function DeckEditorScreen({ switchScreen }) {
       </div>
 
       <div className="deck-edit-container">
-        {/* 現在のデッキ */}
+        {/* デッキ */}
         <div className="deck-section">
           <div
             className="deck-section-title"
@@ -705,17 +776,22 @@ export default function DeckEditorScreen({ switchScreen }) {
               paddingRight: '10px',
             }}
           >
-            <span>現在のデッキ（タップで削除）</span>
+            <span>デッキ（タップで削除）</span>
             <span
               style={{
-                color: deckSelection.length < DECK_SIZE ? '#ef4444' : '#10b981',
+                color:
+                  deckSelection.length !== DECK_SIZE ? '#ef4444' : '#10b981',
                 fontWeight: 'bold',
               }}
             >
               {deckSelection.length} / {DECK_SIZE}
             </span>
           </div>
-          <div id="deck-current-list" className="deck-list-horizontal">
+          <div
+            id="deck-current-list"
+            className="deck-list-horizontal"
+            onWheel={handleHorizontalWheel}
+          >
             {Object.keys(groupedDeck).map((id) => {
               const { card, count } = groupedDeck[id];
               const isBanned = isCardBannedByFortune(card);
@@ -845,39 +921,73 @@ export default function DeckEditorScreen({ switchScreen }) {
             }}
           >
             <span>所持カード（タップで追加）</span>
-            <button
-              className="btn"
-              style={{
-                padding: '4px 8px',
-                margin: 0,
-                fontSize: '0.9rem',
-                background:
-                  filters.rarity.length > 0 ||
-                  filters.power.length > 0 ||
-                  filters.skills.length > 0 ||
-                  !!filters.name
-                    ? 'rgba(250, 204, 21, 0.3)'
-                    : '#334155',
-                border:
-                  filters.rarity.length > 0 ||
-                  filters.power.length > 0 ||
-                  filters.skills.length > 0 ||
-                  !!filters.name
-                    ? '1px solid #facc15'
-                    : '1px solid #475569',
-                color: '#facc15',
-              }}
-              onClick={() => {
-                setTempFilters({ ...filters });
-                setIsFilterModalOpen(true);
-                playSound?.(SOUNDS?.seClick);
-              }}
-            >
-              🔍
-            </button>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                className="btn"
+                style={{
+                  padding: '4px 8px',
+                  margin: 0,
+                  fontSize: '0.9rem',
+                  background:
+                    filters.rarity.length > 0 ||
+                    filters.power.length > 0 ||
+                    (filters.skills && filters.skills.length > 0) ||
+                    (filters.excludeSkills &&
+                      filters.excludeSkills.length > 0) ||
+                    !!filters.name
+                      ? 'rgba(250, 204, 21, 0.3)'
+                      : '#334155',
+                  border:
+                    filters.rarity.length > 0 ||
+                    filters.power.length > 0 ||
+                    (filters.skills && filters.skills.length > 0) ||
+                    (filters.excludeSkills &&
+                      filters.excludeSkills.length > 0) ||
+                    !!filters.name
+                      ? '1px solid #facc15'
+                      : '1px solid #475569',
+                  color: '#facc15',
+                }}
+                onClick={() => {
+                  setTempFilters({ ...filters });
+                  setIsFilterModalOpen(true);
+                  playSound?.(SOUNDS?.seClick);
+                }}
+              >
+                🔍
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: '4px 8px',
+                  margin: 0,
+                  fontSize: '0.9rem',
+                  background:
+                    sortMode !== 'rarity_asc'
+                      ? 'rgba(250, 204, 21, 0.3)'
+                      : '#334155',
+                  border:
+                    sortMode !== 'rarity_asc'
+                      ? '1px solid #facc15'
+                      : '1px solid #475569',
+                  color: '#facc15',
+                }}
+                onClick={() => {
+                  setTempSortMode(sortMode);
+                  setIsSortModalOpen(true);
+                  playSound?.(SOUNDS?.seClick);
+                }}
+              >
+                ↕️
+              </button>
+            </div>
           </div>
-          <div id="deck-master-list" className="deck-list-horizontal">
-            {filteredMasterCards.map((template) => {
+          <div
+            id="deck-master-list"
+            className="deck-list-horizontal"
+            onWheel={handleHorizontalWheel}
+          >
+            {sortedMasterCards.map((template) => {
               const ownedCount = inventory[template.id] || 0;
               if (ownedCount === 0) return null; // 未所持は表示しない、もしくは表示するならグレーアウト（オリジナル仕様に合わせる）
 
@@ -1073,26 +1183,12 @@ export default function DeckEditorScreen({ switchScreen }) {
           }}
           onClick={() => {
             playSound?.(SOUNDS?.seClick);
-            if (GameState.gameMode === 'story') {
-              showConfirmModal?.(
-                '一旦中断してメインメニューに戻りますか？\n（進捗は自動的に保存されています）',
-                () => {
-                  playSound?.(SOUNDS?.seClick);
-                  if (typeof stopAllBGM === 'function') stopAllBGM();
-                  if (AUDIO_INSTANCES?.bgmTitle)
-                    playSound(AUDIO_INSTANCES.bgmTitle);
-                  if (typeof switchScreen === 'function')
-                    switchScreen('screen-solo-menu');
-                }
-              );
-            } else {
-              if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
-              if (typeof goBackFromDeckEdit === 'function')
-                goBackFromDeckEdit(true);
-            }
+            if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
+            if (typeof goBackFromDeckEdit === 'function')
+              goBackFromDeckEdit(true);
           }}
         >
-          {GameState.gameMode === 'story' ? '一時中断' : '戻る'}
+          戻る
         </button>
 
         {/* 右下：ボーナス確認ボタン（全削除ボタンと対になる配置） */}
@@ -1143,309 +1239,360 @@ export default function DeckEditorScreen({ switchScreen }) {
               background: '#1e293b',
               border: '2px solid #facc15',
               borderRadius: '12px',
-              padding: '20px',
+              padding: '15px 20px',
               width: '90%',
               maxWidth: '400px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
+              height: '82vh',
+              maxHeight: '82vh',
               boxShadow: '0 10px 25px rgba(0,0,0,0.8)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '15px',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* 固定タイトル */}
             <h3
               style={{
-                margin: 0,
+                margin: '0 0 10px 0',
                 color: '#facc15',
                 textAlign: 'center',
                 fontSize: '1.2rem',
+                flexShrink: 0,
               }}
             >
               フィルター
             </h3>
 
-            {/* カード名 */}
-            <div>
-              <div
-                style={{
-                  color: '#94a3b8',
-                  fontSize: '0.9rem',
-                  marginBottom: '8px',
-                }}
-              >
-                カード名
-              </div>
-              <input
-                type="text"
-                value={tempFilters.name || ''}
-                onChange={(e) =>
-                  setTempFilters({ ...tempFilters, name: e.target.value })
-                }
-                placeholder="カード名で検索..."
-                style={{
-                  background: '#334155',
-                  color: '#fff',
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  fontSize: '0.9rem',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                }}
-              />
-            </div>
-
-            {/* レアリティ */}
-            <div>
-              <div
-                style={{
-                  color: '#94a3b8',
-                  fontSize: '0.9rem',
-                  marginBottom: '8px',
-                }}
-              >
-                レアリティ
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {availableRarities.map((r) => (
-                  <div
-                    key={`r-${r}`}
-                    onClick={() => toggleTempFilter('rarity', r)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      border: tempFilters.rarity.includes(r)
-                        ? '2px solid #facc15'
-                        : '2px solid #475569',
-                      background: tempFilters.rarity.includes(r)
-                        ? 'rgba(250, 204, 21, 0.2)'
-                        : '#334155',
-                      color: tempFilters.rarity.includes(r)
-                        ? '#facc15'
-                        : '#94a3b8',
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                    }}
-                  >
-                    ★{r}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* パワー */}
-            <div>
-              <div
-                style={{
-                  color: '#94a3b8',
-                  fontSize: '0.9rem',
-                  marginBottom: '8px',
-                }}
-              >
-                パワー
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {availablePowers.map((p) => (
-                  <div
-                    key={`p-${p}`}
-                    onClick={() => toggleTempFilter('power', p)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      border: tempFilters.power.includes(p)
-                        ? '2px solid #facc15'
-                        : '2px solid #475569',
-                      background: tempFilters.power.includes(p)
-                        ? 'rgba(250, 204, 21, 0.2)'
-                        : '#334155',
-                      color: tempFilters.power.includes(p)
-                        ? '#facc15'
-                        : '#94a3b8',
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                    }}
-                  >
-                    P{p}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 能力 */}
-            <div>
-              <div
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setIsSkillAccordionOpen(!isSkillAccordionOpen);
-                }}
-                style={{
-                  color: '#94a3b8',
-                  fontSize: '0.9rem',
-                  marginBottom: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '6px',
-                  backgroundColor: '#334155',
-                  borderRadius: '6px',
-                  border:
-                    tempFilters.skills.length > 0
-                      ? '1px solid #facc15'
-                      : '1px solid transparent',
-                }}
-              >
-                <span
-                  style={{
-                    color:
-                      tempFilters.skills.length > 0 ? '#facc15' : '#94a3b8',
-                  }}
-                >
-                  能力
-                </span>
-                <span>{isSkillAccordionOpen ? '▲' : '▼'}</span>
-              </div>
-              {isSkillAccordionOpen && (
+            {/* スクロールエリア */}
+            <div
+              ref={modalContentRef}
+              style={{
+                position: 'relative',
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                paddingRight: '4px',
+                marginBottom: '10px',
+              }}
+            >
+              {/* カード名 */}
+              <div>
                 <div
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    maxHeight: '260px',
-                    overflowY: 'auto',
-                    padding: '8px',
-                    background: 'rgba(0,0,0,0.3)',
-                    borderRadius: '8px',
+                    color: '#94a3b8',
+                    fontSize: '0.9rem',
+                    marginBottom: '8px',
                   }}
                 >
-                  {SKILL_CATEGORIES.map((category) => {
-                    const activeGroups = category.groups
-                      .map((group) => ({
-                        ...group,
-                        validSkills: group.skills.filter((sk) =>
-                          availableSkills.includes(sk)
-                        ),
-                      }))
-                      .filter((g) => g.validSkills.length > 0);
+                  カード名
+                </div>
+                <input
+                  type="text"
+                  value={tempFilters.name || ''}
+                  onChange={(e) =>
+                    setTempFilters({ ...tempFilters, name: e.target.value })
+                  }
+                  placeholder="カード名で検索..."
+                  style={{
+                    background: '#334155',
+                    color: '#fff',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.9rem',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+              </div>
 
-                    if (activeGroups.length === 0) return null;
+              {/* レアリティ */}
+              <div>
+                <div
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: '0.9rem',
+                    marginBottom: '8px',
+                  }}
+                >
+                  レアリティ
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {availableRarities.map((r) => (
+                    <div
+                      key={`r-${r}`}
+                      onClick={() => toggleTempFilter('rarity', r)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border: tempFilters.rarity.includes(r)
+                          ? '2px solid #facc15'
+                          : '2px solid #475569',
+                        background: tempFilters.rarity.includes(r)
+                          ? 'rgba(250, 204, 21, 0.2)'
+                          : '#334155',
+                        color: tempFilters.rarity.includes(r)
+                          ? '#facc15'
+                          : '#94a3b8',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                      }}
+                    >
+                      ★{r}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-                    return (
-                      <div
-                        key={category.id}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px',
-                        }}
-                      >
+              {/* パワー */}
+              <div>
+                <div
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: '0.9rem',
+                    marginBottom: '8px',
+                  }}
+                >
+                  パワー
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {availablePowers.map((p) => (
+                    <div
+                      key={`p-${p}`}
+                      onClick={() => toggleTempFilter('power', p)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border: tempFilters.power.includes(p)
+                          ? '2px solid #facc15'
+                          : '2px solid #475569',
+                        background: tempFilters.power.includes(p)
+                          ? 'rgba(250, 204, 21, 0.2)'
+                          : '#334155',
+                        color: tempFilters.power.includes(p)
+                          ? '#facc15'
+                          : '#94a3b8',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                      }}
+                    >
+                      P{p}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 能力 */}
+              <div ref={skillAccordionRef}>
+                <div
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    const nextState = !isSkillAccordionOpen;
+                    setIsSkillAccordionOpen(nextState);
+                    if (nextState) {
+                      setTimeout(() => {
+                        if (
+                          modalContentRef.current &&
+                          skillAccordionRef.current
+                        ) {
+                          modalContentRef.current.scrollTo({
+                            top: skillAccordionRef.current.offsetTop,
+                            behavior: 'smooth',
+                          });
+                        }
+                      }, 50);
+                    }
+                  }}
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: '0.9rem',
+                    marginBottom: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '6px',
+                    backgroundColor: '#334155',
+                    borderRadius: '6px',
+                    border:
+                      (tempFilters.skills && tempFilters.skills.length > 0) ||
+                      (tempFilters.excludeSkills &&
+                        tempFilters.excludeSkills.length > 0)
+                        ? '1px solid #facc15'
+                        : '1px solid transparent',
+                  }}
+                >
+                  <span
+                    style={{
+                      color:
+                        (tempFilters.skills && tempFilters.skills.length > 0) ||
+                        (tempFilters.excludeSkills &&
+                          tempFilters.excludeSkills.length > 0)
+                          ? '#facc15'
+                          : '#94a3b8',
+                    }}
+                  >
+                    能力 ※2回クリックで除外
+                  </span>
+                  <span>{isSkillAccordionOpen ? '▲' : '▼'}</span>
+                </div>
+                {isSkillAccordionOpen && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      padding: '8px',
+                      background: 'rgba(0,0,0,0.3)',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    {SKILL_CATEGORIES.map((category) => {
+                      const activeGroups = category.groups
+                        .map((group) => ({
+                          ...group,
+                          validSkills: group.skills.filter((sk) =>
+                            availableSkills.includes(sk)
+                          ),
+                        }))
+                        .filter((g) => g.validSkills.length > 0);
+
+                      if (activeGroups.length === 0) return null;
+
+                      return (
                         <div
-                          style={{
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            color: '#facc15',
-                            borderBottom: '1px solid rgba(250, 204, 21, 0.2)',
-                            paddingBottom: '2px',
-                            marginBottom: '4px',
-                          }}
-                        >
-                          {category.name}
-                        </div>
-                        <div
+                          key={category.id}
                           style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '8px',
-                            paddingLeft: '4px',
+                            gap: '6px',
                           }}
                         >
-                          {activeGroups.map((group, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '6px',
-                                background: 'rgba(255,255,255,0.02)',
-                                padding: '6px',
-                                borderRadius: '6px',
-                                border: '1px solid rgba(255,255,255,0.05)',
-                              }}
-                            >
+                          <div
+                            style={{
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold',
+                              color: '#facc15',
+                              borderBottom: '1px solid rgba(250, 204, 21, 0.2)',
+                              paddingBottom: '2px',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            {category.name}
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                              paddingLeft: '4px',
+                            }}
+                          >
+                            {activeGroups.map((group, idx) => (
                               <div
-                                style={{
-                                  fontSize: '0.75rem',
-                                  color: '#94a3b8',
-                                  fontWeight: 'bold',
-                                }}
-                              >
-                                {group.name}
-                              </div>
-                              <div
+                                key={idx}
                                 style={{
                                   display: 'flex',
-                                  flexWrap: 'wrap',
+                                  flexDirection: 'column',
                                   gap: '6px',
+                                  background: 'rgba(255,255,255,0.02)',
+                                  padding: '6px',
+                                  borderRadius: '6px',
+                                  border: '1px solid rgba(255,255,255,0.05)',
                                 }}
                               >
-                                {group.validSkills.map((sk) => {
-                                  const skillDef = SKILLS[sk] || {
-                                    name: sk,
-                                    icon: '',
-                                  };
-                                  const isSelected =
-                                    tempFilters.skills.includes(sk);
-                                  return (
-                                    <div
-                                      key={sk}
-                                      onClick={() =>
-                                        toggleTempFilter('skills', sk)
-                                      }
-                                      style={{
-                                        padding: '4px 8px',
-                                        borderRadius: '4px',
-                                        border: isSelected
-                                          ? '1px solid #facc15'
-                                          : '1px solid #475569',
-                                        background: isSelected
-                                          ? 'rgba(250, 204, 21, 0.2)'
-                                          : '#334155',
-                                        color: isSelected
-                                          ? '#facc15'
-                                          : '#cbd5e1',
-                                        cursor: 'pointer',
-                                        fontSize: '0.8rem',
-                                        userSelect: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        transition: 'all 0.15s ease',
-                                      }}
-                                    >
-                                      <span>{skillDef.icon}</span>
-                                      <span>{skillDef.name}</span>
-                                    </div>
-                                  );
-                                })}
+                                <div
+                                  style={{
+                                    fontSize: '0.75rem',
+                                    color: '#94a3b8',
+                                    fontWeight: 'bold',
+                                  }}
+                                >
+                                  {group.name}
+                                </div>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: '6px',
+                                  }}
+                                >
+                                  {group.validSkills.map((sk) => {
+                                    const skillDef = SKILLS[sk] || {
+                                      name: sk,
+                                      icon: '',
+                                    };
+                                    const isSelected = (
+                                      tempFilters.skills || []
+                                    ).includes(sk);
+                                    const isExcluded = (
+                                      tempFilters.excludeSkills || []
+                                    ).includes(sk);
+                                    return (
+                                      <div
+                                        key={sk}
+                                        onClick={() =>
+                                          toggleTempSkillFilter(sk)
+                                        }
+                                        style={{
+                                          padding: '4px 8px',
+                                          borderRadius: '4px',
+                                          border: isSelected
+                                            ? '1px solid #facc15'
+                                            : isExcluded
+                                              ? '1px solid #ef4444'
+                                              : '1px solid #475569',
+                                          background: isSelected
+                                            ? 'rgba(250, 204, 21, 0.2)'
+                                            : isExcluded
+                                              ? 'rgba(239, 68, 68, 0.2)'
+                                              : '#334155',
+                                          color: isSelected
+                                            ? '#facc15'
+                                            : isExcluded
+                                              ? '#ef4444'
+                                              : '#cbd5e1',
+                                          textDecoration: isExcluded
+                                            ? 'line-through'
+                                            : 'none',
+                                          cursor: 'pointer',
+                                          fontSize: '0.8rem',
+                                          userSelect: 'none',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          transition: 'all 0.15s ease',
+                                        }}
+                                      >
+                                        <span>{skillDef.icon}</span>
+                                        <span>{skillDef.name}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* 固定フッターボタン */}
             <div
               style={{
                 display: 'flex',
                 gap: '15px',
                 justifyContent: 'center',
-                marginTop: '10px',
+                flexShrink: 0,
+                paddingTop: '5px',
               }}
             >
               <button
@@ -1465,6 +1612,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                     rarity: [],
                     power: [],
                     skills: [],
+                    excludeSkills: [],
                     name: '',
                   });
                 }}
@@ -1504,6 +1652,155 @@ export default function DeckEditorScreen({ switchScreen }) {
                   playSound?.(SOUNDS?.seClick);
                   setFilters({ ...tempFilters });
                   setIsFilterModalOpen(false);
+                }}
+              >
+                適用
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ソートダイアログ */}
+      {isSortModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            zIndex: 9999,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onClick={() => setIsSortModalOpen(false)}
+        >
+          <div
+            style={{
+              background: '#1e293b',
+              border: '2px solid #facc15',
+              borderRadius: '12px',
+              padding: '20px',
+              width: '85%',
+              maxWidth: '320px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                margin: 0,
+                color: '#facc15',
+                textAlign: 'center',
+                fontSize: '1.1rem',
+                marginBottom: '5px',
+              }}
+            >
+              並び替え（ソート）
+            </h3>
+
+            {[
+              { id: 'rarity_asc', label: 'レアリティ昇順 （デフォルト）' },
+              { id: 'rarity_desc', label: 'レアリティ降順' },
+              { id: 'power_asc', label: 'パワー昇順' },
+              { id: 'power_desc', label: 'パワー降順' },
+            ].map((opt) => {
+              const isSelected = tempSortMode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  className="btn"
+                  style={{
+                    padding: '10px 14px',
+                    fontSize: '0.9rem',
+                    textAlign: 'left',
+                    background: isSelected
+                      ? 'rgba(250, 204, 21, 0.2)'
+                      : '#334155',
+                    border: isSelected
+                      ? '1.5px solid #facc15'
+                      : '1px solid #475569',
+                    color: isSelected ? '#facc15' : '#cbd5e1',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    playSound?.(SOUNDS?.seClick);
+                    setTempSortMode(opt.id);
+                  }}
+                >
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                marginTop: '10px',
+              }}
+            >
+              <button
+                className="btn"
+                style={{
+                  background: '#7f1d1d',
+                  margin: 0,
+                  padding: '8px',
+                  flex: 1,
+                  minWidth: '70px',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setTempSortMode('rarity_asc');
+                }}
+              >
+                リセット
+              </button>
+              <button
+                className="btn"
+                style={{
+                  background: '#64748b',
+                  margin: 0,
+                  padding: '8px',
+                  flex: 1,
+                  minWidth: '70px',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setIsSortModalOpen(false);
+                }}
+              >
+                閉じる
+              </button>
+              <button
+                className="btn"
+                style={{
+                  background: '#10b981',
+                  margin: 0,
+                  padding: '8px',
+                  flex: 1,
+                  minWidth: '70px',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setSortMode(tempSortMode);
+                  setIsSortModalOpen(false);
                 }}
               >
                 適用
