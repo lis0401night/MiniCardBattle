@@ -367,6 +367,19 @@
               ></span>
             </div>
           </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-500">並び替え:</span>
+            <select
+              id="card-sort-select"
+              class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+              onchange="window.sortCardList(this.value)"
+            >
+              <option value="defense">🛡️ 防衛デッキ使用順</option>
+              <option value="attack">⚔️ 攻撃デッキ使用順</option>
+              <option value="rarity">⭐ レアリティ順</option>
+              <option value="id">📇 ID順</option>
+            </select>
+          </div>
         </div>
         <div class="panel-scroll scroll-custom p-4 md:p-6" id="cards-grid">
           <!-- JS Injection -->
@@ -497,12 +510,17 @@
       let filteredPlayers = [];
       let selectedPlayerId = null;
       let currentSort = { key: 'defense', dir: 'desc' };
+      let currentCardSort = 'defense';
       let currentTab = 'players';
 
       // グローバル公開
       window.sortBy = sortBy;
       window.selectPlayer = selectPlayer;
       window.switchTab = switchTab;
+      window.sortCardList = function (sortKey) {
+        currentCardSort = sortKey;
+        renderCardList();
+      };
 
       // =============================
       // 初期化
@@ -976,24 +994,53 @@
           (c) => !String(c.id).startsWith('token_')
         );
 
-        // 使用回数を集計
-        const usageCounts = {};
+        // 使用回数を集計 (防衛デッキ & 攻撃デッキ)
+        const defenseUsageCounts = {};
+        const attackUsageCounts = {};
+
         allPlayers.forEach((p) => {
+          // 1. 防衛デッキ使用数の集計
           if (p.has_defense_deck && Array.isArray(p.deck)) {
             p.deck.forEach((entry) => {
               const cId = resolveCardId(entry);
-              usageCounts[cId] = (usageCounts[cId] || 0) + 1;
+              defenseUsageCounts[cId] = (defenseUsageCounts[cId] || 0) + 1;
+            });
+          }
+
+          // 2. 攻撃デッキ使用数の集計（防衛履歴 defense_history を全て重複排除せず集計）
+          if (Array.isArray(p.defense_history)) {
+            p.defense_history.forEach((rec) => {
+              if (Array.isArray(rec.attackerDeck)) {
+                rec.attackerDeck.forEach((entry) => {
+                  const cId = resolveCardId(entry);
+                  attackUsageCounts[cId] = (attackUsageCounts[cId] || 0) + 1;
+                });
+              }
             });
           }
         });
 
-        // ソート: 使用数(降順) -> レアリティ(降順) -> ID
+        // ソート処理
         cards.sort((a, b) => {
-          const countA = usageCounts[a.id] || 0;
-          const countB = usageCounts[b.id] || 0;
-          if (countA !== countB) return countB - countA;
-          if (a.rarity !== b.rarity) return b.rarity - a.rarity;
-          return String(a.id).localeCompare(String(b.id));
+          const defA = defenseUsageCounts[a.id] || 0;
+          const defB = defenseUsageCounts[b.id] || 0;
+          const atkA = attackUsageCounts[a.id] || 0;
+          const atkB = attackUsageCounts[b.id] || 0;
+
+          if (currentCardSort === 'attack') {
+            if (atkA !== atkB) return atkB - atkA;
+            if (defA !== defB) return defB - defA;
+          } else if (currentCardSort === 'defense') {
+            if (defA !== defB) return defB - defA;
+            if (atkA !== atkB) return atkB - atkA;
+          } else if (currentCardSort === 'rarity') {
+            if (a.rarity !== b.rarity) return b.rarity - a.rarity;
+          }
+
+          // タイブレイカー: CARD_MASTER定義インデックス順
+          const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
+          const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
+          return idxA - idxB;
         });
 
         document.getElementById('cards-count').innerText =
@@ -1010,10 +1057,11 @@
 
         const gridHtml = cards
           .map((c) => {
-            const count = usageCounts[c.id] || 0;
+            const defCount = defenseUsageCounts[c.id] || 0;
+            const atkCount = attackUsageCounts[c.id] || 0;
             const rarityColor = RARITY_COLORS[c.rarity] || 'slate';
             const rarityLabel = RARITY_LABELS[c.rarity] || '?';
-            const isZero = count === 0;
+            const isZero = defCount === 0 && atkCount === 0;
 
             const skillsHtml = (c.skills || [])
               .map((sk) => {
@@ -1034,8 +1082,9 @@
                   <div class="mt-1">
                     <span class="text-[10px] font-black text-${rarityColor}-600 bg-${rarityColor}-50 px-1.5 py-0.5 rounded border border-${rarityColor}-200">${rarityLabel}</span>
                   </div>
-                  <div class="mt-auto pt-1 text-[11px] text-slate-600 font-bold">
-                    防衛デッキ使用: ${count}枚
+                  <div class="mt-auto pt-1 text-[11px] font-bold space-y-0.5">
+                    <div class="text-indigo-600">⚔️ 攻撃デッキ使用: ${atkCount}枚</div>
+                    <div class="text-amber-600">🛡️ 防衛デッキ使用: ${defCount}枚</div>
                   </div>
                 </div>
               </div>

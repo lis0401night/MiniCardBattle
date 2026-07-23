@@ -741,7 +741,6 @@ export function initBattleState() {
       const savedPlayerProps = {
         name: GameState.playerConfig.name,
         hp: GameState.playerConfig.hp,
-        leaderSkill: GameState.playerConfig.leaderSkill,
         playmat: GameState.playerConfig.playmat,
       };
 
@@ -761,7 +760,6 @@ export function initBattleState() {
       const savedEnemyProps = {
         name: GameState.enemyConfig.name,
         hp: GameState.enemyConfig.hp,
-        leaderSkill: GameState.enemyConfig.leaderSkill,
         isShadow: GameState.enemyConfig.isShadow,
         playmat: GameState.enemyConfig.playmat,
         playerName: GameState.enemyConfig.playerName,
@@ -1008,7 +1006,9 @@ export function initBattleState() {
             power: template.power,
             basePower: template.power,
             currentPower: template.power,
-            skills: template.skills || [],
+            skills: Array.isArray(template.skills)
+              ? template.skills.map((s) => ({ ...s }))
+              : [],
             owner: 'red',
             uid: getOrCreateUUID(null),
             isToken: true, // 破壊された場合に墓地には送られないトークン扱い
@@ -3353,7 +3353,7 @@ export async function handleMoveSkills(owner) {
               const masterData = CARD_MASTER.find((m) => m.id === combineId);
               if (masterData) {
                 let unionCard = JSON.parse(JSON.stringify(masterData));
-                unionCard.uid = getOrCreateUUID(null);
+                unionCard.uid = `union_${existingCard.uid}_${c.uid}`;
                 unionCard.owner = owner;
                 unionCard.baseId = unionCard.id;
                 unionCard.basePower = unionCard.power;

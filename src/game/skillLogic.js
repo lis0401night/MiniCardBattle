@@ -2409,12 +2409,7 @@ export async function resolveActiveSkillEffect(
           const existingCard = board[targetLane];
 
           if (existingCard && hasSkill(existingCard, 'startup')) {
-            handleStartupDispelled(
-              oppOwner,
-              existingCard,
-              targetLane,
-              selectedCard
-            );
+            handleStartupDispelled(o, existingCard, targetLane, selectedCard);
           } else if (canEquipCard(selectedCard, existingCard)) {
             // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
             const targetCard = existingCard;

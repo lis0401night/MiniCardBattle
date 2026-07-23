@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { showNextDialogue, skipStoryDialogue } from '../services/uiDialogue.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
 export default function DialogueScreen() {
   const [dialogueData, setDialogueData] = useState(
@@ -81,16 +82,10 @@ export default function DialogueScreen() {
     // 高難易度モード（通常・イベント）用の背景
   } else if (
     GameState.gameMode === 'high_difficulty' ||
-    (GameState.gameMode &&
-      GameState.gameMode.startsWith('event_') &&
-      GameState.gameMode.endsWith('_high'))
+    checkIsHighDiffMode(GameState.gameMode)
   ) {
     bgName = 'background_highdifficulty.webp';
-  } else if (
-    GameState.gameMode &&
-    GameState.gameMode.startsWith('event_') &&
-    GameState.gameMode.endsWith('_fortune')
-  ) {
+  } else if (checkIsFortuneMode(GameState.gameMode)) {
     bgName = 'background_fortune01.webp';
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.webp';

@@ -10,7 +10,12 @@ import {
   getSkinImage,
   getIconFramePath,
 } from '../utils/constants/characters.js';
-import { playSound, stopAllBGM } from '../utils/gameUtils.js';
+import {
+  checkIsFortuneMode,
+  checkIsHighDiffMode,
+  playSound,
+  stopAllBGM,
+} from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import {
   MAX_DECK_SLOTS,
@@ -38,9 +43,9 @@ export default function DeckListScreen({ switchScreen }) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_challenge.webp')`;
     } else if (mode === 'online_deck_edit') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_online.webp')`;
-    } else if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
+    } else if (checkIsHighDiffMode(mode)) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_highdifficulty.webp')`;
-    } else if (mode?.startsWith('event_') && mode?.endsWith('_fortune')) {
+    } else if (checkIsFortuneMode(mode)) {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_fortune01.webp')}')`;
     } else if (mode === 'story') {
       return `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_story01.webp')}')`;
@@ -307,8 +312,7 @@ export default function DeckListScreen({ switchScreen }) {
       }
 
       // Auto pagination
-      const containerEl =
-        document.getElementById('app-container') || document.body;
+      const containerEl = e.currentTarget || document.body;
       const containerRect = containerEl.getBoundingClientRect();
       const relativeX = clientX - containerRect.left;
       const containerWidth = containerRect.width;
