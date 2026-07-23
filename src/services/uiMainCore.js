@@ -1168,7 +1168,8 @@ export function confirmCharSelect() {
           console.error('Save data parse error', e);
         }
       }
-      initStoryMode(GameState.pendingCharId);
+      GameState.appState = 'select_difficulty';
+      switchScreen('screen-difficulty');
       return;
     } else if (GameState.gameMode === 'event_satan') {
       // 高難易度サタン戦（旧互換パス：通常はevent_satan_highで来る）

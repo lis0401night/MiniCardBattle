@@ -48,7 +48,7 @@ const getFilteredCharacters = () => {
       const unlockedChars = safeParseArray(
         'mini_card_battle_unlocked_characters'
       );
-      return unlockedChars.includes('automata');
+      if (!unlockedChars.includes('automata')) return false;
     }
     if (BOSS_CHARACTER_IDS.includes(c.id)) {
       if (!isEnemySelect) return false;

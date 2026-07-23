@@ -17,10 +17,11 @@ import { performFadeTransition } from '../services/uiMainCore.js';
 export function initStoryMode(charId) {
   GameState.playerConfig = CHARACTERS[charId];
 
-  // 他のキャラクターのIDをランダムに並び替え（プレイヤーと中ボス・大ボスは除く）
+  // 他のキャラクターのIDをランダムに並び替え（プレイヤー、マキナ、中ボス・大ボスは除く）
   const otherIds = Object.keys(CHARACTERS).filter(
     (id) =>
       id !== charId &&
+      id !== 'automata' &&
       id !== 'satan' &&
       id !== 'void' &&
       id !== 'succubus' &&

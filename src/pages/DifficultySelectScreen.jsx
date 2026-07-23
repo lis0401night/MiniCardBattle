@@ -1,7 +1,10 @@
 import { useEffect, useReducer } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
-import { getScreenBackgroundStyle, MAX_CARD_COPIES } from '../utils/constants/config.js';
+import {
+  getScreenBackgroundStyle,
+  MAX_CARD_COPIES,
+} from '../utils/constants/config.js';
 import {
   confirmDifficulty,
   goBackFromDifficulty,
