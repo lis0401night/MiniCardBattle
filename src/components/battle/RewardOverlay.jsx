@@ -3,7 +3,7 @@ import { saveDeck } from '../../services/deck.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { playSound } from '../../utils/gameUtils.js';
+import { checkIsHighDiffMode, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
@@ -146,7 +146,7 @@ export default function RewardOverlay() {
 
   // 難易度に応じた発光色を判定
   const getGlowColorClass = () => {
-    if (GameState.gameMode?.endsWith('_high')) return 'glow-rainbow';
+    if (checkIsHighDiffMode(GameState.gameMode)) return 'glow-rainbow';
 
     const level = GameState.aiLevel || 1;
     if (level === 1) return 'glow-green';

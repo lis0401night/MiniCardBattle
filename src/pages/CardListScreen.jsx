@@ -1,17 +1,17 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { loadDeck, saveDeck } from '../services/deck.js';
-import { GameState } from '../state/gameState.js';
 import {
   openCardPreview,
   setRenderCardListHook,
 } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
-import { SKILLS, SKILL_CATEGORIES } from '../utils/constants/skills.js';
 import { MAX_CARD_COPIES } from '../utils/constants/config.js';
+import { SKILLS, SKILL_CATEGORIES } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
   isTransitioning,
@@ -39,6 +39,7 @@ export default function CardListScreen() {
   const modalContentRef = useRef(null);
   const skillAccordionRef = useRef(null);
   const [filters, setFilters] = useState({
+    ownership: 'owned_only',
     rarity: [],
     power: [],
     skills: [],
@@ -46,6 +47,7 @@ export default function CardListScreen() {
     name: '',
   });
   const [tempFilters, setTempFilters] = useState({
+    ownership: 'owned_only',
     rarity: [],
     power: [],
     skills: [],
@@ -215,6 +217,12 @@ export default function CardListScreen() {
 
   // フィルター適用後のカードリスト
   const filteredMasterCards = masterCards.filter((c) => {
+    const ownership = filters.ownership || 'owned_only';
+    const ownedCount = inventory[c.id] || 0;
+
+    if (ownership === 'owned_only' && ownedCount <= 0) return false;
+    if (ownership === 'three_or_less' && ownedCount > 3) return false;
+
     if (
       filters.name &&
       !c.name.toLowerCase().includes(filters.name.toLowerCase())
@@ -254,10 +262,8 @@ export default function CardListScreen() {
 
     if (sortMode === 'rarity_asc') {
       if (rarityA !== rarityB) return rarityA - rarityB;
-      if (powerA !== powerB) return powerA - powerB;
     } else if (sortMode === 'rarity_desc') {
       if (rarityA !== rarityB) return rarityB - rarityA;
-      if (powerA !== powerB) return powerB - powerA;
     } else if (sortMode === 'power_asc') {
       if (powerA !== powerB) return powerA - powerB;
       if (rarityA !== rarityB) return rarityA - rarityB;
@@ -265,7 +271,10 @@ export default function CardListScreen() {
       if (powerA !== powerB) return powerB - powerA;
       if (rarityA !== rarityB) return rarityA - rarityB;
     }
-    return 0;
+    // 同レアリティ・同パワーの場合、CARD_MASTERの元のID定義順で一貫性を保つ
+    const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
+    const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
+    return idxA - idxB;
   });
 
   return (
@@ -309,6 +318,7 @@ export default function CardListScreen() {
             margin: 0,
             fontSize: '0.9rem',
             background:
+              (filters.ownership && filters.ownership !== 'owned_only') ||
               filters.rarity.length > 0 ||
               filters.power.length > 0 ||
               (filters.skills && filters.skills.length > 0) ||
@@ -317,6 +327,7 @@ export default function CardListScreen() {
                 ? 'rgba(250, 204, 21, 0.3)'
                 : '#334155',
             border:
+              (filters.ownership && filters.ownership !== 'owned_only') ||
               filters.rarity.length > 0 ||
               filters.power.length > 0 ||
               (filters.skills && filters.skills.length > 0) ||
@@ -491,8 +502,8 @@ export default function CardListScreen() {
               padding: '15px 20px',
               width: '90%',
               maxWidth: '400px',
-              height: '82vh',
-              maxHeight: '82vh',
+              height: '82dvh',
+              maxHeight: '82dvh',
               boxShadow: '0 10px 25px rgba(0,0,0,0.8)',
               display: 'flex',
               flexDirection: 'column',
@@ -558,6 +569,55 @@ export default function CardListScreen() {
                     outline: 'none',
                   }}
                 />
+              </div>
+
+              {/* 所持 */}
+              <div>
+                <div
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: '0.9rem',
+                    marginBottom: '8px',
+                  }}
+                >
+                  所持
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {[
+                    { id: 'owned_only', label: '所持のみ' },
+                    { id: 'include_unowned', label: '未所持含む' },
+                    { id: 'three_or_less', label: '3枚以下のみ' },
+                  ].map((opt) => (
+                    <div
+                      key={opt.id}
+                      onClick={() => {
+                        playSound?.(SOUNDS?.seClick);
+                        setTempFilters({ ...tempFilters, ownership: opt.id });
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border:
+                          (tempFilters.ownership || 'owned_only') === opt.id
+                            ? '2px solid #facc15'
+                            : '2px solid #475569',
+                        background:
+                          (tempFilters.ownership || 'owned_only') === opt.id
+                            ? 'rgba(250, 204, 21, 0.2)'
+                            : '#334155',
+                        color:
+                          (tempFilters.ownership || 'owned_only') === opt.id
+                            ? '#facc15'
+                            : '#94a3b8',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* レアリティ */}
@@ -858,6 +918,7 @@ export default function CardListScreen() {
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
                   setTempFilters({
+                    ownership: 'owned_only',
                     rarity: [],
                     power: [],
                     skills: [],
@@ -955,7 +1016,7 @@ export default function CardListScreen() {
             </h3>
 
             {[
-              { id: 'rarity_asc', label: 'レアリティ昇順 （デフォルト）' },
+              { id: 'rarity_asc', label: 'レアリティ昇順' },
               { id: 'rarity_desc', label: 'レアリティ降順' },
               { id: 'power_asc', label: 'パワー昇順' },
               { id: 'power_desc', label: 'パワー降順' },

@@ -559,6 +559,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setShowStageAcquisitionModalHook(null);
       setCloseEnemyDeckModalHook(null);
 
+      delete window.showPlayerProfileModal;
       delete window.showEnemyDeckModal;
       delete window.showCharDetailModal;
       delete window.closeCharDetailModal;
@@ -3530,10 +3531,17 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 playSound?.(SOUNDS?.seClick);
+                                const nextPremium = !isCardPremium;
                                 setFavCardPremiumMap((prev) => ({
                                   ...prev,
-                                  [card.id]: !isCardPremium,
+                                  [card.id]: nextPremium,
                                 }));
+                                if (favoriteCardState?.cardId === card.id) {
+                                  setFavoriteCardState({
+                                    cardId: card.id,
+                                    isPremium: nextPremium,
+                                  });
+                                }
                               }}
                               style={{
                                 position: 'absolute',

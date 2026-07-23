@@ -221,12 +221,13 @@ export default function DifficultySelectScreen() {
                 </div>
               ))}
             <div className="difficulty-button-row" style={{ margin: 0 }}>
-              {isHighComplete && <CompleteBadge />}
               <MenuButton
                 label={isFortuneMode ? '特級' : '超級'}
                 variant={isFortuneMode ? 'orange' : 'purple'}
                 onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
-              />
+              >
+                {isHighComplete && <CompleteBadge />}
+              </MenuButton>
               <button
                 className="btn-check-deck"
                 style={{ display: 'flex' }}
