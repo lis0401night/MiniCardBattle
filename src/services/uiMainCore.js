@@ -577,8 +577,9 @@ export function goBackFromDifficulty() {
   if (GameState.gameMode === 'defense_register') {
     switchScreen('screen-defense-menu');
   } else if (GameState.gameMode === 'story') {
-    GameState.appState = 'select_deck';
-    switchScreen('screen-deck-list');
+    GameState.appState = 'select_player';
+    initSelectScreen(false);
+    switchScreen('screen-select');
   } else if (
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_high')
