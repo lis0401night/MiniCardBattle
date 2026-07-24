@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import MissionListModal from '../components/battle/MissionListModal.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
@@ -12,6 +12,7 @@ import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
+  DECK_EDIT_GRID_DENSITY_KEY,
   DECK_SIZE,
   MAX_CARD_COPIES,
   appendVersionQuery,
@@ -27,6 +28,34 @@ import {
   togglePremiumCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+
+// カード表示密度：現在の3列表示を最大サイズ(0)とし、段階的に列数を増やして縮小する
+const GRID_DENSITY_COLS = [3, 4, 5];
+const GRID_DENSITY_GAPS = [15, 10, 7];
+
+// 所持カードエリア（可変シート）の高さ範囲。最大まで引き上げてもデッキエリアが少し覗ける値にする
+const SHEET_MIN_PERCENT = 20;
+const SHEET_MAX_PERCENT = 88;
+const SHEET_DEFAULT_PERCENT = 50;
+
+function GridDensityIcon({ level }) {
+  const squareSize = [7, 5.5, 4][level] ?? 7;
+  const gapSize = [3, 2.5, 2][level] ?? 3;
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(2, ${squareSize}px)`,
+        gridTemplateRows: `repeat(2, ${squareSize}px)`,
+        gap: `${gapSize}px`,
+      }}
+    >
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} style={{ background: '#facc15', borderRadius: '1px' }} />
+      ))}
+    </div>
+  );
+}
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -102,6 +131,151 @@ export default function DeckEditorScreen({ switchScreen }) {
     name: '',
   });
   const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
+
+  const [gridDensity, setGridDensity] = useState(() => {
+    const saved = parseInt(
+      localStorage.getItem(DECK_EDIT_GRID_DENSITY_KEY),
+      10
+    );
+    return Number.isInteger(saved) &&
+      saved >= 0 &&
+      saved < GRID_DENSITY_COLS.length
+      ? saved
+      : 0;
+  });
+
+  const cycleGridDensity = () => {
+    playSound?.(SOUNDS?.seClick);
+    setGridDensity((prev) => {
+      const next = (prev + 1) % GRID_DENSITY_COLS.length;
+      localStorage.setItem(DECK_EDIT_GRID_DENSITY_KEY, String(next));
+      return next;
+    });
+  };
+
+  // --- 所持カードエリア（可変シート）のドラッグ操作 ---
+  const stackContainerRef = useRef(null);
+  const sheetElRef = useRef(null);
+  const sheetDragRef = useRef(null);
+  const [sheetPercent, setSheetPercent] = useState(SHEET_DEFAULT_PERCENT);
+
+  // ドラッグ中に毎回setState（=カード一覧全体の再描画）を挟むと
+  // カード枚数が多い時にかくつくため、ドラッグ中はReactを介さず
+  // rAFで1フレームにつき最大1回、シート要素のstyleへ直接反映する。
+  // Reactのstateへは、ドラッグ終了時に一度だけ反映して同期する。
+  const sheetRafIdRef = useRef(null);
+  const pendingSheetPercentRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (sheetRafIdRef.current != null) {
+        cancelAnimationFrame(sheetRafIdRef.current);
+      }
+    };
+  }, []);
+
+  const handleSheetDragStart = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const containerEl = stackContainerRef.current;
+    if (!containerEl) return;
+    sheetDragRef.current = {
+      startY: e.clientY,
+      startPercent: sheetPercent,
+      containerHeight: containerEl.getBoundingClientRect().height,
+    };
+    pendingSheetPercentRef.current = sheetPercent;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const handleSheetDragMove = (e) => {
+    const drag = sheetDragRef.current;
+    if (!drag || !drag.containerHeight) return;
+    const deltaY = e.clientY - drag.startY;
+    const deltaPercent = (deltaY / drag.containerHeight) * 100;
+    const next = Math.min(
+      SHEET_MAX_PERCENT,
+      Math.max(SHEET_MIN_PERCENT, drag.startPercent - deltaPercent)
+    );
+    pendingSheetPercentRef.current = next;
+    if (sheetRafIdRef.current == null) {
+      sheetRafIdRef.current = requestAnimationFrame(() => {
+        sheetRafIdRef.current = null;
+        if (sheetElRef.current && pendingSheetPercentRef.current != null) {
+          sheetElRef.current.style.height = `${pendingSheetPercentRef.current}%`;
+        }
+      });
+    }
+  };
+
+  const handleSheetDragEnd = (e) => {
+    sheetDragRef.current = null;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    // ドラッグ中は直接DOMを書き換えていたので、終えたタイミングで
+    // 一度だけReactのstateに反映して以降の再描画と同期させる
+    if (pendingSheetPercentRef.current != null) {
+      setSheetPercent(pendingSheetPercentRef.current);
+    }
+  };
+
+  // 所持カードシートが最大まで隠す分だけデッキリストの下に余白を作り、
+  // 最下段のカードも一番上までスクロールして見られるようにする。
+  // シートの「現在の」高さではなく「最大」高さで固定することで、
+  // ドラッグ操作中に余白サイズ（＝スクロール可能範囲）が変化してしまい
+  // ブラウザがスクロール位置を自動調整してしまう問題を避ける。
+  const [stackHeightPx, setStackHeightPx] = useState(0);
+
+  useEffect(() => {
+    const el = stackContainerRef.current;
+    if (!el) return undefined;
+    const updateHeight = () =>
+      setStackHeightPx(el.getBoundingClientRect().height);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const sheetMaxHeightPx = (stackHeightPx * SHEET_MAX_PERCENT) / 100;
+
+  // デッキリスト自身の表示領域サイズを計測し、カード1行分の高さを概算する。
+  // 余白は「シートを最大まで開いても隠れない量」と「最下段カードの上端が
+  // ビューポート上端を超えて見切れない量」の小さい方に制限する。
+  const deckListContainerRef = useRef(null);
+  const [deckListSize, setDeckListSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = deckListContainerRef.current;
+    if (!el) return undefined;
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      setDeckListSize({ width: rect.width, height: rect.height });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const deckListCols = GRID_DENSITY_COLS[gridDensity];
+  const deckListGap = GRID_DENSITY_GAPS[gridDensity];
+  const deckListInnerWidth = Math.max(0, deckListSize.width - 10); // 左右padding 5pxずつ分
+  const deckCardWidthPx =
+    deckListCols > 0
+      ? Math.max(
+          0,
+          (deckListInnerWidth - deckListGap * (deckListCols - 1)) / deckListCols
+        )
+      : 0;
+  const deckRowHeightPx = deckCardWidthPx * 1.5 + deckListGap; // .card は padding-bottom:150%で縦横比固定
+
+  const deckListExtraPaddingMax = Math.max(
+    0,
+    deckListSize.height - deckRowHeightPx - 10 // リスト上部のpadding 10px分も差し引く
+  );
+  const deckListExtraPaddingPx = Math.min(
+    sheetMaxHeightPx,
+    deckListExtraPaddingMax
+  );
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
   // battle_dungeon中はデッキ自体にleaderIdが保存されないため、
@@ -366,17 +540,26 @@ export default function DeckEditorScreen({ switchScreen }) {
   };
 
   // デッキ内のカードをIDでグループ化し、常にCARD_MASTERの定義ID順で整列
-  const rawGroupedDeck = {};
-  deckSelection.forEach((card) => {
-    if (!rawGroupedDeck[card.id]) rawGroupedDeck[card.id] = { card, count: 0 };
-    rawGroupedDeck[card.id].count++;
-  });
+  // （シートのドラッグ操作など、deckSelectionと無関係な再レンダリングでは
+  //   再計算しないようuseMemoで固定する）
+  const rawGroupedDeck = useMemo(() => {
+    const grouped = {};
+    deckSelection.forEach((card) => {
+      if (!grouped[card.id]) grouped[card.id] = { card, count: 0 };
+      grouped[card.id].count++;
+    });
+    return grouped;
+  }, [deckSelection]);
 
-  const sortedDeckKeys = Object.keys(rawGroupedDeck).sort((a, b) => {
-    const idxA = CARD_MASTER.findIndex((c) => c.id === a);
-    const idxB = CARD_MASTER.findIndex((c) => c.id === b);
-    return idxA - idxB;
-  });
+  const sortedDeckKeys = useMemo(
+    () =>
+      Object.keys(rawGroupedDeck).sort((a, b) => {
+        const idxA = CARD_MASTER.findIndex((c) => c.id === a);
+        const idxB = CARD_MASTER.findIndex((c) => c.id === b);
+        return idxA - idxB;
+      }),
+    [rawGroupedDeck]
+  );
 
   const getBackgroundImage = () => {
     const mode = effectiveMode;
@@ -400,101 +583,129 @@ export default function DeckEditorScreen({ switchScreen }) {
   };
 
   // idベースで重複排除を行う
-  const allCardsForFilters = [];
-  const seenIds = new Set();
-  [...masterCards, ...(deckSelection || [])].forEach((c) => {
-    if (c && c.id && !seenIds.has(c.id)) {
-      seenIds.add(c.id);
-      allCardsForFilters.push(c);
-    }
-  });
+  // （フィルター・ソート系の計算は所持カードが多いと重くなるため、
+  //   関係する依存値が変わった時だけ再計算されるようuseMemoで囲う）
+  const allCardsForFilters = useMemo(() => {
+    const list = [];
+    const seenIds = new Set();
+    [...masterCards, ...(deckSelection || [])].forEach((c) => {
+      if (c && c.id && !seenIds.has(c.id)) {
+        seenIds.add(c.id);
+        list.push(c);
+      }
+    });
+    return list;
+  }, [masterCards, deckSelection]);
 
-  const availableRarities = Array.from(
-    new Set(
-      allCardsForFilters.map((c) => c.rarity).filter((x) => x !== undefined)
-    )
-  ).sort();
-  const availablePowers = Array.from(
-    new Set(
-      allCardsForFilters.map((c) => c.power).filter((x) => x !== undefined)
-    )
-  ).sort((a, b) => a - b);
-  const availableSkills = Array.from(
-    new Set(
-      allCardsForFilters.flatMap((c) => {
-        let s = [];
-        if (Array.isArray(c.skills)) c.skills.forEach((sk) => s.push(sk.id));
-        if (Array.isArray(c.choices)) c.choices.forEach((ch) => s.push(ch.id));
+  const availableRarities = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allCardsForFilters.map((c) => c.rarity).filter((x) => x !== undefined)
+        )
+      ).sort(),
+    [allCardsForFilters]
+  );
+  const availablePowers = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allCardsForFilters.map((c) => c.power).filter((x) => x !== undefined)
+        )
+      ).sort((a, b) => a - b),
+    [allCardsForFilters]
+  );
+  const availableSkills = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allCardsForFilters.flatMap((c) => {
+            let s = [];
+            if (Array.isArray(c.skills))
+              c.skills.forEach((sk) => s.push(sk.id));
+            if (Array.isArray(c.choices))
+              c.choices.forEach((ch) => s.push(ch.id));
+            if (Array.isArray(c.choices2))
+              c.choices2.forEach((ch) => s.push(ch.id));
+            return s;
+          })
+        )
+      )
+        .filter(Boolean)
+        .sort(),
+    [allCardsForFilters]
+  );
+
+  const filteredMasterCards = useMemo(
+    () =>
+      masterCards.filter((c) => {
+        const ownership = filters.ownership || 'owned_only';
+        const ownedCount = inventory[c.id] || 0;
+
+        if (ownership === 'owned_only' && ownedCount <= 0) return false;
+        if (ownership === 'three_or_less' && ownedCount > 3) return false;
+
+        if (
+          filters.name &&
+          !c.name.toLowerCase().includes(filters.name.toLowerCase())
+        )
+          return false;
+        if (filters.rarity.length > 0 && !filters.rarity.includes(c.rarity))
+          return false;
+        if (filters.power.length > 0 && !filters.power.includes(c.power))
+          return false;
+
+        let cardSkills = [];
+        if (Array.isArray(c.skills))
+          c.skills.forEach((sk) => cardSkills.push(sk.id));
+        if (Array.isArray(c.choices))
+          c.choices.forEach((ch) => cardSkills.push(ch.id));
         if (Array.isArray(c.choices2))
-          c.choices2.forEach((ch) => s.push(ch.id));
-        return s;
-      })
-    )
-  )
-    .filter(Boolean)
-    .sort();
+          c.choices2.forEach((ch) => cardSkills.push(ch.id));
 
-  const filteredMasterCards = masterCards.filter((c) => {
-    const ownership = filters.ownership || 'owned_only';
-    const ownedCount = inventory[c.id] || 0;
+        if (filters.skills && filters.skills.length > 0) {
+          if (!filters.skills.some((sk) => cardSkills.includes(sk)))
+            return false;
+        }
 
-    if (ownership === 'owned_only' && ownedCount <= 0) return false;
-    if (ownership === 'three_or_less' && ownedCount > 3) return false;
+        if (filters.excludeSkills && filters.excludeSkills.length > 0) {
+          if (filters.excludeSkills.some((sk) => cardSkills.includes(sk)))
+            return false;
+        }
 
-    if (
-      filters.name &&
-      !c.name.toLowerCase().includes(filters.name.toLowerCase())
-    )
-      return false;
-    if (filters.rarity.length > 0 && !filters.rarity.includes(c.rarity))
-      return false;
-    if (filters.power.length > 0 && !filters.power.includes(c.power))
-      return false;
-
-    let cardSkills = [];
-    if (Array.isArray(c.skills))
-      c.skills.forEach((sk) => cardSkills.push(sk.id));
-    if (Array.isArray(c.choices))
-      c.choices.forEach((ch) => cardSkills.push(ch.id));
-    if (Array.isArray(c.choices2))
-      c.choices2.forEach((ch) => cardSkills.push(ch.id));
-
-    if (filters.skills && filters.skills.length > 0) {
-      if (!filters.skills.some((sk) => cardSkills.includes(sk))) return false;
-    }
-
-    if (filters.excludeSkills && filters.excludeSkills.length > 0) {
-      if (filters.excludeSkills.some((sk) => cardSkills.includes(sk)))
-        return false;
-    }
-
-    return true;
-  });
+        return true;
+      }),
+    [masterCards, filters, inventory]
+  );
 
   // カードのソート処理
-  const sortedMasterCards = [...filteredMasterCards].sort((a, b) => {
-    const rarityA = a.rarity ?? 0;
-    const rarityB = b.rarity ?? 0;
-    const powerA = a.power ?? 0;
-    const powerB = b.power ?? 0;
+  const sortedMasterCards = useMemo(
+    () =>
+      [...filteredMasterCards].sort((a, b) => {
+        const rarityA = a.rarity ?? 0;
+        const rarityB = b.rarity ?? 0;
+        const powerA = a.power ?? 0;
+        const powerB = b.power ?? 0;
 
-    if (sortMode === 'rarity_asc') {
-      if (rarityA !== rarityB) return rarityA - rarityB;
-    } else if (sortMode === 'rarity_desc') {
-      if (rarityA !== rarityB) return rarityB - rarityA;
-    } else if (sortMode === 'power_asc') {
-      if (powerA !== powerB) return powerA - powerB;
-      if (rarityA !== rarityB) return rarityA - rarityB;
-    } else if (sortMode === 'power_desc') {
-      if (powerA !== powerB) return powerB - powerA;
-      if (rarityA !== rarityB) return rarityA - rarityB;
-    }
+        if (sortMode === 'rarity_asc') {
+          if (rarityA !== rarityB) return rarityA - rarityB;
+        } else if (sortMode === 'rarity_desc') {
+          if (rarityA !== rarityB) return rarityB - rarityA;
+        } else if (sortMode === 'power_asc') {
+          if (powerA !== powerB) return powerA - powerB;
+          if (rarityA !== rarityB) return rarityA - rarityB;
+        } else if (sortMode === 'power_desc') {
+          if (powerA !== powerB) return powerB - powerA;
+          if (rarityA !== rarityB) return rarityA - rarityB;
+        }
 
-    // 同レアリティ・同パワーの場合、CARD_MASTERの元のID定義順で一貫性を保つ
-    const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
-    const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
-    return idxA - idxB;
-  });
+        // 同レアリティ・同パワーの場合、CARD_MASTERの元のID定義順で一貫性を保つ
+        const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
+        const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
+        return idxA - idxB;
+      }),
+    [filteredMasterCards, sortMode]
+  );
 
   return (
     <div
@@ -771,401 +982,577 @@ export default function DeckEditorScreen({ switchScreen }) {
       </div>
 
       <div className="deck-edit-container">
-        {/* デッキ */}
         <div
-          className="deck-section"
+          ref={stackContainerRef}
           style={{
+            position: 'relative',
             flex: 1,
             minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
             overflow: 'hidden',
           }}
         >
+          {/* デッキ（背景レイヤー：常に全面表示） */}
           <div
-            className="deck-section-title"
+            className="deck-section"
             style={{
+              position: 'absolute',
+              inset: 0,
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingRight: '10px',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              // z-indexを明示して独自の重なり文脈を作る。
+              // これがないと内部のカードがホバー時にz-index:10へ上がった際、
+              // 所持カードシート（z-index:5）より上に突き抜けてしまう。
+              zIndex: 1,
             }}
           >
-            <span>デッキ（タップで削除）</span>
-            <span
+            <div
+              className="deck-section-title"
               style={{
-                color:
-                  deckSelection.length !== DECK_SIZE ? '#ef4444' : '#10b981',
-                fontWeight: 'bold',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingRight: '10px',
               }}
             >
-              {deckSelection.length} / {DECK_SIZE}
-            </span>
-          </div>
-          <div
-            id="deck-current-list-container"
-            className="card-list-container"
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
-              background: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: '8px',
-              padding: '10px 5px',
-            }}
-          >
-            <div id="deck-current-grid" className="card-list-grid-3col">
-              {sortedDeckKeys.map((id) => {
-                const { card, count } = rawGroupedDeck[id];
-                const isBanned = isCardBannedByFortune(card);
-                const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-                const imgUrl = getCardImgUrl ? getCardImgUrl(card, true) : '';
-                const isPremUnlocked = unlockedPremium.includes(card.id);
-                const isPremActive = (GameState.premiumCards || []).includes(
-                  card.id
-                );
+              <span>デッキ（タップで削除）</span>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span
+                  style={{
+                    color:
+                      deckSelection.length !== DECK_SIZE
+                        ? '#ef4444'
+                        : '#10b981',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {deckSelection.length} / {DECK_SIZE}
+                </span>
+                <button
+                  className="btn"
+                  title="カード表示サイズを変更"
+                  onClick={cycleGridDensity}
+                  style={{
+                    padding: '4px 8px',
+                    margin: 0,
+                    fontSize: '0.9rem',
+                    background: '#334155',
+                    border: '1px solid #475569',
+                    color: '#facc15',
+                  }}
+                >
+                  <GridDensityIcon level={gridDensity} />
+                </button>
+                <button
+                  className="btn"
+                  title="デッキを全て削除"
+                  onClick={clearDeck}
+                  style={{
+                    padding: '4px 8px',
+                    margin: 0,
+                    fontSize: '0.9rem',
+                    background: '#7f1d1d',
+                    border: '1px solid #ef4444',
+                    color: '#facc15',
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            <div
+              ref={deckListContainerRef}
+              id="deck-current-list-container"
+              className="card-list-container"
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '8px',
+                padding: '10px 5px',
+                paddingBottom: `${10 + deckListExtraPaddingPx}px`,
+              }}
+            >
+              <div
+                id="deck-current-grid"
+                className="card-list-grid-3col"
+                style={{
+                  gridTemplateColumns: `repeat(${GRID_DENSITY_COLS[gridDensity]}, 1fr)`,
+                  gap: `${GRID_DENSITY_GAPS[gridDensity]}px`,
+                }}
+              >
+                {sortedDeckKeys.map((id) => {
+                  const { card, count } = rawGroupedDeck[id];
+                  const isBanned = isCardBannedByFortune(card);
+                  const rarityClass = card.rarity
+                    ? ` rarity-${card.rarity}`
+                    : '';
+                  const imgUrl = getCardImgUrl ? getCardImgUrl(card, true) : '';
+                  const isPremUnlocked = unlockedPremium.includes(card.id);
+                  const isPremActive = (GameState.premiumCards || []).includes(
+                    card.id
+                  );
 
-                return (
-                  <div
-                    key={card.id}
-                    className="deck-card-item gallery-card-wrapper"
-                    onPointerDown={(e) => {
-                      if (e.pointerType === 'mouse' && e.button !== 0) return;
-                      handlePointerDown(card);
-                    }}
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
-                    onPointerCancel={cancelLongPress}
-                    onClick={() => handleClick(id, removeCard)}
-                  >
+                  return (
                     <div
-                      className={`card blue${rarityClass}`}
-                      style={{
-                        position: 'relative',
-                        display: 'block',
-                        overflow: 'hidden',
-                        padding: 0,
-                        opacity: isBanned ? '0.4' : '1',
-                        border: isBanned ? '3px solid #ef4444' : undefined,
-                        boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
+                      key={card.id}
+                      className="deck-card-item gallery-card-wrapper"
+                      onPointerDown={(e) => {
+                        if (e.pointerType === 'mouse' && e.button !== 0) return;
+                        handlePointerDown(card);
                       }}
+                      onPointerUp={cancelLongPress}
+                      onPointerLeave={cancelLongPress}
+                      onPointerCancel={cancelLongPress}
+                      onClick={() => handleClick(id, removeCard)}
                     >
-                      {isBanned && <BannedOverlay />}
                       <div
-                        className="card-bg"
+                        className={`card blue${rarityClass}`}
                         style={{
-                          backgroundImage: `url('${imgUrl}')`,
-                          filter: card.filter || 'none',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          width: '100%',
-                          height: '100%',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          borderRadius: 'inherit',
+                          position: 'relative',
+                          display: 'block',
+                          overflow: 'hidden',
+                          padding: 0,
+                          opacity: isBanned ? '0.4' : '1',
+                          border: isBanned ? '3px solid #ef4444' : undefined,
+                          boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
                         }}
-                      ></div>
-
-                      {isPremUnlocked && (
+                      >
+                        {isBanned && <BannedOverlay />}
                         <div
-                          className="premium-toggle-icon"
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={(e) => handleTogglePremium(e, card.id)}
+                          className="card-bg"
+                          style={{
+                            backgroundImage: `url('${imgUrl}')`,
+                            filter: card.filter || 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            width: '100%',
+                            height: '100%',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            borderRadius: 'inherit',
+                          }}
+                        ></div>
+
+                        {isPremUnlocked && (
+                          <div
+                            className="premium-toggle-icon"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => handleTogglePremium(e, card.id)}
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              left: '4px',
+                              background: 'rgba(0,0,0,0.85)',
+                              color: isPremActive ? '#d946ef' : '#94a3b8',
+                              padding: '2px 6px',
+                              borderRadius: '10px',
+                              fontSize: '0.8rem',
+                              zIndex: 7,
+                              border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✨
+                          </div>
+                        )}
+
+                        <div
+                          className="card-power"
+                          style={{
+                            fontSize: '1.4rem',
+                            bottom: 0,
+                            right: '4px',
+                          }}
+                        >
+                          {card.power}
+                        </div>
+
+                        {window.renderSkillTag && (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: window.renderSkillTag(card),
+                            }}
+                          ></div>
+                        )}
+
+                        <div
                           style={{
                             position: 'absolute',
                             top: '4px',
-                            left: '4px',
+                            right: '4px',
                             background: 'rgba(0,0,0,0.85)',
-                            color: isPremActive ? '#d946ef' : '#94a3b8',
-                            padding: '2px 6px',
+                            color: '#facc15',
+                            padding: '1px 6px',
                             borderRadius: '10px',
-                            fontSize: '0.8rem',
-                            zIndex: 7,
-                            border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
-                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            zIndex: 6,
+                            border: '1px solid #facc15',
                           }}
                         >
-                          ✨
+                          x{count}
                         </div>
-                      )}
-
-                      <div
-                        className="card-power"
-                        style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
-                      >
-                        {card.power}
-                      </div>
-
-                      {window.renderSkillTag && (
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: window.renderSkillTag(card),
-                          }}
-                        ></div>
-                      )}
-
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '4px',
-                          right: '4px',
-                          background: 'rgba(0,0,0,0.85)',
-                          color: '#facc15',
-                          padding: '1px 6px',
-                          borderRadius: '10px',
-                          fontWeight: 'bold',
-                          fontSize: '0.75rem',
-                          zIndex: 6,
-                          border: '1px solid #facc15',
-                        }}
-                      >
-                        x{count}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 所持カードマスターリスト */}
-        <div
-          className="deck-section"
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
+          {/* 所持カード（可変シート：ヘッダーをドラッグして高さ変更） */}
           <div
-            className="deck-section-title"
+            ref={sheetElRef}
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingRight: '10px',
+              position: 'absolute',
+              // デッキエリアと同じ幅に揃える（広げると境界に段差ができるため）
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: `${sheetPercent}%`,
+              borderRadius: '12px 12px 0 0',
+              // box-shadowは内側のoverflow:hiddenと同じ要素に置くと
+              // 影自体が枠でぶつ切りに見えるため、外側の枠なし要素に持たせる
+              boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.5)',
+              zIndex: 5,
             }}
           >
-            <span>所持カード（タップで追加）</span>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                className="btn"
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                background: '#0f172a',
+                border: '1px solid #334155',
+                borderBottom: 'none',
+                borderRadius: '12px 12px 0 0',
+              }}
+            >
+              <div
+                onPointerDown={handleSheetDragStart}
+                onPointerMove={handleSheetDragMove}
+                onPointerUp={handleSheetDragEnd}
+                onPointerCancel={handleSheetDragEnd}
                 style={{
-                  padding: '4px 8px',
-                  margin: 0,
-                  fontSize: '0.9rem',
-                  background:
-                    (filters.ownership && filters.ownership !== 'owned_only') ||
-                    filters.rarity.length > 0 ||
-                    filters.power.length > 0 ||
-                    (filters.skills && filters.skills.length > 0) ||
-                    (filters.excludeSkills &&
-                      filters.excludeSkills.length > 0) ||
-                    !!filters.name
-                      ? 'rgba(250, 204, 21, 0.3)'
-                      : '#334155',
-                  border:
-                    (filters.ownership && filters.ownership !== 'owned_only') ||
-                    filters.rarity.length > 0 ||
-                    filters.power.length > 0 ||
-                    (filters.skills && filters.skills.length > 0) ||
-                    (filters.excludeSkills &&
-                      filters.excludeSkills.length > 0) ||
-                    !!filters.name
-                      ? '1px solid #facc15'
-                      : '1px solid #475569',
-                  color: '#facc15',
-                }}
-                onClick={() => {
-                  setTempFilters({ ...filters });
-                  setIsFilterModalOpen(true);
-                  playSound?.(SOUNDS?.seClick);
+                  cursor: 'grab',
+                  touchAction: 'none',
+                  flexShrink: 0,
                 }}
               >
-                🔍
-              </button>
-              <button
-                className="btn"
-                style={{
-                  padding: '4px 8px',
-                  margin: 0,
-                  fontSize: '0.9rem',
-                  background:
-                    sortMode !== 'rarity_asc'
-                      ? 'rgba(250, 204, 21, 0.3)'
-                      : '#334155',
-                  border:
-                    sortMode !== 'rarity_asc'
-                      ? '1px solid #facc15'
-                      : '1px solid #475569',
-                  color: '#facc15',
-                }}
-                onClick={() => {
-                  setTempSortMode(sortMode);
-                  setIsSortModalOpen(true);
-                  playSound?.(SOUNDS?.seClick);
-                }}
-              >
-                ↕️
-              </button>
-            </div>
-          </div>
-          <div
-            id="deck-master-list-container"
-            className="card-list-container"
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
-              background: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: '8px',
-              padding: '10px 5px',
-            }}
-          >
-            <div id="deck-master-grid" className="card-list-grid-3col">
-              {sortedMasterCards.map((template) => {
-                const ownedCount = inventory[template.id] || 0;
-                const isOwned = ownedCount > 0;
-
-                const inDeckCount = deckSelection.filter(
-                  (c) => c.id === template.id
-                ).length;
-                const remaining = ownedCount - inDeckCount;
-                const canAdd =
-                  isOwned && remaining > 0 && inDeckCount < MAX_CARD_COPIES;
-
-                const isBanned = isCardBannedByFortune(template);
-                const opacity = !isOwned || !canAdd || isBanned ? '0.4' : '1';
-                const rarityClass = template.rarity
-                  ? ` rarity-${template.rarity}`
-                  : '';
-                const imgUrl = getCardImgUrl
-                  ? getCardImgUrl(template, true)
-                  : '';
-                const isPremUnlocked = unlockedPremium.includes(template.id);
-                const isPremActive = (GameState.premiumCards || []).includes(
-                  template.id
-                );
-
-                return (
-                  <div
-                    key={template.id}
-                    className="deck-card-item gallery-card-wrapper"
-                    onPointerDown={(e) => {
-                      if (e.pointerType === 'mouse' && e.button !== 0) return;
-                      handlePointerDown(template);
-                    }}
-                    onPointerUp={cancelLongPress}
-                    onPointerLeave={cancelLongPress}
-                    onPointerCancel={cancelLongPress}
-                    onClick={() => {
-                      if (!isOwned) return;
-                      handleClick(template, addCard);
-                    }}
-                  >
-                    <div
-                      className={`card blue${rarityClass}`}
+                <div
+                  style={{
+                    width: '36px',
+                    height: '4px',
+                    background: '#64748b',
+                    borderRadius: '2px',
+                    margin: '8px auto 2px',
+                  }}
+                />
+                <div
+                  className="deck-section-title"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingLeft: '10px',
+                    paddingRight: '10px',
+                    paddingTop: '4px',
+                    paddingBottom: '10px',
+                  }}
+                >
+                  <span>所持カード（タップで追加）</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      className="btn"
                       style={{
-                        position: 'relative',
-                        display: 'block',
-                        opacity,
-                        overflow: 'hidden',
-                        padding: 0,
-                        border: isBanned ? '3px solid #ef4444' : undefined,
-                        boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
+                        padding: '4px 8px',
+                        margin: 0,
+                        fontSize: '0.9rem',
+                        background:
+                          (filters.ownership &&
+                            filters.ownership !== 'owned_only') ||
+                          filters.rarity.length > 0 ||
+                          filters.power.length > 0 ||
+                          (filters.skills && filters.skills.length > 0) ||
+                          (filters.excludeSkills &&
+                            filters.excludeSkills.length > 0) ||
+                          !!filters.name
+                            ? 'rgba(250, 204, 21, 0.3)'
+                            : '#334155',
+                        border:
+                          (filters.ownership &&
+                            filters.ownership !== 'owned_only') ||
+                          filters.rarity.length > 0 ||
+                          filters.power.length > 0 ||
+                          (filters.skills && filters.skills.length > 0) ||
+                          (filters.excludeSkills &&
+                            filters.excludeSkills.length > 0) ||
+                          !!filters.name
+                            ? '1px solid #facc15'
+                            : '1px solid #475569',
+                        color: '#facc15',
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => {
+                        setTempFilters({ ...filters });
+                        setIsFilterModalOpen(true);
+                        playSound?.(SOUNDS?.seClick);
                       }}
                     >
-                      {isBanned && <BannedOverlay />}
-                      <div
-                        className="card-bg"
-                        style={{
-                          backgroundImage: `url('${imgUrl}')`,
-                          filter: template.filter || 'none',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          width: '100%',
-                          height: '100%',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          borderRadius: 'inherit',
-                        }}
-                      ></div>
+                      🔍
+                    </button>
+                    <button
+                      className="btn"
+                      style={{
+                        padding: '4px 8px',
+                        margin: 0,
+                        fontSize: '0.9rem',
+                        background:
+                          sortMode !== 'rarity_asc'
+                            ? 'rgba(250, 204, 21, 0.3)'
+                            : '#334155',
+                        border:
+                          sortMode !== 'rarity_asc'
+                            ? '1px solid #facc15'
+                            : '1px solid #475569',
+                        color: '#facc15',
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => {
+                        setTempSortMode(sortMode);
+                        setIsSortModalOpen(true);
+                        playSound?.(SOUNDS?.seClick);
+                      }}
+                    >
+                      ↕️
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                id="deck-master-list-container"
+                className="card-list-container"
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '8px',
+                  padding: '10px 5px',
+                }}
+              >
+                <div
+                  id="deck-master-grid"
+                  className="card-list-grid-3col"
+                  style={{
+                    gridTemplateColumns: `repeat(${GRID_DENSITY_COLS[gridDensity]}, 1fr)`,
+                    gap: `${GRID_DENSITY_GAPS[gridDensity]}px`,
+                  }}
+                >
+                  {sortedMasterCards.map((template) => {
+                    const ownedCount = inventory[template.id] || 0;
+                    const isOwned = ownedCount > 0;
 
-                      {isPremUnlocked && (
+                    const inDeckCount = deckSelection.filter(
+                      (c) => c.id === template.id
+                    ).length;
+                    const remaining = ownedCount - inDeckCount;
+                    const canAdd =
+                      isOwned && remaining > 0 && inDeckCount < MAX_CARD_COPIES;
+
+                    const isBanned = isCardBannedByFortune(template);
+                    const opacity =
+                      !isOwned || !canAdd || isBanned ? '0.4' : '1';
+                    const rarityClass = template.rarity
+                      ? ` rarity-${template.rarity}`
+                      : '';
+                    const imgUrl = getCardImgUrl
+                      ? getCardImgUrl(template, true)
+                      : '';
+                    const isPremUnlocked = unlockedPremium.includes(
+                      template.id
+                    );
+                    const isPremActive = (
+                      GameState.premiumCards || []
+                    ).includes(template.id);
+
+                    return (
+                      <div
+                        key={template.id}
+                        className="deck-card-item gallery-card-wrapper"
+                        onPointerDown={(e) => {
+                          if (e.pointerType === 'mouse' && e.button !== 0)
+                            return;
+                          handlePointerDown(template);
+                        }}
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onClick={() => {
+                          if (!isOwned) return;
+                          handleClick(template, addCard);
+                        }}
+                      >
                         <div
-                          className="premium-toggle-icon"
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={(e) => handleTogglePremium(e, template.id)}
+                          className={`card blue${rarityClass}`}
                           style={{
-                            position: 'absolute',
-                            top: '4px',
-                            left: '4px',
-                            background: 'rgba(0,0,0,0.85)',
-                            color: isPremActive ? '#d946ef' : '#94a3b8',
-                            padding: '2px 6px',
-                            borderRadius: '10px',
-                            fontSize: '0.8rem',
-                            zIndex: 7,
-                            border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
-                            cursor: 'pointer',
+                            position: 'relative',
+                            display: 'block',
+                            opacity,
+                            overflow: 'hidden',
+                            padding: 0,
+                            border: isBanned ? '3px solid #ef4444' : undefined,
+                            boxShadow: isBanned
+                              ? '0 0 10px #ef4444'
+                              : undefined,
                           }}
                         >
-                          ✨
+                          {isBanned && <BannedOverlay />}
+                          <div
+                            className="card-bg"
+                            style={{
+                              backgroundImage: `url('${imgUrl}')`,
+                              filter: template.filter || 'none',
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              width: '100%',
+                              height: '100%',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              borderRadius: 'inherit',
+                            }}
+                          ></div>
+
+                          {isPremUnlocked && (
+                            <div
+                              className="premium-toggle-icon"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={(e) =>
+                                handleTogglePremium(e, template.id)
+                              }
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                left: '4px',
+                                background: 'rgba(0,0,0,0.85)',
+                                color: isPremActive ? '#d946ef' : '#94a3b8',
+                                padding: '2px 6px',
+                                borderRadius: '10px',
+                                fontSize: '0.8rem',
+                                zIndex: 7,
+                                border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✨
+                            </div>
+                          )}
+
+                          <div
+                            className="card-power"
+                            style={{
+                              fontSize: '1.4rem',
+                              bottom: 0,
+                              right: '4px',
+                            }}
+                          >
+                            {template.power}
+                          </div>
+
+                          {window.renderSkillTag && (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: window.renderSkillTag(template),
+                              }}
+                            ></div>
+                          )}
+
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              background: 'rgba(0,0,0,0.85)',
+                              color: canAdd ? '#facc15' : '#ef4444',
+                              padding: '1px 6px',
+                              borderRadius: '10px',
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              zIndex: 6,
+                              border: `1px solid ${canAdd ? '#facc15' : '#ef4444'}`,
+                            }}
+                          >
+                            {inDeckCount}/{ownedCount}
+                          </div>
                         </div>
-                      )}
-
-                      <div
-                        className="card-power"
-                        style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
-                      >
-                        {template.power}
                       </div>
-
-                      {window.renderSkillTag && (
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: window.renderSkillTag(template),
-                          }}
-                        ></div>
-                      )}
-
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '4px',
-                          right: '4px',
-                          background: 'rgba(0,0,0,0.85)',
-                          color: canAdd ? '#facc15' : '#ef4444',
-                          padding: '1px 6px',
-                          borderRadius: '10px',
-                          fontWeight: 'bold',
-                          fontSize: '0.75rem',
-                          zIndex: 6,
-                          border: `1px solid ${canAdd ? '#facc15' : '#ef4444'}`,
-                        }}
-                      >
-                        {inDeckCount}/{ownedCount}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          gap: '10px',
+          alignItems: 'center',
+          marginTop: '20px',
+          marginBottom: '20px',
+          padding: '0 10px',
+          width: '100%',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* 左：戻るボタン */}
+        <div style={{ justifySelf: 'start' }}>
+          <button
+            className="btn"
+            style={{
+              background: '#475569',
+              margin: 0,
+              whiteSpace: 'nowrap',
+              padding: '8px 12px',
+              fontSize: '0.9rem',
+              width: 'auto',
+              minWidth: '90px',
+              textAlign: 'center',
+              flexShrink: 0,
+            }}
+            onClick={() => {
+              playSound?.(SOUNDS?.seClick);
+              if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
+              if (typeof goBackFromDeckEdit === 'function')
+                goBackFromDeckEdit(true);
+            }}
+          >
+            戻る
+          </button>
+        </div>
+
+        {/* 中央：編成完了ボタン */}
         <MenuButton
           id="btn-finish-deck"
           variant="blue"
           disabled={deckSelection.length !== DECK_SIZE || hasBannedCard}
           style={{
-            marginTop: '10px',
-            width: '100%',
+            margin: 0,
+            width: 'auto',
+            minWidth: '140px',
+            padding: '10px 24px',
+            whiteSpace: 'nowrap',
             opacity:
               deckSelection.length === DECK_SIZE && !hasBannedCard ? 1 : 0.5,
           }}
@@ -1180,62 +1567,8 @@ export default function DeckEditorScreen({ switchScreen }) {
               : 'バトル開始！'
           }
         />
-      </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          alignItems: 'center',
-          marginTop: '20px',
-          marginBottom: '20px',
-          padding: '0 10px',
-          width: '100%',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* 左下：全削除ボタン */}
-        <div style={{ justifySelf: 'start' }}>
-          <button
-            className="btn"
-            style={{
-              background: '#7f1d1d',
-              margin: 0,
-              whiteSpace: 'nowrap',
-              padding: '8px 15px',
-              fontSize: '0.8rem',
-              width: 'auto',
-              flexShrink: 0,
-            }}
-            onClick={clearDeck}
-          >
-            全削除
-          </button>
-        </div>
-
-        {/* 中央：戻るボタン */}
-        <button
-          className="btn"
-          style={{
-            background: '#475569',
-            margin: 0,
-            whiteSpace: 'nowrap',
-            padding: '10px 20px',
-            fontSize: '1rem',
-            width: 'auto',
-            minWidth: '120px',
-          }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            if (typeof loadDeck === 'function') loadDeck(); // 一時編集データをリセット
-            if (typeof goBackFromDeckEdit === 'function')
-              goBackFromDeckEdit(true);
-          }}
-        >
-          戻る
-        </button>
-
-        {/* 右下：ボーナス確認ボタン（全削除ボタンと対になる配置） */}
+        {/* 右：ボーナス確認ボタン */}
         <div style={{ justifySelf: 'end' }}>
           {showMissionButton && (
             <button
@@ -1244,9 +1577,11 @@ export default function DeckEditorScreen({ switchScreen }) {
                 background: '#0f3443',
                 margin: 0,
                 whiteSpace: 'nowrap',
-                padding: '8px 15px',
-                fontSize: '0.8rem',
+                padding: '8px 12px',
+                fontSize: '0.9rem',
                 width: 'auto',
+                minWidth: '90px',
+                textAlign: 'center',
                 flexShrink: 0,
               }}
               onClick={(e) => {

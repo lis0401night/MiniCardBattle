@@ -38,6 +38,8 @@ export const DEFENSE_HISTORY_KEY = 'mini_card_battle_defense_history';
 export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';
 export const FORTUNE_TOTAL_POINTS_KEY = 'mini_card_battle_fortune_total_points';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';
+export const DECK_EDIT_GRID_DENSITY_KEY =
+  'mini_card_battle_deck_edit_grid_density';
 
 // 交換コストの定義（カテゴリ・レアリティ別）
 export const GOLD_PREMIUM_EXCHANGE_COST = 20; // ゴールド・プレミアムカード
