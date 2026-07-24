@@ -181,6 +181,7 @@ export const PREMIUM_VOICE_MAP = {
   armsuits: 'bird',
   berserker: 'human_female_cool',
   liberator: 'human_female_cool',
+  crusher: 'human_male_ikemen',
 };
 
 export async function playCardVoice(categoryOrCard, situation = 'play') {

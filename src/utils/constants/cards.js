@@ -1110,7 +1110,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 5,
     skills: [{ id: 'crush' }],
-    voiceCategory: 'human_male_ikemen',
+    voiceCategory: 'stone',
     flavor:
       '巨大な武器を力任せに振るい、立ち塞がる障害物や罠を淡々と壊して回る頼れる力仕事の専門家。',
   },
