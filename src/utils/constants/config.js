@@ -426,9 +426,10 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
   {
     id: 'automata_school',
     type: 'skin',
+    charId: 'automata',
     name: '喧嘩腰なライバル',
     description: '何故かあなたを一方的にライバル視し、突っかかってくる特待生。',
-    cost: PLAYMAT_EXCHANGE_COST,
+    cost: SKIN_EXCHANGE_COST,
   },
   {
     id: 'pm_android_school',
