@@ -6,6 +6,8 @@ import { ENEMY_DECKS } from './enemy_decks.js';
 // 試練の宮殿の敵・レンタル候補から除外するリーダーID
 const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
   'player_defense',
+  'automata',
+  'automata_high',
   'satan_high',
   'satan',
   'void',
