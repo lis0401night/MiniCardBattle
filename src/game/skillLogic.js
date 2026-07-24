@@ -62,7 +62,8 @@ export function handleStartupDispelled(
   owner,
   existingCard,
   targetLane,
-  cardToDiscard
+  cardToDiscard,
+  discardOwner = owner
 ) {
   if (!existingCard) return;
 
@@ -73,9 +74,12 @@ export function handleStartupDispelled(
   existingCard.stunTurns = 0;
 
   // 2. 消滅したカードを墓地に送る（トークンでなければ）
+  // discardOwnerはカードの元の持ち主（傀儡など相手墓地から取得した場合に使用）
   if (cardToDiscard && !cardToDiscard.isToken) {
     const discardPile =
-      owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
+      discardOwner === 'blue'
+        ? GameState.playerDiscard
+        : GameState.enemyDiscard;
     discardPile.push(cardToDiscard);
   }
 
@@ -2409,7 +2413,13 @@ export async function resolveActiveSkillEffect(
           const existingCard = board[targetLane];
 
           if (existingCard && hasSkill(existingCard, 'startup')) {
-            handleStartupDispelled(o, existingCard, targetLane, selectedCard);
+            handleStartupDispelled(
+              o,
+              existingCard,
+              targetLane,
+              selectedCard,
+              oppOwner
+            );
           } else if (canEquipCard(selectedCard, existingCard)) {
             // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
             const targetCard = existingCard;

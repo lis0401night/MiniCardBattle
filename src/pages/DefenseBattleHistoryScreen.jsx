@@ -15,6 +15,19 @@ import {
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+/** LocalStorageから防衛履歴を読み込む共通ヘルパー */
+const loadHistoryFromLocalStorage = () => {
+  const raw = localStorage.getItem(DEFENSE_HISTORY_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Failed to parse defense history from localStorage:', e);
+    return [];
+  }
+};
+
 export default function DefenseBattleHistoryScreen() {
   const [historyList, setHistoryList] = useState([]);
   const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error', 'empty'
@@ -40,18 +53,7 @@ export default function DefenseBattleHistoryScreen() {
 
         // サーバーから取得できなかった場合のみ、LocalStorageからのフォールバック
         if (!serverFetchSucceeded && history.length === 0) {
-          const raw = localStorage.getItem(DEFENSE_HISTORY_KEY);
-          if (raw) {
-            try {
-              const parsed = JSON.parse(raw);
-              if (Array.isArray(parsed)) history = parsed;
-            } catch (e) {
-              console.error(
-                'Failed to parse defense history from localStorage:',
-                e
-              );
-            }
-          }
+          history = loadHistoryFromLocalStorage();
         }
 
         if (history.length === 0) {
@@ -63,18 +65,11 @@ export default function DefenseBattleHistoryScreen() {
       } catch (err) {
         console.error('Failed to load defense history:', err);
         // エラー時もLocalStorage試行
-        const raw = localStorage.getItem(DEFENSE_HISTORY_KEY);
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setHistoryList(parsed);
-              setStatus('success');
-              return;
-            }
-          } catch (e) {
-            console.error(e);
-          }
+        const fallback = loadHistoryFromLocalStorage();
+        if (fallback.length > 0) {
+          setHistoryList(fallback);
+          setStatus('success');
+          return;
         }
         setStatus('error');
       }

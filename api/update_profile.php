@@ -93,8 +93,17 @@ if (empty($player_data)) {
 $player_data['uuid'] = $uuid;
 $player_data['name'] = $name;
 $player_data['icon'] = $icon;
-if (isset($data['favoriteCard'])) {
-    $player_data['favorite_card'] = preg_replace('/[^a-z0-9_]/', '', $data['favoriteCard']);
+if (array_key_exists('favoriteCard', $data)) {
+    if (is_array($data['favoriteCard']) && isset($data['favoriteCard']['cardId'])) {
+        // cardIdのみサニタイズし、isPremiumはbool型で保持
+        $player_data['favorite_card'] = [
+            'cardId' => preg_replace('/[^a-z0-9_]/', '', $data['favoriteCard']['cardId']),
+            'isPremium' => !empty($data['favoriteCard']['isPremium']),
+        ];
+    } else {
+        // null等が送られた場合はお気に入り解除
+        $player_data['favorite_card'] = null;
+    }
 }
 $player_data['timestamp'] = $timestamp;
 

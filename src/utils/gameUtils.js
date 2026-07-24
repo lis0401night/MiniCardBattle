@@ -1238,3 +1238,40 @@ export function resolveStartupFade(
     card: popupSourceCard,
   });
 }
+
+/**
+ * LocalStorageから安全にJSON配列をパースして読み込む共通ヘルパー
+ * @param {string} key LocalStorageのキー
+ * @returns {Array} パースされた配列（失敗時は空配列）
+ */
+export function safeParseArray(key) {
+  try {
+    let raw = localStorage.getItem(key);
+    if (raw && typeof raw === 'string') {
+      raw = raw.replace(/[\u200B-\u200D]/g, '');
+    }
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error(`Failed to parse localStorage key "${key}":`, e);
+    return [];
+  }
+}
+
+/**
+ * カードフィルタが有効（デフォルト以外の条件が設定されている）かどうかを判定する
+ * CardListScreen / DeckEditorScreen 等で共通利用
+ * @param {object} filters フィルターオブジェクト
+ * @returns {boolean} 有効なフィルターが存在するかどうか
+ */
+export function hasActiveFilters(filters) {
+  if (!filters) return false;
+  return (
+    (filters.ownership && filters.ownership !== 'owned_only') ||
+    (filters.rarity && filters.rarity.length > 0) ||
+    (filters.power && filters.power.length > 0) ||
+    (filters.skills && filters.skills.length > 0) ||
+    (filters.excludeSkills && filters.excludeSkills.length > 0) ||
+    !!filters.name
+  );
+}

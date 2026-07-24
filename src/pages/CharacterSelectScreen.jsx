@@ -13,9 +13,12 @@ import {
   appendVersionQuery,
   STORY_BANNED_LEADER_IDS,
   TOURNAMENT_BANNED_LEADER_IDS,
-  safeParseArray,
 } from '../utils/constants/config.js';
-import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
+import {
+  checkIsFortuneMode,
+  checkIsHighDiffMode,
+  safeParseArray,
+} from '../utils/gameUtils.js';
 
 // キャラクターフィルタリングの共通処理 (DRY原則を保ちます)
 const getFilteredCharacters = () => {

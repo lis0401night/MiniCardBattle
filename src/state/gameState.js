@@ -8,8 +8,8 @@ import {
   UNLOCKED_ICONS_KEY,
   DEFAULT_PLAYER_NAME,
   DEFAULT_PLAYER_ICON,
-  safeParseArray,
 } from '../utils/constants/config.js';
+import { safeParseArray } from '../utils/gameUtils.js';
 
 const loadUserProfile = () => {
   try {

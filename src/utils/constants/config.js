@@ -681,22 +681,3 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'scrapper', type: 'card', cost: 1 },
   { id: 'liberator', type: 'card', cost: 1 },
 ];
-
-/**
- * LocalStorageから安全にJSON配列をパースして読み込む共通ヘルパー
- * @param {string} key LocalStorageのキー
- * @returns {Array} パースされた配列（失敗時は空配列）
- */
-export function safeParseArray(key) {
-  try {
-    let raw = localStorage.getItem(key);
-    if (raw && typeof raw === 'string') {
-      raw = raw.replace(/[\u200B-\u200D]/g, '');
-    }
-    const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    console.error(`Failed to parse localStorage key "${key}":`, e);
-    return [];
-  }
-}

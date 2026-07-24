@@ -14,6 +14,7 @@ import { MAX_CARD_COPIES } from '../utils/constants/config.js';
 import { SKILLS, SKILL_CATEGORIES } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
+  hasActiveFilters,
   isTransitioning,
   playSound,
   togglePremiumCard,
@@ -317,24 +318,12 @@ export default function CardListScreen() {
             padding: '4px 8px',
             margin: 0,
             fontSize: '0.9rem',
-            background:
-              (filters.ownership && filters.ownership !== 'owned_only') ||
-              filters.rarity.length > 0 ||
-              filters.power.length > 0 ||
-              (filters.skills && filters.skills.length > 0) ||
-              (filters.excludeSkills && filters.excludeSkills.length > 0) ||
-              !!filters.name
-                ? 'rgba(250, 204, 21, 0.3)'
-                : '#334155',
-            border:
-              (filters.ownership && filters.ownership !== 'owned_only') ||
-              filters.rarity.length > 0 ||
-              filters.power.length > 0 ||
-              (filters.skills && filters.skills.length > 0) ||
-              (filters.excludeSkills && filters.excludeSkills.length > 0) ||
-              !!filters.name
-                ? '1px solid #facc15'
-                : '1px solid #475569',
+            background: hasActiveFilters(filters)
+              ? 'rgba(250, 204, 21, 0.3)'
+              : '#334155',
+            border: hasActiveFilters(filters)
+              ? '1px solid #facc15'
+              : '1px solid #475569',
             color: '#facc15',
           }}
           onClick={() => {

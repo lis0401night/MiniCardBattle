@@ -222,8 +222,11 @@ export async function syncUserProfile(
   const timeoutId = setTimeout(() => controller.abort(), 3000);
 
   try {
+    // undefinedの場合のみ既存値にフォールバック（nullは解除を意味する）
     const favCardToSync =
-      favoriteCard || GameState.userProfile?.favoriteCard || null;
+      favoriteCard !== undefined
+        ? favoriteCard
+        : GameState.userProfile?.favoriteCard || null;
 
     const response = await fetch('api/update_profile.php', {
       method: 'POST',

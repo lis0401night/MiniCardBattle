@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
-import {
-  appendVersionQuery,
-  safeParseArray,
-} from '../utils/constants/config.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 import { STAGES } from '../utils/constants/stages.js';
-import { checkIsFortuneMode } from '../utils/gameUtils.js';
+import {
+  checkIsFortuneMode,
+  checkIsHighDiffMode,
+  safeParseArray,
+} from '../utils/gameUtils.js';
 
 export default function StageSelectScreen() {
   const getStages = () => {
@@ -64,7 +65,7 @@ export default function StageSelectScreen() {
 
     let bgFile = MODE_BACKGROUND_FILES[mode];
     if (!bgFile) {
-      if (mode?.startsWith('event_') && mode?.endsWith('_high')) {
+      if (checkIsHighDiffMode(mode)) {
         bgFile = 'assets/backgrounds/background_highdifficulty.webp';
       } else if (checkIsFortuneMode(mode)) {
         bgFile = 'assets/backgrounds/background_fortune01.webp';

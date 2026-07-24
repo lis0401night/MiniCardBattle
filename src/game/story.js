@@ -85,7 +85,11 @@ export function initStoryMode(charId) {
 export function handleStoryProgression() {
   if (GameState.appState === 'pre_dialogue') {
     GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
+    if (typeof window.loadDeck === 'function') {
+      window.loadDeck();
+    } else {
+      loadDeck();
+    }
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
   } else if (GameState.appState === 'post_dialogue') {

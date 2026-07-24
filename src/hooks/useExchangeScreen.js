@@ -4,9 +4,12 @@ import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { savePointsToServer, fetchPlayerDecks } from '../utils/apiUtils.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
-import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
+import {
+  getOrCreateUUID,
+  playSound,
+  safeParseArray,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { safeParseArray } from '../utils/constants/config.js';
 
 export function useExchangeScreen({
   pointsKey, // 'challenge'（試練の宮殿）または 'tournament'（闘技祭）

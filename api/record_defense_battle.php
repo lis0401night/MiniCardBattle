@@ -41,7 +41,15 @@ $attacker_name = isset($data['attacker_name']) ? htmlspecialchars($data['attacke
 $attacker_character = isset($data['attacker_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_character']) : 'android';
 $attacker_skin = isset($data['attacker_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_skin']) : 'default';
 $attacker_total_points = isset($data['attacker_total_points']) ? intval($data['attacker_total_points']) : 0;
-$attacker_deck = (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) ? $data['attacker_deck'] : [];
+$attacker_deck = [];
+if (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) {
+    // 文字列要素のみ抽出し、デッキ枚数上限で切り詰め
+    $attacker_deck = array_slice(
+        array_values(array_filter($data['attacker_deck'], 'is_string')),
+        0,
+        20 // デッキ枚数上限
+    );
+}
 $result = $data['result']; // 'win' (攻撃成功) or 'lose' (攻撃失敗)
 
 // 防衛側視点での勝敗結果 ('win': 防衛成功, 'lose': 防衛失敗)
