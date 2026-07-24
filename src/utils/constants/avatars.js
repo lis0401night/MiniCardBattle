@@ -180,8 +180,8 @@ export const EXTRA_ICONS = [
     path: iconPath('priest_school'),
   },
   {
-    id: 'automata',
-    name: 'マキナ',
-    path: iconPath('automata'),
+    id: 'automata_school',
+    name: '喧嘩腰なライバル',
+    path: iconPath('automata_school'),
   },
 ];

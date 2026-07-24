@@ -1007,10 +1007,18 @@
             });
           }
 
-          // 2. 攻撃デッキ使用数の集計（防衛履歴 defense_history を全て重複排除せず集計）
+          // 2. 攻撃デッキ使用数の集計（同一プレイヤー＋完全同一デッキは重複排除）
           if (Array.isArray(p.defense_history)) {
+            const seenAttackerDecks = new Set();
             p.defense_history.forEach((rec) => {
               if (Array.isArray(rec.attackerDeck)) {
+                // attackerName + デッキ内容でユニークキーを生成
+                const deckKey =
+                  (rec.attackerName || '') +
+                  '|' +
+                  [...rec.attackerDeck].sort().join(',');
+                if (seenAttackerDecks.has(deckKey)) return; // 同一プレイヤー＋同一デッキはスキップ
+                seenAttackerDecks.add(deckKey);
                 rec.attackerDeck.forEach((entry) => {
                   const cId = resolveCardId(entry);
                   attackUsageCounts[cId] = (attackUsageCounts[cId] || 0) + 1;

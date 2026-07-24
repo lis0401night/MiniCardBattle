@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.2.2.3';
+export const GAME_VERSION = '0.2.3';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -11,7 +11,7 @@ export const DECK_SIZE = 20;
 export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
 export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
 export const STORY_BANNED_LEADER_IDS = ['automata']; // ストーリーモードで使用できないリーダーキャラクターID
-export const TOURNAMENT_BANNED_LEADER_IDS = ['automata']; // 夢幻の闘技祭で使用できないリーダーキャラクターID
+export const TOURNAMENT_BANNED_LEADER_IDS = []; // 夢幻の闘技祭で使用できないリーダーキャラクターID
 export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の思考ウェイト時間 (ms)
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
@@ -178,14 +178,14 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_android_summer',
     type: 'playmat',
-    name: 'プレイマット：水陸両用装備',
+    name: '水陸両用装備',
     description: '研究所より支給された耐熱・耐水処理を施した特殊換装とのこと。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_dragon_summer',
     type: 'playmat',
-    name: 'プレイマット：真夏の焔竜姫',
+    name: '真夏の焔竜姫',
     description:
       '太陽の熱よりも熱い竜の息吹。水辺でも彼女の炎が消えることは決してない。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -193,7 +193,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_knight_summer',
     type: 'playmat',
-    name: 'プレイマット：波打ち際の騎士',
+    name: '波打ち際の騎士',
     description:
       '鎧を脱ぎ捨て、ひとときの休息を楽しむ騎士。その剣腕は水着姿でも少しも鈍らない。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -201,7 +201,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_cthulhu_summer',
     type: 'playmat',
-    name: 'プレイマット：深海のサマースイム',
+    name: '深海のサマースイム',
     description:
       '深淵から現れた名状しがたき水着姿。彼女が泳ぐたび、波間に狂気が蠢くという。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -209,7 +209,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_elf_summer',
     type: 'playmat',
-    name: 'プレイマット：水辺の流浪者',
+    name: '水辺の流浪者',
     description:
       '森を抜け出し、海辺にやってきた流浪のエルフ。波の音に耳を傾ける穏やかな時間。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -217,7 +217,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_cleric_summer',
     type: 'playmat',
-    name: 'プレイマット：背徳のサマーバカンス',
+    name: '背徳のサマーバカンス',
     description:
       '神職の務めを忘れ、開放的な夏を満喫する聖職者。神の慈悲は海よりも広いらしい。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -225,7 +225,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_devilhunter_summer',
     type: 'playmat',
-    name: 'プレイマット：渚の悪魔狩り',
+    name: '渚の悪魔狩り',
     description:
       '悪魔を狩るのも夏休みが必要だ。ただし、銃の手入れだけは怠らない。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -233,7 +233,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_witch_summer',
     type: 'playmat',
-    name: 'プレイマット：不機嫌なサマー・グリモワール',
+    name: '不機嫌なサマー・グリモワール',
     description:
       '無理矢理取らされた夏休み。慣れない水着と照りつける太陽のせいで、全く読書に集中できていないようだ。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -241,7 +241,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_oni_summer',
     type: 'playmat',
-    name: 'プレイマット：涼み鬼の波打ち肌',
+    name: '涼み鬼の波打ち肌',
     description:
       '普段は和装の鬼娘も、たまには羽を伸ばして海辺で遊ぶ。しかしその圧倒的な力は健在である。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -249,7 +249,7 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   {
     id: 'pm_priest_summer',
     type: 'playmat',
-    name: 'プレイマット：墓守の休息',
+    name: '墓守の休息',
     description:
       '千年の眠りから覚め、海辺で静かに涼む墓守。水面に映る太陽の光を静かに見つめている。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -422,16 +422,23 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     cost: SKIN_EXCHANGE_COST,
   },
   {
+    id: 'automata_school',
+    type: 'skin',
+    name: '喧嘩腰なライバル',
+    description: '何故かあなたを一方的にライバル視し、突っかかってくる特待生。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
     id: 'pm_android_school',
     type: 'playmat',
-    name: 'プレイマット：献身的な後輩',
+    name: '献身的な後輩',
     description: 'いつも先輩の背中を追いかける、一途で献身的な後輩。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_dragon_school',
     type: 'playmat',
-    name: 'プレイマット：放課後ディストーション',
+    name: '放課後ディストーション',
     description:
       '軽音部でギターをかき鳴らすサークルの姫。彼女のライブはいつも爆音。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -439,21 +446,21 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
   {
     id: 'pm_knight_school',
     type: 'playmat',
-    name: 'プレイマット：必勝の剣道部主将',
+    name: '必勝の剣道部主将',
     description: '剣道部を全国大会へ導く熱血主将。その竹刀の太刀筋は見えない。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_cthulhu_school',
     type: 'playmat',
-    name: 'プレイマット：妖しきオカ研部長',
+    name: '妖しきオカ研部長',
     description: '放課後の旧校舎で怪しげな儀式を行うオカルト研究部の部長。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_elf_school',
     type: 'playmat',
-    name: 'プレイマット：癒しの飼育委員',
+    name: '癒しの飼育委員',
     description:
       '動物をこよなく愛する飼育委員。彼女の周りには常に動物が集まる。',
     cost: PLAYMAT_EXCHANGE_COST,
@@ -461,36 +468,43 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
   {
     id: 'pm_cleric_school',
     type: 'playmat',
-    name: 'プレイマット：恐怖の特別指導',
+    name: '恐怖の特別指導',
     description: '逆らう生徒には容赦しない、学園で最も恐れられるスパルタ教師。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_devilhunter_school',
     type: 'playmat',
-    name: 'プレイマット：孤高のスケバン',
+    name: '孤高のスケバン',
     description: '群れることを嫌う孤高のスケバン。喧嘩の強さは学園一との噂。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_witch_school',
     type: 'playmat',
-    name: 'プレイマット：気怠げな親友の妹',
+    name: '気怠げな親友の妹',
     description: '親友の妹で、いつも気怠げにしている。放課後は早く帰りたがる。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_oni_school',
     type: 'playmat',
-    name: 'プレイマット：鬼の風紀委員',
+    name: '鬼の風紀委員',
     description: '校則違反を絶対に許さない風紀委員。その取り締まりはまさに鬼。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
     id: 'pm_priest_school',
     type: 'playmat',
-    name: 'プレイマット：ミステリアスな留学生',
+    name: 'ミステリアスな留学生',
     description: '遠い異国からやってきた留学生。いつも何かを調べているらしい。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_automata_school',
+    type: 'playmat',
+    name: '喧嘩腰なライバル',
+    description: '何故かあなたを一方的にライバル視し、突っかかってくる特待生。',
     cost: PLAYMAT_EXCHANGE_COST,
   },
   {
@@ -563,6 +577,13 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
     type: 'icon',
     name: 'ミステリアスな留学生',
     description: '遠い異国からやってきた留学生。いつも何かを調べているらしい。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'automata_school',
+    type: 'icon',
+    name: '喧嘩腰なライバル',
+    description: '何故かあなたを一方的にライバル視し、突っかかってくる特待生。',
     cost: ICON_EXCHANGE_COST,
   },
   { id: 'threebears', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },

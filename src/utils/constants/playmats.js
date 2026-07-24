@@ -69,6 +69,12 @@ export const PLAYMAT_MASTER = [
     targetCharacter: 'priest',
   },
   {
+    id: 'automata',
+    name: 'マキナ',
+    image: 'assets/boards/board_automata.webp',
+    targetCharacter: 'automata',
+  },
+  {
     id: 'satan',
     name: 'サタン',
     image: 'assets/boards/board_satan.webp',
@@ -175,6 +181,11 @@ export const PLAYMAT_MASTER = [
     image: 'assets/boards/board_priest_school.webp',
   },
   {
+    id: 'pm_automata_school',
+    name: '喧嘩腰なライバル',
+    image: 'assets/boards/board_automata_school.webp',
+  },
+  {
     id: 'pm_android_high',
     name: 'フルアーマーユニット',
     image: 'assets/boards/board_android_high.webp',
@@ -223,12 +234,6 @@ export const PLAYMAT_MASTER = [
     id: 'pm_priest_high',
     name: '前世の記憶',
     image: 'assets/boards/board_priest_high.webp',
-  },
-  {
-    id: 'automata',
-    name: 'マキナ',
-    image: 'assets/boards/board_automata.webp',
-    targetCharacter: 'automata',
   },
 ];
 // 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）

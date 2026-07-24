@@ -792,7 +792,9 @@ export default function BattleScreen() {
               className="card-power"
               style={{ fontSize: '3.5rem', right: '10px', bottom: '5px' }}
             >
-              {summonAnim.card.power}
+              {summonAnim.card.currentPower !== undefined
+                ? summonAnim.card.currentPower
+                : summonAnim.card.power}
             </div>
           </div>
         </div>

@@ -40,7 +40,7 @@ export function initTournamentMode() {
     ),
   };
 
-  // プレイヤー以外のキャラクターを9体ランダムに選ぶ
+  // プレイヤー以外のキャラクターを10体ランダムに選ぶ
   const allCharIds = Object.keys(CHARACTERS).filter(
     (id) =>
       !CHARACTERS[id].isDummy &&
@@ -48,13 +48,12 @@ export function initTournamentMode() {
       id !== 'satan' && // ボスすぎるキャラは除くかはお好みだが一旦除外
       id !== 'void' && // ゼノンも除外
       id !== 'succubus' && // ヴィオラも除外
-      id !== 'warlock' && // バルタザールも除外
-      id !== 'automata' // マキナも除外
+      id !== 'warlock' // バルタザールも除外
   );
 
   // シャッフル
   allCharIds.sort(() => Math.random() - 0.5);
-  const selectedCharIds = allCharIds.slice(0, 9);
+  const selectedCharIds = allCharIds.slice(0, 10);
 
   const realChars = selectedCharIds.map((charId) => ({
     id: `npc_${charId}`,
@@ -65,8 +64,8 @@ export function initTournamentMode() {
     isDummy: false,
   }));
 
-  // ダミーを6体作成
-  const dummies = Array.from({ length: 6 }).map((_, i) => ({
+  // ダミーを5体作成
+  const dummies = Array.from({ length: 5 }).map((_, i) => ({
     id: `dummy_${i}`,
     isPlayer: false,
     charId: 'android', // ダミーのステータスベース
@@ -77,13 +76,13 @@ export function initTournamentMode() {
   // 対戦カード（1回戦の8試合）を組み立てる
   // 条件:
   // - プレイヤーは絶対にダミーと当たらない (Player vs Real)
-  // - ダミー同士は当たらない (Real vs Dummy x 6)
-  // - 残りの2人のRealが当たる (Real vs Real)
+  // - ダミー同士は当たらない (Real vs Dummy x 5)
+  // - 残りの4人のRealが当たる (Real vs Real x 2)
   //
-  // Realは全部で9人。
-  // Match 1: Player vs Real (1人消費、残り8人)
-  // Match 2~7: Real(6人消費) vs Dummy(6人消費)
-  // Match 8: Real(2人消費) vs Real
+  // Realは全部で10人。
+  // Match 1: Player vs Real (1人消費、残り9人)
+  // Match 2~6: Real(5人消費) vs Dummy(5人消費)
+  // Match 7~8: Real(4人消費) vs Real
   // これにより、ダミーは全員1回戦でRealに負けるため、2回戦以降には絶対進まない。
 
   // Realをシャッフル
@@ -95,17 +94,21 @@ export function initTournamentMode() {
   bracket.push(playerChar);
   bracket.push(realChars[0]);
 
-  // Match 2~7 (Real[1~6] vs Dummy[0~5])
-  for (let i = 0; i < 6; i++) {
+  // Match 2~6 (Real[1~5] vs Dummy[0~4])
+  for (let i = 0; i < 5; i++) {
     const pair = [realChars[1 + i], dummies[i]];
     // 左右をランダムにする
     if (Math.random() > 0.5) pair.reverse();
     bracket.push(...pair);
   }
 
-  // Match 8 (Real[7] vs Real[8])
+  // Match 7 (Real[6] vs Real[7])
+  bracket.push(realChars[6]);
   bracket.push(realChars[7]);
+
+  // Match 8 (Real[8] vs Real[9])
   bracket.push(realChars[8]);
+  bracket.push(realChars[9]);
 
   // 試合の順番(8試合)を、プレイヤーの試合以外ランダムにシャッフルするのも良いが、
   // UIの描画上、プレイヤーがどこにいるか見つけやすいように、そのままにするかペア単位でシャッフルする。
