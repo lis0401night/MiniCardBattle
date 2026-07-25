@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import MissionListModal from '../components/battle/MissionListModal.jsx';
+import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
 import { prepareBattle } from '../game/battle.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
@@ -14,6 +15,8 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
   DECK_EDIT_GRID_DENSITY_KEY,
   DECK_SIZE,
+  GRID_DENSITY_COLS,
+  GRID_DENSITY_GAPS,
   MAX_CARD_COPIES,
   appendVersionQuery,
 } from '../utils/constants/config.js';
@@ -30,33 +33,10 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
-// カード表示密度：現在の3列表示を最大サイズ(0)とし、段階的に列数を増やして縮小する
-const GRID_DENSITY_COLS = [3, 4, 5];
-const GRID_DENSITY_GAPS = [15, 10, 7];
-
 // 所持カードエリア（可変シート）の高さ範囲。最大まで引き上げてもデッキエリアが少し覗ける値にする
 const SHEET_MIN_PERCENT = 20;
 const SHEET_MAX_PERCENT = 88;
 const SHEET_DEFAULT_PERCENT = 50;
-
-function GridDensityIcon({ level }) {
-  const squareSize = [7, 5.5, 4][level] ?? 7;
-  const gapSize = [3, 2.5, 2][level] ?? 3;
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(2, ${squareSize}px)`,
-        gridTemplateRows: `repeat(2, ${squareSize}px)`,
-        gap: `${gapSize}px`,
-      }}
-    >
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} style={{ background: '#facc15', borderRadius: '1px' }} />
-      ))}
-    </div>
-  );
-}
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
+import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { loadDeck, saveDeck } from '../services/deck.js';
 import {
@@ -10,7 +11,12 @@ import {
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
-import { MAX_CARD_COPIES } from '../utils/constants/config.js';
+import {
+  GALLERY_GRID_DENSITY_KEY,
+  GRID_DENSITY_COLS,
+  GRID_DENSITY_GAPS,
+  MAX_CARD_COPIES,
+} from '../utils/constants/config.js';
 import { SKILLS, SKILL_CATEGORIES } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
@@ -56,6 +62,24 @@ export default function CardListScreen() {
     name: '',
   });
   const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
+
+  const [gridDensity, setGridDensity] = useState(() => {
+    const saved = parseInt(localStorage.getItem(GALLERY_GRID_DENSITY_KEY), 10);
+    return Number.isInteger(saved) &&
+      saved >= 0 &&
+      saved < GRID_DENSITY_COLS.length
+      ? saved
+      : 0;
+  });
+
+  const cycleGridDensity = () => {
+    playSound?.(SOUNDS?.seClick);
+    setGridDensity((prev) => {
+      const next = (prev + 1) % GRID_DENSITY_COLS.length;
+      localStorage.setItem(GALLERY_GRID_DENSITY_KEY, String(next));
+      return next;
+    });
+  };
 
   // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
   const handleTitleClick = useEasterEgg(() => {
@@ -312,6 +336,23 @@ export default function CardListScreen() {
         </div>
         <button
           className="btn"
+          title="カード表示サイズを変更"
+          onClick={cycleGridDensity}
+          style={{
+            position: 'absolute',
+            left: '4px',
+            padding: '4px 8px',
+            margin: 0,
+            fontSize: '0.9rem',
+            background: '#334155',
+            border: '1px solid #475569',
+            color: '#facc15',
+          }}
+        >
+          <GridDensityIcon level={gridDensity} />
+        </button>
+        <button
+          className="btn"
           style={{
             position: 'absolute',
             right: '44px', // ソートボタン追加に伴い少し左に移動
@@ -364,7 +405,14 @@ export default function CardListScreen() {
         className="card-list-container"
         style={{ flex: 1, minHeight: 0, maxHeight: '500px' }}
       >
-        <div id="gallery-card-grid" className="card-list-grid-3col">
+        <div
+          id="gallery-card-grid"
+          className="card-list-grid-3col"
+          style={{
+            gridTemplateColumns: `repeat(${GRID_DENSITY_COLS[gridDensity]}, 1fr)`,
+            gap: `${GRID_DENSITY_GAPS[gridDensity]}px`,
+          }}
+        >
           {sortedMasterCards.map((template) => {
             const ownedCount = inventory[template.id] || 0;
             const isOwned = ownedCount > 0;
