@@ -46,7 +46,7 @@ export default function CardListScreen() {
   const modalContentRef = useRef(null);
   const skillAccordionRef = useRef(null);
   const [filters, setFilters] = useState({
-    ownership: 'owned_only',
+    ownership: 'include_unowned',
     rarity: [],
     power: [],
     skills: [],
@@ -54,7 +54,7 @@ export default function CardListScreen() {
     name: '',
   });
   const [tempFilters, setTempFilters] = useState({
-    ownership: 'owned_only',
+    ownership: 'include_unowned',
     rarity: [],
     power: [],
     skills: [],
@@ -242,7 +242,7 @@ export default function CardListScreen() {
 
   // フィルター適用後のカードリスト
   const filteredMasterCards = masterCards.filter((c) => {
-    const ownership = filters.ownership || 'owned_only';
+    const ownership = filters.ownership || 'include_unowned';
     const ownedCount = inventory[c.id] || 0;
 
     if (ownership === 'owned_only' && ownedCount <= 0) return false;
@@ -359,10 +359,10 @@ export default function CardListScreen() {
             padding: '4px 8px',
             margin: 0,
             fontSize: '0.9rem',
-            background: hasActiveFilters(filters)
+            background: hasActiveFilters(filters, 'include_unowned')
               ? 'rgba(250, 204, 21, 0.3)'
               : '#334155',
-            border: hasActiveFilters(filters)
+            border: hasActiveFilters(filters, 'include_unowned')
               ? '1px solid #facc15'
               : '1px solid #475569',
             color: '#facc15',
@@ -403,7 +403,7 @@ export default function CardListScreen() {
 
       <div
         className="card-list-container"
-        style={{ flex: 1, minHeight: 0, maxHeight: '500px' }}
+        style={{ flex: 1, minHeight: 0, maxHeight: '560px' }}
       >
         <div
           id="gallery-card-grid"
@@ -635,15 +635,18 @@ export default function CardListScreen() {
                         padding: '6px 12px',
                         borderRadius: '20px',
                         border:
-                          (tempFilters.ownership || 'owned_only') === opt.id
+                          (tempFilters.ownership || 'include_unowned') ===
+                          opt.id
                             ? '2px solid #facc15'
                             : '2px solid #475569',
                         background:
-                          (tempFilters.ownership || 'owned_only') === opt.id
+                          (tempFilters.ownership || 'include_unowned') ===
+                          opt.id
                             ? 'rgba(250, 204, 21, 0.2)'
                             : '#334155',
                         color:
-                          (tempFilters.ownership || 'owned_only') === opt.id
+                          (tempFilters.ownership || 'include_unowned') ===
+                          opt.id
                             ? '#facc15'
                             : '#94a3b8',
                         cursor: 'pointer',
@@ -955,7 +958,7 @@ export default function CardListScreen() {
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
                   setTempFilters({
-                    ownership: 'owned_only',
+                    ownership: 'include_unowned',
                     rarity: [],
                     power: [],
                     skills: [],

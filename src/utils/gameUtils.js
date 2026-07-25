@@ -1264,10 +1264,10 @@ export function safeParseArray(key) {
  * @param {object} filters フィルターオブジェクト
  * @returns {boolean} 有効なフィルターが存在するかどうか
  */
-export function hasActiveFilters(filters) {
+export function hasActiveFilters(filters, defaultOwnership = 'owned_only') {
   if (!filters) return false;
   return (
-    (filters.ownership && filters.ownership !== 'owned_only') ||
+    (filters.ownership && filters.ownership !== defaultOwnership) ||
     (filters.rarity && filters.rarity.length > 0) ||
     (filters.power && filters.power.length > 0) ||
     (filters.skills && filters.skills.length > 0) ||
