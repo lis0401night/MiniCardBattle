@@ -329,6 +329,16 @@ export function clearTournamentSave() {
   localStorage.removeItem('mini_card_battle_tournament_deck_obj');
   // メモリ上のトーナメント状態もクリア（goBackFromSelect等での誤参照を防止）
   GameState.tournament = null;
+
+  // トーナメント中の学園スキン一時設定をクリーンアップし、通常デッキの本来のスキン状態を復元
+  if (GameState.playerSkins) {
+    Object.keys(GameState.playerSkins).forEach((charId) => {
+      if (GameState.playerSkins[charId] === 'school') {
+        delete GameState.playerSkins[charId];
+      }
+    });
+  }
+  loadDeck();
 }
 
 export function playTournamentVenueDialogue() {

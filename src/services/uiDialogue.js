@@ -255,9 +255,11 @@ export function setupDialogueScreen() {
     GameState.enemyConfig.image ||
     getCardImgUrl(GameState.enemyConfig);
 
+  const firstNode = GameState.dialogueQueue?.[0];
   const isCenter =
     GameState.appState === 'story_intro' ||
     GameState.appState === 'inter_battle_story' ||
+    !!firstNode?.centerMode ||
     (GameState.gameMode === 'tournament' &&
       (GameState.appState === 'pre_dialogue' ||
         GameState.appState === 'venue_dialogue' ||
@@ -282,14 +284,29 @@ export function setupDialogueScreen() {
     }
   }
 
+  // 試練の宮殿の導入会話専用の初期制御
+  if (GameState.appState === 'dungeon_intro_dialogue') {
+    pRightImg = null;
+    if (firstNode?.leftImage) {
+      pLeftImg = firstNode.leftImage;
+    } else {
+      pLeftImg = null;
+    }
+  } else if (firstNode?.leftImage) {
+    pLeftImg = firstNode.leftImage;
+  }
+
   window.currentDialogueData = window.currentDialogueData || {};
   window.currentDialogueData.centerMode = isCenter;
   window.currentDialogueData.leftImage = pLeftImg;
   window.currentDialogueData.rightImage = pRightImg;
-  window.currentDialogueData.rightFilter = GameState.enemyConfig.isShadow
+  window.currentDialogueData.rightFilter = GameState.enemyConfig?.isShadow
     ? 'grayscale(1) brightness(0.6) contrast(1.2)'
     : 'none';
-  window.currentDialogueData.rightDisplay = 'block';
+  window.currentDialogueData.rightDisplay =
+    GameState.appState === 'dungeon_intro_dialogue' || !pRightImg
+      ? 'none'
+      : 'block';
 
   switchScreen('screen-dialogue');
   showNextDialogue(true);
@@ -307,6 +324,21 @@ export async function showNextDialogue(force = false) {
 
   const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
   window.currentDialogueData = window.currentDialogueData || {};
+  if (cur.centerMode !== undefined) {
+    window.currentDialogueData.centerMode = cur.centerMode;
+  }
+
+  if (cur.leftImage) {
+    window.currentDialogueData.leftImage = cur.leftImage;
+  }
+
+  if (cur.rightImage) {
+    window.currentDialogueData.rightImage = cur.rightImage;
+    window.currentDialogueData.rightDisplay = 'block';
+  } else if (GameState.appState === 'dungeon_intro_dialogue') {
+    window.currentDialogueData.rightImage = null;
+    window.currentDialogueData.rightDisplay = 'none';
+  }
   window.currentDialogueData.blackScreen = !!cur.blackScreen;
   window.currentDialogueData.stillEffect = cur.stillEffect || null;
   window.currentDialogueData.stillStep =
@@ -510,7 +542,7 @@ export async function showNextDialogue(force = false) {
     }
   }
 
-  window.currentDialogueData.dialogueText = cur.text;
+  window.currentDialogueData.dialogueText = cur.text || cur.dialogueText || '';
 
   if (window._reactUpdateDialogueUI) {
     window._reactUpdateDialogueUI(window.currentDialogueData);

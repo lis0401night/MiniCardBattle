@@ -18,6 +18,7 @@ export default function DialogueScreen() {
   const isStillShowing = !!(isSatanCastleStill || d.stillEffect || d.hideBox);
   const isValidState =
     GameState.appState === 'story_intro' ||
+    GameState.appState === 'dungeon_intro_dialogue' ||
     (GameState.appState === 'pre_dialogue' &&
       !GameState.isSimplifiedDialogue) ||
     (GameState.appState === 'post_dialogue' &&
@@ -297,8 +298,9 @@ export default function DialogueScreen() {
           id="portrait-left"
           className={`char-portrait ${d.leftActive ? 'active' : ''}`}
           src={d.leftImage || undefined}
-          alt="Player"
+          alt=""
           style={{
+            display: d.leftImage ? 'block' : 'none',
             visibility: d.leftImage ? 'visible' : 'hidden',
           }}
         />
@@ -306,14 +308,18 @@ export default function DialogueScreen() {
           id="portrait-right"
           className={`char-portrait ${d.rightActive ? 'active' : ''}`}
           src={d.rightImage || undefined}
-          alt="Enemy"
+          alt=""
           style={{
             filter:
               d.rightFilter && d.rightFilter !== 'none'
                 ? d.rightFilter
                 : undefined,
-            display: d.centerMode ? 'none' : d.rightDisplay || 'block',
-            visibility: d.rightImage ? 'visible' : 'hidden',
+            display:
+              d.centerMode || !d.rightImage || d.rightDisplay === 'none'
+                ? 'none'
+                : 'block',
+            visibility:
+              d.rightImage && d.rightDisplay !== 'none' ? 'visible' : 'hidden',
           }}
         />
       </div>

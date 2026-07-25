@@ -651,98 +651,73 @@ export default function CardPreviewContent({
           {styleProps.showExchangeActions &&
             styleProps.exchangeData &&
             isRevealed && (
-              <>
-                <div
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '10px',
+                  width: '100%',
+                  marginTop: '10px',
+                  flexShrink: 0,
+                }}
+              >
+                <button
+                  className="btn"
                   style={{
-                    background: 'rgba(0,0,0,0.5)',
+                    flex: 1,
+                    minHeight: '40px',
                     padding: '5px',
-                    borderRadius: '8px',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    marginTop: '10px',
-                    border: '1px solid #475569',
-                    textAlign: 'center',
+                    background: '#475569',
+                    marginTop: 0,
+                    fontSize: '0.9rem',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onExchangeBack) onExchangeBack();
                   }}
                 >
-                  <div
-                    style={{
-                      color: '#facc15',
-                      fontWeight: 'bold',
-                      fontSize: '0.7rem',
-                      marginBottom: '2px',
-                    }}
-                  >
-                    必要ポイント
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '1.2rem',
-                      color: '#10b981',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {styleProps.exchangeData.cost} pt
-                  </div>
-                </div>
-                <div
+                  戻る
+                </button>
+                <button
+                  className="btn"
+                  disabled={
+                    styleProps.exchangeData.isMaxed ||
+                    !styleProps.exchangeData.canExchange
+                  }
                   style={{
-                    display: 'flex',
-                    gap: '10px',
-                    width: '100%',
-                    marginTop: '10px',
-                    flexShrink: 0,
+                    flex: 1,
+                    minHeight: '40px',
+                    padding: '5px',
+                    background:
+                      styleProps.exchangeData.isMaxed ||
+                      !styleProps.exchangeData.canExchange
+                        ? '#475569'
+                        : 'linear-gradient(45deg, #f97316, #ea580c)',
+                    color:
+                      styleProps.exchangeData.isMaxed ||
+                      !styleProps.exchangeData.canExchange
+                        ? '#94a3b8'
+                        : '#ffffff',
+                    marginTop: 0,
+                    fontSize: '0.9rem',
+                    textTransform: 'none',
+                    cursor:
+                      styleProps.exchangeData.isMaxed ||
+                      !styleProps.exchangeData.canExchange
+                        ? 'not-allowed'
+                        : 'pointer',
+                    opacity: styleProps.exchangeData.isMaxed ? 0.5 : 1,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onExchangeConfirm)
+                      onExchangeConfirm(styleProps.exchangeData);
                   }}
                 >
-                  <button
-                    className="btn"
-                    style={{
-                      flex: 1,
-                      minHeight: '40px',
-                      padding: '5px',
-                      background: '#475569',
-                      marginTop: 0,
-                      fontSize: '0.9rem',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onExchangeBack) onExchangeBack();
-                    }}
-                  >
-                    戻る
-                  </button>
-                  <button
-                    className="btn"
-                    style={{
-                      flex: 1,
-                      minHeight: '40px',
-                      padding: '5px',
-                      background:
-                        styleProps.exchangeData.isMaxed ||
-                        !styleProps.exchangeData.canExchange
-                          ? '#475569'
-                          : 'linear-gradient(45deg, #f97316, #ea580c)',
-                      color:
-                        styleProps.exchangeData.isMaxed ||
-                        !styleProps.exchangeData.canExchange
-                          ? '#94a3b8'
-                          : '#ffffff',
-                      marginTop: 0,
-                      fontSize: '0.9rem',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onExchangeConfirm)
-                        onExchangeConfirm(styleProps.exchangeData);
-                    }}
-                  >
-                    {styleProps.exchangeData.isMaxed
-                      ? '交換済み'
-                      : !styleProps.exchangeData.canExchange
-                        ? 'ポイント不足'
-                        : '交換'}
-                  </button>
-                </div>
-              </>
+                  {styleProps.exchangeData.isMaxed
+                    ? '交換済み'
+                    : `交換 ${styleProps.exchangeData.cost} pt`}
+                </button>
+              </div>
             )}
         </div>
 

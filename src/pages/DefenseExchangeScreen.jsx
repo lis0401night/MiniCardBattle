@@ -5,6 +5,10 @@ import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import {
+  showCardAcquisitionModal,
+  showPremiumAcquisitionModal,
+} from '../services/uiGallery.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
 import {
@@ -106,9 +110,7 @@ export default function DefenseExchangeScreen() {
       );
       Object.assign(GameState, { unlockedPremiumCards: newUnlocked });
       setUnlockedPremium(newUnlocked);
-      showAlertModal(
-        `プレミアム特典を解放しました！\n（デッキ編成画面で切り替えられます）`
-      );
+      showPremiumAcquisitionModal(item.id);
     } else {
       const currentCount = inventory[item.id] || 0;
       const newInventory = { ...inventory, [item.id]: currentCount + 1 };
@@ -118,9 +120,7 @@ export default function DefenseExchangeScreen() {
         'mini_card_battle_inventory',
         JSON.stringify(newInventory)
       );
-      showAlertModal(
-        `カードを獲得しました！\n（デッキ編成画面で登録できます）`
-      );
+      showCardAcquisitionModal(item.id);
     }
 
     setPointsUpdated((prev) => !prev);

@@ -157,7 +157,7 @@ export const CARD_MASTER = [
     name: 'スパイダー',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'bind', value: 1 }],
+    skills: [{ id: 'bind', value: 2 }],
     voiceCategory: 'insect',
     flavor:
       '暗闇に潜み、粘着質の糸を紡ぐ巨大な蜘蛛。獲物の自由を奪い、死の抱擁へと誘う。',
@@ -733,7 +733,7 @@ export const CARD_MASTER = [
     obtain: ['void_easy'],
     name: 'ホロウ・ブレイバー',
     rarity: 1,
-    power: 3,
+    power: 2,
     skills: [{ id: 'sublimation', value: 2 }],
     voiceCategory: 'stone',
     flavor:
@@ -1233,7 +1233,7 @@ export const CARD_MASTER = [
     name: 'スプライトの冒険者',
     rarity: 2,
     power: 2,
-    skills: [{ id: 'dodge', value: 3 }],
+    skills: [{ id: 'dodge', value: 4 }],
     voiceCategory: 'human_female_cute',
     flavor:
       '未知なる世界への憧れを胸に、故郷の森を旅立ったスプライト。生来のすばしっこさと微かな光の加護が、彼女を守護している。',
@@ -1277,8 +1277,8 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 2,
     skills: [
-      { id: 'lone_wolf', value: 1 },
-      { id: 'dodge', value: 4 },
+      { id: 'lone_wolf', value: 2 },
+      { id: 'stealth', value: 1 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
@@ -1628,7 +1628,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 4,
     skills: [
-      { id: 'standby', value: 1 },
+      { id: 'standby', value: 2 },
       { id: 'sturdy' },
       { id: 'intercept', value: 2 },
     ],
@@ -2841,7 +2841,7 @@ export const CARD_MASTER = [
         targetId: 'token_drone',
         summonId: 'token_reinforceddrone',
       },
-      { id: 'snipe', value: 1 },
+      { id: 'snipe', value: 2 },
     ],
     voiceCategory: 'machine_new',
     flavor: '小型の無人攻撃兵器。',
@@ -3585,7 +3585,11 @@ export const CARD_MASTER = [
     name: '強化ドローン',
     power: 5,
     isToken: true,
-    skills: [{ id: 'snipe', value: 5 }],
+    skills: [
+      { id: 'snipe', value: 2 },
+      { id: 'snipe', value: 2 },
+      { id: 'snipe', value: 2 },
+    ],
     voiceCategory: 'machine_new',
     flavor: '強化されたドローン。',
   },

@@ -86,6 +86,7 @@ function AcquisitionModal({
   btnColor,
   canClose,
   onClose,
+  isIcon,
 }) {
   return (
     <div
@@ -104,12 +105,28 @@ function AcquisitionModal({
       onClick={(e) => e.stopPropagation()}
     >
       <h2 style={{ color: borderColor, marginBottom: '20px' }}>{title}</h2>
-      <div style={imageStyle}>
+      <div style={{ position: 'relative', ...imageStyle }}>
         <img
           src={imageSrc}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           alt={itemTypeName}
         />
+        {isIcon && (
+          <img
+            src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+            alt=""
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              pointerEvents: 'none',
+              zIndex: 5,
+            }}
+          />
+        )}
       </div>
       <p
         style={{
@@ -331,21 +348,46 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     });
 
     setShowSkinAcquisitionModalHook((name, id) => {
-      const char = Object.values(CHARACTERS || {}).find(
-        (c) => c.skins && c.skins[id]
-      );
-      const img = char ? getSkinImage(char, id, 'image') : '';
-      if (img) {
-        playSound?.(SOUNDS?.seSkill);
-        setAcquisitionData({
-          type: 'skin',
-          name,
-          id,
-          image: img,
-          canClose: false,
-        });
-        triggerCloseTimer('skin', id);
+      let img = '';
+      if (CHARACTERS) {
+        for (const charKey in CHARACTERS) {
+          const char = CHARACTERS[charKey];
+          if (!char || !char.skins) continue;
+          if (char.skins[id]) {
+            img = getSkinImage(char, id, 'image');
+            if (img) break;
+          }
+          if (id.startsWith(charKey + '_')) {
+            const skinKey = id.slice(charKey.length + 1);
+            if (char.skins[skinKey]) {
+              img = getSkinImage(char, skinKey, 'image');
+              if (img) break;
+            }
+          }
+          for (const sKey in char.skins) {
+            const skinObj = char.skins[sKey];
+            if (skinObj && (skinObj.id === id || sKey === id)) {
+              img = getSkinImage(char, sKey, 'image');
+              if (img) break;
+            }
+          }
+          if (img) break;
+        }
       }
+      if (!img) {
+        img = `assets/characters/char_${id}.webp`;
+      }
+      img = appendVersionQuery(img);
+
+      playSound?.(SOUNDS?.seSkill);
+      setAcquisitionData({
+        type: 'skin',
+        name,
+        id,
+        image: img,
+        canClose: false,
+      });
+      triggerCloseTimer('skin', id);
     });
 
     setShowIconAcquisitionModalHook((name, id) => {
@@ -664,18 +706,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           if (cb) cb();
         }}
         onExchangeConfirm={(exchangeData) => {
-          if (exchangeData.isMaxed) {
-            showAlertModal?.(
-              exchangeData.type === 'premium'
-                ? '既にプレミアム化済みです。'
-                : '所持または交換上限に達しています。'
-            );
-          } else if (!exchangeData.canExchange) {
-            showAlertModal?.('ポイントが足りません！');
-          } else {
-            if (exchangeData.onConfirm) {
-              exchangeData.onConfirm();
-            }
+          // 交換済み・ポイント不足はボタン自体が非活性のため到達しないが、安全のためガード
+          if (exchangeData.isMaxed || !exchangeData.canExchange) return;
+          if (exchangeData.onConfirm) {
+            exchangeData.onConfirm();
           }
         }}
         onExchangeBack={() => {
@@ -1115,6 +1149,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               itemTypeName="アイコン"
               btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
               btnColor="#fff"
+              isIcon={true}
               canClose={acquisitionData.canClose}
               onClose={() => setAcquisitionData(null)}
             />

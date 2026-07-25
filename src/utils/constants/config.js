@@ -40,8 +40,7 @@ export const FORTUNE_TOTAL_POINTS_KEY = 'mini_card_battle_fortune_total_points';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';
 export const DECK_EDIT_GRID_DENSITY_KEY =
   'mini_card_battle_deck_edit_grid_density';
-export const GALLERY_GRID_DENSITY_KEY =
-  'mini_card_battle_gallery_grid_density';
+export const GALLERY_GRID_DENSITY_KEY = 'mini_card_battle_gallery_grid_density';
 
 // カード表示密度：3列表示を最大サイズ(0)とし、段階的に列数を増やして縮小する
 export const GRID_DENSITY_COLS = [3, 4, 5];

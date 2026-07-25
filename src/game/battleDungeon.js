@@ -1,4 +1,4 @@
-import { startBattleFlow } from '../services/deck.js';
+import { loadDeck, startBattleFlow } from '../services/deck.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 import {
   performFadeTransition,
@@ -8,6 +8,7 @@ import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
+import { buildDungeonIntroDialogue } from '../utils/constants/dungeonIntroDialogues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
@@ -209,13 +210,18 @@ export function selectRentalDeck(deckData) {
     .filter(Boolean);
 
   GameState.playerConfig = deckData.originalData;
-  GameState.dungeonState = 'select_opponent';
-  // 最初のリーダー確定タイミングで保存（非同期の対戦相手生成完了後）
-  generateNextOpponents(() => {
-    saveDungeonProgress();
-  });
 
-  if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
+  // 対戦相手候補を生成
+  generateNextOpponents();
+
+  // 会話キューの組み立て（選んだリーダーのイラストを中央表示 → ナレーション → セリフ）
+  GameState.dialogueQueue = buildDungeonIntroDialogue(deckData);
+  GameState.currentDialogueIndex = 0;
+  GameState.appState = 'dungeon_intro_dialogue';
+
+  performFadeTransition(() => {
+    setupDialogueScreen();
+  });
 }
 
 export function generateNextOpponents(callback) {
@@ -334,6 +340,9 @@ export function retireDungeon() {
   // 中断データを削除
   clearDungeonSave();
 
+  // モード終了に伴い、通常デッキをリロードして GameState.decks を正常状態に復元する
+  loadDeck();
+
   if (earnedPoints > 0) {
     let currentPts = parseInt(localStorage.getItem(CHALLENGE_POINTS_KEY)) || 0;
     let totalPts =
@@ -370,7 +379,14 @@ export function retireDungeon() {
 }
 
 export function handleBattleDungeonProgression() {
-  if (GameState.appState === 'pre_dialogue') {
+  if (GameState.appState === 'dungeon_intro_dialogue') {
+    GameState.dungeonState = 'select_opponent';
+    saveDungeonProgress();
+    performFadeTransition(() => {
+      switchScreen('screen-battle-dungeon');
+      if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
+    });
+  } else if (GameState.appState === 'pre_dialogue') {
     GameState.appState = 'select_player';
     startBattleFlow();
   } else if (GameState.appState === 'post_dialogue') {

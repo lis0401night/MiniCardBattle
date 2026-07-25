@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { saveDeck } from '../services/deck.js';
 import { showAlertModal } from '../services/uiModals.js';
+import {
+  showCardAcquisitionModal,
+  showSkinAcquisitionModal,
+  showPlaymatAcquisitionModal,
+  showIconAcquisitionModal,
+} from '../services/uiGallery.js';
 import { GameState } from '../state/gameState.js';
 import { savePointsToServer, fetchPlayerDecks } from '../utils/apiUtils.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
@@ -143,7 +149,7 @@ export function useExchangeScreen({
         setInventory(newInventory);
         Object.assign(GameState, { playerInventory: newInventory });
         if (typeof saveDeck === 'function') saveDeck();
-        showAlertModal(`「${item.displayName || item.id}」を手に入れました！`);
+        showCardAcquisitionModal(item.id);
       } else if (item.type === 'playmat') {
         const newUnlocked = [...unlockedPlaymats, item.id];
         localStorage.setItem(
@@ -153,9 +159,7 @@ export function useExchangeScreen({
         Object.assign(GameState, { ownedPlaymats: newUnlocked });
         setOwnedPlaymats(newUnlocked);
         setUnlockedPlaymats(newUnlocked);
-        showAlertModal(
-          `「${item.name}」を手に入れました！\nデッキ編成画面でプレイマットを変更できます。`
-        );
+        showPlaymatAcquisitionModal(item.name, item.id);
       } else if (item.type === 'icon') {
         const newUnlocked = [...unlockedIcons, item.id];
         localStorage.setItem(
@@ -164,9 +168,7 @@ export function useExchangeScreen({
         );
         Object.assign(GameState, { unlockedIcons: newUnlocked });
         setUnlockedIcons(newUnlocked);
-        showAlertModal(
-          `「${item.name}」を手に入れました！\nプロフィール設定画面でアイコンを変更できます。`
-        );
+        showIconAcquisitionModal(item.name, item.id);
       } else {
         const newUnlocked = [...unlockedSkins, item.id];
         localStorage.setItem(
@@ -175,9 +177,7 @@ export function useExchangeScreen({
         );
         Object.assign(GameState, { unlockedSkins: newUnlocked });
         setUnlockedSkins(newUnlocked);
-        showAlertModal(
-          `「${item.name}」を手に入れました！\nキャラクター選択画面でスキンを変更できます。`
-        );
+        showSkinAcquisitionModal(item.name, item.id);
       }
 
       setPointsUpdated((prev) => !prev);

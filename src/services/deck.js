@@ -881,6 +881,15 @@ export function saveCurrentEditDeck() {
   if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
     const activeDeck = GameState.decks[GameState.currentDeckIndex];
 
+    // 試練の迷宮用の一時デッキがアクティブの場合、通常デッキ配列への誤上書きをブロックする
+    if (activeDeck && activeDeck.id === 'dungeon_deck') {
+      localStorage.setItem(
+        'mini_card_battle_dungeon_deck_obj',
+        JSON.stringify(activeDeck)
+      );
+      return;
+    }
+
     // トーナメントモードでは学園スキンが強制設定されているため、
     // 通常デッキのスキン情報を上書きしない（他モードへの汚染を防止）
     if (GameState.gameMode === 'tournament') {
@@ -898,7 +907,18 @@ export function saveCurrentEditDeck() {
     }
 
     activeDeck.playmatId = GameState.selectedPlaymatId;
-    activeDeck.playerSkins = { ...GameState.playerSkins };
+
+    // 通常モード保存時は、イベント用一時スキン('school')が通常デッキのスキンとして誤固着するのを防ぐ
+    const cleanedSkins = { ...GameState.playerSkins };
+    if (GameState.gameMode !== 'tournament') {
+      Object.keys(cleanedSkins).forEach((charId) => {
+        if (cleanedSkins[charId] === 'school') {
+          delete cleanedSkins[charId];
+        }
+      });
+    }
+    activeDeck.playerSkins = cleanedSkins;
+
     activeDeck.premiumCards = [...GameState.premiumCards];
     activeDeck.cards = GameState.playerDeckSelection.map((c) =>
       typeof c === 'string' ? c : c.baseId || c.id
