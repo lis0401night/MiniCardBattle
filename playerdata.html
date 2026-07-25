@@ -216,9 +216,36 @@
               >
                 データベース
               </h2>
-              <div class="text-xl font-black text-slate-800 tracking-tight">
-                登録プレイヤー一覧
+              <div class="flex items-center gap-3">
+                <div class="text-xl font-black text-slate-800 tracking-tight">
+                  登録プレイヤー一覧
+                </div>
+                <div
+                  id="filter-status-badge"
+                  class="text-[10px] font-bold text-slate-600 bg-slate-200 px-2.5 py-0.5 rounded-full border border-slate-300"
+                >
+                  集計対象: --/--人
+                </div>
               </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-500"
+                >集計フィルター:</span
+              >
+              <button
+                onclick="window.toggleAllPlayers(true)"
+                class="px-2.5 py-1 text-[11px] font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg border border-emerald-300 transition-all shadow-sm flex items-center gap-1"
+                title="すべてのプレイヤーを集計対象（有効）にする"
+              >
+                <span>✅ 全員有効</span>
+              </button>
+              <button
+                onclick="window.toggleAllPlayers(false)"
+                class="px-2.5 py-1 text-[11px] font-bold bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-lg border border-rose-300 transition-all shadow-sm flex items-center gap-1"
+                title="すべてのプレイヤーを集計対象外（除外）にする"
+              >
+                <span>❌ 全員除外</span>
+              </button>
             </div>
           </div>
 
@@ -229,6 +256,9 @@
               >
                 <tr>
                   <th class="p-2 md:p-3 w-10 text-center">#</th>
+                  <th class="p-2 md:p-3 text-center" style="min-width: 80px">
+                    集計対象
+                  </th>
                   <th class="p-2 md:p-3" style="min-width: 140px">
                     プレイヤー
                   </th>
@@ -359,12 +389,20 @@
             >
               データベース
             </h2>
-            <div class="text-xl font-black text-slate-800 tracking-tight">
-              全カード一覧
-              <span
-                id="cards-count"
-                class="text-sm font-bold text-slate-500 ml-2"
-              ></span>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                全カード一覧
+                <span
+                  id="cards-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+              <div
+                id="cards-filter-status"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200"
+              >
+                集計対象プレイヤー: --/--人
+              </div>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -512,11 +550,44 @@
       let currentSort = { key: 'defense', dir: 'desc' };
       let currentCardSort = 'defense';
       let currentTab = 'players';
+      let excludedPlayerIds = new Set(); // 集計から除外するプレイヤーのUUID集合
+
+      /**
+       * プレイヤーの集計対象（有効 / 除外）を切り替える
+       * @param {string} uuid - プレイヤーUUID
+       * @param {Event} [e] - イベントオブジェクト
+       */
+      function togglePlayerFilter(uuid, e) {
+        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (excludedPlayerIds.has(uuid)) {
+          excludedPlayerIds.delete(uuid);
+        } else {
+          excludedPlayerIds.add(uuid);
+        }
+        renderPlayerList();
+        renderCardList();
+      }
+
+      /**
+       * 全プレイヤーの一括有効/除外を切り替える
+       * @param {boolean} enableAll - trueなら全員有効、falseなら全員除外
+       */
+      function toggleAllPlayers(enableAll) {
+        if (enableAll) {
+          excludedPlayerIds.clear();
+        } else {
+          allPlayers.forEach((p) => excludedPlayerIds.add(p.uuid));
+        }
+        renderPlayerList();
+        renderCardList();
+      }
 
       // グローバル公開
       window.sortBy = sortBy;
       window.selectPlayer = selectPlayer;
       window.switchTab = switchTab;
+      window.togglePlayerFilter = togglePlayerFilter;
+      window.toggleAllPlayers = toggleAllPlayers;
       window.sortCardList = function (sortKey) {
         currentCardSort = sortKey;
         renderCardList();
@@ -689,6 +760,13 @@
       // プレイヤー一覧レンダリング
       // =============================
       function renderPlayerList() {
+        const totalCount = allPlayers.length;
+        const includedCount = totalCount - excludedPlayerIds.size;
+        const statusBadge = document.getElementById('filter-status-badge');
+        if (statusBadge) {
+          statusBadge.innerHTML = `集計対象: <span class="text-indigo-600 font-black">${includedCount}</span> / ${totalCount} 人`;
+        }
+
         const tbody = document.getElementById('player-table-body');
         const sorted = [...filteredPlayers].sort((a, b) => {
           const av = getSortValue(a, currentSort.key);
@@ -701,11 +779,25 @@
             const iconSrc = getIconPath(p.icon || 'player');
             const charName = getCharName(p.character);
             const isSelected = p.uuid === selectedPlayerId;
+            const isExcluded = excludedPlayerIds.has(p.uuid);
 
             return `
-            <tr class="hover:bg-indigo-50/30 transition-all border-b border-slate-100 last:border-0 group cursor-pointer ${isSelected ? 'player-row-selected' : ''}"
+            <tr class="hover:bg-indigo-50/30 transition-all border-b border-slate-100 last:border-0 group cursor-pointer ${
+              isSelected ? 'player-row-selected' : ''
+            } ${isExcluded ? 'opacity-40 bg-slate-50' : ''}"
                 onclick="window.selectPlayer('${p.uuid}')">
-              <td class="p-2 md:p-3 text-center text-[10px] font-black text-slate-300 group-hover:text-indigo-400 transition-colors">${idx + 1}</td>
+              <td class="p-2 md:p-3 text-center text-[10px] font-black text-slate-300 group-hover:text-indigo-400 transition-colors">${
+                idx + 1
+              }</td>
+              <td class="p-2 md:p-3 text-center" onclick="event.stopPropagation(); window.togglePlayerFilter('${p.uuid}', event)">
+                <button class="px-2 py-0.5 text-[9px] font-black rounded-md transition-all shadow-sm ${
+                  isExcluded
+                    ? 'bg-rose-100 text-rose-600 border border-rose-300 hover:bg-rose-200'
+                    : 'bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200'
+                }" title="クリックでこのプレイヤーの集計有効/除外を切り替えます">
+                  ${isExcluded ? '❌ 除外' : '✅ 有効'}
+                </button>
+              </td>
               <td class="p-2 md:p-3">
                 <div class="flex items-center gap-2">
                   <img src="${iconSrc}" alt="icon" class="w-7 h-7 rounded-full border-2 border-indigo-200 object-cover shrink-0"
@@ -989,6 +1081,19 @@
       // 全カード一覧セクション
       // =============================
       function renderCardList() {
+        const totalCount = allPlayers.length;
+        const includedCount = totalCount - excludedPlayerIds.size;
+        const cardsFilterStatus = document.getElementById(
+          'cards-filter-status'
+        );
+        if (cardsFilterStatus) {
+          cardsFilterStatus.innerHTML = `集計対象プレイヤー: <span class="font-black text-indigo-600">${includedCount}</span> / ${totalCount} 人${
+            excludedPlayerIds.size > 0
+              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
+              : ''
+          }`;
+        }
+
         // トークンを除外
         const cards = CARD_MASTER.filter(
           (c) => !String(c.id).startsWith('token_')
@@ -999,6 +1104,9 @@
         const attackUsageCounts = {};
 
         allPlayers.forEach((p) => {
+          // 除外指定されているプレイヤーはスキップ
+          if (excludedPlayerIds.has(p.uuid)) return;
+
           // 1. 防衛デッキ使用数の集計
           if (p.has_defense_deck && Array.isArray(p.deck)) {
             p.deck.forEach((entry) => {
@@ -1011,12 +1119,25 @@
           if (Array.isArray(p.defense_history)) {
             const seenAttackerDecks = new Set();
             p.defense_history.forEach((rec) => {
+              // 攻撃側プレイヤーが登録プレイヤーで除外対象になっている場合はスキップ
+              if (rec.attackerName) {
+                const attackerObj = allPlayers.find(
+                  (ap) => ap.name === rec.attackerName
+                );
+                if (attackerObj && excludedPlayerIds.has(attackerObj.uuid)) {
+                  return;
+                }
+              }
+
               if (Array.isArray(rec.attackerDeck)) {
                 // attackerName + デッキ内容でユニークキーを生成
                 const deckKey =
                   (rec.attackerName || '') +
                   '|' +
-                  [...rec.attackerDeck].sort().join(',');
+                  [...rec.attackerDeck]
+                    .map((e) => resolveCardId(e))
+                    .sort()
+                    .join(',');
                 if (seenAttackerDecks.has(deckKey)) return; // 同一プレイヤー＋同一デッキはスキップ
                 seenAttackerDecks.add(deckKey);
                 rec.attackerDeck.forEach((entry) => {
