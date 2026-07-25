@@ -2,6 +2,7 @@ import { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 import {
   playSound,
   getEventEnemyCharId,
@@ -69,7 +70,7 @@ export default function FortuneHandicapScreen() {
       id="screen-fortune-handicap"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_fortune01.webp')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('${appendVersionQuery('assets/backgrounds/background_fortune01.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',

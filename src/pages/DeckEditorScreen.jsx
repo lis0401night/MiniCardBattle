@@ -182,7 +182,10 @@ export default function DeckEditorScreen({ switchScreen }) {
       sheetRafIdRef.current = requestAnimationFrame(() => {
         sheetRafIdRef.current = null;
         if (sheetElRef.current && pendingSheetPercentRef.current != null) {
-          sheetElRef.current.style.height = `${pendingSheetPercentRef.current}%`;
+          sheetElRef.current.style.setProperty(
+            '--sheet-height',
+            `${pendingSheetPercentRef.current}%`
+          );
         }
       });
     }
@@ -532,14 +535,21 @@ export default function DeckEditorScreen({ switchScreen }) {
     return grouped;
   }, [deckSelection]);
 
+  // CARD_MASTERのID→定義順インデックス。ソートの安定化用に一度だけ構築する
+  const cardOrderMap = useMemo(() => {
+    const map = new Map();
+    (CARD_MASTER || []).forEach((c, i) => map.set(c.id, i));
+    return map;
+  }, []);
+
   const sortedDeckKeys = useMemo(
     () =>
       Object.keys(rawGroupedDeck).sort((a, b) => {
-        const idxA = CARD_MASTER.findIndex((c) => c.id === a);
-        const idxB = CARD_MASTER.findIndex((c) => c.id === b);
+        const idxA = cardOrderMap.get(a) ?? 999;
+        const idxB = cardOrderMap.get(b) ?? 999;
         return idxA - idxB;
       }),
-    [rawGroupedDeck]
+    [rawGroupedDeck, cardOrderMap]
   );
 
   const getBackgroundImage = () => {
@@ -681,11 +691,11 @@ export default function DeckEditorScreen({ switchScreen }) {
         }
 
         // 同レアリティ・同パワーの場合、CARD_MASTERの元のID定義順で一貫性を保つ
-        const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
-        const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
+        const idxA = cardOrderMap.get(a.id) ?? 999;
+        const idxB = cardOrderMap.get(b.id) ?? 999;
         return idxA - idxB;
       }),
-    [filteredMasterCards, sortMode]
+    [filteredMasterCards, sortMode, cardOrderMap]
   );
 
   return (
@@ -1195,7 +1205,8 @@ export default function DeckEditorScreen({ switchScreen }) {
               left: 0,
               right: 0,
               bottom: 0,
-              height: `${sheetPercent}%`,
+              height: 'var(--sheet-height, 40%)',
+              '--sheet-height': `${sheetPercent}%`,
               borderRadius: '12px 12px 0 0',
               // box-shadowは内側のoverflow:hiddenと同じ要素に置くと
               // 影自体が枠でぶつ切りに見えるため、外側の枠なし要素に持たせる
@@ -1256,10 +1267,10 @@ export default function DeckEditorScreen({ switchScreen }) {
                         padding: '4px 8px',
                         margin: 0,
                         fontSize: '0.9rem',
-                        background: hasActiveFilters(filters)
+                        background: hasActiveFilters(filters, 'owned_only')
                           ? 'rgba(250, 204, 21, 0.3)'
                           : '#334155',
-                        border: hasActiveFilters(filters)
+                        border: hasActiveFilters(filters, 'owned_only')
                           ? '1px solid #facc15'
                           : '1px solid #475569',
                         color: '#facc15',

@@ -6,6 +6,8 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
   TOURNAMENT_EXCHANGE_LINEUP,
+  TOURNAMENT_POINTS_KEY,
+  TOURNAMENT_TOTAL_POINTS_KEY,
   appendVersionQuery,
 } from '../utils/constants/config.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
@@ -42,23 +44,15 @@ export default function TournamentExchangeScreen({ switchScreen }) {
         () => {
           playSound(SOUNDS?.seSkill);
           const currentPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_tournament_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(TOURNAMENT_POINTS_KEY), 10) || 0;
           const totalPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_tournament_total_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(TOURNAMENT_TOTAL_POINTS_KEY), 10) ||
+            0;
           const newPts = currentPts + 100;
           const newTotalPts = totalPts + 100;
 
-          localStorage.setItem('mini_card_battle_tournament_points', newPts);
-          localStorage.setItem(
-            'mini_card_battle_tournament_total_points',
-            newTotalPts
-          );
+          localStorage.setItem(TOURNAMENT_POINTS_KEY, newPts);
+          localStorage.setItem(TOURNAMENT_TOTAL_POINTS_KEY, newTotalPts);
           setTournamentPoints({ current: newPts, total: newTotalPts });
 
           // 共通API同期ユーティリティを介してサーバーと同期

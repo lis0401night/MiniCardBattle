@@ -10,6 +10,7 @@ import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 const SVG_WIDTH = 1100;
 const SVG_HEIGHT = 900;
@@ -344,7 +345,7 @@ export default function TournamentBracketScreen() {
       id="screen-tournament-bracket"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)), url('assets/backgrounds/background_tournament02.webp')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)), url('${appendVersionQuery('assets/backgrounds/background_tournament02.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

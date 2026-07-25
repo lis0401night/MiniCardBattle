@@ -140,6 +140,16 @@ export function initTournamentMode() {
   // トーナメントモードでは全キャラクターが学園スキンを使用する
   // getDialogueが学園スキンの台詞を正しく参照できるようにGameState側にも反映する
   if (!GameState.playerSkins) GameState.playerSkins = {};
+  // トーナメント開始前の本来のスキン設定を一時退避
+  if (
+    GameState.pendingCharId &&
+    GameState.playerSkins[GameState.pendingCharId] !== undefined
+  ) {
+    GameState._prevPlayerSkinBeforeTournament =
+      GameState.playerSkins[GameState.pendingCharId];
+  } else {
+    GameState._prevPlayerSkinBeforeTournament = undefined;
+  }
   GameState.playerSkins[GameState.pendingCharId] = 'school';
   // startGameMode で enemySkins は既にリセット済み
 
@@ -331,12 +341,14 @@ export function clearTournamentSave() {
   GameState.tournament = null;
 
   // トーナメント中の学園スキン一時設定をクリーンアップし、通常デッキの本来のスキン状態を復元
-  if (GameState.playerSkins) {
-    Object.keys(GameState.playerSkins).forEach((charId) => {
-      if (GameState.playerSkins[charId] === 'school') {
-        delete GameState.playerSkins[charId];
-      }
-    });
+  if (GameState.playerSkins && GameState.pendingCharId) {
+    const prevSkin = GameState._prevPlayerSkinBeforeTournament;
+    if (prevSkin !== undefined) {
+      GameState.playerSkins[GameState.pendingCharId] = prevSkin;
+    } else {
+      delete GameState.playerSkins[GameState.pendingCharId];
+    }
+    delete GameState._prevPlayerSkinBeforeTournament;
   }
   loadDeck();
 }

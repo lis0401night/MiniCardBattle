@@ -484,21 +484,22 @@ window.loadDeck = loadDeck;
 export function loadDeck() {
   // 自動マイグレーションを実行
   migrateAllSaveData();
-  // 1. ダンジョン特殊処理
+  // 1. ダンジョン特殊処理（初期選択カードの補填が必要な場合のみセット）
   if (GameState.gameMode === 'battle_dungeon') {
     if (
       !GameState.playerDeckSelection ||
-      GameState.playerDeckSelection.length !== 20
+      GameState.playerDeckSelection.length === 0
     ) {
-      GameState.playerDeckSelection = (GameState.dungeonCards || [])
-        .slice(0, 20)
-        .map((id) => {
-          const template = CARD_MASTER.find((c) => c.id === id);
-          return template ? { ...template } : null;
-        })
-        .filter(Boolean);
+      if (GameState.dungeonCards && GameState.dungeonCards.length >= 20) {
+        GameState.playerDeckSelection = GameState.dungeonCards
+          .slice(0, 20)
+          .map((id) => {
+            const template = CARD_MASTER.find((c) => c.id === id);
+            return template ? { ...template } : null;
+          })
+          .filter(Boolean);
+      }
     }
-    return;
   }
 
   // 2. 全体（アカウント）設定のベース読み込み

@@ -33,6 +33,17 @@ import {
 import { prepareBattle } from '../game/battle.js';
 import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { GameState } from '../state/gameState.js';
+
+/**
+ * デッキ一覧画面へ安全にロード・更新して遷移する共通ヘルパー関数
+ * @param {string} [appState='select_deck']
+ */
+export function navigateToDeckList(appState = 'select_deck') {
+  if (appState) GameState.appState = appState;
+  if (typeof window.loadDeck === 'function') window.loadDeck();
+  if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+  switchScreen('screen-deck-list');
+}
 import { setPlayerReadyOnly } from './multiplayer.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import {
@@ -529,16 +540,11 @@ export function goBackFromSelect() {
   ) {
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
-  } else if (GameState.appState === 'select_enemy') {
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
-  } else if (GameState.appState === 'select_enemy_deck') {
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+  } else if (
+    GameState.appState === 'select_enemy' ||
+    GameState.appState === 'select_enemy_deck'
+  ) {
+    navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'online_deck_edit') {
     showOnlineLobby();
   } else if (GameState.gameMode === 'tournament') {
@@ -612,15 +618,9 @@ export function goBackFromStage() {
     // 防衛・オンラインのステージ選択画面からは、直前のデッキ編集画面へと戻る
     switchScreen('screen-deck-edit');
   } else if (GameState.gameMode === 'practice') {
-    GameState.appState = 'select_enemy_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_enemy_deck');
   } else if (GameState.gameMode === 'free') {
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else {
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
@@ -636,18 +636,14 @@ export function goBackFromDeckEdit(isCancel = false) {
     switchScreen('screen-select');
   } else if (GameState.gameMode === 'online_deck_edit') {
     // オンラインデッキ編集：デッキ一覧に戻る
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
     GameState.appState = 'select_deck';
     switchScreen('screen-deck-list');
   } else if (GameState.appState === 'tournament_init_deck_edit') {
     if (isCancel) {
-      GameState.appState = 'select_deck';
-      switchScreen('screen-deck-list');
+      navigateToDeckList('select_deck');
     } else {
       GameState.pendingCharId =
         GameState.decks[GameState.currentDeckIndex].leaderId;
@@ -680,10 +676,7 @@ export function goBackFromDeckEdit(isCancel = false) {
       } else {
         GameState.gameMode = 'free_deck_edit';
       }
-      GameState.appState = GameState.prevAppStateForCreate || 'select_deck';
-      if (typeof window.loadDeck === 'function') window.loadDeck();
-      if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-      switchScreen('screen-deck-list');
+      navigateToDeckList(GameState.prevAppStateForCreate || 'select_deck');
     }
   } else if (GameState.gameMode === 'story') {
     // 難易度選択に戻る
@@ -696,25 +689,17 @@ export function goBackFromDeckEdit(isCancel = false) {
       GameState.gameMode?.endsWith('_fortune'))
   ) {
     // 高難易度/運命の邂逅：デッキ一覧画面に戻る
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'battle_dungeon') {
     GameState.dungeonState = 'select_opponent';
     switchScreen('screen-battle-dungeon');
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
   } else if (GameState.gameMode === 'free_deck_edit') {
     // マイデッキ編集：デッキ一覧に戻る
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList();
   } else {
     // フリー対戦など：デッキ選択（一覧）画面に戻る
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   }
 }
 
@@ -726,12 +711,9 @@ export function showSoloMenu() {
 export function showDeckEditMenu() {
   playSound(SOUNDS.seClick);
   GameState.gameMode = 'free_deck_edit';
-  GameState.appState = 'free_deck_edit';
   GameState.deckListPage = 0; // メニューから入る際はページリセット
   // 確実に現在の本来の通常デッキをロードし直す
-  if (typeof window.loadDeck === 'function') window.loadDeck();
-  if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-  switchScreen('screen-deck-list');
+  navigateToDeckList('free_deck_edit');
 }
 
 export function startGameMode(mode) {
@@ -785,11 +767,8 @@ export function startGameMode(mode) {
   }
 
   // 以下はストーリー/トーナメント（再開なし）/ダンジョン以外の処理
-  GameState.appState = 'select_deck';
   // デッキ選択画面遷移前に最新状態のデッキをリロードし、強制再描画を要求する
-  if (typeof window.loadDeck === 'function') window.loadDeck();
-  if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-  switchScreen('screen-deck-list');
+  navigateToDeckList('select_deck');
 }
 
 export async function performFadeTransition(action) {
@@ -1160,7 +1139,11 @@ export function confirmCharSelect() {
       if (savedStoryStr) {
         try {
           const savedData = JSON.parse(savedStoryStr);
-          if (savedData && savedData.charId === GameState.pendingCharId) {
+          if (
+            savedData &&
+            (savedData.pendingCharId || savedData.charId) ===
+              GameState.pendingCharId
+          ) {
             GameState.appState = 'story_resume';
             switchScreen('screen-story-resume');
             return;
@@ -1326,10 +1309,7 @@ export function confirmDifficulty(level) {
     initStoryMode(GameState.pendingCharId);
   } else if (GameState.gameMode === 'free') {
     // フリーバトル：難易度選択確定後、デッキ一覧へ
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：難易度選択の後はステージを敵の設定からロード（またはランダム）
     GameState.selectedStageId = GameState.enemyConfig.stageId || 'plain';
@@ -1339,19 +1319,13 @@ export function confirmDifficulty(level) {
     GameState.gameMode?.endsWith('_high')
   ) {
     // 高難易度イベント：難易度確定後、デッキ一覧へ
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else if (
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_fortune')
   ) {
     // 運命の邂逅イベント：デッキ選択画面へ（高難易度と同じフロー）
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else {
     GameState.appState = 'select_stage';
     initStageSelectScreen();

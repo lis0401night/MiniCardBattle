@@ -6,6 +6,7 @@ import { showConfirmModal } from '../services/uiModals.js';
 import { CHARACTERS } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 const getRarityColor = (rarity) => {
   switch (rarity) {
@@ -78,7 +79,7 @@ export default function StoryResumeScreen() {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_story01.webp')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_story01.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: '#fff',

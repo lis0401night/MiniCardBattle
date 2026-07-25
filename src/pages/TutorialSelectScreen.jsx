@@ -12,6 +12,7 @@ import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 /**
  * チュートリアル選択画面
@@ -194,7 +195,7 @@ export default function TutorialSelectScreen() {
       id="screen-tutorial-select"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('assets/backgrounds/background_select.webp')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery('assets/backgrounds/background_select.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { appendVersionQuery } from '../utils/constants/config.js';
 
 const UNLOCK_ITEMS = [
   { id: 'deck_easy', name: '初級のデッキを追加', cost: 3 },
@@ -46,7 +47,7 @@ export default function ChallengeUnlockScreen() {
       id="screen-challenge-unlock"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('assets/backgrounds/background_challenge.webp')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('${appendVersionQuery('assets/backgrounds/background_challenge.webp')}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',

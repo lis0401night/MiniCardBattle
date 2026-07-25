@@ -7,6 +7,8 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
   CHALLENGE_EXCHANGE_LINEUP,
+  CHALLENGE_POINTS_KEY,
+  CHALLENGE_TOTAL_POINTS_KEY,
   appendVersionQuery,
 } from '../utils/constants/config.js';
 import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
@@ -35,23 +37,14 @@ export default function ChallengeExchangeScreen() {
         () => {
           playSound(SOUNDS?.seSkill);
           const currentPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_challenge_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(CHALLENGE_POINTS_KEY), 10) || 0;
           const totalPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_challenge_total_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(CHALLENGE_TOTAL_POINTS_KEY), 10) || 0;
           const newPts = currentPts + 100;
           const newTotalPts = totalPts + 100;
 
-          localStorage.setItem('mini_card_battle_challenge_points', newPts);
-          localStorage.setItem(
-            'mini_card_battle_challenge_total_points',
-            newTotalPts
-          );
+          localStorage.setItem(CHALLENGE_POINTS_KEY, newPts);
+          localStorage.setItem(CHALLENGE_TOTAL_POINTS_KEY, newTotalPts);
           setChallengePoints({ current: newPts, total: newTotalPts });
 
           // 共通APIユーティリティを介してサーバーと同期

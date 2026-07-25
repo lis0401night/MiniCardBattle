@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
@@ -246,7 +246,8 @@ export default function CardListScreen() {
     const ownedCount = inventory[c.id] || 0;
 
     if (ownership === 'owned_only' && ownedCount <= 0) return false;
-    if (ownership === 'three_or_less' && ownedCount > 3) return false;
+    if (ownership === 'three_or_less' && ownedCount > MAX_CARD_COPIES - 1)
+      return false;
 
     if (
       filters.name &&
@@ -278,29 +279,40 @@ export default function CardListScreen() {
     return true;
   });
 
-  // カードのソート処理
-  const sortedMasterCards = [...filteredMasterCards].sort((a, b) => {
-    const rarityA = a.rarity ?? 0;
-    const rarityB = b.rarity ?? 0;
-    const powerA = a.power ?? 0;
-    const powerB = b.power ?? 0;
+  // CARD_MASTERのID→定義順インデックスを一度だけ構築し、ソートの安定化に使う
+  const cardOrderMap = useMemo(() => {
+    const map = new Map();
+    (CARD_MASTER || []).forEach((c, i) => map.set(c.id, i));
+    return map;
+  }, []);
 
-    if (sortMode === 'rarity_asc') {
-      if (rarityA !== rarityB) return rarityA - rarityB;
-    } else if (sortMode === 'rarity_desc') {
-      if (rarityA !== rarityB) return rarityB - rarityA;
-    } else if (sortMode === 'power_asc') {
-      if (powerA !== powerB) return powerA - powerB;
-      if (rarityA !== rarityB) return rarityA - rarityB;
-    } else if (sortMode === 'power_desc') {
-      if (powerA !== powerB) return powerB - powerA;
-      if (rarityA !== rarityB) return rarityA - rarityB;
-    }
-    // 同レアリティ・同パワーの場合、CARD_MASTERの元のID定義順で一貫性を保つ
-    const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
-    const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
-    return idxA - idxB;
-  });
+  // カードのソート処理
+  const sortedMasterCards = useMemo(
+    () =>
+      [...filteredMasterCards].sort((a, b) => {
+        const rarityA = a.rarity ?? 0;
+        const rarityB = b.rarity ?? 0;
+        const powerA = a.power ?? 0;
+        const powerB = b.power ?? 0;
+
+        if (sortMode === 'rarity_asc') {
+          if (rarityA !== rarityB) return rarityA - rarityB;
+        } else if (sortMode === 'rarity_desc') {
+          if (rarityA !== rarityB) return rarityB - rarityA;
+        } else if (sortMode === 'power_asc') {
+          if (powerA !== powerB) return powerA - powerB;
+          if (rarityA !== rarityB) return rarityA - rarityB;
+        } else if (sortMode === 'power_desc') {
+          if (powerA !== powerB) return powerB - powerA;
+          if (rarityA !== rarityB) return rarityA - rarityB;
+        }
+        // 同レアリティ・同パワーの場合、CARD_MASTERの元のID定義順で一貫性を保つ
+        const idxA = cardOrderMap.get(a.id) ?? 999;
+        const idxB = cardOrderMap.get(b.id) ?? 999;
+        return idxA - idxB;
+      }),
+    [filteredMasterCards, sortMode, cardOrderMap]
+  );
 
   return (
     <CompactScreenLayout
@@ -623,7 +635,10 @@ export default function CardListScreen() {
                   {[
                     { id: 'owned_only', label: '所持のみ' },
                     { id: 'include_unowned', label: '未所持含む' },
-                    { id: 'three_or_less', label: '3枚以下のみ' },
+                    {
+                      id: 'three_or_less',
+                      label: `${MAX_CARD_COPIES - 1}枚以下のみ`,
+                    },
                   ].map((opt) => (
                     <div
                       key={opt.id}

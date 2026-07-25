@@ -10,7 +10,11 @@ import {
   showPremiumAcquisitionModal,
 } from '../services/uiGallery.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { EXCHANGE_LINEUP } from '../utils/constants/config.js';
+import {
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  EXCHANGE_LINEUP,
+} from '../utils/constants/config.js';
 import {
   getCardImgUrl,
   isTransitioning,
@@ -20,14 +24,8 @@ import { SOUNDS } from '../utils/sounds.js';
 
 export default function DefenseExchangeScreen() {
   const [points, setPoints] = useState(() => ({
-    current:
-      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) ||
-      0,
-    total:
-      parseInt(
-        localStorage.getItem('mini_card_battle_defense_total_points'),
-        10
-      ) || 0,
+    current: parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0,
+    total: parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0,
   }));
   const [exchangeItems, setExchangeItems] = useState(
     () => EXCHANGE_LINEUP || []
@@ -42,13 +40,9 @@ export default function DefenseExchangeScreen() {
 
   const updateExchange = () => {
     const currentPts =
-      parseInt(localStorage.getItem('mini_card_battle_defense_points'), 10) ||
-      0;
+      parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
     const totalPts =
-      parseInt(
-        localStorage.getItem('mini_card_battle_defense_total_points'),
-        10
-      ) || 0;
+      parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
     setPoints({ current: currentPts, total: totalPts });
 
     setInventory(GameState.playerInventory || {});
@@ -99,7 +93,7 @@ export default function DefenseExchangeScreen() {
       return;
     }
 
-    localStorage.setItem('mini_card_battle_defense_points', newPts);
+    localStorage.setItem(DEFENSE_POINTS_KEY, newPts);
     setPoints((prev) => ({ ...prev, current: newPts }));
 
     if (item.type === 'premium') {
@@ -134,19 +128,13 @@ export default function DefenseExchangeScreen() {
         () => {
           playSound?.(SOUNDS?.seSkill);
           let cPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_defense_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
           let tPts =
-            parseInt(
-              localStorage.getItem('mini_card_battle_defense_total_points'),
-              10
-            ) || 0;
+            parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
           cPts += 100;
           tPts += 100;
-          localStorage.setItem('mini_card_battle_defense_points', cPts);
-          localStorage.setItem('mini_card_battle_defense_total_points', tPts);
+          localStorage.setItem(DEFENSE_POINTS_KEY, cPts);
+          localStorage.setItem(DEFENSE_TOTAL_POINTS_KEY, tPts);
           setPoints({ current: cPts, total: tPts });
 
           // 共通API同期ユーティリティを介してサーバーと同期

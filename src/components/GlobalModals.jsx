@@ -73,6 +73,85 @@ const EXCHANGE_DISPLAY_TYPE_LABELS = {
   skin: 'スキン',
 };
 
+// ============================================================
+// ヘルパー関数定義
+// ============================================================
+
+/**
+ * スキンIDから画像パスを解決するヘルパー関数
+ * @param {string} id - スキンID (例: 'android_summer', 'summer')
+ * @returns {string} 画像パス
+ */
+function resolveSkinImageById(id) {
+  if (typeof id !== 'string' || !id) return '';
+
+  let img = '';
+  if (CHARACTERS) {
+    for (const charKey in CHARACTERS) {
+      const char = CHARACTERS[charKey];
+      if (!char || !char.skins) continue;
+
+      // 1. スキンキー直接一致
+      if (char.skins[id]) {
+        img = getSkinImage(char, id, 'image');
+        if (img) break;
+      }
+
+      // 2. 'charId_skinKey' 形式のプレフィックス除去一致
+      if (id.startsWith(charKey + '_')) {
+        const skinKey = id.slice(charKey.length + 1);
+        if (char.skins[skinKey]) {
+          img = getSkinImage(char, skinKey, 'image');
+          if (img) break;
+        }
+      }
+
+      // 3. 各スキンオブジェクトの id プロパティ照合
+      for (const sKey in char.skins) {
+        const skinObj = char.skins[sKey];
+        if (skinObj && (skinObj.id === id || sKey === id)) {
+          img = getSkinImage(char, sKey, 'image');
+          if (img) break;
+        }
+      }
+      if (img) break;
+    }
+  }
+
+  // フォールバック: パスを直接生成
+  if (!img) {
+    img = `assets/characters/char_${id}.webp`;
+  }
+  return appendVersionQuery(img);
+}
+
+/**
+ * お気に入りカード選択一覧における対象カードのプレミアム状態を判定するヘルパー関数
+ */
+function determineIsCardPremium(
+  cardId,
+  hasPremiumUnlocked,
+  favCardPremiumMap,
+  favoriteCardState,
+  globalPremiumCards
+) {
+  // プレミアムが解禁されていないカードは常に通常版 (false)
+  if (!hasPremiumUnlocked) return false;
+
+  // モーダル内でユーザーが手動切り替えした状態があれば最優先
+  if (favCardPremiumMap && favCardPremiumMap[cardId] !== undefined) {
+    return !!favCardPremiumMap[cardId];
+  }
+
+  // 現在選択中のお気に入りカードの設定状態
+  if (favoriteCardState?.cardId === cardId) {
+    return !!favoriteCardState?.isPremium;
+  }
+
+  // グローバルのデッキ/所持プレミアムカード設定を参照
+  return (globalPremiumCards || []).includes(cardId);
+}
+
 // 共通の獲得モーダルコンポーネント
 function AcquisitionModal({
   title,
@@ -348,36 +427,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     });
 
     setShowSkinAcquisitionModalHook((name, id) => {
-      let img = '';
-      if (CHARACTERS) {
-        for (const charKey in CHARACTERS) {
-          const char = CHARACTERS[charKey];
-          if (!char || !char.skins) continue;
-          if (char.skins[id]) {
-            img = getSkinImage(char, id, 'image');
-            if (img) break;
-          }
-          if (id.startsWith(charKey + '_')) {
-            const skinKey = id.slice(charKey.length + 1);
-            if (char.skins[skinKey]) {
-              img = getSkinImage(char, skinKey, 'image');
-              if (img) break;
-            }
-          }
-          for (const sKey in char.skins) {
-            const skinObj = char.skins[sKey];
-            if (skinObj && (skinObj.id === id || sKey === id)) {
-              img = getSkinImage(char, sKey, 'image');
-              if (img) break;
-            }
-          }
-          if (img) break;
-        }
-      }
-      if (!img) {
-        img = `assets/characters/char_${id}.webp`;
-      }
-      img = appendVersionQuery(img);
+      const img = resolveSkinImageById(id);
 
       playSound?.(SOUNDS?.seSkill);
       setAcquisitionData({
@@ -1744,7 +1794,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   whiteSpace: 'nowrap',
                 }}
                 onClick={() => {
-                  if (playerNameInput) {
+                  // コールバック指定時は呼び出し元（プロフィール等）が保存責任を持つため、ここでは永続化しない
+                  if (playerNameInput && !playerNameCallback) {
                     localStorage.setItem(PROFILE_NAME_KEY, playerNameInput);
                   }
                   if (playerNameCallback) {
@@ -3281,13 +3332,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
                   // 2. サーバーへの同期送信
                   const uuid = getOrCreateUUID();
+                  const currentCharId = GameState.playerConfig?.id || null;
                   syncUserProfile(
                     uuid,
                     trimmed,
                     profileIconInput,
-                    null,
+                    currentCharId,
                     favoriteCardState
-                  );
+                  ).catch((err) => {
+                    console.error('Failed to sync user profile:', err);
+                  });
 
                   setProfileModalVisible(false);
                 }}
@@ -3504,14 +3558,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                       card.id
                     );
 
-                    // 解禁されていない場合は常に通常版 (false)
-                    const isCardPremium = hasPremiumUnlocked
-                      ? favCardPremiumMap[card.id] !== undefined
-                        ? !!favCardPremiumMap[card.id]
-                        : favoriteCardState?.cardId === card.id
-                          ? !!favoriteCardState?.isPremium
-                          : (GameState.premiumCards || []).includes(card.id)
-                      : false;
+                    const isCardPremium = determineIsCardPremium(
+                      card.id,
+                      hasPremiumUnlocked,
+                      favCardPremiumMap,
+                      favoriteCardState,
+                      GameState.premiumCards
+                    );
 
                     const isSelected =
                       favoriteCardState?.cardId === card.id &&

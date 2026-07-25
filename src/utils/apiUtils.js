@@ -213,8 +213,8 @@ export async function syncUserProfile(
   uuid,
   name,
   icon,
-  character = null,
-  favoriteCard = null
+  character,
+  favoriteCard
 ) {
   if (!uuid) return false;
 
