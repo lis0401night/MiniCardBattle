@@ -817,14 +817,17 @@ export function loadDeck() {
       activeDeck.premiumCards = [...GameState.premiumCards];
     }
 
-    // トーナメント進行中かつスナップショットデッキが既にロード済みの場合は上書きしない
-    const tournamentSnapshotLoaded =
-      GameState.gameMode === 'tournament' &&
-      GameState.tournament &&
-      GameState.playerDeckSelection &&
-      GameState.playerDeckSelection.length > 0;
+    // トーナメント進行中またはダンジョンモード進行中で、デッキが既にロード済みの場合は上書きしない
+    const isDeckSnapshotProtected =
+      (GameState.gameMode === 'tournament' &&
+        GameState.tournament &&
+        GameState.playerDeckSelection &&
+        GameState.playerDeckSelection.length > 0) ||
+      (GameState.gameMode === 'battle_dungeon' &&
+        GameState.playerDeckSelection &&
+        GameState.playerDeckSelection.length > 0);
 
-    if (!tournamentSnapshotLoaded) {
+    if (!isDeckSnapshotProtected) {
       GameState.playerDeckSelection = activeDeck.cards.map((item) => {
         const id = typeof item === 'string' ? item : item.id || '';
         const t = CARD_MASTER.find((m) => m.id === id);

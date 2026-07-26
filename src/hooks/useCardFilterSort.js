@@ -4,13 +4,8 @@ import {
   GRID_DENSITY_GAPS,
   MAX_CARD_COPIES,
 } from '../utils/constants/config.js';
-
-const RARITY_ORDER = {
-  SSR: 4,
-  SR: 3,
-  R: 2,
-  N: 1,
-};
+import { isTransitioning, playSound } from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 /**
  * カードフィルター・ソート・グリッド密度管理カスタムフック
@@ -21,19 +16,22 @@ export function useCardFilterSort({
   densityStorageKey = 'mini_card_battle_grid_density_cardlist',
   defaultOwnership = 'include_unowned',
 }) {
-  // グリッド密度 (localStorage連携)
+  // グリッド密度 (0, 1, 2 のインデックス数値で管理)
   const [gridDensity, setGridDensity] = useState(() => {
-    const saved = localStorage.getItem(densityStorageKey);
-    return saved === 'compact' || saved === 'dense' ? saved : 'normal';
+    const saved = parseInt(localStorage.getItem(densityStorageKey), 10);
+    return Number.isInteger(saved) &&
+      saved >= 0 &&
+      saved < GRID_DENSITY_COLS.length
+      ? saved
+      : 0;
   });
 
   const cycleGridDensity = () => {
+    if (isTransitioning) return;
+    playSound?.(SOUNDS?.seClick);
     setGridDensity((prev) => {
-      let next = 'normal';
-      if (prev === 'normal') next = 'compact';
-      else if (prev === 'compact') next = 'dense';
-      else next = 'normal';
-      localStorage.setItem(densityStorageKey, next);
+      const next = (prev + 1) % GRID_DENSITY_COLS.length;
+      localStorage.setItem(densityStorageKey, String(next));
       return next;
     });
   };
@@ -42,31 +40,29 @@ export function useCardFilterSort({
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
 
+  // ソートモード ('rarity_asc', 'rarity_desc', 'power_asc', 'power_desc')
+  const [sortMode, setSortMode] = useState('rarity_asc');
+  const [tempSortMode, setTempSortMode] = useState('rarity_asc');
+
   // 確定済みフィルター状態
   const [filters, setFilters] = useState({
-    name: '',
     ownership: defaultOwnership,
     rarity: [],
-    cost: [],
+    power: [],
     skills: [],
+    excludeSkills: [],
+    name: '',
   });
 
   // モーダル内の一時フィルター状態
   const [tempFilters, setTempFilters] = useState({
-    name: '',
     ownership: defaultOwnership,
     rarity: [],
-    cost: [],
+    power: [],
     skills: [],
+    excludeSkills: [],
+    name: '',
   });
-
-  // 確定済みソート状態
-  const [sortKey, setSortKey] = useState('default');
-  const [sortOrder, setSortOrder] = useState('asc');
-
-  // モーダル内の一時ソート状態
-  const [tempSortKey, setTempSortKey] = useState('default');
-  const [tempSortOrder, setTempSortOrder] = useState('asc');
 
   // モーダルオープン時の初期化
   const openFilterModal = () => {
@@ -75,56 +71,82 @@ export function useCardFilterSort({
   };
 
   const openSortModal = () => {
-    setTempSortKey(sortKey);
-    setTempSortOrder(sortOrder);
+    setTempSortMode(sortMode);
     setSortModalVisible(true);
   };
 
-  const toggleTempFilter = (type, value) => {
+  const toggleTempFilter = (type, val) => {
+    playSound?.(SOUNDS?.seClick);
     setTempFilters((prev) => {
-      const list = prev[type] || [];
-      const exists = list.includes(value);
+      const arr = prev[type] || [];
       return {
         ...prev,
-        [type]: exists ? list.filter((v) => v !== value) : [...list, value],
+        [type]: arr.includes(val)
+          ? arr.filter((x) => x !== val)
+          : [...arr, val],
       };
     });
   };
 
-  const toggleTempSkillFilter = (skillId) => {
-    toggleTempFilter('skills', skillId);
+  const toggleTempSkillFilter = (sk) => {
+    playSound?.(SOUNDS?.seClick);
+    setTempFilters((prev) => {
+      const isIncluded = (prev.skills || []).includes(sk);
+      const isExcluded = (prev.excludeSkills || []).includes(sk);
+
+      let nextSkills = [...(prev.skills || [])];
+      let nextExclude = [...(prev.excludeSkills || [])];
+
+      if (!isIncluded && !isExcluded) {
+        // 未選択 -> 指定（含む）
+        nextSkills.push(sk);
+      } else if (isIncluded) {
+        // 指定 -> 除外
+        nextSkills = nextSkills.filter((x) => x !== sk);
+        nextExclude.push(sk);
+      } else {
+        // 除外 -> 未選択
+        nextExclude = nextExclude.filter((x) => x !== sk);
+      }
+
+      return {
+        ...prev,
+        skills: nextSkills,
+        excludeSkills: nextExclude,
+      };
+    });
   };
 
   const applyFilters = () => {
+    playSound?.(SOUNDS?.seClick);
     setFilters({ ...tempFilters });
     setFilterModalVisible(false);
   };
 
   const resetFilters = () => {
+    playSound?.(SOUNDS?.seClick);
     const initial = {
-      name: '',
       ownership: defaultOwnership,
       rarity: [],
-      cost: [],
+      power: [],
       skills: [],
+      excludeSkills: [],
+      name: '',
     };
     setTempFilters(initial);
     setFilters(initial);
-    setFilterModalVisible(false);
   };
 
   const applySort = () => {
-    setSortKey(tempSortKey);
-    setSortOrder(tempSortOrder);
+    playSound?.(SOUNDS?.seClick);
+    setSortMode(tempSortMode);
     setSortModalVisible(false);
   };
 
   const resetSort = () => {
-    setTempSortKey('default');
-    setTempSortOrder('asc');
-    setSortKey('default');
-    setSortOrder('asc');
-    setSortModalVisible(false);
+    playSound?.(SOUNDS?.seClick);
+    setTempSortMode('rarity_asc');
+    setSortMode('rarity_asc');
   };
 
   // フィルタリング処理
@@ -148,87 +170,70 @@ export function useCardFilterSort({
         return false;
       }
 
-      if (filters.cost.length > 0) {
-        const matchesCost = filters.cost.some((costVal) => {
-          if (costVal === '5+') return c.cost >= 5;
-          return c.cost === costVal;
-        });
-        if (!matchesCost) return false;
+      if (filters.power.length > 0 && !filters.power.includes(c.power)) {
+        return false;
       }
 
-      if (filters.skills.length > 0) {
-        const matchesSkill = filters.skills.some((skillId) => {
-          if (c.onPlaySkill === skillId) return true;
-          if (
-            Array.isArray(c.turnSkills) &&
-            c.turnSkills.some((ts) => ts.skill === skillId)
-          ) {
-            return true;
-          }
-          if (
-            Array.isArray(c.passiveSkills) &&
-            c.passiveSkills.some((ps) => ps.skill === skillId)
-          ) {
-            return true;
-          }
+      let cardSkills = [];
+      if (Array.isArray(c.skills))
+        c.skills.forEach((sk) => cardSkills.push(sk.id));
+      if (Array.isArray(c.choices))
+        c.choices.forEach((ch) => cardSkills.push(ch.id));
+      if (Array.isArray(c.choices2))
+        c.choices2.forEach((ch) => cardSkills.push(ch.id));
+
+      if (filters.skills && filters.skills.length > 0) {
+        if (!filters.skills.some((sk) => cardSkills.includes(sk))) return false;
+      }
+
+      if (filters.excludeSkills && filters.excludeSkills.length > 0) {
+        if (filters.excludeSkills.some((sk) => cardSkills.includes(sk)))
           return false;
-        });
-        if (!matchesSkill) return false;
       }
 
       return true;
     });
   }, [masterCards, inventory, filters, defaultOwnership]);
 
+  // CARD_MASTERのID→定義順インデックス。ソートの安定化用
+  const cardOrderMap = useMemo(() => {
+    const map = new Map();
+    (masterCards || []).forEach((c, i) => map.set(c.id, i));
+    return map;
+  }, [masterCards]);
+
   // ソート処理
   const sortedMasterCards = useMemo(() => {
-    const list = [...filteredMasterCards];
-    if (sortKey === 'default') return list;
+    return [...filteredMasterCards].sort((a, b) => {
+      const rarityA = a.rarity ?? 0;
+      const rarityB = b.rarity ?? 0;
+      const powerA = a.power ?? 0;
+      const powerB = b.power ?? 0;
 
-    list.sort((a, b) => {
-      let valA, valB;
-      if (sortKey === 'cost') {
-        valA = a.cost ?? 0;
-        valB = b.cost ?? 0;
-      } else if (sortKey === 'attack') {
-        valA = a.attack ?? 0;
-        valB = b.attack ?? 0;
-      } else if (sortKey === 'hp') {
-        valA = a.hp ?? 0;
-        valB = b.hp ?? 0;
-      } else if (sortKey === 'rarity') {
-        valA = RARITY_ORDER[a.rarity] || 0;
-        valB = RARITY_ORDER[b.rarity] || 0;
-      } else if (sortKey === 'name') {
-        const comp = (a.name || '').localeCompare(b.name || '', 'ja');
-        return sortOrder === 'asc' ? comp : -comp;
-      } else {
-        const idxA = masterCards.findIndex((mc) => mc.id === a.id);
-        const idxB = masterCards.findIndex((mc) => mc.id === b.id);
-        valA = idxA !== -1 ? idxA : Number.MAX_SAFE_INTEGER;
-        valB = idxB !== -1 ? idxB : Number.MAX_SAFE_INTEGER;
+      if (sortMode === 'rarity_asc') {
+        if (rarityA !== rarityB) return rarityA - rarityB;
+      } else if (sortMode === 'rarity_desc') {
+        if (rarityA !== rarityB) return rarityB - rarityA;
+      } else if (sortMode === 'power_asc') {
+        if (powerA !== powerB) return powerA - powerB;
+        if (rarityA !== rarityB) return rarityA - rarityB;
+      } else if (sortMode === 'power_desc') {
+        if (powerA !== powerB) return powerB - powerA;
+        if (rarityA !== rarityB) return rarityA - rarityB;
       }
 
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-
-      // 同点の場合のフォールバック (デフォルト順)
-      const idxA = masterCards.findIndex((mc) => mc.id === a.id);
-      const idxB = masterCards.findIndex((mc) => mc.id === b.id);
-      return (
-        (idxA !== -1 ? idxA : Number.MAX_SAFE_INTEGER) -
-        (idxB !== -1 ? idxB : Number.MAX_SAFE_INTEGER)
-      );
+      // 同レアリティ・同パワーの場合、元のカード定義順で一貫性を保つ
+      const idxA = cardOrderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const idxB = cardOrderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return idxA - idxB;
     });
-
-    return list;
-  }, [filteredMasterCards, sortKey, sortOrder, masterCards]);
+  }, [filteredMasterCards, sortMode, cardOrderMap]);
 
   return {
     gridDensity,
     cycleGridDensity,
-    gridCols: GRID_DENSITY_COLS[gridDensity],
-    gridGap: GRID_DENSITY_GAPS[gridDensity],
+    gridCols: GRID_DENSITY_COLS[gridDensity] || GRID_DENSITY_COLS[0],
+    gridGap: GRID_DENSITY_GAPS[gridDensity] ?? GRID_DENSITY_GAPS[0],
     filterModalVisible,
     setFilterModalVisible,
     openFilterModal,
@@ -242,12 +247,9 @@ export function useCardFilterSort({
     toggleTempSkillFilter,
     applyFilters,
     resetFilters,
-    sortKey,
-    sortOrder,
-    tempSortKey,
-    setTempSortKey,
-    tempSortOrder,
-    setTempSortOrder,
+    sortMode,
+    tempSortMode,
+    setTempSortMode,
     applySort,
     resetSort,
     sortedMasterCards,

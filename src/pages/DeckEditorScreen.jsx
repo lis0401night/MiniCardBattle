@@ -109,10 +109,9 @@ export default function DeckEditorScreen({ switchScreen }) {
     toggleTempSkillFilter,
     applyFilters,
     resetFilters,
-    tempSortKey,
-    setTempSortKey,
-    tempSortOrder,
-    setTempSortOrder,
+    sortMode,
+    tempSortMode,
+    setTempSortMode,
     applySort,
     resetSort,
     sortedMasterCards,
@@ -1086,7 +1085,29 @@ export default function DeckEditorScreen({ switchScreen }) {
                   }}
                 >
                   <span>所持カード（タップで追加）</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '6px',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <button
+                      className="btn icon-btn"
+                      title="表示密度切替"
+                      style={{
+                        padding: '4px 8px',
+                        margin: 0,
+                        fontSize: '0.9rem',
+                        background: '#334155',
+                        border: '1px solid #475569',
+                        color: '#facc15',
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={cycleGridDensity}
+                    >
+                      <GridDensityIcon level={gridDensity} />
+                    </button>
                     <button
                       className="btn"
                       style={{
@@ -1116,11 +1137,11 @@ export default function DeckEditorScreen({ switchScreen }) {
                         margin: 0,
                         fontSize: '0.9rem',
                         background:
-                          tempSortKey !== 'default'
+                          sortMode !== 'rarity_asc'
                             ? 'rgba(250, 204, 21, 0.3)'
                             : '#334155',
                         border:
-                          tempSortKey !== 'default'
+                          sortMode !== 'rarity_asc'
                             ? '1px solid #facc15'
                             : '1px solid #475569',
                         color: '#facc15',
@@ -1410,10 +1431,8 @@ export default function DeckEditorScreen({ switchScreen }) {
       <CardSortModal
         visible={sortModalVisible}
         onClose={() => setSortModalVisible(false)}
-        tempSortKey={tempSortKey}
-        setTempSortKey={setTempSortKey}
-        tempSortOrder={tempSortOrder}
-        setTempSortOrder={setTempSortOrder}
+        tempSortMode={tempSortMode}
+        setTempSortMode={setTempSortMode}
         onApply={applySort}
         onReset={resetSort}
       />

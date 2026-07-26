@@ -28,7 +28,7 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 
 /**
- * カード一覧画面
+ * カード一覧画面（ギャラリー）
  * useEasterEggカスタムフックによりデバッグモード起動処理をスマートに共通化。
  * useCardFilterSort/CardFilterModal/CardSortModalによりフィルター・ソート処理を共通化。
  */
@@ -57,10 +57,9 @@ export default function CardListScreen() {
     toggleTempSkillFilter,
     applyFilters,
     resetFilters,
-    tempSortKey,
-    setTempSortKey,
-    tempSortOrder,
-    setTempSortOrder,
+    sortMode,
+    tempSortMode,
+    setTempSortMode,
     applySort,
     resetSort,
     sortedMasterCards,
@@ -160,184 +159,208 @@ export default function CardListScreen() {
     updateList();
   };
 
-  const isFiltered = hasActiveFilters(filters, 'include_unowned');
-
   return (
     <CompactScreenLayout
-      title={`カード一覧 (${ownedKindCount}/${masterCards.length}種)`}
+      id="screen-card-list"
+      title="カード一覧"
+      titleColor="#facc15"
+      backgroundImage="background_gallery.webp"
       onTitleClick={handleTitleClick}
-      titleStyle={{ cursor: 'pointer', userSelect: 'none' }}
-      backTarget="screen-card-menu"
-      headerRight={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            className="btn icon-btn"
-            style={{
-              padding: '6px 10px',
-              fontSize: '1.2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onClick={cycleGridDensity}
-            title="表示密度切替"
-          >
-            <GridDensityIcon level={gridDensity} />
-          </button>
-          <button
-            className="btn filter-btn"
-            style={{
-              padding: '6px 12px',
-              fontSize: '0.85rem',
-              position: 'relative',
-              background: isFiltered ? '#facc15' : undefined,
-              color: isFiltered ? '#0f172a' : undefined,
-              fontWeight: isFiltered ? 'bold' : undefined,
-            }}
-            onClick={() => {
-              playSound?.(SOUNDS?.seClick);
-              openFilterModal();
-            }}
-          >
-            🔍 絞り込み
-            {isFiltered && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                }}
-              />
-            )}
-          </button>
-
-          <button
-            className="btn filter-btn"
-            style={{
-              padding: '6px 12px',
-              fontSize: '0.85rem',
-              position: 'relative',
-            }}
-            onClick={() => {
-              playSound?.(SOUNDS?.seClick);
-              openSortModal();
-            }}
-          >
-            ⇅ ソート
-          </button>
-        </div>
-      }
+      backTo="screen-gallery-menu"
     >
       <div
-        className="card-list-scroll-area"
         style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '10px 15px',
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: '10px',
+          width: '95%',
+          maxWidth: '440px',
           boxSizing: 'border-box',
         }}
       >
         <div
+          id="card-list-count"
           style={{
-            display: 'grid',
+            fontSize: '0.9rem',
+            color: '#cbd5e1',
+            margin: 0,
+            textAlign: 'center',
+          }}
+        >
+          カード種類: {ownedKindCount} / {masterCards.length}
+        </div>
+        <button
+          className="btn"
+          title="カード表示サイズを変更"
+          onClick={cycleGridDensity}
+          style={{
+            position: 'absolute',
+            left: '4px',
+            padding: '4px 8px',
+            margin: 0,
+            fontSize: '0.9rem',
+            background: '#334155',
+            border: '1px solid #475569',
+            color: '#facc15',
+          }}
+        >
+          <GridDensityIcon level={gridDensity} />
+        </button>
+        <button
+          className="btn"
+          style={{
+            position: 'absolute',
+            right: '44px',
+            padding: '4px 8px',
+            margin: 0,
+            fontSize: '0.9rem',
+            background: hasActiveFilters(filters, 'include_unowned')
+              ? 'rgba(250, 204, 21, 0.3)'
+              : '#334155',
+            border: hasActiveFilters(filters, 'include_unowned')
+              ? '1px solid #facc15'
+              : '1px solid #475569',
+            color: '#facc15',
+          }}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            openFilterModal();
+          }}
+        >
+          🔍
+        </button>
+        <button
+          className="btn"
+          style={{
+            position: 'absolute',
+            right: '4px',
+            padding: '4px 8px',
+            margin: 0,
+            fontSize: '0.9rem',
+            background:
+              sortMode !== 'rarity_asc' ? 'rgba(250, 204, 21, 0.3)' : '#334155',
+            border:
+              sortMode !== 'rarity_asc'
+                ? '1px solid #facc15'
+                : '1px solid #475569',
+            color: '#facc15',
+          }}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            openSortModal();
+          }}
+        >
+          ↕️
+        </button>
+      </div>
+
+      <div
+        className="card-list-container"
+        style={{ flex: 1, minHeight: 0, maxHeight: '560px' }}
+      >
+        <div
+          id="gallery-card-grid"
+          className="card-list-grid-3col"
+          style={{
             gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
             gap: `${gridGap}px`,
-            justifyItems: 'center',
           }}
         >
           {sortedMasterCards.map((template) => {
             const ownedCount = inventory[template.id] || 0;
-            const isUnlocked = unlockedPremium.includes(template.id);
-            const isPremiumActive = activePremium.includes(template.id);
+            const isOwned = ownedCount > 0;
+            const opacity = isOwned ? '1' : '0.4';
             const rarityClass = template.rarity
               ? ` rarity-${template.rarity}`
               : '';
+            const imgUrl = getCardImgUrl ? getCardImgUrl(template, true) : '';
+            const filter = template.filter || 'none';
+
+            const hasPremiumUnlocked = unlockedPremium.includes(template.id);
+            const isPremiumActive = activePremium.includes(template.id);
 
             return (
               <div
                 key={template.id}
-                className="deck-card-item"
-                style={{
-                  width: '100%',
-                  aspectRatio: '2/3',
-                  maxWidth: '180px',
-                  position: 'relative',
-                  filter: ownedCount === 0 ? 'grayscale(100%)' : 'none',
-                  opacity: ownedCount === 0 ? 0.4 : 1,
-                  cursor: 'pointer',
-                }}
+                className="deck-card-item gallery-card-wrapper"
                 onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  openCardPreview(template.id);
+                  if (!isTransitioning) {
+                    openCardPreview?.(template, { fromCardList: true });
+                  }
                 }}
               >
-                <div
-                  className={`card blue${rarityClass}${isPremiumActive ? ' is-premium' : ''}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    position: 'relative',
-                  }}
-                >
-                  <img
-                    className="card-bg"
-                    src={getCardImgUrl({
-                      id: template.id,
-                      isPremium: isPremiumActive,
-                    })}
-                    alt={template.name}
-                    style={{
-                      objectFit: 'cover',
-                      width: '100%',
-                      height: '100%',
-                    }}
-                  />
-                  {/* 所持枚数バッジ */}
+                <div className={`card blue${rarityClass}`} style={{ opacity }}>
+                  {imgUrl && (
+                    <img
+                      className="card-bg"
+                      src={imgUrl}
+                      alt={template.name}
+                      loading="lazy"
+                      style={{
+                        filter,
+                        objectFit: 'cover',
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    />
+                  )}
+
+                  {hasPremiumUnlocked && (
+                    <div
+                      className="premium-toggle-icon"
+                      onClick={(e) => handleTogglePremium(e, template.id)}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: '4px',
+                        background: 'rgba(0,0,0,0.85)',
+                        color: isPremiumActive ? '#d946ef' : '#94a3b8',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        fontSize: '0.8rem',
+                        zIndex: 7,
+                        border: `1px solid ${isPremiumActive ? '#d946ef' : '#475569'}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✨
+                    </div>
+                  )}
+
+                  <div
+                    className="card-power"
+                    style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
+                  >
+                    {template.power}
+                  </div>
+
+                  {window.renderSkillTag && (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: window.renderSkillTag(template),
+                      }}
+                    ></div>
+                  )}
+
                   <div
                     style={{
                       position: 'absolute',
                       top: '4px',
                       right: '4px',
-                      background: 'rgba(0,0,0,0.75)',
-                      color: '#fff',
-                      borderRadius: '12px',
-                      padding: '2px 6px',
-                      fontSize: '0.75rem',
+                      background: 'rgba(0,0,0,0.85)',
+                      color: '#facc15',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
                       fontWeight: 'bold',
-                      zIndex: 2,
+                      fontSize: '0.75rem',
+                      zIndex: 6,
+                      border: '1px solid #facc15',
                     }}
                   >
-                    ×{ownedCount}
+                    x{ownedCount}
                   </div>
-
-                  {/* プレミアム切り替えボタン (解放済みの場合のみ表示) */}
-                  {isUnlocked && (
-                    <button
-                      className="btn"
-                      style={{
-                        position: 'absolute',
-                        bottom: '4px',
-                        right: '4px',
-                        background: isPremiumActive
-                          ? 'linear-gradient(135deg, #facc15, #f59e0b)'
-                          : 'rgba(0,0,0,0.6)',
-                        color: isPremiumActive ? '#0f172a' : '#facc15',
-                        border: '1px solid #facc15',
-                        borderRadius: '4px',
-                        fontSize: '0.65rem',
-                        fontWeight: 'bold',
-                        padding: '2px 4px',
-                        zIndex: 3,
-                      }}
-                      onClick={(e) => handleTogglePremium(e, template.id)}
-                    >
-                      {isPremiumActive ? '✨ プレミアム' : '通常'}
-                    </button>
-                  )}
                 </div>
               </div>
             );
@@ -375,10 +398,8 @@ export default function CardListScreen() {
       <CardSortModal
         visible={sortModalVisible}
         onClose={() => setSortModalVisible(false)}
-        tempSortKey={tempSortKey}
-        setTempSortKey={setTempSortKey}
-        tempSortOrder={tempSortOrder}
-        setTempSortOrder={setTempSortOrder}
+        tempSortMode={tempSortMode}
+        setTempSortMode={setTempSortMode}
         onApply={applySort}
         onReset={resetSort}
       />

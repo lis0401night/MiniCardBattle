@@ -7,7 +7,7 @@ import { SOUNDS } from '../../utils/sounds.js';
 export default function CardFilterModal({
   visible,
   onClose,
-  tempFilters,
+  tempFilters = {},
   setTempFilters,
   toggleTempFilter,
   toggleTempSkillFilter,
@@ -15,48 +15,40 @@ export default function CardFilterModal({
   onReset,
   defaultOwnership = 'include_unowned',
 }) {
-  const [skillCategoryOpen, setSkillCategoryOpen] = useState({});
+  const [isSkillAccordionOpen, setIsSkillAccordionOpen] = useState(false);
   const modalContentRef = useRef(null);
   const skillAccordionRef = useRef(null);
 
   if (!visible) return null;
 
-  const availableRarities = ['N', 'R', 'SR', 'SSR'];
-  const availableCosts = [0, 1, 2, 3, 4, '5+'];
+  const availableRarities = [1, 2, 3, 4];
+  const availablePowers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-  const toggleCategory = (catKey) => {
-    playSound?.(SOUNDS?.seClick);
-    setSkillCategoryOpen((prev) => {
-      const nextState = { ...prev, [catKey]: !prev[catKey] };
-
-      // 初めてアコーディオンを開く場合、モーダルのスクロール位置を調整して見やすくする
-      if (nextState[catKey] && modalContentRef.current) {
-        setTimeout(() => {
-          if (skillAccordionRef.current && modalContentRef.current) {
-            const containerRect =
-              modalContentRef.current.getBoundingClientRect();
-            const accordionRect =
-              skillAccordionRef.current.getBoundingClientRect();
-
-            // アコーディオンのトップ位置までスクロール
-            modalContentRef.current.scrollTop +=
-              accordionRect.top - containerRect.top - 10;
-          }
-        }, 50);
-      }
-      return nextState;
-    });
-  };
+  const raritiesList = tempFilters.rarity || [];
+  const powersList = tempFilters.power || [];
+  const skillsList = tempFilters.skills || [];
+  const excludeSkillsList = tempFilters.excludeSkills || [];
 
   return (
     <div
-      className="modal-overlay"
-      style={{ zIndex: 2000, display: 'flex' }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        zIndex: 9999,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
       onClick={onClose}
     >
       <div
-        className="skill-modal-box modal-pop-animation"
         style={{
+          background: '#1e293b',
+          border: '2px solid #facc15',
           borderRadius: '12px',
           padding: '15px 20px',
           width: '90%',
@@ -201,27 +193,25 @@ export default function CardFilterModal({
                   style={{
                     padding: '6px 12px',
                     borderRadius: '20px',
-                    border: tempFilters.rarity.includes(r)
+                    border: raritiesList.includes(r)
                       ? '2px solid #facc15'
                       : '2px solid #475569',
-                    background: tempFilters.rarity.includes(r)
+                    background: raritiesList.includes(r)
                       ? 'rgba(250, 204, 21, 0.2)'
                       : '#334155',
-                    color: tempFilters.rarity.includes(r)
-                      ? '#facc15'
-                      : '#94a3b8',
+                    color: raritiesList.includes(r) ? '#facc15' : '#94a3b8',
                     cursor: 'pointer',
                     userSelect: 'none',
                     fontSize: '0.85rem',
                   }}
                 >
-                  {r}
+                  ★{r}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* コスト */}
+          {/* パワー */}
           <div>
             <div
               style={{
@@ -230,174 +220,217 @@ export default function CardFilterModal({
                 marginBottom: '8px',
               }}
             >
-              コスト
+              パワー
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {availableCosts.map((cVal) => (
+              {availablePowers.map((pow) => (
                 <div
-                  key={`c-${cVal}`}
-                  onClick={() => toggleTempFilter('cost', cVal)}
+                  key={`p-${pow}`}
+                  onClick={() => toggleTempFilter('power', pow)}
                   style={{
                     padding: '6px 12px',
                     borderRadius: '20px',
-                    border: tempFilters.cost.includes(cVal)
+                    border: powersList.includes(pow)
                       ? '2px solid #facc15'
                       : '2px solid #475569',
-                    background: tempFilters.cost.includes(cVal)
+                    background: powersList.includes(pow)
                       ? 'rgba(250, 204, 21, 0.2)'
                       : '#334155',
-                    color: tempFilters.cost.includes(cVal)
-                      ? '#facc15'
-                      : '#94a3b8',
+                    color: powersList.includes(pow) ? '#facc15' : '#94a3b8',
                     cursor: 'pointer',
                     userSelect: 'none',
                     fontSize: '0.85rem',
                   }}
                 >
-                  {cVal}
+                  {pow}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* スキル能力（アコーディオン） */}
+          {/* 能力（アコーディオン） */}
           <div ref={skillAccordionRef}>
             <div
+              onClick={() => {
+                playSound?.(SOUNDS?.seClick);
+                const nextState = !isSkillAccordionOpen;
+                setIsSkillAccordionOpen(nextState);
+                if (nextState) {
+                  setTimeout(() => {
+                    if (modalContentRef.current && skillAccordionRef.current) {
+                      modalContentRef.current.scrollTo({
+                        top: skillAccordionRef.current.offsetTop,
+                        behavior: 'smooth',
+                      });
+                    }
+                  }, 50);
+                }
+              }}
               style={{
                 color: '#94a3b8',
                 fontSize: '0.9rem',
                 marginBottom: '8px',
-              }}
-            >
-              能力（スキル）
-            </div>
-            <div
-              style={{
+                cursor: 'pointer',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
+                justifyContent: 'space-between',
+                padding: '6px',
+                backgroundColor: '#334155',
+                borderRadius: '6px',
+                border:
+                  skillsList.length > 0 || excludeSkillsList.length > 0
+                    ? '1px solid #facc15'
+                    : '1px solid transparent',
               }}
             >
-              {Object.entries(SKILL_CATEGORIES).map(([catKey, cat]) => {
-                const categorySkillIds = Object.keys(SKILLS).filter(
-                  (skKey) => SKILLS[skKey].category === catKey
-                );
-                if (categorySkillIds.length === 0) return null;
+              <span
+                style={{
+                  color:
+                    skillsList.length > 0 || excludeSkillsList.length > 0
+                      ? '#facc15'
+                      : '#94a3b8',
+                }}
+              >
+                能力 ※2回クリックで除外
+              </span>
+              <span>{isSkillAccordionOpen ? '▲' : '▼'}</span>
+            </div>
 
-                const selectedCount = categorySkillIds.filter((skKey) =>
-                  tempFilters.skills.includes(skKey)
-                ).length;
-                const isOpen = !!skillCategoryOpen[catKey];
+            {isSkillAccordionOpen && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  padding: '8px',
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                }}
+              >
+                {SKILL_CATEGORIES.map((category) => {
+                  const activeGroups = category.groups
+                    .map((group) => ({
+                      ...group,
+                      validSkills: group.skills.filter((sk) => SKILLS[sk]),
+                    }))
+                    .filter((g) => g.validSkills.length > 0);
 
-                return (
-                  <div
-                    key={catKey}
-                    style={{
-                      background: '#1e293b',
-                      borderRadius: '8px',
-                      border: '1px solid #334155',
-                      overflow: 'hidden',
-                    }}
-                  >
+                  if (activeGroups.length === 0) return null;
+
+                  return (
                     <div
-                      onClick={() => toggleCategory(catKey)}
+                      key={category.id}
                       style={{
-                        padding: '10px 14px',
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        background: isOpen ? '#334155' : 'transparent',
+                        flexDirection: 'column',
+                        gap: '6px',
                       }}
                     >
                       <div
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold',
+                          color: '#facc15',
+                          borderBottom: '1px solid rgba(250, 204, 21, 0.2)',
+                          paddingBottom: '2px',
+                          marginBottom: '4px',
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: '1rem',
-                            color: cat.color || '#38bdf8',
-                          }}
-                        >
-                          {cat.icon || '✨'}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: '0.9rem',
-                            fontWeight: 'bold',
-                            color: '#e2e8f0',
-                          }}
-                        >
-                          {cat.name}
-                        </span>
-                        {selectedCount > 0 && (
-                          <span
-                            style={{
-                              background: '#facc15',
-                              color: '#0f172a',
-                              fontSize: '0.75rem',
-                              fontWeight: 'bold',
-                              borderRadius: '10px',
-                              padding: '1px 7px',
-                            }}
-                          >
-                            {selectedCount}
-                          </span>
-                        )}
+                        {category.name}
                       </div>
-                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
-                        {isOpen ? '▲' : '▼'}
-                      </span>
-                    </div>
-
-                    {isOpen && (
                       <div
                         style={{
-                          padding: '10px 12px',
                           display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '6px',
-                          background: '#0f172a',
-                          borderTop: '1px solid #334155',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          paddingLeft: '4px',
                         }}
                       >
-                        {categorySkillIds.map((skKey) => {
-                          const sk = SKILLS[skKey];
-                          const isSelected = tempFilters.skills.includes(skKey);
-                          return (
+                        {activeGroups.map((group, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '6px',
+                              background: 'rgba(255,255,255,0.02)',
+                              padding: '6px',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
                             <div
-                              key={skKey}
-                              onClick={() => toggleTempSkillFilter(skKey)}
                               style={{
-                                padding: '5px 10px',
-                                borderRadius: '16px',
-                                border: isSelected
-                                  ? '1.5px solid #facc15'
-                                  : '1.5px solid #475569',
-                                background: isSelected
-                                  ? 'rgba(250, 204, 21, 0.2)'
-                                  : '#1e293b',
-                                color: isSelected ? '#facc15' : '#cbd5e1',
-                                cursor: 'pointer',
-                                userSelect: 'none',
-                                fontSize: '0.8rem',
+                                fontSize: '0.75rem',
+                                color: '#94a3b8',
+                                fontWeight: 'bold',
                               }}
                             >
-                              {sk.name}
+                              {group.name}
                             </div>
-                          );
-                        })}
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: '6px',
+                              }}
+                            >
+                              {group.validSkills.map((sk) => {
+                                const skillDef = SKILLS[sk] || {
+                                  name: sk,
+                                  icon: '',
+                                };
+                                const isSelected = skillsList.includes(sk);
+                                const isExcluded =
+                                  excludeSkillsList.includes(sk);
+
+                                return (
+                                  <div
+                                    key={sk}
+                                    onClick={() => toggleTempSkillFilter(sk)}
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: '4px',
+                                      border: isSelected
+                                        ? '1px solid #facc15'
+                                        : isExcluded
+                                          ? '1px solid #ef4444'
+                                          : '1px solid #475569',
+                                      background: isSelected
+                                        ? 'rgba(250, 204, 21, 0.2)'
+                                        : isExcluded
+                                          ? 'rgba(239, 68, 68, 0.2)'
+                                          : '#334155',
+                                      color: isSelected
+                                        ? '#facc15'
+                                        : isExcluded
+                                          ? '#ef4444'
+                                          : '#cbd5e1',
+                                      textDecoration: isExcluded
+                                        ? 'line-through'
+                                        : 'none',
+                                      cursor: 'pointer',
+                                      fontSize: '0.8rem',
+                                      userSelect: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      transition: 'all 0.15s ease',
+                                    }}
+                                  >
+                                    <span>{skillDef.icon}</span>
+                                    <span>{skillDef.name}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -405,21 +438,22 @@ export default function CardFilterModal({
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            gap: '10px',
-            paddingTop: '10px',
-            borderTop: '1px solid #334155',
+            gap: '15px',
+            justifyContent: 'center',
             flexShrink: 0,
+            paddingTop: '5px',
           }}
         >
           <button
             className="btn"
             style={{
-              background: '#475569',
-              color: '#fff',
-              padding: '8px 16px',
-              fontSize: '0.9rem',
-              borderRadius: '8px',
+              background: '#7f1d1d',
+              margin: 0,
+              padding: '8px',
+              flex: 1,
+              minWidth: '80px',
+              fontSize: '1rem',
+              whiteSpace: 'nowrap',
             }}
             onClick={() => {
               playSound?.(SOUNDS?.seClick);
@@ -428,41 +462,42 @@ export default function CardFilterModal({
           >
             リセット
           </button>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              className="btn"
-              style={{
-                background: '#334155',
-                color: '#94a3b8',
-                padding: '8px 16px',
-                fontSize: '0.9rem',
-                borderRadius: '8px',
-              }}
-              onClick={() => {
-                playSound?.(SOUNDS?.seClick);
-                onClose();
-              }}
-            >
-              キャンセル
-            </button>
-            <button
-              className="btn ok-button"
-              style={{
-                background: '#facc15',
-                color: '#0f172a',
-                fontWeight: 'bold',
-                padding: '8px 20px',
-                fontSize: '0.9rem',
-                borderRadius: '8px',
-              }}
-              onClick={() => {
-                playSound?.(SOUNDS?.seClick);
-                onApply();
-              }}
-            >
-              適用
-            </button>
-          </div>
+          <button
+            className="btn"
+            style={{
+              background: '#64748b',
+              margin: 0,
+              padding: '8px',
+              flex: 1,
+              minWidth: '80px',
+              fontSize: '1rem',
+              whiteSpace: 'nowrap',
+            }}
+            onClick={() => {
+              playSound?.(SOUNDS?.seClick);
+              onClose();
+            }}
+          >
+            閉じる
+          </button>
+          <button
+            className="btn"
+            style={{
+              background: '#10b981',
+              margin: 0,
+              padding: '8px',
+              flex: 1,
+              minWidth: '80px',
+              fontSize: '1rem',
+              whiteSpace: 'nowrap',
+            }}
+            onClick={() => {
+              playSound?.(SOUNDS?.seClick);
+              onApply();
+            }}
+          >
+            適用
+          </button>
         </div>
       </div>
     </div>
