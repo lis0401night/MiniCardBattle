@@ -432,10 +432,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
   const ownedMasterCards = useMemo(() => {
     const inventory = GameState.playerInventory || {};
-    return (CARD_MASTER || []).filter(
-      (c) => !c.isToken && (inventory[c.id] || 0) > 0
-    );
-  }, []);
+    const hasInventoryData = Object.keys(inventory).length > 0;
+    return (CARD_MASTER || []).filter((c) => {
+      if (c.isToken) return false;
+      if (!hasInventoryData) return true;
+      return (inventory[c.id] || 0) > 0;
+    });
+  }, [favCardModalOpen, profileModalVisible, GameState.playerInventory]);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
