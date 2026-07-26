@@ -2992,7 +2992,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 0,
     skills: [{ id: 'invite' }],
-    voiceCategory: 'book',
+    voiceCategory: 'magic',
     flavor:
       '異なる次元への扉を開く多面体。深淵を覗き込むとき、そこから恐るべきものが呼び出される。',
   },

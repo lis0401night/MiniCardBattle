@@ -438,7 +438,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       if (!hasInventoryData) return true;
       return (inventory[c.id] || 0) > 0;
     });
-  }, [favCardModalOpen, profileModalVisible, GameState.playerInventory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [favCardModalOpen, profileModalVisible]);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;

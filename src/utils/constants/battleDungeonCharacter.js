@@ -30,17 +30,7 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       ending: [],
     },
   },
-  monster_small: {
-    preBattleLine: 'キュイ、キュイ！',
-    dialogue: {
-      intro: { default: 'ボクたちを、いじめるの？' },
-      win: { default: 'えへへ、勝っちゃった！' },
-      lose: { default: 'わーん、いたいよー！' },
-      damage: ['ピッ！', 'ふぇぇ', 'やめてー'],
-      skill: 'みんな、あつまれー！',
-      ending: [],
-    },
-  },
+
   beast: {
     preBattleLine: 'ガアアア！獲物を追い詰めたぞ！',
     dialogue: {
@@ -335,50 +325,7 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       ending: [],
     },
   },
-  alien: {
-    preBattleLine: 'ワレワレハ……ミナトモダチ……。',
-    dialogue: {
-      intro: { default: 'トモダチ、ニ、ナリニキタ。' },
-      win: { default: 'サヨウナラ……地球。' },
-      lose: { default: '帰還……スル……。' },
-      damage: ['ピポッ？', 'ヴ、ヴグ', '不明ナ抵抗'],
-      skill: 'コンタクト……開始！',
-      ending: [],
-    },
-  },
-  god: {
-    preBattleLine: '矮小な存在よ。我が意志に背くか。',
-    dialogue: {
-      intro: { default: '理を知らぬ者に、審判を下そう。' },
-      win: { default: '元より決まっていた結末だ。' },
-      lose: { default: '世の理が変わる時、か……。' },
-      damage: ['不敬な', 'これも運命か', '……ヌッ'],
-      skill: '創世と終焉の光よ！',
-      ending: [],
-    },
-  },
-  warrior: {
-    preBattleLine: '戦いこそが我が人生よ！',
-    dialogue: {
-      intro: { default: '真っ向勝負で来い！叩き伏せてやる！' },
-      win: { default: 'ハッ、弱すぎるぞ！' },
-      lose: { default: '……いい戦いだった、あばよ。' },
-      damage: ['もっと叩け！', 'グハッ！', 'これだ！'],
-      skill: 'これが戦士の誇りだ！',
-      ending: [],
-    },
-  },
-  mage: {
-    preBattleLine: '魔道の深淵、覗く勇気はあるか？',
-    dialogue: {
-      intro: { default: '詠唱の合間に死なないようにしなさい。' },
-      win: { default: '知恵なき者に勝利はないわ。' },
-      lose: { default: '理論が……間違っていた……？' },
-      damage: ['集中が！', '不器用ね', 'クッ！'],
-      skill: '禁忌の魔術、解放！',
-      ending: [],
-    },
-  },
+
   magic: {
     preBattleLine: '大地に流れるマナよ、我が呼びかけに応えよ。',
     dialogue: {
@@ -387,28 +334,6 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       lose: { default: '術式が……破綻した……？' },
       damage: ['きゃっ！', '魔力が……', 'くっ！'],
       skill: '秘められし魔力よ、解き放たれよ！',
-      ending: [],
-    },
-  },
-  holy: {
-    preBattleLine: '聖なる光がお前を照らし出すだろう。',
-    dialogue: {
-      intro: { default: '不浄なる意志、ここで浄化しよう。' },
-      win: { default: '安らかに眠りなさい。' },
-      lose: { default: 'まだ、祈りが足りなかったか……。' },
-      damage: ['光よ……', '赦しましょう', 'ヌゥッ'],
-      skill: '神聖なる加護をその身に！',
-      ending: [],
-    },
-  },
-  dark: {
-    preBattleLine: '影に呑まれ、全てを忘れ去れ。',
-    dialogue: {
-      intro: { default: 'お前の心、闇で満たしてやろう。' },
-      win: { default: '漆黒の底へ沈むがいい。' },
-      lose: { default: '光が……眩しすぎる……。' },
-      damage: ['痛みが心地よい', 'ククク……', 'いいぞ……'],
-      skill: '終わりなき闇の抱擁！',
       ending: [],
     },
   },

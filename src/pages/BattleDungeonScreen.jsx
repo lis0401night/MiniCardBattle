@@ -7,6 +7,7 @@ import {
   selectRentalDeck,
   selectRewardCard,
   startDungeonBattle,
+  startDungeonLeaderTalk,
 } from '../game/battleDungeon.js';
 import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
@@ -126,20 +127,56 @@ export default function BattleDungeonScreen() {
   const renderBottomButton = () => {
     if (dungeonState === 'select_opponent') {
       return (
-        <button
-          className="btn"
-          style={{ background: '#475569' }}
-          onClick={handleSuspendAction}
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
-          一時中断
-        </button>
+          <button
+            className="btn"
+            style={{
+              background: '#475569',
+              margin: 0,
+              padding: '8px 18px',
+              fontSize: '0.95rem',
+              minWidth: '110px',
+            }}
+            onClick={handleSuspendAction}
+          >
+            一時中断
+          </button>
+          <button
+            className="btn"
+            style={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: '#ffffff',
+              margin: 0,
+              padding: '8px 18px',
+              fontSize: '0.95rem',
+              minWidth: '130px',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)',
+            }}
+            onClick={startDungeonLeaderTalk}
+          >
+            リーダーと話す
+          </button>
+        </div>
       );
     }
     // 通常の戻るボタン
     return (
       <button
         className="btn"
-        style={{ background: '#475569' }}
+        style={{
+          background: '#475569',
+          margin: 0,
+          padding: '8px 24px',
+          fontSize: '0.95rem',
+          minWidth: '110px',
+        }}
         onClick={handleBack}
       >
         戻る

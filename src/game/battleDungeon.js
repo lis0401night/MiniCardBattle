@@ -9,6 +9,7 @@ import { GameState } from '../state/gameState.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
 import { buildDungeonIntroDialogue } from '../utils/constants/dungeonIntroDialogues.js';
+import { buildDungeonLeaderTalkDialogue } from '../utils/constants/dungeonTalkDialogues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import {
@@ -382,8 +383,34 @@ export function retireDungeon() {
   }
 }
 
+export function startDungeonLeaderTalk() {
+  playSound(SOUNDS.seClick);
+  const floor = (GameState.dungeonWinStreak || 0) + 1;
+
+  // コンテキスト情報を収集して会話生成関数に渡す
+  const context = {
+    floor,
+    hp: GameState.dungeonPlayerHP ?? 20,
+    deckSize: (GameState.dungeonCards || []).length,
+  };
+
+  GameState.dialogueQueue = buildDungeonLeaderTalkDialogue(
+    context,
+    GameState.playerConfig
+  );
+  GameState.currentDialogueIndex = 0;
+  GameState.appState = 'dungeon_talk_dialogue';
+
+  performFadeTransition(() => {
+    setupDialogueScreen();
+  });
+}
+
 export function handleBattleDungeonProgression() {
-  if (GameState.appState === 'dungeon_intro_dialogue') {
+  if (
+    GameState.appState === 'dungeon_intro_dialogue' ||
+    GameState.appState === 'dungeon_talk_dialogue'
+  ) {
     GameState.dungeonState = 'select_opponent';
     saveDungeonProgress();
     performFadeTransition(() => {

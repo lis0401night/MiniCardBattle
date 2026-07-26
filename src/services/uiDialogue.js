@@ -284,8 +284,11 @@ export function setupDialogueScreen() {
     }
   }
 
-  // 試練の宮殿の導入会話専用の初期制御
-  if (GameState.appState === 'dungeon_intro_dialogue') {
+  // 試練の宮殿の導入会話・リーダー会話専用の初期制御
+  if (
+    GameState.appState === 'dungeon_intro_dialogue' ||
+    GameState.appState === 'dungeon_talk_dialogue'
+  ) {
     pRightImg = null;
     if (firstNode?.leftImage) {
       pLeftImg = firstNode.leftImage;
@@ -304,7 +307,9 @@ export function setupDialogueScreen() {
     ? 'grayscale(1) brightness(0.6) contrast(1.2)'
     : 'none';
   window.currentDialogueData.rightDisplay =
-    GameState.appState === 'dungeon_intro_dialogue' || !pRightImg
+    GameState.appState === 'dungeon_intro_dialogue' ||
+    GameState.appState === 'dungeon_talk_dialogue' ||
+    !pRightImg
       ? 'none'
       : 'block';
 
@@ -335,7 +340,10 @@ export async function showNextDialogue(force = false) {
   if (cur.rightImage) {
     window.currentDialogueData.rightImage = cur.rightImage;
     window.currentDialogueData.rightDisplay = 'block';
-  } else if (GameState.appState === 'dungeon_intro_dialogue') {
+  } else if (
+    GameState.appState === 'dungeon_intro_dialogue' ||
+    GameState.appState === 'dungeon_talk_dialogue'
+  ) {
     window.currentDialogueData.rightImage = null;
     window.currentDialogueData.rightDisplay = 'none';
   }

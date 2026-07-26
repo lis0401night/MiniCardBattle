@@ -19,6 +19,7 @@ export default function DialogueScreen() {
   const isValidState =
     GameState.appState === 'story_intro' ||
     GameState.appState === 'dungeon_intro_dialogue' ||
+    GameState.appState === 'dungeon_talk_dialogue' ||
     (GameState.appState === 'pre_dialogue' &&
       !GameState.isSimplifiedDialogue) ||
     (GameState.appState === 'post_dialogue' &&
@@ -77,7 +78,11 @@ export default function DialogueScreen() {
     GameState.gameMode === 'battle_dungeon' ||
     GameState.gameMode === 'dungeon'
   ) {
-    bgName = 'background_challenge.webp';
+    if (GameState.appState === 'dungeon_intro_dialogue') {
+      bgName = 'background_challenge02.webp';
+    } else {
+      bgName = 'background_challenge.webp';
+    }
   } else if (GameState.gameMode === 'event_satan_high') {
     bgName = 'background_satan.webp';
     // 高難易度モード（通常・イベント）用の背景
