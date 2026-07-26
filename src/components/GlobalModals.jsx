@@ -159,11 +159,46 @@ function determineIsCardPremium(
 }
 
 /**
- * favorite_card / favoriteCard のキー表記揺れを正規化するヘルパー関数
+ * favorite_card / favoriteCard のキー表記揺れや文字列/オブジェクト形式を統一オブジェクト { cardId, isPremium } に正規化するヘルパー関数
  */
-function normalizeFavoriteCard(profile) {
-  if (!profile) return null;
-  return profile.favoriteCard || profile.favorite_card || null;
+function normalizeFavoriteCard(input) {
+  if (!input) return null;
+
+  let raw = input;
+  if (typeof input === 'object') {
+    if (input.favoriteCard !== undefined) {
+      raw = input.favoriteCard;
+    } else if (input.favorite_card !== undefined) {
+      raw = input.favorite_card;
+    }
+  }
+
+  if (!raw) return null;
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        raw = JSON.parse(trimmed);
+      } catch {
+        return { cardId: trimmed, isPremium: false };
+      }
+    } else {
+      return { cardId: trimmed, isPremium: false };
+    }
+  }
+
+  if (typeof raw === 'object' && raw !== null) {
+    const cardId = raw.cardId || raw.card_id || raw.id;
+    if (!cardId) return null;
+    return {
+      cardId: String(cardId),
+      isPremium: !!(raw.isPremium || raw.is_premium),
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -174,7 +209,7 @@ function FavoriteCardDisplay({
   onClick,
   placeholderText = 'お気に入りカード未設定',
 }) {
-  const fav = normalizeFavoriteCard({ favoriteCard });
+  const fav = normalizeFavoriteCard(favoriteCard);
   if (fav && fav.cardId) {
     const masterCard = (CARD_MASTER || []).find((c) => c.id === fav.cardId);
     const rarityClass = masterCard?.rarity
