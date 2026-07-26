@@ -878,9 +878,33 @@ export function createNewDeck(leaderId) {
   return GameState.decks.length - 1; // 生成したデッキのインデックスを返す
 }
 
+/**
+ * カード配列（カードオブジェクトまたはカードIDの配列）を CARD_MASTER の定義順（ID順）にソートします。
+ */
+export function sortCardsByMasterOrder(cards) {
+  if (!Array.isArray(cards)) return [];
+  const cardOrderMap = new Map();
+  (CARD_MASTER || []).forEach((c, i) => cardOrderMap.set(c.id, i));
+
+  return [...cards].sort((a, b) => {
+    const idA = typeof a === 'string' ? a : a.baseId || a.id;
+    const idB = typeof b === 'string' ? b : b.baseId || b.id;
+    const idxA = cardOrderMap.get(idA) ?? 999;
+    const idxB = cardOrderMap.get(idB) ?? 999;
+    return idxA - idxB;
+  });
+}
+
 export function saveCurrentEditDeck() {
   if (GameState.decks && GameState.decks.length > GameState.currentDeckIndex) {
     const activeDeck = GameState.decks[GameState.currentDeckIndex];
+
+    // 選択デッキのカードを定義順（ID順）に整列
+    if (Array.isArray(GameState.playerDeckSelection)) {
+      GameState.playerDeckSelection = sortCardsByMasterOrder(
+        GameState.playerDeckSelection
+      );
+    }
 
     // 試練の迷宮用の一時デッキがアクティブの場合、通常デッキ配列への誤上書きをブロックする
     if (activeDeck && activeDeck.id === 'dungeon_deck') {
@@ -908,17 +932,7 @@ export function saveCurrentEditDeck() {
     }
 
     activeDeck.playmatId = GameState.selectedPlaymatId;
-
-    // 通常モード保存時は、イベント用一時スキン('school')が通常デッキのスキンとして誤固着するのを防ぐ
-    const cleanedSkins = { ...GameState.playerSkins };
-    if (GameState.gameMode !== 'tournament') {
-      Object.keys(cleanedSkins).forEach((charId) => {
-        if (cleanedSkins[charId] === 'school') {
-          delete cleanedSkins[charId];
-        }
-      });
-    }
-    activeDeck.playerSkins = cleanedSkins;
+    activeDeck.playerSkins = { ...GameState.playerSkins };
 
     activeDeck.premiumCards = [...GameState.premiumCards];
     activeDeck.cards = GameState.playerDeckSelection.map((c) =>
@@ -1065,15 +1079,21 @@ export async function submitDefenseDeck(providedName = null) {
   playSound(SOUNDS.seClick);
   saveUserProfile({ name: playerName });
 
+  const sortedSelection = sortCardsByMasterOrder(
+    GameState.playerDeckSelection || []
+  );
+
   const uuid = getOrCreateUUID();
   const payload = {
     uuid: uuid,
     name: playerName,
     character: GameState.playerConfig.id,
     stage: GameState.selectedStageId, // 追加
-    deck: GameState.playerDeckSelection.map((c) => ({
-      id: c.id,
-      isPremium: GameState.premiumCards.includes(c.id),
+    deck: sortedSelection.map((c) => ({
+      id: typeof c === 'string' ? c : c.id,
+      isPremium: GameState.premiumCards.includes(
+        typeof c === 'string' ? c : c.id
+      ),
     })),
   };
 
@@ -1092,10 +1112,10 @@ export async function submitDefenseDeck(providedName = null) {
         icon: GameState.userProfile?.icon || 'player',
         character: GameState.playerConfig.id,
         stage: GameState.selectedStageId || 'plain',
-        deck: GameState.playerDeckSelection.map((c) => ({
-          id: c.id,
+        deck: sortedSelection.map((c) => ({
+          id: typeof c === 'string' ? c : c.id,
           isPremium: GameState.premiumCards
-            ? GameState.premiumCards.includes(c.id)
+            ? GameState.premiumCards.includes(typeof c === 'string' ? c : c.id)
             : false,
         })),
         playmat: GameState.selectedPlaymatId,

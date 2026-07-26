@@ -354,12 +354,19 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setViewProfileData(playerData || null);
     };
 
-    window.showEnemyDeckModal = (deck, title, leaderSkill = null) => {
+    window.showEnemyDeckModal = (
+      deck,
+      title,
+      leaderSkill = null,
+      extraOpts = {}
+    ) => {
       playSound?.(SOUNDS?.seClick);
       setEnemyDeckData({
         deck: deck || [],
         title: title || '敵デッキ確認',
         leaderSkill,
+        premiumCards: extraOpts.premiumCards || extraOpts.premium || [],
+        isPlayerDeck: !!extraOpts.isPlayerDeck,
       });
     };
 
@@ -945,13 +952,28 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     const originalItem = enemyDeckData.deck.find((c) =>
                       typeof c === 'object' ? c.id === cardId : c === cardId
                     );
-                    const isPremium =
-                      typeof originalItem === 'object'
-                        ? !!originalItem.isPremium
-                        : false;
+                    let isPremium = false;
+                    if (
+                      typeof originalItem === 'object' &&
+                      originalItem?.isPremium !== undefined
+                    ) {
+                      isPremium = !!originalItem.isPremium;
+                    } else if (
+                      Array.isArray(enemyDeckData.premiumCards) &&
+                      enemyDeckData.premiumCards.includes(cardId)
+                    ) {
+                      isPremium = true;
+                    } else if (
+                      enemyDeckData.isPlayerDeck &&
+                      Array.isArray(GameState.premiumCards) &&
+                      GameState.premiumCards.includes(cardId)
+                    ) {
+                      isPremium = true;
+                    }
+
                     const displayCard = {
                       ...template,
-                      owner: 'red',
+                      owner: enemyDeckData.isPlayerDeck ? 'blue' : 'red',
                       isPremium,
                     };
 
@@ -961,13 +983,20 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     const rarityClass = displayCard.rarity
                       ? ` rarity-${displayCard.rarity}`
                       : '';
+                    const cardThemeClass = enemyDeckData.isPlayerDeck
+                      ? 'blue'
+                      : 'red';
                     return (
                       <div
                         key={cardId}
                         className="deck-card-item gallery-card-wrapper"
                         onClick={() => openCardPreview?.(displayCard)}
                       >
-                        <div className={`card red${rarityClass}`}>
+                        <div
+                          className={`card ${cardThemeClass}${rarityClass}${
+                            isPremium ? ' premium' : ''
+                          }`}
+                        >
                           <div
                             className="card-bg"
                             style={{ backgroundImage: `url('${imgUrl}')` }}

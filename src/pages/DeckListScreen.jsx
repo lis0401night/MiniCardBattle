@@ -745,7 +745,12 @@ export default function DeckListScreen({ switchScreen }) {
                                   deck.name || `デッキ${idx + 1}`;
                                 window.showEnemyDeckModal(
                                   deck.cards || [],
-                                  deckTitle
+                                  deckTitle,
+                                  null,
+                                  {
+                                    premiumCards: deck.premiumCards || [],
+                                    isPlayerDeck: true,
+                                  }
                                 );
                               }
                             }}

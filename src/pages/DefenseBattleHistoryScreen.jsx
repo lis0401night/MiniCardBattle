@@ -91,7 +91,8 @@ export default function DefenseBattleHistoryScreen() {
       window.showEnemyDeckModal(
         deckCards,
         `${attackerName} の攻撃デッキ`,
-        leaderSkill
+        leaderSkill,
+        { isPlayerDeck: false }
       );
     }
   };

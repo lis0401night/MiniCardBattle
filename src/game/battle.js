@@ -4676,10 +4676,19 @@ export function endBattle() {
         const activeDeckIdx = GameState.currentDeckIndex || 0;
         const activeDeck =
           GameState.decks?.[activeDeckIdx] || GameState.decks?.[0];
-        const attackerDeckIds = Array.isArray(activeDeck?.cards)
-          ? activeDeck.cards.map((c) =>
-              typeof c === 'string' ? c : c?.id || c
-            )
+        const attackerDeckObjects = Array.isArray(activeDeck?.cards)
+          ? activeDeck.cards.map((c) => {
+              const cId = typeof c === 'string' ? c : c?.id || c;
+              const isPrem =
+                typeof c === 'object' && c?.isPremium !== undefined
+                  ? !!c.isPremium
+                  : (
+                      activeDeck?.premiumCards ||
+                      GameState.premiumCards ||
+                      []
+                    ).includes(cId);
+              return { id: cId, isPremium: isPrem };
+            })
           : [];
         const attackerName = resolvePlayerName();
         const playerCharId = GameState.playerConfig?.id || 'android';
@@ -4698,7 +4707,7 @@ export function endBattle() {
           attackerCharacter,
           attackerSkin,
           attackerTotalPoints,
-          attackerDeck: attackerDeckIds,
+          attackerDeck: attackerDeckObjects,
           result: GameState.lastBattleResult,
         }).catch((err) =>
           console.error('Failed to record defense battle:', err)
