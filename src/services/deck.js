@@ -130,7 +130,7 @@ export function generateDeck(owner, config, sessionId) {
 
   if (owner === 'blue') {
     deck = GameState.playerDeckSelection.map((t, i) => {
-      const isPremium = GameState.premiumCards.includes(t.id);
+      const isPremium = (GameState.premiumCards || []).includes(t.id);
       const tempObj = { ...t, isPremium: isPremium };
       const imgUrl = getCardImgUrl(tempObj);
       return {
@@ -490,9 +490,12 @@ export function loadDeck() {
       !GameState.playerDeckSelection ||
       GameState.playerDeckSelection.length === 0
     ) {
-      if (GameState.dungeonCards && GameState.dungeonCards.length >= 20) {
+      if (
+        GameState.dungeonCards &&
+        GameState.dungeonCards.length >= DECK_SIZE
+      ) {
         GameState.playerDeckSelection = GameState.dungeonCards
-          .slice(0, 20)
+          .slice(0, DECK_SIZE)
           .map((id) => {
             const template = CARD_MASTER.find((c) => c.id === id);
             return template ? { ...template } : null;
@@ -889,8 +892,8 @@ export function sortCardsByMasterOrder(cards) {
   return [...cards].sort((a, b) => {
     const idA = typeof a === 'string' ? a : a.baseId || a.id;
     const idB = typeof b === 'string' ? b : b.baseId || b.id;
-    const idxA = cardOrderMap.get(idA) ?? 999;
-    const idxB = cardOrderMap.get(idB) ?? 999;
+    const idxA = cardOrderMap.get(idA) ?? Number.MAX_SAFE_INTEGER;
+    const idxB = cardOrderMap.get(idB) ?? Number.MAX_SAFE_INTEGER;
     return idxA - idxB;
   });
 }
@@ -908,6 +911,12 @@ export function saveCurrentEditDeck() {
 
     // 試練の迷宮用の一時デッキがアクティブの場合、通常デッキ配列への誤上書きをブロックする
     if (activeDeck && activeDeck.id === 'dungeon_deck') {
+      activeDeck.playmatId = GameState.selectedPlaymatId;
+      activeDeck.playerSkins = { ...GameState.playerSkins };
+      activeDeck.premiumCards = [...(GameState.premiumCards || [])];
+      activeDeck.cards = GameState.playerDeckSelection.map((c) =>
+        typeof c === 'string' ? c : c.baseId || c.id
+      );
       localStorage.setItem(
         'mini_card_battle_dungeon_deck_obj',
         JSON.stringify(activeDeck)
@@ -1091,7 +1100,7 @@ export async function submitDefenseDeck(providedName = null) {
     stage: GameState.selectedStageId, // 追加
     deck: sortedSelection.map((c) => ({
       id: typeof c === 'string' ? c : c.id,
-      isPremium: GameState.premiumCards.includes(
+      isPremium: (GameState.premiumCards || []).includes(
         typeof c === 'string' ? c : c.id
       ),
     })),

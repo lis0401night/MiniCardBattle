@@ -1120,9 +1120,11 @@
             const seenAttackerDecks = new Set();
             p.defense_history.forEach((rec) => {
               // 攻撃側プレイヤーが登録プレイヤーで除外対象になっている場合はスキップ
-              if (rec.attackerName) {
-                const attackerObj = allPlayers.find(
-                  (ap) => ap.name === rec.attackerName
+              if (rec.attackerUuid || rec.attackerName) {
+                const attackerObj = allPlayers.find((ap) =>
+                  rec.attackerUuid
+                    ? ap.uuid === rec.attackerUuid
+                    : ap.name === rec.attackerName
                 );
                 if (attackerObj && excludedPlayerIds.has(attackerObj.uuid)) {
                   return;
@@ -1130,9 +1132,9 @@
               }
 
               if (Array.isArray(rec.attackerDeck)) {
-                // attackerName + デッキ内容でユニークキーを生成
+                // attackerUuid (または attackerName) + デッキ内容でユニークキーを生成
                 const deckKey =
-                  (rec.attackerName || '') +
+                  (rec.attackerUuid || rec.attackerName || '') +
                   '|' +
                   [...rec.attackerDeck]
                     .map((e) => resolveCardId(e))

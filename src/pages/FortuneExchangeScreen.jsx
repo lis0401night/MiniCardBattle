@@ -26,6 +26,8 @@ export default function FortuneExchangeScreen() {
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'fortune',
+    pointsLocalKey: FORTUNE_POINTS_KEY,
+    pointsTotalLocalKey: FORTUNE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_fortune_points.php',
   });
 

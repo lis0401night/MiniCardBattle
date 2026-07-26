@@ -218,6 +218,10 @@ export function selectRentalDeck(deckData) {
   GameState.dialogueQueue = buildDungeonIntroDialogue(deckData);
   GameState.currentDialogueIndex = 0;
   GameState.appState = 'dungeon_intro_dialogue';
+  GameState.dungeonState = 'select_opponent';
+
+  // 会話中にリロード・離脱してもデッキや対戦相手が失われないよう即座にセーブ
+  saveDungeonProgress();
 
   performFadeTransition(() => {
     setupDialogueScreen();

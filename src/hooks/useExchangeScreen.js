@@ -16,13 +16,50 @@ import {
   safeParseArray,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import {
+  CHALLENGE_POINTS_KEY,
+  CHALLENGE_TOTAL_POINTS_KEY,
+  TOURNAMENT_POINTS_KEY,
+  TOURNAMENT_TOTAL_POINTS_KEY,
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
+} from '../utils/constants/config.js';
+
+const KEY_MAPPING = {
+  challenge: {
+    points: CHALLENGE_POINTS_KEY,
+    total: CHALLENGE_TOTAL_POINTS_KEY,
+  },
+  tournament: {
+    points: TOURNAMENT_POINTS_KEY,
+    total: TOURNAMENT_TOTAL_POINTS_KEY,
+  },
+  defense: {
+    points: DEFENSE_POINTS_KEY,
+    total: DEFENSE_TOTAL_POINTS_KEY,
+  },
+  fortune: {
+    points: FORTUNE_POINTS_KEY,
+    total: FORTUNE_TOTAL_POINTS_KEY,
+  },
+};
 
 export function useExchangeScreen({
-  pointsKey, // 'challenge'（試練の宮殿）または 'tournament'（闘技祭）
-  apiEndpoint, // 'update_challenge_points.php' または 'update_tournament_points.php' などのAPIエンドポイント
+  pointsKey, // 'challenge', 'tournament', 'defense', 'fortune' など
+  pointsLocalKey: customPointsLocalKey,
+  pointsTotalLocalKey: customTotalLocalKey,
+  apiEndpoint, // 'update_challenge_points.php' などのAPIエンドポイント
 }) {
-  const pointsLocalKey = `mini_card_battle_${pointsKey}_points`;
-  const pointsTotalLocalKey = `mini_card_battle_${pointsKey}_total_points`;
+  const pointsLocalKey =
+    customPointsLocalKey ||
+    KEY_MAPPING[pointsKey]?.points ||
+    `mini_card_battle_${pointsKey}_points`;
+  const pointsTotalLocalKey =
+    customTotalLocalKey ||
+    KEY_MAPPING[pointsKey]?.total ||
+    `mini_card_battle_${pointsKey}_total_points`;
   const responsePointsField = `${pointsKey}_points`;
   const responseTotalPointsField = `${pointsKey}_total_points`;
 

@@ -100,10 +100,16 @@ export default function DeckListScreen({ switchScreen }) {
   useEffect(() => {
     // [ゲームモードとアプリステートの亡霊をリセット]
     // 新規作成やキャラ選択を途中でキャンセルして戻ってきた際、
-    // これらのフラグが残り続けると、次の「戻る」が今の画面へ無限ループするのを防ぐため。
+    // などのフラグが残り続けると、次の「戻る」が今の画面へ無限ループするのを防ぐため。
     if (GameState.gameMode === 'create_deck') {
       GameState.gameMode = GameState.prevGameModeForCreate || 'free_deck_edit';
       GameState.appState = GameState.prevAppStateForCreate || 'free_deck_edit';
+    }
+
+    // ストーリーモードの場合、前回選択デッキの leaderId で pendingCharId が汚染されていると
+    // 本来の主人公キャラ (playerConfig.id) 以外のデッキが使用不可になるため同調
+    if (GameState.gameMode === 'story' && GameState.playerConfig?.id) {
+      GameState.pendingCharId = GameState.playerConfig.id;
     }
 
     window.forceUpdateDeckList = () => setRenderVersion((v) => v + 1);
@@ -216,6 +222,9 @@ export default function DeckListScreen({ switchScreen }) {
           playSound?.(SOUNDS?.seClick);
           if (typeof stopAllBGM === 'function') stopAllBGM();
           if (AUDIO_INSTANCES?.bgmTitle) playSound(AUDIO_INSTANCES.bgmTitle);
+          GameState.gameMode = null;
+          GameState.appState = null;
+          GameState.pendingCharId = null;
           if (typeof switchScreen === 'function')
             switchScreen('screen-solo-menu');
         }
@@ -586,7 +595,9 @@ export default function DeckListScreen({ switchScreen }) {
                   const isDraggingThis = dragIndex === idx;
                   const isHoveringThis = hoverIndex === idx;
                   const currentLeaderId =
-                    GameState.pendingCharId || GameState.playerConfig?.id;
+                    GameState.gameMode === 'story'
+                      ? GameState.playerConfig?.id || GameState.pendingCharId
+                      : GameState.pendingCharId || GameState.playerConfig?.id;
                   const isLeaderBanned =
                     (GameState.gameMode === 'story' &&
                       (STORY_BANNED_LEADER_IDS.includes(deck.leaderId) ||

@@ -26,6 +26,8 @@ export default function TournamentExchangeScreen({ switchScreen }) {
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'tournament',
+    pointsLocalKey: TOURNAMENT_POINTS_KEY,
+    pointsTotalLocalKey: TOURNAMENT_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_tournament_points.php',
   });
 

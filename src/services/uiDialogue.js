@@ -464,14 +464,15 @@ export async function showNextDialogue(force = false) {
   }
 
   if (cur.speaker === 'player') {
-    window.currentDialogueData.speakerName = GameState.playerConfig.name;
+    window.currentDialogueData.speakerName =
+      cur.speakerName || GameState.playerConfig.name;
     window.currentDialogueData.nameColor = GameState.playerConfig.color;
     window.currentDialogueData.leftActive = true;
     if (GameState.appState !== 'ending_dialogue')
       window.currentDialogueData.rightActive = false;
     window.currentDialogueData.boxBorderColor = GameState.playerConfig.color;
 
-    if (window.currentDialogueData.centerMode) {
+    if (window.currentDialogueData.centerMode && !cur.leftImage) {
       let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
       if (GameState.gameMode === 'tournament') {
         playerSkinId = 'school';

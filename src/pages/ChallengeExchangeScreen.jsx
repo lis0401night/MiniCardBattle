@@ -26,6 +26,8 @@ export default function ChallengeExchangeScreen() {
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'challenge',
+    pointsLocalKey: CHALLENGE_POINTS_KEY,
+    pointsTotalLocalKey: CHALLENGE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_challenge_points.php',
   });
 
