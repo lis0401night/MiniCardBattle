@@ -188,36 +188,32 @@ function FavoriteCardDisplay({
         style={{
           width: '140px',
           height: '210px',
+          position: 'relative',
           cursor: onClick ? 'pointer' : 'default',
         }}
         onClick={onClick}
       >
         <div
-          className={`card blue${rarityClass}${isPremium ? ' is-premium' : ''}`}
+          className={`card blue${rarityClass}`}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+          }}
         >
-          {masterCard ? (
-            <CardPreviewContent
-              card={masterCard}
-              customCard={{
-                ...masterCard,
-                id: fav.cardId,
-                isPremium: isPremium,
-              }}
-              isCardDetail={false}
-            />
-          ) : (
-            <div
-              style={{
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              Unknown Card
-            </div>
-          )}
+          <img
+            className="card-bg"
+            src={getCardImgUrl({
+              id: fav.cardId,
+              isPremium: isPremium,
+            })}
+            alt="Favorite Card"
+            style={{
+              objectFit: 'cover',
+              width: '100%',
+              height: '100%',
+            }}
+          />
         </div>
       </div>
     );

@@ -94,8 +94,6 @@ export default function DeckEditorScreen({ switchScreen }) {
   const {
     gridDensity,
     cycleGridDensity,
-    gridCols,
-    gridGap,
     filterModalVisible,
     openFilterModal,
     setFilterModalVisible,
