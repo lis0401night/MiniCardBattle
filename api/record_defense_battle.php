@@ -43,12 +43,23 @@ $attacker_skin = isset($data['attacker_skin']) ? preg_replace('/[^a-z0-9_]/', ''
 $attacker_total_points = isset($data['attacker_total_points']) ? intval($data['attacker_total_points']) : 0;
 $attacker_deck = [];
 if (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) {
-    // 文字列要素のみ抽出し、デッキ枚数上限で切り詰め
-    $attacker_deck = array_slice(
-        array_values(array_filter($data['attacker_deck'], 'is_string')),
-        0,
-        20 // デッキ枚数上限
-    );
+    foreach ($data['attacker_deck'] as $item) {
+        if (count($attacker_deck) >= 20) break;
+        if (is_string($item)) {
+            $cleaned_id = preg_replace('/[^a-z0-9_]/', '', $item);
+            if (!empty($cleaned_id)) {
+                $attacker_deck[] = $cleaned_id;
+            }
+        } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
+            $cleaned_id = preg_replace('/[^a-z0-9_]/', '', $item['id']);
+            if (!empty($cleaned_id)) {
+                $attacker_deck[] = [
+                    'id' => $cleaned_id,
+                    'isPremium' => !empty($item['isPremium']),
+                ];
+            }
+        }
+    }
 }
 $result = $data['result']; // 'win' (攻撃成功) or 'lose' (攻撃失敗)
 
