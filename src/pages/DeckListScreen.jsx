@@ -100,10 +100,16 @@ export default function DeckListScreen({ switchScreen }) {
   useEffect(() => {
     // [ゲームモードとアプリステートの亡霊をリセット]
     // 新規作成やキャラ選択を途中でキャンセルして戻ってきた際、
-    // これらのフラグが残り続けると、次の「戻る」が今の画面へ無限ループするのを防ぐため。
+    // などのフラグが残り続けると、次の「戻る」が今の画面へ無限ループするのを防ぐため。
     if (GameState.gameMode === 'create_deck') {
       GameState.gameMode = GameState.prevGameModeForCreate || 'free_deck_edit';
       GameState.appState = GameState.prevAppStateForCreate || 'free_deck_edit';
+    }
+
+    // ストーリーモードの場合、前回選択デッキの leaderId で pendingCharId が汚染されていると
+    // 本来の主人公キャラ (playerConfig.id) 以外のデッキが使用不可になるため同調
+    if (GameState.gameMode === 'story' && GameState.playerConfig?.id) {
+      GameState.pendingCharId = GameState.playerConfig.id;
     }
 
     window.forceUpdateDeckList = () => setRenderVersion((v) => v + 1);
@@ -216,6 +222,9 @@ export default function DeckListScreen({ switchScreen }) {
           playSound?.(SOUNDS?.seClick);
           if (typeof stopAllBGM === 'function') stopAllBGM();
           if (AUDIO_INSTANCES?.bgmTitle) playSound(AUDIO_INSTANCES.bgmTitle);
+          GameState.gameMode = null;
+          GameState.appState = null;
+          GameState.pendingCharId = null;
           if (typeof switchScreen === 'function')
             switchScreen('screen-solo-menu');
         }
@@ -236,6 +245,14 @@ export default function DeckListScreen({ switchScreen }) {
 
   const handleBannerPointerDown = (e, index, itemType) => {
     if (itemType === 'create') return;
+    if (
+      e.target.closest('.banner-icon-wrapper') ||
+      e.target.closest('.banner-icon') ||
+      e.target.closest('.banner-delete-btn') ||
+      e.target.closest('.deck-preview-btn')
+    ) {
+      return;
+    }
 
     const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
     const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
@@ -586,7 +603,9 @@ export default function DeckListScreen({ switchScreen }) {
                   const isDraggingThis = dragIndex === idx;
                   const isHoveringThis = hoverIndex === idx;
                   const currentLeaderId =
-                    GameState.pendingCharId || GameState.playerConfig?.id;
+                    GameState.gameMode === 'story'
+                      ? GameState.playerConfig?.id || GameState.pendingCharId
+                      : GameState.pendingCharId || GameState.playerConfig?.id;
                   const isLeaderBanned =
                     (GameState.gameMode === 'story' &&
                       (STORY_BANNED_LEADER_IDS.includes(deck.leaderId) ||
@@ -619,15 +638,33 @@ export default function DeckListScreen({ switchScreen }) {
                       }}
                       onPointerDown={(e) => {
                         if (isLeaderBanned) return;
+                        if (
+                          e.target.closest('.banner-icon-wrapper') ||
+                          e.target.closest('.banner-icon') ||
+                          e.target.closest('.deck-preview-btn') ||
+                          e.target.closest('.banner-delete-btn')
+                        ) {
+                          return;
+                        }
                         handleBannerPointerDown(e, idx, 'deck');
                       }}
                       onTouchStart={(e) => {
                         if (isLeaderBanned) return;
+                        if (
+                          e.target.closest('.banner-icon-wrapper') ||
+                          e.target.closest('.banner-icon') ||
+                          e.target.closest('.deck-preview-btn') ||
+                          e.target.closest('.banner-delete-btn')
+                        ) {
+                          return;
+                        }
                         handleBannerPointerDown(e, idx, 'deck');
                       }}
                     >
-                      <button
+                      <div
                         className={`btn-banner no-transition`}
+                        role="button"
+                        tabIndex={0}
                         style={{
                           margin: 0,
                           borderColor: isLeaderBanned ? '#475569' : char.color,
@@ -639,15 +676,28 @@ export default function DeckListScreen({ switchScreen }) {
                           background: isLeaderBanned
                             ? 'rgba(0, 0, 0, 0.5)'
                             : undefined,
+                          cursor: isLeaderBanned ? 'not-allowed' : 'pointer',
                         }}
                         onClick={(e) => {
                           if (isLeaderBanned) {
                             e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                          }
+                          // アイコンや内部クリック要素からのバブリングを防止
+                          if (
+                            e.target.closest('.banner-icon-wrapper') ||
+                            e.target.closest('.banner-icon') ||
+                            e.target.closest('.deck-preview-btn') ||
+                            e.target.closest('.banner-delete-btn')
+                          ) {
+                            e.stopPropagation();
                             return;
                           }
                           // DnD中はクリック発火させない
                           if (isSwipingRef.current || isDraggingRef.current) {
                             e.preventDefault();
+                            e.stopPropagation();
                             return;
                           }
                           handleSelectDeck(idx);
@@ -666,7 +716,26 @@ export default function DeckListScreen({ switchScreen }) {
                           <div
                             style={{ display: 'flex', alignItems: 'center' }}
                           >
-                            <div className="banner-icon-wrapper">
+                            <div
+                              className="banner-icon-wrapper"
+                              style={{ cursor: 'pointer', zIndex: 5 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (
+                                  isSwipingRef.current ||
+                                  isDraggingRef.current
+                                )
+                                  return;
+                                playSound?.(SOUNDS?.seClick);
+                                if (window.showCharDetailModal) {
+                                  window.showCharDetailModal({
+                                    ...char,
+                                    hideDecideButton: true,
+                                    targetDeckIndex: idx,
+                                  });
+                                }
+                              }}
+                            >
                               <img
                                 src={
                                   getSkinImage
@@ -683,30 +752,14 @@ export default function DeckListScreen({ switchScreen }) {
                                 style={{
                                   cursor: 'pointer',
                                   zIndex: 2,
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onTouchStart={(e) => e.stopPropagation()}
-                                onClick={(e) => {
-                                  if (
-                                    isSwipingRef.current ||
-                                    isDraggingRef.current
-                                  )
-                                    return;
-                                  e.stopPropagation();
-                                  playSound?.(SOUNDS?.seClick);
-                                  if (window.showCharDetailModal) {
-                                    window.showCharDetailModal({
-                                      ...char,
-                                      hideDecideButton: true,
-                                      targetDeckIndex: idx,
-                                    });
-                                  }
+                                  pointerEvents: 'none',
                                 }}
                               />
                               <img
                                 src={getIconFramePath(char.id)}
                                 className="banner-icon-frame"
                                 alt="frame"
+                                style={{ pointerEvents: 'none' }}
                               />
                             </div>
                             <span
@@ -719,23 +772,23 @@ export default function DeckListScreen({ switchScreen }) {
 
                           {/* 虫眼鏡アイコン (自分のデッキ構成確認モーダル) */}
                           <div
+                            className="deck-preview-btn"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              width: '32px',
-                              height: '32px',
+                              width: '36px',
+                              height: '36px',
                               borderRadius: '50%',
-                              background: 'rgba(15, 23, 42, 0.6)',
-                              border: '1px solid rgba(255, 255, 255, 0.3)',
-                              fontSize: '1rem',
+                              background: 'rgba(15, 23, 42, 0.7)',
+                              border: '1px solid rgba(255, 255, 255, 0.4)',
+                              fontSize: '1.1rem',
                               cursor: 'pointer',
-                              zIndex: 5,
+                              zIndex: 10,
                               flexShrink: 0,
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              e.preventDefault();
                               if (isSwipingRef.current || isDraggingRef.current)
                                 return;
 
@@ -758,7 +811,7 @@ export default function DeckListScreen({ switchScreen }) {
                             🔍
                           </div>
                         </div>
-                      </button>
+                      </div>
                       {isLeaderBanned && (
                         <div
                           style={{

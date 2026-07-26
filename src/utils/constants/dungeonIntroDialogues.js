@@ -331,9 +331,9 @@ const CARD_LEADER_CLOSING = {
 export function buildDungeonIntroDialogue(deckData) {
   const leaderName = deckData.name || deckData.originalData?.name || 'リーダー';
   const leaderImage =
-    deckData.icon ||
     deckData.image ||
     deckData.originalData?.image ||
+    deckData.icon ||
     deckData.originalData?.icon;
 
   if (deckData.isCharacterLeader) {

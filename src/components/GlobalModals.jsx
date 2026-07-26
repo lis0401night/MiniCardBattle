@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import {
@@ -118,9 +118,15 @@ function resolveSkinImageById(id) {
     }
   }
 
-  // フォールバック: パスを直接生成
+  // フォールバック: baseId (charId) の画像またはデフォルト画像にフォールバック
   if (!img) {
-    img = `assets/characters/char_${id}.webp`;
+    const baseCharId =
+      typeof id === 'string' && id.includes('_') ? id.split('_')[0] : id;
+    if (CHARACTERS[baseCharId]?.image) {
+      img = CHARACTERS[baseCharId].image;
+    } else {
+      img = CHARACTERS.android?.image || 'assets/characters/char_android.webp';
+    }
   }
   return appendVersionQuery(img);
 }
@@ -150,6 +156,126 @@ function determineIsCardPremium(
 
   // グローバルのデッキ/所持プレミアムカード設定を参照
   return (globalPremiumCards || []).includes(cardId);
+}
+
+/**
+ * favorite_card / favoriteCard のキー表記揺れや文字列/オブジェクト形式を統一オブジェクト { cardId, isPremium } に正規化するヘルパー関数
+ */
+function normalizeFavoriteCard(input) {
+  if (!input) return null;
+
+  let raw = input;
+  if (typeof input === 'object') {
+    if (input.favoriteCard !== undefined) {
+      raw = input.favoriteCard;
+    } else if (input.favorite_card !== undefined) {
+      raw = input.favorite_card;
+    }
+  }
+
+  if (!raw) return null;
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        raw = JSON.parse(trimmed);
+      } catch {
+        return { cardId: trimmed, isPremium: false };
+      }
+    } else {
+      return { cardId: trimmed, isPremium: false };
+    }
+  }
+
+  if (typeof raw === 'object' && raw !== null) {
+    const cardId = raw.cardId || raw.card_id || raw.id;
+    if (!cardId) return null;
+    return {
+      cardId: String(cardId),
+      isPremium: !!(raw.isPremium || raw.is_premium),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * プロフィール画面でのお気に入りカード表示用コンポーネント (DRY共通化)
+ */
+function FavoriteCardDisplay({
+  favoriteCard,
+  onClick,
+  placeholderText = 'お気に入りカード未設定',
+}) {
+  const fav = normalizeFavoriteCard(favoriteCard);
+  if (fav && fav.cardId) {
+    const masterCard = (CARD_MASTER || []).find((c) => c.id === fav.cardId);
+    const rarityClass = masterCard?.rarity
+      ? ` rarity-${masterCard.rarity}`
+      : '';
+    const isPremium = !!fav.isPremium;
+
+    return (
+      <div
+        className="deck-card-item"
+        style={{
+          width: '140px',
+          height: '210px',
+          position: 'relative',
+          cursor: onClick ? 'pointer' : 'default',
+        }}
+        onClick={onClick}
+      >
+        <div
+          className={`card blue${rarityClass}`}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+          }}
+        >
+          <img
+            className="card-bg"
+            src={getCardImgUrl({
+              id: fav.cardId,
+              isPremium: isPremium,
+            })}
+            alt="Favorite Card"
+            style={{
+              objectFit: 'cover',
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: '140px',
+        height: '210px',
+        border: '2px dashed rgba(255, 255, 255, 0.3)',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#94a3b8',
+        fontSize: '0.85rem',
+        cursor: onClick ? 'pointer' : 'default',
+        textAlign: 'center',
+        padding: '10px',
+        boxSizing: 'border-box',
+      }}
+      onClick={onClick}
+    >
+      {placeholderText}
+    </div>
+  );
 }
 
 // 共通の獲得モーダルコンポーネント
@@ -303,6 +429,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [favCardModalOpen, setFavCardModalOpen] = useState(false);
   const [favCardPremiumMap, setFavCardPremiumMap] = useState({});
   const [viewProfileData, setViewProfileData] = useState(null);
+
+  const ownedMasterCards = useMemo(() => {
+    const inventory = GameState.playerInventory || {};
+    const hasInventoryData = Object.keys(inventory).length > 0;
+    return (CARD_MASTER || []).filter((c) => {
+      if (c.isToken) return false;
+      if (!hasInventoryData) return true;
+      return (inventory[c.id] || 0) > 0;
+    });
+  }, [favCardModalOpen, profileModalVisible, GameState.playerInventory]);
 
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
@@ -3053,7 +3189,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         </div>
       )}
 
-      {/* Profile Settings Modal */}
       {/* Profile Modal */}
       {profileModalVisible && (
         <div
@@ -3242,73 +3377,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   setFavCardModalOpen(true);
                 }}
               >
-                {favoriteCardState && favoriteCardState.cardId ? (
-                  (() => {
-                    const masterCard = (CARD_MASTER || []).find(
-                      (c) => c.id === favoriteCardState.cardId
-                    );
-                    const rarityClass = masterCard?.rarity
-                      ? ` rarity-${masterCard.rarity}`
-                      : '';
-                    const isPremium = !!favoriteCardState.isPremium;
-
-                    return (
-                      <div
-                        className="deck-card-item"
-                        style={{
-                          width: '140px',
-                          height: '210px',
-                          position: 'relative',
-                        }}
-                      >
-                        <div
-                          className={`card blue${rarityClass}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            position: 'relative',
-                          }}
-                        >
-                          <img
-                            className="card-bg"
-                            src={getCardImgUrl({
-                              id: favoriteCardState.cardId,
-                              isPremium: isPremium,
-                            })}
-                            alt="Favorite Card"
-                            style={{
-                              objectFit: 'cover',
-                              width: '100%',
-                              height: '100%',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div
-                    style={{
-                      width: '140px',
-                      height: '210px',
-                      borderRadius: '8px',
-                      border: '2px dashed #64748b',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#94a3b8',
-                      fontSize: '0.85rem',
-                      gap: '8px',
-                      background: 'rgba(0,0,0,0.2)',
-                      padding: '10px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <span style={{ fontSize: '2.2rem' }}>+</span>
-                    <span>タップしてカードを選択</span>
-                  </div>
-                )}
+                <FavoriteCardDisplay
+                  favoriteCard={favoriteCardState}
+                  placeholderText="タップしてカードを選択"
+                />
               </div>
             </div>
 
@@ -3574,118 +3646,112 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   </div>
                 </div>
 
-                {(CARD_MASTER || [])
-                  .filter(
-                    (c) =>
-                      !c.isToken &&
-                      ((GameState.playerInventory || {})[c.id] || 0) > 0
-                  )
-                  .map((card) => {
-                    const unlockedPremiumList =
-                      GameState.unlockedPremiumCards || [];
-                    const hasPremiumUnlocked = unlockedPremiumList.includes(
-                      card.id
-                    );
+                {ownedMasterCards.map((card) => {
+                  const unlockedPremiumList =
+                    GameState.unlockedPremiumCards || [];
+                  const hasPremiumUnlocked = unlockedPremiumList.includes(
+                    card.id
+                  );
 
-                    const isCardPremium = determineIsCardPremium(
-                      card.id,
-                      hasPremiumUnlocked,
-                      favCardPremiumMap,
-                      favoriteCardState,
-                      GameState.premiumCards
-                    );
+                  const isCardPremium = determineIsCardPremium(
+                    card.id,
+                    hasPremiumUnlocked,
+                    favCardPremiumMap,
+                    favoriteCardState,
+                    GameState.premiumCards
+                  );
 
-                    const isSelected =
-                      favoriteCardState?.cardId === card.id &&
-                      !!favoriteCardState?.isPremium === isCardPremium;
+                  const isSelected =
+                    favoriteCardState?.cardId === card.id &&
+                    !!favoriteCardState?.isPremium === isCardPremium;
 
-                    const rarityClass = card.rarity
-                      ? ` rarity-${card.rarity}`
-                      : '';
+                  const rarityClass = card.rarity
+                    ? ` rarity-${card.rarity}`
+                    : '';
 
-                    return (
-                      <div
-                        key={card.id}
-                        className="deck-card-item gallery-card-wrapper"
-                        style={{
-                          position: 'relative',
-                          cursor: 'pointer',
-                          borderRadius: '8px',
-                          border: isSelected ? '3px solid #eab308' : 'none',
-                          boxShadow: isSelected ? '0 0 12px #eab308' : 'none',
-                          transform: isSelected ? 'scale(1.03)' : 'none',
-                          transition: 'transform 0.15s',
-                        }}
-                        onClick={() => {
-                          playSound?.(SOUNDS?.seClick);
-                          const newFav = {
-                            cardId: card.id,
+                  return (
+                    <div
+                      key={card.id}
+                      className="deck-card-item gallery-card-wrapper"
+                      style={{
+                        position: 'relative',
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        border: isSelected ? '3px solid #eab308' : 'none',
+                        boxShadow: isSelected ? '0 0 12px #eab308' : 'none',
+                        transform: isSelected ? 'scale(1.03)' : 'none',
+                        transition: 'transform 0.15s',
+                      }}
+                      onClick={() => {
+                        playSound?.(SOUNDS?.seClick);
+                        const newFav = {
+                          cardId: card.id,
+                          isPremium: isCardPremium,
+                        };
+                        setFavoriteCardState(newFav);
+                        setFavCardModalOpen(false);
+                      }}
+                    >
+                      <div className={`card blue${rarityClass}`}>
+                        <img
+                          className="card-bg"
+                          src={getCardImgUrl({
+                            ...card,
                             isPremium: isCardPremium,
-                          };
-                          setFavoriteCardState(newFav);
-                          setFavCardModalOpen(false);
-                        }}
-                      >
-                        <div className={`card blue${rarityClass}`}>
-                          <img
-                            className="card-bg"
-                            src={getCardImgUrl({
-                              ...card,
-                              isPremium: isCardPremium,
-                            })}
-                            alt={card.name}
-                            style={{
-                              objectFit: 'cover',
-                              width: '100%',
-                              height: '100%',
-                            }}
-                          />
+                          })}
+                          alt={card.name}
+                          style={{
+                            objectFit: 'cover',
+                            width: '100%',
+                            height: '100%',
+                          }}
+                        />
 
-                          {/* プレミアム版が解禁されているカードのみ切り替えボタンを表示 */}
-                          {hasPremiumUnlocked && (
-                            <div
-                              className="premium-toggle-icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                playSound?.(SOUNDS?.seClick);
-                                const nextPremium = !isCardPremium;
-                                setFavCardPremiumMap((prev) => ({
-                                  ...prev,
-                                  [card.id]: nextPremium,
-                                }));
-                                if (favoriteCardState?.cardId === card.id) {
-                                  setFavoriteCardState({
-                                    cardId: card.id,
-                                    isPremium: nextPremium,
-                                  });
-                                }
-                              }}
-                              style={{
-                                position: 'absolute',
-                                top: '4px',
-                                left: '4px',
-                                background: 'rgba(0,0,0,0.85)',
-                                color: isCardPremium ? '#d946ef' : '#94a3b8',
-                                padding: '2px 6px',
-                                borderRadius: '10px',
-                                fontSize: '0.8rem',
-                                zIndex: 7,
-                                border: `1px solid ${isCardPremium ? '#d946ef' : '#475569'}`,
-                                cursor: 'pointer',
-                              }}
-                              title={
-                                isCardPremium
-                                  ? '通常版に切り替え'
-                                  : 'プレミアム版に切り替え'
+                        {/* プレミアム版が解禁されているカードのみ切り替えボタンを表示 */}
+                        {hasPremiumUnlocked && (
+                          <div
+                            className="premium-toggle-icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playSound?.(SOUNDS?.seClick);
+                              const nextPremium = !isCardPremium;
+                              setFavCardPremiumMap((prev) => ({
+                                ...prev,
+                                [card.id]: nextPremium,
+                              }));
+                              if (favoriteCardState?.cardId === card.id) {
+                                setFavoriteCardState({
+                                  cardId: card.id,
+                                  isPremium: nextPremium,
+                                });
                               }
-                            >
-                              ✨
-                            </div>
-                          )}
-                        </div>
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              left: '4px',
+                              background: 'rgba(0,0,0,0.85)',
+                              color: isCardPremium ? '#d946ef' : '#94a3b8',
+                              padding: '2px 6px',
+                              borderRadius: '10px',
+                              fontSize: '0.8rem',
+                              zIndex: 7,
+                              border: `1px solid ${isCardPremium ? '#d946ef' : '#475569'}`,
+                              cursor: 'pointer',
+                            }}
+                            title={
+                              isCardPremium
+                                ? '通常版に切り替え'
+                                : 'プレミアム版に切り替え'
+                            }
+                          >
+                            ✨
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -3826,75 +3892,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 お気に入りカード
               </span>
 
-              {(() => {
-                const fav =
-                  viewProfileData.favorite_card || viewProfileData.favoriteCard;
-                if (fav && fav.cardId) {
-                  const masterCard = (CARD_MASTER || []).find(
-                    (c) => c.id === fav.cardId
-                  );
-                  const rarityClass = masterCard?.rarity
-                    ? ` rarity-${masterCard.rarity}`
-                    : '';
-                  const isPremium = !!fav.isPremium;
-
-                  return (
-                    <div
-                      className="deck-card-item"
-                      style={{
-                        width: '140px',
-                        height: '210px',
-                        position: 'relative',
-                      }}
-                    >
-                      <div
-                        className={`card blue${rarityClass}`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          position: 'relative',
-                        }}
-                      >
-                        <img
-                          className="card-bg"
-                          src={getCardImgUrl({
-                            id: fav.cardId,
-                            isPremium: isPremium,
-                          })}
-                          alt="Favorite Card"
-                          style={{
-                            objectFit: 'cover',
-                            width: '100%',
-                            height: '100%',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    style={{
-                      width: '140px',
-                      height: '210px',
-                      borderRadius: '8px',
-                      border: '1px dashed #475569',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#64748b',
-                      fontSize: '0.85rem',
-                      background: 'rgba(0,0,0,0.2)',
-                      padding: '10px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    未設定
-                  </div>
-                );
-              })()}
+              <FavoriteCardDisplay
+                favoriteCard={normalizeFavoriteCard(viewProfileData)}
+                placeholderText="未設定"
+              />
             </div>
 
             {/* 閉じるボタン */}

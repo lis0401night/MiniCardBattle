@@ -287,6 +287,7 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         target_uuid: targetUuid,
+        attacker_uuid: data.attackerUuid || getOrCreateUUID(),
         attacker_name: data.attackerName,
         attacker_character: data.attackerCharacter,
         attacker_skin: data.attackerSkin || 'default',

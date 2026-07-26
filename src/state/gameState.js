@@ -102,6 +102,7 @@ export const GameState = {
   currentDialogueIndex: 0,
   pendingCharId: null,
   lastBattleResult: null,
+  battleStartPlayerDeckObjects: null,
   longPressTimer: null,
   selectedStageId: null,
   extraTurnCount: 0,
@@ -136,19 +137,24 @@ if (typeof window !== 'undefined') {
  */
 export function saveUserProfile(profile) {
   if (!profile) return;
+
+  const currentProfile = GameState.userProfile || loadUserProfile();
+
+  let favToSave = currentProfile.favoriteCard || null;
+  if (profile.favoriteCard !== undefined) {
+    favToSave = profile.favoriteCard;
+  }
+
   const merged = {
     name:
       typeof profile.name === 'string' && profile.name.trim()
         ? profile.name.trim()
-        : GameState.userProfile.name,
+        : currentProfile.name || DEFAULT_PLAYER_NAME,
     icon:
       typeof profile.icon === 'string' && profile.icon
         ? profile.icon
-        : GameState.userProfile.icon,
-    favoriteCard:
-      profile.favoriteCard !== undefined
-        ? profile.favoriteCard
-        : GameState.userProfile.favoriteCard || null,
+        : currentProfile.icon || DEFAULT_PLAYER_ICON,
+    favoriteCard: favToSave,
   };
   GameState.userProfile = merged;
   try {

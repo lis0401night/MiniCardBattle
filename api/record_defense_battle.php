@@ -37,7 +37,13 @@ if (strlen($target_uuid) < 10) {
     exit;
 }
 
-$attacker_name = isset($data['attacker_name']) ? htmlspecialchars($data['attacker_name'], ENT_QUOTES, 'UTF-8') : '挑戦者';
+$attacker_uuid = isset($data['attacker_uuid']) ? preg_replace('/[^a-z0-9-]/', '', (string) $data['attacker_uuid']) : '';
+$attacker_name = isset($data['attacker_name'])
+    ? mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', (string) $data['attacker_name']), 0, 12)
+    : '挑戦者';
+if ($attacker_name === '') {
+    $attacker_name = '挑戦者';
+}
 $attacker_character = isset($data['attacker_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_character']) : 'android';
 $attacker_skin = isset($data['attacker_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_skin']) : 'default';
 $attacker_total_points = isset($data['attacker_total_points']) ? intval($data['attacker_total_points']) : 0;
@@ -61,10 +67,14 @@ if (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) {
         }
     }
 }
-$result = $data['result']; // 'win' (攻撃成功) or 'lose' (攻撃失敗)
+$result = $data['result']; // 'win' (攻撃成功) / 'lose' (攻撃失敗) / 'draw' (引き分け)
+if (!in_array($result, ['win', 'lose', 'draw'], true)) {
+    echo json_encode(['success' => false, 'error' => 'Invalid result value']);
+    exit;
+}
 
-// 防衛側視点での勝敗結果 ('win': 防衛成功, 'lose': 防衛失敗)
-$defense_result = ($result === 'win') ? 'lose' : 'win';
+// 防衛側視点での勝敗結果 ('win': 防衛成功, 'lose': 防衛失敗, 'draw': 引き分け)
+$defense_result = $result === 'win' ? 'lose' : ($result === 'lose' ? 'win' : 'draw');
 
 $dir = __DIR__ . '/decks/players';
 $filename = "{$dir}/{$target_uuid}.js";
@@ -88,7 +98,7 @@ if (!flock($fp, LOCK_EX)) {
 
 clearstatcache(true, $filename);
 $fileSize = filesize($filename);
-$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
+$content = $fileSize > 0 ? stream_get_contents($fp) : '';
 
 $playerData = null;
 if ($fileSize > 0 && preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
@@ -102,6 +112,7 @@ if ($playerData) {
 
     $newRecord = [
         'result' => $defense_result,
+        'attackerUuid' => $attacker_uuid,
         'attackerName' => $attacker_name,
         'attackerCharacter' => $attacker_character,
         'attackerSkin' => $attacker_skin,

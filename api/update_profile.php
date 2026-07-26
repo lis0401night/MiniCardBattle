@@ -29,7 +29,12 @@ if (!$data || !isset($data['uuid']) || !isset($data['name']) || !isset($data['ic
 }
 
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
-$name = htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8');
+$name = isset($data['name'])
+    ? mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', (string) $data['name']), 0, 12)
+    : '挑戦者';
+if ($name === '') {
+    $name = '挑戦者';
+}
 $icon = preg_replace('/[^a-z0-9_]/', '', $data['icon']);
 $timestamp = time();
 
@@ -59,7 +64,7 @@ if (!flock($fp, LOCK_EX)) {
 
 clearstatcache(true, $filename);
 $fileSize = filesize($filename);
-$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
+$content = $fileSize > 0 ? stream_get_contents($fp) : '';
 
 $player_data = [];
 $parseFailed = false;
@@ -94,14 +99,17 @@ $player_data['uuid'] = $uuid;
 $player_data['name'] = $name;
 $player_data['icon'] = $icon;
 if (array_key_exists('favoriteCard', $data)) {
-    if (is_array($data['favoriteCard']) && isset($data['favoriteCard']['cardId'])) {
+    $cleaned_card_id = (is_array($data['favoriteCard']) && isset($data['favoriteCard']['cardId']))
+        ? preg_replace('/[^a-z0-9_]/', '', (string) $data['favoriteCard']['cardId'])
+        : '';
+    if ($cleaned_card_id !== '') {
         // cardIdのみサニタイズし、isPremiumはbool型で保持
         $player_data['favorite_card'] = [
-            'cardId' => preg_replace('/[^a-z0-9_]/', '', $data['favoriteCard']['cardId']),
+            'cardId' => $cleaned_card_id,
             'isPremium' => !empty($data['favoriteCard']['isPremium']),
         ];
     } else {
-        // null等が送られた場合はお気に入り解除
+        // nullや空のcardIdが送られた場合はお気に入り解除
         $player_data['favorite_card'] = null;
     }
 }

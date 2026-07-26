@@ -530,6 +530,35 @@ export function prepareBattle() {
           sessionId
         );
       }
+
+      // バトル開始時点のプレイヤー使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）
+      if (
+        Array.isArray(GameState.playerDeckSelection) &&
+        GameState.playerDeckSelection.length > 0
+      ) {
+        GameState.battleStartPlayerDeckObjects =
+          GameState.playerDeckSelection.map((c) => {
+            const cId = typeof c === 'string' ? c : c?.baseId || c?.id;
+            const isPrem =
+              typeof c === 'object' && c?.isPremium !== undefined
+                ? !!c.isPremium
+                : (GameState.premiumCards || []).includes(cId);
+            return { id: cId, isPremium: isPrem };
+          });
+      } else if (
+        Array.isArray(GameState.playerDeck) &&
+        GameState.playerDeck.length > 0
+      ) {
+        GameState.battleStartPlayerDeckObjects = GameState.playerDeck.map(
+          (c) => {
+            const cId = c?.baseId || c?.id || c;
+            const isPrem = !!c?.isPremium;
+            return { id: cId, isPremium: isPrem };
+          }
+        );
+      } else {
+        GameState.battleStartPlayerDeckObjects = null;
+      }
     } catch (e) {
       console.error('Deck generation error:', e);
       // エラー時も空のデッキで続行を試みる（フリーズ回避）
@@ -4676,20 +4705,24 @@ export function endBattle() {
         const activeDeckIdx = GameState.currentDeckIndex || 0;
         const activeDeck =
           GameState.decks?.[activeDeckIdx] || GameState.decks?.[0];
-        const attackerDeckObjects = Array.isArray(activeDeck?.cards)
-          ? activeDeck.cards.map((c) => {
-              const cId = typeof c === 'string' ? c : c?.id || c;
-              const isPrem =
-                typeof c === 'object' && c?.isPremium !== undefined
-                  ? !!c.isPremium
-                  : (
-                      activeDeck?.premiumCards ||
-                      GameState.premiumCards ||
-                      []
-                    ).includes(cId);
-              return { id: cId, isPremium: isPrem };
-            })
-          : [];
+        const attackerDeckObjects =
+          Array.isArray(GameState.battleStartPlayerDeckObjects) &&
+          GameState.battleStartPlayerDeckObjects.length > 0
+            ? GameState.battleStartPlayerDeckObjects
+            : Array.isArray(activeDeck?.cards)
+              ? activeDeck.cards.map((c) => {
+                  const cId = typeof c === 'string' ? c : c?.id || c;
+                  const isPrem =
+                    typeof c === 'object' && c?.isPremium !== undefined
+                      ? !!c.isPremium
+                      : (
+                          activeDeck?.premiumCards ||
+                          GameState.premiumCards ||
+                          []
+                        ).includes(cId);
+                  return { id: cId, isPremium: isPrem };
+                })
+              : [];
         const attackerName = resolvePlayerName();
         const playerCharId = GameState.playerConfig?.id || 'android';
         const attackerCharacter = playerCharId;
@@ -4703,6 +4736,7 @@ export function endBattle() {
           ) || 0;
 
         recordDefenseBattleToServer(enemyUuid, {
+          attackerUuid: getOrCreateUUID(),
           attackerName,
           attackerCharacter,
           attackerSkin,
