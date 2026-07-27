@@ -775,10 +775,12 @@ export function loadDeck() {
     const templateChar = CHARACTERS[activeDeck.leaderId] || CHARACTERS.android;
     if (!GameState.playerConfig || GameState.appState !== 'select_player') {
       // トーナメント進行中はstartTournamentMatchで設定済みのplayerConfig（名前・スキン設定）を保持する
+      // ストーリーモードはinitStoryMode/resumeStoryProgressで設定済みのplayerConfig（選択したリーダー）を保持する
       if (
-        GameState.gameMode === 'tournament' &&
-        GameState.tournament &&
-        GameState.playerConfig
+        (GameState.gameMode === 'tournament' &&
+          GameState.tournament &&
+          GameState.playerConfig) ||
+        (GameState.gameMode === 'story' && GameState.playerConfig)
       ) {
         // playerConfigは維持し、上書きしない
       } else {
