@@ -269,6 +269,8 @@ export const generateCharacterBossEnemy = (floorNum) => {
   let bossData = {
     ...char,
     id: `dungeon_boss_${bossId}_${Date.now()}`,
+    leaderCardId: bossId,
+    charId: bossId,
     isDungeonEnemy: true,
     fixedAiLevel: 3,
     hp: 20, // ダンジョンボスのHPは一律20
@@ -374,7 +376,13 @@ export const generateDungeonOpponentsList = (winStreak) => {
 export const hydrateDungeonOpponent = (opp) => {
   if (!opp) return null;
 
-  const leaderId = opp.leaderCardId || opp.id;
+  let leaderId = opp.leaderCardId || opp.charId || opp.id;
+  if (typeof leaderId === 'string' && leaderId.startsWith('dungeon_boss_')) {
+    const parts = leaderId.split('_');
+    if (parts[2] && CHARACTERS[parts[2]]) {
+      leaderId = parts[2];
+    }
+  }
   const dialogueData = getDungeonCharacterDialogue(leaderId);
 
   // 1. キャラクターボスの復元（CHARACTERSベース）

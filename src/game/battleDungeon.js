@@ -112,7 +112,8 @@ export function saveDungeonProgress() {
       if (!opp) return null;
       return {
         id: opp.id,
-        leaderCardId: opp.leaderCardId || opp.id,
+        leaderCardId: opp.leaderCardId || opp.charId || opp.id,
+        charId: opp.charId || opp.leaderCardId,
         fixedAiLevel: opp.fixedAiLevel,
         hp: opp.hp,
         stageId: opp.stageId,
