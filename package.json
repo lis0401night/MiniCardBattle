@@ -1,7 +1,7 @@
 {
   "name": "mini-card-battle",
   "private": true,
-  "version": "0.2.5.3",
+  "version": "0.2.5.4",
   "type": "module",
   "scripts": {
     "sync-version": "node sync_version.js && node scripts/generate_card_thumbnails.js && node scripts/compress_audio_all.js",
