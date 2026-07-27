@@ -630,7 +630,11 @@ export function loadDeck() {
     );
     if (dungeonSaved) {
       try {
-        GameState.decks = [JSON.parse(dungeonSaved)];
+        const deckObj = JSON.parse(dungeonSaved);
+        if (deckObj && GameState.playerConfig?.id) {
+          deckObj.leaderId = GameState.playerConfig.id;
+        }
+        GameState.decks = [deckObj];
       } catch {
         GameState.decks = [];
       }
@@ -646,7 +650,12 @@ export function loadDeck() {
             {
               id: 'dungeon_deck',
               name: '試練の宮殿デッキ',
-              leaderId: data.playerConfig?.id || data.leaderId || 'android',
+              leaderId:
+                GameState.playerConfig?.id ||
+                data.charId ||
+                data.playerConfig?.id ||
+                data.leaderId ||
+                'android',
               playmatId: null,
               playerSkins: {},
               premiumCards: [...GameState.premiumCards],
@@ -914,21 +923,6 @@ export function saveCurrentEditDeck() {
       );
     }
 
-    // 試練の迷宮用の一時デッキがアクティブの場合、通常デッキ配列への誤上書きをブロックする
-    if (activeDeck && activeDeck.id === 'dungeon_deck') {
-      activeDeck.playmatId = GameState.selectedPlaymatId;
-      activeDeck.playerSkins = { ...GameState.playerSkins };
-      activeDeck.premiumCards = [...(GameState.premiumCards || [])];
-      activeDeck.cards = GameState.playerDeckSelection.map((c) =>
-        typeof c === 'string' ? c : c.baseId || c.id
-      );
-      localStorage.setItem(
-        'mini_card_battle_dungeon_deck_obj',
-        JSON.stringify(activeDeck)
-      );
-      return;
-    }
-
     // トーナメントモードでは学園スキンが強制設定されているため、
     // 通常デッキのスキン情報を上書きしない（他モードへの汚染を防止）
     if (GameState.gameMode === 'tournament') {
@@ -963,7 +957,28 @@ export function saveCurrentEditDeck() {
         'mini_card_battle_deck_defense',
         JSON.stringify(activeDeck.cards)
       );
-    } else if (GameState.gameMode === 'battle_dungeon') {
+    } else if (
+      GameState.gameMode === 'battle_dungeon' ||
+      (activeDeck && activeDeck.id === 'dungeon_deck')
+    ) {
+      if (activeDeck) {
+        const activeLeaderId =
+          GameState.playerConfig?.id || activeDeck.leaderId;
+        activeDeck.leaderId = activeLeaderId;
+
+        // ダンジョン用デッキの playerSkins をクリーンアップ
+        if (
+          CHARACTERS[activeLeaderId] &&
+          GameState.playerSkins?.[activeLeaderId]
+        ) {
+          activeDeck.playerSkins = {
+            [activeLeaderId]: GameState.playerSkins[activeLeaderId],
+          };
+        } else {
+          activeDeck.playerSkins = {};
+        }
+      }
+      // 試練の宮殿用の一時デッキは通常デッキ配列への誤上書きを避けて専用キーへ保存する
       localStorage.setItem(
         'mini_card_battle_dungeon_deck_obj',
         JSON.stringify(activeDeck)

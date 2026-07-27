@@ -236,10 +236,16 @@ export function setupDialogueScreen() {
     }
   }
 
+  const isDungeonDialogue =
+    GameState.appState === 'dungeon_intro_dialogue' ||
+    GameState.appState === 'dungeon_talk_dialogue';
+  const enemyConfig = GameState.enemyConfig;
+
   let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
-  let enemySkinId = GameState.enemySkins
-    ? GameState.enemySkins[GameState.enemyConfig.id]
-    : 'default';
+  let enemySkinId =
+    GameState.enemySkins && enemyConfig
+      ? GameState.enemySkins[enemyConfig.id]
+      : 'default';
 
   if (GameState.gameMode === 'tournament') {
     playerSkinId = 'school';
@@ -250,10 +256,13 @@ export function setupDialogueScreen() {
     getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
     getCardImgUrl(GameState.playerConfig);
 
-  let pRightImg =
-    getSkinImage(GameState.enemyConfig, enemySkinId, 'image') ||
-    GameState.enemyConfig.image ||
-    getCardImgUrl(GameState.enemyConfig);
+  let pRightImg = null;
+  if (!isDungeonDialogue && enemyConfig) {
+    pRightImg =
+      getSkinImage(enemyConfig, enemySkinId, 'image') ||
+      enemyConfig.image ||
+      getCardImgUrl(enemyConfig);
+  }
 
   const firstNode = GameState.dialogueQueue?.[0];
   const isCenter =

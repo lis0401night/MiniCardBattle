@@ -40,7 +40,7 @@ import { GameState } from '../state/gameState.js';
  */
 export function navigateToDeckList(appState = 'select_deck') {
   if (appState) GameState.appState = appState;
-  if (typeof window.loadDeck === 'function') window.loadDeck();
+  loadDeck();
   if (window.forceUpdateDeckList) window.forceUpdateDeckList();
   switchScreen('screen-deck-list');
 }
@@ -524,11 +524,14 @@ export function goBackFromSelect() {
     }
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
-  } else if (
-    GameState.gameMode === 'story' &&
-    GameState.appState === 'select_player'
-  ) {
-    switchScreen('screen-solo-menu');
+  } else if (GameState.gameMode === 'story') {
+    const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
+    if (savedStoryStr) {
+      GameState.appState = 'story_resume';
+      switchScreen('screen-story-resume');
+    } else {
+      switchScreen('screen-solo-menu');
+    }
   } else if (
     GameState.gameMode === 'free' &&
     GameState.appState === 'select_enemy'
@@ -639,8 +642,7 @@ export function goBackFromDeckEdit(isCancel = false) {
     navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
-    GameState.appState = 'select_deck';
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } else if (GameState.appState === 'tournament_init_deck_edit') {
     if (isCancel) {
       navigateToDeckList('select_deck');
@@ -679,9 +681,8 @@ export function goBackFromDeckEdit(isCancel = false) {
       navigateToDeckList(GameState.prevAppStateForCreate || 'select_deck');
     }
   } else if (GameState.gameMode === 'story') {
-    // 難易度選択に戻る
-    GameState.appState = 'select_difficulty';
-    switchScreen('screen-difficulty');
+    // デッキ編集画面からは常にデッキ選択一覧画面に戻る
+    navigateToDeckList('select_deck');
   } else if (
     (GameState.gameMode?.startsWith('event_') &&
       GameState.gameMode?.endsWith('_high')) ||
@@ -696,7 +697,7 @@ export function goBackFromDeckEdit(isCancel = false) {
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
   } else if (GameState.gameMode === 'free_deck_edit') {
     // マイデッキ編集：デッキ一覧に戻る
-    navigateToDeckList();
+    navigateToDeckList('free_deck_edit');
   } else {
     // フリー対戦など：デッキ選択（一覧）画面に戻る
     navigateToDeckList('select_deck');
@@ -1063,10 +1064,7 @@ export async function startAttackBattle(enemyPlayerData) {
     GameState.selectedStageId = enemyPlayerData.stage || 'plain'; // バトル背景として設定
 
     // 自分の使用するデッキを選択するためデッキ一覧画面から開始
-    GameState.appState = 'select_deck';
-    if (typeof window.loadDeck === 'function') window.loadDeck();
-    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   } catch (err) {
     console.error('Failed to start attack battle:', err);
     showAlertModal('対戦データの読み込みに失敗しました。');

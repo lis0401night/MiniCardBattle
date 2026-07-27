@@ -1560,6 +1560,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               let skinIdToUse;
               if (isEnemySelection) {
                 skinIdToUse = 'default';
+              } else if (GameState.gameMode === 'battle_dungeon') {
+                skinIdToUse =
+                  GameState.playerSkins?.[charDetailData.id] || 'default';
               } else if (
                 charDetailData.targetDeckIndex !== undefined &&
                 GameState.decks &&
@@ -1571,7 +1574,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   ] || 'default';
               } else {
                 skinIdToUse =
-                  GameState.playerSkins[charDetailData.id] || 'default';
+                  GameState.playerSkins?.[charDetailData.id] || 'default';
               }
               const imgSrc = getSkinImage(
                 charDetailData.id,
@@ -1722,6 +1725,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
                   if (isEnemySelection) {
                     initialSkin = 'default';
+                  } else if (GameState.gameMode === 'battle_dungeon') {
+                    initialSkin =
+                      GameState.playerSkins?.[charDetailData.id] || 'default';
                   } else if (
                     charDetailData.targetDeckIndex !== undefined &&
                     GameState.decks &&
@@ -1732,7 +1738,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         .playerSkins?.[charDetailData.id] || 'default';
                   } else {
                     initialSkin =
-                      GameState.playerSkins[charDetailData.id] || 'default';
+                      GameState.playerSkins?.[charDetailData.id] || 'default';
                   }
                   setSelectedSkinState(initialSkin);
                   playSound?.(SOUNDS?.seClick);
@@ -2267,10 +2273,25 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           GameState.playerSkins[charDetailData.id] = skinId;
                           syncPlayerConfigImages(charDetailData, skinId);
 
-                          // 宮殿セーブデータを自動更新
+                          // 宮殿デッキオブジェクト (GameState.decks[0]) の playerSkins も同期更新
+                          if (GameState.decks && GameState.decks[0]) {
+                            if (!GameState.decks[0].playerSkins) {
+                              GameState.decks[0].playerSkins = {};
+                            }
+                            GameState.decks[0].playerSkins[charDetailData.id] =
+                              skinId;
+                          }
+
+                          // デッキ一時キャッシュと宮殿セーブデータを自動更新
+                          if (window.saveCurrentEditDeck) {
+                            window.saveCurrentEditDeck();
+                          }
                           saveDungeonProgress();
 
                           // 画面再描画
+                          if (window.forceUpdateDeckList) {
+                            window.forceUpdateDeckList();
+                          }
                           if (typeof renderDeckEdit === 'function') {
                             renderDeckEdit();
                           }
@@ -3894,7 +3915,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               </span>
 
               <FavoriteCardDisplay
-                favoriteCard={normalizeFavoriteCard(viewProfileData)}
+                favoriteCard={viewProfileData}
                 placeholderText="未設定"
               />
             </div>

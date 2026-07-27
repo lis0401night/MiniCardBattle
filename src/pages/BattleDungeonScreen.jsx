@@ -12,12 +12,15 @@ import {
 import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
-import { getRentalDeckOptions } from '../utils/constants/battleDungeon.js';
+import {
+  getRentalDeckOptions,
+  hydrateDungeonOpponent,
+  hydratePlayerConfig,
+} from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   appendVersionQuery,
   DEFAULT_DUNGEON_AI_LEVEL,
-  DEFAULT_PLAYER_NAME,
 } from '../utils/constants/config.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
@@ -98,7 +101,7 @@ export default function BattleDungeonScreen() {
       case 'reward':
         return <RewardSelect />;
       case 'battle':
-        return <div style={{ color: '#fff' }}>バトル中...</div>;
+        return <OpponentSelect />;
       default:
         return (
           <div style={{ color: '#fff' }}>
@@ -300,20 +303,16 @@ function ResumeSelect() {
     }
   }, []);
   const pConf = useMemo(() => {
-    const rawConf = saveData?.playerConfig || {
-      name: DEFAULT_PLAYER_NAME,
-      rarity: 4,
-      icon: '',
-    };
-    return {
-      ...rawConf,
-      icon: rawConf.icon
-        ? rawConf.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
-        : '',
-      image: rawConf.image
-        ? rawConf.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
-        : null,
-    };
+    const charId =
+      saveData?.charId ||
+      saveData?.playerConfig?.id ||
+      saveData?.leaderId ||
+      'android';
+    return hydratePlayerConfig(
+      charId,
+      saveData?.playerConfig,
+      saveData?.playerSkins
+    );
   }, [saveData]);
   const pCurrentHp = saveData?.playerHP !== undefined ? saveData.playerHP : 20;
 
@@ -379,7 +378,7 @@ function ResumeSelect() {
           最高到達階: {GameState.dungeonMaxWinStreak + 1} 階
         </div>
 
-        {saveData && saveData.playerConfig && (
+        {saveData && (
           <div
             style={{
               display: 'flex',
@@ -916,7 +915,11 @@ function RentalDeckSelect() {
 }
 
 function OpponentSelect() {
-  const opps = GameState.dungeonOpponents || [];
+  const opps = useMemo(() => {
+    return (GameState.dungeonOpponents || [])
+      .map(hydrateDungeonOpponent)
+      .filter(Boolean);
+  }, []);
 
   const handleSelect = (idx) => {
     showConfirmModal(`${opps[idx].name} に挑みますか？`, () => {
@@ -939,11 +942,11 @@ function OpponentSelect() {
     }
   };
 
-  const pConf = GameState.playerConfig || {
-    name: DEFAULT_PLAYER_NAME,
-    rarity: 4,
-    icon: '',
-  };
+  const pConf = useMemo(() => {
+    const rawConf = GameState.playerConfig || {};
+    const charId = rawConf.id || rawConf.leaderCardId || 'android';
+    return hydratePlayerConfig(charId, rawConf, GameState.playerSkins);
+  }, []);
   const pCurrentHp =
     GameState.dungeonPlayerHP !== undefined ? GameState.dungeonPlayerHP : 20;
   const pMaxHp = 20;

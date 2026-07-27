@@ -61,6 +61,22 @@ import {
   calculateCombatPhase,
   canTakeDamage,
 } from './engine.js';
+
+/**
+ * カード配列（文字列またはオブジェクト）を { id, isPremium } の配列に正規化する共通ヘルパー
+ */
+function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
+  if (!Array.isArray(cards)) return [];
+  const list = premiumCardsList || [];
+  return cards.map((c) => {
+    const cId = typeof c === 'string' ? c : c?.baseId || c?.id || c;
+    const isPrem =
+      typeof c === 'object' && c?.isPremium !== undefined
+        ? !!c.isPremium
+        : list.includes(cId);
+    return { id: cId, isPremium: isPrem };
+  });
+}
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
 import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
 import { simulateTournamentRound } from './tournament.js';
@@ -536,25 +552,17 @@ export function prepareBattle() {
         Array.isArray(GameState.playerDeckSelection) &&
         GameState.playerDeckSelection.length > 0
       ) {
-        GameState.battleStartPlayerDeckObjects =
-          GameState.playerDeckSelection.map((c) => {
-            const cId = typeof c === 'string' ? c : c?.baseId || c?.id;
-            const isPrem =
-              typeof c === 'object' && c?.isPremium !== undefined
-                ? !!c.isPremium
-                : (GameState.premiumCards || []).includes(cId);
-            return { id: cId, isPremium: isPrem };
-          });
+        GameState.battleStartPlayerDeckObjects = toDeckObjects(
+          GameState.playerDeckSelection,
+          GameState.premiumCards
+        );
       } else if (
         Array.isArray(GameState.playerDeck) &&
         GameState.playerDeck.length > 0
       ) {
-        GameState.battleStartPlayerDeckObjects = GameState.playerDeck.map(
-          (c) => {
-            const cId = c?.baseId || c?.id || c;
-            const isPrem = !!c?.isPremium;
-            return { id: cId, isPremium: isPrem };
-          }
+        GameState.battleStartPlayerDeckObjects = toDeckObjects(
+          GameState.playerDeck,
+          GameState.premiumCards
         );
       } else {
         GameState.battleStartPlayerDeckObjects = null;
@@ -4709,20 +4717,10 @@ export function endBattle() {
           Array.isArray(GameState.battleStartPlayerDeckObjects) &&
           GameState.battleStartPlayerDeckObjects.length > 0
             ? GameState.battleStartPlayerDeckObjects
-            : Array.isArray(activeDeck?.cards)
-              ? activeDeck.cards.map((c) => {
-                  const cId = typeof c === 'string' ? c : c?.id || c;
-                  const isPrem =
-                    typeof c === 'object' && c?.isPremium !== undefined
-                      ? !!c.isPremium
-                      : (
-                          activeDeck?.premiumCards ||
-                          GameState.premiumCards ||
-                          []
-                        ).includes(cId);
-                  return { id: cId, isPremium: isPrem };
-                })
-              : [];
+            : toDeckObjects(
+                activeDeck?.cards,
+                activeDeck?.premiumCards || GameState.premiumCards
+              );
         const attackerName = resolvePlayerName();
         const playerCharId = GameState.playerConfig?.id || 'android';
         const attackerCharacter = playerCharId;

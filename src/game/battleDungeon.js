@@ -7,7 +7,11 @@ import {
 import { showPointAcquisitionModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
-import { generateDungeonOpponentsList } from '../utils/constants/battleDungeon.js';
+import {
+  generateDungeonOpponentsList,
+  hydrateDungeonOpponent,
+  hydratePlayerConfig,
+} from '../utils/constants/battleDungeon.js';
 import { buildDungeonIntroDialogue } from '../utils/constants/dungeonIntroDialogues.js';
 import { buildDungeonLeaderTalkDialogue } from '../utils/constants/dungeonTalkDialogues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -79,20 +83,77 @@ export function initBattleDungeon() {
   switchScreen('screen-battle-dungeon');
 }
 
+function syncDungeonDeckLeaderId(charId) {
+  if (!charId) return;
+  try {
+    const json = localStorage.getItem('mini_card_battle_dungeon_deck_obj');
+    if (json) {
+      const obj = JSON.parse(json);
+      if (obj && obj.leaderId !== charId) {
+        obj.leaderId = charId;
+        localStorage.setItem(
+          'mini_card_battle_dungeon_deck_obj',
+          JSON.stringify(obj)
+        );
+      }
+    }
+  } catch (e) {
+    console.error('Failed to sync dungeon deck leaderId', e);
+  }
+}
+
 export function saveDungeonProgress() {
+  const pConf = GameState.playerConfig;
+  const charId = pConf?.id || pConf?.leaderCardId || 'android';
+
+  // 対戦相手候補のデータから、不要な定数テキスト（台詞、説明文、画像パス等）を除外した超軽量オブジェクトに変換
+  const lightweightOpponents = (GameState.dungeonOpponents || [])
+    .map((opp) => {
+      if (!opp) return null;
+      return {
+        id: opp.id,
+        leaderCardId: opp.leaderCardId || opp.id,
+        fixedAiLevel: opp.fixedAiLevel,
+        hp: opp.hp,
+        stageId: opp.stageId,
+        color: opp.color,
+        currentSkin: opp.currentSkin,
+        isDungeonEnemy: opp.isDungeonEnemy,
+        dungeonDeck: opp.dungeonDeck,
+      };
+    })
+    .filter(Boolean);
+
+  // カードリーダー（モブ）の場合は最小限の表示パラメータのみ保存
+  const savedPlayerConfig = pConf?.leaderCardId
+    ? {
+        id: pConf.id,
+        leaderCardId: pConf.leaderCardId,
+        name: pConf.name,
+        rarity: pConf.rarity,
+        icon: pConf.icon,
+        image: pConf.image,
+      }
+    : undefined;
+
+  const sanitizedSkins = {};
+  if (CHARACTERS[charId] && GameState.playerSkins?.[charId]) {
+    sanitizedSkins[charId] = GameState.playerSkins[charId];
+  }
+
   const saveData = {
     winStreak: GameState.dungeonWinStreak,
     cards: GameState.dungeonCards,
     deck: (GameState.playerDeckSelection || []).map((c) => c.id), // デッキ構成を保存
-    opponents: GameState.dungeonOpponents,
-    playerConfig: GameState.playerConfig, // 動的リーダー全データ
-    enemyConfig: GameState.enemyConfig, // 動的敵リーダー全データ
+    charId: charId, // キャラクターIDを軽量保存
+    playerConfig: savedPlayerConfig,
+    opponents: lightweightOpponents,
     dungeonState: GameState.dungeonState,
     playerHP:
       typeof GameState.dungeonPlayerHP !== 'undefined'
         ? GameState.dungeonPlayerHP
         : 20,
-    playerSkins: GameState.playerSkins || {}, // スキン設定を保存
+    playerSkins: sanitizedSkins, // クリーンなスキン設定を保存
     selectedPlaymatId: GameState.selectedPlaymatId || null, // プレイマットIDを保存
     timestamp: Date.now(),
   };
@@ -100,6 +161,9 @@ export function saveDungeonProgress() {
     'mini_card_battle_dungeon_save',
     JSON.stringify(saveData)
   );
+
+  // 一時デッキキャッシュ (mini_card_battle_dungeon_deck_obj) の leaderId も同期
+  syncDungeonDeckLeaderId(charId);
 }
 
 export function loadDungeonProgress() {
@@ -130,36 +194,26 @@ export function loadDungeonProgress() {
         .filter(Boolean);
     }
 
-    GameState.dungeonOpponents = data.opponents || [];
+    // マスタデータ（CARD_MASTER / CHARACTERS）から対戦相手情報を動的復元
+    GameState.dungeonOpponents = (data.opponents || [])
+      .map(hydrateDungeonOpponent)
+      .filter(Boolean);
 
-    // プレイヤーコンフィグを直接復元（無い場合は従来のleaderIdもしくはandroidでフォールバック）
-    if (data.playerConfig) {
-      GameState.playerConfig = {
-        ...data.playerConfig,
-        icon: data.playerConfig.icon
-          ? data.playerConfig.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
-          : data.playerConfig.icon,
-        image: data.playerConfig.image
-          ? data.playerConfig.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
-          : data.playerConfig.image,
-        imageLose: data.playerConfig.imageLose
-          ? data.playerConfig.imageLose.replace(
-              /\.(png|jpg|jpeg|gif)$/i,
-              '.webp'
-            )
-          : data.playerConfig.imageLose,
-        imageEnding: data.playerConfig.imageEnding
-          ? data.playerConfig.imageEnding.replace(
-              /\.(png|jpg|jpeg|gif)$/i,
-              '.webp'
-            )
-          : data.playerConfig.imageEnding,
-      };
-    } else if (data.leaderId) {
-      GameState.playerConfig = CHARACTERS[data.leaderId] || CHARACTERS.android;
-    } else {
-      GameState.playerConfig = CHARACTERS.android;
-    }
+    // スキンとプレイマットを先に復元（キャラクター画像の適用に使用）
+    GameState.playerSkins = data.playerSkins || {};
+    GameState.selectedPlaymatId = data.selectedPlaymatId || null;
+
+    // プレイヤーコンフィグの動的復元（キャラリーダー / カードリーダー問わず完璧に対応）
+    const playerCharId =
+      data.charId || data.playerConfig?.id || data.leaderId || 'android';
+    GameState.playerConfig = hydratePlayerConfig(
+      playerCharId,
+      data.playerConfig,
+      GameState.playerSkins
+    );
+
+    // デッキキャッシュの leaderId を同期
+    syncDungeonDeckLeaderId(playerCharId);
 
     if (data.enemyConfig) {
       GameState.enemyConfig = data.enemyConfig;
@@ -176,13 +230,12 @@ export function loadDungeonProgress() {
       syncEnemySkin(data.enemyConfig.id, data.enemyConfig.currentSkin);
     }
 
-    GameState.dungeonState = data.dungeonState || 'select_opponent';
+    // 再開時は「battle」等の途中状態であっても安全に対戦相手選択画面へ復帰させる
+    const restoredState = data.dungeonState || 'select_opponent';
+    GameState.dungeonState =
+      restoredState === 'battle' ? 'select_opponent' : restoredState;
     if (data.playerHP !== undefined) GameState.dungeonPlayerHP = data.playerHP;
     GameState.gameMode = 'battle_dungeon';
-
-    // スキンとプレイマットを復元
-    GameState.playerSkins = data.playerSkins || {};
-    GameState.selectedPlaymatId = data.selectedPlaymatId || null;
 
     // 再描画を促す
     if (window.renderBattleDungeonReact) window.renderBattleDungeonReact();
@@ -239,8 +292,10 @@ export function generateNextOpponents(callback) {
 
 export function startDungeonBattle(enemyIndex) {
   playSound(SOUNDS.seClick);
-  const enemy = GameState.dungeonOpponents[enemyIndex];
-  if (!enemy) return;
+  const rawEnemy = GameState.dungeonOpponents[enemyIndex];
+  if (!rawEnemy) return;
+
+  const enemy = hydrateDungeonOpponent(rawEnemy) || rawEnemy;
 
   if (!enemy.dungeonDeck || enemy.dungeonDeck.length === 0) {
     enemy.dungeonDeck = resolveDungeonDeck(

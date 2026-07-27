@@ -1,6 +1,6 @@
 import { getDungeonCharacterDialogue } from './battleDungeonCharacter.js';
 import { CARD_MASTER } from './cards.js';
-import { CHARACTERS } from './characters.js';
+import { CHARACTERS, getSkinImage } from './characters.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
 
 // 試練の宮殿の敵・レンタル候補から除外するリーダーID
@@ -366,4 +366,166 @@ export const generateDungeonOpponentsList = (winStreak) => {
   }
 
   return opponents;
+};
+
+/**
+ * セーブデータの軽量オブジェクトから、マスタデータ（CARD_MASTER / CHARACTERS）を参照して敵の表示用プロパティを動的復元する
+ */
+export const hydrateDungeonOpponent = (opp) => {
+  if (!opp) return null;
+
+  const leaderId = opp.leaderCardId || opp.id;
+  const dialogueData = getDungeonCharacterDialogue(leaderId);
+
+  // 1. キャラクターボスの復元（CHARACTERSベース）
+  const charMaster = CHARACTERS[leaderId];
+  if (charMaster) {
+    const skinId = opp.currentSkin || 'default';
+    const skinImg =
+      (typeof getSkinImage === 'function' &&
+        getSkinImage(charMaster, skinId, 'image')) ||
+      charMaster.image;
+    const skinIcon =
+      (typeof getSkinImage === 'function' &&
+        getSkinImage(charMaster, skinId, 'icon')) ||
+      charMaster.icon;
+    return {
+      ...charMaster,
+      ...opp,
+      name: opp.name || charMaster.name,
+      rarity: opp.rarity || charMaster.rarity || 4,
+      image: skinImg,
+      icon: skinIcon,
+      preBattleLine:
+        opp.preBattleLine ||
+        dialogueData?.preBattleLine ||
+        charMaster.preBattleLine ||
+        '我が前に立ち塞がるか。',
+      dialogue:
+        opp.dialogue || dialogueData?.dialogue || charMaster.dialogue || {},
+    };
+  }
+
+  // 2. モブ敵の復元（CARD_MASTERベース）
+  const cardMaster = (CARD_MASTER || []).find((c) => c.id === leaderId);
+  if (cardMaster) {
+    return {
+      ...opp,
+      name: opp.name || cardMaster.name,
+      rarity: opp.rarity || cardMaster.rarity || 1,
+      image: cardMaster.image || `assets/cards/card_${cardMaster.id}.webp`,
+      icon:
+        cardMaster.icon ||
+        cardMaster.image ||
+        `assets/cards/card_${cardMaster.id}.webp`,
+      desc: cardMaster.desc || '',
+      color: opp.color || '#dc2626',
+      leaderSkill: opp.leaderSkill || {
+        name: `${cardMaster.name}の召喚`,
+        desc: `(SP:4) 自分のレーンに「${cardMaster.name}(P:${cardMaster.power})」を1体召喚する。`,
+        cost: 4,
+        action: 'dungeon_summon_leader',
+      },
+      preBattleLine:
+        opp.preBattleLine ||
+        dialogueData?.preBattleLine ||
+        '悪いが、ここを通すわけにはいかないんでね。',
+      dialogue: opp.dialogue || dialogueData?.dialogue || {},
+    };
+  }
+
+  return opp;
+};
+
+/**
+ * セーブデータおよび GameState からプレイヤーリーダー（キャラリーダー / カードリーダー問わず）の表示用オブジェクトを安全復元する
+ */
+export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
+  const id = charId || savedConfig?.id || 'android';
+
+  // 1. キャラクターマスタ (CHARACTERS) に存在する場合
+  if (CHARACTERS[id]) {
+    const templateChar = CHARACTERS[id];
+    const skinId = playerSkins?.[id] || 'default';
+    const skinIcon =
+      (typeof getSkinImage === 'function' &&
+        getSkinImage(templateChar, skinId, 'icon')) ||
+      templateChar.icon;
+    const skinImg =
+      (typeof getSkinImage === 'function' &&
+        getSkinImage(templateChar, skinId, 'image')) ||
+      templateChar.image;
+
+    // スキン変更時のスキル差分があればマージ
+    let activeLeaderSkill = templateChar.leaderSkill;
+    if (skinId && templateChar.skins && templateChar.skins[skinId]) {
+      const skinObj = templateChar.skins[skinId];
+      if (skinObj.leaderSkill) {
+        activeLeaderSkill = { ...activeLeaderSkill, ...skinObj.leaderSkill };
+      }
+    }
+
+    return {
+      ...templateChar,
+      ...(savedConfig || {}),
+      id: id,
+      leaderSkill: activeLeaderSkill ? { ...activeLeaderSkill } : null,
+      icon: skinIcon ? skinIcon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp') : '',
+      image: skinImg
+        ? skinImg.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+        : null,
+    };
+  }
+
+  // 2. モブカードリーダー (CARD_MASTER / enemy オブジェクト) の場合
+  const cardId =
+    savedConfig?.leaderCardId ||
+    id.replace(/^dungeon_/, '').replace(/_\d+.*$/, '');
+  const cardMaster = (CARD_MASTER || []).find(
+    (c) => c.id === cardId || c.id === id
+  );
+
+  if (cardMaster) {
+    const icon =
+      savedConfig?.icon ||
+      cardMaster.icon ||
+      cardMaster.image ||
+      `assets/cards/card_${cardMaster.id}.webp`;
+    const image =
+      savedConfig?.image ||
+      cardMaster.image ||
+      `assets/cards/card_${cardMaster.id}.webp`;
+
+    const defaultLeaderSkill = {
+      name: `${cardMaster.name}の召喚`,
+      desc: `(SP:4) 自分のレーンに「${cardMaster.name}(P:${cardMaster.power})」を1体召喚する。`,
+      cost: 4,
+      action: 'dungeon_summon_leader',
+    };
+
+    return {
+      id: id,
+      leaderCardId: cardMaster.id,
+      name: savedConfig?.name || cardMaster.name,
+      rarity: savedConfig?.rarity || cardMaster.rarity || 1,
+      icon: icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
+      image: image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
+      leaderSkill: savedConfig?.leaderSkill || defaultLeaderSkill,
+      ...(savedConfig || {}),
+    };
+  }
+
+  // 3. savedConfig 自体に name と icon/image が既にある場合（フォールバック）
+  if (savedConfig && savedConfig.name) {
+    return {
+      ...savedConfig,
+      icon: savedConfig.icon
+        ? savedConfig.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+        : savedConfig.image
+          ? savedConfig.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
+          : '',
+    };
+  }
+
+  return CHARACTERS.android;
 };

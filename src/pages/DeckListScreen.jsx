@@ -24,6 +24,15 @@ import {
   appendVersionQuery,
 } from '../utils/constants/config.js';
 
+/**
+ * バナー内の個別操作要素（アイコン/削除/プレビュー等）由来のイベントかを判定する共通ヘルパー
+ */
+const INTERACTIVE_BANNER_SELECTOR =
+  '.banner-icon-wrapper, .banner-icon, .banner-delete-btn, .deck-preview-btn';
+
+const isFromBannerControl = (e) =>
+  !!e.target.closest?.(INTERACTIVE_BANNER_SELECTOR);
+
 export default function DeckListScreen({ switchScreen }) {
   const [, setRenderVersion] = useState(0);
   const [currentPage, setCurrentPage] = useState(GameState.deckListPage || 0);
@@ -245,14 +254,7 @@ export default function DeckListScreen({ switchScreen }) {
 
   const handleBannerPointerDown = (e, index, itemType) => {
     if (itemType === 'create') return;
-    if (
-      e.target.closest('.banner-icon-wrapper') ||
-      e.target.closest('.banner-icon') ||
-      e.target.closest('.banner-delete-btn') ||
-      e.target.closest('.deck-preview-btn')
-    ) {
-      return;
-    }
+    if (isFromBannerControl(e)) return;
 
     const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
     const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
@@ -638,26 +640,12 @@ export default function DeckListScreen({ switchScreen }) {
                       }}
                       onPointerDown={(e) => {
                         if (isLeaderBanned) return;
-                        if (
-                          e.target.closest('.banner-icon-wrapper') ||
-                          e.target.closest('.banner-icon') ||
-                          e.target.closest('.deck-preview-btn') ||
-                          e.target.closest('.banner-delete-btn')
-                        ) {
-                          return;
-                        }
+                        if (isFromBannerControl(e)) return;
                         handleBannerPointerDown(e, idx, 'deck');
                       }}
                       onTouchStart={(e) => {
                         if (isLeaderBanned) return;
-                        if (
-                          e.target.closest('.banner-icon-wrapper') ||
-                          e.target.closest('.banner-icon') ||
-                          e.target.closest('.deck-preview-btn') ||
-                          e.target.closest('.banner-delete-btn')
-                        ) {
-                          return;
-                        }
+                        if (isFromBannerControl(e)) return;
                         handleBannerPointerDown(e, idx, 'deck');
                       }}
                     >
@@ -685,12 +673,7 @@ export default function DeckListScreen({ switchScreen }) {
                             return;
                           }
                           // アイコンや内部クリック要素からのバブリングを防止
-                          if (
-                            e.target.closest('.banner-icon-wrapper') ||
-                            e.target.closest('.banner-icon') ||
-                            e.target.closest('.deck-preview-btn') ||
-                            e.target.closest('.banner-delete-btn')
-                          ) {
+                          if (isFromBannerControl(e)) {
                             e.stopPropagation();
                             return;
                           }

@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { MAX_CARD_COPIES } from '../../utils/constants/config.js';
 import { SKILLS, SKILL_CATEGORIES } from '../../utils/constants/skills.js';
 import { playSound } from '../../utils/gameUtils.js';
@@ -19,10 +20,19 @@ export default function CardFilterModal({
   const modalContentRef = useRef(null);
   const skillAccordionRef = useRef(null);
 
+  const availablePowers = useMemo(() => {
+    const powers = new Set();
+    (CARD_MASTER || []).forEach((c) => {
+      if (!c.isToken && typeof c.power === 'number' && !isNaN(c.power)) {
+        powers.add(c.power);
+      }
+    });
+    return Array.from(powers).sort((a, b) => a - b);
+  }, []);
+
   if (!visible) return null;
 
   const availableRarities = [1, 2, 3, 4];
-  const availablePowers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   const raritiesList = tempFilters.rarity || [];
   const powersList = tempFilters.power || [];
@@ -141,36 +151,35 @@ export default function CardFilterModal({
                   id: 'three_or_less',
                   label: `${MAX_CARD_COPIES - 1}枚以下のみ`,
                 },
-              ].map((opt) => (
-                <div
-                  key={opt.id}
-                  onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
-                    setTempFilters({ ...tempFilters, ownership: opt.id });
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    border:
-                      (tempFilters.ownership || defaultOwnership) === opt.id
+              ].map((opt) => {
+                const isSelected =
+                  (tempFilters.ownership || defaultOwnership) === opt.id;
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => {
+                      playSound?.(SOUNDS?.seClick);
+                      setTempFilters({ ...tempFilters, ownership: opt.id });
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      border: isSelected
                         ? '2px solid #facc15'
                         : '2px solid #475569',
-                    background:
-                      (tempFilters.ownership || defaultOwnership) === opt.id
+                      background: isSelected
                         ? 'rgba(250, 204, 21, 0.2)'
                         : '#334155',
-                    color:
-                      (tempFilters.ownership || defaultOwnership) === opt.id
-                        ? '#facc15'
-                        : '#94a3b8',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {opt.label}
-                </div>
-              ))}
+                      color: isSelected ? '#facc15' : '#94a3b8',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

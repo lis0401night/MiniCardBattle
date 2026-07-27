@@ -8,6 +8,11 @@ import { isTransitioning, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 /**
+ * デフォルトのカードソートモード
+ */
+export const DEFAULT_SORT_MODE = 'rarity_asc';
+
+/**
  * カードフィルター・ソート・グリッド密度管理カスタムフック
  */
 export function useCardFilterSort({
@@ -29,11 +34,9 @@ export function useCardFilterSort({
   const cycleGridDensity = () => {
     if (isTransitioning) return;
     playSound?.(SOUNDS?.seClick);
-    setGridDensity((prev) => {
-      const next = (prev + 1) % GRID_DENSITY_COLS.length;
-      localStorage.setItem(densityStorageKey, String(next));
-      return next;
-    });
+    const next = (gridDensity + 1) % GRID_DENSITY_COLS.length;
+    localStorage.setItem(densityStorageKey, String(next));
+    setGridDensity(next);
   };
 
   // モーダル表示状態
@@ -41,8 +44,8 @@ export function useCardFilterSort({
   const [sortModalVisible, setSortModalVisible] = useState(false);
 
   // ソートモード ('rarity_asc', 'rarity_desc', 'power_asc', 'power_desc')
-  const [sortMode, setSortMode] = useState('rarity_asc');
-  const [tempSortMode, setTempSortMode] = useState('rarity_asc');
+  const [sortMode, setSortMode] = useState(DEFAULT_SORT_MODE);
+  const [tempSortMode, setTempSortMode] = useState(DEFAULT_SORT_MODE);
 
   // 確定済みフィルター状態
   const [filters, setFilters] = useState({
@@ -145,8 +148,8 @@ export function useCardFilterSort({
 
   const resetSort = () => {
     playSound?.(SOUNDS?.seClick);
-    setTempSortMode('rarity_asc');
-    setSortMode('rarity_asc');
+    setTempSortMode(DEFAULT_SORT_MODE);
+    setSortMode(DEFAULT_SORT_MODE);
   };
 
   // フィルタリング処理
@@ -166,11 +169,11 @@ export function useCardFilterSort({
         return false;
       }
 
-      if (filters.rarity.length > 0 && !filters.rarity.includes(c.rarity)) {
+      if (filters.rarity?.length > 0 && !filters.rarity.includes(c.rarity)) {
         return false;
       }
 
-      if (filters.power.length > 0 && !filters.power.includes(c.power)) {
+      if (filters.power?.length > 0 && !filters.power.includes(c.power)) {
         return false;
       }
 
@@ -210,7 +213,7 @@ export function useCardFilterSort({
       const powerA = a.power ?? 0;
       const powerB = b.power ?? 0;
 
-      if (sortMode === 'rarity_asc') {
+      if (sortMode === DEFAULT_SORT_MODE) {
         if (rarityA !== rarityB) return rarityA - rarityB;
       } else if (sortMode === 'rarity_desc') {
         if (rarityA !== rarityB) return rarityB - rarityA;
@@ -248,6 +251,7 @@ export function useCardFilterSort({
     applyFilters,
     resetFilters,
     sortMode,
+    isDefaultSort: sortMode === DEFAULT_SORT_MODE,
     tempSortMode,
     setTempSortMode,
     applySort,

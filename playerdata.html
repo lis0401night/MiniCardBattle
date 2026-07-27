@@ -1115,38 +1115,50 @@
             });
           }
 
-          // 2. 攻撃デッキ使用数の集計（同一プレイヤー＋完全同一デッキは重複排除）
+          // 2. 攻撃デッキ使用数の集計（同一プレイヤーは同名カード最大4枚までに制限）
           if (Array.isArray(p.defense_history)) {
-            const seenAttackerDecks = new Set();
+            const playerCardCounts = {};
             p.defense_history.forEach((rec) => {
               // 攻撃側プレイヤーが登録プレイヤーで除外対象になっている場合はスキップ
               if (rec.attackerUuid || rec.attackerName) {
-                const attackerObj = allPlayers.find((ap) =>
-                  rec.attackerUuid
-                    ? ap.uuid === rec.attackerUuid
-                    : ap.name === rec.attackerName
-                );
+                let attackerObj = null;
+                if (rec.attackerUuid) {
+                  attackerObj = allPlayers.find(
+                    (ap) => ap.uuid === rec.attackerUuid
+                  );
+                } else {
+                  // UUID未保持の旧レコードは名前一致で推定するが、同名が複数いる場合は特定不能として扱う
+                  const matches = allPlayers.filter(
+                    (ap) => ap.name === rec.attackerName
+                  );
+                  attackerObj = matches.length === 1 ? matches[0] : null;
+                }
                 if (attackerObj && excludedPlayerIds.has(attackerObj.uuid)) {
                   return;
                 }
               }
 
               if (Array.isArray(rec.attackerDeck)) {
-                // attackerUuid (または attackerName) + デッキ内容でユニークキーを生成
-                const deckKey =
-                  (rec.attackerUuid || rec.attackerName || '') +
-                  '|' +
-                  [...rec.attackerDeck]
-                    .map((e) => resolveCardId(e))
-                    .sort()
-                    .join(',');
-                if (seenAttackerDecks.has(deckKey)) return; // 同一プレイヤー＋同一デッキはスキップ
-                seenAttackerDecks.add(deckKey);
+                const attackerKey =
+                  rec.attackerUuid || rec.attackerName || p.uuid;
+                if (!playerCardCounts[attackerKey]) {
+                  playerCardCounts[attackerKey] = {};
+                }
                 rec.attackerDeck.forEach((entry) => {
                   const cId = resolveCardId(entry);
-                  attackUsageCounts[cId] = (attackUsageCounts[cId] || 0) + 1;
+                  playerCardCounts[attackerKey][cId] =
+                    (playerCardCounts[attackerKey][cId] || 0) + 1;
                 });
               }
+            });
+
+            // プレイヤーごとのカードカウントを上限4に制限して全域集計に加算
+            Object.values(playerCardCounts).forEach((counts) => {
+              Object.keys(counts).forEach((cId) => {
+                const clampedCount = Math.min(4, counts[cId]);
+                attackUsageCounts[cId] =
+                  (attackUsageCounts[cId] || 0) + clampedCount;
+              });
             });
           }
         });

@@ -28,6 +28,11 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 
 /**
+ * カード一覧画面の所持フィルター既定値（フック・判定・モーダルで共有）
+ */
+const DEFAULT_OWNERSHIP = 'include_unowned';
+
+/**
  * カード一覧画面（ギャラリー）
  * useEasterEggカスタムフックによりデバッグモード起動処理をスマートに共通化。
  * useCardFilterSort/CardFilterModal/CardSortModalによりフィルター・ソート処理を共通化。
@@ -57,7 +62,7 @@ export default function CardListScreen() {
     toggleTempSkillFilter,
     applyFilters,
     resetFilters,
-    sortMode,
+    isDefaultSort,
     tempSortMode,
     setTempSortMode,
     applySort,
@@ -67,7 +72,7 @@ export default function CardListScreen() {
     masterCards,
     inventory,
     densityStorageKey: GALLERY_GRID_DENSITY_KEY,
-    defaultOwnership: 'include_unowned',
+    defaultOwnership: DEFAULT_OWNERSHIP,
   });
 
   // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
@@ -216,10 +221,10 @@ export default function CardListScreen() {
             padding: '4px 8px',
             margin: 0,
             fontSize: '0.9rem',
-            background: hasActiveFilters(filters, 'include_unowned')
+            background: hasActiveFilters(filters, DEFAULT_OWNERSHIP)
               ? 'rgba(250, 204, 21, 0.3)'
               : '#334155',
-            border: hasActiveFilters(filters, 'include_unowned')
+            border: hasActiveFilters(filters, DEFAULT_OWNERSHIP)
               ? '1px solid #facc15'
               : '1px solid #475569',
             color: '#facc15',
@@ -239,12 +244,8 @@ export default function CardListScreen() {
             padding: '4px 8px',
             margin: 0,
             fontSize: '0.9rem',
-            background:
-              sortMode !== 'rarity_asc' ? 'rgba(250, 204, 21, 0.3)' : '#334155',
-            border:
-              sortMode !== 'rarity_asc'
-                ? '1px solid #facc15'
-                : '1px solid #475569',
+            background: !isDefaultSort ? 'rgba(250, 204, 21, 0.3)' : '#334155',
+            border: !isDefaultSort ? '1px solid #facc15' : '1px solid #475569',
             color: '#facc15',
           }}
           onClick={() => {
@@ -367,7 +368,7 @@ export default function CardListScreen() {
           })}
         </div>
 
-        {sortedMasterCards.length === 0 && (
+        {masterCards.length > 0 && sortedMasterCards.length === 0 && (
           <div
             style={{
               textAlign: 'center',
@@ -391,7 +392,7 @@ export default function CardListScreen() {
         toggleTempSkillFilter={toggleTempSkillFilter}
         onApply={applyFilters}
         onReset={resetFilters}
-        defaultOwnership="include_unowned"
+        defaultOwnership={DEFAULT_OWNERSHIP}
       />
 
       {/* ソートモーダル */}

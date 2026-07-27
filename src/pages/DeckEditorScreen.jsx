@@ -18,8 +18,6 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
   DECK_EDIT_GRID_DENSITY_KEY,
   DECK_SIZE,
-  GRID_DENSITY_COLS,
-  GRID_DENSITY_GAPS,
   MAX_CARD_COPIES,
   appendVersionQuery,
 } from '../utils/constants/config.js';
@@ -39,6 +37,11 @@ import { SOUNDS } from '../utils/sounds.js';
 const SHEET_MIN_PERCENT = 20;
 const SHEET_MAX_PERCENT = 88;
 const SHEET_DEFAULT_PERCENT = 50;
+
+/**
+ * デッキ編集画面の所持フィルター既定値
+ */
+const DEFAULT_OWNERSHIP = 'owned_only';
 
 export default function DeckEditorScreen({ switchScreen }) {
   // 初期状態の計算ヘルパー（遅延初期化とupdateDeckEditorの両方で使用）
@@ -94,6 +97,8 @@ export default function DeckEditorScreen({ switchScreen }) {
   const {
     gridDensity,
     cycleGridDensity,
+    gridCols,
+    gridGap,
     filterModalVisible,
     openFilterModal,
     setFilterModalVisible,
@@ -107,7 +112,7 @@ export default function DeckEditorScreen({ switchScreen }) {
     toggleTempSkillFilter,
     applyFilters,
     resetFilters,
-    sortMode,
+    isDefaultSort,
     tempSortMode,
     setTempSortMode,
     applySort,
@@ -117,7 +122,7 @@ export default function DeckEditorScreen({ switchScreen }) {
     masterCards,
     inventory,
     densityStorageKey: DECK_EDIT_GRID_DENSITY_KEY,
-    defaultOwnership: 'owned_only',
+    defaultOwnership: DEFAULT_OWNERSHIP,
   });
 
   // --- 所持カードエリア（可変シート）のドラッグ操作 ---
@@ -226,8 +231,8 @@ export default function DeckEditorScreen({ switchScreen }) {
     return () => observer.disconnect();
   }, []);
 
-  const deckListCols = GRID_DENSITY_COLS[gridDensity];
-  const deckListGap = GRID_DENSITY_GAPS[gridDensity];
+  const deckListCols = gridCols;
+  const deckListGap = gridGap;
   const deckListInnerWidth = Math.max(0, deckListSize.width - 10); // 左右padding 5pxずつ分
   const deckCardWidthPx =
     deckListCols > 0
@@ -753,7 +758,9 @@ export default function DeckEditorScreen({ switchScreen }) {
                     (getSkinImage && CHARACTERS[leaderId]
                       ? getSkinImage(
                           CHARACTERS[leaderId],
-                          deck?.playerSkins?.[leaderId] || 'default',
+                          deck?.playerSkins?.[leaderId] ||
+                            GameState.playerSkins?.[leaderId] ||
+                            'default',
                           'icon'
                         )
                       : undefined) || undefined
@@ -894,8 +901,8 @@ export default function DeckEditorScreen({ switchScreen }) {
                 id="deck-current-grid"
                 className="card-list-grid-3col"
                 style={{
-                  gridTemplateColumns: `repeat(${GRID_DENSITY_COLS[gridDensity]}, 1fr)`,
-                  gap: `${GRID_DENSITY_GAPS[gridDensity]}px`,
+                  gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                  gap: `${gridGap}px`,
                 }}
               >
                 {sortedDeckKeys.map((id) => {
@@ -1028,7 +1035,7 @@ export default function DeckEditorScreen({ switchScreen }) {
               left: 0,
               right: 0,
               bottom: 0,
-              height: 'var(--sheet-height, 40%)',
+              height: `var(--sheet-height, ${SHEET_DEFAULT_PERCENT}%)`,
               '--sheet-height': `${sheetPercent}%`,
               borderRadius: '12px 12px 0 0',
               // box-shadowは内側のoverflow:hiddenと同じ要素に置くと
@@ -1112,10 +1119,10 @@ export default function DeckEditorScreen({ switchScreen }) {
                         padding: '4px 8px',
                         margin: 0,
                         fontSize: '0.9rem',
-                        background: hasActiveFilters(filters, 'owned_only')
+                        background: hasActiveFilters(filters, DEFAULT_OWNERSHIP)
                           ? 'rgba(250, 204, 21, 0.3)'
                           : '#334155',
-                        border: hasActiveFilters(filters, 'owned_only')
+                        border: hasActiveFilters(filters, DEFAULT_OWNERSHIP)
                           ? '1px solid #facc15'
                           : '1px solid #475569',
                         color: '#facc15',
@@ -1134,14 +1141,12 @@ export default function DeckEditorScreen({ switchScreen }) {
                         padding: '4px 8px',
                         margin: 0,
                         fontSize: '0.9rem',
-                        background:
-                          sortMode !== 'rarity_asc'
-                            ? 'rgba(250, 204, 21, 0.3)'
-                            : '#334155',
-                        border:
-                          sortMode !== 'rarity_asc'
-                            ? '1px solid #facc15'
-                            : '1px solid #475569',
+                        background: !isDefaultSort
+                          ? 'rgba(250, 204, 21, 0.3)'
+                          : '#334155',
+                        border: !isDefaultSort
+                          ? '1px solid #facc15'
+                          : '1px solid #475569',
                         color: '#facc15',
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
@@ -1168,11 +1173,11 @@ export default function DeckEditorScreen({ switchScreen }) {
                 }}
               >
                 <div
-                  id="deck-master-grid"
+                  id="deck-inventory-grid"
                   className="card-list-grid-3col"
                   style={{
-                    gridTemplateColumns: `repeat(${GRID_DENSITY_COLS[gridDensity]}, 1fr)`,
-                    gap: `${GRID_DENSITY_GAPS[gridDensity]}px`,
+                    gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                    gap: `${gridGap}px`,
                   }}
                 >
                   {sortedMasterCards.map((template) => {
@@ -1422,7 +1427,7 @@ export default function DeckEditorScreen({ switchScreen }) {
         toggleTempSkillFilter={toggleTempSkillFilter}
         onApply={applyFilters}
         onReset={resetFilters}
-        defaultOwnership="owned_only"
+        defaultOwnership={DEFAULT_OWNERSHIP}
       />
 
       {/* ソートモーダル */}
