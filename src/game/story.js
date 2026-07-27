@@ -16,6 +16,7 @@ import { performFadeTransition } from '../services/uiMainCore.js';
 
 export function initStoryMode(charId) {
   GameState.playerConfig = CHARACTERS[charId];
+  GameState.enemySkins = {};
 
   // 他のキャラクターのIDをランダムに並び替え（プレイヤー、マキナ、中ボス・大ボスは除く）
   const otherIds = Object.keys(CHARACTERS).filter(

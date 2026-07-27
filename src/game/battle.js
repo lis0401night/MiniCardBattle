@@ -431,6 +431,7 @@ export function prepareBattle() {
 
   if (
     GameState.gameMode !== 'tutorial' &&
+    GameState.gameMode !== 'story' &&
     GameState.enemyConfig &&
     GameState.enemySkins &&
     GameState.enemySkins[GameState.enemyConfig.id]

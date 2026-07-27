@@ -525,12 +525,16 @@ export function goBackFromSelect() {
     if (window.forceUpdateDeckList) window.forceUpdateDeckList();
     switchScreen('screen-deck-list');
   } else if (GameState.gameMode === 'story') {
-    const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
-    if (savedStoryStr) {
-      GameState.appState = 'story_resume';
-      switchScreen('screen-story-resume');
-    } else {
+    if (GameState.appState === 'story_resume') {
       switchScreen('screen-solo-menu');
+    } else {
+      const savedStoryStr = localStorage.getItem('mini_card_battle_story_save');
+      if (savedStoryStr) {
+        GameState.appState = 'story_resume';
+        switchScreen('screen-story-resume');
+      } else {
+        switchScreen('screen-solo-menu');
+      }
     }
   } else if (
     GameState.gameMode === 'free' &&
