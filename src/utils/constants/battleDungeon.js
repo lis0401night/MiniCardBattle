@@ -376,17 +376,22 @@ export const generateDungeonOpponentsList = (winStreak) => {
 export const hydrateDungeonOpponent = (opp) => {
   if (!opp) return null;
 
+  const isBoss =
+    typeof opp.id === 'string' && opp.id.startsWith('dungeon_boss_');
   let leaderId = opp.leaderCardId || opp.charId || opp.id;
-  if (typeof leaderId === 'string' && leaderId.startsWith('dungeon_boss_')) {
-    const parts = leaderId.split('_');
+  if (isBoss) {
+    const parts = opp.id.split('_');
     if (parts[2] && CHARACTERS[parts[2]]) {
       leaderId = parts[2];
     }
   }
-  const dialogueData = getDungeonCharacterDialogue(leaderId);
+
+  const isGenericMob = opp.isDungeonEnemy && !isBoss && !opp.charId;
+  const dialogueData = getDungeonCharacterDialogue(leaderId, opp);
 
   // 1. キャラクターボスの復元（CHARACTERSベース）
-  const charMaster = CHARACTERS[leaderId];
+  const charMaster =
+    !isGenericMob && CHARACTERS[leaderId] ? CHARACTERS[leaderId] : null;
   if (charMaster) {
     const skinId = opp.currentSkin || 'default';
     const skinImg =
@@ -415,7 +420,9 @@ export const hydrateDungeonOpponent = (opp) => {
   }
 
   // 2. モブ敵の復元（CARD_MASTERベース）
-  const cardMaster = (CARD_MASTER || []).find((c) => c.id === leaderId);
+  const cardMaster = (CARD_MASTER || []).find(
+    (c) => c.id === leaderId || c.id === opp.leaderCardId
+  );
   if (cardMaster) {
     return {
       ...opp,

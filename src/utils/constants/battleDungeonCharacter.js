@@ -339,27 +339,33 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
   },
 };
 
-export function getDungeonCharacterDialogue(id) {
-  if (id.startsWith('dungeon_boss_')) {
+export function getDungeonCharacterDialogue(id, opp) {
+  let charId = id;
+  const isBoss = typeof id === 'string' && id.startsWith('dungeon_boss_');
+  if (isBoss) {
     const parts = id.split('_');
-    const charId = parts[2]; // e.g. dungeon_boss_aegis_12345 -> aegis
-    if (charId && CHARACTERS[charId]) {
-      const char = CHARACTERS[charId];
-      return {
-        preBattleLine:
-          char.preBattleLine || char.dialogue?.intro?.default || '……',
-        dialogue: char.dialogue,
-      };
-    }
+    if (parts[2]) charId = parts[2];
   }
 
-  // dungeon_ やタイムスタンプ等の付加情報を除外して純粋なIDを取得
+  // 1. キャラクターボス (dungeon_boss_) またはプレイヤーキャラクターで、モブ敵でない場合
+  const isGenericMob = opp && opp.isDungeonEnemy && !isBoss && !opp.charId;
+
+  if (CHARACTERS[charId] && !isGenericMob) {
+    const char = CHARACTERS[charId];
+    return {
+      preBattleLine:
+        char.preBattleLine || char.dialogue?.intro?.default || '……',
+      dialogue: char.dialogue || {},
+    };
+  }
+
+  // 2. モブ敵・カードの場合（モブドラゴン等）
   let rawId = id.replace('dungeon_', '');
   if (rawId.includes('_') && !rawId.startsWith('token_')) {
     rawId = rawId.split('_')[0];
   }
 
-  // 直接のID一致をチェック（golem, vampire等）
+  // 直接のID一致をチェック（golem, vampire, dragon等）
   if (DUNGEON_CHARACTER_DIALOGUE[rawId]) {
     return DUNGEON_CHARACTER_DIALOGUE[rawId];
   }
