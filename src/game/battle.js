@@ -4691,13 +4691,20 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'battle_dungeon') {
+      const opp = GameState.enemyConfig || {};
       const dialogueData = getDungeonCharacterDialogue(
-        GameState.enemyConfig.id
+        opp.id || opp.leaderCardId,
+        opp
       );
+      const dialogueObj = opp.dialogue || dialogueData?.dialogue || {};
       let endText =
         GameState.lastBattleResult === 'win'
-          ? dialogueData.dialogue?.lose?.default || ''
-          : dialogueData.dialogue?.win?.default || '';
+          ? dialogueObj.lose?.default ||
+            dialogueData?.dialogue?.lose?.default ||
+            ''
+          : dialogueObj.win?.default ||
+            dialogueData?.dialogue?.win?.default ||
+            '';
 
       GameState.dialogueQueue = [{ speaker: 'enemy', text: endText }];
       setupDialogueScreen();

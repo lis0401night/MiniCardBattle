@@ -394,6 +394,7 @@ export const hydrateDungeonOpponent = (opp) => {
     !isGenericMob && CHARACTERS[leaderId] ? CHARACTERS[leaderId] : null;
   if (charMaster) {
     const skinId = opp.currentSkin || 'default';
+    const skinObj = charMaster.skins && charMaster.skins[skinId];
     const skinImg =
       (typeof getSkinImage === 'function' &&
         getSkinImage(charMaster, skinId, 'image')) ||
@@ -402,20 +403,27 @@ export const hydrateDungeonOpponent = (opp) => {
       (typeof getSkinImage === 'function' &&
         getSkinImage(charMaster, skinId, 'icon')) ||
       charMaster.icon;
+
+    const skinIntro = skinObj?.dialogue?.intro;
+    const skinPreBattleLine = typeof skinIntro === 'string' ? skinIntro : null;
+    const mergedDialogue = skinObj?.dialogue
+      ? { ...charMaster.dialogue, ...skinObj.dialogue }
+      : charMaster.dialogue;
+
     return {
       ...charMaster,
       ...opp,
-      name: opp.name || charMaster.name,
+      name: opp.name || (skinObj && skinObj.name) || charMaster.name,
       rarity: opp.rarity || charMaster.rarity || 4,
       image: skinImg,
       icon: skinIcon,
       preBattleLine:
         opp.preBattleLine ||
+        skinPreBattleLine ||
         dialogueData?.preBattleLine ||
         charMaster.preBattleLine ||
         '我が前に立ち塞がるか。',
-      dialogue:
-        opp.dialogue || dialogueData?.dialogue || charMaster.dialogue || {},
+      dialogue: opp.dialogue || mergedDialogue || dialogueData?.dialogue || {},
     };
   }
 
