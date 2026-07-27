@@ -196,9 +196,22 @@ export function loadDungeonProgress() {
     }
 
     // マスタデータ（CARD_MASTER / CHARACTERS）から対戦相手情報を動的復元
-    GameState.dungeonOpponents = (data.opponents || [])
+    let restoredOpponents = (data.opponents || [])
       .map(hydrateDungeonOpponent)
       .filter(Boolean);
+
+    // 10階層の節目（10階, 20階, 30階...）でありながら、復元された敵がボス敵でない場合（旧セーブデータの自動アップグレード補正）
+    const currentBattleNumber = (data.winStreak || 0) + 1;
+    const isBossFloor = currentBattleNumber % 10 === 0;
+    const hasValidBoss = restoredOpponents.some(
+      (opp) => opp.id && String(opp.id).startsWith('dungeon_boss_')
+    );
+
+    if (isBossFloor && (!hasValidBoss || restoredOpponents.length > 1)) {
+      restoredOpponents = generateDungeonOpponentsList(data.winStreak || 0);
+    }
+
+    GameState.dungeonOpponents = restoredOpponents;
 
     // スキンとプレイマットを先に復元（キャラクター画像の適用に使用）
     GameState.playerSkins = data.playerSkins || {};

@@ -915,11 +915,9 @@ function RentalDeckSelect() {
 }
 
 function OpponentSelect() {
-  const opps = useMemo(() => {
-    return (GameState.dungeonOpponents || [])
-      .map(hydrateDungeonOpponent)
-      .filter(Boolean);
-  }, []);
+  const opps = (GameState.dungeonOpponents || [])
+    .map(hydrateDungeonOpponent)
+    .filter(Boolean);
 
   const handleSelect = (idx) => {
     showConfirmModal(`${opps[idx].name} に挑みますか？`, () => {
@@ -942,11 +940,9 @@ function OpponentSelect() {
     }
   };
 
-  const pConf = useMemo(() => {
-    const rawConf = GameState.playerConfig || {};
-    const charId = rawConf.id || rawConf.leaderCardId || 'android';
-    return hydratePlayerConfig(charId, rawConf, GameState.playerSkins);
-  }, []);
+  const rawConf = GameState.playerConfig || {};
+  const charId = rawConf.id || rawConf.leaderCardId || 'android';
+  const pConf = hydratePlayerConfig(charId, rawConf, GameState.playerSkins);
   const pCurrentHp =
     GameState.dungeonPlayerHP !== undefined ? GameState.dungeonPlayerHP : 20;
   const pMaxHp = 20;
