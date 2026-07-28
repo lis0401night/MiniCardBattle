@@ -29,12 +29,7 @@ if (!$data || !isset($data['uuid']) || !isset($data['name']) || !isset($data['ic
 }
 
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
-$name = isset($data['name'])
-    ? mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', (string) $data['name']), 0, 12)
-    : '挑戦者';
-if ($name === '') {
-    $name = '挑戦者';
-}
+$name = sanitizePlayerDisplayName($data['name'] ?? null);
 $icon = preg_replace('/[^a-z0-9_]/', '', $data['icon']);
 $timestamp = time();
 

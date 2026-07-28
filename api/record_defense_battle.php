@@ -11,7 +11,7 @@
  * @param string $attacker_character 攻撃者のキャラクターID
  * @param int $attacker_total_points 攻撃者の累計ポイント
  * @param array $attacker_deck 攻撃者が使用したデッキ (カードIDの配列)
- * @param string $result 攻撃者視点のバトル結果 ('win' or 'lose')
+ * @param string $result 攻撃者視点のバトル結果 ('win' / 'lose' / 'draw')
  * @return json 処理結果
  */
 
@@ -38,12 +38,11 @@ if (strlen($target_uuid) < 10) {
 }
 
 $attacker_uuid = isset($data['attacker_uuid']) ? preg_replace('/[^a-z0-9-]/', '', (string) $data['attacker_uuid']) : '';
-$attacker_name = isset($data['attacker_name'])
-    ? mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', (string) $data['attacker_name']), 0, 12)
-    : '挑戦者';
-if ($attacker_name === '') {
-    $attacker_name = '挑戦者';
-}
+
+// プレイヤー名のサニタイズ（共通関数を使用）
+// ※ DB/JSON 保存時は二重エスケープ・文字化けを防ぐため htmlspecialchars は適用せず生データで保持し、
+//    フロントエンド描画側（React JSX や playerdata.html の escapeHtml/textContent）で安全にレンダリングします。
+$attacker_name = sanitizePlayerDisplayName($data['attacker_name'] ?? null);
 $attacker_character = isset($data['attacker_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_character']) : 'android';
 $attacker_skin = isset($data['attacker_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_skin']) : 'default';
 $attacker_total_points = isset($data['attacker_total_points']) ? intval($data['attacker_total_points']) : 0;

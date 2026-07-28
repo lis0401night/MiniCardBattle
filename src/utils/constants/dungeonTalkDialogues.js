@@ -1194,15 +1194,15 @@ function resolveContextKey(context) {
   const { floor, hp } = context;
 
   // 優先度1: ボス関連（3種は同一優先度、同時成立しないため先に該当した方を返す）
-  // 次の階が高難易度ボス（50の倍数）
+  // これから挑む階が高難易度ボス階（50の倍数）
   if (floor % HIGH_BOSS_CYCLE === 0) {
     return CONTEXT_PRE_HIGH_BOSS;
   }
-  // 次の階がボス階（10の倍数）
+  // これから挑む階がボス階（10の倍数）
   if (floor % BOSS_CYCLE === 0) {
     return CONTEXT_PRE_BOSS;
   }
-  // ボス撃破直後（前の階がボスだった = 現在の階が10の倍数+1、かつ1階ではない）
+  // ボス撃破直後（直前の階がボスだった = これから挑む階が10の倍数+1、かつ1階ではない）
   if (floor > 1 && (floor - 1) % BOSS_CYCLE === 0) {
     return CONTEXT_POST_BOSS;
   }
@@ -1236,7 +1236,7 @@ function replaceTemplateVars(text, context) {
  * コンテキスト情報とリーダーConfigに応じた会話ノード配列を組み立てる
  * @param {Object} context - { floor, hp, deckSize }
  * @param {Object} playerConfig - GameState.playerConfig
- * @returns {Array} ダイアログノード配列
+ * @returns {Array<{speaker: string, speakerName: string, text: string, leftImage: string, centerMode: boolean}>} ダイアログノード配列
  */
 export function buildDungeonLeaderTalkDialogue(context, playerConfig) {
   if (!playerConfig) {
@@ -1256,23 +1256,15 @@ export function buildDungeonLeaderTalkDialogue(context, playerConfig) {
   // コンテキスト判定
   const contextKey = resolveContextKey(context);
 
-  // パターンA：通常キャラクターリーダー
-  if (playerConfig.id && DUNGEON_CHARACTER_TALK_LINES.normal[playerConfig.id]) {
-    const charId = playerConfig.id;
-    const lines = resolveCharacterLines(charId, contextKey);
-
-    return lines.map((text) => ({
-      speaker: 'player',
-      speakerName: leaderName,
-      text: replaceTemplateVars(text, context),
-      leftImage: leaderImage,
-      centerMode: true,
-    }));
-  }
-
-  // パターンB：カードリーダー（ボイスカテゴリ別）
-  const voiceCategory = resolveVoiceCategoryFromConfig(playerConfig);
-  const lines = resolveCardLeaderLines(voiceCategory, contextKey);
+  // 通常キャラクターリーダーかカードリーダーかを判定して台詞配列を取得（重複していたノード生成処理を共通化）
+  const isCharacterLeader =
+    !!playerConfig.id && !!DUNGEON_CHARACTER_TALK_LINES.normal[playerConfig.id];
+  const lines = isCharacterLeader
+    ? resolveCharacterLines(playerConfig.id, contextKey)
+    : resolveCardLeaderLines(
+        resolveVoiceCategoryFromConfig(playerConfig),
+        contextKey
+      );
 
   return lines.map((text) => ({
     speaker: 'player',
@@ -1284,79 +1276,75 @@ export function buildDungeonLeaderTalkDialogue(context, playerConfig) {
 }
 
 /**
+ * 台詞テーブルからコンテキストに応じた台詞行を解決する共通ヘルパー関数
+ * @param {Object} table - 台詞テーブル（DUNGEON_CHARACTER_TALK_LINES 等）
+ * @param {string} key - キャラクターID または ボイスカテゴリ
+ * @param {string} contextKey - コンテキストキー（CONTEXT_PRE_BOSS 等）
+ * @param {Object} options - オプション設定
+ * @param {boolean} [options.useDefaultFallback=false] - table.default へのフォールバックを許可するかどうか
+ * @param {string} options.finalFallback - 該当台詞が存在しない場合の最終デフォルト文言
+ * @returns {string[]} 解決された台詞テキスト行の配列
+ */
+function resolveTalkLines(table, key, contextKey, options) {
+  const { useDefaultFallback = false, finalFallback } = options;
+  const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  // コンテキスト台詞の検索（normal以外）。無ければ通常台詞へフォールスルー
+  if (contextKey !== CONTEXT_NORMAL) {
+    const contextSet = table[contextKey];
+    const line = contextSet
+      ? contextSet[key] || (useDefaultFallback ? contextSet.default : undefined)
+      : undefined;
+    if (line) return Array.isArray(line) ? [pickRandom(line)] : [line];
+  }
+
+  // 通常台詞: 複数パターンからランダムに1つ選出
+  const normalSet =
+    table.normal[key] ||
+    (useDefaultFallback ? table.normal.default : undefined);
+  if (normalSet && normalSet.length > 0) {
+    const pattern = pickRandom(normalSet);
+    return Array.isArray(pattern) ? pattern : [pattern];
+  }
+
+  return [finalFallback];
+}
+
+/**
  * キャラクターリーダーの台詞を解決する
- * コンテキストキーに応じた台詞があればそれを、なければ通常台詞からランダム選出
  * @param {string} charId - キャラクターID
  * @param {string} contextKey - コンテキストキー
  * @returns {string[]} 台詞行の配列
  */
 function resolveCharacterLines(charId, contextKey) {
-  // コンテキスト台詞の検索（normal以外）
-  if (contextKey !== CONTEXT_NORMAL) {
-    const contextSet = DUNGEON_CHARACTER_TALK_LINES[contextKey];
-    if (contextSet && contextSet[charId]) {
-      const line = contextSet[charId];
-      // コンテキスト台詞は文字列の配列（各要素が1つの台詞パターン）
-      // ランダムに1つを選出
-      if (Array.isArray(line)) {
-        return [line[Math.floor(Math.random() * line.length)]];
-      }
-      return [line];
-    }
-    // コンテキスト台詞が見つからなければ通常台詞にフォールスルー
-  }
-
-  // 通常台詞: 4パターンからランダムに1つ選出
-  const normalSet = DUNGEON_CHARACTER_TALK_LINES.normal[charId];
-  if (normalSet && normalSet.length > 0) {
-    const pattern = normalSet[Math.floor(Math.random() * normalSet.length)];
-    // パターンは文字列の配列（複数行の台詞）
-    return Array.isArray(pattern) ? pattern : [pattern];
-  }
-
-  // 最終フォールバック
-  return ['調子は万全だ。いつでも行けるぞ！'];
+  return resolveTalkLines(DUNGEON_CHARACTER_TALK_LINES, charId, contextKey, {
+    useDefaultFallback: false,
+    finalFallback: '調子は万全だ。いつでも行けるぞ！',
+  });
 }
 
 /**
  * カードリーダーの台詞を解決する
- * コンテキストキーに応じた台詞があればそれを、なければ通常台詞からランダム選出
  * @param {string} voiceCategory - ボイスカテゴリ
  * @param {string} contextKey - コンテキストキー
  * @returns {string[]} 台詞行の配列
  */
 function resolveCardLeaderLines(voiceCategory, contextKey) {
-  // コンテキスト台詞の検索（normal以外）
-  if (contextKey !== CONTEXT_NORMAL) {
-    const contextSet = DUNGEON_CARD_LEADER_TALK_LINES[contextKey];
-    if (contextSet) {
-      // ボイスカテゴリ固有 → default にフォールバック
-      const line = contextSet[voiceCategory] || contextSet.default;
-      if (line) {
-        if (Array.isArray(line)) {
-          return [line[Math.floor(Math.random() * line.length)]];
-        }
-        return [line];
-      }
+  return resolveTalkLines(
+    DUNGEON_CARD_LEADER_TALK_LINES,
+    voiceCategory,
+    contextKey,
+    {
+      useDefaultFallback: true,
+      finalFallback: '……次の戦いへ……。',
     }
-    // コンテキスト台詞が見つからなければ通常台詞にフォールスルー
-  }
-
-  // 通常台詞: 4パターンからランダムに1つ選出
-  const normalSet =
-    DUNGEON_CARD_LEADER_TALK_LINES.normal[voiceCategory] ||
-    DUNGEON_CARD_LEADER_TALK_LINES.normal.default;
-  if (normalSet && normalSet.length > 0) {
-    const pattern = normalSet[Math.floor(Math.random() * normalSet.length)];
-    return Array.isArray(pattern) ? pattern : [pattern];
-  }
-
-  // 最終フォールバック
-  return ['……次の戦いへ……。'];
+  );
 }
 
 /**
- * playerConfig からボイスカテゴリを解決するヘルパー
+ * playerConfig からボイスカテゴリを解決するヘルパー関数
+ * @param {Object} playerConfig - プレイヤー設定オブジェクト
+ * @returns {string} ボイスカテゴリ（sword, magic, default等）
  */
 function resolveVoiceCategoryFromConfig(playerConfig) {
   if (playerConfig.voiceCategory) return playerConfig.voiceCategory;

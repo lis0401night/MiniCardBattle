@@ -113,13 +113,16 @@ export function saveDungeonProgress() {
       return {
         id: opp.id,
         leaderCardId: opp.leaderCardId || opp.charId || opp.id,
-        charId: opp.charId || opp.leaderCardId,
+        // charId はキャラクター由来の敵のみが持つ識別子。
+        // leaderCardId で埋めるとモブ敵がセーブ＆ロード後にキャラクター扱いされるためフォールバックしない
+        charId: opp.charId,
         fixedAiLevel: opp.fixedAiLevel,
         hp: opp.hp,
         stageId: opp.stageId,
         color: opp.color,
         currentSkin: opp.currentSkin,
         isDungeonEnemy: opp.isDungeonEnemy,
+        isHighBoss: opp.isHighBoss,
         dungeonDeck: opp.dungeonDeck,
       };
     })

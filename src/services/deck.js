@@ -484,25 +484,20 @@ window.loadDeck = loadDeck;
 export function loadDeck() {
   // 自動マイグレーションを実行
   migrateAllSaveData();
-  // 1. ダンジョン特殊処理（初期選択カードの補填が必要な場合のみセット）
+  // 1. ダンジョン特殊処理（ダンジョンカードが配置されている場合は専用デッキとしてセット）
   if (GameState.gameMode === 'battle_dungeon') {
-    if (
-      !GameState.playerDeckSelection ||
-      GameState.playerDeckSelection.length === 0
-    ) {
-      if (
-        GameState.dungeonCards &&
-        GameState.dungeonCards.length >= DECK_SIZE
-      ) {
-        GameState.playerDeckSelection = GameState.dungeonCards
-          .slice(0, DECK_SIZE)
-          .map((id) => {
-            const template = CARD_MASTER.find((c) => c.id === id);
-            return template ? { ...template } : null;
-          })
-          .filter(Boolean);
-      }
+    if (GameState.dungeonCards && GameState.dungeonCards.length >= DECK_SIZE) {
+      GameState.playerDeckSelection = GameState.dungeonCards
+        .slice(0, DECK_SIZE)
+        .map((id) => {
+          const template = CARD_MASTER.find((c) => c.id === id);
+          return template ? { ...template } : null;
+        })
+        .filter(Boolean);
+      GameState.isDungeonSnapshotLoaded = true;
     }
+  } else {
+    GameState.isDungeonSnapshotLoaded = false;
   }
 
   // 2. 全体（アカウント）設定のベース読み込み
@@ -828,13 +823,14 @@ export function loadDeck() {
       activeDeck.premiumCards = [...GameState.premiumCards];
     }
 
-    // トーナメント進行中またはダンジョンモード進行中で、デッキが既にロード済みの場合は上書きしない
+    // トーナメント進行中またはダンジョンモード進行中（ダンジョンスナップショットロード済み）の場合は上書きしない
     const isDeckSnapshotProtected =
       (GameState.gameMode === 'tournament' &&
         GameState.tournament &&
         GameState.playerDeckSelection &&
         GameState.playerDeckSelection.length > 0) ||
       (GameState.gameMode === 'battle_dungeon' &&
+        GameState.isDungeonSnapshotLoaded &&
         GameState.playerDeckSelection &&
         GameState.playerDeckSelection.length > 0);
 

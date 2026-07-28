@@ -8,9 +8,28 @@ import { isTransitioning, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 /**
+ * カードソートモード共有定数
+ */
+export const SORT_MODES = {
+  RARITY_ASC: 'rarity_asc',
+  RARITY_DESC: 'rarity_desc',
+  POWER_ASC: 'power_asc',
+  POWER_DESC: 'power_desc',
+};
+
+/**
+ * カード所持フィルターモード共有定数
+ */
+export const OWNERSHIP_FILTERS = {
+  OWNED_ONLY: 'owned_only',
+  INCLUDE_UNOWNED: 'include_unowned',
+  THREE_OR_LESS: 'three_or_less',
+};
+
+/**
  * デフォルトのカードソートモード
  */
-export const DEFAULT_SORT_MODE = 'rarity_asc';
+export const DEFAULT_SORT_MODE = SORT_MODES.RARITY_ASC;
 
 /**
  * カードフィルター・ソート・グリッド密度管理カスタムフック
@@ -158,8 +177,12 @@ export function useCardFilterSort({
       const ownership = filters.ownership || defaultOwnership;
       const ownedCount = inventory[c.id] || 0;
 
-      if (ownership === 'owned_only' && ownedCount <= 0) return false;
-      if (ownership === 'three_or_less' && ownedCount > MAX_CARD_COPIES - 1)
+      if (ownership === OWNERSHIP_FILTERS.OWNED_ONLY && ownedCount <= 0)
+        return false;
+      if (
+        ownership === OWNERSHIP_FILTERS.THREE_OR_LESS &&
+        ownedCount > MAX_CARD_COPIES - 1
+      )
         return false;
 
       if (
@@ -215,12 +238,12 @@ export function useCardFilterSort({
 
       if (sortMode === DEFAULT_SORT_MODE) {
         if (rarityA !== rarityB) return rarityA - rarityB;
-      } else if (sortMode === 'rarity_desc') {
+      } else if (sortMode === SORT_MODES.RARITY_DESC) {
         if (rarityA !== rarityB) return rarityB - rarityA;
-      } else if (sortMode === 'power_asc') {
+      } else if (sortMode === SORT_MODES.POWER_ASC) {
         if (powerA !== powerB) return powerA - powerB;
         if (rarityA !== rarityB) return rarityA - rarityB;
-      } else if (sortMode === 'power_desc') {
+      } else if (sortMode === SORT_MODES.POWER_DESC) {
         if (powerA !== powerB) return powerB - powerA;
         if (rarityA !== rarityB) return rarityA - rarityB;
       }

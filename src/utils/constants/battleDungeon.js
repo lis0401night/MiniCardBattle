@@ -1,4 +1,7 @@
-import { getDungeonCharacterDialogue } from './battleDungeonCharacter.js';
+import {
+  checkIsGenericMob,
+  getDungeonCharacterDialogue,
+} from './battleDungeonCharacter.js';
 import { CARD_MASTER } from './cards.js';
 import { CHARACTERS, getSkinImage } from './characters.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
@@ -272,6 +275,7 @@ export const generateCharacterBossEnemy = (floorNum) => {
     leaderCardId: bossId,
     charId: bossId,
     isDungeonEnemy: true,
+    isHighBoss: isHighBoss,
     fixedAiLevel: 3,
     hp: 20, // ダンジョンボスのHPは一律20
     dungeonDeck: deck,
@@ -386,7 +390,7 @@ export const hydrateDungeonOpponent = (opp) => {
     }
   }
 
-  const isGenericMob = opp.isDungeonEnemy && !isBoss && !opp.charId;
+  const isGenericMob = checkIsGenericMob(opp, isBoss);
   const dialogueData = getDungeonCharacterDialogue(leaderId, opp);
 
   // 1. キャラクターボスの復元（CHARACTERSベース）
@@ -410,10 +414,20 @@ export const hydrateDungeonOpponent = (opp) => {
       ? { ...charMaster.dialogue, ...skinObj.dialogue }
       : charMaster.dialogue;
 
+    const isHighBossFlag = opp.isHighBoss || isBoss;
+    const highConfig =
+      isHighBossFlag && charMaster.event_high ? charMaster.event_high : null;
+
     return {
       ...charMaster,
       ...opp,
-      name: opp.name || (skinObj && skinObj.name) || charMaster.name,
+      name:
+        opp.name ||
+        (highConfig && highConfig.name) ||
+        (skinObj && skinObj.name) ||
+        charMaster.name,
+      leaderSkill:
+        (highConfig && highConfig.leaderSkill) || charMaster.leaderSkill,
       rarity: opp.rarity || charMaster.rarity || 4,
       image: skinImg,
       icon: skinIcon,
@@ -527,6 +541,7 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
     };
 
     return {
+      ...(savedConfig || {}),
       id: id,
       leaderCardId: cardMaster.id,
       name: savedConfig?.name || cardMaster.name,
@@ -534,7 +549,6 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       icon: icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
       image: image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
       leaderSkill: savedConfig?.leaderSkill || defaultLeaderSkill,
-      ...(savedConfig || {}),
     };
   }
 

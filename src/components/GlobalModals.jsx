@@ -483,6 +483,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setProfileNameInput(GameState.userProfile?.name || DEFAULT_PLAYER_NAME);
       setProfileIconInput(GameState.userProfile?.icon || DEFAULT_PLAYER_ICON);
       setFavoriteCardState(GameState.userProfile?.favoriteCard || null);
+      // プロフィール編集モーダルオープン時にお気に入りカードのプレミアム一時表示マップをリセット
+      setFavCardPremiumMap({});
       setProfileModalVisible(true);
     });
 

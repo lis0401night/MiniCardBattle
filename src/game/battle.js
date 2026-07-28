@@ -551,33 +551,25 @@ export function prepareBattle() {
           sessionId
         );
       }
-
-      // バトル開始時点のプレイヤー使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）
-      if (
-        Array.isArray(GameState.playerDeckSelection) &&
-        GameState.playerDeckSelection.length > 0
-      ) {
-        GameState.battleStartPlayerDeckObjects = toDeckObjects(
-          GameState.playerDeckSelection,
-          GameState.premiumCards
-        );
-      } else if (
-        Array.isArray(GameState.playerDeck) &&
-        GameState.playerDeck.length > 0
-      ) {
-        GameState.battleStartPlayerDeckObjects = toDeckObjects(
-          GameState.playerDeck,
-          GameState.premiumCards
-        );
-      } else {
-        GameState.battleStartPlayerDeckObjects = null;
-      }
     } catch (e) {
       console.error('Deck generation error:', e);
       // エラー時も空のデッキで続行を試みる（フリーズ回避）
       GameState.playerDeck = GameState.playerDeck || [];
       GameState.enemyDeck = GameState.enemyDeck || [];
     }
+
+    // バトル開始時点のプレイヤー使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）
+    // ※ 例外発生時でも前戦の古いスナップショットが残留せず、常に最新または適切な状態へ更新されるように try-catch 外で実行
+    const snapshotSource =
+      Array.isArray(GameState.playerDeckSelection) &&
+      GameState.playerDeckSelection.length > 0
+        ? GameState.playerDeckSelection
+        : GameState.playerDeck;
+
+    GameState.battleStartPlayerDeckObjects =
+      Array.isArray(snapshotSource) && snapshotSource.length > 0
+        ? toDeckObjects(snapshotSource, GameState.premiumCards)
+        : null;
 
     const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
     let loaded = 0;
