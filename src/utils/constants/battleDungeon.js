@@ -493,14 +493,18 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
         getSkinImage(templateChar, skinId, 'image')) ||
       templateChar.image;
 
-    // スキン変更時のスキル差分があればマージ
+    // スキン変更時のスキル差分および対戦中セリフ (dialogue) のマージ処理
     let activeLeaderSkill = templateChar.leaderSkill;
-    if (skinId && templateChar.skins && templateChar.skins[skinId]) {
-      const skinObj = templateChar.skins[skinId];
-      if (skinObj.leaderSkill) {
-        activeLeaderSkill = { ...activeLeaderSkill, ...skinObj.leaderSkill };
-      }
+    const skinObj =
+      skinId && templateChar.skins ? templateChar.skins[skinId] : null;
+    if (skinObj?.leaderSkill) {
+      activeLeaderSkill = { ...activeLeaderSkill, ...skinObj.leaderSkill };
     }
+
+    const dialogueData = getDungeonCharacterDialogue(id, savedConfig);
+    const mergedDialogue = skinObj?.dialogue
+      ? { ...templateChar.dialogue, ...skinObj.dialogue }
+      : templateChar.dialogue;
 
     return {
       ...templateChar,
@@ -511,6 +515,9 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       image: skinImg
         ? skinImg.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
         : null,
+      // 対戦中吹き出し表示（showSpeechBubble / showLeaderSkillCutin）に必要なセリフオブジェクトを復元
+      dialogue:
+        savedConfig?.dialogue || mergedDialogue || dialogueData?.dialogue || {},
     };
   }
 
@@ -540,6 +547,11 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       action: 'dungeon_summon_leader',
     };
 
+    const dialogueData = getDungeonCharacterDialogue(
+      cardMaster.id,
+      savedConfig
+    );
+
     return {
       ...(savedConfig || {}),
       id: id,
@@ -549,6 +561,8 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       icon: icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
       image: image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
       leaderSkill: savedConfig?.leaderSkill || defaultLeaderSkill,
+      // モブカードリーダー用の対戦中セリフを解決
+      dialogue: savedConfig?.dialogue || dialogueData?.dialogue || {},
     };
   }
 
