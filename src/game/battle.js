@@ -26,6 +26,10 @@ import {
   getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 import { playCardVoice } from '../utils/constants/voices.js';
+
+if (typeof window !== 'undefined') {
+  window.CARD_MASTER = CARD_MASTER;
+}
 import {
   consumeArmSelf,
   createDamagePopup,
@@ -2857,13 +2861,16 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
   if (card.isToken) return false;
   let skillsToResolve = Array.isArray(card.skills) ? [...card.skills] : [];
+  let isReplacedOnBoard = false;
 
+  // TODO(リファクタリング): 処刑等の旧直接破棄ロジック（discardCard）と Engine/Renderer（新エンジン）の間で
+  // 破棄・墓地送り処理が二重化しています。将来的にはすべて Engine / Renderer 構造へ一元化・統一すべきです。
   for (const sk of skillsToResolve) {
     if (isDestroyed) {
-      // 分裂(split)
+      // 分裂(split): トークンを生成しつつ、元のカード本体も下部の墓地追加処理へ進める
       if (sk.id === 'split' && lane !== undefined) {
         await triggerSplitSkill(owner, lane, card);
-        return true; // 分裂した場合は墓地に行かず場に残る
+        isReplacedOnBoard = true;
       }
       // 誘爆(explode) — 隣接カードにダメージを与える（カード自体は通常通り墓地へ）
       if (sk.id === 'explode' && lane !== undefined) {
@@ -2945,7 +2952,10 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     : GameState.enemyDiscard
   ).push(restoredCard);
   updateDeckDisplay(discardOwner);
-  return false;
+  return isReplacedOnBoard;
+}
+if (typeof window !== 'undefined') {
+  window.discardCard = discardCard;
 }
 
 export async function triggerSplitSkill(owner, lane, card) {

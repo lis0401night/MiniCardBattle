@@ -1175,22 +1175,129 @@ export function getEventEnemyCharId(gameMode) {
 
 /**
  * 指定されたゲームモードが運命の邂逅（_fortune）モードであるかどうかを判定します。
- * @param {string} gameMode - ゲームモード名
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
  * @returns {boolean} 運命の邂逅モードであるか
  */
-export function checkIsFortuneMode(gameMode) {
+export function checkIsFortuneMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
   if (!gameMode) return false;
   return gameMode.startsWith('event_') && gameMode.endsWith('_fortune');
 }
 
 /**
  * 指定されたゲームモードが高難易度（_high）モードであるかどうかを判定します。
- * @param {string} gameMode - ゲームモード名
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
  * @returns {boolean} 高難易度モードであるか
  */
-export function checkIsHighDiffMode(gameMode) {
+export function checkIsHighDiffMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
   if (!gameMode) return false;
-  return gameMode.startsWith('event_') && gameMode.endsWith('_high');
+  return (
+    gameMode === 'high_difficulty' ||
+    (gameMode.startsWith('event_') && gameMode.endsWith('_high'))
+  );
+}
+
+/**
+ * 指定されたゲームモードがストーリーモードであるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} ストーリーモードであるか
+ */
+export function checkIsStoryMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  if (!gameMode) return false;
+  return gameMode === 'story' || gameMode.startsWith('story');
+}
+
+/**
+ * 指定されたゲームモードが試練の宮殿（ダンジョン）モードであるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} ダンジョンモードであるか
+ */
+export function checkIsDungeonMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'battle_dungeon' || gameMode === 'dungeon';
+}
+
+/**
+ * 指定されたゲームモードが防衛戦モード（攻撃または防衛登録）であるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} 防衛戦モードであるか
+ */
+export function checkIsDefenseMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'defense_attack' || gameMode === 'defense_register';
+}
+
+/**
+ * 指定されたゲームモードがフリー対戦またはマイデッキ編集モードであるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} フリー対戦関連モードであるか
+ */
+export function checkIsFreeMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'free' || gameMode === 'free_deck_edit';
+}
+
+/**
+ * 指定されたゲームモードが勝ち抜き組手（トーナメント）モードであるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} トーナメントモードであるか
+ */
+export function checkIsTournamentMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'tournament';
+}
+
+/**
+ * 指定されたゲームモードがオンライン通信対戦またはオンラインデッキ編集モードであるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} オンライン関連モードであるか
+ */
+export function checkIsOnlineMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'online' || gameMode === 'online_deck_edit';
+}
+
+/**
+ * 指定されたゲームモードが練習モード（仮想敵デッキ対戦）であるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} 練習モードであるか
+ */
+export function checkIsPracticeMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'practice';
+}
+
+/**
+ * 指定されたゲームモードが新規デッキ作成モーダル中の状態であるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} 新規デッキ作成モードであるか
+ */
+export function checkIsCreateDeckMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'create_deck';
+}
+
+/**
+ * 指定されたゲームモードがチュートリアルモードであるかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} チュートリアルモードであるか
+ */
+export function checkIsTutorialMode(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  return gameMode === 'tutorial';
 }
 
 /**
