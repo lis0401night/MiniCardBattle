@@ -381,9 +381,14 @@ export const hydrateDungeonOpponent = (opp) => {
   if (!opp) return null;
 
   const isBoss =
-    typeof opp.id === 'string' && opp.id.startsWith('dungeon_boss_');
+    (typeof opp.id === 'string' && opp.id.startsWith('dungeon_boss_')) ||
+    !!opp.isHighBoss;
   let leaderId = opp.leaderCardId || opp.charId || opp.id;
-  if (isBoss) {
+  if (
+    isBoss &&
+    typeof opp.id === 'string' &&
+    opp.id.startsWith('dungeon_boss_')
+  ) {
     const parts = opp.id.split('_');
     if (parts[2] && CHARACTERS[parts[2]]) {
       leaderId = parts[2];
@@ -391,9 +396,12 @@ export const hydrateDungeonOpponent = (opp) => {
   }
 
   const isGenericMob = checkIsGenericMob(opp, isBoss);
-  const dialogueData = getDungeonCharacterDialogue(leaderId, opp);
+  const dialogueData = getDungeonCharacterDialogue(
+    isGenericMob ? opp.leaderCardId || leaderId : leaderId,
+    opp
+  );
 
-  // 1. キャラクターボスの復元（CHARACTERSベース）
+  // 1. キャラクターボスの復元（CHARACTERSベース：モブ敵でない場合のみ）
   const charMaster =
     !isGenericMob && CHARACTERS[leaderId] ? CHARACTERS[leaderId] : null;
   if (charMaster) {
