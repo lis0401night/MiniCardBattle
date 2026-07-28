@@ -110,16 +110,21 @@ export function saveDungeonProgress() {
   const lightweightOpponents = (GameState.dungeonOpponents || [])
     .map((opp) => {
       if (!opp) return null;
+      const isBoss =
+        (typeof opp.id === 'string' && opp.id.startsWith('dungeon_boss_')) ||
+        !!opp.isHighBoss;
       return {
         id: opp.id,
-        leaderCardId: opp.leaderCardId || opp.charId || opp.id,
-        charId: opp.charId || opp.leaderCardId,
+        leaderCardId: isBoss ? undefined : opp.leaderCardId || opp.id,
+        // charId はキャラクター由来の敵のみが持つ識別子。
+        charId: isBoss ? opp.charId || opp.id : undefined,
         fixedAiLevel: opp.fixedAiLevel,
         hp: opp.hp,
         stageId: opp.stageId,
         color: opp.color,
         currentSkin: opp.currentSkin,
         isDungeonEnemy: opp.isDungeonEnemy,
+        isHighBoss: opp.isHighBoss,
         dungeonDeck: opp.dungeonDeck,
       };
     })
@@ -165,6 +170,10 @@ export function saveDungeonProgress() {
 
   // 一時デッキキャッシュ (mini_card_battle_dungeon_deck_obj) の leaderId も同期
   syncDungeonDeckLeaderId(charId);
+}
+
+if (typeof window !== 'undefined') {
+  window.saveDungeonProgress = saveDungeonProgress;
 }
 
 export function loadDungeonProgress() {

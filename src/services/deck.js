@@ -484,13 +484,54 @@ window.loadDeck = loadDeck;
 export function loadDeck() {
   // 自動マイグレーションを実行
   migrateAllSaveData();
-  // 1. ダンジョン特殊処理（初期選択カードの補填が必要な場合のみセット）
+  // 1. ダンジョン特殊処理（ダンジョン進行中の保存デッキ構成を正確に維持・復元）
   if (GameState.gameMode === 'battle_dungeon') {
     if (
-      !GameState.playerDeckSelection ||
-      GameState.playerDeckSelection.length === 0
+      Array.isArray(GameState.playerDeckSelection) &&
+      GameState.playerDeckSelection.length > 0
     ) {
-      if (
+      GameState.isDungeonSnapshotLoaded = true;
+    } else {
+      // 一時デッキキャッシュ (mini_card_battle_dungeon_deck_obj) または進行セーブ (mini_card_battle_dungeon_save) から復元
+      const dungeonSaved = localStorage.getItem(
+        'mini_card_battle_dungeon_deck_obj'
+      );
+      const dungeonProgressSaved = localStorage.getItem(
+        'mini_card_battle_dungeon_save'
+      );
+
+      let savedCards = null;
+      if (dungeonSaved) {
+        try {
+          const deckObj = JSON.parse(dungeonSaved);
+          if (Array.isArray(deckObj?.cards) && deckObj.cards.length > 0) {
+            savedCards = deckObj.cards;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!savedCards && dungeonProgressSaved) {
+        try {
+          const progObj = JSON.parse(dungeonProgressSaved);
+          if (Array.isArray(progObj?.deck) && progObj.deck.length > 0) {
+            savedCards = progObj.deck;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (savedCards && savedCards.length > 0) {
+        GameState.playerDeckSelection = savedCards
+          .map((id) => {
+            const template = CARD_MASTER.find((c) => c.id === id);
+            return template ? { ...template } : null;
+          })
+          .filter(Boolean);
+        GameState.isDungeonSnapshotLoaded = true;
+      } else if (
         GameState.dungeonCards &&
         GameState.dungeonCards.length >= DECK_SIZE
       ) {
@@ -501,8 +542,11 @@ export function loadDeck() {
             return template ? { ...template } : null;
           })
           .filter(Boolean);
+        GameState.isDungeonSnapshotLoaded = true;
       }
     }
+  } else {
+    GameState.isDungeonSnapshotLoaded = false;
   }
 
   // 2. 全体（アカウント）設定のベース読み込み
@@ -828,13 +872,14 @@ export function loadDeck() {
       activeDeck.premiumCards = [...GameState.premiumCards];
     }
 
-    // トーナメント進行中またはダンジョンモード進行中で、デッキが既にロード済みの場合は上書きしない
+    // トーナメント進行中またはダンジョンモード進行中（ダンジョンスナップショットロード済み）の場合は上書きしない
     const isDeckSnapshotProtected =
       (GameState.gameMode === 'tournament' &&
         GameState.tournament &&
         GameState.playerDeckSelection &&
         GameState.playerDeckSelection.length > 0) ||
       (GameState.gameMode === 'battle_dungeon' &&
+        GameState.isDungeonSnapshotLoaded &&
         GameState.playerDeckSelection &&
         GameState.playerDeckSelection.length > 0);
 
@@ -983,6 +1028,11 @@ export function saveCurrentEditDeck() {
         'mini_card_battle_dungeon_deck_obj',
         JSON.stringify(activeDeck)
       );
+
+      // ダンジョン進行セーブデータ (mini_card_battle_dungeon_save) にも編集後のデッキ構成を即座に同期・保存
+      if (typeof window.saveDungeonProgress === 'function') {
+        window.saveDungeonProgress();
+      }
     } else {
       localStorage.setItem(
         'mini_card_battle_decks',

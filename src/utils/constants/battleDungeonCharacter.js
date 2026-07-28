@@ -339,16 +339,38 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
   },
 };
 
+/**
+ * ダンジョン敵がモブ敵（キャラクターでない敵）かどうかを判定します。
+ * @param {object} opp - 敵オブジェクト
+ * @param {boolean} isBoss - ボスフラグ
+ * @returns {boolean} モブ敵であるかどうか
+ */
+export function checkIsGenericMob(opp, isBoss) {
+  if (!opp) return false;
+  // ボスフラグが明示されている場合はモブではない
+  if (isBoss || opp.isHighBoss) return false;
+  // charId が明示されており、かつそれが CHARACTERS に存在するキャラクターボスの場合はモブではない
+  if (opp.charId && CHARACTERS && CHARACTERS[opp.charId] && !opp.leaderCardId) {
+    return false;
+  }
+  // isDungeonEnemy または leaderCardId を持つか、CHARACTERS テンプレート非該当の敵はモブ敵とみなす
+  return !!(opp.isDungeonEnemy || opp.leaderCardId || !opp.charId);
+}
+
 export function getDungeonCharacterDialogue(id, opp) {
+  if (typeof id !== 'string' || !id) {
+    return DUNGEON_CHARACTER_DIALOGUE.default;
+  }
+
   let charId = id;
-  const isBoss = typeof id === 'string' && id.startsWith('dungeon_boss_');
+  const isBoss = id.startsWith('dungeon_boss_');
   if (isBoss) {
     const parts = id.split('_');
     if (parts[2]) charId = parts[2];
   }
 
   // 1. キャラクターボス (dungeon_boss_) またはプレイヤーキャラクターで、モブ敵でない場合
-  const isGenericMob = opp && opp.isDungeonEnemy && !isBoss && !opp.charId;
+  const isGenericMob = checkIsGenericMob(opp, isBoss);
 
   if (CHARACTERS[charId] && !isGenericMob) {
     const char = CHARACTERS[charId];

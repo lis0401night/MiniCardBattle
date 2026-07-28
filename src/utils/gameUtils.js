@@ -1,3 +1,4 @@
+import { OWNERSHIP_FILTERS } from '../hooks/useCardFilterSort.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from './constants/cards.js';
 import { getSkinImage } from './constants/characters.js';
@@ -1366,12 +1367,16 @@ export function safeParseArray(key) {
 }
 
 /**
- * カードフィルタが有効（デフォルト以外の条件が設定されている）かどうかを判定する
+ * フィルター選択状態が存在するかチェックする共通関数
  * CardListScreen / DeckEditorScreen 等で共通利用
  * @param {object} filters フィルターオブジェクト
+ * @param {string} [defaultOwnership=OWNERSHIP_FILTERS.OWNED_ONLY] デフォルトの所持状態
  * @returns {boolean} 有効なフィルターが存在するかどうか
  */
-export function hasActiveFilters(filters, defaultOwnership = 'owned_only') {
+export function hasActiveFilters(
+  filters,
+  defaultOwnership = OWNERSHIP_FILTERS.OWNED_ONLY
+) {
   if (!filters) return false;
   return (
     (filters.ownership && filters.ownership !== defaultOwnership) ||

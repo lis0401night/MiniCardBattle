@@ -1,6 +1,18 @@
+import { SORT_MODES } from '../../hooks/useCardFilterSort.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
+/**
+ * カードソート設定モーダルコンポーネント
+ * @param {Object} props - コンポーネントのプロパティ
+ * @param {boolean} props.visible - モーダル表示フラグ
+ * @param {Function} props.onClose - モーダルを閉じるハンドラ
+ * @param {string} props.tempSortMode - 一時的なソートモードID
+ * @param {Function} props.setTempSortMode - 一時ソートモード更新ハンドラ
+ * @param {Function} props.onApply - 適用実行ハンドラ
+ * @param {Function} props.onReset - リセット実行ハンドラ
+ * @returns {JSX.Element|null} ソートモーダルのJSX
+ */
 export default function CardSortModal({
   visible,
   onClose,
@@ -11,11 +23,12 @@ export default function CardSortModal({
 }) {
   if (!visible) return null;
 
+  // 共有定数 SORT_MODES を参照して選択肢を定義
   const sortOptions = [
-    { id: 'rarity_asc', label: 'レアリティ昇順' },
-    { id: 'rarity_desc', label: 'レアリティ降順' },
-    { id: 'power_asc', label: 'パワー昇順' },
-    { id: 'power_desc', label: 'パワー降順' },
+    { id: SORT_MODES.RARITY_ASC, label: 'レアリティ昇順' },
+    { id: SORT_MODES.RARITY_DESC, label: 'レアリティ降順' },
+    { id: SORT_MODES.POWER_ASC, label: 'パワー昇順' },
+    { id: SORT_MODES.POWER_DESC, label: 'パワー降順' },
   ];
 
   return (

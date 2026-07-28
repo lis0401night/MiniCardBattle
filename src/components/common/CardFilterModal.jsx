@@ -1,10 +1,25 @@
 import { useMemo, useRef, useState } from 'react';
+import { OWNERSHIP_FILTERS } from '../../hooks/useCardFilterSort.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { MAX_CARD_COPIES } from '../../utils/constants/config.js';
 import { SKILLS, SKILL_CATEGORIES } from '../../utils/constants/skills.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
+/**
+ * カードフィルター設定モーダルコンポーネント
+ * @param {Object} props - コンポーネントのプロパティ
+ * @param {boolean} props.visible - モーダル表示フラグ
+ * @param {Function} props.onClose - モーダルを閉じるハンドラ
+ * @param {Object} props.tempFilters - 一時的なフィルター設定オブジェクト
+ * @param {Function} props.setTempFilters - フィルター更新ハンドラ
+ * @param {Function} props.toggleTempFilter - 単一フィルターのトグルハンドラ
+ * @param {Function} props.toggleTempSkillFilter - スキルフィルターのトグルハンドラ
+ * @param {Function} props.onApply - 適用実行ハンドラ
+ * @param {Function} props.onReset - リセット実行ハンドラ
+ * @param {string} [props.defaultOwnership='include_unowned'] - 所持状態の初期値
+ * @returns {JSX.Element|null} フィルターモーダルのJSX
+ */
 export default function CardFilterModal({
   visible,
   onClose,
@@ -20,6 +35,7 @@ export default function CardFilterModal({
   const modalContentRef = useRef(null);
   const skillAccordionRef = useRef(null);
 
+  // マスタデータから利用可能なパワー数値を動的抽出
   const availablePowers = useMemo(() => {
     const powers = new Set();
     (CARD_MASTER || []).forEach((c) => {
@@ -30,9 +46,18 @@ export default function CardFilterModal({
     return Array.from(powers).sort((a, b) => a - b);
   }, []);
 
-  if (!visible) return null;
+  // マスタデータから利用可能なレアリティ数値を動的抽出（ハードコードを排除）
+  const availableRarities = useMemo(() => {
+    const rarities = new Set();
+    (CARD_MASTER || []).forEach((c) => {
+      if (!c.isToken && typeof c.rarity === 'number' && !isNaN(c.rarity)) {
+        rarities.add(c.rarity);
+      }
+    });
+    return Array.from(rarities).sort((a, b) => a - b);
+  }, []);
 
-  const availableRarities = [1, 2, 3, 4];
+  if (!visible) return null;
 
   const raritiesList = tempFilters.rarity || [];
   const powersList = tempFilters.power || [];
@@ -145,10 +170,10 @@ export default function CardFilterModal({
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {[
-                { id: 'owned_only', label: '所持のみ' },
-                { id: 'include_unowned', label: '未所持含む' },
+                { id: OWNERSHIP_FILTERS.OWNED_ONLY, label: '所持のみ' },
+                { id: OWNERSHIP_FILTERS.INCLUDE_UNOWNED, label: '未所持含む' },
                 {
-                  id: 'three_or_less',
+                  id: OWNERSHIP_FILTERS.THREE_OR_LESS,
                   label: `${MAX_CARD_COPIES - 1}枚以下のみ`,
                 },
               ].map((opt) => {
