@@ -780,6 +780,7 @@ export function initBattleState() {
       const savedPlayerProps = {
         name: GameState.playerConfig.name,
         hp: GameState.playerConfig.hp,
+        leaderSkill: GameState.playerConfig.leaderSkill,
         playmat: GameState.playerConfig.playmat,
       };
 
@@ -795,10 +796,11 @@ export function initBattleState() {
       GameState.enemyConfig.id &&
       CHARACTERS[GameState.enemyConfig.id]
     ) {
-      // 各モード固有のカスタム設定（高難易度のHP/スキル、防衛戦情報、影戦フラグ、闘技祭での学園名など）を退避
+      // 各モード固有のカスタム設定（高難易度のHP/スキル/リーダースキル、防衛戦情報、影戦フラグ、闘技祭での学園名など）を退避
       const savedEnemyProps = {
         name: GameState.enemyConfig.name,
         hp: GameState.enemyConfig.hp,
+        leaderSkill: GameState.enemyConfig.leaderSkill,
         isShadow: GameState.enemyConfig.isShadow,
         playmat: GameState.enemyConfig.playmat,
         playerName: GameState.enemyConfig.playerName,
