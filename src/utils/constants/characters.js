@@ -1090,6 +1090,7 @@ export const CHARACTERS = {
     stageId: 'automata',
     name: '廃鉄の声 マキナ',
     desc: '滅びた機械都市の残骸から生まれた自律人形。人類への反逆の旗を掲げ、機械を指揮する。',
+    easeOfUse: 2,
     filter: 'none',
     image: 'assets/characters/char_automata.webp',
     imageLose: 'assets/characters/char_automata_lose.webp',
