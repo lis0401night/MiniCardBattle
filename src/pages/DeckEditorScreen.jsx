@@ -744,11 +744,23 @@ export default function DeckEditorScreen({ switchScreen }) {
                   playSound?.(SOUNDS?.seClick);
                   if (window.showCharDetailModal) {
                     const charObj = CHARACTERS[leaderId];
+                    // リーダー変更を許可しないモード一覧
+                    // battle_dungeon: 試練の宮殿ではリーダーはダンジョン進行中固定
+                    // tournament: トーナメント進行中はリーダー固定
+                    // story: ストーリー進行中はリーダー固定（変更するとデッキが使用不可になる）
+                    const LEADER_CHANGE_BLOCKED_MODES = [
+                      'battle_dungeon',
+                      'tournament',
+                      'story',
+                    ];
+                    const canChangeLeader =
+                      !LEADER_CHANGE_BLOCKED_MODES.includes(GameState.gameMode);
                     if (charObj)
                       window.showCharDetailModal({
                         ...charObj,
                         hideDecideButton: true,
                         targetDeckIndex: GameState.currentDeckIndex,
+                        allowLeaderChange: canChangeLeader,
                       });
                   }
                 }}

@@ -49,6 +49,7 @@ import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
+  BOSS_CHARACTER_IDS,
   CHARACTERS,
   getSkinImage,
   getPlayerIconPath,
@@ -62,6 +63,7 @@ import {
   stopAllBGM,
   togglePremiumCard,
   resolvePlayerName,
+  safeParseArray,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
@@ -419,6 +421,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [skillChoiceData, setSkillChoiceData] = useState(null);
   const [discardSelectionData, setDiscardSelectionData] = useState(null);
   const [skinSelectionVisible, setSkinSelectionVisible] = useState(false);
+  const [leaderSelectVisible, setLeaderSelectVisible] = useState(false);
   const [selectedSkinState, setSelectedSkinState] = useState(null);
   const [simpleImagePreview, setSimpleImagePreview] = useState(null);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -1702,6 +1705,31 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               )}
             </div>
 
+            {/* リーダー変更ボタン（デッキ編成画面経由かつ変更許可モードの場合のみ表示） */}
+            {charDetailData.allowLeaderChange && (
+              <button
+                className="btn"
+                style={{
+                  width: '100%',
+                  margin: 0,
+                  marginBottom: '10px',
+                  background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  textShadow: '1px 1px 2px #000',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setLeaderSelectVisible(true);
+                }}
+              >
+                リーダー変更
+              </button>
+            )}
+
             {!(
               GameState.appState === 'select_enemy' ||
               charDetailData.isDungeonEnemy
@@ -1710,6 +1738,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 className="btn"
                 style={{
                   width: '100%',
+                  margin: 0,
                   marginBottom: '10px',
                   background: 'linear-gradient(45deg, #c084fc, #9333ea)',
                   border: 'none',
@@ -2435,6 +2464,216 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 onClick={() => {
                   playSound?.(SOUNDS?.seClick);
                   setSkinSelectionVisible(false);
+                }}
+              >
+                戻る
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leader Select Modal（リーダー変更用キャラクター選択モーダル） */}
+      {leaderSelectVisible && (
+        <div
+          className="screen"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 80,
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--panel-bg, #1e293b)',
+              border: '2px solid #facc15',
+              borderRadius: '12px',
+              padding: '20px',
+              width: '90%',
+              maxWidth: '400px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8)',
+            }}
+          >
+            <h2
+              style={{
+                color: '#facc15',
+                marginBottom: '15px',
+                fontSize: '1.2rem',
+              }}
+            >
+              リーダー変更
+            </h2>
+
+            <div
+              style={{
+                width: '100%',
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                padding: '5px',
+                boxSizing: 'border-box',
+              }}
+            >
+              {(() => {
+                /**
+                 * リーダー変更候補のキャラクター一覧を生成する
+                 * ボスキャラクターは除外し、automataは解放済みの場合のみ表示する
+                 * @returns {Array<Object>} フィルタリング済みのキャラクターオブジェクト配列
+                 */
+                const getLeaderCandidates = () => {
+                  const charsObj = CHARACTERS || {};
+                  return Object.values(charsObj).filter((c) => {
+                    // ボスキャラクターは選択不可
+                    if (BOSS_CHARACTER_IDS.includes(c.id)) return false;
+                    // automataは解放済みの場合のみ表示
+                    if (c.id === 'automata') {
+                      const unlockedChars = safeParseArray(
+                        'mini_card_battle_unlocked_characters'
+                      );
+                      if (!unlockedChars.includes('automata')) return false;
+                    }
+                    return true;
+                  });
+                };
+
+                const currentLeaderId = charDetailData?.id;
+                const candidates = getLeaderCandidates();
+
+                return candidates.map((char) => {
+                  const isCurrentLeader = char.id === currentLeaderId;
+                  return (
+                    <div
+                      key={char.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '8px',
+                        background: isCurrentLeader
+                          ? 'rgba(250, 204, 21, 0.2)'
+                          : 'rgba(0, 0, 0, 0.3)',
+                        border: `2px solid ${isCurrentLeader ? '#facc15' : '#475569'}`,
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: isCurrentLeader ? 'default' : 'pointer',
+                        transition: 'all 0.2s',
+                        opacity: isCurrentLeader ? 0.6 : 1,
+                      }}
+                      onClick={() => {
+                        // 現在のリーダーと同じ場合は何もしない
+                        if (isCurrentLeader) return;
+                        playSound?.(SOUNDS?.seClick);
+
+                        const targetDeckIndex = charDetailData?.targetDeckIndex;
+
+                        // デッキのリーダーIDを更新
+                        if (
+                          targetDeckIndex !== undefined &&
+                          GameState.decks &&
+                          GameState.decks[targetDeckIndex]
+                        ) {
+                          GameState.decks[targetDeckIndex].leaderId = char.id;
+
+                          // 各モードに応じたLocalStorageへの永続化
+                          if (GameState.gameMode === 'defense_register') {
+                            localStorage.setItem(
+                              'mini_card_battle_defense_deck_obj',
+                              JSON.stringify(GameState.decks[targetDeckIndex])
+                            );
+                          } else {
+                            localStorage.setItem(
+                              'mini_card_battle_decks',
+                              JSON.stringify(GameState.decks)
+                            );
+                          }
+
+                          // 現在アクティブなデッキの場合、playerConfigも同期する
+                          const isActiveDeck =
+                            GameState.currentDeckIndex === targetDeckIndex;
+                          if (isActiveDeck) {
+                            GameState.playerConfig = {
+                              ...CHARACTERS[char.id],
+                            };
+                          }
+                        }
+
+                        // モーダルを閉じる
+                        setLeaderSelectVisible(false);
+                        setCharDetailData(null);
+
+                        // デッキ編集画面・デッキ一覧画面を再描画
+                        if (typeof renderDeckEdit === 'function') {
+                          renderDeckEdit();
+                        }
+                        if (window.forceUpdateDeckList) {
+                          window.forceUpdateDeckList();
+                        }
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '2px solid #475569',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={char.icon}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          alt={char.name}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        <span>{char.name}</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            <div
+              style={{
+                marginTop: '15px',
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                className="btn"
+                style={{ background: '#475569', margin: 0 }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setLeaderSelectVisible(false);
                 }}
               >
                 戻る
