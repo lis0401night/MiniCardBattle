@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-export const GAME_VERSION = '0.2.6.5';
+export const GAME_VERSION = '0.2.6.6';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -38,6 +38,7 @@ export const DEFENSE_HISTORY_KEY = 'mini_card_battle_defense_history';
 export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';
 export const FORTUNE_TOTAL_POINTS_KEY = 'mini_card_battle_fortune_total_points';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';
+export const LAST_HEARTBEAT_KEY = 'mini_card_battle_last_heartbeat'; // ハートビート最終送信日（1日1回制限用）
 export const DECK_EDIT_GRID_DENSITY_KEY =
   'mini_card_battle_deck_edit_grid_density';
 export const GALLERY_GRID_DENSITY_KEY = 'mini_card_battle_gallery_grid_density';

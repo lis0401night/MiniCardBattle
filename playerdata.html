@@ -302,6 +302,9 @@
                   <th class="p-2 md:p-3 text-center" style="min-width: 50px">
                     デッキ
                   </th>
+                  <th class="p-2 md:p-3 text-center" style="min-width: 100px">
+                    最終アクセス
+                  </th>
                 </tr>
               </thead>
               <tbody id="player-table-body" class="divide-y divide-slate-100">
@@ -838,6 +841,9 @@
                     : '<span class="text-[8px] font-bold text-slate-300 italic">未登録</span>'
                 }
               </td>
+              <td class="p-2 md:p-3 text-center">
+                <div class="text-[9px] font-bold text-slate-400">${p.lastAccessAt ? new Date(p.lastAccessAt * 1000).toLocaleDateString('ja-JP') : '-'}</div>
+              </td>
             </tr>`;
           })
           .join('');
@@ -894,7 +900,10 @@
               }
             </div>
           </div>
-          <div class="text-[9px] text-slate-600 text-right mt-2">最終更新: ${lastUpdate}</div>
+          <div class="flex justify-between text-[9px] text-slate-600 mt-2">
+            <span>最終アクセス: ${p.lastAccessAt ? new Date(p.lastAccessAt * 1000).toLocaleString('ja-JP') : '不明'}</span>
+            <span>最終更新: ${lastUpdate}</span>
+          </div>
         `;
       }
 

@@ -15,6 +15,7 @@ import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
+import { resolveValidIconId } from '../utils/constants/avatars.js';
 import {
   ownedPlaymats,
   setOwnedPlaymats,
@@ -1188,7 +1189,7 @@ export async function submitDefenseDeck(providedName = null) {
       body: JSON.stringify({
         uuid: getOrCreateUUID(),
         name: playerName,
-        icon: GameState.userProfile?.icon || 'player',
+        icon: resolveValidIconId(GameState.userProfile?.icon),
         character: GameState.playerConfig.id,
         stage: GameState.selectedStageId || 'plain',
         deck: sortedSelection.map((c) => ({

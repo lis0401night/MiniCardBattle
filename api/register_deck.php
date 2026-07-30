@@ -122,6 +122,8 @@ $player_data['stage'] = $stage;
 $player_data['deck'] = $deck;
 $player_data['skins'] = $skins;
 $player_data['timestamp'] = $timestamp;
+$player_data['registered'] = true;
+$player_data['lastAccessAt'] = $timestamp;
 
 $data_json = json_encode($player_data);
 $js_content = <<<EOT

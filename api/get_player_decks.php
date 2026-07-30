@@ -39,4 +39,4 @@ usort($players, function($a, $b) {
     return strcmp($b['timestamp'] ?? '', $a['timestamp'] ?? '');
 });
 
-echo json_encode(['success' => true, 'players' => $players]);
+echo json_encode(['success' => true, 'players' => $players, 'totalPlayerCount' => count($players)]);

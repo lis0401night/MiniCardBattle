@@ -15,6 +15,7 @@ import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import NewsBanner from '../components/common/NewsBanner.jsx';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
+import { isProfileDefault } from '../state/gameState.js';
 
 export default function ModeSelectScreen() {
   const images = UI_IMAGES || {};
@@ -37,6 +38,22 @@ export default function ModeSelectScreen() {
           }}
         >
           👤
+          {isProfileDefault() && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '14px',
+                height: '14px',
+                background: '#ef4444',
+                border: '2px solid white',
+                borderRadius: '50%',
+                zIndex: 10,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            />
+          )}
         </button>
 
         <button

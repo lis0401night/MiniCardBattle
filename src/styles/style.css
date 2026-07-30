@@ -492,9 +492,13 @@ h2 {
   z-index: 10;
 }
 
-.btn-gear,
-.btn-profile-menu {
+.btn-gear {
   position: static !important;
+  font-size: 1.5rem !important;
+}
+
+.btn-profile-menu {
+  position: relative !important;
   font-size: 1.5rem !important;
 }
 

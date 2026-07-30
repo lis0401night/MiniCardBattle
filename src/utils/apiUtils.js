@@ -1,4 +1,5 @@
 import { getOrCreateUUID, resolvePlayerName } from './gameUtils.js';
+import { resolveValidIconId } from './constants/avatars.js';
 import { GameState } from '../state/gameState.js';
 import { loadFortuneClearedData } from './constants/fortuneRewards.js';
 import {
@@ -12,6 +13,8 @@ import {
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
   DUNGEON_MAX_STREAK_KEY,
+  LAST_HEARTBEAT_KEY,
+  PROFILE_ICON_KEY,
 } from './constants/config.js';
 
 /**
@@ -234,7 +237,7 @@ export async function syncUserProfile(
       body: JSON.stringify({
         uuid,
         name,
-        icon,
+        icon: resolveValidIconId(icon),
         character,
         favoriteCard: favCardToSync,
       }),
@@ -310,5 +313,68 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
     return false;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * アプリ起動時のハートビートをサーバに送信します。
+ * プレイヤーの存在をサーバに登録し、最終アクセス日時を更新します。
+ * 1日1回制限: LocalStorageに最終送信日を保存し、同日中の重複送信を防止します。
+ *
+ * @returns {Promise<boolean>} 送信成功したかどうか（スキップ時もtrueを返す）
+ */
+export async function sendHeartbeat() {
+  try {
+    // 1日1回制限: 本日既に送信済みならスキップ
+    const today = new Date().toDateString();
+    const lastSent = localStorage.getItem(LAST_HEARTBEAT_KEY);
+    if (lastSent === today) {
+      return true;
+    }
+
+    const uuid = getOrCreateUUID();
+    if (!uuid) return false;
+
+    // プロフィール情報をLocalStorageから取得（不正値はデフォルトにフォールバック）
+    const name = resolvePlayerName();
+    const icon = resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY));
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch('api/heartbeat.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uuid, name, icon }),
+      keepalive: true,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(
+        `ハートビート送信に失敗しました。ステータス: ${response.status}`
+      );
+      return false;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      // 送信成功時に最終送信日を記録
+      localStorage.setItem(LAST_HEARTBEAT_KEY, today);
+      console.log(
+        `ハートビート送信成功${result.isNewPlayer ? '（新規プレイヤー登録）' : ''}`
+      );
+      return true;
+    }
+    return false;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.error('ハートビート送信がタイムアウトしました。');
+    } else {
+      console.error('ハートビート送信で通信エラーが発生しました:', err);
+    }
+    return false;
   }
 }

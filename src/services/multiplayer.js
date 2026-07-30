@@ -15,6 +15,7 @@ import { database } from '../utils/firebase.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
 import { showAlertModal } from './uiModals.js';
 import { PROFILE_ICON_KEY } from '../utils/constants/config.js';
+import { resolveValidIconId } from '../utils/constants/avatars.js';
 
 // 現在参加しているルームのID
 export let currentRoomId = null;
@@ -136,7 +137,7 @@ export async function createRoom(hostName) {
     host: {
       id: uuid,
       name: hostName || 'Player 1',
-      icon: localStorage.getItem(PROFILE_ICON_KEY) || 'player',
+      icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
       isReady: false,
       leaderConfig: null,
     },
@@ -182,7 +183,7 @@ export async function joinRoom(roomId, clientName) {
     client: {
       id: getOrCreateUUID(),
       name: clientName || 'Player 2',
-      icon: localStorage.getItem(PROFILE_ICON_KEY) || 'player',
+      icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
       isReady: false,
       leaderConfig: null,
     },

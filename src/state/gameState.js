@@ -10,11 +10,20 @@ import {
   DEFAULT_PLAYER_ICON,
 } from '../utils/constants/config.js';
 import { safeParseArray } from '../utils/gameUtils.js';
+import { resolveValidIconId } from '../utils/constants/avatars.js';
 
 const loadUserProfile = () => {
   try {
     const name = localStorage.getItem(PROFILE_NAME_KEY) || DEFAULT_PLAYER_NAME;
-    const icon = localStorage.getItem(PROFILE_ICON_KEY) || DEFAULT_PLAYER_ICON;
+    const rawIcon = localStorage.getItem(PROFILE_ICON_KEY);
+    const icon = resolveValidIconId(rawIcon);
+    // 不正なアイコンIDがLocalStorageに保存されていた場合、修正値で上書きする
+    if (rawIcon && rawIcon !== icon) {
+      console.warn(
+        `不正なアイコンID "${rawIcon}" を検出しました。"${icon}" に修正します。`
+      );
+      localStorage.setItem(PROFILE_ICON_KEY, icon);
+    }
     let favoriteCard = null;
     try {
       const rawFav = localStorage.getItem(FAVORITE_CARD_KEY);
@@ -150,10 +159,11 @@ export function saveUserProfile(profile) {
       typeof profile.name === 'string' && profile.name.trim()
         ? profile.name.trim()
         : currentProfile.name || DEFAULT_PLAYER_NAME,
-    icon:
+    icon: resolveValidIconId(
       typeof profile.icon === 'string' && profile.icon
         ? profile.icon
-        : currentProfile.icon || DEFAULT_PLAYER_ICON,
+        : currentProfile.icon
+    ),
     favoriteCard: favToSave,
   };
   GameState.userProfile = merged;
@@ -171,4 +181,18 @@ export function saveUserProfile(profile) {
   } catch (e) {
     console.error('Failed to save user profile:', e);
   }
+}
+
+/**
+ * プロフィールがデフォルト（未設定）状態かどうかを判定する。
+ * 名前とアイコンが共にデフォルト値の場合のみ true を返す。
+ *
+ * @returns {boolean} デフォルト状態の場合 true
+ */
+export function isProfileDefault() {
+  const profile = GameState.userProfile;
+  return (
+    (!profile.name || profile.name === DEFAULT_PLAYER_NAME) &&
+    (!profile.icon || profile.icon === DEFAULT_PLAYER_ICON)
+  );
 }

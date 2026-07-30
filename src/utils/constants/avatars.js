@@ -19,6 +19,12 @@ export const AVAILABLE_ICONS = [
 ];
 
 export const EXTRA_ICONS = [
+  // イベント解放
+  {
+    id: 'automata',
+    name: 'マキナ',
+    path: iconPath('automata'),
+  },
   // 高難易度
   {
     id: 'satan',
@@ -185,3 +191,27 @@ export const EXTRA_ICONS = [
     path: iconPath('automata_school'),
   },
 ];
+
+/**
+ * 全有効アイコンIDのセット（AVAILABLE_ICONS + EXTRA_ICONS から自動生成）。
+ * アイコンIDのバリデーションに使用します。
+ * @type {Set<string>}
+ */
+export const VALID_ICON_IDS = new Set([
+  ...AVAILABLE_ICONS.map((i) => i.id),
+  ...EXTRA_ICONS.map((i) => i.id),
+]);
+
+/**
+ * アイコンIDを検証し、不正な値の場合はデフォルトアイコン('player')にフォールバックします。
+ * サーバ送信やLocalStorage保存の前にアイコンIDを必ずこの関数を通して安全な値にすること。
+ *
+ * @param {string|null|undefined} iconId - 検証対象のアイコンID
+ * @returns {string} 有効なアイコンID（不正な場合は 'player'）
+ */
+export function resolveValidIconId(iconId) {
+  if (iconId && VALID_ICON_IDS.has(iconId)) {
+    return iconId;
+  }
+  return 'player';
+}

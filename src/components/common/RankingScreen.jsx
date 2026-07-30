@@ -59,6 +59,7 @@ export default function RankingScreen({
   tabs, // タブ定義の配列（省略可能）
 }) {
   const [rawPlayers, setRawPlayers] = useState([]);
+  const [totalPlayerCount, setTotalPlayerCount] = useState(0);
   const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error', 'empty'
   const [activeTabIndex, setActiveTabIndex] = useState(0);
 
@@ -220,6 +221,7 @@ export default function RankingScreen({
           }
 
           setRawPlayers(activePlayers);
+          setTotalPlayerCount(result.totalPlayerCount ?? activePlayers.length);
           setStatus('success');
         } else {
           throw new Error(result.error);
@@ -291,7 +293,7 @@ export default function RankingScreen({
             flexShrink: 0,
           }}
         >
-          総プレイヤー数: {players.length}人
+          総プレイヤー数: {totalPlayerCount}人
         </div>
       )}
       <div
