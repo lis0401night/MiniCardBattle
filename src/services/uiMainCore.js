@@ -9,6 +9,7 @@ import {
   DEFAULT_PLAYER_NAME,
   GAME_KEY_PREFIX,
   RELOAD_CACHE_CLEAR_TIMEOUT_MS,
+  APP_STATE_SELECT_ENEMY_DECK,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { STAGES } from '../utils/constants/stages.js';
@@ -549,7 +550,7 @@ export function goBackFromSelect() {
     switchScreen('screen-difficulty');
   } else if (
     GameState.appState === 'select_enemy' ||
-    GameState.appState === 'select_enemy_deck'
+    GameState.appState === APP_STATE_SELECT_ENEMY_DECK
   ) {
     navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'online_deck_edit') {
@@ -625,7 +626,7 @@ export function goBackFromStage() {
     // 防衛・オンラインのステージ選択画面からは、直前のデッキ編集画面へと戻る
     switchScreen('screen-deck-edit');
   } else if (GameState.gameMode === 'practice') {
-    navigateToDeckList('select_enemy_deck');
+    navigateToDeckList(APP_STATE_SELECT_ENEMY_DECK);
   } else if (GameState.gameMode === 'free') {
     navigateToDeckList('select_deck');
   } else {
@@ -1133,7 +1134,7 @@ export function confirmCharSelect() {
   ) {
     if (GameState.gameMode === 'practice') {
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
-      GameState.appState = 'select_enemy_deck';
+      GameState.appState = APP_STATE_SELECT_ENEMY_DECK;
       if (window.forceUpdateDeckList) window.forceUpdateDeckList();
       return;
     } else if (GameState.gameMode === 'story') {
@@ -1262,7 +1263,7 @@ export function confirmCharSelect() {
       initSelectScreen(false);
       switchScreen('screen-select');
     }
-  } else if (GameState.appState === 'select_enemy_deck') {
+  } else if (GameState.appState === APP_STATE_SELECT_ENEMY_DECK) {
     GameState.enemyConfig = { ...CHARACTERS[GameState.pendingCharId] };
     const enemyDeckData = GameState.decks[GameState.practiceEnemyDeckIndex];
     const skinIdToUse =

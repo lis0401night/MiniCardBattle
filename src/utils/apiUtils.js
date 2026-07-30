@@ -17,6 +17,34 @@ import {
   PROFILE_ICON_KEY,
 } from './constants/config.js';
 
+/** API通信のデフォルトタイムアウト時間 (ms) */
+const API_TIMEOUT_MS = 3000;
+
+/** ハートビート送信のタイムアウト時間 (ms) */
+const HEARTBEAT_TIMEOUT_MS = 5000;
+
+/** 防衛戦結果送信のタイムアウト時間 (ms) */
+const DEFENSE_RECORD_TIMEOUT_MS = 4000;
+
+/**
+ * タイムアウト付きでfetchを実行する共通ヘルパー。
+ * 指定時間内にレスポンスが返らない場合、AbortErrorをスローします。
+ *
+ * @param {string} url - リクエスト先URL
+ * @param {RequestInit} options - fetchオプション
+ * @param {number} [timeoutMs=API_TIMEOUT_MS] - タイムアウト時間（ミリ秒）
+ * @returns {Promise<Response>} fetchレスポンス
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 /**
  * プレイヤーのポイント情報をサーバーへ同期・送信します。
  * 各種交換所（挑戦、防衛、夢幻など）の共通API同期処理を共通化。
@@ -37,10 +65,7 @@ export function savePointsToServer(
 
     const playerName = resolvePlayerName();
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-    return fetch(`api/${endpoint}`, {
+    return fetchWithTimeout(`api/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -50,11 +75,9 @@ export function savePointsToServer(
         total_points: totalPoints,
         ...extraBody,
       }),
-      keepalive: true, // 画面遷移やアンマウント後も通信を裏で維持する
-      signal: controller.signal,
+      keepalive: true,
     })
       .then((res) => {
-        clearTimeout(timeoutId);
         if (!res.ok) {
           console.error(
             `サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`
@@ -68,7 +91,6 @@ export function savePointsToServer(
         }
       })
       .catch((err) => {
-        clearTimeout(timeoutId);
         if (err.name === 'AbortError') {
           console.error(
             `サーバーへのポイント同期（${endpoint}）がタイムアウトしました。`
@@ -92,22 +114,13 @@ export function savePointsToServer(
  * @returns {Promise<Object>} APIレスポンスオブジェクト
  */
 export async function fetchPlayerDecks() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-  try {
-    const response = await fetch(`api/get_player_decks.php?t=${Date.now()}`, {
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch player decks. Status: ${response.status}`
-      );
-    }
-    return await response.json();
-  } finally {
-    clearTimeout(timeoutId);
+  const response = await fetchWithTimeout(
+    `api/get_player_decks.php?t=${Date.now()}`
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to fetch player decks. Status: ${response.status}`);
   }
+  return await response.json();
 }
 
 /**
@@ -221,9 +234,6 @@ export async function syncUserProfile(
 ) {
   if (!uuid) return false;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000);
-
   try {
     // undefinedの場合のみ既存値にフォールバック（nullは解除を意味する）
     const favCardToSync =
@@ -231,7 +241,7 @@ export async function syncUserProfile(
         ? favoriteCard
         : GameState.userProfile?.favoriteCard || null;
 
-    const response = await fetch('api/update_profile.php', {
+    const response = await fetchWithTimeout('api/update_profile.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -241,7 +251,6 @@ export async function syncUserProfile(
         character,
         favoriteCard: favCardToSync,
       }),
-      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -266,8 +275,6 @@ export async function syncUserProfile(
       );
     }
     return false;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -281,26 +288,26 @@ export async function syncUserProfile(
 export async function recordDefenseBattleToServer(targetUuid, data) {
   if (!targetUuid) return false;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
-
   try {
-    const response = await fetch('api/record_defense_battle.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        target_uuid: targetUuid,
-        attacker_uuid: data.attackerUuid || getOrCreateUUID(),
-        attacker_name: data.attackerName,
-        attacker_character: data.attackerCharacter,
-        attacker_skin: data.attackerSkin || 'default',
-        attacker_total_points: data.attackerTotalPoints,
-        attacker_deck: data.attackerDeck,
-        result: data.result,
-      }),
-      keepalive: true,
-      signal: controller.signal,
-    });
+    const response = await fetchWithTimeout(
+      'api/record_defense_battle.php',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_uuid: targetUuid,
+          attacker_uuid: data.attackerUuid || getOrCreateUUID(),
+          attacker_name: data.attackerName,
+          attacker_character: data.attackerCharacter,
+          attacker_skin: data.attackerSkin || 'default',
+          attacker_total_points: data.attackerTotalPoints,
+          attacker_deck: data.attackerDeck,
+          result: data.result,
+        }),
+        keepalive: true,
+      },
+      DEFENSE_RECORD_TIMEOUT_MS
+    );
 
     if (!response.ok) {
       console.error(`Record defense battle failed. Status: ${response.status}`);
@@ -311,8 +318,6 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
   } catch (err) {
     console.error('Failed to record defense battle to server:', err);
     return false;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -339,18 +344,16 @@ export async function sendHeartbeat() {
     const name = resolvePlayerName();
     const icon = resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY));
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch('api/heartbeat.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uuid, name, icon }),
-      keepalive: true,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
+    const response = await fetchWithTimeout(
+      'api/heartbeat.php',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid, name, icon }),
+        keepalive: true,
+      },
+      HEARTBEAT_TIMEOUT_MS
+    );
 
     if (!response.ok) {
       console.error(

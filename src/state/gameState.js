@@ -18,7 +18,7 @@ const loadUserProfile = () => {
     const rawIcon = localStorage.getItem(PROFILE_ICON_KEY);
     const icon = resolveValidIconId(rawIcon);
     // 不正なアイコンIDがLocalStorageに保存されていた場合、修正値で上書きする
-    if (rawIcon && rawIcon !== icon) {
+    if (rawIcon !== null && rawIcon !== icon) {
       console.warn(
         `不正なアイコンID "${rawIcon}" を検出しました。"${icon}" に修正します。`
       );

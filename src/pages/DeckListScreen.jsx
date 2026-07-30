@@ -21,6 +21,7 @@ import {
   MAX_DECK_SLOTS,
   STORY_BANNED_LEADER_IDS,
   TOURNAMENT_BANNED_LEADER_IDS,
+  APP_STATE_SELECT_ENEMY_DECK,
   appendVersionQuery,
 } from '../utils/constants/config.js';
 
@@ -148,7 +149,7 @@ export default function DeckListScreen({ switchScreen }) {
   const handleSelectDeck = (index) => {
     playSound?.(SOUNDS?.seClick);
 
-    if (GameState.appState === 'select_enemy_deck') {
+    if (GameState.appState === APP_STATE_SELECT_ENEMY_DECK) {
       GameState.pendingCharId = GameState.decks[index].leaderId;
       GameState.practiceEnemyDeckIndex = index;
       confirmCharSelect?.();
@@ -466,7 +467,7 @@ export default function DeckListScreen({ switchScreen }) {
       onPointerCancel={handleGlobalPointerUp}
     >
       <h2 style={{ color: '#facc15', marginBottom: '5px' }}>
-        {GameState.appState === 'select_enemy_deck'
+        {GameState.appState === APP_STATE_SELECT_ENEMY_DECK
           ? '相手のデッキ'
           : 'デッキ一覧'}
       </h2>
@@ -723,7 +724,7 @@ export default function DeckListScreen({ switchScreen }) {
                                   // select_enemy_deck（練習モードの敵デッキ選択）時は自分のデッキではないため禁止
                                   const canChangeLeader =
                                     GameState.appState !==
-                                      'select_enemy_deck' &&
+                                      APP_STATE_SELECT_ENEMY_DECK &&
                                     !LEADER_CHANGE_BLOCKED_MODES.includes(
                                       GameState.gameMode
                                     );

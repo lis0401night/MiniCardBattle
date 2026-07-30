@@ -5,6 +5,11 @@ export const GAME_VERSION = '0.2.6.6';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
+
+// TODO: appStateの全状態名（title, select_deck, battle, pre_dialogue 等）を
+// 一括定数化し、文字列リテラルの直接比較を排除する
+/** appState: 練習モードの敵デッキ選択状態 */
+export const APP_STATE_SELECT_ENEMY_DECK = 'select_enemy_deck';
 export const VERSION_CHECK_TIMEOUT_MS = 3000; // バージョン自動チェック時のAbortタイムアウト時間 (ms)
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;
