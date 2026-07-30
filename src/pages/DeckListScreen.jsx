@@ -711,10 +711,27 @@ export default function DeckListScreen({ switchScreen }) {
                                   return;
                                 playSound?.(SOUNDS?.seClick);
                                 if (window.showCharDetailModal) {
+                                  // リーダー変更を許可しないモード一覧
+                                  // battle_dungeon: 試練の宮殿ではリーダーはダンジョン進行中固定
+                                  // tournament: トーナメント進行中はリーダー固定
+                                  // story: ストーリー進行中はリーダー固定（変更するとデッキが使用不可になる）
+                                  const LEADER_CHANGE_BLOCKED_MODES = [
+                                    'battle_dungeon',
+                                    'tournament',
+                                    'story',
+                                  ];
+                                  // select_enemy_deck（練習モードの敵デッキ選択）時は自分のデッキではないため禁止
+                                  const canChangeLeader =
+                                    GameState.appState !==
+                                      'select_enemy_deck' &&
+                                    !LEADER_CHANGE_BLOCKED_MODES.includes(
+                                      GameState.gameMode
+                                    );
                                   window.showCharDetailModal({
                                     ...char,
                                     hideDecideButton: true,
                                     targetDeckIndex: idx,
+                                    allowLeaderChange: canChangeLeader,
                                   });
                                 }
                               }}
