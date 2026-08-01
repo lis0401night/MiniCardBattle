@@ -22,7 +22,11 @@ const loadUserProfile = () => {
       console.warn(
         `不正なアイコンID "${rawIcon}" を検出しました。"${icon}" に修正します。`
       );
-      localStorage.setItem(PROFILE_ICON_KEY, icon);
+      try {
+        localStorage.setItem(PROFILE_ICON_KEY, icon);
+      } catch (storageError) {
+        console.error('Failed to normalize profile icon:', storageError);
+      }
     }
     let favoriteCard = null;
     try {
@@ -78,6 +82,7 @@ export const GameState = {
   aiLevel: 1,
   storyDifficulty: 1,
   isProcessing: false,
+  isAIThinking: false, // AIのシミュレーション計算中のみtrue（「思考中」UI表示用）
   selectedCardIndex: null,
   fortuneHandicaps: (() => {
     try {

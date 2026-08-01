@@ -483,7 +483,7 @@ export default function BattleScreen() {
                     : GameState.currentTurn === 'player'
                       ? 'YOUR TURN'
                       : GameState.currentTurn === 'enemy'
-                        ? !GameState.isProcessing
+                        ? GameState.isAIThinking
                           ? '思考中・・・'
                           : 'ENEMY TURN'
                         : ''}

@@ -58,6 +58,7 @@ $content = $fileSize > 0 ? fread($fp, $fileSize) : '';
 
 $player_data = [];
 $isNewPlayer = true;
+$isCorrupted = false;
 
 if ($fileSize > 0) {
     if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
@@ -65,8 +66,21 @@ if ($fileSize > 0) {
         if ($existing_data) {
             $player_data = $existing_data;
             $isNewPlayer = false;
+        } else {
+            $isCorrupted = true;
         }
+    } else {
+        $isCorrupted = true;
     }
+}
+
+// 既存ファイルが破損している場合はデフォルト値で上書きせず、エラーを返して処理を中断する
+// （heartbeatは自動送信されるため、破損時の上書きはプレイヤーの進行データ消失に直結する）
+if ($isCorrupted) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    echo json_encode(['success' => false, 'error' => 'Existing player data is corrupted']);
+    exit;
 }
 
 $timestamp = time();
