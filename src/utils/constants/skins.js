@@ -290,8 +290,7 @@ export const buildSkinId = (charId, skinType) => `${charId}_${skinType}`;
  * @param {string} skinType - スキンタイプ
  * @returns {string} プレイマットID（例: 'pm_android_summer'）
  */
-export const buildPlaymatId = (charId, skinType) =>
-  `pm_${charId}_${skinType}`;
+export const buildPlaymatId = (charId, skinType) => `pm_${charId}_${skinType}`;
 
 /**
  * スキンマスタから特定キャラクターの全スキン名マップを取得する
