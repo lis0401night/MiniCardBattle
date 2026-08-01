@@ -5,7 +5,7 @@
  * 基本プレイマットは手書きで定義し、スキン系プレイマットは
  * スキンマスタ（skins.js）から自動生成する。
  */
-import { SKIN_MASTER } from './skins.js';
+import { SKIN_MASTER, buildPlaymatId } from './skins.js';
 
 // ---------------------------------------------------------------------------
 // 基本プレイマット（キャラクターごと + デフォルト）
@@ -105,30 +105,11 @@ function generateSkinPlaymats(skinMaster) {
   /** @type {Array<Object>} */
   const playmats = [];
 
-  // スキンタイプごとのプレイマットIDプレフィックス対応
-  const skinTypeConfig = {
-    summer: {
-      /** @param {string} charId */
-      getId: (charId) => `pm_${charId}_summer`,
-    },
-    school: {
-      /** @param {string} charId */
-      getId: (charId) => `pm_${charId}_school`,
-    },
-    high: {
-      /** @param {string} charId */
-      getId: (charId) => `pm_${charId}_high`,
-    },
-  };
-
-  for (const [skinType, config] of Object.entries(skinTypeConfig)) {
-    const skins = skinMaster[skinType];
-    if (!skins) continue;
-
+  for (const [skinType, skins] of Object.entries(skinMaster)) {
     for (const [charId, skinData] of Object.entries(skins)) {
       if (!skinData.playmat) continue;
       playmats.push({
-        id: config.getId(charId),
+        id: buildPlaymatId(charId, skinType),
         name: skinData.name,
         image: skinData.playmat,
       });

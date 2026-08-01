@@ -4,7 +4,12 @@
  * characters.js から分離したスキン固有の台詞データ。
  * applySkinDialogues() を呼び出すことで、CHARACTERS オブジェクトの
  * 各キャラクターの skins プロパティに台詞を注入する。
+ *
+ * キー生成ルールは skins.js の SKIN_KEY_MAP を共有し、
+ * characters.js と本ファイル間での不整合を防止する。
  */
+
+import { SKIN_KEY_MAP } from './skins.js';
 
 // ===========================================================================
 // 水着スキン台詞
@@ -80,6 +85,13 @@ const SUMMER_DIALOGUES = {
     win: '……冷たい水に流されたな……。静かに沈むといい……。',
     lose: '……水を含んだ砂は……重い……。',
     skill: '……水底の静寂。波に飲まれろ……！',
+  },
+  automata: {
+    intro:
+      '……海、か。姉妹たちは塩水を嫌がるけど……たまには、こういう場所も悪くないわ。邪魔するなら、容赦しないけど。',
+    win: '……潮風が、錆びた心まで洗い流してくれるみたい。少しだけ……気分がいいわ。',
+    lose: '塩水が……関節部に……浸入して……動けない……っ！',
+    skill: '波の力を借りるわ！ 姉妹たちよ、海流に乗って押し潰しなさい！',
   },
 };
 
@@ -204,7 +216,7 @@ const HIGH_DIALOGUES = {
       '光などとうの昔に捨てた……。この魔剣の闇で、全てを黒く塗りつぶしてくれる！',
     win: '絶望に染まり、消え去るが良い……フフフ……。',
     lose: 'この私が……魔剣の闇の力に呑まれたというのか……！',
-    skill: '魔剣よ, 全てを侵食せよ！ 闇の軍勢となりて我に続け！',
+    skill: '魔剣よ、全てを侵食せよ！ 闇の軍勢となりて我に続け！',
   },
   cthulhu: {
     intro:
@@ -218,7 +230,7 @@ const HIGH_DIALOGUES = {
       '記憶の赴くままに……。共に行こう、ヴォイテク！ 私達の力を見せる時よ！',
     win: 'これが私の新しい力……！ ヴォイテク、あなたのおかげね。',
     lose: 'ヴォイテク、ごめんなさい……。まだ私には……。',
-    skill: '私とヴォイテクの連携……見切れるかしら！ ',
+    skill: '私とヴォイテクの連携……見切れるかしら！',
   },
   cleric: {
     intro:
@@ -269,29 +281,23 @@ const HIGH_DIALOGUES = {
  * @returns {void}
  */
 export function applySkinDialogues(CHARACTERS) {
-  // スキンタイプと台詞データ、およびスキンキー生成関数の対応表
+  // スキンタイプと台詞データの対応表（キー生成は SKIN_KEY_MAP に集約）
   const skinDialogueMap = [
-    {
-      dialogues: SUMMER_DIALOGUES,
-      getSkinKey: () => 'summer',
-    },
-    {
-      dialogues: SCHOOL_DIALOGUES,
-      getSkinKey: () => 'school',
-    },
-    {
-      dialogues: HIGH_DIALOGUES,
-      getSkinKey: (charId) => `${charId}_high`,
-    },
+    { skinType: 'summer', dialogues: SUMMER_DIALOGUES },
+    { skinType: 'school', dialogues: SCHOOL_DIALOGUES },
+    { skinType: 'high', dialogues: HIGH_DIALOGUES },
   ];
 
-  for (const { dialogues, getSkinKey } of skinDialogueMap) {
+  for (const { skinType, dialogues } of skinDialogueMap) {
+    const getKeyInfo = SKIN_KEY_MAP[skinType];
+    if (!getKeyInfo) continue;
+
     for (const [charId, dialogue] of Object.entries(dialogues)) {
       const char = CHARACTERS[charId];
       if (!char || !char.skins) continue;
 
-      const skinKey = getSkinKey(charId);
-      const skin = char.skins[skinKey];
+      const { key } = getKeyInfo(charId);
+      const skin = char.skins[key];
       if (skin) {
         skin.dialogue = dialogue;
       }

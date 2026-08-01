@@ -1,6 +1,8 @@
 /**
  * Mini Card Battle - Game Configuration
  */
+import { SKIN_MASTER, buildSkinId, buildPlaymatId } from './skins.js';
+
 export const GAME_VERSION = '0.2.7';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
@@ -101,8 +103,6 @@ export const EXCHANGE_LINEUP = [
 // 交換所ラインナップ生成ヘルパー
 // ---------------------------------------------------------------------------
 
-import { SKIN_MASTER } from './skins.js';
-
 /**
  * スキンマスタから特定のスキンタイプの交換所アイテムを自動生成する。
  * スキン・プレイマット・アイコンの3種を一括生成する。
@@ -120,7 +120,7 @@ function generateSkinExchangeItems(skinType, costs) {
   // スキン商品
   for (const [charId, skinData] of Object.entries(skins)) {
     items.push({
-      id: `${charId}_${skinType}`,
+      id: buildSkinId(charId, skinType),
       type: 'skin',
       charId,
       name: skinData.name,
@@ -132,7 +132,7 @@ function generateSkinExchangeItems(skinType, costs) {
   // プレイマット商品
   for (const [charId, skinData] of Object.entries(skins)) {
     items.push({
-      id: `pm_${charId}_${skinType}`,
+      id: buildPlaymatId(charId, skinType),
       type: 'playmat',
       name: skinData.name,
       description: skinData.description || '',
@@ -143,7 +143,7 @@ function generateSkinExchangeItems(skinType, costs) {
   // アイコン商品
   for (const [charId, skinData] of Object.entries(skins)) {
     items.push({
-      id: `${charId}_${skinType}`,
+      id: buildSkinId(charId, skinType),
       type: 'icon',
       name: skinData.name,
       description: skinData.description || '',

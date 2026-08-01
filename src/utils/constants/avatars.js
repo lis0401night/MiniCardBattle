@@ -1,4 +1,4 @@
-import { SKIN_MASTER } from './skins.js';
+import { SKIN_MASTER, buildSkinId } from './skins.js';
 
 /**
  * アイコン画像パスを生成するヘルパー
@@ -62,28 +62,9 @@ function generateSkinIcons(skinMaster) {
   /** @type {Array<{id: string, name: string, path: string}>} */
   const icons = [];
 
-  // スキンタイプごとのアイコンIDプレフィックスとサフィックスの対応
-  const skinTypeConfig = {
-    high: {
-      /** @param {string} charId */
-      getId: (charId) => `${charId}_high`,
-    },
-    summer: {
-      /** @param {string} charId */
-      getId: (charId) => `${charId}_summer`,
-    },
-    school: {
-      /** @param {string} charId */
-      getId: (charId) => `${charId}_school`,
-    },
-  };
-
-  for (const [skinType, config] of Object.entries(skinTypeConfig)) {
-    const skins = skinMaster[skinType];
-    if (!skins) continue;
-
+  for (const [skinType, skins] of Object.entries(skinMaster)) {
     for (const [charId, skinData] of Object.entries(skins)) {
-      const id = config.getId(charId);
+      const id = buildSkinId(charId, skinType);
       icons.push({
         id,
         name: skinData.name,

@@ -264,6 +264,36 @@ export const SKIN_TYPE_INFO = {
 };
 
 /**
+ * スキンタイプごとのキー・ID生成マップ。
+ * characters.js と skinDialogues.js の両方で共有し、
+ * キー生成ルールの重複・不整合を防止する。
+ *
+ * @type {Object<string, (charId: string) => { key: string, id: string }>}
+ */
+export const SKIN_KEY_MAP = {
+  summer: (_charId) => ({ key: 'summer', id: 'summer' }),
+  school: (_charId) => ({ key: 'school', id: 'school' }),
+  high: (charId) => ({ key: `${charId}_high`, id: `${charId}_high` }),
+};
+
+/**
+ * スキンID（アイコンID・交換所IDと共通）を生成する
+ * @param {string} charId - キャラクターID
+ * @param {string} skinType - スキンタイプ
+ * @returns {string} スキンID（例: 'android_summer'）
+ */
+export const buildSkinId = (charId, skinType) => `${charId}_${skinType}`;
+
+/**
+ * プレイマットIDを生成する
+ * @param {string} charId - キャラクターID
+ * @param {string} skinType - スキンタイプ
+ * @returns {string} プレイマットID（例: 'pm_android_summer'）
+ */
+export const buildPlaymatId = (charId, skinType) =>
+  `pm_${charId}_${skinType}`;
+
+/**
  * スキンマスタから特定キャラクターの全スキン名マップを取得する
  * @param {string} charId - キャラクターID
  * @returns {Object<string, string>} { skinType: name } のマップ

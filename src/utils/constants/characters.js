@@ -3,7 +3,7 @@
  */
 import { appendVersionQuery } from './config.js';
 import { LEADER_SKILLS } from './leaderSkills.js';
-import { SKIN_MASTER } from './skins.js';
+import { SKIN_MASTER, SKIN_KEY_MAP } from './skins.js';
 import { applySkinDialogues } from './skinDialogues.js';
 
 export const CHARACTERS = {
@@ -1087,17 +1087,7 @@ export const CHARACTERS = {
   },
 };
 
-// --- スキン定義（SKIN_MASTER から自動生成） ---
-// スキンタイプとキャラクターの skins キー生成関数の対応表
-const SKIN_TYPE_KEY_MAP = {
-  summer: (_charId) => ({ key: 'summer', id: 'summer' }),
-  school: (_charId) => ({ key: 'school', id: 'school' }),
-  high: (charId) => ({
-    key: `${charId}_high`,
-    id: `${charId}_high`,
-  }),
-};
-
+// --- スキン定義（SKIN_MASTER + SKIN_KEY_MAP から自動生成） ---
 Object.values(CHARACTERS).forEach((char) => {
   // デフォルトスキンの生成
   char.skins = {
@@ -1111,8 +1101,8 @@ Object.values(CHARACTERS).forEach((char) => {
     },
   };
 
-  // SKIN_MASTER から各スキンタイプを自動生成
-  for (const [skinType, getKeyInfo] of Object.entries(SKIN_TYPE_KEY_MAP)) {
+  // SKIN_MASTER から各スキンタイプを自動生成（キー生成は SKIN_KEY_MAP に集約）
+  for (const [skinType, getKeyInfo] of Object.entries(SKIN_KEY_MAP)) {
     const skinData = SKIN_MASTER[skinType]?.[char.id];
     if (!skinData) continue;
 
@@ -1128,6 +1118,7 @@ Object.values(CHARACTERS).forEach((char) => {
       ...(skinData.unlockCondition && {
         unlockCondition: skinData.unlockCondition,
       }),
+      ...(skinData.description && { description: skinData.description }),
     };
   }
 });
