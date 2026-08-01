@@ -13,7 +13,7 @@ export default [
   'motorcycle',
   'detective',
   'detective',
-  'detective',
+  'employee',
   'employee',
   'employee',
   'employee',
