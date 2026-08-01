@@ -11,6 +11,8 @@ import { isGraveKeeperActive } from './engine.js';
 import { GameState } from '../state/gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 
+import { updateBattleUIHook } from '../services/uiBattle.js';
+
 /**
  * ミニカードバトル - 敵AIロジック（シミュレーション・オーバーホール版）
  */
@@ -23,6 +25,7 @@ export async function executeEnemyAI() {
 
   GameState.isProcessing = true;
   GameState.isAIThinking = true; // 「思考中・・・」UI表示開始
+  if (updateBattleUIHook) updateBattleUIHook();
   try {
     await sleep(AI_THINKING_DURATION);
 
@@ -135,6 +138,7 @@ export async function executeEnemyAI() {
         GameState.aiDecision = getNormalDecision();
       }
       GameState.isAIThinking = false; // シミュレーション計算完了、「思考中」UI表示終了
+      if (updateBattleUIHook) updateBattleUIHook();
       decision = GameState.aiDecision;
 
       // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
@@ -188,6 +192,7 @@ export async function executeEnemyAI() {
     console.error('AI Error:', e);
   } finally {
     GameState.isAIThinking = false; // 例外発生時もフラグを確実にリセット
+    if (updateBattleUIHook) updateBattleUIHook();
     if (!GameState.isBattleEnded) {
       try {
         // 【CodeRabbit指摘反映】競合防止のため、非同期のターン終了処理（endTurnLogic）が完全に完了した後に処理中フラグを解除する
