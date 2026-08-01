@@ -1247,6 +1247,24 @@ export function checkIsFreeMode(
 }
 
 /**
+ * 指定されたゲームモードがバトルボーナス（ミッション）機能の対象であるかどうかを判定します。
+ * ストーリーモード、フリー対戦、および高難易度イベントモードが対象となります。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} バトルボーナス対象モードであるか
+ */
+export function checkIsMissionEligible(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  if (!gameMode) return false;
+  // 各ゲームモードの判定ヘルパー関数を組み合わせて、対象モードかどうかを判定する
+  return (
+    checkIsStoryMode(gameMode) ||
+    checkIsFreeMode(gameMode) ||
+    checkIsHighDiffMode(gameMode)
+  );
+}
+
+/**
  * 指定されたゲームモードが勝ち抜き組手（トーナメント）モードであるかどうかを判定します。
  * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
  * @returns {boolean} トーナメントモードであるか

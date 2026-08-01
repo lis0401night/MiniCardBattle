@@ -1,4 +1,14 @@
 import { hasSkill } from '../utils/gameUtils.js';
+import { DAMAGE_PLAYER_SKILL_IDS } from '../utils/constants/skills.js';
+import { DAMAGE_PLAYER_LEADER_SKILL_ACTIONS } from '../utils/constants/leaderSkills.js';
+
+/**
+ * 相手リーダーに直接ダメージを与える純粋な攻撃スキル・リーダースキルの発生源ID一覧
+ */
+const PURE_ATTACK_SKILL_SOURCES = [
+  ...DAMAGE_PLAYER_SKILL_IDS,
+  ...DAMAGE_PLAYER_LEADER_SKILL_ACTIONS,
+];
 
 /**
  * ボーナスの進捗をトラッキングするためのイベントハンドラ
@@ -46,8 +56,11 @@ export function scanMissionEvents(state, events) {
 
       // 初めて敵HPが0以下になった（致死ダメージ）タイミングで、その発生源を記録
       if (virtualEnemyHP <= 0 && !fatalDamageLogged) {
-        state.missionProgress.lastDamageSource =
-          ev.source === 'direct_attack' ? 'attack' : 'skill';
+        // 戦闘波及（一掃・貫通）や身代わり（憑依）ではなく、純粋な攻撃スキル・リーダースキルによるダメージであるかを判定
+        const isPureSkill = PURE_ATTACK_SKILL_SOURCES.includes(ev.source);
+        state.missionProgress.lastDamageSource = isPureSkill
+          ? 'skill'
+          : 'attack';
         fatalDamageLogged = true;
       }
     }

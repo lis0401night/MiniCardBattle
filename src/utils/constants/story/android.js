@@ -596,7 +596,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はマリア。ほう、随分と頑丈そうな鉄の塊じゃない。',
+          text: '私はマリア。へえ、随分と頑丈そうな鉄の塊じゃない。',
         },
         {
           speaker: 'enemy',

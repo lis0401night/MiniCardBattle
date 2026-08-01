@@ -29,7 +29,7 @@ export const CHALLENGE_MISSIONS = [
   },
   {
     id: 'win_by_skill',
-    name: '攻撃以外のダメージで勝利',
+    name: 'ダメージを与えるスキル・リーダースキルで勝利',
     points: 1,
     timing: 'end',
   },

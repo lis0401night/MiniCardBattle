@@ -3,7 +3,7 @@ import BackButton from '../components/BackButton.jsx';
 import { clearStoryProgress, resumeStoryProgress } from '../game/story';
 import { goBackFromSelect } from '../services/uiMainCore';
 import { showConfirmModal } from '../services/uiModals.js';
-import { CHARACTERS } from '../utils/constants/characters';
+import { CHARACTERS, getIconFramePath } from '../utils/constants/characters';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
@@ -157,26 +157,17 @@ export default function StoryResumeScreen() {
                     minWidth: '250px',
                   }}
                 >
-                  <div
-                    className={pConf.rarity === 4 ? 'rarity-4-border' : ''}
-                    style={{
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: `2px solid ${getRarityColor(pConf.rarity)}`,
-                      flexShrink: 0,
-                    }}
-                  >
+                  {/* 他モードと統一されたアイコンフレーム付きリーダー表示 */}
+                  <div className="banner-icon-wrapper" style={{ margin: 0 }}>
                     <img
                       src={pConf.icon || pConf.image}
+                      className="banner-icon"
                       alt={pConf.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        borderRadius: '50%',
-                      }}
+                    />
+                    <img
+                      src={getIconFramePath(pConf.id)}
+                      className="banner-icon-frame"
+                      alt="frame"
                     />
                   </div>
                   <div style={{ textAlign: 'left' }}>

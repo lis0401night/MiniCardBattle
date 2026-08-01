@@ -18,6 +18,7 @@ import {
   hydratePlayerConfig,
 } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { CHARACTERS, getIconFramePath } from '../utils/constants/characters.js';
 import {
   appendVersionQuery,
   DEFAULT_DUNGEON_AI_LEVEL,
@@ -410,28 +411,44 @@ function ResumeSelect() {
                 minWidth: '250px',
               }}
             >
-              <div
-                className={pConf.rarity === 4 ? 'rarity-4-border' : ''}
-                style={{
-                  width: '50px',
-                  height: '50px',
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  border: `2px solid ${getRarityColor(pConf.rarity)}`,
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  src={pConf.icon || pConf.image}
-                  alt={pConf.name}
+              {/* カードリーダーは従来表示、キャラクターリーダーは統一アイコンフレーム付き表示 */}
+              {!!pConf.leaderCardId || !CHARACTERS[pConf.id] ? (
+                <div
+                  className={pConf.rarity === 4 ? 'rarity-4-border' : ''}
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
+                    width: '50px',
+                    height: '50px',
                     borderRadius: '50%',
+                    overflow: 'hidden',
+                    border: `2px solid ${getRarityColor(pConf.rarity)}`,
+                    flexShrink: 0,
                   }}
-                />
-              </div>
+                >
+                  <img
+                    src={pConf.icon || pConf.image}
+                    alt={pConf.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="banner-icon-wrapper" style={{ margin: 0 }}>
+                  <img
+                    src={pConf.icon || pConf.image}
+                    className="banner-icon"
+                    alt={pConf.name}
+                  />
+                  <img
+                    src={getIconFramePath(pConf.id)}
+                    className="banner-icon-frame"
+                    alt="frame"
+                  />
+                </div>
+              )}
               <div style={{ textAlign: 'left' }}>
                 <div
                   className={pConf.rarity === 4 ? 'rarity-4-text' : ''}

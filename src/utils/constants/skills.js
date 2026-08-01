@@ -196,7 +196,7 @@ export const SKILLS = {
     name: '貫通',
     icon: '🔱',
     desc: () =>
-      '攻撃時、自身のパワーの差分だけ相手リーダーにダメージを与える。',
+      '攻撃時、自身のパワーの差分だけ相手リーダーに戦闘ダメージを与える。',
   },
   explode: {
     name: '誘爆',
@@ -626,7 +626,7 @@ export const SKILLS = {
     name: '一掃',
     icon: '🧹',
     desc: () =>
-      '攻撃時、肩代わりを無視して正面とその隣のレーンに分散してダメージを与える。（左>中央>右優先）',
+      '攻撃時、肩代わりを無視して正面とその隣のレーンに分散して戦闘ダメージを与える。（左>中央>右優先）',
   },
   leap: {
     name: '跳躍',
@@ -1052,3 +1052,9 @@ export const SKILL_CATEGORIES = [
     ],
   },
 ];
+
+/**
+ * 相手リーダーに直接ダメージを与えるカードスキルID一覧定数
+ * バトルボーナス「攻撃以外のダメージで勝利 (win_by_skill)」の判定等で使用されます。
+ */
+export const DAMAGE_PLAYER_SKILL_IDS = ['artillery', 'decree', 'fate'];

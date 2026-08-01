@@ -18,6 +18,7 @@ import {
   CHARACTERS,
   getSkinImage,
   getPlayerIconPath,
+  getIconFramePath,
 } from '../utils/constants/characters.js';
 import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -423,17 +424,24 @@ export default function OnlineLobbyScreen() {
           }}
         >
           <div
-            style={{
-              width: '48px',
-              height: '48px',
-              flexShrink: 0,
-              borderRadius: '50%',
-              border: '2px solid #38bdf8',
-              background: myIcon
-                ? `url('${myIcon}') center/cover`
-                : 'rgba(0,0,0,0.5)',
-            }}
-          />
+            className="banner-icon-wrapper"
+            style={{ width: '48px', height: '48px', margin: 0 }}
+          >
+            <img
+              src={myIcon || getPlayerIconPath({ icon: 'player' })}
+              className="banner-icon"
+              alt={myName}
+            />
+            <img
+              src={getIconFramePath(
+                myData?.leaderConfig?.character ||
+                  myData?.leaderConfig?.id ||
+                  'android'
+              )}
+              className="banner-icon-frame"
+              alt="frame"
+            />
+          </div>
           <div style={{ flex: 1 }}>
             <div
               style={{
@@ -530,17 +538,24 @@ export default function OnlineLobbyScreen() {
           }}
         >
           <div
-            style={{
-              width: '48px',
-              height: '48px',
-              flexShrink: 0,
-              borderRadius: '50%',
-              border: '2px solid #ef4444',
-              background: opIcon
-                ? `url('${opIcon}') center/cover`
-                : 'rgba(0,0,0,0.5)',
-            }}
-          />
+            className="banner-icon-wrapper"
+            style={{ width: '48px', height: '48px', margin: 0 }}
+          >
+            <img
+              src={opIcon || getPlayerIconPath({ icon: 'player' })}
+              className="banner-icon"
+              alt={opData?.name || 'Opponent'}
+            />
+            <img
+              src={getIconFramePath(
+                opData?.leaderConfig?.character ||
+                  opData?.leaderConfig?.id ||
+                  'android'
+              )}
+              className="banner-icon-frame"
+              alt="frame"
+            />
+          </div>
           <div style={{ flex: 1 }}>
             <div
               style={{

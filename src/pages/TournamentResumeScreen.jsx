@@ -6,7 +6,11 @@ import {
 } from '../game/tournament.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getIconFramePath,
+  getSkinImage,
+} from '../utils/constants/characters.js';
 import {
   DEFAULT_PLAYER_NAME,
   appendVersionQuery,
@@ -49,14 +53,24 @@ export default function TournamentResumeScreen() {
       rarity: 4,
       icon: CHARACTERS.android.icon,
     };
+    const charId = rawConf.id || rawConf.charId || 'android';
+    const charObj = CHARACTERS[charId] || CHARACTERS.android;
+
+    // トーナメントモードでは常に学園スキン（school）を使用する
+    let iconSrc =
+      getSkinImage(charObj, 'school', 'icon') ||
+      getSkinImage(charObj, 'school', 'image') ||
+      rawConf.icon ||
+      rawConf.image;
+
+    if (iconSrc) {
+      iconSrc = iconSrc.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp');
+    }
+
     return {
       ...rawConf,
-      icon: rawConf.icon
-        ? rawConf.icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
-        : null,
-      image: rawConf.image
-        ? rawConf.image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
-        : null,
+      icon: iconSrc,
+      image: iconSrc,
     };
   }, [saveData]);
   const currentRound = tState?.round || 1;
@@ -232,26 +246,17 @@ export default function TournamentResumeScreen() {
               minWidth: '250px',
             }}
           >
-            <div
-              className={pConf.rarity === 4 ? 'rarity-4-border' : ''}
-              style={{
-                width: '50px',
-                height: '50px',
-                borderRadius: '50%',
-                overflow: 'hidden',
-                border: `2px solid ${getRarityColor(pConf.rarity)}`,
-                flexShrink: 0,
-              }}
-            >
+            {/* 他モードと統一されたアイコンフレーム付きリーダー表示 */}
+            <div className="banner-icon-wrapper" style={{ margin: 0 }}>
               <img
                 src={pConf.icon || pConf.image}
+                className="banner-icon"
                 alt={pConf.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                }}
+              />
+              <img
+                src={getIconFramePath(pConf.id || 'android')}
+                className="banner-icon-frame"
+                alt="frame"
               />
             </div>
             <div style={{ textAlign: 'left' }}>

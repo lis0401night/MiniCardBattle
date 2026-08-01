@@ -32,6 +32,7 @@ if (typeof window !== 'undefined') {
 }
 import {
   checkIsFreeMode,
+  checkIsMissionEligible,
   checkIsStoryMode,
   checkIsTutorialMode,
   consumeArmSelf,
@@ -5085,9 +5086,8 @@ export function endBattle() {
             }
           }
 
-          // バトルボーナスはストーリー・フリー対戦でのみ機能する
-          const isMissionEligible =
-            GameState.gameMode === 'story' || GameState.gameMode === 'free';
+          // バトルボーナスは対象のモード（ストーリー・フリー対戦・高難易度イベント）でのみ機能する
+          const isMissionEligible = checkIsMissionEligible(GameState.gameMode);
 
           if (
             isMissionEligible &&

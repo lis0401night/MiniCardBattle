@@ -2,6 +2,7 @@
  * Mini Card Battle - Character Data
  */
 import { appendVersionQuery } from './config.js';
+import { LEADER_SKILLS } from './leaderSkills.js';
 
 export const CHARACTERS = {
   android: {
@@ -16,12 +17,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_android.webp',
     imageEnding: 'assets/characters/char_android_ending.webp',
     color: '#38bdf8',
-    leaderSkill: {
-      name: '殲滅光線',
-      desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。',
-      cost: 4,
-      action: 'annihilation',
-    },
+    leaderSkill: LEADER_SKILLS.annihilation,
     preBattleLine: '目標確認。バトルプロトコルを開始します。',
     mirrorIntro:
       '偽物の熱源反応を確認。たとえ自分自身であっても、障害は排除します。',
@@ -103,12 +99,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_dragon.webp',
     imageEnding: 'assets/characters/char_dragon_ending.webp',
     color: '#fb7185',
-    leaderSkill: {
-      name: '竜王の降臨',
-      desc: '(SP:4) 自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
-      cost: 4,
-      action: 'dragon_summon',
-    },
+    leaderSkill: LEADER_SKILLS.dragon_summon,
     preBattleLine: 'アツくさせてあげるわ！ 覚悟しなさい！',
     mirrorIntro:
       'なによアイツ、私のマネして！ 私が世界で一番強いって分からせてやるんだから！ ニセモノはひっこんでなさい！',
@@ -193,12 +184,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_knight.webp',
     imageEnding: 'assets/characters/char_knight_ending.webp',
     color: '#facc15',
-    leaderSkill: {
-      name: '聖なる進軍',
-      desc: '(SP:5) 自分のレーンに「騎士(P:2)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。',
-      cost: 5,
-      action: 'holy_march',
-    },
+    leaderSkill: LEADER_SKILLS.holy_march,
     preBattleLine: '我が剣にかけて、勝利を誓おう！',
     mirrorIntro: '私の影……。迷いがあるというのか。だが止まってはいられない！',
     dialogue: {
@@ -276,12 +262,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_cthulhu.webp',
     imageEnding: 'assets/characters/char_cthulhu_ending.webp',
     color: '#c084fc',
-    leaderSkill: {
-      name: '深淵の儀式',
-      desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+1する。',
-      cost: 3,
-      action: 'abyss_ritual',
-    },
+    leaderSkill: LEADER_SKILLS.abyss_ritual,
     preBattleLine: 'フフフ、深淵へようこそ……。',
     mirrorIntro:
       'あら、私の鏡合わせ？ 滑稽ですわ。貴女も飲み込まれたいのかしら？',
@@ -361,12 +342,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_elf.webp',
     imageEnding: 'assets/characters/char_elf_ending.webp',
     color: '#4ade80',
-    leaderSkill: {
-      name: '星墜ちの矢',
-      desc: '(SP:4) 相手の場のカード1枚を選び、破壊する。',
-      cost: 4,
-      action: 'targeted_destruction',
-    },
+    leaderSkill: LEADER_SKILLS.targeted_destruction,
     preBattleLine: '私は自分を探しているの……。邪魔をしないで。',
     mirrorIntro: '鏡の中の私……。あなたは、私の失った記憶を知っているの？',
     dialogue: {
@@ -446,12 +422,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_cleric.webp',
     imageEnding: 'assets/characters/char_cleric_ending.webp',
     color: '#94a3b8',
-    leaderSkill: {
-      name: '神炎の審判',
-      desc: '(SP:4) 相手リーダーに3ダメージを与え、自身のHPを3回復する。',
-      cost: 4,
-      action: 'god_flame',
-    },
+    leaderSkill: LEADER_SKILLS.god_flame,
     preBattleLine: 'あら、私に逆らうなんて。身の程をわきまえなさい。',
     mirrorIntro:
       '私の偽物……？ フフ、その醜い姿で私と同じ聖職者を名乗るなんて。異端者として焼き払ってあげるわ。',
@@ -534,12 +505,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_devilhunter.webp',
     imageEnding: 'assets/characters/char_devilhunter_ending.webp',
     color: '#64748b',
-    leaderSkill: {
-      name: '棺の解放',
-      desc: '(SP:4) 自分の墓地からカードを1枚選び、自分のレーンに配置する。',
-      cost: 4,
-      action: 'devilhunter_resurrect',
-    },
+    leaderSkill: LEADER_SKILLS.devilhunter_resurrect,
     preBattleLine: 'さぁ、仕事の時間よ。',
     mirrorIntro:
       '自分の過去と向き合うなんて、三流のやることよ。私の弾丸でとっとと終わらせてあげる。',
@@ -618,12 +584,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_witch.webp',
     imageEnding: 'assets/characters/char_witch_ending.webp',
     color: '#db2777',
-    leaderSkill: {
-      name: '因果律の掌握',
-      desc: '(SP:6) 追加のターンを2回行う。\n(ただし、追加ターン中はSPは溜まらず攻撃もできない)',
-      cost: 6,
-      action: 'time_stop',
-    },
+    leaderSkill: LEADER_SKILLS.time_stop,
     preBattleLine:
       'はあ…さっきも戦いませんでしたっけ？ 手っ取り早く終わらせますね。',
     mirrorIntro: '別の時間軸の私ですか。……正直、関わるだけ鬱陶しいです。',
@@ -709,12 +670,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_oni.webp',
     imageEnding: 'assets/characters/char_oni_ending.webp',
     color: '#9333ea',
-    leaderSkill: {
-      name: '急急如律令',
-      desc: '(SP:5) 相手のレーンを2つまで選択する。そのレーンのカードに4ダメージを与え、レーンを1ターン封印する。',
-      cost: 5,
-      action: 'seal_lanes',
-    },
+    leaderSkill: LEADER_SKILLS.seal_lanes,
     preBattleLine: '我が瞳に映るは、縛るべき邪気。',
     mirrorIntro: '鏡の中の幻影……いや、貴方こそが私の本当の……？',
     dialogue: {
@@ -798,12 +754,7 @@ export const CHARACTERS = {
     icon: 'assets/icons/icon_priest.webp',
     imageEnding: 'assets/characters/char_priest_ending.webp',
     color: '#f59e0b',
-    leaderSkill: {
-      name: '王墓の呪縛',
-      desc: '(SP:3) 相手のデッキの上からカードを4枚墓地に送る。相手の場のカード1枚を選び、4ダメージを与える。',
-      cost: 3,
-      action: 'tomb_guard',
-    },
+    leaderSkill: LEADER_SKILLS.tomb_guard,
     preBattleLine: '……ここから先は、通さない。',
     mirrorIntro: '……鏡の幻影……？ それとも、私の呪いが具現化したもの……？',
     dialogue: {
@@ -887,12 +838,7 @@ export const CHARACTERS = {
     imageLose: 'assets/characters/char_void_lose.webp',
     icon: 'assets/icons/icon_void.webp',
     color: '#ddd6fe',
-    leaderSkill: {
-      name: 'ゼロの理',
-      desc: '(SP:4) 自分の手札を3枚選んで捨てる。相手は手札を全て捨て、捨てた「虚空」の枚数分ダメージを受ける。その後、お互いに捨てた枚数分の「虚空(P:0)」を手札に加える。',
-      cost: 4,
-      action: 'void_purge',
-    },
+    leaderSkill: LEADER_SKILLS.void_purge,
     preBattleLine: '……',
     dialogue: {
       intro: {
@@ -919,12 +865,7 @@ export const CHARACTERS = {
     imageLose: 'assets/characters/char_succubus_lose.webp',
     icon: 'assets/icons/icon_succubus.webp',
     color: '#22d3ee',
-    leaderSkill: {
-      name: '服従の刻印',
-      desc: '(SP:5) 相手の場のカード1枚を選び、正面のレーンに移動する。',
-      cost: 5,
-      action: 'viola_domination',
-    },
+    leaderSkill: LEADER_SKILLS.viola_domination,
     preBattleLine:
       'サタン様の御前に立ち塞がる不敬なる者……、この私が隷属させてあげるわ！',
     dialogue: {
@@ -996,12 +937,7 @@ export const CHARACTERS = {
     imageLose: 'assets/characters/char_warlock_lose.webp',
     icon: 'assets/icons/icon_warlock.webp',
     color: '#8b5cf6',
-    leaderSkill: {
-      name: '魔宴の儀',
-      desc: '(SP:5) 自分のレーンに「スケルトン(p:3)」1体配置する。その後、自分のカードが配置されている全てのレーンに「デーモン(P:7)」を配置する。',
-      cost: 5,
-      action: 'warlock_place_demons',
-    },
+    leaderSkill: LEADER_SKILLS.warlock_place_demons,
     preBattleLine:
       '魔王の力すらも我が魔術の糧よ……。邪魔する愚か者どもめ、塵にしてくれよう。',
     dialogue: {
@@ -1029,12 +965,7 @@ export const CHARACTERS = {
     imageLose: 'assets/characters/char_satan_lose.webp',
     icon: 'assets/icons/icon_satan.webp',
     color: '#dc2626',
-    leaderSkill: {
-      name: '魔王の化身',
-      desc: '(SP:6) 自分のレーンに「サタンの化身(P:10)」を1体召喚する。',
-      cost: 6,
-      action: 'satan_avatar',
-    },
+    leaderSkill: LEADER_SKILLS.satan_avatar,
     preBattleLine: '我は絶対……ひれ伏すがよい。',
     dialogue: {
       intro: {
@@ -1096,12 +1027,7 @@ export const CHARACTERS = {
     imageLose: 'assets/characters/char_automata_lose.webp',
     icon: 'assets/icons/icon_automata.webp',
     color: '#94a3b8',
-    leaderSkill: {
-      name: '鉄の行進',
-      desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを3回繰り返す。',
-      cost: 3,
-      action: 'iron_march',
-    },
+    leaderSkill: LEADER_SKILLS.iron_march,
     event_fortune: {
       id: 'automata',
       name: '廃鉄の声 マキナ',
@@ -1527,120 +1453,70 @@ CHARACTERS.android.event_high = {
   id: 'android_high',
   name: 'フルアーマー アイギス',
   maxHP: 40,
-  leaderSkill: {
-    name: '一斉射撃',
-    desc: '(SP:4) 敵の場のすべてのカードに4ダメージ、敵リーダーに2ダメージを与える。',
-    cost: 4,
-    action: 'android_high_volley',
-  },
+  leaderSkill: LEADER_SKILLS.android_high_volley,
 };
 
 CHARACTERS.dragon.event_high = {
   id: 'dragon_high',
   name: '熱砂の客人 イグニス',
   maxHP: 40,
-  leaderSkill: {
-    name: '焦熱のプレリュード',
-    desc: '(SP:4) 場のすべてのカードに2ダメージ、自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
-    cost: 4,
-    action: 'dragon_high_ritual',
-  },
+  leaderSkill: LEADER_SKILLS.dragon_high_ritual,
 };
 
 CHARACTERS.knight.event_high = {
   id: 'knight_high',
   name: '暗黒騎士 セレスティア',
   maxHP: 40,
-  leaderSkill: {
-    name: '暗黒の軍勢',
-    desc: '(SP:3) 自分のレーンに「騎士(P:2/必殺/守護)」を最大2体召喚し、自分の場のすべてのカードのパワーを+2する。',
-    cost: 3,
-    action: 'evil_march',
-  },
+  leaderSkill: LEADER_SKILLS.evil_march,
 };
 
 CHARACTERS.cthulhu.event_high = {
   id: 'cthulhu_high',
   name: '魔界の征服者 ナイア',
   maxHP: 40,
-  leaderSkill: {
-    name: '異界の扉',
-    desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+2する。相手の手札からランダムに2枚を捨て、同数「虚空(パワー1)」を加える。',
-    cost: 3,
-    action: 'otherworld_gate',
-  },
+  leaderSkill: LEADER_SKILLS.otherworld_gate,
 };
 
 CHARACTERS.elf.event_high = {
   id: 'elf_high',
   name: 'リナ&ヴォイテク',
   maxHP: 40,
-  leaderSkill: {
-    name: '連携攻撃',
-    desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。',
-    cost: 2,
-    action: 'elf_polarbear_combo',
-  },
+  leaderSkill: LEADER_SKILLS.elf_polarbear_combo,
 };
 
 CHARACTERS.cleric.event_high = {
   id: 'cleric_high',
   name: '断罪の執行者 エリシア',
   maxHP: 40,
-  leaderSkill: {
-    name: 'ギロチンクロス',
-    desc: '(SP:3) 相手リーダーに5ダメージを与え、自身のHPを5回復する。',
-    cost: 3,
-    action: 'condemnation',
-  },
+  leaderSkill: LEADER_SKILLS.condemnation,
 };
 
 CHARACTERS.devilhunter.event_high = {
   id: 'devilhunter_high',
   name: 'ゴーストライダー マリア',
   maxHP: 40,
-  leaderSkill: {
-    name: 'オーバードライブ',
-    desc: '(SP:3) 自分の墓地からカードを1枚選び、自分のレーンに配置する。相手の墓地からカードを1枚選び、自分のレーンに配置する。',
-    cost: 3,
-    action: 'overdrive',
-  },
+  leaderSkill: LEADER_SKILLS.overdrive,
 };
 
 CHARACTERS.witch.event_high = {
   id: 'witch_high',
   name: '時空の探索者 クロエ',
   maxHP: 40,
-  leaderSkill: {
-    name: '世界の再構築',
-    desc: '(SP:3) お互いの手札を全て捨て、墓地をリセットする。その後、自分は4枚、相手は3枚引く。追加のターンを1回行う。\n(ただし、追加ターン中はSPは溜まらず攻撃もできない)',
-    cost: 3,
-    action: 'world_reconstruct',
-  },
+  leaderSkill: LEADER_SKILLS.world_reconstruct,
 };
 
 CHARACTERS.oni.event_high = {
   id: 'oni_high',
   name: '紅月ノ狂鬼 カグラ',
   maxHP: 40,
-  leaderSkill: {
-    name: '百鬼夜行',
-    desc: '(SP:3) 相手のレーンを2つまで選択する。そのレーンのカードに4ダメージを与え、レーンを1ターン封印する。自分の場に「人魂（パワー1）」を1体配置する。',
-    cost: 3,
-    action: 'night_parade',
-  },
+  leaderSkill: LEADER_SKILLS.night_parade,
 };
 
 CHARACTERS.priest.event_high = {
   id: 'priest_high',
   name: '前世の記憶 ネフティ',
   maxHP: 40,
-  leaderSkill: {
-    name: '死者の審判',
-    desc: '(SP:3) 相手のデッキを残り1枚になるように墓地に送る。相手の場のカード1枚を選び、4ダメージを与える。',
-    cost: 3,
-    action: 'death_judgment',
-  },
+  leaderSkill: LEADER_SKILLS.death_judgment,
 };
 
 // サタン（高難易度用event_high定義）
@@ -1648,12 +1524,7 @@ CHARACTERS.satan.event_high = {
   id: 'satan_high',
   name: '復活の魔王 サタン',
   maxHP: 100,
-  leaderSkill: {
-    name: '魔王の化身',
-    desc: '(SP:6) 自分のレーンに「サタンの化身(P:10)」を1体配置する。',
-    cost: 6,
-    action: 'satan_avatar',
-  },
+  leaderSkill: LEADER_SKILLS.satan_avatar,
 };
 
 /**

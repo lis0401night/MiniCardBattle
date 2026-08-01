@@ -25,6 +25,7 @@ import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import {
   checkIsFortuneMode,
   checkIsHighDiffMode,
+  checkIsMissionEligible,
   hasActiveFilters,
   getCardImgUrl,
   getEventEnemyCharId,
@@ -84,10 +85,9 @@ export default function DeckEditorScreen({ switchScreen }) {
   );
   const [showMissions, setShowMissions] = useState(false);
 
-  // バトルボーナスはストーリー・フリー対戦でのみ機能する
+  // バトルボーナスは対象のモードでのみ機能する
   const showMissionButton =
-    !!GameState.enemyConfig &&
-    (GameState.gameMode === 'story' || GameState.gameMode === 'free');
+    !!GameState.enemyConfig && checkIsMissionEligible(GameState.gameMode);
   const [, setRenderVersion] = useState(0);
 
   const [isEditingName, setIsEditingName] = useState(false);
