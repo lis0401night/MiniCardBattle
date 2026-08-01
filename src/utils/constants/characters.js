@@ -3,6 +3,8 @@
  */
 import { appendVersionQuery } from './config.js';
 import { LEADER_SKILLS } from './leaderSkills.js';
+import { SKIN_MASTER } from './skins.js';
+import { applySkinDialogues } from './skinDialogues.js';
 
 export const CHARACTERS = {
   android: {
@@ -1085,51 +1087,19 @@ export const CHARACTERS = {
   },
 };
 
-// --- スキン定義とヘルパー関数 ---
-// 水着スキン
-const SKIN_NAMES = {
-  android: '水陸両用装備',
-  dragon: '真夏の焔竜姫',
-  knight: '波打ち際の騎士',
-  cthulhu: '深海のサマースイム',
-  elf: '水辺の流浪者',
-  cleric: '背徳のサマーバカンス',
-  devilhunter: '渚の悪魔狩り',
-  witch: '不機嫌なサマー・グリモワール',
-  oni: '涼み鬼の波打ち肌',
-  priest: '墓守の休息',
-};
-
-// 学園スキン
-const SCHOOL_SKIN_NAMES = {
-  android: '献身的な後輩',
-  dragon: '放課後ディストーション',
-  knight: '必勝の剣道部主将',
-  cthulhu: '妖しきオカ研部長',
-  elf: '癒しの飼育委員',
-  cleric: '恐怖の特別指導',
-  devilhunter: '孤高のスケバン',
-  witch: '気怠げな親友の妹',
-  oni: '鬼の風紀委員',
-  priest: 'ミステリアスな留学生',
-  automata: '喧嘩腰なライバル',
-};
-
-// 高難易度スキン
-const HIGH_SKIN_NAMES = {
-  android: 'フルアーマーユニット',
-  dragon: '熱砂の客人',
-  knight: '暗黒騎士',
-  cleric: '断罪の執行者',
-  cthulhu: '魔界の征服者',
-  elf: 'リナ&ヴォイテク',
-  devilhunter: 'ゴーストライダー',
-  witch: '時空の探索者',
-  oni: '紅月ノ狂鬼',
-  priest: '前世の記憶',
+// --- スキン定義（SKIN_MASTER から自動生成） ---
+// スキンタイプとキャラクターの skins キー生成関数の対応表
+const SKIN_TYPE_KEY_MAP = {
+  summer: (charId) => ({ key: 'summer', id: 'summer' }),
+  school: (charId) => ({ key: 'school', id: 'school' }),
+  high: (charId) => ({
+    key: `${charId}_high`,
+    id: `${charId}_high`,
+  }),
 };
 
 Object.values(CHARACTERS).forEach((char) => {
+  // デフォルトスキンの生成
   char.skins = {
     default: {
       id: 'default',
@@ -1141,309 +1111,31 @@ Object.values(CHARACTERS).forEach((char) => {
     },
   };
 
-  // 水着スキン（未実装キャラをガード）
-  if (SKIN_NAMES[char.id]) {
-    char.skins.summer = {
-      id: 'summer',
-      name: SKIN_NAMES[char.id],
-      image: `assets/characters/char_${char.id}_summer.webp`,
-      imageLose: `assets/characters/char_${char.id}_summer_lose.webp`,
-      icon: `assets/icons/icon_${char.id}_summer.webp`,
-      iconDamage: `assets/icons/icon_${char.id}_summer_damage.webp`,
-    };
-  }
+  // SKIN_MASTER から各スキンタイプを自動生成
+  for (const [skinType, getKeyInfo] of Object.entries(SKIN_TYPE_KEY_MAP)) {
+    const skinData = SKIN_MASTER[skinType]?.[char.id];
+    if (!skinData) continue;
 
-  // 学園スキン（未実装キャラをガード）
-  if (SCHOOL_SKIN_NAMES[char.id]) {
-    char.skins.school = {
-      id: 'school',
-      name: SCHOOL_SKIN_NAMES[char.id],
-      image: `assets/characters/char_${char.id}_school.webp`,
-      imageLose: `assets/characters/char_${char.id}_school_lose.webp`,
-      icon: `assets/icons/icon_${char.id}_school.webp`,
-      iconDamage: `assets/icons/icon_${char.id}_school_damage.webp`,
-      unlockCondition: 'イベント報酬',
-    };
-  }
-
-  // 高難易度スキン（未実装キャラをガード）
-  if (HIGH_SKIN_NAMES[char.id]) {
-    char.skins[`${char.id}_high`] = {
-      id: `${char.id}_high`,
-      name: HIGH_SKIN_NAMES[char.id],
-      image: `assets/characters/char_${char.id}_high.webp`,
-      imageLose: `assets/characters/char_${char.id}_high_lose.webp`,
-      icon: `assets/icons/icon_${char.id}_high.webp`,
-      iconDamage: `assets/icons/icon_${char.id}_high_damage.webp`,
-      unlockCondition: '実績達成で入手',
+    const { key, id } = getKeyInfo(char.id);
+    char.skins[key] = {
+      id,
+      name: skinData.name,
+      image: skinData.image,
+      imageLose: skinData.imageLose,
+      icon: skinData.icon,
+      iconDamage: skinData.iconDamage,
+      // unlockCondition と description は SKIN_MASTER から直接取得
+      ...(skinData.unlockCondition && {
+        unlockCondition: skinData.unlockCondition,
+      }),
     };
   }
 });
 
-// ============================================================
-// 夏スキン台詞
-// ============================================================
+// スキン台詞データの適用（skinDialogues.js から注入）
+applySkinDialogues(CHARACTERS);
 
-CHARACTERS.android.skins.summer.dialogue = {
-  intro:
-    '水中地形における戦闘行動の最適化を完了しました。水陸両用装備アイギス、迎撃を開始します。',
-  win: '対象の撃沈を確認。水上戦闘モードを終了します。',
-  lose: '装甲防水機能の低下を確認……浸水率、限界値を超えました……。',
-  skill: '水流制御機構解放！全弾発射、目標を完全に制圧します！',
-};
-
-CHARACTERS.dragon.skins.summer.dialogue = {
-  intro:
-    'たまには海で遊ぶのも悪くないわね！ さあ、アンタも水鉄砲で黒焦げにしてあげるわ！',
-  win: 'はっはー！ 海水も全部蒸発させてやったわ！',
-  lose: 'あちちっ！ 海水が熱湯になって私の水着が……！',
-  skill: '波打つ炎よ！ 海水ごとすべて蒸発しなさい！！',
-};
-
-CHARACTERS.knight.skins.summer.dialogue = {
-  intro:
-    '水辺の任務と聞いて動きやすい格好で来たが、これも立派な訓練だ。いざ尋常に勝負！',
-  win: '波の音を聞きながらの勝利も、悪くないものだな！',
-  lose: 'くっ……波打ち際の足場の悪さに、足を取られたか……！',
-  skill: '輝く太陽の光よ、我が剣となれ！ 砕け散れ！！',
-};
-
-CHARACTERS.cthulhu.skins.summer.dialogue = {
-  intro:
-    'うふふ 太陽の光もいいけれど、深海の暗闇こそ私にふさわしいわ。一緒に深くまで泳がない？',
-  win: '残念。あなたは深海の水圧には耐えられなかったみたいね。',
-  lose: 'あら……太陽の光が強すぎて、深海に沈む前に蒸発しちゃいそう……。',
-  skill: '海の底から湧き上がる狂気……一緒に溺れましょう？',
-};
-
-CHARACTERS.elf.skins.summer.dialogue = {
-  intro: '水辺は静かでいいわ。私の記憶の欠片も、この波に流されてきたのかしら。',
-  win: '穏やかな潮騒が、私の心を少しだけ癒やしてくれるわ。',
-  lose: '流される……記憶も、この戦いも……。',
-  skill: '清らかな水流よ！ 私の前に立ちはだかる全てを打ち抜いて！',
-};
-
-CHARACTERS.cleric.skins.summer.dialogue = {
-  intro:
-    'あら、こんな南国でも異端者はいるのね。バカンスのついでに、神の裁きを下してあげるわ！',
-  win: '最高のバカンスになったわ！ 異端者の悲鳴というBGM付きでね！ アハハ！',
-  lose: 'せっかくのバカンスが……私の肌が焼けてしまうじゃないの！！',
-  skill: '太陽の光よりも眩しい、灼熱の裁きを受けなさい！！',
-};
-
-CHARACTERS.devilhunter.skins.summer.dialogue = {
-  intro:
-    '海辺のリゾートでも悪魔は湧くのね。まぁいいわ、バカンス代くらいは稼がせてもらうわよ。',
-  win: '潮風も悪くないわね。さて、報酬でカクテルでも飲もうかしら。',
-  lose: 'あーあ、高かった水着が台無しよ。今日の仕事は大赤字ね。',
-  skill: '潮騒に紛れて、地獄へ送ってあげるわ！',
-};
-
-CHARACTERS.witch.skins.summer.dialogue = {
-  intro:
-    'はぁ……暑いのは嫌いだって言ったのに、なんで水着なんて着なきゃいけないんですか。さっさと帰らせてくださいよ。',
-  win: '終わりました？ じゃあ、早くクーラーの効いた部屋に帰らせてください。',
-  lose: '暑いし、疲れたし、もう最悪です。私、帰ります！',
-  skill: '太陽の時間を止めてやりたいですね！ ええい、吹き飛んでください！！',
-};
-
-CHARACTERS.oni.skins.summer.dialogue = {
-  intro:
-    '水の気配は、私の中の荒ぶる鬼の血を少しだけ鎮めてくれます。……ですが、手加減はしませんよ！',
-  win: '水鏡に映る私の姿……少しは、人間らしく見えますか？',
-  lose: 'あぁ……冷やされたはずの血が、再び滾り始めて……！',
-  skill: '清涼なる水霊よ！ 我が鬼の力を浄化しつつ、敵を討ち払え！',
-};
-
-CHARACTERS.priest.skins.summer.dialogue = {
-  intro: '……海。砂漠とは違う、どこまでも続く青い水……。侵入者も、泳ぐのか……。',
-  win: '……冷たい水に流されたな……。静かに沈むといい……。',
-  lose: '……水を含んだ砂は……重い……。',
-  skill: '……水底の静寂。波に飲まれろ……！',
-};
-
-// ============================================================
-// 学園スキン台詞
-// ============================================================
-
-CHARACTERS.android.skins.school.dialogue = {
-  intro:
-    '先輩、サポートはお任せください！ 相手が誰であろうと、私が先輩をお守りします！',
-  win: '無事クリアですね。先輩に怪我がなくて安心しました。',
-  lose: 'すみません、先輩……私の力不足で……っ！',
-  damage: ['きゃっ！', '先輩、大丈夫です！', 'うっ……！', 'まだ動けます！'],
-  skill: '先輩には指一本触れさせません！ 全力でいきます！',
-};
-
-CHARACTERS.dragon.skins.school.dialogue = {
-  intro:
-    '私の爆音ライブに巻き込まれる覚悟はできてる？ さあ、ガンガンにいくわよ！',
-  win: 'はっはー！ 最高のセッションだったわ！ アンタらじゃ私のビートにはついてこれないわね！',
-  lose: '痛っ！ ちょっと、大事なギターに傷がついたらどうしてくれんのよ……！',
-  damage: ['いったぁ！', 'やるじゃん！', 'ノリが悪いわね！', 'ちょっと！'],
-  skill: '私の魂のシャウト！ 鼓膜ごと全部揺さぶってあげるわ！！',
-};
-
-CHARACTERS.knight.skins.school.dialogue = {
-  intro:
-    '喧嘩を売られたからには容赦はしない。我が剣道部の誇りにかけて、いざ尋常に勝負！',
-  win: '日々の鍛錬の賜物だな！ 己の未熟さを知るがいい！',
-  lose: 'くっ……私の踏み込みが甘かったか……一本、取られたな……！',
-  damage: ['くっ！', '甘いな！', '効かんぞ！', 'なかなかやるな！'],
-  skill: '剣は心なり！ 迷いを断ち切る、渾身の一撃！！',
-};
-
-CHARACTERS.cthulhu.skins.school.dialogue = {
-  intro:
-    'うふふ……部活の邪魔をするなんて、いい度胸ね。呪いの儀式の実験台にしてもいいかしら？',
-  win: '残念。あなたはあちら側の世界には耐えられなかったみたいね。',
-  lose: 'あら……今日の占いは最下位だったものね。大人しく退散するわ……。',
-  damage: ['あらあら', 'うふふ、痛いわ', 'まぁ……', 'いけない子ね'],
-  skill: '学園七不思議の呪い……一緒に狂ってみましょう？',
-};
-
-CHARACTERS.elf.skins.school.dialogue = {
-  intro:
-    '争いごとは好きじゃないけれど……あなたが立ち塞がるなら、私も引くわけにはいかないわ。',
-  win: '怪我はないかしら……？ ごめんなさい、少しやりすぎちゃったわね。',
-  lose: 'ごめんなさい……これ以上は、もう無理みたい……。',
-  damage: ['きゃっ！', 'うっ……！', 'まだ……！', '痛い……'],
-  skill: 'どうかお願い！ 私の想い、まっすぐに届いて！',
-};
-
-CHARACTERS.cleric.skins.school.dialogue = {
-  intro:
-    'あら、私に逆らうなんていい度胸をした生徒ね。きっちり身をもって指導してあげるわ！',
-  win: '最高の特別指導になったわ！ あなたの泣き顔というご褒美付きでね！ アハハ！',
-  lose: 'ちょっと……！ 生徒の分際で、教師の私に盾突くなんて……！！',
-  damage: ['何するのよ！', 'この……！', '減点よ！', '生意気ね！'],
-  skill: '退学になりたくなければ、私の言うことを聞きなさい！！',
-};
-
-CHARACTERS.devilhunter.skins.school.dialogue = {
-  intro:
-    '私に喧嘩を売るなんて、命知らずな奴らね。後悔しても遅いわよ、ボコボコにしてあげる！',
-  win: '口ほどにもないわね。さて、甘いものでも食べに行こうかしら。',
-  lose: 'あーあ、おろしたての制服が台無しよ。今日の喧嘩は大赤字ね。',
-  damage: ['っ！', 'やるじゃない！', 'いってぇ！', 'ナメんな！'],
-  skill: '気合入れていきな！ きっちりシメてあげるわ！',
-};
-
-CHARACTERS.witch.skins.school.dialogue = {
-  intro:
-    'はぁ……争いごととか面倒だって言ったのに、なんで私が戦わなきゃいけないんですか。さっさと終わらせますよ。',
-  win: '終わりました？ じゃあ、早くクーラーの効いた部屋に帰らせてください。',
-  lose: '痛いし、疲れたし、もう最悪です。私、帰ります！',
-  damage: ['いたっ……', 'めんどくさ……', 'うっ……', 'もうやだ……'],
-  skill: '早く終わらせて帰りたいんです！ ええい、もう吹き飛んでください！！',
-};
-
-CHARACTERS.oni.skins.school.dialogue = {
-  intro:
-    '風紀委員として、校則違反のあなたたちを見過ごすわけにはいきません。実力行使で排除します！',
-  win: '服装の乱れは心の乱れ……よし、私に問題はありませんね。',
-  lose: 'あぁ……せっかく直したネクタイが、また乱れてしまって……！',
-  damage: ['くっ！', 'まだです！', '校則違反です！', 'なんの！'],
-  skill: '生徒手帳第3条！ 風紀を乱す者は、私が厳正に処罰します！',
-};
-
-CHARACTERS.priest.skins.school.dialogue = {
-  intro:
-    '……立ち塞がるなら、排除する。……私には、やらなきゃいけない課題があるから……。',
-  win: '……終わった……。静かに、眠るといい……。',
-  lose: '……少し、計算が狂った……退避する……。',
-  damage: ['……っ', '……浅い', '……効かない', '……………'],
-  skill: '……邪魔だ。……退いて……！',
-};
-
-CHARACTERS.automata.skins.school.dialogue = {
-  intro:
-    '別にあなたと戦いたかったわけじゃないわよ。ただ、一番強いのが誰か、はっきりさせたいだけ。',
-  win: 'ふん、当然の結果ね。……何よ、そんな顔して見ないでよ。褒めてほしいなんて思ってないから。',
-  lose: 'くっ……こんなの、まぐれよ。次は絶対に負けない……！',
-  damage: ['ちょっと……！', 'っ……やるじゃない', 'こんなの……！', '熱っ！'],
-  skill: 'これが私の本気……って、余所見しないで！',
-};
-
-// ============================================================
-// 高難易度スキン台詞
-// ============================================================
-
-CHARACTERS.android.skins.android_high.dialogue = {
-  intro:
-    'フルアーマー・アイギス、起動。圧倒的火力にて、対象を完全に殲滅します。',
-  win: '敵対勢力の完全消滅を確認。ボーナスコンプリート。',
-  lose: 'メインフレーム損壊……火器管制システム……ダウン……。',
-  skill: '制限解除……全火器リミッター解除！一斉掃射、開始します！',
-};
-
-CHARACTERS.dragon.skins.dragon_high.dialogue = {
-  intro:
-    'アンタもこの退屈な宴の参加者？ それとも……私を楽しませてくれる獲物かしら！',
-  win: 'あははは！ 灰すら残らないくらいの熱気だったわね！',
-  lose: 'げほっ……砂漠の砂が、目に入っただけよ……！',
-  skill: 'この退屈な砂漠ごと、黒焦げにしてあげるわ！！',
-};
-
-CHARACTERS.knight.skins.knight_high.dialogue = {
-  intro:
-    '光などとうの昔に捨てた……。この魔剣の闇で、全てを黒く塗りつぶしてくれる！',
-  win: '絶望に染まり、消え去るが良い……フフフ……。',
-  lose: 'この私が……魔剣の闇の力に呑まれたというのか……！',
-  skill: '魔剣よ、全てを侵食せよ！ 闇の軍勢となりて我に続け！',
-};
-
-CHARACTERS.cthulhu.skins.cthulhu_high.dialogue = {
-  intro:
-    '魔王城の玉座……案外、座り心地が良いですわ。貴方も深淵の礎になりにいらしたの？ フフフ……',
-  win: 'アハハハ！ 深淵の力には誰も敵いませんわ！ 全てを飲み込んで差し上げます！',
-  lose: 'この私が……玉座から引きずり降ろされるというの……！？ バカな……！',
-  skill: '異界の扉よ、開け！ 全ての絶望と狂気を此の地に！',
-};
-
-CHARACTERS.elf.skins.elf_high.dialogue = {
-  intro: '記憶の赴くままに……。共に行こう、ヴォイテク！ 私達の力を見せる時よ！',
-  win: 'これが私の新しい力……！ ヴォイテク、あなたのおかげね。',
-  lose: 'ヴォイテク、ごめんなさい……。まだ私には……。',
-  skill: '私とヴォイテクの連携……見切れるかしら！ ',
-};
-
-CHARACTERS.cleric.skins.cleric_high.dialogue = {
-  intro:
-    '異端者どもめ、まとめてこの私が断罪してあげるわ！ 逃げようなんて無駄よ、神罰からは逃れられないんだから！',
-  win: 'アハハハ！ これが神に背いた報いよ！ 最高の気分だわ、真の神へと至る道が開かれたわ！',
-  lose: 'バカな……この私が、断罪される側だなんて……あり得ないわ、認めない……認めないわよぉ！！',
-  skill: '神の裁きは理不尽にして絶対！ その身で、断罪の悦びを味わいなさい！！',
-};
-
-CHARACTERS.devilhunter.skins.devilhunter_high.dialogue = {
-  intro: 'エンジン全開……廃都を駆け抜けるわよ。邪魔する奴は轢き殺してあげる。',
-  win: 'ゴールはもう見えてるわ。あとはアクセルを踏むだけよ。',
-  lose: 'クッ……エンジンが焼き付くなんて……こんな結末、認めないわよ……！',
-  skill: '死者も生者も、全員棺桶行きよ！ オーバードライブ！！',
-};
-
-CHARACTERS.witch.skins.witch_high.dialogue = {
-  intro: '時間の流れは私の手の中にあります。……さて、少し遊んであげますよ。',
-  win: 'ふふ、未来の魔法を甘く見ないでくださいね。',
-  lose: 'まさか……ここまでやるとは。もう少し本気を出すべきでしたね。',
-  skill: '世界を再構築します。全部、やり直しですよ。',
-};
-
-CHARACTERS.oni.skins.oni_high.dialogue = {
-  intro: '血が……抑えきれない……！ アハハハ！ すべて壊して、喰らってあげる……！',
-  win: '足りない……まだ足りない……！ もっと血を……！',
-  lose: 'あぁ……鬼の力が……抜けていく……。私、なにを……',
-  skill: '百鬼夜行……！ 忌まわしき血の宴の始まりよ！ アハハハ！',
-};
-
-CHARACTERS.priest.skins.priest_high.dialogue = {
-  intro:
-    '……思い出した。裏切られた記憶……すべて。我は女王……民に尽くし、臣下に滅ぼされた者……。',
-  win: '……審判は下った。お前もまた、永遠に砂の底で眠れ……。',
-  lose: '……前世の記憶が……また、遠ざかっていく……。',
-  skill: '……女王の全権を以て、裏切り者のすべてを裁く。死者の審判を！',
-};
+// スキン台詞データは skinDialogues.js で管理し、上記 applySkinDialogues() で適用済み
 
 // ============================================================
 // 高難易度イベント定義

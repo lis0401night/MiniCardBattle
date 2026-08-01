@@ -1,8 +1,18 @@
 /**
  * Mini Card Battle - Playmat Constants
+ *
+ * プレイマットのマスタデータ。
+ * 基本プレイマットは手書きで定義し、スキン系プレイマットは
+ * スキンマスタ（skins.js）から自動生成する。
  */
+import { SKIN_MASTER } from './skins.js';
 
-export const PLAYMAT_MASTER = [
+// ---------------------------------------------------------------------------
+// 基本プレイマット（キャラクターごと + デフォルト）
+// ---------------------------------------------------------------------------
+
+/** @type {Array<Object>} 基本プレイマット定義 */
+const BASE_PLAYMATS = [
   {
     id: 'pm_lanedefenders',
     name: 'LANE DEFENDERS',
@@ -80,164 +90,79 @@ export const PLAYMAT_MASTER = [
     image: 'assets/boards/board_satan.webp',
     targetCharacter: 'satan',
   },
-  {
-    id: 'pm_android_summer',
-    name: '水陸両用装備',
-    image: 'assets/boards/board_android_summer.webp',
-  },
-  {
-    id: 'pm_dragon_summer',
-    name: '真夏の焔竜姫',
-    image: 'assets/boards/board_dragon_summer.webp',
-  },
-  {
-    id: 'pm_knight_summer',
-    name: '波打ち際の騎士',
-    image: 'assets/boards/board_knight_summer.webp',
-  },
-  {
-    id: 'pm_cthulhu_summer',
-    name: '深海のサマースイム',
-    image: 'assets/boards/board_cthulhu_summer.webp',
-  },
-  {
-    id: 'pm_elf_summer',
-    name: '水辺の流浪者',
-    image: 'assets/boards/board_elf_summer.webp',
-  },
-  {
-    id: 'pm_cleric_summer',
-    name: '背徳のサマーバカンス',
-    image: 'assets/boards/board_cleric_summer.webp',
-  },
-  {
-    id: 'pm_devilhunter_summer',
-    name: '渚の悪魔狩り',
-    image: 'assets/boards/board_devilhunter_summer.webp',
-  },
-  {
-    id: 'pm_witch_summer',
-    name: '不機嫌なサマー・グリモワール',
-    image: 'assets/boards/board_witch_summer.webp',
-  },
-  {
-    id: 'pm_oni_summer',
-    name: '涼み鬼の波打ち肌',
-    image: 'assets/boards/board_oni_summer.webp',
-  },
-  {
-    id: 'pm_priest_summer',
-    name: '墓守の休息',
-    image: 'assets/boards/board_priest_summer.webp',
-  },
-  {
-    id: 'pm_android_school',
-    name: '献身的な後輩',
-    image: 'assets/boards/board_android_school.webp',
-  },
-  {
-    id: 'pm_dragon_school',
-    name: '放課後ディストーション',
-    image: 'assets/boards/board_dragon_school.webp',
-  },
-  {
-    id: 'pm_knight_school',
-    name: '必勝の剣道部主将',
-    image: 'assets/boards/board_knight_school.webp',
-  },
-  {
-    id: 'pm_cthulhu_school',
-    name: '妖しきオカ研部長',
-    image: 'assets/boards/board_cthulhu_school.webp',
-  },
-  {
-    id: 'pm_elf_school',
-    name: '癒しの飼育委員',
-    image: 'assets/boards/board_elf_school.webp',
-  },
-  {
-    id: 'pm_cleric_school',
-    name: '恐怖の特別指導',
-    image: 'assets/boards/board_cleric_school.webp',
-  },
-  {
-    id: 'pm_devilhunter_school',
-    name: '孤高のスケバン',
-    image: 'assets/boards/board_devilhunter_school.webp',
-  },
-  {
-    id: 'pm_witch_school',
-    name: '気怠げな親友の妹',
-    image: 'assets/boards/board_witch_school.webp',
-  },
-  {
-    id: 'pm_oni_school',
-    name: '鬼の風紀委員',
-    image: 'assets/boards/board_oni_school.webp',
-  },
-  {
-    id: 'pm_priest_school',
-    name: 'ミステリアスな留学生',
-    image: 'assets/boards/board_priest_school.webp',
-  },
-  {
-    id: 'pm_automata_school',
-    name: '喧嘩腰なライバル',
-    image: 'assets/boards/board_automata_school.webp',
-  },
-  {
-    id: 'pm_android_high',
-    name: 'フルアーマーユニット',
-    image: 'assets/boards/board_android_high.webp',
-  },
-  {
-    id: 'pm_dragon_high',
-    name: '熱砂の客人',
-    image: 'assets/boards/board_dragon_high.webp',
-  },
-  {
-    id: 'pm_knight_high',
-    name: '暗黒騎士',
-    image: 'assets/boards/board_knight_high.webp',
-  },
-  {
-    id: 'pm_cthulhu_high',
-    name: '魔界の征服者',
-    image: 'assets/boards/board_cthulhu_high.webp',
-  },
-  {
-    id: 'pm_elf_high',
-    name: 'リナ&ヴォイテク',
-    image: 'assets/boards/board_elf_high.webp',
-  },
-  {
-    id: 'pm_cleric_high',
-    name: '断罪の執行者',
-    image: 'assets/boards/board_cleric_high.webp',
-  },
-  {
-    id: 'pm_devilhunter_high',
-    name: 'ゴーストライダー',
-    image: 'assets/boards/board_devilhunter_high.webp',
-  },
-  {
-    id: 'pm_witch_high',
-    name: '時空の探索者',
-    image: 'assets/boards/board_witch_high.webp',
-  },
-  {
-    id: 'pm_oni_high',
-    name: '紅月ノ狂鬼',
-    image: 'assets/boards/board_oni_high.webp',
-  },
-  {
-    id: 'pm_priest_high',
-    name: '前世の記憶',
-    image: 'assets/boards/board_priest_high.webp',
-  },
 ];
-// 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
+
+// ---------------------------------------------------------------------------
+// スキン系プレイマット（スキンマスタから自動生成）
+// ---------------------------------------------------------------------------
+
+/**
+ * スキンマスタからスキン系プレイマットを自動生成する
+ * @param {Object} skinMaster - SKIN_MASTER オブジェクト
+ * @returns {Array<Object>} プレイマットエントリの配列
+ */
+function generateSkinPlaymats(skinMaster) {
+  /** @type {Array<Object>} */
+  const playmats = [];
+
+  // スキンタイプごとのプレイマットIDプレフィックス対応
+  const skinTypeConfig = {
+    summer: {
+      /** @param {string} charId */
+      getId: (charId) => `pm_${charId}_summer`,
+    },
+    school: {
+      /** @param {string} charId */
+      getId: (charId) => `pm_${charId}_school`,
+    },
+    high: {
+      /** @param {string} charId */
+      getId: (charId) => `pm_${charId}_high`,
+    },
+  };
+
+  for (const [skinType, config] of Object.entries(skinTypeConfig)) {
+    const skins = skinMaster[skinType];
+    if (!skins) continue;
+
+    for (const [charId, skinData] of Object.entries(skins)) {
+      if (!skinData.playmat) continue;
+      playmats.push({
+        id: config.getId(charId),
+        name: skinData.name,
+        image: skinData.playmat,
+      });
+    }
+  }
+
+  return playmats;
+}
+
+// ---------------------------------------------------------------------------
+// エクスポート
+// ---------------------------------------------------------------------------
+
+/**
+ * 全プレイマットのマスタ配列
+ * 基本プレイマット + スキンマスタから自動生成されたスキン系プレイマット
+ * @type {Array<Object>}
+ */
+export const PLAYMAT_MASTER = [
+  ...BASE_PLAYMATS,
+  ...generateSkinPlaymats(SKIN_MASTER),
+];
+
+/**
+ * 所持プレイマットの管理用（セーブデータ：キー `mini_card_battle_owned_playmats`）
+ * @type {Array<string>}
+ */
 export let ownedPlaymats = []; // ['android', 'dragon', ...]
+
+/**
+ * 所持プレイマットリストを更新する
+ * @param {Array<string>} newList - 新しい所持プレイマットIDの配列
+ * @returns {void}
+ */
 export function setOwnedPlaymats(newList) {
   ownedPlaymats = newList;
 }
