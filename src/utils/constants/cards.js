@@ -2315,17 +2315,6 @@ export const CARD_MASTER = [
       '禁じられた秘術が記された本。ページを捲るたび、正気は失われ、深淵の知識が魂を蝕んでいく。それでも力に飢えるなら、開くがいい。',
   },
   {
-    id: 'basilisk',
-    obtain: ['witch_hard'],
-    name: 'バジリスク',
-    rarity: 3,
-    power: 5,
-    skills: [{ id: 'petrify' }],
-    voiceCategory: 'snake',
-    flavor:
-      'その猛毒の視線と交わったが最後。生者の肉体は瞬く間に無機質な彫像へと変わり果て、永遠の沈黙に閉ざされる。',
-  },
-  {
     id: 'witch',
     obtain: ['witch_normal', 'witch_hard'],
     name: '闇の森の魔女',
@@ -2346,6 +2335,17 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_assassin',
     flavor:
       '森の奥で秘術を操る魔女。恐ろしい噂とは裏腹に、相応の金貨や珍しい素材を前払いすれば、大抵の厄介な依頼はこなしてくれる。',
+  },
+  {
+    id: 'basilisk',
+    obtain: ['witch_hard'],
+    name: 'バジリスク',
+    rarity: 3,
+    power: 5,
+    skills: [{ id: 'petrify' }],
+    voiceCategory: 'snake',
+    flavor:
+      'その猛毒の視線と交わったが最後。生者の肉体は瞬く間に無機質な彫像へと変わり果て、永遠の沈黙に閉ざされる。',
   },
   {
     id: 'djinn',
@@ -2391,8 +2391,23 @@ export const CARD_MASTER = [
       '術者の魂すら喰らう美しくも恐ろしき妖狐。奪った命を呪いの火として撒き散らすか、傀儡として縛り付けるかは彼女の気まぐれ。',
   },
   {
+    id: 'orochi',
+    obtain: ['oni_normal', 'oni_hard'],
+    name: '神々の宿敵',
+    rarity: 3,
+    power: 6,
+    skills: [
+      { id: 'brutal', value: 6 },
+      { id: 'double_strike' },
+      { id: 'cleave' },
+    ],
+    voiceCategory: 'snake',
+    flavor:
+      '贄の血の匂いに惹かれ、古の厄災が目を覚ます。八つの顎がもたらすのは、すべてを無に帰す純粋な破壊のみ。',
+  },
+  {
     id: 'kasha',
-    obtain: ['oni_normal', 'oni_hard', 'oni_high'],
+    obtain: ['oni_hard', 'oni_high'],
     name: '双輪の炎龍',
     rarity: 3,
     power: 6,
@@ -2405,21 +2420,6 @@ export const CARD_MASTER = [
     voiceCategory: 'dragon',
     flavor:
       '業火を纏い爆走する厄災の竜。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変え蹂躙し尽くす。',
-  },
-  {
-    id: 'orochi',
-    obtain: ['oni_hard'],
-    name: '神々の宿敵',
-    rarity: 3,
-    power: 6,
-    skills: [
-      { id: 'brutal', value: 6 },
-      { id: 'double_strike' },
-      { id: 'cleave' },
-    ],
-    voiceCategory: 'snake',
-    flavor:
-      '贄の血の匂いに惹かれ、古の厄災が目を覚ます。八つの顎がもたらすのは、すべてを無に帰す純粋な破壊のみ。',
   },
   {
     id: 'shogun',
