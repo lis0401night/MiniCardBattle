@@ -1,6 +1,14 @@
 <?php
 /**
  * Mini Card Battle - API Helper Functions
+ * 
+ * TODO: 【重要技術的負債】データ保存処理のアトミック化について
+ * 現在、各API（heartbeat, register_deck, update_points等）で行われている 
+ * `ftruncate($fp, 0)` -> `fwrite()` のフローは、書き込み処理中にサーバーエラーや
+ * 容量不足が起きるとセーブデータが0バイトになって消滅する脆弱性があります。
+ * 将来的には、ここ（helpers.php）に一時ファイルへの書き込みとリネーム上書き（OSの
+ * アトミック操作）を行う共通関数（例: `atomicFileSave`）を作成し、
+ * すべての保存処理を置き換えるリファクタリングを検討してください。
  */
 
 /**

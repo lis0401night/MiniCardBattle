@@ -1265,6 +1265,21 @@ export function checkIsMissionEligible(
 }
 
 /**
+ * バトルボーナス（ミッション）のボタンを表示するかどうかを判定します。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @param {Object} [enemyConfig] - 敵設定情報（省略時は GameState.enemyConfig）
+ * @returns {boolean} バトルボーナスボタンを表示するか
+ */
+export function checkShowMissionButton(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined,
+  enemyConfig = typeof GameState !== 'undefined'
+    ? GameState?.enemyConfig
+    : undefined
+) {
+  return !!enemyConfig && checkIsMissionEligible(gameMode);
+}
+
+/**
  * 指定されたゲームモードが勝ち抜き組手（トーナメント）モードであるかどうかを判定します。
  * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
  * @returns {boolean} トーナメントモードであるか

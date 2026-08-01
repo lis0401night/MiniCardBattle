@@ -68,7 +68,7 @@ function generateSkinIcons(skinMaster) {
       icons.push({
         id,
         name: skinData.name,
-        path: iconPath(id),
+        path: skinData.icon ?? iconPath(id),
       });
     }
   }

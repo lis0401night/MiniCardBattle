@@ -82,7 +82,7 @@ export const LEADER_SKILLS = {
   },
   warlock_place_demons: {
     name: '魔宴の儀',
-    desc: '(SP:5) 自分のレーンに「スケルトン(p:3)」1体配置する。その後、自分のカードが配置されている全てのレーンに「デーモン(P:7)」を配置する。',
+    desc: '(SP:5) 自分のレーンに「スケルトン(P:3)」を1体配置する。その後、自分のカードが配置されている全てのレーンに「デーモン(P:7)」を配置する。',
     cost: 5,
     action: 'warlock_place_demons',
   },

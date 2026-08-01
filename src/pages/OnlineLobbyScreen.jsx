@@ -434,9 +434,7 @@ export default function OnlineLobbyScreen() {
             />
             <img
               src={getIconFramePath(
-                myData?.leaderConfig?.character ||
-                  myData?.leaderConfig?.id ||
-                  'android'
+                myData?.leaderConfig?.leaderConfig?.id || 'android'
               )}
               className="banner-icon-frame"
               alt="frame"
@@ -548,9 +546,7 @@ export default function OnlineLobbyScreen() {
             />
             <img
               src={getIconFramePath(
-                opData?.leaderConfig?.character ||
-                  opData?.leaderConfig?.id ||
-                  'android'
+                opData?.leaderConfig?.leaderConfig?.id || 'android'
               )}
               className="banner-icon-frame"
               alt="frame"

@@ -3,8 +3,8 @@
  */
 import { appendVersionQuery } from './config.js';
 import { LEADER_SKILLS } from './leaderSkills.js';
-import { SKIN_MASTER, SKIN_KEY_MAP } from './skins.js';
 import { applySkinDialogues } from './skinDialogues.js';
+import { SKIN_KEY_MAP, SKIN_MASTER } from './skins.js';
 
 export const CHARACTERS = {
   android: {
@@ -1125,8 +1125,6 @@ Object.values(CHARACTERS).forEach((char) => {
 
 // スキン台詞データの適用（skinDialogues.js から注入）
 applySkinDialogues(CHARACTERS);
-
-// スキン台詞データは skinDialogues.js で管理し、上記 applySkinDialogues() で適用済み
 
 // ============================================================
 // 高難易度イベント定義

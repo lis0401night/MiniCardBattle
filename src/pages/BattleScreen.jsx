@@ -22,7 +22,7 @@ import { evaluateMission } from '../game/missionLogic.js';
 import { showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
-  checkIsMissionEligible,
+  checkShowMissionButton,
   getCardImgUrl,
   hasSkill,
   isTransitioning,
@@ -61,8 +61,7 @@ export default function BattleScreen() {
   const [cardDetailColor, setCardDetailColor] = useState('#94a3b8');
   const [showMissions, setShowMissions] = useState(false);
   // バトルボーナスは対象のモード（ストーリー・フリー対戦・高難易度イベント）でのみ機能する
-  const showMissionButton =
-    !!GameState.enemyConfig && checkIsMissionEligible(GameState.gameMode);
+  const showMissionButton = checkShowMissionButton();
   // バトル中に判定可能な（timing: 'instant'の）ボーナスの現在スコアを集計
   const missionScore = showMissionButton
     ? CHALLENGE_MISSIONS.reduce((sum, m) => {

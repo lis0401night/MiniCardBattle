@@ -112,7 +112,13 @@ export const EXCHANGE_LINEUP = [
  */
 function generateSkinExchangeItems(skinType, costs) {
   const skins = SKIN_MASTER[skinType];
-  if (!skins) return [];
+  if (!skins) {
+    // スキンタイプ名の誤りを検知できるよう警告を出力する
+    console.warn(
+      `[config] 未知のスキンタイプです: ${skinType}。交換所商品を生成しません。`
+    );
+    return [];
+  }
 
   /** @type {Array<Object>} */
   const items = [];
@@ -134,6 +140,7 @@ function generateSkinExchangeItems(skinType, costs) {
     items.push({
       id: buildPlaymatId(charId, skinType),
       type: 'playmat',
+      charId,
       name: skinData.name,
       description: skinData.description || '',
       cost: costs.playmat,
@@ -141,10 +148,14 @@ function generateSkinExchangeItems(skinType, costs) {
   }
 
   // アイコン商品
+  // 意図的な設計: アイコンのIDはスキンのIDと重複する仕様です。
+  // 所持判定や保存先配列（unlockedSkins / unlockedIcons）が独立しているため競合しません。
+  // ※既存ユーザーのセーブデータ破損を防ぐため、IDの変更・接頭辞の付与は行わないこと。
   for (const [charId, skinData] of Object.entries(skins)) {
     items.push({
       id: buildSkinId(charId, skinType),
       type: 'icon',
+      charId,
       name: skinData.name,
       description: skinData.description || '',
       cost: costs.icon,

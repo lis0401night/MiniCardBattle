@@ -41,7 +41,7 @@ export default {
     'omyouji',
     'omyouji',
     'ninja',
-    'ninja',    
+    'ninja',
   ],
   hard: [
     'shogun',
