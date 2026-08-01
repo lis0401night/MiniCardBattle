@@ -844,35 +844,39 @@ export function processActionSequence(
         }
 
         // 【修正】装備カードが持っていた追加アクティブスキル（事前解決された選択スキル等含む）を順次実行シミュレートする
-        addedSkills.forEach((sk) => {
-          // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
-          if (
-            [
-              'clone',
-              'summon',
-              'ambush',
-              'puppet',
-              'resurrect',
-              'execute',
-            ].includes(sk.id)
-          ) {
-            return;
-          }
-          applyActiveSkillLogic(
-            simState,
-            'red',
-            lIdx,
-            sk.id,
-            sk.value,
-            [],
-            cLanesForEquip,
-            undefined
-          );
-          if (simState._actionQueue && simState._actionQueue.length > 0) {
-            actionQueue.push(...simState._actionQueue);
-            delete simState._actionQueue;
-          }
-        });
+        // ※ 復活(resurrect)・傀儡(puppet)による「配置」経路では triggerSkills=false のため、
+        //    アクティブスキルの即時発動は行わない（ゲームルール準拠: 配置ではスキル不発）
+        if (triggerSkills) {
+          addedSkills.forEach((sk) => {
+            // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
+            if (
+              [
+                'clone',
+                'summon',
+                'ambush',
+                'puppet',
+                'resurrect',
+                'execute',
+              ].includes(sk.id)
+            ) {
+              return;
+            }
+            applyActiveSkillLogic(
+              simState,
+              'red',
+              lIdx,
+              sk.id,
+              sk.value,
+              [],
+              cLanesForEquip,
+              undefined
+            );
+            if (simState._actionQueue && simState._actionQueue.length > 0) {
+              actionQueue.push(...simState._actionQueue);
+              delete simState._actionQueue;
+            }
+          });
+        }
       }
 
       if (!skillWasHandledByEquip) {

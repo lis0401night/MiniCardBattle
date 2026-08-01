@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  confirmOverwrittenLane,
   dispatchBattleAction,
   endPlayerTurn,
   returnToTitle,
@@ -276,47 +277,14 @@ export default function BattleScreen() {
         }
       }
 
+      // 既存カードがあるレーンへの召喚時の確認モーダル（起動・合体・装備・破棄を共通関数で一元管理）
       if (GameState.playerBoard[lane] !== null) {
-        const existingCard = GameState.playerBoard[lane];
-        let confirmed;
-        const unionSkill =
-          newCard.skills && newCard.skills.find((s) => s.id === 'union');
-        const isUnion =
-          unionSkill &&
-          (existingCard.baseId === unionSkill.targetId ||
-            existingCard.id === unionSkill.targetId);
-
-        if (isUnion) {
-          confirmed = await new Promise((resolve) => {
-            showConfirmModal(
-              `「${existingCard.name}」と合体しますか？`,
-              () => resolve(true),
-              () => resolve(false)
-            );
-          });
-        } else if (
-          hasSkill &&
-          hasSkill(newCard, 'equip') &&
-          !hasSkill(existingCard, 'possession') &&
-          !hasSkill(existingCard, 'reflect')
-        ) {
-          // 【憑依ルール】配置先カードが憑依を持つ場合は装備不可 → 上書きモーダルへ
-          confirmed = await new Promise((resolve) => {
-            showConfirmModal(
-              `「${existingCard.name}」に「${newCard.name}」を装備しますか？`,
-              () => resolve(true),
-              () => resolve(false)
-            );
-          });
-        } else {
-          confirmed = await new Promise((resolve) => {
-            showConfirmModal(
-              `「${existingCard.name}」を破棄して「${newCard.name}」を配置しますか？`,
-              () => resolve(true),
-              () => resolve(false)
-            );
-          });
-        }
+        const confirmed = await confirmOverwrittenLane(
+          'blue',
+          newCard,
+          lane,
+          true
+        );
         if (!confirmed) return;
       }
 

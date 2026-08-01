@@ -3850,6 +3850,7 @@ export async function playCard(o, hI, l) {
       }
 
       playSound(SOUNDS.sePlace);
+      playCardVoice(consumedCard, 'play');
 
       if (o === 'blue') {
         GameState.selectedCardIndex = null;
