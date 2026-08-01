@@ -1090,8 +1090,8 @@ export const CHARACTERS = {
 // --- スキン定義（SKIN_MASTER から自動生成） ---
 // スキンタイプとキャラクターの skins キー生成関数の対応表
 const SKIN_TYPE_KEY_MAP = {
-  summer: (charId) => ({ key: 'summer', id: 'summer' }),
-  school: (charId) => ({ key: 'school', id: 'school' }),
+  summer: (_charId) => ({ key: 'summer', id: 'summer' }),
+  school: (_charId) => ({ key: 'school', id: 'school' }),
   high: (charId) => ({
     key: `${charId}_high`,
     id: `${charId}_high`,
