@@ -40,8 +40,8 @@ export default [
     'jackalpriest',
     'snakepriest',
     'snakepriest',
-    'snakepriest',
-    'snakepriest',
+    'lion',
+    'lion',
   ],
   [
     'hellkite',

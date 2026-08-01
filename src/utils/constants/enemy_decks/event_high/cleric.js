@@ -16,11 +16,11 @@ export default [
   'punishment',
   'punishment',
   'punishment',
+  'empress',
+  'empress',
   'punisher',
   'punisher',
   'punisher',
   'fire',
   'fire',
-  'empress',
-  'empress',
 ];
