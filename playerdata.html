@@ -272,7 +272,11 @@
                   >
                     防衛ポイント
                   </th>
-                  <th class="p-2 md:p-3 text-center" style="min-width: 60px">
+                  <th
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 60px"
+                    onclick="window.sortBy('defense_wins')"
+                  >
                     防衛成功数
                   </th>
                   <th
@@ -294,15 +298,23 @@
                     style="min-width: 80px"
                     onclick="window.sortBy('fortune')"
                   >
-                    邂逅ポイント
+                    運命ポイント
                   </th>
-                  <th class="p-2 md:p-3 text-center" style="min-width: 70px">
+                  <th
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 70px"
+                    onclick="window.sortBy('grade')"
+                  >
                     等級（マキナ）
                   </th>
                   <th class="p-2 md:p-3 text-center" style="min-width: 50px">
                     デッキ
                   </th>
-                  <th class="p-2 md:p-3 text-center" style="min-width: 100px">
+                  <th
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 100px"
+                    onclick="window.sortBy('lastAccess')"
+                  >
                     最終アクセス
                   </th>
                 </tr>
@@ -755,6 +767,9 @@
           challenge: 'challenge_total_points',
           tournament: 'tournament_total_points',
           fortune: 'fortune_total_points',
+          defense_wins: 'defense_wins',
+          grade: 'fortune_max_total_cost',
+          lastAccess: 'lastAccessAt',
         };
         return p[SORT_KEY_MAP[key]] || 0;
       }
@@ -832,7 +847,7 @@
                 <div class="text-[11px] font-black text-sky-600">${formatNumber(p.fortune_total_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
-                <div class="text-[11px] font-black text-sky-500">${p.fortune_max_grade >= 0 ? p.fortune_max_grade : '-'}</div>
+                <div class="text-[11px] font-black text-sky-500">${p.fortune_max_total_cost >= 0 ? p.fortune_max_total_cost : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 ${
@@ -952,8 +967,8 @@
             current: p.fortune_points || 0,
             total: p.fortune_total_points || 0,
             extra:
-              p.fortune_max_grade >= 0
-                ? `等級（マキナ）: ${p.fortune_max_grade}`
+              p.fortune_max_total_cost >= 0
+                ? `等級（マキナ）: ${p.fortune_max_total_cost}`
                 : null,
           },
         ];
@@ -1123,8 +1138,9 @@
           }
         });
 
-        // 2. 攻撃デッキ使用数の集計（全履歴を横断して同一プレイヤーUUIDごとに同名カード最大4枚までに制限）
-        const globalPlayerCardCounts = {};
+        // 2. 攻撃デッキ使用数の集計（同一プレイヤーの複数履歴がある場合、各デッキ内での最大枚数を採用）
+        // 例: 履歴AにカードXが2枚、履歴BにカードXが3枚 → そのプレイヤーのカードXは3枚として集計
+        const globalPlayerCardMaxCounts = {};
 
         allPlayers.forEach((p) => {
           // 除外指定されているプレイヤーはスキップ
@@ -1141,25 +1157,35 @@
               const attackerUuid = rec.attackerUuid;
 
               if (Array.isArray(rec.attackerDeck)) {
-                if (!globalPlayerCardCounts[attackerUuid]) {
-                  globalPlayerCardCounts[attackerUuid] = {};
-                }
+                // このデッキ内でのカードごとの枚数を集計
+                const deckCardCounts = {};
                 rec.attackerDeck.forEach((entry) => {
                   const cId = resolveCardId(entry);
-                  globalPlayerCardCounts[attackerUuid][cId] =
-                    (globalPlayerCardCounts[attackerUuid][cId] || 0) + 1;
+                  deckCardCounts[cId] = (deckCardCounts[cId] || 0) + 1;
+                });
+
+                // プレイヤーごとの最大枚数を更新（既存値より多ければ上書き）
+                if (!globalPlayerCardMaxCounts[attackerUuid]) {
+                  globalPlayerCardMaxCounts[attackerUuid] = {};
+                }
+                Object.keys(deckCardCounts).forEach((cId) => {
+                  const currentMax =
+                    globalPlayerCardMaxCounts[attackerUuid][cId] || 0;
+                  globalPlayerCardMaxCounts[attackerUuid][cId] = Math.max(
+                    currentMax,
+                    deckCardCounts[cId]
+                  );
                 });
               }
             });
           }
         });
 
-        // 全攻撃者ごとのカードカウントを上限4に制限して全域集計に加算
-        Object.values(globalPlayerCardCounts).forEach((counts) => {
+        // 全攻撃者ごとのカード最大枚数を全域集計に加算
+        Object.values(globalPlayerCardMaxCounts).forEach((counts) => {
           Object.keys(counts).forEach((cId) => {
-            const clampedCount = Math.min(4, counts[cId]);
             attackUsageCounts[cId] =
-              (attackUsageCounts[cId] || 0) + clampedCount;
+              (attackUsageCounts[cId] || 0) + counts[cId];
           });
         });
 
