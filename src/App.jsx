@@ -230,10 +230,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // slow-motion の filter を body ではなく #app-container に適用する。
+    // CSS仕様により filter を持つ要素は position: fixed の包含ブロックを形成するため、
+    // body（max-width: 480px; margin: 0 auto で中央寄せ）に filter をかけると
+    // DamageOverlay 等の position: fixed 要素の座標基準がずれてしまう。
+    const container = document.getElementById('app-container');
+    if (!container) return;
     if (isSlowMotion) {
-      document.body.classList.add('slow-motion');
+      container.classList.add('slow-motion');
     } else {
-      document.body.classList.remove('slow-motion');
+      container.classList.remove('slow-motion');
     }
   }, [isSlowMotion]);
 

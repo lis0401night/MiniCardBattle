@@ -55,6 +55,8 @@ export default function CutinOverlay() {
         className="cutin-char"
         alt="Cutin Character"
         style={{
+          left: '50%',
+          transform: 'translateX(-50%)',
           animation: 'slideIn 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards',
         }}
       />

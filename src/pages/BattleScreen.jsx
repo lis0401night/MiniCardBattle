@@ -794,12 +794,6 @@ export default function BattleScreen() {
         </div>
       )}
 
-      <div id="screen-cutin" style={{ display: 'none' }}>
-        <div id="cutin-bg" className="cutin-bg"></div>
-        <img id="cutin-char-img" className="cutin-char" alt="cutin" />
-        <div id="cutin-text" className="cutin-text-img"></div>
-      </div>
-
       <MissionResultOverlay />
       {showMissions && (
         <MissionListModal onClose={() => setShowMissions(false)} />

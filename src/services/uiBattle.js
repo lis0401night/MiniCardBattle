@@ -315,12 +315,16 @@ export function triggerFinishVisuals() {
   if (typeof window.setSlowMotionReact === 'function') {
     window.setSlowMotionReact(true);
   }
-  document.body.classList.add('anim-mega-shake');
-  // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
+  // body ではなく #app-container に適用し、position: fixed のダメージオーバーレイへの副作用を防止
+  const container = document.getElementById('app-container');
+  if (container) {
+    container.classList.add('anim-mega-shake');
+    // ダメージ音は攻撃処理側ですでに鳴っているため、ここでの二重再生は避ける
 
-  setTimeout(() => {
-    document.body.classList.remove('anim-mega-shake');
-  }, 1000);
+    setTimeout(() => {
+      container.classList.remove('anim-mega-shake');
+    }, 1000);
+  }
 }
 
 /**

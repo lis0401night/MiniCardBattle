@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { setAddDamagePopupHook } from '../../utils/gameUtils.js';
 
 // ダメージポップアップの表示時間（ミリ秒）
 const DAMAGE_POPUP_DURATION = 1000;
 
+/**
+ * ダメージポップアップのオーバーレイコンポーネント
+ * body 直下にポータル描画することで、#app-container の filter（slow-motion 演出）や
+ * CSS の影響を受けず、position: fixed がビューポート基準のまま維持される
+ * @returns {import('react').ReactPortal|null} ポータルでレンダリングされたダメージポップアップ群
+ */
 export default function DamageOverlay() {
   const [popups, setPopups] = useState([]);
 
@@ -30,7 +37,9 @@ export default function DamageOverlay() {
 
   if (popups.length === 0) return null;
 
-  return (
+  // #app-container の filter（slow-motion）の影響を受けないよう、
+  // body 直下にポータル描画する
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -51,6 +60,7 @@ export default function DamageOverlay() {
           {p.text}
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   );
 }

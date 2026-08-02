@@ -101,6 +101,15 @@ export async function playEvents(events) {
           cEl.classList.remove('anim-shake');
           void cEl.offsetWidth; // reflow
           cEl.classList.add('anim-shake');
+          // 【システム処理】
+          // ダメージ時に付与する「anim-shake」クラスは、使用後に外さないと
+          // 後続の破壊エフェクト等でアニメーションが再発火しなくなる（ブラウザの最適化による影響）。
+          // そのため、アニメーション終了イベント（animationend）を一度だけ（once: true）検知し、確実にクラスをクリーンアップする。
+          cEl.addEventListener(
+            'animationend',
+            () => cEl.classList.remove('anim-shake'),
+            { once: true }
+          );
 
           let label = `-${ev.amount}`;
           if (ev.source === 'explode') label = `誘爆 ${label}`;
@@ -189,7 +198,7 @@ export async function playEvents(events) {
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
-        if (cEl) {
+        if (cEl && ev.amount !== 0) {
           const isBuff = ev.amount > 0;
           const prefix = isBuff ? '+' : '';
           const color = isBuff ? '#4ade80' : '#ef4444';
@@ -209,11 +218,14 @@ export async function playEvents(events) {
           if (ev.card) {
             playCardVoice(ev.card, 'play');
           }
+          await sleep(200);
         } else {
           // 通常のパワー変動（バフ等）
-          playSound(SOUNDS.seSkill);
+          if (ev.amount !== 0) {
+            playSound(SOUNDS.seSkill);
+            await sleep(200);
+          }
         }
-        await sleep(200);
         break;
       }
       case 'deadly': {
@@ -228,6 +240,14 @@ export async function playEvents(events) {
           cEl.classList.remove('anim-shake');
           void cEl.offsetWidth;
           cEl.classList.add('anim-shake');
+          // 【システム処理】
+          // 破壊時にも確実にシェイクアニメーションを再トリガーさせるため、
+          // アニメーション終了後にクラスを自動で削除する。
+          cEl.addEventListener(
+            'animationend',
+            () => cEl.classList.remove('anim-shake'),
+            { once: true }
+          );
 
           createDamagePopup(cEl, '破壊', '#991b1b');
         }
@@ -265,7 +285,10 @@ export async function playEvents(events) {
             }
           }
 
-          const rect = hpFill.getBoundingClientRect();
+          // HPバーの塗りつぶし(hp-bar-fill)はtransitionで幅が変動するため、
+          // 幅が固定の親要素(hp-bar-bg)を基準に座標を算出し、位置ずれを防止する
+          const hpBg = hpFill.parentElement;
+          const rect = hpBg.getBoundingClientRect();
           const x = rect.left + rect.width / 2 - 10;
           const y = rect.top + yOffset;
           if (addDamagePopupHook) {
@@ -281,10 +304,22 @@ export async function playEvents(events) {
           playmat.classList.remove('anim-shake');
           void playmat.offsetWidth;
           playmat.classList.add('anim-shake');
+          // 【システム処理】画面揺れの再発火保証のためのクリーンアップ
+          playmat.addEventListener(
+            'animationend',
+            () => playmat.classList.remove('anim-shake'),
+            { once: true }
+          );
         } else if (ev.source === 'artillery') {
           document.body.classList.remove('anim-shake');
           void document.body.offsetWidth;
           document.body.classList.add('anim-shake');
+          // 【システム処理】画面揺れの再発火保証のためのクリーンアップ
+          document.body.addEventListener(
+            'animationend',
+            () => document.body.classList.remove('anim-shake'),
+            { once: true }
+          );
         }
 
         updateHPBar();
@@ -708,6 +743,12 @@ export async function playEvents(events) {
                 cardEl.classList.remove('anim-shake');
                 void cardEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
                 cardEl.classList.add('anim-shake');
+                // 【システム処理】破壊時エフェクトの確実な再トリガーのためのクリーンアップ
+                cardEl.addEventListener(
+                  'animationend',
+                  () => cardEl.classList.remove('anim-shake'),
+                  { once: true }
+                );
               }
             }
 
