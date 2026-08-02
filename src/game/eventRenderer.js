@@ -9,6 +9,7 @@ import {
   playSound,
   sleep,
   applyEquipMerge,
+  triggerShakeAnimation,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
@@ -237,17 +238,7 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
         if (cEl) {
-          cEl.classList.remove('anim-shake');
-          void cEl.offsetWidth;
-          cEl.classList.add('anim-shake');
-          // 【システム処理】
-          // 破壊時にも確実にシェイクアニメーションを再トリガーさせるため、
-          // アニメーション終了後にクラスを自動で削除する。
-          cEl.addEventListener(
-            'animationend',
-            () => cEl.classList.remove('anim-shake'),
-            { once: true }
-          );
+          triggerShakeAnimation(cEl);
 
           createDamagePopup(cEl, '破壊', '#991b1b');
         }
@@ -300,27 +291,9 @@ export async function playEvents(events) {
 
         // プレイヤー側の画面揺らし
         const playmat = document.getElementById(`playmat-${sidePrefix}`);
-        if (playmat) {
-          playmat.classList.remove('anim-shake');
-          void playmat.offsetWidth;
-          playmat.classList.add('anim-shake');
-          // 【システム処理】画面揺れの再発火保証のためのクリーンアップ
-          playmat.addEventListener(
-            'animationend',
-            () => playmat.classList.remove('anim-shake'),
-            { once: true }
-          );
-        } else if (ev.source === 'artillery') {
-          document.body.classList.remove('anim-shake');
-          void document.body.offsetWidth;
-          document.body.classList.add('anim-shake');
-          // 【システム処理】画面揺れの再発火保証のためのクリーンアップ
-          document.body.addEventListener(
-            'animationend',
-            () => document.body.classList.remove('anim-shake'),
-            { once: true }
-          );
-        }
+        // TODO: 現在CSSに .card.anim-shake しか定義がないため、playmat への anim-shake は発動しない（デッドコード）。
+        // playmat の揺れを有効にするには .playmat.anim-shake 等のCSSルール追加が必要。
+        triggerShakeAnimation(playmat);
 
         updateHPBar();
         showSpeechBubble(ev.side);
@@ -739,17 +712,7 @@ export async function playEvents(events) {
             );
             if (cell) {
               const cardEl = cell.querySelector('.card');
-              if (cardEl) {
-                cardEl.classList.remove('anim-shake');
-                void cardEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-                cardEl.classList.add('anim-shake');
-                // 【システム処理】破壊時エフェクトの確実な再トリガーのためのクリーンアップ
-                cardEl.addEventListener(
-                  'animationend',
-                  () => cardEl.classList.remove('anim-shake'),
-                  { once: true }
-                );
-              }
+              triggerShakeAnimation(cardEl);
             }
 
             // 誘爆(explode)スキルのVFXトリガー

@@ -224,9 +224,9 @@ export const SKIN_MASTER = {
  * @type {Object<string, Object>}
  */
 export const SKIN_TYPE_INFO = {
-  summer: { label: '水着', prefix: '' },
-  school: { label: '学園', prefix: '' },
-  high: { label: '高難易度', prefix: '' },
+  summer: { label: '水着' },
+  school: { label: '学園' },
+  high: { label: '高難易度' },
 };
 
 /**

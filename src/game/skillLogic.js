@@ -28,6 +28,7 @@ import {
   shuffleArray,
   sleep,
   triggerGraveKeeperEffect,
+  triggerShakeAnimation,
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
@@ -1339,12 +1340,8 @@ export async function resolveActiveSkillEffect(
           `-${dmg}`,
           '#ef4444'
         );
-        const eh = document.getElementById('playmat-enemy');
-        if (eh) {
-          eh.classList.remove('anim-shake');
-          void eh.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-          eh.classList.add('anim-shake');
-        }
+        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
+        triggerShakeAnimation(document.getElementById('playmat-enemy'));
         showSpeechBubble('red');
         await triggerExtortInAction(c, o);
       } else {
@@ -1354,8 +1351,8 @@ export async function resolveActiveSkillEffect(
           `-${dmg}`,
           '#ef4444'
         );
-        document.body.classList.add('anim-shake');
-        setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
+        triggerShakeAnimation(document.getElementById('playmat-player'));
         showSpeechBubble('blue');
         await triggerExtortInAction(c, o);
       }
@@ -1368,8 +1365,8 @@ export async function resolveActiveSkillEffect(
           `-${dmg}`,
           '#ef4444'
         );
-        document.body.classList.add('anim-shake');
-        setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
+        triggerShakeAnimation(document.getElementById('playmat-player'));
         showSpeechBubble('blue');
       } else {
         GameState.enemyHP -= dmg;
@@ -1378,12 +1375,8 @@ export async function resolveActiveSkillEffect(
           `-${dmg}`,
           '#ef4444'
         );
-        const eh = document.getElementById('playmat-enemy');
-        if (eh) {
-          eh.classList.remove('anim-shake');
-          void eh.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-          eh.classList.add('anim-shake');
-        }
+        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
+        triggerShakeAnimation(document.getElementById('playmat-enemy'));
         showSpeechBubble('red');
       }
     }
@@ -1922,8 +1915,8 @@ export async function resolveActiveSkillEffect(
         `-${dmg}`,
         '#ef4444'
       );
-      const eh = document.getElementById('playmat-enemy');
-      if (eh) eh.classList.add('anim-shake');
+      // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
+      triggerShakeAnimation(document.getElementById('playmat-enemy'));
       showSpeechBubble('red');
     } else {
       GameState.playerHP -= dmg;
@@ -1932,8 +1925,8 @@ export async function resolveActiveSkillEffect(
         `-${dmg}`,
         '#ef4444'
       );
-      document.body.classList.add('anim-shake');
-      setTimeout(() => document.body.classList.remove('anim-shake'), 400);
+      // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
+      triggerShakeAnimation(document.getElementById('playmat-player'));
       showSpeechBubble('blue');
     }
     playSound(SOUNDS.seDamage);

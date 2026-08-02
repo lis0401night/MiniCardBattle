@@ -123,43 +123,27 @@ function generateSkinExchangeItems(skinType, costs) {
   /** @type {Array<Object>} */
   const items = [];
 
-  // スキン商品
-  for (const [charId, skinData] of Object.entries(skins)) {
-    items.push({
-      id: buildSkinId(charId, skinType),
-      type: 'skin',
-      charId,
-      name: skinData.name,
-      description: skinData.description || '',
-      cost: costs.skin,
-    });
-  }
-
-  // プレイマット商品
-  for (const [charId, skinData] of Object.entries(skins)) {
-    items.push({
-      id: buildPlaymatId(charId, skinType),
-      type: 'playmat',
-      charId,
-      name: skinData.name,
-      description: skinData.description || '',
-      cost: costs.playmat,
-    });
-  }
-
-  // アイコン商品
+  // 商品種別の定義。並び順はこの配列の順序に従う（スキン→プレイマット→アイコン）。
   // 意図的な設計: アイコンのIDはスキンのIDと重複する仕様です。
   // 所持判定や保存先配列（unlockedSkins / unlockedIcons）が独立しているため競合しません。
   // ※既存ユーザーのセーブデータ破損を防ぐため、IDの変更・接頭辞の付与は行わないこと。
-  for (const [charId, skinData] of Object.entries(skins)) {
-    items.push({
-      id: buildSkinId(charId, skinType),
-      type: 'icon',
-      charId,
-      name: skinData.name,
-      description: skinData.description || '',
-      cost: costs.icon,
-    });
+  const ITEM_KINDS = [
+    { type: 'skin', buildId: buildSkinId, cost: costs.skin },
+    { type: 'playmat', buildId: buildPlaymatId, cost: costs.playmat },
+    { type: 'icon', buildId: buildSkinId, cost: costs.icon },
+  ];
+
+  for (const { type, buildId, cost } of ITEM_KINDS) {
+    for (const [charId, skinData] of Object.entries(skins)) {
+      items.push({
+        id: buildId(charId, skinType),
+        type,
+        charId,
+        name: skinData.name,
+        description: skinData.description || '',
+        cost,
+      });
+    }
   }
 
   return items;

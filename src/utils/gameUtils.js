@@ -1420,3 +1420,22 @@ export function hasActiveFilters(
     !!filters.name
   );
 }
+
+/**
+ * 指定されたDOM要素に anim-shake クラスを付与し、シェイクアニメーションを（再）トリガーする。
+ * 既にアニメーション中の場合もリフローを挟んで確実に再発火させる。
+ * アニメーション終了時にクラスを自動的に除去するクリーンアップリスナーも登録する。
+ * @param {HTMLElement|null} element - シェイクを適用する対象要素（null の場合は何もしない）
+ * @returns {void}
+ */
+export function triggerShakeAnimation(element) {
+  if (!element) return;
+  element.classList.remove('anim-shake');
+  void element.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+  element.classList.add('anim-shake');
+  element.addEventListener(
+    'animationend',
+    () => element.classList.remove('anim-shake'),
+    { once: true }
+  );
+}

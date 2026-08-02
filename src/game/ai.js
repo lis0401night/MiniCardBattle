@@ -1,18 +1,19 @@
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { shuffleArray, sleep } from '../utils/gameUtils.js';
 import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
+import { shuffleArray, sleep } from '../utils/gameUtils.js';
 import { getEasyDecision } from './ai_easy.js';
 import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
 import { discardCard, endTurnLogic, playCard } from './battle.js';
 import { isGraveKeeperActive } from './engine.js';
-import { GameState } from '../state/gameState.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 
 import { updateBattleUIHook } from '../services/uiBattle.js';
 
+// AI状態をバトルUIへ通知し、UIフックの例外でAI処理を中断しない。
 const notifyBattleUI = () => {
   try {
     if (updateBattleUIHook) updateBattleUIHook();
