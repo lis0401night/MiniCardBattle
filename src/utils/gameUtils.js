@@ -1236,14 +1236,14 @@ export function checkIsDefenseMode(
 }
 
 /**
- * 指定されたゲームモードがフリー対戦またはマイデッキ編集モードであるかどうかを判定します。
+ * 指定されたゲームモードがフリー対戦であるかどうかを判定します。
  * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
- * @returns {boolean} フリー対戦関連モードであるか
+ * @returns {boolean} フリー対戦モードであるか
  */
 export function checkIsFreeMode(
   gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
 ) {
-  return gameMode === 'free' || gameMode === 'free_deck_edit';
+  return gameMode === 'free';
 }
 
 /**
