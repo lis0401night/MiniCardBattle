@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import MenuButton from '../components/common/MenuButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import RoomTypeSelectModal from '../components/online/RoomTypeSelectModal.jsx';
 import { createRoom } from '../services/multiplayer.js';
 import {
   goToModeSelect,
@@ -9,12 +10,11 @@ import {
   showOnlineSearch,
 } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
-import { playSound, resolvePlayerName } from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
+import { resolvePlayerName } from '../utils/gameUtils.js';
 
 /**
  * オンライン対戦メニュー画面
- * 共通コンポーネント ScreenLayout と MenuButton を用いてリファクタリングを完了。
+ * 共通コンポーネント ScreenLayout, MenuButton, RoomTypeSelectModal を用いて構成。
  */
 export default function OnlineMenuScreen() {
   const [isMatching, setIsMatching] = useState(false);
@@ -110,104 +110,13 @@ export default function OnlineMenuScreen() {
         </div>
       )}
 
-      {/* 公開 / 非公開 選択ダイアログモーダル */}
-      {showRoomTypeModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
-              border: '2px solid #38bdf8',
-              borderRadius: '16px',
-              padding: '24px 28px',
-              width: '90%',
-              maxWidth: '360px',
-              textAlign: 'center',
-              boxShadow: '0 0 25px rgba(56, 189, 248, 0.3)',
-            }}
-          >
-            <h3
-              style={{
-                color: '#38bdf8',
-                margin: '0 0 12px 0',
-                fontSize: '1.25rem',
-              }}
-            >
-              ルーム公開設定
-            </h3>
-            <p
-              style={{
-                color: '#94a3b8',
-                fontSize: '0.9rem',
-                marginBottom: '20px',
-                lineHeight: 1.5,
-              }}
-            >
-              作成するルーム種別を選択してください。
-            </p>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                width: '100%',
-                alignItems: 'center',
-              }}
-            >
-              <MenuButton
-                label="公開ルーム作成"
-                variant="blue"
-                style={{ width: '100%', maxWidth: '260px', margin: 0 }}
-                onClick={() => executeCreateRoom(true)}
-              />
-              <MenuButton
-                label="非公開ルーム作成"
-                variant="yellow"
-                style={{ width: '100%', maxWidth: '260px', margin: 0 }}
-                onClick={() => executeCreateRoom(false)}
-              />
-              <button
-                type="button"
-                className="btn"
-                style={{
-                  width: '100%',
-                  maxWidth: '260px',
-                  margin: 0,
-                  padding: '12px 20px',
-                  background: '#475569',
-                  color: '#e2e8f0',
-                  border: '1px solid #64748b',
-                  borderRadius: '10px',
-                  fontWeight: 900,
-                  fontSize: '1.1rem',
-                  letterSpacing: '1.5px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                  cursor: 'pointer',
-                }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setShowRoomTypeModal(false);
-                }}
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ルーム公開 / 非公開 選択モーダル */}
+      <RoomTypeSelectModal
+        isOpen={showRoomTypeModal}
+        onSelectPublic={() => executeCreateRoom(true)}
+        onSelectPrivate={() => executeCreateRoom(false)}
+        onCancel={() => setShowRoomTypeModal(false)}
+      />
     </ScreenLayout>
   );
 }

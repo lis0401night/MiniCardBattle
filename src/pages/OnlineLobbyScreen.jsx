@@ -415,7 +415,7 @@ export default function OnlineLobbyScreen() {
           <span>
             ルームID:{' '}
             <strong style={{ color: '#fde047', letterSpacing: '1px' }}>
-              {roomData?.roomCode || getCurrentRoomId() || '-----'}
+              {roomData?.roomCode || '取得中...'}
             </strong>
           </span>
           <span

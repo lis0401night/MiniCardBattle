@@ -10,8 +10,8 @@ import {
   showOnlineMenu,
   showProfileSettings,
 } from '../services/uiMainCore.js';
-import { listenToLobbyRooms } from '../services/multiplayer.js';
-import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
+import { checkHasPublicWaitingRooms } from '../services/multiplayer.js';
+import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import NewsBanner from '../components/common/NewsBanner.jsx';
@@ -29,15 +29,14 @@ export default function ModeSelectScreen() {
   const [hasWaitingPublicRooms, setHasWaitingPublicRooms] = useState(false);
 
   useEffect(() => {
-    const myId = getOrCreateUUID();
-    const unsubscribe = listenToLobbyRooms((rooms) => {
-      const availableOtherRooms = rooms.filter((r) => r.host?.id !== myId);
-      setHasWaitingPublicRooms(availableOtherRooms.length > 0);
+    let isMounted = true;
+    checkHasPublicWaitingRooms().then((hasRooms) => {
+      if (isMounted) {
+        setHasWaitingPublicRooms(hasRooms);
+      }
     });
     return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
+      isMounted = false;
     };
   }, []);
 

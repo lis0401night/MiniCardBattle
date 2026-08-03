@@ -10,6 +10,9 @@ import {
   onChildAdded,
   onDisconnect,
   runTransaction,
+  query,
+  orderByChild,
+  equalTo,
 } from 'firebase/database';
 import { database } from '../utils/firebase.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
@@ -91,12 +94,53 @@ export function listenToLobbyRooms(onUpdate) {
   return unsubscribe;
 }
 
+const ROOM_CODE_MIN = 100000;
+const ROOM_CODE_RANGE = 900000;
+const ROOM_CODE_MAX_ATTEMPTS = 5;
+
 /**
  * 6桁のランダムな数字ルームID（コード）を生成する
  * @returns {string} 6桁の数字文字列
  */
 function generateRoomCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(ROOM_CODE_MIN + Math.random() * ROOM_CODE_RANGE).toString();
+}
+
+/**
+ * 既存の待機中ルームと重複しない一意な6桁ルームコードを生成する
+ * 同一のルームコードが複数立ち上がる衝突（誤マッチング）を完全に防止するため、
+ * Firebaseクエリを用いて重複がないことを確認した上で安全なコードを返す。
+ *
+ * @param {object} roomsRef - Firebase Realtime Databaseのルーム一覧参照
+ * @returns {Promise<string>} 重複のない一意な6桁のルームコード文字列
+ * @throws {Error} 最大再試行回数（5回）を超えてコード生成に失敗した場合
+ */
+async function generateUniqueRoomCode(roomsRef) {
+  for (let attempt = 0; attempt < ROOM_CODE_MAX_ATTEMPTS; attempt++) {
+    const code = generateRoomCode();
+    try {
+      // roomCode で Firebase 上の既存データをピンポイント検索
+      const codeQuery = query(
+        roomsRef,
+        orderByChild('roomCode'),
+        equalTo(code)
+      );
+      const snapshot = await get(codeQuery);
+      // 同一コードが存在しなければ安全な一意コードとして確定して返す
+      if (!snapshot.exists()) {
+        return code;
+      }
+    } catch (e) {
+      console.warn(
+        'generateUniqueRoomCode check failed, using generated code:',
+        e
+      );
+      return code;
+    }
+  }
+  throw new Error(
+    'ルームコードの生成に失敗しました。時間をおいて再試行してください。'
+  );
 }
 
 /**
@@ -134,7 +178,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   }
 
   const newRoomRef = push(roomsRef);
-  const roomCode = generateRoomCode();
+  const roomCode = await generateUniqueRoomCode(roomsRef);
 
   const rngSeed = Math.floor(Math.random() * 100000000).toString();
   currentRoomId = newRoomRef.key;
@@ -212,11 +256,36 @@ export async function joinRoomByCode(roomCodeInput, clientName) {
       }
     }
 
-    // 2. 直接参照で見つからなかった場合、全ルームの中から roomCode を照合
+    // 2. 直接参照で見つからなかった場合、roomCode のインデックスクエリで探索
     if (!targetRoomId) {
-      const allSnapshot = await getWithTimeout(get(roomsRef), 5000);
+      const codeQuery = query(
+        roomsRef,
+        orderByChild('roomCode'),
+        equalTo(trimmedCode)
+      );
+      const codeSnapshot = await getWithTimeout(get(codeQuery), 5000).catch(
+        () => null
+      );
+
+      if (codeSnapshot && codeSnapshot.exists()) {
+        codeSnapshot.forEach((child) => {
+          if (targetRoomId) return; // 最初に見つかった1件のみ採用
+          const room = child.val();
+          if (room.status === 'waiting') {
+            targetRoomId = child.key;
+          }
+        });
+      }
+    }
+
+    // 3. クエリで取得できなかった場合のフォールバック（全ルーム走査）
+    if (!targetRoomId) {
+      const allSnapshot = await getWithTimeout(get(roomsRef), 5000).catch(
+        () => null
+      );
       if (allSnapshot && allSnapshot.exists()) {
         allSnapshot.forEach((child) => {
+          if (targetRoomId) return; // 最初に見つかった1件のみ採用
           const room = child.val();
           if (
             room.status === 'waiting' &&
@@ -516,4 +585,41 @@ export async function forceDeleteAllRooms() {
   if (!database) return;
   const roomsRef = ref(database, ROOMS_REF);
   await remove(roomsRef).catch((e) => console.error(e));
+}
+
+/**
+ * 自身以外の未埋まり公開待機ルームが存在するかどうかを単発(get)で判定する
+ * メインメニュー画面（ModeSelectScreen）で過剰な通信・読み取りコストを回避しつつ、
+ * オンライン対戦ボタンの通知バッジ表示を更新するための軽量チェック関数
+ *
+ * @returns {Promise<boolean>} 自分以外の公開待機ルームが1件以上存在すればtrue
+ */
+export async function checkHasPublicWaitingRooms() {
+  if (!database) return false;
+  try {
+    const myId = getOrCreateUUID();
+    const roomsRef = ref(database, ROOMS_REF);
+
+    // 常時接続リスナーではなく単発(get)で現在のルーム一覧情報を取得
+    const snapshot = await get(roomsRef);
+    if (!snapshot.exists()) return false;
+
+    let hasRoom = false;
+    snapshot.forEach((child) => {
+      if (hasRoom) return; // 該当する部屋が1件でも見つかれば走査を打ち切り
+      const room = child.val();
+      // 「待機中(status === 'waiting')」「公開(isPublic !== false)」「自分以外のホスト」の3条件を満たすか確認
+      if (
+        room.status === 'waiting' &&
+        room.isPublic !== false &&
+        room.host?.id !== myId
+      ) {
+        hasRoom = true;
+      }
+    });
+    return hasRoom;
+  } catch (e) {
+    console.error('checkHasPublicWaitingRooms error:', e);
+    return false;
+  }
 }

@@ -60,9 +60,9 @@ reviews:
           - 実装基準: waitPlayerLaneSelection 等の呼び出しで checkConstraints フラグに true を渡し、resolveOnPlaySkill 等を呼び出す。
         - **「配置（Place）」のルール**:
           - 該当: 「マリアのリーダースキル」、「分身」、「召喚」、「復活」、「傀儡」スキルなど
-          - 制約チェック: 【無効 (false)】。伝説や生贄などの制約を完全に無視して任意のレーンに置ける。
+          - 制約チェック: 【無効 (false)】。伝説や生贄などの通常の配置制約は無視する。ただし封印レーンは常に配置不可。
           - 挙動: 原則として召喚時のアクティブスキルは発動しない。
-          - 実装基準: waitPlayerLaneSelection 等の呼び出しで checkConstraints フラグに false を渡す。
+          - 実装基準: waitPlayerLaneSelection 等では checkConstraints に false を渡す。ただし、フラグ値に関係なく封印レーンを拒否する。
         - **共通最優先ルール**:
           - 「封印（Seal）」されたレーンは、召喚・配置のどちらの手段であっても配置不可能（強制ブロック）。
 

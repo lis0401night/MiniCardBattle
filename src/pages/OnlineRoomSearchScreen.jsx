@@ -136,6 +136,7 @@ export default function OnlineRoomSearchScreen() {
       })
       .catch((e) => {
         console.error('joinRoomByCode error:', e);
+        if (!isMountedRef.current) return;
         setIsJoining(false);
         const msg =
           e?.message ||
