@@ -3,6 +3,7 @@ import BackButton from '../components/BackButton.jsx';
 import {
   forceDeleteAllRooms,
   joinRoom,
+  joinRoomByCode,
   listenToLobbyRooms,
 } from '../services/multiplayer.js';
 import { showOnlineLobby, showOnlineMenu } from '../services/uiMainCore.js';
@@ -17,8 +18,14 @@ import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
+/**
+ * オンラインルーム検索画面コンポーネント
+ * 公開ルーム一覧の表示および6桁ルームID指定による直接入室機能を提供する。
+ * @returns {import('react').ReactElement} オンラインルーム検索画面
+ */
 export default function OnlineRoomSearchScreen() {
   const [rooms, setRooms] = useState([]);
+  const [inputRoomCode, setInputRoomCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const isMountedRef = useRef(true);
 
@@ -39,6 +46,10 @@ export default function OnlineRoomSearchScreen() {
     };
   }, []);
 
+  /**
+   * タイトル連続クリック時のデバッグ操作（全ルーム削除）
+   * @returns {void}
+   */
   const handleTitleClick = () => {
     const next = debugClickCountRef.current + 1;
     debugClickCountRef.current = next;
@@ -65,6 +76,11 @@ export default function OnlineRoomSearchScreen() {
     }
   };
 
+  /**
+   * 公開一覧からのルーム入室ハンドラ
+   * @param {string} roomId - 対象のルームID
+   * @returns {void}
+   */
   const handleJoinClick = (roomId) => {
     playSound?.(SOUNDS.seClick);
     const name = resolvePlayerName();
@@ -93,6 +109,49 @@ export default function OnlineRoomSearchScreen() {
           showAlertModal?.(
             'ルームへの入室に失敗しました（既に満員か解散された可能性があります）。'
           );
+        }
+      });
+  };
+
+  /**
+   * 6桁ルームID指定での直入室ハンドラ
+   * @returns {void}
+   */
+  const handleJoinByCode = () => {
+    if (!inputRoomCode.trim()) {
+      showConfirmModal?.('ルームIDを入力してください。', null, null, true);
+      return;
+    }
+
+    playSound?.(SOUNDS.seClick);
+    const name = resolvePlayerName();
+
+    setIsJoining(true);
+    joinRoomByCode(inputRoomCode, name)
+      .then(() => {
+        if (isMountedRef.current) {
+          setIsJoining(false);
+          showOnlineLobby?.();
+        }
+      })
+      .catch((e) => {
+        console.error('joinRoomByCode error:', e);
+        setIsJoining(false);
+        const msg =
+          e?.message ||
+          '指定されたIDのルームが見つからないか、既に対戦中・解散されています。';
+        if (
+          e?.code === 'PERMISSION_DENIED' ||
+          msg.includes('Permission denied')
+        ) {
+          showConfirmModal?.(
+            '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。',
+            null,
+            null,
+            true
+          );
+        } else {
+          showConfirmModal?.(msg, null, null, true);
         }
       });
   };
@@ -136,6 +195,74 @@ export default function OnlineRoomSearchScreen() {
           overflowY: 'auto',
         }}
       >
+        {/* ルームID指定による直接入室領域 */}
+        <div
+          style={{
+            background: 'rgba(15, 23, 42, 0.7)',
+            border: '1px solid #334155',
+            borderRadius: '12px',
+            padding: '14px 16px',
+            marginBottom: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <div
+            style={{
+              color: '#fde047',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            🔑 ルームIDを指定して入室
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              placeholder="6桁のルームIDを入力"
+              value={inputRoomCode}
+              onChange={(e) => setInputRoomCode(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #475569',
+                background: 'rgba(30, 41, 59, 0.9)',
+                color: '#fff',
+                fontSize: '0.95rem',
+                outline: 'none',
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleJoinByCode();
+              }}
+            />
+            <button
+              className="btn"
+              style={{
+                margin: 0,
+                padding: '8px 16px',
+                fontSize: '0.85rem',
+                whiteSpace: 'nowrap',
+                background: 'linear-gradient(45deg, #0284c7, #0369a1)',
+                color: '#fff',
+                borderRadius: '6px',
+                border: 'none',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+              onClick={handleJoinByCode}
+              disabled={isJoining}
+            >
+              入室
+            </button>
+          </div>
+        </div>
+
         <h3
           style={{
             color: '#94a3b8',
@@ -145,7 +272,7 @@ export default function OnlineRoomSearchScreen() {
             marginBottom: '15px',
           }}
         >
-          募集中のルーム
+          募集中の公開ルーム
         </h3>
 
         {isJoining ? (

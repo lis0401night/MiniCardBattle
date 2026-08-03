@@ -387,17 +387,57 @@ export default function OnlineLobbyScreen() {
         ),
       }}
     >
-      <h2
-        style={{
-          color: '#38bdf8',
-          margin: '0 0 20px 0',
-          textAlign: 'center',
-          flexShrink: 0,
-          textShadow: '0 0 10px rgba(56, 189, 248, 0.5)',
-        }}
-      >
-        ルーム待機中
-      </h2>
+      <div style={{ textAlign: 'center', marginBottom: '15px', flexShrink: 0 }}>
+        <h2
+          style={{
+            color: '#38bdf8',
+            margin: '0 0 6px 0',
+            textAlign: 'center',
+            textShadow: '0 0 10px rgba(56, 189, 248, 0.5)',
+          }}
+        >
+          ルーム待機中
+        </h2>
+        {/* ルームIDと公開状態の表示 */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(15, 23, 42, 0.7)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: '20px',
+            padding: '4px 14px',
+            fontSize: '0.85rem',
+            color: '#e2e8f0',
+          }}
+        >
+          <span>
+            ルームID:{' '}
+            <strong style={{ color: '#fde047', letterSpacing: '1px' }}>
+              {roomData?.roomCode || getCurrentRoomId() || '-----'}
+            </strong>
+          </span>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              background:
+                roomData?.isPublic === false
+                  ? 'rgba(239, 68, 68, 0.2)'
+                  : 'rgba(16, 185, 129, 0.2)',
+              color: roomData?.isPublic === false ? '#fca5a5' : '#6ee7b7',
+              border:
+                roomData?.isPublic === false
+                  ? '1px solid rgba(239, 68, 68, 0.4)'
+                  : '1px solid rgba(16, 185, 129, 0.4)',
+            }}
+          >
+            {roomData?.isPublic === false ? '🔒 非公開' : '🌐 公開'}
+          </span>
+        </div>
+      </div>
 
       <div
         style={{

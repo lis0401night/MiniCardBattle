@@ -10,6 +10,7 @@ export const UI_IMAGES = {
   EVENT_DEFENSE: 'assets/ui/ui_event_defensebutton01.png',
   GALLERY_CARD_LIST: 'assets/ui/ui_cardlistbutton01.png',
   GALLERY_ACHIEVEMENTS: 'assets/ui/ui_achievementsbutton01.png',
+  GALLERY_GLOSSARY: 'assets/ui/ui_glossarybutton01.png',
   MENU_DUNGEON: 'assets/ui/ui_dungionbutton01.png',
   MENU_ONLINE: 'assets/ui/ui_versusbutton01.png',
   MENU_DECK: 'assets/ui/ui_deckbutton01.png',

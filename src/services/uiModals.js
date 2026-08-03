@@ -72,7 +72,9 @@ export function setShowAlertModalHook(h) {
 }
 export function showAlertModal(message, onClose = null) {
   if (showAlertModalHook) return showAlertModalHook(message, onClose);
-  console.warn('GlobalModals not mounted: showAlertModal fallback missing');
+  console.warn('GlobalModals not mounted: using window.alert fallback');
+  window.alert(message);
+  if (onClose) onClose();
 }
 
 export let showErrorModalHook = null;
@@ -81,7 +83,8 @@ export function setShowErrorModalHook(h) {
 }
 export function showErrorModal(message) {
   if (showErrorModalHook) return showErrorModalHook(message);
-  console.warn('GlobalModals not mounted: showErrorModal fallback missing');
+  console.warn('GlobalModals not mounted: using window.alert fallback');
+  window.alert(message);
   if (typeof stopAllBGM === 'function') stopAllBGM();
 }
 

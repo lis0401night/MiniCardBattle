@@ -1,6 +1,10 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import MenuImageButton from '../components/common/MenuImageButton.jsx';
-import { showAchievements, showCardList } from '../services/uiGallery.js';
+import {
+  showAchievements,
+  showCardList,
+  showGlossary,
+} from '../services/uiGallery.js';
 import { goToModeSelect } from '../services/uiMainCore.js';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
@@ -29,6 +33,11 @@ export default function GalleryMenuScreen() {
           image={images.GALLERY_ACHIEVEMENTS}
           onClick={() => showAchievements?.()}
           notificationBadge={hasUnclaimed}
+        />
+        <MenuImageButton
+          label="用語集"
+          image={images.GALLERY_GLOSSARY}
+          onClick={() => showGlossary?.()}
         />
       </div>
     </ScreenLayout>

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
-import { GameState } from '../state/gameState.js';
 import { showOnlineMenu } from '../services/uiMainCore.js';
+import { GameState } from '../state/gameState.js';
 
 /**
  * オンライン対戦ルール説明画面
@@ -46,6 +46,11 @@ export default function OnlineRulesScreen() {
             オンライン対戦中はお互いの画面が常に同期されます。
             <br />
             通信環境の良い場所でプレイしてください。
+          </li>
+          <li>
+            試験的な実装のため、バグが発生した場合ご了承ください。
+            <br />
+            公開サイトなどでご連絡いただければ幸いです。
           </li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}

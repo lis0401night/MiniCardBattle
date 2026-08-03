@@ -43,6 +43,8 @@ export const ROOMS_REF = 'rooms';
 
 /**
  * 待機中のルーム一覧を取得する関数（コールバックでリアルタイム更新）
+ * @param {function(Array): void} onUpdate - ルーム一覧更新時のコールバック関数
+ * @returns {function(): void} リスナー解除関数
  */
 export function listenToLobbyRooms(onUpdate) {
   if (!database) {
@@ -60,8 +62,8 @@ export function listenToLobbyRooms(onUpdate) {
       if (data) {
         Object.keys(data).forEach((key) => {
           const room = data[key];
-          // 待機中かつ自分が作った部屋ではないもの（テスト用なら自分の部屋も表示してOKだが、基本は除外か判別可能に）
-          if (room.status === 'waiting') {
+          // 待機中かつ公開設定（isPublic !== false）の部屋のみを一覧に含める
+          if (room.status === 'waiting' && room.isPublic !== false) {
             availableRooms.push({
               id: key,
               ...room,
@@ -69,7 +71,7 @@ export function listenToLobbyRooms(onUpdate) {
           }
         });
       }
-      // 作成日時の降順などで並び替えると良い
+      // 作成日時の降順で並び替え
       availableRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       onUpdate(availableRooms);
     },
@@ -90,9 +92,21 @@ export function listenToLobbyRooms(onUpdate) {
 }
 
 /**
- * ルームを作成する
+ * 6桁のランダムな数字ルームID（コード）を生成する
+ * @returns {string} 6桁の数字文字列
  */
-export async function createRoom(hostName) {
+function generateRoomCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * ルームを作成する
+ * @param {string} hostName - ホストプレイヤー名
+ * @param {object} [options] - ルーム作成のオプション
+ * @param {boolean} [options.isPublic=true] - 公開ルームにするかどうか
+ * @returns {Promise<string>} 作成されたルームID
+ */
+export async function createRoom(hostName, { isPublic = true } = {}) {
   if (!database) throw new Error('Firebase not initialized');
 
   const uuid = getOrCreateUUID();
@@ -120,6 +134,7 @@ export async function createRoom(hostName) {
   }
 
   const newRoomRef = push(roomsRef);
+  const roomCode = generateRoomCode();
 
   const rngSeed = Math.floor(Math.random() * 100000000).toString();
   currentRoomId = newRoomRef.key;
@@ -132,6 +147,8 @@ export async function createRoom(hostName) {
 
   await set(newRoomRef, {
     status: 'waiting',
+    isPublic: isPublic,
+    roomCode: roomCode,
     createdAt: serverTimestamp(),
     rngSeed: rngSeed,
     host: {
@@ -150,7 +167,86 @@ export async function createRoom(hostName) {
 }
 
 /**
+ * 6桁のルームコード（またはFirebase ID）から待機中ルームを検索して参加する
+ * @param {string} roomCodeInput - 入力された6桁コードまたはルームID
+ * @param {string} clientName - クライアントプレイヤー名
+ * @returns {Promise<string>} 参加したルームID
+ */
+export async function joinRoomByCode(roomCodeInput, clientName) {
+  if (!database) throw new Error('Firebase not initialized');
+  if (!roomCodeInput || !roomCodeInput.trim()) {
+    throw new Error('ルームIDを入力してください。');
+  }
+
+  const trimmedCode = roomCodeInput.trim();
+  const roomsRef = ref(database, ROOMS_REF);
+
+  // タイムアウト付きでPromiseを実行するヘルパー
+  const getWithTimeout = (promise, ms = 5000) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error('通信タイムアウト: ルーム情報の取得に失敗しました。')
+            ),
+          ms
+        )
+      ),
+    ]);
+  };
+
+  let targetRoomId = null;
+
+  try {
+    // 1. まず直接 Firebase Key (roomId) として存在するか短時間で試行
+    const directRef = ref(database, `${ROOMS_REF}/${trimmedCode}`);
+    const directSnapshot = await getWithTimeout(get(directRef), 3000).catch(
+      () => null
+    );
+    if (directSnapshot && directSnapshot.exists()) {
+      const room = directSnapshot.val();
+      if (room.status === 'waiting') {
+        targetRoomId = trimmedCode;
+      }
+    }
+
+    // 2. 直接参照で見つからなかった場合、全ルームの中から roomCode を照合
+    if (!targetRoomId) {
+      const allSnapshot = await getWithTimeout(get(roomsRef), 5000);
+      if (allSnapshot && allSnapshot.exists()) {
+        allSnapshot.forEach((child) => {
+          const room = child.val();
+          if (
+            room.status === 'waiting' &&
+            (room.roomCode === trimmedCode ||
+              String(room.roomCode) === trimmedCode)
+          ) {
+            targetRoomId = child.key;
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.error('joinRoomByCode search error:', err);
+    throw err;
+  }
+
+  if (!targetRoomId) {
+    throw new Error(
+      '指定されたIDのルームが見つからないか、既に対戦中・解散されています。'
+    );
+  }
+
+  return await joinRoom(targetRoomId, clientName);
+}
+
+/**
  * 既存のルームに参加する
+ * @param {string} roomId - 対象のルームID
+ * @param {string} clientName - クライアントプレイヤー名
+ * @returns {Promise<string>} 参加したルームID
  */
 export async function joinRoom(roomId, clientName) {
   if (!database) throw new Error('Firebase not initialized');

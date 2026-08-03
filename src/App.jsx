@@ -59,6 +59,7 @@ import DifficultySelectScreen from './pages/DifficultySelectScreen.jsx';
 import DungeonMenuScreen from './pages/DungeonMenuScreen.jsx';
 import DungeonRulesScreen from './pages/DungeonRulesScreen.jsx';
 import EndingScreen from './pages/EndingScreen.jsx';
+import GlossaryScreen from './pages/GlossaryScreen.jsx';
 import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
 import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
@@ -146,6 +147,7 @@ const SCREEN_COMPONENTS = {
   'screen-high-difficulty-rules': HighDifficultyRulesScreen,
   'screen-card-list': CardListScreen,
   'screen-achievements': AchievementsScreen,
+  'screen-glossary': GlossaryScreen,
   'screen-exchange': DefenseExchangeScreen,
   'screen-challenge-exchange': ChallengeExchangeScreen,
   'screen-challenge-unlock': ChallengeUnlockScreen,

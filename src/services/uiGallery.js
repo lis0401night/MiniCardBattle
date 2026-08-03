@@ -33,6 +33,22 @@ export function showGallery() {
   switchScreen('screen-gallery-menu');
 }
 
+/**
+ * ギャラリーメニュー画面に戻る（サブ画面からの戻り用）
+ */
+export function showGalleryMenu() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-gallery-menu');
+}
+
+/**
+ * 用語集画面を表示する
+ */
+export function showGlossary() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-glossary');
+}
+
 export function showCardList() {
   playSound(SOUNDS.seClick);
   if (typeof loadDeck === 'function') {
