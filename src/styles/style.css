@@ -4183,13 +4183,13 @@ body.vfx-shake {
   will-change: max-height;
 }
 
-/* 中項目リスト（カテゴリ内で独立してスクロール可能） */
+/* 中項目リスト（カテゴリ内で独立してスクロール可能。モバイルアドレスバー伸縮に対応するためdvh単位を使用） */
 .glossary-terms {
   display: flex;
   flex-direction: column;
   gap: 1px;
   background: rgba(255, 255, 255, 0.05);
-  max-height: 50vh;
+  max-height: 50dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
