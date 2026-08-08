@@ -183,11 +183,20 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       localPts = parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
-      const clearedData = loadFortuneClearedData('automata');
-      const maxGrade = Math.max(clearedData.maxGradeLevel, 0);
+      const clearedAutomata = loadFortuneClearedData('automata');
+      const clearedValkyria = loadFortuneClearedData('valkyria');
+      const maxGrade = Math.max(
+        clearedAutomata.maxGradeLevel,
+        clearedValkyria.maxGradeLevel,
+        0
+      );
 
       endpoint = 'update_fortune_points.php';
-      extraData = { fortune_max_grade: maxGrade };
+      extraData = {
+        fortune_max_grade: maxGrade,
+        fortune_max_total_cost_automata: clearedAutomata.maxTotalCost || 0,
+        fortune_max_total_cost_valkyria: clearedValkyria.maxTotalCost || 0,
+      };
 
       if (serverPlayerData) {
         sPts = serverPlayerData.fortune_points || 0;

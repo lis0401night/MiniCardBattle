@@ -18,6 +18,7 @@ import {
   calculateCombatPhase,
   isGraveKeeperActive,
   isMiasmaActive,
+  processDestructionTriggers,
   quietDiscardFromBoard,
 } from './engine.js';
 
@@ -568,9 +569,11 @@ export function processActionSequence(
               // 空きレーン: そのまま配置
               targetBoard[tLane] = newToken;
             }
-            // 奇襲（ambush）の場合、配置したレーンでただちに戦闘を行う
+            // 奇襲（ambush）の場合、配置したレーンでただちに戦闘を行い、戦闘で破壊されたカードを即時クリーンアップする
             if (action.skillId === 'ambush') {
+              if (newToken) newToken.isSkillResolving = false;
               applySingleCombat(simState, side, tLane, []);
+              processDestructionTriggers(simState, []);
             }
           }
         } else {
@@ -1053,6 +1056,17 @@ export function processActionSequence(
         }
       }
     }
+
+    // アクションキュー全解決後、敵の攻撃（プレイヤーのダイレクトアタック）をシミュレートする前に
+    // 全カードのスキル解決保護フラグ（isSkillResolving）を強制解除し、パワー0以下のカードを盤面から完全に除去（null化）する
+    [simState.playerBoard, simState.enemyBoard].forEach((b) => {
+      if (Array.isArray(b)) {
+        b.forEach((c) => {
+          if (c) c.isSkillResolving = false;
+        });
+      }
+    });
+    processDestructionTriggers(simState, []);
 
     const hpBeforeCombat = simState.enemyHP;
 

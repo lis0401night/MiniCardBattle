@@ -9,9 +9,17 @@ import { SOUNDS } from '../utils/sounds.js';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 
 export default function FortuneScreen() {
+  const fortuneOrder = ['automata', 'valkyria'];
   const fortuneEventChars = Object.values(CHARACTERS)
     .filter((c) => c.event_fortune)
-    .sort((a, b) => (a.id === 'satan' ? -1 : b.id === 'satan' ? 1 : 0));
+    .sort((a, b) => {
+      const idxA = fortuneOrder.indexOf(a.id);
+      const idxB = fortuneOrder.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
 
   return (
     <div

@@ -83,7 +83,7 @@ export default function GlossaryScreen() {
     scrollTimerRef.current = window.setTimeout(() => {
       const el = headerRefs.current[scrollTarget];
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
 

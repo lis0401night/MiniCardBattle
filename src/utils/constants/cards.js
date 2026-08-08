@@ -429,7 +429,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'eye',
-    obtain: ['cthulhu_normal'],
+    obtain: ['cthulhu_normal', 'cthulhu_hard'],
     name: '虚無の目覚め',
     rarity: 1,
     power: 4,
@@ -440,7 +440,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'slime',
-    obtain: ['cthulhu_normal', 'cthulhu_hard'],
+    obtain: ['cthulhu_normal'],
     name: '這い寄るスライム',
     rarity: 1,
     power: 5,
@@ -936,6 +936,28 @@ export const CARD_MASTER = [
       '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
   },
   {
+    id: 'dwarf',
+    obtain: ['exchange_fortune'],
+    name: '熟練の鍛冶師',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'forge' }],
+    voiceCategory: 'human_male_warrior',
+    flavor:
+      '飛び散る火の粉を物ともせず、重い金槌を振るう男。彼が魂を込めて鍛えた剣は、多くの戦士の命を救った。',
+  },
+  {
+    id: 'fenrir',
+    obtain: ['exchange_fortune'],
+    name: '炎の魔狼',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'sacrifice', value: 2 }, { id: 'quick' }],
+    voiceCategory: 'wolf',
+    flavor:
+      'その身を焦がす炎は、尽きることのない飢えと怒りの顕れ。獲物を見つけたが最後、燃え盛る牙が瞬く間に喉笛を食いちぎる。',
+  },
+  {
     id: 'bigeye',
     obtain: ['android_easy', 'android_normal', 'android_hard'],
     name: 'サイクロプス Mk-II',
@@ -1031,7 +1053,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'egg',
-    obtain: ['dragon_normal', 'dragon_hard'],
+    obtain: ['dragon_normal'],
     name: 'ドラゴンの卵',
     rarity: 2,
     power: 3,
@@ -1915,6 +1937,32 @@ export const CARD_MASTER = [
       '機械の暴走事故で娘を奪われた刑事。彼の心には、決して埋まることのない穴がある。',
   },
   {
+    id: 'berserkir',
+    obtain: ['exchange_fortune'],
+    name: 'アグニカの信奉者',
+    rarity: 2,
+    power: 1,
+    skills: [{ id: 'forge' }, { id: 'quick' }],
+    voiceCategory: 'human_male_warrior',
+    flavor:
+      '彼らにとって戦いとは、神に捧げる儀式である。狂信的な叫びと共に振るわれる武具は、戦いの中でより鋭く研ぎ澄まされていく。',
+  },
+  {
+    id: 'mjolnir',
+    obtain: ['exchange_fortune'],
+    name: '雷神の鎚',
+    rarity: 2,
+    power: 2,
+    skills: [
+      { id: 'equip' },
+      { id: 'snipe', value: 3 },
+      { id: 'salvage', value: 1 },
+    ],
+    voiceCategory: 'stone',
+    flavor:
+      '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。',
+  },
+  {
     id: 'cyborgninja',
     obtain: ['android_normal', 'android_hard'],
     name: '光刃の追跡者',
@@ -1976,6 +2024,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 5,
     skills: [{ id: 'miasma' }],
+    voiceCategory: 'monster',
     flavor:
       '瘴気を撒き散らす災いの魔獣。その息吹が触れたものは命の芽吹きすら阻まれる。',
   },
@@ -2387,7 +2436,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'tomoe',
-    obtain: ['oni_normal', 'oni_hard'],
+    obtain: ['oni_normal', 'oni_hard', 'oni_high'],
     name: '戦姫',
     rarity: 3,
     power: 5,
@@ -2662,6 +2711,32 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_assassin',
     flavor:
       '夜の街を自在に駆け抜ける凄腕のエージェント。その鋭い刃は、腐敗した体制を容赦なく切り裂く。',
+  },
+  {
+    id: 'valkyria',
+    obtain: ['exchange_fortune'],
+    name: '焦熱の戦乙女',
+    rarity: 3,
+    power: 3,
+    skills: [
+      { id: 'berserk', value: 3 },
+      { id: 'dodge', value: 6 },
+      { id: 'double_strike' },
+      { id: 'quick' },
+    ],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '炎のオーラを纏い、強襲を掛ける戦乙女。神速の連撃が、標的を瞬く間に灰燼に帰す。',
+  },
+  {
+    id: 'gungnir',
+    obtain: ['exchange_fortune'],
+    name: '巨人殺し',
+    rarity: 3,
+    power: 6,
+    skills: [{ id: 'equip' }, { id: 'legendary' }, { id: 'pierce' }],
+    voiceCategory: 'sword',
+    flavor: 'かつて天を突く巨躯を貫き、大地に縫い留めたとされる神器。',
   },
   {
     id: 'badwolf',
@@ -3429,78 +3504,6 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
-  {
-    id: 'dwarf',
-    obtain: ['exchange_fortune'],
-    name: '熟練の鍛冶師',
-    rarity: 1,
-    power: 4,
-    skills: [{ id: 'forge' }],
-    voiceCategory: 'human_male_warrior',
-    flavor:
-      '飛び散る火の粉を物ともせず、重い金槌を振るう男。彼が魂を込めて鍛えた剣は、多くの戦士の命を救った。',
-  },
-  {
-    id: 'fenrir',
-    obtain: ['exchange_fortune'],
-    name: '炎の魔狼',
-    rarity: 1,
-    power: 4,
-    skills: [{ id: 'sacrifice', value: 2 }, { id: 'quick' }],
-    voiceCategory: 'wolf',
-    flavor: '',
-  },
-  {
-    id: 'berserkir',
-    obtain: ['exchange_fortune'],
-    name: 'アグニカの信奉者',
-    rarity: 2,
-    power: 1,
-    skills: [{ id: 'forge' }, { id: 'quick' }],
-    voiceCategory: 'human_male_warrior',
-    flavor: '',
-  },
-  {
-    id: 'mjolnir',
-    obtain: ['exchange_fortune'],
-    name: '雷神の鎚',
-    rarity: 2,
-    power: 2,
-    skills: [
-      { id: 'equip' },
-      { id: 'snipe', value: 3 },
-      { id: 'salvage', value: 1 },
-    ],
-    voiceCategory: 'stone',
-    flavor:
-      '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。',
-  },
-  {
-    id: 'valkyria',
-    obtain: ['exchange_fortune'],
-    name: '焦熱の戦乙女',
-    rarity: 3,
-    power: 3,
-    skills: [
-      { id: 'berserk', value: 3 },
-      { id: 'dodge', value: 6 },
-      { id: 'double_strike' },
-      { id: 'quick' },
-    ],
-    voiceCategory: 'human_female_cool',
-    flavor:
-      '炎のオーラを纏い、強襲を掛ける戦乙女。神速の連撃が、標的を瞬く間に灰燼に帰す。',
-  },
-  {
-    id: 'gungnir',
-    obtain: ['exchange_fortune'],
-    name: '巨人殺し',
-    rarity: 3,
-    power: 6,
-    skills: [{ id: 'equip' }, { id: 'legendary' }, { id: 'pierce' }],
-    voiceCategory: 'sword',
-    flavor: '',
-  },
 
   // トークンカード
   {
@@ -3560,6 +3563,7 @@ export const CARD_MASTER = [
     name: '蛸足',
     power: 2,
     isToken: true,
+    voiceCategory: 'sea',
     flavor: '切り離されてもなお蠢き続ける蛸の足。',
   },
   {

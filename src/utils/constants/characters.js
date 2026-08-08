@@ -1098,6 +1098,10 @@ export const CHARACTERS = {
     color: '#e74c3c',
     leaderSkill: LEADER_SKILLS.valkyria_guard,
     hp: 20,
+    event_fortune: {
+      id: 'valkyria',
+      name: '紅蓮の翼 アンジェ',
+    },
     preBattleLine: '神の翼に誓って、あなたを裁きます。',
     dialogue: {
       intro: { default: '天の導きに従い、参ります。' },

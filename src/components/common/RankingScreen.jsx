@@ -89,6 +89,11 @@ export default function RankingScreen({
               ...p,
               // サーバーに保存された「一度に有効化した合計目標値の最大値」を使用
               fortune_total_cost: p.fortune_max_total_cost || 0,
+              fortune_total_cost_automata:
+                p.fortune_max_total_cost_automata ??
+                (p.fortune_max_total_cost || 0),
+              fortune_total_cost_valkyria:
+                p.fortune_max_total_cost_valkyria || 0,
             };
           });
 
@@ -167,9 +172,18 @@ export default function RankingScreen({
               const fortuneTotalPts =
                 parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) ||
                 0;
-              const clearedData = loadFortuneClearedData('automata');
-              const fortuneMaxGrade = Math.max(clearedData.maxGradeLevel, 0);
-              const fortuneTotalCost = clearedData.maxTotalCost || 0;
+              const clearedDataAutomata = loadFortuneClearedData('automata');
+              const clearedDataValkyria = loadFortuneClearedData('valkyria');
+              const fortuneMaxGrade = Math.max(
+                clearedDataAutomata.maxGradeLevel,
+                clearedDataValkyria.maxGradeLevel,
+                0
+              );
+              const fortuneTotalCostAutomata =
+                clearedDataAutomata.maxTotalCost || 0;
+              const fortuneTotalCostValkyria =
+                clearedDataValkyria.maxTotalCost || 0;
+              const fortuneTotalCost = fortuneTotalCostAutomata;
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
@@ -209,6 +223,8 @@ export default function RankingScreen({
                   fortune_total_points: fortuneTotalPts,
                   fortune_max_grade: fortuneMaxGrade,
                   fortune_total_cost: fortuneTotalCost,
+                  fortune_total_cost_automata: fortuneTotalCostAutomata,
+                  fortune_total_cost_valkyria: fortuneTotalCostValkyria,
                 };
                 activePlayers.push(virtualPlayer);
               }

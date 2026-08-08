@@ -28,6 +28,7 @@ import witch_high from './enemy_decks/event_high/witch.js';
 import oni_high from './enemy_decks/event_high/oni.js';
 import priest_high from './enemy_decks/event_high/priest.js';
 import automata_fortune from './enemy_decks/event_fortune/automata.js';
+import valkyria_fortune from './enemy_decks/event_fortune/valkyria.js';
 
 export const ENEMY_DECKS = {
   android,
@@ -56,4 +57,5 @@ export const ENEMY_DECKS = {
   oni_high,
   priest_high,
   automata_fortune,
+  valkyria_fortune,
 };

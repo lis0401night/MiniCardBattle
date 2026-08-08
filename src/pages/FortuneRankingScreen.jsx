@@ -19,8 +19,14 @@ export default function FortuneRankingScreen() {
         },
         {
           label: '合計目標値（マキナ）',
-          pointField: 'fortune_total_cost',
+          pointField: 'fortune_total_cost_automata',
           fallbackPointField: 'fortune_total_cost',
+          unit: '',
+        },
+        {
+          label: '合計目標値（アンジェ）',
+          pointField: 'fortune_total_cost_valkyria',
+          fallbackPointField: 'fortune_total_cost_valkyria',
           unit: '',
         },
       ]}
