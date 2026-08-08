@@ -25,6 +25,22 @@ export function isValkyriaGuardActive(state, side) {
   return (state[key] || 0) > 0;
 }
 
+/**
+ * カードがスキル・能力によって破壊・除去可能かどうかを判定する
+ * （無効(immune)スキル保持、または所有者に戦乙女の加護が有効な場合は破壊不可）
+ * @param {Object} state - バトル状態
+ * @param {Object} card - 対象カード
+ * @param {string} [side] - 対象カードの所有者 ('blue'|'red')。省略時は card.owner
+ * @returns {boolean} 破壊可能なら true、破壊無効（防護中）なら false
+ */
+export function canCardBeDestroyed(state, card, side = null) {
+  if (!card) return false;
+  if (hasSkill(card, 'immune')) return false;
+  const owner = side || card.owner;
+  if (owner && isValkyriaGuardActive(state, owner)) return false;
+  return true;
+}
+
 export function canTakeDamage(card, amount, isSkill = true) {
   if (!card) return false;
   if (isSkill && hasSkill(card, 'immune')) return false;
@@ -1156,12 +1172,12 @@ export function applyActiveSkillLogic(
       const targets = [];
       for (let j = 0; j < 3; j++) {
         if (eB[j] && (hasSkill(eB[j], 'defender') || eB[j].stunTurns > 0)) {
-          if (!hasSkill(eB[j], 'immune')) {
+          if (canCardBeDestroyed(state, eB[j], oppOwner)) {
             targets.push({ side: oppOwner, lane: j, card: eB[j] });
           }
         }
         if (b[j] && (hasSkill(b[j], 'defender') || b[j].stunTurns > 0)) {
-          if (!hasSkill(b[j], 'immune')) {
+          if (canCardBeDestroyed(state, b[j], owner)) {
             targets.push({ side: owner, lane: j, card: b[j] });
           }
         }
@@ -1177,12 +1193,12 @@ export function applyActiveSkillLogic(
       const targets = [];
       for (let j = 0; j < 3; j++) {
         if (eB[j] && hasSkill(eB[j], 'legendary')) {
-          if (!hasSkill(eB[j], 'immune')) {
+          if (canCardBeDestroyed(state, eB[j], oppOwner)) {
             targets.push({ side: oppOwner, lane: j, card: eB[j] });
           }
         }
         if (b[j] && hasSkill(b[j], 'legendary')) {
-          if (!hasSkill(b[j], 'immune')) {
+          if (canCardBeDestroyed(state, b[j], owner)) {
             targets.push({ side: owner, lane: j, card: b[j] });
           }
         }
@@ -1220,7 +1236,6 @@ export function applyActiveSkillLogic(
       for (let i = 0; i < targets.length; i++) {
         const tr = targets[i];
         const tgt = tr.targetCard;
-        const isImmune = hasSkill(tgt, 'immune');
 
         if (tr.isHost) {
           let totalLoss = tgt.equippedCards.reduce(
@@ -1251,14 +1266,15 @@ export function applyActiveSkillLogic(
           }
         }
 
+        const canDestroyTgt = canCardBeDestroyed(state, tgt, tr.side);
         if (tr.isSelf) {
-          if (!isImmune) {
+          if (canDestroyTgt) {
             tgt.currentPower = 0;
           }
         }
 
         if (tgt.currentPower <= 0) {
-          if (!isImmune) {
+          if (canDestroyTgt) {
             killTargets.push({ side: tr.side, lane: tr.lane, card: tgt });
             if (tr.side === oppOwner) {
               eB[tr.lane] = null;
@@ -2019,9 +2035,11 @@ export function applyActiveSkillLogic(
           const targetLane = occupiedLanes[idx];
           const targetCard = eB[targetLane];
           if (targetCard) {
-            if (hasSkill(targetCard, 'immune')) {
+            if (!canCardBeDestroyed(state, targetCard, oppOwner)) {
               events.push({
-                type: 'immune_block',
+                type: isValkyriaGuardActive(state, oppOwner)
+                  ? 'valkyria_guard_block'
+                  : 'immune_block',
                 side: oppOwner,
                 lane: targetLane,
                 card: targetCard,
@@ -2093,10 +2111,10 @@ export function applyActiveSkillLogic(
         .map((bc, i) => (bc !== null ? i : -1))
         .filter((i) => i !== -1);
       if (myOccupiedLanes.length > 0) {
-        // パワー昇順ソート。ただし免疫(immune)を最優先で選択して損失を回避する
+        // パワー昇順ソート。ただし免疫(immune)または加護を最優先で選択して損失を回避する
         myOccupiedLanes.sort((a, ab) => {
-          const aImmune = hasSkill(b[a], 'immune');
-          const bImmune = hasSkill(b[ab], 'immune');
+          const aImmune = !canCardBeDestroyed(state, b[a], owner);
+          const bImmune = !canCardBeDestroyed(state, b[ab], owner);
           if (aImmune && !bImmune) return -1;
           if (!aImmune && bImmune) return 1;
 
@@ -2107,9 +2125,11 @@ export function applyActiveSkillLogic(
         const execLane = myOccupiedLanes[0];
         const execCard = b[execLane];
         if (execCard) {
-          if (hasSkill(execCard, 'immune')) {
+          if (!canCardBeDestroyed(state, execCard, owner)) {
             events.push({
-              type: 'immune_block',
+              type: isValkyriaGuardActive(state, owner)
+                ? 'valkyria_guard_block'
+                : 'immune_block',
               side: owner,
               lane: execLane,
               card: execCard,
@@ -2957,7 +2977,7 @@ export function applyLeaderSkillLogic(
       if (!state._actionQueue) state._actionQueue = [];
       state._actionQueue.push(decision);
 
-      if (!hasSkill(eBoard[targetLane], 'immune')) {
+      if (canCardBeDestroyed(state, eBoard[targetLane], oppOwner)) {
         eBoard[targetLane].currentPower = 0;
         events.push({
           type: 'deadly',
@@ -2967,7 +2987,9 @@ export function applyLeaderSkillLogic(
         });
       } else {
         events.push({
-          type: 'immune_block',
+          type: isValkyriaGuardActive(state, oppOwner)
+            ? 'valkyria_guard_block'
+            : 'immune_block',
           side: oppOwner,
           lane: targetLane,
           source: 'targeted_destruction',
@@ -3026,7 +3048,7 @@ export function applyLeaderSkillLogic(
 
     // パート1: 相手のカードの破壊（選ばれた場合のみ）
     if (targetLane !== -1 && eBoard[targetLane] !== null) {
-      if (!hasSkill(eBoard[targetLane], 'immune')) {
+      if (canCardBeDestroyed(state, eBoard[targetLane], oppOwner)) {
         eBoard[targetLane].currentPower = 0;
         events.push({
           type: 'deadly',
@@ -3036,7 +3058,9 @@ export function applyLeaderSkillLogic(
         });
       } else {
         events.push({
-          type: 'immune_block',
+          type: isValkyriaGuardActive(state, oppOwner)
+            ? 'valkyria_guard_block'
+            : 'immune_block',
           side: oppOwner,
           lane: targetLane,
           source: 'elf_polarbear_combo',
@@ -4323,12 +4347,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           }
 
           if (hasSkill(aC, 'deadly')) {
-            if (!hasSkill(targetCard, 'immune')) {
+            if (canCardBeDestroyed(state, targetCard, defSide)) {
               targetCard.currentPower = 0;
               events.push({ type: 'deadly', side: defSide, lane: targetLane });
             } else {
               events.push({
-                type: 'immune_block',
+                type: isValkyriaGuardActive(state, defSide)
+                  ? 'valkyria_guard_block'
+                  : 'immune_block',
                 side: defSide,
                 lane: targetLane,
                 source: 'deadly',
@@ -4409,12 +4435,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       });
       aC_defend.currentPower -= dmgToAtk;
       if (originalTarget && hasSkill(originalTarget, 'deadly')) {
-        if (!hasSkill(aC_defend, 'immune')) {
+        if (canCardBeDestroyed(state, aC_defend, attackerSide)) {
           aC_defend.currentPower = 0;
           events.push({ type: 'deadly', side: attackerSide, lane: aLane });
         } else {
           events.push({
-            type: 'immune_block',
+            type: isValkyriaGuardActive(state, attackerSide)
+              ? 'valkyria_guard_block'
+              : 'immune_block',
             side: attackerSide,
             lane: aLane,
             source: 'deadly',

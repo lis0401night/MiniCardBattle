@@ -1810,6 +1810,31 @@ h2 {
   border-radius: 4px;
 }
 
+.card-skill.badge-valkyria-guard {
+  border-color: #f59e0b;
+  color: #fef08a;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.95),
+    rgba(180, 83, 9, 0.95)
+  );
+  font-weight: 900;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  animation: valkyria-guard-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes valkyria-guard-pulse {
+  0% {
+    box-shadow: 0 0 4px rgba(251, 191, 36, 0.6);
+    filter: brightness(1);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(251, 191, 36, 1);
+    filter: brightness(1.2);
+  }
+}
+
 .hand-area {
   display: flex;
   gap: 1.5%;

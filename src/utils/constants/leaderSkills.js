@@ -100,7 +100,7 @@ export const LEADER_SKILLS = {
   },
   valkyria_guard: {
     name: '戦乙女の加護',
-    desc: '(SP:4) 次の自分のターンの攻撃終了まで、自分のリーダーとカードが受ける全てのダメージを0にする。',
+    desc: '(SP:4) 次の自分のターンの攻撃終了まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
     cost: 4,
     action: 'valkyria_guard',
   },

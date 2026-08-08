@@ -16,8 +16,10 @@ import {
   applyPassiveSkillLogic,
   applySingleCombat,
   calculateCombatPhase,
+  canCardBeDestroyed,
   isGraveKeeperActive,
   isMiasmaActive,
+  isValkyriaGuardActive,
   processDestructionTriggers,
   quietDiscardFromBoard,
 } from './engine.js';
@@ -431,7 +433,7 @@ export function processActionSequence(
         const tgtLane = action.targetLane;
         if (tgtLane !== undefined && simState.enemyBoard[tgtLane] !== null) {
           const execCard = simState.enemyBoard[tgtLane];
-          if (!hasSkill(execCard, 'immune')) {
+          if (canCardBeDestroyed(simState, execCard, 'red')) {
             quietDiscardFromBoard(simState, 'red', tgtLane);
           }
         }
@@ -2153,7 +2155,12 @@ export function getBestSimulatedMove() {
       action === 'death_judgment'
     ) {
       tokenLanePatterns = [0, 1, 2]
-        .filter((l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'))
+        .filter(
+          (l) =>
+            opBoard[l] !== null &&
+            !hasSkill(opBoard[l], 'immune') &&
+            !isValkyriaGuardActive(GameState, 'blue')
+        )
         .map((l) => [l]);
       if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
     } else if (action === 'seal_lanes') {
@@ -2190,7 +2197,10 @@ export function getBestSimulatedMove() {
       tokenLanePatterns = combs.length > 0 ? combs : [null];
     } else if (action === 'elf_polarbear_combo') {
       const enemyOcc = [0, 1, 2].filter(
-        (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
+        (l) =>
+          opBoard[l] !== null &&
+          !hasSkill(opBoard[l], 'immune') &&
+          !isValkyriaGuardActive(GameState, 'blue')
       );
       const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
       let combs = [];

@@ -908,6 +908,18 @@ export function renderSkillTag(card, isBoard = false) {
 
   // 3. バッジの生成
   let badges = [];
+
+  // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブな場合に優先表示）
+  if (isBoard && card.owner && typeof GameState !== 'undefined') {
+    const isGuardActive =
+      card.owner === 'blue'
+        ? (GameState.valkyriaGuardBlue || 0) > 0
+        : (GameState.valkyriaGuardRed || 0) > 0;
+    if (isGuardActive) {
+      badges.push(`<div class="card-skill badge-valkyria-guard">🛡️ 加護</div>`);
+    }
+  }
+
   grouped.forEach((g) => {
     const countSuffix = g.count > 1 ? ` * ${g.count}` : '';
     badges.push(

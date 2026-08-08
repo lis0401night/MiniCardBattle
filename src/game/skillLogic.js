@@ -53,7 +53,11 @@ import {
   waitPlayerLaneSelection,
   waitSkillChoice,
 } from './battle.js';
-import { applyActiveSkillLogic, canTakeDamage } from './engine.js';
+import {
+  applyActiveSkillLogic,
+  canTakeDamage,
+  isValkyriaGuardActive,
+} from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { scanMissionEvents } from './missionLogic.js';
 import { hideMessage, showMessage } from './tutorialEngine.js';
@@ -1628,39 +1632,47 @@ export async function resolveActiveSkillEffect(
     }
 
     if (dmg > 0) {
-      // 実際のHP減少
-      if (o === 'blue') {
-        GameState.playerHP = Math.max(0, GameState.playerHP - dmg);
+      // 戦乙女の加護判定: 加護が有効な場合は自傷ダメージを0（無効化）にする
+      if (isValkyriaGuardActive(GameState, o)) {
+        playSound(SOUNDS.seSkill);
+        if (hpFill) {
+          createDamagePopup(hpFill, '加護', '#ffd700');
+        }
       } else {
-        GameState.enemyHP = Math.max(0, GameState.enemyHP - dmg);
+        // 実際のHP減少
+        if (o === 'blue') {
+          GameState.playerHP = Math.max(0, GameState.playerHP - dmg);
+        } else {
+          GameState.enemyHP = Math.max(0, GameState.enemyHP - dmg);
+        }
+
+        // VFX演出（SEも triggerVfx 内で自動再生されます）
+        if (window.triggerVfx) {
+          await window.triggerVfx('anm_skill_sacrifice', o, l);
+        } else {
+          playSound(SOUNDS.seSkillSacrifice);
+        }
+
+        // ダメージポップアップと画面揺らし
+        if (hpFill) {
+          const label = `-${dmg}`;
+          createDamagePopup(hpFill, label, '#ef4444');
+        }
+
+        const playmat = document.getElementById(`playmat-${sidePrefix}`);
+        if (playmat) {
+          playmat.classList.remove('anim-shake');
+          void playmat.offsetWidth;
+          playmat.classList.add('anim-shake');
+        }
+
+        playSound(SOUNDS.seDamage);
+        updateHPBar();
+        showSpeechBubble(o); // 被害側（自傷した本人）のセリフ
+
+        await sleep(300);
+        checkWinCondition();
       }
-
-      // VFX演出（SEも triggerVfx 内で自動再生されます）
-      if (window.triggerVfx) {
-        await window.triggerVfx('anm_skill_sacrifice', o, l);
-      } else {
-        playSound(SOUNDS.seSkillSacrifice);
-      }
-
-      // ダメージポップアップと画面揺らし
-      if (hpFill) {
-        const label = `-${dmg}`;
-        createDamagePopup(hpFill, label, '#ef4444');
-      }
-
-      const playmat = document.getElementById(`playmat-${sidePrefix}`);
-      if (playmat) {
-        playmat.classList.remove('anim-shake');
-        void playmat.offsetWidth;
-        playmat.classList.add('anim-shake');
-      }
-
-      playSound(SOUNDS.seDamage);
-      updateHPBar();
-      showSpeechBubble(o); // 被害側（自傷した本人）のセリフ
-
-      await sleep(300);
-      checkWinCondition();
     }
   } else if (skillId === 'dispel') {
     playSound(SOUNDS.seSkillBind); // Wait, dispel sound doesn't exist, we use generic or bind sound.
@@ -3664,13 +3676,23 @@ export async function triggerStartTurnPassive(owner, lane) {
         lane: lane,
         skillName: '契約',
       });
-      // HP減少はRenderer側で実施されるためここでは行わない
-      events.push({
-        type: 'damage_player',
-        side: owner,
-        amount: val,
-        source: 'contract',
-      });
+      // 戦乙女の加護判定: 加護が有効なら damage_player ではなく valkyria_guard_block イベントを生成
+      if (isValkyriaGuardActive(GameState, owner)) {
+        events.push({
+          type: 'valkyria_guard_block',
+          side: owner,
+          source: 'contract',
+          amount: val,
+        });
+      } else {
+        // HP減少はRenderer側で実施されるためここでは行わない
+        events.push({
+          type: 'damage_player',
+          side: owner,
+          amount: val,
+          source: 'contract',
+        });
+      }
       triggered = true;
     }
 
