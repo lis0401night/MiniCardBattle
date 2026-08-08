@@ -6,7 +6,6 @@ import {
   BOSS_CHARACTER_IDS,
   UNLOCKED_CHARACTERS_KEY,
 } from './config.js';
-import { safeParseArray } from '../gameUtils.js';
 import { LEADER_SKILLS } from './leaderSkills.js';
 import { applySkinDialogues } from './skinDialogues.js';
 import { SKIN_KEY_MAP, SKIN_MASTER } from './skins.js';
@@ -1493,6 +1492,13 @@ export function canShowUnlockableCharacter(
 ) {
   if (!UNLOCKABLE_CHARACTER_IDS.includes(characterId)) return true;
   if (isEnemySelect) return false;
-  const unlockedChars = safeParseArray(UNLOCKED_CHARACTERS_KEY);
+  let unlockedChars = [];
+  try {
+    const raw = localStorage.getItem(UNLOCKED_CHARACTERS_KEY);
+    const parsed = raw ? JSON.parse(raw.replace(/[\u200B-\u200D]/g, '')) : null;
+    if (Array.isArray(parsed)) unlockedChars = parsed;
+  } catch (e) {
+    console.error('Failed to parse unlocked characters:', e);
+  }
   return unlockedChars.includes(characterId);
 }
