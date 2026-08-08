@@ -921,11 +921,11 @@ export function renderSkillTag(
   let badges = [];
 
   // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブな場合に優先表示）
-  if (isBoard && card.owner) {
+  if (isBoard) {
     const isGuardActive =
       isValkyriaGuardActive !== null
         ? isValkyriaGuardActive
-        : typeof GameState !== 'undefined'
+        : card.owner && typeof GameState !== 'undefined'
           ? card.owner === 'blue'
             ? (GameState.valkyriaGuardBlue || 0) > 0
             : (GameState.valkyriaGuardRed || 0) > 0

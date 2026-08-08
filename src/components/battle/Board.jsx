@@ -135,6 +135,9 @@ export default function Board({
                   key={`enemy-card-${lane}-${card.uid || card.id}`}
                   cardObj={card}
                   isBoard={true}
+                  isValkyriaGuardActive={
+                    (GameState.valkyriaGuardRed || 0) > 0
+                  }
                   className={isSelected ? 'selected' : ''}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -228,6 +231,9 @@ export default function Board({
                   key={`player-card-${lane}-${card.uid || card.id}`}
                   cardObj={card}
                   isBoard={true}
+                  isValkyriaGuardActive={
+                    (GameState.valkyriaGuardBlue || 0) > 0
+                  }
                   className={isSelected ? 'selected' : ''}
                   onClick={(e) => {
                     e.stopPropagation();

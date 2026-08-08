@@ -165,7 +165,7 @@ export const CARD_MASTER = [
   {
     id: 'airship',
     obtain: ['initial', 'android_easy', 'priest_easy'],
-    name: 'セレスタリアのサルベージ船',
+    name: 'マキニアのサルベージ船',
     rarity: 1,
     power: 4,
     skills: [{ id: 'salvage', value: 1 }],
@@ -1056,10 +1056,10 @@ export const CARD_MASTER = [
     obtain: ['dragon_normal'],
     name: 'ドラゴンの卵',
     rarity: 2,
-    power: 3,
+    power: 4,
     skills: [
       { id: 'defender' },
-      { id: 'growth', value: -1 },
+      { id: 'growth', value: -2 },
       { id: 'split', value: 6, summonId: 'token_dragon' },
     ],
     voiceCategory: 'stone',
