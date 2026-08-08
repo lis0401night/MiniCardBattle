@@ -139,6 +139,10 @@ const SUMMER_SKINS = {
     description:
       '波を切り裂くように疾走する鉄の少女。彼女の心にも、夏の潮風は届くらしい。',
   }),
+  valkyria: makeSkinEntry('valkyria', 'summer', '戦乙女の夏季休暇', {
+    description:
+      'アグニカの神より賜った特別休暇。水着姿になっても、エリート戦乙女の威厳は崩さない。',
+  }),
 };
 
 // ---------------------------------------------------------------------------
@@ -181,6 +185,10 @@ const SCHOOL_SKINS = {
   }),
   automata: makeSkinEntry('automata', 'school', '喧嘩腰なライバル', {
     description: '何故かあなたを一方的にライバル視し、突っかかってくる特待生。',
+  }),
+  valkyria: makeSkinEntry('valkyria', 'school', '陸上部のエース', {
+    description:
+      '誰よりも速く、誰よりも高く。自称「天界仕込みのエリートランナー」の走りは、確かに異次元だった。',
   }),
 };
 
