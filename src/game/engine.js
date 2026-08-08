@@ -5422,6 +5422,14 @@ export function applyPassiveSkillLogic(
     }
   }
   processDestructionTriggers(state, events);
+
+  // 戦乙女の加護: ターン開始時スキル（契約等の自傷ダメージ）の解決完了後に自身の加護効果を終了（クリア）
+  if (side === 'blue') {
+    state.valkyriaGuardBlue = 0;
+  } else {
+    state.valkyriaGuardRed = 0;
+  }
+
   return events;
 }
 

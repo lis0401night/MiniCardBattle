@@ -3584,9 +3584,16 @@ export async function startTurn(owner) {
   // ターン数のカウント
   GameState.turnCount++;
 
-  // ターン開始時スキルの発動
+  // ターン開始時スキルの発動（「契約」の自傷ダメージ等も加護で無効化される）
   await triggerStartTurnSkills(owner);
   if (GameState.isBattleEnded) return;
+
+  // 戦乙女の加護: ターン開始時スキルの解決後に自身の加護効果を終了（クリア）
+  if (owner === 'blue') {
+    GameState.valkyriaGuardBlue = 0;
+  } else {
+    GameState.valkyriaGuardRed = 0;
+  }
 
   // 移動スキルの処理
   await handleMoveSkills(owner);
@@ -3629,11 +3636,7 @@ export async function startTurn(owner) {
   }
 
   if (skipAttack) {
-    // 何もせず攻撃フェーズをスキップ。スキップ時も攻撃ステップ通過として自身の加護を減算
-    if (owner === 'blue' && GameState.valkyriaGuardBlue > 0)
-      GameState.valkyriaGuardBlue--;
-    if (owner === 'red' && GameState.valkyriaGuardRed > 0)
-      GameState.valkyriaGuardRed--;
+    // 何もせず攻撃フェーズをスキップ
   } else {
     if (
       (owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(
@@ -3642,12 +3645,6 @@ export async function startTurn(owner) {
     ) {
       await executeCombatPhase(owner);
       if (checkWinCondition()) return;
-    } else {
-      // 盤面にカードが存在せず攻撃が行われなかった場合も、攻撃ステップ通過として自身の加護を減算
-      if (owner === 'blue' && GameState.valkyriaGuardBlue > 0)
-        GameState.valkyriaGuardBlue--;
-      if (owner === 'red' && GameState.valkyriaGuardRed > 0)
-        GameState.valkyriaGuardRed--;
     }
   }
 
@@ -4549,12 +4546,6 @@ export async function executeCombatPhase(atk) {
 
   // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
   await cleanupDestroyedCards();
-
-  // 戦乙女の加護: 全ての攻撃モーションおよび戦闘処理が完全に終了した末尾で自身の加護カウンターを減算
-  if (atk === 'blue' && GameState.valkyriaGuardBlue > 0)
-    GameState.valkyriaGuardBlue--;
-  if (atk === 'red' && GameState.valkyriaGuardRed > 0)
-    GameState.valkyriaGuardRed--;
 
   // 勝敗判定
   checkWinCondition();
