@@ -234,6 +234,9 @@ export function debugUnlockCards() {
 }
 
 export let achievementsClickCount = 0;
+/**
+ * デバッグ用：実績およびすべてのキャラクター（ボス・解放制キャラ）を全解放する
+ */
 export function debugUnlockAchievements() {
   achievementsClickCount++;
   if (achievementsClickCount >= DEBUG_CLICK_THRESHOLD) {
@@ -251,10 +254,38 @@ export function debugUnlockAchievements() {
       }
       achievementData.achievements[ach.id] = data;
     });
+
+    if (achievementData && achievementData.stats) {
+      achievementData.stats.voidDefeated = 1;
+      achievementData.stats.succubusDefeated = 1;
+      achievementData.stats.warlockDefeated = 1;
+      achievementData.stats.storyClears =
+        achievementData.stats.storyClears || {};
+      achievementData.stats.storyClears['knight'] = 1;
+    }
+
+    try {
+      const allUnlockableCharIds = ['automata', 'valkyria'];
+      localStorage.setItem(
+        'mini_card_battle_unlocked_characters',
+        JSON.stringify(allUnlockableCharIds)
+      );
+      if (typeof GameState !== 'undefined' && GameState) {
+        GameState.unlockedCharacters = [...allUnlockableCharIds];
+      }
+    } catch (e) {
+      console.error(
+        'デバッグモード：キャラクター解放中にエラーが発生しました',
+        e
+      );
+    }
+
     saveAchievements();
     renderAchievementsList();
     playSound(SOUNDS.seSkill);
-    showAlertModal('デバッグモード：すべての実績を解除しました！');
+    showAlertModal(
+      'デバッグモード：すべての実績とキャラクターを解除しました！'
+    );
   }
 }
 

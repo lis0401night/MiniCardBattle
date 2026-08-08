@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import { GameState } from '../state/gameState.js';
 
 import {
   setRenderAchievementsListHook,
@@ -169,6 +170,10 @@ export default function AchievementsScreen() {
     }
   };
 
+  /**
+   * 実績画面のタイトルを10回クリックした際のデバッグ用全解除ハンドラー
+   * 実績全解除・ボス解放統計の更新に加え、解放制キャラクター（automata, valkyria）の解放を行う
+   */
   const handleTitleClick = () => {
     const newCount = clickCount + 1;
     setClickCount(newCount);
@@ -177,8 +182,9 @@ export default function AchievementsScreen() {
 
       if (showConfirmModal) {
         showConfirmModal(
-          'デバッグモードを起動して全ての実績を解除しますか？',
+          'デバッグモードを起動して全ての実績とキャラクターを解除しますか？',
           () => {
+            // 1. 実績の全解除
             if (ACHIEVEMENT_MASTER && achievementData) {
               ACHIEVEMENT_MASTER.forEach((ach) => {
                 const data = achievementData.achievements[ach.id] || {
@@ -197,6 +203,8 @@ export default function AchievementsScreen() {
                 achievementData.achievements[ach.id] = data;
               });
             }
+
+            // 2. ボスキャラクターの解放（撃破統計・ストーリークリア統計の付与）
             if (achievementData && achievementData.stats) {
               achievementData.stats.voidDefeated = 1;
               achievementData.stats.succubusDefeated = 1;
@@ -206,12 +214,31 @@ export default function AchievementsScreen() {
               achievementData.stats.storyClears['knight'] = 1; // サタン解放用
             }
 
+            // 3. 解放制キャラクター（マキナ、アンジェ等）の全解放
+            try {
+              const allUnlockableCharIds = ['automata', 'valkyria'];
+              localStorage.setItem(
+                'mini_card_battle_unlocked_characters',
+                JSON.stringify(allUnlockableCharIds)
+              );
+              if (GameState) {
+                GameState.unlockedCharacters = [...allUnlockableCharIds];
+              }
+            } catch (e) {
+              console.error(
+                'デバッグモード：キャラクター解放中にエラーが発生しました',
+                e
+              );
+            }
+
             if (typeof saveAchievements === 'function') saveAchievements();
             updateAchievements(); // リアクティブに再描画
             if (typeof playSound === 'function' && SOUNDS)
               playSound(SOUNDS.seSkill);
             if (typeof showAlertModal === 'function')
-              showAlertModal('デバッグモード：すべての実績を解除しました！');
+              showAlertModal(
+                'デバッグモード：すべての実績とキャラクターを解除しました！'
+              );
           }
         );
       }

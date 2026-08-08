@@ -794,6 +794,7 @@ export function loadDeck() {
           id !== 'unknown' &&
           id !== 'npc' &&
           id !== 'automata' && // マキナは初期解放キャラではないため除外
+          id !== 'valkyria' && // アンジェは初期解放キャラではないため除外
           !BOSS_CHARACTER_IDS.includes(id)
       );
       leaderIds.forEach((id) => {

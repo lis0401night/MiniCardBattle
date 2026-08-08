@@ -23,6 +23,7 @@ export function initStoryMode(charId) {
     (id) =>
       id !== charId &&
       id !== 'automata' &&
+      id !== 'valkyria' &&
       id !== 'satan' &&
       id !== 'void' &&
       id !== 'succubus' &&

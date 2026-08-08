@@ -668,6 +668,11 @@ export const SKILLS = {
     icon: '🗝️',
     desc: () => '場に居る限り、お互いに墓地のカードを選択できない。',
   },
+  miasma: {
+    name: '瘴気',
+    icon: '☣️',
+    desc: () => '場に居る限り、お互いにHPを回復できない。',
+  },
   cull: {
     name: '選別',
     icon: '🫳',
@@ -881,6 +886,7 @@ export const PASSIVE_SKILLS = [
   'cleave',
   'arm_self',
   'grave_keeper',
+  'miasma',
   'awake',
   'startup',
   'intercept',
@@ -1033,6 +1039,7 @@ export const SKILL_CATEGORIES = [
           'startup',
           'union',
           'grave_keeper',
+          'miasma',
         ],
       },
       {

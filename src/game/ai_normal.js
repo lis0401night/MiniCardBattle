@@ -16,6 +16,7 @@ import {
   applyPassiveSkillLogic,
   calculateCombatPhase,
   isGraveKeeperActive,
+  isMiasmaActive,
   quietDiscardFromBoard,
   applySingleCombat,
 } from './engine.js';
@@ -340,10 +341,12 @@ export function processActionSequence(
               } else if (
                 ['heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
               ) {
-                // ユーティリティボーナス系スキル
-                simState.actionUtilityBonus =
-                  (simState.actionUtilityBonus || 0) +
-                  (AI_SKILL_UTILITY[sk.id] || 0);
+                // ユーティリティボーナス系スキル (瘴気発動時は回復ボーナスを除外)
+                if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
+                  simState.actionUtilityBonus =
+                    (simState.actionUtilityBonus || 0) +
+                    (AI_SKILL_UTILITY[sk.id] || 0);
+                }
               } else {
                 // その他のスキル: applyActiveSkillLogicで直接シミュレート
                 applyActiveSkillLogic(
@@ -964,9 +967,11 @@ export function processActionSequence(
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
           skills.forEach((sk) => {
             if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
-              simState.actionUtilityBonus =
-                (simState.actionUtilityBonus || 0) +
-                (AI_SKILL_UTILITY[sk.id] || 0);
+              if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
+                simState.actionUtilityBonus =
+                  (simState.actionUtilityBonus || 0) +
+                  (AI_SKILL_UTILITY[sk.id] || 0);
+              }
             }
             if (sk.id === 'call') {
               const callBonus = sk.value || 3;

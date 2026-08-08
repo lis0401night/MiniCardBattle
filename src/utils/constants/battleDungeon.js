@@ -10,6 +10,7 @@ import { ENEMY_DECKS } from './enemy_decks.js';
 const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
   'player_defense',
   'automata',
+  'valkyria',
   'automata_high',
   'satan_high',
   'satan',

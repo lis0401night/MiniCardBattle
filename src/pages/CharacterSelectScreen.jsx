@@ -46,12 +46,12 @@ const getFilteredCharacters = () => {
       return false;
     if (mode === 'tournament' && TOURNAMENT_BANNED_LEADER_IDS.includes(c.id))
       return false;
-    if (c.id === 'automata') {
+    if (c.id === 'automata' || c.id === 'valkyria') {
       if (isEnemySelect) return false;
       const unlockedChars = safeParseArray(
         'mini_card_battle_unlocked_characters'
       );
-      if (!unlockedChars.includes('automata')) return false;
+      if (!unlockedChars.includes(c.id)) return false;
     }
     if (BOSS_CHARACTER_IDS.includes(c.id)) {
       if (!isEnemySelect) return false;

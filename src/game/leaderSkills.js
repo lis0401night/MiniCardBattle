@@ -1792,6 +1792,8 @@ export async function executeLeaderSkillAction(
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard || [])),
     playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
     enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
+    valkyrieGuardBlue: GameState.valkyrieGuardBlue || 0,
+    valkyrieGuardRed: GameState.valkyrieGuardRed || 0,
   };
 
   if (
@@ -1823,6 +1825,8 @@ export async function executeLeaderSkillAction(
     // 封印状態の同期
     GameState.playerSealedLanes = currentState.playerSealedLanes;
     GameState.enemySealedLanes = currentState.enemySealedLanes;
+    GameState.valkyrieGuardBlue = currentState.valkyrieGuardBlue;
+    GameState.valkyrieGuardRed = currentState.valkyrieGuardRed;
   }
 
   // 【世界の再構築】discardCard を使った正規の手札破棄処理
@@ -1971,6 +1975,18 @@ export async function executeLeaderSkillAction(
           window.triggerVfx('anm_seal_lanes', owner, lane)
         )
       );
+    } else if (action === 'valkyrie_guard') {
+      playSound(SOUNDS.seSkill);
+      const cfg = isBlue ? GameState.playerConfig : GameState.enemyConfig;
+      const skillLine = getDialogue(
+        cfg,
+        null,
+        'skill',
+        isBlue ? 'player' : 'enemy'
+      );
+      if (skillLine && skillLine !== '...') {
+        showSpeechBubble(owner, skillLine);
+      }
     }
   }
 

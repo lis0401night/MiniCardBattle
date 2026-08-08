@@ -98,6 +98,12 @@ export const LEADER_SKILLS = {
     cost: 3,
     action: 'iron_march',
   },
+  valkyrie_guard: {
+    name: '戦乙女の加護',
+    desc: '(SP:4) 次の自分のターンの攻撃終了まで、自分のリーダーとカードが受ける全てのダメージを0にする。',
+    cost: 4,
+    action: 'valkyrie_guard',
+  },
   // --- 高難易度用リーダースキル ---
   android_high_volley: {
     name: '一斉射撃',

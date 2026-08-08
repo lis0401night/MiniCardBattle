@@ -28,6 +28,7 @@ import {
   shuffleArray,
   sleep,
   triggerGraveKeeperEffect,
+  triggerMiasmaEffect,
   triggerShakeAnimation,
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
@@ -54,6 +55,7 @@ import {
 } from './battle.js';
 import { applyActiveSkillLogic, canTakeDamage } from './engine.js';
 import { playEvents } from './eventRenderer.js';
+import { scanMissionEvents } from './missionLogic.js';
 import { hideMessage, showMessage } from './tutorialEngine.js';
 
 /**
@@ -1333,6 +1335,15 @@ export async function resolveActiveSkillEffect(
       } else if (roll === 5) {
         dmg = 3;
       }
+      const targetSide = o === 'blue' ? 'red' : 'blue';
+      scanMissionEvents(GameState, [
+        {
+          type: 'damage_player',
+          side: targetSide,
+          amount: dmg,
+          source: 'fate',
+        },
+      ]);
       if (o === 'blue') {
         GameState.enemyHP -= dmg;
         createDamagePopup(
@@ -1358,6 +1369,15 @@ export async function resolveActiveSkillEffect(
       }
     } else {
       let dmg = 6;
+      const targetSide = o === 'blue' ? 'blue' : 'red';
+      scanMissionEvents(GameState, [
+        {
+          type: 'damage_player',
+          side: targetSide,
+          amount: dmg,
+          source: 'fate',
+        },
+      ]);
       if (o === 'blue') {
         GameState.playerHP -= dmg;
         createDamagePopup(
@@ -1908,6 +1928,15 @@ export async function resolveActiveSkillEffect(
     if (window.triggerVfx) {
       await window.triggerVfx('anm_skill_artillery', o);
     }
+    const targetSide = o === 'blue' ? 'red' : 'blue';
+    scanMissionEvents(GameState, [
+      {
+        type: 'damage_player',
+        side: targetSide,
+        amount: dmg,
+        source: 'artillery',
+      },
+    ]);
     if (o === 'blue') {
       GameState.enemyHP -= dmg;
       createDamagePopup(
@@ -1934,7 +1963,50 @@ export async function resolveActiveSkillEffect(
     updateHPBar();
     checkWinCondition();
     await sleep(400);
+  } else if (skillId === 'decree') {
+    const decreeMultiplier = skillValue || 4;
+    const myHand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+    const decreeCount = (myHand || []).filter(
+      (card) => card && hasSkill(card, 'decree')
+    ).length;
+    const decreeDmg = decreeCount * decreeMultiplier;
+    if (decreeDmg > 0) {
+      const targetSide = o === 'blue' ? 'red' : 'blue';
+      scanMissionEvents(GameState, [
+        {
+          type: 'damage_player',
+          side: targetSide,
+          amount: decreeDmg,
+          source: 'decree',
+        },
+      ]);
+      if (o === 'blue') {
+        GameState.enemyHP -= decreeDmg;
+        createDamagePopup(
+          document.getElementById('enemy-hp-fill'),
+          `-${decreeDmg}`,
+          '#ef4444'
+        );
+        triggerShakeAnimation(document.getElementById('playmat-enemy'));
+        showSpeechBubble('red');
+      } else {
+        GameState.playerHP -= decreeDmg;
+        createDamagePopup(
+          document.getElementById('player-hp-fill'),
+          `-${decreeDmg}`,
+          '#ef4444'
+        );
+        triggerShakeAnimation(document.getElementById('playmat-player'));
+        showSpeechBubble('blue');
+      }
+      playSound(SOUNDS.seDamage);
+      await triggerExtortInAction(c, o);
+      updateHPBar();
+      checkWinCondition();
+      await sleep(400);
+    }
   } else if (skillId === 'heal' || skillId === 'heal_void') {
+    if (await triggerMiasmaEffect()) return;
     if (cEl) {
       const healText = skillId === 'heal_void' ? '回復(虚)' : '回復';
       createDamagePopup(cEl, healText, '#4ade80');

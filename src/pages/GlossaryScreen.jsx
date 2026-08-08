@@ -86,20 +86,21 @@ export default function GlossaryScreen() {
 
   /**
    * 大項目のアコーディオン開閉をトグルする
+   * 他の大項目および展開中の中項目を閉じた上で、選択された大項目のみを展開する排他制御を行う。
    * @param {number} categoryIndex - 大項目のインデックス
    * @returns {void}
    */
   const toggleCategory = useCallback(
     (categoryIndex) => {
       setOpenCategories((prev) => {
-        const next = new Set(prev);
-        if (next.has(categoryIndex)) {
-          next.delete(categoryIndex);
+        if (prev.has(categoryIndex)) {
+          setOpenTerms(new Set());
+          return new Set();
         } else {
-          next.add(categoryIndex);
+          setOpenTerms(new Set());
           scrollIntoViewSmooth(`cat-${categoryIndex}`);
+          return new Set([categoryIndex]);
         }
-        return next;
       });
     },
     [scrollIntoViewSmooth]
@@ -107,20 +108,19 @@ export default function GlossaryScreen() {
 
   /**
    * 中項目のアコーディオン開閉をトグルする
+   * 他の中項目を閉じた上で、選択された中項目のみを展開する排他制御を行う。
    * @param {string} termKey - 中項目の一意キー（"カテゴリIndex-用語Index"）
    * @returns {void}
    */
   const toggleTerm = useCallback(
     (termKey) => {
       setOpenTerms((prev) => {
-        const next = new Set(prev);
-        if (next.has(termKey)) {
-          next.delete(termKey);
+        if (prev.has(termKey)) {
+          return new Set();
         } else {
-          next.add(termKey);
           scrollIntoViewSmooth(`term-${termKey}`);
+          return new Set([termKey]);
         }
-        return next;
       });
     },
     [scrollIntoViewSmooth]

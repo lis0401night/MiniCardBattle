@@ -1085,6 +1085,28 @@ export const CHARACTERS = {
     },
     hp: 20,
   },
+  valkyria: {
+    id: 'valkyria',
+    stageId: 'valkyria',
+    name: '紅蓮の翼 アンジェ',
+    desc: 'アグニカの神の使いの戦乙女',
+    easeOfUse: 2,
+    filter: 'none',
+    image: 'assets/characters/char_valkyria.webp',
+    imageLose: 'assets/characters/char_valkyria_lose.webp',
+    icon: 'assets/icons/icon_valkyria.webp',
+    color: '#e74c3c',
+    leaderSkill: LEADER_SKILLS.valkyrie_guard,
+    hp: 20,
+    preBattleLine: '神の翼に誓って、あなたを裁きます。',
+    dialogue: {
+      intro: { default: '天の導きに従い、参ります。' },
+      win: { default: '神の加護が勝利を導きました。' },
+      lose: { default: '翼が……折れて……。' },
+      damage: ['くっ！', '浅い！', 'まだです！', '神よ……！'],
+      skill: '戦乙女の加護よ、我らを守りたまえ！',
+    },
+  },
 };
 
 // --- スキン定義（SKIN_MASTER + SKIN_KEY_MAP から自動生成） ---

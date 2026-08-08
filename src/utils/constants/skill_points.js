@@ -322,6 +322,10 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0,
   },
+  miasma: {
+    base: 0,
+    multiplier: 0,
+  },
   intercept: {
     base: 0,
     multiplier: 1,

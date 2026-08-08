@@ -584,6 +584,36 @@ export async function triggerGraveKeeperEffect() {
   return activated;
 }
 
+/**
+ * 瘴気スキルの発動チェックと「瘴気」ポップアップエフェクト表示
+ *
+ * @returns {Promise<boolean>} 瘴気効果がトリガーされ演出が実行された場合は true
+ */
+export async function triggerMiasmaEffect() {
+  let activated = false;
+  const triggerEffect = (board, side) => {
+    board.forEach((c, i) => {
+      if (c && hasSkill(c, 'miasma')) {
+        activated = true;
+        const el = document.querySelector(
+          `#${side}-lanes .cell[data-lane="${i}"] .card`
+        );
+        if (el) {
+          playSound(SOUNDS.seSkill);
+          createDamagePopup(el, '瘴気', '#7e22ce');
+        }
+      }
+    });
+  };
+  triggerEffect(GameState.playerBoard, 'player');
+  triggerEffect(GameState.enemyBoard, 'enemy');
+
+  if (activated) {
+    await sleep(500);
+  }
+  return activated;
+}
+
 // 判定補助: 特定のスキルを所持しているか
 export function hasSkill(c, skillId) {
   if (!c) return false;

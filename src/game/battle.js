@@ -295,6 +295,8 @@ function generateSyncState() {
     enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck)),
     currentTurn: GameState.currentTurn,
     turnCount: GameState.turnCount,
+    valkyrieGuardBlue: GameState.valkyrieGuardBlue || 0,
+    valkyrieGuardRed: GameState.valkyrieGuardRed || 0,
   };
 }
 
@@ -394,6 +396,10 @@ function applySyncState(state) {
   else GameState.currentTurn = state.currentTurn;
 
   GameState.turnCount = state.turnCount;
+
+  // 戦乙女の加護フラグ（敵味方反転）
+  GameState.valkyrieGuardBlue = state.valkyrieGuardRed || 0;
+  GameState.valkyrieGuardRed = state.valkyrieGuardBlue || 0;
 
   // 全てのUIを新しいステートに合わせて強制更新
   updateHPBar('blue', GameState.playerHP);
@@ -4490,10 +4496,16 @@ export async function executeCombatPhase(atk) {
     enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
     playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+    valkyrieGuardBlue: GameState.valkyrieGuardBlue || 0,
+    valkyrieGuardRed: GameState.valkyrieGuardRed || 0,
   };
 
   // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
   const events = calculateCombatPhase(currentState, atk, []);
+
+  // 戦乙女の加護: Engine側の計算結果をGameStateに反映
+  if (GameState.valkyrieGuardBlue > 0) GameState.valkyrieGuardBlue--;
+  if (GameState.valkyrieGuardRed > 0) GameState.valkyrieGuardRed--;
 
   // --- UI/演出の実行 (Rendererの呼び出し) ---
   // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）

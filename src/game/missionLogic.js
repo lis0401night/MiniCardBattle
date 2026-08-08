@@ -14,11 +14,32 @@ const PURE_ATTACK_SKILL_SOURCES = [
  * ボーナスの進捗をトラッキングするためのイベントハンドラ
  */
 
-// カードプレイ時のトラッキング
+/**
+ * カードプレイ（召喚）時に生贄・頂点スキルや特定カードの召喚実績を記録します。
+ * skillsプロパティに直接所持している場合に加え、choices / choices2の選択肢内に
+ * 生贄(takeover)・頂点(apex)を持つカードも対象とします。
+ *
+ * @param {object} state - 現在のGameState
+ * @param {string} side - カードをプレイしたプレイヤー ('blue' | 'red')
+ * @param {object} playingCard - プレイされたカードオブジェクト
+ */
 export function trackMissionSacrifice(state, side, playingCard) {
-  if (side === 'blue') {
+  if (side === 'blue' && playingCard) {
     if (!state.missionProgress) state.missionProgress = {};
-    if (hasSkill(playingCard, 'takeover') || hasSkill(playingCard, 'apex')) {
+
+    const hasSacrificeOrApex =
+      hasSkill(playingCard, 'takeover') ||
+      hasSkill(playingCard, 'apex') ||
+      (Array.isArray(playingCard.choices) &&
+        playingCard.choices.some(
+          (s) => s && (s.id === 'takeover' || s.id === 'apex')
+        )) ||
+      (Array.isArray(playingCard.choices2) &&
+        playingCard.choices2.some(
+          (s) => s && (s.id === 'takeover' || s.id === 'apex')
+        ));
+
+    if (hasSacrificeOrApex) {
       state.missionProgress.sacrifice_count =
         (state.missionProgress.sacrifice_count || 0) + 1;
     }

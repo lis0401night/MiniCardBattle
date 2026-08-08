@@ -653,7 +653,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ninja',
-    obtain: ['oni_normal'],
+    obtain: ['oni_easy', 'oni_normal'],
     name: '忍者',
     rarity: 1,
     power: 4,
@@ -664,7 +664,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'tengu',
-    obtain: ['oni_normal', 'oni_hard'],
+    obtain: ['oni_normal'],
     name: '武芸の師範',
     rarity: 1,
     power: 4,
@@ -675,7 +675,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'omyouji',
-    obtain: ['oni_easy', 'oni_normal'],
+    obtain: ['oni_normal', 'oni_hard'],
     name: '漆黒の除霊師',
     rarity: 1,
     power: 4,
@@ -683,17 +683,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cool',
     flavor:
       '闇を以て闇を制する異端の術士。彼女が札をきる時、悪霊は光ではなく、より深い漆黒の結界へと封じ込められる。',
-  },
-  {
-    id: 'drifter',
-    obtain: ['priest_easy', 'priest_normal'],
-    name: 'アッシュランドの放浪者',
-    rarity: 1,
-    power: 4,
-    skills: [{ id: 'double_strike' }],
-    voiceCategory: 'human_male_ikemen',
-    flavor:
-      '灼熱の砂塵を切り裂く双剣。彼の歩みの後には、切り刻まれた絶望のみが残る。',
   },
   {
     id: 'crocodile',
@@ -707,15 +696,15 @@ export const CARD_MASTER = [
       '太古の昔より大河の主として君臨し続ける巨大な爬虫類。その強靭なる顎は全てを噛み砕き、圧倒的な存在感は全てを威圧する。',
   },
   {
-    id: 'mummy',
-    obtain: ['priest_normal', 'priest_hard'],
-    name: '王墓の番人',
+    id: 'drifter',
+    obtain: ['priest_easy', 'priest_normal'],
+    name: 'アッシュランドの放浪者',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'burial', value: 3 }],
-    voiceCategory: 'undead',
+    skills: [{ id: 'double_strike' }],
+    voiceCategory: 'human_male_ikemen',
     flavor:
-      '永遠の眠りを守る呪われた守護者。その長い寿命は、守るべき秘宝と同じくらい朽ち果ててはいない。',
+      '灼熱の砂塵を切り裂く双剣。彼の歩みの後には、切り刻まれた絶望のみが残る。',
   },
   {
     id: 'treasurehunter',
@@ -727,6 +716,17 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_ikemen',
     flavor:
       'しなやかな鞭を華麗に操る冒険家。敵を攻撃する際に、その長いリーチを活かして複数の対象を同時に討つ。',
+  },
+  {
+    id: 'mummy',
+    obtain: ['priest_normal', 'priest_hard'],
+    name: '王墓の番人',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'burial', value: 3 }],
+    voiceCategory: 'undead',
+    flavor:
+      '永遠の眠りを守る呪われた守護者。その長い寿命は、守るべき秘宝と同じくらい朽ち果ててはいない。',
   },
   {
     id: 'voidbraver',
@@ -1030,19 +1030,19 @@ export const CARD_MASTER = [
       'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。',
   },
   {
-    id: 'hammer',
-    obtain: ['dragon_normal'],
-    name: '雷神の鎚',
+    id: 'egg',
+    obtain: ['dragon_normal', 'dragon_hard'],
+    name: 'ドラゴンの卵',
     rarity: 2,
-    power: 2,
+    power: 3,
     skills: [
-      { id: 'equip' },
-      { id: 'snipe', value: 3 },
-      { id: 'salvage', value: 1 },
+      { id: 'defender' },
+      { id: 'growth', value: -1 },
+      { id: 'split', value: 6, summonId: 'token_dragon' },
     ],
     voiceCategory: 'stone',
     flavor:
-      '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。',
+      '表面を覆う紅い殻が、内側から微かな熱を帯びている。いつか訪れる孵化の刻まで、秘めたる命は静かに力を蓄え続ける。',
   },
   {
     id: 'wyvern',
@@ -1970,19 +1970,14 @@ export const CARD_MASTER = [
     flavor: '試作型の重機動兵器。圧倒的な面制圧力を持つ。',
   },
   {
-    id: 'egg',
-    obtain: ['dragon_normal', 'dragon_hard'],
-    name: 'ドラゴンの卵',
+    id: 'catoblepas',
+    obtain: ['priest_hard'],
+    name: '瘴気のカトブレパス',
     rarity: 3,
-    power: 3,
-    skills: [
-      { id: 'defender' },
-      { id: 'growth', value: -1 },
-      { id: 'split', value: 6, summonId: 'token_dragon' },
-    ],
-    voiceCategory: 'stone',
+    power: 5,
+    skills: [{ id: 'miasma' }],
     flavor:
-      '表面を覆う紅い殻が、内側から微かな熱を帯びている。いつか訪れる孵化の刻まで、秘めたる命は静かに力を蓄え続ける。',
+      '邪眼と瘴気を撒き散らす災いの魔獣。その息吹が触れたものは命の芽吹きすら阻まれる。',
   },
   {
     id: 'dragoon',
@@ -2128,7 +2123,7 @@ export const CARD_MASTER = [
     obtain: ['elf_normal', 'elf_hard'],
     name: 'ロストレイルの精鋭パトロール',
     rarity: 3,
-    power: 2,
+    power: 1,
     skills: [
       { id: 'snipe', value: 1 },
       { id: 'snipe', value: 1 },
@@ -2391,19 +2386,15 @@ export const CARD_MASTER = [
       '術者の魂すら喰らう美しくも恐ろしき妖狐。奪った命を呪いの火として撒き散らすか、傀儡として縛り付けるかは彼女の気まぐれ。',
   },
   {
-    id: 'orochi',
+    id: 'tomoe',
     obtain: ['oni_normal', 'oni_hard'],
-    name: '神々の宿敵',
+    name: '戦姫',
     rarity: 3,
-    power: 6,
-    skills: [
-      { id: 'brutal', value: 6 },
-      { id: 'double_strike' },
-      { id: 'cleave' },
-    ],
-    voiceCategory: 'snake',
+    power: 5,
+    skills: [{ id: 'challenge' }, { id: 'quick' }, { id: 'pierce' }],
+    voiceCategory: 'human_female_cool',
     flavor:
-      '贄の血の匂いに惹かれ、古の厄災が目を覚ます。八つの顎がもたらすのは、すべてを無に帰す純粋な破壊のみ。',
+      '月夜の戦場に舞う女武者。疾風の如き薙刀の刺突が、群がる妖魔を容赦なく貫き伏せる。',
   },
   {
     id: 'kasha',
@@ -2646,7 +2637,7 @@ export const CARD_MASTER = [
     obtain: ['exchange_fortune'],
     name: '”ナイトランナー”',
     rarity: 3,
-    power: 6,
+    power: 5,
     skills: [
       { id: 'defender' },
       { id: 'startup' },
@@ -2888,20 +2879,15 @@ export const CARD_MASTER = [
       '黄金の都を一夜にして飲み込んだ大蠕虫。豊穣のオアシスも尖塔も今は全て腹の中。流砂がかつての繁栄を静かに弔う。',
   },
   {
-    id: 'valkyrie',
+    id: 'rocktitan',
     obtain: ['dragon_high'],
-    name: '焦熱の戦乙女',
+    name: 'ロックタイタン',
     rarity: 4,
-    power: 3,
-    skills: [
-      { id: 'berserk', value: 3 },
-      { id: 'dodge', value: 6 },
-      { id: 'double_strike' },
-      { id: 'quick' },
-    ],
-    voiceCategory: 'human_female_cool',
-    flavor:
-      '炎のオーラを纏い、強襲を掛ける戦乙女。神速の連撃が、標的を瞬く間に灰燼に帰す。',
+    power: 10,
+    skills: [{ id: 'apex' }, { id: 'choice', value: 1 }],
+    choices: [{ id: 'immune' }, { id: 'sturdy' }],
+    voiceCategory: 'stone',
+    flavor: '大地より生まれし不屈の巨神。その硬躯は、いかなる災厄をも跳ね返す。',
   },
   {
     id: 'hellkite',
@@ -3259,15 +3245,19 @@ export const CARD_MASTER = [
       '敗者の武具を奪い、己の力へと変える。その桁外れの剛腕から繰り出される一撃は、いかなる盾をも容易く貫く。',
   },
   {
-    id: 'ippondatara',
+    id: 'orochi',
     obtain: ['oni_high'],
-    name: '異形の刀鍛冶',
+    name: '神々の宿敵',
     rarity: 4,
-    power: 4,
-    skills: [{ id: 'forge' }],
-    voiceCategory: 'sword',
+    power: 6,
+    skills: [
+      { id: 'brutal', value: 6 },
+      { id: 'double_strike' },
+      { id: 'cleave' },
+    ],
+    voiceCategory: 'snake',
     flavor:
-      '深夜の山奥で槌音を響かせる、一つ目一本足の怪異。その身を炎に焦がしながら打たれた魔剣は、持ち主の魂をも喰らうという。',
+      '贄の血の匂いに惹かれ、古の厄災が目を覚ます。八つの顎がもたらすのは、すべてを無に帰す純粋な破壊のみ。',
   },
   {
     id: 'seimei',
@@ -3438,6 +3428,82 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
+  {
+    id: 'dwarf',
+    obtain: ['oni_high'],
+    name: '熟練の鍛冶師',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'forge' }],
+    voiceCategory: 'human_male_warrior',
+    flavor: '飛び散る火の粉を物ともせず、重い金槌を振るう男。彼が魂を込めて鍛えた剣は、多くの戦士の命を救った。',
+  },
+  {
+    id: 'fenrir',
+    obtain: ['oni_high'],
+    name: '溶岩生まれの狼',
+    rarity: 1,
+    power: 4,
+    skills: [{ id: 'sacrifice', value: 2 }, { id: 'quick' }],
+    voiceCategory: 'wolf',
+    flavor: '',
+  },
+  {
+    id: 'berserkir',
+    obtain: ['oni_high'],
+    name: 'アグニカの信奉者',
+    rarity: 2,
+    power: 1,
+    skills: [{ id: 'forge' }, { id: 'quick' }],
+    voiceCategory: 'human_male_warrior',
+    flavor: '',
+  },
+  {
+    id: 'hammer',
+    obtain: ['dragon_normal'],
+    name: '雷神の鎚',
+    rarity: 2,
+    power: 2,
+    skills: [
+      { id: 'equip' },
+      { id: 'snipe', value: 3 },
+      { id: 'salvage', value: 1 },
+    ],
+    voiceCategory: 'stone',
+    flavor:
+      '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。',
+  },
+  {
+    id: 'valkyrie',
+    obtain: ['dragon_high'],
+    name: '焦熱の戦乙女',
+    rarity: 3,
+    power: 3,
+    skills: [
+      { id: 'berserk', value: 3 },
+      { id: 'dodge', value: 6 },
+      { id: 'double_strike' },
+      { id: 'quick' },
+    ],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '炎のオーラを纏い、強襲を掛ける戦乙女。神速の連撃が、標的を瞬く間に灰燼に帰す。',
+  },
+  {
+    id: 'gungnir',
+    obtain: ['dragon_normal'],
+    name: '巨人殺し',
+    rarity: 3,
+    power: 6,
+    skills: [
+      { id: 'equip' },
+      { id: 'legendary' },
+      { id: 'pierce' }
+    ],
+    voiceCategory: 'sword',
+    flavor: '',
+  },
+
   // トークンカード
   {
     id: 'token_knight',
