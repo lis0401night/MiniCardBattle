@@ -2613,11 +2613,20 @@ export async function resolveActiveSkillEffect(
       o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
 
-    let discardIndices = await waitPlayerHandSelection(
+    // 墓地に回収可能なカード（トークン以外のカード）が存在しない場合は手札を捨てる処理をスキップ
+    const validCardsInDiscard = discard.filter((card) => !card.isToken);
+    if (validCardsInDiscard.length === 0) return;
+
+    const maxDiscardCount = Math.min(
       skillValue || 1,
+      validCardsInDiscard.length
+    );
+
+    let discardIndices = await waitPlayerHandSelection(
+      maxDiscardCount,
       o,
       false,
-      `捨てるカードを${skillValue || 1}枚まで選んでください`
+      `捨てるカードを${maxDiscardCount}枚まで選んでください`
     );
     if (o === 'red' && discardIndices && discardIndices.length > 0) {
       // AIの思考時間を演出
