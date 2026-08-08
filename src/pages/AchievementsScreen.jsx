@@ -182,7 +182,7 @@ export default function AchievementsScreen() {
 
       if (showConfirmModal) {
         showConfirmModal(
-          'デバッグモードを起動して全ての実績とキャラクターを解除しますか？',
+          'デバッグモードを起動して全ての実績、キャラクター、ステージを解除しますか？',
           () => {
             // 1. 実績の全解除
             if (ACHIEVEMENT_MASTER && achievementData) {
@@ -214,19 +214,24 @@ export default function AchievementsScreen() {
               achievementData.stats.storyClears['knight'] = 1; // サタン解放用
             }
 
-            // 3. 解放制キャラクター（マキナ、アンジェ等）の全解放
+            // 3. 解放制キャラクターおよびステージ（マキナ、アンジェ等）の全解放
             try {
-              const allUnlockableCharIds = ['automata', 'valkyria'];
+              const allUnlockableIds = ['automata', 'valkyria'];
               localStorage.setItem(
                 'mini_card_battle_unlocked_characters',
-                JSON.stringify(allUnlockableCharIds)
+                JSON.stringify(allUnlockableIds)
+              );
+              localStorage.setItem(
+                'mini_card_battle_unlocked_stages',
+                JSON.stringify(allUnlockableIds)
               );
               if (GameState) {
-                GameState.unlockedCharacters = [...allUnlockableCharIds];
+                GameState.unlockedCharacters = [...allUnlockableIds];
+                GameState.unlockedStages = [...allUnlockableIds];
               }
             } catch (e) {
               console.error(
-                'デバッグモード：キャラクター解放中にエラーが発生しました',
+                'デバッグモード：キャラクター・ステージ解放中にエラーが発生しました',
                 e
               );
             }
@@ -237,7 +242,7 @@ export default function AchievementsScreen() {
               playSound(SOUNDS.seSkill);
             if (typeof showAlertModal === 'function')
               showAlertModal(
-                'デバッグモード：すべての実績とキャラクターを解除しました！'
+                'デバッグモード：すべての実績、キャラクター、ステージを解除しました！'
               );
           }
         );

@@ -4067,13 +4067,6 @@ export function calculateCombatPhase(state, attackerSide, events = []) {
     applySingleCombat(state, attackerSide, l, events);
   }
 
-  // 戦乙女の加護: 攻撃を行った側のプレイヤー自身の攻撃フェーズ終了時にカウンターを減算
-  if (attackerSide === 'blue' && state.valkyriaGuardBlue > 0) {
-    state.valkyriaGuardBlue--;
-  } else if (attackerSide === 'red' && state.valkyriaGuardRed > 0) {
-    state.valkyriaGuardRed--;
-  }
-
   processDestructionTriggers(state, events);
   return events;
 }
