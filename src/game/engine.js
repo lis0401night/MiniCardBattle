@@ -15,7 +15,7 @@ import {
 export const VALKYRIA_GUARD_TURNS = 1;
 
 /**
- * 指定サイドにヴァルキリーガード（戦乙女の加護）が有効かどうかを判定する
+ * 指定サイドに戦乙女の加護が有効かどうかを判定する
  * @param {Object} state - バトル状態オブジェクト
  * @param {string} side - 'blue' または 'red'
  * @returns {boolean} ガードが有効なら true

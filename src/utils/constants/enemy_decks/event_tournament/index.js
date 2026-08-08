@@ -13,6 +13,7 @@ import elf from './elf.js';
 import knight from './knight.js';
 import oni from './oni.js';
 import priest from './priest.js';
+import valkyria from './valkyria.js';
 import witch from './witch.js';
 
 /**
@@ -31,4 +32,5 @@ export const TOURNAMENT_DECKS = {
   witch,
   oni,
   priest,
+  valkyria,
 };

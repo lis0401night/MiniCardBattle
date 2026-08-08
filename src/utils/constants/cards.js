@@ -2731,7 +2731,7 @@ export const CARD_MASTER = [
   {
     id: 'gungnir',
     obtain: ['exchange_fortune'],
-    name: '巨人殺し',
+    name: '”巨人殺し”',
     rarity: 3,
     power: 6,
     skills: [

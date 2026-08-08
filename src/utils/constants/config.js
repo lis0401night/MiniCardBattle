@@ -21,7 +21,7 @@ export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
 
 export const STORY_BANNED_LEADER_IDS = ['automata', 'valkyria']; // ストーリーモードで使用できないリーダーキャラクターID
-export const TOURNAMENT_BANNED_LEADER_IDS = ['valkyria']; // 夢幻の闘技祭で使用できないリーダーキャラクターID
+export const TOURNAMENT_BANNED_LEADER_IDS = []; // 夢幻の闘技祭で使用できないリーダーキャラクターID
 
 /** ストーリーモードのランダム対戦相手選出から除外されるキャラクターIDリスト */
 export const STORY_RANDOM_OPPONENT_EXCLUDED_IDS = [
