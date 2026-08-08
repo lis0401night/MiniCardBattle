@@ -3768,8 +3768,10 @@ export const PREMIUM_CARD_IDS = [
   'battlemage',
   'muramasa',
   'snakepriest',
+  // --- 運命の邂逅 ---
+  'liberator',
+  'dwarf',
   // --- シリアルコード ---
   'cheetah',
   'tortoise',
-  'liberator',
 ];

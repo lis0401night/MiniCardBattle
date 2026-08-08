@@ -18,8 +18,9 @@ export default function StageSelectScreen() {
 
     return Object.keys(stagesObj)
       .filter((id) => {
-        // 'automata'（Fortuneイベントの特殊ステージ）は明示的にアンロックされていない限り表示しない
-        if (id === 'automata' && !unlockedStages.includes('automata')) {
+        // 解放制ステージは明示的にアンロックされていない限り表示しない
+        const UNLOCKABLE_STAGE_IDS = ['automata', 'valkyria'];
+        if (UNLOCKABLE_STAGE_IDS.includes(id) && !unlockedStages.includes(id)) {
           return false;
         }
         return true;

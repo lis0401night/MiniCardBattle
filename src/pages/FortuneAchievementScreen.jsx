@@ -57,6 +57,25 @@ const unlockAndShowAcquisition = (
  * 運命の邂逅：特級目標の達成状況画面
  * 各特級目標の達成済み/未達成と、達成レベルの一覧を表示する
  */
+/**
+ * キャラクターごとの運命の邂逅レベル報酬定義
+ * @type {Object<string, Object>}
+ */
+const FORTUNE_REWARDS = {
+  automata: {
+    charName: '廃鉄の声 マキナ',
+    shortName: 'マキナ',
+    stageName: '鋼の墓標',
+    premiumCardId: 'liberator',
+  },
+  valkyria: {
+    charName: '紅蓮の翼 アンジェ',
+    shortName: 'アンジェ',
+    stageName: '約束の丘',
+    premiumCardId: 'dwarf',
+  },
+};
+
 export default function FortuneAchievementScreen() {
   const enemyCharId =
     typeof GameState !== 'undefined' && GameState.gameMode
@@ -66,61 +85,83 @@ export default function FortuneAchievementScreen() {
   const fortuneHandicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
   const clearedData = loadFortuneClearedData(enemyCharId);
 
+  /** キャラクターごとに報酬受取状況を分離するストレージキー */
+  const claimedLevelsKey = `mini_card_battle_fortune_claimed_levels_${enemyCharId}`;
+
   const [claimedLevels, setClaimedLevels] = useState(() => {
     try {
-      const saved = localStorage.getItem(
-        'mini_card_battle_fortune_claimed_levels'
-      );
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem(claimedLevelsKey);
+      if (saved) return JSON.parse(saved);
+      // 旧共通キーからのマイグレーション（automataの場合のみ）
+      if (enemyCharId === 'automata') {
+        const legacy = localStorage.getItem(
+          'mini_card_battle_fortune_claimed_levels'
+        );
+        if (legacy) {
+          const parsed = JSON.parse(legacy);
+          // 新キーに保存して旧キーは残しておく（他の箇所で参照されている可能性があるため）
+          localStorage.setItem(claimedLevelsKey, JSON.stringify(parsed));
+          return parsed;
+        }
+      }
+      return [];
     } catch {
       return [];
     }
   });
 
+  /** 現在のキャラクターに対応する報酬定義を取得する */
+  const rewards = FORTUNE_REWARDS[enemyCharId] || FORTUNE_REWARDS.automata;
+
+  /**
+   * 達成レベルに応じた報酬を付与する
+   * @param {number} level - 達成レベル（1～5）
+   */
   const handleClaimReward = (level) => {
     if (claimedLevels.includes(level)) return;
 
     if (level === 1) {
       unlockAndShowAcquisition(
         'mini_card_battle_unlocked_characters',
-        'automata',
+        enemyCharId,
         showCharacterAcquisitionModal,
-        '廃鉄の声 マキナ'
+        rewards.charName
       );
     } else if (level === 2) {
       unlockAndShowAcquisition(
         'mini_card_battle_unlocked_stages',
-        'automata',
+        enemyCharId,
         showStageAcquisitionModal,
-        '鋼の墓標'
+        rewards.stageName
       );
     } else if (level === 3) {
       unlockAndShowAcquisition(
         'mini_card_battle_unlocked_icons',
-        'automata',
+        enemyCharId,
         showIconAcquisitionModal,
-        'マキナ'
+        rewards.shortName
       );
     } else if (level === 4) {
       unlockAndShowAcquisition(
         'mini_card_battle_owned_playmats',
-        'automata',
+        enemyCharId,
         showPlaymatAcquisitionModal,
-        'マキナ'
+        rewards.shortName
       );
     } else if (level === 5) {
       // プレミアムカードのアンロック処理
+      const premiumId = rewards.premiumCardId;
       if (!GameState.unlockedPremiumCards) {
         GameState.unlockedPremiumCards = [];
       }
       if (!GameState.premiumCards) {
         GameState.premiumCards = [];
       }
-      if (!GameState.unlockedPremiumCards.includes('liberator')) {
-        GameState.unlockedPremiumCards.push('liberator');
+      if (!GameState.unlockedPremiumCards.includes(premiumId)) {
+        GameState.unlockedPremiumCards.push(premiumId);
       }
-      if (!GameState.premiumCards.includes('liberator')) {
-        GameState.premiumCards.push('liberator');
+      if (!GameState.premiumCards.includes(premiumId)) {
+        GameState.premiumCards.push(premiumId);
       }
       localStorage.setItem(
         'mini_card_battle_unlocked_premium',
@@ -130,15 +171,12 @@ export default function FortuneAchievementScreen() {
         'mini_card_battle_premium_cards',
         JSON.stringify(GameState.premiumCards)
       );
-      showPremiumAcquisitionModal('liberator');
+      showPremiumAcquisitionModal(premiumId);
     }
 
     const nextClaimed = [...claimedLevels, level];
     setClaimedLevels(nextClaimed);
-    localStorage.setItem(
-      'mini_card_battle_fortune_claimed_levels',
-      JSON.stringify(nextClaimed)
-    );
+    localStorage.setItem(claimedLevelsKey, JSON.stringify(nextClaimed));
   };
 
   const getRewardName = (lv) => {

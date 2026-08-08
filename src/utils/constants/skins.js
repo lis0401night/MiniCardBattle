@@ -187,8 +187,7 @@ const SCHOOL_SKINS = {
     description: '何故かあなたを一方的にライバル視し、突っかかってくる特待生。',
   }),
   valkyria: makeSkinEntry('valkyria', 'school', '陸上部のエース', {
-    description:
-      '誰よりも速く、誰よりも高く。自称「天界仕込みのエリートランナー」の走りは、確かに異次元だった。',
+    description: '誰よりも速く、誰よりも高くを目指す。自称「エリートランナー」',
   }),
 };
 

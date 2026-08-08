@@ -1,5 +1,5 @@
-import { audioCtx, voiceBuffers, loadAndDecodeAudio } from '../sounds.js';
 import { GameState } from '../../state/gameState.js';
+import { audioCtx, loadAndDecodeAudio, voiceBuffers } from '../sounds.js';
 import { CARD_MASTER } from './cards.js';
 
 /**
@@ -182,6 +182,7 @@ export const PREMIUM_VOICE_MAP = {
   berserker: 'human_female_cool',
   liberator: 'human_female_cool',
   crusher: 'human_male_ikemen',
+  dwarf: 'human_female_normal',
 };
 
 export async function playCardVoice(categoryOrCard, situation = 'play') {
