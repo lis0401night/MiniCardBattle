@@ -1949,36 +1949,43 @@ export async function resolveActiveSkillEffect(
       await window.triggerVfx('anm_skill_artillery', o);
     }
     const targetSide = o === 'blue' ? 'red' : 'blue';
-    scanMissionEvents(GameState, [
-      {
-        type: 'damage_player',
-        side: targetSide,
-        amount: dmg,
-        source: 'artillery',
-      },
-    ]);
-    if (o === 'blue') {
-      GameState.enemyHP -= dmg;
-      createDamagePopup(
-        document.getElementById('enemy-hp-fill'),
-        `-${dmg}`,
-        '#ef4444'
-      );
-      // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
-      triggerShakeAnimation(document.getElementById('playmat-enemy'));
-      showSpeechBubble('red');
+    if (isValkyriaGuardActive(GameState, targetSide)) {
+      const targetHpEl =
+        targetSide === 'red'
+          ? document.getElementById('enemy-hp-fill')
+          : document.getElementById('player-hp-fill');
+      createDamagePopup(targetHpEl, '加護', '#facc15');
+      if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
     } else {
-      GameState.playerHP -= dmg;
-      createDamagePopup(
-        document.getElementById('player-hp-fill'),
-        `-${dmg}`,
-        '#ef4444'
-      );
-      // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
-      triggerShakeAnimation(document.getElementById('playmat-player'));
-      showSpeechBubble('blue');
+      scanMissionEvents(GameState, [
+        {
+          type: 'damage_player',
+          side: targetSide,
+          amount: dmg,
+          source: 'artillery',
+        },
+      ]);
+      if (o === 'blue') {
+        GameState.enemyHP -= dmg;
+        createDamagePopup(
+          document.getElementById('enemy-hp-fill'),
+          `-${dmg}`,
+          '#ef4444'
+        );
+        triggerShakeAnimation(document.getElementById('playmat-enemy'));
+        showSpeechBubble('red');
+      } else {
+        GameState.playerHP -= dmg;
+        createDamagePopup(
+          document.getElementById('player-hp-fill'),
+          `-${dmg}`,
+          '#ef4444'
+        );
+        triggerShakeAnimation(document.getElementById('playmat-player'));
+        showSpeechBubble('blue');
+      }
+      playSound(SOUNDS.seDamage);
     }
-    playSound(SOUNDS.seDamage);
     await triggerExtortInAction(c, o);
     updateHPBar();
     checkWinCondition();
@@ -1992,34 +1999,43 @@ export async function resolveActiveSkillEffect(
     const decreeDmg = decreeCount * decreeMultiplier;
     if (decreeDmg > 0) {
       const targetSide = o === 'blue' ? 'red' : 'blue';
-      scanMissionEvents(GameState, [
-        {
-          type: 'damage_player',
-          side: targetSide,
-          amount: decreeDmg,
-          source: 'decree',
-        },
-      ]);
-      if (o === 'blue') {
-        GameState.enemyHP -= decreeDmg;
-        createDamagePopup(
-          document.getElementById('enemy-hp-fill'),
-          `-${decreeDmg}`,
-          '#ef4444'
-        );
-        triggerShakeAnimation(document.getElementById('playmat-enemy'));
-        showSpeechBubble('red');
+      if (isValkyriaGuardActive(GameState, targetSide)) {
+        const targetHpEl =
+          targetSide === 'red'
+            ? document.getElementById('enemy-hp-fill')
+            : document.getElementById('player-hp-fill');
+        createDamagePopup(targetHpEl, '加護', '#facc15');
+        if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
       } else {
-        GameState.playerHP -= decreeDmg;
-        createDamagePopup(
-          document.getElementById('player-hp-fill'),
-          `-${decreeDmg}`,
-          '#ef4444'
-        );
-        triggerShakeAnimation(document.getElementById('playmat-player'));
-        showSpeechBubble('blue');
+        scanMissionEvents(GameState, [
+          {
+            type: 'damage_player',
+            side: targetSide,
+            amount: decreeDmg,
+            source: 'decree',
+          },
+        ]);
+        if (o === 'blue') {
+          GameState.enemyHP -= decreeDmg;
+          createDamagePopup(
+            document.getElementById('enemy-hp-fill'),
+            `-${decreeDmg}`,
+            '#ef4444'
+          );
+          triggerShakeAnimation(document.getElementById('playmat-enemy'));
+          showSpeechBubble('red');
+        } else {
+          GameState.playerHP -= decreeDmg;
+          createDamagePopup(
+            document.getElementById('player-hp-fill'),
+            `-${decreeDmg}`,
+            '#ef4444'
+          );
+          triggerShakeAnimation(document.getElementById('playmat-player'));
+          showSpeechBubble('blue');
+        }
+        playSound(SOUNDS.seDamage);
       }
-      playSound(SOUNDS.seDamage);
       await triggerExtortInAction(c, o);
       updateHPBar();
       checkWinCondition();

@@ -268,7 +268,7 @@ export const VFX_DATA = {
     se: 'seClock', // 再生する効果音、SOUNDSのキーを指定
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 2,
-    scale: 0.4,
+    scale: 1.0,
     shake: false,
     targetSide: 'self', // 自陣に召喚
   },

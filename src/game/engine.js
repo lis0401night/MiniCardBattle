@@ -134,8 +134,8 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
     return;
   }
 
-  // 犠牲の肩代わりチェック
-  if (applyMartyrForLeader(state, side, amount, events)) {
+  // 犠牲の肩代わりチェック（戦闘ダメージのみ肩代わり可能）
+  if (source === 'combat' && applyMartyrForLeader(state, side, amount, events)) {
     return; // 肩代わりされたので終了
   }
 
@@ -1333,20 +1333,13 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'artillery': {
-      // 砲撃：相手リーダーに直接ダメージ
+      // 砲撃：相手リーダーに直接ダメージ（加護・犠牲考慮）
       const artAmt = val || 3;
-      if (owner === 'blue') state.enemyHP -= artAmt;
-      else state.playerHP -= artAmt;
-      events.push({
-        type: 'damage_player',
-        side: oppOwner,
-        amount: artAmt,
-        source: 'artillery',
-      });
+      damageLeader(state, oppOwner, artAmt, 'artillery', events);
       break;
     }
     case 'decree': {
-      // 宣告：手札の「宣告」を持つカード枚数×valダメージを相手リーダーに与える
+      // 宣告：手札の「宣告」を持つカード枚数×valダメージを相手リーダーに与える（加護・犠牲考慮）
       const decreeMultiplier = val || 4;
       const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const decreeCount = (myHand || []).filter(
@@ -1354,14 +1347,7 @@ export function applyActiveSkillLogic(
       ).length;
       const decreeDmg = decreeCount * decreeMultiplier;
       if (decreeDmg > 0) {
-        if (owner === 'blue') state.enemyHP -= decreeDmg;
-        else state.playerHP -= decreeDmg;
-        events.push({
-          type: 'damage_player',
-          side: oppOwner,
-          amount: decreeDmg,
-          source: 'decree',
-        });
+        damageLeader(state, oppOwner, decreeDmg, 'decree', events);
       }
       break;
     }
@@ -2427,21 +2413,9 @@ export function applyLeaderSkillLogic(
       });
     }
 
-    // 相手が捨てた虚空の枚数分、相手がダメージを受ける
+    // 相手が捨てた虚空の枚数分、相手がダメージを受ける（加護・犠牲考慮）
     if (voidDiscarded > 0) {
-      if (oppOwner === 'blue') {
-        state.playerHP -= voidDiscarded;
-        if (state.playerHP < 0) state.playerHP = 0;
-      } else {
-        state.enemyHP -= voidDiscarded;
-        if (state.enemyHP < 0) state.enemyHP = 0;
-      }
-      events.push({
-        type: 'damage_player',
-        side: oppOwner,
-        amount: voidDiscarded,
-        source: 'void_purge',
-      });
+      damageLeader(state, oppOwner, voidDiscarded, 'void_purge', events);
     }
 
     // 3. 虚空を追加
@@ -3922,24 +3896,13 @@ export function applyLeaderSkillLogic(
   } else if (action === 'god_flame') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     const d = 3;
-    if (isBlue) {
-      state.enemyHP -= d;
-      if (!isMiasmaActive(state)) {
+    damageLeader(state, oppOwner, d, 'god_flame', events);
+    if (!isMiasmaActive(state)) {
+      if (isBlue) {
         state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
-      }
-    } else {
-      state.playerHP -= d;
-      if (!isMiasmaActive(state)) {
+      } else {
         state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + d);
       }
-    }
-    events.push({
-      type: 'damage_player',
-      side: oppOwner,
-      amount: d,
-      source: 'god_flame',
-    });
-    if (!isMiasmaActive(state)) {
       events.push({
         type: 'heal_player',
         side: owner,
@@ -3950,23 +3913,20 @@ export function applyLeaderSkillLogic(
   } else if (action === 'condemnation') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     const d = 5;
-    if (isBlue) {
-      state.enemyHP -= d;
-      if (!isMiasmaActive(state)) {
+    damageLeader(state, oppOwner, d, 'condemnation', events);
+    if (!isMiasmaActive(state)) {
+      if (isBlue) {
         state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
-      }
-    } else {
-      state.playerHP -= d;
-      if (!isMiasmaActive(state)) {
+      } else {
         state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + d);
       }
+      events.push({
+        type: 'heal_player',
+        side: owner,
+        amount: d,
+        source: 'condemnation',
+      });
     }
-    events.push({
-      type: 'damage_player',
-      side: oppOwner,
-      amount: d,
-      source: 'condemnation',
-    });
     if (!isMiasmaActive(state)) {
       events.push({
         type: 'heal_player',
@@ -4931,17 +4891,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           lane: aLane,
           skillName: '憑依',
         });
-        if (!applyMartyrForLeader(state, attackerSide, dmgToAtk, events)) {
-          if (attackerSide === 'blue') state.playerHP -= dmgToAtk;
-          else state.enemyHP -= dmgToAtk;
-          events.push({
-            type: 'damage_player',
-            side: attackerSide,
-            amount: dmgToAtk,
-            source: 'possession',
-            lane: aLane,
-          });
-        }
+        damageLeader(state, attackerSide, dmgToAtk, 'possession', events, aLane);
         dmgToAtk = 0;
       }
     }
