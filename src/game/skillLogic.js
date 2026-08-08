@@ -55,6 +55,7 @@ import {
 } from './battle.js';
 import {
   applyActiveSkillLogic,
+  canCardBeDestroyed,
   canTakeDamage,
   isValkyriaGuardActive,
 } from './engine.js';
@@ -143,10 +144,15 @@ async function executeGroupDestruction(targets) {
       `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
     );
 
-    if (hasSkill(t.card, 'immune')) {
-      // 「無効」を持つカードは破壊されない
+    if (!canCardBeDestroyed(GameState, t.card, t.side)) {
+      // 「無効」または「戦乙女の加護」を持つカードは破壊されない
       if (tgtEl) {
-        createDamagePopup(tgtEl, '無効', '#94a3b8');
+        const isGuard = isValkyriaGuardActive(GameState, t.side);
+        createDamagePopup(
+          tgtEl,
+          isGuard ? '加護' : '無効',
+          isGuard ? '#ffd700' : '#94a3b8'
+        );
       }
     } else {
       // React State経由でアニメーションクラスを付与
@@ -172,7 +178,7 @@ async function executeGroupDestruction(targets) {
   await sleep(400); // 破壊または無効演出待ち
 
   for (let t of targets) {
-    if (!hasSkill(t.card, 'immune')) {
+    if (canCardBeDestroyed(GameState, t.card, t.side)) {
       const eB =
         t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
       if (!(await discardCard(t.side, t.card, t.lane, true))) eB[t.lane] = null;
@@ -3375,12 +3381,18 @@ export async function resolveActiveSkillEffect(
         for (const targetLane of selectedLanes) {
           const targetCard = oppBoard[targetLane];
           if (targetCard) {
-            // 「無効」を持つカードは破壊できない
-            if (hasSkill(targetCard, 'immune')) {
+            // 「無効」または「戦乙女の加護」を持つカードは破壊できない
+            if (!canCardBeDestroyed(GameState, targetCard, oppOwner)) {
               const tgtEl = document.querySelector(
                 `#${oppOwner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
               );
-              if (tgtEl) createDamagePopup(tgtEl, '無効', '#94a3b8');
+              const isGuard = isValkyriaGuardActive(GameState, oppOwner);
+              if (tgtEl)
+                createDamagePopup(
+                  tgtEl,
+                  isGuard ? '加護' : '無効',
+                  isGuard ? '#ffd700' : '#94a3b8'
+                );
               playSound(SOUNDS.seSkill);
               await sleep(300);
             } else {
@@ -3463,12 +3475,18 @@ export async function resolveActiveSkillEffect(
         const targetLane = selectedLanes[0];
         const targetCard = myBoard[targetLane];
         if (targetCard) {
-          // 「無効」を持つカードは破壊できない
-          if (hasSkill(targetCard, 'immune')) {
+          // 「無効」または「戦乙女の加護」を持つカードは破壊できない
+          if (!canCardBeDestroyed(GameState, targetCard, o)) {
             const tgtEl = document.querySelector(
               `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
             );
-            if (tgtEl) createDamagePopup(tgtEl, '無効', '#94a3b8');
+            const isGuard = isValkyriaGuardActive(GameState, o);
+            if (tgtEl)
+              createDamagePopup(
+                tgtEl,
+                isGuard ? '加護' : '無効',
+                isGuard ? '#ffd700' : '#94a3b8'
+              );
             playSound(SOUNDS.seSkill);
             await sleep(300);
           } else {
