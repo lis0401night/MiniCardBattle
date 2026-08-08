@@ -29,6 +29,14 @@ const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
   'cthulhu_high',
 ]);
 
+/**
+ * 指定されたリーダーIDがダンジョン候補（敵ボス・レンタル）として使用可能な正規キャラクターか判定する
+ * @param {string} id - ENEMY_DECKS または CHARACTERS のキーID
+ * @returns {boolean} 有効なダンジョンキャラクターデッキの場合 true
+ */
+const isDungeonCharacterDeck = (id) =>
+  !DUNGEON_EXCLUDED_LEADER_IDS.has(id) && Boolean(CHARACTERS[id]);
+
 // 敵候補のカードリストを取得（golemからdicejugglerまで、トークン以外）
 export const getDungeonEnemyCandidates = () => {
   const startIndex = CARD_MASTER.findIndex((c) => c.id === 'golem');
@@ -91,9 +99,7 @@ export const getRentalDeckOptions = () => {
     }
 
     const addCharDecks = (difficultyKey, label) => {
-      const leaderIds = Object.keys(ENEMY_DECKS).filter(
-        (id) => !DUNGEON_EXCLUDED_LEADER_IDS.has(id)
-      );
+      const leaderIds = Object.keys(ENEMY_DECKS).filter(isDungeonCharacterDeck);
       leaderIds.forEach((id) => {
         const char = CHARACTERS[id];
         if (!char) return; // 存在しないキャラクターはスキップ（NPE防止）
@@ -256,10 +262,8 @@ export const generateCharacterBossEnemy = (floorNum) => {
         : [...(fallbackDeck?.hard || fallbackDeck?.normal || [])];
     }
   } else {
-    // 通常ボス: 除外リストにないキャラクターから選出
-    const leaderIds = Object.keys(ENEMY_DECKS).filter(
-      (id) => !DUNGEON_EXCLUDED_LEADER_IDS.has(id)
-    );
+    // 通常ボス: 除外リストになく、CHARACTERSマスタが存在する正規キャラクターから選出
+    const leaderIds = Object.keys(ENEMY_DECKS).filter(isDungeonCharacterDeck);
     bossId = leaderIds[Math.floor(Math.random() * leaderIds.length)];
     char = CHARACTERS[bossId] || CHARACTERS.android;
     // 30階までは中級、40階以降は上級

@@ -652,7 +652,7 @@ export async function playEvents(events) {
           `#${atkPfx}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
         if (cEl) {
-          createDamagePopup(cEl, ev.skillName, '#facc15');
+          createDamagePopup(cEl, ev.skillName, ev.color || '#facc15');
           // 簒奪 (extort) の場合は専用のVFXを発火させる
           if (ev.skillName === '簒奪' && window.triggerVfx) {
             await window.triggerVfx('anm_skill_extort', ev.side, ev.lane);

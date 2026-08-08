@@ -50,7 +50,7 @@ import {
   sleep,
   stopAllBGM,
   switchScreen,
-  triggerGraveKeeperEffect,
+  createGraveKeeperEvents,
 } from '../utils/gameUtils.js';
 import {
   AUDIO_INSTANCES,
@@ -2180,7 +2180,11 @@ export async function waitPlayerDiscardSelection(
   canCancel = true,
   maxChoices = 1
 ) {
-  if (await triggerGraveKeeperEffect()) return maxChoices > 1 ? [] : null;
+  const graveEvents = createGraveKeeperEvents(GameState);
+  if (graveEvents.length > 0) {
+    await playEvents(graveEvents);
+    return maxChoices > 1 ? [] : null;
+  }
   if (!validCards || validCards.length === 0) return maxChoices > 1 ? [] : null;
 
   // Check for Remote Choice Wait
@@ -2362,7 +2366,11 @@ export async function waitPlayerDualDiscardSelection(
   desc,
   canCancel = true
 ) {
-  if (await triggerGraveKeeperEffect()) return [];
+  const graveEvents = createGraveKeeperEvents(GameState);
+  if (graveEvents.length > 0) {
+    await playEvents(graveEvents);
+    return [];
+  }
 
   // 両方の墓地が空の場合は選択処理自体を即時スキップして解決
   const totalCardsCount = (blueCards?.length || 0) + (redCards?.length || 0);
@@ -3626,6 +3634,10 @@ export async function startTurn(owner) {
     GameState.isProcessing = true;
   }
 
+  // 戦乙女の加護: 攻撃フェーズステップ（スキップ時や空盤面時含む）通過ごとにカウンターを減算
+  if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
+  if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
+
   let skipAttack = false;
   if (GameState.attackSkipCount > 0) {
     skipAttack = true;
@@ -4530,10 +4542,6 @@ export async function executeCombatPhase(atk) {
 
   // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
   const events = calculateCombatPhase(currentState, atk, []);
-
-  // 戦乙女の加護: Engine側の計算結果をGameStateに反映
-  if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
-  if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
 
   // --- UI/演出の実行 (Rendererの呼び出し) ---
   // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）

@@ -558,60 +558,60 @@ window.addEventListener(
   true
 ); // キャプチャフェーズで阻止
 
-// 墓守スキルの発動チェックとエフェクト表示
-export async function triggerGraveKeeperEffect() {
-  let activated = false;
+/**
+ * 墓守スキルの発動チェックを行い、演出イベント配列を生成します。
+ * @param {Object} state - バトル状態オブジェクト
+ * @returns {Array<Object>} 発生した演出イベントの配列
+ */
+export function createGraveKeeperEvents(state) {
+  const events = [];
   const triggerEffect = (board, side) => {
+    if (!Array.isArray(board)) return;
     board.forEach((c, i) => {
       if (c && hasSkill(c, 'grave_keeper')) {
-        activated = true;
-        const el = document.querySelector(
-          `#${side}-lanes .cell[data-lane="${i}"] .card`
-        );
-        if (el) {
-          playSound(SOUNDS.seSkill);
-          createDamagePopup(el, '墓守', '#a8a29e');
-        }
+        events.push({
+          type: 'skill_popup',
+          side: side === 'player' ? 'blue' : 'red',
+          lane: i,
+          skillName: '墓守',
+          color: '#a8a29e',
+        });
       }
     });
   };
-  triggerEffect(GameState.playerBoard, 'player');
-  triggerEffect(GameState.enemyBoard, 'enemy');
-
-  if (activated) {
-    await sleep(500);
-  }
-  return activated;
+  const playerBoard = state?.playerBoard || [];
+  const enemyBoard = state?.enemyBoard || [];
+  triggerEffect(playerBoard, 'player');
+  triggerEffect(enemyBoard, 'enemy');
+  return events;
 }
 
 /**
- * 瘴気スキルの発動チェックと「瘴気」ポップアップエフェクト表示
- *
- * @returns {Promise<boolean>} 瘴気効果がトリガーされ演出が実行された場合は true
+ * 瘴気スキルの発動チェックを行い、演出イベント配列を生成します。
+ * @param {Object} state - バトル状態オブジェクト
+ * @returns {Array<Object>} 発生した演出イベントの配列
  */
-export async function triggerMiasmaEffect() {
-  let activated = false;
+export function createMiasmaEvents(state) {
+  const events = [];
   const triggerEffect = (board, side) => {
+    if (!Array.isArray(board)) return;
     board.forEach((c, i) => {
       if (c && hasSkill(c, 'miasma')) {
-        activated = true;
-        const el = document.querySelector(
-          `#${side}-lanes .cell[data-lane="${i}"] .card`
-        );
-        if (el) {
-          playSound(SOUNDS.seSkill);
-          createDamagePopup(el, '瘴気', '#7e22ce');
-        }
+        events.push({
+          type: 'skill_popup',
+          side: side === 'player' ? 'blue' : 'red',
+          lane: i,
+          skillName: '瘴気',
+          color: '#7e22ce',
+        });
       }
     });
   };
-  triggerEffect(GameState.playerBoard, 'player');
-  triggerEffect(GameState.enemyBoard, 'enemy');
-
-  if (activated) {
-    await sleep(500);
-  }
-  return activated;
+  const playerBoard = state?.playerBoard || [];
+  const enemyBoard = state?.enemyBoard || [];
+  triggerEffect(playerBoard, 'player');
+  triggerEffect(enemyBoard, 'enemy');
+  return events;
 }
 
 // 判定補助: 特定のスキルを所持しているか

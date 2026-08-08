@@ -27,8 +27,8 @@ import {
   playSound,
   shuffleArray,
   sleep,
-  triggerGraveKeeperEffect,
-  triggerMiasmaEffect,
+  createGraveKeeperEvents,
+  createMiasmaEvents,
   triggerShakeAnimation,
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
@@ -2008,7 +2008,11 @@ export async function resolveActiveSkillEffect(
       await sleep(400);
     }
   } else if (skillId === 'heal' || skillId === 'heal_void') {
-    if (await triggerMiasmaEffect()) return;
+    const miasmaEvents = createMiasmaEvents(GameState);
+    if (miasmaEvents.length > 0) {
+      await playEvents(miasmaEvents);
+      return;
+    }
     if (cEl) {
       const healText = skillId === 'heal_void' ? '回復(虚)' : '回復';
       createDamagePopup(cEl, healText, '#4ade80');
@@ -2065,7 +2069,11 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'recurse') {
     playSound(SOUNDS.seSkill);
     createDamagePopup(cEl, '再帰', '#10b981');
-    if (await triggerGraveKeeperEffect()) return;
+    const graveEvents = createGraveKeeperEvents(GameState);
+    if (graveEvents.length > 0) {
+      await playEvents(graveEvents);
+      return;
+    }
     const maxChoices = skillValue || 1;
     const selectedCards = await waitPlayerDualDiscardSelection(
       GameState.playerDiscard,
@@ -2168,7 +2176,11 @@ export async function resolveActiveSkillEffect(
     renderBoard();
     await sleep(400);
   } else if (skillId === 'resurrect') {
-    if (await triggerGraveKeeperEffect()) return;
+    const graveEvents = createGraveKeeperEvents(GameState);
+    if (graveEvents.length > 0) {
+      await playEvents(graveEvents);
+      return;
+    }
     const maxPow = skillValue || 1;
     const discard =
       o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
@@ -2374,7 +2386,11 @@ export async function resolveActiveSkillEffect(
     }
     await sleep(300);
   } else if (skillId === 'puppet') {
-    if (await triggerGraveKeeperEffect()) return;
+    const graveEvents = createGraveKeeperEvents(GameState);
+    if (graveEvents.length > 0) {
+      await playEvents(graveEvents);
+      return;
+    }
     // 【傘儀】相手の墓地からカードを展開し、自分の場に配置する（復活の逆版）
     const maxPow = skillValue || 1;
     const oppOwner = o === 'blue' ? 'red' : 'blue';
@@ -2608,7 +2624,11 @@ export async function resolveActiveSkillEffect(
     }
     await sleep(300);
   } else if (skillId === 'salvage') {
-    if (await triggerGraveKeeperEffect()) return;
+    const graveEvents = createGraveKeeperEvents(GameState);
+    if (graveEvents.length > 0) {
+      await playEvents(graveEvents);
+      return;
+    }
     const discard =
       o === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;

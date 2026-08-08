@@ -126,9 +126,9 @@ export async function fetchPlayerDecks() {
 /**
  * 特定のゲームモードのポイント情報をローカルとサーバーで同期・復旧します。
  *
- * @param {string} mode - 'challenge', 'tournament', 'defense' のいずれか
+ * @param {string} mode - 'challenge', 'tournament', 'defense', 'fortune' のいずれか
  * @param {Object} serverPlayerData - サーバーから取得した当該UUIDのプレイヤーデータオブジェクト(未指定の場合はスキップ)
- * @returns {Promise<Object|null>} 同期後の { points, totalPoints } または同期不要なら null
+ * @returns {Promise<Object|null>} 同期後の { points, totalPoints, ...extraData } または同期不要なら null
  */
 export async function syncModePoints(mode, serverPlayerData = null) {
   if (!mode) return null;
@@ -208,15 +208,27 @@ export async function syncModePoints(mode, serverPlayerData = null) {
 
     // サーバーデータが存在する場合、ローカルが進んでいればサーバーを同期して更新
     if (serverPlayerData) {
-      if (localTotal > sTotal || localPts > sPts) {
+      // Fortuneモードにおいて、ポイント以外の進行情報（最大グレードや最大累計コスト）がサーバーより更新されているか判定
+      const shouldSyncFortuneProgress =
+        mode === 'fortune' &&
+        (extraData.fortune_max_grade >
+          (serverPlayerData.fortune_max_grade || 0) ||
+          extraData.fortune_max_total_cost_automata >
+            (serverPlayerData.fortune_max_total_cost_automata ??
+              serverPlayerData.fortune_max_total_cost ??
+              0) ||
+          extraData.fortune_max_total_cost_valkyria >
+            (serverPlayerData.fortune_max_total_cost_valkyria || 0));
+
+      if (localTotal > sTotal || localPts > sPts || shouldSyncFortuneProgress) {
         await savePointsToServer(endpoint, localPts, localTotal, extraData);
-        return { points: localPts, totalPoints: localTotal };
+        return { points: localPts, totalPoints: localTotal, ...extraData };
       }
     } else {
       // サーバーデータがない場合（新規プレイヤーかつ初回同期）、ローカルに蓄積されたスコアがあればサーバーに新規構築する
       if (localTotal > 0) {
         await savePointsToServer(endpoint, localPts, localTotal, extraData);
-        return { points: localPts, totalPoints: localTotal };
+        return { points: localPts, totalPoints: localTotal, ...extraData };
       }
     }
   } catch (e) {

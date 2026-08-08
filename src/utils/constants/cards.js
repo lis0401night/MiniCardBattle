@@ -2734,7 +2734,12 @@ export const CARD_MASTER = [
     name: '巨人殺し',
     rarity: 3,
     power: 6,
-    skills: [{ id: 'equip' }, { id: 'legendary' }, { id: 'salvage', value: 1 }, { id: 'pierce' }],
+    skills: [
+      { id: 'equip' },
+      { id: 'legendary' },
+      { id: 'salvage', value: 1 },
+      { id: 'pierce' },
+    ],
     voiceCategory: 'sword',
     flavor: 'かつて天を突く巨躯を貫き、大地に縫い留めたとされる神器。',
   },

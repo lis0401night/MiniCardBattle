@@ -24,8 +24,8 @@ import {
   playSound,
   resolveStartupFade,
   sleep,
-  triggerGraveKeeperEffect,
-  triggerMiasmaEffect,
+  createGraveKeeperEvents,
+  createMiasmaEvents,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -557,7 +557,11 @@ export async function executeLeaderSkillAction(
       tokenLanes = [enemyTargetLane, l];
     }
   } else if (action === 'overdrive') {
-    if (await triggerGraveKeeperEffect()) return;
+    const graveEvents = createGraveKeeperEvents(GameState);
+    if (graveEvents.length > 0) {
+      await playEvents(graveEvents);
+      return;
+    }
     // 【オーバードライブ】自分の墓地・相手の墓地それぞれから1枚ずつ自分のレーンに配置する
     // 処理はデvilhunter_resurrect を2回実行する形と等価。
     // パート1: 自分の墓地から選ぶ
@@ -787,7 +791,11 @@ export async function executeLeaderSkillAction(
     await performResurrect(oppDiscard, '相手の墓地', true, oppForcedUid);
     // overdrive は手動でイベント処理済みのため、Engine呼び出しをスキップする
   } else if (action === 'devilhunter_resurrect') {
-    if (await triggerGraveKeeperEffect()) return;
+    const graveEvents = createGraveKeeperEvents(GameState);
+    if (graveEvents.length > 0) {
+      await playEvents(graveEvents);
+      return;
+    }
     const maxPow = 999;
     const discard = isBlue ? GameState.playerDiscard : GameState.enemyDiscard;
     const validCards = discard.filter((c) => !c.isToken);
@@ -1962,7 +1970,10 @@ export async function executeLeaderSkillAction(
     } else if (action === 'god_flame' || action === 'condemnation') {
       await sleep(200);
       await window.triggerVfx('anm_god_flame', owner);
-      await triggerMiasmaEffect();
+      const miasmaEvents = createMiasmaEvents(GameState);
+      if (miasmaEvents.length > 0) {
+        await playEvents(miasmaEvents);
+      }
     } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {
       await sleep(200);
       await Promise.all(

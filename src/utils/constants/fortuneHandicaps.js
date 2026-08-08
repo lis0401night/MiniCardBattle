@@ -36,14 +36,14 @@ export const HANDICAP_MASTER = {
     id: 'ban_sturdy',
     type: HANDICAP_TYPES.BAN_SKILL,
     skillIds: ['sturdy'],
-    name: '「頑丈」」使用禁止',
+    name: '「頑丈」使用禁止',
     cost: 2,
   },
   ban_dodge: {
     id: 'ban_dodge',
     type: HANDICAP_TYPES.BAN_SKILL,
     skillIds: ['dodge'],
-    name: '「回避」」使用禁止',
+    name: '「回避」使用禁止',
     cost: 2,
   },
   hp_minus_3: {

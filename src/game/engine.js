@@ -11,6 +11,9 @@ import {
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
 
+/** 戦乙女の加護の持続カウンター（相手の攻撃フェーズ1回 + 自分の攻撃フェーズ1回） */
+export const VALKYRIA_GUARD_TURNS = 2;
+
 /**
  * 指定サイドにヴァルキリーガード（戦乙女の加護）が有効かどうかを判定する
  * @param {Object} state - バトル状態オブジェクト
@@ -4012,9 +4015,8 @@ export function applyLeaderSkillLogic(
   } else if (action === 'valkyria_guard') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     // 戦乙女の加護: 次の自分の攻撃フェーズ終了まで全ダメージ無効
-    // カウンター2 = 相手の攻撃フェーズ1回 + 自分の攻撃フェーズ1回
     const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
-    state[guardKey] = 2;
+    state[guardKey] = VALKYRIA_GUARD_TURNS;
   }
 
   processDestructionTriggers(state, events);
@@ -4290,16 +4292,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           effectiveDmg = 0;
         }
 
-        if (effectiveDmg > 0) {
-          if (isValkyriaGuardActive(state, defSide)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: defSide,
-              lane: targetLane,
-              amount: effectiveDmg,
-            });
-            effectiveDmg = 0;
-          }
+        if (effectiveDmg > 0 && isValkyriaGuardActive(state, defSide)) {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: defSide,
+            lane: targetLane,
+            amount: effectiveDmg,
+          });
+          effectiveDmg = 0;
         }
 
         if (effectiveDmg > 0) {
