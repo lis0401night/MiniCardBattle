@@ -50,9 +50,9 @@ export const CARD_ID_MIGRATION_MAP = {
   wish: 'rampage',
   nectromancer: 'necromancer', // 互換性維持用の移行マッピング
   atronach: 'lightningatronach',
-  valkyria: 'rocktitan',
+  valkyrie: 'rocktitan',
   hammer: 'catoblepas',
-  ippondatara: 'ippondatara',
+  ippondatara: 'tomoe',
 };
 
 export function migrateCardId(id) {
