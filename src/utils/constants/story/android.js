@@ -438,7 +438,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'enemy',
-          text: 'どんなに堅い鉄の塊だって関係ないわ。私の矢に貫けないものはないって、今ここで証明してみせる！',
+          text: 'どんなに堅い装甲だって関係ないわ。私の矢に貫けないものはないって、今ここで証明してみせる！',
         },
         {
           speaker: 'player',
@@ -512,7 +512,7 @@ export const storyDialogues = {
         { speaker: 'enemy', text: 'はぁ？ 私はエリシアよ。' },
         {
           speaker: 'enemy',
-          text: 'なんなのよ、そのガチャガチャうるさい鉄の塊は。目障りなのよ！',
+          text: 'なんなのよ、そのガチャガチャうるさい人形は。目障りなのよ！',
         },
         {
           speaker: 'player',
@@ -596,7 +596,7 @@ export const storyDialogues = {
       pre: [
         {
           speaker: 'enemy',
-          text: '私はマリア。へえ、随分と頑丈そうな鉄の塊じゃない。',
+          text: '私はマリア。へえ、随分と頑丈そうな人形じゃない。',
         },
         {
           speaker: 'enemy',
