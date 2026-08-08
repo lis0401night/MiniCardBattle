@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Character Data
  */
-import { appendVersionQuery } from './config.js';
+import { appendVersionQuery, BOSS_CHARACTER_IDS } from './config.js';
 import { LEADER_SKILLS } from './leaderSkills.js';
 import { applySkinDialogues } from './skinDialogues.js';
 import { SKIN_KEY_MAP, SKIN_MASTER } from './skins.js';
@@ -1252,7 +1252,7 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
   return path ? appendVersionQuery(path) : '';
 }
 
-export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
+export { BOSS_CHARACTER_IDS };
 
 export const RED_FRAME_CHARACTERS = BOSS_CHARACTER_IDS;
 

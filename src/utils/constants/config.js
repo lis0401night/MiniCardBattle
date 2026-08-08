@@ -17,8 +17,23 @@ export const MAX_HP = 20;
 export const DECK_SIZE = 20;
 export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
 export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
+/** ボスキャラクターのIDリスト */
+export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
+
 export const STORY_BANNED_LEADER_IDS = ['automata', 'valkyria']; // ストーリーモードで使用できないリーダーキャラクターID
 export const TOURNAMENT_BANNED_LEADER_IDS = ['valkyria']; // 夢幻の闘技祭で使用できないリーダーキャラクターID
+
+/** ストーリーモードのランダム対戦相手選出から除外されるキャラクターIDリスト */
+export const STORY_RANDOM_OPPONENT_EXCLUDED_IDS = [
+  ...STORY_BANNED_LEADER_IDS,
+  ...BOSS_CHARACTER_IDS,
+];
+
+/** トーナメントモードのランダム対戦相手選出から除外されるキャラクターIDリスト */
+export const TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS = [
+  ...TOURNAMENT_BANNED_LEADER_IDS,
+  ...BOSS_CHARACTER_IDS,
+];
 export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の思考ウェイト時間 (ms)
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
@@ -265,5 +280,5 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'mjolnir', type: 'card', cost: 3 },
   { id: 'berserkir', type: 'card', cost: 3 },
   { id: 'fenrir', type: 'card', cost: 1 },
-  { id: 'dwarf', type: 'card', cost: 1 },  
+  { id: 'dwarf', type: 'card', cost: 1 },
 ];

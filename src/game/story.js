@@ -9,25 +9,24 @@ import {
   showContinueScreen,
 } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
+import { STORY_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
 
 // ==========================================
 // ストーリーモード進行管理 (story.js)
 // ==========================================
 
+/**
+ * ストーリーモードの初期化処理
+ * プレイヤーのキャラクター設定、ランダム敵キューの生成、オープニング会話キューの構築を行いストーリー画面に遷移します。
+ * @param {string} charId - プレイヤーが選択したキャラクターID
+ */
 export function initStoryMode(charId) {
   GameState.playerConfig = CHARACTERS[charId];
   GameState.enemySkins = {};
 
-  // 他のキャラクターのIDをランダムに並び替え（プレイヤー、マキナ、中ボス・大ボスは除く）
+  // 他のキャラクターのIDをランダムに並び替え（プレイヤー自身および対戦相手除外対象キャラクターは除く）
   const otherIds = Object.keys(CHARACTERS).filter(
-    (id) =>
-      id !== charId &&
-      id !== 'automata' &&
-      id !== 'valkyria' &&
-      id !== 'satan' &&
-      id !== 'void' &&
-      id !== 'succubus' &&
-      id !== 'warlock'
+    (id) => id !== charId && !STORY_RANDOM_OPPONENT_EXCLUDED_IDS.includes(id)
   );
   for (let i = otherIds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

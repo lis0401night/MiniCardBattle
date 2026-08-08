@@ -10,6 +10,7 @@ import {
   getTournamentVenueDialogue,
   getTournamentWinDialogue,
 } from '../utils/constants/eventTournamentDialogues.js';
+import { TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -26,6 +27,10 @@ function toTournamentName(fullName) {
   return `${shortName}？`;
 }
 
+/**
+ * トーナメントモードの初期化処理
+ * プレイヤーおよび参加NPC（実在キャラクター10体 + ダミー5体）のトーナメント表（ブラケット）を組み立て、オープニング画面へ遷移します。
+ */
 export function initTournamentMode() {
   GameState.gameMode = 'tournament';
 
@@ -40,16 +45,12 @@ export function initTournamentMode() {
     ),
   };
 
-  // プレイヤー以外のキャラクターを10体ランダムに選ぶ
+  // プレイヤー以外のキャラクターを10体ランダムに選ぶ（ボスやトーナメント禁止キャラクターは除外）
   const allCharIds = Object.keys(CHARACTERS).filter(
     (id) =>
       !CHARACTERS[id].isDummy &&
       id !== GameState.pendingCharId &&
-      id !== 'satan' && // ボスすぎるキャラは除くかはお好みだが一旦除外
-      id !== 'void' && // ゼノンも除外
-      id !== 'succubus' && // ヴィオラも除外
-      id !== 'warlock' && // バルタザールも除外
-      id !== 'valkyria' // アンジェも除外（解放制キャラクター）
+      !TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS.includes(id)
   );
 
   // シャッフル

@@ -5,65 +5,65 @@ import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCha
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
-    AI_THINKING_DURATION,
-    MAX_HP,
-    PLACE_ANIMATION_DURATION,
+  AI_THINKING_DURATION,
+  MAX_HP,
+  PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
 import {
-    CHAR_FORTUNE_HANDICAPS,
-    HANDICAP_TYPES,
+  CHAR_FORTUNE_HANDICAPS,
+  HANDICAP_TYPES,
 } from '../utils/constants/fortuneHandicaps.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
-    PLAYER_TALKS,
-    STORY_BGM_CHANGE_BATTLE,
-    STORY_DIALOGUES,
-    STORY_LATE_DIALOGUE_BATTLE,
-    STORY_NARRATIONS,
-    getFallbackStoryDialogue,
+  PLAYER_TALKS,
+  STORY_BGM_CHANGE_BATTLE,
+  STORY_DIALOGUES,
+  STORY_LATE_DIALOGUE_BATTLE,
+  STORY_NARRATIONS,
+  getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-    checkIsFreeMode,
-    checkIsMissionEligible,
-    checkIsStoryMode,
-    checkIsTutorialMode,
-    consumeArmSelf,
-    createDamagePopup,
-    decodedBgms,
-    getCardImgUrl,
-    getCurrentRNG,
-    getDialogue,
-    getOrCreateUUID,
-    getSeededRandom,
-    getSkillValue,
-    hasSkill,
-    mergeCardSkills,
-    playSound,
-    resolvePlayerName,
-    setCurrentRNG,
-    setRNGSeed,
-    shuffleArray,
-    sleep,
-    stopAllBGM,
-    switchScreen,
-    triggerGraveKeeperEffect,
+  checkIsFreeMode,
+  checkIsMissionEligible,
+  checkIsStoryMode,
+  checkIsTutorialMode,
+  consumeArmSelf,
+  createDamagePopup,
+  decodedBgms,
+  getCardImgUrl,
+  getCurrentRNG,
+  getDialogue,
+  getOrCreateUUID,
+  getSeededRandom,
+  getSkillValue,
+  hasSkill,
+  mergeCardSkills,
+  playSound,
+  resolvePlayerName,
+  setCurrentRNG,
+  setRNGSeed,
+  shuffleArray,
+  sleep,
+  stopAllBGM,
+  switchScreen,
+  triggerGraveKeeperEffect,
 } from '../utils/gameUtils.js';
 import {
-    AUDIO_INSTANCES,
-    SOUNDS,
-    loadAndDecodeAudio,
+  AUDIO_INSTANCES,
+  SOUNDS,
+  loadAndDecodeAudio,
 } from '../utils/sounds.js';
 import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
 import {
-    applyActiveSkillLogic,
-    applySingleCombat,
-    calculateCombatPhase,
-    canTakeDamage,
+  applyActiveSkillLogic,
+  applySingleCombat,
+  calculateCombatPhase,
+  canTakeDamage,
 } from './engine.js';
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
 import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
@@ -90,60 +90,64 @@ function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
 }
 
 import {
-    cachedRoomData,
-    clearActionQueueAndRegenerateSeed,
-    getIsHost,
-    listenToRoomActions,
-    multiplayerCallbacks,
-    sendOnlineAction,
-    setPlayerReadyOnly,
+  cachedRoomData,
+  clearActionQueueAndRegenerateSeed,
+  getIsHost,
+  listenToRoomActions,
+  multiplayerCallbacks,
+  sendOnlineAction,
+  setPlayerReadyOnly,
 } from '../services/multiplayer.js';
 import {
-    closeSkillConfirm,
-    playSummonAnimation,
-    renderBoard,
-    renderHand,
-    showDeckRefreshEffect,
-    showSpeechBubble,
-    triggerFinishVisuals,
-    updateBattleUIHook,
-    updateCardDetail,
-    updateCardPowerOnly,
-    updateDeckDisplay,
-    updateHPBar,
-    updateSPOrbs,
+  closeSkillConfirm,
+  playSummonAnimation,
+  renderBoard,
+  renderHand,
+  showDeckRefreshEffect,
+  showSpeechBubble,
+  triggerFinishVisuals,
+  updateBattleUIHook,
+  updateCardDetail,
+  updateCardPowerOnly,
+  updateDeckDisplay,
+  updateHPBar,
+  updateSPOrbs,
 } from '../services/uiBattle.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 import {
-    showDefenseBattleList,
-    showOnlineLobby,
+  showDefenseBattleList,
+  showOnlineLobby,
 } from '../services/uiMainCore.js';
-import { showAlertModal, showConfirmModal, showPointAcquisitionModal } from '../services/uiModals.js';
+import {
+  showAlertModal,
+  showConfirmModal,
+  showPointAcquisitionModal,
+} from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
-    recordDefenseBattleToServer,
-    savePointsToServer,
+  recordDefenseBattleToServer,
+  savePointsToServer,
 } from '../utils/apiUtils.js';
 import {
-    FORTUNE_POINTS_KEY,
-    FORTUNE_TOTAL_POINTS_KEY,
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
 } from '../utils/constants/config.js';
 import {
-    calculateFortuneRewards,
-    loadFortuneClearedData,
-    saveFortuneClearedData,
+  calculateFortuneRewards,
+  loadFortuneClearedData,
+  saveFortuneClearedData,
 } from '../utils/constants/fortuneRewards.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import {
-    resolveActiveSkillEffect,
-    triggerStartTurnPassive,
+  resolveActiveSkillEffect,
+  triggerStartTurnPassive,
 } from './skillLogic.js';
 import {
-    cleanupTutorial,
-    filterPlacementLaneClick,
-    handleTutorialEnd,
-    isTutorialMode,
-    runTutorialFlow,
+  cleanupTutorial,
+  filterPlacementLaneClick,
+  handleTutorialEnd,
+  isTutorialMode,
+  runTutorialFlow,
 } from './tutorialEngine.js';
 
 export let pendingChoiceResolver = null;

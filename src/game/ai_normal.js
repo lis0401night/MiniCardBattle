@@ -3,22 +3,22 @@ import { AI_SKILL_UTILITY } from '../utils/constants/aiSkillValues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
-    consumeArmSelf,
-    getCurrentRNG,
-    getSeededRandom,
-    hasSkill,
-    mergeCardSkills,
-    setCurrentRNG,
+  consumeArmSelf,
+  getCurrentRNG,
+  getSeededRandom,
+  hasSkill,
+  mergeCardSkills,
+  setCurrentRNG,
 } from '../utils/gameUtils.js';
 import {
-    applyActiveSkillLogic,
-    applyLeaderSkillLogic,
-    applyPassiveSkillLogic,
-    applySingleCombat,
-    calculateCombatPhase,
-    isGraveKeeperActive,
-    isMiasmaActive,
-    quietDiscardFromBoard,
+  applyActiveSkillLogic,
+  applyLeaderSkillLogic,
+  applyPassiveSkillLogic,
+  applySingleCombat,
+  calculateCombatPhase,
+  isGraveKeeperActive,
+  isMiasmaActive,
+  quietDiscardFromBoard,
 } from './engine.js';
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）

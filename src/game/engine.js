@@ -2,13 +2,13 @@ import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
-    consumeArmSelf,
-    getSeededRandom,
-    getSkillValue,
-    hasSkill,
-    mergeCardSkills,
-    resolveStartupFade,
-    unmergeCardSkills,
+  consumeArmSelf,
+  getSeededRandom,
+  getSkillValue,
+  hasSkill,
+  mergeCardSkills,
+  resolveStartupFade,
+  unmergeCardSkills,
 } from '../utils/gameUtils.js';
 
 /**
@@ -17,7 +17,7 @@ import {
  * @param {string} side - 'blue' または 'red'
  * @returns {boolean} ガードが有効なら true
  */
-export function isvalkyriaGuardActive(state, side) {
+export function isValkyriaGuardActive(state, side) {
   const key = side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
   return (state[key] || 0) > 0;
 }
@@ -105,7 +105,7 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
   if (amount <= 0) return;
 
   // 戦乙女の加護: 全ダメージを無効化
-  if (isvalkyriaGuardActive(state, side)) {
+  if (isValkyriaGuardActive(state, side)) {
     events.push({
       type: 'valkyria_guard_block',
       side,
@@ -134,6 +134,76 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
     source: source,
     lane: lane,
   });
+}
+
+/**
+ * 盤面上のカードにダメージを適用し、各種ブロック（戦乙女の加護・無効/回避）およびダメージイベントを記録する共通関数
+ *
+ * 判定順序（加護優先）:
+ * 1. 戦乙女の加護 (isValkyriaGuardActive) ➔ 'valkyria_guard_block' イベントを発行し終了
+ * 2. ダメージ無効・回避 (canTakeDamage) ➔ 'immune_block' イベントを発行し終了
+ * 3. 実際のダメージ適用 (currentPower 減算) ➔ 'damage_card' イベントを発行
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} side - 対象カードの所属陣営 ('blue' | 'red')
+ * @param {number} lane - 対象カードのレーンインデックス (0 | 1 | 2)
+ * @param {number} amount - 与えるダメージ量
+ * @param {string} source - ダメージ発生源 (スキル名や効果識別子)
+ * @param {Array} events - イベントログの追加先配列
+ * @param {boolean} [isSkill=true] - スキルによるダメージかどうか (無効/回避判定で使用)
+ * @returns {boolean} ダメージが実際にカードのPowerに適用された場合は true、ブロックまたは対象なしの場合は false
+ */
+export function damageCard(
+  state,
+  side,
+  lane,
+  amount,
+  source,
+  events,
+  isSkill = true
+) {
+  if (amount <= 0) return false;
+
+  const board = side === 'blue' ? state.playerBoard : state.enemyBoard;
+  if (!board || lane < 0 || lane >= board.length) return false;
+
+  const card = board[lane];
+  if (!card) return false;
+
+  // 1. 戦乙女の加護: 全ダメージを無効化
+  if (isValkyriaGuardActive(state, side)) {
+    events.push({
+      type: 'valkyria_guard_block',
+      side,
+      lane,
+      amount,
+      source,
+    });
+    return false;
+  }
+
+  // 2. ダメージ無効/回避チェック
+  if (!canTakeDamage(card, amount, isSkill)) {
+    events.push({
+      type: 'immune_block',
+      side,
+      lane,
+      source,
+    });
+    return false;
+  }
+
+  // 3. 実際のダメージ適用
+  card.currentPower -= amount;
+  events.push({
+    type: 'damage_card',
+    side,
+    lane,
+    amount,
+    source,
+  });
+
+  return true;
 }
 
 /**
@@ -338,31 +408,7 @@ export function processDestructionTriggers(state, events) {
             const dmg = getSkillValue(deadCard, 'explode') || 3;
             [i - 1, i + 1].forEach((adj) => {
               if (adj >= 0 && adj < 3 && board[adj]) {
-                if (isvalkyriaGuardActive(state, side)) {
-                  events.push({
-                    type: 'valkyria_guard_block',
-                    side,
-                    lane: adj,
-                    amount: dmg,
-                    source: 'explode',
-                  });
-                } else if (canTakeDamage(board[adj], dmg)) {
-                  board[adj].currentPower -= dmg;
-                  events.push({
-                    type: 'damage_card',
-                    side,
-                    lane: adj,
-                    amount: dmg,
-                    source: 'explode',
-                  });
-                } else {
-                  events.push({
-                    type: 'immune_block',
-                    side,
-                    lane: adj,
-                    source: 'explode',
-                  });
-                }
+                damageCard(state, side, adj, dmg, 'explode', events, true);
               }
             });
           }
@@ -710,31 +756,15 @@ export function applyActiveSkillLogic(
           }
         }
         if (maxL !== -1) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: maxL,
-              amount: totalDmg,
-              source: 'snipe_void',
-            });
-          } else if (canTakeDamage(eB[maxL], totalDmg)) {
-            eB[maxL].currentPower -= totalDmg;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: maxL,
-              amount: totalDmg,
-              source: 'snipe_void',
-            });
-          } else {
-            events.push({
-              type: 'immune_block',
-              side: oppOwner,
-              lane: maxL,
-              source: 'snipe_void',
-            });
-          }
+          damageCard(
+            state,
+            oppOwner,
+            maxL,
+            totalDmg,
+            'snipe_void',
+            events,
+            true
+          );
         }
       }
       break;
@@ -775,31 +805,7 @@ export function applyActiveSkillLogic(
         const spVal = (val || 2) * voidCount;
         [l - 1, l, l + 1].forEach((j) => {
           if (j >= 0 && j < 3 && eB[j]) {
-            if (isvalkyriaGuardActive(state, oppOwner)) {
-              events.push({
-                type: 'valkyria_guard_block',
-                side: oppOwner,
-                lane: j,
-                amount: spVal,
-                source: 'spread_void',
-              });
-            } else if (canTakeDamage(eB[j], spVal)) {
-              eB[j].currentPower -= spVal;
-              events.push({
-                type: 'damage_card',
-                side: oppOwner,
-                lane: j,
-                amount: spVal,
-                source: 'spread_void',
-              });
-            } else {
-              events.push({
-                type: 'immune_block',
-                side: oppOwner,
-                lane: j,
-                source: 'spread_void',
-              });
-            }
+            damageCard(state, oppOwner, j, spVal, 'spread_void', events, true);
           }
         });
       }
@@ -1086,32 +1092,7 @@ export function applyActiveSkillLogic(
       const spVal = val || 2;
       [l - 1, l, l + 1].forEach((j) => {
         if (j >= 0 && j < 3 && eB[j]) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: j,
-              amount: spVal,
-              source: 'spread',
-            });
-          } else if (canTakeDamage(eB[j], spVal)) {
-            let d = spVal;
-            eB[j].currentPower -= d;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: j,
-              amount: d,
-              source: 'spread',
-            });
-          } else {
-            events.push({
-              type: 'immune_block',
-              side: oppOwner,
-              lane: j,
-              source: 'spread',
-            });
-          }
+          damageCard(state, oppOwner, j, spVal, 'spread', events, true);
         }
       });
       break;
@@ -1164,32 +1145,7 @@ export function applyActiveSkillLogic(
         }
       }
       if (maxL !== -1) {
-        if (isvalkyriaGuardActive(state, oppOwner)) {
-          events.push({
-            type: 'valkyria_guard_block',
-            side: oppOwner,
-            lane: maxL,
-            amount: snVal,
-            source: 'snipe',
-          });
-        } else if (canTakeDamage(eB[maxL], snVal)) {
-          let d = snVal;
-          eB[maxL].currentPower -= d;
-          events.push({
-            type: 'damage_card',
-            side: oppOwner,
-            lane: maxL,
-            amount: d,
-            source: 'snipe',
-          });
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: maxL,
-            source: 'snipe',
-          });
-        }
+        damageCard(state, oppOwner, maxL, snVal, 'snipe', events, true);
       }
       break;
     }
@@ -1323,31 +1279,7 @@ export function applyActiveSkillLogic(
       const bAdj = l === 1 ? [0, 2] : [1];
       bAdj.forEach((j) => {
         if (b[j]) {
-          if (isvalkyriaGuardActive(state, owner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: owner,
-              lane: j,
-              amount: bVal,
-              source: 'berserk',
-            });
-          } else if (canTakeDamage(b[j], bVal)) {
-            b[j].currentPower -= bVal;
-            events.push({
-              type: 'damage_card',
-              side: owner,
-              lane: j,
-              amount: bVal,
-              source: 'berserk',
-            });
-          } else {
-            events.push({
-              type: 'immune_block',
-              side: owner,
-              lane: j,
-              source: 'berserk',
-            });
-          }
+          damageCard(state, owner, j, bVal, 'berserk', events, true);
         }
       });
       break;
@@ -2678,32 +2610,7 @@ export function applyLeaderSkillLogic(
 
       // Damage card if exists
       if (eBoard[lane] !== null) {
-        if (canTakeDamage(eBoard[lane], 4)) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: lane,
-              amount: 4,
-            });
-          } else {
-            eBoard[lane].currentPower -= 4;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: lane,
-              amount: 4,
-              source: 'seal_lanes',
-            });
-          }
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: lane,
-            source: 'seal_lanes',
-          });
-        }
+        damageCard(state, oppOwner, lane, 4, 'seal_lanes', events, true);
       }
     }
   } else if (action === 'night_parade') {
@@ -2739,32 +2646,7 @@ export function applyLeaderSkillLogic(
 
       // Damage card if exists
       if (eBoard[lane] !== null) {
-        if (canTakeDamage(eBoard[lane], 4)) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: lane,
-              amount: 4,
-            });
-          } else {
-            eBoard[lane].currentPower -= 4;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: lane,
-              amount: 4,
-              source: 'night_parade',
-            });
-          }
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: lane,
-            source: 'night_parade',
-          });
-        }
+        damageCard(state, oppOwner, lane, 4, 'night_parade', events, true);
       }
     }
     // ※ processDestructionTriggers は呼び出し元 (leaderSkills.js) 側で一括実行する
@@ -2836,32 +2718,7 @@ export function applyLeaderSkillLogic(
     events.push({ type: 'leader_skill', skill: action, side: owner });
     for (let i = 0; i < 3; i++) {
       if (eBoard[i]) {
-        if (canTakeDamage(eBoard[i], 4)) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: i,
-              amount: 4,
-            });
-          } else {
-            eBoard[i].currentPower -= 4;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: i,
-              amount: 4,
-              source: 'annihilation',
-            });
-          }
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: i,
-            source: 'annihilation',
-          });
-        }
+        damageCard(state, oppOwner, i, 4, 'annihilation', events, true);
       }
     }
   } else if (action === 'android_high_volley') {
@@ -2869,32 +2726,7 @@ export function applyLeaderSkillLogic(
     // 敵の場のすべてのカードに4ダメージ
     for (let i = 0; i < 3; i++) {
       if (eBoard[i]) {
-        if (canTakeDamage(eBoard[i], 4)) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: i,
-              amount: 4,
-            });
-          } else {
-            eBoard[i].currentPower -= 4;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: i,
-              amount: 4,
-              source: 'android_high_volley',
-            });
-          }
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: i,
-            source: 'android_high_volley',
-          });
-        }
+        damageCard(state, oppOwner, i, 4, 'android_high_volley', events, true);
       }
     }
     // 敵リーダーに2ダメージ
@@ -2906,61 +2738,11 @@ export function applyLeaderSkillLogic(
     for (let i = 0; i < 3; i++) {
       // 自分の場のカードにも2ダメージ
       if (board[i]) {
-        if (canTakeDamage(board[i], 2)) {
-          if (isvalkyriaGuardActive(state, owner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: owner,
-              lane: i,
-              amount: 2,
-            });
-          } else {
-            board[i].currentPower -= 2;
-            events.push({
-              type: 'damage_card',
-              side: owner,
-              lane: i,
-              amount: 2,
-              source: 'dragon_high_ritual',
-            });
-          }
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: owner,
-            lane: i,
-            source: 'dragon_high_ritual',
-          });
-        }
+        damageCard(state, owner, i, 2, 'dragon_high_ritual', events, true);
       }
       // 相手の場のカードにも2ダメージ
       if (eBoard[i]) {
-        if (canTakeDamage(eBoard[i], 2)) {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: i,
-              amount: 2,
-            });
-          } else {
-            eBoard[i].currentPower -= 2;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: i,
-              amount: 2,
-              source: 'dragon_high_ritual',
-            });
-          }
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: i,
-            source: 'dragon_high_ritual',
-          });
-        }
+        damageCard(state, oppOwner, i, 2, 'dragon_high_ritual', events, true);
       }
     }
     processDestructionTriggers(state, events);
@@ -3332,33 +3114,7 @@ export function applyLeaderSkillLogic(
       const targetLane = tokenLanes[0];
       const targetCard = eBoard[targetLane];
       if (targetCard) {
-        if (!canTakeDamage(targetCard, 4)) {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: targetLane,
-            source: 'tomb_guard',
-          });
-        } else {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: targetLane,
-              amount: 4,
-            });
-          } else {
-            targetCard.currentPower -= 4;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: targetLane,
-              amount: 4,
-              source: 'tomb_guard',
-            });
-          }
-          // ここではHPが0以下になってもそのままにしておく（呼び出し元の cleanupDestroyedCards 等で処理される）
-        }
+        damageCard(state, oppOwner, targetLane, 4, 'tomb_guard', events, true);
       }
     }
   } else if (action === 'death_judgment') {
@@ -3387,32 +3143,15 @@ export function applyLeaderSkillLogic(
       const targetLane = tokenLanes[0];
       const targetCard = eBoard[targetLane];
       if (targetCard) {
-        if (!canTakeDamage(targetCard, DEATH_JUDGMENT_DAMAGE)) {
-          events.push({
-            type: 'immune_block',
-            side: oppOwner,
-            lane: targetLane,
-            source: 'death_judgment',
-          });
-        } else {
-          if (isvalkyriaGuardActive(state, oppOwner)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppOwner,
-              lane: targetLane,
-              amount: DEATH_JUDGMENT_DAMAGE,
-            });
-          } else {
-            targetCard.currentPower -= DEATH_JUDGMENT_DAMAGE;
-            events.push({
-              type: 'damage_card',
-              side: oppOwner,
-              lane: targetLane,
-              amount: DEATH_JUDGMENT_DAMAGE,
-              source: 'death_judgment',
-            });
-          }
-        }
+        damageCard(
+          state,
+          oppOwner,
+          targetLane,
+          DEATH_JUDGMENT_DAMAGE,
+          'death_judgment',
+          events,
+          true
+        );
       }
     }
   } else if (action === 'devilhunter_resurrect') {
@@ -4497,31 +4236,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     [l - 1, l + 1].forEach((tj) => {
       if (tj >= 0 && tj <= 2 && atkBoard[tj]) {
-        if (isvalkyriaGuardActive(state, attackerSide)) {
-          events.push({
-            type: 'valkyria_guard_block',
-            side: attackerSide,
-            lane: tj,
-            amount: brutalDmg,
-            source: 'brutal',
-          });
-        } else if (canTakeDamage(atkBoard[tj], brutalDmg)) {
-          atkBoard[tj].currentPower -= brutalDmg;
-          events.push({
-            type: 'damage_card',
-            side: attackerSide,
-            lane: tj,
-            amount: brutalDmg,
-            source: 'brutal',
-          });
-        } else {
-          events.push({
-            type: 'immune_block',
-            side: attackerSide,
-            lane: tj,
-            source: 'brutal',
-          });
-        }
+        damageCard(state, attackerSide, tj, brutalDmg, 'brutal', events, true);
       }
     });
   }
@@ -4576,7 +4291,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         if (effectiveDmg > 0) {
-          if (isvalkyriaGuardActive(state, defSide)) {
+          if (isValkyriaGuardActive(state, defSide)) {
             events.push({
               type: 'valkyria_guard_block',
               side: defSide,
@@ -4623,7 +4338,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
       } else {
         // 空レーン: ダメージはリーダーへ
-        if (isvalkyriaGuardActive(state, defSide)) {
+        if (isValkyriaGuardActive(state, defSide)) {
           events.push({
             type: 'valkyria_guard_block',
             side: defSide,
@@ -4670,7 +4385,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
     if (isOriginalTargetDefender) dmgToAtk = 0;
 
-    if (dmgToAtk > 0 && isvalkyriaGuardActive(state, attackerSide)) {
+    if (dmgToAtk > 0 && isValkyriaGuardActive(state, attackerSide)) {
       events.push({
         type: 'valkyria_guard_block',
         side: attackerSide,
@@ -4771,7 +4486,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
       }
       if (totalPierceDmg > 0) {
-        if (isvalkyriaGuardActive(state, defSide)) {
+        if (isValkyriaGuardActive(state, defSide)) {
           events.push({
             type: 'valkyria_guard_block',
             side: defSide,
@@ -4928,7 +4643,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
       dmgToAtk = Math.floor(dmgToAtk / 2);
     }
-    if (dmgToDef > 0 && isvalkyriaGuardActive(state, defSide)) {
+    if (dmgToDef > 0 && isValkyriaGuardActive(state, defSide)) {
       events.push({
         type: 'valkyria_guard_block',
         side: defSide,
@@ -5032,7 +4747,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         // 場にカードが存在しない場合は肩代わり不可、通常通りダメージを受ける
       }
     }
-    if (dmgToAtk > 0 && isvalkyriaGuardActive(state, attackerSide)) {
+    if (dmgToAtk > 0 && isValkyriaGuardActive(state, attackerSide)) {
       events.push({
         type: 'valkyria_guard_block',
         side: attackerSide,
@@ -5293,7 +5008,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       let pDmg = Math.max(0, effectiveAP - originalTargetPower);
       if (pDmg > 0) {
         if (!applyMartyrForLeader(state, defSide, pDmg, events)) {
-          if (isvalkyriaGuardActive(state, defSide)) {
+          if (isValkyriaGuardActive(state, defSide)) {
             events.push({
               type: 'valkyria_guard_block',
               side: defSide,
@@ -5416,7 +5131,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   } else {
     let finalDmg = aP;
     if (!applyMartyrForLeader(state, defSide, finalDmg, events)) {
-      if (isvalkyriaGuardActive(state, defSide)) {
+      if (isValkyriaGuardActive(state, defSide)) {
         events.push({
           type: 'valkyria_guard_block',
           side: defSide,

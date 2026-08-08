@@ -1,26 +1,26 @@
 import {
-    renderBoard,
-    renderHand,
-    showSpeechBubble,
-    updateCardPowerOnly,
-    updateDeckDisplay,
-    updateHPBar,
-    updateSPOrbs,
+  renderBoard,
+  renderHand,
+  showSpeechBubble,
+  updateCardPowerOnly,
+  updateDeckDisplay,
+  updateHPBar,
+  updateSPOrbs,
 } from '../services/uiBattle.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { PLACE_ANIMATION_DURATION } from '../utils/constants/config.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-    addDamagePopupHook,
-    applyEquipMerge,
-    createDamagePopup,
-    getSeededRandom,
-    hasSkill,
-    mergeCardSkills,
-    playSound,
-    sleep,
-    triggerShakeAnimation,
+  addDamagePopupHook,
+  applyEquipMerge,
+  createDamagePopup,
+  getSeededRandom,
+  hasSkill,
+  mergeCardSkills,
+  playSound,
+  sleep,
+  triggerShakeAnimation,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { scanMissionEvents } from './missionLogic.js';

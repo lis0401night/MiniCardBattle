@@ -66,23 +66,33 @@ export default function GlossaryScreen() {
   const [openCategories, setOpenCategories] = useState(new Set());
   // 開いている中項目のキーセット（"カテゴリIndex-用語Index" 形式）
   const [openTerms, setOpenTerms] = useState(new Set());
+  // アコーディオン展開後のスクロール対象参照キー（例: "cat-0", "term-0-1"）
+  const [scrollTarget, setScrollTarget] = useState(null);
+  // スクロール用タイマーの参照
+  const scrollTimerRef = useRef(null);
   // 各カテゴリ・用語ヘッダーへの参照マップ
   const headerRefs = useRef({});
 
   /**
-   * 指定された要素をビューポート内に滑らかにスクロールする
-   * アコーディオンの展開アニメーション完了後に実行する。
-   * @param {string} refKey - headerRefs に格納されたキー
-   * @returns {void}
+   * スクロールターゲットが変更された際、アコーディオン展開アニメーション終了後に滑らかなスクロールを実行する効果。
+   * タイマーのクリーンアップにより、高速連続クリック時の不整合なスクロール発火を防ぎます。
    */
-  const scrollIntoViewSmooth = useCallback((refKey) => {
-    setTimeout(() => {
-      const el = headerRefs.current[refKey];
+  useEffect(() => {
+    if (!scrollTarget) return undefined;
+
+    scrollTimerRef.current = window.setTimeout(() => {
+      const el = headerRefs.current[scrollTarget];
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
-  }, []);
+
+    return () => {
+      if (scrollTimerRef.current) {
+        window.clearTimeout(scrollTimerRef.current);
+      }
+    };
+  }, [scrollTarget]);
 
   /**
    * 大項目のアコーディオン開閉をトグルする
@@ -92,18 +102,18 @@ export default function GlossaryScreen() {
    */
   const toggleCategory = useCallback(
     (categoryIndex) => {
-      setOpenCategories((prev) => {
-        if (prev.has(categoryIndex)) {
-          setOpenTerms(new Set());
-          return new Set();
-        } else {
-          setOpenTerms(new Set());
-          scrollIntoViewSmooth(`cat-${categoryIndex}`);
-          return new Set([categoryIndex]);
-        }
-      });
+      const isOpen = openCategories.has(categoryIndex);
+      if (isOpen) {
+        setOpenCategories(new Set());
+        setOpenTerms(new Set());
+        setScrollTarget(null);
+      } else {
+        setOpenCategories(new Set([categoryIndex]));
+        setOpenTerms(new Set());
+        setScrollTarget(`cat-${categoryIndex}`);
+      }
     },
-    [scrollIntoViewSmooth]
+    [openCategories]
   );
 
   /**
@@ -114,16 +124,16 @@ export default function GlossaryScreen() {
    */
   const toggleTerm = useCallback(
     (termKey) => {
-      setOpenTerms((prev) => {
-        if (prev.has(termKey)) {
-          return new Set();
-        } else {
-          scrollIntoViewSmooth(`term-${termKey}`);
-          return new Set([termKey]);
-        }
-      });
+      const isOpen = openTerms.has(termKey);
+      if (isOpen) {
+        setOpenTerms(new Set());
+        setScrollTarget(null);
+      } else {
+        setOpenTerms(new Set([termKey]));
+        setScrollTarget(`term-${termKey}`);
+      }
     },
-    [scrollIntoViewSmooth]
+    [openTerms]
   );
 
   return (

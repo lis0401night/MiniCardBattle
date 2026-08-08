@@ -1,11 +1,11 @@
 import {
-    renderBoard,
-    renderHand,
-    showSpeechBubble,
-    updateCardDetail,
-    updateDeckDisplay,
-    updateHPBar,
-    updateSPOrbs,
+  renderBoard,
+  renderHand,
+  showSpeechBubble,
+  updateCardDetail,
+  updateDeckDisplay,
+  updateHPBar,
+  updateSPOrbs,
 } from '../services/uiBattle.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -14,37 +14,37 @@ import { AI_THINKING_DURATION } from '../utils/constants/config.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-    consumeArmSelf,
-    createDamagePopup,
-    getCardImgUrl,
-    getDialogue,
-    getSeededRandom,
-    hasSkill,
-    mergeCardSkills,
-    playSound,
-    resolveStartupFade,
-    sleep,
-    triggerGraveKeeperEffect,
+  consumeArmSelf,
+  createDamagePopup,
+  getCardImgUrl,
+  getDialogue,
+  getSeededRandom,
+  hasSkill,
+  mergeCardSkills,
+  playSound,
+  resolveStartupFade,
+  sleep,
+  triggerGraveKeeperEffect,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
-    checkWinCondition,
-    cleanupDestroyedCards,
-    confirmOverwrittenLane,
-    discardCard,
-    drawCard,
-    endTurnLogic,
-    hasActiveSkill,
-    resolveOnPlaySkill,
-    waitPlayerDiscardSelection,
-    waitPlayerEnemyLaneSelection,
-    waitPlayerHandSelection,
-    waitPlayerLaneSelection,
+  checkWinCondition,
+  cleanupDestroyedCards,
+  confirmOverwrittenLane,
+  discardCard,
+  drawCard,
+  endTurnLogic,
+  hasActiveSkill,
+  resolveOnPlaySkill,
+  waitPlayerDiscardSelection,
+  waitPlayerEnemyLaneSelection,
+  waitPlayerHandSelection,
+  waitPlayerLaneSelection,
 } from './battle.js';
 import {
-    applyLeaderSkillLogic,
-    applySingleCombat,
-    processDestructionTriggers,
+  applyLeaderSkillLogic,
+  applySingleCombat,
+  processDestructionTriggers,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { resolveActiveSkillEffect } from './skillLogic.js';

@@ -3,25 +3,25 @@ import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from './constants/cards.js';
 import { getSkinImage } from './constants/characters.js';
 import {
-    appendVersionQuery,
-    DEFAULT_PLAYER_NAME,
-    DEFENSE_TARGET_COUNT,
-    HIGH_TIER_PICK_COUNT,
-    LOW_TIER_PICK_COUNT,
-    MID_TIER_PICK_COUNT,
-    PROFILE_NAME_KEY,
+  appendVersionQuery,
+  DEFAULT_PLAYER_NAME,
+  DEFENSE_TARGET_COUNT,
+  HIGH_TIER_PICK_COUNT,
+  LOW_TIER_PICK_COUNT,
+  MID_TIER_PICK_COUNT,
+  PROFILE_NAME_KEY,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import { setCurrentScreen } from './errorReporter.js';
 import {
-    audioCtx,
-    decodedBgms,
-    isAudioUnlocked,
-    loadAndDecodeAudio,
-    recreateAudioSystem,
-    seBuffers,
-    SOUNDS,
-    unlockAudio,
+  audioCtx,
+  decodedBgms,
+  isAudioUnlocked,
+  loadAndDecodeAudio,
+  recreateAudioSystem,
+  seBuffers,
+  SOUNDS,
+  unlockAudio,
 } from './sounds.js';
 
 // LocalStorageに保存する防衛戦選出キャッシュのキー
