@@ -4038,6 +4038,13 @@ export function applyLeaderSkillLogic(
     state.attackSkipCount = (state.attackSkipCount || 0) + 1;
   } else if (action === 'valkyria_guard') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
+    // アンジェ「戦乙女の加護」用VFX：発動者の中央レーン固定で再生
+    events.push({
+      type: 'vfx_trigger',
+      vfxId: 'anm_valkyria_guard',
+      side: owner,
+      lane: 1,
+    });
     // 戦乙女の加護: 次の自分の攻撃フェーズ終了まで全ダメージ無効
     const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
     state[guardKey] = VALKYRIA_GUARD_TURNS;

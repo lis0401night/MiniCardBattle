@@ -247,9 +247,25 @@ export const VFX_DATA = {
     src: 'assets/vfx/vfx_march_of_iron.png',
     columns: 6,
     rows: 5,
-    frameCount: 28,
+    frameCount: 30,
     duration: 700,
     se: 'seMetalBlast',
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 2,
+    scale: 0.4,
+    shake: false,
+    targetSide: 'self', // 自陣に召喚
+  },
+
+    // アンジェスキル「戦乙女の加護」用VFX
+  anm_valkyria_guard: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_valkyria_guard.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 30,
+    duration: 1000,
+    se: 'seClock', // 再生する効果音、SOUNDSのキーを指定
     position: 'lane', // ターゲットのレーンに合わせて表示
     offsetY: 2,
     scale: 0.4,
