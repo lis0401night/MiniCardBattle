@@ -64,6 +64,10 @@ export const LAST_HEARTBEAT_KEY = 'mini_card_battle_last_heartbeat'; // ハー�
 export const DECK_EDIT_GRID_DENSITY_KEY =
   'mini_card_battle_deck_edit_grid_density';
 export const GALLERY_GRID_DENSITY_KEY = 'mini_card_battle_gallery_grid_density';
+export const UNLOCKED_CHARACTERS_KEY = 'mini_card_battle_unlocked_characters';
+
+/** 戦乙女の加護のポップアップ表示色 */
+export const VALKYRIA_GUARD_POPUP_COLOR = '#ffd700';
 
 // カード表示密度：3列表示を最大サイズ(0)とし、段階的に列数を増やして縮小する
 export const GRID_DENSITY_COLS = [3, 4, 5];

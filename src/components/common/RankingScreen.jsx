@@ -135,6 +135,14 @@ export default function RankingScreen({
                 } else if (syncMode === 'fortune') {
                   myData.fortune_points = syncResult.points;
                   myData.fortune_total_points = syncResult.totalPoints;
+                  myData.fortune_max_grade =
+                    syncResult.fortune_max_grade ?? myData.fortune_max_grade;
+                  myData.fortune_total_cost_automata =
+                    syncResult.fortune_max_total_cost_automata ??
+                    myData.fortune_total_cost_automata;
+                  myData.fortune_total_cost_valkyria =
+                    syncResult.fortune_max_total_cost_valkyria ??
+                    myData.fortune_total_cost_valkyria;
                 }
               }
             }

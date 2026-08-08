@@ -13,6 +13,7 @@ import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
+  VALKYRIA_GUARD_POPUP_COLOR,
 } from '../utils/constants/config.js';
 import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
@@ -102,6 +103,77 @@ export function handleStartupDispelled(
 }
 
 /**
+ * リーダーへのダメージを適用し、戦乙女の加護判定およびダメージ演出・ミッション報告を一括処理する共通ヘルパー
+ * 加護が有効な場合はダメージを無効化し、「加護」ポップアップを表示します。
+ *
+ * @param {string} targetSide - ダメージを受ける対象サイド ('blue' または 'red')
+ * @param {number} dmg - 与えるダメージ量
+ * @param {string} source - ダメージ発生源のスキルID
+ * @param {Object|null} [card=null] - アクション発動カード（簒奪判定用）
+ * @param {string|null} [owner=null] - アクション発動者サイド ('blue' または 'red')
+ * @returns {Promise<boolean>} ダメージが適用された場合は true、加護等で無効化された場合は false
+ */
+async function applyLeaderDamageWithGuard(
+  targetSide,
+  dmg,
+  source,
+  card = null,
+  owner = null
+) {
+  if (dmg <= 0) return false;
+
+  const isTargetEnemy = targetSide === 'red';
+  const targetHpEl = document.getElementById(
+    isTargetEnemy ? 'enemy-hp-fill' : 'player-hp-fill'
+  );
+  const targetPlaymat = document.getElementById(
+    isTargetEnemy ? 'playmat-enemy' : 'playmat-player'
+  );
+
+  if (isValkyriaGuardActive(GameState, targetSide)) {
+    if (targetHpEl) createDamagePopup(targetHpEl, '加護', VALKYRIA_GUARD_POPUP_COLOR);
+    if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
+    if (card && owner) {
+      await triggerExtortInAction(card, owner);
+    }
+    updateHPBar();
+    await sleep(400);
+    return false;
+  }
+
+  scanMissionEvents(GameState, [
+    {
+      type: 'damage_player',
+      side: targetSide,
+      amount: dmg,
+      source: source,
+    },
+  ]);
+
+  if (isTargetEnemy) {
+    GameState.enemyHP -= dmg;
+    if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
+    triggerShakeAnimation(targetPlaymat);
+    showSpeechBubble('red');
+  } else {
+    GameState.playerHP -= dmg;
+    if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
+    triggerShakeAnimation(targetPlaymat);
+    showSpeechBubble('blue');
+  }
+
+  if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seDamage);
+
+  if (card && owner) {
+    await triggerExtortInAction(card, owner);
+  }
+  updateHPBar();
+  checkWinCondition();
+  await sleep(400);
+  return true;
+}
+
+/**
  * Mini Card Battle - Skill Implementation Logic
  * 分割されたスキル実行ロジック
  *
@@ -151,7 +223,7 @@ async function executeGroupDestruction(targets) {
         createDamagePopup(
           tgtEl,
           isGuard ? '加護' : '無効',
-          isGuard ? '#ffd700' : '#94a3b8'
+          isGuard ? VALKYRIA_GUARD_POPUP_COLOR : '#94a3b8'
         );
       }
     } else {
@@ -1348,73 +1420,12 @@ export async function resolveActiveSkillEffect(
         dmg = 3;
       }
       const targetSide = o === 'blue' ? 'red' : 'blue';
-      scanMissionEvents(GameState, [
-        {
-          type: 'damage_player',
-          side: targetSide,
-          amount: dmg,
-          source: 'fate',
-        },
-      ]);
-      if (o === 'blue') {
-        GameState.enemyHP -= dmg;
-        createDamagePopup(
-          document.getElementById('enemy-hp-fill'),
-          `-${dmg}`,
-          '#ef4444'
-        );
-        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
-        triggerShakeAnimation(document.getElementById('playmat-enemy'));
-        showSpeechBubble('red');
-        await triggerExtortInAction(c, o);
-      } else {
-        GameState.playerHP -= dmg;
-        createDamagePopup(
-          document.getElementById('player-hp-fill'),
-          `-${dmg}`,
-          '#ef4444'
-        );
-        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
-        triggerShakeAnimation(document.getElementById('playmat-player'));
-        showSpeechBubble('blue');
-        await triggerExtortInAction(c, o);
-      }
+      await applyLeaderDamageWithGuard(targetSide, dmg, 'fate', c, o);
     } else {
       let dmg = 6;
       const targetSide = o === 'blue' ? 'blue' : 'red';
-      scanMissionEvents(GameState, [
-        {
-          type: 'damage_player',
-          side: targetSide,
-          amount: dmg,
-          source: 'fate',
-        },
-      ]);
-      if (o === 'blue') {
-        GameState.playerHP -= dmg;
-        createDamagePopup(
-          document.getElementById('player-hp-fill'),
-          `-${dmg}`,
-          '#ef4444'
-        );
-        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
-        triggerShakeAnimation(document.getElementById('playmat-player'));
-        showSpeechBubble('blue');
-      } else {
-        GameState.enemyHP -= dmg;
-        createDamagePopup(
-          document.getElementById('enemy-hp-fill'),
-          `-${dmg}`,
-          '#ef4444'
-        );
-        // TODO: CSSに .card.anim-shake しか定義がないため発動しない（デッドコード）。要CSSルール追加。
-        triggerShakeAnimation(document.getElementById('playmat-enemy'));
-        showSpeechBubble('red');
-      }
+      await applyLeaderDamageWithGuard(targetSide, dmg, 'fate', c, o);
     }
-    updateHPBar();
-    checkWinCondition();
-    await sleep(400);
   } else if (skillId === 'quick') {
     await sleep(400);
     await executeSingleCombat(o, l);
@@ -1642,7 +1653,7 @@ export async function resolveActiveSkillEffect(
       if (isValkyriaGuardActive(GameState, o)) {
         playSound(SOUNDS.seSkill);
         if (hpFill) {
-          createDamagePopup(hpFill, '加護', '#ffd700');
+          createDamagePopup(hpFill, '加護', VALKYRIA_GUARD_POPUP_COLOR);
         }
       } else {
         // 実際のHP減少
@@ -1949,47 +1960,7 @@ export async function resolveActiveSkillEffect(
       await window.triggerVfx('anm_skill_artillery', o);
     }
     const targetSide = o === 'blue' ? 'red' : 'blue';
-    if (isValkyriaGuardActive(GameState, targetSide)) {
-      const targetHpEl =
-        targetSide === 'red'
-          ? document.getElementById('enemy-hp-fill')
-          : document.getElementById('player-hp-fill');
-      createDamagePopup(targetHpEl, '加護', '#facc15');
-      if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-    } else {
-      scanMissionEvents(GameState, [
-        {
-          type: 'damage_player',
-          side: targetSide,
-          amount: dmg,
-          source: 'artillery',
-        },
-      ]);
-      if (o === 'blue') {
-        GameState.enemyHP -= dmg;
-        createDamagePopup(
-          document.getElementById('enemy-hp-fill'),
-          `-${dmg}`,
-          '#ef4444'
-        );
-        triggerShakeAnimation(document.getElementById('playmat-enemy'));
-        showSpeechBubble('red');
-      } else {
-        GameState.playerHP -= dmg;
-        createDamagePopup(
-          document.getElementById('player-hp-fill'),
-          `-${dmg}`,
-          '#ef4444'
-        );
-        triggerShakeAnimation(document.getElementById('playmat-player'));
-        showSpeechBubble('blue');
-      }
-      playSound(SOUNDS.seDamage);
-    }
-    await triggerExtortInAction(c, o);
-    updateHPBar();
-    checkWinCondition();
-    await sleep(400);
+    await applyLeaderDamageWithGuard(targetSide, dmg, 'artillery', c, o);
   } else if (skillId === 'decree') {
     const decreeMultiplier = skillValue || 4;
     const myHand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
@@ -1999,47 +1970,7 @@ export async function resolveActiveSkillEffect(
     const decreeDmg = decreeCount * decreeMultiplier;
     if (decreeDmg > 0) {
       const targetSide = o === 'blue' ? 'red' : 'blue';
-      if (isValkyriaGuardActive(GameState, targetSide)) {
-        const targetHpEl =
-          targetSide === 'red'
-            ? document.getElementById('enemy-hp-fill')
-            : document.getElementById('player-hp-fill');
-        createDamagePopup(targetHpEl, '加護', '#facc15');
-        if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-      } else {
-        scanMissionEvents(GameState, [
-          {
-            type: 'damage_player',
-            side: targetSide,
-            amount: decreeDmg,
-            source: 'decree',
-          },
-        ]);
-        if (o === 'blue') {
-          GameState.enemyHP -= decreeDmg;
-          createDamagePopup(
-            document.getElementById('enemy-hp-fill'),
-            `-${decreeDmg}`,
-            '#ef4444'
-          );
-          triggerShakeAnimation(document.getElementById('playmat-enemy'));
-          showSpeechBubble('red');
-        } else {
-          GameState.playerHP -= decreeDmg;
-          createDamagePopup(
-            document.getElementById('player-hp-fill'),
-            `-${decreeDmg}`,
-            '#ef4444'
-          );
-          triggerShakeAnimation(document.getElementById('playmat-player'));
-          showSpeechBubble('blue');
-        }
-        playSound(SOUNDS.seDamage);
-      }
-      await triggerExtortInAction(c, o);
-      updateHPBar();
-      checkWinCondition();
-      await sleep(400);
+      await applyLeaderDamageWithGuard(targetSide, decreeDmg, 'decree', c, o);
     }
   } else if (skillId === 'heal' || skillId === 'heal_void') {
     const miasmaEvents = createMiasmaEvents(GameState);
@@ -3368,8 +3299,8 @@ export async function resolveActiveSkillEffect(
       ) {
         // 相手がAIの場合：最もパワーの低いカードを自動選択（自分の損失を最小化）
         const sortedLanes = [...occupiedLanes].sort((a, b) => {
-          const aImmune = hasSkill(oppBoard[a], 'immune');
-          const bImmune = hasSkill(oppBoard[b], 'immune');
+          const aImmune = !canCardBeDestroyed(GameState, oppBoard[a], oppOwner);
+          const bImmune = !canCardBeDestroyed(GameState, oppBoard[b], oppOwner);
           if (aImmune && !bImmune) return -1;
           if (!aImmune && bImmune) return 1;
 
@@ -3407,7 +3338,7 @@ export async function resolveActiveSkillEffect(
                 createDamagePopup(
                   tgtEl,
                   isGuard ? '加護' : '無効',
-                  isGuard ? '#ffd700' : '#94a3b8'
+                  isGuard ? VALKYRIA_GUARD_POPUP_COLOR : '#94a3b8'
                 );
               playSound(SOUNDS.seSkill);
               await sleep(300);
@@ -3466,8 +3397,8 @@ export async function resolveActiveSkillEffect(
             .map((bc, i) => (bc !== null ? i : -1))
             .filter((i) => i !== -1);
           occupiedLanes.sort((a, b) => {
-            const aImmune = hasSkill(myBoard[a], 'immune');
-            const bImmune = hasSkill(myBoard[b], 'immune');
+            const aImmune = !canCardBeDestroyed(GameState, myBoard[a], o);
+            const bImmune = !canCardBeDestroyed(GameState, myBoard[b], o);
             if (aImmune && !bImmune) return -1;
             if (!aImmune && bImmune) return 1;
 
@@ -3501,7 +3432,7 @@ export async function resolveActiveSkillEffect(
               createDamagePopup(
                 tgtEl,
                 isGuard ? '加護' : '無効',
-                isGuard ? '#ffd700' : '#94a3b8'
+                isGuard ? VALKYRIA_GUARD_POPUP_COLOR : '#94a3b8'
               );
             playSound(SOUNDS.seSkill);
             await sleep(300);

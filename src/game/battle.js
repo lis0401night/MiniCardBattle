@@ -8,6 +8,7 @@ import {
   AI_THINKING_DURATION,
   MAX_HP,
   PLACE_ANIMATION_DURATION,
+  VALKYRIA_GUARD_POPUP_COLOR,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
@@ -63,6 +64,7 @@ import {
   applySingleCombat,
   calculateCombatPhase,
   canTakeDamage,
+  clearValkyriaGuard,
   isValkyriaGuardActive,
 } from './engine.js';
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
@@ -2712,6 +2714,8 @@ export async function waitSkillChoice(
             enemyMaxHP: GameState.enemyMaxHP,
             extraTurnCount: GameState.extraTurnCount,
             attackSkipCount: GameState.attackSkipCount,
+            valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+            valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
           };
           // 簡易シミュレーション
           const lane = GameState.enemyBoard.indexOf(card);
@@ -3199,13 +3203,13 @@ export function drawCard(owner) {
     const damage = currentHP - newHP;
 
     if (damage > 0) {
+      const hpFill = document.getElementById(
+        `${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`
+      );
       // 戦乙女の加護（アンジェのリーダースキル）が有効な場合は山札補充ペナルティダメージも0（無効化）にする
       if (isValkyriaGuardActive(GameState, owner)) {
-        const hpFill = document.getElementById(
-          `${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`
-        );
         if (hpFill) {
-          createDamagePopup(hpFill, '加護', '#ffd700');
+          createDamagePopup(hpFill, '加護', VALKYRIA_GUARD_POPUP_COLOR);
         }
         playSound(SOUNDS.seSkill);
       } else {
@@ -3214,13 +3218,9 @@ export function drawCard(owner) {
         } else {
           GameState.enemyHP = newHP;
         }
-        createDamagePopup(
-          document.getElementById(
-            `${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`
-          ),
-          `-${damage}`,
-          '#ef4444'
-        );
+        if (hpFill) {
+          createDamagePopup(hpFill, `-${damage}`, '#ef4444');
+        }
         playSound(SOUNDS.seDamage);
 
         if (window.triggerVfx) {
@@ -3589,11 +3589,7 @@ export async function startTurn(owner) {
   if (GameState.isBattleEnded) return;
 
   // 戦乙女の加護: ターン開始時スキルの解決後に自身の加護効果を終了（クリア）
-  if (owner === 'blue') {
-    GameState.valkyriaGuardBlue = 0;
-  } else {
-    GameState.valkyriaGuardRed = 0;
-  }
+  clearValkyriaGuard(GameState, owner);
 
   // 移動スキルの処理
   await handleMoveSkills(owner);

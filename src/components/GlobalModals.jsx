@@ -53,6 +53,7 @@ import {
   CHARACTERS,
   getSkinImage,
   getPlayerIconPath,
+  canShowUnlockableCharacter,
 } from '../utils/constants/characters.js';
 import { ownedPlaymats, PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
@@ -2538,13 +2539,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   return Object.values(charsObj).filter((c) => {
                     // ボスキャラクターは選択不可
                     if (BOSS_CHARACTER_IDS.includes(c.id)) return false;
-                    // 解放制キャラクター（automata, valkyria）は解放済みの場合のみ表示
-                    if (c.id === 'automata' || c.id === 'valkyria') {
-                      const unlockedChars = safeParseArray(
-                        'mini_card_battle_unlocked_characters'
-                      );
-                      if (!unlockedChars.includes(c.id)) return false;
-                    }
+                    // 解放制キャラクター（automata, valkyria等）は解放済みの場合のみ表示
+                    if (!canShowUnlockableCharacter(c.id)) return false;
                     return true;
                   });
                 };

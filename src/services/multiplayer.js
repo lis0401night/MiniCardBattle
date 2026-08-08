@@ -13,6 +13,7 @@ import {
   query,
   orderByChild,
   equalTo,
+  limitToFirst,
 } from 'firebase/database';
 import { database } from '../utils/firebase.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
@@ -20,8 +21,9 @@ import { showAlertModal } from './uiModals.js';
 import { PROFILE_ICON_KEY } from '../utils/constants/config.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
 
-// 現在参加しているルームのID
+// 現在参加しているルームのIDおよびルームコード
 export let currentRoomId = null;
+export let currentRoomCode = null;
 export let isHost = false;
 export let multiplayerCallbacks = {
   onRoomJoined: null,
@@ -30,9 +32,26 @@ export let multiplayerCallbacks = {
   onRoomClosed: null,
 };
 
+/**
+ * 現在参加しているルームのIDを取得する
+ * @returns {string|null} ルームID
+ */
 export function getCurrentRoomId() {
   return currentRoomId;
 }
+
+/**
+ * 現在参加しているルームの6桁コードを取得する
+ * @returns {string|null} ルームコード
+ */
+export function getCurrentRoomCode() {
+  return currentRoomCode;
+}
+
+/**
+ * 自身がホストであるかどうかを取得する
+ * @returns {boolean} ホストフラグ
+ */
 export function getIsHost() {
   return isHost;
 }
@@ -204,6 +223,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   }
 
   currentRoomId = newRoomRef.key;
+  currentRoomCode = roomCode;
   isHost = true;
 
   // ホスト切断時の自動部屋削除（部屋本体およびルームコード予約インデックス）を予約
@@ -264,7 +284,28 @@ export async function joinRoomByCode(roomCodeInput, clientName) {
       }
     }
 
-    // 2. 直接参照で見つからなかった場合、roomCode のインデックスクエリで探索
+    // 2. 予約インデックス（roomCodeIndex）から対象ルームIDを O(1) で高速解決
+    if (!targetRoomId) {
+      const indexSnapshot = await getWithTimeout(
+        get(ref(database, `roomCodeIndex/${trimmedCode}`)),
+        3000
+      ).catch(() => null);
+      const indexedRoomId = indexSnapshot?.val();
+      if (indexedRoomId && typeof indexedRoomId === 'string') {
+        const indexedRoomSnapshot = await getWithTimeout(
+          get(ref(database, `${ROOMS_REF}/${indexedRoomId}`)),
+          3000
+        ).catch(() => null);
+        if (indexedRoomSnapshot?.exists()) {
+          const room = indexedRoomSnapshot.val();
+          if (room.status === 'waiting') {
+            targetRoomId = indexedRoomId;
+          }
+        }
+      }
+    }
+
+    // 3. インデックスで見つからなかった場合、roomCode のインデックスクエリで探索
     if (!targetRoomId) {
       const codeQuery = query(
         roomsRef,
@@ -277,23 +318,24 @@ export async function joinRoomByCode(roomCodeInput, clientName) {
 
       if (codeSnapshot && codeSnapshot.exists()) {
         codeSnapshot.forEach((child) => {
-          if (targetRoomId) return; // 最初に見つかった1件のみ採用
+          if (targetRoomId) return true; // 最初に見つかった1件のみ採用し列挙を打ち切り
           const room = child.val();
           if (room.status === 'waiting') {
             targetRoomId = child.key;
+            return true; // 打ち切り
           }
         });
       }
     }
 
-    // 3. クエリで取得できなかった場合のフォールバック（全ルーム走査）
+    // 4. クエリで取得できなかった場合のフォールバック（全ルーム走査）
     if (!targetRoomId) {
       const allSnapshot = await getWithTimeout(get(roomsRef), 5000).catch(
         () => null
       );
       if (allSnapshot && allSnapshot.exists()) {
         allSnapshot.forEach((child) => {
-          if (targetRoomId) return; // 最初に見つかった1件のみ採用
+          if (targetRoomId) return true; // 最初に見つかった1件のみ採用し列挙を打ち切り
           const room = child.val();
           if (
             room.status === 'waiting' &&
@@ -301,6 +343,7 @@ export async function joinRoomByCode(roomCodeInput, clientName) {
               String(room.roomCode) === trimmedCode)
           ) {
             targetRoomId = child.key;
+            return true; // 打ち切り
           }
         });
       }
@@ -340,7 +383,9 @@ export async function joinRoom(roomId, clientName) {
 
   // 1回の原子的トランザクションで参加状態（status === 'waiting' && client == null）を確認して参加更新を実行
   const result = await runTransaction(roomRef, (room) => {
-    if (!room || room.status !== 'waiting' || room.client) {
+    // 初回はローカルキャッシュ由来の null が渡る場合があるため、null をそのまま返してサーバー値での再実行を促す
+    if (room === null) return null;
+    if (room.status !== 'waiting' || room.client) {
       return undefined; // 条件を満たさない場合はトランザクションを中断してコミットしない
     }
     return {
@@ -351,7 +396,7 @@ export async function joinRoom(roomId, clientName) {
     };
   });
 
-  if (!result.committed) {
+  if (!result.committed || !result.snapshot?.exists()) {
     throw new Error('指定されたルームは見つからないか、既に対戦中・満員です。');
   }
 
@@ -526,6 +571,7 @@ export async function leaveRoom() {
   if (!currentRoomId || !database) return;
 
   const roomId = currentRoomId;
+  const roomCode = currentRoomCode;
   const wasHost = isHost;
 
   // 1. ローカルの状態クリアは「最初」に無条件で安全に実行します
@@ -537,10 +583,14 @@ export async function leaveRoom() {
   stopListeningToRoomActions();
 
   currentRoomId = null;
+  currentRoomCode = null;
   isHost = false;
   cachedRoomData = null;
 
   const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
+  const codeRef = roomCode
+    ? ref(database, `roomCodeIndex/${roomCode}`)
+    : null;
 
   // 正常退室のための切断時予約の解除
   try {
@@ -548,11 +598,21 @@ export async function leaveRoom() {
   } catch (e) {
     console.warn('onDisconnect cancel failed:', e);
   }
+  if (codeRef) {
+    try {
+      await onDisconnect(codeRef).cancel();
+    } catch (e) {
+      console.warn('onDisconnect code index cancel failed:', e);
+    }
+  }
 
   try {
     if (wasHost) {
-      // ホストが抜ける場合はルームごと削除
+      // ホストが抜ける場合はルームおよびコードインデックスを削除
       await remove(roomRef);
+      if (codeRef) {
+        await remove(codeRef).catch(() => {});
+      }
     } else {
       // クライアントが抜ける場合は、他の操作との競合によるルームの再作成を防ぐため
       // トランザクションを使用してデータが存在する間だけステータスとクライアントを更新する
@@ -572,6 +632,9 @@ export async function leaveRoom() {
     try {
       if (wasHost) {
         await onDisconnect(roomRef).remove();
+        if (codeRef) {
+          await onDisconnect(codeRef).remove();
+        }
       }
     } catch (disconnectError) {
       console.warn('Failed to re-register onDisconnect:', disconnectError);
@@ -611,13 +674,19 @@ export async function checkHasPublicWaitingRooms() {
     const myId = getOrCreateUUID();
     const roomsRef = ref(database, ROOMS_REF);
 
-    // 常時接続リスナーではなく単発(get)で現在のルーム一覧情報を取得
-    const snapshot = await get(roomsRef);
+    // roomsノード全件取得を避け、status='waiting'の待機ルームのみを最大20件に絞り込んでクエリ取得
+    const waitingQuery = query(
+      roomsRef,
+      orderByChild('status'),
+      equalTo('waiting'),
+      limitToFirst(20)
+    );
+    const snapshot = await get(waitingQuery);
     if (!snapshot.exists()) return false;
 
     let hasRoom = false;
     snapshot.forEach((child) => {
-      if (hasRoom) return; // 該当する部屋が1件でも見つかれば走査を打ち切り
+      if (hasRoom) return true; // 該当する部屋が1件でも見つかれば走査を打ち切り
       const room = child.val();
       // 「待機中(status === 'waiting')」「公開(isPublic !== false)」「自分以外のホスト」の3条件を満たすか確認
       if (
@@ -626,6 +695,7 @@ export async function checkHasPublicWaitingRooms() {
         room.host?.id !== myId
       ) {
         hasRoom = true;
+        return true; // 1件見つかった時点で走査を打ち切る
       }
     });
     return hasRoom;

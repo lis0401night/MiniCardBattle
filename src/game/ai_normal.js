@@ -1660,13 +1660,19 @@ export function getBestSimulatedMove() {
                     };
                     const destroyedCard =
                       tgtLane === lane ? card : activeEnemyBoard[tgtLane];
-                    const isImmuneTarget =
-                      destroyedCard && hasSkill(destroyedCard, 'immune');
+                    const projectedState = {
+                      ...GameState,
+                      enemyBoard: activeEnemyBoard,
+                      playerBoard: activePlayerBoard,
+                    };
+                    const isDestroyable =
+                      destroyedCard &&
+                      canCardBeDestroyed(projectedState, destroyedCard, 'red');
                     let newlyDiscarded = [...currentDiscarded];
                     if (
                       destroyedCard &&
                       !destroyedCard.isToken &&
-                      !isImmuneTarget
+                      isDestroyable
                     ) {
                       newlyDiscarded.push(destroyedCard);
                     }
@@ -1675,8 +1681,8 @@ export function getBestSimulatedMove() {
                     const nextEnemyBoard = activeEnemyBoard.map((c) =>
                       c ? { ...c } : null
                     );
-                    if (!isImmuneTarget) {
-                      nextEnemyBoard[tgtLane] = null; // ★自己処刑・他者処刑にかかわらず、対象レーンを確実にnullにする！（immuneを除く）
+                    if (isDestroyable) {
+                      nextEnemyBoard[tgtLane] = null; // ★自己処刑・他者処刑にかかわらず、加護等を含めて破壊可能な場合のみnullにする
                     }
 
                     let nextBranches = buildSkillBranch(
@@ -3451,10 +3457,16 @@ export function evaluateAdhocTokenLanes(
           };
           const destroyedCard =
             tgtLane === laneIdx ? tokenCard : activeEnemyBoard[tgtLane];
-          const isImmuneTarget =
-            destroyedCard && hasSkill(destroyedCard, 'immune');
+          const projectedState = {
+            ...GameState,
+            enemyBoard: activeEnemyBoard,
+            playerBoard: activePlayerBoard,
+          };
+          const isDestroyable =
+            destroyedCard &&
+            canCardBeDestroyed(projectedState, destroyedCard, 'red');
           let newlyDiscarded = [...currentDiscard];
-          if (destroyedCard && !destroyedCard.isToken && !isImmuneTarget) {
+          if (destroyedCard && !destroyedCard.isToken && isDestroyable) {
             newlyDiscarded.push(destroyedCard);
           }
 
@@ -3462,7 +3474,7 @@ export function evaluateAdhocTokenLanes(
           const nextEnemyBoard = activeEnemyBoard.map((c) =>
             c ? { ...c } : null
           );
-          if (!isImmuneTarget) {
+          if (isDestroyable) {
             nextEnemyBoard[tgtLane] = null;
           }
 

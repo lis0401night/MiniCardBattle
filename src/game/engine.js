@@ -11,8 +11,19 @@ import {
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
 
-/** 戦乙女の加護の持続カウンター（発動後の次の自分の攻撃フェーズ終了まで） */
+/** 戦乙女の加護の持続カウンター（発動後、次の自分のターン開始時スキル解決完了までを1とする） */
 export const VALKYRIA_GUARD_TURNS = 1;
+
+/**
+ * 指定サイドの戦乙女の加護状態を解除（クリア）する
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} side - 対象サイド ('blue' または 'red')
+ */
+export function clearValkyriaGuard(state, side) {
+  if (!state) return;
+  const key = side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
+  state[key] = 0;
+}
 
 /**
  * 指定サイドに戦乙女の加護が有効かどうかを判定する
@@ -492,9 +503,11 @@ export const isGraveKeeperActive = (state) => {
  * @returns {boolean} プレイヤーまたは敵の盤面に瘴気カードが存在する場合は true
  */
 export const isMiasmaActive = (state) => {
+  const pb = state?.playerBoard || [];
+  const eb = state?.enemyBoard || [];
   return (
-    state.playerBoard.some((c) => c && hasSkill(c, 'miasma')) ||
-    state.enemyBoard.some((c) => c && hasSkill(c, 'miasma'))
+    pb.some((c) => c && hasSkill(c, 'miasma')) ||
+    eb.some((c) => c && hasSkill(c, 'miasma'))
   );
 };
 
@@ -2267,6 +2280,48 @@ function tryEquipToken(state, board, lane, newToken, owner, events) {
   return false;
 }
 
+/**
+ * ダメージ＋回復系リーダースキル（神炎 god_flame / 断罪の聖域 condemnation）の共通実行ヘルパー
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} action - スキルID ('god_flame' | 'condemnation')
+ * @param {string} owner - スキル発動者 ('blue' | 'red')
+ * @param {string} oppOwner - 相手 ('red' | 'blue')
+ * @param {boolean} isBlue - 発動者がブルー（プレイヤー）か
+ * @param {number} damageAmount - 与えるダメージ量および回復量
+ * @param {Array} events - イベントログ配列
+ */
+function executeFlameHealLeaderSkill(
+  state,
+  action,
+  owner,
+  oppOwner,
+  isBlue,
+  damageAmount,
+  events
+) {
+  events.push({ type: 'leader_skill', skill: action, side: owner });
+  damageLeader(state, oppOwner, damageAmount, action, events);
+  if (!isMiasmaActive(state)) {
+    if (isBlue) {
+      state.playerHP = Math.min(
+        state.playerMaxHP,
+        state.playerHP + damageAmount
+      );
+    } else {
+      state.enemyHP = Math.min(
+        state.enemyMaxHP,
+        state.enemyHP + damageAmount
+      );
+    }
+    events.push({
+      type: 'heal_player',
+      side: owner,
+      amount: damageAmount,
+      source: action,
+    });
+  }
+}
+
 export function applyLeaderSkillLogic(
   state,
   owner,
@@ -3894,47 +3949,9 @@ export function applyLeaderSkillLogic(
       }
     }
   } else if (action === 'god_flame') {
-    events.push({ type: 'leader_skill', skill: action, side: owner });
-    const d = 3;
-    damageLeader(state, oppOwner, d, 'god_flame', events);
-    if (!isMiasmaActive(state)) {
-      if (isBlue) {
-        state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
-      } else {
-        state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + d);
-      }
-      events.push({
-        type: 'heal_player',
-        side: owner,
-        amount: d,
-        source: 'god_flame',
-      });
-    }
+    executeFlameHealLeaderSkill(state, action, owner, oppOwner, isBlue, 3, events);
   } else if (action === 'condemnation') {
-    events.push({ type: 'leader_skill', skill: action, side: owner });
-    const d = 5;
-    damageLeader(state, oppOwner, d, 'condemnation', events);
-    if (!isMiasmaActive(state)) {
-      if (isBlue) {
-        state.playerHP = Math.min(state.playerMaxHP, state.playerHP + d);
-      } else {
-        state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + d);
-      }
-      events.push({
-        type: 'heal_player',
-        side: owner,
-        amount: d,
-        source: 'condemnation',
-      });
-    }
-    if (!isMiasmaActive(state)) {
-      events.push({
-        type: 'heal_player',
-        side: owner,
-        amount: d,
-        source: 'condemnation',
-      });
-    }
+    executeFlameHealLeaderSkill(state, action, owner, oppOwner, isBlue, 5, events);
   } else if (action === 'time_stop') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     state.extraTurnCount = (state.extraTurnCount || 0) + 2;
@@ -5374,11 +5391,7 @@ export function applyPassiveSkillLogic(
   processDestructionTriggers(state, events);
 
   // 戦乙女の加護: ターン開始時スキル（契約等の自傷ダメージ）の解決完了後に自身の加護効果を終了（クリア）
-  if (side === 'blue') {
-    state.valkyriaGuardBlue = 0;
-  } else {
-    state.valkyriaGuardRed = 0;
-  }
+  clearValkyriaGuard(state, side);
 
   return events;
 }

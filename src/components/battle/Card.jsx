@@ -4,6 +4,7 @@ import { getCardImgUrl, renderSkillTag } from '../../utils/gameUtils.js';
 export default function Card({
   cardObj,
   isBoard = false,
+  isValkyriaGuardActive = null,
   className = '',
   onClick = undefined,
   onLongPress = undefined,
@@ -32,7 +33,7 @@ export default function Card({
   const imgUrl = getCardImgUrl(cardObj, true);
 
   // スキルタグのHTML生成（Reactレンダー内に安全に埋め込み）
-  const skillTagHtml = renderSkillTag(cardObj, isBoard);
+  const skillTagHtml = renderSkillTag(cardObj, isBoard, isValkyriaGuardActive);
 
   // 長押しとクリックイベントのハンドリング
   const handlePointerDown = (e) => {

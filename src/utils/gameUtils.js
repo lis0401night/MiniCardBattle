@@ -867,7 +867,18 @@ export function getOrCreateUUID() {
   return uuid;
 }
 
-export function renderSkillTag(card, isBoard = false) {
+/**
+ * カードのスキルバッジHTMLを生成するユーティリティ関数
+ * @param {Object} card - 対象のカードオブジェクト
+ * @param {boolean} [isBoard=false] - 盤面配置中かどうか
+ * @param {boolean|null} [isValkyriaGuardActive=null] - 戦乙女の加護が有効かどうか（nullの場合はGameStateからフォールバック取得）
+ * @returns {string} スキルバッジのHTML文字列
+ */
+export function renderSkillTag(
+  card,
+  isBoard = false,
+  isValkyriaGuardActive = null
+) {
   if (!card) return '';
   let skillCandidates = [];
 
@@ -910,11 +921,16 @@ export function renderSkillTag(card, isBoard = false) {
   let badges = [];
 
   // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブな場合に優先表示）
-  if (isBoard && card.owner && typeof GameState !== 'undefined') {
+  if (isBoard && card.owner) {
     const isGuardActive =
-      card.owner === 'blue'
-        ? (GameState.valkyriaGuardBlue || 0) > 0
-        : (GameState.valkyriaGuardRed || 0) > 0;
+      isValkyriaGuardActive !== null
+        ? isValkyriaGuardActive
+        : typeof GameState !== 'undefined'
+          ? card.owner === 'blue'
+            ? (GameState.valkyriaGuardBlue || 0) > 0
+            : (GameState.valkyriaGuardRed || 0) > 0
+          : false;
+
     if (isGuardActive) {
       badges.push(`<div class="card-skill badge-valkyria-guard">🛡️ 加護</div>`);
     }

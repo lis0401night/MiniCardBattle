@@ -10,7 +10,10 @@ import {
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { getSkinImage } from '../utils/constants/characters.js';
-import { AI_THINKING_DURATION } from '../utils/constants/config.js';
+import {
+  AI_THINKING_DURATION,
+  VALKYRIA_GUARD_POPUP_COLOR,
+} from '../utils/constants/config.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
@@ -45,6 +48,8 @@ import {
 import {
   applyLeaderSkillLogic,
   applySingleCombat,
+  isMiasmaActive,
+  isValkyriaGuardActive,
   processDestructionTriggers,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
@@ -1170,22 +1175,30 @@ export async function executeLeaderSkillAction(
 
     // 相手が捨てた虚空の枚数分、相手がダメージを受ける
     if (voidDiscarded > 0) {
-      if (opId === 'blue') {
-        GameState.playerHP -= voidDiscarded;
-        if (GameState.playerHP < 0) GameState.playerHP = 0;
-      } else {
-        GameState.enemyHP -= voidDiscarded;
-        if (GameState.enemyHP < 0) GameState.enemyHP = 0;
-      }
-
-      // 被弾演出
       const hpFill = document.getElementById(
         `${opId === 'blue' ? 'player' : 'enemy'}-hp-fill`
       );
-      if (hpFill) {
-        createDamagePopup(hpFill, `-${voidDiscarded}`, '#ef4444');
+      // 戦乙女の加護: 対象側に加護が有効な場合はダメージを0（無効化）にする
+      if (isValkyriaGuardActive(GameState, opId)) {
+        if (hpFill) {
+          createDamagePopup(hpFill, '加護', VALKYRIA_GUARD_POPUP_COLOR);
+        }
+        playSound(SOUNDS.seSkill);
+      } else {
+        if (opId === 'blue') {
+          GameState.playerHP -= voidDiscarded;
+          if (GameState.playerHP < 0) GameState.playerHP = 0;
+        } else {
+          GameState.enemyHP -= voidDiscarded;
+          if (GameState.enemyHP < 0) GameState.enemyHP = 0;
+        }
+
+        // 被弾演出
+        if (hpFill) {
+          createDamagePopup(hpFill, `-${voidDiscarded}`, '#ef4444');
+        }
+        playSound(SOUNDS.seDamage);
       }
-      playSound(SOUNDS.seDamage);
 
       updateHPBar();
       showSpeechBubble(opId);
@@ -1970,10 +1983,6 @@ export async function executeLeaderSkillAction(
     } else if (action === 'god_flame' || action === 'condemnation') {
       await sleep(200);
       await window.triggerVfx('anm_god_flame', owner);
-      const miasmaEvents = createMiasmaEvents(GameState);
-      if (miasmaEvents.length > 0) {
-        await playEvents(miasmaEvents);
-      }
     } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {
       await sleep(200);
       await Promise.all(
@@ -1988,6 +1997,16 @@ export async function executeLeaderSkillAction(
           window.triggerVfx('anm_seal_lanes', owner, lane)
         )
       );
+    }
+  }
+
+  // god_flame / condemnation による回復が「瘴気」で阻害された場合の演出再生（VFXの有無に関わらず実行）
+  if (action === 'god_flame' || action === 'condemnation') {
+    if (isMiasmaActive(GameState)) {
+      const miasmaEvents = createMiasmaEvents(GameState);
+      if (miasmaEvents.length > 0) {
+        await playEvents(miasmaEvents);
+      }
     }
   }
 

@@ -9,7 +9,10 @@ import {
 } from '../services/uiBattle.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { PLACE_ANIMATION_DURATION } from '../utils/constants/config.js';
+import {
+  PLACE_ANIMATION_DURATION,
+  VALKYRIA_GUARD_POPUP_COLOR,
+} from '../utils/constants/config.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   addDamagePopupHook,
@@ -634,12 +637,12 @@ export async function playEvents(events) {
             `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
           );
           if (cEl) {
-            createDamagePopup(cEl, '加護', '#ffd700');
+            createDamagePopup(cEl, '加護', VALKYRIA_GUARD_POPUP_COLOR);
           }
         } else {
           const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
           if (hpFill) {
-            createDamagePopup(hpFill, '加護', '#ffd700');
+            createDamagePopup(hpFill, '加護', VALKYRIA_GUARD_POPUP_COLOR);
           }
         }
         playSound(SOUNDS.seSkill);

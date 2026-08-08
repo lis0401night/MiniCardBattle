@@ -1,7 +1,12 @@
 /**
  * Mini Card Battle - Character Data
  */
-import { appendVersionQuery, BOSS_CHARACTER_IDS } from './config.js';
+import {
+  appendVersionQuery,
+  BOSS_CHARACTER_IDS,
+  UNLOCKED_CHARACTERS_KEY,
+} from './config.js';
+import { safeParseArray } from '../gameUtils.js';
 import { LEADER_SKILLS } from './leaderSkills.js';
 import { applySkinDialogues } from './skinDialogues.js';
 import { SKIN_KEY_MAP, SKIN_MASTER } from './skins.js';
@@ -1471,4 +1476,23 @@ export function getPlayerColor(player) {
     }
   }
   return '#ffffff';
+}
+
+/** 解放制キャラクターのID一覧 */
+export const UNLOCKABLE_CHARACTER_IDS = ['automata', 'valkyria'];
+
+/**
+ * 解放制キャラクターの表示条件を一元化して判定する共通関数
+ * @param {string} characterId - キャラクターID
+ * @param {boolean} [isEnemySelect=false] - 対戦相手選択画面（CPU選択）かどうか
+ * @returns {boolean} 表示可能であればtrue
+ */
+export function canShowUnlockableCharacter(
+  characterId,
+  isEnemySelect = false
+) {
+  if (!UNLOCKABLE_CHARACTER_IDS.includes(characterId)) return true;
+  if (isEnemySelect) return false;
+  const unlockedChars = safeParseArray(UNLOCKED_CHARACTERS_KEY);
+  return unlockedChars.includes(characterId);
 }

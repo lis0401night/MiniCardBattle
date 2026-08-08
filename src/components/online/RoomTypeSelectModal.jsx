@@ -4,6 +4,9 @@ import MenuButton from '../common/MenuButton.jsx';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
+// モーダル描画完了後にフォーカスを移すまでの待機時間(ms)
+const FOCUS_DELAY_MS = 50;
+
 /**
  * オンライン対戦 ルーム公開/非公開選択モーダルコンポーネント
  *
@@ -21,12 +24,17 @@ export default function RoomTypeSelectModal({
   onCancel,
 }) {
   const modalRef = useRef(null);
+  // モーダルを開く直前にフォーカスしていた要素を保持する
+  const previousFocusRef = useRef(null);
 
   /**
    * モーダル表示時に最初のフォーカス可能要素へフォーカスを割り当てるエフェクト
+   * モーダルを閉じる際は、開く直前の要素へフォーカスを戻します。
    */
   useEffect(() => {
     if (!isOpen) return;
+
+    previousFocusRef.current = document.activeElement;
 
     const timer = setTimeout(() => {
       if (modalRef.current) {
@@ -39,25 +47,38 @@ export default function RoomTypeSelectModal({
           modalRef.current.focus();
         }
       }
-    }, 50);
+    }, FOCUS_DELAY_MS);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      previousFocusRef.current?.focus?.();
+    };
   }, [isOpen]);
 
   /**
-   * モーダル内でのキーボード操作ハンドラ
-   * Escapeキーでのキャンセル実行、およびTabキーでのフォーカストラップを処理します。
+   * Escapeキーによるキャンセル操作をモーダル外からでも確実に受け付けるエフェクト
+   */
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        playSound?.(SOUNDS?.seClick);
+        if (onCancel) onCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onCancel]);
+
+  /**
+   * モーダル内でのTabキーによるフォーカストラップの処理ハンドラ
    * @param {React.KeyboardEvent} e - キーボードイベント
    * @returns {void}
    */
   const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      playSound?.(SOUNDS?.seClick);
-      if (onCancel) onCancel();
-      return;
-    }
-
     if (e.key === 'Tab' && modalRef.current) {
       const focusables = Array.from(
         modalRef.current.querySelectorAll(
@@ -164,31 +185,12 @@ export default function RoomTypeSelectModal({
             style={{ width: '100%', maxWidth: '260px', margin: 0 }}
             onClick={onSelectPrivate}
           />
-          <button
-            type="button"
-            className="btn"
-            style={{
-              width: '100%',
-              maxWidth: '260px',
-              margin: 0,
-              padding: '12px 20px',
-              background: '#475569',
-              color: '#e2e8f0',
-              border: '1px solid #64748b',
-              borderRadius: '10px',
-              fontWeight: 900,
-              fontSize: '1.1rem',
-              letterSpacing: '1.5px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              cursor: 'pointer',
-            }}
-            onClick={() => {
-              playSound?.(SOUNDS?.seClick);
-              if (onCancel) onCancel();
-            }}
-          >
-            キャンセル
-          </button>
+          <MenuButton
+            label="キャンセル"
+            variant="gray"
+            style={{ width: '100%', maxWidth: '260px', margin: 0 }}
+            onClick={onCancel}
+          />
         </div>
       </div>
     </div>

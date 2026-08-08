@@ -17,6 +17,20 @@ import { SOUNDS } from '../utils/sounds.js';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
+const ROOM_CODE_LENGTH = 6;
+
+/**
+ * 入力文字列を半角数字のみへ正規化する（全角数字の自動半角変換および最大桁数切り出し）
+ * @param {string} value - 入力文字列
+ * @returns {string} 半角数字のみに正規化された最大6桁の文字列
+ */
+const normalizeRoomCode = (value) => {
+  if (!value) return '';
+  return value
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/\D/g, '')
+    .slice(0, ROOM_CODE_LENGTH);
+};
 
 /**
  * オンラインルーム検索画面コンポーネント
@@ -128,7 +142,7 @@ export default function OnlineRoomSearchScreen() {
     if (joinRequestRef.current || isJoining) return;
 
     if (!inputRoomCode.trim()) {
-      showConfirmModal?.('ルームIDを入力してください。', null, null, true);
+      showAlertModal?.('ルームIDを入力してください。');
       return;
     }
 
@@ -148,21 +162,18 @@ export default function OnlineRoomSearchScreen() {
         console.error('joinRoomByCode error:', e);
         if (!isMountedRef.current) return;
         setIsJoining(false);
-        const msg =
-          e?.message ||
-          '指定されたIDのルームが見つからないか、既に対戦中・解散されています。';
+        const msg = e?.message || '';
         if (
           e?.code === 'PERMISSION_DENIED' ||
           msg.includes('Permission denied')
         ) {
-          showConfirmModal?.(
-            '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。',
-            null,
-            null,
-            true
+          showAlertModal?.(
+            '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
           );
         } else {
-          showConfirmModal?.(msg, null, null, true);
+          showAlertModal?.(
+            '指定されたIDのルームが見つからないか、既に対戦中・解散されています。'
+          );
         }
       })
       .finally(() => {
@@ -238,9 +249,13 @@ export default function OnlineRoomSearchScreen() {
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
+              inputMode="numeric"
+              maxLength={ROOM_CODE_LENGTH}
               placeholder="6桁のルームIDを入力"
               value={inputRoomCode}
-              onChange={(e) => setInputRoomCode(e.target.value)}
+              onChange={(e) =>
+                setInputRoomCode(normalizeRoomCode(e.target.value))
+              }
               disabled={isJoining}
               style={{
                 flex: 1,
