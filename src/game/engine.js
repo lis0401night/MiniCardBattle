@@ -2680,7 +2680,12 @@ export function applyLeaderSkillLogic(
       if (eBoard[lane] !== null) {
         if (canTakeDamage(eBoard[lane], 4)) {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: lane, amount: 4 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: lane,
+              amount: 4,
+            });
           } else {
             eBoard[lane].currentPower -= 4;
             events.push({
@@ -2736,7 +2741,12 @@ export function applyLeaderSkillLogic(
       if (eBoard[lane] !== null) {
         if (canTakeDamage(eBoard[lane], 4)) {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: lane, amount: 4 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: lane,
+              amount: 4,
+            });
           } else {
             eBoard[lane].currentPower -= 4;
             events.push({
@@ -2828,7 +2838,12 @@ export function applyLeaderSkillLogic(
       if (eBoard[i]) {
         if (canTakeDamage(eBoard[i], 4)) {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: i, amount: 4 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: i,
+              amount: 4,
+            });
           } else {
             eBoard[i].currentPower -= 4;
             events.push({
@@ -2856,7 +2871,12 @@ export function applyLeaderSkillLogic(
       if (eBoard[i]) {
         if (canTakeDamage(eBoard[i], 4)) {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: i, amount: 4 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: i,
+              amount: 4,
+            });
           } else {
             eBoard[i].currentPower -= 4;
             events.push({
@@ -2888,7 +2908,12 @@ export function applyLeaderSkillLogic(
       if (board[i]) {
         if (canTakeDamage(board[i], 2)) {
           if (isValkyrieGuardActive(state, owner)) {
-            events.push({ type: 'valkyrie_guard_block', side: owner, lane: i, amount: 2 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: owner,
+              lane: i,
+              amount: 2,
+            });
           } else {
             board[i].currentPower -= 2;
             events.push({
@@ -2912,7 +2937,12 @@ export function applyLeaderSkillLogic(
       if (eBoard[i]) {
         if (canTakeDamage(eBoard[i], 2)) {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: i, amount: 2 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: i,
+              amount: 2,
+            });
           } else {
             eBoard[i].currentPower -= 2;
             events.push({
@@ -3311,7 +3341,12 @@ export function applyLeaderSkillLogic(
           });
         } else {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: targetLane, amount: 4 });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: targetLane,
+              amount: 4,
+            });
           } else {
             targetCard.currentPower -= 4;
             events.push({
@@ -3361,7 +3396,12 @@ export function applyLeaderSkillLogic(
           });
         } else {
           if (isValkyrieGuardActive(state, oppOwner)) {
-            events.push({ type: 'valkyrie_guard_block', side: oppOwner, lane: targetLane, amount: DEATH_JUDGMENT_DAMAGE });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: oppOwner,
+              lane: targetLane,
+              amount: DEATH_JUDGMENT_DAMAGE,
+            });
           } else {
             targetCard.currentPower -= DEATH_JUDGMENT_DAMAGE;
             events.push({
@@ -4537,7 +4577,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
         if (effectiveDmg > 0) {
           if (isValkyrieGuardActive(state, defSide)) {
-            events.push({ type: 'valkyrie_guard_block', side: defSide, lane: targetLane, amount: effectiveDmg });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: defSide,
+              lane: targetLane,
+              amount: effectiveDmg,
+            });
             effectiveDmg = 0;
           }
         }
@@ -4579,18 +4624,23 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       } else {
         // 空レーン: ダメージはリーダーへ
         if (isValkyrieGuardActive(state, defSide)) {
-          events.push({ type: 'valkyrie_guard_block', side: defSide, amount: currentDmg, source: 'cleave' });
+          events.push({
+            type: 'valkyrie_guard_block',
+            side: defSide,
+            amount: currentDmg,
+            source: 'cleave',
+          });
         } else {
           defHP -= currentDmg;
-        events.push({
-          type: 'damage_player',
-          side: defSide,
-          amount: currentDmg,
-          source: 'cleave',
-        });
-        totalActualDmgToDef += currentDmg;
-        // 簒奪: リーダーにダメージを与えた際に発動
-        applyExtort(aC, defSide, attackerSide, aLane, events, state);
+          events.push({
+            type: 'damage_player',
+            side: defSide,
+            amount: currentDmg,
+            source: 'cleave',
+          });
+          totalActualDmgToDef += currentDmg;
+          // 簒奪: リーダーにダメージを与えた際に発動
+          applyExtort(aC, defSide, attackerSide, aLane, events, state);
         }
       }
     }
@@ -4621,7 +4671,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     if (isOriginalTargetDefender) dmgToAtk = 0;
 
     if (dmgToAtk > 0 && isValkyrieGuardActive(state, attackerSide)) {
-      events.push({ type: 'valkyrie_guard_block', side: attackerSide, lane: aLane, amount: dmgToAtk });
+      events.push({
+        type: 'valkyrie_guard_block',
+        side: attackerSide,
+        lane: aLane,
+        amount: dmgToAtk,
+      });
       dmgToAtk = 0;
     }
 
@@ -4717,38 +4772,43 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
       if (totalPierceDmg > 0) {
         if (isValkyrieGuardActive(state, defSide)) {
-          events.push({ type: 'valkyrie_guard_block', side: defSide, amount: totalPierceDmg, source: 'pierce' });
+          events.push({
+            type: 'valkyrie_guard_block',
+            side: defSide,
+            amount: totalPierceDmg,
+            source: 'pierce',
+          });
         } else {
           defHP -= totalPierceDmg;
-        events.push({
-          type: 'damage_player',
-          side: defSide,
-          amount: totalPierceDmg,
-          source: 'pierce',
-        });
-        applyExtort(aC, defSide, attackerSide, aLane, events, state);
-        if (hasSkill(aC, 'absorb')) {
-          const healAmt = Math.floor(totalPierceDmg / 2);
-          if (healAmt > 0 && !isMiasmaActive(state)) {
-            if (attackerSide === 'blue')
-              state.playerHP = Math.min(
-                state.playerMaxHP || 20,
-                state.playerHP + healAmt
-              );
-            else
-              state.enemyHP = Math.min(
-                state.enemyMaxHP || 20,
-                state.enemyHP + healAmt
-              );
-            events.push({
-              type: 'heal_player',
-              side: attackerSide,
-              amount: healAmt,
-              source: 'absorb',
-              lane: aLane,
-            });
+          events.push({
+            type: 'damage_player',
+            side: defSide,
+            amount: totalPierceDmg,
+            source: 'pierce',
+          });
+          applyExtort(aC, defSide, attackerSide, aLane, events, state);
+          if (hasSkill(aC, 'absorb')) {
+            const healAmt = Math.floor(totalPierceDmg / 2);
+            if (healAmt > 0 && !isMiasmaActive(state)) {
+              if (attackerSide === 'blue')
+                state.playerHP = Math.min(
+                  state.playerMaxHP || 20,
+                  state.playerHP + healAmt
+                );
+              else
+                state.enemyHP = Math.min(
+                  state.enemyMaxHP || 20,
+                  state.enemyHP + healAmt
+                );
+              events.push({
+                type: 'heal_player',
+                side: attackerSide,
+                amount: healAmt,
+                source: 'absorb',
+                lane: aLane,
+              });
+            }
           }
-        }
         }
       }
     }
@@ -4869,7 +4929,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       dmgToAtk = Math.floor(dmgToAtk / 2);
     }
     if (dmgToDef > 0 && isValkyrieGuardActive(state, defSide)) {
-      events.push({ type: 'valkyrie_guard_block', side: defSide, lane: dLane, amount: dmgToDef });
+      events.push({
+        type: 'valkyrie_guard_block',
+        side: defSide,
+        lane: dLane,
+        amount: dmgToDef,
+      });
       dmgToDef = 0;
     }
     if (dmgToDef > 0 && !canTakeDamage(dC, dmgToDef, false)) {
@@ -4968,7 +5033,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
     }
     if (dmgToAtk > 0 && isValkyrieGuardActive(state, attackerSide)) {
-      events.push({ type: 'valkyrie_guard_block', side: attackerSide, lane: aLane, amount: dmgToAtk });
+      events.push({
+        type: 'valkyrie_guard_block',
+        side: attackerSide,
+        lane: aLane,
+        amount: dmgToAtk,
+      });
       dmgToAtk = 0;
     }
     if (dmgToAtk > 0 && !canTakeDamage(aC_defend, dmgToAtk, false)) {
@@ -5224,7 +5294,12 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       if (pDmg > 0) {
         if (!applyMartyrForLeader(state, defSide, pDmg, events)) {
           if (isValkyrieGuardActive(state, defSide)) {
-            events.push({ type: 'valkyrie_guard_block', side: defSide, amount: pDmg, source: 'pierce' });
+            events.push({
+              type: 'valkyrie_guard_block',
+              side: defSide,
+              amount: pDmg,
+              source: 'pierce',
+            });
           } else {
             defHP -= pDmg;
             events.push({
@@ -5236,27 +5311,27 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             applyExtort(aC, defSide, attackerSide, aLane, events, state);
 
             if (hasSkill(aC, 'absorb')) {
-            const healAmt = Math.floor(pDmg / 2);
-            if (healAmt > 0 && !isMiasmaActive(state)) {
-              if (attackerSide === 'blue')
-                state.playerHP = Math.min(
-                  state.playerMaxHP || 20,
-                  state.playerHP + healAmt
-                );
-              else
-                state.enemyHP = Math.min(
-                  state.enemyMaxHP || 20,
-                  state.enemyHP + healAmt
-                );
-              events.push({
-                type: 'heal_player',
-                side: attackerSide,
-                amount: healAmt,
-                source: 'absorb',
-                lane: aLane,
-              });
+              const healAmt = Math.floor(pDmg / 2);
+              if (healAmt > 0 && !isMiasmaActive(state)) {
+                if (attackerSide === 'blue')
+                  state.playerHP = Math.min(
+                    state.playerMaxHP || 20,
+                    state.playerHP + healAmt
+                  );
+                else
+                  state.enemyHP = Math.min(
+                    state.enemyMaxHP || 20,
+                    state.enemyHP + healAmt
+                  );
+                events.push({
+                  type: 'heal_player',
+                  side: attackerSide,
+                  amount: healAmt,
+                  source: 'absorb',
+                  lane: aLane,
+                });
+              }
             }
-          }
           }
         }
       }
@@ -5342,16 +5417,21 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     let finalDmg = aP;
     if (!applyMartyrForLeader(state, defSide, finalDmg, events)) {
       if (isValkyrieGuardActive(state, defSide)) {
-        events.push({ type: 'valkyrie_guard_block', side: defSide, amount: finalDmg, source: 'direct_attack' });
+        events.push({
+          type: 'valkyrie_guard_block',
+          side: defSide,
+          amount: finalDmg,
+          source: 'direct_attack',
+        });
       } else {
         defHP -= finalDmg;
-      events.push({
-        type: 'damage_player',
-        side: defSide,
-        amount: finalDmg,
-        source: 'direct_attack',
-      });
-      applyExtort(aC, defSide, attackerSide, aLane, events, state);
+        events.push({
+          type: 'damage_player',
+          side: defSide,
+          amount: finalDmg,
+          source: 'direct_attack',
+        });
+        applyExtort(aC, defSide, attackerSide, aLane, events, state);
       }
 
       if (finalDmg > 0 && hasSkill(aC, 'absorb')) {

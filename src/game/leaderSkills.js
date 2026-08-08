@@ -1977,6 +1977,24 @@ export async function executeLeaderSkillAction(
       );
     } else if (action === 'valkyrie_guard') {
       playSound(SOUNDS.seSkill);
+      const sidePrefix = owner === 'blue' ? 'player' : 'enemy';
+
+      // 発動時演出: リーダーHPバーの上に「加護」ポップアップを表示
+      const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
+      if (hpFill) {
+        createDamagePopup(hpFill, '加護', '#ffd700');
+      }
+
+      // 発動時演出: 自陣の全カードの上に「加護」ポップアップを表示
+      for (let l = 0; l < 3; l++) {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${l}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '加護', '#ffd700');
+        }
+      }
+
       const cfg = isBlue ? GameState.playerConfig : GameState.enemyConfig;
       const skillLine = getDialogue(
         cfg,

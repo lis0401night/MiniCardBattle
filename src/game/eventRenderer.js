@@ -628,6 +628,24 @@ export async function playEvents(events) {
         await sleep(300);
         break;
       }
+      case 'valkyrie_guard_block': {
+        if (ev.lane !== undefined && ev.lane !== null) {
+          const cEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+          );
+          if (cEl) {
+            createDamagePopup(cEl, '加護', '#ffd700');
+          }
+        } else {
+          const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
+          if (hpFill) {
+            createDamagePopup(hpFill, '加護', '#ffd700');
+          }
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
       case 'skill_popup': {
         const atkPfx = ev.side === 'blue' ? 'player' : 'enemy';
         const cEl = document.querySelector(

@@ -2887,7 +2887,8 @@ export const CARD_MASTER = [
     skills: [{ id: 'apex' }, { id: 'choice', value: 1 }],
     choices: [{ id: 'immune' }, { id: 'sturdy' }],
     voiceCategory: 'stone',
-    flavor: '大地より生まれし不屈の巨神。その硬躯は、いかなる災厄をも跳ね返す。',
+    flavor:
+      '大地より生まれし不屈の巨神。その硬躯は、いかなる災厄をも跳ね返す。',
   },
   {
     id: 'hellkite',
@@ -3436,7 +3437,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'forge' }],
     voiceCategory: 'human_male_warrior',
-    flavor: '飛び散る火の粉を物ともせず、重い金槌を振るう男。彼が魂を込めて鍛えた剣は、多くの戦士の命を救った。',
+    flavor:
+      '飛び散る火の粉を物ともせず、重い金槌を振るう男。彼が魂を込めて鍛えた剣は、多くの戦士の命を救った。',
   },
   {
     id: 'fenrir',
@@ -3495,11 +3497,7 @@ export const CARD_MASTER = [
     name: '巨人殺し',
     rarity: 3,
     power: 6,
-    skills: [
-      { id: 'equip' },
-      { id: 'legendary' },
-      { id: 'pierce' }
-    ],
+    skills: [{ id: 'equip' }, { id: 'legendary' }, { id: 'pierce' }],
     voiceCategory: 'sword',
     flavor: '',
   },
