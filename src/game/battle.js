@@ -4537,10 +4537,6 @@ export async function executeCombatPhase(atk) {
   // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
   const events = calculateCombatPhase(currentState, atk, []);
 
-  // Engine側の減算結果（戦乙女の加護カウンター）をGameStateへ同期
-  GameState.valkyriaGuardBlue = currentState.valkyriaGuardBlue;
-  GameState.valkyriaGuardRed = currentState.valkyriaGuardRed;
-
   // --- UI/演出の実行 (Rendererの呼び出し) ---
   // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）
   // イベント再生中にGameStateも連動して更新される
@@ -4553,6 +4549,12 @@ export async function executeCombatPhase(atk) {
 
   // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
   await cleanupDestroyedCards();
+
+  // 戦乙女の加護: 全ての攻撃モーションおよび戦闘処理が完全に終了した末尾で自身の加護カウンターを減算
+  if (atk === 'blue' && GameState.valkyriaGuardBlue > 0)
+    GameState.valkyriaGuardBlue--;
+  if (atk === 'red' && GameState.valkyriaGuardRed > 0)
+    GameState.valkyriaGuardRed--;
 
   // 勝敗判定
   checkWinCondition();
