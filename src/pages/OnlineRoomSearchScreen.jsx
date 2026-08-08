@@ -28,6 +28,7 @@ export default function OnlineRoomSearchScreen() {
   const [inputRoomCode, setInputRoomCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const isMountedRef = useRef(true);
+  const joinRequestRef = useRef(false);
 
   const debugClickCountRef = useRef(0);
   const debugTimeout = useRef(null);
@@ -82,6 +83,9 @@ export default function OnlineRoomSearchScreen() {
    * @returns {void}
    */
   const handleJoinClick = (roomId) => {
+    if (joinRequestRef.current || isJoining) return;
+    joinRequestRef.current = true;
+
     playSound?.(SOUNDS.seClick);
     const name = resolvePlayerName();
 
@@ -110,6 +114,9 @@ export default function OnlineRoomSearchScreen() {
             'ルームへの入室に失敗しました（既に満員か解散された可能性があります）。'
           );
         }
+      })
+      .finally(() => {
+        joinRequestRef.current = false;
       });
   };
 
@@ -118,11 +125,14 @@ export default function OnlineRoomSearchScreen() {
    * @returns {void}
    */
   const handleJoinByCode = () => {
+    if (joinRequestRef.current || isJoining) return;
+
     if (!inputRoomCode.trim()) {
       showConfirmModal?.('ルームIDを入力してください。', null, null, true);
       return;
     }
 
+    joinRequestRef.current = true;
     playSound?.(SOUNDS.seClick);
     const name = resolvePlayerName();
 
@@ -154,6 +164,9 @@ export default function OnlineRoomSearchScreen() {
         } else {
           showConfirmModal?.(msg, null, null, true);
         }
+      })
+      .finally(() => {
+        joinRequestRef.current = false;
       });
   };
 
@@ -228,6 +241,7 @@ export default function OnlineRoomSearchScreen() {
               placeholder="6桁のルームIDを入力"
               value={inputRoomCode}
               onChange={(e) => setInputRoomCode(e.target.value)}
+              disabled={isJoining}
               style={{
                 flex: 1,
                 padding: '8px 12px',

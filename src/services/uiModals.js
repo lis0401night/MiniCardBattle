@@ -81,11 +81,17 @@ export let showErrorModalHook = null;
 export function setShowErrorModalHook(h) {
   showErrorModalHook = h;
 }
+/**
+ * エラー表示モーダルを呼び出す（フック未登録時はwindow.alertでフォールバック）
+ * @param {string} message - 表示するエラーメッセージ
+ * @returns {void}
+ */
 export function showErrorModal(message) {
   if (showErrorModalHook) return showErrorModalHook(message);
   console.warn('GlobalModals not mounted: using window.alert fallback');
-  window.alert(message);
+  // window.alertによる同期ブロックの前にBGMを停止
   if (typeof stopAllBGM === 'function') stopAllBGM();
+  window.alert(message);
 }
 
 export let showPointAcquisitionModalHook = null;

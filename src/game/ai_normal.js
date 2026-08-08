@@ -186,7 +186,23 @@ export function processActionSequence(
   actionQueue = [...actionQueue];
   const savedRNG = getCurrentRNG();
   try {
-    let simState = initialSimState;
+    let simState = initialSimState
+      ? {
+          ...initialSimState,
+          valkyriaGuardBlue: initialSimState.valkyriaGuardBlue ?? 0,
+          valkyriaGuardRed: initialSimState.valkyriaGuardRed ?? 0,
+          playerConfig:
+            initialSimState.playerConfig ??
+            (GameState.playerConfig
+              ? JSON.parse(JSON.stringify(GameState.playerConfig))
+              : null),
+          enemyConfig:
+            initialSimState.enemyConfig ??
+            (GameState.enemyConfig
+              ? JSON.parse(JSON.stringify(GameState.enemyConfig))
+              : null),
+        }
+      : null;
     if (!simState) {
       simState = {
         playerBoard: GameState.playerBoard.map(cloneCard),
@@ -344,8 +360,11 @@ export function processActionSequence(
               } else if (
                 ['heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
               ) {
-                // ユーティリティボーナス系スキル (瘴気発動時は回復ボーナスを除外)
-                if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
+                // ユーティリティボーナス系スキル (瘴気発動時は回復・吸収ボーナスを除外)
+                if (
+                  !['heal', 'absorb', 'heal_void'].includes(sk.id) ||
+                  !isMiasmaActive(simState)
+                ) {
                   simState.actionUtilityBonus =
                     (simState.actionUtilityBonus || 0) +
                     (AI_SKILL_UTILITY[sk.id] || 0);
@@ -972,7 +991,10 @@ export function processActionSequence(
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
           skills.forEach((sk) => {
             if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
-              if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
+              if (
+                !['heal', 'absorb', 'heal_void'].includes(sk.id) ||
+                !isMiasmaActive(simState)
+              ) {
                 simState.actionUtilityBonus =
                   (simState.actionUtilityBonus || 0) +
                   (AI_SKILL_UTILITY[sk.id] || 0);
@@ -2939,6 +2961,14 @@ export function evaluateSimState(state) {
       // skillTriggered = true の場合、アクティブスキルは発動済みなので
       // パッシブスキルのみ評価する
       const addUtility = (skillId) => {
+        // 瘴気が発動中は回復・吸収系スキルの価値を評価しない（実戦で回復効果が100%無効化されるため）
+        if (
+          ['heal', 'absorb', 'heal_void'].includes(skillId) &&
+          isMiasmaActive(state)
+        ) {
+          return;
+        }
+
         const val = AI_SKILL_UTILITY[skillId];
         if (val === undefined || val === null) return;
         // 動的評価関数（hack等）の場合は関数を呼び出して値を取得する
@@ -3080,6 +3110,12 @@ export function evaluateAdhocTokenLanes(
     enemyHand: GameState.enemyHand ? GameState.enemyHand.map(cloneCard) : [],
     playerDeck: GameState.playerDeck ? GameState.playerDeck.map(cloneCard) : [],
     enemyDeck: GameState.enemyDeck ? GameState.enemyDeck.map(cloneCard) : [],
+    playerConfig: GameState.playerConfig
+      ? JSON.parse(JSON.stringify(GameState.playerConfig))
+      : null,
+    enemyConfig: GameState.enemyConfig
+      ? JSON.parse(JSON.stringify(GameState.enemyConfig))
+      : null,
     extraTurnCount: GameState.extraTurnCount || 0,
     attackSkipCount: GameState.attackSkipCount || 0,
     valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,

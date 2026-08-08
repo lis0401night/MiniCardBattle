@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import MenuButton from '../common/MenuButton.jsx';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -18,6 +20,72 @@ export default function RoomTypeSelectModal({
   onSelectPrivate,
   onCancel,
 }) {
+  const modalRef = useRef(null);
+
+  /**
+   * モーダル表示時に最初のフォーカス可能要素へフォーカスを割り当てるエフェクト
+   */
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstFocusable = modalRef.current.querySelector(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (firstFocusable) {
+          firstFocusable.focus();
+        } else {
+          modalRef.current.focus();
+        }
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  /**
+   * モーダル内でのキーボード操作ハンドラ
+   * Escapeキーでのキャンセル実行、およびTabキーでのフォーカストラップを処理します。
+   * @param {React.KeyboardEvent} e - キーボードイベント
+   * @returns {void}
+   */
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      playSound?.(SOUNDS?.seClick);
+      if (onCancel) onCancel();
+      return;
+    }
+
+    if (e.key === 'Tab' && modalRef.current) {
+      const focusables = Array.from(
+        modalRef.current.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+      if (focusables.length === 0) return;
+
+      const firstEl = focusables[0];
+      const lastEl = focusables[focusables.length - 1];
+
+      if (e.shiftKey) {
+        // Shift + Tab: 先頭要素で押された場合は末尾要素へフォーカス移動
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        // Tab: 末尾要素で押された場合は先頭要素へフォーカス移動
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -35,8 +103,14 @@ export default function RoomTypeSelectModal({
         zIndex: 1000,
         backdropFilter: 'blur(4px)',
       }}
+      onKeyDown={handleKeyDown}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="room-type-select-title"
+        tabIndex={-1}
         style={{
           background: 'linear-gradient(135deg, #1e293b, #0f172a)',
           border: '2px solid #38bdf8',
@@ -46,9 +120,11 @@ export default function RoomTypeSelectModal({
           maxWidth: '360px',
           textAlign: 'center',
           boxShadow: '0 0 25px rgba(56, 189, 248, 0.3)',
+          outline: 'none',
         }}
       >
         <h3
+          id="room-type-select-title"
           style={{
             color: '#38bdf8',
             margin: '0 0 12px 0',

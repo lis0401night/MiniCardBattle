@@ -559,31 +559,42 @@ window.addEventListener(
 ); // キャプチャフェーズで阻止
 
 /**
+ * 指定したパッシブスキルを持つカードを盤面から検出し、演出イベント配列を生成します。
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} skillId - 検出対象のスキルID
+ * @param {string} skillName - ポップアップに表示するスキル名
+ * @param {string} color - ポップアップの表示色
+ * @returns {Array<Object>} 発生した演出イベントの配列
+ */
+function createPassiveSkillPopupEvents(state, skillId, skillName, color) {
+  const events = [];
+  const boards = [
+    { board: state?.playerBoard || [], side: 'blue' },
+    { board: state?.enemyBoard || [], side: 'red' },
+  ];
+  boards.forEach(({ board, side }) => {
+    if (!Array.isArray(board)) return;
+    board.forEach((c, i) => {
+      if (c && hasSkill(c, skillId)) {
+        events.push({ type: 'skill_popup', side, lane: i, skillName, color });
+      }
+    });
+  });
+  return events;
+}
+
+/**
  * 墓守スキルの発動チェックを行い、演出イベント配列を生成します。
  * @param {Object} state - バトル状態オブジェクト
  * @returns {Array<Object>} 発生した演出イベントの配列
  */
 export function createGraveKeeperEvents(state) {
-  const events = [];
-  const triggerEffect = (board, side) => {
-    if (!Array.isArray(board)) return;
-    board.forEach((c, i) => {
-      if (c && hasSkill(c, 'grave_keeper')) {
-        events.push({
-          type: 'skill_popup',
-          side: side === 'player' ? 'blue' : 'red',
-          lane: i,
-          skillName: '墓守',
-          color: '#a8a29e',
-        });
-      }
-    });
-  };
-  const playerBoard = state?.playerBoard || [];
-  const enemyBoard = state?.enemyBoard || [];
-  triggerEffect(playerBoard, 'player');
-  triggerEffect(enemyBoard, 'enemy');
-  return events;
+  return createPassiveSkillPopupEvents(
+    state,
+    'grave_keeper',
+    '墓守',
+    '#a8a29e'
+  );
 }
 
 /**
@@ -592,26 +603,7 @@ export function createGraveKeeperEvents(state) {
  * @returns {Array<Object>} 発生した演出イベントの配列
  */
 export function createMiasmaEvents(state) {
-  const events = [];
-  const triggerEffect = (board, side) => {
-    if (!Array.isArray(board)) return;
-    board.forEach((c, i) => {
-      if (c && hasSkill(c, 'miasma')) {
-        events.push({
-          type: 'skill_popup',
-          side: side === 'player' ? 'blue' : 'red',
-          lane: i,
-          skillName: '瘴気',
-          color: '#7e22ce',
-        });
-      }
-    });
-  };
-  const playerBoard = state?.playerBoard || [];
-  const enemyBoard = state?.enemyBoard || [];
-  triggerEffect(playerBoard, 'player');
-  triggerEffect(enemyBoard, 'enemy');
-  return events;
+  return createPassiveSkillPopupEvents(state, 'miasma', '瘴気', '#7e22ce');
 }
 
 // 判定補助: 特定のスキルを所持しているか

@@ -50,7 +50,6 @@ import {
   sleep,
   stopAllBGM,
   switchScreen,
-  createGraveKeeperEvents,
 } from '../utils/gameUtils.js';
 import {
   AUDIO_INSTANCES,
@@ -70,7 +69,7 @@ import { playEvents, registerDiscardCard } from './eventRenderer.js';
 import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
 import { simulateTournamentRound } from './tournament.js';
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && import.meta.env?.DEV) {
   window.CARD_MASTER = CARD_MASTER;
 }
 
@@ -2180,11 +2179,6 @@ export async function waitPlayerDiscardSelection(
   canCancel = true,
   maxChoices = 1
 ) {
-  const graveEvents = createGraveKeeperEvents(GameState);
-  if (graveEvents.length > 0) {
-    await playEvents(graveEvents);
-    return maxChoices > 1 ? [] : null;
-  }
   if (!validCards || validCards.length === 0) return maxChoices > 1 ? [] : null;
 
   // Check for Remote Choice Wait
@@ -2366,12 +2360,6 @@ export async function waitPlayerDualDiscardSelection(
   desc,
   canCancel = true
 ) {
-  const graveEvents = createGraveKeeperEvents(GameState);
-  if (graveEvents.length > 0) {
-    await playEvents(graveEvents);
-    return [];
-  }
-
   // 両方の墓地が空の場合は選択処理自体を即時スキップして解決
   const totalCardsCount = (blueCards?.length || 0) + (redCards?.length || 0);
   if (totalCardsCount === 0) {
@@ -3634,10 +3622,6 @@ export async function startTurn(owner) {
     GameState.isProcessing = true;
   }
 
-  // 戦乙女の加護: 攻撃フェーズステップ（スキップ時や空盤面時含む）通過ごとにカウンターを減算
-  if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
-  if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
-
   let skipAttack = false;
   if (GameState.attackSkipCount > 0) {
     skipAttack = true;
@@ -3645,7 +3629,9 @@ export async function startTurn(owner) {
   }
 
   if (skipAttack) {
-    // 何もせず攻撃フェーズをスキップ
+    // 何もせず攻撃フェーズをスキップ。スキップ時も攻撃ステップ通過として減算
+    if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
+    if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
   } else {
     if (
       (owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(
@@ -3654,6 +3640,10 @@ export async function startTurn(owner) {
     ) {
       await executeCombatPhase(owner);
       if (checkWinCondition()) return;
+    } else {
+      // 盤面にカードが存在せず攻撃が行われなかった場合も、攻撃ステップ通過として減算
+      if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
+      if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
     }
   }
 
@@ -4542,6 +4532,10 @@ export async function executeCombatPhase(atk) {
 
   // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
   const events = calculateCombatPhase(currentState, atk, []);
+
+  // Engine側の減算結果（戦乙女の加護カウンター）をGameStateへ同期
+  GameState.valkyriaGuardBlue = currentState.valkyriaGuardBlue;
+  GameState.valkyriaGuardRed = currentState.valkyriaGuardRed;
 
   // --- UI/演出の実行 (Rendererの呼び出し) ---
   // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）

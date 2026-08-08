@@ -107,39 +107,37 @@ function generateRoomCode() {
 }
 
 /**
- * 既存の待機中ルームと重複しない一意な6桁ルームコードを生成する
- * 同一のルームコードが複数立ち上がる衝突（誤マッチング）を完全に防止するため、
- * Firebaseクエリを用いて重複がないことを確認した上で安全なコードを返す。
+ * 6桁のルームコードを原子的（runTransaction）に予約する
+ * 同一コードが同時に複数クライアントで取得されることを競合防止トランザクションで確実に防ぎます。
  *
- * @param {object} roomsRef - Firebase Realtime Databaseのルーム一覧参照
- * @returns {Promise<string>} 重複のない一意な6桁のルームコード文字列
- * @throws {Error} 最大再試行回数（5回）を超えてコード生成に失敗した場合
+ * @param {string} roomId - 作成予定のルームID (Firebase Key)
+ * @returns {Promise<string>} 予約に成功した6桁のルームコード文字列
+ * @throws {Error} 最大再試行回数を超えて予約に失敗した場合
  */
-async function generateUniqueRoomCode(roomsRef) {
+async function reserveRoomCode(roomId) {
   for (let attempt = 0; attempt < ROOM_CODE_MAX_ATTEMPTS; attempt++) {
     const code = generateRoomCode();
+    const reservationRef = ref(database, `roomCodeIndex/${code}`);
+
     try {
-      // roomCode で Firebase 上の既存データをピンポイント検索
-      const codeQuery = query(
-        roomsRef,
-        orderByChild('roomCode'),
-        equalTo(code)
-      );
-      const snapshot = await get(codeQuery);
-      // 同一コードが存在しなければ安全な一意コードとして確定して返す
-      if (!snapshot.exists()) {
+      const result = await runTransaction(reservationRef, (currentValue) => {
+        // まだ誰にも予約されていない場合（null）、roomId を設定して予約
+        if (currentValue === null) {
+          return roomId;
+        }
+        // 既に予約済みの場合は変更を破棄してアボート
+        return undefined;
+      });
+
+      if (result.committed) {
         return code;
       }
     } catch (e) {
-      console.warn(
-        'generateUniqueRoomCode check failed, using generated code:',
-        e
-      );
-      return code;
+      console.warn(`reserveRoomCode attempt ${attempt + 1} failed:`, e);
     }
   }
   throw new Error(
-    'ルームコードの生成に失敗しました。時間をおいて再試行してください。'
+    'ルームコードの生成・予約に失敗しました。時間をおいて再試行してください。'
   );
 }
 
@@ -178,33 +176,43 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   }
 
   const newRoomRef = push(roomsRef);
-  const roomCode = await generateUniqueRoomCode(roomsRef);
+  const roomCode = await reserveRoomCode(newRoomRef.key);
 
   const rngSeed = Math.floor(Math.random() * 100000000).toString();
+
+  try {
+    await set(newRoomRef, {
+      status: 'waiting',
+      isPublic: isPublic,
+      roomCode: roomCode,
+      createdAt: serverTimestamp(),
+      rngSeed: rngSeed,
+      host: {
+        id: uuid,
+        name: hostName || 'Player 1',
+        icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
+        isReady: false,
+        leaderConfig: null,
+      },
+      client: null,
+      actionQueue: {},
+    });
+  } catch (error) {
+    // ルーム初期作成に失敗した場合は予約したインデックスコードを削除・解放する
+    await remove(ref(database, `roomCodeIndex/${roomCode}`)).catch(() => {});
+    throw error;
+  }
+
   currentRoomId = newRoomRef.key;
   isHost = true;
 
-  // ホスト切断時の自動部屋削除を予約
+  // ホスト切断時の自動部屋削除（部屋本体およびルームコード予約インデックス）を予約
   onDisconnect(newRoomRef)
     .remove()
     .catch((e) => console.error('onDisconnect error:', e));
-
-  await set(newRoomRef, {
-    status: 'waiting',
-    isPublic: isPublic,
-    roomCode: roomCode,
-    createdAt: serverTimestamp(),
-    rngSeed: rngSeed,
-    host: {
-      id: uuid,
-      name: hostName || 'Player 1',
-      icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
-      isReady: false,
-      leaderConfig: null,
-    },
-    client: null,
-    actionQueue: {},
-  });
+  onDisconnect(ref(database, `roomCodeIndex/${roomCode}`))
+    .remove()
+    .catch((e) => console.error('onDisconnect code index error:', e));
 
   listenToRoom(currentRoomId);
   return currentRoomId;
@@ -321,14 +329,30 @@ export async function joinRoom(roomId, clientName) {
   if (!database) throw new Error('Firebase not initialized');
 
   const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
-  const snapshot = await get(roomRef);
-  if (!snapshot.exists()) {
-    throw new Error('Room not found');
-  }
 
-  const roomData = snapshot.val();
-  if (roomData.status !== 'waiting') {
-    throw new Error('Room is already playing or finished');
+  const clientInfo = {
+    id: getOrCreateUUID(),
+    name: clientName || 'Player 2',
+    icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
+    isReady: false,
+    leaderConfig: null,
+  };
+
+  // 1回の原子的トランザクションで参加状態（status === 'waiting' && client == null）を確認して参加更新を実行
+  const result = await runTransaction(roomRef, (room) => {
+    if (!room || room.status !== 'waiting' || room.client) {
+      return undefined; // 条件を満たさない場合はトランザクションを中断してコミットしない
+    }
+    return {
+      ...room,
+      status: 'playing',
+      client: clientInfo,
+      battleSeed: Date.now(),
+    };
+  });
+
+  if (!result.committed) {
+    throw new Error('指定されたルームは見つからないか、既に対戦中・満員です。');
   }
 
   currentRoomId = roomId;
@@ -341,19 +365,6 @@ export async function joinRoom(roomId, clientName) {
       client: null,
     })
     .catch((e) => console.error('onDisconnect error:', e));
-
-  // クライアント情報を書き込み、ステータスを playing に切り替える
-  await update(roomRef, {
-    status: 'playing',
-    client: {
-      id: getOrCreateUUID(),
-      name: clientName || 'Player 2',
-      icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
-      isReady: false,
-      leaderConfig: null,
-    },
-    battleSeed: Date.now(),
-  });
 
   listenToRoom(currentRoomId);
   return currentRoomId;
