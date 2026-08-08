@@ -1096,7 +1096,7 @@ export const CHARACTERS = {
     imageLose: 'assets/characters/char_valkyria_lose.webp',
     icon: 'assets/icons/icon_valkyria.webp',
     color: '#e74c3c',
-    leaderSkill: LEADER_SKILLS.valkyrie_guard,
+    leaderSkill: LEADER_SKILLS.valkyria_guard,
     hp: 20,
     preBattleLine: '神の翼に誓って、あなたを裁きます。',
     dialogue: {

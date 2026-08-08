@@ -1,14 +1,14 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
-import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
-  getSeededRandom,
-  getSkillValue,
-  hasSkill,
-  mergeCardSkills,
-  unmergeCardSkills,
-  consumeArmSelf,
-  resolveStartupFade,
+    consumeArmSelf,
+    getSeededRandom,
+    getSkillValue,
+    hasSkill,
+    mergeCardSkills,
+    resolveStartupFade,
+    unmergeCardSkills,
 } from '../utils/gameUtils.js';
 
 /**
@@ -17,8 +17,8 @@ import {
  * @param {string} side - 'blue' または 'red'
  * @returns {boolean} ガードが有効なら true
  */
-export function isValkyrieGuardActive(state, side) {
-  const key = side === 'blue' ? 'valkyrieGuardBlue' : 'valkyrieGuardRed';
+export function isvalkyriaGuardActive(state, side) {
+  const key = side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
   return (state[key] || 0) > 0;
 }
 
@@ -105,9 +105,9 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
   if (amount <= 0) return;
 
   // 戦乙女の加護: 全ダメージを無効化
-  if (isValkyrieGuardActive(state, side)) {
+  if (isvalkyriaGuardActive(state, side)) {
     events.push({
-      type: 'valkyrie_guard_block',
+      type: 'valkyria_guard_block',
       side,
       source,
       amount,
@@ -338,9 +338,9 @@ export function processDestructionTriggers(state, events) {
             const dmg = getSkillValue(deadCard, 'explode') || 3;
             [i - 1, i + 1].forEach((adj) => {
               if (adj >= 0 && adj < 3 && board[adj]) {
-                if (isValkyrieGuardActive(state, side)) {
+                if (isvalkyriaGuardActive(state, side)) {
                   events.push({
-                    type: 'valkyrie_guard_block',
+                    type: 'valkyria_guard_block',
                     side,
                     lane: adj,
                     amount: dmg,
@@ -710,9 +710,9 @@ export function applyActiveSkillLogic(
           }
         }
         if (maxL !== -1) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: maxL,
               amount: totalDmg,
@@ -775,9 +775,9 @@ export function applyActiveSkillLogic(
         const spVal = (val || 2) * voidCount;
         [l - 1, l, l + 1].forEach((j) => {
           if (j >= 0 && j < 3 && eB[j]) {
-            if (isValkyrieGuardActive(state, oppOwner)) {
+            if (isvalkyriaGuardActive(state, oppOwner)) {
               events.push({
-                type: 'valkyrie_guard_block',
+                type: 'valkyria_guard_block',
                 side: oppOwner,
                 lane: j,
                 amount: spVal,
@@ -1086,9 +1086,9 @@ export function applyActiveSkillLogic(
       const spVal = val || 2;
       [l - 1, l, l + 1].forEach((j) => {
         if (j >= 0 && j < 3 && eB[j]) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: j,
               amount: spVal,
@@ -1164,9 +1164,9 @@ export function applyActiveSkillLogic(
         }
       }
       if (maxL !== -1) {
-        if (isValkyrieGuardActive(state, oppOwner)) {
+        if (isvalkyriaGuardActive(state, oppOwner)) {
           events.push({
-            type: 'valkyrie_guard_block',
+            type: 'valkyria_guard_block',
             side: oppOwner,
             lane: maxL,
             amount: snVal,
@@ -1323,9 +1323,9 @@ export function applyActiveSkillLogic(
       const bAdj = l === 1 ? [0, 2] : [1];
       bAdj.forEach((j) => {
         if (b[j]) {
-          if (isValkyrieGuardActive(state, owner)) {
+          if (isvalkyriaGuardActive(state, owner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: owner,
               lane: j,
               amount: bVal,
@@ -2679,9 +2679,9 @@ export function applyLeaderSkillLogic(
       // Damage card if exists
       if (eBoard[lane] !== null) {
         if (canTakeDamage(eBoard[lane], 4)) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: lane,
               amount: 4,
@@ -2740,9 +2740,9 @@ export function applyLeaderSkillLogic(
       // Damage card if exists
       if (eBoard[lane] !== null) {
         if (canTakeDamage(eBoard[lane], 4)) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: lane,
               amount: 4,
@@ -2837,9 +2837,9 @@ export function applyLeaderSkillLogic(
     for (let i = 0; i < 3; i++) {
       if (eBoard[i]) {
         if (canTakeDamage(eBoard[i], 4)) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: i,
               amount: 4,
@@ -2870,9 +2870,9 @@ export function applyLeaderSkillLogic(
     for (let i = 0; i < 3; i++) {
       if (eBoard[i]) {
         if (canTakeDamage(eBoard[i], 4)) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: i,
               amount: 4,
@@ -2907,9 +2907,9 @@ export function applyLeaderSkillLogic(
       // 自分の場のカードにも2ダメージ
       if (board[i]) {
         if (canTakeDamage(board[i], 2)) {
-          if (isValkyrieGuardActive(state, owner)) {
+          if (isvalkyriaGuardActive(state, owner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: owner,
               lane: i,
               amount: 2,
@@ -2936,9 +2936,9 @@ export function applyLeaderSkillLogic(
       // 相手の場のカードにも2ダメージ
       if (eBoard[i]) {
         if (canTakeDamage(eBoard[i], 2)) {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: i,
               amount: 2,
@@ -3340,9 +3340,9 @@ export function applyLeaderSkillLogic(
             source: 'tomb_guard',
           });
         } else {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: targetLane,
               amount: 4,
@@ -3395,9 +3395,9 @@ export function applyLeaderSkillLogic(
             source: 'death_judgment',
           });
         } else {
-          if (isValkyrieGuardActive(state, oppOwner)) {
+          if (isvalkyriaGuardActive(state, oppOwner)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: oppOwner,
               lane: targetLane,
               amount: DEATH_JUDGMENT_DAMAGE,
@@ -4270,11 +4270,11 @@ export function applyLeaderSkillLogic(
     // 4. 追加ターン1回（SP増加なし・攻撃なし）
     state.extraTurnCount = (state.extraTurnCount || 0) + 1;
     state.attackSkipCount = (state.attackSkipCount || 0) + 1;
-  } else if (action === 'valkyrie_guard') {
+  } else if (action === 'valkyria_guard') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     // 戦乙女の加護: 次の自分の攻撃フェーズ終了まで全ダメージ無効
     // カウンター2 = 相手の攻撃フェーズ1回 + 自分の攻撃フェーズ1回
-    const guardKey = isBlue ? 'valkyrieGuardBlue' : 'valkyrieGuardRed';
+    const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
     state[guardKey] = 2;
   }
 
@@ -4296,8 +4296,8 @@ export function calculateCombatPhase(state, attackerSide, events = []) {
   }
 
   // 戦乙女の加護: 攻撃フェーズ通過ごとにカウンターを減算
-  if (state.valkyrieGuardBlue > 0) state.valkyrieGuardBlue--;
-  if (state.valkyrieGuardRed > 0) state.valkyrieGuardRed--;
+  if (state.valkyriaGuardBlue > 0) state.valkyriaGuardBlue--;
+  if (state.valkyriaGuardRed > 0) state.valkyriaGuardRed--;
 
   processDestructionTriggers(state, events);
   return events;
@@ -4497,9 +4497,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     [l - 1, l + 1].forEach((tj) => {
       if (tj >= 0 && tj <= 2 && atkBoard[tj]) {
-        if (isValkyrieGuardActive(state, attackerSide)) {
+        if (isvalkyriaGuardActive(state, attackerSide)) {
           events.push({
-            type: 'valkyrie_guard_block',
+            type: 'valkyria_guard_block',
             side: attackerSide,
             lane: tj,
             amount: brutalDmg,
@@ -4576,9 +4576,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         if (effectiveDmg > 0) {
-          if (isValkyrieGuardActive(state, defSide)) {
+          if (isvalkyriaGuardActive(state, defSide)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: defSide,
               lane: targetLane,
               amount: effectiveDmg,
@@ -4623,9 +4623,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
       } else {
         // 空レーン: ダメージはリーダーへ
-        if (isValkyrieGuardActive(state, defSide)) {
+        if (isvalkyriaGuardActive(state, defSide)) {
           events.push({
-            type: 'valkyrie_guard_block',
+            type: 'valkyria_guard_block',
             side: defSide,
             amount: currentDmg,
             source: 'cleave',
@@ -4670,9 +4670,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
     if (isOriginalTargetDefender) dmgToAtk = 0;
 
-    if (dmgToAtk > 0 && isValkyrieGuardActive(state, attackerSide)) {
+    if (dmgToAtk > 0 && isvalkyriaGuardActive(state, attackerSide)) {
       events.push({
-        type: 'valkyrie_guard_block',
+        type: 'valkyria_guard_block',
         side: attackerSide,
         lane: aLane,
         amount: dmgToAtk,
@@ -4771,9 +4771,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
       }
       if (totalPierceDmg > 0) {
-        if (isValkyrieGuardActive(state, defSide)) {
+        if (isvalkyriaGuardActive(state, defSide)) {
           events.push({
-            type: 'valkyrie_guard_block',
+            type: 'valkyria_guard_block',
             side: defSide,
             amount: totalPierceDmg,
             source: 'pierce',
@@ -4928,9 +4928,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
       dmgToAtk = Math.floor(dmgToAtk / 2);
     }
-    if (dmgToDef > 0 && isValkyrieGuardActive(state, defSide)) {
+    if (dmgToDef > 0 && isvalkyriaGuardActive(state, defSide)) {
       events.push({
-        type: 'valkyrie_guard_block',
+        type: 'valkyria_guard_block',
         side: defSide,
         lane: dLane,
         amount: dmgToDef,
@@ -5032,9 +5032,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         // 場にカードが存在しない場合は肩代わり不可、通常通りダメージを受ける
       }
     }
-    if (dmgToAtk > 0 && isValkyrieGuardActive(state, attackerSide)) {
+    if (dmgToAtk > 0 && isvalkyriaGuardActive(state, attackerSide)) {
       events.push({
-        type: 'valkyrie_guard_block',
+        type: 'valkyria_guard_block',
         side: attackerSide,
         lane: aLane,
         amount: dmgToAtk,
@@ -5293,9 +5293,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       let pDmg = Math.max(0, effectiveAP - originalTargetPower);
       if (pDmg > 0) {
         if (!applyMartyrForLeader(state, defSide, pDmg, events)) {
-          if (isValkyrieGuardActive(state, defSide)) {
+          if (isvalkyriaGuardActive(state, defSide)) {
             events.push({
-              type: 'valkyrie_guard_block',
+              type: 'valkyria_guard_block',
               side: defSide,
               amount: pDmg,
               source: 'pierce',
@@ -5416,9 +5416,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   } else {
     let finalDmg = aP;
     if (!applyMartyrForLeader(state, defSide, finalDmg, events)) {
-      if (isValkyrieGuardActive(state, defSide)) {
+      if (isvalkyriaGuardActive(state, defSide)) {
         events.push({
-          type: 'valkyrie_guard_block',
+          type: 'valkyria_guard_block',
           side: defSide,
           amount: finalDmg,
           source: 'direct_attack',

@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - Game Configuration
  */
-import { SKIN_MASTER, buildSkinId, buildPlaymatId } from './skins.js';
+import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
 export const GAME_VERSION = '0.2.8';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
@@ -77,7 +77,7 @@ export const EXCHANGE_LINEUP = [
   { id: 'pharaoh', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dreadnought', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'armsuits', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
-  { id: 'hammer', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
+  { id: 'mjolnir', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'berserker', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'horse', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'crusher', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
@@ -259,4 +259,11 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'detective', type: 'card', cost: 3 },
   { id: 'scrapper', type: 'card', cost: 1 },
   { id: 'liberator', type: 'card', cost: 1 },
+  // アンジェのカード
+  { id: 'gungnir', type: 'card', cost: 5 },
+  { id: 'valkyria', type: 'card', cost: 5 },
+  { id: 'mjolnir', type: 'card', cost: 3 },
+  { id: 'berserkir', type: 'card', cost: 3 },
+  { id: 'fenrir', type: 'card', cost: 1 },
+  { id: 'dwarf', type: 'card', cost: 1 },  
 ];

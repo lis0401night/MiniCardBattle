@@ -5,70 +5,73 @@ import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCha
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
-  AI_THINKING_DURATION,
-  MAX_HP,
-  PLACE_ANIMATION_DURATION,
+    AI_THINKING_DURATION,
+    MAX_HP,
+    PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { getTournamentPostBattleAnnounce } from '../utils/constants/eventTournamentDialogues.js';
-import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
-  CHAR_FORTUNE_HANDICAPS,
-  HANDICAP_TYPES,
+    CHAR_FORTUNE_HANDICAPS,
+    HANDICAP_TYPES,
 } from '../utils/constants/fortuneHandicaps.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
-  PLAYER_TALKS,
-  STORY_BGM_CHANGE_BATTLE,
-  STORY_DIALOGUES,
-  STORY_LATE_DIALOGUE_BATTLE,
-  STORY_NARRATIONS,
-  getFallbackStoryDialogue,
+    PLAYER_TALKS,
+    STORY_BGM_CHANGE_BATTLE,
+    STORY_DIALOGUES,
+    STORY_LATE_DIALOGUE_BATTLE,
+    STORY_NARRATIONS,
+    getFallbackStoryDialogue,
 } from '../utils/constants/storyDialogues.js';
 import { playCardVoice } from '../utils/constants/voices.js';
-
-if (typeof window !== 'undefined') {
-  window.CARD_MASTER = CARD_MASTER;
-}
 import {
-  checkIsFreeMode,
-  checkIsMissionEligible,
-  checkIsStoryMode,
-  checkIsTutorialMode,
-  consumeArmSelf,
-  createDamagePopup,
-  decodedBgms,
-  getCardImgUrl,
-  getCurrentRNG,
-  getDialogue,
-  getOrCreateUUID,
-  getSeededRandom,
-  getSkillValue,
-  hasSkill,
-  mergeCardSkills,
-  playSound,
-  setCurrentRNG,
-  setRNGSeed,
-  shuffleArray,
-  sleep,
-  resolvePlayerName,
-  stopAllBGM,
-  switchScreen,
-  triggerGraveKeeperEffect,
+    checkIsFreeMode,
+    checkIsMissionEligible,
+    checkIsStoryMode,
+    checkIsTutorialMode,
+    consumeArmSelf,
+    createDamagePopup,
+    decodedBgms,
+    getCardImgUrl,
+    getCurrentRNG,
+    getDialogue,
+    getOrCreateUUID,
+    getSeededRandom,
+    getSkillValue,
+    hasSkill,
+    mergeCardSkills,
+    playSound,
+    resolvePlayerName,
+    setCurrentRNG,
+    setRNGSeed,
+    shuffleArray,
+    sleep,
+    stopAllBGM,
+    switchScreen,
+    triggerGraveKeeperEffect,
 } from '../utils/gameUtils.js';
 import {
-  AUDIO_INSTANCES,
-  SOUNDS,
-  loadAndDecodeAudio,
+    AUDIO_INSTANCES,
+    SOUNDS,
+    loadAndDecodeAudio,
 } from '../utils/sounds.js';
 import { evaluateBestLanesForToken, executeEnemyAI } from './ai.js';
 import { evaluateAIMoves } from './ai_normal.js';
 import {
-  applyActiveSkillLogic,
-  applySingleCombat,
-  calculateCombatPhase,
-  canTakeDamage,
+    applyActiveSkillLogic,
+    applySingleCombat,
+    calculateCombatPhase,
+    canTakeDamage,
 } from './engine.js';
+import { playEvents, registerDiscardCard } from './eventRenderer.js';
+import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
+import { simulateTournamentRound } from './tournament.js';
+
+if (typeof window !== 'undefined') {
+  window.CARD_MASTER = CARD_MASTER;
+}
 
 /**
  * カード配列（文字列またはオブジェクト）を { id, isPremium } の配列に正規化する共通ヘルパー
@@ -85,66 +88,62 @@ function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
     return { id: cId, isPremium: isPrem };
   });
 }
-import { playEvents, registerDiscardCard } from './eventRenderer.js';
-import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
-import { simulateTournamentRound } from './tournament.js';
 
 import {
-  cachedRoomData,
-  clearActionQueueAndRegenerateSeed,
-  getIsHost,
-  listenToRoomActions,
-  multiplayerCallbacks,
-  sendOnlineAction,
-  setPlayerReadyOnly,
+    cachedRoomData,
+    clearActionQueueAndRegenerateSeed,
+    getIsHost,
+    listenToRoomActions,
+    multiplayerCallbacks,
+    sendOnlineAction,
+    setPlayerReadyOnly,
 } from '../services/multiplayer.js';
 import {
-  closeSkillConfirm,
-  playSummonAnimation,
-  renderBoard,
-  renderHand,
-  showDeckRefreshEffect,
-  showSpeechBubble,
-  triggerFinishVisuals,
-  updateBattleUIHook,
-  updateCardDetail,
-  updateCardPowerOnly,
-  updateDeckDisplay,
-  updateHPBar,
-  updateSPOrbs,
+    closeSkillConfirm,
+    playSummonAnimation,
+    renderBoard,
+    renderHand,
+    showDeckRefreshEffect,
+    showSpeechBubble,
+    triggerFinishVisuals,
+    updateBattleUIHook,
+    updateCardDetail,
+    updateCardPowerOnly,
+    updateDeckDisplay,
+    updateHPBar,
+    updateSPOrbs,
 } from '../services/uiBattle.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 import {
-  showDefenseBattleList,
-  showOnlineLobby,
+    showDefenseBattleList,
+    showOnlineLobby,
 } from '../services/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { showPointAcquisitionModal } from '../services/uiModals.js';
+import { showAlertModal, showConfirmModal, showPointAcquisitionModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
-  savePointsToServer,
-  recordDefenseBattleToServer,
+    recordDefenseBattleToServer,
+    savePointsToServer,
 } from '../utils/apiUtils.js';
 import {
-  FORTUNE_POINTS_KEY,
-  FORTUNE_TOTAL_POINTS_KEY,
+    FORTUNE_POINTS_KEY,
+    FORTUNE_TOTAL_POINTS_KEY,
 } from '../utils/constants/config.js';
 import {
-  calculateFortuneRewards,
-  loadFortuneClearedData,
-  saveFortuneClearedData,
+    calculateFortuneRewards,
+    loadFortuneClearedData,
+    saveFortuneClearedData,
 } from '../utils/constants/fortuneRewards.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 import {
-  resolveActiveSkillEffect,
-  triggerStartTurnPassive,
+    resolveActiveSkillEffect,
+    triggerStartTurnPassive,
 } from './skillLogic.js';
 import {
-  cleanupTutorial,
-  filterPlacementLaneClick,
-  handleTutorialEnd,
-  isTutorialMode,
-  runTutorialFlow,
+    cleanupTutorial,
+    filterPlacementLaneClick,
+    handleTutorialEnd,
+    isTutorialMode,
+    runTutorialFlow,
 } from './tutorialEngine.js';
 
 export let pendingChoiceResolver = null;
@@ -295,8 +294,8 @@ function generateSyncState() {
     enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck)),
     currentTurn: GameState.currentTurn,
     turnCount: GameState.turnCount,
-    valkyrieGuardBlue: GameState.valkyrieGuardBlue || 0,
-    valkyrieGuardRed: GameState.valkyrieGuardRed || 0,
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
 }
 
@@ -398,8 +397,8 @@ function applySyncState(state) {
   GameState.turnCount = state.turnCount;
 
   // 戦乙女の加護フラグ（敵味方反転）
-  GameState.valkyrieGuardBlue = state.valkyrieGuardRed || 0;
-  GameState.valkyrieGuardRed = state.valkyrieGuardBlue || 0;
+  GameState.valkyriaGuardBlue = state.valkyriaGuardRed || 0;
+  GameState.valkyriaGuardRed = state.valkyriaGuardBlue || 0;
 
   // 全てのUIを新しいステートに合わせて強制更新
   updateHPBar('blue', GameState.playerHP);
@@ -2606,6 +2605,8 @@ export async function waitSkillChoice(
           enemyMaxHP: GameState.enemyMaxHP,
           extraTurnCount: GameState.extraTurnCount,
           attackSkipCount: GameState.attackSkipCount,
+          valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+          valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
         };
 
         // 1. スキル効果を適用（カードオーナー=blue側で発動）
@@ -4465,6 +4466,8 @@ export async function executeSingleCombat(atk, l) {
     enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
     playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
 
   // 特定のレーンだけ発火させるための個別処理
@@ -4496,16 +4499,16 @@ export async function executeCombatPhase(atk) {
     enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
     playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-    valkyrieGuardBlue: GameState.valkyrieGuardBlue || 0,
-    valkyrieGuardRed: GameState.valkyrieGuardRed || 0,
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
 
   // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
   const events = calculateCombatPhase(currentState, atk, []);
 
   // 戦乙女の加護: Engine側の計算結果をGameStateに反映
-  if (GameState.valkyrieGuardBlue > 0) GameState.valkyrieGuardBlue--;
-  if (GameState.valkyrieGuardRed > 0) GameState.valkyrieGuardRed--;
+  if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
+  if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
 
   // --- UI/演出の実行 (Rendererの呼び出し) ---
   // 蓄積されたイベントを順番に再生（攻撃モーション、ダメージポップアップ、破壊音など）

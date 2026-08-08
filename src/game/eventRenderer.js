@@ -1,29 +1,29 @@
+import {
+    renderBoard,
+    renderHand,
+    showSpeechBubble,
+    updateCardPowerOnly,
+    updateDeckDisplay,
+    updateHPBar,
+    updateSPOrbs,
+} from '../services/uiBattle.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { PLACE_ANIMATION_DURATION } from '../utils/constants/config.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  addDamagePopupHook,
-  createDamagePopup,
-  getSeededRandom,
-  hasSkill,
-  mergeCardSkills,
-  playSound,
-  sleep,
-  applyEquipMerge,
-  triggerShakeAnimation,
+    addDamagePopupHook,
+    applyEquipMerge,
+    createDamagePopup,
+    getSeededRandom,
+    hasSkill,
+    mergeCardSkills,
+    playSound,
+    sleep,
+    triggerShakeAnimation,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { GameState } from '../state/gameState.js';
 import { scanMissionEvents } from './missionLogic.js';
-import { PLACE_ANIMATION_DURATION } from '../utils/constants/config.js';
-import {
-  renderBoard,
-  renderHand,
-  showSpeechBubble,
-  updateCardPowerOnly,
-  updateDeckDisplay,
-  updateHPBar,
-  updateSPOrbs,
-} from '../services/uiBattle.js';
 
 // 狙撃・拡散・迎撃などのVFXトリガー共通処理（DRY原則適用）
 const SNIPE_SKILLS = [
@@ -628,7 +628,7 @@ export async function playEvents(events) {
         await sleep(300);
         break;
       }
-      case 'valkyrie_guard_block': {
+      case 'valkyria_guard_block': {
         if (ev.lane !== undefined && ev.lane !== null) {
           const cEl = document.querySelector(
             `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`

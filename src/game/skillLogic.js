@@ -1,57 +1,57 @@
 import { getIsHost } from '../services/multiplayer.js';
 import {
-  playSummonAnimation,
-  renderBoard,
-  renderHand,
-  showSpeechBubble,
-  updateDeckDisplay,
-  updateHPBar,
+    playSummonAnimation,
+    renderBoard,
+    renderHand,
+    showSpeechBubble,
+    updateDeckDisplay,
+    updateHPBar,
 } from '../services/uiBattle.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
-  AI_THINKING_DURATION,
-  PLACE_ANIMATION_DURATION,
+    AI_THINKING_DURATION,
+    PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
 import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  consumeArmSelf,
-  createDamagePopup,
-  getCardImgUrl,
-  getSeededRandom,
-  getSkillValue,
-  hasSkill,
-  mergeCardSkills,
-  playSound,
-  shuffleArray,
-  sleep,
-  triggerGraveKeeperEffect,
-  triggerMiasmaEffect,
-  triggerShakeAnimation,
-  unmergeCardSkills,
+    consumeArmSelf,
+    createDamagePopup,
+    getCardImgUrl,
+    getSeededRandom,
+    getSkillValue,
+    hasSkill,
+    mergeCardSkills,
+    playSound,
+    shuffleArray,
+    sleep,
+    triggerGraveKeeperEffect,
+    triggerMiasmaEffect,
+    triggerShakeAnimation,
+    unmergeCardSkills,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
-  canEquipCard,
-  checkWinCondition,
-  cleanupDestroyedCards,
-  confirmOverwrittenLane, // 【追加】根本的リファクタリング用
-  consumeAIAction,
-  discardCard,
-  drawCard,
-  executeSingleCombat,
-  hasActiveSkill,
-  playCard,
-  resolveOnPlaySkill,
-  waitPlayerAlliedLaneSelection,
-  waitPlayerDiscardSelection,
-  waitPlayerDualDiscardSelection,
-  waitPlayerEnemyLaneSelection,
-  waitPlayerHandSelection,
-  waitPlayerLaneSelection,
-  waitSkillChoice,
+    canEquipCard,
+    checkWinCondition,
+    cleanupDestroyedCards,
+    confirmOverwrittenLane, // 【追加】根本的リファクタリング用
+    consumeAIAction,
+    discardCard,
+    drawCard,
+    executeSingleCombat,
+    hasActiveSkill,
+    playCard,
+    resolveOnPlaySkill,
+    waitPlayerAlliedLaneSelection,
+    waitPlayerDiscardSelection,
+    waitPlayerDualDiscardSelection,
+    waitPlayerEnemyLaneSelection,
+    waitPlayerHandSelection,
+    waitPlayerLaneSelection,
+    waitSkillChoice,
 } from './battle.js';
 import { applyActiveSkillLogic, canTakeDamage } from './engine.js';
 import { playEvents } from './eventRenderer.js';
@@ -337,6 +337,8 @@ export async function resolveActiveSkillEffect(
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
     playerConfig: GameState.playerConfig,
     enemyConfig: GameState.enemyConfig,
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
 
   // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
@@ -3709,6 +3711,8 @@ export async function triggerStartTurnPassive(owner, lane) {
         enemyHand: GameState.enemyHand,
         playerSealedLanes: GameState.playerSealedLanes,
         enemySealedLanes: GameState.enemySealedLanes,
+        valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+        valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
       };
 
       let awakeEvents = [];

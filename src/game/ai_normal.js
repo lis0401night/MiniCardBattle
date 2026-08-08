@@ -3,22 +3,22 @@ import { AI_SKILL_UTILITY } from '../utils/constants/aiSkillValues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
-  consumeArmSelf,
-  getCurrentRNG,
-  getSeededRandom,
-  hasSkill,
-  mergeCardSkills,
-  setCurrentRNG,
+    consumeArmSelf,
+    getCurrentRNG,
+    getSeededRandom,
+    hasSkill,
+    mergeCardSkills,
+    setCurrentRNG,
 } from '../utils/gameUtils.js';
 import {
-  applyActiveSkillLogic,
-  applyLeaderSkillLogic,
-  applyPassiveSkillLogic,
-  calculateCombatPhase,
-  isGraveKeeperActive,
-  isMiasmaActive,
-  quietDiscardFromBoard,
-  applySingleCombat,
+    applyActiveSkillLogic,
+    applyLeaderSkillLogic,
+    applyPassiveSkillLogic,
+    applySingleCombat,
+    calculateCombatPhase,
+    isGraveKeeperActive,
+    isMiasmaActive,
+    quietDiscardFromBoard,
 } from './engine.js';
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）
@@ -222,6 +222,8 @@ export function processActionSequence(
         enemyConfig: GameState.enemyConfig
           ? JSON.parse(JSON.stringify(GameState.enemyConfig))
           : null,
+        valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+        valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
         turnCount: GameState.turnCount || 0,
         extraTurnCount: GameState.extraTurnCount || 0,
         attackSkipCount: GameState.attackSkipCount || 0,
@@ -3066,6 +3068,8 @@ export function evaluateAdhocTokenLanes(
     enemyDeck: GameState.enemyDeck ? GameState.enemyDeck.map(cloneCard) : [],
     extraTurnCount: GameState.extraTurnCount || 0,
     attackSkipCount: GameState.attackSkipCount || 0,
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
     combatDamageTaken: 0,
     lastCardPlayed: null,
     lastPlayedLane: -1,

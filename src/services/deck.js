@@ -1,5 +1,7 @@
 import { prepareBattle } from '../game/battle.js';
+import { resolveDungeonDeck } from '../game/battleDungeon.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
+import { resolveValidIconId } from '../utils/constants/avatars.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
@@ -8,14 +10,13 @@ import {
 } from '../utils/constants/characters.js';
 import {
   DECK_SIZE,
-  MAX_DECK_SLOTS,
   DEFAULT_DUNGEON_AI_LEVEL,
+  MAX_DECK_SLOTS,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
-import { resolveValidIconId } from '../utils/constants/avatars.js';
 import {
   ownedPlaymats,
   setOwnedPlaymats,
@@ -36,7 +37,6 @@ import {
   showOnlineLobby,
 } from './uiMainCore.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
-import { resolveDungeonDeck } from '../game/battleDungeon.js';
 
 // ==========================================
 // カードIDのマイグレーション（後方互換性維持用）
@@ -50,6 +50,9 @@ export const CARD_ID_MIGRATION_MAP = {
   wish: 'rampage',
   nectromancer: 'necromancer', // 互換性維持用の移行マッピング
   atronach: 'lightningatronach',
+  valkyria: 'rocktitan',
+  hammer: 'catoblepas',
+  ippondatara: 'ippondatara',
 };
 
 export function migrateCardId(id) {

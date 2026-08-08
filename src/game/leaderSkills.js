@@ -1,53 +1,53 @@
+import {
+    renderBoard,
+    renderHand,
+    showSpeechBubble,
+    updateCardDetail,
+    updateDeckDisplay,
+    updateHPBar,
+    updateSPOrbs,
+} from '../services/uiBattle.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { getSkinImage } from '../utils/constants/characters.js';
+import { AI_THINKING_DURATION } from '../utils/constants/config.js';
+import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  getCardImgUrl,
-  getDialogue,
-  getSeededRandom,
-  hasSkill,
-  mergeCardSkills,
-  playSound,
-  sleep,
-  triggerGraveKeeperEffect,
-  consumeArmSelf,
-  createDamagePopup,
-  resolveStartupFade,
+    consumeArmSelf,
+    createDamagePopup,
+    getCardImgUrl,
+    getDialogue,
+    getSeededRandom,
+    hasSkill,
+    mergeCardSkills,
+    playSound,
+    resolveStartupFade,
+    sleep,
+    triggerGraveKeeperEffect,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
-  checkWinCondition,
-  cleanupDestroyedCards,
-  discardCard,
-  drawCard,
-  endTurnLogic,
-  hasActiveSkill,
-  resolveOnPlaySkill,
-  waitPlayerDiscardSelection,
-  waitPlayerEnemyLaneSelection,
-  waitPlayerHandSelection,
-  waitPlayerLaneSelection,
-  confirmOverwrittenLane,
+    checkWinCondition,
+    cleanupDestroyedCards,
+    confirmOverwrittenLane,
+    discardCard,
+    drawCard,
+    endTurnLogic,
+    hasActiveSkill,
+    resolveOnPlaySkill,
+    waitPlayerDiscardSelection,
+    waitPlayerEnemyLaneSelection,
+    waitPlayerHandSelection,
+    waitPlayerLaneSelection,
 } from './battle.js';
-import { resolveActiveSkillEffect } from './skillLogic.js';
 import {
-  applyLeaderSkillLogic,
-  processDestructionTriggers,
-  applySingleCombat,
+    applyLeaderSkillLogic,
+    applySingleCombat,
+    processDestructionTriggers,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { GameState } from '../state/gameState.js';
-import { AI_THINKING_DURATION } from '../utils/constants/config.js';
-import {
-  renderBoard,
-  renderHand,
-  updateCardDetail,
-  updateDeckDisplay,
-  updateSPOrbs,
-  updateHPBar,
-  showSpeechBubble,
-} from '../services/uiBattle.js';
+import { resolveActiveSkillEffect } from './skillLogic.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -1792,8 +1792,8 @@ export async function executeLeaderSkillAction(
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard || [])),
     playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
     enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
-    valkyrieGuardBlue: GameState.valkyrieGuardBlue || 0,
-    valkyrieGuardRed: GameState.valkyrieGuardRed || 0,
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
 
   if (
@@ -1825,8 +1825,8 @@ export async function executeLeaderSkillAction(
     // 封印状態の同期
     GameState.playerSealedLanes = currentState.playerSealedLanes;
     GameState.enemySealedLanes = currentState.enemySealedLanes;
-    GameState.valkyrieGuardBlue = currentState.valkyrieGuardBlue;
-    GameState.valkyrieGuardRed = currentState.valkyrieGuardRed;
+    GameState.valkyriaGuardBlue = currentState.valkyriaGuardBlue;
+    GameState.valkyriaGuardRed = currentState.valkyriaGuardRed;
   }
 
   // 【世界の再構築】discardCard を使った正規の手札破棄処理
@@ -1975,7 +1975,7 @@ export async function executeLeaderSkillAction(
           window.triggerVfx('anm_seal_lanes', owner, lane)
         )
       );
-    } else if (action === 'valkyrie_guard') {
+    } else if (action === 'valkyria_guard') {
       playSound(SOUNDS.seSkill);
       const sidePrefix = owner === 'blue' ? 'player' : 'enemy';
 

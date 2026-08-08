@@ -39,8 +39,8 @@ export default [
     'starfish',
     'starfish',
     'starfish',
-    'valkyrie',
-    'valkyrie',
-    'valkyrie',
+    'valkyria',
+    'valkyria',
+    'valkyria',
   ],
 ];

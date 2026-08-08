@@ -1971,13 +1971,13 @@ export const CARD_MASTER = [
   },
   {
     id: 'catoblepas',
-    obtain: ['priest_hard'],
+    obtain: ['dragon_normal', 'dragon_hard'],
     name: '瘴気のカトブレパス',
     rarity: 3,
     power: 5,
     skills: [{ id: 'miasma' }],
     flavor:
-      '邪眼と瘴気を撒き散らす災いの魔獣。その息吹が触れたものは命の芽吹きすら阻まれる。',
+      '瘴気を撒き散らす災いの魔獣。その息吹が触れたものは命の芽吹きすら阻まれる。',
   },
   {
     id: 'dragoon',
@@ -3431,7 +3431,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dwarf',
-    obtain: ['oni_high'],
+    obtain: ['exchange_fortune'],
     name: '熟練の鍛冶師',
     rarity: 1,
     power: 4,
@@ -3442,8 +3442,8 @@ export const CARD_MASTER = [
   },
   {
     id: 'fenrir',
-    obtain: ['oni_high'],
-    name: '溶岩生まれの狼',
+    obtain: ['exchange_fortune'],
+    name: '炎の魔狼',
     rarity: 1,
     power: 4,
     skills: [{ id: 'sacrifice', value: 2 }, { id: 'quick' }],
@@ -3452,7 +3452,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'berserkir',
-    obtain: ['oni_high'],
+    obtain: ['exchange_fortune'],
     name: 'アグニカの信奉者',
     rarity: 2,
     power: 1,
@@ -3461,8 +3461,8 @@ export const CARD_MASTER = [
     flavor: '',
   },
   {
-    id: 'hammer',
-    obtain: ['dragon_normal'],
+    id: 'mjolnir',
+    obtain: ['exchange_fortune'],
     name: '雷神の鎚',
     rarity: 2,
     power: 2,
@@ -3476,8 +3476,8 @@ export const CARD_MASTER = [
       '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。',
   },
   {
-    id: 'valkyrie',
-    obtain: ['dragon_high'],
+    id: 'valkyria',
+    obtain: ['exchange_fortune'],
     name: '焦熱の戦乙女',
     rarity: 3,
     power: 3,
@@ -3493,7 +3493,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gungnir',
-    obtain: ['dragon_normal'],
+    obtain: ['exchange_fortune'],
     name: '巨人殺し',
     rarity: 3,
     power: 6,
@@ -3740,7 +3740,7 @@ export const PREMIUM_CARD_IDS = [
   'shogun',
   'pharaoh',
   'dreadnought',
-  'hammer',
+  'mjolnir',
   'crusher',
   'shark',
   'shaman',
