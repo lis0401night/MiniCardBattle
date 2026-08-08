@@ -25,6 +25,7 @@ import {
   resolveStartupFade,
   sleep,
   triggerGraveKeeperEffect,
+  triggerMiasmaEffect,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -1961,6 +1962,7 @@ export async function executeLeaderSkillAction(
     } else if (action === 'god_flame' || action === 'condemnation') {
       await sleep(200);
       await window.triggerVfx('anm_god_flame', owner);
+      await triggerMiasmaEffect();
     } else if (action === 'seal_lanes' && tokenLanes && tokenLanes.length > 0) {
       await sleep(200);
       await Promise.all(

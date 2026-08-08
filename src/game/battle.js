@@ -64,6 +64,7 @@ import {
   applySingleCombat,
   calculateCombatPhase,
   canTakeDamage,
+  isValkyriaGuardActive,
 } from './engine.js';
 import { playEvents, registerDiscardCard } from './eventRenderer.js';
 import { trackMissionPower, trackMissionSacrifice } from './missionLogic.js';
@@ -3170,6 +3171,15 @@ export function consumeAIAction(types) {
   }
   return null;
 }
+/**
+ * 指定したプレイヤーの山札からカードを1枚引き、手札に加える
+ * 山札が空で墓地にカードがある場合、墓地をシャッフルして山札に再補充する。
+ * 山札再補充時には体力が半分（切り上げ）になるペナルティダメージが発生するが、
+ * 「戦乙女の加護（アンジェのリーダースキル）」がアクティブな場合はペナルティダメージを無効化（0）にする。
+ * 
+ * @param {string} owner - ドローを行うプレイヤーの識別子 ('blue' または 'red')
+ * @returns {void}
+ */
 export function drawCard(owner) {
   let d = owner === 'blue' ? GameState.playerDeck : GameState.enemyDeck,
     h = owner === 'blue' ? GameState.playerHand : GameState.enemyHand,
@@ -3193,27 +3203,38 @@ export function drawCard(owner) {
     const damage = currentHP - newHP;
 
     if (damage > 0) {
-      if (owner === 'blue') {
-        GameState.playerHP = newHP;
-      } else {
-        GameState.enemyHP = newHP;
-      }
-      createDamagePopup(
-        document.getElementById(
+      // 戦乙女の加護（アンジェのリーダースキル）が有効な場合は山札補充ペナルティダメージも0（無効化）にする
+      if (isValkyriaGuardActive(GameState, owner)) {
+        const hpFill = document.getElementById(
           `${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`
-        ),
-        `-${damage}`,
-        '#ef4444'
-      );
-      playSound(SOUNDS.seDamage);
+        );
+        if (hpFill) {
+          createDamagePopup(hpFill, '加護', '#ffd700');
+        }
+        playSound(SOUNDS.seSkill);
+      } else {
+        if (owner === 'blue') {
+          GameState.playerHP = newHP;
+        } else {
+          GameState.enemyHP = newHP;
+        }
+        createDamagePopup(
+          document.getElementById(
+            `${owner === 'blue' ? 'player' : 'enemy'}-hp-fill`
+          ),
+          `-${damage}`,
+          '#ef4444'
+        );
+        playSound(SOUNDS.seDamage);
 
-      if (window.triggerVfx) {
-        window.triggerVfx('anm_deck_reset_joker', owner);
+        if (window.triggerVfx) {
+          window.triggerVfx('anm_deck_reset_joker', owner);
+        }
+
+        showSpeechBubble(owner);
+        updateHPBar();
+        checkWinCondition();
       }
-
-      showSpeechBubble(owner);
-      updateHPBar();
-      checkWinCondition();
     }
   }
 
