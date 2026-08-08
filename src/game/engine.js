@@ -11,8 +11,8 @@ import {
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
 
-/** 戦乙女の加護の持続カウンター（相手の攻撃フェーズ1回 + 自分の攻撃フェーズ1回） */
-export const VALKYRIA_GUARD_TURNS = 2;
+/** 戦乙女の加護の持続カウンター（発動後の次の自分の攻撃フェーズ終了まで） */
+export const VALKYRIA_GUARD_TURNS = 1;
 
 /**
  * 指定サイドにヴァルキリーガード（戦乙女の加護）が有効かどうかを判定する
@@ -4060,9 +4060,12 @@ export function calculateCombatPhase(state, attackerSide, events = []) {
     applySingleCombat(state, attackerSide, l, events);
   }
 
-  // 戦乙女の加護: 攻撃フェーズ通過ごとにカウンターを減算
-  if (state.valkyriaGuardBlue > 0) state.valkyriaGuardBlue--;
-  if (state.valkyriaGuardRed > 0) state.valkyriaGuardRed--;
+  // 戦乙女の加護: 攻撃を行った側のプレイヤー自身の攻撃フェーズ終了時にカウンターを減算
+  if (attackerSide === 'blue' && state.valkyriaGuardBlue > 0) {
+    state.valkyriaGuardBlue--;
+  } else if (attackerSide === 'red' && state.valkyriaGuardRed > 0) {
+    state.valkyriaGuardRed--;
+  }
 
   processDestructionTriggers(state, events);
   return events;

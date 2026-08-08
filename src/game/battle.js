@@ -3629,9 +3629,11 @@ export async function startTurn(owner) {
   }
 
   if (skipAttack) {
-    // 何もせず攻撃フェーズをスキップ。スキップ時も攻撃ステップ通過として減算
-    if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
-    if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
+    // 何もせず攻撃フェーズをスキップ。スキップ時も攻撃ステップ通過として自身の加護を減算
+    if (owner === 'blue' && GameState.valkyriaGuardBlue > 0)
+      GameState.valkyriaGuardBlue--;
+    if (owner === 'red' && GameState.valkyriaGuardRed > 0)
+      GameState.valkyriaGuardRed--;
   } else {
     if (
       (owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard).some(
@@ -3641,9 +3643,11 @@ export async function startTurn(owner) {
       await executeCombatPhase(owner);
       if (checkWinCondition()) return;
     } else {
-      // 盤面にカードが存在せず攻撃が行われなかった場合も、攻撃ステップ通過として減算
-      if (GameState.valkyriaGuardBlue > 0) GameState.valkyriaGuardBlue--;
-      if (GameState.valkyriaGuardRed > 0) GameState.valkyriaGuardRed--;
+      // 盤面にカードが存在せず攻撃が行われなかった場合も、攻撃ステップ通過として自身の加護を減算
+      if (owner === 'blue' && GameState.valkyriaGuardBlue > 0)
+        GameState.valkyriaGuardBlue--;
+      if (owner === 'red' && GameState.valkyriaGuardRed > 0)
+        GameState.valkyriaGuardRed--;
     }
   }
 
