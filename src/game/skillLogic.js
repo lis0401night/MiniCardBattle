@@ -3591,10 +3591,20 @@ export async function triggerStartTurnPassive(owner, lane) {
           skillName: '迎撃',
         });
 
-        if (canTakeDamage(eB[maxL], dmg)) {
+        const oppOwner = owner === 'blue' ? 'red' : 'blue';
+        // 戦乙女の加護が有効な場合はカードへの迎撃ダメージを無効化（ブロック）
+        if (isValkyriaGuardActive(GameState, oppOwner)) {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: oppOwner,
+            lane: maxL,
+            amount: dmg,
+            source: 'intercept',
+          });
+        } else if (canTakeDamage(eB[maxL], dmg)) {
           events.push({
             type: 'damage_card',
-            side: owner === 'blue' ? 'red' : 'blue',
+            side: oppOwner,
             lane: maxL,
             amount: dmg,
             source: 'intercept',
@@ -3602,7 +3612,7 @@ export async function triggerStartTurnPassive(owner, lane) {
         } else {
           events.push({
             type: 'immune_block',
-            side: owner === 'blue' ? 'red' : 'blue',
+            side: oppOwner,
             lane: maxL,
             source: 'intercept',
           });

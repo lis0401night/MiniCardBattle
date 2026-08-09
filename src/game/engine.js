@@ -1,6 +1,7 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
+import { GameState } from '../state/gameState.js';
 import {
   consumeArmSelf,
   getSeededRandom,
@@ -80,9 +81,32 @@ export function canCardBeDestroyed(state, card, side = null) {
   return true;
 }
 
-export function canTakeDamage(card, amount, isSkill = true) {
+/**
+ * カードがダメージを受けられるか（無効・回避・戦乙女の加護等で防がれないか）を判定する
+ *
+ * @param {Object} card - 対象カード
+ * @param {number} amount - 与えるダメージ量
+ * @param {boolean} [isSkill=true] - スキルダメージかどうか
+ * @param {Object} [state=null] - バトル状態（未指定時はグローバルなGameStateにフォールバック）
+ * @param {string} [side=null] - カードの所有者 ('blue'|'red')。未指定時は card.owner
+ * @returns {boolean} ダメージを受けられるなら true、無効化・ガード中なら false
+ */
+export function canTakeDamage(
+  card,
+  amount,
+  isSkill = true,
+  state = null,
+  side = null
+) {
   if (!card) return false;
   if (isSkill && hasSkill(card, 'immune')) return false;
+
+  // 戦乙女の加護（アンジェのリーダースキル）による全ダメージ無効化判定を一元処理
+  const owner = side || card?.owner;
+  const st =
+    state || (typeof GameState !== 'undefined' ? GameState : null);
+  if (owner && st && isValkyriaGuardActive(st, owner)) return false;
+
   const resVal = getSkillValue(card, 'dodge');
   // 回避（dodge）: 指定値以上のダメージを無効化する。ただし、防御（defender）が付与されている場合は無効。
   if (resVal > 0 && amount >= resVal && !hasSkill(card, 'defender'))
@@ -5340,7 +5364,16 @@ export function applyPassiveSkillLogic(
           lane: i,
           skillName: '迎撃',
         });
-        if (canTakeDamage(eB[maxL], dmg)) {
+        // 戦乙女の加護が有効な場合はカードへの迎撃ダメージを無効化（ブロック）
+        if (isValkyriaGuardActive(state, oppSide)) {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: oppSide,
+            lane: maxL,
+            amount: dmg,
+            source: 'intercept',
+          });
+        } else if (canTakeDamage(eB[maxL], dmg)) {
           eB[maxL].currentPower -= dmg;
           events.push({
             type: 'damage_card',
