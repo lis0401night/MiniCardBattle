@@ -40,11 +40,11 @@ export const HANDICAP_MASTER = {
     name: '「頑丈」使用禁止',
     cost: 2,
   },
-  ban_dodge: {
-    id: 'ban_dodge',
+  ban_deadly: {
+    id: 'ban_deadly',
     type: HANDICAP_TYPES.BAN_SKILL,
-    skillIds: ['dodge'],
-    name: '「回避」使用禁止',
+    skillIds: ['deadly'],
+    name: '「必殺」使用禁止',
     cost: 2,
   },
   hp_minus_3: {
@@ -148,7 +148,7 @@ export const CHAR_FORTUNE_HANDICAPS = {
   valkyria: [
     HANDICAP_MASTER.ban_legend,
     HANDICAP_MASTER.ban_sturdy,
-    HANDICAP_MASTER.ban_dodge,
+    HANDICAP_MASTER.ban_deadly,
     HANDICAP_MASTER.hp_minus_3,
     HANDICAP_MASTER.hp_minus_7,
     HANDICAP_MASTER.enemy_hp_plus_10,
