@@ -12,11 +12,11 @@ import {
   setCloseCardPreviewHook,
   setOpenCardPreviewHook,
   setShowCardAcquisitionModalHook,
+  setShowCharacterAcquisitionModalHook,
   setShowIconAcquisitionModalHook,
   setShowPlaymatAcquisitionModalHook,
   setShowPremiumAcquisitionModalHook,
   setShowSkinAcquisitionModalHook,
-  setShowCharacterAcquisitionModalHook,
   setShowStageAcquisitionModalHook,
 } from '../services/uiGallery.js';
 import {
@@ -50,10 +50,10 @@ import { syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
-  CHARACTERS,
-  getSkinImage,
-  getPlayerIconPath,
   canShowUnlockableCharacter,
+  CHARACTERS,
+  getPlayerIconPath,
+  getSkinImage,
 } from '../utils/constants/characters.js';
 import { ownedPlaymats, PLAYMAT_MASTER } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
@@ -61,9 +61,9 @@ import {
   getCardImgUrl,
   getOrCreateUUID,
   playSound,
+  resolvePlayerName,
   stopAllBGM,
   togglePremiumCard,
-  resolvePlayerName,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
@@ -1678,7 +1678,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                       marginBottom: '5px',
                     }}
                   >
-                    【リーダー能力】
+                    【リーダースキル】
                   </div>
                   <div
                     style={{
@@ -3390,7 +3390,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 </ul>
               </div>
               <div className="rule-section">
-                <div className="rule-category">【リーダー能力】</div>
+                <div className="rule-category">【リーダースキル】</div>
                 <ul>
                   <li>
                     毎ターン「SP」が溜まります。

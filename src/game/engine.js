@@ -156,6 +156,14 @@ export function applyMartyrForLeader(state, side, amount, events) {
   return false; // 肩代わりなし
 }
 
+/** 戦闘に起因するダメージ源（犠牲による肩代わりが可能） */
+const MARTYR_ELIGIBLE_SOURCES = [
+  'combat',
+  'possession',
+  'pierce',
+  'direct_attack',
+];
+
 /**
  * リーダーにダメージを与える（犠牲の肩代わりを考慮する）
  */
@@ -173,9 +181,9 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
     return;
   }
 
-  // 犠牲の肩代わりチェック（戦闘ダメージのみ肩代わり可能）
+  // 犠牲の肩代わりチェック（戦闘に起因するダメージのみ肩代わり可能）
   if (
-    source === 'combat' &&
+    MARTYR_ELIGIBLE_SOURCES.includes(source) &&
     applyMartyrForLeader(state, side, amount, events)
   ) {
     return; // 肩代わりされたので終了

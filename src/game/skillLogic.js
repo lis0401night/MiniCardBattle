@@ -151,15 +151,12 @@ async function applyLeaderDamageWithGuard(
 
   if (isTargetEnemy) {
     GameState.enemyHP = Math.max(0, GameState.enemyHP - dmg);
-    if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
-    triggerShakeAnimation(targetPlaymat);
-    showSpeechBubble('red');
   } else {
     GameState.playerHP = Math.max(0, GameState.playerHP - dmg);
-    if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
-    triggerShakeAnimation(targetPlaymat);
-    showSpeechBubble('blue');
   }
+  if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
+  triggerShakeAnimation(targetPlaymat);
+  showSpeechBubble(targetSide);
 
   playSound(SOUNDS.seDamage);
 

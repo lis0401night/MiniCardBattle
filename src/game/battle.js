@@ -5055,6 +5055,9 @@ export function endBattle() {
             }
           );
 
+          // 達成情報が更新されたため、ポイント0でも実績チェックをトリガーする
+          checkFortuneAchievements();
+
           // 運命の邂逅イベントではカード報酬はドロップせず直接会話画面へ
           GameState.appState = 'post_dialogue';
           setupDialogueScreen();

@@ -100,12 +100,13 @@ export default function DialogueScreen() {
   } else if (checkIsFortuneMode(GameState.gameMode)) {
     // 運命の邂逅イベント：対戦相手固有のステージ背景を優先参照する。
     // 背景画像はCSS背景のためonErrorで救済できない。STAGESに定義済みのIDのみ採用する。
-    const candidateId =
-      GameState.selectedStageId ||
-      GameState.enemyConfig?.stageId ||
-      GameState.enemyConfig?.id;
     const stageId =
-      candidateId && STAGES?.[candidateId] ? candidateId : 'fortune01';
+      [
+        GameState.selectedStageId,
+        GameState.enemyConfig?.stageId,
+        GameState.enemyConfig?.id,
+      ].find((candidateId) => candidateId && STAGES?.[candidateId]) ||
+      'fortune01';
     bgName = `background_${stageId}.webp`;
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.webp';

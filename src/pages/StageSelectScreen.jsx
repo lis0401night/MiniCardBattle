@@ -4,30 +4,15 @@ import BackButton from '../components/BackButton.jsx';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
-import { UNLOCKABLE_CHARACTER_IDS } from '../utils/constants/characters.js';
-import { STAGES } from '../utils/constants/stages.js';
-import {
-  checkIsFortuneMode,
-  checkIsHighDiffMode,
-  safeParseArray,
-} from '../utils/gameUtils.js';
+import { STAGES, canShowUnlockableStage } from '../utils/constants/stages.js';
+import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
 export default function StageSelectScreen() {
   const getStages = () => {
     const stagesObj = STAGES || {};
-    const unlockedStages = safeParseArray('mini_card_battle_unlocked_stages');
 
     return Object.keys(stagesObj)
-      .filter((id) => {
-        // 解放制ステージは明示的にアンロックされていない限り表示しない
-        if (
-          UNLOCKABLE_CHARACTER_IDS.includes(id) &&
-          !unlockedStages.includes(id)
-        ) {
-          return false;
-        }
-        return true;
-      })
+      .filter((id) => canShowUnlockableStage(id))
       .map((id) => ({
         id,
         ...stagesObj[id],

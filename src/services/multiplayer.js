@@ -161,6 +161,23 @@ async function reserveRoomCode(roomId) {
 }
 
 /**
+ * ルーム本体とルームコードインデックスを同一の原子的（アトミック）更新で同時削除する
+ * @param {string} roomId - 削除対象のルームID
+ * @param {string} roomCode - 削除対象の6桁ルームコード（省略可能）
+ * @returns {Promise<void>}
+ */
+async function removeRoomAndCode(roomId, roomCode) {
+  if (!database || !roomId) return;
+  const updates = {
+    [`${ROOMS_REF}/${roomId}`]: null,
+  };
+  if (roomCode) {
+    updates[`roomCodeIndex/${roomCode}`] = null;
+  }
+  await update(ref(database), updates);
+}
+
+/**
  * ルームを作成する
  * @param {string} hostName - ホストプレイヤー名
  * @param {object} [options] - ルーム作成のオプション
@@ -173,7 +190,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   const uuid = getOrCreateUUID();
   const roomsRef = ref(database, ROOMS_REF);
 
-  // 既存の自分が作ったルーム（ゴミ）を削除
+  // 既存の自分が作ったルーム（ゴミ）を削除（部屋本体とインデックスを原子的に削除）
   try {
     const snapshot = await get(roomsRef);
     if (snapshot.exists()) {
@@ -181,9 +198,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
       snapshot.forEach((child) => {
         const roomData = child.val();
         if (roomData.host && roomData.host.id === uuid) {
-          deletePromises.push(
-            remove(ref(database, `${ROOMS_REF}/${child.key}`))
-          );
+          deletePromises.push(removeRoomAndCode(child.key, roomData.roomCode));
         }
       });
       if (deletePromises.length > 0) {
@@ -199,7 +214,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
 
   // 予約直後に自動解放を登録し、set完了前の切断でインデックスが孤児化することを防ぐ
   const codeIndexRef = ref(database, `roomCodeIndex/${roomCode}`);
-  onDisconnect(codeIndexRef)
+  await onDisconnect(codeIndexRef)
     .remove()
     .catch((e) => console.error('onDisconnect code index error:', e));
 
@@ -222,20 +237,19 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
       client: null,
       actionQueue: {},
     });
+    // ホスト切断時の自動部屋削除（部屋本体）を予約
+    await onDisconnect(newRoomRef)
+      .remove()
+      .catch((e) => console.error('onDisconnect error:', e));
   } catch (error) {
-    // ルーム初期作成に失敗した場合は予約したインデックスコードを削除・解放する
-    await remove(codeIndexRef).catch(() => {});
+    // ルーム初期作成に失敗した場合は予約したインデックスコードおよびルーム本体をクリーンアップ
+    await removeRoomAndCode(newRoomRef.key, roomCode).catch(() => {});
     throw error;
   }
 
   currentRoomId = newRoomRef.key;
   currentRoomCode = roomCode;
   isHost = true;
-
-  // ホスト切断時の自動部屋削除（部屋本体）を予約
-  onDisconnect(newRoomRef)
-    .remove()
-    .catch((e) => console.error('onDisconnect error:', e));
 
   listenToRoom(currentRoomId);
   return currentRoomId;
@@ -594,11 +608,8 @@ export async function leaveRoom() {
 
   try {
     if (wasHost) {
-      // ホストが抜ける場合はルームおよびコードインデックスを削除
-      await remove(roomRef);
-      if (codeRef) {
-        await remove(codeRef).catch(() => {});
-      }
+      // ホストが抜ける場合はルームおよびコードインデックスを原子的に同時削除
+      await removeRoomAndCode(roomId, roomCode);
     } else {
       // クライアントが抜ける場合は、他の操作との競合によるルームの再作成を防ぐため
       // トランザクションを使用してデータが存在する間だけステータスとクライアントを更新する

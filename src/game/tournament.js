@@ -14,6 +14,12 @@ import { TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/conf
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+/** トーナメントに参加する実在NPCキャラクター数 */
+const TOURNAMENT_REAL_CHARACTER_COUNT = 11;
+
+/** トーナメントに参加するダミー（モブ）キャラクター数 */
+const TOURNAMENT_DUMMY_CHARACTER_COUNT = 4;
+
 /**
  * トーナメント用キャラクター名を生成する
  * 異世界の二つ名を除去し、学園世界観であることを示す「？」を付ける
@@ -29,7 +35,7 @@ function toTournamentName(fullName) {
 
 /**
  * トーナメントモードの初期化処理
- * プレイヤーおよび参加NPC（実在キャラクター10体 + ダミー5体）のトーナメント表（ブラケット）を組み立て、オープニング画面へ遷移します。
+ * プレイヤーおよび参加NPC（実在キャラクター11体 + ダミー4体）のトーナメント表（ブラケット）を組み立て、オープニング画面へ遷移します。
  */
 export function initTournamentMode() {
   GameState.gameMode = 'tournament';
@@ -45,7 +51,7 @@ export function initTournamentMode() {
     ),
   };
 
-  // プレイヤー以外のキャラクターを11体選ぶ（ボスやトーナメント禁止キャラクターは除外）
+  // プレイヤー以外のキャラクターを選ぶ（ボスやトーナメント禁止キャラクターは除外）
   const allCharIds = Object.keys(CHARACTERS).filter(
     (id) =>
       !CHARACTERS[id].isDummy &&
@@ -55,7 +61,7 @@ export function initTournamentMode() {
 
   // シャッフル
   allCharIds.sort(() => Math.random() - 0.5);
-  const selectedCharIds = allCharIds.slice(0, 11);
+  const selectedCharIds = allCharIds.slice(0, TOURNAMENT_REAL_CHARACTER_COUNT);
 
   const realChars = selectedCharIds.map((charId) => ({
     id: `npc_${charId}`,
@@ -66,14 +72,16 @@ export function initTournamentMode() {
     isDummy: false,
   }));
 
-  // ダミーを4体作成
-  const dummies = Array.from({ length: 4 }).map((_, i) => ({
-    id: `dummy_${i}`,
-    isPlayer: false,
-    charId: 'android', // ダミーのステータスベース
-    name: `参加者${i + 1}`, // ダミー感のある名前
-    isDummy: true,
-  }));
+  // ダミーを作成
+  const dummies = Array.from({ length: TOURNAMENT_DUMMY_CHARACTER_COUNT }).map(
+    (_, i) => ({
+      id: `dummy_${i}`,
+      isPlayer: false,
+      charId: 'android', // ダミーのステータスベース
+      name: `参加者${i + 1}`, // ダミー感のある名前
+      isDummy: true,
+    })
+  );
 
   // 対戦カード（1回戦の8試合）を組み立てる
   // 条件:
@@ -97,7 +105,7 @@ export function initTournamentMode() {
   bracket.push(realChars[0]);
 
   // Match 2~5 (Real[1~4] vs Dummy[0~3])
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < TOURNAMENT_DUMMY_CHARACTER_COUNT; i++) {
     const pair = [realChars[1 + i], dummies[i]];
     // 左右をランダムにする
     if (Math.random() > 0.5) pair.reverse();

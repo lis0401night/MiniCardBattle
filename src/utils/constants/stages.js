@@ -22,3 +22,24 @@ export const STAGES = {
   automata: { id: 'automata', name: '鋼の墓標', bgm: 'bgmStageAutomata' },
   valkyria: { id: 'valkyria', name: '約束の丘', bgm: 'bgmStageValkyria' },
 };
+
+/** 解放制ステージのID一覧 */
+export const UNLOCKABLE_STAGE_IDS = ['automata', 'valkyria'];
+
+/**
+ * 解放制ステージの表示条件を判定する共通関数
+ * @param {string} stageId - ステージID
+ * @returns {boolean} 表示可能であればtrue
+ */
+export function canShowUnlockableStage(stageId) {
+  if (!UNLOCKABLE_STAGE_IDS.includes(stageId)) return true;
+  let unlockedStages = [];
+  try {
+    const raw = localStorage.getItem('mini_card_battle_unlocked_stages');
+    const parsed = raw ? JSON.parse(raw.replace(/[\u200B-\u200D]/g, '')) : null;
+    if (Array.isArray(parsed)) unlockedStages = parsed;
+  } catch (e) {
+    console.error('Failed to parse unlocked stages:', e);
+  }
+  return unlockedStages.includes(stageId);
+}

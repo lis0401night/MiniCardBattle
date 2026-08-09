@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { prepareBattle } from '../game/battle.js';
 import {
   cachedRoomData,
+  getCurrentRoomCode,
   getCurrentRoomId,
   getIsHost,
   leaveRoom,
@@ -415,7 +416,10 @@ export default function OnlineLobbyScreen() {
           <span>
             ルームID:{' '}
             <strong style={{ color: '#fde047', letterSpacing: '1px' }}>
-              {roomData?.roomCode || getCurrentRoomId() || '取得中...'}
+              {roomData?.roomCode ||
+                getCurrentRoomCode() ||
+                getCurrentRoomId() ||
+                '取得中...'}
             </strong>
           </span>
           {/* 公開状態はサーバー同期後にのみ表示し、未確定時の誤表示を防ぐ */}

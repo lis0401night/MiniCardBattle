@@ -12,6 +12,7 @@ import {
   APP_STATE_SELECT_ENEMY_DECK,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
   clearCachesAndServiceWorkers,
@@ -1491,19 +1492,9 @@ export function openEnemyDeckPreview(level) {
       GameState.fortuneHandicaps.enemy_leader_skill_change;
     if (isLeaderSkillChanged) {
       if (enemyCharId === 'automata') {
-        leaderSkill = {
-          name: 'ラスト・バタリオン',
-          desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
-          cost: 3,
-          action: 'last_battalion',
-        };
+        leaderSkill = LEADER_SKILLS.last_battalion;
       } else if (enemyCharId === 'valkyria') {
-        leaderSkill = {
-          name: 'ラグナロク',
-          desc: '(SP:4) 敵の場のすべてのカードに2ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
-          cost: 4,
-          action: 'ragnarok',
-        };
+        leaderSkill = LEADER_SKILLS.ragnarok;
       }
     }
 

@@ -56,7 +56,7 @@ export default function RulesScreen() {
           </ul>
         </div>
         <div className="rule-section">
-          <div className="rule-category">【リーダー能力】</div>
+          <div className="rule-category">【リーダースキル】</div>
           <ul>
             <li>
               毎ターン「SP」が溜まります。
