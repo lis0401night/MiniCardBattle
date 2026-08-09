@@ -77,14 +77,17 @@ export default function GlossaryScreen() {
    * @param {ScrollLogicalPosition} [blockPosition='start'] - スクロール位置（'start'|'center'|'nearest'）
    * @returns {void}
    */
-  const scrollIntoViewSmooth = useCallback((refKey, blockPosition = 'start') => {
-    setTimeout(() => {
-      const el = headerRefs.current[refKey];
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: blockPosition });
-      }
-    }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
-  }, []);
+  const scrollIntoViewSmooth = useCallback(
+    (refKey, blockPosition = 'start') => {
+      setTimeout(() => {
+        const el = headerRefs.current[refKey];
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: blockPosition });
+        }
+      }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
+    },
+    []
+  );
 
   /**
    * 大項目のアコーディオン開閉をトグルする

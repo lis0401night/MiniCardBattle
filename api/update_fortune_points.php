@@ -35,6 +35,8 @@ $total_points = isset($data['total_points']) ? intval($data['total_points']) : 0
 $fortune_max_grade = isset($data['fortune_max_grade']) ? intval($data['fortune_max_grade']) : -1;
 $fortune_cleared = isset($data['fortune_cleared']) ? $data['fortune_cleared'] : '{}';
 $fortune_max_total_cost = isset($data['fortune_max_total_cost']) ? intval($data['fortune_max_total_cost']) : 0;
+$fortune_max_total_cost_automata = isset($data['fortune_max_total_cost_automata']) ? intval($data['fortune_max_total_cost_automata']) : 0;
+$fortune_max_total_cost_valkyria = isset($data['fortune_max_total_cost_valkyria']) ? intval($data['fortune_max_total_cost_valkyria']) : 0;
 
 if (strlen($uuid) < 10) {
     echo json_encode(['success' => false, 'error' => 'Invalid uuid format']);
@@ -103,6 +105,19 @@ if ($playerData) {
         $playerData['fortune_max_total_cost'] = $fortune_max_total_cost;
     }
 
+    // マキナ用合計目標値
+    $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata']) ? intval($playerData['fortune_max_total_cost_automata']) : $existingMaxTotalCost;
+    $newCostAutomata = max($fortune_max_total_cost_automata, ($fortune_max_total_cost_automata === 0 ? $fortune_max_total_cost : 0));
+    if ($newCostAutomata > $existingMaxCostAutomata) {
+        $playerData['fortune_max_total_cost_automata'] = $newCostAutomata;
+    }
+
+    // アンジェ用合計目標値
+    $existingMaxCostValkyria = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
+    if ($fortune_max_total_cost_valkyria > $existingMaxCostValkyria) {
+        $playerData['fortune_max_total_cost_valkyria'] = $fortune_max_total_cost_valkyria;
+    }
+
     $playerData['timestamp'] = time();
 
     $data_json = json_encode($playerData);
@@ -126,6 +141,8 @@ EOT;
             'fortune_points' => $playerData['fortune_points'],
             'fortune_total_points' => $playerData['fortune_total_points'],
             'fortune_max_grade' => $playerData['fortune_max_grade'] ?? -1,
+            'fortune_max_total_cost_automata' => $playerData['fortune_max_total_cost_automata'] ?? 0,
+            'fortune_max_total_cost_valkyria' => $playerData['fortune_max_total_cost_valkyria'] ?? 0,
         ]);
         exit;
     } else {

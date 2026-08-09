@@ -749,6 +749,18 @@ export function prepareBattle() {
   }
 }
 
+/**
+ * バトル状態の初期化を行う関数。
+ *
+ * 【主な機能・目的】
+ * - ゲーム開始・リトライ・コンティニュー時に、GameStateの各種パラメータ（HP、SP、デッキ、手札、墓地、レーン状態等）をクリア・初期化する。
+ * - BGMの再生制御、スキン画像の再適用、各ゲームモード（ストーリー、高難易度、運命の邂逅、トーナメント等）固有のHP/スキル補正を行う。
+ * - 「運命の邂逅」モードでは、コンティニュー時に特級目標のハンディキャップ（SP増減等）が二重適用・累積計算されないよう、
+ *   未加工のベースリーダースキルからクリーンに1回だけハンディキャップを計算・適用する。
+ *
+ * @function initBattleState
+ * @returns {void}
+ */
 export function initBattleState() {
   // バトル準備フラグをリセット（次回のprepareBattle呼び出しを許可）
   isBattleLoading = false;
@@ -887,6 +899,28 @@ export function initBattleState() {
         .replace('event_', '')
         .replace('_fortune', '');
       const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
+
+      // 【コンティニュー時等のSP累積加減算バグ対策】
+      // savedPlayerProps/savedEnemyPropsの復元により、過去に特級目標で補正された状態のleaderSkillが退避・復元されている場合がある。
+      // 二重計算（累積減算・加算）を防ぐため、ハンディキャップ計算直前にマスターデータから未補正のベース定義をクリーンに復元する。
+      if (
+        GameState.playerConfig &&
+        GameState.playerConfig.id &&
+        CHARACTERS[GameState.playerConfig.id]?.leaderSkill
+      ) {
+        GameState.playerConfig.leaderSkill = JSON.parse(
+          JSON.stringify(CHARACTERS[GameState.playerConfig.id].leaderSkill)
+        );
+      }
+      if (
+        GameState.enemyConfig &&
+        GameState.enemyConfig.id &&
+        CHARACTERS[GameState.enemyConfig.id]?.leaderSkill
+      ) {
+        GameState.enemyConfig.leaderSkill = JSON.parse(
+          JSON.stringify(CHARACTERS[GameState.enemyConfig.id].leaderSkill)
+        );
+      }
 
       // 1. 最優先でリーダースキル変更を適用
       handicapsList.forEach((h) => {
@@ -4988,16 +5022,28 @@ export function endBattle() {
             result.newMaxTotalCost
           );
 
-          // サーバーへポイントと達成情報を同期
+          // サーバーへポイントと達成情報を同期（対戦キャラクターごとの合計目標値も送信）
+          const fortuneSyncExtra = {
+            fortune_max_grade: result.newMaxGradeLevel,
+            fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+            fortune_max_total_cost: result.newMaxTotalCost,
+          };
+          if (fortuneCharId === 'valkyria') {
+            fortuneSyncExtra.fortune_max_total_cost_valkyria =
+              result.newMaxTotalCost;
+          } else if (fortuneCharId === 'automata') {
+            fortuneSyncExtra.fortune_max_total_cost_automata =
+              result.newMaxTotalCost;
+          } else if (fortuneCharId) {
+            fortuneSyncExtra[`fortune_max_total_cost_${fortuneCharId}`] =
+              result.newMaxTotalCost;
+          }
+
           savePointsToServer(
             'update_fortune_points.php',
             currentPts,
             totalPts,
-            {
-              fortune_max_grade: result.newMaxGradeLevel,
-              fortune_cleared: JSON.stringify(result.newClearedHandicaps),
-              fortune_max_total_cost: result.newMaxTotalCost,
-            }
+            fortuneSyncExtra
           );
 
           // 運命の邂逅の実績チェックをトリガー
@@ -5044,15 +5090,27 @@ export function endBattle() {
           let totalPts =
             parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
 
+          const fortuneSyncExtraZero = {
+            fortune_max_grade: result.newMaxGradeLevel,
+            fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+            fortune_max_total_cost: result.newMaxTotalCost,
+          };
+          if (fortuneCharId === 'valkyria') {
+            fortuneSyncExtraZero.fortune_max_total_cost_valkyria =
+              result.newMaxTotalCost;
+          } else if (fortuneCharId === 'automata') {
+            fortuneSyncExtraZero.fortune_max_total_cost_automata =
+              result.newMaxTotalCost;
+          } else if (fortuneCharId) {
+            fortuneSyncExtraZero[`fortune_max_total_cost_${fortuneCharId}`] =
+              result.newMaxTotalCost;
+          }
+
           savePointsToServer(
             'update_fortune_points.php',
             currentPts,
             totalPts,
-            {
-              fortune_max_grade: result.newMaxGradeLevel,
-              fortune_cleared: JSON.stringify(result.newClearedHandicaps),
-              fortune_max_total_cost: result.newMaxTotalCost,
-            }
+            fortuneSyncExtraZero
           );
 
           // 達成情報が更新されたため、ポイント0でも実績チェックをトリガーする
