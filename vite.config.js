@@ -20,7 +20,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'static',
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1600,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: {
         main: './index.html',
