@@ -104,12 +104,6 @@ export const LEADER_SKILLS = {
     cost: 4,
     action: 'valkyria_guard',
   },
-  ragnarok: {
-    name: 'ラグナロク',
-    desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
-    cost: 4,
-    action: 'ragnarok',
-  },
   // --- 高難易度用リーダースキル ---
   android_high_volley: {
     name: '一斉射撃',
@@ -176,6 +170,12 @@ export const LEADER_SKILLS = {
     desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
     cost: 3,
     action: 'last_battalion',
+  },
+  ragnarok: {
+    name: 'ラグナロク',
+    desc: '(SP:4) 敵の場のすべてのカードに2ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
+    cost: 4,
+    action: 'ragnarok',
   },
 };
 

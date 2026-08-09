@@ -270,7 +270,7 @@ export const VFX_DATA = {
     offsetY: 2,
     scale: 1.0,
     shake: false,
-    targetSide: 'self', // 自陣に召喚
+    targetSide: 'self', // 自陣に表示
   },
 
   // 有毒スキル用VFX

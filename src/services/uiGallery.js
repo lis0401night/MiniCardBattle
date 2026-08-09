@@ -5,8 +5,12 @@ import {
   saveAchievements,
   checkCollectionAchievements,
 } from '../utils/constants/achievements.js';
-import { MAX_CARD_COPIES } from '../utils/constants/config.js';
+import {
+  MAX_CARD_COPIES,
+  UNLOCKED_CHARACTERS_KEY,
+} from '../utils/constants/config.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from '../utils/constants/cards.js';
+import { UNLOCKABLE_CHARACTER_IDS } from '../utils/constants/characters.js';
 import {
   playSound,
   isTransitioning,
@@ -256,22 +260,26 @@ export function debugUnlockAchievements() {
     });
 
     if (achievementData && achievementData.stats) {
-      achievementData.stats.voidDefeated = 1;
-      achievementData.stats.succubusDefeated = 1;
-      achievementData.stats.warlockDefeated = 1;
+      const bossKeys = ['voidDefeated', 'succubusDefeated', 'warlockDefeated'];
+      bossKeys.forEach((key) => {
+        achievementData.stats[key] = 1;
+      });
       achievementData.stats.storyClears =
         achievementData.stats.storyClears || {};
       achievementData.stats.storyClears['knight'] = 1;
     }
 
     try {
-      const allUnlockableCharIds = ['automata', 'valkyria'];
-      localStorage.setItem(
-        'mini_card_battle_unlocked_characters',
-        JSON.stringify(allUnlockableCharIds)
+      // 解放可能キャラクターの一覧は共通定数から導出し、追加時の更新漏れを防ぐ
+      const stored = JSON.parse(
+        localStorage.getItem(UNLOCKED_CHARACTERS_KEY) || '[]'
       );
+      const existing = Array.isArray(stored) ? stored : [];
+      // 既存の解放情報を保持したままマージし、ユーザーデータの消失を防ぐ
+      const merged = [...new Set([...existing, ...UNLOCKABLE_CHARACTER_IDS])];
+      localStorage.setItem(UNLOCKED_CHARACTERS_KEY, JSON.stringify(merged));
       if (typeof GameState !== 'undefined' && GameState) {
-        GameState.unlockedCharacters = [...allUnlockableCharIds];
+        GameState.unlockedCharacters = merged;
       }
     } catch (e) {
       console.error(

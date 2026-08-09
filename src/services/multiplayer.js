@@ -254,6 +254,10 @@ export async function joinRoomByCode(roomCodeInput, clientName) {
   }
 
   const trimmedCode = roomCodeInput.trim();
+  // Firebase のノードパスに安全に使用できる英数字・ハイフン・アンダースコアのみを許可する
+  if (!/^[A-Za-z0-9_-]+$/.test(trimmedCode)) {
+    throw new Error('ルームIDの形式が不正です。');
+  }
   const roomsRef = ref(database, ROOMS_REF);
 
   // タイムアウト付きでPromiseを実行するヘルパー

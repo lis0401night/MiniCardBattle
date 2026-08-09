@@ -4,6 +4,7 @@ import BackButton from '../components/BackButton.jsx';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import { UNLOCKABLE_CHARACTER_IDS } from '../utils/constants/characters.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
   checkIsFortuneMode,
@@ -19,8 +20,10 @@ export default function StageSelectScreen() {
     return Object.keys(stagesObj)
       .filter((id) => {
         // 解放制ステージは明示的にアンロックされていない限り表示しない
-        const UNLOCKABLE_STAGE_IDS = ['automata', 'valkyria'];
-        if (UNLOCKABLE_STAGE_IDS.includes(id) && !unlockedStages.includes(id)) {
+        if (
+          UNLOCKABLE_CHARACTER_IDS.includes(id) &&
+          !unlockedStages.includes(id)
+        ) {
           return false;
         }
         return true;

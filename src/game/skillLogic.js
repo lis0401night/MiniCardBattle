@@ -133,7 +133,7 @@ async function applyLeaderDamageWithGuard(
   if (isValkyriaGuardActive(GameState, targetSide)) {
     if (targetHpEl)
       createDamagePopup(targetHpEl, '加護', VALKYRIA_GUARD_POPUP_COLOR);
-    if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
+    playSound(SOUNDS.seSkill);
     // 加護によりダメージが無効化されたため、簒奪（extort）は発動しない
     updateHPBar();
     await sleep(400);
@@ -150,18 +150,18 @@ async function applyLeaderDamageWithGuard(
   ]);
 
   if (isTargetEnemy) {
-    GameState.enemyHP -= dmg;
+    GameState.enemyHP = Math.max(0, GameState.enemyHP - dmg);
     if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
     triggerShakeAnimation(targetPlaymat);
     showSpeechBubble('red');
   } else {
-    GameState.playerHP -= dmg;
+    GameState.playerHP = Math.max(0, GameState.playerHP - dmg);
     if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
     triggerShakeAnimation(targetPlaymat);
     showSpeechBubble('blue');
   }
 
-  if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seDamage);
+  playSound(SOUNDS.seDamage);
 
   if (card && owner) {
     await triggerExtortInAction(card, owner);

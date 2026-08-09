@@ -1500,7 +1500,7 @@ export function openEnemyDeckPreview(level) {
       } else if (enemyCharId === 'valkyria') {
         leaderSkill = {
           name: 'ラグナロク',
-          desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
+          desc: '(SP:4) 敵の場のすべてのカードに2ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
           cost: 4,
           action: 'ragnarok',
         };

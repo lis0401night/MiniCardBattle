@@ -254,6 +254,8 @@ export default function OnlineRoomSearchScreen() {
             <input
               type="text"
               inputMode="numeric"
+              aria-label="6桁のルームID"
+              autoComplete="off"
               maxLength={ROOM_CODE_LENGTH}
               placeholder="6桁のルームIDを入力"
               value={inputRoomCode}

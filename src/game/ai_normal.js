@@ -78,6 +78,17 @@ function decayInvincibleSkills(board) {
 
 const cloneCard = (c) => (c ? structuredClone(c) : null);
 
+/**
+ * canCardBeDestroyed が参照する加護カウンターのみを持つ軽量ステートオブジェクトを生成します。
+ * @returns {Object} { valkyriaGuardBlue: number, valkyriaGuardRed: number }
+ */
+function createGuardProjectedState() {
+  return {
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
+  };
+}
+
 // リーダースキルが特定のレーンにトークン・カードを配置するかを判定するヘルパー
 function isLaneOccupiedByLeaderSkill(lane, context) {
   if (!context || !context.tokenLanes) return false;
@@ -1655,10 +1666,7 @@ export function getBestSimulatedMove() {
                     const destroyedCard =
                       tgtLane === lane ? card : activeEnemyBoard[tgtLane];
                     // canCardBeDestroyed が参照するのは加護カウンターのみのため軽量オブジェクトを生成
-                    const projectedState = {
-                      valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
-                      valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
-                    };
+                    const projectedState = createGuardProjectedState();
                     const isDestroyable =
                       destroyedCard &&
                       canCardBeDestroyed(projectedState, destroyedCard, 'red');
@@ -2154,16 +2162,16 @@ export function getBestSimulatedMove() {
       action === 'tomb_guard' ||
       action === 'death_judgment'
     ) {
-      // 相手側に戦乙女の加護が有効な場合、破壊対象は成立しない
+      // 相手側に戦乙女の加護が有効な場合、破壊対象は成立しないため空撃ち候補を生成しない
       const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
-      tokenLanePatterns = oppGuarded
-        ? []
-        : [0, 1, 2]
-            .filter(
-              (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
-            )
-            .map((l) => [l]);
-      if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
+      if (oppGuarded) {
+        tokenLanePatterns = [];
+      } else {
+        tokenLanePatterns = [0, 1, 2]
+          .filter((l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'))
+          .map((l) => [l]);
+        if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
+      }
     } else if (action === 'seal_lanes') {
       const avail = [0, 1, 2].filter(
         (l) =>
@@ -2198,17 +2206,21 @@ export function getBestSimulatedMove() {
       tokenLanePatterns = combs.length > 0 ? combs : [null];
     } else if (action === 'elf_polarbear_combo') {
       const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
-      const enemyOcc = oppGuarded
-        ? []
-        : [0, 1, 2].filter(
-            (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
-          );
-      const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
-      let combs = [];
-      if (enemyOcc.length > 0 && myAvail.length > 0) {
-        for (let e of enemyOcc) for (let m of myAvail) combs.push([e, m]);
-        tokenLanePatterns = combs;
-      } else tokenLanePatterns = [null];
+      if (oppGuarded) {
+        tokenLanePatterns = [];
+      } else {
+        const enemyOcc = [0, 1, 2].filter(
+          (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
+        );
+        const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
+        let combs = [];
+        if (enemyOcc.length > 0 && myAvail.length > 0) {
+          for (let e of enemyOcc) for (let m of myAvail) combs.push([e, m]);
+          tokenLanePatterns = combs;
+        } else {
+          tokenLanePatterns = [];
+        }
+      }
     } else if (action === 'void_purge') {
       tokenLanePatterns = [null];
     } else if (action === 'viola_domination') {
@@ -3453,10 +3465,7 @@ export function evaluateAdhocTokenLanes(
           const destroyedCard =
             tgtLane === laneIdx ? tokenCard : activeEnemyBoard[tgtLane];
           // canCardBeDestroyed が参照するのは加護カウンターのみのため軽量オブジェクトを生成
-          const projectedState = {
-            valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
-            valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
-          };
+          const projectedState = createGuardProjectedState();
           const isDestroyable =
             destroyedCard &&
             canCardBeDestroyed(projectedState, destroyedCard, 'red');
