@@ -7,6 +7,7 @@ export const HANDICAP_TYPES = {
   ENEMY_SP: 'enemy_sp', // 敵のSPコスト・上限変動
   SPAWN_ENEMY: 'spawn_enemy', // 敵陣への初期カード配置
   ENEMY_LEADER_SKILL_CHANGE: 'enemy_leader_skill_change', // 敵のリーダースキル変更
+  ENEMY_TURN_END_SALVAGE: 'enemy_turn_end_salvage', // 相手のターン終了時回収スキル発動
 };
 
 // 特級目標のマスター定義
@@ -104,6 +105,20 @@ export const HANDICAP_MASTER = {
     name: '敵の右レーンに「ボーダーエンフォーサー(P:4, 初回攻撃不可)」配置',
     cost: 2,
   },
+  enemy_center_fenrir: {
+    id: 'enemy_center_fenrir',
+    type: HANDICAP_TYPES.SPAWN_ENEMY,
+    lane: 1,
+    cardId: 'fenrir',
+    name: '敵の中央レーンに「炎の魔狼(P:4, 初回攻撃不可)」配置',
+    cost: 2,
+  },
+  enemy_turn_end_salvage: {
+    id: 'enemy_turn_end_salvage',
+    type: HANDICAP_TYPES.ENEMY_TURN_END_SALVAGE,
+    name: '相手のターン終了時、回収3が発動',
+    cost: 2,
+  },
   enemy_leader_skill_change: {
     id: 'enemy_leader_skill_change',
     type: HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE,
@@ -140,8 +155,8 @@ export const CHAR_FORTUNE_HANDICAPS = {
     HANDICAP_MASTER.enemy_hp_plus_20,
     HANDICAP_MASTER.sp_plus_1,
     HANDICAP_MASTER.enemy_sp_minus_1,
-    HANDICAP_MASTER.enemy_left_cop,
-    HANDICAP_MASTER.enemy_right_cop,
+    HANDICAP_MASTER.enemy_center_fenrir,
+    HANDICAP_MASTER.enemy_turn_end_salvage,
     HANDICAP_MASTER.enemy_leader_skill_change,
   ],
 };

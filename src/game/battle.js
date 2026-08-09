@@ -3778,6 +3778,26 @@ export async function endTurnLogic(o) {
       renderHand();
     }
 
+    const isFortuneMode =
+      GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_fortune');
+
+    // 運命の邂逅ハンディキャップ：相手（赤）のターン終了時、回収3発動
+    if (
+      o === 'red' &&
+      isFortuneMode &&
+      GameState.fortuneHandicaps &&
+      GameState.fortuneHandicaps.enemy_turn_end_salvage
+    ) {
+      // 墓地にトークン以外の有効なカードが存在する場合のみ回収3を実行（墓地にカードがない場合は捨てない）
+      const validCardsInDiscard = (GameState.enemyDiscard || []).filter(
+        (card) => !card.isToken
+      );
+      if (validCardsInDiscard.length > 0) {
+        await resolveActiveSkillEffect('red', 1, null, 'salvage', 3);
+      }
+    }
+
     renderBoard();
     let nextOwner = o === 'blue' ? 'red' : 'blue';
     if (GameState.extraTurnCount > 0) {
