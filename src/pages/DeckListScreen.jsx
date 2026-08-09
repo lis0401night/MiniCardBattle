@@ -921,21 +921,24 @@ export default function DeckListScreen({ switchScreen }) {
           id="trash-can-zone"
           style={{
             position: 'absolute',
-            right: '15px',
-            width: '50px',
-            height: '50px',
+            right: '30px',
+            top: '50%',
+            width: '44px',
+            height: '44px',
             borderRadius: '50%',
             background: isHoveringTrash ? '#ef4444' : '#334155',
             border: `2px solid ${isHoveringTrash ? '#fff' : '#475569'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.8rem',
+            fontSize: '1.5rem',
             boxShadow: isHoveringTrash
               ? '0 0 20px #ef4444'
               : '0 5px 10px rgba(0,0,0,0.5)',
             cursor: dragIndex !== null ? 'default' : 'pointer',
-            transform: isHoveringTrash ? 'scale(1.2)' : 'scale(1)',
+            transform: isHoveringTrash
+              ? 'translateY(-50%) scale(1.2)'
+              : 'translateY(-50%) scale(1)',
             transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           }}
           onClick={() => {

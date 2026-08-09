@@ -3774,4 +3774,5 @@ export const PREMIUM_CARD_IDS = [
   // --- シリアルコード ---
   'cheetah',
   'tortoise',
+  'sniper',
 ];

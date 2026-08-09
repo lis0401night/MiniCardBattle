@@ -18,5 +18,10 @@
     "rewardType": "premium",
     "rewardValue": "tortoise",
     "rewardName": "鉄亀"
+  },
+  "S9N4-P2K8-R5M1-L7D3": {
+    "rewardType": "premium",
+    "rewardValue": "sniper",
+    "rewardName": "森の射手"
   }
 }

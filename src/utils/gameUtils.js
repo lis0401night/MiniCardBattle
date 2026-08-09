@@ -744,6 +744,7 @@ export const VALID_PREMIUM_CARDS = [
   'tortoise',
   'liberator',
   'dwarf',
+  'sniper',
 ];
 
 /**
