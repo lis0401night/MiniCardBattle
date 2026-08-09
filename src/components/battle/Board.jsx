@@ -3,6 +3,7 @@ import { GameState } from '../../state/gameState.js';
 import { PLAYMAT_MASTER } from '../../utils/constants/playmats.js';
 import { hasSkill } from '../../utils/gameUtils.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
+import { isValkyriaGuardActive } from '../../game/engine.js';
 import Card from './Card.jsx';
 
 /**
@@ -135,7 +136,10 @@ export default function Board({
                   key={`enemy-card-${lane}-${card.uid || card.id}`}
                   cardObj={card}
                   isBoard={true}
-                  isValkyriaGuardActive={(GameState.valkyriaGuardRed || 0) > 0}
+                  isValkyriaGuardActive={isValkyriaGuardActive(
+                    GameState,
+                    'red'
+                  )}
                   className={isSelected ? 'selected' : ''}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -229,7 +233,10 @@ export default function Board({
                   key={`player-card-${lane}-${card.uid || card.id}`}
                   cardObj={card}
                   isBoard={true}
-                  isValkyriaGuardActive={(GameState.valkyriaGuardBlue || 0) > 0}
+                  isValkyriaGuardActive={isValkyriaGuardActive(
+                    GameState,
+                    'blue'
+                  )}
                   className={isSelected ? 'selected' : ''}
                   onClick={(e) => {
                     e.stopPropagation();

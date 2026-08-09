@@ -18,6 +18,10 @@ export const VALKYRIA_GUARD_TURNS = 1;
 const GOD_FLAME_AMOUNT = 3;
 /** 断罪のクロスのダメージ量および回復量 */
 const CONDEMNATION_AMOUNT = 5;
+/** 凶兆(portent)の強化基準HP。自分のリーダーHPがこの値を下回るほど強化される */
+const PORTENT_THRESHOLD_HP = 13;
+/** ラグナロクの全体カードダメージ量 */
+const RAGNAROK_CARD_DAMAGE_AMOUNT = 2;
 
 /**
  * 指定サイドの戦乙女の加護状態を解除（クリア）する
@@ -967,7 +971,7 @@ export function applyActiveSkillLogic(
     case 'portent': {
       const currentHp =
         owner === 'blue' ? state?.playerHP || 0 : state?.enemyHP || 0;
-      const bonus = Math.max(0, 13 - (currentHp || 0));
+      const bonus = Math.max(0, PORTENT_THRESHOLD_HP - currentHp);
       if (bonus > 0) {
         c.currentPower += bonus;
         events.push({
@@ -2325,12 +2329,10 @@ function tryEquipToken(state, board, lane, newToken, owner, events) {
 }
 
 /**
- * ダメージ＋回復系リーダースキル（神炎 god_flame / 断罪の聖域 condemnation）の共通実行ヘルパー
+ * ダメージ＋回復系リーダースキル（神炎 god_flame / 断罪のクロス condemnation）の共通実行ヘルパー
  * @param {Object} state - バトル状態オブジェクト
  * @param {string} action - スキルID ('god_flame' | 'condemnation')
  * @param {string} owner - スキル発動者 ('blue' | 'red')
- * @param {string} oppOwner - 相手 ('red' | 'blue')
- * @param {boolean} isBlue - 発動者がブルー（プレイヤー）か
  * @param {number} damageAmount - 与えるダメージ量および回復量
  * @param {Array} events - イベントログ配列
  */
@@ -2338,11 +2340,11 @@ function executeFlameHealLeaderSkill(
   state,
   action,
   owner,
-  oppOwner,
-  isBlue,
   damageAmount,
   events
 ) {
+  const isBlue = owner === 'blue';
+  const oppOwner = isBlue ? 'red' : 'blue';
   events.push({ type: 'leader_skill', skill: action, side: owner });
   damageLeader(state, oppOwner, damageAmount, action, events);
   if (!isMiasmaActive(state)) {
@@ -3990,22 +3992,12 @@ export function applyLeaderSkillLogic(
       }
     }
   } else if (action === 'god_flame') {
-    executeFlameHealLeaderSkill(
-      state,
-      action,
-      owner,
-      oppOwner,
-      isBlue,
-      GOD_FLAME_AMOUNT,
-      events
-    );
+    executeFlameHealLeaderSkill(state, action, owner, GOD_FLAME_AMOUNT, events);
   } else if (action === 'condemnation') {
     executeFlameHealLeaderSkill(
       state,
       action,
       owner,
-      oppOwner,
-      isBlue,
       CONDEMNATION_AMOUNT,
       events
     );
@@ -4076,10 +4068,18 @@ export function applyLeaderSkillLogic(
     grantValkyriaGuard(state, owner, events);
   } else if (action === 'ragnarok') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
-    // 敵の場のすべてのカードに4ダメージを与える
+    // 敵の場のすべてのカードに2ダメージを与える
     for (let i = 0; i < 3; i++) {
       if (eBoard[i]) {
-        damageCard(state, oppOwner, i, 4, 'ragnarok', events, true);
+        damageCard(
+          state,
+          oppOwner,
+          i,
+          RAGNAROK_CARD_DAMAGE_AMOUNT,
+          'ragnarok',
+          events,
+          true
+        );
       }
     }
     // 戦乙女の加護を自分に付与
@@ -5456,7 +5456,8 @@ export function applyPassiveSkillLogic(
   }
   processDestructionTriggers(state, events);
 
-  // 戦乙女の加護: ターン開始時スキル（契約等の自傷ダメージ）の解決完了後に自身の加護効果を終了（クリア）
+  // 戦乙女の加護: ターン開始時スキル（「契約」等の自傷ダメージ）の解決完了後に自身の加護効果を終了（クリア）
+  // ※実戦進行側 (battle.js startTurn) と同一の順序・仕様で揃えています
   clearValkyriaGuard(state, side);
 
   return events;

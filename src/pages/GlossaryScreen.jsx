@@ -71,19 +71,12 @@ export default function GlossaryScreen() {
    * @param {number} categoryIndex - 大項目のインデックス
    * @returns {void}
    */
-  const toggleCategory = useCallback(
-    (categoryIndex) => {
-      const isOpen = openCategories.has(categoryIndex);
-      if (isOpen) {
-        setOpenCategories(new Set());
-        setOpenTerms(new Set());
-      } else {
-        setOpenCategories(new Set([categoryIndex]));
-        setOpenTerms(new Set());
-      }
-    },
-    [openCategories]
-  );
+  const toggleCategory = useCallback((categoryIndex) => {
+    setOpenCategories((prev) =>
+      prev.has(categoryIndex) ? new Set() : new Set([categoryIndex])
+    );
+    setOpenTerms(new Set());
+  }, []);
 
   /**
    * 中項目のアコーディオン開閉をトグルする
@@ -91,17 +84,11 @@ export default function GlossaryScreen() {
    * @param {string} termKey - 中項目の一意キー（"カテゴリIndex-用語Index"）
    * @returns {void}
    */
-  const toggleTerm = useCallback(
-    (termKey) => {
-      const isOpen = openTerms.has(termKey);
-      if (isOpen) {
-        setOpenTerms(new Set());
-      } else {
-        setOpenTerms(new Set([termKey]));
-      }
-    },
-    [openTerms]
-  );
+  const toggleTerm = useCallback((termKey) => {
+    setOpenTerms((prev) =>
+      prev.has(termKey) ? new Set() : new Set([termKey])
+    );
+  }, []);
 
   return (
     <ScreenLayout
@@ -160,10 +147,7 @@ export default function GlossaryScreen() {
 
                         {/* 説明文（アニメーション付き） */}
                         <AccordionPanel isOpen={isTermOpen}>
-                          <div
-                            className="glossary-description"
-                            style={{ whiteSpace: 'pre-line' }}
-                          >
+                          <div className="glossary-description">
                             {term.description}
                           </div>
                         </AccordionPanel>

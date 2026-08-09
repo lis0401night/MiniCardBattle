@@ -185,8 +185,8 @@ export default function RankingScreen({
               const clearedDataAutomata = loadFortuneClearedData('automata');
               const clearedDataValkyria = loadFortuneClearedData('valkyria');
               const fortuneMaxGrade = Math.max(
-                clearedDataAutomata.maxGradeLevel,
-                clearedDataValkyria.maxGradeLevel,
+                clearedDataAutomata.maxGradeLevel || 0,
+                clearedDataValkyria.maxGradeLevel || 0,
                 0
               );
               const fortuneTotalCostAutomata =

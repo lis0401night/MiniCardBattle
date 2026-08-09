@@ -4218,6 +4218,9 @@ body.vfx-shake {
   max-height: 50dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Firefox等のWebKit系以外でもスクロールバー表示を統一する */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(250, 204, 21, 0.4) rgba(0, 0, 0, 0.3);
 }
 
 /* カテゴリ内スクロールバー */
@@ -4282,7 +4285,7 @@ body.vfx-shake {
   font-size: 0.85rem;
   line-height: 1.6;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  white-space: pre-wrap;
+  white-space: pre-line;
 }
 
 /* アコーディオン矢印 */

@@ -48,7 +48,6 @@ import {
 import {
   applyLeaderSkillLogic,
   applySingleCombat,
-  isMiasmaActive,
   isValkyriaGuardActive,
   processDestructionTriggers,
 } from './engine.js';
@@ -2000,16 +1999,6 @@ export async function executeLeaderSkillAction(
     }
   }
 
-  // god_flame / condemnation による回復が「瘴気」で阻害された場合の演出再生（VFXの有無に関わらず実行）
-  if (action === 'god_flame' || action === 'condemnation') {
-    if (isMiasmaActive(GameState)) {
-      const miasmaEvents = createMiasmaEvents(GameState);
-      if (miasmaEvents.length > 0) {
-        await playEvents(miasmaEvents);
-      }
-    }
-  }
-
   // イベントログを再生（再生中にGameStateと描画が逐次更新される）
   // dragon_summon / dragon_high_ritual: イグニストークンのimgUrlを現在設定中のスキンに合わせて書き換える
   // （engine.jsは純粋関数のためGameStateにアクセスできないため、ここでパッチする）
@@ -2050,6 +2039,15 @@ export async function executeLeaderSkillAction(
     GameState.enemyBoard = savedEnemyBoard;
 
     await playEvents(events);
+
+    // god_flame / condemnation による回復が「瘴気」で阻害された場合の演出をダメージ演出の後に再生する
+    if (action === 'god_flame' || action === 'condemnation') {
+      const miasmaEvents = createMiasmaEvents(GameState);
+      if (miasmaEvents.length > 0) {
+        await playEvents(miasmaEvents);
+      }
+    }
+
     // リーダースキルによる演出が完了したので、配置したカードの保護フラグを解除
     events.forEach((ev) => {
       if (

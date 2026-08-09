@@ -201,8 +201,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       const clearedAutomata = loadFortuneClearedData('automata');
       const clearedValkyria = loadFortuneClearedData('valkyria');
       const maxGrade = Math.max(
-        clearedAutomata.maxGradeLevel,
-        clearedValkyria.maxGradeLevel,
+        clearedAutomata.maxGradeLevel || 0,
+        clearedValkyria.maxGradeLevel || 0,
         0
       );
 
@@ -236,11 +236,30 @@ export async function syncModePoints(mode, serverPlayerData = null) {
             (serverPlayerData.fortune_max_total_cost_valkyria || 0));
 
       if (localTotal > sTotal || localPts > sPts || shouldSyncFortuneProgress) {
-        // ポイントは必ずサーバー値との最大値を送信し、他端末で稼いだ記録の巻き戻しを防ぐ
+        // ポイントおよび進行情報は必ずサーバー値との最大値を送信し、他端末で稼いだ記録の巻き戻しを防ぐ
         const sendPts = Math.max(localPts, sPts);
         const sendTotal = Math.max(localTotal, sTotal);
-        await savePointsToServer(endpoint, sendPts, sendTotal, extraData);
-        return { points: sendPts, totalPoints: sendTotal, ...extraData };
+        const syncExtraData =
+          mode === 'fortune'
+            ? {
+                ...extraData,
+                fortune_max_grade: Math.max(
+                  extraData.fortune_max_grade || 0,
+                  serverPlayerData.fortune_max_grade || 0
+                ),
+                fortune_max_total_cost_automata: Math.max(
+                  extraData.fortune_max_total_cost_automata || 0,
+                  serverAutomataMaxCost || 0
+                ),
+                fortune_max_total_cost_valkyria: Math.max(
+                  extraData.fortune_max_total_cost_valkyria || 0,
+                  serverPlayerData.fortune_max_total_cost_valkyria || 0
+                ),
+              }
+            : extraData;
+
+        await savePointsToServer(endpoint, sendPts, sendTotal, syncExtraData);
+        return { points: sendPts, totalPoints: sendTotal, ...syncExtraData };
       }
     } else {
       // サーバーデータがない場合（新規プレイヤーかつ初回同期）、ローカルに蓄積されたスコアまたは進行データがあればサーバーに新規構築する

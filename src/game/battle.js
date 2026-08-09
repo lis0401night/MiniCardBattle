@@ -3597,7 +3597,8 @@ export async function startTurn(owner) {
   await triggerStartTurnSkills(owner);
   if (GameState.isBattleEnded) return;
 
-  // 戦乙女の加護: ターン開始時スキルの解決後に自身の加護効果を終了（クリア）
+  // 戦乙女の加護: ターン開始時スキル（「契約」等の自傷ダメージ）の解決完了後に自身の加護効果を終了（クリア）
+  // ※AIシミュレーション側 (engine.js resolveTurnStartSkills) と同一の順序・仕様で揃えています
   clearValkyriaGuard(GameState, owner);
 
   // 移動スキルの処理
