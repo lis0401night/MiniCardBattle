@@ -78,7 +78,7 @@ export const SKILLS = {
   portent: {
     name: '凶兆',
     icon: '🔪',
-    desc: (val) => `召喚時、${val || 13} - 自分のHP分だけパワーを上げる。`,
+    desc: () => '召喚時、13 - 自分リーダーのHP分だけパワーを上げる。',
   },
   soul_bind: {
     name: '魂縛',

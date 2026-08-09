@@ -1601,7 +1601,7 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'portent') {
     // 【開発ガイドライン適用】直接トリガー型アクティブスキル：凶兆
     const currentHp = o === 'blue' ? GameState.playerHp : GameState.enemyHp;
-    const bonus = Math.max(0, (skillValue || 13) - (currentHp || 0));
+    const bonus = Math.max(0, 13 - (currentHp || 0));
     if (bonus > 0) {
       c.currentPower = (c.currentPower || 0) + bonus;
 
