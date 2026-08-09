@@ -59,6 +59,7 @@ import {
   canCardBeDestroyed,
   getDamageBlockType,
   isValkyriaGuardActive,
+  BLOCK_TYPE_EVENT_MAP,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { scanMissionEvents } from './missionLogic.js';
@@ -3633,7 +3634,7 @@ export async function triggerStartTurnPassive(owner, lane) {
           });
         } else {
           events.push({
-            type: `${blockType}_block`,
+            type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
             side: oppOwner,
             lane: maxL,
             source: 'intercept',

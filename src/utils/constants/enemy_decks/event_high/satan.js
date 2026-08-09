@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Satan (高難易度)
- * 魔王サタンの高難易度デッキ
+ * 敵デッキ定義：魔王 サタン（高難易度イベント）
+ * 魔王サタン専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'whiterider',

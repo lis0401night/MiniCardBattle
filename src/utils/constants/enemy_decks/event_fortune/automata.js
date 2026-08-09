@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Automata (Fortune Event)
- * マキナの運命の邂逅イベント用専用デッキ（20枚）
+ * 敵デッキ定義：廃鉄の声 マキナ（運命の邂逅イベント）
+ * マキナ専用の運命の邂逅用デッキ構成データ
  */
 export default [
   'agent',

@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：隷属の女王 ヴィオラ（ボス・通常対戦・難易度別）
+ * ヴィオラの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'dealer',

@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：時駆けの魔女 クロエ（通常対戦・難易度別）
+ * クロエの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'cat',

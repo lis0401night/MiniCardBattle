@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Valkyria (Tournament Event)
- * アンジェの夢幻の闘技祭用専用デッキ
+ * 敵デッキ定義：運命の戦乙女 アンジェ（夢幻の闘技祭イベント）
+ * アンジェ専用の夢幻の闘技祭用デッキ構成データ
  */
 export default [
   [

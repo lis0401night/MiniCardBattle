@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Valkyria (Fortune Event)
- * アンジェの運命の邂逅イベント用専用デッキ（20枚）
+ * 敵デッキ定義：運命の戦乙女 アンジェ（運命の邂逅イベント）
+ * アンジェ専用の運命の邂逅用デッキ構成データ
  */
 export default [
   'gungnir',

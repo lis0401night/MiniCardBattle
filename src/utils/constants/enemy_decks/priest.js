@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：王墓の守護者 ネフティ（通常対戦・難易度別）
+ * ネフティの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'camel',

@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Knight (高難易度)
- * セレスティアの高難易度デッキ
+ * 敵デッキ定義：聖騎士 セレスティア（高難易度イベント）
+ * セレスティア専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'darkpaladin',

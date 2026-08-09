@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：魔王 サタン（ボス・通常対戦・難易度別）
+ * サタンの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'dealer',

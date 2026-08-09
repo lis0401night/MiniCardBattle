@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：鬼血の陰陽師 カグラ（通常対戦・難易度別）
+ * カグラの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'gashadokuro',

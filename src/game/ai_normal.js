@@ -183,6 +183,32 @@ const getCombinations = (arr, k) => {
  * 計算コストの削減のためにシミュレーションの質を落とすことは、このAIにおいて許容されない。
  */
 
+/**
+ * AIシミュレーション中にカードへ一時保留されていた即時スキルを発動し、保留リストを削除する
+ *
+ * @param {Object} simState - シミュレーション状態オブジェクト
+ * @param {Object|null} card - 保留スキルを持つカードオブジェクト
+ * @param {number} lane - カードが配置されているレーンインデックス
+ * @returns {void}
+ */
+function flushPendingSimSkills(simState, card, lane) {
+  if (!card || !Array.isArray(card._pendingSimSkills)) return;
+  if (card._pendingSimSkills.length === 0) return;
+  for (const pendingSk of card._pendingSimSkills) {
+    applyActiveSkillLogic(
+      simState,
+      'red',
+      lane,
+      pendingSk.id,
+      pendingSk.value,
+      [],
+      null,
+      undefined
+    );
+  }
+  delete card._pendingSimSkills;
+}
+
 export function processActionSequence(
   actionQueue,
   isLeaderSkillPlay = false,
@@ -477,26 +503,7 @@ export function processActionSequence(
           // 連鎖スキルがスキップされた場合でも、親カードに保留されていた
           // 即時スキル（quick/snipe等）は発動する必要がある
           for (let i = 0; i < 3; i++) {
-            const pc = parentCardOnLane[i];
-            if (
-              pc &&
-              Array.isArray(pc._pendingSimSkills) &&
-              pc._pendingSimSkills.length > 0
-            ) {
-              for (const pendingSk of pc._pendingSimSkills) {
-                applyActiveSkillLogic(
-                  simState,
-                  'red',
-                  i,
-                  pendingSk.id,
-                  pendingSk.value,
-                  [],
-                  null,
-                  undefined
-                );
-              }
-              delete pc._pendingSimSkills;
-            }
+            flushPendingSimSkills(simState, parentCardOnLane[i], i);
           }
           continue;
         }
@@ -1143,26 +1150,7 @@ export function processActionSequence(
         action.type === 'forge'
       ) {
         for (let i = 0; i < 3; i++) {
-          const pc = parentCardOnLane[i];
-          if (
-            pc &&
-            Array.isArray(pc._pendingSimSkills) &&
-            pc._pendingSimSkills.length > 0
-          ) {
-            for (const pendingSk of pc._pendingSimSkills) {
-              applyActiveSkillLogic(
-                simState,
-                'red',
-                i,
-                pendingSk.id,
-                pendingSk.value,
-                [],
-                null,
-                undefined
-              );
-            }
-            delete pc._pendingSimSkills;
-          }
+          flushPendingSimSkills(simState, parentCardOnLane[i], i);
         }
       }
     }
@@ -1171,26 +1159,7 @@ export function processActionSequence(
     // 連鎖スキル（forge/invite/chant）の子アクションがアクションキューに
     // 生成されなかった場合でも、保留された即時スキルを必ず発動させる。
     for (let i = 0; i < 3; i++) {
-      const bc = simState.enemyBoard[i];
-      if (
-        bc &&
-        Array.isArray(bc._pendingSimSkills) &&
-        bc._pendingSimSkills.length > 0
-      ) {
-        for (const pendingSk of bc._pendingSimSkills) {
-          applyActiveSkillLogic(
-            simState,
-            'red',
-            i,
-            pendingSk.id,
-            pendingSk.value,
-            [],
-            null,
-            undefined
-          );
-        }
-        delete bc._pendingSimSkills;
-      }
+      flushPendingSimSkills(simState, simState.enemyBoard[i], i);
     }
 
     // アクションキュー全解決後、敵の攻撃（プレイヤーのダイレクトアタック）をシミュレートする前に

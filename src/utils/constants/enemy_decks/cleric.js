@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：狂信の聖職者 エリシア（通常対戦・難易度別）
+ * エリシアの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'pegasus',

@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Cthulhu (高難易度)
- * ナイアの高難易度デッキ
+ * 敵デッキ定義：深淵の呼び声 ナイア（高難易度イベント）
+ * ナイア専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'shoggoth',

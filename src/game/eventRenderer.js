@@ -163,6 +163,17 @@ export async function playEvents(events) {
         await sleep(200);
         break;
       }
+      case 'dodge_block': {
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '回避', '#38bdf8');
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
       case 'double_strike_proc': {
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`

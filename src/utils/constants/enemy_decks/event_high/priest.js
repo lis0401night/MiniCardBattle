@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Priest (高難易度)
- * ネフティの高難易度デッキ
+ * 敵デッキ定義：王墓の守護者 ネフティ（高難易度イベント）
+ * ネフティ専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'cleopatra',

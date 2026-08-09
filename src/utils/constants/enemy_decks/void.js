@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：虚空の騎士 ゼノン（ボス・通常対戦・難易度別）
+ * ゼノンの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'dealer',

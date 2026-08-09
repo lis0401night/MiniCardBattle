@@ -4981,6 +4981,25 @@ export function endBattle() {
         incrementStat('eventClear', `${charId}_high`);
       }
 
+      /**
+       * 運命の邂逅の進行値をサーバーへ同期するためのペイロードを組み立てる
+       * @param {string} fortuneCharId - 対戦キャラクターID
+       * @param {Object} result - calculateFortuneRewards の戻り値
+       * @returns {Object} 同期用の追加パラメータ
+       */
+      const buildFortuneSyncExtra = (fortuneCharId, result) => {
+        const extra = {
+          fortune_max_grade: result.newMaxGradeLevel,
+          fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+          fortune_max_total_cost: result.newMaxTotalCost,
+        };
+        if (fortuneCharId) {
+          extra[`fortune_max_total_cost_${fortuneCharId}`] =
+            result.newMaxTotalCost;
+        }
+        return extra;
+      };
+
       // --- 運命の邂逅：特級目標ポイント付与処理 ---
       if (
         GameState.gameMode.startsWith('event_') &&
@@ -5024,21 +5043,7 @@ export function endBattle() {
           );
 
           // サーバーへポイントと達成情報を同期（対戦キャラクターごとの合計目標値も送信）
-          const fortuneSyncExtra = {
-            fortune_max_grade: result.newMaxGradeLevel,
-            fortune_cleared: JSON.stringify(result.newClearedHandicaps),
-            fortune_max_total_cost: result.newMaxTotalCost,
-          };
-          if (fortuneCharId === 'valkyria') {
-            fortuneSyncExtra.fortune_max_total_cost_valkyria =
-              result.newMaxTotalCost;
-          } else if (fortuneCharId === 'automata') {
-            fortuneSyncExtra.fortune_max_total_cost_automata =
-              result.newMaxTotalCost;
-          } else if (fortuneCharId) {
-            fortuneSyncExtra[`fortune_max_total_cost_${fortuneCharId}`] =
-              result.newMaxTotalCost;
-          }
+          const fortuneSyncExtra = buildFortuneSyncExtra(fortuneCharId, result);
 
           savePointsToServer(
             'update_fortune_points.php',
@@ -5091,21 +5096,10 @@ export function endBattle() {
           let totalPts =
             parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
 
-          const fortuneSyncExtraZero = {
-            fortune_max_grade: result.newMaxGradeLevel,
-            fortune_cleared: JSON.stringify(result.newClearedHandicaps),
-            fortune_max_total_cost: result.newMaxTotalCost,
-          };
-          if (fortuneCharId === 'valkyria') {
-            fortuneSyncExtraZero.fortune_max_total_cost_valkyria =
-              result.newMaxTotalCost;
-          } else if (fortuneCharId === 'automata') {
-            fortuneSyncExtraZero.fortune_max_total_cost_automata =
-              result.newMaxTotalCost;
-          } else if (fortuneCharId) {
-            fortuneSyncExtraZero[`fortune_max_total_cost_${fortuneCharId}`] =
-              result.newMaxTotalCost;
-          }
+          const fortuneSyncExtraZero = buildFortuneSyncExtra(
+            fortuneCharId,
+            result
+          );
 
           savePointsToServer(
             'update_fortune_points.php',

@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Cleric (高難易度)
- * エリシアの高難易度デッキ
+ * 敵デッキ定義：狂信の聖職者 エリシア（高難易度イベント）
+ * エリシア専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'goddess',

@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Elf (高難易度)
- * リナの高難易度デッキ
+ * 敵デッキ定義：流浪の射手 リナ（高難易度イベント）
+ * リナ専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'elfking',

@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：深淵の呼び声 ナイア（通常対戦・難易度別）
+ * ナイアの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'prince',

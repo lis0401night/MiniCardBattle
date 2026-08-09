@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Android (高難易度)
- * アイギスの高難易度デッキ
+ * 敵デッキ定義：機動戦姫 アイギス（高難易度イベント）
+ * アイギス専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'gearA',

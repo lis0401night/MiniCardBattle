@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Automata (Tournament Event)
- * マキナの夢幻の闘技祭用専用デッキ（20枚 x 2パターン）
+ * 敵デッキ定義：廃鉄の声 マキナ（夢幻の闘技祭イベント）
+ * マキナの夢幻の闘技祭専用デッキ構成データ
  */
 export default [
   [

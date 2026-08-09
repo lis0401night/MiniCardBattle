@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：闇の総帥 バルタザール（ボス・通常対戦・難易度別）
+ * バルタザールの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'dealer',

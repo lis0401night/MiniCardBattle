@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：聖騎士 セレスティア（通常対戦・難易度別）
+ * セレスティアの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'horse',

@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Devilhunter (高難易度)
- * マリアの高難易度デッキ
+ * 敵デッキ定義：悪魔狩り マリア（高難易度イベント）
+ * マリア専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'doll',

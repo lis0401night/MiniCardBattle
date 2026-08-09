@@ -87,6 +87,57 @@ export function canCardBeDestroyed(state, card, side = null) {
   return true;
 }
 
+/** ダメージブロック種別から演出イベント種別へのマッピング定数 */
+export const BLOCK_TYPE_EVENT_MAP = {
+  valkyria_guard: 'valkyria_guard_block',
+  immune: 'immune_block',
+  dodge: 'dodge_block',
+};
+
+/**
+ * カードへのダメージのブロック判定を行い、ブロック時は対応するイベントを積む
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {Object} card - 対象カード
+ * @param {number} amount - ダメージ量
+ * @param {boolean} isSkill - スキルダメージかどうか
+ * @param {string} side - カードの所有者 ('blue'|'red')
+ * @param {number} lane - 対象レーン
+ * @param {string|null} source - ダメージ発生源
+ * @param {Array} events - イベントログ配列
+ * @returns {boolean} ブロックされた場合は true
+ */
+export function pushDamageBlockEvent(
+  state,
+  card,
+  amount,
+  isSkill,
+  side,
+  lane,
+  source,
+  events
+) {
+  const blockType = getDamageBlockType(card, amount, isSkill, state, side);
+  if (!blockType) return false;
+  if (blockType === 'valkyria_guard') {
+    events.push({
+      type: 'valkyria_guard_block',
+      side,
+      lane,
+      amount,
+      source: source || undefined,
+    });
+  } else {
+    events.push({
+      type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
+      side,
+      lane,
+      source: source || undefined,
+    });
+  }
+  return true;
+}
+
 /**
  * カードが受けるダメージのブロック理由（無効化原因）を取得する
  * ※ state は呼び出し側が必ず渡すこと（グローバル状態を参照するとAIシミュレーションが破綻するため）
@@ -4448,7 +4499,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             effectiveDmg = 0;
           } else {
             events.push({
-              type: `${blockType}_block`,
+              type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
               side: defSide,
               lane: targetLane,
               source: 'cleave',
@@ -4521,30 +4572,20 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
     if (isOriginalTargetDefender) dmgToAtk = 0;
 
-    if (dmgToAtk > 0) {
-      const blockType = getDamageBlockType(
+    if (
+      dmgToAtk > 0 &&
+      pushDamageBlockEvent(
+        state,
         aC_defend,
         dmgToAtk,
         false,
-        state,
-        attackerSide
-      );
-      if (blockType === 'valkyria_guard') {
-        events.push({
-          type: 'valkyria_guard_block',
-          side: attackerSide,
-          lane: aLane,
-          amount: dmgToAtk,
-        });
-        dmgToAtk = 0;
-      } else if (blockType) {
-        events.push({
-          type: `${blockType}_block`,
-          side: attackerSide,
-          lane: aLane,
-        });
-        dmgToAtk = 0;
-      }
+        attackerSide,
+        aLane,
+        null,
+        events
+      )
+    ) {
+      dmgToAtk = 0;
     }
 
     if (dmgToAtk > 0) {
@@ -4804,7 +4845,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         dmgToDef = 0;
       } else if (blockType) {
         events.push({
-          type: `${blockType}_block`,
+          type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
           side: defSide,
           lane: dLane,
         });
@@ -4903,30 +4944,20 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         // 場にカードが存在しない場合は肩代わり不可、通常通りダメージを受ける
       }
     }
-    if (dmgToAtk > 0) {
-      const blockType = getDamageBlockType(
+    if (
+      dmgToAtk > 0 &&
+      pushDamageBlockEvent(
+        state,
         aC_defend,
         dmgToAtk,
         false,
-        state,
-        attackerSide
-      );
-      if (blockType === 'valkyria_guard') {
-        events.push({
-          type: 'valkyria_guard_block',
-          side: attackerSide,
-          lane: aLane,
-          amount: dmgToAtk,
-        });
-        dmgToAtk = 0;
-      } else if (blockType) {
-        events.push({
-          type: `${blockType}_block`,
-          side: attackerSide,
-          lane: aLane,
-        });
-        dmgToAtk = 0;
-      }
+        attackerSide,
+        aLane,
+        null,
+        events
+      )
+    ) {
+      dmgToAtk = 0;
     }
     if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
       if (dmgToAtk > 0)
@@ -5460,7 +5491,7 @@ export function applyPassiveSkillLogic(
           });
         } else {
           events.push({
-            type: `${blockType}_block`,
+            type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
             side: oppSide,
             lane: maxL,
             source: 'intercept',

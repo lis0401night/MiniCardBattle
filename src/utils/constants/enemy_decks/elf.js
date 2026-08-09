@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：流浪の射手 リナ（通常対戦・難易度別）
+ * リナの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'bird',

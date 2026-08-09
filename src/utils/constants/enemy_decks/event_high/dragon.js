@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Dragon (高難易度)
- * イグニスの高難易度デッキ
+ * 敵デッキ定義：焔竜姫 イグニス（高難易度イベント）
+ * イグニス専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'hellkite',

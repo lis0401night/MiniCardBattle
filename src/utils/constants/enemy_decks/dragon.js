@@ -1,3 +1,7 @@
+/**
+ * 敵デッキ定義：焔竜姫 イグニス（通常対戦・難易度別）
+ * イグニスの難易度別（easy / normal / hard）デッキ構成データ
+ */
 export default {
   easy: [
     'babydragon',

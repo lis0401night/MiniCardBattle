@@ -56,29 +56,18 @@ export default function RoomTypeSelectModal({
   }, [isOpen]);
 
   /**
-   * Escapeキーによるキャンセル操作をモーダル外からでも確実に受け付けるエフェクト
-   */
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        playSound?.(SOUNDS?.seClick);
-        if (onCancel) onCancel();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onCancel]);
-
-  /**
-   * モーダル内でのTabキーによるフォーカストラップの処理ハンドラ
+   * モーダル内でのキーボード操作（Escape によるキャンセル、Tab によるフォーカストラップ）ハンドラ
    * @param {React.KeyboardEvent} e - キーボードイベント
    * @returns {void}
    */
   const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      playSound?.(SOUNDS?.seClick);
+      if (onCancel) onCancel();
+      return;
+    }
+
     if (e.key === 'Tab' && modalRef.current) {
       const focusables = Array.from(
         modalRef.current.querySelectorAll(

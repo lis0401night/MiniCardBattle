@@ -1,6 +1,6 @@
 /**
- * Mini Card Battle - Enemy Deck: Oni (高難易度)
- * カグラの高難易度デッキ
+ * 敵デッキ定義：鬼血の陰陽師 カグラ（高難易度イベント）
+ * カグラ専用の高難易度イベント用デッキ構成データ
  */
 export default [
   'seimei',
