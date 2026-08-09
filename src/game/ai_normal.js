@@ -429,41 +429,6 @@ export function processActionSequence(
         }
       }
 
-      // 【連鎖スキル完了後の保留スキル発動】
-      // 連鎖スキル（forge/invite/chant）の子アクション処理開始時に、
-      // 親カードに保留されていた即時スキル（quick/snipe等）を発動する。
-      // これにより装備合体やカード追加配置が完了した状態で速攻や砲撃が正しく実行される。
-      // （実戦のbattle.js resolveOnPlaySkillでは、連鎖スキルが先に解決されてから
-      //   quickが発動する順序で処理されており、それと同じ挙動を再現する）
-      if (
-        action.type === 'invite' ||
-        action.type === 'chant' ||
-        action.type === 'forge'
-      ) {
-        for (let i = 0; i < 3; i++) {
-          const pc = parentCardOnLane[i];
-          if (
-            pc &&
-            Array.isArray(pc._pendingSimSkills) &&
-            pc._pendingSimSkills.length > 0
-          ) {
-            for (const pendingSk of pc._pendingSimSkills) {
-              applyActiveSkillLogic(
-                simState,
-                'red',
-                i,
-                pendingSk.id,
-                pendingSk.value,
-                [],
-                null,
-                undefined
-              );
-            }
-            delete pc._pendingSimSkills;
-          }
-        }
-      }
-
       if (action.type === 'discard') {
         if (simState.enemyHand[action.targetIdx]) {
           simState.enemyDiscard.push(simState.enemyHand[action.targetIdx]);
@@ -1165,6 +1130,39 @@ export function processActionSequence(
           !simState.enemyBoard[lIdx].isSkillResolving
         ) {
           simState.enemyBoard[lIdx] = null;
+        }
+      }
+
+      // 【連鎖スキル完了後の保留スキル発動】
+      // 連鎖スキル（forge/invite/chant）の子アクション処理（装備合体や追加カード配置）が完了した後に、
+      // 親カードに保留されていた即時スキル（quick/snipe等）を発動する。
+      // これにより装備合体完了後の強化ステータスで速攻や砲撃が正しく実行される。
+      if (
+        action.type === 'invite' ||
+        action.type === 'chant' ||
+        action.type === 'forge'
+      ) {
+        for (let i = 0; i < 3; i++) {
+          const pc = parentCardOnLane[i];
+          if (
+            pc &&
+            Array.isArray(pc._pendingSimSkills) &&
+            pc._pendingSimSkills.length > 0
+          ) {
+            for (const pendingSk of pc._pendingSimSkills) {
+              applyActiveSkillLogic(
+                simState,
+                'red',
+                i,
+                pendingSk.id,
+                pendingSk.value,
+                [],
+                null,
+                undefined
+              );
+            }
+            delete pc._pendingSimSkills;
+          }
         }
       }
     }
