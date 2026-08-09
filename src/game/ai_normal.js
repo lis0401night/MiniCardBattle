@@ -429,6 +429,41 @@ export function processActionSequence(
         }
       }
 
+      // 【連鎖スキル完了後の保留スキル発動】
+      // 連鎖スキル（forge/invite/chant）の子アクション処理開始時に、
+      // 親カードに保留されていた即時スキル（quick/snipe等）を発動する。
+      // これにより装備合体やカード追加配置が完了した状態で速攻や砲撃が正しく実行される。
+      // （実戦のbattle.js resolveOnPlaySkillでは、連鎖スキルが先に解決されてから
+      //   quickが発動する順序で処理されており、それと同じ挙動を再現する）
+      if (
+        action.type === 'invite' ||
+        action.type === 'chant' ||
+        action.type === 'forge'
+      ) {
+        for (let i = 0; i < 3; i++) {
+          const pc = parentCardOnLane[i];
+          if (
+            pc &&
+            Array.isArray(pc._pendingSimSkills) &&
+            pc._pendingSimSkills.length > 0
+          ) {
+            for (const pendingSk of pc._pendingSimSkills) {
+              applyActiveSkillLogic(
+                simState,
+                'red',
+                i,
+                pendingSk.id,
+                pendingSk.value,
+                [],
+                null,
+                undefined
+              );
+            }
+            delete pc._pendingSimSkills;
+          }
+        }
+      }
+
       if (action.type === 'discard') {
         if (simState.enemyHand[action.targetIdx]) {
           simState.enemyDiscard.push(simState.enemyHand[action.targetIdx]);
@@ -473,6 +508,31 @@ export function processActionSequence(
             action.type === 'forge' ||
             action.type === 'play_adhoc')
         ) {
+          // 【スキップ時の保留スキル発動】
+          // 連鎖スキルがスキップされた場合でも、親カードに保留されていた
+          // 即時スキル（quick/snipe等）は発動する必要がある
+          for (let i = 0; i < 3; i++) {
+            const pc = parentCardOnLane[i];
+            if (
+              pc &&
+              Array.isArray(pc._pendingSimSkills) &&
+              pc._pendingSimSkills.length > 0
+            ) {
+              for (const pendingSk of pc._pendingSimSkills) {
+                applyActiveSkillLogic(
+                  simState,
+                  'red',
+                  i,
+                  pendingSk.id,
+                  pendingSk.value,
+                  [],
+                  null,
+                  undefined
+                );
+              }
+              delete pc._pendingSimSkills;
+            }
+          }
           continue;
         }
         if (action.type === 'play_adhoc') {
@@ -999,6 +1059,18 @@ export function processActionSequence(
         }
 
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
+          // 【連鎖スキルと即時スキルの実行順序制御】
+          // カードが連鎖スキル（forge/invite/chant）を持つ場合、
+          // 除外リスト外の即時スキル（quick/snipe等）は連鎖完了後に発動する必要がある。
+          // （例: forge→装備合体→quickの順で処理しないと、装備前のパワーで速攻が発動してしまう）
+          // battle.js の resolveOnPlaySkill と同じ実行順序を再現するため、
+          // 連鎖スキルを持つカードでは即時スキルを _pendingSimSkills に保留し、
+          // アクションキュー上で連鎖子アクションが処理される際に発動させる。
+          const hasChainSkill =
+            hasSkill(activeCardForSkills, 'forge') ||
+            hasSkill(activeCardForSkills, 'invite') ||
+            hasSkill(activeCardForSkills, 'chant');
+
           skills.forEach((sk) => {
             if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
               if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
@@ -1043,16 +1115,27 @@ export function processActionSequence(
                 'execute',
               ].includes(sk.id)
             ) {
-              applyActiveSkillLogic(
-                simState,
-                'red',
-                lIdx,
-                sk.id,
-                sk.value,
-                [],
-                action.cardTokenLanes ? [...action.cardTokenLanes] : null,
-                undefined
-              );
+              // 連鎖スキルを持つカードの場合は即時スキルを保留する
+              if (hasChainSkill) {
+                if (!activeCardForSkills._pendingSimSkills) {
+                  activeCardForSkills._pendingSimSkills = [];
+                }
+                activeCardForSkills._pendingSimSkills.push({
+                  id: sk.id,
+                  value: sk.value,
+                });
+              } else {
+                applyActiveSkillLogic(
+                  simState,
+                  'red',
+                  lIdx,
+                  sk.id,
+                  sk.value,
+                  [],
+                  action.cardTokenLanes ? [...action.cardTokenLanes] : null,
+                  undefined
+                );
+              }
             }
           });
           activeCardForSkills.skillTriggered = true;
