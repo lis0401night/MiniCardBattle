@@ -23,8 +23,6 @@ import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
 
-/** 運命の邂逅ハンディキャップ「ターン終了時回収」で回収する枚数 */
-const FORTUNE_TURN_END_SALVAGE_COUNT = 3;
 import {
   PLAYER_TALKS,
   STORY_BGM_CHANGE_BATTLE,
@@ -3776,32 +3774,6 @@ export async function endTurnLogic(o) {
 
       GameState.placementMessage = null;
       renderHand();
-    }
-
-    const isFortuneMode =
-      GameState.gameMode?.startsWith('event_') &&
-      GameState.gameMode?.endsWith('_fortune');
-
-    // 運命の邂逅ハンディキャップ：相手（赤）のターン終了時、回収3発動
-    if (
-      o === 'red' &&
-      isFortuneMode &&
-      GameState.fortuneHandicaps &&
-      GameState.fortuneHandicaps.enemy_turn_end_salvage
-    ) {
-      // 墓地にトークン以外の有効なカードが存在する場合のみ回収3を実行（墓地にカードがない場合は捨てない）
-      const validCardsInDiscard = (GameState.enemyDiscard || []).filter(
-        (card) => !card.isToken
-      );
-      if (validCardsInDiscard.length > 0) {
-        await resolveActiveSkillEffect(
-          'red',
-          1,
-          GameState.enemyBoard[1] ?? null,
-          'salvage',
-          FORTUNE_TURN_END_SALVAGE_COUNT
-        );
-      }
     }
 
     renderBoard();

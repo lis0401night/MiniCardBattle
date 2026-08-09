@@ -945,6 +945,7 @@ export const SKILL_CATEGORIES = [
           'burial',
           'recurse',
           'shuffle',
+          'morph',
         ],
       },
       {
@@ -956,6 +957,8 @@ export const SKILL_CATEGORIES = [
           'sublimation',
           'double_power',
           'metamorph',
+          'portent',
+          'invade',
         ],
       },
       {

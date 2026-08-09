@@ -7,7 +7,6 @@ export const HANDICAP_TYPES = {
   ENEMY_SP: 'enemy_sp', // 敵のSPコスト・上限変動
   SPAWN_ENEMY: 'spawn_enemy', // 敵陣への初期カード配置
   ENEMY_LEADER_SKILL_CHANGE: 'enemy_leader_skill_change', // 敵のリーダースキル変更
-  ENEMY_TURN_END_SALVAGE: 'enemy_turn_end_salvage', // 相手のターン終了時回収スキル発動
 };
 
 // 特級目標のマスター定義
@@ -45,6 +44,13 @@ export const HANDICAP_MASTER = {
     type: HANDICAP_TYPES.BAN_SKILL,
     skillIds: ['deadly'],
     name: '「必殺」使用禁止',
+    cost: 2,
+  },
+  ban_quick: {
+    id: 'ban_quick',
+    type: HANDICAP_TYPES.BAN_SKILL,
+    skillIds: ['quick'],
+    name: '「速攻」使用禁止',
     cost: 2,
   },
   hp_minus_3: {
@@ -113,12 +119,6 @@ export const HANDICAP_MASTER = {
     name: '敵の中央レーンに「炎の魔狼(P:4, 初回攻撃不可)」配置',
     cost: 2,
   },
-  enemy_turn_end_salvage: {
-    id: 'enemy_turn_end_salvage',
-    type: HANDICAP_TYPES.ENEMY_TURN_END_SALVAGE,
-    name: '相手のターン終了時、回収3が発動',
-    cost: 2,
-  },
   enemy_leader_skill_change: {
     id: 'enemy_leader_skill_change',
     type: HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE,
@@ -149,6 +149,7 @@ export const CHAR_FORTUNE_HANDICAPS = {
     HANDICAP_MASTER.ban_legend,
     HANDICAP_MASTER.ban_sturdy,
     HANDICAP_MASTER.ban_deadly,
+    HANDICAP_MASTER.ban_quick,
     HANDICAP_MASTER.hp_minus_3,
     HANDICAP_MASTER.hp_minus_7,
     HANDICAP_MASTER.enemy_hp_plus_10,
@@ -156,7 +157,6 @@ export const CHAR_FORTUNE_HANDICAPS = {
     HANDICAP_MASTER.sp_plus_1,
     HANDICAP_MASTER.enemy_sp_minus_1,
     HANDICAP_MASTER.enemy_center_fenrir,
-    HANDICAP_MASTER.enemy_turn_end_salvage,
     HANDICAP_MASTER.enemy_leader_skill_change,
   ],
 };
