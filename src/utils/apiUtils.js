@@ -124,6 +124,21 @@ export async function fetchPlayerDecks() {
 }
 
 /**
+ * サーバー応答からAutomata版の運命の邂逅・最大累計コストを解決する
+ * 新フィールドが無い旧データの場合は旧フィールドへフォールバックする
+ * @param {Object} serverPlayerData - サーバーのプレイヤーデータ
+ * @returns {number} 最大累計コスト
+ */
+export function resolveFortuneMaxCostAutomata(serverPlayerData) {
+  if (!serverPlayerData) return 0;
+  return (
+    serverPlayerData.fortune_max_total_cost_automata ??
+    serverPlayerData.fortune_max_total_cost ??
+    0
+  );
+}
+
+/**
  * 特定のゲームモードのポイント情報をローカルとサーバーで同期・復旧します。
  *
  * @param {string} mode - 'challenge', 'tournament', 'defense', 'fortune' のいずれか
@@ -208,25 +223,34 @@ export async function syncModePoints(mode, serverPlayerData = null) {
 
     // サーバーデータが存在する場合、ローカルが進んでいればサーバーを同期して更新
     if (serverPlayerData) {
+      const serverAutomataMaxCost =
+        resolveFortuneMaxCostAutomata(serverPlayerData);
+
       // Fortuneモードにおいて、ポイント以外の進行情報（最大グレードや最大累計コスト）がサーバーより更新されているか判定
       const shouldSyncFortuneProgress =
         mode === 'fortune' &&
         (extraData.fortune_max_grade >
           (serverPlayerData.fortune_max_grade || 0) ||
-          extraData.fortune_max_total_cost_automata >
-            (serverPlayerData.fortune_max_total_cost_automata ??
-              serverPlayerData.fortune_max_total_cost ??
-              0) ||
+          extraData.fortune_max_total_cost_automata > serverAutomataMaxCost ||
           extraData.fortune_max_total_cost_valkyria >
             (serverPlayerData.fortune_max_total_cost_valkyria || 0));
 
       if (localTotal > sTotal || localPts > sPts || shouldSyncFortuneProgress) {
-        await savePointsToServer(endpoint, localPts, localTotal, extraData);
-        return { points: localPts, totalPoints: localTotal, ...extraData };
+        // ポイントは必ずサーバー値との最大値を送信し、他端末で稼いだ記録の巻き戻しを防ぐ
+        const sendPts = Math.max(localPts, sPts);
+        const sendTotal = Math.max(localTotal, sTotal);
+        await savePointsToServer(endpoint, sendPts, sendTotal, extraData);
+        return { points: sendPts, totalPoints: sendTotal, ...extraData };
       }
     } else {
-      // サーバーデータがない場合（新規プレイヤーかつ初回同期）、ローカルに蓄積されたスコアがあればサーバーに新規構築する
-      if (localTotal > 0) {
+      // サーバーデータがない場合（新規プレイヤーかつ初回同期）、ローカルに蓄積されたスコアまたは進行データがあればサーバーに新規構築する
+      const hasFortuneProgress =
+        mode === 'fortune' &&
+        (extraData.fortune_max_grade > 0 ||
+          extraData.fortune_max_total_cost_automata > 0 ||
+          extraData.fortune_max_total_cost_valkyria > 0);
+
+      if (localTotal > 0 || hasFortuneProgress) {
         await savePointsToServer(endpoint, localPts, localTotal, extraData);
         return { points: localPts, totalPoints: localTotal, ...extraData };
       }

@@ -136,13 +136,17 @@ export default function OnlineRoomSearchScreen() {
 
   /**
    * 6桁ルームID指定での直入室ハンドラ
+   * 入力されたルームIDが規定の6桁数字であることを事前検証してから入室試行を行う。
    * @returns {void}
    */
   const handleJoinByCode = () => {
     if (joinRequestRef.current || isJoining) return;
 
-    if (!inputRoomCode.trim()) {
-      showAlertModal?.('ルームIDを入力してください。');
+    // 入力値は normalizeRoomCode で数字のみに正規化済みのため、桁数を検証する
+    if (inputRoomCode.length !== ROOM_CODE_LENGTH) {
+      showAlertModal?.(
+        `ルームIDは${ROOM_CODE_LENGTH}桁の数字で入力してください。`
+      );
       return;
     }
 

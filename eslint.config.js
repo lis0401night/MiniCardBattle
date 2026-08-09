@@ -14,6 +14,7 @@ export default [
       'public',
       'api',
       'scratch',
+      'tool',
       'eslint.config.js',
       'vite.config.js',
     ],

@@ -131,11 +131,10 @@ async function applyLeaderDamageWithGuard(
   );
 
   if (isValkyriaGuardActive(GameState, targetSide)) {
-    if (targetHpEl) createDamagePopup(targetHpEl, '加護', VALKYRIA_GUARD_POPUP_COLOR);
+    if (targetHpEl)
+      createDamagePopup(targetHpEl, '加護', VALKYRIA_GUARD_POPUP_COLOR);
     if (typeof playSound === 'function' && SOUNDS) playSound(SOUNDS.seSkill);
-    if (card && owner) {
-      await triggerExtortInAction(card, owner);
-    }
+    // 加護によりダメージが無効化されたため、簒奪（extort）は発動しない
     updateHPBar();
     await sleep(400);
     return false;
@@ -1423,8 +1422,8 @@ export async function resolveActiveSkillEffect(
       await applyLeaderDamageWithGuard(targetSide, dmg, 'fate', c, o);
     } else {
       let dmg = 6;
-      const targetSide = o === 'blue' ? 'blue' : 'red';
-      await applyLeaderDamageWithGuard(targetSide, dmg, 'fate', c, o);
+      // 出目6は自傷（発動者自身がダメージを受ける）
+      await applyLeaderDamageWithGuard(o, dmg, 'fate', c, o);
     }
   } else if (skillId === 'quick') {
     await sleep(400);

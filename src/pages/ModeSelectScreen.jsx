@@ -30,11 +30,16 @@ export default function ModeSelectScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    checkHasPublicWaitingRooms().then((hasRooms) => {
-      if (isMounted) {
-        setHasWaitingPublicRooms(hasRooms);
-      }
-    });
+    checkHasPublicWaitingRooms()
+      .then((hasRooms) => {
+        if (isMounted) {
+          setHasWaitingPublicRooms(hasRooms);
+        }
+      })
+      .catch((e) => {
+        // 公開待機ルームの取得失敗時は通知バッジ非表示で縮退させる
+        console.warn('公開待機ルームの取得に失敗しました:', e);
+      });
     return () => {
       isMounted = false;
     };

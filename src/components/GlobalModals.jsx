@@ -64,7 +64,6 @@ import {
   stopAllBGM,
   togglePremiumCard,
   resolvePlayerName,
-  safeParseArray,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';

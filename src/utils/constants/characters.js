@@ -1486,10 +1486,7 @@ export const UNLOCKABLE_CHARACTER_IDS = ['automata', 'valkyria'];
  * @param {boolean} [isEnemySelect=false] - 対戦相手選択画面（CPU選択）かどうか
  * @returns {boolean} 表示可能であればtrue
  */
-export function canShowUnlockableCharacter(
-  characterId,
-  isEnemySelect = false
-) {
+export function canShowUnlockableCharacter(characterId, isEnemySelect = false) {
   if (!UNLOCKABLE_CHARACTER_IDS.includes(characterId)) return true;
   if (isEnemySelect) return false;
   let unlockedChars = [];

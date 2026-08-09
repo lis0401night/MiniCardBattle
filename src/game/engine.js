@@ -14,6 +14,11 @@ import {
 /** 戦乙女の加護の持続カウンター（発動後、次の自分のターン開始時スキル解決完了までを1とする） */
 export const VALKYRIA_GUARD_TURNS = 1;
 
+/** 神炎の審判のダメージ量および回復量 */
+const GOD_FLAME_AMOUNT = 3;
+/** 断罪のクロスのダメージ量および回復量 */
+const CONDEMNATION_AMOUNT = 5;
+
 /**
  * 指定サイドの戦乙女の加護状態を解除（クリア）する
  * @param {Object} state - バトル状態オブジェクト
@@ -34,6 +39,25 @@ export function clearValkyriaGuard(state, side) {
 export function isValkyriaGuardActive(state, side) {
   const key = side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
   return (state[key] || 0) > 0;
+}
+
+/**
+ * 発動者側に「戦乙女の加護」を付与し、VFXイベントを積む共通処理
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} owner - 発動者サイド ('blue' | 'red')
+ * @param {Array} events - イベントログ配列
+ * @returns {void}
+ */
+export function grantValkyriaGuard(state, owner, events) {
+  // アンジェ「戦乙女の加護」用VFX：発動者の中央レーン固定で再生
+  events.push({
+    type: 'vfx_trigger',
+    vfxId: 'anm_valkyria_guard',
+    side: owner,
+    lane: 1,
+  });
+  const guardKey = owner === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
+  state[guardKey] = VALKYRIA_GUARD_TURNS;
 }
 
 /**
@@ -146,7 +170,10 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
   }
 
   // 犠牲の肩代わりチェック（戦闘ダメージのみ肩代わり可能）
-  if (source === 'combat' && applyMartyrForLeader(state, side, amount, events)) {
+  if (
+    source === 'combat' &&
+    applyMartyrForLeader(state, side, amount, events)
+  ) {
     return; // 肩代わりされたので終了
   }
 
@@ -2308,10 +2335,7 @@ function executeFlameHealLeaderSkill(
         state.playerHP + damageAmount
       );
     } else {
-      state.enemyHP = Math.min(
-        state.enemyMaxHP,
-        state.enemyHP + damageAmount
-      );
+      state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + damageAmount);
     }
     events.push({
       type: 'heal_player',
@@ -3949,9 +3973,25 @@ export function applyLeaderSkillLogic(
       }
     }
   } else if (action === 'god_flame') {
-    executeFlameHealLeaderSkill(state, action, owner, oppOwner, isBlue, 3, events);
+    executeFlameHealLeaderSkill(
+      state,
+      action,
+      owner,
+      oppOwner,
+      isBlue,
+      GOD_FLAME_AMOUNT,
+      events
+    );
   } else if (action === 'condemnation') {
-    executeFlameHealLeaderSkill(state, action, owner, oppOwner, isBlue, 5, events);
+    executeFlameHealLeaderSkill(
+      state,
+      action,
+      owner,
+      oppOwner,
+      isBlue,
+      CONDEMNATION_AMOUNT,
+      events
+    );
   } else if (action === 'time_stop') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
     state.extraTurnCount = (state.extraTurnCount || 0) + 2;
@@ -4015,34 +4055,18 @@ export function applyLeaderSkillLogic(
     state.attackSkipCount = (state.attackSkipCount || 0) + 1;
   } else if (action === 'valkyria_guard') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
-    // アンジェ「戦乙女の加護」用VFX：発動者の中央レーン固定で再生
-    events.push({
-      type: 'vfx_trigger',
-      vfxId: 'anm_valkyria_guard',
-      side: owner,
-      lane: 1,
-    });
-    // 戦乙女の加護: 次の自分の攻撃フェーズ終了まで全ダメージ無効
-    const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
-    state[guardKey] = VALKYRIA_GUARD_TURNS;
+    // 戦乙女の加護: 次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする（加護付与）
+    grantValkyriaGuard(state, owner, events);
   } else if (action === 'ragnarok') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
-    // アンジェ「ラグナロク」用VFX演出
-    events.push({
-      type: 'vfx_trigger',
-      vfxId: 'anm_valkyria_guard',
-      side: owner,
-      lane: 1,
-    });
     // 敵の場のすべてのカードに4ダメージを与える
     for (let i = 0; i < 3; i++) {
       if (eBoard[i]) {
         damageCard(state, oppOwner, i, 4, 'ragnarok', events, true);
       }
     }
-    // 次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする（加護付与）
-    const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
-    state[guardKey] = VALKYRIA_GUARD_TURNS;
+    // 戦乙女の加護を自分に付与
+    grantValkyriaGuard(state, owner, events);
   }
 
   processDestructionTriggers(state, events);
@@ -4926,7 +4950,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           lane: aLane,
           skillName: '憑依',
         });
-        damageLeader(state, attackerSide, dmgToAtk, 'possession', events, aLane);
+        damageLeader(
+          state,
+          attackerSide,
+          dmgToAtk,
+          'possession',
+          events,
+          aLane
+        );
         dmgToAtk = 0;
       }
     }

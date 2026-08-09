@@ -1,7 +1,8 @@
 import RankingScreen from '../components/common/RankingScreen.jsx';
 
 /**
- * 運命の邂逅ランキング画面
+ * 運命の邂逅ランキング画面コンポーネント
+ * @returns {JSX.Element} 運命の邂逅ランキング画面
  */
 export default function FortuneRankingScreen() {
   return (
@@ -26,7 +27,6 @@ export default function FortuneRankingScreen() {
         {
           label: '合計目標値（アンジェ）',
           pointField: 'fortune_total_cost_valkyria',
-          fallbackPointField: 'fortune_total_cost_valkyria',
           unit: '',
         },
       ]}

@@ -197,6 +197,12 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   const newRoomRef = push(roomsRef);
   const roomCode = await reserveRoomCode(newRoomRef.key);
 
+  // 予約直後に自動解放を登録し、set完了前の切断でインデックスが孤児化することを防ぐ
+  const codeIndexRef = ref(database, `roomCodeIndex/${roomCode}`);
+  onDisconnect(codeIndexRef)
+    .remove()
+    .catch((e) => console.error('onDisconnect code index error:', e));
+
   const rngSeed = Math.floor(Math.random() * 100000000).toString();
 
   try {
@@ -218,7 +224,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
     });
   } catch (error) {
     // ルーム初期作成に失敗した場合は予約したインデックスコードを削除・解放する
-    await remove(ref(database, `roomCodeIndex/${roomCode}`)).catch(() => {});
+    await remove(codeIndexRef).catch(() => {});
     throw error;
   }
 
@@ -226,13 +232,10 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   currentRoomCode = roomCode;
   isHost = true;
 
-  // ホスト切断時の自動部屋削除（部屋本体およびルームコード予約インデックス）を予約
+  // ホスト切断時の自動部屋削除（部屋本体）を予約
   onDisconnect(newRoomRef)
     .remove()
     .catch((e) => console.error('onDisconnect error:', e));
-  onDisconnect(ref(database, `roomCodeIndex/${roomCode}`))
-    .remove()
-    .catch((e) => console.error('onDisconnect code index error:', e));
 
   listenToRoom(currentRoomId);
   return currentRoomId;
@@ -327,27 +330,6 @@ export async function joinRoomByCode(roomCodeInput, clientName) {
         });
       }
     }
-
-    // 4. クエリで取得できなかった場合のフォールバック（全ルーム走査）
-    if (!targetRoomId) {
-      const allSnapshot = await getWithTimeout(get(roomsRef), 5000).catch(
-        () => null
-      );
-      if (allSnapshot && allSnapshot.exists()) {
-        allSnapshot.forEach((child) => {
-          if (targetRoomId) return true; // 最初に見つかった1件のみ採用し列挙を打ち切り
-          const room = child.val();
-          if (
-            room.status === 'waiting' &&
-            (room.roomCode === trimmedCode ||
-              String(room.roomCode) === trimmedCode)
-          ) {
-            targetRoomId = child.key;
-            return true; // 打ち切り
-          }
-        });
-      }
-    }
   } catch (err) {
     console.error('joinRoomByCode search error:', err);
     throw err;
@@ -383,8 +365,8 @@ export async function joinRoom(roomId, clientName) {
 
   // 1回の原子的トランザクションで参加状態（status === 'waiting' && client == null）を確認して参加更新を実行
   const result = await runTransaction(roomRef, (room) => {
-    // 初回はローカルキャッシュ由来の null が渡る場合があるため、null をそのまま返してサーバー値での再実行を促す
-    if (room === null) return null;
+    // Firebase RTDBでは undefined を返した場合のみトランザクション中断となる（null は削除コミットになる）
+    if (room === null) return undefined;
     if (room.status !== 'waiting' || room.client) {
       return undefined; // 条件を満たさない場合はトランザクションを中断してコミットしない
     }
@@ -401,6 +383,8 @@ export async function joinRoom(roomId, clientName) {
   }
 
   currentRoomId = roomId;
+  // ホストが発行した6桁コードを参加側でも保持し、getCurrentRoomCode()から参照できるようにする
+  currentRoomCode = result.snapshot.val()?.roomCode || null;
   isHost = false;
 
   // クライアント切断時の自動ロビー戻り（クライアント削除 & ステータス復元）を予約
@@ -588,9 +572,7 @@ export async function leaveRoom() {
   cachedRoomData = null;
 
   const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
-  const codeRef = roomCode
-    ? ref(database, `roomCodeIndex/${roomCode}`)
-    : null;
+  const codeRef = roomCode ? ref(database, `roomCodeIndex/${roomCode}`) : null;
 
   // 正常退室のための切断時予約の解除
   try {
@@ -598,7 +580,7 @@ export async function leaveRoom() {
   } catch (e) {
     console.warn('onDisconnect cancel failed:', e);
   }
-  if (codeRef) {
+  if (wasHost && codeRef) {
     try {
       await onDisconnect(codeRef).cancel();
     } catch (e) {

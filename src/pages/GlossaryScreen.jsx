@@ -160,7 +160,10 @@ export default function GlossaryScreen() {
 
                         {/* 説明文（アニメーション付き） */}
                         <AccordionPanel isOpen={isTermOpen}>
-                          <div className="glossary-description">
+                          <div
+                            className="glossary-description"
+                            style={{ whiteSpace: 'pre-line' }}
+                          >
                             {term.description}
                           </div>
                         </AccordionPanel>

@@ -362,11 +362,8 @@ export function processActionSequence(
               } else if (
                 ['heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
               ) {
-                // ユーティリティボーナス系スキル (瘴気発動時は回復・吸収ボーナスを除外)
-                if (
-                  !['heal', 'absorb', 'heal_void'].includes(sk.id) ||
-                  !isMiasmaActive(simState)
-                ) {
+                // ユーティリティボーナス系スキル (瘴気発動時は回復ボーナスを除外)
+                if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
                   simState.actionUtilityBonus =
                     (simState.actionUtilityBonus || 0) +
                     (AI_SKILL_UTILITY[sk.id] || 0);
@@ -993,10 +990,7 @@ export function processActionSequence(
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
           skills.forEach((sk) => {
             if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
-              if (
-                !['heal', 'absorb', 'heal_void'].includes(sk.id) ||
-                !isMiasmaActive(simState)
-              ) {
+              if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
                 simState.actionUtilityBonus =
                   (simState.actionUtilityBonus || 0) +
                   (AI_SKILL_UTILITY[sk.id] || 0);
@@ -1660,10 +1654,10 @@ export function getBestSimulatedMove() {
                     };
                     const destroyedCard =
                       tgtLane === lane ? card : activeEnemyBoard[tgtLane];
+                    // canCardBeDestroyed が参照するのは加護カウンターのみのため軽量オブジェクトを生成
                     const projectedState = {
-                      ...GameState,
-                      enemyBoard: activeEnemyBoard,
-                      playerBoard: activePlayerBoard,
+                      valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+                      valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
                     };
                     const isDestroyable =
                       destroyedCard &&
@@ -2160,14 +2154,15 @@ export function getBestSimulatedMove() {
       action === 'tomb_guard' ||
       action === 'death_judgment'
     ) {
-      tokenLanePatterns = [0, 1, 2]
-        .filter(
-          (l) =>
-            opBoard[l] !== null &&
-            !hasSkill(opBoard[l], 'immune') &&
-            !isValkyriaGuardActive(GameState, 'blue')
-        )
-        .map((l) => [l]);
+      // 相手側に戦乙女の加護が有効な場合、破壊対象は成立しない
+      const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
+      tokenLanePatterns = oppGuarded
+        ? []
+        : [0, 1, 2]
+            .filter(
+              (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
+            )
+            .map((l) => [l]);
       if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
     } else if (action === 'seal_lanes') {
       const avail = [0, 1, 2].filter(
@@ -2202,12 +2197,12 @@ export function getBestSimulatedMove() {
       }
       tokenLanePatterns = combs.length > 0 ? combs : [null];
     } else if (action === 'elf_polarbear_combo') {
-      const enemyOcc = [0, 1, 2].filter(
-        (l) =>
-          opBoard[l] !== null &&
-          !hasSkill(opBoard[l], 'immune') &&
-          !isValkyriaGuardActive(GameState, 'blue')
-      );
+      const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
+      const enemyOcc = oppGuarded
+        ? []
+        : [0, 1, 2].filter(
+            (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
+          );
       const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
       let combs = [];
       if (enemyOcc.length > 0 && myAvail.length > 0) {
@@ -3457,10 +3452,10 @@ export function evaluateAdhocTokenLanes(
           };
           const destroyedCard =
             tgtLane === laneIdx ? tokenCard : activeEnemyBoard[tgtLane];
+          // canCardBeDestroyed が参照するのは加護カウンターのみのため軽量オブジェクトを生成
           const projectedState = {
-            ...GameState,
-            enemyBoard: activeEnemyBoard,
-            playerBoard: activePlayerBoard,
+            valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+            valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
           };
           const isDestroyable =
             destroyedCard &&

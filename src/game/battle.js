@@ -16,8 +16,12 @@ import {
   CHAR_FORTUNE_HANDICAPS,
   HANDICAP_TYPES,
 } from '../utils/constants/fortuneHandicaps.js';
+import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
+
+/** 運命の邂逅ハンディキャップ「ターン終了時回収」で回収する枚数 */
+const FORTUNE_TURN_END_SALVAGE_COUNT = 3;
 import {
   PLAYER_TALKS,
   STORY_BGM_CHANGE_BATTLE,
@@ -891,22 +895,14 @@ export function initBattleState() {
           if (GameState.enemyConfig.id === 'automata') {
             GameState.enemyConfig = {
               ...GameState.enemyConfig,
-              leaderSkill: {
-                name: 'ラスト・バタリオン',
-                desc: '(SP:3) 自分のレーンに「オートマタ(P:1)」を1体配置する。その後、そのレーンのカードをただちに攻撃させる。これを5回繰り返す。',
-                cost: 3,
-                action: 'last_battalion',
-              },
+              // マスターデータを単一の情報源とし、定義の二重管理を避ける
+              leaderSkill: { ...LEADER_SKILLS.last_battalion },
             };
           } else if (GameState.enemyConfig.id === 'valkyria') {
             GameState.enemyConfig = {
               ...GameState.enemyConfig,
-              leaderSkill: {
-                name: 'ラグナロク',
-                desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
-                cost: 4,
-                action: 'ragnarok',
-              },
+              // マスターデータを単一の情報源とし、定義の二重管理を避ける
+              leaderSkill: { ...LEADER_SKILLS.ragnarok },
             };
           }
         }
@@ -3794,7 +3790,13 @@ export async function endTurnLogic(o) {
         (card) => !card.isToken
       );
       if (validCardsInDiscard.length > 0) {
-        await resolveActiveSkillEffect('red', 1, null, 'salvage', 3);
+        await resolveActiveSkillEffect(
+          'red',
+          1,
+          GameState.enemyBoard[1] ?? null,
+          'salvage',
+          FORTUNE_TURN_END_SALVAGE_COUNT
+        );
       }
     }
 

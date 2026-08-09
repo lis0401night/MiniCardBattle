@@ -13,7 +13,11 @@ import {
   playSound,
   resolvePlayerName,
 } from '../../utils/gameUtils.js';
-import { fetchPlayerDecks, syncModePoints } from '../../utils/apiUtils.js';
+import {
+  fetchPlayerDecks,
+  syncModePoints,
+  resolveFortuneMaxCostAutomata,
+} from '../../utils/apiUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import {
   CHALLENGE_POINTS_KEY,
@@ -89,9 +93,7 @@ export default function RankingScreen({
               ...p,
               // サーバーに保存された「一度に有効化した合計目標値の最大値」を使用
               fortune_total_cost: p.fortune_max_total_cost || 0,
-              fortune_total_cost_automata:
-                p.fortune_max_total_cost_automata ??
-                (p.fortune_max_total_cost || 0),
+              fortune_total_cost_automata: resolveFortuneMaxCostAutomata(p),
               fortune_total_cost_valkyria:
                 p.fortune_max_total_cost_valkyria || 0,
             };

@@ -125,7 +125,7 @@ export const VFX_DATA = {
     offsetY: 0,
     scale: 1.0,
     shake: false,
-    targetSide: 'self', // 自陣に召喚
+    targetSide: 'self', // 自陣に表示
   },
 
   // セレスティア召喚用VFX
@@ -257,7 +257,7 @@ export const VFX_DATA = {
     targetSide: 'self', // 自陣に召喚
   },
 
-    // アンジェスキル「戦乙女の加護」用VFX
+  // アンジェスキル「戦乙女の加護」用VFX
   anm_valkyria_guard: {
     type: 'sprite',
     src: 'assets/vfx/vfx_valkyria_guard.png',

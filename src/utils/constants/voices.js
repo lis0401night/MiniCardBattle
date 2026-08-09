@@ -164,6 +164,7 @@ export const VOICE_CATEGORIES = {
 export const voiceAudioCache = {};
 
 // プレミアムカード用ボイスタイプ変更テーブル
+// カードによって別のタイプのボイスを再生する場合に使用
 export const PREMIUM_VOICE_MAP = {
   cleric: 'human_female_sexy',
   cyberman: 'human_female_normal',

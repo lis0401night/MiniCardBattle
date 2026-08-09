@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { showNextDialogue, skipStoryDialogue } from '../services/uiDialogue.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import { STAGES } from '../utils/constants/stages.js';
 import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
 /**
@@ -97,12 +98,14 @@ export default function DialogueScreen() {
   ) {
     bgName = 'background_highdifficulty.webp';
   } else if (checkIsFortuneMode(GameState.gameMode)) {
-    // 運命の邂逅イベント：対戦相手固有のステージ背景を優先参照する（設定がない場合は汎用背景 fallback）
-    const stageId =
+    // 運命の邂逅イベント：対戦相手固有のステージ背景を優先参照する。
+    // 背景画像はCSS背景のためonErrorで救済できない。STAGESに定義済みのIDのみ採用する。
+    const candidateId =
       GameState.selectedStageId ||
       GameState.enemyConfig?.stageId ||
-      GameState.enemyConfig?.id ||
-      'fortune01';
+      GameState.enemyConfig?.id;
+    const stageId =
+      candidateId && STAGES?.[candidateId] ? candidateId : 'fortune01';
     bgName = `background_${stageId}.webp`;
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.webp';

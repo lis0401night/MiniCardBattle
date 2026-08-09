@@ -418,24 +418,25 @@ export default function OnlineLobbyScreen() {
               {roomData?.roomCode || getCurrentRoomId() || '取得中...'}
             </strong>
           </span>
-          <span
-            style={{
-              fontSize: '0.75rem',
-              padding: '2px 8px',
-              borderRadius: '10px',
-              background:
-                roomData?.isPublic === false
-                  ? 'rgba(239, 68, 68, 0.2)'
-                  : 'rgba(16, 185, 129, 0.2)',
-              color: roomData?.isPublic === false ? '#fca5a5' : '#6ee7b7',
-              border:
-                roomData?.isPublic === false
-                  ? '1px solid rgba(239, 68, 68, 0.4)'
-                  : '1px solid rgba(16, 185, 129, 0.4)',
-            }}
-          >
-            {roomData?.isPublic === false ? '🔒 非公開' : '🌐 公開'}
-          </span>
+          {/* 公開状態はサーバー同期後にのみ表示し、未確定時の誤表示を防ぐ */}
+          {typeof roomData?.isPublic === 'boolean' && (
+            <span
+              style={{
+                fontSize: '0.75rem',
+                padding: '2px 8px',
+                borderRadius: '10px',
+                background: roomData.isPublic
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : 'rgba(239, 68, 68, 0.2)',
+                color: roomData.isPublic ? '#6ee7b7' : '#fca5a5',
+                border: roomData.isPublic
+                  ? '1px solid rgba(16, 185, 129, 0.4)'
+                  : '1px solid rgba(239, 68, 68, 0.4)',
+              }}
+            >
+              {roomData.isPublic ? '🌐 公開' : '🔒 非公開'}
+            </span>
+          )}
         </div>
       </div>
 

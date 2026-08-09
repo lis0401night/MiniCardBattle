@@ -8,18 +8,27 @@ import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 
+/** 運命の邂逅イベントの表示順定義 */
+const FORTUNE_DISPLAY_ORDER = ['automata', 'valkyria'];
+
+/**
+ * キャラクターの運命の邂逅表示順ランクを取得する
+ * @param {string} id - キャラクターID
+ * @returns {number} 順序インデックス（未定義の場合は末尾配置用の大きな数値）
+ */
+const getFortuneRank = (id) => {
+  const idx = FORTUNE_DISPLAY_ORDER.indexOf(id);
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+};
+
+/**
+ * 運命の邂逅キャラクター選択画面コンポーネント
+ * @returns {JSX.Element} 運命の邂逅選択画面
+ */
 export default function FortuneScreen() {
-  const fortuneOrder = ['automata', 'valkyria'];
   const fortuneEventChars = Object.values(CHARACTERS)
     .filter((c) => c.event_fortune)
-    .sort((a, b) => {
-      const idxA = fortuneOrder.indexOf(a.id);
-      const idxB = fortuneOrder.indexOf(b.id);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return 0;
-    });
+    .sort((a, b) => getFortuneRank(a.id) - getFortuneRank(b.id));
 
   return (
     <div

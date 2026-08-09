@@ -66,14 +66,25 @@ export function showConfirmModal(
   }
 }
 
+/**
+ * GlobalModals 未マウント時の window.alert フォールバック共通処理
+ * window.alert はメインスレッドを同期ブロックするため、事前にBGMを停止する
+ * @param {string} message - アラート表示するメッセージ
+ * @returns {void}
+ */
+function alertFallback(message) {
+  console.warn('GlobalModals not mounted: using window.alert fallback');
+  if (typeof stopAllBGM === 'function') stopAllBGM();
+  window.alert(message);
+}
+
 export let showAlertModalHook = null;
 export function setShowAlertModalHook(h) {
   showAlertModalHook = h;
 }
 export function showAlertModal(message, onClose = null) {
   if (showAlertModalHook) return showAlertModalHook(message, onClose);
-  console.warn('GlobalModals not mounted: using window.alert fallback');
-  window.alert(message);
+  alertFallback(message);
   if (onClose) onClose();
 }
 
@@ -88,10 +99,7 @@ export function setShowErrorModalHook(h) {
  */
 export function showErrorModal(message) {
   if (showErrorModalHook) return showErrorModalHook(message);
-  console.warn('GlobalModals not mounted: using window.alert fallback');
-  // window.alertによる同期ブロックの前にBGMを停止
-  if (typeof stopAllBGM === 'function') stopAllBGM();
-  window.alert(message);
+  alertFallback(message);
 }
 
 export let showPointAcquisitionModalHook = null;
