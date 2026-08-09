@@ -57,7 +57,7 @@ import {
 import {
   applyActiveSkillLogic,
   canCardBeDestroyed,
-  canTakeDamage,
+  getDamageBlockType,
   isValkyriaGuardActive,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
@@ -3296,10 +3296,18 @@ export async function resolveActiveSkillEffect(
       ) {
         // 相手がAIの場合：最もパワーの低いカードを自動選択（自分の損失を最小化）
         const sortedLanes = [...occupiedLanes].sort((a, b) => {
-          const aImmune = !canCardBeDestroyed(GameState, oppBoard[a], oppOwner);
-          const bImmune = !canCardBeDestroyed(GameState, oppBoard[b], oppOwner);
-          if (aImmune && !bImmune) return -1;
-          if (!aImmune && bImmune) return 1;
+          const aUndestroyable = !canCardBeDestroyed(
+            GameState,
+            oppBoard[a],
+            oppOwner
+          );
+          const bUndestroyable = !canCardBeDestroyed(
+            GameState,
+            oppBoard[b],
+            oppOwner
+          );
+          if (aUndestroyable && !bUndestroyable) return -1;
+          if (!aUndestroyable && bUndestroyable) return 1;
 
           const diff =
             (oppBoard[a].currentPower || 0) - (oppBoard[b].currentPower || 0);
@@ -3394,10 +3402,18 @@ export async function resolveActiveSkillEffect(
             .map((bc, i) => (bc !== null ? i : -1))
             .filter((i) => i !== -1);
           occupiedLanes.sort((a, b) => {
-            const aImmune = !canCardBeDestroyed(GameState, myBoard[a], o);
-            const bImmune = !canCardBeDestroyed(GameState, myBoard[b], o);
-            if (aImmune && !bImmune) return -1;
-            if (!aImmune && bImmune) return 1;
+            const aUndestroyable = !canCardBeDestroyed(
+              GameState,
+              myBoard[a],
+              o
+            );
+            const bUndestroyable = !canCardBeDestroyed(
+              GameState,
+              myBoard[b],
+              o
+            );
+            if (aUndestroyable && !bUndestroyable) return -1;
+            if (!aUndestroyable && bUndestroyable) return 1;
 
             const diff =
               (myBoard[a].currentPower || 0) - (myBoard[b].currentPower || 0);
@@ -3592,16 +3608,14 @@ export async function triggerStartTurnPassive(owner, lane) {
         });
 
         const oppOwner = owner === 'blue' ? 'red' : 'blue';
-        // 戦乙女の加護が有効な場合はカードへの迎撃ダメージを無効化（ブロック）
-        if (isValkyriaGuardActive(GameState, oppOwner)) {
-          events.push({
-            type: 'valkyria_guard_block',
-            side: oppOwner,
-            lane: maxL,
-            amount: dmg,
-            source: 'intercept',
-          });
-        } else if (canTakeDamage(eB[maxL], dmg)) {
+        const blockType = getDamageBlockType(
+          eB[maxL],
+          dmg,
+          true,
+          GameState,
+          oppOwner
+        );
+        if (!blockType) {
           events.push({
             type: 'damage_card',
             side: oppOwner,
@@ -3609,9 +3623,17 @@ export async function triggerStartTurnPassive(owner, lane) {
             amount: dmg,
             source: 'intercept',
           });
+        } else if (blockType === 'valkyria_guard') {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: oppOwner,
+            lane: maxL,
+            amount: dmg,
+            source: 'intercept',
+          });
         } else {
           events.push({
-            type: 'immune_block',
+            type: `${blockType}_block`,
             side: oppOwner,
             lane: maxL,
             source: 'intercept',

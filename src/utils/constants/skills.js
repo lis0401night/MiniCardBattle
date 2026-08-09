@@ -78,7 +78,8 @@ export const SKILLS = {
   portent: {
     name: '凶兆',
     icon: '🔪',
-    desc: () => '召喚時、13 - 自分リーダーのHP分だけパワーを上げる。',
+    desc: () =>
+      '召喚時、自分リーダーのHPが13を下回っている場合、その差分だけパワーを上げる。',
   },
   soul_bind: {
     name: '魂縛',

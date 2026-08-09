@@ -205,7 +205,13 @@ export default function RankingScreen({
               } else if (syncMode === 'defense' && defenseTotalPts > 0) {
                 await syncModePoints('defense', null);
                 hasCreated = true;
-              } else if (syncMode === 'fortune' && fortuneTotalPts > 0) {
+              } else if (
+                syncMode === 'fortune' &&
+                (fortuneTotalPts > 0 ||
+                  fortuneMaxGrade > 0 ||
+                  fortuneTotalCostAutomata > 0 ||
+                  fortuneTotalCostValkyria > 0)
+              ) {
                 await syncModePoints('fortune', null);
                 hasCreated = true;
               }

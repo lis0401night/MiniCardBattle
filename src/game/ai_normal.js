@@ -1167,6 +1167,32 @@ export function processActionSequence(
       }
     }
 
+    // 【保留スキルの最終回収】
+    // 連鎖スキル（forge/invite/chant）の子アクションがアクションキューに
+    // 生成されなかった場合でも、保留された即時スキルを必ず発動させる。
+    for (let i = 0; i < 3; i++) {
+      const bc = simState.enemyBoard[i];
+      if (
+        bc &&
+        Array.isArray(bc._pendingSimSkills) &&
+        bc._pendingSimSkills.length > 0
+      ) {
+        for (const pendingSk of bc._pendingSimSkills) {
+          applyActiveSkillLogic(
+            simState,
+            'red',
+            i,
+            pendingSk.id,
+            pendingSk.value,
+            [],
+            null,
+            undefined
+          );
+        }
+        delete bc._pendingSimSkills;
+      }
+    }
+
     // アクションキュー全解決後、敵の攻撃（プレイヤーのダイレクトアタック）をシミュレートする前に
     // 全カードのスキル解決保護フラグ（isSkillResolving）を強制解除し、パワー0以下のカードを盤面から完全に除去（null化）する
     [simState.playerBoard, simState.enemyBoard].forEach((b) => {
@@ -2287,21 +2313,19 @@ export function getBestSimulatedMove() {
       tokenLanePatterns = combs.length > 0 ? combs : [null];
     } else if (action === 'elf_polarbear_combo') {
       const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
-      if (oppGuarded) {
-        tokenLanePatterns = [];
-      } else {
-        const enemyOcc = [0, 1, 2].filter(
-          (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
-        );
-        const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
-        let combs = [];
-        if (enemyOcc.length > 0 && myAvail.length > 0) {
-          for (let e of enemyOcc) for (let m of myAvail) combs.push([e, m]);
-          tokenLanePatterns = combs;
-        } else {
-          tokenLanePatterns = [];
-        }
+      // 加護中や対象不在でも「ヴォイテクの配置」は有効なため、破壊対象なし(-1)の候補を必ず残す
+      const enemyOcc = oppGuarded
+        ? []
+        : [0, 1, 2].filter(
+            (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
+          );
+      const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
+      let combs = [];
+      for (let m of myAvail) {
+        for (let e of enemyOcc) combs.push([e, m]);
+        combs.push([-1, m]); // 破壊対象を選ばず配置のみ行う
       }
+      tokenLanePatterns = combs.length > 0 ? combs : [];
     } else if (action === 'void_purge') {
       tokenLanePatterns = [null];
     } else if (action === 'viola_domination') {

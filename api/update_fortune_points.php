@@ -105,18 +105,17 @@ if ($playerData) {
         $playerData['fortune_max_total_cost'] = $fortune_max_total_cost;
     }
 
-    // マキナ用合計目標値
-    $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata']) ? intval($playerData['fortune_max_total_cost_automata']) : $existingMaxTotalCost;
+    // マキナ用合計目標値（旧データ形式の fortune_max_total_cost からの移行・保持も保証）
+    $existingMaxCostAutomata = max(
+        isset($playerData['fortune_max_total_cost_automata']) ? intval($playerData['fortune_max_total_cost_automata']) : 0,
+        $existingMaxTotalCost
+    );
     $newCostAutomata = max($fortune_max_total_cost_automata, ($fortune_max_total_cost_automata === 0 ? $fortune_max_total_cost : 0));
-    if ($newCostAutomata > $existingMaxCostAutomata) {
-        $playerData['fortune_max_total_cost_automata'] = $newCostAutomata;
-    }
+    $playerData['fortune_max_total_cost_automata'] = max($existingMaxCostAutomata, $newCostAutomata);
 
     // アンジェ用合計目標値
     $existingMaxCostValkyria = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
-    if ($fortune_max_total_cost_valkyria > $existingMaxCostValkyria) {
-        $playerData['fortune_max_total_cost_valkyria'] = $fortune_max_total_cost_valkyria;
-    }
+    $playerData['fortune_max_total_cost_valkyria'] = max($existingMaxCostValkyria, $fortune_max_total_cost_valkyria);
 
     $playerData['timestamp'] = time();
 

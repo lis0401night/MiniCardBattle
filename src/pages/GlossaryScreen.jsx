@@ -69,6 +69,8 @@ export default function GlossaryScreen() {
   const [openTerms, setOpenTerms] = useState(new Set());
   // 各カテゴリ・用語ヘッダーへの参照マップ
   const headerRefs = useRef({});
+  // スクロール用タイマー参照
+  const scrollTimerRef = useRef(null);
 
   /**
    * 指定された要素をビューポート内に滑らかにスクロールする
@@ -79,15 +81,27 @@ export default function GlossaryScreen() {
    */
   const scrollIntoViewSmooth = useCallback(
     (refKey, blockPosition = 'start') => {
-      setTimeout(() => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      scrollTimerRef.current = setTimeout(() => {
         const el = headerRefs.current[refKey];
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: blockPosition });
         }
+        scrollTimerRef.current = null;
       }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
     },
     []
   );
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    };
+  }, []);
 
   /**
    * 大項目のアコーディオン開閉をトグルする

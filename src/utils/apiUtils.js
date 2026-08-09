@@ -258,7 +258,13 @@ export async function syncModePoints(mode, serverPlayerData = null) {
               }
             : extraData;
 
-        await savePointsToServer(endpoint, sendPts, sendTotal, syncExtraData);
+        const saved = await savePointsToServer(
+          endpoint,
+          sendPts,
+          sendTotal,
+          syncExtraData
+        );
+        if (!saved) return null;
         return { points: sendPts, totalPoints: sendTotal, ...syncExtraData };
       }
     } else {
@@ -270,7 +276,13 @@ export async function syncModePoints(mode, serverPlayerData = null) {
           extraData.fortune_max_total_cost_valkyria > 0);
 
       if (localTotal > 0 || hasFortuneProgress) {
-        await savePointsToServer(endpoint, localPts, localTotal, extraData);
+        const saved = await savePointsToServer(
+          endpoint,
+          localPts,
+          localTotal,
+          extraData
+        );
+        if (!saved) return null;
         return { points: localPts, totalPoints: localTotal, ...extraData };
       }
     }

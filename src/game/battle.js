@@ -1,8 +1,8 @@
 import { generateDeck } from '../services/deck.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import {
-  incrementStat,
   checkFortuneAchievements,
+  incrementStat,
 } from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -753,7 +753,8 @@ export function prepareBattle() {
  * バトル状態の初期化を行う関数。
  *
  * 【主な機能・目的】
- * - ゲーム開始・リトライ・コンティニュー時に、GameStateの各種パラメータ（HP、SP、デッキ、手札、墓地、レーン状態等）をクリア・初期化する。
+ * - ゲーム開始・リトライ・コンティニュー時に、GameStateの各種パラメータ（HP、SP、手札、墓地、レーン状態等）をクリア・初期化する。
+ * - 事前に生成した GameState.playerDeck と GameState.enemyDeck は保持する。
  * - BGMの再生制御、スキン画像の再適用、各ゲームモード（ストーリー、高難易度、運命の邂逅、トーナメント等）固有のHP/スキル補正を行う。
  * - 「運命の邂逅」モードでは、コンティニュー時に特級目標のハンディキャップ（SP増減等）が二重適用・累積計算されないよう、
  *   未加工のベースリーダースキルからクリーンに1回だけハンディキャップを計算・適用する。

@@ -1,7 +1,6 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
-import { GameState } from '../state/gameState.js';
 import {
   consumeArmSelf,
   getSeededRandom,
@@ -25,14 +24,22 @@ const PORTENT_THRESHOLD_HP = 13;
 const RAGNAROK_CARD_DAMAGE_AMOUNT = 2;
 
 /**
+ * サイドに対応する戦乙女の加護カウンターのキー名を返す
+ * @param {string} side - 対象サイド ('blue' または 'red')
+ * @returns {string} 状態オブジェクトのキー名
+ */
+function getValkyriaGuardKey(side) {
+  return side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
+}
+
+/**
  * 指定サイドの戦乙女の加護状態を解除（クリア）する
  * @param {Object} state - バトル状態オブジェクト
  * @param {string} side - 対象サイド ('blue' または 'red')
  */
 export function clearValkyriaGuard(state, side) {
   if (!state) return;
-  const key = side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
-  state[key] = 0;
+  state[getValkyriaGuardKey(side)] = 0;
 }
 
 /**
@@ -42,8 +49,8 @@ export function clearValkyriaGuard(state, side) {
  * @returns {boolean} ガードが有効なら true
  */
 export function isValkyriaGuardActive(state, side) {
-  const key = side === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
-  return (state[key] || 0) > 0;
+  if (!state) return false;
+  return (state[getValkyriaGuardKey(side)] || 0) > 0;
 }
 
 /**
@@ -61,8 +68,7 @@ export function grantValkyriaGuard(state, owner, events) {
     side: owner,
     lane: 1,
   });
-  const guardKey = owner === 'blue' ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
-  state[guardKey] = VALKYRIA_GUARD_TURNS;
+  state[getValkyriaGuardKey(owner)] = VALKYRIA_GUARD_TURNS;
 }
 
 /**
@@ -82,12 +88,52 @@ export function canCardBeDestroyed(state, card, side = null) {
 }
 
 /**
+ * カードが受けるダメージのブロック理由（無効化原因）を取得する
+ * ※ state は呼び出し側が必ず渡すこと（グローバル状態を参照するとAIシミュレーションが破綻するため）
+ *
+ * @param {Object} card - 対象カード
+ * @param {number} amount - ダメージ量
+ * @param {boolean} [isSkill=true] - スキルダメージかどうか
+ * @param {Object} [state=null] - バトル状態オブジェクト
+ * @param {string} [side=null] - カードの所有者 ('blue'|'red')。未指定時は card.owner
+ * @returns {'valkyria_guard'|'immune'|'dodge'|null} ブロック種別（ダメージを受ける場合は null）
+ */
+export function getDamageBlockType(
+  card,
+  amount,
+  isSkill = true,
+  state = null,
+  side = null
+) {
+  if (!card) return null;
+
+  // 1. 戦乙女の加護（最優先ブロック）
+  const owner = side || card?.owner;
+  if (owner && state && isValkyriaGuardActive(state, owner)) {
+    return 'valkyria_guard';
+  }
+
+  // 2. スキルダメージ無効
+  if (isSkill && hasSkill(card, 'immune')) {
+    return 'immune';
+  }
+
+  // 3. 回避
+  const resVal = getSkillValue(card, 'dodge');
+  if (resVal > 0 && amount >= resVal && !hasSkill(card, 'defender')) {
+    return 'dodge';
+  }
+
+  return null;
+}
+
+/**
  * カードがダメージを受けられるか（無効・回避・戦乙女の加護等で防がれないか）を判定する
  *
  * @param {Object} card - 対象カード
  * @param {number} amount - 与えるダメージ量
  * @param {boolean} [isSkill=true] - スキルダメージかどうか
- * @param {Object} [state=null] - バトル状態（未指定時はグローバルなGameStateにフォールバック）
+ * @param {Object} [state=null] - バトル状態オブジェクト
  * @param {string} [side=null] - カードの所有者 ('blue'|'red')。未指定時は card.owner
  * @returns {boolean} ダメージを受けられるなら true、無効化・ガード中なら false
  */
@@ -98,20 +144,7 @@ export function canTakeDamage(
   state = null,
   side = null
 ) {
-  if (!card) return false;
-  if (isSkill && hasSkill(card, 'immune')) return false;
-
-  // 戦乙女の加護（アンジェのリーダースキル）による全ダメージ無効化判定を一元処理
-  const owner = side || card?.owner;
-  const st =
-    state || (typeof GameState !== 'undefined' ? GameState : null);
-  if (owner && st && isValkyriaGuardActive(st, owner)) return false;
-
-  const resVal = getSkillValue(card, 'dodge');
-  // 回避（dodge）: 指定値以上のダメージを無効化する。ただし、防御（defender）が付与されている場合は無効。
-  if (resVal > 0 && amount >= resVal && !hasSkill(card, 'defender'))
-    return false;
-  return true;
+  return getDamageBlockType(card, amount, isSkill, state, side) === null;
 }
 
 /**
@@ -146,7 +179,7 @@ export function applyMartyrForLeader(state, side, amount, events) {
     });
 
     let appliedDmg = amount;
-    if (!canTakeDamage(martyrCard, appliedDmg, false)) {
+    if (!canTakeDamage(martyrCard, appliedDmg, false, state, side)) {
       events.push({
         type: 'immune_block',
         side: side,
@@ -276,7 +309,7 @@ export function damageCard(
   }
 
   // 2. ダメージ無効/回避チェック
-  if (!canTakeDamage(card, amount, isSkill)) {
+  if (!canTakeDamage(card, amount, isSkill, state, side)) {
     events.push({
       type: 'immune_block',
       side,
@@ -2260,7 +2293,7 @@ export function applyActiveSkillLogic(
               const dmg = getSkillValue(execCard, 'explode') || 3;
               [execLane - 1, execLane + 1].forEach((adj) => {
                 if (adj >= 0 && adj < 3 && b[adj]) {
-                  if (canTakeDamage(b[adj], dmg)) {
+                  if (canTakeDamage(b[adj], dmg, true, state, owner)) {
                     b[adj].currentPower -= dmg;
                     events.push({
                       type: 'damage_card',
@@ -4387,18 +4420,15 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           effectiveDmg = 0;
         }
 
-        if (effectiveDmg > 0 && isValkyriaGuardActive(state, defSide)) {
-          events.push({
-            type: 'valkyria_guard_block',
-            side: defSide,
-            lane: targetLane,
-            amount: effectiveDmg,
-          });
-          effectiveDmg = 0;
-        }
-
         if (effectiveDmg > 0) {
-          if (canTakeDamage(targetCard, effectiveDmg, false)) {
+          const blockType = getDamageBlockType(
+            targetCard,
+            effectiveDmg,
+            false,
+            state,
+            defSide
+          );
+          if (!blockType) {
             targetCard.currentPower -= effectiveDmg;
             events.push({
               type: 'damage_card',
@@ -4408,13 +4438,22 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
               source: 'cleave',
             });
             totalActualDmgToDef += effectiveDmg;
+          } else if (blockType === 'valkyria_guard') {
+            events.push({
+              type: 'valkyria_guard_block',
+              side: defSide,
+              lane: targetLane,
+              amount: effectiveDmg,
+            });
+            effectiveDmg = 0;
           } else {
             events.push({
-              type: 'immune_block',
+              type: `${blockType}_block`,
               side: defSide,
               lane: targetLane,
               source: 'cleave',
             });
+            effectiveDmg = 0;
           }
 
           if (hasSkill(aC, 'deadly')) {
@@ -4482,19 +4521,30 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       (hasSkill(originalTarget, 'defender') || originalTarget.stunTurns > 0);
     if (isOriginalTargetDefender) dmgToAtk = 0;
 
-    if (dmgToAtk > 0 && isValkyriaGuardActive(state, attackerSide)) {
-      events.push({
-        type: 'valkyria_guard_block',
-        side: attackerSide,
-        lane: aLane,
-        amount: dmgToAtk,
-      });
-      dmgToAtk = 0;
-    }
-
-    if (dmgToAtk > 0 && !canTakeDamage(aC_defend, dmgToAtk, false)) {
-      events.push({ type: 'immune_block', side: attackerSide, lane: aLane });
-      dmgToAtk = 0;
+    if (dmgToAtk > 0) {
+      const blockType = getDamageBlockType(
+        aC_defend,
+        dmgToAtk,
+        false,
+        state,
+        attackerSide
+      );
+      if (blockType === 'valkyria_guard') {
+        events.push({
+          type: 'valkyria_guard_block',
+          side: attackerSide,
+          lane: aLane,
+          amount: dmgToAtk,
+        });
+        dmgToAtk = 0;
+      } else if (blockType) {
+        events.push({
+          type: `${blockType}_block`,
+          side: attackerSide,
+          lane: aLane,
+        });
+        dmgToAtk = 0;
+      }
     }
 
     if (dmgToAtk > 0) {
@@ -4742,19 +4792,24 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
       dmgToAtk = Math.floor(dmgToAtk / 2);
     }
-    if (dmgToDef > 0 && isValkyriaGuardActive(state, defSide)) {
-      events.push({
-        type: 'valkyria_guard_block',
-        side: defSide,
-        lane: dLane,
-        amount: dmgToDef,
-      });
-      dmgToDef = 0;
-    }
-    if (dmgToDef > 0 && !canTakeDamage(dC, dmgToDef, false)) {
-      if (dmgToDef > 0)
-        events.push({ type: 'immune_block', side: defSide, lane: dLane });
-      dmgToDef = 0;
+    if (dmgToDef > 0) {
+      const blockType = getDamageBlockType(dC, dmgToDef, false, state, defSide);
+      if (blockType === 'valkyria_guard') {
+        events.push({
+          type: 'valkyria_guard_block',
+          side: defSide,
+          lane: dLane,
+          amount: dmgToDef,
+        });
+        dmgToDef = 0;
+      } else if (blockType) {
+        events.push({
+          type: `${blockType}_block`,
+          side: defSide,
+          lane: dLane,
+        });
+        dmgToDef = 0;
+      }
     }
     if (dmgToDef > 0 && hasSkill(dC, 'invincible')) {
       if (dmgToDef > 0)
@@ -4801,7 +4856,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
           if (effectiveDmg > 0) {
             let damageApplied = false;
-            if (canTakeDamage(chosenCard, effectiveDmg, false)) {
+            if (
+              canTakeDamage(chosenCard, effectiveDmg, false, state, chosenSide)
+            ) {
               chosenCard.currentPower -= effectiveDmg;
               damageApplied = true;
               events.push({
@@ -4846,19 +4903,30 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         // 場にカードが存在しない場合は肩代わり不可、通常通りダメージを受ける
       }
     }
-    if (dmgToAtk > 0 && isValkyriaGuardActive(state, attackerSide)) {
-      events.push({
-        type: 'valkyria_guard_block',
-        side: attackerSide,
-        lane: aLane,
-        amount: dmgToAtk,
-      });
-      dmgToAtk = 0;
-    }
-    if (dmgToAtk > 0 && !canTakeDamage(aC_defend, dmgToAtk, false)) {
-      if (dmgToAtk > 0)
-        events.push({ type: 'immune_block', side: attackerSide, lane: aLane });
-      dmgToAtk = 0;
+    if (dmgToAtk > 0) {
+      const blockType = getDamageBlockType(
+        aC_defend,
+        dmgToAtk,
+        false,
+        state,
+        attackerSide
+      );
+      if (blockType === 'valkyria_guard') {
+        events.push({
+          type: 'valkyria_guard_block',
+          side: attackerSide,
+          lane: aLane,
+          amount: dmgToAtk,
+        });
+        dmgToAtk = 0;
+      } else if (blockType) {
+        events.push({
+          type: `${blockType}_block`,
+          side: attackerSide,
+          lane: aLane,
+        });
+        dmgToAtk = 0;
+      }
     }
     if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
       if (dmgToAtk > 0)
@@ -4913,7 +4981,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
           if (effectiveDmg > 0) {
             let damageApplied = false;
-            if (canTakeDamage(chosenCard, effectiveDmg, false)) {
+            if (
+              canTakeDamage(chosenCard, effectiveDmg, false, state, chosenSide)
+            ) {
               chosenCard.currentPower -= effectiveDmg;
               damageApplied = true;
               events.push({
@@ -5364,16 +5434,14 @@ export function applyPassiveSkillLogic(
           lane: i,
           skillName: '迎撃',
         });
-        // 戦乙女の加護が有効な場合はカードへの迎撃ダメージを無効化（ブロック）
-        if (isValkyriaGuardActive(state, oppSide)) {
-          events.push({
-            type: 'valkyria_guard_block',
-            side: oppSide,
-            lane: maxL,
-            amount: dmg,
-            source: 'intercept',
-          });
-        } else if (canTakeDamage(eB[maxL], dmg)) {
+        const blockType = getDamageBlockType(
+          eB[maxL],
+          dmg,
+          true,
+          state,
+          oppSide
+        );
+        if (!blockType) {
           eB[maxL].currentPower -= dmg;
           events.push({
             type: 'damage_card',
@@ -5382,9 +5450,17 @@ export function applyPassiveSkillLogic(
             amount: dmg,
             source: 'intercept',
           });
+        } else if (blockType === 'valkyria_guard') {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: oppSide,
+            lane: maxL,
+            amount: dmg,
+            source: 'intercept',
+          });
         } else {
           events.push({
-            type: 'immune_block',
+            type: `${blockType}_block`,
             side: oppSide,
             lane: maxL,
             source: 'intercept',

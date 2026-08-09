@@ -214,13 +214,13 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
 
   // 予約直後に自動解放を登録し、set完了前の切断でインデックスが孤児化することを防ぐ
   const codeIndexRef = ref(database, `roomCodeIndex/${roomCode}`);
-  await onDisconnect(codeIndexRef)
-    .remove()
-    .catch((e) => console.error('onDisconnect code index error:', e));
-
   const rngSeed = Math.floor(Math.random() * 100000000).toString();
 
   try {
+    // ルーム公開前に両方の切断時自動削除予約を登録する
+    await onDisconnect(codeIndexRef).remove();
+    await onDisconnect(newRoomRef).remove();
+
     await set(newRoomRef, {
       status: 'waiting',
       isPublic: isPublic,
@@ -237,12 +237,8 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
       client: null,
       actionQueue: {},
     });
-    // ホスト切断時の自動部屋削除（部屋本体）を予約
-    await onDisconnect(newRoomRef)
-      .remove()
-      .catch((e) => console.error('onDisconnect error:', e));
   } catch (error) {
-    // ルーム初期作成に失敗した場合は予約したインデックスコードおよびルーム本体をクリーンアップ
+    // ルーム初期作成またはonDisconnect登録に失敗した場合は予約したインデックスコードおよびルーム本体をクリーンアップ
     await removeRoomAndCode(newRoomRef.key, roomCode).catch(() => {});
     throw error;
   }
@@ -592,24 +588,21 @@ export async function leaveRoom() {
   const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
   const codeRef = roomCode ? ref(database, `roomCodeIndex/${roomCode}`) : null;
 
-  // 正常退室のための切断時予約の解除
-  try {
-    await onDisconnect(roomRef).cancel();
-  } catch (e) {
-    console.warn('onDisconnect cancel failed:', e);
-  }
-  if (wasHost && codeRef) {
-    try {
-      await onDisconnect(codeRef).cancel();
-    } catch (e) {
-      console.warn('onDisconnect code index cancel failed:', e);
-    }
-  }
-
   try {
     if (wasHost) {
       // ホストが抜ける場合はルームおよびコードインデックスを原子的に同時削除
       await removeRoomAndCode(roomId, roomCode);
+      // 手動削除成功後に正常退室のための切断時予約解除を実行
+      await onDisconnect(roomRef)
+        .cancel()
+        .catch((e) => console.warn('onDisconnect cancel failed:', e));
+      if (codeRef) {
+        await onDisconnect(codeRef)
+          .cancel()
+          .catch((e) =>
+            console.warn('onDisconnect code index cancel failed:', e)
+          );
+      }
     } else {
       // クライアントが抜ける場合は、他の操作との競合によるルームの再作成を防ぐため
       // トランザクションを使用してデータが存在する間だけステータスとクライアントを更新する
@@ -621,6 +614,9 @@ export async function leaveRoom() {
           client: null,
         };
       });
+      await onDisconnect(roomRef)
+        .cancel()
+        .catch((e) => console.warn('onDisconnect cancel failed:', e));
     }
   } catch (e) {
     console.error('leaveRoom failed:', e);

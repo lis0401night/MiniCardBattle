@@ -62,6 +62,10 @@ export default function Board({
   // 3レーン分ループ
   const lanes = [0, 1, 2];
 
+  // 戦乙女の加護は陣営単位の状態のため、レーンループの外で1度だけ判定する
+  const isEnemyGuardActive = isValkyriaGuardActive(GameState, 'red');
+  const isPlayerGuardActive = isValkyriaGuardActive(GameState, 'blue');
+
   const getPlaymatUrl = (idOrUrl) => {
     if (!idOrUrl) return 'none';
     const pm = PLAYMAT_MASTER.find((p) => p.id === idOrUrl);
@@ -136,10 +140,7 @@ export default function Board({
                   key={`enemy-card-${lane}-${card.uid || card.id}`}
                   cardObj={card}
                   isBoard={true}
-                  isValkyriaGuardActive={isValkyriaGuardActive(
-                    GameState,
-                    'red'
-                  )}
+                  isValkyriaGuardActive={isEnemyGuardActive}
                   className={isSelected ? 'selected' : ''}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -233,10 +234,7 @@ export default function Board({
                   key={`player-card-${lane}-${card.uid || card.id}`}
                   cardObj={card}
                   isBoard={true}
-                  isValkyriaGuardActive={isValkyriaGuardActive(
-                    GameState,
-                    'blue'
-                  )}
+                  isValkyriaGuardActive={isPlayerGuardActive}
                   className={isSelected ? 'selected' : ''}
                   onClick={(e) => {
                     e.stopPropagation();

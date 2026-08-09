@@ -87,24 +87,26 @@ export function initTournamentMode() {
   // 条件:
   // - プレイヤーは絶対にダミーと当たらない (Player vs Real)
   // - ダミー同士は当たらない (Real vs Dummy x 4)
-  // - 残りの6人のRealが当たる (Real vs Real x 3)
+  // - プレイヤー対実在キャラクター
+  // - ダミー同士は対戦しない（実在キャラクター対ダミーを4試合）
+  // - 残りの6人の実在キャラクターが対戦する（実在キャラクター対実在キャラクターを3試合）
   //
-  // Realは全部で11人。
-  // Match 1: Player vs Real (1人消費、残り10人)
-  // Match 2~5: Real(4人消費) vs Dummy(4人消費)
-  // Match 6~8: Real(6人消費) vs Real
-  // これにより、ダミーは全員1回戦でRealに負けるため、2回戦以降には絶対進まない。
+  // 実在キャラクターは全部で11人。
+  // 第1試合: プレイヤー対実在キャラクター（1人消費、残り10人）
+  // 第2〜5試合: 実在キャラクター（4人消費）対ダミーキャラクター（4人消費）
+  // 第6〜8試合: 実在キャラクター（6人消費）対実在キャラクター
+  // これにより、ダミーは全員1回戦で実在キャラクターに負けるため、2回戦以降には絶対進まない。
 
-  // Realをシャッフル
+  // 実在キャラクターをシャッフル
   realChars.sort(() => Math.random() - 0.5);
 
   const bracket = []; // 1回戦の参加者16人（2人ずつペア）
 
-  // Match 1 (Player vs Real[0])
+  // 第1試合（プレイヤー対 realChars[0]）
   bracket.push(playerChar);
   bracket.push(realChars[0]);
 
-  // Match 2~5 (Real[1~4] vs Dummy[0~3])
+  // 第2〜5試合（realChars[1〜4] 対 dummies[0〜3]）
   for (let i = 0; i < TOURNAMENT_DUMMY_CHARACTER_COUNT; i++) {
     const pair = [realChars[1 + i], dummies[i]];
     // 左右をランダムにする
@@ -112,17 +114,13 @@ export function initTournamentMode() {
     bracket.push(...pair);
   }
 
-  // Match 6 (Real[5] vs Real[6])
-  bracket.push(realChars[5]);
-  bracket.push(realChars[6]);
-
-  // Match 7 (Real[7] vs Real[8])
-  bracket.push(realChars[7]);
-  bracket.push(realChars[8]);
-
-  // Match 8 (Real[9] vs Real[10])
-  bracket.push(realChars[9]);
-  bracket.push(realChars[10]);
+  // 第6〜8試合（残りの実在キャラクター同士の対戦）
+  const remainingRealChars = realChars.slice(
+    1 + TOURNAMENT_DUMMY_CHARACTER_COUNT
+  );
+  for (let i = 0; i < remainingRealChars.length; i += 2) {
+    bracket.push(remainingRealChars[i], remainingRealChars[i + 1]);
+  }
 
   // 試合の順番(8試合)を、プレイヤーの試合以外ランダムにシャッフルするのも良いが、
   // UIの描画上、プレイヤーがどこにいるか見つけやすいように、そのままにするかペア単位でシャッフルする。

@@ -872,13 +872,13 @@ export function getOrCreateUUID() {
  * カードのスキルバッジHTMLを生成するユーティリティ関数
  * @param {Object} card - 対象のカードオブジェクト
  * @param {boolean} [isBoard=false] - 盤面配置中かどうか
- * @param {boolean|null} [isValkyriaGuardActive=null] - 戦乙女の加護が有効かどうか（nullの場合はGameStateからフォールバック取得）
+ * @param {boolean|null} [valkyriaGuardActive=null] - 戦乙女の加護が有効かどうか（nullの場合はGameStateからフォールバック取得）
  * @returns {string} スキルバッジのHTML文字列
  */
 export function renderSkillTag(
   card,
   isBoard = false,
-  isValkyriaGuardActive = null
+  valkyriaGuardActive = null
 ) {
   if (!card) return '';
   let skillCandidates = [];
@@ -924,8 +924,8 @@ export function renderSkillTag(
   // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブな場合に優先表示）
   if (isBoard) {
     const isGuardActive =
-      isValkyriaGuardActive !== null
-        ? isValkyriaGuardActive
+      valkyriaGuardActive !== null
+        ? valkyriaGuardActive
         : card.owner && typeof GameState !== 'undefined'
           ? card.owner === 'blue'
             ? (GameState.valkyriaGuardBlue || 0) > 0

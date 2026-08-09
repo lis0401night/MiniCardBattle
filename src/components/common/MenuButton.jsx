@@ -6,7 +6,7 @@ import { SOUNDS } from '../../utils/sounds.js';
  *
  * @param {string} label - ボタンラベル
  * @param {function} onClick - クリックイベントハンドラ
- * @param {string} [variant='default'] - 'default', 'yellow', 'purple', 'blue', 'orange', 'red', 'emerald', 'gray'
+ * @param {string} [variant='default'] - ボタンの表示種別。'default'、'yellow'、'purple'、'blue'、'orange'、'red'、'emerald'、'gray'
  * @param {string} [className] - 追加のクラス
  * @param {object} [style] - 追加のインラインスタイル
  * @param {boolean} [disabled] - 無効化状態
