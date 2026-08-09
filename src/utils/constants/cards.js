@@ -3495,8 +3495,7 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'portent', value: 13 }],
     voiceCategory: 'sword',
-    flavor:
-      '流れた血の数だけ殺意は研ぎ澄まされ、惨劇の夜を繰り返す。',
+    flavor: '流れた血の数だけ殺意は研ぎ澄まされ、惨劇の夜を繰り返す。',
   },
   {
     id: 'homunculus',

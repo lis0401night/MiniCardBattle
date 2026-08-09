@@ -966,13 +966,7 @@ export function applyActiveSkillLogic(
     }
     case 'portent': {
       const currentHp =
-        owner === 'blue'
-          ? state
-            ? state.playerHp
-            : GameState.playerHp
-          : state
-            ? state.enemyHp
-            : GameState.enemyHp;
+        owner === 'blue' ? state?.playerHp || 0 : state?.enemyHp || 0;
       const bonus = Math.max(0, (val || 13) - (currentHp || 0));
       if (bonus > 0) {
         c.currentPower += bonus;
