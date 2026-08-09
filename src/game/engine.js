@@ -580,6 +580,7 @@ export function applyActiveSkillLogic(
     'hero',
     'adversity',
     'lone_wolf',
+    'portent',
     'invade',
     'replicate',
     'standby',
@@ -959,6 +960,28 @@ export function applyActiveSkillLogic(
           lane: l,
           amount: wVal,
           source: 'lone_wolf',
+        });
+      }
+      break;
+    }
+    case 'portent': {
+      const currentHp =
+        owner === 'blue'
+          ? state
+            ? state.playerHp
+            : GameState.playerHp
+          : state
+            ? state.enemyHp
+            : GameState.enemyHp;
+      const bonus = Math.max(0, (val || 13) - (currentHp || 0));
+      if (bonus > 0) {
+        c.currentPower += bonus;
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: l,
+          amount: bonus,
+          source: 'portent',
         });
       }
       break;

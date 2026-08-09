@@ -3488,6 +3488,17 @@ export const CARD_MASTER = [
     flavor: '賽は投げられた。君の幸運を祈ろう……できれば、私自身にもね。',
   },
   {
+    id: 'jason',
+    obtain: ['achievement'],
+    name: '不吉な殺人鬼',
+    rarity: 4,
+    power: 0,
+    skills: [{ id: 'portent', value: 13 }],
+    voiceCategory: 'sword',
+    flavor:
+      '流れた血の数だけ殺意は研ぎ澄まされ、惨劇の夜を繰り返す。',
+  },
+  {
     id: 'homunculus',
     obtain: ['achievement'],
     name: 'ホムンクルスの実験体',

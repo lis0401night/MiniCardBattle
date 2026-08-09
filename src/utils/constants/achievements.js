@@ -1,9 +1,10 @@
 import { saveDeck } from '../../services/deck.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from './cards.js';
+import { UNLOCKED_ICONS_KEY, UNLOCKED_SKINS_KEY } from './config.js';
+import { loadFortuneClearedData } from './fortuneRewards.js';
 import { INITIAL_PLAYER_CARD } from './initial_cards.js';
 import { ownedPlaymats } from './playmats.js';
-import { UNLOCKED_SKINS_KEY, UNLOCKED_ICONS_KEY } from './config.js';
 
 /**
  * Mini Card Battle - Achievements Data
@@ -794,6 +795,39 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 'tournament_round_4',
     reward: { type: 'card', value: 'bell', name: '葬送の鐘' },
   },
+  // --- 運命の邂逅 合計目標値 ---
+  {
+    id: 'fortune_total_cost_5',
+    title: '運命の萌芽',
+    description: '「運命の邂逅」で任意のキャラクターで合計目標値5を達成する',
+    type: 'fortune_total_cost',
+    targetValue: 5,
+    reward: { type: 'card', value: 'jason', name: '不吉な殺人鬼' },
+  },
+  {
+    id: 'fortune_total_cost_10',
+    title: '運命の探求者',
+    description: '「運命の邂逅」で任意のキャラクターで合計目標値10を達成する',
+    type: 'fortune_total_cost',
+    targetValue: 10,
+    reward: { type: 'card', value: 'jason', name: '不吉な殺人鬼' },
+  },
+  {
+    id: 'fortune_total_cost_15',
+    title: '運命を拓く者',
+    description: '「運命の邂逅」で任意のキャラクターで合計目標値15を達成する',
+    type: 'fortune_total_cost',
+    targetValue: 15,
+    reward: { type: 'card', value: 'jason', name: '不吉な殺人鬼' },
+  },
+  {
+    id: 'fortune_total_cost_20',
+    title: '運命の支配者',
+    description: '「運命の邂逅」で任意のキャラクターで合計目標値20を達成する',
+    type: 'fortune_total_cost',
+    targetValue: 20,
+    reward: { type: 'card', value: 'jason', name: '不吉な殺人鬼' },
+  },
   // --- 実績達成数 ---
   {
     id: 'total_unlock_5',
@@ -896,6 +930,7 @@ export function loadAchievements() {
   checkUniqueStoryAchievements(); // ストーリーのクリア種類数もロード時に判定
   checkUniqueStoryHardAchievements(); // 上級ストーリーのクリア種類数もロード時に判定
   checkTutorialAchievements(); // チュートリアルのクリア種類数もロード時に判定
+  checkFortuneAchievements(); // 運命の邂逅の達成目標値もロード時に判定
   checkTotalAchievementUnlocks(); // 累計実績もロード時に再計算して反映する
   saveAchievements();
 }
@@ -1092,6 +1127,26 @@ export function checkTutorialAchievements() {
   ACHIEVEMENT_MASTER.filter((a) => a.type === 'tutorial_clear').forEach(
     (ach) => {
       updateAchievement(ach.id, clearedCount, ach.targetValue);
+    }
+  );
+}
+
+/**
+ * 運命の邂逅の合計目標値達成実績を判定します。
+ * マキナ/アンジェ等の最高合計目標値を参照して自動更新・解禁します。
+ */
+export function checkFortuneAchievements() {
+  const clearedAutomata = loadFortuneClearedData('automata');
+  const clearedValkyria = loadFortuneClearedData('valkyria');
+  const maxTotalCost = Math.max(
+    clearedAutomata?.maxTotalCost || 0,
+    clearedValkyria?.maxTotalCost || 0,
+    0
+  );
+
+  ACHIEVEMENT_MASTER.filter((a) => a.type === 'fortune_total_cost').forEach(
+    (ach) => {
+      updateAchievement(ach.id, maxTotalCost, ach.targetValue);
     }
   );
 }

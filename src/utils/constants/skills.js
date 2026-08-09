@@ -75,6 +75,12 @@ export const SKILLS = {
     desc: (val) =>
       `召喚時、自分の空いているレーンの数×${val || 3}だけパワーを上げる。`,
   },
+  portent: {
+    name: '凶兆',
+    icon: '🔪',
+    desc: (val) =>
+      `召喚時、${val || 13} - 自分のHP分だけパワーを上げる。`,
+  },
   soul_bind: {
     name: '魂縛',
     icon: '⛓️',
@@ -818,6 +824,7 @@ export const ACTIVE_SKILLS = [
   'invade',
   'petrify',
   'call',
+  'portent',
   'bless',
   'dispel',
   'freeze',

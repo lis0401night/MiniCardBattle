@@ -1,6 +1,9 @@
 import { generateDeck } from '../services/deck.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
-import { incrementStat } from '../utils/constants/achievements.js';
+import {
+  incrementStat,
+  checkFortuneAchievements,
+} from '../utils/constants/achievements.js';
 import { getDungeonCharacterDialogue } from '../utils/constants/battleDungeonCharacter.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
@@ -5023,6 +5026,9 @@ export function endBattle() {
               fortune_max_total_cost: result.newMaxTotalCost,
             }
           );
+
+          // 運命の邂逅の実績チェックをトリガー
+          checkFortuneAchievements();
 
           // ポイント内訳メッセージを構築
           let breakdownText = '';

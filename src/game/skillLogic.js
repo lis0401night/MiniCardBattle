@@ -329,6 +329,7 @@ export async function resolveActiveSkillEffect(
       support: '援護',
       hero: '英雄',
       lone_wolf: '単騎',
+      portent: '凶兆',
       morph: '変化',
       spread: '拡散',
       snipe: '狙撃',
@@ -1586,6 +1587,32 @@ export async function resolveActiveSkillEffect(
 
       if (cEl) {
         createDamagePopup(cEl, `+${hVal}`, '#4ade80');
+      }
+
+      renderBoard();
+
+      if (window.updateCardVisualsReact) {
+        window.updateCardVisualsReact(l, o === 'blue' ? 'player' : 'enemy');
+      } else if (window.updateBattleUIHook) {
+        window.updateBattleUIHook();
+      }
+      await sleep(200);
+    }
+  } else if (skillId === 'portent') {
+    // 【開発ガイドライン適用】直接トリガー型アクティブスキル：凶兆
+    const currentHp = o === 'blue' ? GameState.playerHp : GameState.enemyHp;
+    const bonus = Math.max(0, (skillValue || 13) - (currentHp || 0));
+    if (bonus > 0) {
+      c.currentPower = (c.currentPower || 0) + bonus;
+
+      if (window.triggerVfx) {
+        await window.triggerVfx('anm_skill_hero', o, l);
+      } else {
+        playSound(SOUNDS.seSkill);
+      }
+
+      if (cEl) {
+        createDamagePopup(cEl, `+${bonus}`, '#a855f7');
       }
 
       renderBoard();
