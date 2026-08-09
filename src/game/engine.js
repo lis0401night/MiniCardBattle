@@ -1387,7 +1387,14 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'dispel': {
+      // 【AI思考空間：解除(dispel)スキルのシミュレーション】
       const targets = [];
+
+      /**
+       * 盤面から「解除」対象（装備カードを保持しているホスト、または自身が装備スキルのカード）を収集するヘルパー
+       * @param {Array} board - 対象陣営の盤面
+       * @param {string} side - 対象陣営
+       */
       const gatherDispelTargets = (board, side) => {
         for (let j = 0; j < 3; j++) {
           if (board[j]) {
@@ -1415,6 +1422,7 @@ export function applyActiveSkillLogic(
         const tgt = tr.targetCard;
 
         if (tr.isHost) {
+          // 1. 装着されている装備カードを全て解除し、ステータス（パワー）を減算する
           let totalLoss = tgt.equippedCards.reduce(
             (sum, eq) => sum + (eq.power || 0),
             0
@@ -1443,21 +1451,21 @@ export function applyActiveSkillLogic(
           }
         }
 
+        // 対象カードの破壊不能判定（無効(immune)スキル保持、または所有者の戦乙女の加護が有効な場合は false）
         const canDestroyTgt = canCardBeDestroyed(state, tgt, tr.side);
-        if (tr.isSelf) {
-          if (canDestroyTgt) {
-            tgt.currentPower = 0;
-          }
-        }
 
-        if (tgt.currentPower <= 0) {
-          if (canDestroyTgt) {
-            killTargets.push({ side: tr.side, lane: tr.lane, card: tgt });
-            if (tr.side === oppOwner) {
-              eB[tr.lane] = null;
-            } else {
-              b[tr.lane] = null;
-            }
+        // --- AIシミュレーションでの破壊確定条件 ---
+        // A) 装備解除によりステータス（パワー）が 0 以下になった場合 (isHost): 戦乙女の加護や無効に関わらず確定破壊 (isKilledByStatLoss)
+        // B) 自身が装備スキルのカードの直接破壊 (isSelf): 粉砕や叛逆と同様の直接破壊。canDestroyTgt (加護・無効) で保護される (isKilledBySkill)
+        const isKilledByStatLoss = tr.isHost && tgt.currentPower <= 0;
+        const isKilledBySkill = tr.isSelf && canDestroyTgt;
+
+        if (isKilledByStatLoss || isKilledBySkill) {
+          killTargets.push({ side: tr.side, lane: tr.lane, card: tgt });
+          if (tr.side === oppOwner) {
+            eB[tr.lane] = null;
+          } else {
+            b[tr.lane] = null;
           }
         }
       }

@@ -1690,8 +1690,16 @@ export async function resolveActiveSkillEffect(
       }
     }
   } else if (skillId === 'dispel') {
-    playSound(SOUNDS.seSkillBind); // Wait, dispel sound doesn't exist, we use generic or bind sound.
+    // 【「解除」スキル処理】
+    // 召喚時、お互いの場のすべての「装備」カード（他のカードに装備されているカード、および装備能力を持つカード自身）を対象とする。
+    playSound(SOUNDS.seSkillBind);
     const targets = [];
+
+    /**
+     * 指定した盤面から「解除」対象（装備カードを保持しているホストカード、または自身が装備スキルのカード）を抽出する内部関数
+     * @param {Array} board - プレイヤーまたは敵の盤面配列
+     * @param {string} side - 対象陣営 ('blue'|'red')
+     */
     const checkTargets = (board, side) => {
       for (let i = 0; i < 3; i++) {
         const card = board[i];
@@ -1715,8 +1723,7 @@ export async function resolveActiveSkillEffect(
     checkTargets(GameState.enemyBoard, 'red');
 
     if (targets.length > 0) {
-      let anyValidTarget = false;
-      let playedVoices = new Set();
+      const destroyTargets = []; // executeGroupDestruction に渡す「装備」スキルカード自体の直接破壊対象
 
       for (let t of targets) {
         const targetCard = t.card;
@@ -1725,11 +1732,9 @@ export async function resolveActiveSkillEffect(
           `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
         );
 
-        const isImmune = hasSkill(targetCard, 'immune');
-        let totalPowerLoss = 0;
-
         if (t.isHost) {
-          // 装備カードを全て破壊（墓地に送る）
+          // 1. 装着されている装備カードを全て解除し、墓地（捨て札）へ送る
+          let totalPowerLoss = 0;
           for (const eqCard of targetCard.equippedCards) {
             totalPowerLoss += eqCard.power || 0;
 
@@ -1749,77 +1754,45 @@ export async function resolveActiveSkillEffect(
             unmergeCardSkills(targetCard, equipSkills);
             await discardCard(t.side, eqCard, undefined, false);
           }
-        }
 
-        if (tgtEl) {
-          tgtEl.classList.remove('anim-shake');
-          void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-          tgtEl.classList.add('anim-shake');
-        }
-
-        if (t.isHost) {
+          // 2. 装備解除によるステータス（パワー）の減算処理
           if (tgtEl) {
+            tgtEl.classList.remove('anim-shake');
+            void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+            tgtEl.classList.add('anim-shake');
             createDamagePopup(tgtEl, `-${totalPowerLoss} 解除`, '#94a3b8');
           }
           targetCard.equippedCards = [];
           targetCard.power -= totalPowerLoss;
           targetCard.currentPower -= totalPowerLoss;
           targetCard.basePower -= totalPowerLoss;
-        }
 
-        if (t.isSelf) {
-          if (!isImmune) {
-            targetCard.currentPower = 0;
-          }
-        }
+          // 装備脱着の結果としてパワーが0以下になった場合は、ステータス低下による消滅（墓地送り）処理を行う
+          if (targetCard.currentPower <= 0) {
+            if (tgtEl) {
+              tgtEl.classList.add('anim-card-destroy');
+            }
+            playCardVoice(targetCard, 'death');
+            playSound(SOUNDS.seDestroy);
+            await sleep(400);
 
-        let showImmunePopup = false;
-        if (isImmune) {
-          if (t.isSelf || targetCard.currentPower <= 0) {
-            showImmunePopup = true;
-          }
-        }
-
-        if (targetCard.currentPower <= 0 && !isImmune) {
-          if (tgtEl) {
-            tgtEl.classList.add('anim-card-destroy');
-            if (!t.isHost) {
-              createDamagePopup(tgtEl, '破壊', '#ef4444');
+            const eB =
+              t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+            if (!(await discardCard(t.side, targetCard, t.lane, true))) {
+              eB[t.lane] = null;
             }
           }
-          if (
-            targetCard.voiceCategory &&
-            !playedVoices.has(targetCard.voiceCategory)
-          ) {
-            playCardVoice(targetCard, 'death');
-            playedVoices.add(targetCard.voiceCategory);
-          }
-          anyValidTarget = true;
-        } else if (showImmunePopup) {
-          if (tgtEl) {
-            createDamagePopup(tgtEl, '無効', '#94a3b8');
-          }
+        }
+
+        // 3. 自身が「装備」スキルを持つカードは、粉砕・叛逆等と同様に共通破壊対象としてリストアップ
+        if (t.isSelf) {
+          destroyTargets.push({ lane: t.lane, card: targetCard, side: t.side });
         }
       }
 
-      if (anyValidTarget) {
-        playSound(SOUNDS.seDestroy);
-        await sleep(400); // 破壊演出待ち
-      } else {
-        await sleep(400); // 解除・無効のみの演出待ち
-      }
-
-      for (let t of targets) {
-        const targetCard = t.card;
-        if (hasSkill(targetCard, 'immune')) continue;
-
-        if (targetCard.currentPower <= 0) {
-          const eB =
-            t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-          if (!(await discardCard(t.side, targetCard, t.lane, true))) {
-            eB[t.lane] = null;
-          }
-        }
+      // 自身が「装備」スキルを持つカードの直接破壊は、共通の executeGroupDestruction 関数で一括処理する
+      if (destroyTargets.length > 0) {
+        await executeGroupDestruction(destroyTargets);
       }
 
       renderBoard();
