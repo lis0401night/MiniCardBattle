@@ -4025,6 +4025,24 @@ export function applyLeaderSkillLogic(
     // 戦乙女の加護: 次の自分の攻撃フェーズ終了まで全ダメージ無効
     const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
     state[guardKey] = VALKYRIA_GUARD_TURNS;
+  } else if (action === 'ragnarok') {
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+    // アンジェ「ラグナロク」用VFX演出
+    events.push({
+      type: 'vfx_trigger',
+      vfxId: 'anm_valkyria_guard',
+      side: owner,
+      lane: 1,
+    });
+    // 敵の場のすべてのカードに4ダメージを与える
+    for (let i = 0; i < 3; i++) {
+      if (eBoard[i]) {
+        damageCard(state, oppOwner, i, 4, 'ragnarok', events, true);
+      }
+    }
+    // 次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする（加護付与）
+    const guardKey = isBlue ? 'valkyriaGuardBlue' : 'valkyriaGuardRed';
+    state[guardKey] = VALKYRIA_GUARD_TURNS;
   }
 
   processDestructionTriggers(state, events);

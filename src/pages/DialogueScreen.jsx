@@ -5,6 +5,11 @@ import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
 import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
+/**
+ * ダイアログ（会話）画面コンポーネント
+ * ストーリーや各イベント、試練の宮殿等の会話演出を表示する。
+ * @returns {JSX.Element} 会話画面コンポーネント
+ */
 export default function DialogueScreen() {
   const [dialogueData, setDialogueData] = useState(
     () => window.currentDialogueData || {}
@@ -92,7 +97,13 @@ export default function DialogueScreen() {
   ) {
     bgName = 'background_highdifficulty.webp';
   } else if (checkIsFortuneMode(GameState.gameMode)) {
-    bgName = 'background_fortune01.webp';
+    // 運命の邂逅イベント：対戦相手固有のステージ背景を優先参照する（設定がない場合は汎用背景 fallback）
+    const stageId =
+      GameState.selectedStageId ||
+      GameState.enemyConfig?.stageId ||
+      GameState.enemyConfig?.id ||
+      'fortune01';
+    bgName = `background_${stageId}.webp`;
   } else if (GameState.gameMode === 'defense_attack') {
     bgName = 'background_defense.webp';
   } else if (GameState.gameMode && GameState.gameMode.startsWith('story')) {

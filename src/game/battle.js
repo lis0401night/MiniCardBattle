@@ -898,6 +898,16 @@ export function initBattleState() {
                 action: 'last_battalion',
               },
             };
+          } else if (GameState.enemyConfig.id === 'valkyria') {
+            GameState.enemyConfig = {
+              ...GameState.enemyConfig,
+              leaderSkill: {
+                name: 'ラグナロク',
+                desc: '(SP:4) 敵の場のすべてのカードに4ダメージを与える。次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
+                cost: 4,
+                action: 'ragnarok',
+              },
+            };
           }
         }
       });

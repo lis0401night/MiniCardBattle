@@ -102,7 +102,8 @@ export async function executeEnemyAI() {
       ) {
         if (
           skill.action === 'annihilation' ||
-          skill.action === 'targeted_destruction'
+          skill.action === 'targeted_destruction' ||
+          skill.action === 'ragnarok'
         ) {
           // 相手の場にカードがある場合のみ使用（空撃ち防止）
           if (GameState.playerBoard.some((c) => c !== null)) {
