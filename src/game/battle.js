@@ -22,6 +22,10 @@ import {
 import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { STAGES } from '../utils/constants/stages.js';
+import {
+  getAllVfxImageUrls,
+  getLeaderPreloadUrls,
+} from '../utils/resourceLoader.js';
 
 import {
   PLAYER_TALKS,
@@ -594,6 +598,33 @@ export function prepareBattle() {
         : null;
 
     const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
+    const cardUrls = allCards.map((c) => c?.imgUrl).filter(Boolean);
+
+    // 対戦で使用する自プレイヤーおよび敵リーダーのカットイン・立ち絵・スキン画像
+    const playerSkin = GameState.playerSkins?.[GameState.playerConfig?.id];
+    const enemySkin = GameState.enemySkins?.[GameState.enemyConfig?.id];
+    const playerLeaderUrls = getLeaderPreloadUrls(
+      GameState.playerConfig,
+      playerSkin
+    );
+    const enemyLeaderUrls = getLeaderPreloadUrls(
+      GameState.enemyConfig,
+      enemySkin
+    );
+
+    // 全VFX演出画像（スキル演出、カットイン、ジョーカー演出等）
+    const vfxUrls = getAllVfxImageUrls();
+
+    // 重複を排除した対戦用全画像アセットURL配列
+    const battleImageUrls = Array.from(
+      new Set([
+        ...cardUrls,
+        ...playerLeaderUrls,
+        ...enemyLeaderUrls,
+        ...vfxUrls,
+      ])
+    );
+
     let loaded = 0;
     let bgmLoaded = false;
     let cardsLoaded = false;
@@ -624,11 +655,13 @@ export function prepareBattle() {
     const updateProgress = () => {
       if (isFinished) return;
       loaded++;
-      const progressText = `Generating Cards... ${Math.floor((loaded / Math.max(1, allCards.length)) * 100)}%`;
+      const progressText = `Loading Battle Assets... ${Math.floor(
+        (loaded / Math.max(1, battleImageUrls.length)) * 100
+      )}%`;
       if (window.updateLoadingTextReact) {
         window.updateLoadingTextReact(progressText);
       }
-      if (loaded >= allCards.length) {
+      if (loaded >= battleImageUrls.length) {
         cardsLoaded = true;
         finishLoading();
       }
@@ -695,17 +728,17 @@ export function prepareBattle() {
       finishLoading();
     }
 
-    if (allCards.length === 0) {
+    if (battleImageUrls.length === 0) {
       cardsLoaded = true;
       finishLoading();
       return;
     }
 
-    allCards.forEach((card) => {
+    battleImageUrls.forEach((url) => {
       const img = new Image();
       img.onload = updateProgress;
       img.onerror = updateProgress;
-      img.src = card.imgUrl;
+      img.src = url;
     });
   };
 
