@@ -1598,32 +1598,6 @@ export async function resolveActiveSkillEffect(
       }
       await sleep(200);
     }
-  } else if (skillId === 'portent') {
-    // 【開発ガイドライン適用】直接トリガー型アクティブスキル：凶兆
-    const currentHp = o === 'blue' ? GameState.playerHp : GameState.enemyHp;
-    const bonus = Math.max(0, 13 - (currentHp || 0));
-    if (bonus > 0) {
-      c.currentPower = (c.currentPower || 0) + bonus;
-
-      if (window.triggerVfx) {
-        await window.triggerVfx('anm_skill_hero', o, l);
-      } else {
-        playSound(SOUNDS.seSkill);
-      }
-
-      if (cEl) {
-        createDamagePopup(cEl, `+${bonus}`, '#a855f7');
-      }
-
-      renderBoard();
-
-      if (window.updateCardVisualsReact) {
-        window.updateCardVisualsReact(l, o === 'blue' ? 'player' : 'enemy');
-      } else if (window.updateBattleUIHook) {
-        window.updateBattleUIHook();
-      }
-      await sleep(200);
-    }
   } else if (skillId === 'adversity') {
     // 【開発ガイドライン適用】直接トリガー型アクティブスキル
     const opB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
