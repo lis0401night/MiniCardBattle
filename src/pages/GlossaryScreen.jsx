@@ -7,6 +7,9 @@ import { showGalleryMenu } from '../services/uiGallery.js';
 /** アコーディオン展開アニメーションの持続時間(ms) */
 const ACCORDION_DURATION_MS = 300;
 
+/** アコーディオン開閉後のスクロール開始までの遅延時間(ms) */
+const SCROLL_DELAY_MS = 50;
+
 /**
  * アコーディオンで滑らかに開閉するパネルコンポーネント
  * max-height トランジションを用いてコンテンツの高さに合わせた展開/収縮を行う。
@@ -56,7 +59,7 @@ function AccordionPanel({ isOpen, children }) {
 /**
  * 用語集画面コンポーネント
  * 大項目（カテゴリ）→ 中項目（用語）の2段アコーディオンで用語集を表示する。
- * 各カテゴリ領域内で中項目リストをスムーズなアニメーション付きで開閉制御する。
+ * 各カテゴリ領域内で中項目リストをスムーズなアニメーション付きで開閉制御し、選択項目への自動スクロールを行う。
  * @returns {import('react').ReactElement} 用語集画面
  */
 export default function GlossaryScreen() {
@@ -64,31 +67,63 @@ export default function GlossaryScreen() {
   const [openCategories, setOpenCategories] = useState(new Set());
   // 開いている中項目のキーセット（"カテゴリIndex-用語Index" 形式）
   const [openTerms, setOpenTerms] = useState(new Set());
+  // 各カテゴリ・用語ヘッダーへの参照マップ
+  const headerRefs = useRef({});
+
+  /**
+   * 指定された要素をビューポート内に滑らかにスクロールする
+   * アコーディオンの展開アニメーション完了後に実行する。
+   * @param {string} refKey - headerRefs に格納されたキー
+   * @param {ScrollLogicalPosition} [blockPosition='start'] - スクロール位置（'start'|'center'|'nearest'）
+   * @returns {void}
+   */
+  const scrollIntoViewSmooth = useCallback((refKey, blockPosition = 'start') => {
+    setTimeout(() => {
+      const el = headerRefs.current[refKey];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: blockPosition });
+      }
+    }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
+  }, []);
 
   /**
    * 大項目のアコーディオン開閉をトグルする
-   * 他の大項目および展開中の中項目を閉じた上で、選択された大項目のみを展開する排他制御を行う。
+   * 他の大項目および展開中の中項目を閉じた上で、選択された大項目のみを展開しスクロールする。
    * @param {number} categoryIndex - 大項目のインデックス
    * @returns {void}
    */
-  const toggleCategory = useCallback((categoryIndex) => {
-    setOpenCategories((prev) =>
-      prev.has(categoryIndex) ? new Set() : new Set([categoryIndex])
-    );
-    setOpenTerms(new Set());
-  }, []);
+  const toggleCategory = useCallback(
+    (categoryIndex) => {
+      setOpenCategories((prev) => {
+        const isOpening = !prev.has(categoryIndex);
+        if (isOpening) {
+          scrollIntoViewSmooth(`cat-${categoryIndex}`);
+        }
+        return isOpening ? new Set([categoryIndex]) : new Set();
+      });
+      setOpenTerms(new Set());
+    },
+    [scrollIntoViewSmooth]
+  );
 
   /**
    * 中項目のアコーディオン開閉をトグルする
-   * 他の中項目を閉じた上で、選択された中項目のみを展開する排他制御を行う。
+   * 他の中項目を閉じた上で、選択された中項目のみを展開し滑らかに自動スクロールする。
    * @param {string} termKey - 中項目の一意キー（"カテゴリIndex-用語Index"）
    * @returns {void}
    */
-  const toggleTerm = useCallback((termKey) => {
-    setOpenTerms((prev) =>
-      prev.has(termKey) ? new Set() : new Set([termKey])
-    );
-  }, []);
+  const toggleTerm = useCallback(
+    (termKey) => {
+      setOpenTerms((prev) => {
+        const isOpening = !prev.has(termKey);
+        if (isOpening) {
+          scrollIntoViewSmooth(`term-${termKey}`);
+        }
+        return isOpening ? new Set([termKey]) : new Set();
+      });
+    },
+    [scrollIntoViewSmooth]
+  );
 
   return (
     <ScreenLayout
@@ -106,6 +141,9 @@ export default function GlossaryScreen() {
             <div key={catIdx} className="glossary-category">
               {/* 大項目ヘッダー */}
               <button
+                ref={(el) => {
+                  headerRefs.current[`cat-${catIdx}`] = el;
+                }}
                 className={`glossary-category-header ${isCatOpen ? 'glossary-category-header-active' : ''}`}
                 onClick={() => toggleCategory(catIdx)}
                 aria-expanded={isCatOpen}
@@ -127,7 +165,13 @@ export default function GlossaryScreen() {
                     const termKey = `${catIdx}-${termIdx}`;
                     const isTermOpen = openTerms.has(termKey);
                     return (
-                      <div key={termKey} className="glossary-term">
+                      <div
+                        key={termKey}
+                        ref={(el) => {
+                          headerRefs.current[`term-${termKey}`] = el;
+                        }}
+                        className="glossary-term"
+                      >
                         {/* 中項目ヘッダー */}
                         <button
                           className={`glossary-term-header ${isTermOpen ? 'glossary-term-header-active' : ''}`}
