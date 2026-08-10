@@ -111,28 +111,31 @@ export default function EnemyArea({
             id="enemy-deck-info"
             className="deck-info"
             style={{
-              fontSize: '1rem',
-              marginTop: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
-              gap: '8px',
+              gap: '6px',
+              whiteSpace: 'nowrap',
             }}
           >
             <DeckIcon count={deckCount} max={maxDeckCount} />
             <span
               style={{
                 display: 'inline-block',
-                minWidth: '150px',
-                textAlign: 'left',
                 fontVariantNumeric: 'tabular-nums',
+                whiteSpace: 'nowrap',
               }}
             >
               山札：{deckCount} / 墓地：{dropCount}
             </span>
             <button
               className="action-btn"
-              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+              style={{
+                padding: '3px 8px',
+                fontSize: '0.75rem',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 window.showDiscardSelectionModalReact?.(

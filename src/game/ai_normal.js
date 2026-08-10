@@ -6,6 +6,7 @@ import {
   consumeArmSelf,
   getCurrentRNG,
   getSeededRandom,
+  getSkillValue,
   hasSkill,
   mergeCardSkills,
   setCurrentRNG,
@@ -468,7 +469,37 @@ export function processActionSequence(
         if (tgtLane !== undefined && simState.enemyBoard[tgtLane] !== null) {
           const execCard = simState.enemyBoard[tgtLane];
           if (canCardBeDestroyed(simState, execCard, 'red')) {
-            quietDiscardFromBoard(simState, 'red', tgtLane);
+            // 分裂(split): 墓地送りにせず、対象レーンにトークンを配置する
+            if (hasSkill(execCard, 'split')) {
+              if (
+                !simState.enemySealedLanes ||
+                simState.enemySealedLanes[tgtLane] === 0
+              ) {
+                const tokenId =
+                  execCard.summonId ||
+                  execCard.skills?.find((s) => s.id === 'split')?.summonId ||
+                  'token_legs';
+                const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
+                  name: 'トークン',
+                  power: 1,
+                };
+                const val = getSkillValue(execCard, 'split') || tL.power || 2;
+                simState.enemyBoard[tgtLane] = {
+                  ...JSON.parse(JSON.stringify(tL)),
+                  id: `sp_sim_${Math.floor(Math.random() * 1000000000)}_${tgtLane}`,
+                  owner: 'red',
+                  imgUrl: `assets/cards/card_${tokenId}.webp`,
+                  power: val,
+                  currentPower: val,
+                  basePower: val,
+                  rarity: tL.rarity || 1,
+                };
+              } else {
+                quietDiscardFromBoard(simState, 'red', tgtLane);
+              }
+            } else {
+              quietDiscardFromBoard(simState, 'red', tgtLane);
+            }
           }
         }
         continue;

@@ -279,7 +279,7 @@ export function getScreenBackgroundStyle(imagePath) {
  */
 export function getStageBackgroundStyle(stageId) {
   return {
-    backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.webp`)}')`,
+    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.3)), url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.webp`)}')`,
   };
 }
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;
