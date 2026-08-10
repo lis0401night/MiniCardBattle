@@ -835,7 +835,9 @@ export default function VfxSpritesheetTool() {
         jsonMeta.columns > 0 &&
         jsonMeta.rows > 0 &&
         jsonMeta.columns <= img.naturalWidth &&
-        jsonMeta.rows <= img.naturalHeight;
+        jsonMeta.rows <= img.naturalHeight &&
+        img.naturalWidth % jsonMeta.columns === 0 &&
+        img.naturalHeight % jsonMeta.rows === 0;
       const cols = hasUsableMeta ? jsonMeta.columns : guessedGrid.cols;
       const rows = hasUsableMeta ? jsonMeta.rows : guessedGrid.rows;
       setAnimState({

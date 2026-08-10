@@ -1808,14 +1808,17 @@ export function getBestSimulatedMove() {
                       newlyDiscarded.push(destroyedCard);
                     }
 
-                    // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合はトークンを残留させる）
+                    // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合は封印されていないレーンのみトークンを残留させる）
                     const nextEnemyBoard = activeEnemyBoard.map((c) =>
                       c ? { ...c } : null
                     );
                     if (isDestroyable) {
-                      nextEnemyBoard[tgtLane] = hasSkill(destroyedCard, 'split')
-                        ? createSplitSimToken(destroyedCard, tgtLane, 'red')
-                        : null;
+                      const canPlaceSplitToken =
+                        !mySealedLanes || mySealedLanes[tgtLane] === 0;
+                      nextEnemyBoard[tgtLane] =
+                        hasSkill(destroyedCard, 'split') && canPlaceSplitToken
+                          ? createSplitSimToken(destroyedCard, tgtLane, 'red')
+                          : null;
                     }
 
                     let nextBranches = buildSkillBranch(
@@ -3608,14 +3611,17 @@ export function evaluateAdhocTokenLanes(
             newlyDiscarded.push(destroyedCard);
           }
 
-          // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合はトークンを残留させる）
+          // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合は封印されていないレーンのみトークンを残留させる）
           const nextEnemyBoard = activeEnemyBoard.map((c) =>
             c ? { ...c } : null
           );
           if (isDestroyable) {
-            nextEnemyBoard[tgtLane] = hasSkill(destroyedCard, 'split')
-              ? createSplitSimToken(destroyedCard, tgtLane, 'red')
-              : null;
+            const canPlaceSplitToken =
+              !sealedLanes || sealedLanes[tgtLane] === 0;
+            nextEnemyBoard[tgtLane] =
+              hasSkill(destroyedCard, 'split') && canPlaceSplitToken
+                ? createSplitSimToken(destroyedCard, tgtLane, 'red')
+                : null;
           }
 
           let nextBranches = buildSkillBranchAdhoc(
