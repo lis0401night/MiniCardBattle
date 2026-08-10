@@ -10,6 +10,7 @@ import {
   multiplayerCallbacks,
   sendChatMessage,
   updatePlayerReady,
+  updateRoomHeartbeat,
 } from '../services/multiplayer.js';
 import { showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
@@ -278,7 +279,16 @@ export default function OnlineLobbyScreen() {
       listenToRoom(roomId);
     }
 
+    // ホストとしてロビーで待機中の間、10秒ごとに生存信号（ハートビート）を送信するタイマー
+    const heartbeatInterval = setInterval(() => {
+      const activeRoomId = getCurrentRoomId();
+      if (getIsHost() && activeRoomId && GameState.appState !== 'battle') {
+        updateRoomHeartbeat(activeRoomId);
+      }
+    }, 10000);
+
     return () => {
+      clearInterval(heartbeatInterval);
       // ロビー画面から離脱した場合（対戦開始時を除く）はコールバックを解除
       // 対戦開始時は対戦用のコールバック（切断検知等）を維持するため、バトル状態でない場合のみ null にする
       if (GameState.appState !== 'battle') {

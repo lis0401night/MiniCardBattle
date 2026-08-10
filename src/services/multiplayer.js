@@ -13,7 +13,6 @@ import {
   query,
   orderByChild,
   equalTo,
-  limitToFirst,
 } from 'firebase/database';
 import { database } from '../utils/firebase.js';
 import { getOrCreateUUID } from '../utils/gameUtils.js';
@@ -54,6 +53,105 @@ export function getCurrentRoomCode() {
  */
 export function getIsHost() {
   return isHost;
+}
+
+/** ホスト生存信号（ハートビート）の有効期限（45秒） */
+export const ROOM_HEARTBEAT_TIMEOUT_MS = 45000;
+
+/**
+ * ホストが現在ロビー画面でアプリを開いて待機中であることを示す生存信号（ハートビート）を更新する。
+ * @param {string} roomId - 対象のルームID
+ * @returns {Promise<boolean>} 更新が成功したかどうか
+ */
+export async function updateRoomHeartbeat(roomId) {
+  if (!roomId || !database) return false;
+  try {
+    const hostRef = ref(database, `${ROOMS_REF}/${roomId}/host`);
+    await update(hostRef, {
+      lastActiveAt: serverTimestamp(),
+    });
+    return true;
+  } catch (e) {
+    console.warn('updateRoomHeartbeat failed:', e);
+    return false;
+  }
+}
+
+/**
+ * ルームのホストが生存中（直近にハートビートを送信しているか、または作成直後であるか）を判定する。
+ * @param {Object} room - ルームデータ
+ * @param {number} [now] - 現在のタイムスタンプ
+ * @returns {boolean} ホストが生存中であればtrue
+ */
+export function isHostAlive(room, now = Date.now()) {
+  if (!room || !room.host) return false;
+  const lastSeen = room.host.lastActiveAt || room.createdAt || 0;
+  if (!lastSeen) return true;
+  return now - lastSeen <= ROOM_HEARTBEAT_TIMEOUT_MS;
+}
+
+/**
+ * 未埋まりの公開対戦待機ルーム一覧をリアルタイム監視する。
+ * ホストの生存信号（lastActiveAt）を確認し、放置された無人部屋は自動除外・クリーンアップする。
+ *
+ * @param {function(Array):void} onUpdate - ロード・更新完了時にコールバックされる関数
+ * @returns {function():void} 監視解除用関数
+ */
+export function fetchPublicWaitingRooms(onUpdate) {
+  if (!database) return () => {};
+
+  const roomsRef = ref(database, ROOMS_REF);
+
+  const unsubscribe = onValue(
+    roomsRef,
+    (snapshot) => {
+      const data = snapshot.val();
+      const availableRooms = [];
+      const now = Date.now();
+      const expiredRoomKeys = [];
+
+      if (data) {
+        Object.keys(data).forEach((key) => {
+          const room = data[key];
+          // 待機中かつ公開設定（isPublic !== false）の部屋をチェック
+          if (room && room.status === 'waiting' && room.isPublic !== false) {
+            if (isHostAlive(room, now)) {
+              availableRooms.push({
+                id: key,
+                ...room,
+              });
+            } else {
+              expiredRoomKeys.push({ key, code: room.roomCode });
+            }
+          }
+        });
+      }
+
+      // 放置された無人部屋のバックグラウンドクリーンアップ
+      if (expiredRoomKeys.length > 0) {
+        expiredRoomKeys.forEach(({ key, code }) => {
+          removeRoomAndCode(key, code).catch(() => {});
+        });
+      }
+
+      // 作成日時の降順で並び替え
+      availableRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      onUpdate(availableRooms);
+    },
+    (error) => {
+      console.error('Firebase listen error:', error);
+      if (
+        error?.code === 'PERMISSION_DENIED' ||
+        (error?.message && error.message.includes('Permission denied'))
+      ) {
+        showAlertModal(
+          '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
+        );
+      }
+    }
+  );
+
+  return unsubscribe;
 }
 
 // リスナー解除用関数
@@ -650,9 +748,10 @@ export async function forceDeleteAllRooms() {
 }
 
 /**
- * 自身以外の未埋まり公開待機ルームが存在するかどうかを単発(get)で判定する
+ * 自身以外の未埋まり公開待機ルームが存在するかどうかを単発(get)で判定する。
  * メインメニュー画面（ModeSelectScreen）で過剰な通信・読み取りコストを回避しつつ、
- * オンライン対戦ボタンの通知バッジ表示を更新するための軽量チェック関数
+ * オンライン対戦ボタンの通知バッジ表示を更新するための軽量チェック関数。
+ * ホストの生存信号（lastActiveAt）を確認し、放置された無人部屋は判定から除外・自動削除する。
  *
  * @returns {Promise<boolean>} 自分以外の公開待機ルームが1件以上存在すればtrue
  */
@@ -661,31 +760,38 @@ export async function checkHasPublicWaitingRooms() {
   try {
     const myId = getOrCreateUUID();
     const roomsRef = ref(database, ROOMS_REF);
+    const snapshot = await get(roomsRef);
 
-    // roomsノード全件取得を避け、status='waiting'の待機ルームのみを最大20件に絞り込んでクエリ取得
-    const waitingQuery = query(
-      roomsRef,
-      orderByChild('status'),
-      equalTo('waiting'),
-      limitToFirst(20)
-    );
-    const snapshot = await get(waitingQuery);
-    if (!snapshot.exists()) return false;
+    if (!snapshot || !snapshot.exists()) return false;
 
+    const now = Date.now();
     let hasRoom = false;
+    const expiredRoomKeys = [];
+
     snapshot.forEach((child) => {
-      if (hasRoom) return true; // 該当する部屋が1件でも見つかれば走査を打ち切り
       const room = child.val();
-      // 「待機中(status === 'waiting')」「公開(isPublic !== false)」「自分以外のホスト」の3条件を満たすか確認
-      if (
-        room.status === 'waiting' &&
-        room.isPublic !== false &&
-        room.host?.id !== myId
-      ) {
-        hasRoom = true;
-        return true; // 1件見つかった時点で走査を打ち切る
+      const roomKey = child.key;
+
+      // 「待機中(status === 'waiting')」「公開(isPublic !== false)」の条件を満たす部屋をチェック
+      if (room && room.status === 'waiting' && room.isPublic !== false) {
+        if (isHostAlive(room, now)) {
+          if (room.host?.id !== myId) {
+            hasRoom = true;
+          }
+        } else {
+          // ホストの生存信号が切れている無人部屋（ゾンビルーム）を発見した場合は削除リストに追加
+          expiredRoomKeys.push({ key: roomKey, code: room.roomCode });
+        }
       }
     });
+
+    // 発見した無人放置部屋をバックグラウンドで自動クリーンアップ
+    if (expiredRoomKeys.length > 0) {
+      expiredRoomKeys.forEach(({ key, code }) => {
+        removeRoomAndCode(key, code).catch(() => {});
+      });
+    }
+
     return hasRoom;
   } catch (e) {
     console.error('checkHasPublicWaitingRooms error:', e);
