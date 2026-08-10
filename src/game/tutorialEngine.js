@@ -1819,13 +1819,9 @@ export async function runTutorialFlow() {
           // 連打対策: 敵ターンから自ターン攻撃フェーズまでの全戦闘演出が100%完了するまで確実に待機
           await waitUntilTutorialCondition(
             () =>
-              !GameState.isProcessing &&
-              (!GameState.tutorial ||
-                step.resumeEnemyTurnAfter ||
-                !GameState.tutorial.enemyTurnResumeResolver) &&
-              (!GameState.tutorial ||
-                step.resumeCombatAfter ||
-                !GameState.tutorial.combatResumeResolver),
+              !GameState.isProcessing ||
+              Boolean(GameState.tutorial?.enemyTurnResumeResolver) ||
+              Boolean(GameState.tutorial?.combatResumeResolver),
             TUTORIAL_POLL_INTERVAL_MS,
             null
           );
