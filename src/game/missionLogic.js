@@ -110,7 +110,7 @@ export function evaluateMission(missionId, state) {
       return state.missionProgress?.damage_5_single === true;
     case 'win_by_skill':
       return state.missionProgress?.lastDamageSource === 'skill';
-    case 'sacrifice_apex_1':
+    case 'play_sacrifice_apex':
       return (state.missionProgress?.sacrifice_count || 0) >= 1;
     case 'play_golem':
       return state.missionProgress?.played_golem === true;

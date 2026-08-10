@@ -34,8 +34,8 @@ export const CHALLENGE_MISSIONS = [
     timing: 'end',
   },
   {
-    id: 'sacrifice_apex_1',
-    name: '生贄または頂点を持つカードを1回召喚',
+    id: 'play_sacrifice_apex',
+    name: '生贄または頂点を持つカードを召喚',
     points: 1,
     timing: 'instant',
   },
