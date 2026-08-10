@@ -15,8 +15,6 @@ reviews:
     - '!package-lock.json'
     - '!public/assets/**'
     - '!**/public/assets/**'
-    - '!tool/**'
-    - '!**/tool/**'
   path_instructions:
     - path: '**/*.{js,jsx,css}'
       instructions: |

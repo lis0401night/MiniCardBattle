@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>お知らせ管理画面</title>
+
+    <!-- Quill.js CDN -->
+    <link
+      href="https://cdn.quilljs.com/1.3.6/quill.snow.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #0f172a;
+        color: #f8fafc;
+        margin: 0;
+        padding: 20px;
+      }
+      h1 {
+        color: #facc15;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: opacity 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.8;
+      }
+      .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+      }
+      .btn-danger {
+        background-color: #ef4444;
+        color: white;
+      }
+      .btn-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        background-color: #475569;
+        color: white;
+      }
+
+      .news-list {
+        max-width: 900px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .news-item {
+        background-color: #1e293b;
+        border: 1px solid #475569;
+        border-radius: 8px;
+        padding: 20px;
+      }
+      .news-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 10px;
+      }
+      .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      .status-active {
+        background: #10b981;
+        color: white;
+      }
+      .status-inactive {
+        background: #64748b;
+        color: white;
+      }
+
+      .news-controls {
+        display: flex;
+        gap: 10px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-row {
+        display: flex;
+        gap: 15px;
+      }
+      .form-row .form-group {
+        flex: 1;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 13px;
+        color: #94a3b8;
+      }
+      .hint-text {
+        font-size: 11px;
+        color: #fbbf24;
+        margin-left: 10px;
+      }
+      input[type='text'],
+      input[type='datetime-local'],
+      input[type='color'] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #475569;
+        border-radius: 4px;
+        background-color: #0f172a;
+        color: white;
+        box-sizing: border-box;
+      }
+
+      /* Quill Editor Overrides */
+      .ql-container {
+        background-color: #fff;
+        color: #000;
+        font-size: 14px;
+        border-radius: 0 0 4px 4px;
+      }
+      .ql-toolbar {
+        background-color: #e2e8f0;
+        border-radius: 4px 4px 0 0;
+      }
+
+      /* Checkbox Toggle Switch Style */
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+        background-color: #475569;
+        border-radius: 12px;
+        margin-right: 10px;
+        transition: background-color 0.3s;
+      }
+      .toggle-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+      }
+      input[type='checkbox'] {
+        display: none;
+      }
+      input[type='checkbox']:checked + .toggle-switch {
+        background-color: #3b82f6;
+      }
+      input[type='checkbox']:checked + .toggle-switch::after {
+        transform: translateX(26px);
+      }
+
+      .fallback-group {
+        background-color: #0f172a;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 10px;
+      }
+
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 1000;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+    <script
+      type="module"
+      src="../src/tools/common/toolNavStandalone.js"
+    ></script>
+  </head>
+  <body>
+    <div id="loading">Loading...</div>
+
+    <h1>お知らせ管理画面</h1>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="addNews()">＋ 新規追加</button>
+      <button class="btn btn-danger" onclick="saveNews()" id="saveBtn">
+        サーバーに保存
+      </button>
+    </div>
+
+    <div class="news-list" id="newsListContainer">
+      <!-- News items will be rendered here -->
+    </div>
+
+    <script>
+      let newsItems = [];
+
+      // Initialize
+      async function loadNews() {
+        try {
+          const res = await fetch('api/get_news.php');
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            if (data.success && data.news) {
+              newsItems = data.news;
+            }
+          } catch (e) {
+            console.warn('Local dev fallback or parsing error', e);
+            newsItems = [];
+          }
+          renderNews();
+        } catch (err) {
+          alert('読み込みエラーが発生しました。');
+        } finally {
+          document.getElementById('loading').classList.add('hidden');
+        }
+      }
+
+      async function saveNews() {
+        const btn = document.getElementById('saveBtn');
+        btn.innerText = '保存中...';
+        btn.disabled = true;
+        try {
+          const res = await fetch('api/save_news.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ news: newsItems }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('保存しました！');
+          } else {
+            alert('保存に失敗しました。');
+          }
+        } catch (err) {
+          alert('保存中にエラーが発生しました。');
+        } finally {
+          btn.innerText = 'サーバーに保存';
+          btn.disabled = false;
+        }
+      }
+
+      function addNews() {
+        const newId =
+          newsItems.length > 0
+            ? Math.max(...newsItems.map((n) => n.id)) + 1
+            : 1;
+        const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+        newsItems.unshift({
+          id: newId,
+          title: '新しいお知らせ',
+          date: today,
+          startDate: '',
+          endDate: '',
+          content: '<p><br></p>',
+          color1: '#333333',
+          color2: '#111111',
+          icon: '📢',
+          imageUrl: '',
+          shortcut: '',
+          isActive: false,
+        });
+        renderNews();
+      }
+
+      function deleteNews(id) {
+        if (confirm('本当に削除しますか？')) {
+          newsItems = newsItems.filter((n) => n.id !== id);
+          renderNews();
+        }
+      }
+
+      function moveNews(index, direction) {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= newsItems.length) return;
+        const temp = newsItems[index];
+        newsItems[index] = newsItems[targetIndex];
+        newsItems[targetIndex] = temp;
+        renderNews();
+      }
+
+      function updateField(id, field, value) {
+        const item = newsItems.find((n) => n.id === id);
+        if (item) {
+          item[field] = value;
+          // 画像URLが変更された場合は、フォールバックUIの表示非表示を切り替えるために再描画
+          if (field === 'imageUrl') {
+            renderNews();
+          }
+        }
+      }
+
+      function updateCheckbox(id, field, checked) {
+        const item = newsItems.find((n) => n.id === id);
+        if (item) {
+          item[field] = checked;
+          // ステータスバッジの更新のため再描画
+          renderNews();
+        }
+      }
+
+      function renderNews() {
+        const container = document.getElementById('newsListContainer');
+        container.innerHTML = '';
+
+        newsItems.forEach((item, index) => {
+          const div = document.createElement('div');
+          div.className = 'news-item';
+
+          const fallbackDisplay = item.imageUrl
+            ? 'display: none;'
+            : 'display: flex;';
+
+          // ステータスの表示
+          const statusClass = item.isActive
+            ? 'status-active'
+            : 'status-inactive';
+          const statusText = item.isActive
+            ? '公開中（または公開待機）'
+            : '非公開';
+
+          div.innerHTML = `
+          <div class="news-header">
+            <div style="display: flex; align-items: center;">
+              <span class="status-badge ${statusClass}">${statusText}</span>
+              <span style="font-weight: bold; margin-right: 15px;">ID: ${item.id}</span>
+              
+              <label class="toggle-container">
+                <input type="checkbox" ${item.isActive ? 'checked' : ''} onchange="updateCheckbox(${item.id}, 'isActive', this.checked)">
+                <div class="toggle-switch"></div>
+                <span>${item.isActive ? '公開を許可' : '強制非公開'}</span>
+              </label>
+            </div>
+            
+            <div class="news-controls">
+              <button class="btn-circle" onclick="moveNews(${index}, -1)">▲</button>
+              <button class="btn-circle" onclick="moveNews(${index}, 1)">▼</button>
+              <button class="btn-circle btn-danger" onclick="deleteNews(${item.id})">🗑</button>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label>タイトル</label>
+              <input type="text" value="${item.title}" oninput="updateField(${item.id}, 'title', this.value)">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>表示用日付 (バナー左上に表示)</label>
+              <input type="text" value="${item.date}" oninput="updateField(${item.id}, 'date', this.value)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>公開開始日時 <span class="hint-text">※未入力で制限なし</span></label>
+              <input type="datetime-local" value="${item.startDate || ''}" onchange="updateField(${item.id}, 'startDate', this.value)">
+            </div>
+            <div class="form-group">
+              <label>公開終了日時 <span class="hint-text">※未入力で制限なし</span></label>
+              <input type="datetime-local" value="${item.endDate || ''}" onchange="updateField(${item.id}, 'endDate', this.value)">
+            </div>
+            <div class="form-group">
+              <label>ショートカット (画面ID)</label>
+              <select onchange="updateField(${item.id}, 'shortcut', this.value)" style="width: 100%; padding: 8px; border: 1px solid #475569; border-radius: 4px; background-color: #0f172a; color: white;">
+                <option value="" ${item.shortcut === '' ? 'selected' : ''}>なし (ボタンを表示しない)</option>
+                <option value="screen-solo-menu" ${item.shortcut === 'screen-solo-menu' ? 'selected' : ''}>ソロモード</option>
+                <option value="screen-event-menu" ${item.shortcut === 'screen-event-menu' ? 'selected' : ''}>イベントモード</option>
+                <option value="screen-tournament-menu" ${item.shortcut === 'screen-tournament-menu' ? 'selected' : ''}>トーナメント</option>
+                <option value="screen-defense-menu" ${item.shortcut === 'screen-defense-menu' ? 'selected' : ''}>防衛戦</option>
+                <option value="screen-high-difficulty-menu" ${item.shortcut === 'screen-high-difficulty-menu' ? 'selected' : ''}>高難易度</option>
+                <option value="screen-dungeon-menu" ${item.shortcut === 'screen-dungeon-menu' ? 'selected' : ''}>ダンジョン</option>
+                <option value="screen-card-list" ${item.shortcut === 'screen-card-list' ? 'selected' : ''}>ギャラリー (カードリスト)</option>
+                <option value="screen-achievements" ${item.shortcut === 'screen-achievements' ? 'selected' : ''}>実績</option>
+                <option value="screen-deck-list" ${item.shortcut === 'screen-deck-list' ? 'selected' : ''}>デッキ編成</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>本文</label>
+            <div id="editor-${item.id}" style="height: 150px;"></div>
+          </div>
+          
+          <div class="form-group">
+            <label>画像URL <span class="hint-text">※最適な画像サイズ：バナー用 720×240px または 1440×480px (3:1の比率)</span></label>
+            <input type="text" value="${item.imageUrl}" placeholder="https://..." oninput="updateField(${item.id}, 'imageUrl', this.value)">
+          </div>
+          
+          <div class="fallback-group form-row" style="${fallbackDisplay}">
+            <div class="form-group">
+              <label>グラデーション色1</label>
+              <input type="color" value="${item.color1}" onchange="updateField(${item.id}, 'color1', this.value)">
+            </div>
+            <div class="form-group">
+              <label>グラデーション色2</label>
+              <input type="color" value="${item.color2}" onchange="updateField(${item.id}, 'color2', this.value)">
+            </div>
+            <div class="form-group">
+              <label>アイコン (絵文字等)</label>
+              <input type="text" value="${item.icon}" oninput="updateField(${item.id}, 'icon', this.value)">
+            </div>
+          </div>
+        `;
+          container.appendChild(div);
+
+          // Initialize Quill
+          const quill = new Quill(`#editor-${item.id}`, {
+            theme: 'snow',
+            modules: {
+              toolbar: [
+                ['bold', 'italic', 'underline', 'strike'], // toggled buttons
+                [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                [{ size: ['small', false, 'large', 'huge'] }], // custom dropdown
+                [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                ['link'], // link button
+                ['clean'], // remove formatting button
+              ],
+            },
+          });
+
+          // Set initial content
+          quill.root.innerHTML = item.content || '';
+
+          // Listen to changes
+          quill.on('text-change', function () {
+            updateField(item.id, 'content', quill.root.innerHTML);
+          });
+        });
+      }
+
+      // Start
+      loadNews();
+    </script>
+  </body>
+</html>

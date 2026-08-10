@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
+import {
+  checkIsTutorialMode,
+  checkIsStoryMode,
+  checkIsFreeMode,
+} from '../../utils/gameUtils.js';
 
 /** カットイン表示時間（ミリ秒） */
 const CUTIN_DISPLAY_DURATION = 2500;
@@ -49,10 +54,16 @@ export default function CutinOverlay() {
     ? 'linear-gradient(90deg, transparent, #38bdf8, transparent)'
     : 'linear-gradient(90deg, transparent, #ef4444, transparent)';
 
-  // プレイヤーまたは敵のスキン適用後立ち絵画像を取得
-  const charImgSrc = isBlue
-    ? getSkinImage(config, GameState.playerSkins[config.id], 'image')
-    : getSkinImage(config, GameState.enemySkins?.[config.id], 'image');
+  // モード判定を考慮してプレイヤーまたは敵のスキン適用後立ち絵画像を取得
+  const skinId = isBlue
+    ? checkIsTutorialMode()
+      ? 'default'
+      : GameState.playerSkins?.[config.id]
+    : checkIsTutorialMode() || checkIsStoryMode() || checkIsFreeMode()
+      ? 'default'
+      : GameState.enemySkins?.[config.id];
+
+  const charImgSrc = getSkinImage(config, skinId, 'image');
 
   return (
     <div id="screen-cutin" style={{ display: 'flex' }}>

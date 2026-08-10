@@ -66,6 +66,10 @@
         }
       }
     </style>
+    <script
+      type="module"
+      src="../src/tools/common/toolNavStandalone.js"
+    ></script>
   </head>
 
   <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -328,10 +332,10 @@
       async function init() {
         try {
           // ESMを使ってモジュールとしてインポート
-          const cardsModule = await import('./src/utils/constants/cards.js');
-          const skillsModule = await import('./src/utils/constants/skills.js');
+          const cardsModule = await import('../src/utils/constants/cards.js');
+          const skillsModule = await import('../src/utils/constants/skills.js');
           const skillPointsModule =
-            await import('./src/utils/constants/skill_points.js');
+            await import('../src/utils/constants/skill_points.js');
 
           cardData = (cardsModule.CARD_MASTER || []).filter((c) => !c.isToken);
           skillData = skillsModule.SKILLS || {};
@@ -371,11 +375,11 @@
               if (isHigh) {
                 const cleanFile = file.replace('_high', '');
                 deckModule = await import(
-                  `./src/utils/constants/enemy_decks/event_high/${cleanFile}.js`
+                  `../src/utils/constants/enemy_decks/event_high/${cleanFile}.js`
                 );
               } else {
                 deckModule = await import(
-                  `./src/utils/constants/enemy_decks/${file}.js`
+                  `../src/utils/constants/enemy_decks/${file}.js`
                 );
               }
               const deck =

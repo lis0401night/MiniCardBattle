@@ -1491,3 +1491,34 @@ export function triggerShakeAnimation(element) {
     { once: true }
   );
 }
+
+/**
+ * サーバー由来の画像URLや各種画像パスについて、ローカル開発環境（localhost / 127.0.0.1）では
+ * 自動的にローカルのアセットパス（/assets/...）に補正・解決して返却するユーティリティ関数。
+ *
+ * @param {string} url - 変換前の画像URL（相対パスまたはフルURL）
+ * @returns {string} 補正後の画像URL
+ */
+export function resolveAssetUrl(url) {
+  if (!url) return '';
+  const isLocal =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.startsWith('192.168.'));
+
+  if (isLocal) {
+    // フルURL(https://.../assets/foo.pngなど)や相対URLから assets/ の相対パス部分を抽出してルート絶対パス(/assets/...)化
+    const match = url.match(/assets\/(.+)$/i);
+    if (match) {
+      return `/assets/${match[1]}`;
+    }
+  }
+
+  // 先頭が assets/ で始まっている場合はローカルルート相対パス /assets/ に補正
+  if (url.startsWith('assets/')) {
+    return '/' + url;
+  }
+
+  return url;
+}

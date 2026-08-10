@@ -1,6 +1,10 @@
 import DOMPurify from 'dompurify';
 import { useEffect, useRef, useState } from 'react';
-import { playSound, switchScreen } from '../../utils/gameUtils.js';
+import {
+  playSound,
+  resolveAssetUrl,
+  switchScreen,
+} from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
 // リンクを常に新しいタブ(外部ブラウザ)で開くようにDOMPurifyを設定
@@ -331,7 +335,7 @@ export default function NewsBanner() {
             {/* 上部画像 (設定されている場合のみ、枠の内側に表示) */}
             {selectedNews.imageUrl && (
               <img
-                src={selectedNews.imageUrl}
+                src={resolveAssetUrl(selectedNews.imageUrl)}
                 alt="News Banner"
                 style={{
                   width: '100%',
@@ -401,7 +405,15 @@ export default function NewsBanner() {
                 borderRadius: '8px',
               }}
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(selectedNews.content),
+                __html: DOMPurify.sanitize(
+                  typeof selectedNews.content === 'string'
+                    ? selectedNews.content.replace(
+                        /src=["'](https?:\/\/[^"']+\/)?assets\/([^"']+)["']/gi,
+                        (m, p1, p2) =>
+                          `src="${resolveAssetUrl('assets/' + p2)}"`
+                      )
+                    : selectedNews.content
+                ),
               }}
             />
 

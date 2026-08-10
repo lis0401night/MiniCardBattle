@@ -15,6 +15,7 @@
   "dependencies": {
     "dompurify": "^3.4.10",
     "firebase": "^12.11.0",
+    "pica": "^10.0.2",
     "pngjs": "^7.0.0",
     "puppeteer": "^24.38.0",
     "react": "^19.0.0",

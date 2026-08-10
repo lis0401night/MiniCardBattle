@@ -962,7 +962,7 @@ const TUTORIAL_LEADER_PRIEST = [
     id: 'player_counterattack',
     type: 'message',
     text: '相手の体力が半分に減ったね！\n引いてきた「稲妻の猟豹」を空いているレーンに召喚して、トドメを刺そう！',
-    resumeCombatAfter: true,
+    waitBattleIdle: true,
   },
   {
     id: 'select_cheetah',
@@ -1320,9 +1320,12 @@ export function notifyTutorialHandLongPress(cardId, baseId) {
 
 /**
  * チュートリアルの攻撃フェーズ一時停止を解除し、戦闘を再開する
+ * 【システム処理】解除直後にGameState.isProcessing = trueを即時ONにし、
+ * 攻撃演出開始前の隙間にwaitForTutorialPauseがフライング通過するのを防ぎます。
  */
 export function resumeTutorialCombat() {
   if (GameState.tutorial && GameState.tutorial.combatResumeResolver) {
+    GameState.isProcessing = true;
     const resolve = GameState.tutorial.combatResumeResolver;
     GameState.tutorial.combatResumeResolver = null;
     resolve();
@@ -1742,6 +1745,7 @@ export function startTutorial(tutorialId) {
 
   // プレイマットの他モードからの残存キャッシュを初期化（スキンはbattle.jsで適用がスキップされます）
   GameState.selectedPlaymatId = null;
+  GameState.enemySkins = {};
 
   // チュートリアル状態を初期化
   GameState.tutorial = {
@@ -1812,10 +1816,18 @@ export async function runTutorialFlow() {
 
         // バトル処理の一時停止完了後に表示するメッセージの場合
         if (step.waitBattleIdle) {
-          await waitForTutorialPause();
+          // 連打対策: 敵ターンから自ターン攻撃フェーズまでの全戦闘演出が100%完了するまで確実に待機
+          await waitUntilTutorialCondition(
+            () =>
+              !GameState.isProcessing &&
+              (!GameState.tutorial ||
+                !GameState.tutorial.enemyTurnResumeResolver),
+            TUTORIAL_POLL_INTERVAL_MS,
+            null
+          );
           if (!GameState.tutorial) break;
-          // 召喚アニメーション等の演出完了を待ってからメッセージ表示
-          await sleep(1500);
+          // 演出完了を待ってからメッセージ表示
+          await sleep(1000);
         }
         if (!GameState.tutorial) break;
         // メッセージを表示して、タップを待つ
@@ -2108,9 +2120,14 @@ function waitForTutorialPause() {
 
 /**
  * チュートリアルの敵ターン一時停止を解除し、敵ターンを開始する
+ * 【システム処理】連打時に敵ターン〜自ターンの攻撃処理が開始される前の隙間で
+ * waitBattleIdleの判定がフライング通過しないよう、GameState.isProcessing = true を即時ONにします。
+ *
+ * @return {void}
  */
 export function resumeTutorialEnemyTurn() {
   if (GameState.tutorial && GameState.tutorial.enemyTurnResumeResolver) {
+    GameState.isProcessing = true;
     const resolve = GameState.tutorial.enemyTurnResumeResolver;
     GameState.tutorial.enemyTurnResumeResolver = null;
     resolve();

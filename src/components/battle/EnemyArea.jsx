@@ -7,8 +7,26 @@ import {
   MAX_DISCARD_PREVIEW_COUNT,
   DECK_SIZE,
 } from '../../utils/constants/config.js';
+import {
+  checkIsTutorialMode,
+  checkIsStoryMode,
+  checkIsFreeMode,
+} from '../../utils/gameUtils.js';
 import DeckIcon from './DeckIcon.jsx';
 
+/**
+ * 対戦相手（敵）のステータス表示エリアコンポーネント
+ * HP、アイコン、デッキ残数、墓地枚数を表示する
+ *
+ * @param {Object} props
+ * @param {Object} props.enemyConfig 敵キャラクター設定データ
+ * @param {number} props.enemyHP 現在のHP
+ * @param {number} props.enemyMaxHP 最大HP
+ * @param {number} props.deckCount 山札の残り枚数
+ * @param {number} [props.maxDeckCount] デッキの最大枚数
+ * @param {number} props.dropCount 墓地の枚数
+ * @returns {JSX.Element|null}
+ */
 export default function EnemyArea({
   enemyConfig,
   enemyHP,
@@ -18,6 +36,13 @@ export default function EnemyArea({
   dropCount,
 }) {
   if (!enemyConfig) return null;
+
+  // チュートリアル・ストーリー・フリーモードでは敵スキンを適用しないためデフォルトアイコンを使用
+  const skipEnemySkin =
+    checkIsTutorialMode() || checkIsStoryMode() || checkIsFreeMode();
+  const enemySkinId = skipEnemySkin
+    ? 'default'
+    : GameState.enemySkins?.[enemyConfig.id];
 
   return (
     <div className="hp-area">
@@ -33,11 +58,7 @@ export default function EnemyArea({
               id="enemy-icon"
               className="char-icon"
               src={
-                getSkinImage(
-                  enemyConfig,
-                  GameState.enemySkins?.[enemyConfig.id],
-                  'icon'
-                ) ||
+                getSkinImage(enemyConfig, enemySkinId, 'icon') ||
                 enemyConfig.icon ||
                 enemyConfig.image
               }

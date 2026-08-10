@@ -882,7 +882,9 @@ export function initBattleState() {
     }
 
     // --- JSON.stringifyによる初期化リセット後のスキン再適用（一瞬初期スキン画像に戻るチラつきを防止） ---
+    // ※チュートリアルモードでは常にデフォルトスキンを使用するためスキン再適用をスキップする
     if (
+      !checkIsTutorialMode() &&
       GameState.playerConfig &&
       GameState.playerSkins &&
       GameState.playerSkins[GameState.playerConfig.id]
@@ -901,7 +903,11 @@ export function initBattleState() {
           getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
       }
     }
+    // フリーバトル・ストーリー・チュートリアルは標準キャラクター画像を使用するため敵スキン自動同期を適用しない
     if (
+      !checkIsTutorialMode() &&
+      !checkIsStoryMode() &&
+      !checkIsFreeMode() &&
       GameState.enemyConfig &&
       GameState.enemySkins &&
       GameState.enemySkins[GameState.enemyConfig.id]

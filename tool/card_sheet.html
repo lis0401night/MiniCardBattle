@@ -74,6 +74,10 @@
         display: block;
       }
     </style>
+    <script
+      type="module"
+      src="../src/tools/common/toolNavStandalone.js"
+    ></script>
   </head>
   <body>
     <div id="header">
@@ -647,12 +651,12 @@
           img.alt = id;
 
           // 画像パス指定
-          img.src = `public/assets/cards/card_${id}.webp`;
+          img.src = `/assets/cards/card_${id}.webp`;
 
           // フォールバック
           img.onerror = function () {
             if (this.src.endsWith('.webp') && !this.src.includes('_premium')) {
-              this.src = `public/assets/cards/card_${id}_premium.webp`;
+              this.src = `/assets/cards/card_${id}_premium.webp`;
             }
           };
 

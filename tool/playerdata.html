@@ -110,6 +110,10 @@
         }
       }
     </style>
+    <script
+      type="module"
+      src="../src/tools/common/toolNavStandalone.js"
+    ></script>
   </head>
 
   <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -307,6 +311,13 @@
                   >
                     等級（マキナ）
                   </th>
+                  <th
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 70px"
+                    onclick="window.sortBy('grade_valkyria')"
+                  >
+                    等級（アンジェ）
+                  </th>
                   <th class="p-2 md:p-3 text-center" style="min-width: 50px">
                     デッキ
                   </th>
@@ -450,8 +461,32 @@
       let ALL_ICONS = [];
       let SKILLS = {};
 
+      // アセットパス補正ヘルパー（サーバーフルURLを含めて/assets/... へのローカル絶対パス変換）
+      const fixAssetPath = (path) => {
+        if (!path) return '';
+        const isLocal =
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('192.168.');
+
+        if (isLocal) {
+          const match = path.match(/assets\/(.+)$/i);
+          if (match) {
+            return `/assets/${match[1]}`;
+          }
+        }
+        if (
+          path.startsWith('http://') ||
+          path.startsWith('https://') ||
+          path.startsWith('/')
+        ) {
+          return path;
+        }
+        return '/' + path;
+      };
+
       // アイコンパス生成ヘルパー
-      const getIconPath = (id) => `assets/icons/icon_${id}.webp`;
+      const getIconPath = (id) => fixAssetPath(`assets/icons/icon_${id}.webp`);
 
       // =============================
       // 日本語名変換ヘルパー
@@ -615,7 +650,7 @@
         try {
           // マスターデータのインポート（本番サーバーにsrc/がない場合はフォールバック）
           try {
-            const cardsModule = await import('./src/utils/constants/cards.js');
+            const cardsModule = await import('../src/utils/constants/cards.js');
             CARD_MASTER = cardsModule.CARD_MASTER || [];
           } catch (e) {
             console.warn(
@@ -625,7 +660,7 @@
           }
           try {
             const charactersModule =
-              await import('./src/utils/constants/characters.js');
+              await import('../src/utils/constants/characters.js');
             CHARACTERS = charactersModule.CHARACTERS || {};
           } catch (e) {
             console.warn(
@@ -635,7 +670,7 @@
           }
           try {
             const playmatsModule =
-              await import('./src/utils/constants/playmats.js');
+              await import('../src/utils/constants/playmats.js');
             PLAYMAT_MASTER = playmatsModule.PLAYMAT_MASTER || [];
           } catch (e) {
             console.warn(
@@ -645,7 +680,7 @@
           }
           try {
             const avatarsModule =
-              await import('./src/utils/constants/avatars.js');
+              await import('../src/utils/constants/avatars.js');
             ALL_ICONS = [
               ...(avatarsModule.AVAILABLE_ICONS || []),
               ...(avatarsModule.EXTRA_ICONS || []),
@@ -658,7 +693,7 @@
           }
           try {
             const skillsModule =
-              await import('./src/utils/constants/skills.js');
+              await import('../src/utils/constants/skills.js');
             SKILLS = skillsModule.SKILLS || {};
           } catch (e) {
             console.warn(
@@ -769,6 +804,7 @@
           fortune: 'fortune_total_points',
           defense_wins: 'defense_wins',
           grade: 'fortune_max_total_cost',
+          grade_valkyria: 'fortune_max_total_cost_valkyria',
           lastAccess: 'lastAccessAt',
         };
         return p[SORT_KEY_MAP[key]] || 0;
@@ -848,6 +884,9 @@
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-sky-500">${p.fortune_max_total_cost >= 0 ? p.fortune_max_total_cost : '-'}</div>
+              </td>
+              <td class="p-2 md:p-3 text-center">
+                <div class="text-[11px] font-black text-rose-500">${p.fortune_max_total_cost_valkyria !== undefined && p.fortune_max_total_cost_valkyria >= 0 ? p.fortune_max_total_cost_valkyria : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 ${
@@ -967,9 +1006,17 @@
             current: p.fortune_points || 0,
             total: p.fortune_total_points || 0,
             extra:
-              p.fortune_max_total_cost >= 0
-                ? `等級（マキナ）: ${p.fortune_max_total_cost}`
-                : null,
+              [
+                p.fortune_max_total_cost >= 0
+                  ? `等級（マキナ）: ${p.fortune_max_total_cost}`
+                  : null,
+                p.fortune_max_total_cost_valkyria !== undefined &&
+                p.fortune_max_total_cost_valkyria >= 0
+                  ? `等級（アンジェ）: ${p.fortune_max_total_cost_valkyria}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(' / ') || null,
           },
         ];
 
@@ -1242,7 +1289,7 @@
             return `
             <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-xl p-3 flex flex-col shadow-sm hover:shadow-md transition-shadow">
               <div class="flex gap-3 mb-3">
-                <img src="assets/cards/card_${c.id}_thumb.webp" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.src='assets/icons/icon_player.webp'" />
+                <img src="/assets/cards/card_${c.id}_thumb.webp" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.src='/assets/icons/icon_player.webp'" />
                 <div class="flex flex-col flex-1 min-w-0">
                   <div class="flex justify-between items-start gap-1">
                     <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>

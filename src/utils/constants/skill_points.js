@@ -40,7 +40,7 @@ export const SKILL_POINTS = {
   },
   bind: {
     base: 0,
-    multiplier: 1,
+    multiplier: 0.5,
   },
   growth: {
     base: 0,
@@ -56,7 +56,7 @@ export const SKILL_POINTS = {
   },
   spend: {
     base: 0,
-    multiplier: -1,
+    multiplier: -2,
   },
   stealth: {
     base: 0,
@@ -249,7 +249,7 @@ export const SKILL_POINTS = {
     multiplier: 0.5,
   },
   reflect: {
-    base: 0,
+    base: 4,
     multiplier: 0,
   },
   force: {
@@ -386,5 +386,33 @@ export const SKILL_POINTS = {
   soul_bind_void: {
     base: 0,
     multiplier: 0.5,
+  },
+  portent: {
+    base: 5,
+    multiplier: 0,
+  },
+  ambush: {
+    base: 0,
+    multiplier: 1,
+  },
+  startup: {
+    base: 1,
+    multiplier: 0,
+  },
+  treason: {
+    base: 0,
+    multiplier: 0,
+  },
+  samsara: {
+    base: 0,
+    multiplier: 0,
+  },
+  grant_deadly: {
+    base: 1,
+    multiplier: 0,
+  },
+  grant_sturdy: {
+    base: 1,
+    multiplier: 0,
   },
 };

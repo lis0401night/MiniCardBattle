@@ -5,6 +5,9 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   plugins: [
     react(),
     viteStaticCopy({
@@ -24,8 +27,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.html',
-        cardscore: './cardscore.html',
-        playerdata: './playerdata.html',
+        cardscore: './tool/cardscore.html',
+        playerdata: './tool/playerdata.html',
+        card_sheet: './tool/card_sheet.html',
+        admin_news: './tool/admin_news.html',
+        chara_assetmaker: './tool/chara_assetmaker/index.html',
+        vfx_spritesheet_tool:
+          './tool/vfx_spritesheet_tool/vfx_spritesheet_tool.html',
       },
       output: {
         manualChunks: {
