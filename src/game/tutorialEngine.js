@@ -15,7 +15,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, sleep, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
-import { prepareBattle } from './battle.js';
+import { prepareBattle } from './battle/index.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 
@@ -956,12 +956,12 @@ const TUTORIAL_LEADER_PRIEST = [
     type: 'message',
     text: 'デッキが0枚の時にカードを引こうとすると、墓地のカードが山札に戻る代わりにリーダーの体力が半分になるんだ！',
     resumeEnemyTurnAfter: true,
-    waitBattleIdle: true,
   },
   {
     id: 'player_counterattack',
     type: 'message',
     text: '相手の体力が半分に減ったね！\n引いてきた「稲妻の猟豹」を空いているレーンに召喚して、トドメを刺そう！',
+    resumeCombatAfter: true,
     waitBattleIdle: true,
   },
   {
@@ -1821,6 +1821,7 @@ export async function runTutorialFlow() {
             () =>
               !GameState.isProcessing &&
               (!GameState.tutorial ||
+                step.resumeEnemyTurnAfter ||
                 !GameState.tutorial.enemyTurnResumeResolver),
             TUTORIAL_POLL_INTERVAL_MS,
             null

@@ -32,7 +32,7 @@ import {
   startBattleFlow,
 } from './deck.js';
 
-import { prepareBattle } from '../game/battle.js';
+import { prepareBattle } from '../game/battle/index.js';
 import { clearStoryProgress, initStoryMode } from '../game/story.js';
 import { GameState } from '../state/gameState.js';
 

@@ -1,4 +1,4 @@
-import { prepareBattle } from '../game/battle.js';
+import { prepareBattle } from '../game/battle/index.js';
 import { resolveDungeonDeck } from '../game/battleDungeon.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';

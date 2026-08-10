@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { prepareBattle } from '../game/battle.js';
+import { prepareBattle } from '../game/battle/index.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';

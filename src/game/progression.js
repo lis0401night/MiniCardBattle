@@ -7,7 +7,7 @@ import {
 } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { switchScreen } from '../utils/gameUtils.js';
-import { prepareBattle } from './battle.js';
+import { prepareBattle } from './battle/index.js';
 import { handleBattleDungeonProgression } from './battleDungeon.js';
 
 import { handleEventProgression } from './events.js';

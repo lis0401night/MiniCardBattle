@@ -7,7 +7,7 @@ import {
 import { shuffleArray, sleep } from '../utils/gameUtils.js';
 import { getEasyDecision } from './ai_easy.js';
 import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
-import { discardCard, endTurnLogic, playCard } from './battle.js';
+import { discardCard, endTurnLogic, playCard } from './battle/index.js';
 import { isGraveKeeperActive } from './engine.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 

@@ -44,7 +44,7 @@ import {
   waitPlayerEnemyLaneSelection,
   waitPlayerHandSelection,
   waitPlayerLaneSelection,
-} from './battle.js';
+} from './battle/index.js';
 import {
   applyLeaderSkillLogic,
   applySingleCombat,

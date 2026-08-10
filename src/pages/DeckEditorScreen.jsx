@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import MissionListModal from '../components/battle/MissionListModal.jsx';
 import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
-import { prepareBattle } from '../game/battle.js';
+import { prepareBattle } from '../game/battle/index.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
 import { openCardPreview } from '../services/uiGallery.js';
 import { goBackFromDeckEdit } from '../services/uiMainCore.js';

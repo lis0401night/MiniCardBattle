@@ -37,7 +37,7 @@ import {
   endPlayerTurn,
   executeSkillFromConfirm,
   returnToTitle,
-} from './game/battle.js';
+} from './game/battle/index.js';
 import AchievementsScreen from './pages/AchievementsScreen.jsx';
 import BattleDungeonScreen from './pages/BattleDungeonScreen.jsx';
 import BattleScreen from './pages/BattleScreen.jsx';

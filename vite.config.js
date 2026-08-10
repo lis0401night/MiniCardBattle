@@ -42,7 +42,7 @@ export default defineConfig({
             './src/services/uiMainCore.js',
             './src/services/uiDialogue.js',
             './src/services/deck.js',
-            './src/game/battle.js',
+            './src/game/battle/index.js',
             './src/game/battleDungeon.js',
             './src/utils/constants/battleDungeon.js',
             './src/utils/constants/battleDungeonCharacter.js',

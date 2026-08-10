@@ -101,6 +101,7 @@ export const GameState = {
   firstPlayer: 'blue',
   turnCount: 0,
   battlePhase: 'INIT',
+  turnSubPhase: null, // ターン内サブフェイズの追跡（STATUS_COUNTDOWN, COMBAT, DRAW等）
   actionQueue: [],
   combatStep: 0,
   aiDecision: null,

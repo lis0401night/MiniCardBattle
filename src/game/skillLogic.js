@@ -53,7 +53,7 @@ import {
   waitPlayerHandSelection,
   waitPlayerLaneSelection,
   waitSkillChoice,
-} from './battle.js';
+} from './battle/index.js';
 import {
   applyActiveSkillLogic,
   canCardBeDestroyed,

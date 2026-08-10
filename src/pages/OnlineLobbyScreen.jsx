@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { prepareBattle } from '../game/battle.js';
+import { prepareBattle } from '../game/battle/index.js';
 import {
   cachedRoomData,
   getCurrentRoomCode,

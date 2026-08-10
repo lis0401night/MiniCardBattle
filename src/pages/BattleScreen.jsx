@@ -4,7 +4,7 @@ import {
   dispatchBattleAction,
   endPlayerTurn,
   returnToTitle,
-} from '../game/battle.js';
+} from '../game/battle/index.js';
 import {
   setSummonAnimationHook,
   setUpdateBattleUIHook,
