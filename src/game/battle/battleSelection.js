@@ -1,7 +1,7 @@
 /**
  * ===========================================
  * battleSelection.js
- * 
+ *
  * バトル中のプレイヤー入力を待機する処理群を提供します。
  * 配置先の選択、カードの選択、スキルの選択など、主にユーザーからの
  * 選択完了を非同期で待機し、結果を返す関数の集まりです。
@@ -12,14 +12,26 @@ import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
 import { applyActiveSkillLogic, calculateCombatPhase } from '../engine.js';
 import { isTutorialMode, filterPlacementLaneClick } from '../tutorialEngine.js';
 import { GameState } from '../../state/gameState.js';
-import { hasSkill, getCurrentRNG, setCurrentRNG, getSeededRandom, shuffleArray, sleep, playSound } from '../../utils/gameUtils.js';
+import {
+  hasSkill,
+  getCurrentRNG,
+  setCurrentRNG,
+  getSeededRandom,
+  shuffleArray,
+  sleep,
+  playSound,
+} from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { updateBattleUIHook, renderBoard, renderHand, updateCardDetail } from '../../services/uiBattle.js';
+import {
+  updateBattleUIHook,
+  renderHand,
+  updateCardDetail,
+} from '../../services/uiBattle.js';
 import { sendOnlineAction } from '../../services/multiplayer.js';
 import { AI_THINKING_DURATION } from '../../utils/constants/config.js';
 import { showAlertModal, showConfirmModal } from '../../services/uiModals.js';
 import { consumeAIAction } from './battleCombat.js';
-import { pendingChoiceResolver, setPendingChoiceResolver } from './battleQueue.js';
+import { setPendingChoiceResolver } from './battleQueue.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 
 /**

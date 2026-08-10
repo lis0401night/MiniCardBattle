@@ -51,7 +51,6 @@ import {
   HANDICAP_TYPES,
 } from '../../utils/constants/fortuneHandicaps.js';
 
-
 /**
  * カードを墓地に送り、破棄アニメーション・音声・変身解除・ミッション進捗（生贄カウント）等を処理する。
  * @param {string} owner - カード所有者 ('blue' | 'red')

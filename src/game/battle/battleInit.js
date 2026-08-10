@@ -3,23 +3,69 @@
  * バトルの準備、ステートの初期化、プリセット適用、ターンの開始決定などを担当する。
  */
 import { generateDeck } from '../../services/deck.js';
-import { cachedRoomData, getIsHost, listenToRoomActions, multiplayerCallbacks } from '../../services/multiplayer.js';
-import { renderBoard, renderHand, updateBattleUIHook, updateCardDetail, updateDeckDisplay, updateHPBar, updateSPOrbs } from '../../services/uiBattle.js';
+import {
+  cachedRoomData,
+  getIsHost,
+  listenToRoomActions,
+  multiplayerCallbacks,
+} from '../../services/multiplayer.js';
+import {
+  renderBoard,
+  renderHand,
+  updateBattleUIHook,
+  updateCardDetail,
+  updateDeckDisplay,
+  updateHPBar,
+  updateSPOrbs,
+} from '../../services/uiBattle.js';
 import { showOnlineLobby } from '../../services/uiMainCore.js';
 import { showAlertModal } from '../../services/uiModals.js';
 import { GameState } from '../../state/gameState.js';
+import { incrementStat } from '../../utils/constants/achievements.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
-import { AI_THINKING_DURATION, MAX_HP, PLACE_ANIMATION_DURATION } from '../../utils/constants/config.js';
-import { CHAR_FORTUNE_HANDICAPS, HANDICAP_TYPES } from '../../utils/constants/fortuneHandicaps.js';
+import {
+  AI_THINKING_DURATION,
+  MAX_HP,
+  PLACE_ANIMATION_DURATION,
+} from '../../utils/constants/config.js';
+import {
+  CHAR_FORTUNE_HANDICAPS,
+  HANDICAP_TYPES,
+} from '../../utils/constants/fortuneHandicaps.js';
 import { LEADER_SKILLS } from '../../utils/constants/leaderSkills.js';
 import { STAGES } from '../../utils/constants/stages.js';
-import { checkIsFreeMode, checkIsStoryMode, checkIsTutorialMode, decodedBgms, getCardImgUrl, getOrCreateUUID, getSeededRandom, hasSkill, playSound, setRNGSeed, shuffleArray, sleep, stopAllBGM, switchScreen } from '../../utils/gameUtils.js';
-import { getAllVfxImageUrls, getLeaderPreloadUrls } from '../../utils/resourceLoader.js';
-import { AUDIO_INSTANCES, loadAndDecodeAudio, SOUNDS } from '../../utils/sounds.js';
+import {
+  checkIsFreeMode,
+  checkIsStoryMode,
+  checkIsTutorialMode,
+  decodedBgms,
+  getCardImgUrl,
+  getOrCreateUUID,
+  getSeededRandom,
+  hasSkill,
+  playSound,
+  setRNGSeed,
+  shuffleArray,
+  sleep,
+  stopAllBGM,
+  switchScreen,
+} from '../../utils/gameUtils.js';
+import {
+  getAllVfxImageUrls,
+  getLeaderPreloadUrls,
+} from '../../utils/resourceLoader.js';
+import {
+  AUDIO_INSTANCES,
+  loadAndDecodeAudio,
+  SOUNDS,
+} from '../../utils/sounds.js';
 import { checkWinCondition } from './battleResult.js';
 import { drawCard, playCard } from './battleCombat.js';
-import { resetQueueProcessing, setPendingChoiceResolver } from './battleQueue.js';
+import {
+  resetQueueProcessing,
+  setPendingChoiceResolver,
+} from './battleQueue.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
 import { dispatchBattleAction } from './battleQueue.js';
 import { endTurnLogic, startTurn } from './battleTurn.js';
@@ -42,7 +88,6 @@ function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
     return { id: cId, isPremium: isPrem };
   });
 }
-
 
 // ==========================================
 // バトル進行とスキルロジック
@@ -404,7 +449,6 @@ export function prepareBattle() {
     }, false);
   }
 }
-
 
 /**
  * バトル状態の初期化を行う関数。
@@ -865,8 +909,6 @@ export function initBattleState() {
   }
 }
 
-
-
 /**
  * プリセット用のカードIDからマスタデータを検索し、対戦者・インデックス情報が付与されたカードオブジェクトを生成する。
  * @param {string} cardId - 生成対象のカードID
@@ -898,7 +940,6 @@ function resolvePresetCard(cardId, owner, index) {
   card.imgUrl = getCardImgUrl(card);
   return card;
 }
-
 
 /**
  * 【デバッグ・チュートリアル用】バトル状態プリセットを適用する
@@ -1012,7 +1053,6 @@ function applyBattlePreset(preset) {
  * ターン数に応じて事前定義されたカードを出す
  */
 
-
 /**
  * チュートリアル用: 敵のスクリプト行動
  * ターン数に応じて事前定義されたカードを出す
@@ -1059,7 +1099,6 @@ export async function executeTutorialEnemyTurn() {
 
   await endTurnLogic('red');
 }
-
 
 /**
  * 先攻・後攻を決定する演出
@@ -1126,7 +1165,6 @@ export async function determineTurnOrder() {
     window.finishTurnOrder();
   }
 }
-
 
 /**
  * マリガン（初期手札の引き直し）フェイズを開始する。
@@ -1215,5 +1253,3 @@ export async function startMulliganPhase() {
 
   await startTurn(GameState.firstPlayer);
 }
-
-

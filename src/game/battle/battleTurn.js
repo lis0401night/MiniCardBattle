@@ -14,9 +14,7 @@ import {
 } from '../../services/uiBattle.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import {
-  PLACE_ANIMATION_DURATION,
-} from '../../utils/constants/config.js';
+import { PLACE_ANIMATION_DURATION } from '../../utils/constants/config.js';
 import {
   createDamagePopup,
   getSeededRandom,
@@ -46,7 +44,6 @@ import {
   canEquipCard,
 } from './battleSelection.js';
 import { dispatchBattleAction, getIsQueueProcessing } from './battleQueue.js';
-
 
 /**
  * ターン開始時における移動関連スキル（神出・移動・起動消滅等）の移動処理を非同期で解決する。
@@ -345,7 +342,6 @@ export async function handleMoveSkills(owner) {
   }
 }
 
-
 import { TURN_SUB_PHASE } from './phases/phaseTypes.js';
 
 /**
@@ -439,7 +435,8 @@ async function executeCombatIfPossible(owner) {
   }
 
   if (!skipAttack) {
-    const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const board =
+      owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     if (board.some((x) => x !== null)) {
       await executeCombatPhase(owner);
       if (checkWinCondition()) return true;
@@ -563,8 +560,6 @@ export async function startTurn(owner) {
   await runPhases(TURN_PHASES, { owner });
 }
 
-
-
 /**
  * プレイヤーが手動でターン終了ボタンを押下した際の処理。
  * 確認モーダルを表示し、承認された場合はターン終了アクションをディスパッチする。
@@ -673,7 +668,6 @@ export async function endTurnLogic(o) {
   }
 }
 
-
 /**
  * 盤面上のカードが保持するターン開始時パッシブスキル（「契約」の自傷ダメージ等）を全レーンで評価・発動する。
  * @param {string} owner - ターンを開始するプレイヤー ('blue' | 'red')
@@ -695,4 +689,3 @@ export async function triggerStartTurnSkills(owner) {
     await sleep(200);
   }
 }
-

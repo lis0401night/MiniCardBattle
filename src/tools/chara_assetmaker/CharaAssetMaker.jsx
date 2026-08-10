@@ -331,7 +331,7 @@ export default function CharaAssetMaker() {
         ctx.restore();
       }
     },
-    [images, transforms]
+    [canvasRefs, images, transforms]
   );
 
   // 画像・変換値の更新に伴うキャンバスの再描画

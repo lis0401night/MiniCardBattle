@@ -5,10 +5,7 @@
 // キューイングし、順番に処理する。
 // ==========================================
 
-import {
-  getIsHost,
-  sendOnlineAction,
-} from '../../services/multiplayer.js';
+import { getIsHost, sendOnlineAction } from '../../services/multiplayer.js';
 import {
   renderBoard,
   renderHand,
@@ -21,10 +18,7 @@ import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
 } from '../../utils/constants/config.js';
-import {
-  playSound,
-  sleep,
-} from '../../utils/gameUtils.js';
+import { playSound, sleep } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { executeEnemyAI } from '../ai.js';
 import { activateLeaderSkill } from '../leaderSkills.js';
@@ -57,7 +51,8 @@ export function registerQueueDependencies(deps) {
   if (deps.playCard) _playCard = deps.playCard;
   if (deps.endTurnLogic) _endTurnLogic = deps.endTurnLogic;
   if (deps.checkWinCondition) _checkWinCondition = deps.checkWinCondition;
-  if (deps.executeTutorialEnemyTurn) _executeTutorialEnemyTurn = deps.executeTutorialEnemyTurn;
+  if (deps.executeTutorialEnemyTurn)
+    _executeTutorialEnemyTurn = deps.executeTutorialEnemyTurn;
 }
 
 // ==========================================
