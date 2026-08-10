@@ -751,7 +751,8 @@ export async function forceDeleteAllRooms() {
  * 自身以外の未埋まり公開待機ルームが存在するかどうかを単発(get)で判定する。
  * メインメニュー画面（ModeSelectScreen）で過剰な通信・読み取りコストを回避しつつ、
  * オンライン対戦ボタンの通知バッジ表示を更新するための軽量チェック関数。
- * ホストの生存信号（lastActiveAt）を確認し、放置された無人部屋は判定から除外・自動削除する。
+ * サーバー側の onDisconnect().remove() により不要なゴミ部屋は自動消去されるため、
+ * 純粋に自分以外の待機中公開ルームが存在するかを軽量チェックする。
  *
  * @returns {Promise<boolean>} 自分以外の公開待機ルームが1件以上存在すればtrue
  */
@@ -760,37 +761,36 @@ export async function checkHasPublicWaitingRooms() {
   try {
     const myId = getOrCreateUUID();
     const roomsRef = ref(database, ROOMS_REF);
-    const snapshot = await get(roomsRef);
+
+    let snapshot;
+    try {
+      const waitingQuery = query(
+        roomsRef,
+        orderByChild('status'),
+        equalTo('waiting')
+      );
+      snapshot = await get(waitingQuery);
+    } catch (queryErr) {
+      // インデックス未登録時の安全フォールバック
+      snapshot = await get(roomsRef);
+    }
 
     if (!snapshot || !snapshot.exists()) return false;
 
-    const now = Date.now();
     let hasRoom = false;
-    const expiredRoomKeys = [];
-
     snapshot.forEach((child) => {
+      if (hasRoom) return true; // 1件でも見つかれば即座に走査中断
       const room = child.val();
-      const roomKey = child.key;
-
-      // 「待機中(status === 'waiting')」「公開(isPublic !== false)」の条件を満たす部屋をチェック
-      if (room && room.status === 'waiting' && room.isPublic !== false) {
-        if (isHostAlive(room, now)) {
-          if (room.host?.id !== myId) {
-            hasRoom = true;
-          }
-        } else {
-          // ホストの生存信号が切れている無人部屋（ゾンビルーム）を発見した場合は削除リストに追加
-          expiredRoomKeys.push({ key: roomKey, code: room.roomCode });
-        }
+      if (
+        room &&
+        room.status === 'waiting' &&
+        room.isPublic !== false &&
+        room.host?.id !== myId
+      ) {
+        hasRoom = true;
+        return true;
       }
     });
-
-    // 発見した無人放置部屋をバックグラウンドで自動クリーンアップ
-    if (expiredRoomKeys.length > 0) {
-      expiredRoomKeys.forEach(({ key, code }) => {
-        removeRoomAndCode(key, code).catch(() => {});
-      });
-    }
 
     return hasRoom;
   } catch (e) {
