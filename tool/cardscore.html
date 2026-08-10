@@ -341,77 +341,34 @@
           skillData = skillsModule.SKILLS || {};
           pointSettings = skillPointsModule.SKILL_POINTS || {};
 
-          // 敵デッキをダイナミックインポート
-          const deckFiles = [
-            'android',
-            'dragon',
-            'knight',
-            'cthulhu',
-            'elf',
-            'cleric',
-            'devilhunter',
-            'witch',
-            'oni',
-            'satan',
-            'void',
-            'succubus',
-            'priest',
-            'android_high',
-            'dragon_high',
-            'knight_high',
-            'cthulhu_high',
-            'elf_high',
-            'cleric_high',
-            'devilhunter_high',
-            'witch_high',
-            'oni_high',
-            'satan_high',
-            'priest_high',
-          ];
-          for (const file of deckFiles) {
-            try {
-              const isHigh = file.endsWith('_high');
-              let deckModule;
-              if (isHigh) {
-                const cleanFile = file.replace('_high', '');
-                deckModule = await import(
-                  `../src/utils/constants/enemy_decks/event_high/${cleanFile}.js`
-                );
+          // 敵デッキをインポートモジュールから一括読み込み
+          const enemyDecksModule =
+            await import('../src/utils/constants/enemy_decks.js');
+          const allEnemyDecks = enemyDecksModule.ENEMY_DECKS || {};
+
+          Object.keys(allEnemyDecks).forEach((key) => {
+            const deck = allEnemyDecks[key];
+            if (!deck) return;
+            const isHigh = key.endsWith('_high');
+            if (isHigh) {
+              const baseChar = key.replace('_high', '');
+              if (!deckData[baseChar]) {
+                deckData[baseChar] = {};
+              }
+              deckData[baseChar]['high'] = Array.isArray(deck)
+                ? deck
+                : deck.normal || deck.hard || [];
+            } else {
+              if (!deckData[key]) {
+                deckData[key] = {};
+              }
+              if (Array.isArray(deck)) {
+                deckData[key]['Extra'] = deck;
               } else {
-                deckModule = await import(
-                  `../src/utils/constants/enemy_decks/${file}.js`
-                );
+                Object.assign(deckData[key], deck);
               }
-              const deck =
-                deckModule.default ||
-                deckModule[file] ||
-                deckModule[file.replace('_high', '')] ||
-                deckModule.ENEMY_DECKS?.[file] ||
-                deckModule.ENEMY_DECKS?.[file.replace('_high', '')];
-              if (deck) {
-                if (isHigh) {
-                  const baseChar = file.replace('_high', '');
-                  if (!deckData[baseChar]) {
-                    deckData[baseChar] = {};
-                  }
-                  deckData[baseChar]['high'] = Array.isArray(deck)
-                    ? deck
-                    : deck.normal || deck.hard || [];
-                } else {
-                  if (!deckData[file]) {
-                    deckData[file] = {};
-                  }
-                  if (Array.isArray(deck)) {
-                    deckData[file]['Extra'] = deck;
-                  } else {
-                    Object.assign(deckData[file], deck);
-                  }
-                }
-              }
-            } catch (e) {
-              console.warn(`Deck load skipped/failed for: ${file}`, e);
             }
-          }
+          });
 
           // スキル設定の不足分を補完
           Object.keys(skillData).forEach((k) => {

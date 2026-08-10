@@ -241,7 +241,7 @@
       // Initialize
       async function loadNews() {
         try {
-          const res = await fetch('api/get_news.php');
+          const res = await fetch('../api/get_news.php');
           const text = await res.text();
           try {
             const data = JSON.parse(text);
@@ -265,7 +265,7 @@
         btn.innerText = '保存中...';
         btn.disabled = true;
         try {
-          const res = await fetch('api/save_news.php', {
+          const res = await fetch('../api/save_news.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ news: newsItems }),

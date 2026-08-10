@@ -461,28 +461,23 @@
       let ALL_ICONS = [];
       let SKILLS = {};
 
-      // アセットパス補正ヘルパー（サーバーフルURLを含めて/assets/... へのローカル絶対パス変換）
+      // アセットパス補正ヘルパー（tool/ 階層からの相対パス ../assets/... への変換）
       const fixAssetPath = (path) => {
         if (!path) return '';
-        const isLocal =
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1' ||
-          window.location.hostname.startsWith('192.168.');
-
-        if (isLocal) {
-          const match = path.match(/assets\/(.+)$/i);
-          if (match) {
-            return `/assets/${match[1]}`;
-          }
-        }
         if (
           path.startsWith('http://') ||
           path.startsWith('https://') ||
-          path.startsWith('/')
+          path.startsWith('data:')
         ) {
           return path;
         }
-        return '/' + path;
+        if (path.startsWith('/assets/')) {
+          return '..' + path;
+        }
+        if (path.startsWith('assets/')) {
+          return '../' + path;
+        }
+        return path;
       };
 
       // アイコンIDはURLエンコードしてから埋め込む（属性破壊とスクリプト注入を防ぐ）
@@ -707,7 +702,7 @@
 
           // プレイヤーデータをAPIから取得
           const response = await fetch(
-            `api/get_all_players.php?t=${Date.now()}`
+            `../api/get_all_players.php?t=${Date.now()}`
           );
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1295,7 +1290,7 @@
             return `
             <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-xl p-3 flex flex-col shadow-sm hover:shadow-md transition-shadow">
               <div class="flex gap-3 mb-3">
-                <img src="/assets/cards/card_${c.id}_thumb.webp" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.src='/assets/icons/icon_player.webp'" />
+                <img src="../assets/cards/card_${c.id}_thumb.webp" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='../assets/icons/icon_player.webp'" />
                 <div class="flex flex-col flex-1 min-w-0">
                   <div class="flex justify-between items-start gap-1">
                     <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>

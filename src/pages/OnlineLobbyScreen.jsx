@@ -131,12 +131,26 @@ export default function OnlineLobbyScreen() {
     multiplayerCallbacks.onRoomUpdated = (data) => {
       setRoomData(data);
 
-      // 両方がReadyならバトル開始
+      // すでに対戦中（appState === 'battle'）の場合は二重対戦開始を防止するためスキップ
+      if (GameState.appState === 'battle') {
+        if (battleStartTimeoutRef.current) {
+          clearTimeout(battleStartTimeoutRef.current);
+          battleStartTimeoutRef.current = null;
+        }
+        return;
+      }
+
+      // 両方がReadyかつまだ対戦中ではない場合にバトル開始タイマーをセット
       if (data && data.host?.isReady && data.client?.isReady) {
         if (battleStartTimeoutRef.current) {
           clearTimeout(battleStartTimeoutRef.current);
         }
         battleStartTimeoutRef.current = setTimeout(() => {
+          // タイマー実行時に再度対戦中チェック（二重呼び出し防止）
+          if (GameState.appState === 'battle') {
+            battleStartTimeoutRef.current = null;
+            return;
+          }
           const isHost = getIsHost();
           const meData = isHost ? data.host : data.client;
           const opData = isHost ? data.client : data.host;
