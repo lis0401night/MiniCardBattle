@@ -1,7 +1,7 @@
 import { OWNERSHIP_FILTERS } from '../hooks/useCardFilterSort.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from './constants/cards.js';
-import { getSkinImage } from './constants/characters.js';
+import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import {
   appendVersionQuery,
   DEFAULT_PLAYER_NAME,
@@ -1397,13 +1397,15 @@ export function getFortuneHandicapsStorageKey(enemyCharId) {
 
 /**
  * 特級目標モードのゲームモード名から敵キャラクターIDを抽出する。
+ * 有効なキャラクターID（CHARACTERSのキー）と一致する場合のみIDを返し、不正な形式や未定義IDの場合は空文字列を返す。
  * @param {string} gameMode - ゲームモード名（例: 'event_valkyria_fortune'）
- * @returns {string} 敵キャラクターID
+ * @returns {string} 抽出および検証済みの敵キャラクターID
  */
 export function getFortuneEnemyCharId(gameMode) {
   if (typeof gameMode !== 'string') return '';
   const match = /^event_(.+)_fortune$/.exec(gameMode);
-  return match?.[1] ?? '';
+  const charId = match?.[1] ?? '';
+  return charId && CHARACTERS[charId] ? charId : '';
 }
 
 /**

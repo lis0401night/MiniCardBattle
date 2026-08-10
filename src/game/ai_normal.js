@@ -32,6 +32,38 @@ function hasActiveSkill(c) {
 }
 
 /**
+ * AIシミュレーション内で分裂(split)スキル発動時に生成されるトークンカードオブジェクトを生成する。
+ * 実行処理と分岐評価処理の両方で同じトークン構造（isToken: true, baseId）を保証する。
+ * @param {object} execCard - 分裂スキルを持つカード
+ * @param {number} tgtLane - 対象レーンインデックス (0~2)
+ * @param {string} [owner='red'] - 所有者 ('blue' | 'red')
+ * @returns {object} 生成されたシミュレーション用トークンカードオブジェクト
+ */
+function createSplitSimToken(execCard, tgtLane, owner = 'red') {
+  const tokenId =
+    execCard.summonId ||
+    execCard.skills?.find((s) => s.id === 'split')?.summonId ||
+    'token_legs';
+  const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
+    name: 'トークン',
+    power: 1,
+  };
+  const val = getSkillValue(execCard, 'split') || tL.power || 2;
+  return {
+    ...JSON.parse(JSON.stringify(tL)),
+    id: `sp_sim_${Math.floor(getSeededRandom() * 1000000000)}_${tgtLane}`,
+    baseId: tokenId,
+    isToken: true,
+    owner,
+    imgUrl: `assets/cards/card_${tokenId}.webp`,
+    power: val,
+    currentPower: val,
+    basePower: val,
+    rarity: tL.rarity || 1,
+  };
+}
+
+/**
  * 【号令（call）・変身（metamorph）のAIシミュレーション仕様】
  *
  * ■ 号令（call）:
@@ -475,25 +507,11 @@ export function processActionSequence(
                 !simState.enemySealedLanes ||
                 simState.enemySealedLanes[tgtLane] === 0
               ) {
-                const tokenId =
-                  execCard.summonId ||
-                  execCard.skills?.find((s) => s.id === 'split')?.summonId ||
-                  'token_legs';
-                const tL = CARD_MASTER.find((m) => m.id === tokenId) || {
-                  name: 'トークン',
-                  power: 1,
-                };
-                const val = getSkillValue(execCard, 'split') || tL.power || 2;
-                simState.enemyBoard[tgtLane] = {
-                  ...JSON.parse(JSON.stringify(tL)),
-                  id: `sp_sim_${Math.floor(Math.random() * 1000000000)}_${tgtLane}`,
-                  owner: 'red',
-                  imgUrl: `assets/cards/card_${tokenId}.webp`,
-                  power: val,
-                  currentPower: val,
-                  basePower: val,
-                  rarity: tL.rarity || 1,
-                };
+                simState.enemyBoard[tgtLane] = createSplitSimToken(
+                  execCard,
+                  tgtLane,
+                  'red'
+                );
               } else {
                 quietDiscardFromBoard(simState, 'red', tgtLane);
               }
@@ -1784,17 +1802,20 @@ export function getBestSimulatedMove() {
                     if (
                       destroyedCard &&
                       !destroyedCard.isToken &&
+                      !hasSkill(destroyedCard, 'split') &&
                       isDestroyable
                     ) {
                       newlyDiscarded.push(destroyedCard);
                     }
 
-                    // 破壊された後の盤面を生成して引き継ぐ
+                    // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合はトークンを残留させる）
                     const nextEnemyBoard = activeEnemyBoard.map((c) =>
                       c ? { ...c } : null
                     );
                     if (isDestroyable) {
-                      nextEnemyBoard[tgtLane] = null; // ★自己処刑・他者処刑にかかわらず、加護等を含めて破壊可能な場合のみnullにする
+                      nextEnemyBoard[tgtLane] = hasSkill(destroyedCard, 'split')
+                        ? createSplitSimToken(destroyedCard, tgtLane, 'red')
+                        : null;
                     }
 
                     let nextBranches = buildSkillBranch(
@@ -3578,16 +3599,23 @@ export function evaluateAdhocTokenLanes(
             destroyedCard &&
             canCardBeDestroyed(projectedState, destroyedCard, 'red');
           let newlyDiscarded = [...currentDiscard];
-          if (destroyedCard && !destroyedCard.isToken && isDestroyable) {
+          if (
+            destroyedCard &&
+            !destroyedCard.isToken &&
+            !hasSkill(destroyedCard, 'split') &&
+            isDestroyable
+          ) {
             newlyDiscarded.push(destroyedCard);
           }
 
-          // 破壊された後の盤面を生成して引き継ぐ
+          // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合はトークンを残留させる）
           const nextEnemyBoard = activeEnemyBoard.map((c) =>
             c ? { ...c } : null
           );
           if (isDestroyable) {
-            nextEnemyBoard[tgtLane] = null;
+            nextEnemyBoard[tgtLane] = hasSkill(destroyedCard, 'split')
+              ? createSplitSimToken(destroyedCard, tgtLane, 'red')
+              : null;
           }
 
           let nextBranches = buildSkillBranchAdhoc(

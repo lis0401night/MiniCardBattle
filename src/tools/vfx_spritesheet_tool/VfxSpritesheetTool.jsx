@@ -828,11 +828,16 @@ export default function VfxSpritesheetTool() {
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const cols =
-        jsonMeta?.columns ||
-        guessGrid(img.naturalWidth, img.naturalHeight).cols;
-      const rows =
-        jsonMeta?.rows || guessGrid(img.naturalWidth, img.naturalHeight).rows;
+      const guessedGrid = guessGrid(img.naturalWidth, img.naturalHeight);
+      const hasUsableMeta =
+        Number.isInteger(jsonMeta?.columns) &&
+        Number.isInteger(jsonMeta?.rows) &&
+        jsonMeta.columns > 0 &&
+        jsonMeta.rows > 0 &&
+        jsonMeta.columns <= img.naturalWidth &&
+        jsonMeta.rows <= img.naturalHeight;
+      const cols = hasUsableMeta ? jsonMeta.columns : guessedGrid.cols;
+      const rows = hasUsableMeta ? jsonMeta.rows : guessedGrid.rows;
       setAnimState({
         img,
         frameIndex: 0,
@@ -840,7 +845,7 @@ export default function VfxSpritesheetTool() {
         cols,
         rows,
         fps: 12,
-        statusText: jsonMeta
+        statusText: hasUsableMeta
           ? `${img.naturalWidth}×${img.naturalHeight}px / JSONメタデータ適用 (${cols}列×${rows}行)`
           : `${img.naturalWidth}×${img.naturalHeight}px / 推定 ${cols}列×${rows}行(手動調整可)`,
       });

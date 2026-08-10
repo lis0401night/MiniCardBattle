@@ -115,7 +115,7 @@ export default function EnemyArea({
               alignItems: 'center',
               justifyContent: 'flex-end',
               gap: '6px',
-              whiteSpace: 'nowrap',
+              minWidth: 0,
             }}
           >
             <DeckIcon count={deckCount} max={maxDeckCount} />
@@ -123,6 +123,9 @@ export default function EnemyArea({
               style={{
                 display: 'inline-block',
                 fontVariantNumeric: 'tabular-nums',
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
             >

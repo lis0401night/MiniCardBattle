@@ -49,6 +49,37 @@ import { runPhases } from './phases/PhaseRunner.js';
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
 
 /**
+ * 装備カードのパラメータおよびスキルを対象カードへ統合・加算適用する共通ヘルパー関数。
+ * DRY原則を遵守し、resolveMoveDestination と handlePlayerMove の両方から同一のロジックを呼び出す。
+ * @param {object} target - 装備される対象カード
+ * @param {object} equipment - 装備するカード
+ * @param {Set} [movedIds] - 移動済みカードID集合
+ */
+function applyEquipment(target, equipment, movedIds) {
+  const equipPower = equipment.power || 0;
+  const currentPower = target.currentPower ?? target.power ?? 0;
+
+  target.power = (target.power || 0) + equipPower;
+  target.basePower = (target.basePower || 0) + equipPower;
+  target.currentPower = currentPower + equipPower;
+
+  const equipSkills = (equipment.skills || []).filter(
+    (skill) => skill.id !== 'equip'
+  );
+  if (equipSkills.length > 0) {
+    mergeCardSkills(target, equipSkills);
+  }
+
+  target.equippedCards = target.equippedCards || [];
+  target.equippedCards.push(equipment);
+  consumeArmSelf(target, equipment);
+
+  if (movedIds) {
+    movedIds.add(target.uid || target.id);
+  }
+}
+
+/**
  * 移動先レーンに既存カードがある場合の解決処理を行う。
  * 起動消滅 > 合体 > 装備 > 通常の破棄配置 の優先順位で判定する。
  * AI とプレイヤーの両経路から呼び出し、挙動の非対称を防ぐ。
@@ -107,17 +138,22 @@ async function resolveMoveDestination(
         }
         playSound(SOUNDS.seSummon);
 
+        const masterClone = JSON.parse(JSON.stringify(mergedCard));
+        const unionSkills = JSON.parse(
+          JSON.stringify(masterClone.skills || [])
+        );
         const newInstance = {
-          ...mergedCard,
+          ...masterClone,
           uid: `union_${existingCard.uid || existingCard.id}_${movingCard.uid || movingCard.id}`,
           owner,
-          baseId: mergedCard.id,
-          basePower: mergedCard.power,
-          currentPower: mergedCard.power,
-          skills: mergeCardSkills(mergedCard),
+          baseId: masterClone.id,
+          basePower: masterClone.power,
+          currentPower: masterClone.power,
+          skills: [],
           unionMaterials: [existingCard, movingCard],
           isPremium: !!movingCard.isPremium || !!existingCard.isPremium,
         };
+        mergeCardSkills(newInstance, unionSkills);
 
         board[toLane] = newInstance;
         board[fromLane] = null;
@@ -140,28 +176,7 @@ async function resolveMoveDestination(
     }
     playSound(SOUNDS.sePlace);
 
-    const equipPower = movingCard.power || 0;
-    existingCard.currentPower =
-      (existingCard.currentPower || existingCard.power || 0) + equipPower;
-    existingCard.power = (existingCard.power || 0) + equipPower;
-    existingCard.basePower = (existingCard.basePower || 0) + equipPower;
-
-    // スキルの統合（equipスキルを除く）
-    existingCard.skills = existingCard.skills || [];
-    const equipSkills = (movingCard.skills || []).filter(
-      (s) => s.id !== 'equip'
-    );
-    if (equipSkills.length > 0) {
-      mergeCardSkills(existingCard, equipSkills);
-    }
-
-    // 装備カードリストへの追加
-    existingCard.equippedCards = existingCard.equippedCards || [];
-    existingCard.equippedCards.push(movingCard);
-
-    // 武装（arm_self）消費処理
-    consumeArmSelf(existingCard, movingCard);
-
+    applyEquipment(existingCard, movingCard, movedIds);
     board[fromLane] = null;
 
     await sleep(PLACE_ANIMATION_DURATION);
@@ -362,35 +377,8 @@ export async function handleMoveSkills(owner) {
 
             // 2. 装備（Equip / Arm Self）の判定と処理（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
             if (!didUnion && canEquipCard(c, existingCard)) {
-              // 装備によるパワー加算
-              existingCard.power = (existingCard.power || 0) + (c.power || 0);
-              existingCard.basePower =
-                (existingCard.basePower || 0) + (c.power || 0);
-              existingCard.currentPower =
-                (existingCard.currentPower || 0) + (c.power || 0);
-
-              // スキルの統合
-              existingCard.skills = existingCard.skills || [];
-
-              const equipSkills = [];
-              if (c.skills) {
-                c.skills.forEach((s) => {
-                  if (s.id !== 'equip') equipSkills.push(s);
-                });
-              }
-              if (equipSkills.length > 0) {
-                mergeCardSkills(existingCard, equipSkills);
-              }
-
-              // 装備カードリストに追加
-              existingCard.equippedCards = existingCard.equippedCards || [];
-              existingCard.equippedCards.push(c);
-
-              // 武装（arm_self）の消費処理
-              consumeArmSelf(existingCard, c);
-
+              applyEquipment(existingCard, c, movedIds);
               b[i] = null;
-              movedIds.add(existingCard.uid || existingCard.id);
 
               playSound(SOUNDS.sePlace);
               renderBoard();

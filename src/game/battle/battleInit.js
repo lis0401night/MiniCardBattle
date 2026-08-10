@@ -176,10 +176,12 @@ export function prepareBattle() {
   if (isBattleLoading) return;
   isBattleLoading = true;
   const currentGeneration = ++prepareBattleGeneration;
+  const isCurrentPreparation = () =>
+    currentGeneration === prepareBattleGeneration;
 
   // 想定外の例外等で initBattleState へ到達しなかった場合でも、一定時間後にロックを解除してデッドロックを防ぐ
   setTimeout(() => {
-    if (isBattleLoading && currentGeneration === prepareBattleGeneration) {
+    if (isBattleLoading && isCurrentPreparation()) {
       console.warn(
         'prepareBattle: セーフティタイマーによりローディングロックを解除します'
       );
@@ -339,7 +341,7 @@ export function prepareBattle() {
     let cardsLoaded = false;
 
     const finishLoading = () => {
-      if (isFinished) return;
+      if (!isCurrentPreparation() || isFinished) return;
       // 両方のロードが完了するまで進めない
       if (!bgmLoaded || !cardsLoaded) return;
 
@@ -347,13 +349,17 @@ export function prepareBattle() {
       if (onLoadComplete) {
         onLoadComplete();
       } else {
-        setTimeout(initBattleState, 500);
+        setTimeout(() => {
+          if (isCurrentPreparation()) {
+            initBattleState();
+          }
+        }, 500);
       }
     };
 
     // セーフティタイムアウト: 5秒経過したら強制的に開始
     setTimeout(() => {
-      if (!isFinished) {
+      if (isCurrentPreparation() && !isFinished) {
         console.warn('Battle loading timed out. Forcing start...');
         bgmLoaded = true;
         cardsLoaded = true;
@@ -362,7 +368,7 @@ export function prepareBattle() {
     }, 5000);
 
     const updateProgress = () => {
-      if (isFinished) return;
+      if (!isCurrentPreparation() || isFinished) return;
       loaded++;
       const progressText = `Loading Battle Assets... ${Math.floor(
         (loaded / Math.max(1, battleImageUrls.length)) * 100
@@ -392,6 +398,7 @@ export function prepareBattle() {
         }
         loadAndDecodeAudio(fetchUrl)
           .then((buffer) => {
+            if (!isCurrentPreparation()) return;
             if (buffer) {
               decodedBgms[fetchUrl] = buffer;
             }
@@ -399,6 +406,7 @@ export function prepareBattle() {
             finishLoading();
           })
           .catch((e) => {
+            if (!isCurrentPreparation()) return;
             console.warn('Failed to preload battle BGM:', e);
             bgmLoaded = true; // エラー時も進行を止めない
             finishLoading();
@@ -428,18 +436,23 @@ export function prepareBattle() {
 
   if (typeof window.showMatchingScreen === 'function') {
     setTimeout(() => {
+      if (!isCurrentPreparation()) return;
       let matchingDone = false;
       let loadingDone = false;
 
       const tryInit = () => {
-        if (matchingDone && loadingDone) {
-          setTimeout(initBattleState, 50);
+        if (isCurrentPreparation() && matchingDone && loadingDone) {
+          setTimeout(() => {
+            if (isCurrentPreparation()) {
+              initBattleState();
+            }
+          }, 50);
         }
       };
 
       // マッチング画面開始
       const matchingSafetyTimeout = setTimeout(() => {
-        if (!matchingDone) {
+        if (isCurrentPreparation() && !matchingDone) {
           console.warn('Matching screen timed out. Forcing battle start...');
           matchingDone = true;
           tryInit();
@@ -448,12 +461,14 @@ export function prepareBattle() {
 
       window.showMatchingScreen(() => {
         clearTimeout(matchingSafetyTimeout);
+        if (!isCurrentPreparation()) return;
         matchingDone = true;
         tryInit();
       });
 
       // 読み込みも開始
       startLoadingAndBattle(() => {
+        if (!isCurrentPreparation()) return;
         loadingDone = true;
         tryInit();
       }, true);
@@ -461,7 +476,11 @@ export function prepareBattle() {
   } else {
     // 従来の挙動
     startLoadingAndBattle(() => {
-      setTimeout(initBattleState, 500);
+      setTimeout(() => {
+        if (isCurrentPreparation()) {
+          initBattleState();
+        }
+      }, 500);
     }, false);
   }
 }

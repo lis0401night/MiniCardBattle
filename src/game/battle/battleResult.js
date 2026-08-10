@@ -343,6 +343,12 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'battle_dungeon') {
+      // 引き分け時は敵の勝利セリフで上書きせず、設定済みの引き分けダイアログ（「引き分けです。」）を表示する
+      if (GameState.lastBattleResult === 'draw') {
+        setupDialogueScreen();
+        return;
+      }
+
       const opp = GameState.enemyConfig || {};
       const dialogueData = getDungeonCharacterDialogue(
         opp.id || opp.leaderCardId,
